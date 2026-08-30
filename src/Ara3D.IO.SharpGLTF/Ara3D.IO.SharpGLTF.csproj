@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>    
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <PackageId>Ara3D.IO.SharpGLTF</PackageId>
+    <AssemblyName>SharpGLTF.Core</AssemblyName>
+    <RootNamespace>SharpGLTF</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+    <DefineConstants>TRACE;SUPRESSTRYCATCH</DefineConstants>
+    -->
+  </PropertyGroup>  
+
+  <ItemGroup>
+    <None Include="Schema2\Generated\*.cs">
+      <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+    </None>
+  </ItemGroup>
+
+</Project>
