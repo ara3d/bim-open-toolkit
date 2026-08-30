@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+artifacts/
+*.user
+*.log
+
+# Node
+node_modules/
+dist/
+
+# Test/model data — never committed (populate locally via data/get-test-data.ps1)
+data/**
+!data/README.md
+!data/get-test-data.ps1
+*.ifc
+*.bos
+*.parquet
+*.duckdb
+
+# IDE
+.vs/
+.idea/

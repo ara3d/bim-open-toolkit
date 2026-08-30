@@ -1,0 +1,3 @@
+[submodule "submodules/gratify"]
+	path = submodules/gratify
+	url = https://github.com/ara3d/gratify
