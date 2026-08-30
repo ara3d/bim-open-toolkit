@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dotnet:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet build BimOpenToolkit.sln -c Release
+      # Tests that need the IFC Test Kit are skipped in CI until a public
+      # fixture download source exists (data is not committed to this repo).
+      - run: dotnet test BimOpenToolkit.sln -c Release --no-build --filter "TestCategory!=RequiresTestData"
+        continue-on-error: true
+
+  platoflow-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+        working-directory: platoflow/web
+      - run: npm run build --if-present
+        working-directory: platoflow/web
