@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>platoflow-host</AssemblyName>
+    <RootNamespace>PlatoFlow.Host</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- IfcDuck.cs talks to DuckDB.NET.Data directly. -->
+    <PackageReference Include="DuckDB.NET.Data.Full" Version="1.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Referenced, never edited. IfcLoader carries the native web-ifc DLL to our output.
+         Ara3D.Ifc.Editing is the promoted byte-exact IFC patch/diff library (was source-linked
+         test files in ara3d-sdk). -->
+    <ProjectReference Include="..\..\src\Ara3D.Utils\Ara3D.Utils.csproj" />
+    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\src\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
+    <ProjectReference Include="..\..\src\Ara3D.Ifc.Editing\Ara3D.Ifc.Editing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Source-linked: the BOS/DuckDB view creation lives in the MCP project (fix-on-entry item
+         2 in PLAN.md wants it moved into Ara3D.BimOpenSchema.IO; repoint this when that lands). -->
+    <Compile Include="..\..\src\Ara3D.Ifc.Mcp\IfcDuck.cs" Link="Linked\IfcDuck.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="kinds.default.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
