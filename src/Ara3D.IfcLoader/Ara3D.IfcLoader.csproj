@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>IFC to BIM Open Schema conversion via the native web-ifc library.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="web-ifc-library.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>web-ifc-library.dll</Link>
+      <Pack>true</Pack>
+      <PackagePath>contentFiles/any/any</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="..\Ara3D.IO.StepParser\Ara3D.IO.StepParser.csproj" />
+    <ProjectReference Include="..\Ara3D.Models\Ara3D.Models.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\Ara3D.IfcTypes\Ara3D.IfcTypes.projitems" Label="Shared" />
+</Project>

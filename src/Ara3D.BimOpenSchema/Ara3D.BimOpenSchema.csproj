@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ara3D.DataTable\Ara3D.DataTable.csproj" />
+    <ProjectReference Include="..\Ara3D.Geometry\Ara3D.Geometry.csproj" />
+    <ProjectReference Include="..\Ara3D.Models\Ara3D.Models.csproj" />
+  </ItemGroup>
+
+</Project>
