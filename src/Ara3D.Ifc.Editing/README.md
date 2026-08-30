@@ -12,4 +12,5 @@ consumers (the tier 4 test projects) work unchanged.
 
 Provenance: copied from ara3d/ara3d-sdk `tests/Ara3D.Ifc.Tests`
 (IfcSourceFile.cs, IfcEntitySpan.cs, IfcDiff.cs, IfcPatcher.cs,
-IfcPropertySetBuilder.cs, IfcPropertyValue.cs) @ 82df7322.
+IfcPropertySetBuilder.cs, IfcPropertyValue.cs, plus their helper files
+IfcGuid.cs and IfcStepText.cs) @ 82df7322.
