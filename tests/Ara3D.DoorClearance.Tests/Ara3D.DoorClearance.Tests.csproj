@@ -25,12 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- IfcStepText/IfcGuid still live in Ara3D.Ifc.Tests (linked, not copied). -->
-    <Compile Include="..\Ara3D.Ifc.Tests\IfcStepText.cs" Link="Ifc\IfcStepText.cs" />
-    <Compile Include="..\Ara3D.Ifc.Tests\IfcGuid.cs" Link="Ifc\IfcGuid.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="rules\door-clearance-rules.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
