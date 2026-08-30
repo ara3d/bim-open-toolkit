@@ -2,10 +2,10 @@
 End-to-end smoke test for the platoflow-poc host.
 
 The host must already be running (see README.md):
-    dotnet run --project ara3d-sdk/wip/platoflow-poc/host/PlatoFlowHost.csproj
+    dotnet run --project platoflow/host/PlatoFlowHost.csproj
 
 Then:
-    powershell -ExecutionPolicy Bypass -File ara3d-sdk/wip/platoflow-poc/host/smoke.ps1
+    powershell -ExecutionPolicy Bypass -File platoflow/host/smoke.ps1
 
 Prints PASS/FAIL per step; exit code is the number of failures.
 Written for Windows PowerShell 5.1 (no ternary, no null-coalescing, no -SkipHttpErrorCheck).

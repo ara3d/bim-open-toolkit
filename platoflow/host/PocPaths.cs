@@ -1,7 +1,7 @@
 namespace PlatoFlow.Host;
 
 /// <summary>Locates the PoC tree from wherever the exe happens to run. The marker is CONTRACTS.md
-/// at the root of <c>ara3d-sdk/wip/platoflow-poc</c>, so <c>dotnet run</c>, a published exe and a test
+/// at the root of <c>the platoflow directory</c>, so <c>dotnet run</c>, a published exe and a test
 /// runner all find the same <c>data/</c>.</summary>
 public static class PocPaths
 {
@@ -20,7 +20,7 @@ public static class PocPaths
 
         throw new DirectoryNotFoundException(
             $"Could not find the PoC root (a folder containing CONTRACTS.md) above {AppContext.BaseDirectory}. "
-            + $"Set {RootEnvVar} to ara3d-sdk/wip/platoflow-poc.");
+            + $"Set {RootEnvVar} to the platoflow directory.");
     }
 
     /// <summary>Source data outside the platoflow tree. Duplex/carbon come from the toolkit's

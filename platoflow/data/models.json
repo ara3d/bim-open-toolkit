@@ -1,27 +1,9 @@
 [
   {
-    "id": "snowdon",
-    "name": "Snowdon Towers Architectural",
-    "bosUrl": "/api/file?path=snowdon.bos",
-    "ifcPath": "C:\\Users\\cdigg\\git\\studio\\ara3d-sdk\\wip\\platoflow-poc\\data\\snowdon.ifc"
-  },
-  {
-    "id": "snowdon-hvac",
-    "name": "Snowdon Towers HVAC",
-    "bosUrl": "/api/file?path=snowdon-hvac.bos",
-    "ifcPath": "C:\\Users\\cdigg\\git\\studio\\ara3d-sdk\\wip\\platoflow-poc\\data\\snowdon-hvac.ifc"
-  },
-  {
-    "id": "snowdon-struct",
-    "name": "Snowdon Towers Structural",
-    "bosUrl": "/api/file?path=snowdon-struct.bos",
-    "ifcPath": "C:\\Users\\cdigg\\git\\studio\\ara3d-sdk\\wip\\platoflow-poc\\data\\snowdon-struct.ifc"
-  },
-  {
     "id": "duplex",
     "name": "Duplex Apartment",
     "bosUrl": "/api/file?path=duplex.bos",
-    "ifcPath": "C:\\Users\\cdigg\\git\\studio\\ara3d-sdk\\wip\\platoflow-poc\\data\\duplex.ifc"
+    "ifcPath": "C:\\Users\\cdigg\\git\\bim-open-toolkit\\platoflow\\data\\duplex.ifc"
   },
   {
     "id": "rac_basic",
