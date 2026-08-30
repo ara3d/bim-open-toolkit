@@ -21,6 +21,7 @@
     <Ara3DCoverletCollectorVersion>6.0.0</Ara3DCoverletCollectorVersion>
     <Ara3DDuckDbNetDataFullVersion>1.3.2</Ara3DDuckDbNetDataFullVersion>
     <Ara3DMicrosoftCodeAnalysisCSharpVersion>4.8.0</Ara3DMicrosoftCodeAnalysisCSharpVersion>
+    <Ara3DMicrosoftDataSqliteVersion>8.0.6</Ara3DMicrosoftDataSqliteVersion>
     <Ara3DMicrosoftDiaSymReaderNativeVersion>1.7.0</Ara3DMicrosoftDiaSymReaderNativeVersion>
     <Ara3DMicrosoftExtensionsConfigurationVersion>8.0.0</Ara3DMicrosoftExtensionsConfigurationVersion>
     <Ara3DMicrosoftNetTestSdkVersion>17.8.0</Ara3DMicrosoftNetTestSdkVersion>
