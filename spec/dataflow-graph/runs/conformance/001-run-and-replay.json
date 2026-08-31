@@ -1,0 +1,46 @@
+{
+  "part": "runs",
+  "case": "001-run-and-replay",
+  "description": "A Run over a pure graph produces a record whose output hashes a replay reproduces. The record's hashes are frozen from the first canonical engine run.",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "b", "kind": "test.const", "version": 1 },
+          { "id": "sum", "kind": "test.add", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "sum.a" },
+          { "from": "b.out", "to": "sum.b" }
+        ]
+      },
+      "values": {
+        "a": { "kind": "Integer", "value": 5 },
+        "b": { "kind": "Integer", "value": 7 }
+      }
+    },
+    "steps": [
+      { "action": "run" },
+      { "action": "replay", "providedInputs": [] }
+    ]
+  },
+  "expect": {
+    "record": {
+      "runVersion": "0.1.0",
+      "graphHash": "TBD-by-engine",
+      "inputs": [],
+      "nodeOutputs": {
+        "a.out": "TBD-by-engine",
+        "b.out": "TBD-by-engine",
+        "sum.out": "TBD-by-engine"
+      },
+      "recordedOutputs": {
+        "sum.out": { "kind": "Integer", "value": 12 }
+      },
+      "effects": []
+    },
+    "replay": { "outcome": "ok" }
+  }
+}

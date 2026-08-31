@@ -1,0 +1,42 @@
+{
+  "part": "runs",
+  "case": "002-replay-input-mismatch",
+  "description": "Replay is refused, not attempted, when a pinned input's content hash does not match the provided input (runs.md section 4 step 2). The record pins input hash aaa...; the harness provides bbb....",
+  "input": {
+    "record": {
+      "runVersion": "0.1.0",
+      "graphHash": "TBD-by-engine",
+      "engineVersion": "conformance-fixture",
+      "timestampUtc": "2026-08-31T00:00:00.000Z",
+      "inputs": [
+        {
+          "node": "f",
+          "param": "path",
+          "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "nodeOutputs": {},
+      "recordedOutputs": {},
+      "effects": []
+    },
+    "steps": [
+      {
+        "action": "replay",
+        "providedInputs": [
+          {
+            "node": "f",
+            "param": "path",
+            "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+      }
+    ]
+  },
+  "expect": {
+    "replay": {
+      "outcome": "input-mismatch",
+      "node": "f",
+      "param": "path"
+    }
+  }
+}
