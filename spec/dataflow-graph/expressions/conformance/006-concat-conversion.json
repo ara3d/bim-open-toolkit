@@ -1,0 +1,13 @@
+{
+  "part": "expressions",
+  "case": "006-concat-conversion",
+  "description": "& concatenates and converts non-Text scalars to canonical invariant text; & binds tighter than comparison.",
+  "input": {
+    "expression": "'n = ' & 2 * 3 & ', ok = ' & true",
+    "environment": {}
+  },
+  "expect": {
+    "type": "Text",
+    "value": { "kind": "Text", "value": "n = 6, ok = true" }
+  }
+}

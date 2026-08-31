@@ -1,0 +1,15 @@
+{
+  "part": "expressions",
+  "case": "011-coalesce",
+  "description": "coalesce returns the first non-null argument and is the only null-stopping builtin; both args are Integer so the result stays Integer.",
+  "input": {
+    "expression": "coalesce(rating, 0) + 1",
+    "environment": {
+      "rating": { "type": "Integer", "value": { "kind": "Integer", "value": null } }
+    }
+  },
+  "expect": {
+    "type": "Integer",
+    "value": { "kind": "Integer", "value": 1 }
+  }
+}

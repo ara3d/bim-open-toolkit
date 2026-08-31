@@ -1,0 +1,13 @@
+{
+  "part": "expressions",
+  "case": "004-modulo-integer",
+  "description": "% is Integer-only; result has the sign of the dividend.",
+  "input": {
+    "expression": "-7 % 3",
+    "environment": {}
+  },
+  "expect": {
+    "type": "Integer",
+    "value": { "kind": "Integer", "value": -1 }
+  }
+}

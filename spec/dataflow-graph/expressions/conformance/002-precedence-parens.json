@@ -1,0 +1,13 @@
+{
+  "part": "expressions",
+  "case": "002-precedence-parens",
+  "description": "Parentheses override precedence; unary minus binds tightest.",
+  "input": {
+    "expression": "-(2 + 3) * 4",
+    "environment": {}
+  },
+  "expect": {
+    "type": "Integer",
+    "value": { "kind": "Integer", "value": -20 }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "part": "expressions",
+  "case": "001-arithmetic-integer",
+  "description": "Integer arithmetic stays Integer; * binds tighter than +.",
+  "input": {
+    "expression": "2 + 3 * 4",
+    "environment": {}
+  },
+  "expect": {
+    "type": "Integer",
+    "value": { "kind": "Integer", "value": 14 }
+  }
+}

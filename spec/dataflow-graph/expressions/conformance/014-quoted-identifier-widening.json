@@ -1,0 +1,15 @@
+{
+  "part": "expressions",
+  "case": "014-quoted-identifier-widening",
+  "description": "Bracket-quoted identifier with a space; Integer column widens to Number when mixed with a Number literal.",
+  "input": {
+    "expression": "[Fire Rating] + 0.5",
+    "environment": {
+      "Fire Rating": { "type": "Integer", "value": { "kind": "Integer", "value": 2 } }
+    }
+  },
+  "expect": {
+    "type": "Number",
+    "value": { "kind": "Number", "value": 2.5 }
+  }
+}

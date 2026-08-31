@@ -1,0 +1,15 @@
+{
+  "part": "expressions",
+  "case": "008-conditional",
+  "description": "Conditional selects a branch; branch types unify (both Text here). Environment binds a column value.",
+  "input": {
+    "expression": "area > 10.0 ? 'large' : 'small'",
+    "environment": {
+      "area": { "type": "Number", "value": { "kind": "Number", "value": 24.5 } }
+    }
+  },
+  "expect": {
+    "type": "Text",
+    "value": { "kind": "Text", "value": "large" }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "part": "expressions",
+  "case": "009-null-propagation-arithmetic",
+  "description": "A null operand makes any arithmetic result null; the static type is unchanged.",
+  "input": {
+    "expression": "carbon + 1",
+    "environment": {
+      "carbon": { "type": "Integer", "value": { "kind": "Integer", "value": null } }
+    }
+  },
+  "expect": {
+    "type": "Integer",
+    "value": { "kind": "Integer", "value": null }
+  }
+}

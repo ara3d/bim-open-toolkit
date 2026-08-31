@@ -1,0 +1,12 @@
+{
+  "part": "expressions",
+  "case": "013-type-error-conditional-branches",
+  "description": "Conditional branches must unify; Integer and Text do not.",
+  "input": {
+    "expression": "true ? 1 : 'a'",
+    "environment": {}
+  },
+  "expect": {
+    "error": "type"
+  }
+}

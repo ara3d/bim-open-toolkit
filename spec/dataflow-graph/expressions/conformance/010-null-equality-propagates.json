@@ -1,0 +1,15 @@
+{
+  "part": "expressions",
+  "case": "010-null-equality-propagates",
+  "description": "Equality propagates null like every other operator: x == null is null, never true. coalesce is the null-handling tool.",
+  "input": {
+    "expression": "x == null",
+    "environment": {
+      "x": { "type": "Integer", "value": { "kind": "Integer", "value": 5 } }
+    }
+  },
+  "expect": {
+    "type": "Boolean",
+    "value": { "kind": "Boolean", "value": null }
+  }
+}

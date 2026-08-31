@@ -1,0 +1,13 @@
+{
+  "part": "expressions",
+  "case": "007-text-functions",
+  "description": "Text builtins: case mapping is invariant, contains is ordinal and case-sensitive, len counts code points.",
+  "input": {
+    "expression": "contains(upper('Fire Door'), 'DOOR') and startswith('IfcWall', 'Ifc') and len('abc') == 3",
+    "environment": {}
+  },
+  "expect": {
+    "type": "Boolean",
+    "value": { "kind": "Boolean", "value": true }
+  }
+}

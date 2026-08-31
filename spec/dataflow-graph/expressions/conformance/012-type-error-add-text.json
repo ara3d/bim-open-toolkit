@@ -1,0 +1,12 @@
+{
+  "part": "expressions",
+  "case": "012-type-error-add-text",
+  "description": "+ requires numeric operands; adding Text is a static type error (use & for concatenation).",
+  "input": {
+    "expression": "1 + 'a'",
+    "environment": {}
+  },
+  "expect": {
+    "error": "type"
+  }
+}

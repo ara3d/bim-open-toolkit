@@ -1,0 +1,13 @@
+{
+  "part": "expressions",
+  "case": "003-division-always-number",
+  "description": "/ always yields Number, including Integer / Integer (expressions.md section 5).",
+  "input": {
+    "expression": "7 / 2",
+    "environment": {}
+  },
+  "expect": {
+    "type": "Number",
+    "value": { "kind": "Number", "value": 3.5 }
+  }
+}

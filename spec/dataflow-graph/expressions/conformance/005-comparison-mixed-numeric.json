@@ -1,0 +1,13 @@
+{
+  "part": "expressions",
+  "case": "005-comparison-mixed-numeric",
+  "description": "Ordering comparison on mixed Integer/Number compares as Number and yields Boolean.",
+  "input": {
+    "expression": "3 < 3.5",
+    "environment": {}
+  },
+  "expect": {
+    "type": "Boolean",
+    "value": { "kind": "Boolean", "value": true }
+  }
+}
