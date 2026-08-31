@@ -163,6 +163,38 @@ public sealed class BosDuckDbTests
         }
     }
 
+    /// <summary>Regression: while ParameterType had a Bool = Int alias, the SDK's positional
+    /// enum encoding shifted parquet ValueType codes +1, so parquet-derived databases mislabeled
+    /// every typed value in ParameterText.</summary>
+    [Test]
+    public void ParquetDerivedDatabase_LabelsValueTypesCorrectly()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "ara3d-duckdb-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var bos = new FilePath(Path.Combine(folder, "tiny.bos"));
+            var db = new FilePath(Path.Combine(folder, "tiny.duckdb"));
+            BuildTinyData().WriteToParquetZip(bos);
+            bos.BosToDuckDB(db);
+            BosDuckDbViews.CreateViews(db);
+
+            using var conn = BosDuckDb.Open(db);
+            var table = conn.Query("SELECT Name, ValueType, Value FROM ParameterText ORDER BY Name");
+            Assert.That(table.Rows, Has.Count.EqualTo(3));
+            Assert.That(table.Rows[0][1], Is.EqualTo("Number"));
+            Assert.That(table.Rows[0][2], Is.EqualTo("2.5"));
+            Assert.That(table.Rows[1][1], Is.EqualTo("String"));
+            Assert.That(table.Rows[1][2], Is.EqualTo("Concrete"));
+            Assert.That(table.Rows[2][1], Is.EqualTo("Entity"));
+            Assert.That(table.Rows[2][2], Is.EqualTo("BasicWall"));
+        }
+        finally
+        {
+            TryDelete(folder);
+        }
+    }
+
     /// <summary>Best-effort cleanup: the zip/parquet pipeline can hold a handle on the .bos file
     /// until GC (IfcBosArtifacts.Dispose swallows the same IOException).</summary>
     public static void TryDelete(string folder)

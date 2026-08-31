@@ -113,7 +113,6 @@ public static class BosHarmonizer
             var group = input.Strings[(int)d.Group];
             if (!mappings.TryGetValue((name, group), out var m))
                 mappings.TryGetValue((name, null), out m);
-            // Bool aliases Int, so comparing the enum values also accepts Bool for Int.
             if (m != null && m.Type == d.Type)
                 descMap[i] = m;
         }
@@ -148,7 +147,7 @@ public static class BosHarmonizer
                 case ParameterType.Entity:
                     bdb.AddParameter(p.Entity, (EntityIndex)p.Value, cd);
                     break;
-                default: // Int / Bool
+                default: // Int (includes booleans)
                     bdb.AddParameter(p.Entity, p.Value, cd);
                     break;
             }

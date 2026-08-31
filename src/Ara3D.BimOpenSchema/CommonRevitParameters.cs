@@ -66,7 +66,7 @@ public static class CommonRevitParameters
     // =========================
 
     public static RevitParameterDesc AreaSchemeRevitParameterDesc = new("Rvt:Area:Scheme", ParameterType.Entity);
-    public static RevitParameterDesc AreaIsGrossInterior = new("Rvt:Area:IsGrossInterior", ParameterType.Bool);
+    public static RevitParameterDesc AreaIsGrossInterior = new("Rvt:Area:IsGrossInterior", ParameterType.Int);
 
     // =========================
     // Room
@@ -128,8 +128,8 @@ public static class CommonRevitParameters
     public static RevitParameterDesc SpaceReturnAirflow = new("Rvt:Space:ReturnAirflow", ParameterType.String);
     public static RevitParameterDesc SpaceSpaceCavityRatio = new("Rvt:Space:SpaceCavityRatio", ParameterType.Number);
     public static RevitParameterDesc SpaceVolume = new("Rvt:Space:Volume", ParameterType.Number);
-    public static RevitParameterDesc SpaceOccupiable = new("Rvt:Space:Occupiable", ParameterType.Bool);
-    public static RevitParameterDesc SpacePlenum = new("Rvt:Space:Plenum", ParameterType.Bool);
+    public static RevitParameterDesc SpaceOccupiable = new("Rvt:Space:Occupiable", ParameterType.Int);
+    public static RevitParameterDesc SpacePlenum = new("Rvt:Space:Plenum", ParameterType.Int);
     public static RevitParameterDesc SpaceUpperLimit = new("Rvt:Space:UpperLimit", ParameterType.Entity);      // Level
     public static RevitParameterDesc SpaceRoom = new("Rvt:Space:Room", ParameterType.Entity);            // Related Room
     public static RevitParameterDesc SpaceSpaceTypeElement = new("Rvt:Space:SpaceTypeElement", ParameterType.Entity);  // SpaceTypeId

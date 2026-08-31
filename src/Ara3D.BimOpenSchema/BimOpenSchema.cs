@@ -112,11 +112,14 @@ public record struct Point
 /// <summary>
 /// Important for grouping the different kinds of parameter data ...
 /// otherwise we can have two parameter with the same name, but different underlying parameter types.
+/// Booleans are stored as Int.
+/// Values must stay contiguous from zero with no aliases: the SDK's ToDataTable encodes enums
+/// by position in Enum.GetValues, and parquet readers cast the stored codes numerically —
+/// an alias or gap makes the two disagree.
 /// </summary>
 public enum ParameterType
 {
-    Int = 0, 
-    Bool = Int, 
+    Int = 0,
     Number = 1,
     Entity = 2,
     String = 3,

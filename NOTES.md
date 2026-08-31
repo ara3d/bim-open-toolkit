@@ -64,7 +64,7 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Quoted identifiers are never calls; bare `len` is usable as a column name.
 
 ### Track DUCK (Ara3D.BimOpenSchema.DuckDb) — 11 tests
-- Pre-existing SDK bug: ToDataTable encodes aliased ParameterType by POSITION, shifting stored ValueType codes +1 — parquet-derived ParameterText mislabels every typed value. In-memory LoadBimData path is correct. (Spawned as separate task.)
+- FIXED (2026-08-31): SDK's ToDataTable encodes enums by POSITION in Enum.GetValues; the `Bool = Int` alias in ParameterType made positional codes disagree with numeric values, shifting stored ValueType codes +1 for values >= 1. Fixed by removing the alias (positions now equal values); ParameterType must stay contiguous from zero with no aliases. Regression tests: ParquetParameterTypeTests (schema tests) and ParquetDerivedDatabase_LabelsValueTypesCorrectly (DuckDb tests). Migration: .bos files exported before the fix still carry shifted codes (Number->2, Entity->3, String->4, Point->5) and must be re-exported; bfast files were never affected (raw struct bytes).
 - net8.0-windows forced by BimOpenSchema.IO (via IfcLoader); true DuckDB isolation needs IO's windows-only parts split out later.
 - Jsonable coercion + tool-error hints deliberately left in the MCP layer; repoint of Ara3D.Ifc.Mcp is clean and mapped in the track report.
 - Shared-worktree incident: an --amend raced another track's commit and rewrote it; f66e52d carries ~2.5MB bin/obj blobs in history (HEAD clean). Rule reinforced: never amend on a shared worktree.

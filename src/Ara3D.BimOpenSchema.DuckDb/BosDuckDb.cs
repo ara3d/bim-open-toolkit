@@ -23,12 +23,12 @@ public static class BosDuckDb
 
     /// <summary>Writes every BOS table into the connection. Rows are appended in source array
     /// order, so <c>rowid</c> equals the BOS index — the invariant the text views join on.
-    /// Columns are written explicitly rather than through <c>IBimData.ToDataSet()</c>: the SDK's
-    /// ToDataTable encodes an aliased enum (ParameterType, where Bool = Int) by its position in
-    /// GetValues, shifting stored values by one and breaking the ValueType CASE in the views.
-    /// Here enum columns hold their numeric values, which the view SQL assumes.</summary>
-    // TODO: parquet-derived databases (DuckUtils.BosToDuckDB) still carry the shifted
-    // ParameterType encoding; fix belongs in the SDK's ToDataTable (or drop the Bool alias).
+    /// Columns are written explicitly rather than through <c>IBimData.ToDataSet()</c>, so enum
+    /// columns hold their numeric values regardless of how the SDK's ToDataTable encodes enums.
+    /// The view SQL assumes numeric values.</summary>
+    // NOTE: .bos files written while ParameterType had the Bool = Int alias (before 2026-08-31)
+    // carry ValueType codes shifted +1 for values >= 1; parquet-derived databases built from
+    // those files mislabel typed values. Re-export the .bos file to fix.
     public static void LoadBimData(this DuckDBConnection conn, IBimData data)
     {
         conn.WriteBosTable("Strings",
