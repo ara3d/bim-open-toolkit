@@ -29,6 +29,13 @@ from a sibling `nrc-ifc-llm` clone).
 
 PlatoFlow web: `cd platoflow/web && npm install && npm run dev`.
 
+## Docs
+
+- [What "AEC world model" suggests to different audiences](docs/aec-world-model-terminology.md) —
+  how the term lands differently across ML researchers, BIM practitioners,
+  contractors, owners, regulators, robotics, and investors, and why this
+  toolkit favors an explicit, verifiable model over a learned one.
+
 ## Provenance and boundary
 
 Only BIM/IFC-specific code lives here; general-purpose libraries (utilities,
