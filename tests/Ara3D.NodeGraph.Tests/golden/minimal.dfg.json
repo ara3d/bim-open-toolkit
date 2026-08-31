@@ -1,0 +1,50 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "a": {
+      "x": 100,
+      "y": 200.5
+    },
+    "b": {
+      "h": 80,
+      "w": 160,
+      "x": 300,
+      "y": 200.5
+    }
+  },
+  "session": {
+    "camera": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1.5
+    },
+    "display": [
+      "b"
+    ]
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "a.out",
+        "to": "b.in"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "a",
+        "kind": "test.const",
+        "version": 1
+      },
+      {
+        "id": "b",
+        "kind": "test.negate",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "a": {
+      "value": "42"
+    }
+  }
+}
