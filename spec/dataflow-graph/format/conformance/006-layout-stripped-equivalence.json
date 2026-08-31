@@ -1,0 +1,50 @@
+{
+  "part": "format",
+  "case": "006-layout-stripped-equivalence",
+  "description": "Stripping layout and session must not change the graph hash (format.md section 6): the two documents are the same analysis.",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "b", "kind": "test.negate", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "b.in" }
+        ]
+      },
+      "values": {
+        "a": { "value": 42 }
+      },
+      "layout": {
+        "a": { "x": 120, "y": 80, "w": 180 },
+        "b": { "x": 360, "y": 80 }
+      },
+      "session": {
+        "camera": { "x": 0, "y": 0, "zoom": 1 },
+        "display": ["b"]
+      }
+    },
+    "strippedDocument": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "b", "kind": "test.negate", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "b.in" }
+        ]
+      },
+      "values": {
+        "a": { "value": 42 }
+      }
+    }
+  },
+  "expect": {
+    "valid": true,
+    "equalGraphHash": true,
+    "graphHash": "TBD-by-engine"
+  }
+}

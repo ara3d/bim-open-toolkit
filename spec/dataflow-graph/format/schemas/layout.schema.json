@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.ara3d.com/dataflow-graph/format/0.1.0/layout.schema.json",
+  "title": "DataFlow Graph layout layer",
+  "type": "object",
+  "patternProperties": {
+    "^[A-Za-z0-9_-]+$": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "required": ["x", "y"],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,22 @@
+{
+  "part": "format",
+  "case": "003-duplicate-node-id-invalid",
+  "description": "Node ids must be unique (format.md section 5, document validity rule 2).",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "a", "kind": "test.const", "version": 1 }
+        ],
+        "edges": []
+      },
+      "values": {}
+    }
+  },
+  "expect": {
+    "valid": false,
+    "reason": "duplicate-node-id"
+  }
+}

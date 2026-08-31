@@ -1,0 +1,26 @@
+{
+  "part": "format",
+  "case": "007-duplicate-input-edge-invalid",
+  "description": "At most one edge may target a given input port (format.md section 5, document validity rule 4).",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "b", "kind": "test.const", "version": 1 },
+          { "id": "c", "kind": "test.negate", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "c.in" },
+          { "from": "b.out", "to": "c.in" }
+        ]
+      },
+      "values": {}
+    }
+  },
+  "expect": {
+    "valid": false,
+    "reason": "duplicate-input-edge"
+  }
+}

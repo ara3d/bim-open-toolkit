@@ -1,0 +1,25 @@
+{
+  "part": "format",
+  "case": "005-cycle-invalid",
+  "description": "The edge graph must be acyclic (format.md section 5, document validity rule 5).",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.negate", "version": 1 },
+          { "id": "b", "kind": "test.negate", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "b.in" },
+          { "from": "b.out", "to": "a.in" }
+        ]
+      },
+      "values": {}
+    }
+  },
+  "expect": {
+    "valid": false,
+    "reason": "cycle"
+  }
+}

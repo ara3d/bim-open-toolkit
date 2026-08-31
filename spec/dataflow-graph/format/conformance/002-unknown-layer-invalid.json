@@ -1,0 +1,17 @@
+{
+  "part": "format",
+  "case": "002-unknown-layer-invalid",
+  "description": "An unrecognized top-level member makes the document invalid (format.md section 1). Forward compatibility is by migration, not tolerated layers.",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": { "nodes": [], "edges": [] },
+      "values": {},
+      "annotations": { "note": "not a layer" }
+    }
+  },
+  "expect": {
+    "valid": false,
+    "reason": "unknown-layer"
+  }
+}

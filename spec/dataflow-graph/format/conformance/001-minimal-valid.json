@@ -1,0 +1,26 @@
+{
+  "part": "format",
+  "case": "001-minimal-valid",
+  "description": "Smallest useful valid document: two nodes, one edge, one parameter value. Also pins its graph hash.",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "b", "kind": "test.negate", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "b.in" }
+        ]
+      },
+      "values": {
+        "a": { "value": 42 }
+      }
+    }
+  },
+  "expect": {
+    "valid": true,
+    "graphHash": "TBD-by-engine"
+  }
+}

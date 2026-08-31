@@ -1,0 +1,21 @@
+{
+  "part": "format",
+  "case": "008-bad-node-id-invalid",
+  "description": "Node ids must match [A-Za-z0-9_-]+ and in particular contain no dot, which is the edge-endpoint separator (format.md section 2).",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a.1", "kind": "test.const", "version": 1 }
+        ],
+        "edges": []
+      },
+      "values": {}
+    }
+  },
+  "expect": {
+    "valid": false,
+    "reason": "bad-node-id"
+  }
+}

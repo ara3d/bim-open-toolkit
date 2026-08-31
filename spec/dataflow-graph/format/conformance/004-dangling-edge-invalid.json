@@ -1,0 +1,23 @@
+{
+  "part": "format",
+  "case": "004-dangling-edge-invalid",
+  "description": "Every edge endpoint must name an existing node (format.md section 5, document validity rule 3). Node 'ghost' does not exist.",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "ghost.in" }
+        ]
+      },
+      "values": {}
+    }
+  },
+  "expect": {
+    "valid": false,
+    "reason": "dangling-edge"
+  }
+}

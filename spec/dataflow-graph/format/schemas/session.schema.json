@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.ara3d.com/dataflow-graph/format/0.1.0/session.schema.json",
+  "title": "DataFlow Graph session layer",
+  "description": "Volatile view state. Additional members are allowed here and only here; tools must preserve members they do not understand.",
+  "type": "object",
+  "properties": {
+    "camera": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "zoom": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "required": ["x", "y", "zoom"],
+      "additionalProperties": false
+    },
+    "display": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+    }
+  },
+  "additionalProperties": true
+}

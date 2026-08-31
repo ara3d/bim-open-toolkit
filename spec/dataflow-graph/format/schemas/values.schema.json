@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.ara3d.com/dataflow-graph/format/0.1.0/values.schema.json",
+  "title": "DataFlow Graph values layer",
+  "description": "Per-node parameter values. Whether each value matches its declared parameter kind is catalog validity, not expressible here; this schema only forbids bare null values.",
+  "type": "object",
+  "patternProperties": {
+    "^[A-Za-z0-9_-]+$": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9]*$": {
+          "type": ["boolean", "number", "string", "object", "array"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
