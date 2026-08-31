@@ -96,3 +96,111 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Canvas needs a light gratify theme to match the app chrome (platoflow's theme.ts is the model).
 - Geometry asset scheme fixed by supervisor to model:{id} -> /api/models/{id}/bos, matching the host route; promote the endpoint to contracts.json when it stabilizes.
 - vite build emits one 973 kB chunk (three) — code-splitting is a cosmetic TODO.
+
+### Track VEXT (@ara3d/viewer-loaders + @ara3d/viewer-controls) â€” 45 tests
+- BOS reader ported, not stubbed: `.bos` = ZIP of parquet tables (not BFAST); vertices Int32 fixed-point /10000, mesh-local indices; decoded with jszip + hyparquet (pure JS). Sources recovered from @ara3d/ara3d-webgl 1.3.15's published source map.
+- Core API gap: `Viewer.sceneObject` is private â€” picking/clipping can't reach the viewer's meshes; core needs a one-line accessor (`get objects(): SceneObject`).
+- Core API gap: clipping needs `WebGLRenderer.localClippingEnabled = true` but the renderer is private too.
+- three's GLTFLoader parses geometry-only GLBs headless under Node â€” cheap real-file integration tests without a browser.
+- Per-instance alpha (instanceColor is RGB-only) and per-instance visibility (group-level only) limited by core; BOS hidden instances dropped (TODO in bos-geometry.ts); multi-material meshes use first material (TODO in three-convert.ts).
+- `loadBos` returns `groupEntities` mapping instances back to BOS entity indices for future picking-to-data wiring.
+
+### Track ENG (Ara3D.DataFlowEngine) â€” 53 tests
+- Two spec/code conflicts pinned in favor of code: hash is plain lowercase hex (spec says "sha256:" prefix) and no Integer->Number widening at edges (spec mandates it; GraphValidation rejects such edges). Spec needs a 0.1.x errata pass.
+- Memo key has no node id â€” identical work shares one cache entry across nodes (tested); only successful Pure evals cached; cache unbounded, eviction is future work.
+- `PortSpec` lacks the spec's required/optional input flag; every input port pinned as required (missing edge -> Unready, not error). One place to touch when the flag lands: `Evaluator.EvaluateNode`.
+- Warnings are memoized with outputs and replayed on hits â€” memo hits observationally identical to re-execution; worth stating in spec Â§4.
+- Cancellation pinned as pass-abort: previous snapshot kept (atomic commit), memo entries kept, execution counts roll back.
+- TestNodes fakes mirror the spec Â§8 conformance vocabulary â€” TestKit can lift them nearly verbatim.
+
+### Track TK/CONF (Ara3D.DataFlowEngine.TestKit + Conformance) â€” 24 + 12 tests (3 ignored)
+- All concrete conformance expectations matched the engine â€” no wrong vectors.
+- Frozen TBD-by-engine hashes: format 001/006 graphHash `5ca17f12â€¦`, runs 001 record hashes; runs 002 graphHash left TBD (fixture has no document, value irrelevant â€” RUNS or SPEC should freeze a dummy).
+- Engine has no Run implementation (effects only reach EffectPending); conformance ships a minimal StepHarness Run driver that should delegate to the real engine Run when one lands.
+- Spec gives no default for `test.const`'s `kind` param, yet format vectors 001/006 omit it; TestKit defaults to Integer, which those vectors implicitly rely on.
+- Engine test project's internal `test.const` (Integer-only) diverges from spec Â§8 (`kind`+`value`); could be replaced by TestKit.
+- GraphBuilder is immutable; static+instance `Node` on one class is illegal in C#, hence the `Graph` static facade.
+
+### Track RUNS (Ara3D.DataFlowEngine.Runs) â€” 24 tests
+- `run.schema.json` has `additionalProperties: false` and no `warnings` member, yet the task lists warnings â€” `RunRecord.Warnings` is in-memory only, never serialized; TODO proposes a schema minor bump.
+- Task's `Freeze` signature was unimplementable without the registry (port names and Effect capability live in NodeSpec) â€” added an `INodeRegistry` parameter.
+- Schema has no slot for EffectInputs; `effects` lists only executed effects, EffectPending nodes excluded everywhere.
+- Replay skips output comparison for EffectPending nodes (engine has no effect-free Run recompute yet; TODO at the skip).
+- MemoryTable/MemoryColumn now exist in three fenced places â€” a public minimal in-memory IDataTable in the vendored Ara3D.DataTable would deduplicate (DataTableBuilder's null-cell behavior is undocumented).
+- Freeze->serialize->parse round-trip is byte-identical; both spec conformance vectors executed with inline fakes.
+
+### Track MIG (Ara3D.NodeGraph.Migrations) â€” 9 tests
+- GraphDocumentIO.Parse treats `formatVersion` as optional and never checks it â€” the migrator is the only place version compatibility is enforced; direct Parse callers bypass checking entirely.
+- No-op fast path returns already-current documents byte-identical without canonicalizing â€” the method is "migrate", not "normalize" (documented in README).
+- `System.Version` comparison accepts four-part versions and rejects prerelease suffixes (`0.2.0-beta`); fine while the spec uses plain x.y.z.
+- 0.1.0 is the first format, so the production registry is empty; the exemplar migration is a test-only fake.
+
+### Track BOSP (BimOpenFlow.Nodes.Bos) â€” 23 tests
+- `.gitignore` rule `*.bos` (line 17) ignores the whole `src/BimOpenFlow.Nodes.Bos/` directory â€” had to `git add -f`; scope the rule.
+- SDK bug: `ParquetUtils.ReadBimDataFromParquetZip` NREs on any .bos without geometry tables (BimGeometryExtensions.cs:251) â€” every file written by `WriteToParquetZip` is unreadable by it; tests append an empty BimGeometry to work around.
+- `bos.harmonize` standalone node skipped: `BosHarmonizer.Harmonize` transforms IBimData (not tables) and has no target-unit-system parameter; wrapped as bos.load's `harmonize` flag instead.
+- bos.load adds ORDER BY to view queries â€” DuckDB gives no stable row order from the LEFT-JOIN views; determinism matters for memoization/hashing in any pack materializing views.
+- `table.aggregate` CASTs `sum` to BIGINT/DOUBLE so results aren't HUGEINT/BigInteger.
+- Stale `ParameterType` alias shift appears resolved (enum now contiguous); only pre-fix .bos files carry shifted codes.
+
+### Track CMP (BimOpenFlow.Nodes.Compliance) â€” 30 tests
+- `NodeSpec` cannot express optional or variadic inputs â€” `check.union` takes exactly two Tables (chain for more); `reviewExpr` optionality encoded as empty-string-means-unused. Consider optional-port support in Abstractions.
+- Verdict-table convention: exact columns `verdict`/`checkId`/`checkTitle`/`citation` appended in order; output table name = checkId; severity Fail > NeedsReview > InfoNotAvailable > Pass.
+- `Verdict` is a local mirror of the contracts.json enum; needs a member-for-member identity test once a project references both (host).
+- No reusable in-code IDataTable builder existed in the repo â€” pack carries an internal ~70-line MemoryTable; promote if other packs need it.
+- Expression column-type mapping defined here (bool->Boolean, integrals->Integer, float/double/decimal->Number, string->Text, Nullable unwrapped); other table-producing packs must emit those CLR descriptor types or columns won't be addressable from `check.rule` expressions.
+
+### Track GEO (BimOpenFlow.Nodes.Geometry) â€” 19 tests
+- `InstanceStruct.EntityIndex` actually holds the STEP express id, not an index â€” misleading; worth renaming upstream or documenting in Ara3D.Models.
+- `Approach1Mesher.Build` with `includeGeometry: false` is pure C# â€” the native web-ifc dll never loads on this path; the windows/x64 constraint is inherited, not exercised.
+- `DataTableBuilder.AddColumn(IDataColumn)` reuses live column objects; safe copying needs materializing via `Array.CreateInstance` â€” a shared "copy/select rows" helper may belong in Ara3D.DataTable.
+- Canonical cell-text join rules duplicate `Scalar.ToCanonicalText` from Expressions; promote to a shared table-utils module if a third pack needs them.
+- ModelGeometryCache is unbounded (TODO); host should own eviction. Instance table rebuilt per `view3d.instances` eval â€” cache it if eval frequency grows.
+- Joins compare canonical invariant text, so Integer 2 joins Text "2"; categorical color indices stable under row reordering (sorted distinct text).
+
+### Track EFF (BimOpenFlow.Nodes.Effects) â€” 10 tests
+- `Ara3D.Ifc.Editing` compiles into namespace `Ara3D.Ifc.Tests` (RootNamespace in its csproj) â€” consumers must `using Ara3D.Ifc.Tests;`; worth renaming.
+- Doc inconsistency: charter and docs/bimopenflow-structure.md list GLB/BOS export sinks (naming Ara3D.IO.GltfExporter), but the granted dependency set has no geometry/schema projects â€” deferred with README note + TODO.
+- Third copy of minimal in-memory IDataTable now exists; CSV writer is a near-duplicate of BimOpenSchema.IO's WriteCsv (unreferenced because that project drags in Sqlite) â€” both TODO-flagged for hoisting.
+- Tiny hand-written 14-line IFC4 file parses through `IfcSourceFile.Load` â€” pset write-back testable without duplex.ifc or native deps.
+- STEP parser memory-maps files and can hold the lock past Dispose â€” temp-dir cleanup must be best-effort; expect this anywhere writing then reloading IFC in-process.
+- Deterministic GUIDs from guidKey make repeated writePsets runs byte-identical (tested); all values written as IFCTEXT in v1 (typed measures deferred).
+
+### Track CAT (BimOpenFlow.Host.Catalog) â€” 15 tests
+- `IfcToBosConverter.Convert` static helper never disposes the IfcFile it opens â€” both platoflow and Host.Catalog carry their own dispose wrapper; fix at the source.
+- Cache concurrency without lock files: write uniquely-named `.tmp` then `File.Move` â€” first rename wins, losers delete their temp.
+- Content-hash cache keying means a renamed source reuses the cached conversion but changes the model Id â€” Host.Store should key run records by ContentHash for rename-stability.
+- `Scan()` eagerly SHA-256-hashes every file; TODO to memoize by (path, size, mtime). Cache dir accumulates orphaned `{hash}.bos` files â€” eviction TODO.
+- Entity/parameter counts read cheaply from `ReadBimDataFromParquetZip` â€” Host.Api can serve model metadata without a DuckDB step.
+
+### Track STO (BimOpenFlow.Host.Store) â€” 20 tests
+- Run timestamps in file names strip punctuation (colons illegal on Windows) but still sort chronologically.
+- Save is a no-op returning false on byte-identical canonical JSON; otherwise old current archived to a version slot, new current via temp+atomic rename. Crash window between copy and replace can leave a duplicated archived version (harmless, documented).
+- Concurrency is last-writer-wins v1; optimistic concurrency (compare graph hash) can layer on later without changing the on-disk layout.
+- `History` recomputes each version's graph hash by loading the document â€” O(versions) reads; hash sidecar is the obvious later optimization.
+- Missing-analysis Load surfaces raw `DirectoryNotFoundException`/`FileNotFoundException` â€” Host.Api must map to 404 itself.
+
+### Track API (BimOpenFlow.Host.Api) â€” 17 tests
+- BLOCKER found: generated `BimOpenFlow.Contracts.g.cs` didn't compile â€” `NodeState` emitted `string? Error = null` before required `Warnings` (CS1737); fix belongs in contracts/generate.mjs (regenerate; track left a one-line uncommitted worktree patch).
+- ASP.NET Core minimal APIs, framework-only (no packages); tests run real Kestrel on `127.0.0.1:0` â€” no Mvc.Testing/TestServer needed.
+- Contract `ModelSummary.sizeBytes` is `int` â€” models over 2 GB clamp; propose `long` in contracts.json (TODO in ApiMapping).
+- `RunSummary` has no timestamp/hash source except the run file, so listRuns parses every record per request â€” candidate for filename-derived summaries.
+- Sessions never watch the store directory; out-of-band edits to `current.dfg.json` leave a stale EvalSession until the next PUT (TODO).
+- `catalog.Scan()` re-hashes every model per call; listModels and createRun both pay it â€” the Catalog memoization TODO will matter for polling clients.
+- Wire casing verified against generated TS: camelCase, enums as exact name strings, nullable fields omitted when null.
+
+### Track STATE (@bimopenflow/state) â€” 41 tests
+- `ApiClient.analysisEvents` constructs `EventSource` directly with no injection point â€” `connectAnalysis` takes a structural `AnalysisApi` subset instead; consider generating such an interface alongside the class in contracts codegen. This also forces "DOM" into the tsconfig lib.
+- `serializeDocument` is near-canonical but double formatting isn't guaranteed byte-identical to C# "R" round-trip â€” server must re-canonicalize on PUT.
+- Reducer throws on invalid edits (mirroring NodeGraph exceptions), state unchanged on throw; UI layer needs try/catch or validation around dispatch.
+- Undo/redo stacks are serialized-document snapshots kept in state so the reducer stays pure; selection excluded from history.
+- `markSaved` is an extra internal action beyond the specified set â€” save() must clear dirty through the dispatch choke point.
+
+### Track PANES (@bimopenflow/panes) â€” 66 tests
+- `@bimopenflow/contracts` and viz resolve through existing workspace junctions; only cross-workspace `@ara3d/viewer-*` need tsconfig/vitest aliases until a real install links them (TODO-marked for the supervisor).
+- Viewer controls' minimal element interfaces (`InputElement`, `PickElement`) aren't satisfied by `HTMLCanvasElement` under strict function types â€” panes casts through `unknown`; widen those signatures in viewer/packages/controls.
+- viz doesn't export its column helpers, so panes reimplements a small `columns.ts`; promote into viz's public API if a third consumer appears.
+- viz `DataTableView` re-renders on header-click sort with no hook â€” TablePane uses a MutationObserver to keep selection highlights; an `onRender`/row-metadata option in viz would remove that.
+- Per-instance isolation in the 3D pane is alpha 0 (InstancedGroup visibility is group-level only); true per-instance hide needs viewer-core support.
+- 3D picks emit entity ids via BOS `groupEntities`; GLB has no mapping so picks emit nothing.
+
