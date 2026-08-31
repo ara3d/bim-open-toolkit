@@ -40,3 +40,42 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - data/get-test-data.ps1 clobbers data/README.md: `Copy-Item IFC-Test-Kit\* data\` overwrites the repo's data/README.md with the test kit's README. Restored via git checkout; script should exclude README.md.
 - get-test-data.ps1 fetches only the IFC Test Kit. Harmonizer/Mcp/BimOpenSchema tests additionally need (from ara3d-sdk/data): AC20-FZK-Haus.ifc, AC20-Institute-Var-2.ifc, model_0.ifc, schependomlaan.ifc, rac_basic_sample_project-2025.bos. Copied locally (gitignored) to verify; script should be extended.
 - Ara3D.Ifc.Editing shipped IfcStepText.cs and IfcGuid.cs in addition to the six promoted files; deleted the test-side copies/links to avoid CS0436 duplicates.
+
+## Findings — BimOpenFlow rewrite waves 0–3 (2026-08-31)
+
+### Track SPEC (spec/dataflow-graph)
+- Graph hash covers canonical bytes of {"structure","values"} only; formatVersion/layout/session excluded — canvas edits never change analysis identity. One hash style everywhere: bare lowercase hex SHA-256.
+- Hash-bearing conformance expectations ship as "TBD-by-engine"; the conformance suite freezes them from the first canonical engine run; after that a changed hash is a breaking change by definition.
+- Node ids may not contain dots (dot is the endpoint separator); kind ids need >=2 dotted segments — the namespaces cannot collide.
+- The conformance harness contract (per-step execution counts, effect order, test.* vocabulary) is part of the spec, so "memoization works" is a black-box assertion.
+- PoC-format migration tooling must handle three renames: {node,slot} objects -> "nodeId.port" strings, kindVersion -> version, wires -> edges.
+- and/or are NOT short-circuiting (null-propagation rule wins); only ?: is lazy.
+
+### Track NG (Ara3D.NodeGraph) — 44 tests
+- Param values are canonical strings; typed-JSON values were a spec drift, reconciled back.
+- Graph hash: plain lowercase hex, hash input has no trailing LF; document text ends with exactly one LF.
+- No Integer->Number widening at edges (deferred deliberately; expressions widen internally).
+- Canonical writer is two-stage (loose JSON -> sorted canonical text), so future layers serialize canonically for free; nodes sort by id, edges by "to".
+
+### Track EXP (Ara3D.DataFlowEngine.Expressions) — 422 tests
+- Conformance runner auto-discovers spec/dataflow-graph/expressions/conformance/*.json; all 14 vectors pass; new vectors run with no test changes.
+- Pinned where sources were silent: round digits 0..15; long.MinValue % -1 == 0; keywords/builtins lowercase case-sensitive; text ordering by Unicode code points.
+- Checker environment is scalar-only; spec allows Any/Table bindings — needs a decision when node packs bind tables.
+- Quoted identifiers are never calls; bare `len` is usable as a column name.
+
+### Track DUCK (Ara3D.BimOpenSchema.DuckDb) — 11 tests
+- Pre-existing SDK bug: ToDataTable encodes aliased ParameterType by POSITION, shifting stored ValueType codes +1 — parquet-derived ParameterText mislabels every typed value. In-memory LoadBimData path is correct. (Spawned as separate task.)
+- net8.0-windows forced by BimOpenSchema.IO (via IfcLoader); true DuckDB isolation needs IO's windows-only parts split out later.
+- Jsonable coercion + tool-error hints deliberately left in the MCP layer; repoint of Ara3D.Ifc.Mcp is clean and mapped in the track report.
+- Shared-worktree incident: an --amend raced another track's commit and rewrote it; f66e52d carries ~2.5MB bin/obj blobs in history (HEAD clean). Rule reinforced: never amend on a shared worktree.
+
+### Track VCORE (@ara3d/viewer-core) — 37 tests
+- Loader contract: InstancedGroup.append(transforms 16 floats col-major, colors RGBA 4 floats) -> startIndex; renderer sync is pull-based via version counters.
+- Per-instance alpha not rendered yet (three instanceColor is RGB); group opacity works; TODO in group-object.ts.
+- Capacity growth rebuilds the InstancedMesh — consumers must hold GroupObject.root, never cache .mesh.
+- three peer range >=0.180.0; workspace devDep three ^0.185.0.
+
+### Track VIZ (@bimopenflow/viz) — 25 tests
+- Contracts imports are type-only, so the IIFE bundle (8.8KB minified) has zero runtime deps — small enough to inline into generated dashboard HTML. Keep @bimopenflow/contracts types-only.
+- dist/ not committed; the C# Publishing layer must run `npm run -w @bimopenflow/viz bundle` or the supervisor stages the artifact.
+- jsdom setup dominates vitest wall-time (34s setup vs 136ms tests) — pool/shard later if more jsdom packages appear.
