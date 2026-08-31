@@ -28,12 +28,14 @@
 
 ### DataFlow Graph Specification
 **Location:** `spec/dataflow-graph/`
-The normative definition of the graph document format (structure + values
-layers), evaluation semantics (dirtiness, memoization, standing evaluation),
-and the run record. Written as markdown plus JSON Schemas plus a directory of
-conformance vectors: input graph + inputs → expected outputs, consumed by the
-conformance test project. No code and no dependencies; versioned with explicit
-migration notes.
+The normative definition, partitioned into four separately versioned documents
+so spec+implementation pairs can evolve in parallel: `format.md` (the graph
+document: structure + values layers), `semantics.md` (evaluation: dirtiness,
+memoization, standing evaluation), `expressions.md` (the expression language),
+and `runs.md` (the run record). Each part owns its JSON Schemas and its
+directory of conformance vectors (input graph + inputs → expected outputs),
+consumed by the conformance test project. No code and no dependencies;
+versioned with explicit migration notes.
 **Depends on:** nothing.
 
 ### Contracts
@@ -89,6 +91,33 @@ Runs are the only artifact archived or submitted as evidence, and the input to
 both generators below.
 **Depends on:** Ara3D.DataFlowEngine, Ara3D.NodeGraph.
 
+### Ara3D.NodeGraph.Migrations
+**Location:** `src/Ara3D.NodeGraph.Migrations/`
+Version-to-version graph document upgrades, driven by the spec's migration
+notes. Kept out of `Ara3D.NodeGraph` so handling old formats never complicates
+the current document model, and so migration work can proceed in its own fence.
+**Depends on:** Ara3D.NodeGraph.
+
+### Ara3D.DataFlowEngine.TestKit
+**Location:** `src/Ara3D.DataFlowEngine.TestKit/`
+Test infrastructure for everyone building on the engine: fluent graph
+builders, fake/probe nodes, and evaluation assertions. This is what makes
+every other agent's tests cheap to write, and what third-party node-pack
+authors test against; shipped as a real package, not test-project internals.
+**Depends on:** Ara3D.DataFlowEngine, Ara3D.NodeGraph.
+
+---
+
+## BIM data layer (C#)
+
+### Ara3D.BimOpenSchema.DuckDb
+**Location:** `src/Ara3D.BimOpenSchema.DuckDb/`
+The DuckDB view/query layer over BOS (`CreateViews`: EntityText, ParameterText,
+RelationText — today buried in the PoC's MCP project; fix-on-entry item 2).
+A dedicated project so the DuckDB native dependency is isolated here instead of
+riding along with `Ara3D.BimOpenSchema.IO` into every consumer.
+**Depends on:** Ara3D.BimOpenSchema, Ara3D.BimOpenSchema.IO; DuckDB.NET.
+
 ---
 
 ## BIM node packs (C#)
@@ -100,7 +129,7 @@ select/derive/aggregate via DuckDB, and unit-aware columns via the Harmonizer.
 The workhorse vocabulary for takeoffs, audits, and analytics.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions,
 Ara3D.DataFlowEngine.Expressions; Ara3D.BimOpenSchema,
-Ara3D.BimOpenSchema.IO, Ara3D.BimOpenSchema.Harmonizer.
+Ara3D.BimOpenSchema.DuckDb, Ara3D.BimOpenSchema.Harmonizer.
 
 ### BimOpenFlow.Nodes.Geometry
 **Location:** `src/BimOpenFlow.Nodes.Geometry/`
@@ -132,15 +161,42 @@ Ara3D.Ifc.Editing; Ara3D.IO.GltfExporter (vendored SDK).
 
 ## Application (C#)
 
+The host is split four ways up front — it is the likeliest fence-contention
+hotspot, and these seams let four agents work it concurrently.
+
+### BimOpenFlow.Host.Catalog
+**Location:** `src/BimOpenFlow.Host.Catalog/`
+Model discovery and the conversion pipeline: watching/registering model files,
+IFC → BOS conversion with caching, and model metadata. Owns all knowledge of
+where models live and how they become BOS.
+**Depends on:** Ara3D.IfcLoader, Ara3D.BimOpenSchema.IO;
+Ara3D.Utils (vendored SDK).
+
+### BimOpenFlow.Host.Store
+**Location:** `src/BimOpenFlow.Host.Store/`
+Persistence for graph documents and run records: the analysis library on disk,
+versioned saves, and run archival. No HTTP and no evaluation — storage
+semantics only.
+**Depends on:** Ara3D.NodeGraph, Ara3D.DataFlowEngine.Runs.
+
+### BimOpenFlow.Host.Api
+**Location:** `src/BimOpenFlow.Host.Api/`
+The HTTP surface, generated-contract-first: endpoint handlers, the
+standing-evaluation subscription channel, and request/response mapping. Holds
+no business logic — every handler delegates to Catalog, Store, or the engine.
+**Depends on:** contracts (generated C#); BimOpenFlow.Host.Catalog,
+BimOpenFlow.Host.Store; Ara3D.DataFlowEngine.
+
 ### BimOpenFlow.Host
 **Location:** `src/BimOpenFlow.Host/`
-The headless host process: model catalog, graph store, conversion pipeline
-(IFC → BOS), evaluation sessions, and the HTTP API defined in `contracts/`.
-This is P1's "one headless core" as a deployable — the web app is strictly a
-client of it.
-**Depends on:** Ara3D.DataFlowEngine (+ Runs, Expressions), Ara3D.NodeGraph,
-all four node packs; Ara3D.IfcLoader, Ara3D.BimOpenSchema.IO; contracts
-(generated C#).
+The composition root and deployable: wires Catalog, Store, Api, the engine,
+and the node packs together into the headless host process. This is P1's "one
+headless core" as an executable — the web app is strictly a client of it.
+Deliberately thin; if logic accumulates here, it belongs in one of the three
+modules above.
+**Depends on:** BimOpenFlow.Host.Api, BimOpenFlow.Host.Catalog,
+BimOpenFlow.Host.Store; Ara3D.DataFlowEngine (+ Runs, Expressions); all four
+node packs.
 
 ### BimOpenFlow.Mcp
 **Location:** `src/BimOpenFlow.Mcp/`
@@ -151,24 +207,40 @@ operations.
 **Depends on:** Ara3D.MCP (vendored SDK); Ara3D.NodeGraph; BimOpenFlow.Host
 (or its API client).
 
+### BimOpenFlow.Publishing
+**Location:** `src/BimOpenFlow.Publishing/`
+The shared document-emission layer under both generators: HTML templating,
+asset embedding (the `viz` bundle, fonts, images as data URIs), theming, and
+self-contained-file assembly. Exists so Dashboards and Reports stay thin and
+visually consistent instead of growing two copies of the same plumbing.
+**Depends on:** Ara3D.DataTable (vendored SDK); contracts; the `viz` JS bundle
+(build artifact, not a project reference).
+
 ### BimOpenFlow.Dashboards
 **Location:** `src/BimOpenFlow.Dashboards/`
 The dashboard generator: turns a graph's output tables and views into a
 self-contained interactive HTML dashboard (charts, tables, embedded 3D
-snapshots) by binding run/session data to the prebuilt `web/packages/viz`
-bundle. Live dashboards observe a running host; exported ones embed frozen run
-data.
-**Depends on:** Ara3D.DataFlowEngine.Runs; Ara3D.DataTable (vendored SDK);
-contracts; the `viz` JS bundle (build artifact, not a project reference).
+snapshots) by binding run/session data to the `viz` components via Publishing.
+Live dashboards observe a running host; exported ones embed frozen run data.
+**Depends on:** BimOpenFlow.Publishing; Ara3D.DataFlowEngine.Runs.
 
 ### BimOpenFlow.Reports
 **Location:** `src/BimOpenFlow.Reports/`
 The report generator: renders a run record into a static, archivable document
-(HTML, printable to PDF) — the audit/compliance deliverable with verdicts,
-provenance hashes, and evidence tables. Static by construction: a report never
-requires a running host to read.
-**Depends on:** Ara3D.DataFlowEngine.Runs; Ara3D.DataTable (vendored SDK);
-contracts.
+(HTML, printable to PDF) — the audit deliverable with verdicts, provenance
+hashes, and evidence tables. Static by construction: a report never requires a
+running host to read.
+**Depends on:** BimOpenFlow.Publishing; Ara3D.DataFlowEngine.Runs.
+
+### BimOpenFlow.Evidence
+**Location:** `src/BimOpenFlow.Evidence/`
+The compliance hand-off package (the semantics doc's open question 4 made
+concrete): one archive holding the graph, pinned input snapshots or content
+hashes, the run record, and the rendered report — the thing actually given to
+an official. Separate from Reports because the archive format carries its own
+versioning and signing rules; it is a legal artifact, not a rendering concern.
+**Depends on:** Ara3D.DataFlowEngine.Runs, Ara3D.NodeGraph;
+BimOpenFlow.Reports.
 
 ---
 
@@ -195,8 +267,8 @@ The pane implementations — table, chart, 3D view, inspector, verdict list —
 each an isolated module behind the single pane contract (data in, events out).
 The most naturally parallel surface in the system: one agent per pane, zero
 overlap.
-**Depends on:** @bimopenflow/viz, @ara3d/viewer (3D pane only), contracts
-(generated TS).
+**Depends on:** @bimopenflow/viz, @ara3d/viewer-core/-loaders/-controls (3D
+pane only), contracts (generated TS).
 
 ### @bimopenflow/viz
 **Location:** `bimopenflow/web/packages/viz/`
@@ -214,15 +286,34 @@ hand-edited. Includes the subscription client for standing-evaluation updates.
 
 ---
 
-## Viewer (TypeScript, general-purpose)
+## Viewer (TypeScript, general-purpose, `viewer/` npm workspace)
 
-### @ara3d/viewer
-**Location:** `viewer/`
 The new WebGL viewer replacing `@ara3d/ara3d-webgl`, designed against the §5
 item 7 lessons: `three` as a peer dependency, float numeric parameters,
-per-instance color API, and loader progress reporting. BIM-free and
-independently publishable; consumed by the 3D pane and by exported dashboards.
-**Depends on:** three (peer). Candidate to move to its own repo once stable.
+per-instance color API, and loader progress reporting. BIM-free, split into
+three packages with clean interfaces so agents can work them concurrently;
+the workspace is a candidate to move to its own repo once stable.
+
+### @ara3d/viewer-core
+**Location:** `viewer/packages/core/`
+The renderer: scene management, instanced drawing, materials, per-instance
+color, and the frame loop. No file formats and no input handling — it draws
+what it is handed.
+**Depends on:** three (peer).
+
+### @ara3d/viewer-loaders
+**Location:** `viewer/packages/loaders/`
+Ingestion: BOS geometry and GLB loading into viewer-core's scene structures,
+with incremental/progress reporting as a first-class API. All format knowledge
+lives here.
+**Depends on:** @ara3d/viewer-core; three (peer).
+
+### @ara3d/viewer-controls
+**Location:** `viewer/packages/controls/`
+Interaction: camera models and navigation, picking/selection, and section
+planes / overlay hooks (overlay may split out later if it grows). Emits
+selection events; owns no scene content.
+**Depends on:** @ara3d/viewer-core; three (peer).
 
 ---
 
@@ -264,15 +355,20 @@ graph BT
   ENG[Ara3D.DataFlowEngine]
   EXP[.Expressions]
   RUNS[.Runs]
+  TK[.TestKit]
+  MIG[NodeGraph.Migrations]
+  DUCK[Ara3D.BimOpenSchema.DuckDb]
   BOS[Nodes.Bos]
   GEO[Nodes.Geometry]
   CMP[Nodes.Compliance]
   EFF[Nodes.Effects]
-  HOST[BimOpenFlow.Host]
+  HOST["BimOpenFlow.Host (root + Api/Catalog/Store)"]
   MCP[BimOpenFlow.Mcp]
+  PUB[BimOpenFlow.Publishing]
   DASH[BimOpenFlow.Dashboards]
   REP[BimOpenFlow.Reports]
-  VIEW["@ara3d/viewer"]
+  EVID[BimOpenFlow.Evidence]
+  VIEW["@ara3d/viewer-* (core, loaders, controls)"]
   WEB["@bimopenflow/* (app, state, panes, viz, api-client)"]
 
   NG --> ABS
@@ -280,8 +376,11 @@ graph BT
   ENG --> NG
   EXP --> ABS
   RUNS --> ENG
+  TK --> ENG
+  MIG --> NG
   BOS --> ABS
   BOS --> EXP
+  BOS --> DUCK
   GEO --> ABS
   CMP --> ABS
   CMP --> EXP
@@ -295,8 +394,11 @@ graph BT
   HOST --> EFF
   MCP --> NG
   MCP --> HOST
-  DASH --> RUNS
-  REP --> RUNS
+  PUB --> RUNS
+  DASH --> PUB
+  REP --> PUB
+  EVID --> REP
+  EVID --> RUNS
   WEB --> VIEW
   NG -. implements .-> spec
   ENG -. implements .-> spec
@@ -306,9 +408,32 @@ graph BT
 
 ## Build-order / wave implications
 
-Wave 0 (serial, supervisor): spec first draft + contracts + Abstractions —
-the three frozen surfaces everything fans out from. Wave 1 (parallel):
-NodeGraph, Expressions, viewer, viz — no mutual dependencies. Wave 2: engine +
-conformance, then Runs. Wave 3 (parallel): the four node packs + api-client +
-state. Wave 4: host, panes, app. Wave 5 (parallel): Mcp, Dashboards, Reports,
+Wave 0 (serial, supervisor): spec first drafts + contracts + Abstractions —
+the frozen surfaces everything fans out from. Wave 1 (parallel): NodeGraph,
+Expressions, DuckDb layer, viewer-core, viz — no mutual dependencies. Wave 2:
+engine + conformance + TestKit, then Runs; viewer-loaders/-controls alongside.
+Wave 3 (parallel): the four node packs, Migrations, api-client, state. Wave 4:
+Host.Catalog/Store/Api in parallel, then the Host root; panes and app
+alongside. Wave 5 (parallel): Mcp, Publishing → Dashboards/Reports, Evidence,
 gates.
+
+## Deferred breakdowns
+
+Real seams, deliberately not split yet — the trigger to revisit any of them is
+fence contention: two agents in a wave repeatedly requesting changes to the
+same file.
+
+- **Expression internals** (parser / type checker / evaluator) — folders inside
+  `Ara3D.DataFlowEngine.Expressions`, not projects.
+- **Per-chart-type viz packages** — one `@bimopenflow/viz` package with fenced
+  folders per widget is enough until something external consumes a single chart.
+- **Engine internals** (scheduler vs. memoization/cache) — splitting these
+  would freeze a contract exactly where refactoring freedom matters most.
+- **Viewer overlay/annotation** — starts inside `@ara3d/viewer-controls`;
+  splits out if section planes / annotations grow their own audience.
+- **Docking/layout manager in the web app** — a genuine module, but its right
+  home is gratify; move it upstream when it stabilizes rather than splitting it
+  here.
+- **Run signing/attestation crypto** — inside `Ara3D.DataFlowEngine.Runs`
+  until a second consumer (Evidence hardening, external verification tool)
+  appears.
