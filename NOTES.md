@@ -79,3 +79,11 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Contracts imports are type-only, so the IIFE bundle (8.8KB minified) has zero runtime deps — small enough to inline into generated dashboard HTML. Keep @bimopenflow/contracts types-only.
 - dist/ not committed; the C# Publishing layer must run `npm run -w @bimopenflow/viz bundle` or the supervisor stages the artifact.
 - jsdom setup dominates vitest wall-time (34s setup vs 136ms tests) — pool/shard later if more jsdom packages appear.
+
+### Track PUBS (BimOpenFlow.Publishing / Dashboards / Reports / Evidence) — 42 tests
+- Generated contracts file lacked `#nullable enable` (CS8669 on every build); supervisor fixed generate.mjs to emit it. The CS1737 optional-before-required record bug was fixed mid-wave; generate.mjs should keep emitting no defaults.
+- TableJson/ValueJson encode NaN/±Infinity as strings, but viz charts treat string cells as non-numeric — NaN cells render null-ish in dashboards. Acceptable; worth a spec note.
+- Test-fixture duplication: TestTable (Publishing.Tests) and run-record JSON builders (Dashboards/Reports/Evidence tests) are candidates for the shared TestKit.
+- DashboardItem.OptionsJson stays raw JSON by design (viz option shapes evolve TS-side); revisit typed option records when options stabilize.
+- EvidencePackage zip bytes are deterministic in practice (fixed entry timestamps, sorted entries) but Deflate output is runtime-version-dependent; only manifest/member sha256 hashes are contractually deterministic. Signing is a TODO.
+- Live-session dashboard variant (SSE-driven) deferred with a TODO; static-from-run works end to end with the real 8.8KB viz bundle located via VizBundle.FindInRepo.
