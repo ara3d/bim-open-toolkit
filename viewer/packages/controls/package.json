@@ -1,0 +1,26 @@
+{
+  "name": "@ara3d/viewer-controls",
+  "version": "0.1.0",
+  "description": "Interaction for the Ara 3D viewer: orbit camera navigation, picking/selection with typed events, and section planes. Owns no scene content.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@ara3d/viewer-core": "^0.1.0",
+    "three": ">=0.180.0"
+  }
+}
