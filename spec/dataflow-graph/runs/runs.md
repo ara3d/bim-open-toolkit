@@ -36,12 +36,12 @@ A run record is produced when a Run completes (semantics part §6). It pins:
   "engineVersion": "Ara3D.DataFlowEngine 0.1.0",
   "timestampUtc": "2026-08-31T14:03:22.117Z",
   "inputs": [
-    { "node": "m1", "param": "path", "contentHash": "sha256:…",
+    { "node": "m1", "param": "path", "contentHash": "…64 lowercase hex…",
       "source": "models/tower-a.bos" }      // source is informational only
   ],
   "nodeOutputs": {
-    "m1.out": "sha256:…",               // "nodeId.port" -> value hash
-    "sum.out": "sha256:…"
+    "m1.out": "…64 lowercase hex…",     // "nodeId.port" -> value hash
+    "sum.out": "…64 lowercase hex…"
   },
   "recordedOutputs": {
     "sum.out": { "kind": "Integer", "value": 12 }   // serialized values, section 3
@@ -53,10 +53,10 @@ A run record is produced when a Run completes (semantics part §6). It pins:
 ```
 
 All members shown are required except `source` (informational; hashes, not
-paths, carry identity) and failed effects' optional `error` text. Note the
-two hash styles: `graphHash` is bare lowercase hex (format part §6), while
-input content hashes and value hashes carry the `sha256:` prefix (semantics
-part §1.1). `inputs`
+paths, carry identity) and failed effects' optional `error` text. Every
+hash in the record — graph, input content, value — is the same style: 64
+bare lowercase hex characters, SHA-256 (format part §6, semantics part
+§1.1). `inputs`
 is sorted by (node, param); `effects` is in execution order (which is
 normative, semantics part §6). The record is serialized with the format
 part's canonical JSON rules (§6 there), so a run record is itself

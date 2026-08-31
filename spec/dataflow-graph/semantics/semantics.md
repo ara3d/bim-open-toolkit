@@ -36,8 +36,10 @@ widens internally (see the expressions part).
 ### 1.1 Value hashing
 
 Several rules below key on value identity, so value hashing is normative.
-The hash of a value is `"sha256:" + lowercase-hex(SHA-256(enc(v)))` where
-`enc` is:
+The hash of a value is `lowercase-hex(SHA-256(enc(v)))` — 64 lowercase hex
+characters, no prefix, the same style as the format part's graph hash. The
+algorithm is SHA-256 by definition of this spec version (an
+algorithm-agility field can come with signing later). `enc` is:
 
 - Boolean — byte `0x01`, then `0x00` (false) or `0x01` (true).
 - Integer — byte `0x02`, then 8 bytes little-endian two's complement.
