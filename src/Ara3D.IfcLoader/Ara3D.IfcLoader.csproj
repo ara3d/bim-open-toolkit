@@ -21,8 +21,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
-    <ProjectReference Include="..\Ara3D.IO.StepParser\Ara3D.IO.StepParser.csproj" />
-    <ProjectReference Include="..\Ara3D.Models\Ara3D.Models.csproj" />
+    <PackageReference Include="Ara3D.IO.StepParser" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
   </ItemGroup>
 
   <Import Project="..\Ara3D.IfcTypes\Ara3D.IfcTypes.projitems" Label="Shared" />

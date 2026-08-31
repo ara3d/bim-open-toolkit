@@ -17,6 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Central NuGet dependency versions">
+    <Ara3DSdkVersion>1.6.2-local</Ara3DSdkVersion>
     <Ara3DClosedXmlVersion>0.105.0</Ara3DClosedXmlVersion>
     <Ara3DCoverletCollectorVersion>6.0.0</Ara3DCoverletCollectorVersion>
     <Ara3DDuckDbNetDataFullVersion>1.3.2</Ara3DDuckDbNetDataFullVersion>

@@ -10,7 +10,8 @@ repo is the reference implementation.
 
 | Where | What |
 |---|---|
-| `src/` | C# libraries: utilities, geometry, BOS, IFC loading/meshing/editing, MCP servers |
+| `src/` | C# libraries: BOS, IFC loading/meshing/editing, the IFC MCP server |
+| `vendor/` | Local copies of the general-purpose Ara3D.SDK NuGet packages (see `vendor/README.md`) |
 | `tests/` | NUnit test suites |
 | `data/` | Test fixtures — **not committed**; populate with `./data/get-test-data.ps1` |
 | `platoflow/` | PlatoFlow node-graph editor (PoC reference + design docs for the rewrite) |
@@ -28,10 +29,14 @@ from a sibling `nrc-ifc-llm` clone).
 
 PlatoFlow web: `cd platoflow/web && npm install && npm run dev`.
 
-## Provenance
+## Provenance and boundary
 
-Projects were copied from `ara3d/ara3d-sdk` (each project README carries the
-source path and commit SHA). Full history remains in the origin repos. See
-[PLAN.md](PLAN.md) for the population plan and the open-core boundary.
+Only BIM/IFC-specific code lives here; general-purpose libraries (utilities,
+geometry, data tables, glTF export, the MCP protocol) remain in
+[ara3d-sdk](https://github.com/ara3d/ara3d-sdk) and are consumed as NuGet
+packages vendored under `vendor/`. Projects here were copied from
+`ara3d/ara3d-sdk` (each project README carries the source path and commit SHA);
+full history remains in the origin repos. See [PLAN.md](PLAN.md) for the
+population plan and the open-core boundary.
 
 License: MIT.

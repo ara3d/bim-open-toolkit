@@ -11,11 +11,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
-    <ProjectReference Include="..\Ara3D.Geometry\Ara3D.Geometry.csproj" />
-    <ProjectReference Include="..\Ara3D.IO.StepParser\Ara3D.IO.StepParser.csproj" />
-    <ProjectReference Include="..\Ara3D.Memory\Ara3D.Memory.csproj" />
-    <ProjectReference Include="..\Ara3D.Models\Ara3D.Models.csproj" />
-    <ProjectReference Include="..\Ara3D.Utils\Ara3D.Utils.csproj" />
+    <PackageReference Include="Ara3D.Geometry" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.IO.StepParser" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Memory" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
   </ItemGroup>
 
   <ItemGroup>

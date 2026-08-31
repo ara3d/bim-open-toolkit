@@ -21,7 +21,7 @@
     <!-- Referenced, never edited. IfcLoader carries the native web-ifc DLL to our output.
          Ara3D.Ifc.Editing is the promoted byte-exact IFC patch/diff library (was source-linked
          test files in ara3d-sdk). -->
-    <ProjectReference Include="..\..\src\Ara3D.Utils\Ara3D.Utils.csproj" />
+    <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
     <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
     <ProjectReference Include="..\..\src\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
     <ProjectReference Include="..\..\src\Ara3D.Ifc.Editing\Ara3D.Ifc.Editing.csproj" />

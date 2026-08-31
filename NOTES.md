@@ -23,6 +23,12 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Host still source-links src/Ara3D.Ifc.Mcp/IfcDuck.cs — repoint when fix-on-entry item 2 moves CreateViews into BimOpenSchema.IO.
 - Default demo model is now duplex.ifc; Snowdon/rac_basic models load via PLATOFLOW_EXTRA_DATA env var (not shipped).
 
+### Supervisor / SDK-boundary restructure (2026-08-30, evening)
+- Reversed the tier 0-1 vendoring per user direction: general-purpose SDK projects (Utils, Memory, Collections, Logging, F8, PropKit, Geometry, DataTable, Models, IO.BFAST, IO.StepParser, IO.GltfExporter, IO.SharpGLTF, Ara3D.MCP, Plato.*) removed from src/ and consumed as NuGet packages from a local vendor/ feed (nuget.config), packed from ara3d-sdk @ 82df7322.
+- Vendored packs are versioned 1.6.2-local, NOT 1.6.1: nuget.org's 1.6.1 has older content (no SimpleHttpServer in Utils) and the global package cache resolves by id/version, so a same-version vendor pack silently loses. Never vendor a version nuget.org also serves.
+- tests/Ara3D.MCP.Tests removed (its subject stays in the SDK). Test count 175 -> 126, all green. Full sln builds 0 errors.
+- Earlier wave close-out claimed "BimOpenToolkit.sln builds 0 errors" but the committed sln was EMPTY - the shproj crash during `dotnet sln add` rolled back the whole batch, and building/testing an empty sln trivially succeeds. The per-project test runs were the real gate. Sln now actually contains the 13 projects; lesson: verify sln contents, not just exit codes.
+
 ### Supervisor / wave close-out (2026-08-30)
 - Full gate green: BimOpenToolkit.sln builds with 0 errors; 175/175 tests pass across 6 suites; platoflow web builds and its gates pass.
 - .shproj shared projects (IfcTypes, Plato.*) are not in the .sln (dotnet CLI can't add them); they compile into consumers via .projitems, so builds are unaffected. Add via VS if IDE browsing is wanted.

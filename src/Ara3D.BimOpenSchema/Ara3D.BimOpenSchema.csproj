@@ -5,9 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ara3D.DataTable\Ara3D.DataTable.csproj" />
-    <ProjectReference Include="..\Ara3D.Geometry\Ara3D.Geometry.csproj" />
-    <ProjectReference Include="..\Ara3D.Models\Ara3D.Models.csproj" />
+    <PackageReference Include="Ara3D.DataTable" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Geometry" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
   </ItemGroup>
 
 </Project>

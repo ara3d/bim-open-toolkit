@@ -11,6 +11,34 @@
 > is the reference implementation and CI-tests against it. It will be referenced from
 > the repo handed to the NRC.
 
+## Revision — 2026-08-30 (evening): the SDK boundary
+
+The split is sharper than the original inventory below: **general-purpose code
+stays in `ara3d-sdk` and is consumed here as NuGet packages; only BIM/IFC-specific
+code lives in this repo.** Consequences, superseding §1/§3/§7 where they conflict:
+
+- Tiers 0–1 (Utils, Memory, Collections, Logging, F8, PropKit, Geometry,
+  DataTable, Models, IO.BFAST) do NOT move. Neither do `Ara3D.IO.StepParser`,
+  `Ara3D.IO.GltfExporter`, `Ara3D.IO.SharpGLTF`, `Ara3D.MCP` (protocol library),
+  or the Plato shared projects. All are referenced as `Ara3D.*` packages pinned
+  by `$(Ara3DSdkVersion)` in `Directory.Build.props`.
+- The packages are vendored as `.nupkg` files in `vendor/` (a local NuGet feed
+  registered in `nuget.config`), packed from ara3d-sdk @ 82df7322 as
+  `1.6.2-local`, so this repo builds with no publish/install round-trip. The SDK
+  should publish real versions of StepParser/GltfExporter/SharpGLTF/MCP when
+  convenient. NOTE: never vendor a version number that nuget.org also serves —
+  the global package cache resolves by id/version and the published content wins.
+- What lives here: `Ara3D.BimOpenSchema` + `.IO` + `.Harmonizer` (BOS package
+  publishing moves to this repo from the SDK), `Ara3D.IfcLoader`, `Ara3D.IfcTypes`,
+  `Ara3D.Ifc.Mesher`, `Ara3D.Ifc.Editing`, `Ara3D.Ifc.Mcp`, their tests,
+  PlatoFlow, and (later) the Revit exporter.
+- Phase 7 shrinks to: delete only the BIM/IFC projects from `ara3d-sdk`, have
+  Studio consume BOS/IFC from this repo's packages; the SDK is a product that
+  remains, not a repo being emptied.
+- Cross-repo cost: a change needed in an SDK project now requires a repack into
+  `vendor/` (or a real publish). This raises the value of §5 item 6 (make BOS
+  data-only conversion geometry-free).
+
 ## Principles
 
 1. **Copy, stabilize, repoint, then delete.** Origins keep working until consumers
