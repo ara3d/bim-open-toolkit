@@ -35,6 +35,7 @@ export class Viewer {
   private frameHandle: number | null = null;
   private renderRequested = false;
   private disposed = false;
+  private localClipping = false;
 
   constructor(options: ViewerOptions = {}) {
     this.camera = new PerspectiveCamera(
@@ -61,11 +62,22 @@ export class Viewer {
     if (this.disposed) throw new Error('Viewer is disposed');
     if (this.renderer) throw new Error('Viewer is already attached');
     this.renderer = new WebGLRenderer({ canvas, antialias: this.antialias, alpha: true });
+    this.renderer.localClippingEnabled = this.localClipping;
     this.resize(canvas.clientWidth || canvas.width, canvas.clientHeight || canvas.height);
   }
 
   get isAttached(): boolean { return this.renderer !== null; }
   get isRunning(): boolean { return this.running; }
+
+  /** The three.js mirror of the scene model — for picking, clipping, and other integrations. */
+  get objects(): SceneObject { return this.sceneObject; }
+
+  /** Enables/disables local (per-material) clipping planes on the renderer. */
+  setLocalClipping(enabled: boolean): void {
+    if (this.renderer) this.renderer.localClippingEnabled = enabled;
+    this.localClipping = enabled;
+    this.requestRender();
+  }
 
   /** Sets the drawing-buffer size and camera aspect. Floats accepted; CSS pixel units. */
   resize(width: number, height: number, pixelRatio: number = 1.0): void {
