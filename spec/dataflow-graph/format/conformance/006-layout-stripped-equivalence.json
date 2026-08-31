@@ -45,6 +45,6 @@
   "expect": {
     "valid": true,
     "equalGraphHash": true,
-    "graphHash": "TBD-by-engine"
+    "graphHash": "5ca17f129792a94d9725eda0bb1c1c63c8460430c878cb1571e7409bad6a1a62"
   }
 }

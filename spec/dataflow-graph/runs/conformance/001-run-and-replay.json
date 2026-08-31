@@ -29,12 +29,12 @@
   "expect": {
     "record": {
       "runVersion": "0.1.0",
-      "graphHash": "TBD-by-engine",
+      "graphHash": "f24e18d761d065b1ab61fdc3b42f4405e8eaeca569f723ad1e0344b56edf660d",
       "inputs": [],
       "nodeOutputs": {
-        "a.out": "TBD-by-engine",
-        "b.out": "TBD-by-engine",
-        "sum.out": "TBD-by-engine"
+        "a.out": "054cf7d9d119099e90e449f8448d9b53e00b51508f5f56a2dfd58151ffdbe8ce",
+        "b.out": "95d6f8b53c8e5c1d2e3c443dfee0705a7ebdff9f6442377ef935ecc87dd1695a",
+        "sum.out": "2770f01dcc36089e038d75ede7c4c008d37d30d604f0c59cae40d90b8d367eaa"
       },
       "recordedOutputs": {
         "sum.out": { "kind": "Integer", "value": 12 }
