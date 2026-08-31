@@ -248,11 +248,23 @@ BimOpenFlow.Reports.
 
 ### @bimopenflow/app
 **Location:** `bimopenflow/web/packages/app/`
-The editor application shell: canvas editing on gratify, node catalog browsing,
-pane docking, and session/run controls. Owns the `layout` and `session` layers
-of a graph file; never evaluates anything itself.
-**Depends on:** gratify (submodule); @bimopenflow/state, @bimopenflow/panes,
+The editor application shell: node catalog browsing, pane docking, and
+session/run controls. Owns the `layout` and `session` layers of a graph file;
+never evaluates anything itself. Graph editing on the canvas belongs to
+@bimopenflow/graph.
+**Depends on:** @bimopenflow/graph, @bimopenflow/state, @bimopenflow/panes,
 @bimopenflow/api-client.
+
+### @bimopenflow/graph
+**Location:** `bimopenflow/web/packages/graph/`
+The node-graph editing surface: node bodies driven by the catalog, port typing
+and connection rules, status badges, wire rendering and inspection, selection
+and cross-probing, and the mapping from canvas gestures to store operations.
+Built on gratify's core primitives; gratify's `examples/node-editor` is a demo,
+not an upstream. Gaps in gratify are fixed at the core level, never by growing
+a graph layer there — see `docs/graph-module-layering.md`.
+**Depends on:** gratify (submodule); @bimopenflow/state, contracts (generated
+TS).
 
 ### @bimopenflow/state
 **Location:** `bimopenflow/web/packages/state/`
