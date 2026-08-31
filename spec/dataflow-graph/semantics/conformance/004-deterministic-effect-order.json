@@ -1,0 +1,32 @@
+{
+  "part": "semantics",
+  "case": "004-deterministic-effect-order",
+  "description": "Independent Effect nodes execute in topological order with ties broken by node id ascending — declaration order in the file does not matter (semantics.md section 6).",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "z", "kind": "test.effect", "version": 1 },
+          { "id": "b", "kind": "test.effect", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "z.in" },
+          { "from": "a.out", "to": "b.in" }
+        ]
+      },
+      "values": {
+        "a": { "kind": "Integer", "value": 7 }
+      }
+    },
+    "steps": [
+      { "action": "run" }
+    ]
+  },
+  "expect": {
+    "steps": [
+      { "executions": { "a": 1, "b": 1, "z": 1 }, "effectOrder": ["b", "z"] }
+    ]
+  }
+}

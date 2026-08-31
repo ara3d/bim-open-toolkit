@@ -1,0 +1,34 @@
+{
+  "part": "semantics",
+  "case": "003-effect-gating",
+  "description": "Effect nodes never execute during standing evaluation; a Run executes each reachable Effect node exactly once (semantics.md section 6).",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "e", "kind": "test.effect", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "e.in" }
+        ]
+      },
+      "values": {
+        "a": { "kind": "Text", "value": "hello" }
+      }
+    },
+    "steps": [
+      { "action": "evaluate" },
+      { "action": "run" },
+      { "action": "evaluate" }
+    ]
+  },
+  "expect": {
+    "steps": [
+      { "executions": { "a": 1, "e": 0 }, "effectOrder": [] },
+      { "executions": { "a": 0, "e": 1 }, "effectOrder": ["e"] },
+      { "executions": { "a": 0, "e": 0 }, "effectOrder": [] }
+    ]
+  }
+}

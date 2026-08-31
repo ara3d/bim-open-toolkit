@@ -1,0 +1,45 @@
+{
+  "part": "semantics",
+  "case": "002-dirty-propagation",
+  "description": "A values edit re-executes only the changed node and its downstream; the independent branch stays clean (semantics.md section 5).",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "b", "kind": "test.const", "version": 1 },
+          { "id": "sum", "kind": "test.add", "version": 1 },
+          { "id": "p1", "kind": "test.probe", "version": 1 },
+          { "id": "p2", "kind": "test.probe", "version": 1 }
+        ],
+        "edges": [
+          { "from": "a.out", "to": "sum.a" },
+          { "from": "b.out", "to": "sum.b" },
+          { "from": "sum.out", "to": "p1.in" },
+          { "from": "b.out", "to": "p2.in" }
+        ]
+      },
+      "values": {
+        "a": { "kind": "Integer", "value": 1 },
+        "b": { "kind": "Integer", "value": 2 }
+      }
+    },
+    "steps": [
+      { "action": "evaluate" },
+      { "action": "setValue", "node": "a", "param": "value", "value": 10 },
+      { "action": "evaluate" }
+    ]
+  },
+  "expect": {
+    "steps": [
+      { "executions": { "a": 1, "b": 1, "sum": 1, "p1": 1, "p2": 1 } },
+      { "executions": {} },
+      { "executions": { "a": 1, "b": 0, "sum": 1, "p1": 1, "p2": 0 } }
+    ],
+    "outputs": {
+      "p1.out": { "kind": "Integer", "value": 12 },
+      "p2.out": { "kind": "Integer", "value": 2 }
+    }
+  }
+}
