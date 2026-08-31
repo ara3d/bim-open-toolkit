@@ -32,3 +32,63 @@ Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES
   properties — do not hardcode versions; request additions via NOTES.md.
 - Provenance: each copied project gets a README note (or a line appended) naming
   source repo, path, and commit SHA.
+
+---
+
+# Contracts — BimOpenFlow rewrite, waves 0–1 (2026-08-31)
+
+Implements `docs/bimopenflow-structure.md`. Wave 0 (landed by supervisor):
+`spec/dataflow-graph/` drafts (SPEC track), `contracts/` + codegen,
+`Ara3D.DataFlowEngine.Abstractions`, web workspace root + `@bimopenflow/contracts`.
+
+## Fences (who writes where)
+
+Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES.md):
+`docs/bimopenflow-structure.md`, `contracts/**`,
+`src/Ara3D.DataFlowEngine.Abstractions/**`, `bimopenflow/web/package.json`,
+`bimopenflow/web/packages/contracts/**`, `BimOpenToolkit.sln`,
+`Directory.Build.props` (all), this doc.
+
+| Track | Writes only |
+|---|---|
+| SPEC | `spec/dataflow-graph/**` |
+| NG NodeGraph | `src/Ara3D.NodeGraph/**`, `tests/Ara3D.NodeGraph.Tests/**` |
+| EXP Expressions | `src/Ara3D.DataFlowEngine.Expressions/**`, `tests/Ara3D.DataFlowEngine.Expressions.Tests/**` |
+| DUCK DuckDb | `src/Ara3D.BimOpenSchema.DuckDb/**`, `tests/Ara3D.BimOpenSchema.DuckDb.Tests/**` |
+| VCORE viewer | `viewer/**` (whole workspace this wave, incl. its package.json + lockfile) |
+| VIZ viz | `bimopenflow/web/packages/viz/**` + may run `npm install` in `bimopenflow/web` and commit the lockfile |
+| S supervisor | everything else; sln membership; integration + full gate |
+
+No shared servers this wave. Tests are per-project; supervisor runs the full gate.
+
+## Frozen seams (wave 0 decisions — build against these, don't redesign)
+
+- **Value kinds on edges** (Abstractions `FlowValue`): Boolean, Integer(Int64),
+  Number(double), Text, Table(`Ara3D.DataTable.IDataTable`). Ports add `Any`.
+- **Node identity**: dotted string kind (e.g. `source.model`) + integer version.
+  Capability: Pure | Effect (Effect nodes run only inside an explicit Run).
+- **Param kinds**: Boolean, Integer, Number, Text, Enum, FilePath, ModelRef,
+  Expression, Json. Param values travel as canonical invariant strings
+  (`ParamValues`).
+- **Graph document** (`.dfg.json`): four layers. `structure`: `nodes`
+  `[{id, kind, version}]`, `edges` `[{from: "nodeId.port", to: "nodeId.port"}]`;
+  `values`: `{nodeId: {paramName: string}}`; `layout`: `{nodeId: {x, y}}` (+
+  optional w/h); `session`: free-form presentation state. `structure+values`
+  fully determine evaluation.
+- **Canonical JSON**: UTF-8, LF, 2-space indent, object keys sorted
+  alphabetically at every level, integers plain, doubles shortest round-trip
+  ("R"). Graph hash = SHA-256 of canonical `{structure, values}` subdocument.
+- **Expression language**: literals (boolean/integer/number/text), identifiers =
+  column refs (bare or `[quoted]`), unary `-`/`not`; `* / %`; `+ -`; `&` (text
+  concat, converts scalars to canonical text); comparisons; `and`; `or`;
+  `cond ? a : b` (right-assoc, lowest). `/` always yields Number; `%` Integer
+  only; `+ - *` Integer if both Integer else Number; Integer widens to Number.
+  Null propagates through every operator; `coalesce` returns first non-null.
+  Builtins: abs, min, max, round, floor, ceil, len, lower, upper, contains,
+  startswith, endswith, coalesce.
+- **Contracts codegen**: edit `contracts/contracts.json`, run
+  `node contracts/generate.mjs`, commit outputs. TS lands in
+  `@bimopenflow/contracts` (viz/api-client import it; never hand-copy types).
+- **C# conventions**: net8.0; SDK packages via `$(Ara3DSdkVersion)`; NUnit test
+  projects copy the pattern of `tests/Ara3D.BimOpenSchema.Tests`; follow the
+  house C# style (immutable, expression-bodied, `IReadOnlyList`).

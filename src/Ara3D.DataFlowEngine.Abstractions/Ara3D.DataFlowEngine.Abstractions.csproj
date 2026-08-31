@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Collections" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.DataTable" Version="$(Ara3DSdkVersion)" />
+  </ItemGroup>
+
+</Project>
