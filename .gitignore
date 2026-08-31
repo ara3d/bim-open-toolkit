@@ -17,6 +17,8 @@ data/**
 *.bos
 *.parquet
 *.duckdb
+!src/Ara3D.BimOpenSchema.DuckDb/
+!tests/Ara3D.BimOpenSchema.DuckDb.Tests/
 
 # IDE
 .vs/
