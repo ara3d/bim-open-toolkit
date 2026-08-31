@@ -8,7 +8,7 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
     },
-    "graphHash": { "$ref": "#/$defs/hash" },
+    "graphHash": { "$ref": "#/$defs/graphHash" },
     "engineVersion": { "type": "string", "minLength": 1 },
     "timestampUtc": {
       "type": "string",
@@ -68,6 +68,10 @@
   ],
   "additionalProperties": false,
   "$defs": {
+    "graphHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
     "hash": {
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"

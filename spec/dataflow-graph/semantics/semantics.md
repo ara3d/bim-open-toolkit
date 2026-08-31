@@ -27,9 +27,11 @@ Cells are values of the column kind or null. **Null exists only inside table
 cells and inside expression evaluation (see the expressions part); an edge
 never carries a bare null.**
 
-Port types are the five kinds plus `Any`. `Any` accepts every kind. The only
-widening is Integer → Number, applied at the port boundary (an Integer output
-wired to a Number input arrives as the equal Number).
+Port types are the five kinds plus `Any`. `Any` accepts every kind.
+There is no conversion at an edge: unless one side is `Any`, the kinds must
+match exactly, and a value arrives bit-identical to how it left. Integer →
+Number widening at edges is deliberately deferred; the expression language
+widens internally (see the expressions part).
 
 ### 1.1 Value hashing
 
@@ -171,7 +173,7 @@ the suite must provide (in its test harness, not its product catalog):
 
 | Kind (version 1) | Capability | Ports and parameters |
 |---|---|---|
-| `test.const` | Pure | out `out: Any`. Params: `kind` (Enum of the five kinds), `value` (Json, interpreted as that kind). |
+| `test.const` | Pure | out `out: Any`. Params: `kind` (Enum of the five kinds), `value` (Text: the canonical string form of a value of that kind, per the format part §4). |
 | `test.negate` | Pure | in `in: Integer`, out `out: Integer`. Arithmetic negation. |
 | `test.add` | Pure | in `a: Integer`, `b: Integer`, out `out: Integer`. |
 | `test.probe` | Pure | in `in: Any`, out `out: Any`. Identity; the harness records each execution. |

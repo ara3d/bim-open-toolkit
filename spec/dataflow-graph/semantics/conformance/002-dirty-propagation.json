@@ -21,13 +21,13 @@
         ]
       },
       "values": {
-        "a": { "kind": "Integer", "value": 1 },
-        "b": { "kind": "Integer", "value": 2 }
+        "a": { "kind": "Integer", "value": "1" },
+        "b": { "kind": "Integer", "value": "2" }
       }
     },
     "steps": [
       { "action": "evaluate" },
-      { "action": "setValue", "node": "a", "param": "value", "value": 10 },
+      { "action": "setValue", "node": "a", "param": "value", "value": "10" },
       { "action": "evaluate" }
     ]
   },

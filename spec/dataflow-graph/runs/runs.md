@@ -32,7 +32,7 @@ A run record is produced when a Run completes (semantics part §6). It pins:
 ```jsonc
 {
   "runVersion": "0.1.0",              // version of this part
-  "graphHash": "sha256:…",
+  "graphHash": "…64 lowercase hex…",  // bare hex, format part section 6
   "engineVersion": "Ara3D.DataFlowEngine 0.1.0",
   "timestampUtc": "2026-08-31T14:03:22.117Z",
   "inputs": [
@@ -53,7 +53,10 @@ A run record is produced when a Run completes (semantics part §6). It pins:
 ```
 
 All members shown are required except `source` (informational; hashes, not
-paths, carry identity) and failed effects' optional `error` text. `inputs`
+paths, carry identity) and failed effects' optional `error` text. Note the
+two hash styles: `graphHash` is bare lowercase hex (format part §6), while
+input content hashes and value hashes carry the `sha256:` prefix (semantics
+part §1.1). `inputs`
 is sorted by (node, param); `effects` is in execution order (which is
 normative, semantics part §6). The record is serialized with the format
 part's canonical JSON rules (§6 there), so a run record is itself

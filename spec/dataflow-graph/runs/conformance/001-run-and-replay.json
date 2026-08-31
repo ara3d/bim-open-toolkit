@@ -17,8 +17,8 @@
         ]
       },
       "values": {
-        "a": { "kind": "Integer", "value": 5 },
-        "b": { "kind": "Integer", "value": 7 }
+        "a": { "kind": "Integer", "value": "5" },
+        "b": { "kind": "Integer", "value": "7" }
       }
     },
     "steps": [

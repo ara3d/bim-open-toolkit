@@ -17,7 +17,7 @@
         ]
       },
       "values": {
-        "a": { "kind": "Integer", "value": 7 }
+        "a": { "kind": "Integer", "value": "7" }
       }
     },
     "steps": [

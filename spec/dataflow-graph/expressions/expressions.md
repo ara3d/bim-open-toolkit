@@ -117,9 +117,9 @@ true — test for absence with `coalesce`, e.g. `coalesce(x, fallback)`.
 - **`&`** — text concatenation. Each operand may be any scalar (Boolean,
   Integer, Number, Text); result is Text. Non-Text operands convert to
   canonical invariant text: Boolean → `true`/`false`; Integer → decimal;
-  Number → the shortest round-trip decimal form (ECMAScript
-  `Number::toString`), with non-finite values as `NaN`, `Infinity`,
-  `-Infinity`.
+  Number → the .NET round-trip ("R") format, invariant culture (the same
+  canonical double form as the format part §6), with non-finite values as
+  `NaN`, `Infinity`, `-Infinity`.
 - **`==` `!=`** — both operands numeric (mixed Integer/Number compares as
   Number), both Text, or both Boolean → Boolean. Text equality is ordinal
   (exact code points, case-sensitive). NaN is not equal to anything,

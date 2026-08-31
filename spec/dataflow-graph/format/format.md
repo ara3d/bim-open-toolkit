@@ -66,25 +66,25 @@ A graph document is one JSON object with exactly these members:
 ## 4. The `values`, `layout`, and `session` layers
 
 **`values`** — object keyed by node id; each entry is an object keyed by
-parameter name. The parameter kinds (declared by the catalog) and their JSON
-representations:
+parameter name. **Every parameter value is a JSON string**: the canonical
+string form of the value, invariant culture. Typed interpretation happens
+against the catalog (catalog validity, §5); the document itself carries only
+strings, which keeps the layer uniform, keeps Int64 exact (no JSON number
+precision limits), and makes hashing trivial.
 
-| Parameter kind | JSON representation |
+| Parameter kind | Canonical string form |
 |---|---|
-| Boolean | `true` / `false` |
-| Integer | number, no fraction or exponent, magnitude ≤ 2^53 − 1 |
-| Number | number (IEEE double) |
-| Text | string |
-| Enum | string (one of the catalog-declared options) |
-| FilePath | string |
-| ModelRef | string |
-| Expression | string (source text per the expressions part) |
-| Json | any JSON value |
+| Boolean | `"true"` / `"false"` |
+| Integer | decimal, full Int64 range, no leading zeros, `-` only for negatives |
+| Number | .NET round-trip ("R") format, invariant culture (§6 rule 5) |
+| Text | the text itself |
+| Enum | the option name (one of the catalog-declared options) |
+| FilePath | the path text |
+| ModelRef | the model reference text |
+| Expression | source text per the expressions part |
+| Json | the JSON text |
 
-`null` is not a legal parameter value except inside a Json-kind value; to
-unset a parameter, omit it. Integer parameters outside ±(2^53 − 1) are
-invalid in v0.1 (JSON interop safety); this is deliberately narrower than the
-Int64 value kind on edges.
+To unset a parameter, omit it; `null` is never a legal parameter value.
 
 **`layout`** — object keyed by node id; each entry is
 `{ "x": number, "y": number, "w"?: number, "h"?: number }`, all finite.
@@ -115,11 +115,13 @@ Two levels, checked in order.
 1. Every (kind, version) is known to the catalog.
 2. Every edge endpoint names a port that exists on its node, with the correct
    direction (`from` an output, `to` an input).
-3. Edge value kinds are compatible: the output port's kind equals the input
-   port's kind, or the input port is `Any`, or the output is `Integer` and
-   the input is `Number` (the one widening).
+3. Edge value kinds are compatible if and only if the output port's type is
+   `Any`, or the input port's type is `Any`, or the input port's type is
+   exactly the output port's kind. There is no conversion at an edge —
+   Integer → Number widening is deliberately deferred (the expression
+   language widens internally; edges do not).
 4. Every parameter name in `values` is declared by the node's kind, and its
-   JSON value matches the declared parameter kind.
+   string parses as the declared parameter kind's canonical form (§4).
 
 A tool that has no catalog MUST still enforce document validity.
 
@@ -131,8 +133,10 @@ is valid per §5, canonical or not; loading and re-saving canonicalizes.
 
 Canonical form:
 
-1. **Encoding** — UTF-8, no BOM. Line separator is LF. The file ends with
-   exactly one LF.
+1. **Encoding and layers** — UTF-8, no BOM. Line separator is LF. The
+   document text ends with exactly one LF. Empty optional layers are
+   omitted: a canonical document never contains `"layout": {}` or
+   `"session": {}`. `formatVersion` is always written.
 2. **Layout** — pretty-printed: every object member and array element on its
    own line; indentation two spaces per nesting level; `": "` between key and
    value; no trailing whitespace. Empty objects and arrays are `{}` and `[]`
@@ -144,9 +148,15 @@ Canonical form:
    see §5 rule 4). All other arrays keep author order (order is meaningful,
    e.g. `session.display`).
 5. **Numbers** — integers: no decimal point, no exponent, no leading zeros,
-   `-` only for negatives. Non-integers: the shortest round-trip decimal form
-   defined by ECMAScript `Number::toString` (e.g. `0.1`, `1e21`). Negative
-   zero canonicalizes to `0`. NaN and infinities cannot occur (not JSON).
+   `-` only for negatives. Non-integers: the .NET round-trip ("R") format,
+   invariant culture — the shortest string that parses back to the same
+   double, with an uppercase-`E` signed exponent where used (e.g. `0.1`,
+   `1E+21`). Negative zero canonicalizes to `0`. NaN and infinities cannot
+   occur (not JSON). This same form is the canonical string form for
+   Number-kind parameter values (§4).
+   `// TODO: a non-.NET implementation must reproduce .NET "R" output`
+   `// byte-for-byte; document the exact algorithm (or a vector corpus)`
+   `// before a second implementation starts.`
 6. **Strings** — minimal escaping: only `"` (as `\"`), `\` (as `\\`), and
    control characters U+0000–U+001F (as `\b`, `\t`, `\n`, `\f`, `\r` where
    defined, otherwise `\u00XX` with lowercase hex). All other characters
@@ -155,14 +165,16 @@ Canonical form:
 **Graph hash.** The document's identity is
 
 ```
-graphHash = "sha256:" + lowercase-hex(SHA-256(canonical bytes of {"structure": S, "values": V}))
+graphHash = lowercase-hex(SHA-256(UTF-8 canonical text of {"structure": S, "values": V}))
 ```
 
-where the hashed object holds only the `structure` and `values` layers,
-serialized by the same canonical rules (its two keys sort as `structure`,
-`values`). `formatVersion`, `layout`, and `session` are excluded: editing the
-canvas or the camera never changes graph identity, and two documents with
-equal graph hashes are the same analysis.
+64 lowercase hex characters, no prefix. The hashed object holds only the
+`structure` and `values` layers, serialized by the same canonical rules (its
+two keys sort as `structure`, `values`) — except that the hash input has
+**no trailing LF** (the trailing LF of rule 1 is a property of the document
+file, not of the hash input). `formatVersion`, `layout`, and `session` are
+excluded: editing the canvas or the camera never changes graph identity, and
+two documents with equal graph hashes are the same analysis.
 
 ## 7. Schemas
 
