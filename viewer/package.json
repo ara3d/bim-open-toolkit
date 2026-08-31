@@ -1,0 +1,15 @@
+{
+  "name": "ara3d-viewer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/three": "^0.185.0",
+    "three": "^0.185.0",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.0"
+  }
+}
