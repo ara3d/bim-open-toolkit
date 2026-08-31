@@ -92,3 +92,20 @@ No shared servers this wave. Tests are per-project; supervisor runs the full gat
 - **C# conventions**: net8.0; SDK packages via `$(Ara3DSdkVersion)`; NUnit test
   projects copy the pattern of `tests/Ara3D.BimOpenSchema.Tests`; follow the
   house C# style (immutable, expression-bodied, `IReadOnlyList`).
+
+## Wave 4 fences (2026-08-31, later)
+
+Supervisor additionally owns: `bimopenflow/web/packages/api-client/**` (fully generated).
+
+| Track | Writes only |
+|---|---|
+| EFF | `src/BimOpenFlow.Nodes.Effects/**`, `tests/BimOpenFlow.Nodes.Effects.Tests/**` |
+| MIG | `src/Ara3D.NodeGraph.Migrations/**`, `tests/Ara3D.NodeGraph.Migrations.Tests/**` |
+| CAT | `src/BimOpenFlow.Host.Catalog/**`, `tests/BimOpenFlow.Host.Catalog.Tests/**` |
+| STO | `src/BimOpenFlow.Host.Store/**`, `tests/BimOpenFlow.Host.Store.Tests/**` |
+| STATE | `bimopenflow/web/packages/state/**` + may run `npm install` in `bimopenflow/web` and commit the lockfile |
+| PANES | `bimopenflow/web/packages/panes/**` — NO npm install (lockfile belongs to STATE this wave); use tsconfig/vitest path aliases to sibling package sources |
+
+New frozen seams: host HTTP API + shared app types live in `contracts/contracts.json`
+("endpoints" section); the TS client (`@bimopenflow/api-client`) and C# `ApiRoutes`
+are generated — never hand-edit. SSE endpoint `analysisEvents` streams `EvalUpdate`.
