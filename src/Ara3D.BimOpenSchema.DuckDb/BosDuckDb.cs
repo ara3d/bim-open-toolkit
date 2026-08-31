@@ -1,4 +1,5 @@
 using Ara3D.BimOpenSchema.IO;
+using Ara3D.DataTable;
 using Ara3D.Utils;
 using DuckDB.NET.Data;
 
@@ -20,13 +21,71 @@ public static class BosDuckDb
         return conn;
     }
 
-    /// <summary>Writes every BOS table (Entities, Strings, Parameters, ...) into the connection.
-    /// Rows are appended in source array order, so <c>rowid</c> equals the BOS index — the
-    /// invariant the text views join on.</summary>
+    /// <summary>Writes every BOS table into the connection. Rows are appended in source array
+    /// order, so <c>rowid</c> equals the BOS index — the invariant the text views join on.
+    /// Columns are written explicitly rather than through <c>IBimData.ToDataSet()</c>: the SDK's
+    /// ToDataTable encodes an aliased enum (ParameterType, where Bool = Int) by its position in
+    /// GetValues, shifting stored values by one and breaking the ValueType CASE in the views.
+    /// Here enum columns hold their numeric values, which the view SQL assumes.</summary>
+    // TODO: parquet-derived databases (DuckUtils.BosToDuckDB) still carry the shifted
+    // ParameterType encoding; fix belongs in the SDK's ToDataTable (or drop the Bool alias).
     public static void LoadBimData(this DuckDBConnection conn, IBimData data)
     {
-        foreach (var table in data.ToDataSet().Tables)
-            conn.WriteTable(table, table.Name);
+        conn.WriteBosTable("Strings",
+            ("Strings", typeof(string), Col(data.Strings, s => s)));
+        conn.WriteBosTable("Numbers",
+            ("Numbers", typeof(float), Col(data.Numbers, n => n)));
+        conn.WriteBosTable("Documents",
+            ("Title", typeof(int), Col(data.Documents, d => (int)d.Title)),
+            ("Path", typeof(int), Col(data.Documents, d => (int)d.Path)));
+        conn.WriteBosTable("Entities",
+            ("LocalId", typeof(long), Col(data.Entities, e => e.LocalId)),
+            ("GlobalId", typeof(int), Col(data.Entities, e => (int)e.GlobalId)),
+            ("Document", typeof(int), Col(data.Entities, e => (int)e.Document)),
+            ("Name", typeof(int), Col(data.Entities, e => (int)e.Name)),
+            ("Category", typeof(int), Col(data.Entities, e => (int)e.Category)),
+            ("Type", typeof(int), Col(data.Entities, e => (int)e.Type)));
+        conn.WriteBosTable("Descriptors",
+            ("Name", typeof(int), Col(data.Descriptors, d => (int)d.Name)),
+            ("Units", typeof(int), Col(data.Descriptors, d => (int)d.Units)),
+            ("Group", typeof(int), Col(data.Descriptors, d => (int)d.Group)),
+            ("Type", typeof(int), Col(data.Descriptors, d => (int)d.Type)));
+        conn.WriteBosTable("Parameters",
+            ("Entity", typeof(int), Col(data.Parameters, p => (int)p.Entity)),
+            ("Descriptor", typeof(int), Col(data.Parameters, p => (int)p.Descriptor)),
+            ("Value", typeof(int), Col(data.Parameters, p => p.Value)));
+        conn.WriteBosTable("Relations",
+            ("EntityA", typeof(int), Col(data.Relations, r => (int)r.EntityA)),
+            ("EntityB", typeof(int), Col(data.Relations, r => (int)r.EntityB)),
+            ("RelationType", typeof(int), Col(data.Relations, r => (int)r.RelationType)));
+        conn.WriteBosTable("Points",
+            ("X", typeof(float), Col(data.Points, p => p.X)),
+            ("Y", typeof(float), Col(data.Points, p => p.Y)),
+            ("Z", typeof(float), Col(data.Points, p => p.Z)));
+        conn.WriteBosTable("Diagnostics",
+            ("Type", typeof(int), Col(data.Diagnostics, d => (int)d.Type)),
+            ("Document", typeof(int), Col(data.Diagnostics, d => (int)d.Document)),
+            ("Entity", typeof(int), Col(data.Diagnostics, d => (int)d.Entity)),
+            ("Message", typeof(int), Col(data.Diagnostics, d => (int)d.Message)));
+    }
+
+    private static object[] Col<T>(IReadOnlyList<T> items, Func<T, object> value)
+    {
+        var r = new object[items.Count];
+        for (var i = 0; i < r.Length; i++)
+            r[i] = value(items[i]);
+        return r;
+    }
+
+    private static void WriteBosTable(
+        this DuckDBConnection conn,
+        string name,
+        params (string Name, Type Type, object[] Values)[] columns)
+    {
+        var builder = new DataTableBuilder(name);
+        foreach (var (colName, type, values) in columns)
+            builder.AddColumn(values, colName, type);
+        conn.WriteTable(builder.Build(), name);
     }
 
     /// <summary>An in-memory database holding the BOS tables plus the text views, ready to query.</summary>
