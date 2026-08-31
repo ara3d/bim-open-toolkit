@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <Description>BimOpenFlow node pack: view3d tables (instances, color, isolate, camera) and renderable geometry extraction from IFC models.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ara3D.DataFlowEngine.Abstractions\Ara3D.DataFlowEngine.Abstractions.csproj" />
+    <ProjectReference Include="..\Ara3D.Ifc.Mesher\Ara3D.Ifc.Mesher.csproj" />
+    <ProjectReference Include="..\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
+    <PackageReference Include="Ara3D.DataTable" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Geometry" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
+  </ItemGroup>
+
+</Project>
