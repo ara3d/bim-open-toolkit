@@ -87,3 +87,12 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - DashboardItem.OptionsJson stays raw JSON by design (viz option shapes evolve TS-side); revisit typed option records when options stabilize.
 - EvidencePackage zip bytes are deterministic in practice (fixed entry timestamps, sorted entries) but Deflate output is runtime-version-dependent; only manifest/member sha256 hashes are contractually deterministic. Signing is a TODO.
 - Live-session dashboard variant (SSE-driven) deferred with a TODO; static-from-run works end to end with the real 8.8KB viz bundle located via VizBundle.FindInRepo.
+
+### Track APP (@bimopenflow/app) — 33 tests
+- Gratify embed seam: syncing an external store into Runtime.dispatch must be deferred one microtask — a nested dispatch inside update is silently overwritten (worked around in canvasEditor.ts); gratify could expose a setDoc/external-sync API.
+- Anchor meta is untyped (unknown) through gratify's Query — a generic meta parameter upstream would remove local casts.
+- addNode from catalog costs three undo steps (add + setLayout + select); the state package could offer a compound/transaction action.
+- The state reducer snapshots undo on every setLayout, so canvas drags commit only on release — copy the transient-move pattern in canvasIntents.ts.
+- Canvas needs a light gratify theme to match the app chrome (platoflow's theme.ts is the model).
+- Geometry asset scheme fixed by supervisor to model:{id} -> /api/models/{id}/bos, matching the host route; promote the endpoint to contracts.json when it stabilizes.
+- vite build emits one 973 kB chunk (three) — code-splitting is a cosmetic TODO.
