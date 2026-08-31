@@ -21,3 +21,10 @@ Provenance: extracted from `src/Ara3D.Ifc.Mcp/IfcDuck.cs` (fix-on-entry item 2).
 View and query SQL is kept identical to the origin; the MCP-specific result
 shaping (JSON-friendly value coercion, tool-named error messages) stayed behind
 in the MCP layer.
+
+Known divergence: `LoadBimData` writes enum columns as their numeric values, so
+the in-memory path resolves `ParameterText.ValueType` correctly. Databases built
+from parquet files (`DuckUtils.BosToDuckDB`) inherit the SDK `ToDataTable` bug
+where the aliased `ParameterType` enum (`Bool = Int`) is encoded by position in
+`GetValues`, shifting stored values by one and mislabeling typed values — a
+pre-existing defect in the origin, to be fixed upstream.
