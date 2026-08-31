@@ -1,26 +1,28 @@
-# Build output
-bin/
-obj/
-artifacts/
-*.user
-*.log
-
-# Node
-node_modules/
-dist/
-
 # Test/model data — never committed (populate locally via data/get-test-data.ps1)
 data/**
 !data/README.md
 !data/get-test-data.ps1
 *.ifc
 *.bos
-!src/BimOpenFlow.Nodes.Bos/
-!tests/BimOpenFlow.Nodes.Bos.Tests/
 *.parquet
 *.duckdb
-!src/Ara3D.BimOpenSchema.DuckDb/
-!tests/Ara3D.BimOpenSchema.DuckDb.Tests/
+
+# The patterns above match any path component by name, case-insensitively on
+# Windows, so a project directory such as src/BimOpenFlow.Nodes.Bos or
+# src/Ara3D.BimOpenSchema.DuckDb would otherwise be excluded whole — which forces
+# `git add -f` and sweeps build output into the commit. Re-include every directory
+# under src/ and tests/ so only actual data *files* stay ignored.
+!src/**/
+!tests/**/
+
+# Build output — last, so it wins over the re-includes above.
+bin/
+obj/
+artifacts/
+node_modules/
+dist/
+*.user
+*.log
 
 # IDE
 .vs/
