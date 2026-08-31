@@ -1,0 +1,3 @@
+# Spec conformance vectors and canonical graph documents are byte-sensitive.
+spec/** text eol=lf
+*.dfg.json text eol=lf
