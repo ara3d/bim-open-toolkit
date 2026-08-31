@@ -204,3 +204,11 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Per-instance isolation in the 3D pane is alpha 0 (InstancedGroup visibility is group-level only); true per-instance hide needs viewer-core support.
 - 3D picks emit entity ids via BOS `groupEntities`; GLB has no mapping so picks emit nothing.
 
+
+### Track HOSTMCP (BimOpenFlow.Host + BimOpenFlow.Mcp) — 11 + 12 tests
+- McpJson (Ara3D.MCP 1.6.2-local) lacks JsonStringEnumConverter; any tool returning contract records emits numeric enums — tools return anonymous objects with enum.ToString() instead. Worth adding the converter to the SDK package.
+- ApiServer.MapBimOpenFlowApi news its own AnalysisSessions with no injection overload; a host+MCP single process would hold two session sets. Add an overload accepting sessions (Host.Api).
+- Host and Mcp as separate processes each hold independent AnalysisSessions; cross-process staleness covered by the existing no-mtime-check TODO in AnalysisSessions.
+- ModelSummary.SizeBytes int clamp in ApiMapping retired by supervisor after the long contract change landed.
+- HostConfig --port is meaningless to bimopenflow-mcp (MCP HTTP port comes from --http [port]); doc line needed.
+- GET /api/models/{id}/bos lives in Host (ModelBytesEndpoint) with a TODO to promote to contracts.json once a binary-endpoint shape exists; HostComposition.BuildServices returns catalog/store/registry with no ASP.NET types — the single wiring seam both Host and Mcp use.
