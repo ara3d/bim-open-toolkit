@@ -389,9 +389,10 @@ public static class ParquetUtils
             else
                 Debug.WriteLine($"Unexpected table {table.Name}");
         }
-        var geometryDataSet = geometryTables.ToDataSet();
-        var bimGeometry = geometryDataSet.ToBimGeometry();
-        bimData.Geometry = bimGeometry;
+        // Files written by WriteToParquetZip contain no geometry tables; use an empty geometry.
+        bimData.Geometry = geometryTables.Count > 0
+            ? geometryTables.ToDataSet().ToBimGeometry()
+            : new BimGeometry();
         return bimData;
     }
 

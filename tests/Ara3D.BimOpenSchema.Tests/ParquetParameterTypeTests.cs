@@ -65,9 +65,6 @@ public static class ParquetParameterTypeTests
         }
     }
 
-    // TODO: ReadBimDataFromParquetZip throws NullReferenceException when the zip has no
-    // geometry tables (ToBimGeometry on an empty dataset); once that is handled, round-trip
-    // the whole BimData here instead of mapping rows through ToDescriptor.
     [Test]
     public static void ParquetRoundTripPreservesDescriptorTypes()
     {
@@ -79,6 +76,30 @@ public static class ParquetParameterTypeTests
             var roundTripped = descriptors!.Rows.Select(r => ParquetUtils.ToDescriptor(r.Values.ToArray()));
             Assert.That(roundTripped.Select(d => d.Type),
                 Is.EqualTo(data.Descriptors.Select(d => d.Type)));
+        }
+        finally
+        {
+            if (File.Exists(fp.FullPath))
+                File.Delete(fp.FullPath);
+        }
+    }
+
+    /// <summary>Regression: WriteToParquetZip omits geometry tables, and
+    /// ReadBimDataFromParquetZip used to throw NullReferenceException on such files.</summary>
+    [Test]
+    public static void ParquetRoundTripReadsDataOnlyZip()
+    {
+        var data = CreateDataWithAllParameterTypes();
+        var fp = WriteToTempBosZip(data);
+        try
+        {
+            var roundTripped = fp.ReadBimDataFromParquetZip();
+            Assert.That(roundTripped.Entities.Length, Is.EqualTo(data.Entities.Length));
+            Assert.That(roundTripped.Parameters.Length, Is.EqualTo(data.Parameters.Length));
+            Assert.That(roundTripped.Descriptors.Select(d => d.Type),
+                Is.EqualTo(data.Descriptors.Select(d => d.Type)));
+            Assert.That(roundTripped.Geometry, Is.Not.Null);
+            Assert.That(roundTripped.Geometry.InstanceEntityIndex, Is.Empty);
         }
         finally
         {

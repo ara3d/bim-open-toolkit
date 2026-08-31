@@ -1,8 +1,7 @@
-using System.IO.Compression;
 using Ara3D.BimOpenSchema;
 using Ara3D.BimOpenSchema.IO;
 using Ara3D.DataFlowEngine.Abstractions;
-using Parquet;
+using Ara3D.Utils;
 
 namespace BimOpenFlow.Nodes.Bos.Tests;
 
@@ -34,20 +33,7 @@ public sealed class BosLoadNodeTests
         _folder = Path.Combine(Path.GetTempPath(), "bimopenflow-bos-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_folder);
         _bosPath = Path.Combine(_folder, "tiny.bos");
-        WriteBos(BuildTinyData(), _bosPath);
-    }
-
-    /// <summary>Writes data plus (empty) geometry tables, mirroring IfcToBosConverter.SaveToBos.
-    /// The plain WriteToParquetZip omits geometry tables, and ReadBimDataFromParquetZip
-    /// cannot read such files back (it unconditionally rebuilds BimGeometry).</summary>
-    private static void WriteBos(BimData data, string path)
-    {
-        using var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        using var zip = new ZipArchive(fs, ZipArchiveMode.Create);
-        data.ToDataSet().WriteParquetToZip(zip,
-            CompressionMethod.None, CompressionLevel.NoCompression, CompressionLevel.NoCompression);
-        new BimGeometryBuilder().BuildModel().WriteParquetToZip(zip,
-            CompressionMethod.None, CompressionLevel.NoCompression, CompressionLevel.NoCompression);
+        BuildTinyData().WriteToParquetZip(new FilePath(_bosPath));
     }
 
     [OneTimeTearDown]
