@@ -1,0 +1,20 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "exploded": { "x": 370, "y": 40 },
+    "inst": { "x": 40, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "exploded.instances" }
+    ],
+    "nodes": [
+      { "id": "exploded", "kind": "view3d.spacing", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 }
+    ]
+  },
+  "values": {
+    "exploded": { "axis": "x", "groupColumn": "category", "spacing": "15" },
+    "inst": { "path": "{DATA}/duplex.ifc" }
+  }
+}

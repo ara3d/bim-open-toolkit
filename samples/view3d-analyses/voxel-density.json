@@ -1,0 +1,25 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "colored": { "x": 700, "y": 40 },
+    "inst": { "x": 40, "y": 40 },
+    "vox": { "x": 370, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "vox.instances" },
+      { "from": "vox.boxes", "to": "colored.instances" },
+      { "from": "vox.boxes", "to": "colored.values" }
+    ],
+    "nodes": [
+      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "vox", "kind": "view3d.voxelize", "version": 1 }
+    ]
+  },
+  "values": {
+    "colored": { "colorMap": "viridis", "joinColumn": "voxelId", "valueColumn": "count" },
+    "inst": { "path": "{DATA}/duplex.ifc" },
+    "vox": { "size": "0.5" }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "boxes": { "x": 370, "y": 40 },
+    "inst": { "x": 40, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "boxes.instances" }
+    ],
+    "nodes": [
+      { "id": "boxes", "kind": "view3d.boundingBoxes", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 }
+    ]
+  },
+  "values": {
+    "boxes": { "groupColumn": "category" },
+    "inst": { "path": "{DATA}/duplex.ifc" }
+  }
+}

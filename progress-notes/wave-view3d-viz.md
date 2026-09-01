@@ -80,4 +80,56 @@ dedupes in the refactor step.
 
 ## Findings
 
-(appended as the wave runs)
+### Track A — nodes-vis (hide/opacity/decimate)
+- Untracked files can't be committed by pathspec alone; explicit `git add <paths>`
+  is needed first (the pathspec commit rule works as-is only for tracked files).
+- The `WithColumn` (replace-or-append a column) helper in OpacityNode.cs is a
+  TableOps candidate once a second user appears.
+- TestKit's `Table` takes `object?[]` cells, so long/double literals need boxing;
+  a typed-array overload (like the old TestSupport had) would read better.
+
+### Track B — nodes-offset (spacing/arrange)
+- Offset/bounds columns are rewritten as `double` (non-numeric/null cells read as
+  0 before the delta is added); column matching is case-insensitive to match
+  TableOps.ColumnIndex.
+- Negative `gap` is not validated on view3d.arrange (cells can overlap).
+- Duplicated helpers were deduped by the supervisor into OffsetTables.cs.
+
+### Track C — nodes-boxes (boundingBoxes/voxelize)
+- An instance max exactly on a cell boundary occupies the next cell too
+  (closed-AABB overlap); the union-max face clamps back into the grid.
+- Voxel coarsening doubles size, so the adjusted size is original x 2^k, not the
+  tightest fit.
+- The coarsening warning interpolates doubles with current culture (could print
+  "12,8" on comma-decimal locales); matches existing Warn formatting in the pack.
+
+### Track D — web-panes
+- Float32 gotcha: 0.7 is not representable; tests compare Math.fround(0.7).
+- ColorableGroup.transforms/setTransform are optional, so groups without
+  transform support (GLB) silently skip offset application.
+- ViewerRig gained setBoxes/clearBoxes; PaneInput gained {kind:"boxes"}.
+
+### Track E — viewer-alpha
+- three r185's default customProgramCacheKey hashes onBeforeCompile.toString(),
+  but an explicit key is safer across minified builds.
+- The instanced alpha attribute must live on the geometry (only instanceColor is
+  special-cased onto InstancedMesh); the geometry is per-GroupObject, so safe.
+- Known artifact by design: depthWrite stays on, so overlapping fractional-alpha
+  instances can pop with draw order; opaque-vs-faded interleaving is correct.
+- Picking still hits alpha-0 (hidden) instances — raycasting ignores the shader
+  discard. Follow-up if it bothers users.
+
+### Supervisor — integration
+- A colored boxes table leaves view3d.color on a port named "instances"; the pane
+  area now detects boxes tables by column shape (bounds, no instance keys), not
+  just port name.
+- `dotnet run --project src/BimOpenFlow.NodeDocs -v q --nologo` passes the flags
+  to the program as its output path (writes a file named `--nologo`); run it with
+  no extra args.
+- C# static initializer order bit the sample tests: a static property initializer
+  referencing a later-declared static property sees null. Computed (`=>`)
+  properties avoid it.
+- A concurrent wave (BimAnalysis/Viz packs) owned the sln, Host, and
+  samples/bim-analyses; this wave's samples live in samples/view3d-analyses with
+  their own test project, deliberately not registered in the sln yet (TODO in the
+  test file).

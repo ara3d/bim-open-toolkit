@@ -1,0 +1,20 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "big": { "x": 370, "y": 40 },
+    "inst": { "x": 40, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "big.instances" }
+    ],
+    "nodes": [
+      { "id": "big", "kind": "view3d.decimate", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 }
+    ]
+  },
+  "values": {
+    "big": { "keepFraction": "0.25", "minDiagonal": "0.5" },
+    "inst": { "path": "{DATA}/duplex.ifc" }
+  }
+}

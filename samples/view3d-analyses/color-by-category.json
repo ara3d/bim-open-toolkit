@@ -1,0 +1,25 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "byCat": { "x": 370, "y": 224 },
+    "colored": { "x": 700, "y": 40 },
+    "inst": { "x": 40, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "byCat.table" },
+      { "from": "inst.instances", "to": "colored.instances" },
+      { "from": "byCat.table", "to": "colored.values" }
+    ],
+    "nodes": [
+      { "id": "byCat", "kind": "table.aggregate", "version": 1 },
+      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 }
+    ]
+  },
+  "values": {
+    "byCat": { "aggregates": "count(category) as instances", "groupBy": "category" },
+    "colored": { "colorMap": "category10", "joinColumn": "category", "valueColumn": "category" },
+    "inst": { "path": "{DATA}/duplex.ifc" }
+  }
+}

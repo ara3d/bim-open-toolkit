@@ -1,0 +1,25 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "ghosted": { "x": 700, "y": 40 },
+    "inst": { "x": 40, "y": 40 },
+    "walls": { "x": 370, "y": 224 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "walls.table" },
+      { "from": "inst.instances", "to": "ghosted.instances" },
+      { "from": "walls.table", "to": "ghosted.ids" }
+    ],
+    "nodes": [
+      { "id": "ghosted", "kind": "view3d.opacity", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "walls", "kind": "table.filter", "version": 1 }
+    ]
+  },
+  "values": {
+    "ghosted": { "alpha": "0.15", "joinColumn": "entityId", "scope": "others" },
+    "inst": { "path": "{DATA}/duplex.ifc" },
+    "walls": { "expr": "category == \"IFCWALLSTANDARDCASE\"" }
+  }
+}
