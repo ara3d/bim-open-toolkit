@@ -176,3 +176,59 @@ Supervisor-owned (tracks READ only; request via NOTES.md): `bimopenflow/web/pack
 - Sample analyses (C) must validate against HostComposition.TablePacks() and use
   a {SAMPLES} path placeholder rewritten to the absolute samples/tables dir at
   seed time.
+
+---
+
+# Contracts — chart nodes wave (2026-09-01)
+
+Implements core-node-sets.md Set 4 chart/table-view nodes (chart.bar, chart.line,
+view.table) plus web rendering. Supervisor pre-landed: skeleton pack
+`src/BimOpenFlow.Nodes.Viz` with FROZEN NodeSpecs (kinds, ports, params) and
+throwing Eval bodies.
+
+NOTE to other live sessions: another session currently has
+`src/BimOpenFlow.Host/HostComposition.cs`, `BimOpenToolkit.sln`, and Geometry-pack
+files dirty (BimAnalysis work). This wave therefore does NOT touch those files;
+VizNodes registration (HostComposition AllPacks/TablePacks, sln membership,
+NodeDocs) happens at this wave's integration step as minimal additive edits.
+
+## Fences (who writes where)
+
+Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES.md):
+`src/BimOpenFlow.Nodes.Viz/*.csproj` + the NodeSpec shapes in it,
+`src/BimOpenFlow.Host/**`, `src/BimOpenFlow.NodeDocs/**`, `BimOpenToolkit.sln`,
+`contracts/**`, this doc.
+
+| Track | Writes only |
+|---|---|
+| PACK | `src/BimOpenFlow.Nodes.Viz/**` (Eval bodies + helpers; NOT the Spec shapes), `tests/BimOpenFlow.Nodes.Viz.Tests/**` |
+| WEB | `bimopenflow/web/packages/viz/src/{barChart,lineChart,columns}.ts`, `bimopenflow/web/packages/viz/test/**`, `bimopenflow/web/packages/panes/src/chartPane.ts`, `bimopenflow/web/packages/panes/test/chartPane.test.ts`, `bimopenflow/web/packages/app/src/{paneArea,paneChoice}.ts`, `bimopenflow/web/packages/app/test/{paneArea,paneChoice}.test.ts` |
+| S supervisor | registration (HostComposition, sln, NodeDocs, docs/nodes.md), integration + gates |
+
+No npm installs this wave (no new dependencies — D3 etc. deliberately excluded).
+No shared servers; PACK verifies via `dotnet test`, WEB via vitest/tsc per package.
+
+## Frozen seams
+
+- Node kinds/params are FIXED in the skeleton NodeSpecs. chart.bar:
+  labelColumn/valueColumns/title/sort(none|asc|desc). chart.line:
+  xColumn/yColumns/title. view.table: title/columns. Column-list params are
+  comma-separated, trimmed; empty = default behavior.
+- Node outputs are PROJECTED tables: label/x column first, then value columns,
+  in param order. chart.bar `sort` orders by the first value column; chart.line
+  orders by xColumn (numeric compare when the column kind is Integer/Number,
+  else ordinal/lexical). Unknown column names WARN (context.Warn) and are
+  skipped, never errors. A missing/empty labelColumn or xColumn falls back to
+  the first Text column (bar) / no reorder (line), also with a warning when the
+  named column is absent.
+- Web mapping (WEB consumes kinds + param values from the catalog/graph, no new
+  endpoints): kind chart.line -> LineChart, chart.bar -> BarChart, else current
+  behavior. Pane options come from node params: title -> new `title?: string`
+  viz option on both charts; chart.bar valueColumns -> BarChart multi-series
+  (new `seriesColumns?: string[]`, grouped bars, default = all numeric columns
+  except the category column); chart.line xColumn/yColumns -> LineChart
+  xColumn/seriesColumns, and a non-numeric xColumn must fall back to row index
+  without throwing (rows arrive pre-sorted by the node).
+- Since node outputs are projected, viz defaults (first text column, numeric
+  columns) remain correct even when params are unset — WEB passes params
+  through but must not require them.
