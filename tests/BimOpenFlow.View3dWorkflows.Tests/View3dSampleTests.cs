@@ -8,9 +8,6 @@ using BimOpenFlow.Nodes.Geometry;
 
 namespace BimOpenFlow.View3dWorkflows.Tests;
 
-// TODO: register this project in BimOpenToolkit.sln once the concurrent BimAnalysis wave's
-// solution edits land (the sln is mid-edit by that wave; run it via the csproj path meanwhile).
-
 /// <summary>
 /// Every committed view3d sample (samples/view3d-analyses/*.json) parses,
 /// validates against the Bos + Geometry packs, and evaluates all-green over
