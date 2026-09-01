@@ -146,3 +146,33 @@ Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES
   option (`bim` default | `tables`); Tracks A/B do not touch the host.
 - File-reading nodes cache by file content hash (the BosLoadNode pattern); the
   engine's memo does not see file content (known staleness wart, out of scope).
+
+---
+
+# Contracts — sandbox UI wave (2026-08-31)
+
+UI improvements to the table sandbox. Supervisor pre-landed: green web baseline
+(PortDescriptor.optional in test literals) and the canvas theme seam
+(`packages/app/src/canvasTheme.ts` names + `CanvasEditor.setTheme` stub).
+
+## Fences (who writes where)
+
+Supervisor-owned (tracks READ only; request via NOTES.md): `bimopenflow/web/packages/{state,panes,viz,api-client,contracts}/**`,
+`contracts/**`, `src/BimOpenFlow.Host.Api/**`, `submodules/gratify`, `platoflow/**`,
+`samples/tables/*.csv`, `BimOpenToolkit.sln`, this doc.
+
+| Track | Writes only |
+|---|---|
+| A shell-ux | `bimopenflow/web/packages/app/src/**` EXCEPT canvas*.ts and viewModel.ts; `bimopenflow/web/packages/app/test/**` EXCEPT canvasIntents/canvasParts/viewModel tests |
+| B canvas | `bimopenflow/web/packages/app/src/{canvasEditor,canvasIntents,canvasParts,canvasTheme,viewModel}.ts`; `bimopenflow/web/packages/app/test/{canvasIntents,canvasParts,viewModel,canvasTheme}.test.ts` |
+| C samples | `samples/analyses/**`, `src/BimOpenFlow.Host/**`, `tests/BimOpenFlow.TableWorkflows.Tests/**` |
+
+## Seams
+
+- Theme: canvasTheme.ts names are the contract; A renders the picker + persists
+  choice in localStorage and calls editor.setTheme; B implements the themes
+  (platoflow/web/src/theme.ts is the light-theme model) and the actual setTheme.
+- A may not change the CanvasEditor interface; B may not change shell/topbar.
+- Sample analyses (C) must validate against HostComposition.TablePacks() and use
+  a {SAMPLES} path placeholder rewritten to the absolute samples/tables dir at
+  seed time.
