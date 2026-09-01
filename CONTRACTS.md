@@ -179,6 +179,50 @@ Supervisor-owned (tracks READ only; request via NOTES.md): `bimopenflow/web/pack
 
 ---
 
+# Contracts — BIM analysis pack wave (2026-09-01)
+
+The `bim.*` pack: `src/BimOpenFlow.Nodes.BimAnalysis`. Wave 0 (landed by
+supervisor): csproj, `BimAnalysisNodes.All`, `BimColumns`, `BimModel` (cached
+loader + point/bounds lookups), `BimSampleModel` (the deterministic two-storey
+fixture), skeleton NodeSpecs for all 12 nodes, test project + helpers +
+`SampleModelTests`, sln/Host/profile-test registration.
+
+## Fences (who writes where)
+
+Supervisor-owned (tracks READ only; request smallest unblocking change via
+NOTES.md): everything in the pack except the per-node files below — in
+particular `BimAnalysisNodes.cs`, `BimColumns.cs`, `BimModel.cs`,
+`BimSampleModel.cs`, both csproj files, `BimAnalysisTestHelpers.cs`,
+`SampleModelTests.cs` — plus `BimOpenToolkit.sln`, `src/BimOpenFlow.Host/**`,
+`src/BimOpenFlow.NodeDocs/**`, `samples/**`, this doc.
+
+Each track writes ONLY its node files in `src/BimOpenFlow.Nodes.BimAnalysis/`
+and its test files in `tests/BimOpenFlow.Nodes.BimAnalysis.Tests/`:
+
+| Track | Node files | Test files |
+|---|---|---|
+| SRC | BimElementsNode.cs, BimRoomsNode.cs, BimLevelsNode.cs | BimElementsNodeTests.cs, BimRoomsNodeTests.cs, BimLevelsNodeTests.cs |
+| GEO | BimBoundsNode.cs, BimContainmentNode.cs, BimNearestNode.cs | BimBoundsNodeTests.cs, BimContainmentNodeTests.cs, BimNearestNodeTests.cs |
+| PAR | BimParamTableNode.cs, BimParamCoverageNode.cs | BimParamTableNodeTests.cs, BimParamCoverageNodeTests.cs |
+| CLS | BimDisciplineNode.cs, BimClassifyRoomsNode.cs | BimDisciplineNodeTests.cs, BimClassifyRoomsNodeTests.cs |
+| NAV | BimNavGraphNode.cs, BimHopsNode.cs | BimNavGraphNodeTests.cs, BimHopsNodeTests.cs |
+| S | samples/bim-analyses/**, tests/BimOpenFlow.BimWorkflows.Tests/**, docs regen, integration |
+
+## Seams
+
+- NodeSpecs (kinds, ports, params, defaults) are FIXED in the skeletons —
+  implement Eval bodies; Spec changes need a NOTES.md contract request.
+- Column names come from `BimColumns` constants, never string literals.
+- Source nodes load via `BimModel.Get(path, Kind)`; element/room selection via
+  `InstanceElements()` / `ElementsInCategories(...)`; bounds via `GetBounds`.
+- Tables are built with `DataTableBuilder`; column CLR types: long for ids and
+  counts, double for measures, string for names; absent values are null.
+- Tests assert against `BimSampleModel` through
+  `BimAnalysisTestHelpers.SampleBosPath` / `.SampleTable(...)`; the model's
+  contents are frozen (see the class doc).
+
+---
+
 # Contracts — chart nodes wave (2026-09-01)
 
 Implements core-node-sets.md Set 4 chart/table-view nodes (chart.bar, chart.line,
