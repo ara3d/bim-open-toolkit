@@ -22,6 +22,13 @@
       "runtimeArgs": ["run", "dev", "--workspace", "@bimopenflow/app"],
       "cwd": "bimopenflow/web",
       "port": 5300
+    },
+    {
+      "name": "bof-web-alt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "@bimopenflow/app", "--", "--port", "5301"],
+      "cwd": "bimopenflow/web",
+      "port": 5301
     }
   ]
 }

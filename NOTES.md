@@ -235,3 +235,20 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - platoflow's cream theme mapped one-to-one onto gratify tokens; wire color on light = platoflow's "hue whisper" gray #7A98A8.
 - Sample seeding: only into an EMPTY store, only in tables profile, {SAMPLES} placeholder rewritten at seed time; walks up to BimOpenToolkit.sln and skips silently when not found (installed deployments).
 - A running dotnet host locks its bin dir — stop it before `dotnet build` at integration (MSB3027).
+
+### Data-node-sets wave (2026-09-01) — supervisor + 6 tracks + web track
+
+## Contract changes (this wave)
+- ParamKind gains DateTime (contracts.json + engine enum + spec format.md §4: ISO-8601 canonical, empty = unset). First users: table.calendar, date.filter.
+- New packs BimOpenFlow.Nodes.TableOps/Cleaning/Dates; tables profile now also serves EffectNodes.TableSinks (the six table writers) — writePsets/report stay BIM-profile-only.
+- Shared generated-SQL backbone DuckTableSql (Run/QuoteIdent/QuoteLiteral/NormalizeDatesToText) added to Ara3D.BimOpenSchema.DuckDb, below the packs.
+
+## Findings
+- Deviations from the proposal, deliberate: xlsx.read/table.join/sink.exportCsv extended IN PLACE at v1 (behavior-preserving defaults) instead of v2 — saved graphs pin (kind, version) and nothing migrates them yet. table.range/calendar are plain C# (Tables pack stays DuckDB-free) with generate_series semantics preserved.
+- Determinism: every ordered SQL transform injects a collision-free ordinal column and ORDER BYs it; DISTINCT ON and first() are avoided (arg_min/row_number instead). DuckDB sum() widens BIGINT to HUGEINT — must CAST back or the wire kinds cannot carry it.
+- DuckDB warts: split_part returns "" not NULL out of range; regexp_extract returns "" on no match; SUMMARIZE min/max/avg come back VARCHAR in 1.3; glob() returns forward-slash paths on Windows; try_strptime exists in 1.3.
+- sqlite/duckdb writers edit the target in place inside one transaction (temp-file replace would destroy other tables in the database); file writers are temp-then-move atomic.
+- git pathspec commits do NOT pick up untracked files (Track TABLES slip: two commits landed without their new files; tip fixed by a follow-up commit). Waves should require `git add <paths>` before `git commit -- <paths>`.
+- Hoisting candidates repeated by 3+ packs: ordinal/WithOrdinal machinery, RequireColumn, CLR-type-to-wire-name mapping — the `Ara3D.DuckDb` graduation (core proposal open question 2) would house them.
+- Web inline controls: gratify islands carry DOM inputs through pan/zoom (island facet); Boolean/Enum are canvas-drawn (undo-clean local state + modal dropdown); commits happen on change/gesture-up only, because the store snapshots the whole doc per edit for undo. setLayout now merges partial layouts (drag used to drop stored w/h). Sidebar groups the 67-kind catalog by dotted prefix.
+- The UX proposal (bimopenflow-ux-proposal.md) had routed scalar editing to the params pane; inline node controls are a deliberate change of course per user direction — the pane remains for Json/Expression/ModelRef and as the full editor.
