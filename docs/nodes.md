@@ -45,7 +45,7 @@ is the content itself, not the path or a timestamp.
 | Pack | Nodes | Kinds |
 |---|---|---|
 | BOS — `BimOpenFlow.Nodes.Bos` | 6 | `bos.load`, `bos.query`, `table.filter`, `table.derive`, `table.aggregate`, `table.sort` |
-| Geometry — `BimOpenFlow.Nodes.Geometry` | 4 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.camera` |
+| Geometry — `BimOpenFlow.Nodes.Geometry` | 11 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
 | DuckDB — `BimOpenFlow.Nodes.DuckDb` | 8 | `duck.read`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
@@ -53,6 +53,7 @@ is the content itself, not the path or a timestamp.
 | TableOps — `BimOpenFlow.Nodes.TableOps` | 14 | `table.cast`, `table.concat`, `table.distinct`, `table.drop`, `table.limit`, `table.pivot`, `table.profile`, `table.rename`, `table.sample`, `table.schema`, `table.splitColumn`, `table.transpose`, `table.unpivot`, `table.window` |
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
+| Viz — `BimOpenFlow.Nodes.Viz` | 3 | `chart.bar`, `chart.line`, `view.table` |
 
 ## BOS — `BimOpenFlow.Nodes.Bos`
 
@@ -278,6 +279,168 @@ The ids table is matched on its column with the same name as `joinColumn`, or it
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
 | `joinColumn` | Text | — | — | — |
+
+### `view3d.hide` (v1) — Pure
+
+Removes the instance rows whose join column value appears in the ids table.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+| `ids` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `instances` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `joinColumn` | Text | — | — | columns of input `instances` |
+
+### `view3d.opacity` (v1) — Pure
+
+Sets the alpha column of an instance table, for all rows or for rows matched against an ids table.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+| `ids` | Table | optional |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `instances` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `alpha` | Number | `0.25` | — | — |
+| `joinColumn` | Text | — | — | columns of input `instances` |
+| `scope` | Enum | `matched` | `matched`, `others` | — |
+
+### `view3d.spacing` (v1) — Pure
+
+Offsets each group of instances along an axis by its group index times the spacing.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `instances` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `groupColumn` | Text | — | — | columns of input `instances` |
+| `axis` | Enum | `x` | `x`, `y`, `z` | — |
+| `spacing` | Number | `10` | — | — |
+
+### `view3d.arrange` (v1) — Pure
+
+Arranges each group of instances into its own cell of a ground-plane grid.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `instances` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `groupColumn` | Text | — | — | columns of input `instances` |
+| `gap` | Number | `5` | — | — |
+
+### `view3d.decimate` (v1) — Pure
+
+Keeps only the largest instances: a minimum bounds diagonal, then the top fraction by volume.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `instances` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `keepFraction` | Number | `0.25` | — | — |
+| `minDiagonal` | Number | `0` | — | — |
+
+### `view3d.boundingBoxes` (v1) — Pure
+
+Emits the axis-aligned bounding boxes of instances, per row or unioned per group.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `boxes` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `groupColumn` | Text | — | — | columns of input `instances` |
+
+### `view3d.voxelize` (v1) — Pure
+
+Emits the occupied voxels of the instances' bounding boxes as a boxes table with per-voxel counts.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `boxes` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `size` | Number | `1` | — | — |
 
 ### `view3d.camera` (v1) — Pure
 
@@ -1728,3 +1891,79 @@ Keeps rows whose ISO date column falls in the half-open range [from, to), so adj
 | `column` | Text | — | — | columns of input `table` |
 | `from` | DateTime | — | — | — |
 | `to` | DateTime | — | — | — |
+
+## Viz — `BimOpenFlow.Nodes.Viz`
+
+Chart and table-view nodes that validate and project table data for the web panes; rendering stays client-side.
+
+### `chart.bar` (v1) — Pure
+
+Projects 'labelColumn' plus the comma-separated numeric 'valueColumns' for the bar-chart pane; 'sort' orders rows by the first value column.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `labelColumn` | Text | — | — | columns of input `table` |
+| `valueColumns` | Text | — | — | columns of input `table` |
+| `title` | Text | — | — | — |
+| `sort` | Enum | `none` | `none`, `asc`, `desc` | — |
+
+### `chart.line` (v1) — Pure
+
+Projects 'xColumn' plus the comma-separated numeric 'yColumns' for the line-chart pane; rows are ordered by 'xColumn'.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `xColumn` | Text | — | — | columns of input `table` |
+| `yColumns` | Text | — | — | columns of input `table` |
+| `title` | Text | — | — | — |
+
+### `view.table` (v1) — Pure
+
+Titles a table view; comma-separated 'columns' optionally projects (default all, kept in the named order; unknown names warn).
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `title` | Text | — | — | — |
+| `columns` | Text | — | — | columns of input `table` |
