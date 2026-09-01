@@ -18,11 +18,33 @@ public enum ParamKind
     DateTime,
 }
 
+public enum SuggestKind
+{
+    /// <summary>Column names of the table connected to input port <c>Source</c>.</summary>
+    ColumnsOfInput,
+    /// <summary>Table names inside the database file named by param <c>Source</c>.</summary>
+    TablesInFile,
+}
+
+/// <summary>
+/// Where a parameter's value suggestions come from. Advisory only: the value
+/// stays a free canonical string, and validation remains an eval-time concern.
+/// </summary>
+public sealed record SuggestSource(SuggestKind Kind, string Source)
+{
+    public static SuggestSource ColumnsOf(string inputPort)
+        => new(SuggestKind.ColumnsOfInput, inputPort);
+
+    public static SuggestSource TablesInFile(string pathParam)
+        => new(SuggestKind.TablesInFile, pathParam);
+}
+
 public sealed record ParamSpec(
     string Name,
     ParamKind Kind,
     string Default = "",
-    IReadOnlyList<string>? EnumValues = null);
+    IReadOnlyList<string>? EnumValues = null,
+    SuggestSource? Suggest = null);
 
 /// <summary>
 /// A node's parameter values as delivered by the engine: canonical string form
