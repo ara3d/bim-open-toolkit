@@ -1,26 +1,17 @@
 using Ara3D.DataFlowEngine.Abstractions;
+using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
 
 namespace BimOpenFlow.Nodes.Bos.Tests;
 
-internal sealed class FakeEvalContext : IEvalContext
+/// <summary>Bos-specific test sugar; the shared helpers live in
+/// Ara3D.DataFlowEngine.TestKit.NodeTestHelpers.</summary>
+internal static class BosTestHelpers
 {
-    public bool IsRun => false;
-    public CancellationToken Cancellation => CancellationToken.None;
-    public List<string> Warnings { get; } = [];
-    public void Warn(string message) => Warnings.Add(message);
-}
-
-internal static class NodeTestHelpers
-{
-    public static readonly IEvalContext Ctx = new FakeEvalContext();
-
-    public static ParamValues Params(params (string Name, string Value)[] ps)
-        => new(ps.ToDictionary(p => p.Name, p => p.Value));
-
     public static IReadOnlyList<FlowValue> Eval(this IFlowNode node, IDataTable? input,
         params (string Name, string Value)[] ps)
-        => node.Eval(Ctx, input == null ? [] : [new TableValue(input)], Params(ps));
+        => node.Eval(NodeTestHelpers.Ctx, input == null ? [] : [new TableValue(input)],
+            NodeTestHelpers.Params(ps));
 
     public static IDataTable EvalTable(this IFlowNode node, IDataTable? input,
         params (string Name, string Value)[] ps)
@@ -36,10 +27,4 @@ internal static class NodeTestHelpers
         builder.AddColumn(new object?[] { "Walls", "Walls", "Doors", "Doors" }, "Category", typeof(string));
         return builder.Build();
     }
-
-    public static object? Cell(this IDataTable table, string column, int row)
-        => table[table.Columns.Single(c => c.Descriptor.Name == column).ColumnIndex, row];
-
-    public static IReadOnlyList<string> ColumnNames(this IDataTable table)
-        => table.Columns.Select(c => c.Descriptor.Name).ToList();
 }

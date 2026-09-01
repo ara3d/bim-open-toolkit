@@ -1,17 +1,15 @@
-﻿using Ara3D.DataFlowEngine.Abstractions;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 
-namespace BimOpenFlow.Nodes.TableOps.Tests;
+namespace Ara3D.DataFlowEngine.TestKit;
 
-internal sealed class FakeEvalContext : IEvalContext
-{
-    public bool IsRun => false;
-    public CancellationToken Cancellation => CancellationToken.None;
-    public List<string> Warnings { get; } = [];
-    public void Warn(string message) => Warnings.Add(message);
-}
-
-internal static class NodeTestHelpers
+/// <summary>Single-node evaluation helpers shared by the node-pack test
+/// projects: parameter/table construction, one-call Eval, and cell access.</summary>
+public static class NodeTestHelpers
 {
     public static readonly IEvalContext Ctx = new FakeEvalContext();
 
@@ -67,4 +65,3 @@ internal static class NodeTestHelpers
         throw new FileNotFoundException($"samples/tables/{fileName} not found above {AppContext.BaseDirectory}");
     }
 }
-
