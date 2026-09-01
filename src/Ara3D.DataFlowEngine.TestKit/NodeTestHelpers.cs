@@ -29,6 +29,16 @@ public static class NodeTestHelpers
         return new TableValue(builder.Build());
     }
 
+    /// <summary>Builds an in-memory table named "t" from typed-array columns,
+    /// avoiding the boxing boilerplate of the object?[] overload.</summary>
+    public static TableValue Table(params (string Name, Array Values)[] columns)
+    {
+        var builder = new DataTableBuilder("t");
+        foreach (var (name, values) in columns)
+            builder.AddColumn(values, name, values.GetType().GetElementType()!);
+        return new TableValue(builder.Build());
+    }
+
     /// <summary>Evaluates with a fresh context so warnings can be asserted.</summary>
     public static (IDataTable Table, IReadOnlyList<string> Warnings) EvalWithWarnings(
         this IFlowNode node, IReadOnlyList<FlowValue> inputs, params (string Name, string Value)[] ps)

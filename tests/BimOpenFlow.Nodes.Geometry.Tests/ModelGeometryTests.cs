@@ -1,5 +1,5 @@
+using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.Utils;
-using static BimOpenFlow.Nodes.Geometry.Tests.TestSupport;
 
 namespace BimOpenFlow.Nodes.Geometry.Tests;
 
@@ -45,15 +45,15 @@ public sealed class ModelGeometryTests
     public void Duplex_InstancesNode_ProducesConventionTable()
     {
         var path = RequirePath(Duplex);
-        var result = OutputTable(new InstancesNode(), [], Params(("path", path)));
+        var result = new InstancesNode().EvalTable([], ("path", path));
 
         Assert.That(result.Rows, Has.Count.GreaterThan(0));
-        Assert.That(ColumnNames(result), Is.EqualTo(new[]
+        Assert.That(result.ColumnNames(), Is.EqualTo(new[]
         {
             "instanceIndex", "meshId", "entityId", "globalId", "category",
             "minX", "minY", "minZ", "maxX", "maxY", "maxZ",
         }));
-        Assert.That(Cell(result, "category", 0), Is.Not.Empty);
-        Assert.That(double.IsFinite((double)Cell(result, "minX", 0)), Is.True);
+        Assert.That(result.Cell("category", 0), Is.Not.Empty);
+        Assert.That(double.IsFinite((double)result.Cell("minX", 0)!), Is.True);
     }
 }
