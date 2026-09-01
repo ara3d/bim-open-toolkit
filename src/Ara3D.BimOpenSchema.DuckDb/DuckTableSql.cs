@@ -29,6 +29,24 @@ public static class DuckTableSql
     public static IDataTable Run(IDataTable table, string sql)
         => Run([("t", table)], sql);
 
+    /// <summary>Runs generated SQL, rethrowing engine failures with the node
+    /// kind prefixed so every error a user sees names its node.</summary>
+    public static IDataTable Run(string kind, IReadOnlyList<(string Name, IDataTable Table)> tables, string sql)
+    {
+        try
+        {
+            return Run(tables, sql);
+        }
+        catch (Exception e) when (e is not ArgumentException and not OperationCanceledException)
+        {
+            throw new ArgumentException($"{kind}: {e.Message}", e);
+        }
+    }
+
+    /// <summary>Kind-prefixed run over a single table registered as "t".</summary>
+    public static IDataTable Run(string kind, IDataTable table, string sql)
+        => Run(kind, [("t", table)], sql);
+
     /// <summary>Escapes a name for use as a double-quoted SQL identifier.</summary>
     public static string QuoteIdent(string name)
         => "\"" + name.Replace("\"", "\"\"") + "\"";
@@ -36,6 +54,14 @@ public static class DuckTableSql
     /// <summary>Escapes text for use inside a single-quoted SQL literal.</summary>
     public static string QuoteLiteral(string text)
         => "'" + text.Replace("'", "''") + "'";
+
+    /// <summary>Extension sugar for QuoteIdent.</summary>
+    public static string Ident(this string name)
+        => QuoteIdent(name);
+
+    /// <summary>Extension sugar for QuoteLiteral.</summary>
+    public static string Literal(this string text)
+        => QuoteLiteral(text);
 
     /// <summary>
     /// Tables on the wire carry only the five spec value kinds, so DuckDB
