@@ -1,4 +1,5 @@
 using Ara3D.DataFlowEngine.Abstractions;
+using Ara3D.DataTable;
 
 namespace BimOpenFlow.Nodes.Geometry;
 
@@ -22,5 +23,46 @@ public sealed class DecimateNode : IFlowNode
         "Keeps only the largest instances: a minimum bounds diagonal, then the top fraction by volume.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
-        => throw new NotImplementedException();
+    {
+        var instances = ((TableValue)inputs[0]).Table;
+        var minX = instances.RequireColumn("minX");
+        var minY = instances.RequireColumn("minY");
+        var minZ = instances.RequireColumn("minZ");
+        var maxX = instances.RequireColumn("maxX");
+        var maxY = instances.RequireColumn("maxY");
+        var maxZ = instances.RequireColumn("maxZ");
+
+        var keepFraction = parameters.GetNumber("keepFraction", 0.25);
+        if (keepFraction is < 0 or > 1)
+        {
+            context.Warn($"keepFraction {keepFraction} is outside [0,1]; clamping");
+            keepFraction = Math.Clamp(keepFraction, 0, 1);
+        }
+        var minDiagonal = parameters.GetNumber("minDiagonal");
+
+        var candidates = new List<(int Row, double Volume)>();
+        for (var i = 0; i < instances.RowCount(); i++)
+        {
+            var ex = Extent(instances, maxX, minX, i);
+            var ey = Extent(instances, maxY, minY, i);
+            var ez = Extent(instances, maxZ, minZ, i);
+            var diagonal = Math.Sqrt(ex * ex + ey * ey + ez * ez);
+            if (diagonal >= minDiagonal)
+                candidates.Add((i, Math.Max(ex, 0) * Math.Max(ey, 0) * Math.Max(ez, 0)));
+        }
+
+        var keepCount = (int)Math.Ceiling(keepFraction * candidates.Count);
+        var rows = candidates
+            .OrderByDescending(c => c.Volume)
+            .ThenBy(c => c.Row)
+            .Take(keepCount)
+            .Select(c => c.Row)
+            .OrderBy(r => r)
+            .ToList();
+
+        return [new TableValue(instances.SelectRows(rows, instances.Name))];
+    }
+
+    private static double Extent(IDataTable table, int maxCol, int minCol, int row)
+        => (TableOps.CellNumber(table[maxCol, row]) ?? 0) - (TableOps.CellNumber(table[minCol, row]) ?? 0);
 }
