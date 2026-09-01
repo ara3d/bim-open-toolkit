@@ -214,3 +214,14 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - ModelSummary.SizeBytes int clamp in ApiMapping retired by supervisor after the long contract change landed.
 - HostConfig --port is meaningless to bimopenflow-mcp (MCP HTTP port comes from --http [port]); doc line needed.
 - GET /api/models/{id}/bos lives in Host (ModelBytesEndpoint) with a TODO to promote to contracts.json once a binary-endpoint shape exists; HostComposition.BuildServices returns catalog/store/registry with no ASP.NET types — the single wiring seam both Host and Mcp use.
+
+### Table sandbox wave (2026-08-31)
+- Optional input ports (spec §2) now implemented: unconnected optional → MissingValue placeholder, out of the memo key. sql.query t1..t4 is the first consumer; nodes must skip MissingValue when consuming optional positions.
+- DuckDB DATE/TIMESTAMP columns break ValueHash ("column type DateOnly is not hashable") — tables on the wire carry only the five spec kinds, so the DuckDb pack normalizes date-like columns to ISO-8601 text (NormalizeDates, applied in all three nodes; xlsx.read already did this). If a real date column kind is ever wanted it is a spec change first.
+- DuckDB.NET 1.3.2: connection-string config works for read-only opens (DataSource=...;ACCESS_MODE=READ_ONLY) — no helper-library change needed.
+- Microsoft.Data.Sqlite pooling holds the db file open on Windows; tests/seeding must use Pooling=False or ClearAllPools() before deleting temp dirs.
+- SQLite columns are per-row typed; sqlite.query unifies per column (one type wins, long+double → double, else canonical text). ClosedXML used-range may not start at A1; xlsx.read addresses via RangeAddress.
+- HostConfig record growth wart: adding a required positional param broke 3 external constructor call sites; defaulted Profile instead. Prefer defaulted params when extending config records.
+- Track C hand-computed expectation had a typo (P-13 revenue 3432.25 vs true 3431.25) — the pipeline was right; hand-check arithmetic twice or compute expectations in-test.
+- Pack-local helper duplication (NodeArgs/TableOps copies in DuckDb and Tables packs) is now three-fold across packs; candidate for a small shared support project if a fourth pack appears.
+- Docs generator observations: check.rule param 'title' emits column 'checkTitle'; Geometry/Compliance packs cast inputs raw (InvalidCastException instead of kind-named errors); duck.read has no 'options' param yet (proposal lists one); bos.query still exists alongside sql.query (retirement pending, proposal open question 7).
