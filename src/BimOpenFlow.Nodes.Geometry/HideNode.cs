@@ -17,5 +17,24 @@ public sealed class HideNode : IFlowNode
         "Removes the instance rows whose join column value appears in the ids table.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
-        => throw new NotImplementedException();
+    {
+        var instances = ((TableValue)inputs[0]).Table;
+        var ids = ((TableValue)inputs[1]).Table;
+        var joinName = parameters.GetText("joinColumn");
+        var instJoin = instances.RequireColumn(joinName);
+        var idsJoin = ids.ColumnIndex(joinName) is var found && found >= 0 ? found : 0;
+
+        var keys = new HashSet<string>();
+        if (ids.Columns.Count > 0)
+            for (var i = 0; i < ids.RowCount(); i++)
+                if (TableOps.CanonicalText(ids[idsJoin, i]) is { } key)
+                    keys.Add(key);
+
+        var rows = new List<int>();
+        for (var i = 0; i < instances.RowCount(); i++)
+            if (TableOps.CanonicalText(instances[instJoin, i]) is not { } key || !keys.Contains(key))
+                rows.Add(i);
+
+        return [new TableValue(instances.SelectRows(rows, instances.Name))];
+    }
 }
