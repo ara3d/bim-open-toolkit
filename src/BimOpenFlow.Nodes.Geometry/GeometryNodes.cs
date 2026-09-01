@@ -10,6 +10,13 @@ public static class GeometryNodes
         new InstancesNode(),
         new ColorNode(),
         new IsolateNode(),
+        new HideNode(),
+        new OpacityNode(),
+        new SpacingNode(),
+        new ArrangeNode(),
+        new DecimateNode(),
+        new BoundingBoxesNode(),
+        new VoxelizeNode(),
         new CameraNode(),
     ];
 }

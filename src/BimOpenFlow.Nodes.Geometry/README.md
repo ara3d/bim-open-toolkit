@@ -26,6 +26,13 @@ meshes to the viewer itself; nodes only produce and transform instance tables.
 | `view3d.instances` | — | `path` (FilePath) | instance table |
 | `view3d.color` | instances, values | `joinColumn`, `valueColumn`, `colorMap` (viridis \| category10 \| redgreen) | instance table + `r g b a` |
 | `view3d.isolate` | instances, ids | `joinColumn` | filtered instance table |
+| `view3d.hide` | instances, ids | `joinColumn` | filtered instance table (inverse of isolate) |
+| `view3d.opacity` | instances, ids (optional) | `alpha`, `joinColumn`, `scope` (matched \| others) | instance table + `a` |
+| `view3d.spacing` | instances | `groupColumn`, `axis` (x \| y \| z), `spacing` | instance table + offsets |
+| `view3d.arrange` | instances | `groupColumn`, `gap` | instance table + offsets (grid layout) |
+| `view3d.decimate` | instances | `keepFraction`, `minDiagonal` | thinned instance table |
+| `view3d.boundingBoxes` | instances | `groupColumn` (empty = per row) | boxes table |
+| `view3d.voxelize` | instances | `size` | boxes table with per-voxel `count` |
 | `view3d.camera` | — | `name`, `posX..posZ`, `targetX..targetZ` | camera table |
 
 ## Instance table columns
@@ -48,6 +55,35 @@ Unmatched rows get gray (0.5, 0.5, 0.5, 1).
 Joins compare canonical invariant text of cells (integers plain, doubles
 round-trip "R", booleans `true`/`false`), so an Integer `entityId` joins a Text
 id column holding `"42"`.
+
+### Alpha
+
+The `a` column is honored on its own, without `r g b`: 0 hides the instance,
+values between 0 and 1 fade it, 1 leaves it opaque. `view3d.opacity` writes only
+`a`, preserving whatever colors are present.
+
+### Offsets
+
+`view3d.spacing` and `view3d.arrange` append optional `offsetX offsetY offsetZ`
+(Number) columns. The 3D pane translates each instance by its offset on top of
+the transform loaded with the model. Nodes that produce offsets accumulate onto
+existing offset columns (so they chain) and shift `minX..maxZ` by the same
+amount, keeping the bounds columns descriptive of the displayed position.
+
+## Boxes table columns
+
+Emitted on a port named `boxes` (table name `boxes`) by `view3d.boundingBoxes`
+and `view3d.voxelize`. The 3D pane renders each row as an axis-aligned box
+(an instanced unit cube), colored by `r g b a` when present, gray otherwise;
+alpha semantics match instance tables.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `minX minY minZ maxX maxY maxZ` | Number | Required. World-space box |
+| `r g b a` | Number | Optional, 0..1 |
+| `label` | Text | Optional. Group value or row id |
+| `count` | Integer | Optional. Voxel occupancy count |
+| `voxelId` | Text | Optional. "x,y,z" cell indices (join key) |
 
 ## Camera table columns
 
