@@ -1,0 +1,28 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "aspect": { "x": 370, "y": 40 },
+    "bounds": { "x": 40, "y": 40 },
+    "ranked": { "x": 1030, "y": 40 },
+    "tall": { "x": 700, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "bounds.table", "to": "aspect.table" },
+      { "from": "tall.table", "to": "ranked.table" },
+      { "from": "aspect.table", "to": "tall.table" }
+    ],
+    "nodes": [
+      { "id": "aspect", "kind": "table.derive", "version": 1 },
+      { "id": "bounds", "kind": "bim.bounds", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "tall", "kind": "table.filter", "version": 1 }
+    ]
+  },
+  "values": {
+    "aspect": { "expr": "SizeX / SizeY", "name": "Aspect" },
+    "bounds": { "path": "{SAMPLES}/sample.bos" },
+    "ranked": { "by": "Volume desc" },
+    "tall": { "expr": "SizeZ > 2.5" }
+  }
+}

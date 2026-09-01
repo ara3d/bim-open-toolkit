@@ -1,0 +1,27 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "byDiscipline": { "x": 700, "y": 40 },
+    "disciplines": { "x": 370, "y": 40 },
+    "elements": { "x": 40, "y": 40 },
+    "ranked": { "x": 1030, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "elements.table", "to": "disciplines.table" },
+      { "from": "disciplines.table", "to": "byDiscipline.table" },
+      { "from": "byDiscipline.table", "to": "ranked.table" }
+    ],
+    "nodes": [
+      { "id": "byDiscipline", "kind": "table.aggregate", "version": 1 },
+      { "id": "disciplines", "kind": "bim.discipline", "version": 1 },
+      { "id": "elements", "kind": "bim.elements", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 }
+    ]
+  },
+  "values": {
+    "byDiscipline": { "aggregates": "count(*) as Elements", "groupBy": "Discipline" },
+    "elements": { "path": "{SAMPLES}/sample.bos" },
+    "ranked": { "by": "Elements desc" }
+  }
+}

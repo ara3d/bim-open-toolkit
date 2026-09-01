@@ -1,0 +1,23 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "coverage": { "x": 370, "y": 40 },
+    "load": { "x": 40, "y": 40 },
+    "top": { "x": 700, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "load.parameters", "to": "coverage.parameters" },
+      { "from": "coverage.table", "to": "top.table" }
+    ],
+    "nodes": [
+      { "id": "coverage", "kind": "bim.paramCoverage", "version": 1 },
+      { "id": "load", "kind": "bos.load", "version": 1 },
+      { "id": "top", "kind": "table.sort", "version": 1 }
+    ]
+  },
+  "values": {
+    "load": { "path": "{SAMPLES}/sample.bos" },
+    "top": { "by": "Count desc" }
+  }
+}

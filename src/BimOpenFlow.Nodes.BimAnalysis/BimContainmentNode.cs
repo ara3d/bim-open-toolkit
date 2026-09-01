@@ -1,4 +1,5 @@
 using Ara3D.DataFlowEngine.Abstractions;
+using Ara3D.DataTable;
 
 namespace BimOpenFlow.Nodes.BimAnalysis;
 
@@ -30,6 +31,94 @@ public sealed class BimContainmentNode : IFlowNode
         + "ignoreZ, containment is tested in plan (XY) only. Typical use: element centers from "
         + "bim.bounds against room boxes from bim.rooms, when the model has no room parameters.");
 
+    private sealed record Box(string? Key,
+        double MinX, double MinY, double MinZ, double MaxX, double MaxY, double MaxZ, double Measure);
+
+    // TODO: ParamOr/Numeric/CopyColumns are duplicated in BimNearestNode; promote to
+    // BimOpenFlow.Nodes.Support once the fence allows a shared edit.
+    private static string ParamOr(ParamValues parameters, string name, string @default)
+        => parameters.GetText(name) is { } t && !string.IsNullOrWhiteSpace(t) ? t : @default;
+
+    private static double? Numeric(object? cell)
+        => cell switch
+        {
+            null or DBNull => null,
+            double d => d,
+            float f => f,
+            long l => l,
+            int i => i,
+            short s => s,
+            byte b => b,
+            decimal m => (double)m,
+            _ => null,
+        };
+
+    private static DataTableBuilder CopyColumns(IDataTable table)
+    {
+        var rows = table.RowCount();
+        var builder = new DataTableBuilder(table.Name);
+        foreach (var c in table.Columns)
+        {
+            var cells = new object?[rows];
+            for (var row = 0; row < rows; row++)
+                cells[row] = table[c.ColumnIndex, row];
+            builder.AddColumn(cells, c.Descriptor.Name, c.Descriptor.Type);
+        }
+        return builder;
+    }
+
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
-        => throw new NotImplementedException($"{Kind}: track GEO");
+    {
+        var points = inputs.TableInput(0, Kind);
+        var boxes = inputs.TableInput(1, Kind);
+        var ignoreZ = parameters.GetBoolean("ignoreZ");
+        var xi = points.RequireColumn(ParamOr(parameters, "x", BimColumns.CenterX), Kind);
+        var yi = points.RequireColumn(ParamOr(parameters, "y", BimColumns.CenterY), Kind);
+        var zi = points.RequireColumn(ParamOr(parameters, "z", BimColumns.CenterZ), Kind);
+        var keyIndex = boxes.RequireColumn(ParamOr(parameters, "key", BimColumns.Name), Kind);
+        var asName = ParamOr(parameters, "as", "ContainedIn");
+        if (points.ColumnIndex(asName) >= 0)
+            throw new ArgumentException($"{Kind}: points table already has a column named '{asName}'.");
+
+        var minXi = boxes.RequireColumn(BimColumns.MinX, Kind);
+        var minYi = boxes.RequireColumn(BimColumns.MinY, Kind);
+        var minZi = boxes.RequireColumn(BimColumns.MinZ, Kind);
+        var maxXi = boxes.RequireColumn(BimColumns.MaxX, Kind);
+        var maxYi = boxes.RequireColumn(BimColumns.MaxY, Kind);
+        var maxZi = boxes.RequireColumn(BimColumns.MaxZ, Kind);
+
+        var candidates = Enumerable.Range(0, boxes.RowCount())
+            .Select(row => (
+                Key: TableColumns.CellText(boxes[keyIndex, row]),
+                MinX: Numeric(boxes[minXi, row]), MinY: Numeric(boxes[minYi, row]),
+                MinZ: Numeric(boxes[minZi, row]), MaxX: Numeric(boxes[maxXi, row]),
+                MaxY: Numeric(boxes[maxYi, row]), MaxZ: Numeric(boxes[maxZi, row])))
+            .Where(r => r.MinX != null && r.MinY != null && r.MaxX != null && r.MaxY != null
+                && (ignoreZ || (r.MinZ != null && r.MaxZ != null)))
+            .Select(r => new Box(r.Key, r.MinX!.Value, r.MinY!.Value, r.MinZ ?? 0,
+                r.MaxX!.Value, r.MaxY!.Value, r.MaxZ ?? 0,
+                (r.MaxX.Value - r.MinX.Value) * (r.MaxY.Value - r.MinY.Value)
+                * (ignoreZ ? 1 : (r.MaxZ ?? 0) - (r.MinZ ?? 0))))
+            .ToList();
+
+        string? Containing(int row)
+        {
+            var x = Numeric(points[xi, row]);
+            var y = Numeric(points[yi, row]);
+            var z = ignoreZ ? 0 : Numeric(points[zi, row]);
+            return x == null || y == null || z == null
+                ? null
+                : candidates
+                    .Where(b => b.MinX <= x && x <= b.MaxX && b.MinY <= y && y <= b.MaxY
+                        && (ignoreZ || (b.MinZ <= z && z <= b.MaxZ)))
+                    .OrderBy(b => b.Measure)
+                    .FirstOrDefault()?.Key;
+        }
+
+        var rows = points.RowCount();
+        var builder = CopyColumns(points);
+        builder.AddColumn(Enumerable.Range(0, rows).Select(r => (object?)Containing(r)).ToArray(),
+            asName, typeof(string));
+        return [new TableValue(builder.Build())];
+    }
 }

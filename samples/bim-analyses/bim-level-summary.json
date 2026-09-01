@@ -1,0 +1,23 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "byLevel": { "x": 370, "y": 40 },
+    "elements": { "x": 40, "y": 40 },
+    "levels": { "x": 40, "y": 224 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "elements.table", "to": "byLevel.table" }
+    ],
+    "nodes": [
+      { "id": "byLevel", "kind": "table.aggregate", "version": 1 },
+      { "id": "elements", "kind": "bim.elements", "version": 1 },
+      { "id": "levels", "kind": "bim.levels", "version": 1 }
+    ]
+  },
+  "values": {
+    "byLevel": { "aggregates": "count(*) as Elements", "groupBy": "Level" },
+    "elements": { "path": "{SAMPLES}/sample.bos" },
+    "levels": { "path": "{SAMPLES}/sample.bos" }
+  }
+}

@@ -1,4 +1,6 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
+using Ara3D.DataTable;
 
 namespace BimOpenFlow.Nodes.BimAnalysis;
 
@@ -26,5 +28,79 @@ public sealed class BimParamTableNode : IFlowNode
         + "Entity to text, and Point parameters expand to three .X/.Y/.Z double columns.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
-        => throw new NotImplementedException($"{Kind}: track PAR");
+    {
+        var path = parameters.RequiredText("path", Kind);
+        var requested = parameters.RequiredText("parameters", Kind).SplitNames();
+        if (requested.Count == 0)
+            throw new ArgumentException($"{Kind}: parameter 'parameters' must name at least one parameter.");
+
+        var model = BimModel.Get(path, Kind);
+        var elements = model.InstanceElements().ToList();
+
+        var builder = new DataTableBuilder("paramTable");
+        var used = new HashSet<string> { BimColumns.EntityIndex, BimColumns.Name, BimColumns.Category };
+        builder.AddColumn(elements.Select(e => (object?)(long)e.Index).ToArray(), BimColumns.EntityIndex, typeof(long));
+        builder.AddColumn(elements.Select(e => (object?)e.Name).ToArray(), BimColumns.Name, typeof(string));
+        builder.AddColumn(elements.Select(e => (object?)e.Category).ToArray(), BimColumns.Category, typeof(string));
+
+        foreach (var fullName in requested)
+        {
+            var desc = model.Objects.Descriptors.FirstOrDefault(d =>
+                string.Equals(d.Name, fullName, StringComparison.OrdinalIgnoreCase));
+            var column = ColumnName(CommonRevitParameters.ParameterNameToUI(fullName), fullName, used);
+            if (desc == null)
+            {
+                context.Warn($"{Kind}: unknown parameter '{fullName}'.");
+                builder.AddColumn(new object?[elements.Count], column, typeof(string));
+            }
+            else if (desc.ParameterType == ParameterType.Point)
+            {
+                AddPointColumns(builder, model, elements, desc.Name, column);
+            }
+            else
+            {
+                builder.AddColumn(elements.Select(e => CellValue(e, desc.Name)).ToArray(),
+                    column, CellType(desc.ParameterType));
+            }
+        }
+        return [new TableValue(builder.Build())];
+    }
+
+    /// <summary>The short name, or the full name when the short name is taken by a
+    /// lead column or an earlier parameter; reserves the chosen name.</summary>
+    private static string ColumnName(string shortName, string fullName, HashSet<string> used)
+    {
+        var name = used.Contains(shortName) ? fullName : shortName;
+        used.Add(name);
+        return name;
+    }
+
+    private static void AddPointColumns(DataTableBuilder builder, BimModel model,
+        IReadOnlyList<EntityModel> elements, string paramName, string column)
+    {
+        foreach (var (axis, pick) in new (string Axis, Func<Point, double> Pick)[]
+                 { ("X", p => p.X), ("Y", p => p.Y), ("Z", p => p.Z) })
+            builder.AddColumn(elements.Select(e =>
+                    model.TryGetPoint(e.Index, paramName, out var p) ? (object?)pick(p) : null).ToArray(),
+                $"{column}.{axis}", typeof(double));
+    }
+
+    private static Type CellType(ParameterType type)
+        => type switch
+        {
+            ParameterType.Int => typeof(long),
+            ParameterType.Number => typeof(double),
+            _ => typeof(string),
+        };
+
+    private static object? CellValue(EntityModel e, string paramName)
+        => e.ParameterValues.TryGetValue(paramName, out var v)
+            ? v switch
+            {
+                int i => (long)i,
+                float f => (double)f,
+                EntityModel m => m.Name,
+                _ => v,
+            }
+            : null;
 }

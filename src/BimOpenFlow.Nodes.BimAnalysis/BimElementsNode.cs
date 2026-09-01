@@ -1,4 +1,6 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
+using Ara3D.DataTable;
 
 namespace BimOpenFlow.Nodes.BimAnalysis;
 
@@ -18,5 +20,43 @@ public sealed class BimElementsNode : IFlowNode
         + "The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
-        => throw new NotImplementedException($"{Kind}: track SRC");
+    {
+        var model = BimModel.Get(parameters.RequiredText("path", Kind), Kind);
+        var elements = model.InstanceElements().ToList();
+        object?[] Cells(Func<EntityModel, object?> f) => elements.Select(f).ToArray();
+
+        var b = new DataTableBuilder("elements");
+        b.AddColumn(Cells(e => (long)(int)e.Index), BimColumns.EntityIndex, typeof(long));
+        b.AddColumn(Cells(e => e.LocalId), BimColumns.LocalId, typeof(long));
+        b.AddColumn(Cells(e => e.GlobalId), BimColumns.GlobalId, typeof(string));
+        b.AddColumn(Cells(e => e.Name), BimColumns.Name, typeof(string));
+        b.AddColumn(Cells(e => e.Category), BimColumns.Category, typeof(string));
+        b.AddColumn(Cells(e => e.CategoryType), BimColumns.CategoryType, typeof(string));
+        b.AddColumn(Cells(e => e.TypeName is { Length: > 0 } t ? t : null), BimColumns.Type, typeof(string));
+        b.AddColumn(Cells(e => e.ClassName), BimColumns.ClassName, typeof(string));
+        b.AddColumn(Cells(e => e.LevelName), BimColumns.Level, typeof(string));
+        b.AddColumn(Cells(Elevation), BimColumns.Elevation, typeof(double));
+        b.AddColumn(Cells(e => RoomOf(e)?.Name), BimColumns.Room, typeof(string));
+        b.AddColumn(Cells(e => e.DocumentTitle), BimColumns.Document, typeof(string));
+        b.AddColumn(Cells(Workset), BimColumns.Workset, typeof(long));
+        b.AddColumn(Cells(e => e.GroupName), BimColumns.Group, typeof(string));
+        return [new TableValue(b.Build())];
+    }
+
+    private static object? Elevation(EntityModel e)
+        => e.GetParameterAsEntity(CommonRevitParameters.ElementLevel) is { } level
+            ? NumberOrNull(level, CommonRevitParameters.LevelElevation)
+            : null;
+
+    private static object? NumberOrNull(EntityModel e, string name)
+        => e.ParameterValues.TryGetValue(name, out var v) && v is float f ? (double)f : null;
+
+    private static EntityModel? RoomOf(EntityModel e)
+        => e.GetParameterAsEntity(CommonRevitParameters.FISpace)
+           ?? e.GetParameterAsEntity(CommonRevitParameters.FIRoom);
+
+    private static object? Workset(EntityModel e)
+        => e.ParameterValues.ContainsKey(CommonRevitParameters.ElementWorksetId)
+            ? (long)e.GetParameterAsInt(CommonRevitParameters.ElementWorksetId)
+            : null;
 }

@@ -1,0 +1,24 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "hops": { "x": 370, "y": 40 },
+    "nav": { "x": 40, "y": 40 },
+    "ranked": { "x": 700, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "nav.table", "to": "hops.edges" },
+      { "from": "hops.table", "to": "ranked.table" }
+    ],
+    "nodes": [
+      { "id": "hops", "kind": "bim.hops", "version": 1 },
+      { "id": "nav", "kind": "bim.navGraph", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 }
+    ]
+  },
+  "values": {
+    "hops": { "start": "Corridor 102" },
+    "nav": { "path": "{SAMPLES}/sample.bos" },
+    "ranked": { "by": "Hops" }
+  }
+}

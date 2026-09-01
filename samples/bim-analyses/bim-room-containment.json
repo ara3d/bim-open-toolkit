@@ -1,0 +1,31 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "bounds": { "x": 40, "y": 40 },
+    "byRoom": { "x": 1030, "y": 40 },
+    "doorsOnly": { "x": 370, "y": 40 },
+    "place": { "x": 700, "y": 40 },
+    "rooms": { "x": 40, "y": 224 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "bounds.table", "to": "doorsOnly.table" },
+      { "from": "place.table", "to": "byRoom.table" },
+      { "from": "rooms.table", "to": "place.boxes" },
+      { "from": "doorsOnly.table", "to": "place.points" }
+    ],
+    "nodes": [
+      { "id": "bounds", "kind": "bim.bounds", "version": 1 },
+      { "id": "byRoom", "kind": "table.aggregate", "version": 1 },
+      { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
+      { "id": "place", "kind": "bim.containment", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+    ]
+  },
+  "values": {
+    "bounds": { "path": "{SAMPLES}/sample.bos" },
+    "byRoom": { "aggregates": "count(*) as Doors", "groupBy": "ContainedIn" },
+    "doorsOnly": { "expr": "Category == 'Doors'" },
+    "rooms": { "path": "{SAMPLES}/sample.bos" }
+  }
+}

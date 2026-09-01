@@ -1,0 +1,27 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "byClass": { "x": 700, "y": 40 },
+    "classes": { "x": 370, "y": 40 },
+    "ranked": { "x": 1030, "y": 40 },
+    "rooms": { "x": 40, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "classes.table", "to": "byClass.table" },
+      { "from": "rooms.table", "to": "classes.table" },
+      { "from": "byClass.table", "to": "ranked.table" }
+    ],
+    "nodes": [
+      { "id": "byClass", "kind": "table.aggregate", "version": 1 },
+      { "id": "classes", "kind": "bim.classifyRooms", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+    ]
+  },
+  "values": {
+    "byClass": { "aggregates": "count(*) as Rooms, sum(Volume) as TotalVolume", "groupBy": "RoomClass" },
+    "ranked": { "by": "Rooms desc" },
+    "rooms": { "path": "{SAMPLES}/sample.bos" }
+  }
+}
