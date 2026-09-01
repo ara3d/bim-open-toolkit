@@ -284,6 +284,8 @@ The ids table is matched on its column with the same name as `joinColumn`, or it
 
 Removes the instance rows whose join column value appears in the ids table.
 
+The exact inverse of `view3d.isolate`: rows whose join key appears in the ids table are removed; rows with a null join key are kept. Same ids-column lookup (same name as `joinColumn`, else the first column).
+
 **Inputs**
 
 | Name | Type | Required |
@@ -306,6 +308,8 @@ Removes the instance rows whose join column value appears in the ids table.
 ### `view3d.opacity` (v1) — Pure
 
 Sets the alpha column of an instance table, for all rows or for rows matched against an ids table.
+
+Writes only the `a` column (added with default 1 when absent); existing colors are untouched, and the 3D pane honors `a` even without r/g/b — 0 hides, fractions fade. The ids input is optional: without it every row gets the alpha; with it, scope `matched` fades the matching rows and `others` fades everything else, while unassigned rows keep their current alpha.
 
 **Inputs**
 
@@ -332,6 +336,8 @@ Sets the alpha column of an instance table, for all rows or for rows matched aga
 
 Offsets each group of instances along an axis by its group index times the spacing.
 
+Explode-by-column: groups are the sorted distinct values of `groupColumn` and group i moves i x spacing along the axis. Offsets accumulate onto existing offsetX/Y/Z columns so spacing nodes chain, and the bounds columns are shifted to match. Null-group rows stay in place.
+
 **Inputs**
 
 | Name | Type | Required |
@@ -356,6 +362,8 @@ Offsets each group of instances along an axis by its group index times the spaci
 
 Arranges each group of instances into its own cell of a ground-plane grid.
 
+Parts-catalog layout: each group gets a cell in a square XY grid sized by the largest group footprint plus the gap, moved so its bounds minimum lands at the cell origin; Z is unchanged. Offset/bounds column handling matches `view3d.spacing`.
+
 **Inputs**
 
 | Name | Type | Required |
@@ -378,6 +386,8 @@ Arranges each group of instances into its own cell of a ground-plane grid.
 ### `view3d.decimate` (v1) — Pure
 
 Keeps only the largest instances: a minimum bounds diagonal, then the top fraction by volume.
+
+Instance thinning, not mesh simplification: drops rows with a bounds diagonal under `minDiagonal`, then keeps the top `keepFraction` of the remainder by bounds volume (ties to the earlier row), preserving row order. An out-of-range fraction warns and clamps.
 
 **Inputs**
 
@@ -402,6 +412,8 @@ Keeps only the largest instances: a minimum bounds diagonal, then the top fracti
 
 Emits the axis-aligned bounding boxes of instances, per row or unioned per group.
 
+Emits a boxes table (see the Geometry README): one box per row, or with `groupColumn`, one union box per sorted distinct group value with null-group rows under "(none)". Labels fall back globalId, then instanceIndex, then row number; r/g/b/a carry through when all four columns exist (group mode: first row's color).
+
 **Inputs**
 
 | Name | Type | Required |
@@ -423,6 +435,8 @@ Emits the axis-aligned bounding boxes of instances, per row or unioned per group
 ### `view3d.voxelize` (v1) — Pure
 
 Emits the occupied voxels of the instances' bounding boxes as a boxes table with per-voxel counts.
+
+AABB rasterization, not triangle-accurate: every voxel overlapped by an instance bounding box is emitted with a `count` of overlapping instances and a `voxelId` join key for coloring. The grid spans the union bounds; a size that would exceed 2,000,000 voxels is doubled until it fits, with a warning.
 
 **Inputs**
 
