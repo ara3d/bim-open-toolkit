@@ -34,11 +34,8 @@ public sealed class BimContainmentNode : IFlowNode
     private sealed record Box(string? Key,
         double MinX, double MinY, double MinZ, double MaxX, double MaxY, double MaxZ, double Measure);
 
-    // TODO: ParamOr/Numeric/CopyColumns are duplicated in BimNearestNode; promote to
-    // BimOpenFlow.Nodes.Support once the fence allows a shared edit.
-    private static string ParamOr(ParamValues parameters, string name, string @default)
-        => parameters.GetText(name) is { } t && !string.IsNullOrWhiteSpace(t) ? t : @default;
-
+    // TODO: Numeric/CopyColumns are duplicated in BimNearestNode (and near-copies exist in
+    // Geometry.TableOps.CellNumber and Viz.VizProjection); promote to BimOpenFlow.Nodes.Support.
     private static double? Numeric(object? cell)
         => cell switch
         {
@@ -72,27 +69,27 @@ public sealed class BimContainmentNode : IFlowNode
         var points = inputs.TableInput(0, Kind);
         var boxes = inputs.TableInput(1, Kind);
         var ignoreZ = parameters.GetBoolean("ignoreZ");
-        var xi = points.RequireColumn(ParamOr(parameters, "x", BimColumns.CenterX), Kind);
-        var yi = points.RequireColumn(ParamOr(parameters, "y", BimColumns.CenterY), Kind);
-        var zi = points.RequireColumn(ParamOr(parameters, "z", BimColumns.CenterZ), Kind);
-        var keyIndex = boxes.RequireColumn(ParamOr(parameters, "key", BimColumns.Name), Kind);
-        var asName = ParamOr(parameters, "as", "ContainedIn");
+        var xi = points.RequireColumn(parameters.TextOr("x", BimColumns.CenterX), Kind);
+        var yi = points.RequireColumn(parameters.TextOr("y", BimColumns.CenterY), Kind);
+        var zi = ignoreZ ? -1 : points.RequireColumn(parameters.TextOr("z", BimColumns.CenterZ), Kind);
+        var keyIndex = boxes.RequireColumn(parameters.TextOr("key", BimColumns.Name), Kind);
+        var asName = parameters.TextOr("as", "ContainedIn");
         if (points.ColumnIndex(asName) >= 0)
             throw new ArgumentException($"{Kind}: points table already has a column named '{asName}'.");
 
         var minXi = boxes.RequireColumn(BimColumns.MinX, Kind);
         var minYi = boxes.RequireColumn(BimColumns.MinY, Kind);
-        var minZi = boxes.RequireColumn(BimColumns.MinZ, Kind);
+        var minZi = ignoreZ ? -1 : boxes.RequireColumn(BimColumns.MinZ, Kind);
         var maxXi = boxes.RequireColumn(BimColumns.MaxX, Kind);
         var maxYi = boxes.RequireColumn(BimColumns.MaxY, Kind);
-        var maxZi = boxes.RequireColumn(BimColumns.MaxZ, Kind);
+        var maxZi = ignoreZ ? -1 : boxes.RequireColumn(BimColumns.MaxZ, Kind);
 
         var candidates = Enumerable.Range(0, boxes.RowCount())
             .Select(row => (
                 Key: TableColumns.CellText(boxes[keyIndex, row]),
                 MinX: Numeric(boxes[minXi, row]), MinY: Numeric(boxes[minYi, row]),
-                MinZ: Numeric(boxes[minZi, row]), MaxX: Numeric(boxes[maxXi, row]),
-                MaxY: Numeric(boxes[maxYi, row]), MaxZ: Numeric(boxes[maxZi, row])))
+                MinZ: ignoreZ ? null : Numeric(boxes[minZi, row]), MaxX: Numeric(boxes[maxXi, row]),
+                MaxY: Numeric(boxes[maxYi, row]), MaxZ: ignoreZ ? null : Numeric(boxes[maxZi, row])))
             .Where(r => r.MinX != null && r.MinY != null && r.MaxX != null && r.MaxY != null
                 && (ignoreZ || (r.MinZ != null && r.MaxZ != null)))
             .Select(r => new Box(r.Key, r.MinX!.Value, r.MinY!.Value, r.MinZ ?? 0,

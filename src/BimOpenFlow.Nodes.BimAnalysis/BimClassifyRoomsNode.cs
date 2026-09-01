@@ -31,10 +31,8 @@ public sealed class BimClassifyRoomsNode : IFlowNode
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var table = inputs.TableInput(0, Kind);
-        var column = table.RequireColumn(parameters.GetText("column", BimColumns.Name), Kind);
-        var name = parameters.GetText("as") is var n && !string.IsNullOrWhiteSpace(n)
-            ? n
-            : BimColumns.RoomClass;
+        var column = table.RequireColumn(parameters.TextOr("column", BimColumns.Name), Kind);
+        var name = parameters.TextOr("as", BimColumns.RoomClass);
         if (table.ColumnIndex(name) >= 0)
             throw new ArgumentException($"{Kind}: column '{name}' already exists.");
         var rules = ParseRules(parameters.GetText("rules"));

@@ -47,7 +47,8 @@ public sealed class BimParamTableNode : IFlowNode
         {
             var desc = model.Objects.Descriptors.FirstOrDefault(d =>
                 string.Equals(d.Name, fullName, StringComparison.OrdinalIgnoreCase));
-            var column = ColumnName(CommonRevitParameters.ParameterNameToUI(fullName), fullName, used);
+            var column = ColumnName(CommonRevitParameters.ParameterNameToUI(fullName), fullName, used,
+                desc?.ParameterType == ParameterType.Point);
             if (desc == null)
             {
                 context.Warn($"{Kind}: unknown parameter '{fullName}'.");
@@ -66,12 +67,15 @@ public sealed class BimParamTableNode : IFlowNode
         return [new TableValue(builder.Build())];
     }
 
-    /// <summary>The short name, or the full name when the short name is taken by a
-    /// lead column or an earlier parameter; reserves the chosen name.</summary>
-    private static string ColumnName(string shortName, string fullName, HashSet<string> used)
+    /// <summary>The short name, or the full name when the short name (or, for a point,
+    /// any of its .X/.Y/.Z expansions) is taken by a lead column or an earlier
+    /// parameter; reserves the chosen name(s).</summary>
+    private static string ColumnName(string shortName, string fullName, HashSet<string> used, bool isPoint)
     {
-        var name = used.Contains(shortName) ? fullName : shortName;
-        used.Add(name);
+        IEnumerable<string> Expand(string b) => isPoint ? [$"{b}.X", $"{b}.Y", $"{b}.Z"] : [b];
+        var name = Expand(shortName).Any(used.Contains) ? fullName : shortName;
+        foreach (var n in Expand(name))
+            used.Add(n);
         return name;
     }
 

@@ -29,7 +29,7 @@ public sealed class BimNavGraphNode : IFlowNode
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var path = parameters.RequiredText("path", Kind);
-        var categories = parameters.GetText("doorCategories", "Doors");
+        var categories = parameters.TextOr("doorCategories", "Doors");
         var model = BimModel.Get(path, Kind);
         var doors = model.ElementsInCategories(categories).ToList();
 
@@ -44,6 +44,9 @@ public sealed class BimNavGraphNode : IFlowNode
         return [new TableValue(builder.Build())];
     }
 
+    // TODO: rooms without numbers still merge across levels (the label is Name-only then),
+    // and every exterior side shares the one "Outside" vertex — consider level-qualified
+    // labels and per-door outside vertices as options.
     private static string SideLabel(EntityModel door, string roomParameter)
         => door.GetParameterAsEntity(roomParameter) is { } room ? RoomLabel(room) : BimColumns.Outside;
 

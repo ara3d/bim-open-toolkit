@@ -29,7 +29,7 @@ public sealed class BimDisciplineNode : IFlowNode
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var table = inputs.TableInput(0, Kind);
-        var column = table.RequireColumn(parameters.GetText("column", BimColumns.Category), Kind);
+        var column = table.RequireColumn(parameters.TextOr("column", BimColumns.Category), Kind);
         if (table.ColumnIndex(BimColumns.Discipline) >= 0)
             throw new ArgumentException($"{Kind}: column '{BimColumns.Discipline}' already exists.");
         var overrides = ParseOverrides(parameters.GetText("overrides"));

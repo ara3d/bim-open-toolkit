@@ -21,6 +21,8 @@ public sealed class BimLevelsNode : IFlowNode
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var model = BimModel.Get(parameters.RequiredText("path", Kind), Kind);
+        // TODO: levels are drawn from InstanceElements(), so a level entity with no
+        // category is invisible even when it carries the elevation parameter.
         var elements = model.InstanceElements().ToList();
         var levels = elements
             .Where(e => e.ParameterValues.ContainsKey(CommonRevitParameters.LevelElevation)

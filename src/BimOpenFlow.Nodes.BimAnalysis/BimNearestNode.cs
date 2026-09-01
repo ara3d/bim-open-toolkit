@@ -33,11 +33,8 @@ public sealed class BimNearestNode : IFlowNode
         + "with null coordinates, or when b is empty, get nulls. Typical use: distance from each "
         + "room center to the nearest exit door.");
 
-    // TODO: ParamOr/Numeric/CopyColumns are duplicated in BimContainmentNode; promote to
-    // BimOpenFlow.Nodes.Support once the fence allows a shared edit.
-    private static string ParamOr(ParamValues parameters, string name, string @default)
-        => parameters.GetText(name) is { } t && !string.IsNullOrWhiteSpace(t) ? t : @default;
-
+    // TODO: Numeric/CopyColumns are duplicated in BimContainmentNode; promote to
+    // BimOpenFlow.Nodes.Support.
     private static double? Numeric(object? cell)
         => cell switch
         {
@@ -70,14 +67,14 @@ public sealed class BimNearestNode : IFlowNode
     {
         var a = inputs.TableInput(0, Kind);
         var b = inputs.TableInput(1, Kind);
-        var xi = a.RequireColumn(ParamOr(parameters, "x", BimColumns.CenterX), Kind);
-        var yi = a.RequireColumn(ParamOr(parameters, "y", BimColumns.CenterY), Kind);
-        var zi = a.RequireColumn(ParamOr(parameters, "z", BimColumns.CenterZ), Kind);
-        var bxi = b.RequireColumn(ParamOr(parameters, "bx", BimColumns.CenterX), Kind);
-        var byi = b.RequireColumn(ParamOr(parameters, "by", BimColumns.CenterY), Kind);
-        var bzi = b.RequireColumn(ParamOr(parameters, "bz", BimColumns.CenterZ), Kind);
-        var keyIndex = b.RequireColumn(ParamOr(parameters, "key", BimColumns.Name), Kind);
-        var asName = ParamOr(parameters, "as", "Nearest");
+        var xi = a.RequireColumn(parameters.TextOr("x", BimColumns.CenterX), Kind);
+        var yi = a.RequireColumn(parameters.TextOr("y", BimColumns.CenterY), Kind);
+        var zi = a.RequireColumn(parameters.TextOr("z", BimColumns.CenterZ), Kind);
+        var bxi = b.RequireColumn(parameters.TextOr("bx", BimColumns.CenterX), Kind);
+        var byi = b.RequireColumn(parameters.TextOr("by", BimColumns.CenterY), Kind);
+        var bzi = b.RequireColumn(parameters.TextOr("bz", BimColumns.CenterZ), Kind);
+        var keyIndex = b.RequireColumn(parameters.TextOr("key", BimColumns.Name), Kind);
+        var asName = parameters.TextOr("as", "Nearest");
         foreach (var name in new[] { asName, BimColumns.Distance })
             if (a.ColumnIndex(name) >= 0)
                 throw new ArgumentException($"{Kind}: table a already has a column named '{name}'.");

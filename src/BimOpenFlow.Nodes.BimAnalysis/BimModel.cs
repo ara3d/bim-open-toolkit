@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
 using Ara3D.BimOpenSchema;
 using Ara3D.BimOpenSchema.IO;
 using Ara3D.Utils;
@@ -13,6 +12,8 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 /// unchanged content never reload.</summary>
 public sealed class BimModel
 {
+    // TODO: unbounded cache and a full-file re-hash per Eval — same eviction/staleness
+    // trade-off as BosLoadNode; revisit together.
     private static readonly ConcurrentDictionary<string, BimModel> Cache = new();
 
     public IBimData Data { get; }
@@ -36,17 +37,11 @@ public sealed class BimModel
     {
         if (!File.Exists(path))
             throw new FileNotFoundException($"{kind}: file not found: {path}", path);
-        return Cache.GetOrAdd(ContentHash(path), _ => Load(path));
+        return Cache.GetOrAdd(FileHashes.HashFile(path), _ => Load(path));
     }
 
     private static BimModel Load(string path)
         => new(new FilePath(path).ReadBimDataFromParquetZip());
-
-    private static string ContentHash(string path)
-    {
-        using var stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream));
-    }
 
     public bool TryGetPoint(EntityIndex entity, string paramName, out Point point)
         => _points.TryGetValue((entity, paramName), out point);

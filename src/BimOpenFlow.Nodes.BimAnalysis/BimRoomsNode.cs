@@ -27,10 +27,10 @@ public sealed class BimRoomsNode : IFlowNode
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var model = BimModel.Get(parameters.RequiredText("path", Kind), Kind);
-        var categories = parameters.GetText("categories", "Rooms,Spaces") is { Length: > 0 } c ? c : "Rooms,Spaces";
+        var categories = parameters.TextOr("categories", "Rooms,Spaces");
         var rooms = model.ElementsInCategories(categories).ToList();
         var containedCounts = model.InstanceElements()
-            .Select(e => RoomOf(e)?.Index)
+            .Select(e => e.RoomOf()?.Index)
             .Where(i => i != null)
             .GroupBy(i => i!.Value)
             .ToDictionary(g => g.Key, g => (long)g.Count());
@@ -43,7 +43,7 @@ public sealed class BimRoomsNode : IFlowNode
         b.AddColumn(Cells(e => e.Name), BimColumns.Name, typeof(string));
         b.AddColumn(Cells(e => e.GetParameterAsString(CommonRevitParameters.RoomNumber)), BimColumns.Number, typeof(string));
         b.AddColumn(Cells(e => e.LevelName), BimColumns.Level, typeof(string));
-        b.AddColumn(Cells(Elevation), BimColumns.Elevation, typeof(double));
+        b.AddColumn(Cells(e => (object?)e.ElevationOrNull()), BimColumns.Elevation, typeof(double));
         b.AddColumn(Cells(e => FirstNumber(e, CommonRevitParameters.RoomVolume, CommonRevitParameters.SpaceVolume)),
             BimColumns.Volume, typeof(double));
         b.AddColumn(Cells(e => FirstNumber(e, CommonRevitParameters.RoomUnboundedHeight, CommonRevitParameters.SpaceUnboundedHeight)),
@@ -66,18 +66,6 @@ public sealed class BimRoomsNode : IFlowNode
         return [new TableValue(b.Build())];
     }
 
-    private static object? Elevation(EntityModel e)
-        => e.GetParameterAsEntity(CommonRevitParameters.ElementLevel) is { } level
-            ? NumberOrNull(level, CommonRevitParameters.LevelElevation)
-            : null;
-
-    private static object? NumberOrNull(EntityModel e, string name)
-        => e.ParameterValues.TryGetValue(name, out var v) && v is float f ? (double)f : null;
-
     private static object? FirstNumber(EntityModel e, string first, string second)
-        => NumberOrNull(e, first) ?? NumberOrNull(e, second);
-
-    private static EntityModel? RoomOf(EntityModel e)
-        => e.GetParameterAsEntity(CommonRevitParameters.FISpace)
-           ?? e.GetParameterAsEntity(CommonRevitParameters.FIRoom);
+        => e.NumberOrNull(first) ?? e.NumberOrNull(second);
 }

@@ -35,25 +35,13 @@ public sealed class BimElementsNode : IFlowNode
         b.AddColumn(Cells(e => e.TypeName is { Length: > 0 } t ? t : null), BimColumns.Type, typeof(string));
         b.AddColumn(Cells(e => e.ClassName), BimColumns.ClassName, typeof(string));
         b.AddColumn(Cells(e => e.LevelName), BimColumns.Level, typeof(string));
-        b.AddColumn(Cells(Elevation), BimColumns.Elevation, typeof(double));
-        b.AddColumn(Cells(e => RoomOf(e)?.Name), BimColumns.Room, typeof(string));
+        b.AddColumn(Cells(e => (object?)e.ElevationOrNull()), BimColumns.Elevation, typeof(double));
+        b.AddColumn(Cells(e => e.RoomOf()?.Name), BimColumns.Room, typeof(string));
         b.AddColumn(Cells(e => e.DocumentTitle), BimColumns.Document, typeof(string));
         b.AddColumn(Cells(Workset), BimColumns.Workset, typeof(long));
         b.AddColumn(Cells(e => e.GroupName), BimColumns.Group, typeof(string));
         return [new TableValue(b.Build())];
     }
-
-    private static object? Elevation(EntityModel e)
-        => e.GetParameterAsEntity(CommonRevitParameters.ElementLevel) is { } level
-            ? NumberOrNull(level, CommonRevitParameters.LevelElevation)
-            : null;
-
-    private static object? NumberOrNull(EntityModel e, string name)
-        => e.ParameterValues.TryGetValue(name, out var v) && v is float f ? (double)f : null;
-
-    private static EntityModel? RoomOf(EntityModel e)
-        => e.GetParameterAsEntity(CommonRevitParameters.FISpace)
-           ?? e.GetParameterAsEntity(CommonRevitParameters.FIRoom);
 
     private static object? Workset(EntityModel e)
         => e.ParameterValues.ContainsKey(CommonRevitParameters.ElementWorksetId)

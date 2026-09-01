@@ -29,8 +29,8 @@ public sealed class BimHopsNode : IFlowNode
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var edges = inputs.TableInput(0, Kind);
-        var fromColumn = edges.RequireColumn(parameters.GetText("from", BimColumns.FromRoom), Kind);
-        var toColumn = edges.RequireColumn(parameters.GetText("to", BimColumns.ToRoom), Kind);
+        var fromColumn = edges.RequireColumn(parameters.TextOr("from", BimColumns.FromRoom), Kind);
+        var toColumn = edges.RequireColumn(parameters.TextOr("to", BimColumns.ToRoom), Kind);
         var start = parameters.RequiredText("start", Kind);
 
         var neighbors = BuildGraph(edges, fromColumn, toColumn);
