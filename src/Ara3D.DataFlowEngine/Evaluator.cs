@@ -61,7 +61,13 @@ internal static class Evaluator
         {
             if (!edgeInto.TryGetValue($"{node.Id}.{port.Name}", out var source))
             {
-                unready = true;
+                // Spec semantics §2: only a required port with no edge makes the
+                // node unready. An absent optional port yields the placeholder and
+                // stays out of the memo key (connected ports only).
+                if (port.Optional)
+                    inputs.Add(MissingValue.Instance);
+                else
+                    unready = true;
                 continue;
             }
             var upstream = results[source.NodeId];

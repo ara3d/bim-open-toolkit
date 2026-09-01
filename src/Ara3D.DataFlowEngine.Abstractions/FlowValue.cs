@@ -9,6 +9,9 @@ public enum ValueKind
     Number,
     Text,
     Table,
+
+    /// <summary>Not a wire value: the placeholder for an unconnected optional input.</summary>
+    Missing,
 }
 
 /// <summary>
@@ -42,4 +45,20 @@ public sealed record TextValue(string Value) : FlowValue
 public sealed record TableValue(IDataTable Table) : FlowValue
 {
     public override ValueKind Kind => ValueKind.Table;
+}
+
+/// <summary>
+/// The placeholder a node receives for an unconnected optional input, keeping
+/// the inputs list aligned with Spec.Inputs. Never flows along an edge, is never
+/// hashed, and must never be returned as an output.
+/// </summary>
+public sealed record MissingValue : FlowValue
+{
+    public static readonly MissingValue Instance = new();
+
+    private MissingValue()
+    {
+    }
+
+    public override ValueKind Kind => ValueKind.Missing;
 }

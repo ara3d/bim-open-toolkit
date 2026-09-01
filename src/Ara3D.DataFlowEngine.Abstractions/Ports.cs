@@ -10,7 +10,12 @@ public enum PortType
     Any,
 }
 
-public readonly record struct PortSpec(string Name, PortType Type);
+/// <summary>
+/// An input or output port. Optional applies to inputs only (spec semantics §2):
+/// an unconnected optional input does not make the node unready — the node
+/// receives MissingValue.Instance in that position instead.
+/// </summary>
+public readonly record struct PortSpec(string Name, PortType Type, bool Optional = false);
 
 public static class PortTypeExtensions
 {
