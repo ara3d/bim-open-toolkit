@@ -45,6 +45,7 @@ is the content itself, not the path or a timestamp.
 | Pack | Nodes | Kinds |
 |---|---|---|
 | BOS — `BimOpenFlow.Nodes.Bos` | 6 | `bos.load`, `bos.query`, `table.filter`, `table.derive`, `table.aggregate`, `table.sort` |
+| BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 12 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops` |
 | Geometry — `BimOpenFlow.Nodes.Geometry` | 11 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
@@ -203,6 +204,268 @@ Runs via DuckDB. Each comma-separated term is a column name with an optional ` d
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
 | `by` | Text | — | — | columns of input `table` |
+
+## BIM analysis — `BimOpenFlow.Nodes.BimAnalysis`
+
+The bim.* pack: grouping tables (elements, rooms, levels), typed parameter tables and coverage, bounding boxes with dimensions, spatial joins, discipline and room classification, and door navigation graphs.
+
+### `bim.elements` (v1) — Pure
+
+Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name, Category, CategoryType, Type, ClassName, Level, Elevation, Room, Document, Workset, Group. The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+
+### `bim.rooms` (v1) — Pure
+
+Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, Volume, UnboundedHeight, ElementCount (elements whose Room/Space parameter points here), and when bounds exist MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea. Rooms are the elements whose category is in the comma-separated 'categories' list.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+| `categories` | Text | `Rooms,Spaces` | — | — |
+
+### `bim.levels` (v1) — Pure
+
+Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Name, Elevation, ElementCount (elements whose Level parameter points here), RoomCount. Levels are the elements carrying a level-elevation parameter or categorized as Levels.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+
+### `bim.bounds` (v1) — Pure
+
+Loads a .bos file into one row per element that has bounds: EntityIndex, Name, Category, Level, MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea (SizeX*SizeY), Volume (box volume), Diagonal. Feeds bim.containment, bim.nearest, and dimension analyses.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+
+### `bim.paramTable` (v1) — Pure
+
+Loads a .bos file into one row per element with EntityIndex, Name, Category plus one typed column per requested parameter ('parameters' is a comma-separated list of full descriptor names, e.g. Rvt:Room:Volume). Columns take the short name after the last colon (the full name on collision); Int maps to integer, Number to double, String and Entity to text, and Point parameters expand to three .X/.Y/.Z double columns.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+| `parameters` | Text | — | — | — |
+
+### `bim.paramCoverage` (v1) — Pure
+
+Profiles a long parameter table (the bos.load parameters output: EntityIndex, Name, ParameterGroup, Units, ValueType, Value) into one row per parameter name: Name, ParameterGroup, ValueType, Count, Distinct, FillRate (share of the input's distinct entities that carry the parameter), ordered by Count descending.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `parameters` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**: none
+
+### `bim.discipline` (v1) — Pure
+
+Adds a Discipline column (Architecture, Structure, Mechanical, Electrical, Plumbing, FireProtection, Site, or General) classified from the category column by a built-in mapping of common Revit categories and IFC classes; 'overrides' is an optional JSON object of {"category": "discipline"} entries that win over the built-ins. Unmatched categories get General.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `column` | Text | `Category` | — | columns of input `table` |
+| `overrides` | Json | — | — | — |
+
+### `bim.classifyRooms` (v1) — Pure
+
+Adds a room class column ('as', default RoomClass) by matching the name column against ordered case-insensitive regex rules; first match wins, no match gets Other. The built-in ruleset covers Office, Meeting, Circulation, Stair, Elevator, Sanitary, Kitchen, Storage, Mechanical, Residential, and Parking; 'rules' is an optional JSON array of {"class": ..., "pattern": ...} that replaces it.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `column` | Text | `Name` | — | columns of input `table` |
+| `rules` | Json | — | — | — |
+| `as` | Text | `RoomClass` | — | — |
+
+### `bim.containment` (v1) — Pure
+
+Adds a column ('as') to the points table holding the 'key' of the smallest box row whose MinX..MaxZ box contains the point (x, y, z); rows in no box get null. With ignoreZ, containment is tested in plan (XY) only. Typical use: element centers from bim.bounds against room boxes from bim.rooms, when the model has no room parameters.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `points` | Table | required |
+| `boxes` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `x` | Text | `CenterX` | — | columns of input `points` |
+| `y` | Text | `CenterY` | — | columns of input `points` |
+| `z` | Text | `CenterZ` | — | columns of input `points` |
+| `key` | Text | `Name` | — | columns of input `boxes` |
+| `as` | Text | `ContainedIn` | — | — |
+| `ignoreZ` | Boolean | `false` | — | — |
+
+### `bim.nearest` (v1) — Pure
+
+Adds two columns to a: 'as' (default Nearest) holding the 'key' of the closest b row by 3D distance between (x,y,z) and (bx,by,bz), and Distance holding that distance. Rows with null coordinates, or when b is empty, get nulls. Typical use: distance from each room center to the nearest exit door.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `a` | Table | required |
+| `b` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `x` | Text | `CenterX` | — | columns of input `a` |
+| `y` | Text | `CenterY` | — | columns of input `a` |
+| `z` | Text | `CenterZ` | — | columns of input `a` |
+| `bx` | Text | `CenterX` | — | columns of input `b` |
+| `by` | Text | `CenterY` | — | columns of input `b` |
+| `bz` | Text | `CenterZ` | — | columns of input `b` |
+| `key` | Text | `Name` | — | columns of input `b` |
+| `as` | Text | `Nearest` | — | — |
+
+### `bim.navGraph` (v1) — Pure
+
+Loads a .bos file into one row per door in the given categories: Door (entity index), DoorName, Level, FromRoom, ToRoom — the rooms from the door's from/to-room parameters, labelled 'Name Number' (so two Corridors on different floors stay distinct), with Outside standing in for a missing side. The rows are the undirected edges of the room navigation graph; feed them to bim.hops for reachability.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+| `doorCategories` | Text | `Doors` | — | — |
+
+### `bim.hops` (v1) — Pure
+
+Walks the undirected graph whose edges are the (from, to) column pairs, breadth-first from the 'start' room, into one row per room seen in either column: Room, Hops (0 for the start, null for unreachable rooms), ordered by Hops then Room. An unknown start room is an error. Typical input: the bim.navGraph edge table.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `edges` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `from` | Text | `FromRoom` | — | columns of input `edges` |
+| `to` | Text | `ToRoom` | — | columns of input `edges` |
+| `start` | Text | — | — | — |
 
 ## Geometry — `BimOpenFlow.Nodes.Geometry`
 
