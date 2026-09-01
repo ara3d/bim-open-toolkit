@@ -4,6 +4,14 @@
 > Goal: parameters like "column name" or "table name" should offer live pull-downs
 > populated from the actual data flowing through the graph. This document records
 > the architecture and UX design, grounded in the codebase as of commit b57371f.
+>
+> **Status: implemented** (2026-09-01) — autosave in `state/src/sync.ts`;
+> `SuggestSource` in `Params.cs`; endpoint in `SuggestEndpoints.cs` with the
+> DuckDB probe injected from `HostComposition`; datalist comboboxes in
+> `app/src/suggestInput.ts` wired into canvas islands and the params pane;
+> annotations across the node packs; `docs/nodes.md` renders the sources.
+> Section 6's combobox differs in one detail: the shipped control is a native
+> datalist on the existing island inputs, not an EnumSlot variant.
 
 ## 1. The one-sentence version
 
