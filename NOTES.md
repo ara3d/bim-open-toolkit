@@ -225,3 +225,13 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Track C hand-computed expectation had a typo (P-13 revenue 3432.25 vs true 3431.25) — the pipeline was right; hand-check arithmetic twice or compute expectations in-test.
 - Pack-local helper duplication (NodeArgs/TableOps copies in DuckDb and Tables packs) is now three-fold across packs; candidate for a small shared support project if a fourth pack appears.
 - Docs generator observations: check.rule param 'title' emits column 'checkTitle'; Geometry/Compliance packs cast inputs raw (InvalidCastException instead of kind-named errors); duck.read has no 'options' param yet (proposal lists one); bos.query still exists alongside sql.query (retirement pending, proposal open question 7).
+
+### Sandbox UI wave (2026-08-31)
+- Canvas flash on panel resize, root cause: gratify's ResizeObserver sets canvas.width/height (clearing the bitmap) and only schedules the repaint for the NEXT rAF — one blank frame per resize event. App-side fix is ghost-line splitters (apply width once on pointerup). If live-resize is ever wanted, gratify core needs a synchronous redraw in its resize path.
+- Catalog-click "GET 404": paneArea fetched results for a just-added, never-evaluated node; gated by hasResults(status==Ok). A "run to see results" hint would be a panes-package change.
+- Sidebar has no rename field for analyses — untitled-N names are permanent until a rename UI exists. Needs an owner.
+- gratify supports live theme swap (setTheme retargets tokens + cross-fades ~0.5s; themeVersion invalidates style caches). Canvas themes register as "bof-*" palettes; per-part non-token colors route through canvasColors() in canvasTheme.ts — add new part colors there, never as raw rgb() in canvasParts. Theme extras snap while tokens fade (cosmetic).
+- gratify theme state is module-global (one theme per page); two canvases with different themes would need a gratify-core change.
+- platoflow's cream theme mapped one-to-one onto gratify tokens; wire color on light = platoflow's "hue whisper" gray #7A98A8.
+- Sample seeding: only into an EMPTY store, only in tables profile, {SAMPLES} placeholder rewritten at seed time; walks up to BimOpenToolkit.sln and skips silently when not found (installed deployments).
+- A running dotnet host locks its bin dir — stop it before `dotnet build` at integration (MSB3027).
