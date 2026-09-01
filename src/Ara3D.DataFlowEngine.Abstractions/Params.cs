@@ -15,6 +15,7 @@ public enum ParamKind
     ModelRef,
     Expression,
     Json,
+    DateTime,
 }
 
 public sealed record ParamSpec(

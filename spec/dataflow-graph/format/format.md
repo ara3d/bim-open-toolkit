@@ -83,6 +83,7 @@ precision limits), and makes hashing trivial.
 | ModelRef | the model reference text |
 | Expression | source text per the expressions part |
 | Json | the JSON text |
+| DateTime | ISO-8601 (`yyyy-MM-dd` or `yyyy-MM-ddTHH:mm:ss`), no offset; empty = unset |
 
 To unset a parameter, omit it; `null` is never a legal parameter value.
 
