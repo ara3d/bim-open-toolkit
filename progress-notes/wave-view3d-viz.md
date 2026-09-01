@@ -119,6 +119,17 @@ dedupes in the refactor step.
 - Picking still hits alpha-0 (hidden) instances — raycasting ignores the shader
   discard. Follow-up if it bothers users.
 
+### Fresh-context review (post-wave)
+All five acceptance criteria held; all scoped suites green. Fixed from its findings:
+voxelize infinite-loop on non-finite bounds (now throws), NaN keepFraction bypassing
+the decimate clamp (now warns + defaults), and the ids-join key-set logic that was
+triplicated across isolate/hide/opacity (hoisted to TableOps.IdKeys). Left open,
+recorded here: TS columnIndex is case-sensitive while the C# nodes match columns
+case-insensitively (only reachable with hand-made column names); the replaced
+instanceAlpha attribute's GPU buffer is freed only at geometry dispose (bounded,
+rare growth path); UnionBounds and sorted-distinct grouping each exist twice in
+the Geometry pack with different input shapes.
+
 ### Supervisor — integration
 - A colored boxes table leaves view3d.color on a port named "instances"; the pane
   area now detects boxes tables by column shape (bounds, no instance keys), not

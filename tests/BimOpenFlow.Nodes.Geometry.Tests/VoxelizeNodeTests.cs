@@ -20,6 +20,17 @@ public sealed class VoxelizeNodeTests
         => [minX, minY, minZ, maxX, maxY, maxZ];
 
     [Test]
+    public void NonFiniteBounds_Throws()
+    {
+        Assert.That(
+            () => Node.EvalTable([Instances(Row(0, 0, 0, double.PositiveInfinity, 1, 1))], ("size", "1")),
+            Throws.ArgumentException.With.Message.Contains("non-finite"));
+        Assert.That(
+            () => Node.EvalTable([Instances(Row(0, double.NaN, 0, 1, 1, 1))], ("size", "1")),
+            Throws.ArgumentException.With.Message.Contains("non-finite"));
+    }
+
+    [Test]
     public void SmallInstance_OneVoxel_CountOne()
     {
         var result = Node.EvalTable([Instances(Row(2, 3, 4, 4, 5, 6))], ("size", "10"));

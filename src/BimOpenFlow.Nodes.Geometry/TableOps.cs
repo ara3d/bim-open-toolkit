@@ -22,6 +22,20 @@ internal static class TableOps
     public static int RowCount(this IDataTable table)
         => table.Columns.Count == 0 ? 0 : table.Columns[0].Count;
 
+    /// <summary>The canonical-text key set of an ids table, read from its column named
+    /// like the join column, or its first column when absent (the ids-join convention
+    /// shared by view3d.isolate, view3d.hide, and view3d.opacity).</summary>
+    public static HashSet<string> IdKeys(this IDataTable ids, string joinName)
+    {
+        var column = ids.ColumnIndex(joinName) is var found && found >= 0 ? found : 0;
+        var keys = new HashSet<string>();
+        if (ids.Columns.Count > 0)
+            for (var i = 0; i < ids.RowCount(); i++)
+                if (CanonicalText(ids[column, i]) is { } key)
+                    keys.Add(key);
+        return keys;
+    }
+
     /// <summary>Canonical invariant text of a cell, matching the expression language's conventions
     /// (integers plain, doubles round-trip, booleans true/false); null for absent values.</summary>
     public static string? CanonicalText(object? value)

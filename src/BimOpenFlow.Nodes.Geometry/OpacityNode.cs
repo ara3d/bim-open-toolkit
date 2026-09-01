@@ -70,14 +70,8 @@ public sealed class OpacityNode : IFlowNode
         var ids = idsTable.Table;
         var joinName = parameters.GetText("joinColumn");
         var instJoin = instances.RequireColumn(joinName);
-        var idsJoin = ids.ColumnIndex(joinName) is var found && found >= 0 ? found : 0;
         var others = parameters.GetText("scope", "matched") == "others";
-
-        var keys = new HashSet<string>();
-        if (ids.Columns.Count > 0)
-            for (var i = 0; i < ids.RowCount(); i++)
-                if (TableOps.CanonicalText(ids[idsJoin, i]) is { } key)
-                    keys.Add(key);
+        var keys = ids.IdKeys(joinName);
 
         for (var i = 0; i < n; i++)
         {

@@ -40,6 +40,17 @@ public sealed class DecimateNodeTests
     }
 
     [Test]
+    public void NanKeepFraction_WarnsAndUsesDefault()
+    {
+        var boxes = Boxes((1, 1, 1, 1), (2, 4, 4, 4), (3, 2, 2, 2), (4, 3, 3, 3));
+
+        var (result, warnings) = Node.EvalWithWarnings([boxes], ("keepFraction", "NaN"));
+
+        Assert.That(warnings, Has.Count.EqualTo(1));
+        Assert.That(result.ColumnCells("entityId"), Is.EqualTo(new object[] { 2L }));
+    }
+
+    [Test]
     public void KeepsLargestByVolume_PreservingOriginalRowOrder()
     {
         var boxes = Boxes((1, 3, 3, 3), (2, 1, 1, 1), (3, 2, 2, 2));

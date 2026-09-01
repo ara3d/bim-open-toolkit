@@ -33,10 +33,10 @@ public sealed class DecimateNode : IFlowNode
         var maxZ = instances.RequireColumn("maxZ");
 
         var keepFraction = parameters.GetNumber("keepFraction", 0.25);
-        if (keepFraction is < 0 or > 1)
+        if (!(keepFraction >= 0 && keepFraction <= 1))
         {
             context.Warn($"keepFraction {keepFraction} is outside [0,1]; clamping");
-            keepFraction = Math.Clamp(keepFraction, 0, 1);
+            keepFraction = double.IsNaN(keepFraction) ? 0.25 : Math.Clamp(keepFraction, 0, 1);
         }
         var minDiagonal = parameters.GetNumber("minDiagonal");
 

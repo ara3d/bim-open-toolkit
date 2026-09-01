@@ -22,13 +22,7 @@ public sealed class HideNode : IFlowNode
         var ids = ((TableValue)inputs[1]).Table;
         var joinName = parameters.GetText("joinColumn");
         var instJoin = instances.RequireColumn(joinName);
-        var idsJoin = ids.ColumnIndex(joinName) is var found && found >= 0 ? found : 0;
-
-        var keys = new HashSet<string>();
-        if (ids.Columns.Count > 0)
-            for (var i = 0; i < ids.RowCount(); i++)
-                if (TableOps.CanonicalText(ids[idsJoin, i]) is { } key)
-                    keys.Add(key);
+        var keys = ids.IdKeys(joinName);
 
         var rows = new List<int>();
         for (var i = 0; i < instances.RowCount(); i++)

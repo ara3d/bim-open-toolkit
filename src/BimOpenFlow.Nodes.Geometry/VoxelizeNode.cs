@@ -47,6 +47,9 @@ public sealed class VoxelizeNode : IFlowNode
         }
 
         var union = UnionBounds(aabbs, n);
+        foreach (var value in union)
+            if (!double.IsFinite(value))
+                throw new ArgumentException("instance bounds contain non-finite values");
         var adjusted = FitSize(union, size);
         if (adjusted > size)
             context.Warn($"size {size} would exceed {MaxVoxels} voxels over the model bounds; using {adjusted}");
