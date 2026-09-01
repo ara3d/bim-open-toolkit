@@ -2,33 +2,32 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "tables-host",
+      "name": "bof-host",
       "runtimeExecutable": "dotnet",
       "runtimeArgs": [
         "run",
         "--project",
         "src/BimOpenFlow.Host",
+        "--no-build",
         "--",
-        "--profile",
-        "tables",
         "--port",
-        "5214"
+        "5214",
+        "--profile",
+        "bim",
+        "--models",
+        "C:/Users/cdigg/git/bim-open-toolkit/data",
+        "--store",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-demo/store",
+        "--cache",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-demo/cache"
       ],
       "port": 5214
     },
     {
       "name": "bof-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace", "@bimopenflow/app"],
-      "cwd": "bimopenflow/web",
+      "runtimeArgs": ["--prefix", "bimopenflow/web", "run", "dev", "--workspace", "packages/app"],
       "port": 5300
-    },
-    {
-      "name": "bof-web-alt",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace", "@bimopenflow/app", "--", "--port", "5301"],
-      "cwd": "bimopenflow/web",
-      "port": 5301
     }
   ]
 }
