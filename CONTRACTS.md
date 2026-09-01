@@ -109,3 +109,40 @@ Supervisor additionally owns: `bimopenflow/web/packages/api-client/**` (fully ge
 New frozen seams: host HTTP API + shared app types live in `contracts/contracts.json`
 ("endpoints" section); the TS client (`@bimopenflow/api-client`) and C# `ApiRoutes`
 are generated — never hand-edit. SSE endpoint `analysisEvents` streams `EvalUpdate`.
+
+---
+
+# Contracts — table sandbox wave (2026-08-31)
+
+Implements the table-only sandbox (SQL/DuckDB/CSV/XLSX/SQLite workflows).
+Wave 0 (landed by supervisor): engine optional input ports (PortSpec.Optional,
+MissingValue placeholder, memo key = connected ports only), PortDescriptor.optional
+through contracts codegen, skeleton NodeSpecs for the two new packs, sample CSVs
+under samples/tables/.
+
+## Fences (who writes where)
+
+Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES.md):
+`src/Ara3D.DataFlowEngine.Abstractions/**`, `src/Ara3D.DataFlowEngine/**`,
+`contracts/**`, `samples/tables/*.csv`, `BimOpenToolkit.sln`,
+`Directory.Build.props` (all), this doc.
+
+| Track | Writes only |
+|---|---|
+| A duckdb | `src/BimOpenFlow.Nodes.DuckDb/**`, `tests/BimOpenFlow.Nodes.DuckDb.Tests/**` |
+| B tables | `src/BimOpenFlow.Nodes.Tables/**`, `tests/BimOpenFlow.Nodes.Tables.Tests/**` |
+| C host+workflows | `src/BimOpenFlow.Host/**`, `tests/BimOpenFlow.TableWorkflows.Tests/**`, `samples/tables/*.xlsx`, `samples/tables/*.sqlite`, `samples/tables/*.duckdb` |
+| S supervisor | everything else; integration + full gate |
+
+## Seams
+
+- Node kinds, ports, and params are FIXED in the skeleton NodeSpecs (wave 0) —
+  implement bodies; do not change Spec shapes without a NOTES.md contract request.
+- sql.query table naming: connected inputs register as t1..t4; `t` is a view of t1.
+- Read-only SQL validation: reuse `BosDuckDbQueries.ReadOnlyQuery` (DuckDb pack);
+  Tables pack implements its own single-statement SELECT/WITH check for SQLite.
+- Track C provides `HostComposition.TablePacks()` (DuckDbNodes.All + TableNodes.All
+  + the four table.* nodes cherry-picked from the Bos pack) and a `--profile`
+  option (`bim` default | `tables`); Tracks A/B do not touch the host.
+- File-reading nodes cache by file content hash (the BosLoadNode pattern); the
+  engine's memo does not see file content (known staleness wart, out of scope).
