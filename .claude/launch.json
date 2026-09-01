@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tables-host",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "src/BimOpenFlow.Host",
+        "--",
+        "--profile",
+        "tables",
+        "--port",
+        "5214"
+      ],
+      "port": 5214
+    },
+    {
+      "name": "bof-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "@bimopenflow/app"],
+      "cwd": "bimopenflow/web",
+      "port": 5300
+    }
+  ]
+}

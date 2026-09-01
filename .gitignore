@@ -28,3 +28,8 @@ dist/
 # IDE
 .vs/
 .idea/
+
+# Host runtime state (analysis store/cache created by dotnet run)
+src/BimOpenFlow.Host/analyses/
+src/BimOpenFlow.Host/cache/
+src/BimOpenFlow.Host/models/
