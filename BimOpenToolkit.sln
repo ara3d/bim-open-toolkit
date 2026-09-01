@@ -135,6 +135,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Nodes.Tables.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.TableWorkflows.Tests", "tests\BimOpenFlow.TableWorkflows.Tests\BimOpenFlow.TableWorkflows.Tests.csproj", "{CCE356C8-C883-491D-9A17-6CD6D949FBFE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.NodeDocs", "src\BimOpenFlow.NodeDocs\BimOpenFlow.NodeDocs.csproj", "{2CB0355E-61DC-4957-93DB-181900F0A728}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -889,6 +891,18 @@ Global
 		{CCE356C8-C883-491D-9A17-6CD6D949FBFE}.Release|x64.Build.0 = Release|Any CPU
 		{CCE356C8-C883-491D-9A17-6CD6D949FBFE}.Release|x86.ActiveCfg = Release|Any CPU
 		{CCE356C8-C883-491D-9A17-6CD6D949FBFE}.Release|x86.Build.0 = Release|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Debug|x64.Build.0 = Debug|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Debug|x86.Build.0 = Debug|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Release|x64.ActiveCfg = Release|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Release|x64.Build.0 = Release|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Release|x86.ActiveCfg = Release|Any CPU
+		{2CB0355E-61DC-4957-93DB-181900F0A728}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -957,5 +971,6 @@ Global
 		{803E80A6-C8DD-4795-8A8D-B7887698E3B7} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{E769C5C3-E0E2-46C0-A1CA-DF35A801ED6B} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{CCE356C8-C883-491D-9A17-6CD6D949FBFE} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{2CB0355E-61DC-4957-93DB-181900F0A728} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
