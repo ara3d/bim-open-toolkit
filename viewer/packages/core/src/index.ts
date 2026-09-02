@@ -11,6 +11,14 @@ export {
   COLOR_STRIDE,
 } from './instanced-group.js';
 export { ViewerScene } from './scene.js';
+export {
+  type Bounds3,
+  unionBounds,
+  meshBounds,
+  transformBounds,
+  groupBounds,
+  sceneBounds,
+} from './bounds.js';
 export { GroupObject, buildGeometry, buildMaterial } from './group-object.js';
 export {
   INSTANCE_ALPHA_ATTRIBUTE,

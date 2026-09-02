@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import type { Bounds3 } from '@ara3d/viewer-core';
 
 /** Float parameters of the orbit camera model. All mutable at runtime. */
 export interface OrbitParams {
@@ -109,6 +110,30 @@ export class OrbitModel {
       Math.acos(clamp(offset.y / this._distance, -1, 1)),
       this.params.minPolar,
       this.params.maxPolar,
+    );
+  }
+
+  /**
+   * Targets the center of `bounds` and backs off far enough that the bounding
+   * sphere fits a vertical field of view of `fovRadians`. Keeps the viewing
+   * angles; an empty/point bounds only recenters.
+   */
+  frame(bounds: Bounds3, fovRadians: number = (50 * Math.PI) / 180): void {
+    this._target.set(
+      (bounds.min[0] + bounds.max[0]) / 2,
+      (bounds.min[1] + bounds.max[1]) / 2,
+      (bounds.min[2] + bounds.max[2]) / 2,
+    );
+    const radius = Math.hypot(
+      bounds.max[0] - bounds.min[0],
+      bounds.max[1] - bounds.min[1],
+      bounds.max[2] - bounds.min[2],
+    ) / 2;
+    if (radius <= 0) return;
+    this._distance = clamp(
+      radius / Math.sin(Math.min(fovRadians, Math.PI / 2) / 2),
+      this.params.minDistance,
+      this.params.maxDistance,
     );
   }
 

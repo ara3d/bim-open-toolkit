@@ -54,6 +54,35 @@ describe('OrbitModel', () => {
     expect(m.target.y).toBeCloseTo(1);
   });
 
+  it('frame targets the bounds center and fits the bounding sphere', () => {
+    const m = new OrbitModel();
+    const theta = m.theta;
+    const phi = m.phi;
+    const fov = Math.PI / 2;
+    m.frame({ min: [0, 0, 0], max: [10, 10, 10] }, fov);
+    expect(m.target.x).toBeCloseTo(5);
+    expect(m.target.y).toBeCloseTo(5);
+    expect(m.target.z).toBeCloseTo(5);
+    const radius = Math.sqrt(300) / 2;
+    expect(m.distance).toBeCloseTo(radius / Math.sin(fov / 2));
+    expect(m.theta).toBe(theta);
+    expect(m.phi).toBe(phi);
+  });
+
+  it('frame on a point bounds recenters without changing distance', () => {
+    const m = new OrbitModel();
+    const before = m.distance;
+    m.frame({ min: [1, 2, 3], max: [1, 2, 3] });
+    expect(m.target.x).toBeCloseTo(1);
+    expect(m.distance).toBe(before);
+  });
+
+  it('frame clamps distance to maxDistance', () => {
+    const m = new OrbitModel({ maxDistance: 10 });
+    m.frame({ min: [0, 0, 0], max: [1000, 1000, 1000] });
+    expect(m.distance).toBe(10);
+  });
+
   it('applyTo points a real camera at the target', () => {
     const m = new OrbitModel();
     m.setTarget(new Vector3(1, 2, 3));
