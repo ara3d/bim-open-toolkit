@@ -51,6 +51,37 @@ async function readTable(
   });
 }
 
+const LOCAL_ID_COLUMN = 'LocalId';
+
+/**
+ * The Entities table's LocalId column: each entity's id in its source document
+ * (the IFC STEP express id), which is how instance tables address entities.
+ * Null when the archive carries no Entities table (geometry-only BOS).
+ */
+async function readEntityLocalIds(zip: JSZip): Promise<Int32Array | null> {
+  const name = Object.keys(zip.files).find((n) =>
+    n.toLowerCase().endsWith('entities.parquet'));
+  if (!name) return null;
+  const file = await zip.files[name].async('arraybuffer');
+  const metadata = await parquetMetadataAsync(file);
+  const ids = new Int32Array(Number(metadata.num_rows));
+  if (ids.length === 0) return ids;
+  await parquetRead({
+    file,
+    compressors,
+    metadata,
+    columns: [LOCAL_ID_COLUMN],
+    onChunk(chunk) {
+      if (chunk.columnName !== LOCAL_ID_COLUMN) return;
+      // LocalId is INT64, so values decode as bigints; Number() widens them.
+      const data = chunk.columnData as ArrayLike<unknown>;
+      for (let i = 0; i < data.length && chunk.rowStart + i < ids.length; i++)
+        ids[chunk.rowStart + i] = Number(data[i]);
+    },
+  });
+  return ids;
+}
+
 /** Decodes the six BOS geometry tables from .bos (ZIP-of-parquet) bytes. */
 export async function parseBosGeometry(buffer: ArrayBuffer): Promise<BosGeometry> {
   const zip = await JSZip.loadAsync(buffer);
@@ -61,6 +92,7 @@ export async function parseBosGeometry(buffer: ArrayBuffer): Promise<BosGeometry
   await readTable(zip, 'Meshes', bg, Int32Array);
   await readTable(zip, 'Materials', bg, Uint8Array);
   await readTable(zip, 'Transforms', bg, Float32Array);
+  bg.EntityLocalId = await readEntityLocalIds(zip);
   return bg as unknown as BosGeometry;
 }
 
@@ -70,7 +102,8 @@ export async function parseBosGeometry(buffer: ArrayBuffer): Promise<BosGeometry
  * InstancedGroups (instances merged per mesh + material). Groups are added to
  * `scene` one by one; `onProgress` reports each stage.
  *
- * Geometry only — BOS entity/parameter tables are out of scope for the viewer.
+ * Geometry plus the Entities table's LocalId column (the ids instances are
+ * reported under); the rest of the BOS entity/parameter data is out of scope.
  */
 export async function loadBos(
   source: LoadSource,

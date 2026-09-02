@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import {
+  bosEntityId,
   bosMeshBuffers,
   bosToGroups,
   composeTrs,
@@ -35,7 +36,35 @@ describe('bosMeshBuffers', () => {
   });
 });
 
+describe('bosEntityId', () => {
+  const withIds = sampleBosGeometry({
+    EntityLocalId: new Int32Array([514, 819, 0, -1]),
+  });
+
+  it('returns the source document id when the BOS carries one', () => {
+    expect(bosEntityId(withIds, 0)).toBe(514);
+    expect(bosEntityId(withIds, 1)).toBe(819);
+  });
+
+  it('falls back to the row index without an id, or out of range', () => {
+    expect(bosEntityId(withIds, 2)).toBe(2); // LocalId 0
+    expect(bosEntityId(withIds, 3)).toBe(3); // LocalId -1
+    expect(bosEntityId(withIds, 7)).toBe(7);
+    expect(bosEntityId(sampleBosGeometry(), 1)).toBe(1); // no column at all
+  });
+});
+
 describe('bosToGroups', () => {
+  it('maps instances to source entity ids when the BOS has them', () => {
+    // Instance entity indices 10..13 name Entities rows carrying express ids.
+    const localIds = new Int32Array(16);
+    localIds.set([514, 819, 1928, 2108], 10);
+    const { groupEntities } = bosToGroups(
+      sampleBosGeometry({ EntityLocalId: localIds }));
+    expect(groupEntities[0].entities).toEqual([514, 819]);
+    expect(groupEntities[1].entities).toEqual([1928]);
+  });
+
   it('merges instances by mesh + material, skips hidden, maps entities', () => {
     const { groups, instanceCount, groupEntities } = bosToGroups(sampleBosGeometry());
     expect(groups.length).toBe(2);

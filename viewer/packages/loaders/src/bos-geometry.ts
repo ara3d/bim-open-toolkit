@@ -38,6 +38,12 @@ export interface BosGeometry {
   readonly TransformSX: Float32Array;
   readonly TransformSY: Float32Array;
   readonly TransformSZ: Float32Array;
+  /**
+   * Per BOS entity row, the source document's own id (the IFC STEP express id)
+   * from the Entities table's LocalId column. Absent for archives without an
+   * Entities table; 0 or negative where the entity has no source id.
+   */
+  readonly EntityLocalId?: IntColumn | null;
 }
 
 /** BOS stores vertex coordinates as integers at this fixed-point scale. */
@@ -47,6 +53,18 @@ const HIDDEN_FLAG = 0x1;
 
 export const bosMeshCount = (bos: BosGeometry): number =>
   bos.MeshVertexOffset.length;
+
+/**
+ * The id an entity is addressed by outside the viewer: its source document id
+ * (IFC express id) when the BOS carries one, else the BOS entity row index.
+ * Instance tables key rows by the source id, so groups must report the same.
+ */
+export function bosEntityId(bos: BosGeometry, entityIndex: number): number {
+  const ids = bos.EntityLocalId;
+  if (!ids || entityIndex < 0 || entityIndex >= ids.length) return entityIndex;
+  const id = ids[entityIndex];
+  return id > 0 ? id : entityIndex;
+}
 
 /**
  * Extracts one mesh from the shared vertex/index buffers as MeshBuffers
@@ -110,11 +128,11 @@ interface Bucket {
   readonly opacity: number;
   readonly transforms: number[];
   readonly colors: number[];
-  /** BOS entity index per instance, aligned with the group's instance indices. */
+  /** Entity id per instance (see bosEntityId), aligned with instance indices. */
   readonly entities: number[];
 }
 
-/** Maps each produced group's instances back to BOS entity indices. */
+/** Maps each produced group's instances back to entity ids (see bosEntityId). */
 export interface BosGroupEntities {
   readonly group: InstancedGroup;
   readonly entities: readonly number[];
@@ -170,7 +188,7 @@ export function bosToGroups(bos: BosGeometry, onGroup?: GroupCallback): BosConve
       (bos.MaterialBlue[mi] ?? 255) / 255,
       alpha,
     );
-    bucket.entities.push(bos.InstanceEntityIndex[i]);
+    bucket.entities.push(bosEntityId(bos, bos.InstanceEntityIndex[i]));
     instanceCount++;
   }
 

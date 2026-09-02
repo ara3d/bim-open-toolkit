@@ -24,6 +24,22 @@ describe.skipIf(!existsSync(bosPath))('BOS container (duplex.bos)', () => {
     expect(bos.TransformTX.length).toBe(bos.TransformQW.length);
   });
 
+  it('reports instances under their source entity ids, not BOS row indices', async () => {
+    const bos = await parseBosGeometry(buffer());
+    const ids = bos.EntityLocalId!;
+    expect(ids.length).toBeGreaterThan(0);
+    const scene = new ViewerScene();
+    const { groupEntities } = await loadBos(buffer(), scene);
+    const entities = groupEntities.flatMap((g) => [...g.entities]);
+    expect(entities.length).toBeGreaterThan(0);
+    // Every reported id is the LocalId of some entity row, and differs from
+    // the row index for at least most instances (the two are distinct spaces).
+    const localIds = new Set([...ids]);
+    expect(entities.every((e) => localIds.has(e))).toBe(true);
+    const rowIndices = new Set([...bos.InstanceEntityIndex]);
+    expect(entities.some((e) => !rowIndices.has(e))).toBe(true);
+  });
+
   it('loads into a scene with progress reporting', async () => {
     const scene = new ViewerScene();
     const stages = new Set<string>();
