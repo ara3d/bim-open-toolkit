@@ -55,6 +55,23 @@ describe('batched scene mirror', () => {
     batch.dispose();
   });
 
+  it('reads only changed attribute buffers during incremental updates', () => {
+    const item = group();
+    const [batch] = createBatchObjects([item]);
+    const transforms = vi.spyOn(item, 'transforms', 'get');
+    const colors = vi.spyOn(item, 'colors', 'get');
+    item.setColor(0,0,1,0,1);
+    batch.sync();
+    expect(transforms).not.toHaveBeenCalled();
+    expect(colors).toHaveBeenCalledOnce();
+    colors.mockClear();
+    item.setTransform(0,translation(1,0,0));
+    batch.sync();
+    expect(transforms).toHaveBeenCalledOnce();
+    expect(colors).not.toHaveBeenCalled();
+    batch.dispose();
+  });
+
   it.each([0, 1000])('resolves logical hit identity and filters alpha, visibility and clipping (threshold %i)', threshold => {
     const model = new ViewerScene();
     const item = group();

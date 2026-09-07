@@ -13,6 +13,26 @@ const record = (modelId: string): ObjectRecord => ({ ref: { modelId, objectId: '
 const bind = (adapter: RenderBinding, modelId: string, mesh: InstancedGroup) => adapter.addModel(modelId, [{ ref: record(modelId).ref, group: mesh, instanceIndex: 0, representationId: 'body' }]);
 
 describe('render boundary', () => {
+  it('skips Float32-equivalent colors and repairs external instance mutations on the next update', () => {
+    const scene = new ViewerScene(), adapter = new RenderBinding(scene, () => {}), mesh = group();
+    const local = [...identityMatrix]; local[12] = 0.1;
+    adapter.addModel('a', [{ ref: record('a').ref, representationId: 'body', group: mesh, instanceIndex: 0, localTransform: local as unknown as ObjectRecord['transform'] }]);
+    const updated = { ...record('a'), appearance: { color: [0.1,0.2,0.3] as const, opacity: 0.4, visible: true } };
+    adapter.update([updated]);
+    const colors = mesh.colorsVersion, transforms = mesh.transformsVersion;
+    adapter.update([updated]);
+    expect(mesh.colorsVersion).toBe(colors);
+    expect(mesh.transformsVersion).toBe(transforms);
+    mesh.setColor(0,0,0,0,1); mesh.setTransform(0,new Float32Array(identityMatrix));
+    adapter.update([updated]);
+    expect(mesh.getColor(0)).toEqual(new Float32Array([0.1,0.2,0.3,0.4]));
+    expect(mesh.transforms[12]).toBe(Math.fround(0.1));
+    adapter.applySnapshot([]);
+    const hidden = mesh.colorsVersion;
+    adapter.applySnapshot([]);
+    expect(mesh.colorsVersion).toBe(hidden);
+    adapter.dispose();
+  });
   it('merges optional pick sources by distance, rejects unknown refs and removes providers', () => {
     const scene = new ViewerScene(), adapter = new RenderBinding(scene, () => {}), mirror = new SceneObject(scene);
     bind(adapter, 'a', group());

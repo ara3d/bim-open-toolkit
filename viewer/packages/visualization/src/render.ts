@@ -1,6 +1,6 @@
 import { type InstancedGroup, type ViewerScene, type SceneObject } from '@ara3d/viewer-core';
 import { type Camera, Matrix4 as ThreeMatrix4, Raycaster, Vector2 } from 'three';
-import { objectKey, type Matrix4, type ObjectRef, type ObjectRecord, type Result, type Vec3 } from './contracts.js';
+import { identityMatrix, objectKey, type Matrix4, type ObjectRef, type ObjectRecord, type Result, type Vec3 } from './contracts.js';
 
 export type InstanceBinding = {
   readonly ref: ObjectRef;
@@ -12,6 +12,12 @@ export type InstanceBinding = {
 };
 export type ObjectHit = { readonly ref: ObjectRef; readonly representationId: string; readonly point: Vec3; readonly distance: number };
 const failure = (message: string): Result<number> => ({ ok: false, diagnostics: [{ code: 'invalid-binding', message }] });
+const whiteFactor = [1,1,1,1] as const;
+
+function sameTransform(stored: Float32Array, offset: number, matrix: ArrayLike<number>): boolean {
+  for (let i = 0; i < 16; i++) if (Math.fround(matrix[i]!) !== stored[offset + i]) return false;
+  return true;
+}
 
 /** Owns scene membership, borrows groups. Dispose mirrors/viewer separately to release GPU resources. */
 export class RenderBinding {
@@ -95,27 +101,33 @@ export class RenderBinding {
     }
     const diagnostics = [];
     const objectMatrix = new ThreeMatrix4(), localMatrix = new ThreeMatrix4(), combined = new ThreeMatrix4();
+    const views = new Map<InstancedGroup, { transforms: Float32Array; colors: Float32Array }>();
     let updated = 0;
     for (const record of records) {
       const bindings = this.objects.get(objectKey(record.ref));
       if (!bindings) { diagnostics.push({ code: 'unbound-object', message: 'No render representation', ref: record.ref }); continue; }
-      objectMatrix.fromArray(record.transform);
+      const identity = record.transform.every((value,i) => value === identityMatrix[i]);
+      if (!identity) objectMatrix.fromArray(record.transform);
       for (const { group, instanceIndex, localTransform, colorFactor } of bindings) {
+        let buffers = views.get(group);
+        if (!buffers) { buffers = { transforms: group.transforms, colors: group.colors }; views.set(group, buffers); }
         const { color, opacity, visible } = record.appearance;
-        const factor = colorFactor ?? [1, 1, 1, 1];
-        group.setColor(instanceIndex, color[0] * factor[0], color[1] * factor[1], color[2] * factor[2], visible ? opacity * factor[3] : 0);
-        const transform = localTransform ? combined.multiplyMatrices(objectMatrix, localMatrix.fromArray(localTransform)).elements : record.transform;
+        const factor = colorFactor ?? whiteFactor;
+        const r = color[0] * factor[0], g = color[1] * factor[1], b = color[2] * factor[2], a = visible ? opacity * factor[3] : 0;
+        const colorOffset = instanceIndex * 4;
+        if (buffers.colors[colorOffset] !== Math.fround(r) || buffers.colors[colorOffset+1] !== Math.fround(g) || buffers.colors[colorOffset+2] !== Math.fround(b) || buffers.colors[colorOffset+3] !== Math.fround(a))
+          group.setColor(instanceIndex, r,g,b,a);
+        const transform = localTransform ? identity ? localTransform : combined.multiplyMatrices(objectMatrix, localMatrix.fromArray(localTransform)).elements : record.transform;
         const offset = instanceIndex * 16;
-        const transforms = group.transforms;
-        if (transform.some((value, i) => Math.fround(value) !== transforms[offset + i]))
+        if (!sameTransform(buffers.transforms, offset, transform))
           group.setTransform(instanceIndex, new Float32Array(transform));
         updated++;
       }
     }
     if (snapshot) for (const [key, bindings] of this.objects) if (!keys.has(key)) {
       for (const { group, instanceIndex } of bindings) {
-        const color = group.getColor(instanceIndex);
-        group.setColor(instanceIndex, color[0] ?? 0, color[1] ?? 0, color[2] ?? 0, 0);
+        const colors = group.colors, offset = instanceIndex * 4;
+        if (colors[offset+3] !== 0) group.setColor(instanceIndex, colors[offset] ?? 0, colors[offset+1] ?? 0, colors[offset+2] ?? 0, 0);
       }
     }
     this.requestRender();

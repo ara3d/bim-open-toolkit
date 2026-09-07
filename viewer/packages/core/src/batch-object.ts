@@ -70,20 +70,20 @@ export class BatchObject {
       const colorsChanged = range.colors !== group.colorsVersion;
       const visibilityChanged = range.visibility !== group.visibilityVersion;
       if (!transformsChanged && !colorsChanged && !visibilityChanged) continue;
-      const transforms = group.transforms;
-      const colors = group.colors;
+      const transforms = transformsChanged ? group.transforms : undefined;
+      const colors = colorsChanged || visibilityChanged ? group.colors : undefined;
       if (colorsChanged) range.fractional = 0;
       for (let i = 0; i < range.count; i++) {
         const source = range.start + i;
         const id = range.offset + i;
-        if (transformsChanged) this.mesh.setMatrixAt(id, matrix.fromArray(transforms, source * 16));
+        if (transformsChanged) this.mesh.setMatrixAt(id, matrix.fromArray(transforms!, source * 16));
         if (colorsChanged) {
-          color.fromArray(colors, source * 4);
+          color.fromArray(colors!, source * 4);
           this.mesh.setColorAt(id, color);
           if (color.w >= MIN_VISIBLE_ALPHA && color.w < 1) range.fractional++;
         }
         if (colorsChanged || visibilityChanged)
-          this.mesh.setVisibleAt(id, group.visible && colors[source * 4 + 3] * group.material.opacity >= MIN_VISIBLE_ALPHA);
+          this.mesh.setVisibleAt(id, group.visible && colors![source * 4 + 3] * group.material.opacity >= MIN_VISIBLE_ALPHA);
       }
       range.transforms = group.transformsVersion;
       range.colors = group.colorsVersion;
