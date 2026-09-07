@@ -25,6 +25,7 @@ export class InstancedGroup {
   private _transformsVersion = 0;
   private _colorsVersion = 0;
   private _visibilityVersion = 0;
+  private readonly listeners = new Set<() => void>();
 
   constructor(
     mesh: MeshBuffers,
@@ -47,6 +48,13 @@ export class InstancedGroup {
     if (v === this._visible) return;
     this._visible = v;
     this._visibilityVersion++;
+    this.changed();
+  }
+
+  /** Observe completed mutations. Release the subscription when its owner is removed. */
+  onChange(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
   }
 
   /** Bumped when instances are appended (capacity may have changed too). */
@@ -87,6 +95,7 @@ export class InstancedGroup {
     this._countVersion++;
     this._transformsVersion++;
     this._colorsVersion++;
+    this.changed();
     return start;
   }
 
@@ -99,6 +108,7 @@ export class InstancedGroup {
     this._colors[o + 2] = b;
     this._colors[o + 3] = a;
     this._colorsVersion++;
+    this.changed();
   }
 
   /** Overwrites RGBA colors for a contiguous range starting at `start`. */
@@ -111,6 +121,7 @@ export class InstancedGroup {
       throw new Error(`range [${start}, ${start + n}) exceeds instance count ${this._count}`);
     this._colors.set(colors, start * COLOR_STRIDE);
     this._colorsVersion++;
+    this.changed();
   }
 
   /** Returns a copy of one instance's RGBA color. */
@@ -127,6 +138,7 @@ export class InstancedGroup {
       throw new Error(`matrix length ${matrix.length} != ${TRANSFORM_STRIDE}`);
     this._transforms.set(matrix, index * TRANSFORM_STRIDE);
     this._transformsVersion++;
+    this.changed();
   }
 
   /** Returns a copy of one instance's 4x4 transform. */
@@ -140,6 +152,8 @@ export class InstancedGroup {
     if (index < 0 || index >= this._count)
       throw new Error(`instance index ${index} out of range (count ${this._count})`);
   }
+
+  private changed(): void { for (const listener of this.listeners) listener(); }
 
   private ensureCapacity(needed: number): void {
     let cap = this.capacity;

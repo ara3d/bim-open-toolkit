@@ -27,6 +27,7 @@ export class SceneObject {
   private batches: BatchObject[] = [];
   private batchMembers = new Map<InstancedGroup, number>();
   private batched = false;
+  private syncedVersion = -1;
 
   constructor(model: ViewerScene, private readonly batchThreshold = 1000, private readonly packedGeometry = true) {
     this.model = model;
@@ -42,6 +43,14 @@ export class SceneObject {
   /** Brings the THREE.Scene up to date with the model. Returns true if anything changed. */
   sync(): boolean {
     if (this.disposed) throw new Error('SceneObject is disposed');
+    const version = this.model.version;
+    if (this.syncedVersion === version) return false;
+    const changed = this.syncGroups();
+    this.syncedVersion = version;
+    return changed;
+  }
+
+  private syncGroups(): boolean {
     const groups = this.model.groups;
     const useBatches = groups.length > this.batchThreshold;
     let changed = false;

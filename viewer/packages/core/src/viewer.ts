@@ -143,6 +143,7 @@ export class Viewer {
     this.running = false;
     this.cancelFrame();
     this.sceneObject.dispose();
+    this.scene.clear();
     this.renderer?.dispose();
     this.renderer?.forceContextLoss();
     this.renderer = null;
