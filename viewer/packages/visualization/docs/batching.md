@@ -1,0 +1,13 @@
+# Snowdon batching checkpoint
+
+G2 acknowledged; Parallel Wave and Platonic Coder applied. State: verified by focused tests; integrated build/browser remain coordinator-owned. Owned: core `src/batch-object.ts`, `src/scene-object.ts`, `test/batch-object.test.ts`, and this checkpoint. No builds or shared resources owned.
+
+SceneObject automatically batches scenes above 1,000 groups. Optional constructor threshold supports controlled tests. Small scenes retain GroupObject behavior. Batches group matching metalness/roughness/opacity, cap instances at 32,768, and deduplicate mesh resources by identity within each batch. The batch uses owned combined geometry; borrowed source buffers are never modified. Geometry is indexed before missing normals are computed. Indexed and nonindexed source meshes can share a batch.
+
+Transform/color/visibility changes use group versions and stable batch instance IDs; geometry is retained. Membership or instance-count changes rebuild the batches. Group membership checks use maps and sets, avoiding nested group scans. Source mesh buffers and material configurations remain immutable by their existing contract.
+
+`SceneObject.raycast(raycaster)` synchronizes first and returns nearest-first `{group, instanceIndex, point, distance}` hits on both paths. It filters hidden objects, low effective alpha and material clipping planes. `getObject` is undefined for batched groups; traverse `scene` to obtain batch materials for clipping. `objectCount` remains the logical group count. Batch disposal releases geometry, instance textures and material.
+
+Limitations: Three BatchedMesh does not support negatively scaled matrices; near/far clipping and host global clipping are outside this mirror. Membership rebuilds and worst-case one batch per unique material can still be costly. GPU/display performance on Snowdon remains a coordinator gate; unit tests do not establish frame rate.
+
+Focused command from core: `../../node_modules/.bin/vitest.cmd run test/batch-object.test.ts test/scene-object.test.ts --maxWorkers=1 --cache=false` passed 11 tests across 2 files, 707 ms (September 7, 2026). Coordinator confirmed scene.ts stable before the run. Checks cover >1,000 groups, 32,768-instance split, resource deduplication, RGBA/matrix/visibility updates without geometry replacement, logical hits on both paths including moved objects after prior raycasts, clipping, membership rebuild and disposal, and indexed normals. Inspection of installed Three source confirmed fresh-batch geometry additions append at known offsets without scanning prior geometries. Three raycast still walks instances; spatial acceleration is deferred. No processes running. Commit pending.
