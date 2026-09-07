@@ -567,7 +567,7 @@ export declare class RenderBinding {
 ## @bim-open-toolkit/visualization/loading
 
 ```ts
-import { type LoadProgress, type LoadSource } from '@ara3d/viewer-loaders';
+import { type BimData, type LoadProgress, type LoadSource } from '@ara3d/viewer-loaders';
 import { type ModelData, type ModelRef, type Result } from './contracts.js';
 import type { InstanceBinding } from './render.js';
 export type BosModelOptions = {
@@ -579,6 +579,7 @@ export type BosModelOptions = {
 export type LoadedBosModel = {
     readonly model: ModelData;
     readonly bindings: InstanceBinding[];
+    readonly bimData?: BimData;
 };
 /** Decode and normalize without touching a scene. A cancelled load never publishes a value. */
 export declare function loadBosModel(source: LoadSource, modelRef: ModelRef, options?: BosModelOptions): Promise<Result<LoadedBosModel>>;

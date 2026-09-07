@@ -4,15 +4,19 @@
 
 BOS ZIP and prepared Ara 3D BFAST are detected by their byte signatures through
 this same API: `loadBosModel('/model.bfast', modelRef, options)`. BFAST skips ZIP,
-Parquet, fixed-point vertex conversion and TRS composition. Triangle geometry
+geometry-Parquet decoding, fixed-point vertex conversion and TRS composition. Triangle geometry
 borrows file-backed vertex/index views; instance transforms and materials are
 converted directly. Source bytes must remain immutable while the model is used.
 Unsupported line/quad primitives and vertex colors fail visibly.
 
-Both formats use `bos:<entity-row>` object identity. BFAST retains records for
-hidden and mesh-free instances, but contains no LocalId/property tables or
-unreferenced entity rows; no source IDs or missing objects are invented. Use a
-new model revision for the prepared file. Hidden geometry is skipped, as in BOS.
+Both formats use `bos:<entity-row>` object identity. Combined BFAST files retain
+all original Parquet tables under `BOS/`. The loader reads Entities.LocalId to
+restore all entity rows and source IDs, including entities without instances.
+Other tables remain undecoded in `result.value.bimData`; use
+`readBimTable(bimData, 'Parameters.parquet', columns?)` from viewer-loaders for
+on-demand reads. Legacy geometry-only BFAST retains only referenced entities
+and has no source IDs. Use a new revision for each prepared file. Hidden geometry
+is skipped, as in BOS.
 Cancellation and normalization use the same path; parsing/group conversion is
 synchronous and full-file, not a streaming or worker implementation.
 
@@ -20,6 +24,10 @@ The gallery's **Snowdon · prepared BFAST** choice uses the sibling
 `ara3d-webgl/docs/snowdon.bfast` by default. Set `SNOWDON_BFAST_PATH` to override
 it before starting `npm run demo`; the model is served locally and never bundled.
 See [BFAST verification](bfast-loading.md) for exact-fixture parity and measurements.
+Create the combined file with
+`node packages/loaders/scripts/bos-to-bfast.mjs input.bos output.bfast` from
+`viewer/` after building the packages. Every original Parquet entry is preserved,
+including geometry tables; its internal compression is unchanged.
 
 ```ts
 const controller = new AbortController();

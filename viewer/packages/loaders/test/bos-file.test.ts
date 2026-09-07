@@ -7,6 +7,10 @@ import JSZip from 'jszip';
 import * as parquet from 'hyparquet';
 import { ViewerScene } from '@ara3d/viewer-core';
 import { parseBosGeometry, loadBos } from '../src/bos-loader.js';
+import { bosToBfast } from '../src/bos-to-bfast.js';
+import { parseBfastModel, loadBfast } from '../src/bfast-loader.js';
+import { readBimTable } from '../src/bim-data.js';
+import { bfastFixture } from './bfast-fixture.js';
 
 vi.mock('hyparquet', async importOriginal => {
   const actual = await importOriginal<typeof import('hyparquet')>();
@@ -40,6 +44,33 @@ describe.skipIf(!existsSync(bosPath))('BOS container (duplex.bos)', () => {
     const b = readFileSync(bosPath);
     return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
   };
+
+  it('reads embedded original Parquet tables and source identities', async () => {
+    const source = buffer(), zip = await JSZip.loadAsync(source);
+    const sourceIds = (await parseBosGeometry(source)).EntityLocalId!;
+    const sourceRow = sourceIds.findIndex(id => id > 0);
+    const tables = Object.values(zip.files).filter(f => !f.dir && f.name.toLowerCase().endsWith('.parquet'));
+    const payloads = await Promise.all(tables.map(async file => [file.name, await file.async('uint8array')] as const));
+    const prepared = bfastFixture(buffers => {
+      for (const [name, bytes] of payloads) buffers.set(`BOS/${name}`, bytes);
+      const instances = buffers.get('InstanceData')!;
+      const words = new Int32Array(instances.buffer, instances.byteOffset, instances.byteLength / 4);
+      words[13] = words[29] = sourceRow;
+    });
+    const parsed = parseBfastModel(prepared);
+    expect(parsed.bimData.size).toBe(tables.length);
+    for (const file of tables) expect(parsed.bimData.get(file.name)).toEqual(await file.async('uint8array'));
+    const combined = await loadBfast(prepared, new ViewerScene());
+    expect(combined.instanceCount).toBe(2);
+    expect(combined.groupEntities.map(g => g.entities)).toEqual([[sourceIds[sourceRow]], [sourceIds[sourceRow]]]);
+    const entities = await readBimTable(parsed.bimData, 'Entities.parquet', ['LocalId']);
+    expect(entities.map(row => Number(row.LocalId))).toEqual([...combined.entityLocalIds!]);
+  });
+
+  it('rejects a prepared export when source transforms are nonfinite', async () => {
+    // This legacy duplex fixture contains Infinity in transform row 484.
+    await expect(bosToBfast(buffer())).rejects.toThrow(/Invalid BFAST transform/);
+  });
 
   it('decodes the geometry tables', async () => {
     const bos = await parseBosGeometry(buffer());

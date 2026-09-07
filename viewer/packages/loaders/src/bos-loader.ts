@@ -10,6 +10,7 @@ import { ViewerScene } from '@ara3d/viewer-core';
 import { LoadOptions, LoadSource } from './progress.js';
 import { toArrayBuffer } from './fetch-buffer.js';
 import { BosConvertResult, BosGeometry, bosToGroups } from './bos-geometry.js';
+import { readEntityLocalIds } from './bim-data.js';
 import { isBFast } from './bfast.js';
 import { loadBfast } from './bfast-loader.js';
 
@@ -56,40 +57,14 @@ async function readTable(
   });
 }
 
-const LOCAL_ID_COLUMN = 'LocalId';
-
-/**
- * The Entities table's LocalId column: each entity's id in its source document
- * (the IFC STEP express id), which is how instance tables address entities.
- * Null when the archive carries no Entities table (geometry-only BOS).
- */
-async function readEntityLocalIds(zip: JSZip): Promise<Int32Array | null> {
-  const name = Object.keys(zip.files).find((n) =>
-    n.toLowerCase().endsWith('entities.parquet'));
-  if (!name) return null;
-  const file = await zip.files[name].async('arraybuffer');
-  const metadata = await parquetMetadataAsync(file);
-  const ids = new Int32Array(Number(metadata.num_rows));
-  if (ids.length === 0) return ids;
-  await parquetRead({
-    file,
-    compressors,
-    metadata,
-    columns: [LOCAL_ID_COLUMN],
-    onChunk(chunk) {
-      if (chunk.columnName !== LOCAL_ID_COLUMN) return;
-      // LocalId is INT64, so values decode as bigints; Number() widens them.
-      const data = chunk.columnData as ArrayLike<unknown>;
-      for (let i = 0; i < data.length && chunk.rowStart + i < ids.length; i++)
-        ids[chunk.rowStart + i] = Number(data[i]);
-    },
-  });
-  return ids;
-}
-
 /** Decodes the six BOS geometry tables from .bos (ZIP-of-parquet) bytes. */
 export async function parseBosGeometry(buffer: ArrayBuffer): Promise<BosGeometry> {
   const zip = await JSZip.loadAsync(buffer);
+  return parseBosGeometryFromZip(zip);
+}
+
+/** Shared by the loader and BOS-to-BFAST converter; opens the ZIP only once. */
+export async function parseBosGeometryFromZip(zip: JSZip): Promise<BosGeometry> {
   const bg: Record<string, unknown> = {};
   await readTable(zip, 'Instances', bg, Int32Array);
   await readTable(zip, 'VertexBuffer', bg, Int32Array);
@@ -97,7 +72,8 @@ export async function parseBosGeometry(buffer: ArrayBuffer): Promise<BosGeometry
   await readTable(zip, 'Meshes', bg, Int32Array);
   await readTable(zip, 'Materials', bg, Uint8Array);
   await readTable(zip, 'Transforms', bg, Float32Array);
-  bg.EntityLocalId = await readEntityLocalIds(zip);
+  const entities = Object.values(zip.files).find(file => !file.dir && file.name.split('/').pop()?.toLowerCase() === 'entities.parquet');
+  bg.EntityLocalId = entities ? await readEntityLocalIds(await entities.async('arraybuffer')) : null;
   return bg as unknown as BosGeometry;
 }
 

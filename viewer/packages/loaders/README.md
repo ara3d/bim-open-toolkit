@@ -21,13 +21,14 @@ knowledge lives here — viewer-core knows nothing about files.
   group to the scene as it is produced rather than in one batch.
 
 - **BFAST** (`loadBfast`, also auto-detected by `loadBos`): reads Ara 3D's
-  uncompressed render model without ZIP/Parquet decoding. `parseBfastModel`
+  uncompressed render geometry without ZIP/geometry-Parquet decoding. `parseBfastModel`
   and `bfastToGroups` expose parsing and conversion separately. Mesh vertices
   and indices remain views on the source bytes. Triangle models with instance
   RGBA, roughness/metalness, transforms, flags and entity row indices are
   supported. Lines, quads and vertex colors return explicit errors.
-  BFAST is prepared geometry, not a lossless archive of BOS property tables:
-  LocalId and entities without instance records are unavailable. Do not mutate
+  Combined files carry the original Parquet tables under `BOS/`; `loadBfast`
+  reads Entities.LocalId and exposes the tables as `bimData`. Legacy geometry-only
+  files remain supported, with no invented source IDs or entity rows. Do not mutate
   source bytes while groups borrow them. Fetching is whole-file, not streaming.
 
 ## Usage
@@ -48,8 +49,39 @@ Sources can be a URL, `ArrayBuffer`, or `Blob`. The lower-level pieces
 (`convertObject`, `toMeshBuffers`, `bosToGroups`, `parseBosGeometry`,
 `composeTrs`) are exported for reuse and testing.
 
-`loadBos` returns `groupEntities` mapping each group's instance indices back
-to BOS entity indices, for wiring picking to model data.
+`loadBos` returns `groupEntities` mapping each group's instance indices to
+positive source LocalId values when available, otherwise BOS entity row indices.
+
+## Combined geometry and BIM data
+
+`bosToBfast(bosBytes)` produces an `ArrayBuffer` containing prepared render
+buffers followed by **every original Parquet file**, including geometry tables,
+as `BOS/<original ZIP entry path>`. Parquet bytes and internal compression are
+unchanged; there is no enclosing ZIP. Unknown future tables are preserved too.
+Non-Parquet ZIP entries are not included. Existing render-only BFAST readers
+can ignore the additional named buffers.
+
+After building, convert a local file from this package directory:
+
+```sh
+node scripts/bos-to-bfast.mjs input.bos output.bfast
+```
+
+The CLI refuses to overwrite an existing output. Invalid prepared geometry is
+rejected before writing. The converter derives both payloads from one BOS;
+do not pair prepared geometry with tables from another model or revision.
+
+```ts
+import { loadBfast, readBimTable } from '@ara3d/viewer-loaders';
+const loaded = await loadBfast('model.bfast', viewer.scene);
+const rows = await readBimTable(loaded.bimData, 'Parameters.parquet');
+```
+
+`parseBfastModel(bytes).bimData` is a read-only map from original entry paths to
+file-backed byte views. `readBimTable(data, path, columns?)` decodes only the
+requested table and optional columns; a unique case-insensitive basename is
+accepted, ambiguous basenames fail. `loadBfast` reports source LocalId values
+where positive, matching `loadBos`; `bfastToGroups` keeps entity row indices.
 
 ## Provenance
 
@@ -61,6 +93,8 @@ https://github.com/ara3d/ara3d-webgl
 The BFAST container and render-record readers are adapted from that repository's
 `src/loader/bfast.ts` and `renderModel.ts`, with its MIT notice retained in source
 and emitted JavaScript. Test fixture serialization uses its `tests/writeBFast.mts`.
+The production writer and converter adapt `tests/writeBFast.mts` and
+`tests/bosToBfast.mts` with the same retained MIT notice.
 
 ## Tests
 

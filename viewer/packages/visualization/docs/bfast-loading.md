@@ -1,5 +1,9 @@
 # BFAST loading verification — 2026-09-07
 
+This initial geometry-only record is retained as evidence. The combined-container
+follow-up below supersedes its blanket statement that BFAST lacks BIM tables;
+that limitation now applies only to legacy geometry-only files.
+
 F02 follow-up requested by the user: support prepared uncompressed BOS geometry
 using the existing ara3d-webgl readers. This adds an ingestion path; it does not
 complete worker parsing, streaming properties or the F02 release qualification.
@@ -82,3 +86,42 @@ Owned checkpoint: loader BFAST reader/converter/tests, shared loading dispatch,
 gallery fixture choice and endpoints, focused browser scenario, parity script,
 and this evidence. Implementation and local combined checks are complete; no
 claim of streaming, full BOS metadata parity or hardware release qualification.
+
+## Combined-container follow-up — 2026-09-07
+
+Previous choice: export prepared geometry only, omitting source-ID/property
+tables. New choice, explicitly requested by the user: retain original BOS
+Parquet files alongside render-ready buffers. The production `bosToBfast` API
+and `loaders/scripts/bos-to-bfast.mjs` derive both from one source BOS. Every
+Parquet entry, including geometry and unknown tables, is stored byte-for-byte
+as `BOS/<original entry path>`; internal Parquet compression remains unchanged.
+Non-Parquet ZIP entries are outside this contract. Existing BFAST render-buffer
+names/layouts remain unchanged, and legacy geometry-only files still load.
+
+`parseBfastModel` exposes the embedded byte views as `bimData`. `loadBfast` and
+`loadBosModel` decode only Entities.LocalId during opening; normalization now
+preserves geometry-free entity rows and source IDs. `readBimTable` decodes
+other tables/columns on demand. Rendering never decodes geometry Parquet tables.
+Corrupt identity tables fail visibly; unrequested property tables remain lazy.
+
+The new private Snowdon output is 111,630,208 bytes, SHA-256
+`313c247e01a9aeee10d373b8d8ddfb9c13fc5ebb709945e75defcd763f33465b`.
+It adds 10,023,168 bytes to the exact-source geometry-only BFAST above.
+`check-bfast-bim.mjs` verified all 15 original Parquet entries byte-for-byte,
+all 51,139 entity rows/source IDs, 456,598 bindings, and an on-demand read of
+1,620,524 Parameters rows. `check-bfast.mjs` verified every geometry/material/
+transform/entity-row value against the BOS path again. The prior 3.5× benchmark
+describes geometry-only loading; it is not a new combined-file performance claim.
+
+The legacy duplex test model contains an infinite transform value. The converter
+rejects it before writing prepared geometry; its valid Parquet tables are used
+independently to verify embedded table reads and source-ID normalization.
+
+Follow-up gates passed: both package TypeScript builds, strict example checking,
+production demo build, 45 tests across eight files plus the added lazy/corrupt
+table case (four BFAST normalization tests rerun successfully), geometry parity,
+and the combined BIM-data gate. Edge 152.0.4191.66/SwiftShader at 1280×800 rendered
+the combined Snowdon, then passed category tint, ghosting, reset and fit with no
+browser errors (40,033 ms for the whole scenario, not a load-time benchmark).
+The inspected screenshot shows 51,139 objects, 28,976 without rendered geometry,
+456,598 instances and 6,185,680 triangles. Planning baseline checks passed.

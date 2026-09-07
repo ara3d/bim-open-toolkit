@@ -5,10 +5,14 @@ import type { BosConvertResult } from './bos-geometry.js';
 import type { GroupCallback } from './groups.js';
 import type { LoadOptions, LoadSource } from './progress.js';
 import { toArrayBuffer } from './fetch-buffer.js';
+import { bfastBimData, bimEntityLocalIds, type BimData } from './bim-data.js';
+
+export type BfastModel = RenderModel & { readonly bimData: BimData };
 
 /** Reads prepared Ara 3D triangle geometry as views on the uncompressed file. */
-export function parseBfastModel(buffer: ArrayBuffer): RenderModel {
-  const model = readRenderModel(readBFast(buffer));
+export function parseBfastModel(buffer: ArrayBuffer): BfastModel {
+  const container = readBFast(buffer);
+  const model = { ...readRenderModel(container), bimData: bfastBimData(container) };
   if (model.meta.primitiveSize !== 3 || model.meta.flags !== 0)
     throw new Error('BFAST supports triangle models without vertex colors only');
   if (model.meshSlices.length % 4 || model.instanceInts.length % 16 || model.vertices.length % 3 ||
@@ -76,13 +80,22 @@ export function bfastToGroups(model: RenderModel, onGroup?: GroupCallback): BosC
   return { groups, groupEntities, instanceCount: count };
 }
 
-export async function loadBfast(source: LoadSource, scene: import('@ara3d/viewer-core').ViewerScene, options: LoadOptions = {}): Promise<BosConvertResult> {
+export type BfastLoadResult = BosConvertResult & { readonly bimData: BimData; readonly entityLocalIds: Int32Array | null };
+
+export async function loadBfast(source: LoadSource, scene: import('@ara3d/viewer-core').ViewerScene, options: LoadOptions = {}): Promise<BfastLoadResult> {
   const buffer = await toArrayBuffer(source, options.onProgress);
   options.onProgress?.({ stage: 'parse', loaded: 0, total: 1 });
   const model = parseBfastModel(buffer);
+  const entityLocalIds = await bimEntityLocalIds(model.bimData);
+  if (entityLocalIds) for (let i = 13; i < model.instanceInts.length; i += 16)
+    if (model.instanceInts[i] >= entityLocalIds.length) throw new Error('BFAST entity index exceeds Entities table');
   options.onProgress?.({ stage: 'parse', loaded: 1, total: 1 });
-  return bfastToGroups(model, (group, index, total) => {
+  const converted = bfastToGroups(model, (group, index, total) => {
     scene.addGroup(group);
     options.onProgress?.({ stage: 'convert', loaded: index + 1, total });
   });
+  // Match loadBos's source-ID convention; bfastToGroups remains row-based.
+  const groupEntities = converted.groupEntities.map(entry => ({ ...entry, entities: entry.entities.map(row =>
+    entityLocalIds && entityLocalIds[row] > 0 ? entityLocalIds[row] : row) }));
+  return { ...converted, groupEntities, bimData: model.bimData, entityLocalIds };
 }
