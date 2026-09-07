@@ -128,6 +128,7 @@ export class Viewer {
 
   /** Renders one frame immediately: syncs the scene model and draws. */
   renderFrame(): void {
+    if (this.disposed) return;
     this.renderRequested = false;
     this.sceneObject.sync();
     if (this.renderer) this.renderer.render(this.sceneObject.scene, this.renderCamera);
@@ -140,6 +141,7 @@ export class Viewer {
     this.cancelFrame();
     this.sceneObject.dispose();
     this.renderer?.dispose();
+    this.renderer?.forceContextLoss();
     this.renderer = null;
     this.cameraOverride = null;
   }

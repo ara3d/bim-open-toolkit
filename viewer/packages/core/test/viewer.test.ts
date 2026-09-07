@@ -1,12 +1,42 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Viewer } from '../src/viewer.js';
 import { InstancedGroup } from '../src/instanced-group.js';
 import { triangle, identity, rgba } from './helpers.js';
 import { OrthographicCamera, PerspectiveCamera } from 'three';
 
-// The WebGLRenderer needs a GL context, so attach() is not unit-tested;
-// everything up to the draw call runs headless.
+const renderer = vi.hoisted(() => ({
+  setPixelRatio: vi.fn(), setSize: vi.fn(), render: vi.fn(),
+  dispose: vi.fn(), forceContextLoss: vi.fn(), localClippingEnabled: false,
+}));
+vi.mock('three', async importOriginal => ({
+  ...await importOriginal<typeof import('three')>(),
+  WebGLRenderer: vi.fn(function () { return renderer; }),
+}));
+
 describe('Viewer', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('releases the native context once and ignores frames after disposal', () => {
+    const viewer = new Viewer();
+    const group = new InstancedGroup(triangle());
+    group.append(identity(), rgba(1,0,0,1));
+    viewer.scene.addGroup(group);
+    viewer.attach({ clientWidth: 200, clientHeight: 100 } as HTMLCanvasElement);
+    viewer.renderFrame();
+    expect(renderer.render).toHaveBeenCalledOnce();
+    const sync = vi.spyOn(viewer.objects, 'sync');
+    viewer.dispose();
+    viewer.dispose();
+    viewer.renderFrame();
+    viewer.requestRender();
+    expect(viewer.isAttached).toBe(false);
+    expect(renderer.dispose).toHaveBeenCalledOnce();
+    expect(renderer.forceContextLoss).toHaveBeenCalledOnce();
+    expect(renderer.dispose.mock.invocationCallOrder[0]).toBeLessThan(renderer.forceContextLoss.mock.invocationCallOrder[0]!);
+    expect(sync).not.toHaveBeenCalled();
+    expect(renderer.render).toHaveBeenCalledOnce();
+  });
+
   it('borrows an orthographic render camera, resizes its frustum and restores perspective', () => {
     const viewer = new Viewer();
     const original = viewer.camera;
