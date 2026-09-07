@@ -1,0 +1,13 @@
+{
+  "name": "@bim-open-toolkit/visualization",
+  "version": "0.1.0",
+  "description": "Composable BIM review state and adapters for the Ara viewer",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }, "./render": { "types": "./dist/render.d.ts", "default": "./dist/render.js" } },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": { "build": "tsc -p tsconfig.json", "test": "vitest run --maxWorkers=2" },
+  "peerDependencies": { "@ara3d/viewer-core": "^0.1.0", "three": ">=0.180.0" }
+}
