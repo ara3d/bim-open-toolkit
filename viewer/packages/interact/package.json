@@ -1,0 +1,27 @@
+{
+  "name": "@bim-open-toolkit/interact",
+  "version": "0.1.0",
+  "description": "Camera state math, orbit, first-person and overhead navigation, configurable bindings, touch and interruptible camera animation.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/model": "0.1.0",
+    "@ara3d/viewer-controls": "0.1.0"
+  }
+}

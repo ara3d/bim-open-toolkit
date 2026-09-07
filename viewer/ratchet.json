@@ -1,0 +1,8 @@
+{
+  "explicitAny": 2,
+  "asCasts": 145,
+  "nonNullAssertions": 181,
+  "tsDirectives": 0,
+  "eslintDisables": 0,
+  "undocumentedExports": 137
+}

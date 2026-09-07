@@ -1,0 +1,29 @@
+{
+  "name": "@bim-open-toolkit/ui-gratify",
+  "version": "0.1.0",
+  "description": "Gratify shell, panels, theme tokens, big-text and keyboard map bound to viewer commands and subscriptions.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/viewer": "0.1.0"
+  },
+  "peerDependencies": {
+    "gratify": "^0.2.0"
+  }
+}

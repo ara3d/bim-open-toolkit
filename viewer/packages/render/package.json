@@ -1,0 +1,30 @@
+{
+  "name": "@bim-open-toolkit/render",
+  "version": "0.1.0",
+  "description": "Instance table bound to viewer-core groups, representation registry, picking, clipping, environment, overlay primitives, capture and frame timing.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/model": "0.1.0",
+    "@ara3d/viewer-core": "0.1.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.180.0"
+  }
+}

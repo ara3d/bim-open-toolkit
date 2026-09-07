@@ -1,0 +1,30 @@
+{
+  "name": "@bim-open-toolkit/viewer",
+  "version": "0.1.0",
+  "description": "Default composition: createViewer, command bus, feature host, slice persistence and multi-view.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/model": "0.1.0",
+    "@bim-open-toolkit/formats": "0.1.0",
+    "@bim-open-toolkit/render": "0.1.0",
+    "@bim-open-toolkit/interact": "0.1.0",
+    "@bim-open-toolkit/features": "0.1.0"
+  }
+}

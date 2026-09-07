@@ -1,0 +1,27 @@
+{
+  "name": "@bim-open-toolkit/formats",
+  "version": "0.1.0",
+  "description": "BOS, BFAST, GLB, GLTF, OBJ and STL adapters producing one normalized LoadedModel with a columnar representation table.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/model": "0.1.0",
+    "@ara3d/viewer-loaders": "0.1.0"
+  }
+}

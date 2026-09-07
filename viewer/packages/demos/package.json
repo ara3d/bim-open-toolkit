@@ -1,0 +1,41 @@
+{
+  "name": "@bim-open-toolkit/demos",
+  "version": "0.1.0",
+  "description": "Gallery host, feature demos, workflow demos, fixture server and browser specs.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/model": "0.1.0",
+    "@bim-open-toolkit/synthetic": "0.1.0",
+    "@bim-open-toolkit/formats": "0.1.0",
+    "@bim-open-toolkit/render": "0.1.0",
+    "@bim-open-toolkit/interact": "0.1.0",
+    "@bim-open-toolkit/features": "0.1.0",
+    "@bim-open-toolkit/workflows": "0.1.0",
+    "@bim-open-toolkit/viewer": "0.1.0",
+    "@bim-open-toolkit/ui-gratify": "0.1.0",
+    "@bim-open-toolkit/ui-react": "0.1.0",
+    "@bim-open-toolkit/mcp": "0.1.0",
+    "@bim-open-toolkit/testing": "0.1.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.180.0",
+    "react": "^18.3.1"
+  }
+}

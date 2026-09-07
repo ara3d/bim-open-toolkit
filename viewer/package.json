@@ -16,7 +16,11 @@
     "build:gratify": "tsc -p ../submodules/gratify/tsconfig.build.json",
     "docs:api": "node packages/visualization/scripts/generate-api.mjs",
     "demo:browser": "node packages/visualization/scripts/browser-smoke.mjs",
-    "demo:normalized": "node packages/visualization/scripts/check-normalized-snowdon.mjs"
+    "demo:normalized": "node packages/visualization/scripts/check-normalized-snowdon.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "check": "npm run typecheck && npm run lint",
+    "test:v2": "vitest run --config vitest.v2.config.ts"
   },
   "devDependencies": {
     "@types/react": "^18.3.13",
@@ -29,6 +33,8 @@
     "three": "^0.185.0",
     "typescript": "^5.9.2",
     "vite": "^8.2.2",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "eslint": "^10.9.0",
+    "typescript-eslint": "^8.67.0"
   }
 }

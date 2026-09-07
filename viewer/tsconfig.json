@@ -1,0 +1,41 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "paths": {
+      "@bim-open-toolkit/model": ["./packages/model/src/index.ts"],
+      "@bim-open-toolkit/synthetic": ["./packages/synthetic/src/index.ts"],
+      "@bim-open-toolkit/formats": ["./packages/formats/src/index.ts"],
+      "@bim-open-toolkit/render": ["./packages/render/src/index.ts"],
+      "@bim-open-toolkit/interact": ["./packages/interact/src/index.ts"],
+      "@bim-open-toolkit/features": ["./packages/features/src/index.ts"],
+      "@bim-open-toolkit/workflows": ["./packages/workflows/src/index.ts"],
+      "@bim-open-toolkit/viewer": ["./packages/viewer/src/index.ts"],
+      "@bim-open-toolkit/ui-gratify": ["./packages/ui-gratify/src/index.ts"],
+      "@bim-open-toolkit/ui-react": ["./packages/ui-react/src/index.ts"],
+      "@bim-open-toolkit/mcp": ["./packages/mcp/src/index.ts"],
+      "@bim-open-toolkit/testing": ["./packages/testing/src/index.ts"],
+      "@bim-open-toolkit/demos": ["./packages/demos/src/index.ts"]
+    }
+  },
+  "include": [
+    "packages/model/src", "packages/model/test",
+    "packages/synthetic/src", "packages/synthetic/test",
+    "packages/formats/src", "packages/formats/test",
+    "packages/render/src", "packages/render/test",
+    "packages/interact/src", "packages/interact/test",
+    "packages/features/src", "packages/features/test",
+    "packages/workflows/src", "packages/workflows/test",
+    "packages/viewer/src", "packages/viewer/test",
+    "packages/ui-gratify/src", "packages/ui-gratify/test",
+    "packages/ui-react/src", "packages/ui-react/test",
+    "packages/mcp/src", "packages/mcp/test",
+    "packages/testing/src", "packages/testing/test",
+    "packages/demos/src", "packages/demos/test"
+  ]
+}

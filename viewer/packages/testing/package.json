@@ -1,0 +1,29 @@
+{
+  "name": "@bim-open-toolkit/testing",
+  "version": "0.1.0",
+  "description": "Fixture builders, fake clocks, headless scene helpers, browser runner and benchmark protocol.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "perf": "vitest run --config vitest.perf.config.ts"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/model": "0.1.0",
+    "@bim-open-toolkit/synthetic": "0.1.0",
+    "@bim-open-toolkit/render": "0.1.0"
+  }
+}

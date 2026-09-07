@@ -1,0 +1,26 @@
+{
+  "name": "@bim-open-toolkit/synthetic",
+  "version": "0.1.0",
+  "description": "Seeded generators for buildings, networks, schedules, revisions, facts with gaps, stress scenes and mesh primitives.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bim-open-toolkit/model": "0.1.0"
+  }
+}
