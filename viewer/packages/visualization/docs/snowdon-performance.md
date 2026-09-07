@@ -40,3 +40,26 @@ Memory tradeoff: packed position, normal, RGBA and index arrays total 269,071,35
 Group mutation notifications advance the owning scene's revision. A mirror whose revision is current returns immediately, avoiding the membership/version scans over 158,055 groups during camera-only frames. Changed scenes still use the established count/attribute checks; two mirrors independently observe the same changes. Membership removal, scene clearing and viewer disposal release subscriptions. Mutate attributes through the group methods, not by writing into the borrowed buffer views.
 
 Two repeated packed/revision runs measured 12.6 ms median RAF intervals and 16.7 ms p95, corresponding to approximately 79 scheduled frames/second at the median. CPU submission was 5.5–5.7 ms p50 / 6.8–7.0 ms p95. Mirror sync measured 0 ms at browser timer resolution. The diagnostic bypass-sync variant was equivalent (12.9 / 16.8 ms), confirming the idle scan was removed. Pixel comparisons after all six cases still passed with the same 89–557 differing pixels. These are local headless hardware-accelerated results, not a guarantee for every device or a direct measurement of displayed FPS.
+
+## Final repeated workload
+
+Rendering source revision: `dfe2688`, following packed milestone `356d3a7`; the final harness changes only add stricter error/nonempty-image checks and repeated update measurements. Original benchmark milestone: `c978a06` (before rendering changes). Command: `node packages/visualization/scripts/snowdon-frame-benchmark.mjs sorted half-resolution sorted --verify --updates`. Raw report: ignored `artifacts/frame-benchmark/final.json`.
+
+Final standard-profile repeats: 12.5–12.6 ms RAF p50 / 16.7 ms p95, 5.5 ms CPU submission p50 / 6.5–7.1 ms p95. Half resolution remained equivalent at 12.6 / 16.7 ms. Against the clean original 316.7 ms median, the measured interval improved approximately 25-fold. The same full-model image checks passed; nonempty-image checks count colored pixels rather than background alpha.
+
+Each bulk operation changes 10,000 distinct represented objects, restores their original state between samples, warms up five times and records 20 samples. Preparation of the record arrays is outside the timed region; update validation, group writes, mirror sync and rendering submission are included as labeled. GPU execution/display completion is not measured.
+
+| Operation | Update + mirror p50 / p95 | Including CPU render submission p50 / p95 | Command to next RAF p50 / p95 |
+|---|---:|---:|---:|
+| Color | 157.9 / 176.9 ms | 171.1 / 190.5 ms | 171.6 / 191.0 ms |
+| Visibility | 157.0 / 187.5 ms | 168.6 / 199.7 ms | 169.5 / 200.1 ms |
+| Transform | 573.3 / 635.2 ms | 590.7 / 655.0 ms | 591.0 / 655.3 ms |
+| Ghost | 160.4 / 178.8 ms | 272.0 / 294.2 ms | 272.6 / 294.6 ms |
+
+## Remaining improvements and boundaries
+
+- Transparent batches still sort and submit individual draw ranges. Full-model ghosting can be much slower than ordinary opaque navigation. A future transparency strategy needs its own image-correctness tests.
+- Packed vertices trade memory and initial construction work for fewer draw ranges. Initial-load regression and lower-memory/mobile devices need separate qualification. Use the shared-geometry option where this tradeoff is unsuitable.
+- Transform changes rebake affected packed ranges. GPU-indexed transform/color data could reduce update copying and packed color storage, but would introduce a shader contract and needs independent verification.
+- Changed scenes still scan group versions; only unchanged scenes skip that scan. A dirty-group queue could benefit continuous object animation. Picking remains the existing CPU raycast; spatial acceleration is a separate improvement.
+- The 30 FPS navigation target is met in this local scheduling profile. It is not general release qualification: other devices, high DPR, close-up camera paths, multiple views, transparency, GPU timing and actual presentation still need measured profiles.

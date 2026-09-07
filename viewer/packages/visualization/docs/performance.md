@@ -1,5 +1,7 @@
 # Bulk update measurement
 
+For measured Snowdon navigation costs, packed rendering, memory tradeoffs and the repeatable browser experiment, see [Snowdon frame performance](snowdon-performance.md). This September 7 follow-up includes hardware-accelerated measurements; the original track checkpoint below is retained as historical evidence.
+
 `measureOperation(operation, options)` runs the requested warmups and samples serially, awaiting each operation's completion. It returns measured milliseconds in original order and nearest-rank p50/p95, with caller-supplied name and workload counts. A supplied monotonic clock makes pure tests deterministic. Invalid options/clocks and cancellation throw `MeasurementError`; operation/progress errors propagate unchanged. Cancellation returns promptly for pending operations, but the host must honor the signal to stop its own resources. The utility does not infer GPU or display completion.
 
 `performanceDemo` scans source bindings once for up to 10,000 distinct represented objects, then patches only their records. The complete loaded scene remains present (Snowdon: expected 6,185,680 source triangles; actual scene counts displayed). Color, visibility and transform actions alternate values so measured work is not an unchanged update. Each action uses 5 warmups and 20 samples and disables its controls while running; cancel remains available. A failed/cancelled/completed run restores original affected records when the viewer remains mounted. Route reset/disposal belongs to the harness.

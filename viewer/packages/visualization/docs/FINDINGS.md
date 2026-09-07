@@ -72,3 +72,15 @@ All work stays on the existing main branch. Agents committed their scoped verifi
 The isolated suite reports every case and saves screenshots in ignored `artifacts/browser-smoke/`. The loaded Snowdon screenshots were inspected; the building and source-backed React table render correctly. Software-rendered Snowdon cases took33–62 seconds each and are not comparable to the earlier hardware/in-app latency observations. Cases use separate pages and deterministic teardown to bound resources.
 
 Final source inputs: all agent commits through `0863ea0` plus the coordinator integration file set. All writers/processes affecting test inputs were stopped before their respective final gates. Changes after broader tests were scoped fixes with affected tests/typechecks/browser cases rerun; the favicon change reran its failing case and production build. Documentation-only evidence updates do not alter runtime inputs.
+
+## September 7 Snowdon performance follow-up
+
+[Detailed experiment and limits](snowdon-performance.md) supersedes the earlier unqualified navigation-performance observations for one named local profile. Hardware-accelerated Edge/Intel Arc measured median RAF intervals of 316.7 ms before optimization and 12.5–12.6 ms after packed opaque geometry plus revision-based mirror synchronization (final p95 16.7 ms). This is scheduling evidence, not measured presentation latency or multi-device release qualification.
+
+Full source hash/count verification, six rendered-image comparisons, and five-warmup/twenty-sample 10,000-object updates passed. The final update p95 command-to-next-RAF observations were 191 ms color, 200 ms visibility, 655 ms transforms and 295 ms ghosting. Packed buffers add approximately 257 MiB of CPU arrays and corresponding GPU buffers; a public opt-out preserves the lower-memory path. Full transparency and changed-scene scans remain optimization opportunities.
+
+The dependency build, production gallery build, strict example typecheck and 278 tests passed (one pre-existing optional integration test skipped). The production build retains its large-bundle warning. The 77 core tests include the new packing, update, fallback, disposal, multi-mirror and revision checks. Generated visualization reference remains unchanged after regeneration. Immutable planning baseline checks pass.
+
+Five additional gallery scenarios passed on hardware WebGL: Snowdon appearance/ghost/reset, select/move/undo, clipping/clear/reset, replacement/undo and PNG thumbnail decode. The resulting appearance screenshot was inspected. Repeat with `BROWSER_RENDERER=hardware` and `BIM_BROWSER_CASE=Snowdon` when invoking `scripts/browser-smoke.mjs`; its default remains software WebGL for functional isolation.
+
+Rendering source is committed through `dfe2688`; the final harness/documentation changes add verification and evidence. Separate gallery resize edits appeared in the shared checkout during final verification and are outside this performance change. The isolated benchmark does not import the affected gallery modules. Performance commits remain local: automatic approval review rejected publication to the shared remote main branch.

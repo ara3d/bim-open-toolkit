@@ -3,7 +3,14 @@ import { WebGLRenderer, WebGLRenderTarget, PerspectiveCamera, HemisphereLight, D
 import { ViewerScene, SceneObject, sceneBounds } from '@ara3d/viewer-core';
 import { loadBosModel } from '../src/loading.js';
 import { RenderBinding } from '../src/render.js';
-import { objectKey } from '../src/contracts.js';
+import { objectKey, type ObjectRecord } from '../src/contracts.js';
+
+type UpdateOperation = 'color' | 'visibility' | 'transform' | 'ghost';
+function updatedRecords(records: readonly ObjectRecord[], operation: UpdateOperation): ObjectRecord[] {
+  const translation = new Matrix4().makeTranslation(0,1,0).toArray();
+  return records.map(o=>({...o,transform:operation==='transform'?translation as unknown as typeof o.transform:o.transform,
+    appearance:{...o.appearance,...(operation==='color'?{color:[0.9,0.1,0.1] as const}:operation==='visibility'?{visible:false}:operation==='ghost'?{opacity:0.18}:{})}}));
+}
 
 export async function prepare() {
   const info = await (await fetch('/__fixtures/snowdon-info.json')).json();
@@ -50,6 +57,9 @@ export async function prepare() {
     gpu:debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : 'unavailable', multiDraw:!!gl.getExtension('WEBGL_multi_draw'),
     viewport:[1000,700], dpr:1, camera:{center:center.toArray(),radius}, gpuTiming:'not measured', userAgent:navigator.userAgent};
   const percentile = (values:number[], q:number) => [...values].sort((a,b)=>a-b)[Math.ceil(values.length*q)-1];
+  const represented = new Set(loaded.value.bindings.map(b=>objectKey(b.ref)));
+  const records = loaded.value.model.objects.filter(o=>represented.has(objectKey(o.ref))).slice(0,10000);
+  if(records.length!==10000)throw Error('Need 10,000 distinct represented objects');
   return { metadata,
     async measure(variant:string) {
       selectPath(variant==='legacy');
@@ -85,8 +95,6 @@ export async function prepare() {
     async verify() {
       const target = new WebGLRenderTarget(1000,700);
       const reference = new Uint8Array(1000*700*4), actual = new Uint8Array(reference.length);
-      const represented = new Set(loaded.value.bindings.map(b=>objectKey(b.ref)));
-      const records = loaded.value.model.objects.filter(o=>represented.has(objectKey(o.ref))).slice(0,10000);
       const results=[];
       const compare = (name:string) => {
         mirror.sync(); renderer.setRenderTarget(target);
@@ -94,7 +102,7 @@ export async function prepare() {
         selectPath(false); renderer.render(mirror.scene,camera); renderer.readRenderTargetPixels(target,0,0,1000,700,actual);
         let different=0, nonempty=0;
         for(let i=0;i<actual.length;i+=4){
-          if(actual[i+3])nonempty++;
+          if(actual[i] || actual[i+1] || actual[i+2])nonempty++;
           if([0,1,2,3].some(c=>Math.abs(actual[i+c]-reference[i+c])>8))different++;
         }
         const passed=!!nonempty && different/700000<=0.01;
@@ -103,10 +111,8 @@ export async function prepare() {
       };
       try {
         results.push(compare('original'));
-        const translation=new Matrix4().makeTranslation(0,1,0).toArray();
         for(const operation of ['color','visibility','transform','ghost'] as const){
-          const changed=records.map(o=>({...o,transform:operation==='transform'?translation as unknown as typeof o.transform:o.transform,
-            appearance:{...o.appearance,...(operation==='color'?{color:[0.9,0.1,0.1] as const}:operation==='visibility'?{visible:false}:operation==='ghost'?{opacity:0.18}:{})}}));
+          const changed=updatedRecords(records,operation);
           const start=performance.now(); const result=binding.update(changed); if(!result.ok)throw Error(JSON.stringify(result)); mirror.sync();
           const submissionMs=performance.now()-start;
           results.push({...compare(operation),objects:records.length,submissionMs});
@@ -120,6 +126,23 @@ export async function prepare() {
         renderer.localClippingEnabled=false; renderer.setRenderTarget(null); target.dispose();
       }
       return results;
+    },
+    async measureUpdates(operation:UpdateOperation) {
+      const changed=updatedRecords(records,operation);
+      const samples: {modelMs:number;submissionMs:number;nextRafMs:number}[]=[];
+      for(let i=0;i<25;i++){
+        await new Promise(requestAnimationFrame);
+        const start=performance.now();
+        const result=binding.update(changed); if(!result.ok)throw Error(JSON.stringify(result));
+        mirror.sync(); const modelMs=performance.now()-start;
+        renderer.render(mirror.scene,camera); const submissionMs=performance.now()-start;
+        await new Promise(requestAnimationFrame); const nextRafMs=performance.now()-start;
+        if(i>=5)samples.push({modelMs,submissionMs,nextRafMs});
+        const reset=binding.update(records); if(!reset.ok)throw Error(JSON.stringify(reset));
+        mirror.sync(); renderer.render(mirror.scene,camera);
+      }
+      return {operation,objects:records.length,warmups:5,sampleCount:20,
+        metrics:Object.fromEntries((['modelMs','submissionMs','nextRafMs'] as const).map(key=>[key,{p50:percentile(samples.map(s=>s[key]),0.5),p95:percentile(samples.map(s=>s[key]),0.95)}])),samples};
     },
     dispose() {basic.dispose();mirror.dispose();binding.dispose();renderer.dispose();}
   };

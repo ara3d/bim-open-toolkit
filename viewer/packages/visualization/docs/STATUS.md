@@ -4,6 +4,8 @@ Recorded 2026-09-07 after implementation commit 6539fe9. This is the prioritized
 
 The former plan is preserved exactly in the planning history. Its status content follows, with the obsolete active-track label corrected.
 
+September 7 performance follow-up: [Snowdon frame investigation](snowdon-performance.md) records an approximately 25-fold improvement in median navigation-frame intervals on the named Intel Arc/Edge profile. Small opaque surfaces use bounded packed meshes; source identity, shared source geometry, picking and transparent fallback remain. Scene revisions skip unchanged-model scans. This is local F03/F27 evidence, with memory, transparency, mobile and presentation-timing limits retained.
+
 ## Current direction
 
 Continue the authorized implementation through useful independent increments. Snowdon is the primary integration fixture. Each feature has a small demo viewer, reset/cleanup behavior, focused tests and explicit limitations. Keep all three subagent slots occupied when independent work is ready; coordinator owns integration, browser validation and plan updates. Postpone high-cost specialist features rather than compromising the common foundation.
@@ -15,7 +17,7 @@ Skills: Parallel Wave and Platonic Coder. Shared checkout on main; preserve the 
 - V1: src/contracts.ts. Identity is model revision plus object ID. Geometry-free objects remain valid. World matrices are column-major. Units and unknown values stay explicit. SceneDocument schema1 holds references/plain data, never renderer objects.
 - Composition: base → enabled edit layers → ordered workflow rules → filter → transient selection. Selection cannot resurrect hidden/deleted geometry. Replaceable geometry has a separate ephemeral transaction until a deliberate saved-schema migration.
 - G1.1: examples/gallery/contracts.ts. One shared host supplies model, base records, viewer, controls, rendering, selection, panel, buttons, status, update/reset/fit. Each FeatureDemo mounts and returns cleanup. Hosts own model resolution; features own only their subscriptions and temporary resources.
-- Core rendering: SceneObject uses bounded Three BatchedMesh above1,000 groups. RenderBinding supports per-representation transforms/colors and overlay pick providers. Borrowed geometry membership stays stable while bound.
+- Core rendering: SceneObject uses bounded batches above1,000 groups, with packed small opaque meshes and Three BatchedMesh for transparent fallback/picking. `Viewer({ packedGeometry: false })` selects lower mirror memory. RenderBinding supports per-representation transforms/colors and overlay pick providers. Borrowed geometry membership stays stable while bound.
 - Projection addition: Viewer retains its perspective camera; renderCamera/setRenderCamera adds an optional render override. Coordinator routes picking through the actual render camera.
 - Coordinator exclusively owns manifests/lockfile, public exports, gallery host/index/style, local fixture server, shared build outputs, port5173, test browser tab, generated reference and aggregate findings. No agent installs dependencies or runs shared builds. Scoped tests may overlap only against stable inputs.
 

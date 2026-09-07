@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 const directory=path.dirname(fileURLToPath(import.meta.url));
 const output=path.resolve(directory,'../artifacts/browser-smoke');
 const baseURL=process.env.DEMO_URL??'http://127.0.0.1:5173';
-const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL??'msedge',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const software=process.env.BROWSER_RENDERER!=='hardware';
+const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL??'msedge',headless:true,args:software?['--use-angle=swiftshader','--enable-unsafe-swiftshader']:[]});
 const results=[];
 try{
   const probe=await browser.newPage();
@@ -21,7 +22,7 @@ try{
     return {renderer,version};
   });
   assert.ok(graphics,'Isolated test browser cannot create WebGL2');
-  console.log(JSON.stringify({browser:browser.version(),graphics,mode:'software WebGL; functional checks, not a hardware performance benchmark'}));
+  console.log(JSON.stringify({browser:browser.version(),graphics,mode:`${software?'software':'default browser'} WebGL; functional checks, not a frame-rate benchmark`}));
   await probe.close();
   if(!process.argv.includes('--probe')){
     await mkdir(output,{recursive:true});
