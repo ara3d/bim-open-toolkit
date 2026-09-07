@@ -16,6 +16,10 @@ async function sourceBuffer(source: LoadSource, options: BosModelOptions): Promi
   if (typeof source !== 'string') return source instanceof ArrayBuffer ? source : source.arrayBuffer();
   const response = await fetch(source, options.signal ? { signal: options.signal } : {});
   if (!response.ok) throw new Error(`BOS fetch failed: ${response.status}`);
+  if (response.headers.get('content-type')?.includes('text/html')) {
+    await response.body?.cancel();
+    throw new Error('BOS endpoint returned HTML, not model data. Check the fixture route and start the configured demo server.');
+  }
   if (!response.body) return response.arrayBuffer();
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -46,12 +50,15 @@ export async function loadBosModel(source: LoadSource, modelRef: ModelRef, optio
   try {
     check();
     const buffer = await sourceBuffer(source, { ...options, onProgress: progress });
+    const signature = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 4));
+    if (signature.length < 4 || signature[0] !== 0x50 || signature[1] !== 0x4b || signature[2] !== 3 || signature[3] !== 4)
+      throw new Error('Invalid BOS file: expected a ZIP archive (PK header). The response may be an HTML error page or a truncated file.');
     check(); progress({ stage: 'parse', loaded: 0, total: 1 });
     const bos = await parseBosGeometry(buffer);
     check(); progress({ stage: 'parse', loaded: 1, total: 1 });
     // The converter's source-ID fallback can collide with another entity row's LocalId.
     // Use entity rows for runtime identity and keep source IDs as separate metadata.
-    const converted = bosToGroups({ ...bos, EntityLocalId: null }, (_group, index, total) => progress({ stage: 'convert', loaded: index + 1, total }));
+    const converted = bosToGroups({ ...bos, EntityLocalId: null }, (_group, index, total) => progress({ stage: 'convert', loaded: index + 1, total: total * 2 }));
     const objects = new Map<number, ObjectRecord>();
     const addObject = (entity: number) => {
       if (!Number.isInteger(entity) || entity < 0) throw new Error('Invalid BOS entity index');
@@ -68,23 +75,37 @@ export async function loadBosModel(source: LoadSource, modelRef: ModelRef, optio
     for (let entity = 0; entity < (bos.EntityLocalId?.length ?? 0); entity++) addObject(entity);
     for (const entity of bos.InstanceEntityIndex) addObject(entity);
     const conversion = options.sourceUp === 'Z' ? new ThreeMatrix4().makeRotationX(-Math.PI / 2) : new ThreeMatrix4();
-    const matrix = new ThreeMatrix4();
+    const matrix = new ThreeMatrix4(), sourceMatrix = new ThreeMatrix4();
+    const transformBuffer = new Float32Array(16);
     const bindings: InstanceBinding[] = [];
+    let sinceYield = 0;
     for (const [groupIndex, entry] of converted.groupEntities.entries()) {
       check();
       // Source alpha is carried once in each representation's color factor.
-      const group = new InstancedGroup(entry.group.mesh, { ...entry.group.material, opacity: 1 }, entry.group.instanceCount);
-      group.append(entry.group.transforms, entry.group.colors);
+      const group = entry.group.material.opacity === 1 ? entry.group
+        : new InstancedGroup(entry.group.mesh, { ...entry.group.material, opacity: 1 }, entry.group.instanceCount);
+      if (group !== entry.group) group.append(entry.group.transforms, entry.group.colors);
+      const transforms = group.transforms, colors = group.colors;
       for (const [instanceIndex, entity] of entry.entities.entries()) {
-        const transform = matrix.multiplyMatrices(conversion, new ThreeMatrix4().fromArray(group.getTransform(instanceIndex))).toArray();
+        if (sinceYield === 4096) {
+          await new Promise<void>(resolve => setTimeout(resolve, 0));
+          check(); sinceYield = 0;
+        }
+        const transform = matrix.multiplyMatrices(conversion, sourceMatrix.fromArray(transforms, instanceIndex * 16)).toArray();
         if (!transform.every(Number.isFinite)) throw new Error('Invalid BOS representation transform');
-        group.setTransform(instanceIndex, new Float32Array(transform));
+        if (options.sourceUp === 'Z') {
+          transformBuffer.set(transform);
+          group.setTransform(instanceIndex, transformBuffer);
+        }
+        const colorOffset = instanceIndex * 4;
         bindings.push({
           ref: addObject(entity).ref, representationId: `bos:${groupIndex}:${instanceIndex}`, group, instanceIndex,
           localTransform: Object.freeze(transform) as unknown as Matrix4,
-          colorFactor: Object.freeze(Array.from(group.getColor(instanceIndex))) as unknown as readonly [number, number, number, number],
+          colorFactor: Object.freeze([colors[colorOffset]!, colors[colorOffset + 1]!, colors[colorOffset + 2]!, colors[colorOffset + 3]!] as const),
         });
+        sinceYield++;
       }
+      progress({ stage: 'convert', loaded: converted.groupEntities.length + groupIndex + 1, total: converted.groupEntities.length * 2 });
     }
     check();
     return { ok: true, value: { model: { ref: { ...modelRef }, coordinates: { units: 'unknown', up: 'Y', registration: 'unknown' }, objects: [...objects.values()] }, bindings }, diagnostics: [] };

@@ -2,13 +2,38 @@
 // (never committed — see data/README.md), so the suite skips when it is absent.
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import JSZip from 'jszip';
+import * as parquet from 'hyparquet';
 import { ViewerScene } from '@ara3d/viewer-core';
 import { parseBosGeometry, loadBos } from '../src/bos-loader.js';
+
+vi.mock('hyparquet', async importOriginal => {
+  const actual = await importOriginal<typeof import('hyparquet')>();
+  return { ...actual, parquetMetadataAsync: vi.fn(actual.parquetMetadataAsync), parquetRead: vi.fn(actual.parquetRead) };
+});
 
 const bosPath = fileURLToPath(
   new URL('../../../../platoflow/data/duplex.bos', import.meta.url),
 );
+
+describe('BOS column chunks', () => {
+  it('accumulates out-of-order chunks at their declared row offsets', async () => {
+    const zip = new JSZip();
+    for (const table of ['Instances', 'VertexBuffer', 'IndexBuffer', 'Meshes', 'Materials', 'Transforms']) zip.file(`${table}.parquet`, new Uint8Array([1]));
+    // Isolate the column reader from parquet encoding: every synthetic table exposes one column.
+    const metadata = vi.spyOn(parquet, 'parquetMetadataAsync').mockResolvedValue({ num_rows: 4n, schema: [{ name: 'VertexX', type: 1 }] } as unknown as Awaited<ReturnType<typeof parquet.parquetMetadataAsync>>);
+    const read = vi.spyOn(parquet, 'parquetRead').mockImplementation(async options => {
+      options.onChunk?.({ columnName: 'VertexX', rowStart: 2, rowEnd: 4, columnData: [3, 4] });
+      options.onChunk?.({ columnName: 'VertexX', rowStart: 0, rowEnd: 2, columnData: [1, 2] });
+    });
+    try {
+      const bos = await parseBosGeometry(await zip.generateAsync({ type: 'arraybuffer' }));
+      expect(Array.from(bos.VertexX)).toEqual([1, 2, 3, 4]);
+      expect(read).toHaveBeenCalledTimes(6);
+    } finally { read.mockRestore(); metadata.mockRestore(); }
+  });
+});
 
 describe.skipIf(!existsSync(bosPath))('BOS container (duplex.bos)', () => {
   const buffer = (): ArrayBuffer => {

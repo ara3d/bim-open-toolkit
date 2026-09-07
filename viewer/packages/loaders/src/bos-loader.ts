@@ -45,8 +45,11 @@ async function readTable(
     metadata,
     onChunk(chunk) {
       const data = chunk.columnData;
-      target[chunk.columnName] =
-        data.constructor === ctor ? data : ctor.from(data as ArrayLike<number>);
+      // Parquet may deliver several chunks, and callbacks need not arrive in row order.
+      const column = target[chunk.columnName] as InstanceType<TypedArrayCtor> | undefined;
+      const output = column ?? new ctor(Number(metadata.num_rows));
+      output.set(data.constructor === ctor ? data as ArrayLike<number> : ctor.from(data as ArrayLike<number>), chunk.rowStart);
+      target[chunk.columnName] = output;
     },
   });
 }
