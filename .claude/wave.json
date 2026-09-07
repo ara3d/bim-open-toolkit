@@ -1,0 +1,15 @@
+{
+  "name": "visualization-v2-wave-0",
+  "supervisor": [
+    "viewer/package.json", "viewer/package-lock.json", "viewer/tsconfig*.json", "viewer/eslint.config.js", "viewer/ratchet.json", "viewer/vitest*.ts",
+    "viewer/packages/*/package.json", "viewer/packages/*/tsconfig*.json", "viewer/packages/*/vitest*.ts", "viewer/packages/*/src/index.ts",
+    "tools/**", ".mcp.json", ".claude/wave.json", "docs/plans/visualization/**"
+  ],
+  "scratch": ["viewer/artifacts/**"],
+  "tracks": {
+    "M": { "paths": ["viewer/packages/model/**"] },
+    "S": { "paths": ["viewer/packages/synthetic/**"] },
+    "PERF": { "paths": ["viewer/packages/testing/src/perf/**", "viewer/packages/testing/test/perf/**", "viewer/packages/testing/docs/**"] },
+    "loaders-session": { "paths": ["viewer/packages/loaders/**", "viewer/packages/visualization/**", "viewer/packages/core/**", "viewer/packages/controls/**"] }
+  }
+}
