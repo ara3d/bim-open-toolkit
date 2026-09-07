@@ -1,12 +1,14 @@
 import { type InstancedGroup, type ViewerScene, type SceneObject } from '@ara3d/viewer-core';
-import { type Camera, Raycaster, Vector2 } from 'three';
-import { objectKey, type ObjectRef, type ObjectRecord, type Result, type Vec3 } from './contracts.js';
+import { type Camera, Matrix4 as ThreeMatrix4, Raycaster, Vector2 } from 'three';
+import { objectKey, type Matrix4, type ObjectRef, type ObjectRecord, type Result, type Vec3 } from './contracts.js';
 
 export type InstanceBinding = {
   readonly ref: ObjectRef;
   readonly representationId: string;
   readonly group: InstancedGroup;
   readonly instanceIndex: number;
+  readonly localTransform?: Matrix4;
+  readonly colorFactor?: readonly [number, number, number, number];
 };
 export type ObjectHit = { readonly ref: ObjectRef; readonly representationId: string; readonly point: Vec3; readonly distance: number };
 const failure = (message: string): Result<number> => ({ ok: false, diagnostics: [{ code: 'invalid-binding', message }] });
@@ -28,10 +30,17 @@ export class RenderBinding {
       const { group, instanceIndex, ref } = binding;
       if (ref.modelId !== modelId || !Number.isInteger(instanceIndex) || instanceIndex < 0 || instanceIndex >= group.instanceCount)
         return failure('Model mismatch or invalid instance index');
+      if (binding.localTransform && (binding.localTransform.length !== 16 || !binding.localTransform.every(Number.isFinite)))
+        return failure('Invalid representation transform');
+      if (binding.colorFactor && (binding.colorFactor.length !== 4 || !binding.colorFactor.every(n => Number.isFinite(n) && n >= 0 && n <= 1)))
+        return failure('Invalid representation color');
       if (this.scene.groups.includes(group) || this.instances.has(group)) return failure('Group already owned by a scene/model');
       const entries = pending.get(group) ?? new Map<number, InstanceBinding>();
       if (entries.has(instanceIndex)) return failure('Instance has multiple object bindings');
-      entries.set(instanceIndex, { ...binding, ref: { ...ref } });
+      entries.set(instanceIndex, Object.freeze({ ...binding, ref: Object.freeze({ ...ref }),
+        ...(binding.localTransform ? { localTransform: Object.freeze([...binding.localTransform]) as Matrix4 } : {}),
+        ...(binding.colorFactor ? { colorFactor: Object.freeze([...binding.colorFactor]) as readonly [number, number, number, number] } : {}),
+      }));
       pending.set(group, entries);
     }
     // Bind every instance: unaddressable geometry cannot participate in snapshot updates or picking.
@@ -81,17 +90,21 @@ export class RenderBinding {
         || record.transform.length !== 16 || !record.transform.every(Number.isFinite)) return failure('Invalid appearance or transform');
     }
     const diagnostics = [];
+    const objectMatrix = new ThreeMatrix4(), localMatrix = new ThreeMatrix4(), combined = new ThreeMatrix4();
     let updated = 0;
     for (const record of records) {
       const bindings = this.objects.get(objectKey(record.ref));
       if (!bindings) { diagnostics.push({ code: 'unbound-object', message: 'No render representation', ref: record.ref }); continue; }
-      for (const { group, instanceIndex } of bindings) {
+      objectMatrix.fromArray(record.transform);
+      for (const { group, instanceIndex, localTransform, colorFactor } of bindings) {
         const { color, opacity, visible } = record.appearance;
-        group.setColor(instanceIndex, ...color, visible ? opacity : 0);
+        const factor = colorFactor ?? [1, 1, 1, 1];
+        group.setColor(instanceIndex, color[0] * factor[0], color[1] * factor[1], color[2] * factor[2], visible ? opacity * factor[3] : 0);
+        const transform = localTransform ? combined.multiplyMatrices(objectMatrix, localMatrix.fromArray(localTransform)).elements : record.transform;
         const offset = instanceIndex * 16;
         const transforms = group.transforms;
-        if (record.transform.some((value, i) => value !== transforms[offset + i]))
-          group.setTransform(instanceIndex, new Float32Array(record.transform));
+        if (transform.some((value, i) => value !== transforms[offset + i]))
+          group.setTransform(instanceIndex, new Float32Array(transform));
         updated++;
       }
     }

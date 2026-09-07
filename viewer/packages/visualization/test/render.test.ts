@@ -13,6 +13,26 @@ const record = (modelId: string): ObjectRecord => ({ ref: { modelId, objectId: '
 const bind = (adapter: RenderBinding, modelId: string, mesh: InstancedGroup) => adapter.addModel(modelId, [{ ref: record(modelId).ref, group: mesh, instanceIndex: 0, representationId: 'body' }]);
 
 describe('render boundary', () => {
+  it('multiplies logical edits by representation placement and color, including picking', () => {
+    const scene = new ViewerScene(), adapter = new RenderBinding(scene, () => {}), mirror = new SceneObject(scene);
+    const mesh = group();
+    const local = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,-2,1] as const;
+    expect(adapter.addModel('a', [{ ref: record('a').ref, representationId: 'body', group: mesh, instanceIndex: 0, localTransform: local, colorFactor: [0.5, 0.25, 1, 0.5] }]).ok).toBe(true);
+    const white = { ...record('a'), appearance: { color: [1, 1, 1] as const, opacity: 0.5, visible: true } };
+    adapter.update([white]);
+    expect([...mesh.colors]).toEqual([0.5, 0.25, 1, 0.25]);
+    expect(mesh.getTransform(0)[14]).toBe(-2);
+    const camera = new PerspectiveCamera(50,1,0.1,100); camera.position.set(0,0,5); camera.lookAt(0,0,0);
+    expect(adapter.pick(mirror, camera, 0, 0)?.point[2]).toBeCloseTo(-2);
+    adapter.update([{ ...white, appearance: { ...white.appearance, visible: false } }]);
+    expect(adapter.pick(mirror, camera, 0, 0)).toBeUndefined();
+    adapter.dispose(); mirror.dispose();
+  });
+  it('rejects invalid representation factors before scene mutation', () => {
+    const scene = new ViewerScene(), adapter = new RenderBinding(scene, () => {});
+    expect(adapter.addModel('a', [{ ref: record('a').ref, representationId: 'body', group: group(), instanceIndex: 0, colorFactor: [1, 1, 1, NaN] }]).ok).toBe(false);
+    expect(scene.groupCount).toBe(0);
+  });
   it('keeps model identity and ownership separate and submits once per batch', () => {
     const scene = new ViewerScene(), request = vi.fn(), adapter = new RenderBinding(scene, request);
     const a = group(), b = group();
