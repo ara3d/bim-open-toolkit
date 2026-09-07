@@ -220,6 +220,7 @@ F22 maps, F24 tracing and F25 mesh-derived voxels stay postponed. The `city` gen
 ## Gates and resources
 
 - Baseline recorded 2026-09-07 at commit `851a91e` with the concurrent loader files uncommitted: `npm test` in `viewer/` passed 290 tests and skipped 1 across core, controls, loaders and visualization, with no failures. The retrofit dry run over 147 viewer TypeScript files counted 2 `any`, 181 `as` casts, 217 non-null assertions, 0 compiler directives, 0 lint disables and 167 undocumented exports.
+- Every tool, check and process rule is scored in [TOOLING-LEDGER.md](TOOLING-LEDGER.md) (cost, defects caught, friction) and reviewed at each wave end; a hindrance is turned off. Track checkpoints carry a "Tooling" section that feeds it.
 - Per package: `npm test -w @bim-open-toolkit/<name>`; typecheck through the workspace build; `node ../platonic-ts/node_modules/tsx/dist/cli.mjs tools/platonic-check.mts` for the strictness gate once wave 0 chunk 1 lands.
 - Demos: `demo:check`, `demo:build`, browser smoke on software WebGL for function, hardware runs for performance.
 - Snowdon: opt-in integration test and HTTP smoke, unchanged from the alpha; one browser lane owned by the supervisor until measured capacity allows more.

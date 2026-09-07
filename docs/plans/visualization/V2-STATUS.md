@@ -31,9 +31,21 @@ Tooling decisions taken while landing the retrofit:
 | S synthetic generators | Opus | `viewer/packages/synthetic/**` | not started | `viewer/packages/synthetic/docs/CHECKPOINT-S.md` |
 | PERF instance-update study (user request 2026-09-07) | Opus | `viewer/packages/testing/{src/perf,test/perf,docs}/**` | working | `viewer/packages/testing/docs/CHECKPOINT-perf.md` |
 
+### BFAST versus BOS loading (user request 2026-09-07)
+
+Method: the alpha `loadBosModel` (parse, group conversion, normalized bindings; file read excluded) on Snowdon in fresh Node 22.13.1 processes, five alternating runs per format, Windows, 64 GB. BOS is the original 9,362,255-byte file; `snowdon-bim.bfast` (111,630,208 bytes) is the loader session's conversion that keeps the Parquet tables; `snowdon.bfast` (101,607,040 bytes) is the geometry-only conversion. All three produce 456,598 bindings.
+
+| Format | Load ms, five runs | Median | Objects |
+|---|---|---:|---:|
+| BOS | 3808, 3797, 4009, 3771, 3690 | 3797 | 51,139 |
+| BFAST with tables | 2153, 2212, 1955, 1612, 1981 | 1981 | 51,139 |
+| BFAST geometry only | 1890, 1910, 1966, 1492, 1650 | 1890 | 25,675 |
+
+Result: 1.9× (with tables) to 2.0× (geometry only) faster end to end on the CPU. The loader session measured 3.5× on parse plus conversion alone; the difference is the alpha's normalized-binding step, which costs the same for both formats and which V2 removes. The BFAST file is 11 to 12 times larger, so over a network the gain depends on transfer; not measured. Proposed decision, awaiting the user: BFAST becomes the default prepared format for local fixtures and the fixture server in V2, BOS stays the source and interchange format, and Track F measures both again on the columnar path.
+
 ### Queue
 
-- User request 2026-09-07: try the new BFAST loader on Snowdon and, if it loads at least twice as fast as BOS, make BFAST the default prepared-model format for V2 demos and the fixture server. Owner: supervisor measurement after wave 0 gates, then Track F in wave 1. Existing evidence: the loader session's `viewer/packages/visualization/docs/bfast-loading.md` reports about 3.5× faster parse plus group conversion on a small CPU sample.
+- Tooling review at wave end per [TOOLING-LEDGER.md](TOOLING-LEDGER.md).
 - Wave 1 briefs once revision M1 is reviewed.
 
 ### Findings
