@@ -21,7 +21,13 @@ export const editsDemo: FeatureDemo = {
       history = commitEditHistory(history, [...history.present, { id: `edit-${++serial}`, enabled: true, operations: objects.map(operation) }]);
       refresh();
     };
-    context.button('Select first object', () => { context.selection.replace(context.base.slice(0, 1).map(object => object.ref)); });
+    context.button('Select first rendered object', () => {
+      for (const group of context.viewer.scene.groups) {
+        const binding = context.render.resolveInstance(group, 0);
+        if (binding) { context.selection.replace([binding.ref]); return; }
+      }
+      context.status('No rendered object is available to select.');
+    });
     context.button('Hide selected', () => edit(object => ({ kind: 'style', ref: object.ref, style: { visible: false } })));
     context.button('Move selected +X', () => edit(object => ({ kind: 'transform', ref: object.ref, transform: object.transform.map((value, index) => index === 12 ? value + 1 : value) as unknown as Matrix4 })));
     const undo = context.button('Undo', () => { history = undoEditHistory(history); refresh(); });

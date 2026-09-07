@@ -12,7 +12,7 @@ export const selectionDemo: FeatureDemo = {
     const count = document.createElement('p');
     const table = document.createElement('div'); table.setAttribute('role', 'group'); table.setAttribute('aria-label', 'Matching objects');
     context.panel.append(filter, count, table);
-    const refresh = () => {
+    const refreshTable = () => {
       const selected = context.selection.snapshot();
       const keys = new Set(selected.map(objectKey));
       const query = filter.value.trim().toLowerCase();
@@ -28,12 +28,16 @@ export const selectionDemo: FeatureDemo = {
         fragment.append(row);
       }
       table.replaceChildren(fragment);
+    };
+    const refresh = () => {
+      const selected = context.selection.snapshot();
+      refreshTable();
       context.update(composeAppearance(context.base, { selection: selected, selectionColor: [0.05, 0.95, 0.5], ...(isolated ? { visible: selected } : {}) }));
     };
     const isolate = context.button('Isolate selected', () => { isolated = !isolated; isolate.textContent = isolated ? 'Show all objects' : 'Isolate selected'; refresh(); });
     context.button('Clear selection', () => { context.selection.replace([]); });
     context.button('Reset selection demo', () => { context.reset(); });
-    filter.oninput = refresh;
+    filter.oninput = refreshTable;
     const unsubscribe = context.selection.subscribe(refresh);
     refresh(); context.status('Click a row or object. Ctrl/Cmd-click toggles membership. Filtering changes the table only.');
     return () => { unsubscribe(); filter.oninput = null; table.replaceChildren(); };

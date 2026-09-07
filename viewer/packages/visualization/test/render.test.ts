@@ -13,6 +13,19 @@ const record = (modelId: string): ObjectRecord => ({ ref: { modelId, objectId: '
 const bind = (adapter: RenderBinding, modelId: string, mesh: InstancedGroup) => adapter.addModel(modelId, [{ ref: record(modelId).ref, group: mesh, instanceIndex: 0, representationId: 'body' }]);
 
 describe('render boundary', () => {
+  it('does not reupload unchanged transforms rounded to Float32 storage', () => {
+    const adapter = new RenderBinding(new ViewerScene(), () => {}), mesh = group();
+    const local = [1,0,0,0,0,Math.cos(-Math.PI/2),-1,0,0,1,Math.cos(-Math.PI/2),0,0.1,0,0,1] as const;
+    expect(adapter.addModel('a', [{ ref: record('a').ref, representationId: 'body', group: mesh, instanceIndex: 0, localTransform: local }]).ok).toBe(true);
+    adapter.update([record('a')]);
+    const firstVersion = mesh.transformsVersion;
+    expect(mesh.transforms[12]).toBe(Math.fround(0.1));
+    adapter.update([{ ...record('a'), appearance: { color: [0,1,0], opacity: 0.5, visible: true } }]);
+    expect(mesh.transformsVersion).toBe(firstVersion);
+    adapter.update([{ ...record('a'), transform: [1,0,0,0,0,1,0,0,0,0,1,0,1,0,0,1] }]);
+    expect(mesh.transformsVersion).toBe(firstVersion + 1);
+    adapter.dispose();
+  });
   it('multiplies logical edits by representation placement and color, including picking', () => {
     const scene = new ViewerScene(), adapter = new RenderBinding(scene, () => {}), mirror = new SceneObject(scene);
     const mesh = group();

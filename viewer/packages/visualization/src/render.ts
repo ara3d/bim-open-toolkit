@@ -16,7 +16,7 @@ const failure = (message: string): Result<number> => ({ ok: false, diagnostics: 
 /** Owns scene membership, borrows groups. Dispose mirrors/viewer separately to release GPU resources. */
 export class RenderBinding {
   private readonly models = new Map<string, readonly InstanceBinding[]>();
-  private readonly objects = new Map<string, readonly InstanceBinding[]>();
+  private readonly objects = new Map<string, InstanceBinding[]>();
   private readonly instances = new Map<InstancedGroup, Map<number, InstanceBinding>>();
   private disposed = false;
 
@@ -26,6 +26,7 @@ export class RenderBinding {
   addModel(modelId: string, bindings: readonly InstanceBinding[]): Result<number> {
     if (this.disposed || this.models.has(modelId)) return failure('Disposed binding or duplicate model ID');
     const pending = new Map<InstancedGroup, Map<number, InstanceBinding>>();
+    const existingGroups = new Set(this.scene.groups);
     for (const binding of bindings) {
       const { group, instanceIndex, ref } = binding;
       if (ref.modelId !== modelId || !Number.isInteger(instanceIndex) || instanceIndex < 0 || instanceIndex >= group.instanceCount)
@@ -34,7 +35,7 @@ export class RenderBinding {
         return failure('Invalid representation transform');
       if (binding.colorFactor && (binding.colorFactor.length !== 4 || !binding.colorFactor.every(n => Number.isFinite(n) && n >= 0 && n <= 1)))
         return failure('Invalid representation color');
-      if (this.scene.groups.includes(group) || this.instances.has(group)) return failure('Group already owned by a scene/model');
+      if (existingGroups.has(group) || this.instances.has(group)) return failure('Group already owned by a scene/model');
       const entries = pending.get(group) ?? new Map<number, InstanceBinding>();
       if (entries.has(instanceIndex)) return failure('Instance has multiple object bindings');
       entries.set(instanceIndex, Object.freeze({ ...binding, ref: Object.freeze({ ...ref }),
@@ -49,7 +50,9 @@ export class RenderBinding {
     this.models.set(modelId, owned);
     for (const binding of owned) {
       const key = objectKey(binding.ref);
-      this.objects.set(key, [...(this.objects.get(key) ?? []), binding]);
+      const entries = this.objects.get(key) ?? [];
+      entries.push(binding);
+      this.objects.set(key, entries);
     }
     for (const [group, entries] of pending) { this.instances.set(group, entries); this.scene.addGroup(group); }
     this.requestRender();
@@ -103,7 +106,7 @@ export class RenderBinding {
         const transform = localTransform ? combined.multiplyMatrices(objectMatrix, localMatrix.fromArray(localTransform)).elements : record.transform;
         const offset = instanceIndex * 16;
         const transforms = group.transforms;
-        if (transform.some((value, i) => value !== transforms[offset + i]))
+        if (transform.some((value, i) => Math.fround(value) !== transforms[offset + i]))
           group.setTransform(instanceIndex, new Float32Array(transform));
         updated++;
       }
@@ -130,29 +133,14 @@ export class RenderBinding {
     camera.updateMatrixWorld();
     const ray = new Raycaster();
     ray.setFromCamera(new Vector2(x, y), camera);
-    let best: ObjectHit | undefined;
-    for (const [group, bindings] of this.instances) {
-      if (!group.visible || group.material.opacity <= 0) continue;
-      const object = objects.getObject(group);
-      const mesh = object?.mesh;
-      if (!object || !mesh) continue;
-      object.root.updateMatrixWorld(true);
-      for (const hit of ray.intersectObject(mesh, false)) {
-        if (hit.instanceId === undefined || (group.colors[hit.instanceId * 4 + 3] ?? 0) < 0.001) continue;
-        const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-        const planes = material?.clippingPlanes ?? [];
-        const clipped = material?.clipIntersection
-          ? planes.length > 0 && planes.every(plane => plane.distanceToPoint(hit.point) < 0)
-          : planes.some(plane => plane.distanceToPoint(hit.point) < 0);
-        if (clipped) continue;
-        const binding = bindings.get(hit.instanceId);
-        if (binding && (!best || hit.distance < best.distance)) best = {
-          ref: { ...binding.ref }, representationId: binding.representationId,
-          point: [hit.point.x, hit.point.y, hit.point.z], distance: hit.distance,
-        };
-      }
+    for (const hit of objects.raycast(ray)) {
+      const binding = this.instances.get(hit.group)?.get(hit.instanceIndex);
+      if (binding) return {
+        ref: { ...binding.ref }, representationId: binding.representationId,
+        point: [hit.point.x, hit.point.y, hit.point.z], distance: hit.distance,
+      };
     }
-    return best;
+    return undefined;
   }
 
   dispose(): void {

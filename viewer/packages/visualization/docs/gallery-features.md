@@ -9,10 +9,12 @@ Four G1 feature modules mount in the coordinator's Snowdon harness, each with it
 
 The selection, edit and persistence modules unsubscribe when unmounted. Persistence cancels pending restore before teardown. Selection, appearance and edit reset delegate to harness remount; persistence's current-view reset clears selection and fits the camera while retaining its JSON. Appearance removes its owned legend on cleanup. The supervisor owns browser verification and integration; these modules do not add renderer behavior.
 
+Review fixes: filtering updates only the table, without submitting the whole scene. Quick selection chooses a bound representation rather than a potentially geometry-free source row. Annotation overlays subscribe to camera control updates, including host fit operations, and unsubscribe on teardown. Render bindings compare transforms at Float32 precision before uploading, preserving instance transform versions across unchanged color-only updates.
+
 ## Checkpoint
 
 - Contract: G1 and V1 acknowledged; both required skills reread.
-- State: verified by isolated strict TypeScript check of the four feature modules (`tsc --noEmit`, ES2022/bundler, strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes, skipLibCheck). Browser behavior awaits supervisor verification.
+- State: verified. Review fixes passed 8 focused render tests, including Float32 transform-version regression. Isolated strict `tsc --noEmit` for render and changed demos passed after the controls subscription API build. Browser verification remains with supervisor.
 - Owned files: the four feature modules above and this document.
 - Processes: none.
 - Outstanding: coordinated commit and integrated browser verification.

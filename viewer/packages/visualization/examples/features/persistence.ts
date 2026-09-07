@@ -18,7 +18,13 @@ export const persistenceDemo: FeatureDemo = {
     context.panel.append(json);
     const vector = (value: { x: number; y: number; z: number }): Vec3 => [value.x, value.y, value.z];
     const refresh = () => { context.update(composeAppearance(context.base, { selection: context.selection.snapshot(), selectionColor: [0.05, 0.95, 0.5] })); };
-    context.button('Select first object', () => { context.selection.replace(context.base.slice(0, 1).map(object => object.ref)); });
+    context.button('Select first rendered object', () => {
+      for (const group of context.viewer.scene.groups) {
+        const binding = context.render.resolveInstance(group, 0);
+        if (binding) { context.selection.replace([binding.ref]); return; }
+      }
+      context.status('No rendered object is available to select.');
+    });
     context.button('Save pose and selection', () => {
       const saved: SceneDocument = { schemaVersion: 1, models: models.map(model => model.ref), sets: [], layers: [], views: [{
         id: 'saved-view', selection: context.selection.snapshot(), rules: [],

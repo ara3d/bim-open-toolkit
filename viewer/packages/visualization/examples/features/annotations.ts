@@ -58,10 +58,11 @@ export const annotationsDemo: FeatureDemo = {
     };
     context.canvas.addEventListener('pointerdown', down); context.canvas.addEventListener('pointerup', up); context.canvas.addEventListener('pointercancel', cancel);
     context.canvas.addEventListener('pointermove', move); context.canvas.addEventListener('wheel', schedule);
+    const unsubscribeCamera = context.controls.subscribe(schedule);
     const resize = new ResizeObserver(schedule); resize.observe(context.canvas);
     refresh();
     return () => {
-      cancelAnimationFrame(frame); resize.disconnect(); overlay.dispose(); list.onchange = null;
+      unsubscribeCamera(); cancelAnimationFrame(frame); resize.disconnect(); overlay.dispose(); list.onchange = null;
       context.canvas.removeEventListener('pointerdown', down); context.canvas.removeEventListener('pointerup', up); context.canvas.removeEventListener('pointercancel', cancel);
       context.canvas.removeEventListener('pointermove', move); context.canvas.removeEventListener('wheel', schedule);
     };
