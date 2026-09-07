@@ -1,46 +1,74 @@
-# Foundation wave findings — 2026-09-07
+# Verification findings — September 7, 2026
 
-Outcome: implemented and verified the bounded foundation increment; the full product brief remains incomplete. No private model data was copied. Core, controls and loader source were reused without changes; renderer version remains host-owned.
+This continuation implements a composable alpha with23 independent gallery routes. It does not claim the entire product brief or V1 release acceptance. Snowdon is the primary integration fixture; private model/projection data remains outside the distribution.
 
-## Baseline and stable integration
+## Loading defect and prevention
 
-Baseline: existing workspace builds passed; 110 tests passed (core 58, controls 28, loaders 24). Initial tree was clean. The first scaffold build was accidentally invoked from the repository root and failed for lack of package.json; rerunning from viewer passed. No baseline code defect blocked this wave.
+The reported ZIP error came from HTTP200 HTML served at the model endpoint because Vite did not select the example configuration. The npm demo commands now name that config explicitly. The loader rejects HTML and non-ZIP signatures before decompression, and the gallery shows model, initialization and rendering failures prominently with retry actions.
 
-Agent commits: contracts/plan `82d7f41`; identity/selection `0a8943b`; appearance/edits `6333d37`; persistence `863f5cd`; persistence numeric-domain and large-collection follow-up `cfba29e`. Each track reported stopped writes/processes before final checks. Supervisor owned integration and browser resources. Test inputs were `cfba29e` plus the integration files included in the subsequent integration commit. No implementation inputs changed after final gates; only documentation/checkpoint updates followed.
+The local HTTP smoke checks the exact served bytes against the original file, SHA256 metadata and decoded geometry. A separate opt-in normalization gate checks every representation binding, source ID, transform, index, color and normalized bound. It exercises real cooperative cancellation and rejects malformed data without partial publication. A separate loading-checks gallery route demonstrates expected HTML/truncated ZIP/pre-abort rejection.
 
-Final gates, from viewer:
+Source file:9,362,255 bytes; SHA256 `fc31c4463d9eb958ae8de3d853cfc8224b9469477b419857fbc929956c9cc51d`. Actual normalized result:51,139 logical objects,456,598 rendered instances,158,055 groups and6,185,680 displayed triangles.28,976 objects have no normalized render bindings; that includes source-hidden geometry skipped by the converter and must not be described as proof that every such source entity never had geometry.
 
-| Gate | Result |
+The BuildingModel projection resolves142 doors against that exact source fingerprint. Nominal widths:141 known and1 conflicting; clear widths:0 known and142 missing. The adapter preserves evidence and missing reasons and makes no compliance inference.
+
+## Unit, type and package gates
+
+| Gate | Actual result |
 |---|---|
-| `npm run build` | All four packages passed, dependency order core -> controls/loaders -> visualization |
-| core tests | 58 passed / 9 files |
-| controls tests | 28 passed / 5 files |
-| loaders tests | 24 passed / 4 files |
-| visualization tests | 43 passed / 7 files |
-| `npm run demo:check` | Passed |
-| `npm run demo:build` | Passed; JS bundle 553.46 kB, gzip 140.70 kB |
-| `git diff --check` | Passed before final documentation updates; rechecked at commit |
+| Full core suite |70 passed /10 files, including batch rendering, indexed normals and renderer teardown |
+| Full controls suite |32 passed /5 files, including touch/cancel and batched picking/sectioning |
+| Full loaders suite |25 passed /4 files |
+| Full visualization suite |144 passed /25 files; excluded only the separately executed opt-in Snowdon integration test |
+| Total ordinary tests |271 passed |
+| Full workspace build |Passed pinned Gratify, core, controls, loaders and visualization in dependency order; affected packages rebuilt after later fixes |
+| Strict gallery typecheck |Passed including React TSX and every feature route |
+| Production gallery build |Passed;1.20MB uncompressed entry chunk,380KB gzip; code-splitting remains an optimization |
+| Actual normalized Snowdon |Passed all geometry/identity/binding/bounds/cancellation assertions |
+| HTTP Snowdon smoke |Passed exact original bytes/hash, JSON metadata and archive decode |
+| Generated API |12 public entrypoints generated; all declared JS/type files exist |
+| Root boundary |48 runtime exports across17 local modules; zero external runtime imports; import succeeds with DOM getters throwing |
+| Packaging |Dry-run passed:137 files, generated API included; no private model/projection/artifact files |
 
-The four package test commands ran concurrently against stable builds, alongside demo checks/build. npm consumed attempted worker/cache forwarding flags for the existing packages and warned about `maxWorkers`; their existing default Vitest settings ran successfully. Visualization explicitly uses two workers. No check failure was waived.
+The actual normalization gate took20.94s total under concurrent development load:5.52s for an aborted load and8.52s for a successful normalized load. Host: Windows10.0.26200, Intel Core Ultra7 155H, Node22.13.1. These are one-sample CPU timings. ZIP/column parsing is still synchronous before the normalization yield; worker-based interruption remains deferred.
 
-## Browser evidence
+## Browser evidence and performance
 
-Codex in-app browser, local Vite server at port 5173. Actual WebGL geometry was visually inspected. Browser checks exercised select-all -> hide -> undo (100 selected, transaction count 1 -> 0), heat-map activation, stress fixture and CPU measurement, name filtering with `000` returning separate model-1/model-2 identities, and save -> page reload -> restore preserving one selected object and one transform transaction. A subsequent move/save after restore succeeded with two distinct transactions. Final fixture reset to 100 objects.
+The original in-app browser successfully rendered full Snowdon. Visually checked source colors, category tint,18% ghosting, axis/box clipping and edit selection→move→undo. No errors occurred in those checks.
 
-The first demo check found an incorrect orbit method name and an input-listener TypeScript boundary mismatch; both were fixed. Framing now accounts for the narrower horizontal/vertical field of view. A restore/edit transaction-ID collision was fixed and verified through the UI. Browser behavior is smoke coverage, not exhaustive end-to-end automation or physical-device certification.
+Measured10,000 distinct represented objects,5 warmups and20 changing samples, nearest-rank percentiles, full Snowdon loaded. In-app Chromium152 on Windows,980×658 viewport/drawing buffer,DPR1. GPU model/driver/presentation timing were unavailable.
 
-## Measurements and limits
+| Operation | CPU p50 / p95 | Command to next RAF p50 / p95 |
+|---|---|---|
+| Color, before targeted optimization |297.50 /434.40ms |955.40 /1095.40ms |
+| Color, after optimization |271.20 /316.20ms |855.50 /956.20ms |
+| Visibility, after optimization |262.00 /304.80ms |597.20 /811.60ms |
 
-Observed CPU color/unchanged-transform batch submission on 10,000 synthetic objects (120,000 triangles): 5 warmups, 20 samples, nearest-rank p50 16.50 ms / p95 20.80 ms. Includes validation and CPU buffer writes, excludes drawing/GPU/display completion. No claim about changed-transform or geometry replacement throughput follows from this sample. Timing control remains in the demo for repeatability.
+The optimization avoids unchanged color uploads, unnecessary matrix multiplication and repeated buffer-view/callback allocations. Tests preserve nonidentity composition and externally changed source buffers. These measurements include explicit rendering but do not establish GPU completion, visible-pixel latency, sustained30FPS, or10-million-triangle acceptance.
 
-No named hardware/browser-version baseline, FPS path, GPU timing, 10-million-triangle workload, Snowdon, multiple-view, mobile, memory-growth or context-loss gate was run. These remain release acceptance work. Pure large-collection persistence regression covers 150,000 members; it is not a rendering measurement.
+Repeated development reloads eventually caused the in-app browser to refuse new WebGL contexts, including the tiny fixture. The application now distinguishes graphics initialization from model loading, reports context loss, disables disposed controls, performs best-effort cleanup and exposes reload. Viewer disposal releases its WebGL context explicitly and ignores later frame requests. Existing browser-process graphics availability is external to that cleanup; automatic context reconstruction is not claimed.
 
-Vite warns about the single bundle exceeding 500 kB and the explicit output directory outside the demo root; output is isolated and Git-ignored. Splitting Three and feature routes belongs with the gallery wave. No new rendering dependency was downloaded; offline installation linked the new workspace package and exposed the already-installed Vite dependency.
+An isolated headless Edge152.0.4191.66 process successfully creates WebGL2 with ANGLE SwiftShader. The repeatable browser-smoke suite uses this software renderer for functional checks and writes per-case JSON/screenshots into ignored artifacts. It does not supply hardware performance numbers. All12 scenarios passed across the full run plus one targeted rerun after correcting a missing favicon404. The full run passed11 feature cases; expected loading failures also behaved correctly, but its strict console gate caught the favicon. The targeted loading-checks rerun passed after adding an inline icon.
 
-## Remaining work
+## Composition and remaining scope
 
-The implementation is an API foundation with one runnable combined demo. Full F01/F03/F06/F07/F08/F15/F17/F27 acceptance remains broader than the delivered subsets. Rendered additions/replacements, source normalization, independent representation offsets, complete persistence, generated reference site and standalone feature routes remain deferred. Coordinates are declared, not converted. The renderer adapter expects stable bound group instance counts.
+The root API remains data-only; renderer/loading/capture/Gratify adapters are explicit optional subpaths. Host callbacks own persistence/network/application effects. Actual React and Gratify examples use the same identity, selection, styling and persistence modules. Gratify's pinned package resolves in Vite; native Node import of its extensionless directory exports fails upstream. That optional adapter is currently browser-bundler qualified, not native-Node qualified.
 
-F02 loaders lack cancellation despite having progress; no adapter claims otherwise. Planned Gratify/React/mobile work, other formats, cameras, layouts, two-view comparison, markup/overlays, screenshots, animation, map/MCP, advanced lighting, voxels and BuildingModel workflows are explicitly deferred to bounded later waves. The next gallery wave is described in PLAN.md.
+SceneDocument schema1 does not yet store clipping, environment, overlays or replacement buffers. Text annotations have their own validated schema; replacement geometry uses a separate reversible transaction. Orthographic fixed views are implemented; first-person navigation and hardware-mobile qualification remain. Two-view support has independent/linked cameras, not all shared-state combinations. Assistant tools expose validated bounded MCP-style descriptors/results and host commands; external MCP transport is deferred.
 
-Local integration and publication are distinct: final commit/push outcome is reported in the task response. Development server session is supervisor-owned and remains available for the delivered local demo.
+Maps/georegistration, tracing/simulation, mesh-derived voxel occupancy, LOD, richer markup, four views, full Gratify theming and additional BuildingModel recipes are postponed. They are not implied by the working foundation. The React example demonstrates a real source-backed review application but does not satisfy every release-level reference-app criterion.
+
+## Repository state
+
+All work stays on the existing main branch. Agents committed their scoped verified increments under serialized turns. Coordinator owns the integration commit, generated reference and final findings. The pre-existing unpublished foundation commit is not silently pushed together with this work. No remote publication is claimed.
+
+## Final browser acceptance matrix
+
+| Fixture | Verified behavior |
+|---|---|
+| Snowdon | Category styling/ghost/reset; select/move/undo; axis clipping/clear/reset; replacement/undo;142-door exception evidence and save/restore; React actual-fact selection/filter; PNG thumbnail decode |
+| Small fixture | Three loading-failure checks; Gratify command dispatch/reset; orthographic projection/restore; add/link/remove/re-add comparison view; uniquely named local save/load/delete |
+
+The isolated suite reports every case and saves screenshots in ignored `artifacts/browser-smoke/`. The loaded Snowdon screenshots were inspected; the building and source-backed React table render correctly. Software-rendered Snowdon cases took33–62 seconds each and are not comparable to the earlier hardware/in-app latency observations. Cases use separate pages and deterministic teardown to bound resources.
+
+Final source inputs: all agent commits through `0863ea0` plus the coordinator integration file set. All writers/processes affecting test inputs were stopped before their respective final gates. Changes after broader tests were scoped fixes with affected tests/typechecks/browser cases rerun; the favicon change reran its failing case and production build. Documentation-only evidence updates do not alter runtime inputs.

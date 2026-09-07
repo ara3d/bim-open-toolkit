@@ -6,8 +6,75 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }, "./render": { "types": "./dist/render.d.ts", "default": "./dist/render.js" } },
-  "files": ["dist", "README.md", "LICENSE"],
-  "scripts": { "build": "tsc -p tsconfig.json", "test": "vitest run --maxWorkers=2" },
-  "peerDependencies": { "@ara3d/viewer-core": "^0.1.0", "three": ">=0.180.0" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./render": {
+      "types": "./dist/render.d.ts",
+      "default": "./dist/render.js"
+    },
+    "./loading": {
+      "types": "./dist/loading.d.ts",
+      "default": "./dist/loading.js"
+    },
+    "./camera": {
+      "types": "./dist/camera.d.ts",
+      "default": "./dist/camera.js"
+    },
+    "./assets": {
+      "types": "./dist/assets.d.ts",
+      "default": "./dist/assets.js"
+    },
+    "./clipping": {
+      "types": "./dist/clipping.d.ts",
+      "default": "./dist/clipping.js"
+    },
+    "./environment": {
+      "types": "./dist/environment.d.ts",
+      "default": "./dist/environment.js"
+    },
+    "./navigation-aids": {
+      "types": "./dist/navigation-aids.d.ts",
+      "default": "./dist/navigation-aids.js"
+    },
+    "./overlay-renderer": {
+      "types": "./dist/overlay-renderer.d.ts",
+      "default": "./dist/overlay-renderer.js"
+    },
+    "./capture": {
+      "types": "./dist/capture.d.ts",
+      "default": "./dist/capture.js"
+    },
+    "./replacement": {
+      "types": "./dist/replacement.d.ts",
+      "default": "./dist/replacement.js"
+    },
+    "./gratify": {
+      "types": "./dist/gratify.d.ts",
+      "default": "./dist/gratify.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --maxWorkers=2"
+  },
+  "peerDependencies": {
+    "@ara3d/viewer-core": "^0.1.0",
+    "@ara3d/viewer-loaders": "^0.1.0",
+    "three": ">=0.180.0",
+    "gratify": "^0.2.0"
+  },
+  "peerDependenciesMeta": {
+    "gratify": {
+      "optional": true
+    }
+  }
 }

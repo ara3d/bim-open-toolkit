@@ -49,6 +49,13 @@ export class OrbitControls {
   private lastX = 0;
   private lastY = 0;
   private readonly handlers: Array<[string, (e: never) => void]> = [];
+  private readonly listeners = new Set<() => void>();
+
+  /** Observe pose changes from user input and programmatic update(). */
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
+  }
 
   constructor(view: CameraView, model: OrbitModel = new OrbitModel()) {
     this.view = view;
@@ -72,6 +79,7 @@ export class OrbitControls {
   }
 
   dispose(): void {
+    this.listeners.clear();
     if (!this.element) return;
     for (const [type, handler] of this.handlers)
       this.element.removeEventListener(type, handler);
@@ -90,6 +98,7 @@ export class OrbitControls {
   update(): void {
     this.model.applyTo(this.view.camera);
     this.view.requestRender();
+    for (const listener of [...this.listeners]) listener();
   }
 
   private listen<E>(type: string, handler: (e: E) => void): void {

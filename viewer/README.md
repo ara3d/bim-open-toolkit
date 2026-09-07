@@ -25,9 +25,11 @@ Design requirements carried over from the previous viewer's lessons:
 
 This workspace is a candidate to move to its own repository once stable.
 
-The visualization alpha includes a standalone review demonstration. After installing and
-running `npm run build`, use `npm run demo` to open the local development server.
-See its package README for implemented scope, verification, and explicit deferrals.
+The visualization alpha includes 23 independent feature demos, primarily using the local
+Snowdon fixture. After installing and running `npm run build`, use `npm run demo`.
+`npm run demo:snowdon`, `npm run demo:normalized` and `npm run demo:browser` check the
+served fixture, normalized geometry and browser behavior. See the
+[package README](packages/visualization/README.md) for setup, evidence and remaining scope.
 
 ## Developing
 

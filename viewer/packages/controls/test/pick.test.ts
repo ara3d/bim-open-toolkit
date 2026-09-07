@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PerspectiveCamera } from 'three';
 import { SceneObject, ViewerScene } from '@ara3d/viewer-core';
 import { Picker } from '../src/pick.js';
+import { SectionPlanes } from '../src/section-planes.js';
 import { quadGroupAt, translation, white } from './helpers.js';
 
 const makeCamera = (): PerspectiveCamera => {
@@ -13,6 +14,19 @@ const makeCamera = (): PerspectiveCamera => {
 };
 
 describe('Picker', () => {
+  it('preserves picking and sectioning when core uses batched rendering', () => {
+    const scene = new ViewerScene();
+    const near = quadGroupAt([[0,0,1]]), far = quadGroupAt([[0,0,-1]]);
+    scene.addGroup(near); scene.addGroup(far);
+    const objects = new SceneObject(scene,0);
+    const picker = new Picker(scene,objects);
+    expect(picker.pick(makeCamera(),0,0)?.group).toBe(near);
+    const section = new SectionPlanes(); section.addAxisPlane('z',0); section.apply(scene,objects);
+    expect(picker.pick(makeCamera(),0,0)?.group).toBe(far);
+    section.clear(); section.apply(scene,objects);
+    expect(picker.pick(makeCamera(),0,0)?.group).toBe(near);
+    objects.dispose();
+  });
   it('hits the nearest instance through the center ray', () => {
     const scene = new ViewerScene();
     const group = quadGroupAt([[0, 0, 0], [0, 0, -2]]);

@@ -8,11 +8,7 @@ export const persistenceDemo: FeatureDemo = {
   source: 'examples/features/persistence.ts', tests: 'test/persistence.test.ts',
   mount(context) {
     const controller = new AbortController();
-    const models: ModelData[] = [...new Set(context.base.map(object => object.ref.modelId))].map(id => ({
-      ref: { id, revision: 'gallery-current-session' },
-      coordinates: { units: 'unknown', up: 'Y', registration: 'unknown' },
-      objects: context.base.filter(object => object.ref.modelId === id),
-    }));
+    const models: ModelData[] = [context.model];
     const json = document.createElement('textarea');
     json.rows = 12; json.setAttribute('aria-label', 'Saved view JSON'); json.placeholder = 'Save a view to inspect its JSON';
     context.panel.append(json);

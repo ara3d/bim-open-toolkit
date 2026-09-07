@@ -1,4 +1,4 @@
-import { Camera, Group, InstancedMesh, Raycaster, Vector2, Vector3 } from 'three';
+import { Camera, Group, InstancedMesh, Raycaster, Vector2, Vector3, type Object3D } from 'three';
 import { InstancedGroup, ViewerScene } from '@ara3d/viewer-core';
 
 /**
@@ -9,6 +9,8 @@ import { InstancedGroup, ViewerScene } from '@ara3d/viewer-core';
 export interface SceneObjects {
   sync(): boolean;
   getObject(group: InstancedGroup): SceneGroupObject | undefined;
+  readonly scene?: Object3D;
+  raycast?(raycaster: Raycaster): readonly PickHit[];
 }
 
 export interface SceneGroupObject {
@@ -48,7 +50,9 @@ export class Picker {
 
   pick(camera: Camera, ndcX: number, ndcY: number): PickHit | null {
     this.objects.sync();
+    camera.updateMatrixWorld();
     this.raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
+    if (this.objects.raycast) return this.objects.raycast(this.raycaster)[0] ?? null;
     let best: PickHit | null = null;
     for (const group of this.scene.groups) {
       if (!group.visible) continue;

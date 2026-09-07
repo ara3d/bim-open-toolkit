@@ -1,6 +1,6 @@
 # Animation checkpoint
 
-Wave4, V1/G1 acknowledged; Parallel Wave and Platonic Coder applied. Owns `src/animation.ts`, `test/animation.test.ts`, `examples/features/animation.ts`, and this checkpoint. State: verified by scoped tests/typecheck. No processes or shared output mutation.
+Wave4, V1/G1 acknowledged; Parallel Wave and Platonic Coder applied. Owns `src/animation.ts`, `test/animation.test.ts`, `examples/features/animation.ts`, and this checkpoint. State: verified by scoped tests/typecheck. No processes or shared output mutation. Commit: `1ee7b63e62693e2fc3579efecfaee43aa543ceb8` (post-commit checkpoint line for integration).
 
 Playback is plain readonly state. `createPlayback` establishes duration, positive rate, looping and initial timestamp. `advancePlayback`, `playPlayback`, `pausePlayback`, `seekPlayback`, `setPlaybackRate`, and `resetPlayback` consume supplied monotonic timestamps in seconds. No global clock or scheduler exists in the public helper. Endpoints clamp in nonlooping mode; looping wraps across multiple periods. Pause and rate changes preserve elapsed playback; resuming excludes paused time. Seek clamps its explicit position. Reset preserves rate/loop configuration but pauses at zero. `sampleCircularTranslation` depends only on time and returns a horizontal circle displacement starting at zero.
 

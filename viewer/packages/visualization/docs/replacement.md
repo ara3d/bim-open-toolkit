@@ -1,6 +1,6 @@
 # Replacement checkpoint
 
-Wave replacement and G1.1 acknowledged; Parallel Wave and Platonic Coder applied. Owns `src/replacement.ts`, `test/replacement.test.ts`, `examples/features/replacement.ts`, `docs/replacement.md`, and transferred `src/render.ts`/`test/render.test.ts`. State: verified by focused tests and strict scoped typecheck.
+Wave replacement and G1.1 acknowledged; Parallel Wave and Platonic Coder applied. Owns `src/replacement.ts`, `test/replacement.test.ts`, `examples/features/replacement.ts`, `docs/replacement.md`, and transferred `src/render.ts`/`test/render.test.ts`. State: verified by focused tests and strict scoped typecheck. Commit `d67ad7510d2c37c7a88d3c3e188d25b7247ed8dd` (post-commit checkpoint line for integration).
 
 `ReplacementLayer(sceneObject, renderBinding, requestRender)` owns a separate overlay root, geometry and materials. `replace(original, suppliedMesh, worldTransform?)` copies supplied buffers and hides only that source object's bound instances. It indexes geometry before computing missing normals. The original record is snapshotted for restoration; source geometry and shared prototypes are never mutated. `undo(ref)` restores the source record and releases the replacement; `reset` restores all. A second replacement for one object discards its previous overlay but retains the initial source for undo. `setVisible`, `bounds`, and `raycast` address current replacements. Dispose is idempotent and unregisters picking.
 

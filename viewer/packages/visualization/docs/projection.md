@@ -1,6 +1,6 @@
 # Orthographic projection checkpoint
 
-G1.1 read and unchanged. Parallel Wave and Platonic Coder applied. Owns core `src/viewer.ts`/`test/viewer.test.ts`; visualization `src/projection.ts`, `test/projection.test.ts`, `examples/features/projection.ts`, and this checkpoint. State: focused tests and strict scoped demo typecheck verified. No processes running.
+G1.1 read and unchanged. Parallel Wave and Platonic Coder applied. Owns core `src/viewer.ts`/`test/viewer.test.ts`; visualization `src/projection.ts`, `test/projection.test.ts`, `examples/features/projection.ts`, and this checkpoint. State: focused tests and strict scoped demo typecheck verified. No processes running. Commit `2c56689ac8375efb0fff3c56210917443ff1fc95` (post-commit checkpoint line for integration).
 
 Viewer keeps its existing readonly perspective `camera`. `renderCamera` returns the camera currently used for drawing/picking; `setRenderCamera(camera)` borrows an alternate camera and null restores the default. Borrowed cameras are not disposed by Viewer. Resize updates both the default perspective aspect and an override; orthographic resize preserves vertical span, horizontal center and zoom while adapting horizontal span to viewport aspect. Generic Camera overrides retain host-owned projection matrices. Dispose clears the override reference.
 

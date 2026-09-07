@@ -1,0 +1,6 @@
+import { expect,it,vi } from 'vitest';
+import { Color,DirectionalLight,Scene } from 'three';
+import { applyEnvironment } from '../src/environment.js';
+import { addNavigationAids } from '../src/navigation-aids.js';
+it('restores host lights and background without accumulating rigs',()=>{const scene=new Scene();const original=new Color(0x123456);scene.background=original;const light=new DirectionalLight();scene.add(light);const dispose=applyEnvironment(scene,{background:0,intensity:1});expect(light.visible).toBe(false);expect(scene.children).toHaveLength(2);dispose();dispose();expect(scene.background).toBe(original);expect(scene.children).toEqual([light]);expect(light.visible).toBe(true);expect(()=>applyEnvironment(scene,{background:0,intensity:NaN})).toThrow();expect(scene.children).toEqual([light]);});
+it('releases guide geometry once and removes only its own nodes',()=>{const scene=new Scene();const light=new DirectionalLight();scene.add(light);const aids=addNavigationAids(scene,{min:[0,0,0],max:[2,3,4]});const dispose=vi.fn();aids.root.children.forEach(child=>{if('geometry'in child)(child.geometry as {addEventListener(name:string,listener:()=>void):void}).addEventListener('dispose',dispose);});aids.dispose();aids.dispose();expect(dispose).toHaveBeenCalledTimes(3);expect(scene.children).toEqual([light]);});

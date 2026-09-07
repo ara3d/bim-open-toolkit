@@ -1,4 +1,4 @@
-import { Material, Plane, Vector3 } from 'three';
+import { Material, Plane, Vector3, Mesh } from 'three';
 import { ViewerScene } from '@ara3d/viewer-core';
 import { SceneObjects } from './pick.js';
 
@@ -58,6 +58,16 @@ export class SectionPlanes {
   apply(scene: ViewerScene, objects: SceneObjects): void {
     objects.sync();
     const active = this._enabled && this._planes.length > 0 ? this._planes : null;
+    if (objects.scene) {
+      objects.scene.traverse(object => {
+        if (!(object instanceof Mesh)) return;
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          material.clippingPlanes = active;
+          material.needsUpdate = true;
+        }
+      });
+      return;
+    }
     for (const group of scene.groups) {
       const mesh = objects.getObject(group)?.mesh;
       if (!mesh) continue;

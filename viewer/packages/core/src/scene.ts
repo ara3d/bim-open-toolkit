@@ -6,27 +6,29 @@ import { InstancedGroup } from './instanced-group.js';
  * Renderers diff against it each frame (see SceneObject.sync).
  */
 export class ViewerScene {
-  private _groups: InstancedGroup[] = [];
+  private readonly members = new Set<InstancedGroup>();
+  private snapshot: readonly InstancedGroup[] | undefined;
 
-  get groups(): readonly InstancedGroup[] { return this._groups; }
-  get groupCount(): number { return this._groups.length; }
+  get groups(): readonly InstancedGroup[] { return this.snapshot ??= [...this.members]; }
+  get groupCount(): number { return this.members.size; }
 
   /** Adds a group. Adding the same group twice is an error. */
   addGroup(group: InstancedGroup): void {
-    if (this._groups.includes(group))
+    if (this.members.has(group))
       throw new Error('group already in scene');
-    this._groups.push(group);
+    this.members.add(group);
+    this.snapshot = undefined;
   }
 
   /** Removes a group. Returns false if it was not in the scene. */
   removeGroup(group: InstancedGroup): boolean {
-    const i = this._groups.indexOf(group);
-    if (i < 0) return false;
-    this._groups.splice(i, 1);
-    return true;
+    const removed = this.members.delete(group);
+    if (removed) this.snapshot = undefined;
+    return removed;
   }
 
   clear(): void {
-    this._groups.length = 0;
+    this.members.clear();
+    this.snapshot = undefined;
   }
 }

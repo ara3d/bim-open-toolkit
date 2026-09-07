@@ -30,7 +30,7 @@ export const formatsDemo: FeatureDemo = {
       original.clear(); context.selection.replace([]);
     };
     context.button('Open selected asset', async () => {
-      const selected = [...(files.files ?? [])];
+      const selected = Array.from(files.files ?? []);
       const source = selected.find(file => file.name.toLowerCase().endsWith(`.${format.value}`));
       if (!source) { context.status('Choose an asset matching the selected format. Include its glTF buffers/images when needed.'); return; }
       controller?.abort(); controller = new AbortController(); const request = controller;
