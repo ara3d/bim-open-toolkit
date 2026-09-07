@@ -29,6 +29,9 @@ export class ReplacementLayer {
 
   replace(original: ObjectRecord, supplied: MeshBuffers, worldTransform: Matrix4 = original.transform): void {
     if (this.disposed) throw new Error('Replacement layer is disposed');
+    const key = objectKey(original.ref);
+    const previous = this.entries.get(key);
+    const snapshot = previous?.original ?? structuredClone(original);
     validateMeshBuffers(supplied);
     if (!worldTransform.every(Number.isFinite) || worldTransform.length !== 16 || !supplied.positions.every(Number.isFinite) || (supplied.normals && !supplied.normals.every(Number.isFinite))) throw new Error('Replacement geometry and matrix must be finite');
     const geometry = new BufferGeometry();
@@ -44,11 +47,9 @@ export class ReplacementLayer {
     const hidden = { ...original, appearance: { ...original.appearance, visible: false } };
     const result = this.render.update([hidden]);
     if (!result.ok || result.diagnostics.length) { geometry.dispose(); material.dispose(); throw new Error(result.diagnostics.map(item => item.message).join('; ')); }
-    const key = objectKey(original.ref);
-    const previous = this.entries.get(key);
     if (previous && !previous.original.appearance.visible) mesh.visible = false;
     if (previous) this.release(previous);
-    this.entries.set(key, { original: previous?.original ?? structuredClone(original), mesh });
+    this.entries.set(key, { original: snapshot, mesh });
     this.root.add(mesh);
     this.requestRender();
   }

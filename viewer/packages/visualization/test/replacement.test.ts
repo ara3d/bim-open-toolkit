@@ -43,6 +43,20 @@ it('replaces one repeated object without changing source mesh, membership or bat
   layer.dispose(); f.render.dispose(); f.mirror.dispose();
 });
 
+it('fails source snapshotting before hiding geometry or creating replacement history', () => {
+  const f = fixture();
+  const layer = new ReplacementLayer(f.mirror, f.render, () => {});
+  const extended = { ...f.original, hostCallback: () => {} };
+  const colorVersion = f.group.colorsVersion;
+  expect(() => layer.replace(extended, f.data)).toThrow();
+  expect(f.group.colorsVersion).toBe(colorVersion);
+  expect(f.group.getColor(0)[3]).toBe(1);
+  expect(layer.root.children).toHaveLength(0);
+  expect(layer.undo(f.original.ref)).toBe(false);
+  expect(f.render.pick(f.mirror,f.camera,0,0)?.representationId).toBe('source');
+  layer.dispose(); f.render.dispose(); f.mirror.dispose();
+});
+
 it('filters hidden/clipped replacement hits and cleans up on disposal', () => {
   const f = fixture();
   const layer = new ReplacementLayer(f.mirror, f.render, () => {});
