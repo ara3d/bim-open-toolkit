@@ -26,14 +26,20 @@ try{
   await probe.close();
   if(!process.argv.includes('--probe')){
     await mkdir(output,{recursive:true});
-    const modules=await Promise.all(['loading','spatial','review'].map(name=>import(`./browser-specs/${name}.mjs`)));
+    const modules=await Promise.all(['loading','spatial','review','resize'].map(name=>import(`./browser-specs/${name}.mjs`)));
     const filter=process.env.BIM_BROWSER_CASE;
     const scenarios=modules.flatMap(module=>module.scenarios).filter(item=>!filter||item.name.includes(filter)||item.feature===filter);
     assert.ok(scenarios.length,'No matching browser scenarios');
     for(const scenario of scenarios){
-      const page=await browser.newPage({viewport:{width:1280,height:800},deviceScaleFactor:1});
+      const page=await browser.newPage({viewport:{width:1280,height:800},deviceScaleFactor:scenario.deviceScaleFactor??1});
       page.setDefaultTimeout(20000);
       const errors=[];
+      // Browser-generated ResizeObserver errors can bypass Playwright's pageerror event.
+      await page.addInitScript(() => {
+        window.__browserErrors = [];
+        window.addEventListener('error', event => window.__browserErrors.push(event.message));
+        window.addEventListener('unhandledrejection', event => window.__browserErrors.push(String(event.reason)));
+      });
       page.on('pageerror',error=>errors.push(String(error)));
       page.on('console',message=>{if(message.type()==='error')errors.push(`${message.text()} @ ${message.location().url}`);});
       const started=performance.now();
@@ -44,10 +50,14 @@ try{
         assert.match(await page.locator('#model-count').innerText(),/objects/,'Model did not become ready');
         if(scenario.model==='snowdon')assert.match(await page.locator('#model-count').innerText(),/51,139 objects/);
         await scenario.run(page);
+        const windowErrors = await page.evaluate(() => window.__browserErrors);
+        errors.push(...windowErrors.map(message=>`Window error: ${message}`));
         assert.deepEqual(errors,[],'Browser emitted errors');
         await page.screenshot({path:path.join(output,`${scenario.feature}.png`)});
         result={...result,passed:true,elapsedMs:Math.round(performance.now()-started)};
       }catch(error){
+        const windowErrors=await page.evaluate(()=>window.__browserErrors??[]).catch(()=>[]);
+        for(const message of windowErrors){const entry=`Window error: ${message}`;if(!errors.includes(entry))errors.push(entry);}
         result={...result,passed:false,error:String(error),browserErrors:errors,elapsedMs:Math.round(performance.now()-started)};
         await page.screenshot({path:path.join(output,`${scenario.feature}-failed.png`)}).catch(()=>{});
       }finally{await page.close();}

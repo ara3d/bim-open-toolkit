@@ -1,3 +1,4 @@
+import { observeResize } from './observe-resize.js';
 import './style.css';
 import { BoxGeometry, Vector3 } from 'three';
 import { Viewer, InstancedGroup, sceneBounds } from '@ara3d/viewer-core';
@@ -139,7 +140,6 @@ canvas.addEventListener('pointerup', event => {
   if (hit) { event.ctrlKey || event.metaKey ? selection.toggle([hit.ref]) : selection.replace([hit.ref]); status(registry.getObject(hit.ref)?.name ?? hit.ref.objectId); }
 });
 const unsubscribe = selection.subscribe(() => { update(); table(); });
-const resize = new ResizeObserver(() => viewer.resize(canvas.clientWidth,canvas.clientHeight,Math.min(devicePixelRatio,2)));
-resize.observe(canvas);
-window.addEventListener('pagehide', () => { resize.disconnect(); unsubscribe(); selection.dispose(); registry.dispose(); controls.dispose(); binding.dispose(); viewer.dispose(); }, { once:true });
+const stopResize = observeResize(canvas, () => viewer.resize(canvas.clientWidth,canvas.clientHeight,Math.min(devicePixelRatio,2)));
+window.addEventListener('pagehide', () => { stopResize(); unsubscribe(); selection.dispose(); registry.dispose(); controls.dispose(); binding.dispose(); viewer.dispose(); }, { once:true });
 loadFixture(100);

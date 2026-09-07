@@ -1,6 +1,7 @@
 import { Viewer, sceneBounds } from '@ara3d/viewer-core';
 import { OrbitControls } from '@ara3d/viewer-controls';
 import { Vector3 } from 'three';
+import { observeResize } from '../observe-resize.js';
 import { fitPerspectivePose } from '../../src/camera.js';
 import { linkCameraViews, type CameraEndpoint } from '../../src/view-link.js';
 import type { FeatureDemo } from '../gallery/contracts.js';
@@ -42,10 +43,10 @@ export const comparisonDemo: FeatureDemo = {
       Object.assign(canvas.style, { position: 'absolute', right: '0', top: '0', width: '50%', height: '100%' });
       const viewer = new Viewer({ background: 0xdce4e9, near: context.viewer.camera.near, far: context.viewer.camera.far, fov: context.viewer.camera.fov });
       const controls = new OrbitControls(viewer);
-      const observer = new ResizeObserver(() => viewer.resize(canvas.clientWidth, canvas.clientHeight, Math.min(devicePixelRatio, 2)));
+      let stopResize = () => {};
       removeSecond = () => {
         unlink(); other = undefined;
-        observer.disconnect(); controls.dispose(); viewer.dispose(); canvas.remove();
+        stopResize(); controls.dispose(); viewer.dispose(); canvas.remove();
         context.canvas.style.width = originalWidth; resizeFirst();
         removeSecond = undefined;
         addButton.disabled = false; removeButton.disabled = true; linkButton.disabled = true;
@@ -61,7 +62,7 @@ export const comparisonDemo: FeatureDemo = {
           get clientHeight() { return canvas.clientHeight; }, style: canvas.style,
           setPointerCapture: id => canvas.setPointerCapture(id), releasePointerCapture: id => canvas.releasePointerCapture(id),
         });
-        observer.observe(canvas);
+        stopResize = observeResize(canvas, () => viewer.resize(canvas.clientWidth, canvas.clientHeight, Math.min(devicePixelRatio, 2)));
         resizeFirst();
         viewer.resize(canvas.clientWidth, canvas.clientHeight, Math.min(devicePixelRatio, 2));
         const bounds = sceneBounds(viewer.scene);

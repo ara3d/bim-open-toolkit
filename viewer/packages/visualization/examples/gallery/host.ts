@@ -6,6 +6,7 @@ import { objectKey } from '../../src/contracts.js';
 import { loadBosModel } from '../../src/loading.js';
 import type { FeatureDemo, DemoContext } from './contracts.js';
 import { smallFixture } from './fixture.js';
+import { observeResize } from '../observe-resize.js';
 
 /** One route, one renderer; feature controls are mounted only after its model is ready. */
 export async function mountViewer(feature: FeatureDemo, root: HTMLElement): Promise<() => void> {
@@ -35,12 +36,12 @@ export async function mountViewer(feature: FeatureDemo, root: HTMLElement): Prom
   const controls = new OrbitControls(viewer);
   let cleanupFeature = () => {};
   let disposed = false;
-  const resize = new ResizeObserver(() => { if (!disposed) viewer.resize(canvas.clientWidth,canvas.clientHeight,Math.min(devicePixelRatio,2)); });
+  let stopResize = () => {};
   const dispose = () => {
     if(disposed)return;disposed=true;window.removeEventListener('pagehide',dispose);controller.abort();
     root.querySelectorAll<HTMLButtonElement>('button').forEach(button=>{button.disabled=true;});
     const failures:unknown[]=[];
-    for(const release of [cleanupFeature,()=>resize.disconnect(),()=>controls.dispose(),()=>selection.dispose(),()=>render.dispose(),()=>viewer.dispose()]){
+    for(const release of [cleanupFeature,()=>stopResize(),()=>controls.dispose(),()=>selection.dispose(),()=>render.dispose(),()=>viewer.dispose()]){
       try{release();}catch(error){failures.push(error);}
     }
     if(failures.length)showError(`Cleanup failed: ${failures.map(String).join('; ')}`);
@@ -57,7 +58,8 @@ export async function mountViewer(feature: FeatureDemo, root: HTMLElement): Prom
   choice.value = new URLSearchParams(location.search).get('model') === 'small' ? 'small' : 'snowdon';
   choice.onchange = () => { dispose(); const url = new URL(location.href); url.searchParams.set('model',choice.value); location.href = url.href; };
   try {
-    viewer.attach(canvas); resize.observe(canvas);
+    viewer.attach(canvas);
+    stopResize = observeResize(canvas, () => viewer.resize(canvas.clientWidth,canvas.clientHeight,Math.min(devicePixelRatio,2)));
     controls.attach({
       addEventListener:(type,listener)=>canvas.addEventListener(type,listener as EventListener),
       removeEventListener:(type,listener)=>canvas.removeEventListener(type,listener as EventListener),
