@@ -3,6 +3,8 @@
 The optional `/gratify` adapter imports only Gratify's public API. `mountReviewControls(canvas, commands)` returns `{dispatch(command), dispose()}`; commands are typed `fit`, `clearSelection` and `toggleGhost` callbacks. The adapter contains no BIM selection, camera or appearance logic. The independent `gratifyDemo` maps these callbacks to the existing viewer features and offers equivalent native HTML buttons.
 
 ```ts
+import { mountReviewControls } from '@bim-open-toolkit/visualization/gratify';
+
 const controls = mountReviewControls(canvas, {
   fit: () => camera.fit(),
   clearSelection: () => selection.replace([]),
@@ -21,9 +23,11 @@ The surface is 288×196 logical pixels, scaled by host CSS; pointer coordinates 
 
 Development uses the pinned local Gratify submodule built and linked by the coordinator; no submodule source was modified. Published consumers require a compatible published Gratify release. A local 0.2.0 package build alone does not establish npm release availability or application accessibility certification. The visualization root export remains Gratify-free; dependency/export wiring belongs to the coordinator.
 
+The current optional entrypoint works through the gallery's browser bundler and the Vitest resolver. Direct native Node import of `/gratify` fails with `ERR_UNSUPPORTED_DIR_IMPORT`: pinned Gratify 0.2.0 emits an extensionless `dist/core` directory import. Native Node consumers need an upstream packaging correction or a compatible release. This limitation does not affect the visualization root data API, which was independently imported in Node without DOM access. Headless Runtime tests use Vitest resolution and do not establish native Node package compatibility.
+
 ## Track checkpoint
 
 - State: verified against G1.1/V1, four owned files: `src/gratify.ts`, `test/gratify.test.ts`, `examples/features/gratify.ts`, this document.
 - Direct Vitest `run test/gratify.test.ts --maxWorkers=1 --cache=false`: 3/3 passed using the real public Gratify Runtime for MVU/headless rendering/keyboard routing. A separate fake-canvas lifecycle test verifies owned listener removal, RAF cancellation, canvas restoration and ignored post-disposal dispatch; it does not claim raster rendering coverage.
 - Strict no-emit TypeScript check for adapter and demo passed, including exact optional fields and unchecked indexes.
-- No builds, installs, submodule changes or processes left running. Coordinator owns package exports, gallery registration and actual browser canvas verification. Commit turn requested; hash reported after commit.
+- Implementation landed in `77624b8`. No builds, installs, submodule changes or processes left running. Coordinator owns final browser canvas qualification. The later documentation-only qualification records the native Node import limitation above; it adds no runtime changes.
