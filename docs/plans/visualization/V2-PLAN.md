@@ -1,6 +1,6 @@
 # Visualization V2 plan
 
-Date: 2026-09-07. Status: proposed, not started. Supersedes the alpha delivery approach in [PLAN.md](../../../viewer/packages/visualization/docs/PLAN.md) for future waves. The [product brief](PRODUCT-BRIEF.md) remains the requirements baseline and its F01–F27 IDs are used below.
+Date: 2026-09-07. Status: proposed, not started; pre-flight review completed 2026-09-07 (see the decision record in [README.md](README.md)). Supersedes the alpha delivery approach in [PLAN.md](../../../viewer/packages/visualization/docs/PLAN.md) for future waves. The [product brief](PRODUCT-BRIEF.md) remains the requirements baseline and its F01–F27 IDs are used below.
 
 ## Why a new plan
 
@@ -122,9 +122,28 @@ Track leads may spawn sub-agents inside their own fence. Rules for nested agents
 
 Every brief includes: F-ID and stage, acceptance cases from the brief, contract revision, exact writable paths, test command, stop-and-reassess condition, and the next handoff.
 
+## Concurrent work in this checkout
+
+At the 2026-09-07 pre-flight review three other interactive sessions were active in this checkout. One is adding prepared BFAST model loading: commit `851a91e` landed during the review and `viewer/packages/loaders` still held uncommitted files (`bfast-writer.ts`, `bim-data.ts`, `bos-to-bfast.ts`, `scripts/`) plus an edit to `viewer/packages/visualization/src/loading.ts`. Rules that follow:
+
+- `viewer/packages/{core,controls,loaders,visualization}/**` are read-only for every V2 track and for the supervisor until the wave 4 cutover. V2 packages consume `@ara3d/viewer-core`, `@ara3d/viewer-controls` and `@ara3d/viewer-loaders` through their published exports at a commit recorded in `V2-STATUS.md`. Track F re-verifies against the loaders package at its HEAD before each checkpoint and reports any export change as a finding.
+- The BFAST `RenderModel` in the loaders package (typed-array mesh slices and 64-byte instance records, all views on the file) is the closest existing input to the V2 `RepresentationTable`. Track F builds the BOS and BFAST adapter on it, not on the alpha `InstanceBinding` objects.
+- The supervisor edits `viewer/package.json` and the lockfile only to add V2 workspaces and their dev dependencies. Before every such edit run `git status --porcelain`; if another session has changed either file, re-run `npm install` and re-verify before committing.
+- Every commit is staged by explicit pathspec. Any modified or untracked file outside the active wave's fences is another session's work: leave it alone, never stage it, and note it in the checkpoint.
+- `npm test` at the workspace root includes the alpha packages, whose inputs can change under other sessions. V2 gates run per V2 package; combined runs record alpha results as informational until wave 4.
+- Ports 5173 and 5174 may be held by another session. Check before starting a server and record the owner in `V2-STATUS.md`.
+
+## Toolset
+
+- **Skills.** `platonic-coder@platonic` and `parallel-wave@platonic`, both 0.2.0 at marketplace commit `5d8db0b`, installed at user scope and invoked as `platonic-coder:platonic-coder` and `parallel-wave:parallel-wave`. Briefs pass the resolved paths `C:/Users/cdigg/.claude/plugins/cache/platonic/<name>/0.2.0/skills/<name>/SKILL.md`. No copy may exist under `~/.claude/skills` or `.claude/skills`; a copy shadows the plugin.
+- **platonic-ts MCP server.** The sibling checkout `../platonic-ts` provides a 33-tool MCP server over a TypeScript code index. It is registered in `.mcp.json` through `tools/platonic-mcp.ts` over `viewer/`, and connects at session start, so a session started before the registration must be restarted. Index scope is `viewer/packages/*/src` and `viewer/packages/*/test`. Every brief says: use `outline`, `symbol`, `usages`, `callers` and `blast_radius` instead of reading whole files or grepping; use `replace_symbol`, `insert_symbol` and `rename_symbol` for edits addressed by declaration name; use `diagnostics` before running the compiler. Smoke test on 2026-09-07: `usages InstancedGroup` returned 82 type-checked uses in 17 files.
+- **Strictness retrofit and check gate.** Wave 0 supervisor chunk 1 runs `platonic init viewer --profile standard --yes` from `../platonic-ts`, which writes `viewer/tsconfig.json` (strict plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitReturns`; `include` set to `packages/*/src` and `packages/*/test`), `viewer/eslint.config.js` (files scoped to the V2 packages so the alpha and loaders are not linted), `viewer/ratchet.json` (baseline at the current counts) and the `typecheck`, `lint` and `check` scripts with `eslint` and `typescript-eslint` dev dependencies (keep `typescript` at `^5.9.2`). A wrapper `tools/platonic-check.ts` runs the platonic-ts gate steps typecheck, lint, ratchet and tests over `viewer/`. Rules: V2 code adds no escape hatches, so counts only fall; the alpha `npm test`, `demo:check` and `npm run build` must be unchanged after the retrofit, verified before it is committed.
+- **Fences.** The supervisor writes `.claude/wave.json` for each wave as the machine-readable copy of the wave table (format: platonic-ts `WaveManifest` with `name`, `supervisor`, `scratch` and `tracks[id].paths`). Whether the platonic-ts hooks enforce it is unresolved decision 5. Without hooks, fences are enforced at the commit turn by inspecting the index against the manifest.
+- **Upstream note.** The platonic-ts entry points hardcode their own repository as the target, so this repository uses wrappers under `tools/`. A `--repo <dir>` option upstream would remove them; record it as a platonic-ts backlog item, not V2 work.
+
 ## Waves
 
-Capacity: check the actual concurrent agent limit at the start of each wave and keep a ready queue so a finished slot is refilled immediately. Tracks below are ordered by readiness; run as many as the limit allows.
+Capacity: check the actual concurrent agent limit at the start of each wave and keep a ready queue so a finished slot is refilled immediately. Tracks below are ordered by readiness; run as many as the limit allows. Earlier sessions in this repository measured one coordinator plus three workers; other interactive sessions in the same checkout share the machine's CPU, memory, browser and port capacity, so record them in `V2-STATUS.md` at each wave start.
 
 ### Wave 0: contracts and skeleton (supervisor plus two Opus leads)
 
@@ -132,9 +151,11 @@ Acceptance: all packages exist with manifests, typecheck and an empty passing te
 
 | Track | Writes only | Ready when | Checks |
 |---|---|---|---|
-| Supervisor | `viewer/package.json`, lockfile, `viewer/packages/*/package.json`, `tsconfig*`, `docs/plans/visualization/V2-STATUS.md` | now | workspace build |
+| Supervisor | `viewer/package.json`, lockfile, `viewer/packages/*/package.json` for V2 packages only, `viewer/tsconfig.json`, `viewer/eslint.config.js`, `viewer/ratchet.json`, `tools/**`, `.mcp.json`, `.claude/wave.json`, `docs/plans/visualization/V2-STATUS.md` | now | workspace build; alpha `npm test`, `demo:check` and `npm run build` unchanged after the retrofit |
 | M (Opus) | `viewer/packages/model/**` | skeleton | `npm test -w @bim-open-toolkit/model` |
 | S (Opus) | `viewer/packages/synthetic/**` | model types stubbed | `npm test -w @bim-open-toolkit/synthetic` |
+
+Supervisor chunk order: (1) strictness retrofit and `tools/platonic-check.ts`, verified against the alpha suites and committed alone; (2) V2 package skeletons with manifests, empty passing tests and the recorded baseline in `V2-STATUS.md`; (3) `.claude/wave.json` and the track briefs for M and S.
 
 Track M delivers: identity, coordinates, sets, style rules with precedence, edits and history, schema combinators, `Result`, facts vocabulary, `Table`, mesh POD, `Feature`, `Command`, `StateSlice` and `Event` contracts. Track S delivers the seeded PRNG, mesh primitives, `building` and `stress` generators; other generators follow in wave 1.
 
@@ -198,7 +219,8 @@ F22 maps, F24 tracing and F25 mesh-derived voxels stay postponed. The `city` gen
 
 ## Gates and resources
 
-- Per package: `npm test -w @bim-open-toolkit/<name>`; typecheck through the workspace build.
+- Baseline recorded 2026-09-07 at commit `851a91e` with the concurrent loader files uncommitted: `npm test` in `viewer/` passed 290 tests and skipped 1 across core, controls, loaders and visualization, with no failures. The retrofit dry run over 147 viewer TypeScript files counted 2 `any`, 181 `as` casts, 217 non-null assertions, 0 compiler directives, 0 lint disables and 167 undocumented exports.
+- Per package: `npm test -w @bim-open-toolkit/<name>`; typecheck through the workspace build; `node ../platonic-ts/node_modules/tsx/dist/cli.mjs tools/platonic-check.ts` for the strictness gate once wave 0 chunk 1 lands.
 - Demos: `demo:check`, `demo:build`, browser smoke on software WebGL for function, hardware runs for performance.
 - Snowdon: opt-in integration test and HTTP smoke, unchanged from the alpha; one browser lane owned by the supervisor until measured capacity allows more.
 - Benchmark protocol: as brief section 8, plus frame-time percentiles over a recorded camera path, HUD disabled, per viewport count.
@@ -210,6 +232,7 @@ F22 maps, F24 tracing and F25 mesh-derived voxels stay postponed. The `city` gen
 2. MCP transport: a WebSocket bridge from a Node process to the browser session is the default; confirm the client used for the walkthrough.
 3. Whether `interact` replaces `@ara3d/viewer-controls` or wraps it. Track I decides in its first chunk and records the reason.
 4. Package count: thirteen is deliberate for ownership; merge later only if a boundary proves to have no independent consumer.
+5. Fence enforcement by hooks. The platonic-ts PreToolUse and pre-commit hooks refuse edits outside `.claude/wave.json` fences, `git add .` and `commit -a`, and commits that mix owners. Project hooks apply to every session in this checkout, including the concurrent loader work, and the hook code in `../platonic-ts` was itself mid-change on 2026-09-07. Recommendation: do not install them for wave 0; enforce fences at the commit turn instead; revisit at the start of wave 1 when the concurrent sessions and the hook code are stable, and if installed give the concurrent work its own track entry in the manifest.
 
 ## Maintaining this plan
 

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "platonic": {
+      "command": "node",
+      "args": ["../platonic-ts/node_modules/tsx/dist/cli.mjs", "tools/platonic-mcp.ts"]
+    }
+  }
+}

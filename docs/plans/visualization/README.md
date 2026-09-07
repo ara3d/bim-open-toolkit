@@ -41,3 +41,15 @@ Append a dated record with: affected original F-ID/stage and requirement; previo
 **User basis:** user request on 2026-09-07 for a new plan prioritizing maintainability, usability and ease of extension, with many real-world workflow demonstrations, more synthetic examples, maximal parallelism, Opus agents for coding, Sonnet agents for long mechanical tasks, and nested agent spawning.
 
 **Affected requirements:** none removed. F22, F24 and F25 remain postponed. All other P0 stages are scheduled in waves 0 to 4.
+
+## Decision record: 2026-09-07 — V2 pre-flight: concurrent work, toolset and baseline
+
+**Previous decision:** [V2-PLAN.md](V2-PLAN.md) as proposed, not started; tooling limited to the platonic-coder and parallel-wave skills.
+
+**Revised decision:** V2-PLAN.md gains a "Concurrent work" section, a "Toolset" section, a recorded baseline, and wave 0 supervisor paths for the tooling files. The platonic-ts MCP server (sibling checkout `../platonic-ts`) is registered for this repository over the viewer workspace through `tools/platonic-mcp.ts` and `.mcp.json`. The platonic-ts strictness retrofit and check gate are scheduled as the first wave 0 supervisor chunk. Fence-enforcing hooks are not installed; that decision is recorded as unresolved because project hooks apply to every session in this checkout, including the concurrent loader work.
+
+**Reason and evidence:** three other interactive sessions were active in this checkout during the review; commit `851a91e` (prepared BFAST models) landed during it and `viewer/packages/loaders` still carried uncommitted files. The MCP smoke test over `viewer/` listed 33 tools and resolved `InstancedGroup` to 82 type-checked uses in 17 files. The workspace test baseline at `851a91e` plus the dirty loader files was 290 passed, 1 skipped, 0 failed. The retrofit dry run over 147 viewer TypeScript files counted 2 `any`, 181 `as`, 217 `!`, 0 directives, 0 lint disables and 167 undocumented exports.
+
+**User basis:** user request on 2026-09-07 to prepare V2 execution with the parallel-wave and platonic-coder skills and the platonic-ts toolset, aware of concurrent BFAST loader work.
+
+**Affected requirements:** none. F22, F24 and F25 remain postponed.
