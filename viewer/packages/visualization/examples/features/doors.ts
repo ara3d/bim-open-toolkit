@@ -1,4 +1,4 @@
-import { adaptDoorSchedule, type DoorSchedule, type NumericFact } from '../../src/building-model.js';
+import { adaptDoorSchedule, type DoorSchedule, type DoorScheduleRow, type NumericFact } from '../../src/building-model.js';
 import { composeAppearance, objectKey, serializeSceneDocument, parseSceneDocument, restoreSceneDocument, type SceneDocument } from '../../src/index.js';
 import type { FeatureDemo } from '../gallery/contracts.js';
 
@@ -18,9 +18,13 @@ export const doorsDemo: FeatureDemo = {
     const saved = document.createElement('textarea'); saved.rows = 4; saved.setAttribute('aria-label', 'Saved door selection JSON');
     context.panel.append(alert, summary, filter, sort, table, details, saved);
     const display = (fact: NumericFact) => fact.state === 'known' ? `${fact.value.toFixed(3)} m` : `${fact.reason}: ${fact.explanation}`;
+    const showDetails = (row?: DoorScheduleRow) => {
+      details.textContent = row ? `Nominal width: ${display(row.nominalWidth)}\nClear width: ${display(row.clearWidth)}\nSnapshot: ${schedule!.snapshotId}\nObject: ${row.id}\n${row.evidenceIds.map(id => { const evidence = schedule!.evidence.find(item => item.id === id); return evidence ? `${id}\n${evidence.method}: ${evidence.explanation}\n${evidence.externalReferences.map(link => `${link.authority} / ${link.title} / ${link.version}: ${link.locator}`).join('\n')}` : `${id}: unavailable`; }).join('\n')}` : '';
+    };
     const refreshTable = () => {
       if (!schedule) return;
       const selected = new Set(context.selection.snapshot().map(objectKey));
+      showDetails(schedule.rows.find(row => row.ref && selected.has(objectKey(row.ref))));
       const rows = schedule.rows.filter(row => row.name.toLowerCase().includes(filter.value.toLowerCase()));
       rows.sort((a, b) => sort.value === 'Name' ? a.name.localeCompare(b.name) : (a.nominalWidth.state === 'known' ? a.nominalWidth.value : Infinity) - (b.nominalWidth.state === 'known' ? b.nominalWidth.value : Infinity) || a.name.localeCompare(b.name));
       table.replaceChildren();
@@ -29,8 +33,12 @@ export const doorsDemo: FeatureDemo = {
         button.textContent = `${row.name} · nominal ${display(row.nominalWidth)} · clear ${row.clearWidth.state === 'known' ? display(row.clearWidth) : row.clearWidth.reason}`;
         button.setAttribute('aria-pressed', String(row.ref ? selected.has(objectKey(row.ref)) : false));
         button.onclick = () => {
-          details.textContent = `Nominal width: ${display(row.nominalWidth)}\nClear width: ${display(row.clearWidth)}\nSnapshot: ${schedule!.snapshotId}\nObject: ${row.id}\n${row.evidenceIds.map(id => { const evidence = schedule!.evidence.find(item => item.id === id); return evidence ? `${id}\n${evidence.method}: ${evidence.explanation}\n${evidence.externalReferences.map(link => `${link.authority} / ${link.title} / ${link.version}: ${link.locator}`).join('\n')}` : `${id}: unavailable`; }).join('\n')}`;
-          if (row.ref) context.selection.replace([row.ref]); else context.status('This row has unresolved geometry identity; its facts remain inspectable.');
+          if (row.ref) { context.selection.replace([row.ref]); refreshTable(); }
+          else {
+            context.selection.replace([]);
+            showDetails(row);
+            context.status('This row has unresolved geometry identity; its facts remain inspectable.');
+          }
         };
         table.append(button);
       }
@@ -56,7 +64,7 @@ export const doorsDemo: FeatureDemo = {
       const restored = await restoreSceneDocument(parsed.value, async reference => reference.id === context.model.ref.id ? context.model : undefined, { signal: controller.signal });
       if (controller.signal.aborted) return;
       if (!restored.ok || restored.diagnostics.length) { alert.textContent = restored.diagnostics.map(item => item.message).join('; '); return; }
-      context.selection.replace(parsed.value.sets[0]?.members ?? []); alert.textContent = '';
+      context.selection.replace(parsed.value.sets[0]?.members ?? []); refreshTable(); alert.textContent = '';
     });
     context.button('Reset door review', () => context.reset());
     const unsubscribe = context.selection.subscribe(refresh);
