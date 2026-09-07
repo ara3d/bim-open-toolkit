@@ -109,6 +109,20 @@ describe('scene persistence', () => {
     expect(result.diagnostics.map(d => d.code)).toEqual(['missing-model', 'unresolved-object']);
   });
 
+  it.each([false, true])('only enabled additions resolve saved selection (enabled=%s)', async enabled => {
+    const added = { ...ref, objectId: 'added' };
+    const document: SceneDocument = {
+      ...fixture(), sets: [],
+      views: [{ ...fixture().views[0]!, selection: [added], rules: [] }],
+      layers: [{ id: 'add', enabled, operations: [{ kind: 'add', object: { ...object, ref: added } }] }],
+    };
+    const result = await restoreSceneDocument(document, async () => model());
+    expect(result.ok).toBe(true);
+    expect(result.diagnostics).toEqual(enabled ? [] : [{
+      code: 'unresolved-object', message: 'Object added in model model could not be resolved', ref: added,
+    }]);
+  });
+
   it('cancels even when the host resolver never settles', async () => {
     const controller = new AbortController();
     const promise = restoreSceneDocument(fixture(), (_reference, signal) => {

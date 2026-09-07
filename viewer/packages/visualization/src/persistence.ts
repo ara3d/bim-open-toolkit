@@ -134,7 +134,9 @@ export async function restoreSceneDocument(document: SceneDocument, resolver: Mo
       for (const rule of view.rules) for (const member of rule.members) refs.push(member);
     }
     for (const layer of validated.value.layers) for (const edit of layer.operations) {
-      if (edit.kind === 'add') available.add(objectKey(edit.object.ref));
+      if (edit.kind === 'add') {
+        if (layer.enabled) available.add(objectKey(edit.object.ref));
+      }
       else refs.push(edit.ref);
     }
     const reported = new Set<string>();
