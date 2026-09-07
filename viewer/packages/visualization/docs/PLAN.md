@@ -8,6 +8,7 @@ This is the durable implementation plan for the September 7, 2026 visualization 
 - [Current implementation status](STATUS.md): delivered increments, current constraints and qualification gaps.
 - [Verification evidence](FINDINGS.md): actual checks, browser observations and limits; a demo route alone does not establish feature completion.
 - [Planning history and decisions](../../../../docs/plans/visualization/README.md): exact committed plans, provenance and the explanation of the September 7 repair.
+- [V2 rewrite plan](../../../../docs/plans/visualization/V2-PLAN.md): proposed 2026-09-07 successor to this delivery approach; this document remains the alpha record.
 - [Parallel scheduling improvements](../../../../docs/plans/visualization/PARALLEL-WAVE-IMPROVEMENTS.md): concrete guidance for future authorized waves.
 
 The repository-root PLAN.md concerns initial repository population and is a separate plan. This document was reconstructed on September 7 from the intact product brief and committed plans; it is not a claim to recover every uncommitted intermediate wave note.

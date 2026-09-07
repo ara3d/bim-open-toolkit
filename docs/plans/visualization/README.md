@@ -29,3 +29,15 @@ Run `node docs/plans/visualization/check-baselines.mjs` to detect changed baseli
 ## Future decisions
 
 Append a dated record with: affected original F-ID/stage and requirement; previous decision; revised decision; reason and evidence; user instruction or other authority; affected contracts/checks; retained work and next readiness condition. Do not rewrite earlier decisions to make them appear to have anticipated later results.
+
+## Decision record: 2026-09-07 — V2 rewrite plan
+
+**Previous decision:** continue the alpha through incremental waves on the existing `visualization` package (PLAN.md).
+
+**Revised decision:** plan a rewrite, [V2-PLAN.md](V2-PLAN.md), organized around one extension mechanism (feature modules with commands, versioned state slices and events), columnar instance tables, a synthetic data catalog and eleven workflow demonstrations. The alpha package stays untouched until a parity gate, then is removed.
+
+**Reason:** the alpha lacks a default composition, keeps feature state outside the saved schema, copies per-instance data into JavaScript objects, and cannot show most section 6 workflows without private data. Each of these costs grows with every added feature.
+
+**User basis:** user request on 2026-09-07 for a new plan prioritizing maintainability, usability and ease of extension, with many real-world workflow demonstrations, more synthetic examples, maximal parallelism, Opus agents for coding, Sonnet agents for long mechanical tasks, and nested agent spawning.
+
+**Affected requirements:** none removed. F22, F24 and F25 remain postponed. All other P0 stages are scheduled in waves 0 to 4.
