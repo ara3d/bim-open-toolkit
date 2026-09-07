@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.9.12120.119 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
@@ -1167,5 +1167,8 @@ Global
 		{9ED0938F-CC41-490A-9FF8-6DE86445345A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{857D553B-E21E-44AD-A31D-EEADE579FE90} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{A3D51F82-6C4E-4B9D-9E1C-52B7E4A90D3F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\Ara3D.IfcTypes\Ara3D.IfcTypes.projitems*{e0b72fa9-a47a-4b10-bce8-a5fe1e1b6968}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ara3d.com/schemas/bim-query-platform/0.1.0-review.1/workflows.schema.json",
+  "title": "Proposed BIM workflow catalog",
+  "description": "Validates documentation structure. Referential and semantic checks require companion validation; pseudo-code is not executed and source support is not established.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "version",
+    "contractVersion",
+    "status",
+    "executionSemantics",
+    "description",
+    "roles",
+    "workflows"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "./workflows.schema.json"
+    },
+    "version": {
+      "const": "0.1.0-review.1"
+    },
+    "contractVersion": {
+      "const": "0.1.0-review.1"
+    },
+    "status": {
+      "const": "proposed"
+    },
+    "executionSemantics": {
+      "const": "illustrative-not-executable"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/role"
+      }
+    },
+    "workflows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/workflow"
+      }
+    }
+  },
+  "$defs": {
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "interests"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interests": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "required"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "reads",
+        "pseudocode"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*\\.[a-zA-Z][a-zA-Z0-9]*$"
+          },
+          "uniqueItems": true
+        },
+        "pseudocode": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "roleIds",
+        "question",
+        "decision",
+        "parameters",
+        "requiredTables",
+        "requiredFields",
+        "outputTables",
+        "steps",
+        "policies",
+        "missingDataBehavior",
+        "countingBasis",
+        "acceptanceExamples",
+        "openQuestions",
+        "maturity"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "roleIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/parameter"
+          }
+        },
+        "requiredTables": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "requiredFields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*\\.[a-zA-Z][a-zA-Z0-9]*$"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "outputTables": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "uniqueItems": true
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "policies": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "quantity-selection",
+              "identity-reconciliation",
+              "property-selection",
+              "topology-evidence",
+              "spatial-candidate",
+              "assessment-completeness",
+              "factor-match",
+              "rate-match",
+              "scope-no-double-count",
+              "coordinate-resolution"
+            ]
+          }
+        },
+        "missingDataBehavior": {
+          "type": "string",
+          "minLength": 1
+        },
+        "countingBasis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acceptanceExamples": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "openQuestions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "maturity": {
+          "enum": [
+            "detailed",
+            "candidate"
+          ]
+        }
+      }
+    }
+  }
+}

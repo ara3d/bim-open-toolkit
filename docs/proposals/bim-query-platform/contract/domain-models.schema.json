@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ara3d:bim:domain-design-backlog:0.1.0",
+  "title": "Workflow-driven domain model design backlog",
+  "description": "Validates design proposals, not building data rows. Hierarchy expresses navigation, not inheritance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "status", "purpose", "authoringSources", "ratingBasis", "activeDesignLimit", "domains"],
+  "properties": {
+    "$schema": {"const": "./domain-models.schema.json"},
+    "version": {"$ref": "#/$defs/text"},
+    "status": {"const": "design-backlog"},
+    "purpose": {"$ref": "#/$defs/text"},
+    "authoringSources": {"$ref": "#/$defs/texts"},
+    "ratingBasis": {"$ref": "#/$defs/text"},
+    "activeDesignLimit": {"type": "integer", "minimum": 1, "maximum": 12},
+    "domains": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/domain"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "texts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "domain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "meaning", "groups"],
+      "properties": {
+        "id": {"$ref": "#/$defs/text"}, "name": {"$ref": "#/$defs/text"}, "meaning": {"$ref": "#/$defs/text"},
+        "groups": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/group"}}
+      }
+    },
+    "group": {
+      "type": "object", "additionalProperties": false, "required": ["name", "models"],
+      "properties": {
+        "name": {"$ref": "#/$defs/text"},
+        "models": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/model"}}
+      }
+    },
+    "model": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "form", "roles", "workflows", "tags", "question", "decision", "grain", "proposedFields", "relationships", "separateBecause", "mergeOrDefer", "existingContract", "scenarioSupport", "priority"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "name": {"$ref": "#/$defs/text"},
+        "form": {"enum": ["record", "view", "facet", "capability"]},
+        "roles": {"$ref": "#/$defs/texts"}, "workflows": {"$ref": "#/$defs/texts"}, "tags": {"$ref": "#/$defs/texts"},
+        "question": {"$ref": "#/$defs/text"}, "decision": {"$ref": "#/$defs/text"}, "grain": {"$ref": "#/$defs/text"},
+        "proposedFields": {"$ref": "#/$defs/texts"}, "relationships": {"$ref": "#/$defs/texts"},
+        "separateBecause": {"$ref": "#/$defs/text"}, "mergeOrDefer": {"$ref": "#/$defs/text"},
+        "existingContract": {"$ref": "#/$defs/existingContract"},
+        "scenarioSupport": {"type": "array", "items": {"$ref": "#/$defs/scenarioSupport"}},
+        "priority": {"$ref": "#/$defs/priority"}
+      }
+    },
+    "priority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "impact", "repeatUse", "scopeCost", "evidenceBasis", "rationale", "nextAction"],
+      "properties": {
+        "value": {"enum": ["high", "medium", "low"]}, "impact": {"enum": ["high", "medium", "low"]},
+        "repeatUse": {"enum": ["frequent", "occasional", "rare"]}, "scopeCost": {"enum": ["small", "medium", "large"]},
+        "evidenceBasis": {"enum": ["workflow_scenario", "brainstorm"]},
+        "rationale": {"$ref": "#/$defs/text"}, "nextAction": {"enum": ["design_now", "validate_next", "park", "reuse_existing", "extend_existing"]},
+        "whyNow": {"$ref": "#/$defs/text"}, "acceptanceQuestion": {"$ref": "#/$defs/text"}
+      },
+      "allOf": [{
+        "if": {"properties": {"nextAction": {"const": "design_now"}}},
+        "then": {"required": ["whyNow", "acceptanceQuestion"]},
+        "else": {"not": {"anyOf": [{"required": ["whyNow"]}, {"required": ["acceptanceQuestion"]}]}}
+      }]
+    },
+    "existingContract": {
+      "type": "object", "additionalProperties": false, "required": ["approach", "tables", "incrementalGain"],
+      "properties": {
+        "approach": {"enum": ["proposed_new", "extend", "reuse_view", "unassessed"]},
+        "tables": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "incrementalGain": {"$ref": "#/$defs/text"}
+      }
+    },
+    "scenarioSupport": {
+      "type": "object", "additionalProperties": false, "required": ["scenarioId", "supports", "doesNotEstablish"],
+      "properties": {
+        "scenarioId": {"$ref": "#/$defs/text"}, "supports": {"$ref": "#/$defs/text"}, "doesNotEstablish": {"$ref": "#/$defs/text"}
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <Import Project="../../../../../../tools/bim-data-model/Platonic.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../generated/Ara3D.BimOpenSchema.QueryModel.Review.csproj" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>

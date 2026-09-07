@@ -1,0 +1,2809 @@
+{
+  "$schema": "./domain-models.schema.json",
+  "version": "0.1.0-review.1",
+  "status": "design-backlog",
+  "purpose": "Candidate domain models driven by user decisions. This hierarchy is navigation, not inheritance or a list of approved C# records.",
+  "authoringSources": [
+    "domain-candidates.csv",
+    "domain-review-policy.json",
+    "domains.csv",
+    "workflows.json",
+    "model.catalog.json",
+    "examples/scenarios.json"
+  ],
+  "ratingBasis": "Editorial hypotheses based on the current user/workflow catalog and synthetic acceptance stories. No usage-frequency study or source-feasibility verification has been performed.",
+  "activeDesignLimit": 8,
+  "domains": [
+    {
+      "id": "identity_source_history",
+      "name": "Identity and source history",
+      "meaning": "A real/logical thing is distinct from the source rows and representations describing it",
+      "groups": [
+        {
+          "name": "Change review",
+          "models": [
+            {
+              "id": "source_revision_change",
+              "name": "Source revision changes",
+              "form": "view",
+              "roles": [
+                "project_manager",
+                "general_contractor",
+                "estimator"
+              ],
+              "workflows": [
+                "planning",
+                "coordination",
+                "estimating"
+              ],
+              "tags": [
+                "revision",
+                "scope",
+                "review"
+              ],
+              "question": "Which scope changed between issued models?",
+              "decision": "Select packages to review again",
+              "grain": "One proposed object change between two snapshots",
+              "proposedFields": [
+                "object_id",
+                "before_snapshot",
+                "after_snapshot",
+                "change_kind",
+                "match_status"
+              ],
+              "relationships": [
+                "work_package"
+              ],
+              "separateBecause": "Change review needs before-and-after meaning beyond source row identifiers",
+              "mergeOrDefer": "Defer until correspondence is defensible; uncertain matches remain candidates",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Change review needs before-and-after meaning beyond source row identifiers"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "high",
+                "repeatUse": "occasional",
+                "scopeCost": "large",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Useful at new-delivery comparisons. The user describes data as infrequently updated, so revision comparison should not outrank every recurring query by an assumed frequent-change cadence.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "project_place",
+      "name": "Project and place",
+      "meaning": "Recognizable locations; overlapping zones and multi-storey objects remain possible",
+      "groups": [
+        {
+          "name": "Occupancy and places",
+          "models": [
+            {
+              "id": "space",
+              "name": "Space",
+              "form": "record",
+              "roles": [
+                "architect",
+                "interior_designer",
+                "facility_manager",
+                "mechanical_engineer"
+              ],
+              "workflows": [
+                "architectural_spaces",
+                "finish_schedule",
+                "asset_handover",
+                "mep_trace"
+              ],
+              "tags": [
+                "space",
+                "occupancy",
+                "handover"
+              ],
+              "question": "Which spaces exist and what activities and services belong to them?",
+              "decision": "Review programs and room-based work",
+              "grain": "One bounded or explicitly scheduled space occurrence",
+              "proposedFields": [
+                "object_id",
+                "number",
+                "name",
+                "use",
+                "storey_id",
+                "net_area",
+                "enclosure_status"
+              ],
+              "relationships": [
+                "storey",
+                "functional_zone",
+                "door",
+                "finish_surface"
+              ],
+              "separateBecause": "Room identity and room fields support many tasks",
+              "mergeOrDefer": "Treat room as a space use; avoid classes per room function",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "object_states"
+                ],
+                "incrementalGain": "A typed space view would add room number, use, measured area and enclosure meaning over shared object identity; it must not create another identity."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "shared-wall-faces",
+                  "supports": "Stable room references let opposite wall faces carry separate finish quantities.",
+                  "doesNotEstablish": "Space enclosure, occupancy and room-area definitions."
+                }
+              ],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "Room-facing finishes and service traces need stable space references; area and enclosure require separate evidence.",
+                "nextAction": "design_now",
+                "whyNow": "Provides a recognizable shared context for architectural schedules, finishes, services and handover without classes for each room use.",
+                "acceptanceQuestion": "Can we give a room-based work list when some spaces are only scheduled, their enclosure is unknown, and services or finishes have no resolved room?"
+              }
+            },
+            {
+              "id": "storey",
+              "name": "Storey",
+              "form": "record",
+              "roles": [
+                "architect",
+                "general_contractor",
+                "estimator",
+                "facility_manager"
+              ],
+              "workflows": [
+                "architectural_spaces",
+                "planning",
+                "estimating",
+                "asset_handover"
+              ],
+              "tags": [
+                "place",
+                "level",
+                "navigation"
+              ],
+              "question": "What belongs to this building level and what does its elevation mean?",
+              "decision": "Navigate and group work by level",
+              "grain": "One named building level",
+              "proposedFields": [
+                "object_id",
+                "building_id",
+                "name",
+                "elevation",
+                "frame_id",
+                "level_role"
+              ],
+              "relationships": [
+                "space",
+                "floor",
+                "stair"
+              ],
+              "separateBecause": "A common grouping dimension needs elevation semantics",
+              "mergeOrDefer": "Use associations for multi-level objects; distinguish finish and structural levels",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; A common grouping dimension needs elevation semantics"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "small",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected frequent grouping value; existing workflows do not yet settle alternative level conventions.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "functional_zone",
+              "name": "Functional zone membership",
+              "form": "facet",
+              "roles": [
+                "architect",
+                "mechanical_engineer",
+                "safety_auditor",
+                "facility_manager"
+              ],
+              "workflows": [
+                "architectural_spaces",
+                "mep_trace",
+                "egress",
+                "building_performance"
+              ],
+              "tags": [
+                "zone",
+                "membership",
+                "overlap"
+              ],
+              "question": "Which spaces form this department or service zone?",
+              "decision": "Scope services and assessments",
+              "grain": "One object membership in a named zone under a purpose",
+              "proposedFields": [
+                "zone_id",
+                "member_id",
+                "purpose",
+                "membership_basis",
+                "status"
+              ],
+              "relationships": [
+                "space",
+                "equipment"
+              ],
+              "separateBecause": "Departments and service areas overlap beyond a place hierarchy",
+              "mergeOrDefer": "Use controlled purposes; specialize only when rules differ",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Departments and service areas overlap beyond a place hierarchy"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "May remove repeated manual grouping; regulated safety zones require stronger rules than generic membership.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coordinates_representations",
+      "name": "Coordinates and representations",
+      "meaning": "Position/orientation, parent frames, 2D/3D shape and selectable detail",
+      "groups": [
+        {
+          "name": "Access and spatial screening",
+          "models": [
+            {
+              "id": "service_access",
+              "name": "Service access envelope",
+              "form": "facet",
+              "roles": [
+                "facility_manager",
+                "mechanical_trade",
+                "electrician",
+                "safety_auditor"
+              ],
+              "workflows": [
+                "coordination",
+                "asset_handover",
+                "safety"
+              ],
+              "tags": [
+                "access",
+                "clearance",
+                "maintenance"
+              ],
+              "question": "Can someone operate or remove this component in the required direction?",
+              "decision": "Flag access conflicts",
+              "grain": "One required envelope for an object and operation",
+              "proposedFields": [
+                "object_id",
+                "operation",
+                "frame_id",
+                "envelope_reference",
+                "requirement_source",
+                "status"
+              ],
+              "relationships": [
+                "equipment",
+                "distribution_panel",
+                "valve"
+              ],
+              "separateBecause": "Operational clearance differs from physical shape",
+              "mergeOrDefer": "Start from supplied requirements; do not infer safe clearance from generic dimensions",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Operational clearance differs from physical shape"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "high",
+                "repeatUse": "occasional",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Blocked panels and inaccessible valves cause rework; models may lack the clearance shape and its authority.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "spatial_candidates",
+              "name": "Spatial conflict candidates",
+              "form": "capability",
+              "roles": [
+                "general_contractor",
+                "mechanical_trade",
+                "structural_engineer"
+              ],
+              "workflows": [
+                "coordination",
+                "safety"
+              ],
+              "tags": [
+                "spatial",
+                "coordination",
+                "candidates"
+              ],
+              "question": "Which objects might intersect this work area or clearance?",
+              "decision": "Narrow precise geometry and human review",
+              "grain": "One candidate pair or object-region hit for a named test",
+              "proposedFields": [
+                "test_id",
+                "subject_id",
+                "candidate_id",
+                "geometry_basis",
+                "tolerance",
+                "coverage_status"
+              ],
+              "relationships": [
+                "service_access",
+                "service_run",
+                "structural_member"
+              ],
+              "separateBecause": "Screening is an operation producing bounded results",
+              "mergeOrDefer": "Use bounds first and exact geometry selectively",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Screening is an operation producing bounded results"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "large",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected broad coordination value at scale; approximate overlap must never become a confirmed clash.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "building_fabric",
+      "name": "Building fabric",
+      "meaning": "Common components with useful typed fields and spatial/contextual links",
+      "groups": [
+        {
+          "name": "Openings and circulation",
+          "models": [
+            {
+              "id": "door",
+              "name": "Door",
+              "form": "record",
+              "roles": [
+                "door_supplier",
+                "architect",
+                "facility_manager",
+                "safety_auditor"
+              ],
+              "workflows": [
+                "door_audit",
+                "egress",
+                "asset_handover"
+              ],
+              "tags": [
+                "door",
+                "opening",
+                "delivery",
+                "egress"
+              ],
+              "question": "Does this door configuration meet the intended opening function?",
+              "decision": "Prepare schedules and audit evidence",
+              "grain": "One door occurrence with explicit leaf or assembly scope",
+              "proposedFields": [
+                "object_id",
+                "mark",
+                "opening_id",
+                "clear_width",
+                "operation",
+                "fire_rating"
+              ],
+              "relationships": [
+                "space",
+                "wall",
+                "installation_observation"
+              ],
+              "separateBecause": "Operation and clear opening recur in practical tasks",
+              "mergeOrDefer": "Keep hardware linked; settle leaf versus assembly counting",
+              "existingContract": {
+                "approach": "extend",
+                "tables": [
+                  "door_schedule"
+                ],
+                "incrementalGain": "Extend existing door audit projection with scope/operation/space concepts only where a new question requires them."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "missing-door-evidence",
+                  "supports": "Missing width/rating evidence prevents a complete audit.",
+                  "doesNotEstablish": "Door operation, leaf-versus-assembly rules and connected-space topology."
+                }
+              ],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "The current door_schedule already answers the worked width/rating audit. Additional value concerns operation, opening scope and space relationships; these need new examples.",
+                "nextAction": "extend_existing"
+              }
+            },
+            {
+              "id": "window",
+              "name": "Window",
+              "form": "record",
+              "roles": [
+                "facade_trade",
+                "architect",
+                "performance_analyst"
+              ],
+              "workflows": [
+                "envelope",
+                "building_performance",
+                "estimating"
+              ],
+              "tags": [
+                "window",
+                "glazing",
+                "envelope"
+              ],
+              "question": "Which glazed openings share size and performance requirements?",
+              "decision": "Package glazing and review envelope inputs",
+              "grain": "One window unit at an explicit unit or assembly scope",
+              "proposedFields": [
+                "object_id",
+                "mark",
+                "opening_id",
+                "width",
+                "height",
+                "glazing_specification",
+                "thermal_transmittance"
+              ],
+              "relationships": [
+                "wall",
+                "assembly_specification"
+              ],
+              "separateBecause": "Glazed openings have recurring dimensions and performance fields",
+              "mergeOrDefer": "Use roles for operability; evaluate curtain-wall panel grain separately",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Glazed openings have recurring dimensions and performance fields"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected glazing schedule value; current envelope workflow provides only a broad requirement.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "stair",
+              "name": "Stair",
+              "form": "record",
+              "roles": [
+                "architect",
+                "safety_auditor",
+                "general_contractor"
+              ],
+              "workflows": [
+                "egress",
+                "safety",
+                "coordination"
+              ],
+              "tags": [
+                "stair",
+                "circulation",
+                "egress"
+              ],
+              "question": "Which levels does this stair connect and what route dimensions are known?",
+              "decision": "Review circulation evidence",
+              "grain": "One stair assembly with optional flight detail",
+              "proposedFields": [
+                "object_id",
+                "from_storey_id",
+                "to_storey_id",
+                "clear_width",
+                "travel_direction",
+                "detail_coverage"
+              ],
+              "relationships": [
+                "storey",
+                "space"
+              ],
+              "separateBecause": "A level connection is useful before every tread is modeled",
+              "mergeOrDefer": "Defer flight and landing records until an assessment needs their separate geometry",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; A level connection is useful before every tread is modeled"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Recognizable circulation data helps review; a simple stair record cannot establish compliant egress.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enclosure and separation",
+          "models": [
+            {
+              "id": "wall",
+              "name": "Wall",
+              "form": "record",
+              "roles": [
+                "architect",
+                "partition_trade",
+                "finishing_trade",
+                "structural_engineer"
+              ],
+              "workflows": [
+                "finish_schedule",
+                "envelope",
+                "structural_takeoff",
+                "coordination"
+              ],
+              "tags": [
+                "wall",
+                "partition",
+                "enclosure"
+              ],
+              "question": "Which walls separate this area and what construction is intended?",
+              "decision": "Coordinate partitions and measurable faces",
+              "grain": "One wall occurrence with identifiable faces and assembly",
+              "proposedFields": [
+                "object_id",
+                "assembly_id",
+                "thickness",
+                "height",
+                "load_bearing_status",
+                "exterior_status"
+              ],
+              "relationships": [
+                "space",
+                "finish_surface",
+                "door",
+                "window",
+                "penetration"
+              ],
+              "separateBecause": "Host identity connects construction to separate room-facing surfaces",
+              "mergeOrDefer": "Keep finishes on surfaces; do not assign one universal room to a wall",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Host identity connects construction to separate room-facing surfaces"
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "shared-wall-faces",
+                  "supports": "One physical wall can have two separately measured finishes.",
+                  "doesNotEstablish": "Wall construction layers, loadbearing role and complete opening deductions."
+                }
+              ],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "The finish scenario proves two faces of one wall must remain distinct; broader wall fields need validation.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "floor",
+              "name": "Floor construction",
+              "form": "record",
+              "roles": [
+                "architect",
+                "flooring_trade",
+                "structural_engineer",
+                "estimator"
+              ],
+              "workflows": [
+                "flooring",
+                "structural_takeoff",
+                "estimating"
+              ],
+              "tags": [
+                "floor",
+                "slab",
+                "quantity"
+              ],
+              "question": "Which floor construction and finishes are in scope?",
+              "decision": "Separate structural and finish quantities",
+              "grain": "One floor construction occurrence at a declared scope",
+              "proposedFields": [
+                "object_id",
+                "assembly_id",
+                "storey_id",
+                "elevation",
+                "thickness",
+                "net_area"
+              ],
+              "relationships": [
+                "storey",
+                "finish_surface",
+                "structural_member"
+              ],
+              "separateBecause": "Construction and finish installation have different quantities and ownership",
+              "mergeOrDefer": "Use a structural-role facet rather than duplicate slab identity",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Construction and finish installation have different quantities and ownership"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "May reduce slab-versus-finish double counting; the flooring workflow has not settled construction boundaries.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "roof",
+              "name": "Roof",
+              "form": "record",
+              "roles": [
+                "roofer",
+                "architect",
+                "estimator",
+                "sustainability_analyst"
+              ],
+              "workflows": [
+                "roof_takeoff",
+                "estimating",
+                "carbon"
+              ],
+              "tags": [
+                "roof",
+                "weatherproofing",
+                "takeoff"
+              ],
+              "question": "How much roof surface needs each assembly and what remains unknown?",
+              "decision": "Prepare takeoff with the correct basis",
+              "grain": "One roof occurrence or explicitly partitioned construction scope",
+              "proposedFields": [
+                "object_id",
+                "assembly_id",
+                "net_surface_area",
+                "projected_area",
+                "slope",
+                "measurement_scope_id"
+              ],
+              "relationships": [
+                "assembly_specification",
+                "drain",
+                "quantity_takeoff"
+              ],
+              "separateBecause": "Surface and projected areas need distinct names",
+              "mergeOrDefer": "Use assembly layers rather than classes per roofing product",
+              "existingContract": {
+                "approach": "extend",
+                "tables": [
+                  "roof_takeoff"
+                ],
+                "incrementalGain": "Extend assembly or edge details after testing the gap; reuse existing area selection and occurrence identity."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "roof-surface-versus-projection",
+                  "supports": "Net surface, projected area, competing observations and unmeasured scope differ.",
+                  "doesNotEstablish": "Layer ordering, roof drainage and edge details."
+                }
+              ],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "The current roof_takeoff already separates net and projected areas. Construction/edge detail is an extension, not a reason to duplicate roof identity or selected measurements.",
+                "nextAction": "extend_existing"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Interfaces between trades",
+          "models": [
+            {
+              "id": "penetration",
+              "name": "Service penetration",
+              "form": "record",
+              "roles": [
+                "fire_protection_trade",
+                "mechanical_trade",
+                "electrician",
+                "general_contractor"
+              ],
+              "workflows": [
+                "coordination",
+                "safety",
+                "planning"
+              ],
+              "tags": [
+                "penetration",
+                "firestop",
+                "coordination"
+              ],
+              "question": "Which openings need approval and a compatible firestop detail?",
+              "decision": "Resolve interfaces before closing barriers",
+              "grain": "One opening through a host with linked passing services",
+              "proposedFields": [
+                "object_id",
+                "host_id",
+                "service_ids",
+                "opening_dimensions",
+                "firestop_requirement",
+                "approval_status"
+              ],
+              "relationships": [
+                "wall",
+                "floor",
+                "service_run",
+                "installation_observation"
+              ],
+              "separateBecause": "Openings span trades and have independent approval work",
+              "mergeOrDefer": "Link firestop specifications; do not infer required ratings from host names",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "object_states",
+                  "relationships",
+                  "assessments"
+                ],
+                "incrementalGain": "Add the host-opening/passing-service/approval association and distinguish required from observed firestop evidence."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected rework and safety value; current coordination cases do not yet validate a penetration approval workflow.",
+                "nextAction": "design_now",
+                "whyNow": "Adds a cross-trade coordination case beyond familiar component schedules: a host opening, several passing services and independent approval/firestop evidence. Doors already have a bounded audit projection to refine later.",
+                "acceptanceQuestion": "Can the contractor identify which service penetrations need approval or firestop evidence before closing a wall, without inferring ratings or approvals from object names?"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "structure_civil",
+      "name": "Structure and civil",
+      "meaning": "Structural and site objects; linear and surface features as well as solids",
+      "groups": [
+        {
+          "name": "Load-bearing construction",
+          "models": [
+            {
+              "id": "structural_member",
+              "name": "Structural member",
+              "form": "record",
+              "roles": [
+                "structural_engineer",
+                "structural_trade",
+                "estimator"
+              ],
+              "workflows": [
+                "structural_takeoff",
+                "coordination",
+                "estimating"
+              ],
+              "tags": [
+                "structure",
+                "steel",
+                "timber",
+                "concrete"
+              ],
+              "question": "Which members share section and material and measurable lengths?",
+              "decision": "Prepare member schedules",
+              "grain": "One physical structural member at an explicit occurrence scope",
+              "proposedFields": [
+                "object_id",
+                "member_role",
+                "section_reference",
+                "material_reference",
+                "axis_reference",
+                "length"
+              ],
+              "relationships": [
+                "assembly_specification",
+                "support_assembly"
+              ],
+              "separateBecause": "Beams columns and braces share section and axis data",
+              "mergeOrDefer": "Use member roles; do not treat physical geometry as an analysis model",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "object_states",
+                  "quantity_observations"
+                ],
+                "incrementalGain": "Add typed section/material/axis relationships for physical member schedules; reuse object identity and quantity evidence."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected steel and timber schedule value; connection and analysis detail should follow proven needs.",
+                "nextAction": "design_now",
+                "whyNow": "Adds structural trade requirements early and tests where beams, columns and braces can share stable fields without importing an analytical structural hierarchy.",
+                "acceptanceQuestion": "Can a fabricator group members by section and material and use measured lengths without substituting bounding-box dimensions or counting analytical duplicates?"
+              }
+            },
+            {
+              "id": "reinforcement_takeoff",
+              "name": "Reinforcement fabrication takeoff",
+              "form": "view",
+              "roles": [
+                "structural_trade",
+                "structural_engineer",
+                "estimator"
+              ],
+              "workflows": [
+                "structural_takeoff",
+                "estimating"
+              ],
+              "tags": [
+                "reinforcement",
+                "fabrication",
+                "detail"
+              ],
+              "question": "Which bar shapes and counts are ready for fabrication by pour?",
+              "decision": "Issue a reinforcement schedule",
+              "grain": "One selected bar mark and shape within a fabrication scope",
+              "proposedFields": [
+                "bar_mark",
+                "host_id",
+                "shape_code",
+                "diameter",
+                "cut_length",
+                "count",
+                "revision"
+              ],
+              "relationships": [
+                "foundation",
+                "structural_member",
+                "work_package"
+              ],
+              "separateBecause": "Fabrication requires more readiness than concrete quantities",
+              "mergeOrDefer": "Defer until bar shapes and regional scheduling rules exist; do not infer bars from concrete geometry",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Fabrication requires more readiness than concrete quantities"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "occasional",
+                "scopeCost": "large",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Potential reinforcement-trade value but detailed source coverage and fabrication rules make this a poor early default.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ground and foundations",
+          "models": [
+            {
+              "id": "foundation",
+              "name": "Foundation",
+              "form": "record",
+              "roles": [
+                "structural_engineer",
+                "structural_trade",
+                "civil_engineer",
+                "estimator"
+              ],
+              "workflows": [
+                "structural_takeoff",
+                "estimating",
+                "coordination"
+              ],
+              "tags": [
+                "foundation",
+                "below_grade",
+                "concrete"
+              ],
+              "question": "Which foundations need concrete and excavation scope at what elevation?",
+              "decision": "Coordinate below-grade work",
+              "grain": "One footing pile or foundation assembly at explicit countable scope",
+              "proposedFields": [
+                "object_id",
+                "foundation_role",
+                "material_reference",
+                "bearing_elevation",
+                "volume",
+                "assembly_scope"
+              ],
+              "relationships": [
+                "earthwork_zone",
+                "structural_member"
+              ],
+              "separateBecause": "Bearing and ground context exceed generic member length",
+              "mergeOrDefer": "Use roles for piles and caps until separate fields are justified",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Bearing and ground context exceed generic member length"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected quantity value; foundation volume and excavation volume cannot be treated as equivalent.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "earthwork_zone",
+              "name": "Earthwork zone",
+              "form": "record",
+              "roles": [
+                "earthworks_trade",
+                "civil_engineer",
+                "estimator",
+                "landscape_architect"
+              ],
+              "workflows": [
+                "landscape",
+                "estimating",
+                "planning"
+              ],
+              "tags": [
+                "earthworks",
+                "terrain",
+                "cut_fill"
+              ],
+              "question": "Where do existing and proposed ground imply cut or fill?",
+              "decision": "Scope excavation and grading",
+              "grain": "One named earthwork scope with existing and proposed surfaces",
+              "proposedFields": [
+                "object_id",
+                "boundary_reference",
+                "existing_surface",
+                "proposed_surface",
+                "soil_classification",
+                "quantity_status"
+              ],
+              "relationships": [
+                "work_package",
+                "planting_area"
+              ],
+              "separateBecause": "Earthworks need two surface states rather than one object volume",
+              "mergeOrDefer": "Defer computed volumes until surface coverage and datum alignment are established",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Earthworks need two surface states rather than one object volume"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "occasional",
+                "scopeCost": "large",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected civil value; the broad landscape workflow does not yet justify an earthworks calculation engine.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interiors_landscape",
+      "name": "Interiors and landscape",
+      "meaning": "Surfaces and assemblies that trades measure and specify",
+      "groups": [
+        {
+          "name": "Room-facing construction",
+          "models": [
+            {
+              "id": "finish_surface",
+              "name": "Finish surface",
+              "form": "record",
+              "roles": [
+                "finishing_trade",
+                "flooring_trade",
+                "ceiling_trade",
+                "interior_designer",
+                "estimator"
+              ],
+              "workflows": [
+                "finish_schedule",
+                "flooring",
+                "estimating"
+              ],
+              "tags": [
+                "finish",
+                "paint",
+                "tile",
+                "surface"
+              ],
+              "question": "Which face needs which finish and how much net area?",
+              "decision": "Order materials and assign finish work",
+              "grain": "One distinct finish-bearing surface partition with optional space association",
+              "proposedFields": [
+                "surface_id",
+                "host_id",
+                "space_id",
+                "surface_side",
+                "finish_specification",
+                "net_area"
+              ],
+              "relationships": [
+                "wall",
+                "floor",
+                "ceiling",
+                "space",
+                "assembly_specification"
+              ],
+              "separateBecause": "The measured and specified unit is a face rather than its host",
+              "mergeOrDefer": "Allow unassigned spaces and surface partitions; tag paint tile and coverings",
+              "existingContract": {
+                "approach": "extend",
+                "tables": [
+                  "finish_schedule"
+                ],
+                "incrementalGain": "Test whether the existing face record can serve the domain after clearer naming; add partition/specification detail only if required."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "shared-wall-faces",
+                  "supports": "Face identity prevents host-based finish double counting.",
+                  "doesNotEstablish": "All finish partition rules or product specifications."
+                }
+              ],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "finish_schedule already represents distinct faces and unresolved spaces. Review its domain naming and surface partitions before adding another record with the same grain.",
+                "nextAction": "design_now",
+                "whyNow": "A worked shared-wall example already exposes the correct measurement grain. Start from finish_schedule and test whether it can serve the domain directly before creating another record.",
+                "acceptanceQuestion": "Can painters, flooring and ceiling trades share a finish-face model that preserves partitions, unknown areas and unassigned spaces without counting the host twice?"
+              }
+            },
+            {
+              "id": "ceiling",
+              "name": "Ceiling",
+              "form": "record",
+              "roles": [
+                "ceiling_trade",
+                "interior_designer",
+                "mechanical_trade"
+              ],
+              "workflows": [
+                "flooring",
+                "coordination",
+                "finish_schedule"
+              ],
+              "tags": [
+                "ceiling",
+                "interior",
+                "coordination"
+              ],
+              "question": "Which ceiling construction and elevation applies and where is access required?",
+              "decision": "Coordinate ceiling and overhead services",
+              "grain": "One ceiling construction occurrence with associated spaces and surfaces",
+              "proposedFields": [
+                "object_id",
+                "assembly_id",
+                "elevation",
+                "net_area",
+                "void_height",
+                "access_provisions"
+              ],
+              "relationships": [
+                "space",
+                "finish_surface",
+                "air_terminal",
+                "lighting_fixture"
+              ],
+              "separateBecause": "Ceiling datum and access differ from floor surface information",
+              "mergeOrDefer": "Use shared assemblies and surfaces; defer grid and hanger detail until needed",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Ceiling datum and access differ from floor surface information"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected reflected-ceiling coordination value; current workflows have not established tile-level requirements.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "room_fitout",
+              "name": "Room fitout schedule",
+              "form": "view",
+              "roles": [
+                "interior_designer",
+                "general_contractor",
+                "owner"
+              ],
+              "workflows": [
+                "finish_schedule",
+                "architectural_spaces",
+                "planning"
+              ],
+              "tags": [
+                "room",
+                "fitout",
+                "completeness"
+              ],
+              "question": "What finishes fixtures and equipment are specified per room and what is missing?",
+              "decision": "Review room completeness",
+              "grain": "One room and fitout category with linked selected items",
+              "proposedFields": [
+                "space_id",
+                "category",
+                "item_ids",
+                "specification_status",
+                "quantity_status",
+                "coverage"
+              ],
+              "relationships": [
+                "space",
+                "finish_surface",
+                "sanitary_fixture",
+                "lighting_fixture",
+                "equipment"
+              ],
+              "separateBecause": "Room review combines records without duplicating their identities",
+              "mergeOrDefer": "Keep a view; expected categories come from project requirements",
+              "existingContract": {
+                "approach": "reuse_view",
+                "tables": [
+                  "finish_schedule",
+                  "asset_register"
+                ],
+                "incrementalGain": "Compose room-based procurement/context without a second identity or finish measurement store."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "small",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Combines existing finish and asset concepts into a useful room view. Its incremental benefit is coordination and packaging, not a new physical-object identity.",
+                "nextAction": "reuse_existing"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Landscape and external works",
+          "models": [
+            {
+              "id": "planting_area",
+              "name": "Planting area",
+              "form": "record",
+              "roles": [
+                "landscape_trade",
+                "landscape_architect",
+                "sustainability_analyst"
+              ],
+              "workflows": [
+                "landscape",
+                "estimating",
+                "carbon"
+              ],
+              "tags": [
+                "landscape",
+                "soil",
+                "planting"
+              ],
+              "question": "Which areas need which planting and soil preparation quantities?",
+              "decision": "Prepare landscape scope",
+              "grain": "One bounded planting or soil-preparation area at a declared layer scope",
+              "proposedFields": [
+                "object_id",
+                "boundary_reference",
+                "area",
+                "planting_specification",
+                "soil_depth",
+                "irrigation_requirement"
+              ],
+              "relationships": [
+                "earthwork_zone",
+                "assembly_specification"
+              ],
+              "separateBecause": "Area-based planting differs from individually tracked assets",
+              "mergeOrDefer": "Separate area and soil-layer quantities; avoid classes per species",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Area-based planting differs from individually tracked assets"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected landscape-trade value; ecological outcomes require more than planting area and species labels.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "landscape_asset",
+              "name": "Landscape asset",
+              "form": "record",
+              "roles": [
+                "landscape_trade",
+                "landscape_architect",
+                "facility_manager"
+              ],
+              "workflows": [
+                "landscape",
+                "asset_handover"
+              ],
+              "tags": [
+                "landscape",
+                "tree",
+                "site_furniture"
+              ],
+              "question": "Which individual trees or furnishings need installation or care records?",
+              "decision": "Count and hand over selected assets",
+              "grain": "One individually tracked landscape occurrence",
+              "proposedFields": [
+                "object_id",
+                "asset_role",
+                "specification",
+                "size_class",
+                "installation_status",
+                "care_reference"
+              ],
+              "relationships": [
+                "planting_area",
+                "asset_service_requirements"
+              ],
+              "separateBecause": "Individual care can require identity beyond a planting polygon",
+              "mergeOrDefer": "Use roles initially; keep bulk planting area-based and defer botanical lifecycle detail",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Individual care can require identity beyond a planting polygon"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "occasional",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Useful when individual tracking is required; low-value identities for every planting would inflate the model.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "systems_equipment",
+      "name": "Systems and equipment",
+      "meaning": "Connectivity, membership, flow/medium and service relationships are distinct",
+      "groups": [
+        {
+          "name": "Plant and terminals",
+          "models": [
+            {
+              "id": "equipment",
+              "name": "Equipment and plant overview",
+              "form": "view",
+              "roles": [
+                "mechanical_engineer",
+                "mechanical_trade",
+                "electrician",
+                "facility_manager"
+              ],
+              "workflows": [
+                "mep_trace",
+                "asset_handover",
+                "coordination"
+              ],
+              "tags": [
+                "equipment",
+                "plant",
+                "maintenance"
+              ],
+              "question": "Which plant items exist by system and what handover or connection data is missing?",
+              "decision": "Navigate equipment and review common handover coverage",
+              "grain": "One identified equipment occurrence in a cross-system overview",
+              "proposedFields": [
+                "object_id",
+                "equipment_role",
+                "tag",
+                "type_reference",
+                "system_ids",
+                "port_ids",
+                "handover_coverage"
+              ],
+              "relationships": [
+                "space",
+                "service_run",
+                "service_access",
+                "asset_service_requirements"
+              ],
+              "separateBecause": "A cross-system overview helps navigation without defining every machine through generic properties",
+              "mergeOrDefer": "Keep this a view; pump duty and air-handler performance need separate typed records when specific workflows justify them",
+              "existingContract": {
+                "approach": "reuse_view",
+                "tables": [
+                  "component_schedule",
+                  "asset_register"
+                ],
+                "incrementalGain": "Compose inventory and handover coverage from existing concepts; specialized equipment fields belong in concrete models or justified facets."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "asset-without-manual",
+                  "supports": "A maintainable asset stays visible despite missing handover data.",
+                  "doesNotEstablish": "Pump/head curves, air-handler duties or generic equipment performance fields."
+                }
+              ],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "component_schedule and asset_register already provide much of the inventory. A cross-system overview adds readable joins and gaps; it does not justify a generic duty model.",
+                "nextAction": "reuse_existing"
+              }
+            },
+            {
+              "id": "air_terminal",
+              "name": "Air terminal",
+              "form": "record",
+              "roles": [
+                "mechanical_engineer",
+                "mechanical_trade",
+                "ceiling_trade"
+              ],
+              "workflows": [
+                "mep_trace",
+                "coordination",
+                "building_performance"
+              ],
+              "tags": [
+                "hvac",
+                "airflow",
+                "terminal"
+              ],
+              "question": "Which terminal serves each space at what design airflow?",
+              "decision": "Coordinate terminal schedules and ceiling openings",
+              "grain": "One air terminal occurrence serving a space or zone",
+              "proposedFields": [
+                "object_id",
+                "terminal_role",
+                "system_id",
+                "served_space_id",
+                "design_flow",
+                "connection_size"
+              ],
+              "relationships": [
+                "space",
+                "service_run",
+                "ceiling"
+              ],
+              "separateBecause": "Room service and airflow exceed generic equipment naming",
+              "mergeOrDefer": "Use roles for diffusers and grilles; distinguish design and measured flow",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Room service and airflow exceed generic equipment naming"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected mechanical value; terminal proximity cannot prove connectivity or balanced airflow.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "sanitary_fixture",
+              "name": "Sanitary fixture",
+              "form": "record",
+              "roles": [
+                "plumbing_trade",
+                "plumbing_engineer",
+                "interior_designer",
+                "facility_manager"
+              ],
+              "workflows": [
+                "plumbing_takeoff",
+                "asset_handover",
+                "coordination"
+              ],
+              "tags": [
+                "plumbing",
+                "sanitation",
+                "fixture"
+              ],
+              "question": "Which fixtures are specified per space and what connections are required?",
+              "decision": "Count and coordinate supply and waste scope",
+              "grain": "One installed or scheduled sanitary fixture occurrence",
+              "proposedFields": [
+                "object_id",
+                "fixture_role",
+                "space_id",
+                "type_reference",
+                "water_use_basis",
+                "supply_ports",
+                "waste_ports"
+              ],
+              "relationships": [
+                "space",
+                "service_run",
+                "valve"
+              ],
+              "separateBecause": "Toilets basins and showers share schedule and connection needs",
+              "mergeOrDefer": "Use a toilet role; add a subtype only for repeated distinct fields",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "object_states",
+                  "relationships"
+                ],
+                "incrementalGain": "Add fixture role and explicit supply/waste and water-use bases, retaining shared physical identity."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected plumbing and interior value; fixture units and consumption require explicit rule or measurement bases.",
+                "nextAction": "design_now",
+                "whyNow": "Tests a useful practical family containing toilets and basins, with real connection and water-use differences, instead of one class for every fixture label.",
+                "acceptanceQuestion": "Can a plumber produce a per-space fixture and connection schedule without treating missing waste/supply ports as absent services or mixing water-use bases?"
+              }
+            },
+            {
+              "id": "drain",
+              "name": "Drain inlet",
+              "form": "record",
+              "roles": [
+                "plumbing_trade",
+                "plumbing_engineer",
+                "roofer",
+                "civil_engineer"
+              ],
+              "workflows": [
+                "plumbing_takeoff",
+                "roof_takeoff",
+                "coordination"
+              ],
+              "tags": [
+                "drainage",
+                "roof",
+                "plumbing"
+              ],
+              "question": "Which areas discharge through each drain and what outlet data is known?",
+              "decision": "Coordinate roof and floor drainage",
+              "grain": "One drain inlet with declared catchment references",
+              "proposedFields": [
+                "object_id",
+                "drain_role",
+                "inlet_elevation",
+                "outlet_size",
+                "system_id",
+                "catchment_references"
+              ],
+              "relationships": [
+                "roof",
+                "floor",
+                "service_run",
+                "earthwork_zone"
+              ],
+              "separateBecause": "A drain links a surface catchment with a network",
+              "mergeOrDefer": "Keep catchments explicit; defer hydraulic inference until boundary conditions exist",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; A drain links a surface catchment with a network"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected cross-trade value; the roof scenario covers areas and does not validate drainage logic.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "fire_protection_terminal",
+              "name": "Fire-protection terminal",
+              "form": "record",
+              "roles": [
+                "fire_protection_trade",
+                "safety_auditor",
+                "facility_manager"
+              ],
+              "workflows": [
+                "coordination",
+                "safety",
+                "asset_handover"
+              ],
+              "tags": [
+                "fire_protection",
+                "inspection",
+                "terminal"
+              ],
+              "question": "Which heads or service outlets belong to each protection system and lack inspection data?",
+              "decision": "Prepare installation and inspection scope",
+              "grain": "One terminal occurrence with declared protection role",
+              "proposedFields": [
+                "object_id",
+                "terminal_role",
+                "system_id",
+                "location",
+                "rating_reference",
+                "inspection_requirement"
+              ],
+              "relationships": [
+                "space",
+                "service_run",
+                "ceiling",
+                "installation_observation"
+              ],
+              "separateBecause": "Protection roles and inspection needs recur over project stages",
+              "mergeOrDefer": "Use explicit roles; defer coverage and hydraulic adequacy calculations",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Protection roles and inspection needs recur over project stages"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected fire-trade schedule value; missing terminals cannot establish absence or adequate coverage.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Distribution networks",
+          "models": [
+            {
+              "id": "service_run",
+              "name": "Service route geometry and endpoints",
+              "form": "facet",
+              "roles": [
+                "mechanical_trade",
+                "electrician",
+                "plumbing_trade",
+                "mechanical_engineer",
+                "plumbing_engineer"
+              ],
+              "workflows": [
+                "mep_trace",
+                "plumbing_takeoff",
+                "electrical_schedule",
+                "coordination"
+              ],
+              "tags": [
+                "pipe",
+                "duct",
+                "cable_tray",
+                "network"
+              ],
+              "question": "Where does this service segment run and which endpoints have supported links?",
+              "decision": "Reuse routing context across trade-specific schedules",
+              "grain": "One physical service occurrence and its route representation",
+              "proposedFields": [
+                "object_id",
+                "route_geometry",
+                "frame_id",
+                "port_ids",
+                "segmentation_basis",
+                "connection_coverage"
+              ],
+              "relationships": [
+                "duct_segment",
+                "pipe_segment",
+                "distribution_panel",
+                "equipment"
+              ],
+              "separateBecause": "Route and endpoint context is reusable without replacing discipline-specific records",
+              "mergeOrDefer": "Apply alongside duct and pipe records; trays need their own workflow before further specialization",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Route and endpoint context is reusable without replacing discipline-specific records"
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "supported-mep-only",
+                  "supports": "Accepted service edges differ from candidate proximity edges.",
+                  "doesNotEstablish": "Physical segmentation boundaries, duct construction or pipe pressure semantics."
+                }
+              ],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "large",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "Trace cases justify shared routing context; duct airflow and pipe service properties belong to concrete trade records rather than a universal service type.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "valve",
+              "name": "Valve",
+              "form": "record",
+              "roles": [
+                "plumbing_trade",
+                "mechanical_trade",
+                "facility_manager"
+              ],
+              "workflows": [
+                "mep_trace",
+                "plumbing_takeoff",
+                "asset_handover"
+              ],
+              "tags": [
+                "valve",
+                "isolation",
+                "maintenance"
+              ],
+              "question": "Which valve controls this branch and can staff identify and reach it?",
+              "decision": "Plan inspection and isolation review",
+              "grain": "One valve occurrence with a control or isolation role",
+              "proposedFields": [
+                "object_id",
+                "tag",
+                "valve_role",
+                "nominal_size",
+                "system_id",
+                "port_ids",
+                "normal_position"
+              ],
+              "relationships": [
+                "service_run",
+                "service_access",
+                "asset_service_requirements"
+              ],
+              "separateBecause": "Operational role and normal position matter beyond a fitting count",
+              "mergeOrDefer": "Do not infer safe isolation from tags; defer actuator internals",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Operational role and normal position matter beyond a fitting count"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected operating value; trustworthy isolation additionally requires complete topology and current state.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "duct_segment",
+              "name": "Duct segment",
+              "form": "record",
+              "roles": [
+                "mechanical_trade",
+                "mechanical_engineer",
+                "ceiling_trade"
+              ],
+              "workflows": [
+                "mep_trace",
+                "coordination",
+                "building_performance"
+              ],
+              "tags": [
+                "duct",
+                "hvac",
+                "airflow",
+                "fabrication"
+              ],
+              "question": "Which duct sizes constructions and design airflows are assigned to each HVAC route?",
+              "decision": "Prepare duct schedules and coordinate fabrication scope",
+              "grain": "One physical duct segment with declared segment boundaries",
+              "proposedFields": [
+                "object_id",
+                "system_id",
+                "section_shape",
+                "section_dimensions",
+                "material",
+                "lining",
+                "insulation",
+                "design_airflow",
+                "flow_basis"
+              ],
+              "relationships": [
+                "service_run",
+                "air_terminal",
+                "equipment",
+                "support_assembly"
+              ],
+              "separateBecause": "Section shape lining and airflow are familiar mechanical fields with distinct meanings",
+              "mergeOrDefer": "Keep fittings as linked occurrences when fabrication needs them; do not derive airflow from geometry",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "object_states",
+                  "representations",
+                  "relationships"
+                ],
+                "incrementalGain": "Add duct construction, lining, dimensions and airflow vocabulary; geometry and adjacency alone cannot express it."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected mechanical schedule value; generic connectivity scenarios support links but do not establish duct lining or design-flow evidence.",
+                "nextAction": "design_now",
+                "whyNow": "Tests a concrete mechanical model and prevents shared routing geometry from turning into a universal pipe/duct/tray record. Compare with the pipe candidate before approving the shared facet.",
+                "acceptanceQuestion": "Can a mechanical trade query duct size, construction, lining and airflow separately from geometry and distinguish an unobserved connection from a disconnected route?"
+              }
+            },
+            {
+              "id": "pipe_segment",
+              "name": "Pipe segment",
+              "form": "record",
+              "roles": [
+                "plumbing_trade",
+                "plumbing_engineer",
+                "mechanical_trade",
+                "fire_protection_trade"
+              ],
+              "workflows": [
+                "plumbing_takeoff",
+                "mep_trace",
+                "coordination"
+              ],
+              "tags": [
+                "pipe",
+                "plumbing",
+                "mechanical",
+                "piping"
+              ],
+              "question": "Which pipe sizes materials and service requirements apply to each run?",
+              "decision": "Prepare pipe schedules and check service-specific requirements",
+              "grain": "One physical pipe segment with declared segment boundaries",
+              "proposedFields": [
+                "object_id",
+                "system_id",
+                "service_medium",
+                "nominal_size",
+                "material",
+                "length",
+                "optional_slope",
+                "optional_pressure",
+                "pressure_basis"
+              ],
+              "relationships": [
+                "service_run",
+                "valve",
+                "drain",
+                "sanitary_fixture",
+                "support_assembly"
+              ],
+              "separateBecause": "Nominal size service medium and slope or pressure requirements differ from duct airflow fields",
+              "mergeOrDefer": "Use optional drainage or pressure facets where applicable; do not force every pipe to have both",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "object_states",
+                  "representations",
+                  "relationships"
+                ],
+                "incrementalGain": "Add pipe material, size and conditional slope/pressure context; share geometry without forcing duct semantics."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected plumbing and mechanical value; slope and pressure remain explicitly conditional rather than inferred from generic route geometry.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Electrical supply and devices",
+          "models": [
+            {
+              "id": "distribution_panel",
+              "name": "Electrical distribution panel",
+              "form": "record",
+              "roles": [
+                "electrician",
+                "electrical_engineer",
+                "facility_manager"
+              ],
+              "workflows": [
+                "electrical_schedule",
+                "mep_trace",
+                "asset_handover"
+              ],
+              "tags": [
+                "electrical",
+                "panel",
+                "circuit"
+              ],
+              "question": "Which panel supplies each circuit and what capacity and access information is known?",
+              "decision": "Review supply schedules and isolation scope",
+              "grain": "One panel or electrical board occurrence",
+              "proposedFields": [
+                "object_id",
+                "tag",
+                "voltage",
+                "phase_configuration",
+                "rated_current",
+                "upstream_reference",
+                "circuit_references"
+              ],
+              "relationships": [
+                "service_run",
+                "service_access",
+                "lighting_fixture"
+              ],
+              "separateBecause": "Circuits and supply characteristics justify a recurring electrical model",
+              "mergeOrDefer": "Start circuit detail as relationships; avoid classes per panel style",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "object_states",
+                  "relationships"
+                ],
+                "incrementalGain": "Add electrical supply and circuit vocabulary absent from generic component/edge rows."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected electrical-specific value; phase and spare-capacity calculations need explicit conventions.",
+                "nextAction": "design_now",
+                "whyNow": "Electrical schedules need distinct supply and circuit concepts that the generic component model cannot make discoverable. This deliberately tests a discipline beyond architectural takeoff.",
+                "acceptanceQuestion": "Can an electrician inspect panel and circuit assignments while unknown phases, capacity and upstream connections remain explicit?"
+              }
+            },
+            {
+              "id": "lighting_fixture",
+              "name": "Lighting fixture",
+              "form": "record",
+              "roles": [
+                "electrician",
+                "electrical_engineer",
+                "interior_designer",
+                "facility_manager"
+              ],
+              "workflows": [
+                "electrical_schedule",
+                "coordination",
+                "building_performance"
+              ],
+              "tags": [
+                "lighting",
+                "electrical",
+                "emergency"
+              ],
+              "question": "Which luminaires belong to each room and circuit and serve emergency lighting?",
+              "decision": "Prepare fixture schedules",
+              "grain": "One installed luminaire occurrence",
+              "proposedFields": [
+                "object_id",
+                "type_reference",
+                "space_id",
+                "circuit_reference",
+                "input_power",
+                "emergency_role",
+                "control_group"
+              ],
+              "relationships": [
+                "space",
+                "distribution_panel",
+                "ceiling"
+              ],
+              "separateBecause": "Count power and emergency role recur across electrical and interior tasks",
+              "mergeOrDefer": "Reference photometric files; defer illumination simulation",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Count power and emergency role recur across electrical and interior tasks"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected schedule value; emergency role alone cannot prove emergency-lighting compliance.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Interfaces between trades",
+          "models": [
+            {
+              "id": "support_assembly",
+              "name": "Service support assembly",
+              "form": "record",
+              "roles": [
+                "mechanical_trade",
+                "electrician",
+                "structural_trade",
+                "general_contractor"
+              ],
+              "workflows": [
+                "coordination",
+                "planning",
+                "estimating"
+              ],
+              "tags": [
+                "support",
+                "hanger",
+                "rack",
+                "attachment"
+              ],
+              "question": "Which supports carry routes and need attachment approval?",
+              "decision": "Coordinate hangers and attachments",
+              "grain": "One support or rack assembly carrying one or more services",
+              "proposedFields": [
+                "object_id",
+                "support_role",
+                "supported_ids",
+                "host_id",
+                "load_requirement",
+                "attachment_specification",
+                "approval_status"
+              ],
+              "relationships": [
+                "service_run",
+                "structural_member",
+                "work_package"
+              ],
+              "separateBecause": "Supports span structure and services with independent installation scope",
+              "mergeOrDefer": "Begin with explicit supports; defer automatic layout and seismic detailing",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Supports span structure and services with independent installation scope"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "occasional",
+                "scopeCost": "large",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Potential coordination value when detail exists; source coverage may make early support taxonomy expensive.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "materials_measurement",
+      "name": "Materials and measurement",
+      "meaning": "Material contributions and quantities with explicit basis and provenance",
+      "groups": [
+        {
+          "name": "Specifications and quantities",
+          "models": [
+            {
+              "id": "assembly_specification",
+              "name": "Construction assembly specification",
+              "form": "record",
+              "roles": [
+                "architect",
+                "estimator",
+                "roofer",
+                "partition_trade",
+                "sustainability_analyst"
+              ],
+              "workflows": [
+                "roof_takeoff",
+                "finish_schedule",
+                "estimating",
+                "carbon"
+              ],
+              "tags": [
+                "assembly",
+                "material",
+                "specification"
+              ],
+              "question": "Which layers and specifications define this construction and what remains unspecified?",
+              "decision": "Reuse specifications and allocate material scope",
+              "grain": "One versioned assembly specification with component ordering defined",
+              "proposedFields": [
+                "specification_id",
+                "version",
+                "name",
+                "component_references",
+                "layer_order_basis",
+                "performance_requirements"
+              ],
+              "relationships": [
+                "roof",
+                "wall",
+                "floor",
+                "finish_surface"
+              ],
+              "separateBecause": "Shared specifications differ from installed occurrences and quantities",
+              "mergeOrDefer": "Avoid universal composition theory; add layers where takeoff or performance needs them",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Shared specifications differ from installed occurrences and quantities"
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "deduplicated-material-impact",
+                  "supports": "A material contribution must be counted once across source representations.",
+                  "doesNotEstablish": "Ordered assembly layers or a general assembly taxonomy."
+                }
+              ],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "Roof grouping and carbon contributions need reusable specifications; layer ordering and measurement remain open.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "quantity_takeoff",
+              "name": "Selected quantity takeoff",
+              "form": "view",
+              "roles": [
+                "estimator",
+                "roofer",
+                "flooring_trade",
+                "structural_trade",
+                "plumbing_trade"
+              ],
+              "workflows": [
+                "roof_takeoff",
+                "finish_schedule",
+                "estimating",
+                "structural_takeoff",
+                "plumbing_takeoff"
+              ],
+              "tags": [
+                "quantity",
+                "takeoff",
+                "coverage"
+              ],
+              "question": "What quantity can I sum and which items remain unmeasured?",
+              "decision": "Produce defensible takeoff totals",
+              "grain": "One selected quantity per subject and basis within a scope",
+              "proposedFields": [
+                "subject_id",
+                "scope_id",
+                "quantity_kind",
+                "basis",
+                "amount",
+                "unit",
+                "selection_reason",
+                "coverage_status"
+              ],
+              "relationships": [
+                "roof",
+                "finish_surface",
+                "assembly_specification",
+                "work_package"
+              ],
+              "separateBecause": "Users need additive selected quantities rather than competing observations",
+              "mergeOrDefer": "Preserve observations; never sum overlapping assembly and part scope",
+              "existingContract": {
+                "approach": "reuse_view",
+                "tables": [
+                  "quantity_scopes",
+                  "quantity_observations"
+                ],
+                "incrementalGain": "Expose selected quantities and missing coverage through a view; preserve the original observations."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "roof-surface-versus-projection",
+                  "supports": "Select a measurement basis and retain unknown scope.",
+                  "doesNotEstablish": "Every trade measurement convention or aggregation denominator."
+                }
+              ],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "Selected quantity observations and scopes already exist. Additional value is a readable coverage-aware view and documented additive grouping.",
+                "nextAction": "reuse_existing"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "commercial_delivery",
+      "name": "Commercial and delivery",
+      "meaning": "A work item can concern multiple objects and may have no independent geometry",
+      "groups": [
+        {
+          "name": "Scope and delivery",
+          "models": [
+            {
+              "id": "work_package",
+              "name": "Trade work package",
+              "form": "record",
+              "roles": [
+                "general_contractor",
+                "project_manager",
+                "estimator"
+              ],
+              "workflows": [
+                "estimating",
+                "planning",
+                "safety"
+              ],
+              "tags": [
+                "package",
+                "trade",
+                "planning"
+              ],
+              "question": "Which objects and activities are in this package and what prevents release?",
+              "decision": "Assign and price explicit work scope",
+              "grain": "One package within a project planning scenario",
+              "proposedFields": [
+                "package_id",
+                "trade",
+                "name",
+                "scope_memberships",
+                "release_status",
+                "dependency_references"
+              ],
+              "relationships": [
+                "quantity_takeoff",
+                "procurement_line",
+                "installation_observation"
+              ],
+              "separateBecause": "Commercial scope may contain many objects and tasks without geometry",
+              "mergeOrDefer": "Keep scenarios explicit; avoid building a full scheduling system",
+              "existingContract": {
+                "approach": "extend",
+                "tables": [
+                  "work_packages"
+                ],
+                "incrementalGain": "Existing package scope is sufficient for the worked estimate; release/dependency fields remain an incremental design question."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "priced-and-unpriced-scope",
+                  "supports": "An estimate can price known package scope while preserving unpriced scope.",
+                  "doesNotEstablish": "Schedule dependencies, release rules or installation progress."
+                }
+              ],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "work_packages already scopes the estimate example. Dependencies and release readiness should extend that contract once additional cases establish their meaning.",
+                "nextAction": "extend_existing"
+              }
+            },
+            {
+              "id": "procurement_line",
+              "name": "Procurement requirement",
+              "form": "view",
+              "roles": [
+                "estimator",
+                "general_contractor",
+                "door_supplier",
+                "project_manager"
+              ],
+              "workflows": [
+                "estimating",
+                "door_audit",
+                "planning"
+              ],
+              "tags": [
+                "procurement",
+                "bidding",
+                "delivery"
+              ],
+              "question": "Which specified items must be ordered and what prevents ordering?",
+              "decision": "Prepare order scope and resolve selections",
+              "grain": "One required purchasable item or specification in a package and scenario",
+              "proposedFields": [
+                "package_id",
+                "item_reference",
+                "specification_reference",
+                "required_quantity",
+                "unit",
+                "required_date",
+                "readiness_status"
+              ],
+              "relationships": [
+                "work_package",
+                "door",
+                "equipment",
+                "assembly_specification"
+              ],
+              "separateBecause": "Purchased grouping differs from occurrence and installed quantity",
+              "mergeOrDefer": "Separate requirement from order and shipment; supplier terms require external data",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Purchased grouping differs from occurrence and installed quantity"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Expected contractor value; current scenarios do not provide prices lead times or delivery commitments.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "installation_observation",
+              "name": "Installation or delivery observation",
+              "form": "record",
+              "roles": [
+                "general_contractor",
+                "door_supplier",
+                "project_manager",
+                "safety_auditor"
+              ],
+              "workflows": [
+                "door_audit",
+                "planning",
+                "safety"
+              ],
+              "tags": [
+                "audit",
+                "delivery",
+                "installation",
+                "evidence"
+              ],
+              "question": "What was delivered or installed against requirements and what supports that observation?",
+              "decision": "Accept flag or clarify an item",
+              "grain": "One dated observation of a subject against a declared stage",
+              "proposedFields": [
+                "observation_id",
+                "subject_id",
+                "stage",
+                "observed_at",
+                "observed_condition",
+                "evidence_references",
+                "review_status"
+              ],
+              "relationships": [
+                "door",
+                "equipment",
+                "penetration",
+                "work_package"
+              ],
+              "separateBecause": "Site observation differs from design intent and interpretation",
+              "mergeOrDefer": "Record observations first; defer capture apps and transaction systems",
+              "existingContract": {
+                "approach": "proposed_new",
+                "tables": [
+                  "source_records",
+                  "assessments"
+                ],
+                "incrementalGain": "Independent delivery or installation events need a subject, event scope and evidence grain separate from the modeled occurrence."
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Door audits motivate this extension but current cases concern model evidence; delivery observations need independent field evidence.",
+                "nextAction": "design_now",
+                "whyNow": "Adds delivery and field-audit needs to the first wave. It tests the distinction between what a model specifies and what independent evidence says was delivered or installed.",
+                "acceptanceQuestion": "Can a project manager reconcile specified items with partial deliveries and repeated observations without treating a modeled object as proof of installation?"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operations_performance",
+      "name": "Operations and performance",
+      "meaning": "Stable assets plus links to operational records and scenario results",
+      "groups": [
+        {
+          "name": "Operate and maintain",
+          "models": [
+            {
+              "id": "asset_service_requirements",
+              "name": "Asset service requirements",
+              "form": "facet",
+              "roles": [
+                "facility_manager",
+                "owner",
+                "mechanical_trade"
+              ],
+              "workflows": [
+                "asset_handover",
+                "mep_trace"
+              ],
+              "tags": [
+                "asset",
+                "handover",
+                "maintenance"
+              ],
+              "question": "What documentation access and service obligations belong to this item?",
+              "decision": "Review handover readiness",
+              "grain": "One asset and versioned service requirement set",
+              "proposedFields": [
+                "object_id",
+                "maintainable_status",
+                "manual_references",
+                "warranty_reference",
+                "service_requirements",
+                "handover_coverage"
+              ],
+              "relationships": [
+                "equipment",
+                "valve",
+                "landscape_asset",
+                "service_access"
+              ],
+              "separateBecause": "Maintainability cuts across physical categories without duplicating identity",
+              "mergeOrDefer": "Apply a facet to existing objects; keep events in operational systems",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Maintainability cuts across physical categories without duplicating identity"
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "asset-without-manual",
+                  "supports": "Missing manuals are a handover gap rather than absence of an asset.",
+                  "doesNotEstablish": "Maintenance intervals, access envelopes or service procedures."
+                }
+              ],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "small",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "Handover explicitly tracks unknown manuals and maintainability; extra warranty and service fields require validation.",
+                "nextAction": "validate_next"
+              }
+            },
+            {
+              "id": "maintenance_plan",
+              "name": "Maintenance planning view",
+              "form": "view",
+              "roles": [
+                "facility_manager",
+                "owner"
+              ],
+              "workflows": [
+                "asset_handover",
+                "planning"
+              ],
+              "tags": [
+                "maintenance",
+                "schedule",
+                "operations"
+              ],
+              "question": "Which services are due and what access or shutdown constraints apply?",
+              "decision": "Plan maintenance scope",
+              "grain": "One asset service task in a planning period and schedule version",
+              "proposedFields": [
+                "object_id",
+                "service_task",
+                "due_window",
+                "requirement_reference",
+                "access_constraints",
+                "shutdown_dependencies"
+              ],
+              "relationships": [
+                "asset_service_requirements",
+                "service_access",
+                "valve"
+              ],
+              "separateBecause": "Service planning combines requirements dates and operating constraints",
+              "mergeOrDefer": "Defer due-date computation until history and authoritative intervals are connected",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Service planning combines requirements dates and operating constraints"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "occasional",
+                "scopeCost": "large",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Valuable to facilities but static BIM is insufficient; handover does not justify a maintenance management system.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "environment_assessment",
+      "name": "Environment and assessment",
+      "meaning": "Versioned factors/rules and explainable results with incomplete/unknown outcomes",
+      "groups": [
+        {
+          "name": "Impact and requirements",
+          "models": [
+            {
+              "id": "impact_breakdown",
+              "name": "Material impact breakdown",
+              "form": "view",
+              "roles": [
+                "sustainability_analyst",
+                "estimator",
+                "owner",
+                "portfolio_analyst"
+              ],
+              "workflows": [
+                "carbon",
+                "portfolio",
+                "estimating"
+              ],
+              "tags": [
+                "carbon",
+                "material",
+                "scenario",
+                "coverage"
+              ],
+              "question": "What contributes to carbon results and how much scope lacks factors?",
+              "decision": "Compare alternatives with visible coverage",
+              "grain": "One additive contribution and factor application in a scenario and life-cycle module",
+              "proposedFields": [
+                "contribution_id",
+                "scope_id",
+                "scenario_id",
+                "module",
+                "quantity",
+                "factor_reference",
+                "impact",
+                "coverage_status"
+              ],
+              "relationships": [
+                "assembly_specification",
+                "quantity_takeoff",
+                "work_package"
+              ],
+              "separateBecause": "Impact needs factor and module context beyond a material label",
+              "mergeOrDefer": "Retain exclusions and uncertainty; defer full ecological impact claims",
+              "existingContract": {
+                "approach": "reuse_view",
+                "tables": [
+                  "impact_lines"
+                ],
+                "incrementalGain": "Use existing impact grain and factor context; test aggregate coverage rather than creating another result fact."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "deduplicated-material-impact",
+                  "supports": "Contribution identity and module/factor context constrain an impact line.",
+                  "doesNotEstablish": "Full portfolio aggregation, lifecycle completeness or ecological-impact methods."
+                }
+              ],
+              "priority": {
+                "value": "medium",
+                "impact": "medium",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "impact_lines already carries additive contribution, factor and module context. Reuse it for breakdowns; independently prove aggregation and coverage additions.",
+                "nextAction": "reuse_existing"
+              }
+            },
+            {
+              "id": "requirement_assessment",
+              "name": "Requirement assessment results",
+              "form": "view",
+              "roles": [
+                "safety_auditor",
+                "architect",
+                "general_contractor",
+                "facility_manager"
+              ],
+              "workflows": [
+                "door_audit",
+                "egress",
+                "safety",
+                "asset_handover"
+              ],
+              "tags": [
+                "audit",
+                "requirements",
+                "coverage"
+              ],
+              "question": "Which requirements passed failed or could not be assessed and why?",
+              "decision": "Direct review to failures and missing evidence",
+              "grain": "One subject against one versioned requirement in a scenario",
+              "proposedFields": [
+                "subject_id",
+                "requirement_reference",
+                "scenario_id",
+                "result",
+                "input_coverage",
+                "reason",
+                "evidence_references"
+              ],
+              "relationships": [
+                "door",
+                "space",
+                "installation_observation",
+                "asset_service_requirements"
+              ],
+              "separateBecause": "A result is an explainable decision rather than a boolean property",
+              "mergeOrDefer": "Use domain evaluators later; avoid a universal executable rule language now",
+              "existingContract": {
+                "approach": "reuse_view",
+                "tables": [
+                  "assessments"
+                ],
+                "incrementalGain": "The existing assessment record already has the requested grain and incomplete outcomes."
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "missing-door-evidence",
+                  "supports": "An incomplete assessment remains unknown.",
+                  "doesNotEstablish": "Any regulatory rule implementation or complete compliance claim."
+                }
+              ],
+              "priority": {
+                "value": "low",
+                "impact": "low",
+                "repeatUse": "frequent",
+                "scopeCost": "medium",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "assessments already represents this row grain, result and incomplete inputs. Reuse its result view; a second independent assessment record adds little. This does not devalue safety work.",
+                "nextAction": "reuse_existing"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Specialist analysis",
+          "models": [
+            {
+              "id": "acoustic_response",
+              "name": "Detailed acoustic response",
+              "form": "capability",
+              "roles": [
+                "architect",
+                "interior_designer",
+                "performance_analyst"
+              ],
+              "workflows": [
+                "building_performance",
+                "architectural_spaces"
+              ],
+              "tags": [
+                "acoustics",
+                "simulation",
+                "specialist"
+              ],
+              "question": "How might finishes and transmission paths affect room acoustics across frequency bands?",
+              "decision": "Compare specialist acoustic alternatives",
+              "grain": "One analysis metric for a space or path and frequency band in a scenario",
+              "proposedFields": [
+                "scenario_id",
+                "subject_id",
+                "frequency_band",
+                "metric",
+                "result",
+                "boundary_conditions",
+                "method_reference"
+              ],
+              "relationships": [
+                "space",
+                "finish_surface",
+                "wall"
+              ],
+              "separateBecause": "Frequency-specific results differ from a simple product rating",
+              "mergeOrDefer": "Defer simulation and detailed taxonomy until a specialist workflow and corpus justify them",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Frequency-specific results differ from a simple product rating"
+              },
+              "scenarioSupport": [],
+              "priority": {
+                "value": "low",
+                "impact": "low",
+                "repeatUse": "rare",
+                "scopeCost": "large",
+                "evidenceBasis": "brainstorm",
+                "rationale": "Possible specialist value but no current acoustic scenario and insufficient boundary conditions; low priority refers only to initial scope.",
+                "nextAction": "park"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flexible_evidence",
+      "name": "Flexible evidence",
+      "meaning": "Preserve source detail and explain how curated values were chosen",
+      "groups": [
+        {
+          "name": "Evidence review",
+          "models": [
+            {
+              "id": "evidence_issue",
+              "name": "Model evidence issues",
+              "form": "view",
+              "roles": [
+                "project_manager",
+                "architect",
+                "general_contractor",
+                "facility_manager"
+              ],
+              "workflows": [
+                "door_audit",
+                "asset_handover",
+                "planning",
+                "coordination"
+              ],
+              "tags": [
+                "quality",
+                "coverage",
+                "review"
+              ],
+              "question": "Which missing or conflicting fields block this workflow?",
+              "decision": "Prioritize data repair for a decision",
+              "grain": "One evidence issue affecting a subject field and workflow in a snapshot",
+              "proposedFields": [
+                "subject_id",
+                "field",
+                "workflow_id",
+                "issue_kind",
+                "blocking_decision",
+                "source_references",
+                "resolution_status"
+              ],
+              "relationships": [
+                "work_package",
+                "requirement_assessment"
+              ],
+              "separateBecause": "Missing fields have different consequences in different workflows",
+              "mergeOrDefer": "Do not rank every optional missing field as an equal defect",
+              "existingContract": {
+                "approach": "unassessed",
+                "tables": [],
+                "incrementalGain": "Existing-contract fit still needs explicit review; Missing fields have different consequences in different workflows"
+              },
+              "scenarioSupport": [
+                {
+                  "scenarioId": "missing-door-evidence",
+                  "supports": "Incomplete inputs must remain visible rather than produce a pass.",
+                  "doesNotEstablish": "A comprehensive model-quality rule set or root-cause diagnosis."
+                }
+              ],
+              "priority": {
+                "value": "high",
+                "impact": "high",
+                "repeatUse": "frequent",
+                "scopeCost": "small",
+                "evidenceBasis": "workflow_scenario",
+                "rationale": "Unknown audit and handover cases justify actionable gaps; assignment and resolution histories require collaboration data.",
+                "nextAction": "validate_next"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

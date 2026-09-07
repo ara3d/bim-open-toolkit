@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><IsTestProject>true</IsTestProject></PropertyGroup>
+  <Import Project="../../tools/bim-data-model/Platonic.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Workflows/Ara3D.BimOpenSchema.BuildingModel.Workflows.csproj" />
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO.csproj" />
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Source/Ara3D.BimOpenSchema.BuildingModel.Source.csproj" />
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.DataModel.IO/Ara3D.BimOpenSchema.DataModel.IO.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(Ara3DMicrosoftNetTestSdkVersion)" />
+    <PackageReference Include="NUnit" Version="$(Ara3DNUnitVersion)" />
+    <PackageReference Include="NUnit3TestAdapter" Version="$(Ara3DNUnit3TestAdapterVersion)" />
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+</Project>

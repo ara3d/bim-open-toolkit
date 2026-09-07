@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Ara3D.BimOpenSchema.DataModel/Ara3D.BimOpenSchema.DataModel.csproj" />
+    <Project Path="src/Ara3D.BimOpenSchema.DataModel.IO/Ara3D.BimOpenSchema.DataModel.IO.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Ara3D.BimOpenSchema.DataModel.Tests/Ara3D.BimOpenSchema.DataModel.Tests.csproj" />
+  </Folder>
+</Solution>

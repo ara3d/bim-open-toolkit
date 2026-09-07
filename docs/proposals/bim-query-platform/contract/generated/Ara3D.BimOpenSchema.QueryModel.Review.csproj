@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Ara3D.BimOpenSchema.QueryModel.Review</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <IsPackable>false</IsPackable>
+    <Description>Generated C# review projection of the earlier BIM query contract.</Description>
+  </PropertyGroup>
+  <Import Project="../../../../../tools/bim-data-model/Platonic.props" />
+</Project>

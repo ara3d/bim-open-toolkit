@@ -1,0 +1,1103 @@
+{
+  "$schema": "./catalog.schema.json",
+  "version": "0.1.0-review.1",
+  "status": "proposed",
+  "modelSchema": "model.schema.json",
+  "workflowCatalog": "workflows.json",
+  "purpose": "Review human-facing BIM semantics through questions, explicit record grain and evidence; physical storage remains undecided.",
+  "performanceContract": {
+    "preparedOpenSeconds": 10,
+    "processMemoryCeilingGiB": 16,
+    "baselineWorkstationGiB": 32,
+    "includes": [
+      "first-useful-query",
+      "native-allocations",
+      "resident-mapped-pages",
+      "workers"
+    ],
+    "preparationExcludedFromOpenDeadline": true
+  },
+  "sourceEvidence": [
+    {
+      "id": "revit-corpus",
+      "status": "user-reported",
+      "statement": "Documents/BIM Open Schema is generally Revit-derived and more reliable, not assumed perfect."
+    },
+    {
+      "id": "ifc-corpus",
+      "status": "user-reported",
+      "statement": "IFC-to-BOS converter is incomplete. Unknown omission causes remain unknown."
+    },
+    {
+      "id": "stress-footers",
+      "status": "observed",
+      "statement": "all-medium.bos has 224 document rows, 1,237,191 entities and zero explicit Relations rows. This does not establish number of physical objects or absent topology."
+    },
+    {
+      "id": "nearby-bfast-samples",
+      "status": "unverified-correspondence",
+      "statement": "Nearby cache property/name samples are hypotheses; source correspondence has not been proved."
+    }
+  ],
+  "identityContract": "objects.id identifies a proposed semantic identity; all snapshot-scoped joins include snapshotId. Cross-import stability depends on reconciliation, not a generated row key.",
+  "missingDataContract": "Required observations use explicit availability states. JSON null is reserved for optional display/locator values and does not encode a measurement or audit result.",
+  "policies": [
+    {
+      "id": "quantity-selection",
+      "status": "unresolved",
+      "statement": "Choose measurement alternatives using declared kind, basis, source authority and method; no silent first-row-wins."
+    },
+    {
+      "id": "identity-reconciliation",
+      "status": "unresolved",
+      "statement": "Reconcile candidate source identities only with evidence; preserve unmatched and contested records."
+    },
+    {
+      "id": "property-selection",
+      "status": "unresolved",
+      "statement": "Choose specifications with explicit precedence; duplicates and missing exporter coverage remain visible."
+    },
+    {
+      "id": "topology-evidence",
+      "status": "unresolved",
+      "statement": "Choose accepted topology of the requested meaning and report unknown coverage."
+    },
+    {
+      "id": "spatial-candidate",
+      "status": "unresolved",
+      "statement": "Use geometric bounds as candidate evidence only; exact methods and tolerances are explicit."
+    },
+    {
+      "id": "assessment-completeness",
+      "status": "unresolved",
+      "statement": "Specify required evidence and applicable rules before deciding pass/fail/unknown."
+    },
+    {
+      "id": "factor-match",
+      "status": "unresolved",
+      "statement": "Match material quantity to a versioned factor, unit, geography and lifecycle boundary."
+    },
+    {
+      "id": "rate-match",
+      "status": "unresolved",
+      "statement": "Match work scope and quantity to a rate edition, currency and regional/date assumptions."
+    },
+    {
+      "id": "scope-no-double-count",
+      "status": "unresolved",
+      "statement": "Select nonoverlapping additive scope at the declared grain."
+    },
+    {
+      "id": "coordinate-resolution",
+      "status": "unresolved",
+      "statement": "Resolve declared frames and dimensions without assuming federated source alignment."
+    }
+  ],
+  "invariants": [
+    {
+      "id": "snapshot-selection",
+      "statement": "A query selects explicit snapshots; comparisons do not aggregate alternative revisions together.",
+      "enforcement": "partially-checked"
+    },
+    {
+      "id": "identity-no-guess",
+      "statement": "Only confirmed, evidenced correspondences authorize treating source records as the same object. Names, coordinates and local IDs alone are insufficient.",
+      "enforcement": "policy-required"
+    },
+    {
+      "id": "source-not-truth",
+      "statement": "Source presence is evidence, not certification. Empty relation/diagnostic tables do not prove absent topology or correctness; not-exported needs documented capability evidence.",
+      "enforcement": "policy-required"
+    },
+    {
+      "id": "location-not-origin",
+      "statement": "Unknown location remains unknown. Available place references target spatial objects in the same snapshot; nonspatial objects may have associations without coordinates.",
+      "enforcement": "companion-validator"
+    },
+    {
+      "id": "frame-consistency",
+      "statement": "Frames are acyclic; poses match frame dimension. Known transforms use declared conventions; cross-source alignment needs evidence.",
+      "enforcement": "partially-checked"
+    },
+    {
+      "id": "representation-not-object",
+      "statement": "Counts use object identity and declared occurrence scope, not number of representations or source records.",
+      "enforcement": "policy-required"
+    },
+    {
+      "id": "bounds-not-quantity",
+      "statement": "Bounds/projection are not substituted for surface area, volume or exact geometry results.",
+      "enforcement": "policy-required"
+    },
+    {
+      "id": "topology-not-proximity",
+      "statement": "Traversal selects accepted relation kinds. Touches/possible_overlap cannot establish connects_to or feeds. Incomplete source topology prevents a completeness claim.",
+      "enforcement": "policy-required"
+    },
+    {
+      "id": "observation-selection",
+      "statement": "Alternatives remain separately addressable. Selected observations require a named policy and declared quantity/property context.",
+      "enforcement": "partially-checked"
+    },
+    {
+      "id": "quantity-unit-basis",
+      "statement": "Measurement kind, unit and basis agree; surface_area and projected_area differ. Nonnegative physical takeoff quantities are not mixed across units.",
+      "enforcement": "companion-validator"
+    },
+    {
+      "id": "scope-no-double-count",
+      "statement": "Aggregate only compatible leaf contributions/scopes; do not sum assembly totals with their constituents, duplicate representations, overlapping scopes or alternative revisions.",
+      "enforcement": "partially-checked"
+    },
+    {
+      "id": "reference-version",
+      "statement": "Rates, factors and requirements reference an explicit versioned set of the correct kind.",
+      "enforcement": "companion-validator"
+    },
+    {
+      "id": "assessment-no-false-pass",
+      "statement": "Pass requires complete applicable inputs and rule evidence. An incomplete model cannot establish complete safety or regulatory compliance.",
+      "enforcement": "partially-checked"
+    },
+    {
+      "id": "countable-occurrences",
+      "statement": "Component schedules include physical occurrence kinds, excluding spaces, systems, definitions and metadata.",
+      "enforcement": "companion-validator"
+    },
+    {
+      "id": "surface-accounting",
+      "statement": "One face/surface has explicit identity. Shared objects can have two different finish faces; duplicate space associations do not multiply a surface quantity.",
+      "enforcement": "partially-checked"
+    },
+    {
+      "id": "rate-compatibility",
+      "statement": "Unit rate and selected quantity are compatible, currencies agree, and waste assumptions are explicit. Unpriced scope is not zero cost.",
+      "enforcement": "companion-validator"
+    },
+    {
+      "id": "factor-compatibility",
+      "statement": "Selected material quantity matches factor denominator unit; lifecycle module, factor edition and scenario remain explicit. Missing factors are not zero impact.",
+      "enforcement": "partially-checked"
+    }
+  ],
+  "tables": [
+    {
+      "id": "snapshots",
+      "title": "Dataset snapshots",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": false,
+      "grain": "One published selection of source revisions and interpretation policies, not one building.",
+      "rowSchema": "model.schema.json#/$defs/Snapshots",
+      "primaryKey": [
+        "id"
+      ],
+      "foreignKeys": [],
+      "workflowIds": [
+        "portfolio",
+        "door_audit",
+        "estimating"
+      ],
+      "invariantIds": [
+        "snapshot-selection"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "objects",
+      "title": "Identified things",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": false,
+      "grain": "One provisionally or explicitly reconciled physical, spatial or logical identity across snapshots.",
+      "rowSchema": "model.schema.json#/$defs/Objects",
+      "primaryKey": [
+        "id"
+      ],
+      "foreignKeys": [],
+      "workflowIds": [
+        "asset_handover",
+        "carbon",
+        "portfolio"
+      ],
+      "invariantIds": [
+        "identity-no-guess"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "source_records",
+      "title": "Source evidence records",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One locator for an original record in an identified source revision; metadata records are not countable assets.",
+      "rowSchema": "model.schema.json#/$defs/SourceRecords",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [],
+      "workflowIds": [
+        "door_audit",
+        "asset_handover"
+      ],
+      "invariantIds": [
+        "source-not-truth"
+      ],
+      "coverage": "source-structure-observed",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "source_links",
+      "title": "Object correspondence assertions",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One assertion linking a source record to an object; candidate links do not authorize merging or counting as equivalent.",
+      "rowSchema": "model.schema.json#/$defs/SourceLinks",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "sourceRecordId",
+          "targetTable": "source_records",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "objectId",
+          "targetTable": "objects",
+          "targetField": "id",
+          "scope": "global",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "carbon",
+        "portfolio",
+        "asset_handover"
+      ],
+      "invariantIds": [
+        "identity-no-guess"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "object_states",
+      "title": "Objects in a delivery",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One description of an identified object in a snapshot; retirement and unobserved delivery status are distinct.",
+      "rowSchema": "model.schema.json#/$defs/ObjectStates",
+      "primaryKey": [
+        "snapshotId",
+        "objectId"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "objects",
+          "targetField": "id",
+          "scope": "global",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "architectural_spaces",
+        "mep_trace",
+        "asset_handover",
+        "portfolio"
+      ],
+      "invariantIds": [
+        "identity-no-guess",
+        "location-not-origin"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "coordinate_frames",
+      "title": "Coordinate frames",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One declared coordinate frame in a snapshot; unaligned source frames remain unaligned.",
+      "rowSchema": "model.schema.json#/$defs/CoordinateFrames",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "parentFrameId",
+          "targetTable": "coordinate_frames",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "coordination",
+        "landscape"
+      ],
+      "invariantIds": [
+        "frame-consistency"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "representations",
+      "title": "Geometric representations",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One addressable representation of an object for a purpose; multiple representations do not create multiple physical objects.",
+      "rowSchema": "model.schema.json#/$defs/Representations",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "frameId",
+          "targetTable": "coordinate_frames",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "coordination",
+        "egress",
+        "roof_takeoff"
+      ],
+      "invariantIds": [
+        "representation-not-object",
+        "bounds-not-quantity"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "relationships",
+      "title": "Typed relationship assertions",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One directional relationship assertion; status and evidence distinguish accepted topology from candidates.",
+      "rowSchema": "model.schema.json#/$defs/Relationships",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "sourceObjectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "targetObjectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "mep_trace",
+        "egress",
+        "coordination",
+        "plumbing_takeoff"
+      ],
+      "invariantIds": [
+        "topology-not-proximity"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "property_observations",
+      "title": "Property observations",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One observation of a semantic property concept on an object, preserving competing assertions as separate rows.",
+      "rowSchema": "model.schema.json#/$defs/PropertyObservations",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "door_audit",
+        "electrical_schedule",
+        "building_performance"
+      ],
+      "invariantIds": [
+        "observation-selection",
+        "source-not-truth"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "quantity_observations",
+      "title": "Quantity observations",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One quantity observation for an identified object measurement scope, kind and basis; competing measurements remain separate rows.",
+      "rowSchema": "model.schema.json#/$defs/QuantityObservations",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "scopeId",
+          "targetTable": "quantity_scopes",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "roof_takeoff",
+        "estimating",
+        "carbon",
+        "structural_takeoff",
+        "flooring",
+        "landscape"
+      ],
+      "invariantIds": [
+        "quantity-unit-basis",
+        "observation-selection",
+        "scope-no-double-count"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "material_contributions",
+      "title": "Material contributions",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One material contribution to an object at a declared part/layer/scope; not an assembly total to add again to its constituents.",
+      "rowSchema": "model.schema.json#/$defs/MaterialContributions",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "materialId",
+          "targetTable": "objects",
+          "targetField": "id",
+          "scope": "global",
+          "many": false
+        },
+        {
+          "field": "quantityObservationId",
+          "targetTable": "quantity_observations",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "carbon",
+        "structural_takeoff",
+        "estimating"
+      ],
+      "invariantIds": [
+        "scope-no-double-count"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "reference_sets",
+      "title": "Versioned external references",
+      "layer": "foundation",
+      "status": "proposed",
+      "snapshotScoped": false,
+      "grain": "One identifiable edition of rates, environmental factors, rules or a vocabulary; authority is explicit.",
+      "rowSchema": "model.schema.json#/$defs/ReferenceSets",
+      "primaryKey": [
+        "id"
+      ],
+      "foreignKeys": [],
+      "workflowIds": [
+        "estimating",
+        "carbon",
+        "door_audit",
+        "asset_handover"
+      ],
+      "invariantIds": [
+        "reference-version"
+      ],
+      "coverage": "external-required",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "work_packages",
+      "title": "Work packages",
+      "layer": "domain",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One named scope of work for a delivery, possibly spanning many objects; no independent point location is required.",
+      "rowSchema": "model.schema.json#/$defs/WorkPackages",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectIds",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": true
+        }
+      ],
+      "workflowIds": [
+        "planning",
+        "estimating",
+        "safety"
+      ],
+      "invariantIds": [
+        "scope-no-double-count"
+      ],
+      "coverage": "external-required",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "assessments",
+      "title": "Requirement assessments",
+      "layer": "domain",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One requirement assessed against one subject in a specified scenario; unknown is not pass.",
+      "rowSchema": "model.schema.json#/$defs/Assessments",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "subjectObjectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "requirementSetId",
+          "targetTable": "reference_sets",
+          "targetField": "id",
+          "scope": "global",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "door_audit",
+        "egress",
+        "safety",
+        "asset_handover"
+      ],
+      "invariantIds": [
+        "assessment-no-false-pass"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "component_schedule",
+      "title": "Component schedule",
+      "layer": "workflow_view",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One countable component occurrence in one snapshot, with readable context. Source metadata and definitions are excluded.",
+      "rowSchema": "model.schema.json#/$defs/ComponentSchedule",
+      "primaryKey": [
+        "snapshotId",
+        "objectId"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "architectural_spaces",
+        "structural_takeoff",
+        "electrical_schedule",
+        "plumbing_takeoff",
+        "envelope",
+        "landscape"
+      ],
+      "invariantIds": [
+        "countable-occurrences"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "door_schedule",
+      "title": "Door schedule",
+      "layer": "workflow_view",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One door occurrence with selected specifications; clear opening width is not nominal leaf width.",
+      "rowSchema": "model.schema.json#/$defs/DoorSchedule",
+      "primaryKey": [
+        "snapshotId",
+        "objectId"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "door_audit",
+        "egress"
+      ],
+      "invariantIds": [
+        "observation-selection",
+        "assessment-no-false-pass"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "roof_takeoff",
+      "title": "Roof takeoff",
+      "layer": "workflow_view",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One roof occurrence under a selected measurement policy; surface and plan-projected area remain separate.",
+      "rowSchema": "model.schema.json#/$defs/RoofTakeoff",
+      "primaryKey": [
+        "snapshotId",
+        "objectId"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "netSurfaceQuantityId",
+          "targetTable": "quantity_observations",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "roof_takeoff",
+        "estimating",
+        "envelope"
+      ],
+      "invariantIds": [
+        "quantity-unit-basis",
+        "bounds-not-quantity",
+        "scope-no-double-count"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "finish_schedule",
+      "title": "Room-facing finish schedule",
+      "layer": "workflow_view",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One identified finish surface/face of an object, with an available or unresolved space association. A shared wall can have independently measured finishes on opposite faces.",
+      "rowSchema": "model.schema.json#/$defs/FinishSchedule",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "finish_schedule",
+        "flooring"
+      ],
+      "invariantIds": [
+        "surface-accounting"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": [
+        "An available space.value is a same-snapshot space reference checked by the companion validator; unresolved associations stay in the schedule."
+      ]
+    },
+    {
+      "id": "estimate_lines",
+      "title": "Estimate lines",
+      "layer": "workflow_view",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One priced or explicitly unpriced quantity contribution within one package and rate scenario; alternative measurements do not create additive scope.",
+      "rowSchema": "model.schema.json#/$defs/EstimateLines",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "workPackageId",
+          "targetTable": "work_packages",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "quantityObservationId",
+          "targetTable": "quantity_observations",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "rateSetId",
+          "targetTable": "reference_sets",
+          "targetField": "id",
+          "scope": "global",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "estimating",
+        "planning"
+      ],
+      "invariantIds": [
+        "rate-compatibility",
+        "scope-no-double-count",
+        "reference-version"
+      ],
+      "coverage": "external-required",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "impact_lines",
+      "title": "Material impact lines",
+      "layer": "workflow_view",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One material contribution evaluated against one factor item, lifecycle module and scenario; alternative factor scenarios are not additive.",
+      "rowSchema": "model.schema.json#/$defs/ImpactLines",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "materialContributionId",
+          "targetTable": "material_contributions",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "factorSetId",
+          "targetTable": "reference_sets",
+          "targetField": "id",
+          "scope": "global",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "carbon",
+        "portfolio"
+      ],
+      "invariantIds": [
+        "factor-compatibility",
+        "scope-no-double-count",
+        "reference-version"
+      ],
+      "coverage": "external-required",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "asset_register",
+      "title": "Asset register",
+      "layer": "workflow_view",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One selected maintainable object, independent of the number of source descriptions or visual representations.",
+      "rowSchema": "model.schema.json#/$defs/AssetRegister",
+      "primaryKey": [
+        "snapshotId",
+        "objectId"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "asset_handover",
+        "mep_trace"
+      ],
+      "invariantIds": [
+        "identity-no-guess",
+        "source-not-truth"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": []
+    },
+    {
+      "id": "spatial_bounds",
+      "title": "Spatial search envelopes",
+      "layer": "domain",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One axis-aligned envelope of an object representation in one declared coordinate frame; multiple envelopes do not multiply object counts.",
+      "rowSchema": "model.schema.json#/$defs/SpatialBounds",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "representationId",
+          "targetTable": "representations",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        },
+        {
+          "field": "frameId",
+          "targetTable": "coordinate_frames",
+          "targetField": "id",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "coordination"
+      ],
+      "invariantIds": [
+        "frame-consistency",
+        "representation-not-object",
+        "bounds-not-quantity"
+      ],
+      "coverage": "derived-planned",
+      "storageDecision": "unspecified",
+      "openQuestions": [
+        "Should oriented bounds and multilevel spatial envelopes be separate projections after measured query needs?"
+      ]
+    },
+    {
+      "id": "quantity_scopes",
+      "title": "Measurement subjects",
+      "layer": "domain",
+      "status": "proposed",
+      "snapshotScoped": true,
+      "grain": "One identified measurement scope within one object: whole object, material part or surface. Distinct parts can carry independently selected masses or areas.",
+      "rowSchema": "model.schema.json#/$defs/QuantityScopes",
+      "primaryKey": [
+        "snapshotId",
+        "id"
+      ],
+      "foreignKeys": [
+        {
+          "field": "objectId",
+          "targetTable": "object_states",
+          "targetField": "objectId",
+          "scope": "snapshot",
+          "many": false
+        }
+      ],
+      "workflowIds": [
+        "roof_takeoff",
+        "estimating",
+        "carbon",
+        "finish_schedule"
+      ],
+      "invariantIds": [
+        "observation-selection",
+        "scope-no-double-count"
+      ],
+      "coverage": "mapping-unverified",
+      "storageDecision": "unspecified",
+      "openQuestions": [
+        "How are scope identity and overlap established across deliveries and measurement methods?"
+      ]
+    }
+  ],
+  "deferredConcepts": [
+    {
+      "id": "performance-series",
+      "reason": "Time periods, observed/simulated series and scenario definitions need a dedicated contract; not forced into property rows.",
+      "workflowIds": [
+        "building_performance",
+        "portfolio"
+      ]
+    },
+    {
+      "id": "construction-progress",
+      "reason": "Milestones, temporary works and statuses need schedule/source rules beyond the work-package kernel.",
+      "workflowIds": [
+        "planning",
+        "safety"
+      ]
+    },
+    {
+      "id": "egress-network",
+      "reason": "Navigable portals, capacities and jurisdiction-specific analysis are not equivalent to generic relationship edges.",
+      "workflowIds": [
+        "egress"
+      ]
+    },
+    {
+      "id": "terrain-and-landscape",
+      "reason": "Existing/proposed terrain, soil layers and species specifications require refinement beyond objects and quantities.",
+      "workflowIds": [
+        "landscape"
+      ]
+    },
+    {
+      "id": "electrical-and-fluid-design",
+      "reason": "Loads, phase, capacity, flow direction and hydraulic/electrical calculations need domain contracts, not inferred proximity.",
+      "workflowIds": [
+        "electrical_schedule",
+        "plumbing_takeoff",
+        "mep_trace"
+      ]
+    }
+  ],
+  "openDecisions": [
+    {
+      "id": "review-grain",
+      "question": "Are roof occurrence and room-facing surface the right starting schedule grains for trade review?"
+    },
+    {
+      "id": "reference-authority",
+      "question": "Which measurement conventions, rate libraries and environmental/requirement authorities should be supported first?"
+    },
+    {
+      "id": "quantity-selection",
+      "question": "How should source versus derived or estimated quantities be selected when both exist?"
+    },
+    {
+      "id": "projection-shape",
+      "question": "Are explicit availability objects acceptable in JSON results while SQL exposes equivalent flat status/value/unit columns?"
+    },
+    {
+      "id": "identity-scope",
+      "question": "What evidence will establish object correspondence across authoring tools and deliveries?"
+    },
+    {
+      "id": "policy-editions",
+      "question": "Before source preparation is reproducible, how should policy versions and their parameter hashes be registered in snapshots?"
+    },
+    {
+      "id": "resolvable-provenance",
+      "question": "Define addressable source revisions, scenario inputs, reference items and policy editions before promising replayable preparation or rate/factor audits."
+    },
+    {
+      "id": "scope-overlap",
+      "question": "How should part/surface identities and overlap be represented so that layered assemblies, whole-object totals and split work packages cannot double count?"
+    },
+    {
+      "id": "rounding-and-units",
+      "question": "Choose supported unit conversions, precision, currency rounding, taxes and discounts before production estimating."
+    }
+  ]
+}

@@ -1,0 +1,2248 @@
+{
+  "version": "0.1.0-review.1",
+  "provenance": "synthetic",
+  "tables": {
+    "snapshots": [
+      {
+        "id": "synthetic-snapshot",
+        "label": "Entirely synthetic review fixture",
+        "sourceRevisionIds": [
+          "synthetic-rev-a",
+          "synthetic-rev-b"
+        ],
+        "policyIds": [
+          "quantity-selection",
+          "identity-reconciliation",
+          "property-selection",
+          "topology-evidence",
+          "scope-no-double-count"
+        ]
+      }
+    ],
+    "objects": [
+      {
+        "id": "building",
+        "identityDomain": "place",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "room-north",
+        "identityDomain": "place",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "room-south",
+        "identityDomain": "place",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "roof-known",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "roof-unknown",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "wall-shared",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "door-unknown",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "ahu",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "duct",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "nearby-equipment",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "beam",
+        "identityDomain": "physical",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      },
+      {
+        "id": "steel",
+        "identityDomain": "material",
+        "identityStatus": "reconciled",
+        "identityBasis": "Explicit synthetic identity assignment; no reconciliation claim about real sources."
+      }
+    ],
+    "source_records": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-building",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 0,
+        "localId": "building",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-room-north",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 1,
+        "localId": "room-north",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-room-south",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 2,
+        "localId": "room-south",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-roof-known",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 3,
+        "localId": "roof-known",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-roof-unknown",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 4,
+        "localId": "roof-unknown",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-wall-shared",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 5,
+        "localId": "wall-shared",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-door-unknown",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 6,
+        "localId": "door-unknown",
+        "role": "occurrence",
+        "exporterFamily": "ifc",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-ahu",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 7,
+        "localId": "ahu",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-duct",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 8,
+        "localId": "duct",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-nearby-equipment",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 9,
+        "localId": "nearby-equipment",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-beam",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 10,
+        "localId": "beam",
+        "role": "occurrence",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-steel",
+        "sourceId": "synthetic-source-a",
+        "sourceRevisionId": "synthetic-rev-a",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 11,
+        "localId": "steel",
+        "role": "definition",
+        "exporterFamily": "revit",
+        "exporterVersion": "synthetic-only"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "src-beam-duplicate",
+        "sourceId": "synthetic-source-b",
+        "sourceRevisionId": "synthetic-rev-b",
+        "sourceTable": "InventedObjects",
+        "sourceRow": 0,
+        "localId": "other-model-beam",
+        "role": "occurrence",
+        "exporterFamily": "ifc",
+        "exporterVersion": "synthetic-only"
+      }
+    ],
+    "source_links": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-building",
+        "sourceRecordId": "src-building",
+        "objectId": "building",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-building"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-room-north",
+        "sourceRecordId": "src-room-north",
+        "objectId": "room-north",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-room-north"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-room-south",
+        "sourceRecordId": "src-room-south",
+        "objectId": "room-south",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-room-south"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-roof-known",
+        "sourceRecordId": "src-roof-known",
+        "objectId": "roof-known",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-known"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-roof-unknown",
+        "sourceRecordId": "src-roof-unknown",
+        "objectId": "roof-unknown",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-unknown"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-wall-shared",
+        "sourceRecordId": "src-wall-shared",
+        "objectId": "wall-shared",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-wall-shared"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-door-unknown",
+        "sourceRecordId": "src-door-unknown",
+        "objectId": "door-unknown",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-door-unknown"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-ahu",
+        "sourceRecordId": "src-ahu",
+        "objectId": "ahu",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-ahu"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-duct",
+        "sourceRecordId": "src-duct",
+        "objectId": "duct",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-duct"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-nearby-equipment",
+        "sourceRecordId": "src-nearby-equipment",
+        "objectId": "nearby-equipment",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-nearby-equipment"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-beam",
+        "sourceRecordId": "src-beam",
+        "objectId": "beam",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-beam"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-steel",
+        "sourceRecordId": "src-steel",
+        "objectId": "steel",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-steel"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "link-beam-duplicate",
+        "sourceRecordId": "src-beam-duplicate",
+        "objectId": "beam",
+        "matchState": "confirmed",
+        "policyId": "identity-reconciliation",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-beam",
+            "src-beam-duplicate"
+          ],
+          "referenceSetIds": [],
+          "method": "explicit-synthetic-correspondence-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "object_states": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "building",
+        "kind": "building",
+        "name": "Synthetic building",
+        "lifecycle": "existing",
+        "location": {
+          "state": "not_observed",
+          "reason": "No external site placement is supplied in this fixture.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-building"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "room-north",
+        "kind": "space",
+        "name": "North room",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-room-north"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "room-south",
+        "kind": "space",
+        "name": "South room",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-room-south"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "roof-known",
+        "kind": "roof",
+        "name": "Sloped roof",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-known"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "roof-unknown",
+        "kind": "roof",
+        "name": "Unmeasured roof",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-unknown"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "wall-shared",
+        "kind": "wall",
+        "name": "Shared partition",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-wall-shared"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "door-unknown",
+        "kind": "door",
+        "name": "Door without usable width evidence",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-door-unknown"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "ahu",
+        "kind": "equipment",
+        "name": "Air handling unit",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-ahu"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "duct",
+        "kind": "duct",
+        "name": "Supply duct",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-duct"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "nearby-equipment",
+        "kind": "equipment",
+        "name": "Nearby unconnected equipment",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-nearby-equipment"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "beam",
+        "kind": "structural_member",
+        "name": "Steel beam",
+        "lifecycle": "existing",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-beam"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "steel",
+        "kind": "material",
+        "name": "Steel",
+        "lifecycle": "existing",
+        "location": {
+          "state": "not_applicable",
+          "reason": "A material definition has no physical placement.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-steel"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-steel"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "coordinate_frames": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "frame-building",
+        "name": "Synthetic local building frame",
+        "dimension": 3,
+        "lengthUnit": "m",
+        "axisConvention": "Right-handed X east, Y north, Z up; synthetic local convention only.",
+        "parentFrameId": null,
+        "transformToParent": null,
+        "crsIdentifier": null,
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-building"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "representations": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "rep-roof",
+        "objectId": "roof-known",
+        "purpose": "measurement",
+        "geometryKind": "surface",
+        "frameId": "frame-building",
+        "resource": "synthetic:roof-surface",
+        "detailDescription": "Opaque invented surface locator; no mesh is distributed.",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-known"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "rep-beam-a",
+        "objectId": "beam",
+        "purpose": "source",
+        "geometryKind": "mesh",
+        "frameId": "frame-building",
+        "resource": "synthetic:beam-source-a",
+        "detailDescription": "First synthetic representation of one beam.",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-beam"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "rep-beam-b",
+        "objectId": "beam",
+        "purpose": "source",
+        "geometryKind": "mesh",
+        "frameId": "frame-building",
+        "resource": "synthetic:beam-source-b",
+        "detailDescription": "Second synthetic representation of the same beam.",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-beam-duplicate"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "spatial_bounds": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "bounds-roof",
+        "objectId": "roof-known",
+        "representationId": "rep-roof",
+        "frameId": "frame-building",
+        "dimension": 3,
+        "min": [
+          "0",
+          "0",
+          "3"
+        ],
+        "max": [
+          "10",
+          "10",
+          "9.6332495807"
+        ],
+        "evidence": {
+          "origin": "derived",
+          "sourceRecordIds": [
+            "src-roof-known"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-bounds-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "edge-ahu-duct",
+        "sourceObjectId": "ahu",
+        "targetObjectId": "duct",
+        "kind": "connects_to",
+        "status": "accepted",
+        "medium": "air",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-ahu",
+            "src-duct"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-explicit-connection-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "edge-duct-room",
+        "sourceObjectId": "duct",
+        "targetObjectId": "room-north",
+        "kind": "serves",
+        "status": "accepted",
+        "medium": "air",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-duct",
+            "src-room-north"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-service-assignment-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "edge-proximity",
+        "sourceObjectId": "ahu",
+        "targetObjectId": "nearby-equipment",
+        "kind": "possible_overlap",
+        "status": "candidate",
+        "medium": null,
+        "evidence": {
+          "origin": "derived",
+          "sourceRecordIds": [
+            "src-ahu",
+            "src-nearby-equipment"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-bounds-candidate-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "property_observations": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "property-rating",
+        "objectId": "door-unknown",
+        "conceptId": "door.fire_rating",
+        "sourceLabel": "FireRating",
+        "value": {
+          "state": "not_observed",
+          "reason": "No rating observation is supplied; exporter capability is unknown.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-door-unknown"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      }
+    ],
+    "quantity_observations": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "quantity-roof-selected",
+        "objectId": "roof-known",
+        "quantityKind": "surface_area",
+        "basis": "net",
+        "measurement": {
+          "state": "available",
+          "value": {
+            "amount": "120",
+            "unit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-known"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "selectionState": "selected",
+        "selectionPolicyId": "quantity-selection",
+        "scopeId": "scope-roof-known"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "quantity-roof-alternative",
+        "objectId": "roof-known",
+        "quantityKind": "surface_area",
+        "basis": "net",
+        "measurement": {
+          "state": "available",
+          "value": {
+            "amount": "125",
+            "unit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-known"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-alternative-survey-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "selectionState": "alternative",
+        "selectionPolicyId": "quantity-selection",
+        "scopeId": "scope-roof-known"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "quantity-roof-projected",
+        "objectId": "roof-known",
+        "quantityKind": "projected_area",
+        "basis": "projected",
+        "measurement": {
+          "state": "available",
+          "value": {
+            "amount": "100",
+            "unit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-known"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "selectionState": "selected",
+        "selectionPolicyId": "quantity-selection",
+        "scopeId": "scope-roof-known"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "quantity-roof-unknown",
+        "objectId": "roof-unknown",
+        "quantityKind": "surface_area",
+        "basis": "net",
+        "measurement": {
+          "state": "not_observed",
+          "reason": "No net roof-area observation is supplied.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-unknown"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "selectionState": "unresolved",
+        "selectionPolicyId": "quantity-selection",
+        "scopeId": "scope-roof-unknown"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "quantity-steel",
+        "objectId": "beam",
+        "quantityKind": "mass",
+        "basis": "declared",
+        "measurement": {
+          "state": "available",
+          "value": {
+            "amount": "100",
+            "unit": "kg"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-beam"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "selectionState": "selected",
+        "selectionPolicyId": "quantity-selection",
+        "scopeId": "scope-beam"
+      }
+    ],
+    "material_contributions": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "material-steel",
+        "objectId": "beam",
+        "materialId": "steel",
+        "quantityObservationId": "quantity-steel",
+        "partDescription": "Entire steel material contribution of one beam.",
+        "accountingScopeId": "beam-steel-scope",
+        "accountingRole": "leaf_contribution",
+        "evidence": {
+          "origin": "derived",
+          "sourceRecordIds": [
+            "src-beam",
+            "src-beam-duplicate"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-deduplicated-material-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "reference_sets": [
+      {
+        "id": "rates-v1",
+        "kind": "rates",
+        "version": "synthetic-v1",
+        "authority": "Invented fixture authority; not a commercial, environmental or code authority.",
+        "geography": "Synthetic jurisdiction",
+        "effectiveDate": "2026-09-06"
+      },
+      {
+        "id": "factors-v1",
+        "kind": "environmental_factors",
+        "version": "synthetic-v1",
+        "authority": "Invented fixture authority; not a commercial, environmental or code authority.",
+        "geography": "Synthetic jurisdiction",
+        "effectiveDate": "2026-09-06"
+      },
+      {
+        "id": "requirements-v1",
+        "kind": "requirements",
+        "version": "synthetic-v1",
+        "authority": "Invented fixture authority; not a commercial, environmental or code authority.",
+        "geography": "Synthetic jurisdiction",
+        "effectiveDate": "2026-09-06"
+      }
+    ],
+    "work_packages": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "package-roof",
+        "name": "Synthetic roof membrane package",
+        "trade": "roofing",
+        "objectIds": [
+          "roof-known",
+          "roof-unknown"
+        ],
+        "status": "incomplete",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-known",
+            "src-roof-unknown"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "assessments": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "audit-door",
+        "subjectObjectId": "door-unknown",
+        "requirementId": "required-usable-width",
+        "requirementSetId": "requirements-v1",
+        "scenarioId": "synthetic-door-audit",
+        "result": "unknown",
+        "inputCompleteness": "incomplete",
+        "reason": "Usable clear width is not observed; exporter family alone does not establish why.",
+        "evidence": {
+          "origin": "derived",
+          "sourceRecordIds": [
+            "src-door-unknown"
+          ],
+          "referenceSetIds": [
+            "requirements-v1"
+          ],
+          "method": "synthetic-requirement-assessment-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "audit-egress",
+        "subjectObjectId": "room-north",
+        "requirementId": "supported-route-to-exit",
+        "requirementSetId": "requirements-v1",
+        "scenarioId": "synthetic-egress",
+        "result": "unknown",
+        "inputCompleteness": "incomplete",
+        "reason": "Navigable portal topology, designated exits and applicable route inputs are not supplied.",
+        "evidence": {
+          "origin": "derived",
+          "sourceRecordIds": [
+            "src-room-north"
+          ],
+          "referenceSetIds": [
+            "requirements-v1"
+          ],
+          "method": "synthetic-route-input-check-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "audit-manual",
+        "subjectObjectId": "ahu",
+        "requirementId": "required-asset-manual",
+        "requirementSetId": "requirements-v1",
+        "scenarioId": "synthetic-handover",
+        "result": "unknown",
+        "inputCompleteness": "incomplete",
+        "reason": "Manual evidence is not observed.",
+        "evidence": {
+          "origin": "derived",
+          "sourceRecordIds": [
+            "src-ahu"
+          ],
+          "referenceSetIds": [
+            "requirements-v1"
+          ],
+          "method": "synthetic-handover-check-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ],
+    "component_schedule": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "roof-known",
+        "kind": "roof",
+        "name": "Sloped roof",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "roof-unknown",
+        "kind": "roof",
+        "name": "Unmeasured roof",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "wall-shared",
+        "kind": "wall",
+        "name": "Shared partition",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "door-unknown",
+        "kind": "door",
+        "name": "Door without usable width evidence",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "ahu",
+        "kind": "equipment",
+        "name": "Air handling unit",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "duct",
+        "kind": "duct",
+        "name": "Supply duct",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "nearby-equipment",
+        "kind": "equipment",
+        "name": "Nearby unconnected equipment",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "beam",
+        "kind": "structural_member",
+        "name": "Steel beam",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      }
+    ],
+    "door_schedule": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "door-unknown",
+        "name": "Door without usable width evidence",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building",
+              "room-north"
+            ],
+            "placeLabels": [
+              "Synthetic building",
+              "North room"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "fireRating": {
+          "state": "not_observed",
+          "reason": "No fire-rating observation is supplied.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-door-unknown"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "clearWidth": {
+          "state": "not_observed",
+          "reason": "No clear-width observation is supplied; no documented exporter omission.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-door-unknown"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      }
+    ],
+    "roof_takeoff": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "roof-known",
+        "name": "Sloped roof",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "assembly": {
+          "state": "available",
+          "value": "Membrane assembly A",
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-known"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "netSurfaceArea": {
+          "state": "available",
+          "value": {
+            "amount": "120",
+            "unit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-known"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "projectedArea": {
+          "state": "available",
+          "value": {
+            "amount": "100",
+            "unit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-known"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "netSurfaceQuantityId": "quantity-roof-selected"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "roof-unknown",
+        "name": "Unmeasured roof",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building"
+            ],
+            "placeLabels": [
+              "Synthetic building"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "assembly": {
+          "state": "available",
+          "value": "Membrane assembly A",
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-unknown"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "netSurfaceArea": {
+          "state": "not_observed",
+          "reason": "No net roof-area observation is supplied.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-unknown"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "projectedArea": {
+          "state": "not_observed",
+          "reason": "No projected roof-area observation is supplied.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-roof-unknown"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "netSurfaceQuantityId": "quantity-roof-unknown"
+      }
+    ],
+    "finish_schedule": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "finish-north",
+        "objectId": "wall-shared",
+        "surfaceSide": "north",
+        "surfaceIdentity": "wall-shared-north-face",
+        "finish": {
+          "state": "available",
+          "value": "Paint A",
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-wall-shared"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "netArea": {
+          "state": "available",
+          "value": {
+            "amount": "12",
+            "unit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-wall-shared"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "space": {
+          "state": "available",
+          "value": "room-north",
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-wall-shared"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "finish-south",
+        "objectId": "wall-shared",
+        "surfaceSide": "south",
+        "surfaceIdentity": "wall-shared-south-face",
+        "finish": {
+          "state": "available",
+          "value": "Tile B",
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-wall-shared"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "netArea": {
+          "state": "available",
+          "value": {
+            "amount": "10",
+            "unit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-wall-shared"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "space": {
+          "state": "available",
+          "value": "room-south",
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-wall-shared"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      }
+    ],
+    "estimate_lines": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "estimate-known",
+        "workPackageId": "package-roof",
+        "quantityObservationId": "quantity-roof-selected",
+        "rateSetId": "rates-v1",
+        "rateItemId": "membrane-area",
+        "scenarioId": "synthetic-bid",
+        "unitRate": {
+          "state": "available",
+          "value": {
+            "amount": "10",
+            "currency": "CAD",
+            "perUnit": "m2"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "external",
+            "sourceRecordIds": [],
+            "referenceSetIds": [
+              "rates-v1"
+            ],
+            "method": "synthetic-membrane-rate-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "wasteFraction": "0.1",
+        "totalCost": {
+          "state": "available",
+          "value": {
+            "amount": "1320",
+            "currency": "CAD"
+          },
+          "assurance": "estimated",
+          "evidence": {
+            "origin": "derived",
+            "sourceRecordIds": [
+              "src-roof-known"
+            ],
+            "referenceSetIds": [
+              "rates-v1"
+            ],
+            "method": "quantity-times-rate-times-one-plus-waste-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "status": "priced",
+        "accountingScopeId": "roof-known-membrane"
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "estimate-unknown",
+        "workPackageId": "package-roof",
+        "quantityObservationId": "quantity-roof-unknown",
+        "rateSetId": "rates-v1",
+        "rateItemId": null,
+        "scenarioId": "synthetic-bid",
+        "unitRate": {
+          "state": "not_observed",
+          "reason": "No applicable rate selected for unresolved scope.",
+          "evidence": {
+            "origin": "external",
+            "sourceRecordIds": [],
+            "referenceSetIds": [
+              "rates-v1"
+            ],
+            "method": "synthetic-rate-match-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "wasteFraction": "0.1",
+        "totalCost": {
+          "state": "not_observed",
+          "reason": "Missing quantity and applicable rate prevent pricing.",
+          "evidence": {
+            "origin": "derived",
+            "sourceRecordIds": [
+              "src-roof-unknown"
+            ],
+            "referenceSetIds": [
+              "rates-v1"
+            ],
+            "method": "synthetic-pricing-gap-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "status": "unpriced",
+        "accountingScopeId": "roof-unknown-membrane"
+      }
+    ],
+    "impact_lines": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "impact-steel",
+        "materialContributionId": "material-steel",
+        "factorSetId": "factors-v1",
+        "factorItemId": "synthetic-steel-factor",
+        "scenarioId": "synthetic-carbon",
+        "module": "A1-A3",
+        "factorAmount": "2",
+        "factorPerUnit": "kg",
+        "impact": {
+          "state": "available",
+          "value": {
+            "amount": "200",
+            "unit": "kgCO2e"
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "derived",
+            "sourceRecordIds": [
+              "src-beam"
+            ],
+            "referenceSetIds": [
+              "factors-v1"
+            ],
+            "method": "selected-mass-times-declared-factor-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "status": "calculated"
+      }
+    ],
+    "asset_register": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "objectId": "ahu",
+        "name": "Air handling unit",
+        "location": {
+          "state": "available",
+          "value": {
+            "placeIds": [
+              "building",
+              "room-north"
+            ],
+            "placeLabels": [
+              "Synthetic building",
+              "North room"
+            ]
+          },
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-building"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "maintainability": {
+          "state": "available",
+          "value": true,
+          "assurance": "observed",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-ahu"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        },
+        "manuals": {
+          "state": "not_observed",
+          "reason": "No manual evidence is supplied.",
+          "evidence": {
+            "origin": "source",
+            "sourceRecordIds": [
+              "src-ahu"
+            ],
+            "referenceSetIds": [],
+            "method": "synthetic-fixture-observation-v1",
+            "note": "Invented fixture evidence; not observed in any supplied BIM file."
+          }
+        }
+      }
+    ],
+    "quantity_scopes": [
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "scope-beam",
+        "objectId": "beam",
+        "kind": "whole_object",
+        "description": "Whole synthetic occurrence; fixture has one material contribution on beam.",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-beam"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "scope-roof-known",
+        "objectId": "roof-known",
+        "kind": "whole_object",
+        "description": "Whole synthetic occurrence; fixture has one material contribution on beam.",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-known"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      },
+      {
+        "snapshotId": "synthetic-snapshot",
+        "id": "scope-roof-unknown",
+        "objectId": "roof-unknown",
+        "kind": "whole_object",
+        "description": "Whole synthetic occurrence; fixture has one material contribution on beam.",
+        "evidence": {
+          "origin": "source",
+          "sourceRecordIds": [
+            "src-roof-unknown"
+          ],
+          "referenceSetIds": [],
+          "method": "synthetic-fixture-observation-v1",
+          "note": "Invented fixture evidence; not observed in any supplied BIM file."
+        }
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "roof-surface-versus-projection",
+      "workflowId": "roof_takeoff",
+      "description": "Select net surface area without adding a competing observation or projected area; retain unmeasured scope.",
+      "expected": {
+        "selectedSurfaceArea": "120",
+        "projectedArea": "100",
+        "alternativeSurfaceArea": "125",
+        "areaUnit": "m2",
+        "unmeasuredRoofCount": 1,
+        "roofCount": 2
+      }
+    },
+    {
+      "id": "shared-wall-faces",
+      "workflowId": "finish_schedule",
+      "description": "Separate finishes on opposite room-facing sides of one wall.",
+      "expected": {
+        "wallObjectCount": 1,
+        "surfaceCount": 2,
+        "areaBySpace": {
+          "room-north": "12",
+          "room-south": "10"
+        },
+        "finishBySpace": {
+          "room-north": "Paint A",
+          "room-south": "Tile B"
+        },
+        "areaUnit": "m2"
+      }
+    },
+    {
+      "id": "priced-and-unpriced-scope",
+      "workflowId": "estimating",
+      "description": "120 m2 times 10 CAD/m2 times 1.1; unresolved second roof remains unpriced.",
+      "expected": {
+        "pricedSubtotal": "1320",
+        "currency": "CAD",
+        "pricedLineCount": 1,
+        "unpricedLineCount": 1,
+        "wasteFraction": "0.1"
+      }
+    },
+    {
+      "id": "missing-door-evidence",
+      "workflowId": "door_audit",
+      "description": "Missing clear width has unknown cause, not a proven exporter omission or an audit pass.",
+      "expected": {
+        "assessmentId": "audit-door",
+        "result": "unknown",
+        "inputCompleteness": "incomplete",
+        "clearWidthState": "not_observed",
+        "fireRatingState": "not_observed"
+      }
+    },
+    {
+      "id": "supported-mep-only",
+      "workflowId": "mep_trace",
+      "description": "Follow accepted connects_to and serves edges; nearby geometry does not establish connectivity.",
+      "expected": {
+        "startObjectId": "ahu",
+        "acceptedKinds": [
+          "connects_to",
+          "serves"
+        ],
+        "reachableObjectIds": [
+          "duct",
+          "room-north"
+        ],
+        "excludedObjectIds": [
+          "nearby-equipment"
+        ],
+        "candidateEdgeIds": [
+          "edge-proximity"
+        ]
+      }
+    },
+    {
+      "id": "deduplicated-material-impact",
+      "workflowId": "carbon",
+      "description": "Two confirmed source records and representations describe one beam; its 100 kg contribution at 2 kgCO2e/kg produces 200 kgCO2e once.",
+      "expected": {
+        "objectId": "beam",
+        "sourceRecordCount": 2,
+        "representationCount": 2,
+        "materialContributionCount": 1,
+        "selectedMass": "100",
+        "massUnit": "kg",
+        "factorAmount": "2",
+        "impact": "200",
+        "impactUnit": "kgCO2e",
+        "module": "A1-A3"
+      }
+    },
+    {
+      "id": "egress-input-gap",
+      "workflowId": "egress",
+      "description": "Service relationships are not a navigable route graph; missing route inputs prevent assurance.",
+      "expected": {
+        "assessmentId": "audit-egress",
+        "result": "unknown",
+        "inputCompleteness": "incomplete",
+        "navigableRouteEstablished": false
+      }
+    },
+    {
+      "id": "asset-without-manual",
+      "workflowId": "asset_handover",
+      "description": "A located maintainable asset remains in the register with incomplete handover evidence.",
+      "expected": {
+        "objectId": "ahu",
+        "assetCount": 1,
+        "maintainable": true,
+        "manualsState": "not_observed",
+        "assessmentId": "audit-manual",
+        "result": "unknown",
+        "inputCompleteness": "incomplete"
+      }
+    }
+  ]
+}

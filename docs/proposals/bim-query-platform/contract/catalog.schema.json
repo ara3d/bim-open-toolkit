@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ara3d:bim:review:catalog:0.1.0",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "const": "proposed"
+    },
+    "modelSchema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workflowCatalog": {
+      "type": "string",
+      "minLength": 1
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "performanceContract": {
+      "type": "object",
+      "properties": {
+        "preparedOpenSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "processMemoryCeilingGiB": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "baselineWorkstationGiB": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "includes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "preparationExcludedFromOpenDeadline": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "preparedOpenSeconds",
+        "processMemoryCeilingGiB",
+        "baselineWorkstationGiB",
+        "includes",
+        "preparationExcludedFromOpenDeadline"
+      ],
+      "additionalProperties": false
+    },
+    "sourceEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "user-reported",
+              "unverified-correspondence"
+            ]
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "statement"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "identityContract": {
+      "type": "string",
+      "minLength": 1
+    },
+    "missingDataContract": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "const": "unresolved"
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "statement"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": [
+              "companion-validator",
+              "partially-checked",
+              "policy-required"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "enforcement"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "layer": {
+            "type": "string",
+            "enum": [
+              "foundation",
+              "domain",
+              "workflow_view"
+            ]
+          },
+          "status": {
+            "const": "proposed"
+          },
+          "snapshotScoped": {
+            "type": "boolean"
+          },
+          "grain": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rowSchema": {
+            "type": "string",
+            "minLength": 1
+          },
+          "primaryKey": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "foreignKeys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "targetTable": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "targetField": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "global",
+                    "snapshot"
+                  ]
+                },
+                "many": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "field",
+                "targetTable",
+                "targetField",
+                "scope",
+                "many"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "workflowIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "invariantIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "source-structure-observed",
+              "mapping-unverified",
+              "derived-planned",
+              "external-required"
+            ]
+          },
+          "storageDecision": {
+            "const": "unspecified"
+          },
+          "openQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "layer",
+          "status",
+          "snapshotScoped",
+          "grain",
+          "rowSchema",
+          "primaryKey",
+          "foreignKeys",
+          "workflowIds",
+          "invariantIds",
+          "coverage",
+          "storageDecision",
+          "openQuestions"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "deferredConcepts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workflowIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "workflowIds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "openDecisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "question"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "$schema",
+    "version",
+    "status",
+    "modelSchema",
+    "workflowCatalog",
+    "purpose",
+    "performanceContract",
+    "sourceEvidence",
+    "identityContract",
+    "missingDataContract",
+    "policies",
+    "invariants",
+    "tables",
+    "deferredConcepts",
+    "openDecisions"
+  ],
+  "additionalProperties": false
+}

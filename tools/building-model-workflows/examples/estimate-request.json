@@ -1,0 +1,41 @@
+{
+  "Package": {
+    "Id": { "snapshot": "synthetic-example", "local": "doors" },
+    "Code": "D", "Name": "Synthetic door supply", "Trade": "Doors",
+    "ResponsibleOrganization": { "state": "missing", "reason": "NotObserved", "explanation": "Controlled example", "evidence": [] },
+    "ParentPackage": { "state": "missing", "reason": "NotApplicable", "explanation": "Root package", "evidence": [] },
+    "ScopeRule": "Two synthetic doors, not observations from the supplied BOS files",
+    "AccountingScope": "synthetic-doors", "MembershipCompleteness": "Complete", "Evidence": []
+  },
+  "Scenario": {
+    "Id": "synthetic-estimate-v1", "Name": "Controlled pricing example", "Version": "1",
+    "Purpose": "Verify JSON request and calculation", "Assumptions": "Synthetic CAD 100 per door; 10 percent waste; no tax", "Evidence": []
+  },
+  "Currency": "CAD",
+  "Catalogs": [{
+    "Id": "synthetic-rates", "Name": "Controlled rates", "Version": "1", "Authority": "Test fixture", "Currency": "CAD",
+    "Geography": { "state": "missing", "reason": "NotApplicable", "explanation": "Synthetic", "evidence": [] },
+    "EffectiveFrom": { "state": "missing", "reason": "NotApplicable", "explanation": "Synthetic", "evidence": [] },
+    "EffectiveUntil": { "state": "missing", "reason": "NotApplicable", "explanation": "Synthetic", "evidence": [] },
+    "PriceBasis": "Synthetic example only", "Evidence": []
+  }],
+  "Lines": [{
+    "Id": { "snapshot": "synthetic-example", "local": "door-supply" },
+    "Description": "Two synthetic doors", "ExclusiveScope": "door-supply",
+    "Observation": { "state": "missing", "reason": "NotApplicable", "explanation": "Fixture quantity, not a source observation", "evidence": [] },
+    "Quantity": { "state": "known", "value": 2, "assurance": "Estimated", "evidence": [] },
+    "Unit": "Count",
+    "Waste": { "state": "known", "value": { "Value": 0.1 }, "assurance": "Estimated", "evidence": [] },
+    "Rate": {
+      "state": "known", "assurance": "Estimated", "evidence": [],
+      "value": {
+        "Id": "synthetic-door-rate", "CatalogId": "synthetic-rates", "Code": "D", "Description": "Synthetic door supply",
+        "Trade": "Doors", "PricingUnit": "Count",
+        "UnitPrice": { "state": "known", "value": { "Amount": 100, "Currency": "CAD" }, "assurance": "Estimated", "evidence": [] },
+        "Inclusions": "Supply", "Exclusions": "Tax and installation", "Evidence": []
+      }
+    },
+    "Evidence": []
+  }],
+  "ScopeCoverage": "Complete"
+}

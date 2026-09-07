@@ -1,0 +1,13 @@
+id,name,meaning
+identity_source_history,Identity and source history,A real/logical thing is distinct from the source rows and representations describing it
+project_place,Project and place,Recognizable locations; overlapping zones and multi-storey objects remain possible
+coordinates_representations,Coordinates and representations,"Position/orientation, parent frames, 2D/3D shape and selectable detail"
+building_fabric,Building fabric,Common components with useful typed fields and spatial/contextual links
+structure_civil,Structure and civil,Structural and site objects; linear and surface features as well as solids
+interiors_landscape,Interiors and landscape,Surfaces and assemblies that trades measure and specify
+systems_equipment,Systems and equipment,"Connectivity, membership, flow/medium and service relationships are distinct"
+materials_measurement,Materials and measurement,Material contributions and quantities with explicit basis and provenance
+commercial_delivery,Commercial and delivery,A work item can concern multiple objects and may have no independent geometry
+operations_performance,Operations and performance,Stable assets plus links to operational records and scenario results
+environment_assessment,Environment and assessment,Versioned factors/rules and explainable results with incomplete/unknown outcomes
+flexible_evidence,Flexible evidence,Preserve source detail and explain how curated values were chosen

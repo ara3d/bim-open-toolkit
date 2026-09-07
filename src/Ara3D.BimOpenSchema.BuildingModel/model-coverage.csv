@@ -1,0 +1,46 @@
+candidate_id,record_types,meaning
+source_revision_change,ObjectChange;ObjectCorrespondence,Snapshot comparison after identity reconciliation
+space,Space;SpaceBoundary,Rooms and scheduled spaces with explicit boundaries
+storey,Storey,Named levels and their coordinate datum
+functional_zone,Zone;ZoneMembership,Overlapping purpose-specific groupings
+service_access,ServiceAccessEnvelope,Operational clearance requirements distinct from component shape
+spatial_candidates,SpatialConflict,Result records only; no spatial engine implemented
+door,Door,Door assembly with leaf count and clear dimensions
+window,Window;FacadePanel,Window units and separately scoped facade panels
+wall,Wall;SpaceBoundary,Construction host and space-facing boundary assertions
+floor,Floor,Floor construction distinct from finish installation
+roof,Roof,Actual surface and projected quantities
+stair,Stair;StairFlight;Landing;Ramp;VerticalTransport,Circulation components without implied egress approval
+penetration,ServicePenetration;PenetratingService,Cross-trade opening and passing-service associations
+structural_member,StructuralMember;StructuralConnection,Role-based beam and column schedules
+foundation,Foundation,Foundation occurrences and quantities
+reinforcement_takeoff,ReinforcementGroup,Explicit group counting and reinforcement quantity scope
+earthwork_zone,EarthworkZone;TerrainSurface,Cut and fill against declared terrain assumptions
+finish_surface,FinishSurface,Independently measurable host-face installation scope
+ceiling,Ceiling,Ceiling construction and service void
+room_fitout,Furniture;FinishSurface;Space,Room schedules over concrete linked records
+planting_area,PlantingArea,Area-based planting and landscape quantities
+landscape_asset,LandscapeAsset,Individual plant and site-asset occurrences
+equipment,AirHandlingUnit;Fan;Pump;ElectricalPanel,Concrete equipment examples with shared identity
+air_terminal,AirTerminal,Room-facing supply and extract terminals
+sanitary_fixture,SanitaryFixture;ToiletSpecification,Sanitary occurrences with optional toilet-specific details
+service_run,RouteSegment;DuctSegment;PipeSegment;CableSegment,Geometry routes and discipline-specific physical segments
+distribution_panel,ElectricalPanel;ElectricalCircuit,Panel schedules and circuit demand
+lighting_fixture,LightingFixture,Lighting installation and photometric inputs
+valve,Valve,Isolation and regulation components
+drain,Drain;DrainageCatchment,Drain terminals and contributing areas
+fire_protection_terminal,FireProtectionTerminal,Protection terminals and supplied ratings
+support_assembly,ServiceSupport;ServiceSupportAttachment,One support with multiple supported components
+assembly_specification,AssemblyDefinition;AssemblyLayer;Material,Versioned ordered construction layers
+quantity_takeoff,QuantityScope;QuantityObservation;QuantityTakeoff,Selected quantities and explicit missing scope
+work_package,WorkPackage;WorkPackageAssignment;Milestone,Trade scope and planning checkpoints
+procurement_line,ProcurementRequirement;DeliveryBatch;DeliveryLine,Required purchase scope and independent receipts
+installation_observation,InstallationObservation,Observed progress separate from design intent
+asset_service_requirements,Asset;AssetServiceRequirement,Asset registration and maintenance obligations
+maintenance_plan,MaintenanceTask,Planned or performed service actions; no scheduling engine
+impact_breakdown,EnvironmentalFactor;ImpactLine;ImpactSummary,Climate impact by quantity and lifecycle module
+requirement_assessment,RequirementSet;Requirement;Assessment;Finding,Explainable requirement-specific results
+evidence_issue,DataIssue;Evidence;PropertyObservation,Workflow-relevant missing or conflicting evidence
+acoustic_response,AcousticResult;AcousticBandResult,Specialist result representation; no acoustic solver
+duct_segment,DuctSegment;DuctFitting;Damper,Air distribution dimensions and performance inputs
+pipe_segment,PipeSegment;PipeFitting;Valve,Service medium and nominal versus actual dimensions

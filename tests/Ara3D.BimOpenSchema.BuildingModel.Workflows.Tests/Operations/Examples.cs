@@ -1,0 +1,32 @@
+using Ara3D.BimOpenSchema.BuildingModel;
+using Ara3D.BimOpenSchema.BuildingModel.Workflows.Operations;
+
+namespace Ara3D.BimOpenSchema.BuildingModel.Workflows.Tests.Operations;
+
+internal static class Examples
+{
+    internal static ReferenceKey<T> Ref<T>(string id) => new(id);
+    internal static SnapshotKey<T> Key<T>(string id) => new(Ref<ModelSnapshot>("synthetic-snapshot"), id);
+    internal static Fact<T> Known<T>(T value) => new Fact<T>.Known(value, Assurance.Observed, [Ref<Evidence>("synthetic-fixture")]);
+    internal static Fact<T> Unknown<T>() => Fact<T>.Unknown("Deliberately absent fixture input.");
+    internal static T Value<T>(Fact<T> fact) => ((Fact<T>.Known)fact).Value;
+    internal static AnalysisScenario Scenario(string version = "1") => new(Ref<AnalysisScenario>($"synthetic-{version}"), "Synthetic scenario", version, "Controlled workflow proof", "Not real source evidence", []);
+    internal static WorkPackage Package() => new(Key<WorkPackage>("doors"), "D", "Doors", Trade.Doors, Unknown<string>(), Unknown<SnapshotKey<WorkPackage>>(), "Fixture door supply", "synthetic-doors", Completeness.Complete, []);
+    internal static RateCatalog Catalog() => new(Ref<RateCatalog>("rates"), "Synthetic rates", "1", "Fixture", "CAD", Unknown<string>(), Unknown<DateOnly>(), Unknown<DateOnly>(), "No tax; supplied only", []);
+    internal static RateItem Rate(decimal price = 10, QuantityUnit unit = QuantityUnit.Count, string currency = "CAD") => new(Ref<RateItem>("door-rate"), Catalog().Id, "D", "Door", Trade.Doors, unit, Known(new Money(price, currency)), "Supply", "Tax", []);
+    internal static EstimateInput Cost(string id, Fact<decimal> quantity) => new(Key<EstimateLine>(id), id, id, Known(Key<QuantityObservation>(id)), quantity, QuantityUnit.Count, Known(new Ratio(0)), Known(Rate()), []);
+    internal static ProcurementRequirement Requirement() => new(Key<ProcurementRequirement>("doors"), Package().Id, Scenario().Id, "10 doors", Known(Ref<ProductDefinition>("door-type")), Known(10m), QuantityUnit.Count, "Occurrence count", Unknown<DateOnly>(), Unknown<string>(), [Ref<BimObject>("door-1")], Completeness.Complete, []);
+    internal static DeliveryLine Receipt(string id, decimal received, decimal accepted) => new(Key<DeliveryLine>(id), Key<DeliveryBatch>(id), Known(Requirement().Id), Known(Ref<ProductDefinition>("door-type")), Unknown<string>(), Known(10m), Known(received), Known(accepted), QuantityUnit.Count, DeliveryState.Received, Unknown<string>(), []);
+    internal static InstallationObservation Installed(string id, DateTimeOffset time, InstallationState state) => new(Key<InstallationObservation>(id), Ref<BimObject>("door-1"), Known(Package().Id), time, "Install", state, Unknown<Ratio>(), "Observed activity state", Unknown<string>(), Unknown<string>(), []);
+    internal static ServicePort Port(string id) => new(Key<ServicePort>(id), Ref<BimObject>($"object-{id}"), Known(id), ServiceDiscipline.DomesticColdWater, Unknown<PortFlowDirection>(), Unknown<Placement>(), Unknown<FlowSectionShape>(), Unknown<Length>(), Unknown<Length>(), Unknown<Length>(), Unknown<string>(), Ref<Evidence>("fixture"));
+    internal static DirectedServiceConnection Edge(string id, string a, string b, DirectedConnection direction = DirectedConnection.AToB) => new(new(Key<ServiceConnection>(id), Key<ServicePort>(a), Key<ServicePort>(b), ConnectionBasis.SourceDeclared, Known("Explicit internal or external path"), Known(true), Ref<Evidence>("fixture")), direction, Ref<Evidence>("direction-fixture"));
+    internal static GeometryRepresentation Geometry(string id, string frame, Bounds3 bounds) => new(Key<GeometryRepresentation>(id), Ref<BimObject>(id), Key<CoordinateFrame>(frame), GeometryKind.Bounds, GeometryPurpose.SourceEvidence, 3, "Not loaded", Known(bounds), Unknown<Bounds2>(), Unknown<Length>(), Unknown<SnapshotKey<GeometryRepresentation>>(), Unknown<Transform3>(), []);
+    internal static ServiceAccessEnvelope Envelope() => new(Key<ServiceAccessEnvelope>("pump-access"), Ref<BimObject>("pump"), "Remove motor", Known(Key<GeometryRepresentation>("region")), Known(Key<CoordinateFrame>("common")), Unknown<Vector3>(), Unknown<ReferenceKey<RequirementSet>>(), []);
+    internal static Asset Asset(string id) => new(Key<Asset>(id), Ref<BimObject>(id), id, Known(id), Unknown<ReferenceKey<ProductDefinition>>(), Unknown<string>(), Unknown<string>(), Unknown<string>(), Unknown<SnapshotKey<Space>>(), Unknown<string>(), Known(new DateOnly(2026, 1, 1)), Unknown<DateOnly>(), Unknown<DurationValue>(), Unknown<string>(), Unknown<string>(), []);
+    internal static AssetServiceRequirement Service(string asset) => new(Key<AssetServiceRequirement>($"service-{asset}"), Key<Asset>(asset), "Monthly", Unknown<ReferenceKey<Requirement>>(), "Elapsed time", Known(new DurationValue(TimeSpan.FromDays(30))), Unknown<string>(), Unknown<Length>(), "Fixture procedure", []);
+    internal static MaintenanceTask Task(string id, string asset, DateTimeOffset completed) => new(Key<MaintenanceTask>(id), Key<Asset>(asset), Known(Service(asset).Id), "Service", MaintenanceState.Completed, Unknown<DateTimeOffset>(), Unknown<DateTimeOffset>(), Known(completed), Unknown<string>(), Unknown<Money>(), Known("signed-log"), []);
+    internal static MaterialUse Material(string id, ContributionRole role = ContributionRole.LeafContribution) => new(Key<MaterialUse>(id), Ref<BimObject>("wall"), Ref<Material>("material"), Key<QuantityScope>(id), Unknown<ReferenceKey<AssemblyDefinition>>(), Unknown<string>(), role, Unknown<Area>(), Unknown<Volume>(), Unknown<Mass>(), LinkSet<QuantityObservation>.Unknown(), []);
+    internal static EnvironmentalFactor Factor(decimal coefficient = 2) => new(Ref<EnvironmentalFactor>("factor"), "Synthetic factor", "1", "Fixture", "Material", Known(Ref<Material>("material")), Unknown<ReferenceKey<ProductDefinition>>(), LifeCycleStage.Product, "A1-A3", QuantityUnit.Kilogram, Known(coefficient), "GWP fixture", "Fixture", Unknown<DateOnly>(), "Product stage", []);
+    internal static CarbonInput Contribution(string id, Fact<decimal> quantity) => new(Material(id), id, quantity, QuantityUnit.Kilogram, Known(Key<QuantityObservation>(id)), Known(Factor()));
+    internal static CarbonRequest CarbonRequest(params CarbonInput[] inputs) => new(Ref<ModelSnapshot>("synthetic-snapshot"), Scenario(), "fixture-wall", LifeCycleStage.Product, "A1-A3", "GWP fixture", [.. inputs], Completeness.Complete);
+}

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><IsPackable>false</IsPackable></PropertyGroup>
+  <Import Project="../bim-data-model/Platonic.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Source/Ara3D.BimOpenSchema.BuildingModel.Source.csproj" />
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO.csproj" />
+  </ItemGroup>
+</Project>

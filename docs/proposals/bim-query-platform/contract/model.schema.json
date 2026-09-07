@@ -1,0 +1,2719 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ara3d:bim:review:model:0.1.0",
+  "title": "BIM semantic record contracts — review draft",
+  "description": "Validates one table/row interchange envelope. JSON storage, object hydration, foreign keys and semantic truth are not implied.",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "snapshots"
+        },
+        "row": {
+          "$ref": "#/$defs/Snapshots"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "objects"
+        },
+        "row": {
+          "$ref": "#/$defs/Objects"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "source_records"
+        },
+        "row": {
+          "$ref": "#/$defs/SourceRecords"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "source_links"
+        },
+        "row": {
+          "$ref": "#/$defs/SourceLinks"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "object_states"
+        },
+        "row": {
+          "$ref": "#/$defs/ObjectStates"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "coordinate_frames"
+        },
+        "row": {
+          "$ref": "#/$defs/CoordinateFrames"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "representations"
+        },
+        "row": {
+          "$ref": "#/$defs/Representations"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "relationships"
+        },
+        "row": {
+          "$ref": "#/$defs/Relationships"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "property_observations"
+        },
+        "row": {
+          "$ref": "#/$defs/PropertyObservations"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "quantity_observations"
+        },
+        "row": {
+          "$ref": "#/$defs/QuantityObservations"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "material_contributions"
+        },
+        "row": {
+          "$ref": "#/$defs/MaterialContributions"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "reference_sets"
+        },
+        "row": {
+          "$ref": "#/$defs/ReferenceSets"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "work_packages"
+        },
+        "row": {
+          "$ref": "#/$defs/WorkPackages"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "assessments"
+        },
+        "row": {
+          "$ref": "#/$defs/Assessments"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "component_schedule"
+        },
+        "row": {
+          "$ref": "#/$defs/ComponentSchedule"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "door_schedule"
+        },
+        "row": {
+          "$ref": "#/$defs/DoorSchedule"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "roof_takeoff"
+        },
+        "row": {
+          "$ref": "#/$defs/RoofTakeoff"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "finish_schedule"
+        },
+        "row": {
+          "$ref": "#/$defs/FinishSchedule"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "estimate_lines"
+        },
+        "row": {
+          "$ref": "#/$defs/EstimateLines"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "impact_lines"
+        },
+        "row": {
+          "$ref": "#/$defs/ImpactLines"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "asset_register"
+        },
+        "row": {
+          "$ref": "#/$defs/AssetRegister"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "spatial_bounds"
+        },
+        "row": {
+          "$ref": "#/$defs/SpatialBounds"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "table": {
+          "const": "quantity_scopes"
+        },
+        "row": {
+          "$ref": "#/$defs/QuantityScopes"
+        }
+      },
+      "required": [
+        "table",
+        "row"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque identity string, not a row offset. Stability across deliveries requires an explicit correspondence policy."
+    },
+    "Decimal": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+      "description": "Exact base-10 number serialized as a string. This does not prescribe database storage or arithmetic precision."
+    },
+    "Unit": {
+      "type": "string",
+      "enum": [
+        "m",
+        "m2",
+        "m3",
+        "kg",
+        "count",
+        "kWh",
+        "kW",
+        "L/s",
+        "m3/s",
+        "kgCO2e"
+      ]
+    },
+    "Evidence": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "string",
+          "enum": [
+            "source",
+            "derived",
+            "external",
+            "asserted"
+          ]
+        },
+        "sourceRecordIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "referenceSetIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "sourceRecordIds",
+        "referenceSetIds",
+        "method"
+      ],
+      "additionalProperties": false,
+      "description": "Evidence and method are not proof of truth; referenced records must exist.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "origin": {
+                "const": "source"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "sourceRecordIds": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "origin": {
+                "const": "external"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "referenceSetIds": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Unavailable": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "not_observed",
+            "not_exported",
+            "not_applicable",
+            "invalid",
+            "conflicting"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "state",
+        "reason",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "No value field is allowed. Not-exported needs supported exporter evidence; otherwise use not-observed. Conflict alternatives live in observation rows."
+    },
+    "TextFact": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "BooleanFact": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "type": "boolean"
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "MeasurementValue": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "#/$defs/Decimal"
+        },
+        "unit": {
+          "$ref": "#/$defs/Unit"
+        }
+      },
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "additionalProperties": false
+    },
+    "Measurement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "$ref": "#/$defs/MeasurementValue"
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "Area": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "$ref": "#/$defs/Decimal"
+                },
+                "unit": {
+                  "const": "m2"
+                }
+              },
+              "required": [
+                "amount",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "Length": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "$ref": "#/$defs/Decimal"
+                },
+                "unit": {
+                  "const": "m"
+                }
+              },
+              "required": [
+                "amount",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "Impact": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "$ref": "#/$defs/Decimal"
+                },
+                "unit": {
+                  "const": "kgCO2e"
+                }
+              },
+              "required": [
+                "amount",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "MoneyValue": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "#/$defs/Decimal"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        }
+      },
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "additionalProperties": false
+    },
+    "Money": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "$ref": "#/$defs/MoneyValue"
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "Rate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "$ref": "#/$defs/Decimal"
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "perUnit": {
+                  "$ref": "#/$defs/Unit"
+                }
+              },
+              "required": [
+                "amount",
+                "currency",
+                "perUnit"
+              ],
+              "additionalProperties": false
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "ScalarValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "boolean"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "integer"
+            },
+            "value": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "decimal"
+            },
+            "value": {
+              "$ref": "#/$defs/Decimal"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ScalarFact": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "$ref": "#/$defs/ScalarValue"
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "Pose": {
+      "type": "object",
+      "properties": {
+        "frameId": {
+          "$ref": "#/$defs/Id"
+        },
+        "dimension": {
+          "enum": [
+            2,
+            3
+          ]
+        },
+        "coordinates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Decimal"
+          },
+          "minItems": 2,
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "frameId",
+        "dimension",
+        "coordinates"
+      ],
+      "additionalProperties": false,
+      "description": "Coordinates are in the referenced frame. This is an anchor, not a complete geometric representation.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dimension": {
+                "const": 2
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "coordinates": {
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "dimension": {
+                "const": 3
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "coordinates": {
+                "minItems": 3,
+                "maxItems": 3
+              }
+            }
+          }
+        }
+      ]
+    },
+    "LocationValue": {
+      "type": "object",
+      "properties": {
+        "placeIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "placeLabels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "pose": {
+          "$ref": "#/$defs/Pose"
+        }
+      },
+      "required": [
+        "placeIds",
+        "placeLabels"
+      ],
+      "additionalProperties": false,
+      "description": "Place membership may overlap; absence of a pose does not imply origin coordinates. Labels are display context, not identity.",
+      "anyOf": [
+        {
+          "properties": {
+            "placeIds": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": [
+            "pose"
+          ]
+        }
+      ]
+    },
+    "Location": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "$ref": "#/$defs/LocationValue"
+            },
+            "assurance": {
+              "type": "string",
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    },
+    "ObjectKind": {
+      "type": "string",
+      "enum": [
+        "project",
+        "site",
+        "building",
+        "storey",
+        "space",
+        "zone",
+        "wall",
+        "floor",
+        "ceiling",
+        "roof",
+        "door",
+        "window",
+        "opening",
+        "stair",
+        "railing",
+        "facade",
+        "structural_member",
+        "foundation",
+        "terrain",
+        "paved_area",
+        "landscape_asset",
+        "planting_area",
+        "equipment",
+        "fixture",
+        "furniture",
+        "pipe",
+        "duct",
+        "cable",
+        "tray",
+        "port",
+        "system",
+        "circuit",
+        "material",
+        "definition",
+        "other",
+        "unclassified"
+      ]
+    },
+    "Snapshots": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceRevisionIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "policyIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "sourceRevisionIds",
+        "policyIds"
+      ],
+      "additionalProperties": false,
+      "description": "One published selection of source revisions and interpretation policies, not one building."
+    },
+    "Objects": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "identityDomain": {
+          "type": "string",
+          "enum": [
+            "physical",
+            "place",
+            "logical",
+            "material",
+            "definition"
+          ]
+        },
+        "identityStatus": {
+          "type": "string",
+          "enum": [
+            "provisional",
+            "reconciled"
+          ]
+        },
+        "identityBasis": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "identityDomain",
+        "identityStatus",
+        "identityBasis"
+      ],
+      "additionalProperties": false,
+      "description": "One provisionally or explicitly reconciled physical, spatial or logical identity across snapshots."
+    },
+    "SourceRecords": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "sourceId": {
+          "$ref": "#/$defs/Id"
+        },
+        "sourceRevisionId": {
+          "$ref": "#/$defs/Id"
+        },
+        "sourceTable": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceRow": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "localId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "occurrence",
+            "definition",
+            "metadata",
+            "relationship",
+            "unknown"
+          ]
+        },
+        "exporterFamily": {
+          "type": "string",
+          "enum": [
+            "revit",
+            "ifc",
+            "external",
+            "unknown"
+          ]
+        },
+        "exporterVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "sourceId",
+        "sourceRevisionId",
+        "sourceTable",
+        "sourceRow",
+        "localId",
+        "role",
+        "exporterFamily",
+        "exporterVersion"
+      ],
+      "additionalProperties": false,
+      "description": "One locator for an original record in an identified source revision; metadata records are not countable assets."
+    },
+    "SourceLinks": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "sourceRecordId": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "matchState": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "candidate",
+            "rejected"
+          ]
+        },
+        "policyId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "sourceRecordId",
+        "objectId",
+        "matchState",
+        "policyId",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One assertion linking a source record to an object; candidate links do not authorize merging or counting as equivalent."
+    },
+    "ObjectStates": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "$ref": "#/$defs/ObjectKind"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lifecycle": {
+          "type": "string",
+          "enum": [
+            "planned",
+            "existing",
+            "retired",
+            "not_observed",
+            "unknown"
+          ]
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "objectId",
+        "kind",
+        "name",
+        "lifecycle",
+        "location",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One description of an identified object in a snapshot; retirement and unobserved delivery status are distinct."
+    },
+    "CoordinateFrames": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dimension": {
+          "enum": [
+            2,
+            3
+          ]
+        },
+        "lengthUnit": {
+          "const": "m"
+        },
+        "axisConvention": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentFrameId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "transformToParent": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Decimal"
+              },
+              "minItems": 9,
+              "maxItems": 16
+            }
+          ],
+          "description": "Row-major homogeneous matrix multiplying column vectors; null means no known transform. Schema does not establish orthogonality or invertibility."
+        },
+        "crsIdentifier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "name",
+        "dimension",
+        "lengthUnit",
+        "axisConvention",
+        "parentFrameId",
+        "transformToParent",
+        "crsIdentifier",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One declared coordinate frame in a snapshot; unaligned source frames remain unaligned.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dimension": {
+                "const": 2
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "transformToParent": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Decimal"
+                    },
+                    "minItems": 9,
+                    "maxItems": 9
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "dimension": {
+                "const": 3
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "transformToParent": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Decimal"
+                    },
+                    "minItems": 16,
+                    "maxItems": 16
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Representations": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "purpose": {
+          "type": "string",
+          "enum": [
+            "visualization",
+            "measurement",
+            "navigation",
+            "source"
+          ]
+        },
+        "geometryKind": {
+          "type": "string",
+          "enum": [
+            "point",
+            "curve",
+            "footprint",
+            "surface",
+            "mesh",
+            "solid",
+            "bounds"
+          ]
+        },
+        "frameId": {
+          "$ref": "#/$defs/Id"
+        },
+        "resource": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque resource locator; not embedded mesh payload and not a storage format requirement."
+        },
+        "detailDescription": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "objectId",
+        "purpose",
+        "geometryKind",
+        "frameId",
+        "resource",
+        "detailDescription",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One addressable representation of an object for a purpose; multiple representations do not create multiple physical objects."
+    },
+    "Relationships": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "sourceObjectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "targetObjectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "part_of",
+            "contained_in",
+            "located_in",
+            "member_of",
+            "hosted_by",
+            "has_port",
+            "connects_to",
+            "feeds",
+            "serves",
+            "bounds",
+            "touches",
+            "possible_overlap"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "candidate",
+            "rejected"
+          ]
+        },
+        "medium": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "sourceObjectId",
+        "targetObjectId",
+        "kind",
+        "status",
+        "medium",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One directional relationship assertion; status and evidence distinguish accepted topology from candidates."
+    },
+    "PropertyObservations": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "conceptId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceLabel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/ScalarFact"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "objectId",
+        "conceptId",
+        "sourceLabel",
+        "value"
+      ],
+      "additionalProperties": false,
+      "description": "One observation of a semantic property concept on an object, preserving competing assertions as separate rows."
+    },
+    "QuantityObservations": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "quantityKind": {
+          "type": "string",
+          "enum": [
+            "surface_area",
+            "projected_area",
+            "length",
+            "volume",
+            "mass",
+            "count",
+            "energy",
+            "power",
+            "flow"
+          ]
+        },
+        "basis": {
+          "type": "string",
+          "enum": [
+            "gross",
+            "net",
+            "centerline",
+            "declared",
+            "projected"
+          ]
+        },
+        "measurement": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "selectionState": {
+          "type": "string",
+          "enum": [
+            "selected",
+            "alternative",
+            "rejected",
+            "unresolved"
+          ]
+        },
+        "selectionPolicyId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scopeId": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "objectId",
+        "quantityKind",
+        "basis",
+        "measurement",
+        "selectionState",
+        "selectionPolicyId",
+        "scopeId"
+      ],
+      "additionalProperties": false,
+      "description": "One quantity observation for an identified object measurement scope, kind and basis; competing measurements remain separate rows."
+    },
+    "MaterialContributions": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "materialId": {
+          "$ref": "#/$defs/Id"
+        },
+        "quantityObservationId": {
+          "$ref": "#/$defs/Id"
+        },
+        "partDescription": {
+          "type": "string",
+          "minLength": 1
+        },
+        "accountingScopeId": {
+          "$ref": "#/$defs/Id"
+        },
+        "accountingRole": {
+          "type": "string",
+          "enum": [
+            "leaf_contribution",
+            "assembly_total",
+            "unresolved"
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "objectId",
+        "materialId",
+        "quantityObservationId",
+        "partDescription",
+        "accountingScopeId",
+        "accountingRole",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One material contribution to an object at a declared part/layer/scope; not an assembly total to add again to its constituents."
+    },
+    "ReferenceSets": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "rates",
+            "environmental_factors",
+            "requirements",
+            "vocabulary",
+            "manuals"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "geography": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "effectiveDate": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "version",
+        "authority",
+        "geography",
+        "effectiveDate"
+      ],
+      "additionalProperties": false,
+      "description": "One identifiable edition of rates, environmental factors, rules or a vocabulary; authority is explicit."
+    },
+    "WorkPackages": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trade": {
+          "type": "string",
+          "minLength": 1
+        },
+        "objectIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Id"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "confirmed",
+            "incomplete"
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "name",
+        "trade",
+        "objectIds",
+        "status",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One named scope of work for a delivery, possibly spanning many objects; no independent point location is required."
+    },
+    "Assessments": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "subjectObjectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "requirementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirementSetId": {
+          "$ref": "#/$defs/Id"
+        },
+        "scenarioId": {
+          "$ref": "#/$defs/Id"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "unknown",
+            "not_applicable"
+          ]
+        },
+        "inputCompleteness": {
+          "type": "string",
+          "enum": [
+            "complete",
+            "incomplete",
+            "not_applicable"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "subjectObjectId",
+        "requirementId",
+        "requirementSetId",
+        "scenarioId",
+        "result",
+        "inputCompleteness",
+        "reason",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One requirement assessed against one subject in a specified scenario; unknown is not pass.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "pass"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputCompleteness": {
+                "const": "complete"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "not_applicable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputCompleteness": {
+                "const": "not_applicable"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ComponentSchedule": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "$ref": "#/$defs/ObjectKind"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "objectId",
+        "kind",
+        "name",
+        "location"
+      ],
+      "additionalProperties": false,
+      "description": "One countable component occurrence in one snapshot, with readable context. Source metadata and definitions are excluded."
+    },
+    "DoorSchedule": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        },
+        "fireRating": {
+          "$ref": "#/$defs/TextFact"
+        },
+        "clearWidth": {
+          "$ref": "#/$defs/Length"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "objectId",
+        "name",
+        "location",
+        "fireRating",
+        "clearWidth"
+      ],
+      "additionalProperties": false,
+      "description": "One door occurrence with selected specifications; clear opening width is not nominal leaf width."
+    },
+    "RoofTakeoff": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        },
+        "assembly": {
+          "$ref": "#/$defs/TextFact"
+        },
+        "netSurfaceArea": {
+          "$ref": "#/$defs/Area"
+        },
+        "projectedArea": {
+          "$ref": "#/$defs/Area"
+        },
+        "netSurfaceQuantityId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "snapshotId",
+        "objectId",
+        "name",
+        "location",
+        "assembly",
+        "netSurfaceArea",
+        "projectedArea",
+        "netSurfaceQuantityId"
+      ],
+      "additionalProperties": false,
+      "description": "One roof occurrence under a selected measurement policy; surface and plan-projected area remain separate."
+    },
+    "FinishSchedule": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "surfaceSide": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finish": {
+          "$ref": "#/$defs/TextFact"
+        },
+        "netArea": {
+          "$ref": "#/$defs/Area"
+        },
+        "surfaceIdentity": {
+          "$ref": "#/$defs/Id"
+        },
+        "space": {
+          "$ref": "#/$defs/ObjectReferenceFact"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "objectId",
+        "surfaceSide",
+        "finish",
+        "netArea",
+        "surfaceIdentity",
+        "space"
+      ],
+      "additionalProperties": false,
+      "description": "One identified finish surface/face of an object, with an available or unresolved space association. A shared wall can have independently measured finishes on opposite faces."
+    },
+    "EstimateLines": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "workPackageId": {
+          "$ref": "#/$defs/Id"
+        },
+        "quantityObservationId": {
+          "$ref": "#/$defs/Id"
+        },
+        "rateSetId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rateItemId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scenarioId": {
+          "$ref": "#/$defs/Id"
+        },
+        "unitRate": {
+          "$ref": "#/$defs/Rate"
+        },
+        "wasteFraction": {
+          "$ref": "#/$defs/Decimal"
+        },
+        "totalCost": {
+          "$ref": "#/$defs/Money"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "priced",
+            "unpriced",
+            "incomplete"
+          ]
+        },
+        "accountingScopeId": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "workPackageId",
+        "quantityObservationId",
+        "rateSetId",
+        "rateItemId",
+        "scenarioId",
+        "unitRate",
+        "wasteFraction",
+        "totalCost",
+        "status",
+        "accountingScopeId"
+      ],
+      "additionalProperties": false,
+      "description": "One priced or explicitly unpriced quantity contribution within one package and rate scenario; alternative measurements do not create additive scope.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "priced"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "unitRate": {
+                "properties": {
+                  "state": {
+                    "const": "available"
+                  }
+                }
+              },
+              "totalCost": {
+                "properties": {
+                  "state": {
+                    "const": "available"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "unpriced",
+                  "incomplete"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "totalCost": {
+                "properties": {
+                  "state": {
+                    "not": {
+                      "const": "available"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "priced"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "rateSetId": {
+                "$ref": "#/$defs/Id"
+              },
+              "rateItemId": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ImpactLines": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "materialContributionId": {
+          "$ref": "#/$defs/Id"
+        },
+        "factorSetId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "factorItemId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scenarioId": {
+          "$ref": "#/$defs/Id"
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "factorAmount": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "factorPerUnit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Unit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "impact": {
+          "$ref": "#/$defs/Impact"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "calculated",
+            "incomplete"
+          ]
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "materialContributionId",
+        "factorSetId",
+        "factorItemId",
+        "scenarioId",
+        "module",
+        "factorAmount",
+        "factorPerUnit",
+        "impact",
+        "status"
+      ],
+      "additionalProperties": false,
+      "description": "One material contribution evaluated against one factor item, lifecycle module and scenario; alternative factor scenarios are not additive.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "calculated"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "impact": {
+                "properties": {
+                  "state": {
+                    "const": "available"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "incomplete"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "impact": {
+                "properties": {
+                  "state": {
+                    "not": {
+                      "const": "available"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "calculated"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "factorSetId": {
+                "$ref": "#/$defs/Id"
+              },
+              "factorItemId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "factorAmount": {
+                "$ref": "#/$defs/Decimal"
+              },
+              "factorPerUnit": {
+                "$ref": "#/$defs/Unit"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AssetRegister": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        },
+        "maintainability": {
+          "$ref": "#/$defs/BooleanFact"
+        },
+        "manuals": {
+          "$ref": "#/$defs/TextFact"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "objectId",
+        "name",
+        "location",
+        "maintainability",
+        "manuals"
+      ],
+      "additionalProperties": false,
+      "description": "One selected maintainable object, independent of the number of source descriptions or visual representations."
+    },
+    "SpatialBounds": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "representationId": {
+          "$ref": "#/$defs/Id"
+        },
+        "frameId": {
+          "$ref": "#/$defs/Id"
+        },
+        "dimension": {
+          "enum": [
+            2,
+            3
+          ]
+        },
+        "min": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Decimal"
+          }
+        },
+        "max": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Decimal"
+          }
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "objectId",
+        "representationId",
+        "frameId",
+        "dimension",
+        "min",
+        "max",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One axis-aligned envelope of one representation in a declared frame, in metres. Candidate filtering only; not an exact intersection, area or volume.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dimension": {
+                "const": 2
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "min": {
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "max": {
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "dimension": {
+                "const": 3
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "min": {
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "max": {
+                "minItems": 3,
+                "maxItems": 3
+              }
+            }
+          }
+        }
+      ]
+    },
+    "QuantityScopes": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/Id"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "objectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "enum": [
+            "whole_object",
+            "material_part",
+            "surface"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "id",
+        "objectId",
+        "kind",
+        "description",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "description": "One identified measurement subject within an object: the whole occurrence, a material part, or a surface. Scope identity must survive quantity alternatives; it is not a quantity observation ID."
+    },
+    "ObjectReferenceFact": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "$ref": "#/$defs/Id"
+            },
+            "assurance": {
+              "enum": [
+                "observed",
+                "estimated",
+                "inferred",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/Evidence"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "assurance",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/Unavailable"
+        }
+      ]
+    }
+  }
+}

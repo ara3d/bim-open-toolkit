@@ -1,0 +1,372 @@
+{
+  "version": "0.1.0-review.1",
+  "status": "proposed",
+  "activeDesignLimit": 8,
+  "ratingBasis": "Editorial hypotheses based on the current user/workflow catalog and synthetic acceptance stories. No usage-frequency study or source-feasibility verification has been performed.",
+  "rubric": {
+    "impact": {
+      "high": "A practical decision still requires repeated ad hoc reconstruction because the current contract lacks the relevant typed domain vocabulary or relationship meaning; the proposal directly removes that gap.",
+      "medium": "The current contract supports much of the core answer; the proposal adds useful typed fields, interpretation, grouping or presentation.",
+      "low": "No substantial additional model is justified for the current question: reuse largely covers it, or the proposal is specialized detail without a demonstrated near-term gap."
+    },
+    "repeatUse": {
+      "frequent": "Hypothesized to recur in the named workflow across routine deliveries or many relevant objects; not a measured frequency.",
+      "occasional": "Needed at selected project stages or for a narrower subset of the named workflow.",
+      "rare": "Only a specialized situation is currently identified."
+    },
+    "scopeCost": {
+      "small": "A bounded schedule or field group can be reviewed with one straightforward example.",
+      "medium": "Several relationships, conventions or incomplete-data cases need joint review.",
+      "large": "Requires substantial domain rules, new external inputs, topology, time series or difficult geometry."
+    },
+    "evidenceBasis": {
+      "workflow_scenario": "The question is grounded in a current worked workflow scenario. This does not validate the proposed record, real source mapping or market demand.",
+      "brainstorm": "An explicit hypothesis suggested by a role or broader workflow; obtain an acceptance example before promotion."
+    }
+  },
+  "valueRules": [
+    {
+      "impact": "high",
+      "repeatUse": "frequent",
+      "value": "high"
+    },
+    {
+      "impact": "high",
+      "repeatUse": "occasional",
+      "value": "medium"
+    },
+    {
+      "impact": "high",
+      "repeatUse": "rare",
+      "value": "medium"
+    },
+    {
+      "impact": "medium",
+      "repeatUse": "frequent",
+      "value": "medium"
+    },
+    {
+      "impact": "medium",
+      "repeatUse": "occasional",
+      "value": "medium"
+    },
+    {
+      "impact": "medium",
+      "repeatUse": "rare",
+      "value": "low"
+    },
+    {
+      "impact": "low",
+      "repeatUse": "frequent",
+      "value": "low"
+    },
+    {
+      "impact": "low",
+      "repeatUse": "occasional",
+      "value": "low"
+    },
+    {
+      "impact": "low",
+      "repeatUse": "rare",
+      "value": "low"
+    }
+  ],
+  "guardrails": [
+    "Do not rank by number of class names, role tags or workflow links; broad tagging is not evidence of value.",
+    "Scope cost does not reduce value. A valuable but difficult capability may need investigation instead of immediate implementation.",
+    "Infrequent high-consequence safety or accessibility work requires explicit review; the frequency rule alone must not dismiss it.",
+    "A first design wave must cover contrasting workflow families and trades, not only the easiest architectural examples.",
+    "A candidate needs an explicit question, decision, grain, minimum fields and separation rationale. A noun alone does not qualify.",
+    "Promote a separate record only when stable row meaning, distinct fields or relationships, and a useful query justify it; prefer a subtype label, shared facet or view otherwise.",
+    "Design-now is a bounded semantic design experiment, not authorization to generate all candidate classes or claim source feasibility.",
+    "Source readiness and derivation cost remain unverified until bounded BOS inspection; empty exports must not decide whether a domain concept matters.",
+    "Evaluate incremental model value against the existing contract, not the importance of a profession or workflow. Explicitly record reuse or extension before proposing another record."
+  ],
+  "promotionChecks": [
+    "Walk through one named user's decision using the proposed record; compare it with the existing generic representation.",
+    "Create a complete and an incomplete example, including the most likely double-counting or wrong-relationship trap.",
+    "Explain why existing records plus a label, facet or view do not suffice.",
+    "Review stable field meanings, units, spatial scope, identity and external requirements.",
+    "Trace at least one actual source-backed example or document an explicit mapping/external-input gap before claiming population support.",
+    "Review the SQL/table and C# result shape together; add a row schema only after the candidate passes the semantic review."
+  ],
+  "activeDesign": [
+    {
+      "id": "space",
+      "whyNow": "Provides a recognizable shared context for architectural schedules, finishes, services and handover without classes for each room use.",
+      "acceptanceQuestion": "Can we give a room-based work list when some spaces are only scheduled, their enclosure is unknown, and services or finishes have no resolved room?"
+    },
+    {
+      "id": "finish_surface",
+      "whyNow": "A worked shared-wall example already exposes the correct measurement grain. Start from finish_schedule and test whether it can serve the domain directly before creating another record.",
+      "acceptanceQuestion": "Can painters, flooring and ceiling trades share a finish-face model that preserves partitions, unknown areas and unassigned spaces without counting the host twice?"
+    },
+    {
+      "id": "penetration",
+      "whyNow": "Adds a cross-trade coordination case beyond familiar component schedules: a host opening, several passing services and independent approval/firestop evidence. Doors already have a bounded audit projection to refine later.",
+      "acceptanceQuestion": "Can the contractor identify which service penetrations need approval or firestop evidence before closing a wall, without inferring ratings or approvals from object names?"
+    },
+    {
+      "id": "structural_member",
+      "whyNow": "Adds structural trade requirements early and tests where beams, columns and braces can share stable fields without importing an analytical structural hierarchy.",
+      "acceptanceQuestion": "Can a fabricator group members by section and material and use measured lengths without substituting bounding-box dimensions or counting analytical duplicates?"
+    },
+    {
+      "id": "distribution_panel",
+      "whyNow": "Electrical schedules need distinct supply and circuit concepts that the generic component model cannot make discoverable. This deliberately tests a discipline beyond architectural takeoff.",
+      "acceptanceQuestion": "Can an electrician inspect panel and circuit assignments while unknown phases, capacity and upstream connections remain explicit?"
+    },
+    {
+      "id": "sanitary_fixture",
+      "whyNow": "Tests a useful practical family containing toilets and basins, with real connection and water-use differences, instead of one class for every fixture label.",
+      "acceptanceQuestion": "Can a plumber produce a per-space fixture and connection schedule without treating missing waste/supply ports as absent services or mixing water-use bases?"
+    },
+    {
+      "id": "duct_segment",
+      "whyNow": "Tests a concrete mechanical model and prevents shared routing geometry from turning into a universal pipe/duct/tray record. Compare with the pipe candidate before approving the shared facet.",
+      "acceptanceQuestion": "Can a mechanical trade query duct size, construction, lining and airflow separately from geometry and distinguish an unobserved connection from a disconnected route?"
+    },
+    {
+      "id": "installation_observation",
+      "whyNow": "Adds delivery and field-audit needs to the first wave. It tests the distinction between what a model specifies and what independent evidence says was delivered or installed.",
+      "acceptanceQuestion": "Can a project manager reconcile specified items with partial deliveries and repeated observations without treating a modeled object as proof of installation?"
+    }
+  ],
+  "existingContractReview": [
+    {
+      "id": "space",
+      "approach": "proposed_new",
+      "tables": [
+        "object_states"
+      ],
+      "incrementalGain": "A typed space view would add room number, use, measured area and enclosure meaning over shared object identity; it must not create another identity."
+    },
+    {
+      "id": "door",
+      "approach": "extend",
+      "tables": [
+        "door_schedule"
+      ],
+      "incrementalGain": "Extend existing door audit projection with scope/operation/space concepts only where a new question requires them."
+    },
+    {
+      "id": "roof",
+      "approach": "extend",
+      "tables": [
+        "roof_takeoff"
+      ],
+      "incrementalGain": "Extend assembly or edge details after testing the gap; reuse existing area selection and occurrence identity."
+    },
+    {
+      "id": "finish_surface",
+      "approach": "extend",
+      "tables": [
+        "finish_schedule"
+      ],
+      "incrementalGain": "Test whether the existing face record can serve the domain after clearer naming; add partition/specification detail only if required."
+    },
+    {
+      "id": "equipment",
+      "approach": "reuse_view",
+      "tables": [
+        "component_schedule",
+        "asset_register"
+      ],
+      "incrementalGain": "Compose inventory and handover coverage from existing concepts; specialized equipment fields belong in concrete models or justified facets."
+    },
+    {
+      "id": "room_fitout",
+      "approach": "reuse_view",
+      "tables": [
+        "finish_schedule",
+        "asset_register"
+      ],
+      "incrementalGain": "Compose room-based procurement/context without a second identity or finish measurement store."
+    },
+    {
+      "id": "quantity_takeoff",
+      "approach": "reuse_view",
+      "tables": [
+        "quantity_scopes",
+        "quantity_observations"
+      ],
+      "incrementalGain": "Expose selected quantities and missing coverage through a view; preserve the original observations."
+    },
+    {
+      "id": "work_package",
+      "approach": "extend",
+      "tables": [
+        "work_packages"
+      ],
+      "incrementalGain": "Existing package scope is sufficient for the worked estimate; release/dependency fields remain an incremental design question."
+    },
+    {
+      "id": "impact_breakdown",
+      "approach": "reuse_view",
+      "tables": [
+        "impact_lines"
+      ],
+      "incrementalGain": "Use existing impact grain and factor context; test aggregate coverage rather than creating another result fact."
+    },
+    {
+      "id": "requirement_assessment",
+      "approach": "reuse_view",
+      "tables": [
+        "assessments"
+      ],
+      "incrementalGain": "The existing assessment record already has the requested grain and incomplete outcomes."
+    },
+    {
+      "id": "structural_member",
+      "approach": "proposed_new",
+      "tables": [
+        "object_states",
+        "quantity_observations"
+      ],
+      "incrementalGain": "Add typed section/material/axis relationships for physical member schedules; reuse object identity and quantity evidence."
+    },
+    {
+      "id": "distribution_panel",
+      "approach": "proposed_new",
+      "tables": [
+        "object_states",
+        "relationships"
+      ],
+      "incrementalGain": "Add electrical supply and circuit vocabulary absent from generic component/edge rows."
+    },
+    {
+      "id": "sanitary_fixture",
+      "approach": "proposed_new",
+      "tables": [
+        "object_states",
+        "relationships"
+      ],
+      "incrementalGain": "Add fixture role and explicit supply/waste and water-use bases, retaining shared physical identity."
+    },
+    {
+      "id": "duct_segment",
+      "approach": "proposed_new",
+      "tables": [
+        "object_states",
+        "representations",
+        "relationships"
+      ],
+      "incrementalGain": "Add duct construction, lining, dimensions and airflow vocabulary; geometry and adjacency alone cannot express it."
+    },
+    {
+      "id": "pipe_segment",
+      "approach": "proposed_new",
+      "tables": [
+        "object_states",
+        "representations",
+        "relationships"
+      ],
+      "incrementalGain": "Add pipe material, size and conditional slope/pressure context; share geometry without forcing duct semantics."
+    },
+    {
+      "id": "penetration",
+      "approach": "proposed_new",
+      "tables": [
+        "object_states",
+        "relationships",
+        "assessments"
+      ],
+      "incrementalGain": "Add the host-opening/passing-service/approval association and distinguish required from observed firestop evidence."
+    },
+    {
+      "id": "installation_observation",
+      "approach": "proposed_new",
+      "tables": [
+        "source_records",
+        "assessments"
+      ],
+      "incrementalGain": "Independent delivery or installation events need a subject, event scope and evidence grain separate from the modeled occurrence."
+    }
+  ],
+  "scenarioSupport": [
+    {
+      "id": "space",
+      "scenarioId": "shared-wall-faces",
+      "supports": "Stable room references let opposite wall faces carry separate finish quantities.",
+      "doesNotEstablish": "Space enclosure, occupancy and room-area definitions."
+    },
+    {
+      "id": "door",
+      "scenarioId": "missing-door-evidence",
+      "supports": "Missing width/rating evidence prevents a complete audit.",
+      "doesNotEstablish": "Door operation, leaf-versus-assembly rules and connected-space topology."
+    },
+    {
+      "id": "wall",
+      "scenarioId": "shared-wall-faces",
+      "supports": "One physical wall can have two separately measured finishes.",
+      "doesNotEstablish": "Wall construction layers, loadbearing role and complete opening deductions."
+    },
+    {
+      "id": "roof",
+      "scenarioId": "roof-surface-versus-projection",
+      "supports": "Net surface, projected area, competing observations and unmeasured scope differ.",
+      "doesNotEstablish": "Layer ordering, roof drainage and edge details."
+    },
+    {
+      "id": "finish_surface",
+      "scenarioId": "shared-wall-faces",
+      "supports": "Face identity prevents host-based finish double counting.",
+      "doesNotEstablish": "All finish partition rules or product specifications."
+    },
+    {
+      "id": "equipment",
+      "scenarioId": "asset-without-manual",
+      "supports": "A maintainable asset stays visible despite missing handover data.",
+      "doesNotEstablish": "Pump/head curves, air-handler duties or generic equipment performance fields."
+    },
+    {
+      "id": "service_run",
+      "scenarioId": "supported-mep-only",
+      "supports": "Accepted service edges differ from candidate proximity edges.",
+      "doesNotEstablish": "Physical segmentation boundaries, duct construction or pipe pressure semantics."
+    },
+    {
+      "id": "assembly_specification",
+      "scenarioId": "deduplicated-material-impact",
+      "supports": "A material contribution must be counted once across source representations.",
+      "doesNotEstablish": "Ordered assembly layers or a general assembly taxonomy."
+    },
+    {
+      "id": "quantity_takeoff",
+      "scenarioId": "roof-surface-versus-projection",
+      "supports": "Select a measurement basis and retain unknown scope.",
+      "doesNotEstablish": "Every trade measurement convention or aggregation denominator."
+    },
+    {
+      "id": "work_package",
+      "scenarioId": "priced-and-unpriced-scope",
+      "supports": "An estimate can price known package scope while preserving unpriced scope.",
+      "doesNotEstablish": "Schedule dependencies, release rules or installation progress."
+    },
+    {
+      "id": "asset_service_requirements",
+      "scenarioId": "asset-without-manual",
+      "supports": "Missing manuals are a handover gap rather than absence of an asset.",
+      "doesNotEstablish": "Maintenance intervals, access envelopes or service procedures."
+    },
+    {
+      "id": "impact_breakdown",
+      "scenarioId": "deduplicated-material-impact",
+      "supports": "Contribution identity and module/factor context constrain an impact line.",
+      "doesNotEstablish": "Full portfolio aggregation, lifecycle completeness or ecological-impact methods."
+    },
+    {
+      "id": "requirement_assessment",
+      "scenarioId": "missing-door-evidence",
+      "supports": "An incomplete assessment remains unknown.",
+      "doesNotEstablish": "Any regulatory rule implementation or complete compliance claim."
+    },
+    {
+      "id": "evidence_issue",
+      "scenarioId": "missing-door-evidence",
+      "supports": "Incomplete inputs must remain visible rather than produce a pass.",
+      "doesNotEstablish": "A comprehensive model-quality rule set or root-cause diagnosis."
+    }
+  ]
+}

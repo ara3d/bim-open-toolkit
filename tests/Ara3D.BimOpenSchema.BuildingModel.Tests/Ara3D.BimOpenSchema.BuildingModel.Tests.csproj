@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <Import Project="../../tools/bim-data-model/Platonic.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel/Ara3D.BimOpenSchema.BuildingModel.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(Ara3DMicrosoftNetTestSdkVersion)" />
+    <PackageReference Include="NUnit" Version="$(Ara3DNUnitVersion)" />
+    <PackageReference Include="NUnit3TestAdapter" Version="$(Ara3DNUnit3TestAdapterVersion)" />
+    <Using Include="NUnit.Framework" />
+    <None Include="../../src/Ara3D.BimOpenSchema.BuildingModel/model-coverage.csv" Link="model-coverage.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../docs/proposals/bim-query-platform/contract/domain-candidates.csv" Link="domain-candidates.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

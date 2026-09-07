@@ -1,0 +1,1941 @@
+{
+  "$schema": "./workflows.schema.json",
+  "version": "0.1.0-review.1",
+  "contractVersion": "0.1.0-review.1",
+  "status": "proposed",
+  "executionSemantics": "illustrative-not-executable",
+  "description": "Reviewable user decisions and proposed information requirements. Roles describe interests, not permissions or separate databases. Required tables/fields identify draft capabilities, not evidence of populated BOS source fields. Detailed means worked through for contract review, not implemented or source-validated. Candidate workflows expose missing capabilities and have no promised output projection. Steps are explanatory pseudo-code, not a query language.",
+  "roles": [
+    {
+      "id": "estimator",
+      "label": "Cost estimator / quantity surveyor",
+      "interests": [
+        "Bid scope",
+        "Measurement rules",
+        "Price and quantity uncertainty"
+      ]
+    },
+    {
+      "id": "project_manager",
+      "label": "Project manager",
+      "interests": [
+        "Package readiness",
+        "Milestones",
+        "Dependencies"
+      ]
+    },
+    {
+      "id": "general_contractor",
+      "label": "General contractor",
+      "interests": [
+        "Coordination",
+        "Scope allocation",
+        "Delivery"
+      ]
+    },
+    {
+      "id": "roofer",
+      "label": "Roofing contractor",
+      "interests": [
+        "Membrane and insulation quantities",
+        "Roof edges and penetrations"
+      ]
+    },
+    {
+      "id": "facade_trade",
+      "label": "Facade / glazing contractor",
+      "interests": [
+        "Panels and openings",
+        "Interfaces",
+        "Envelope quantities"
+      ]
+    },
+    {
+      "id": "partition_trade",
+      "label": "Drywall / partition contractor",
+      "interests": [
+        "Faces and layers",
+        "Opening deductions",
+        "Fire and acoustic specifications"
+      ]
+    },
+    {
+      "id": "finishing_trade",
+      "label": "Painter / finishing contractor",
+      "interests": [
+        "Room-facing finishes",
+        "Preparation and coats"
+      ]
+    },
+    {
+      "id": "flooring_trade",
+      "label": "Flooring / tiling contractor",
+      "interests": [
+        "Finish areas",
+        "Skirting and transitions",
+        "Waste"
+      ]
+    },
+    {
+      "id": "ceiling_trade",
+      "label": "Ceiling contractor",
+      "interests": [
+        "Ceiling areas",
+        "Soffits",
+        "Access panels"
+      ]
+    },
+    {
+      "id": "door_supplier",
+      "label": "Door / hardware supplier",
+      "interests": [
+        "Leaves and frames",
+        "Hardware",
+        "Clear opening and ratings"
+      ]
+    },
+    {
+      "id": "electrician",
+      "label": "Electrical contractor",
+      "interests": [
+        "Circuits and panels",
+        "Device schedules",
+        "Cable and conduit routes"
+      ]
+    },
+    {
+      "id": "mechanical_trade",
+      "label": "HVAC contractor",
+      "interests": [
+        "Ducts and insulation",
+        "Equipment",
+        "Maintenance access"
+      ]
+    },
+    {
+      "id": "plumbing_trade",
+      "label": "Plumbing / sanitation contractor",
+      "interests": [
+        "Pipe lengths and slopes",
+        "Fixtures",
+        "Network connectivity"
+      ]
+    },
+    {
+      "id": "fire_protection_trade",
+      "label": "Fire-protection contractor",
+      "interests": [
+        "Devices and zones",
+        "Pipework",
+        "Design input coverage"
+      ]
+    },
+    {
+      "id": "structural_trade",
+      "label": "Concrete / rebar / steel / timber contractor",
+      "interests": [
+        "Material quantities",
+        "Fabrication and erection packages"
+      ]
+    },
+    {
+      "id": "earthworks_trade",
+      "label": "Civil / earthworks contractor",
+      "interests": [
+        "Terrain",
+        "Cut and fill",
+        "Drainage"
+      ]
+    },
+    {
+      "id": "landscape_trade",
+      "label": "Landscape contractor",
+      "interests": [
+        "Planting and soil",
+        "Irrigation",
+        "Hardscape"
+      ]
+    },
+    {
+      "id": "safety_auditor",
+      "label": "Safety auditor / site safety planner",
+      "interests": [
+        "Hazards",
+        "Temporary work",
+        "Access and inspection evidence"
+      ]
+    },
+    {
+      "id": "architect",
+      "label": "Architect",
+      "interests": [
+        "Spatial program",
+        "Envelope and openings",
+        "Design requirements"
+      ]
+    },
+    {
+      "id": "interior_designer",
+      "label": "Interior designer",
+      "interests": [
+        "Room data",
+        "Finishes",
+        "Fixtures and furniture"
+      ]
+    },
+    {
+      "id": "landscape_architect",
+      "label": "Landscape architect",
+      "interests": [
+        "Land cover",
+        "Planting",
+        "Ecological and water scenarios"
+      ]
+    },
+    {
+      "id": "structural_engineer",
+      "label": "Structural engineer",
+      "interests": [
+        "Members and connections",
+        "Analytical assumptions",
+        "Materials"
+      ]
+    },
+    {
+      "id": "civil_engineer",
+      "label": "Civil engineer",
+      "interests": [
+        "Survey frames",
+        "Terrain",
+        "Infrastructure and drainage"
+      ]
+    },
+    {
+      "id": "electrical_engineer",
+      "label": "Electrical engineer",
+      "interests": [
+        "Loads",
+        "Circuits",
+        "Equipment and topology"
+      ]
+    },
+    {
+      "id": "mechanical_engineer",
+      "label": "Mechanical engineer",
+      "interests": [
+        "Air systems",
+        "Service zones",
+        "Performance inputs"
+      ]
+    },
+    {
+      "id": "plumbing_engineer",
+      "label": "Plumbing / sanitation engineer",
+      "interests": [
+        "Supply and waste systems",
+        "Flow and slope",
+        "Design criteria"
+      ]
+    },
+    {
+      "id": "owner",
+      "label": "Owner / asset manager",
+      "interests": [
+        "Handover",
+        "Investment and renewal",
+        "Portfolio comparability"
+      ]
+    },
+    {
+      "id": "facility_manager",
+      "label": "Facility manager",
+      "interests": [
+        "Asset location",
+        "Maintenance records",
+        "Service dependencies"
+      ]
+    },
+    {
+      "id": "performance_analyst",
+      "label": "Building-performance analyst",
+      "interests": [
+        "Envelope and occupancy inputs",
+        "Simulated and observed results"
+      ]
+    },
+    {
+      "id": "sustainability_analyst",
+      "label": "Sustainability / ecological-impact analyst",
+      "interests": [
+        "Material impact",
+        "Lifecycle boundaries",
+        "Water and habitat"
+      ]
+    },
+    {
+      "id": "portfolio_analyst",
+      "label": "Portfolio analyst",
+      "interests": [
+        "Comparable building metrics",
+        "Coverage",
+        "Selected revisions"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "id": "roof_takeoff",
+      "title": "Roof quantities by assembly",
+      "roleIds": [
+        "roofer",
+        "estimator",
+        "architect"
+      ],
+      "question": "How much roof membrane and insulation does this building need, by assembly, and which roofs remain unmeasured?",
+      "decision": "Prepare a measured bid scope and identify unresolved quantities before applying waste or pricing.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "measurement_rule",
+          "description": "Named/versioned surface-area and deduction rules.",
+          "required": true
+        },
+        {
+          "id": "assembly_scope",
+          "description": "Requested layers or assembly definitions; never infer layer thickness from area.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "roof_takeoff",
+        "quantity_observations",
+        "quantity_scopes"
+      ],
+      "requiredFields": [
+        "roof_takeoff.objectId",
+        "roof_takeoff.location",
+        "roof_takeoff.assembly",
+        "roof_takeoff.netSurfaceArea",
+        "roof_takeoff.projectedArea",
+        "quantity_observations.basis",
+        "quantity_observations.selectionState",
+        "quantity_scopes.id",
+        "quantity_scopes.objectId",
+        "quantity_scopes.kind"
+      ],
+      "outputTables": [
+        "roof_takeoff"
+      ],
+      "steps": [
+        {
+          "id": "establish_measurement_subject",
+          "reads": [
+            "quantity_scopes.id",
+            "quantity_scopes.objectId",
+            "quantity_scopes.kind"
+          ],
+          "pseudocode": "Select distinct whole-object, material-part or surface measurement subjects appropriate to the decision. Do not add overlapping whole-object and part quantities."
+        },
+        {
+          "id": "select_roofs",
+          "reads": [
+            "roof_takeoff.objectId",
+            "roof_takeoff.location"
+          ],
+          "pseudocode": "Select roof occurrences in the requested snapshot and building scope; retain unresolved location as an explicit scope exception."
+        },
+        {
+          "id": "select_measurements",
+          "reads": [
+            "roof_takeoff.netSurfaceArea",
+            "roof_takeoff.projectedArea",
+            "quantity_observations.basis",
+            "quantity_observations.selectionState"
+          ],
+          "pseudocode": "Use the accepted net surface-area observation under the requested rule; do not substitute plan-projected area or sum competing observations."
+        },
+        {
+          "id": "group_and_report",
+          "reads": [
+            "roof_takeoff.assembly",
+            "roof_takeoff.netSurfaceArea"
+          ],
+          "pseudocode": "Group compatible measured contributions by assembly; return measured subtotal, unmeasured roof count and exclusions. Report insulation volume only if its required thickness evidence is supplied."
+        }
+      ],
+      "policies": [
+        "quantity-selection",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Unknown assembly or net surface area remains unresolved. Report supported partial quantities; do not treat unknown area as zero or diagnose exporter fault without evidence.",
+      "countingBasis": "One selected measurement per roof occurrence and requested quantity basis; assembly totals and layer contributions are separate alternatives.",
+      "acceptanceExamples": [
+        "Synthetic: a sloped roof with net surface area 120 m2 and projected area 100 m2 contributes 120 m2 to membrane area, not 220 m2.",
+        "Synthetic: a second roof with unknown area increases unmeasured count and leaves the measured subtotal unchanged."
+      ],
+      "openQuestions": [
+        "Which opening-deduction and layer measurement standards should be supported first?",
+        "Roof edges, penetrations, drains and layer thickness are not yet dedicated contract projections."
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "finish_schedule",
+      "title": "Room-facing finish schedule",
+      "roleIds": [
+        "interior_designer",
+        "finishing_trade",
+        "partition_trade",
+        "ceiling_trade"
+      ],
+      "question": "What finishes and net areas belong to each room-facing surface, including opposite sides of shared walls?",
+      "decision": "Specify and measure finishes without assigning one room's finish to the other side of a shared component.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "finish_scope",
+          "description": "Requested spaces and surface/layer scope.",
+          "required": true
+        },
+        {
+          "id": "deduction_rule",
+          "description": "Named/versioned net-area deduction rule.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "finish_schedule",
+        "property_observations",
+        "quantity_scopes"
+      ],
+      "requiredFields": [
+        "finish_schedule.id",
+        "finish_schedule.objectId",
+        "finish_schedule.space",
+        "finish_schedule.surfaceSide",
+        "finish_schedule.finish",
+        "finish_schedule.netArea",
+        "property_observations.value",
+        "quantity_scopes.id",
+        "quantity_scopes.objectId",
+        "quantity_scopes.kind"
+      ],
+      "outputTables": [
+        "finish_schedule"
+      ],
+      "steps": [
+        {
+          "id": "establish_measurement_subject",
+          "reads": [
+            "quantity_scopes.id",
+            "quantity_scopes.objectId",
+            "quantity_scopes.kind"
+          ],
+          "pseudocode": "Select distinct whole-object, material-part or surface measurement subjects appropriate to the decision. Do not add overlapping whole-object and part quantities."
+        },
+        {
+          "id": "select_surfaces",
+          "reads": [
+            "finish_schedule.objectId",
+            "finish_schedule.space",
+            "finish_schedule.surfaceSide"
+          ],
+          "pseudocode": "Select room-facing surface contributions; preserve distinct sides of the same object."
+        },
+        {
+          "id": "resolve_finish",
+          "reads": [
+            "finish_schedule.finish",
+            "property_observations.value"
+          ],
+          "pseudocode": "Select supported finish observations using the named policy; keep conflicting observations discoverable and unresolved when no policy settles them."
+        },
+        {
+          "id": "summarize",
+          "reads": [
+            "finish_schedule.id",
+            "finish_schedule.netArea",
+            "finish_schedule.finish"
+          ],
+          "pseudocode": "Group compatible accepted net areas by space and finish; return unassigned surfaces and unmeasured contributions alongside totals."
+        }
+      ],
+      "policies": [
+        "property-selection",
+        "quantity-selection",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Unknown side, room association, finish or area is a separate unresolved contribution. Do not copy the sole known finish to another side.",
+      "countingBasis": "One identified finish surface/side contribution; a wall may validly contribute to two spaces, but a repeated source representation is not an additional surface.",
+      "acceptanceExamples": [
+        "Synthetic: one wall has north-room paint A at 12 m2 and south-room tile B at 10 m2; report two contributions, not two whole-wall totals.",
+        "Synthetic: conflicting finish observations return an unresolved finish until a selection rule is provided."
+      ],
+      "openQuestions": [
+        "Does the first release require multiple finish layers, coat count and substrate preparation as explicit typed fields?",
+        "A stable surface identity and layer accounting rule still require source mapping validation."
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "estimating",
+      "title": "Scenario-based package estimate",
+      "roleIds": [
+        "estimator",
+        "general_contractor",
+        "project_manager"
+      ],
+      "question": "What does this trade package cost under the selected rates and waste assumptions, and what remains unpriced or uncertain?",
+      "decision": "Compare bid scenarios while separating measured scope, omissions and unpriced quantities.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "work_package",
+          "description": "Selected package and explicitly included/excluded scope.",
+          "required": true
+        },
+        {
+          "id": "rate_set",
+          "description": "Versioned rate set, currency, date and region.",
+          "required": true
+        },
+        {
+          "id": "scenario",
+          "description": "Explicit waste, contingency and rounding assumptions.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "work_packages",
+        "quantity_observations",
+        "reference_sets",
+        "estimate_lines",
+        "quantity_scopes"
+      ],
+      "requiredFields": [
+        "work_packages.id",
+        "work_packages.objectIds",
+        "quantity_observations.measurement",
+        "quantity_observations.basis",
+        "quantity_observations.selectionState",
+        "reference_sets.id",
+        "reference_sets.version",
+        "estimate_lines.quantityObservationId",
+        "estimate_lines.unitRate",
+        "estimate_lines.totalCost",
+        "estimate_lines.status",
+        "quantity_scopes.id",
+        "quantity_scopes.objectId",
+        "quantity_scopes.kind"
+      ],
+      "outputTables": [
+        "estimate_lines"
+      ],
+      "steps": [
+        {
+          "id": "establish_measurement_subject",
+          "reads": [
+            "quantity_scopes.id",
+            "quantity_scopes.objectId",
+            "quantity_scopes.kind"
+          ],
+          "pseudocode": "Select distinct whole-object, material-part or surface measurement subjects appropriate to the decision. Do not add overlapping whole-object and part quantities."
+        },
+        {
+          "id": "select_scope",
+          "reads": [
+            "work_packages.id",
+            "work_packages.objectIds"
+          ],
+          "pseudocode": "Select package object scope and resolve overlaps under the counting policy."
+        },
+        {
+          "id": "match_rate",
+          "reads": [
+            "quantity_observations.measurement",
+            "quantity_observations.basis",
+            "reference_sets.id",
+            "reference_sets.version"
+          ],
+          "pseudocode": "Select compatible accepted quantities; match exactly one applicable rate from the requested reference version. Require dimensional and currency compatibility."
+        },
+        {
+          "id": "calculate",
+          "reads": [
+            "estimate_lines.quantityObservationId",
+            "estimate_lines.unitRate",
+            "estimate_lines.totalCost",
+            "estimate_lines.status"
+          ],
+          "pseudocode": "Apply declared scenario adjustments once; return priced subtotal, unpriced quantities and unresolved scope separately. Do not label a partial subtotal as a complete bid."
+        }
+      ],
+      "policies": [
+        "quantity-selection",
+        "rate-match",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "No matching rate means unpriced, not free. Unknown quantities remain unknown; missing scope information prevents a completeness claim.",
+      "countingBasis": "One priced scope contribution per scenario/rate basis; do not combine assembly price and constituent prices for the same scope.",
+      "acceptanceExamples": [
+        "Synthetic: 10 m2 at 20 currency-units/m2 gives 200 before explicitly declared adjustments.",
+        "Synthetic: 5 m2 without a rate remains an unpriced line and does not become a zero-cost accepted line."
+      ],
+      "openQuestions": [
+        "Where should scenario and currency metadata live as dedicated contract records?",
+        "How are alternates, provisional sums, allowances and partial package allocations represented?"
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "door_audit",
+      "title": "Door delivery completeness audit",
+      "roleIds": [
+        "architect",
+        "door_supplier",
+        "general_contractor",
+        "safety_auditor"
+      ],
+      "question": "Which delivered doors lack the required fire-rating or usable clear-width evidence?",
+      "decision": "Request corrections and identify unassessed requirements before accepting a delivery.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "requirements",
+          "description": "Versioned project requirements and applicability criteria; not inferred jurisdiction rules.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "door_schedule",
+        "property_observations",
+        "source_records",
+        "assessments"
+      ],
+      "requiredFields": [
+        "door_schedule.objectId",
+        "door_schedule.location",
+        "door_schedule.fireRating",
+        "door_schedule.clearWidth",
+        "property_observations.value",
+        "source_records.exporterFamily",
+        "assessments.requirementId",
+        "assessments.result",
+        "assessments.reason"
+      ],
+      "outputTables": [
+        "door_schedule",
+        "assessments"
+      ],
+      "steps": [
+        {
+          "id": "select_subjects",
+          "reads": [
+            "door_schedule.objectId",
+            "door_schedule.location"
+          ],
+          "pseudocode": "Select identified door occurrences and applicable delivery scope; keep scope uncertainty visible."
+        },
+        {
+          "id": "evaluate_inputs",
+          "reads": [
+            "door_schedule.fireRating",
+            "door_schedule.clearWidth",
+            "property_observations.value"
+          ],
+          "pseudocode": "For each supplied applicable requirement, distinguish usable values, conflicts, invalid observations, missing observations and supported evidence of non-applicability."
+        },
+        {
+          "id": "report_assessment",
+          "reads": [
+            "assessments.requirementId",
+            "assessments.result",
+            "assessments.reason",
+            "source_records.exporterFamily"
+          ],
+          "pseudocode": "Emit pass/fail only with sufficient evidence and rule inputs; otherwise emit incomplete/unknown with reason. Exporter family alone cannot explain a missing field."
+        }
+      ],
+      "policies": [
+        "property-selection",
+        "assessment-completeness"
+      ],
+      "missingDataBehavior": "Missing or invalid clear width is unassessed rather than compliant. Proven non-applicability is distinct from absent evidence; exporter omission requires documented support.",
+      "countingBasis": "One assessment per door, requirement and selected delivery context; count assessed subjects separately from observation count.",
+      "acceptanceExamples": [
+        "Synthetic: missing clear width under an applicable minimum-width requirement produces an incomplete/unknown outcome, never pass.",
+        "Synthetic: a documented non-applicable rating requirement is not a failing missing-property finding."
+      ],
+      "openQuestions": [
+        "Requirement definitions and applicability predicates need an external/versioned contract.",
+        "Which distinctions between leaf size, nominal opening and usable clear width must be mandatory?"
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "mep_trace",
+      "title": "Supported service and connectivity trace",
+      "roleIds": [
+        "mechanical_engineer",
+        "electrical_engineer",
+        "plumbing_engineer",
+        "mechanical_trade",
+        "electrician",
+        "plumbing_trade",
+        "facility_manager"
+      ],
+      "question": "Which equipment and spaces are demonstrably connected to or served by this equipment, and where does the evidence stop?",
+      "decision": "Understand supported service dependencies and plan an investigation of unresolved links.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "start_object",
+          "description": "Identified starting equipment or system.",
+          "required": true
+        },
+        {
+          "id": "relationship_scope",
+          "description": "Allowed relationship kinds, direction and evidence statuses.",
+          "required": true
+        },
+        {
+          "id": "depth_limit",
+          "description": "Bounded traversal depth or explicit stop criteria.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "relationships",
+        "object_states"
+      ],
+      "requiredFields": [
+        "relationships.sourceObjectId",
+        "relationships.targetObjectId",
+        "relationships.kind",
+        "relationships.status",
+        "object_states.kind",
+        "object_states.name"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "select_edges",
+          "reads": [
+            "relationships.sourceObjectId",
+            "relationships.targetObjectId",
+            "relationships.kind",
+            "relationships.status"
+          ],
+          "pseudocode": "Select supported edges of explicitly requested kinds and direction; do not replace missing connectivity with geometric proximity."
+        },
+        {
+          "id": "traverse",
+          "reads": [
+            "relationships.sourceObjectId",
+            "relationships.targetObjectId",
+            "object_states.kind",
+            "object_states.name"
+          ],
+          "pseudocode": "Traverse with a visited-object set and stop criteria; retain each path's edge evidence and distinguish connected-to from serves."
+        },
+        {
+          "id": "report_gaps",
+          "reads": [
+            "relationships.status"
+          ],
+          "pseudocode": "Return supported reachable objects plus unresolved links and coverage limits. No observed path does not prove physical disconnection or safe isolation."
+        }
+      ],
+      "policies": [
+        "topology-evidence",
+        "identity-reconciliation"
+      ],
+      "missingDataBehavior": "An empty edge set yields no supported trace and unknown topology coverage. Inferred or uncertain edges are labeled and excluded from verified-only results.",
+      "countingBasis": "Unique reachable objects within the selected snapshot; preserve multiple meaningful paths without counting the same asset repeatedly.",
+      "acceptanceExamples": [
+        "Synthetic: A connects to B and B serves room C; a permitted mixed-kind trace returns B and C with their distinct relation meanings.",
+        "Synthetic: nearby object D with no supported edge is not connected by the trace."
+      ],
+      "openQuestions": [
+        "Port-level topology, flow direction and operational isolation state require further explicit modeling.",
+        "The traversal result shape is illustrative; a dedicated path projection is not yet defined."
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "carbon",
+      "title": "Material impact under a declared scenario",
+      "roleIds": [
+        "sustainability_analyst",
+        "estimator",
+        "owner",
+        "portfolio_analyst"
+      ],
+      "question": "What embodied impact is attributable to these material quantities under the same factor version and lifecycle modules, and how much scope is unresolved?",
+      "decision": "Compare material or procurement scenarios on a stated, comparable basis.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "factor_set",
+          "description": "Versioned applicable environmental factors with units, geography and declared modules.",
+          "required": true
+        },
+        {
+          "id": "scenario",
+          "description": "Explicit boundary, selected modules, substitutions and lifecycle assumptions.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "material_contributions",
+        "quantity_observations",
+        "reference_sets",
+        "impact_lines",
+        "quantity_scopes"
+      ],
+      "requiredFields": [
+        "material_contributions.id",
+        "material_contributions.objectId",
+        "material_contributions.materialId",
+        "material_contributions.quantityObservationId",
+        "quantity_observations.measurement",
+        "quantity_observations.basis",
+        "reference_sets.version",
+        "impact_lines.factorSetId",
+        "impact_lines.module",
+        "impact_lines.impact",
+        "impact_lines.status",
+        "quantity_scopes.id",
+        "quantity_scopes.objectId",
+        "quantity_scopes.kind"
+      ],
+      "outputTables": [
+        "impact_lines"
+      ],
+      "steps": [
+        {
+          "id": "establish_measurement_subject",
+          "reads": [
+            "quantity_scopes.id",
+            "quantity_scopes.objectId",
+            "quantity_scopes.kind"
+          ],
+          "pseudocode": "Select distinct whole-object, material-part or surface measurement subjects appropriate to the decision. Do not add overlapping whole-object and part quantities."
+        },
+        {
+          "id": "select_contributions",
+          "reads": [
+            "material_contributions.id",
+            "material_contributions.objectId",
+            "material_contributions.quantityObservationId",
+            "quantity_observations.basis"
+          ],
+          "pseudocode": "Select non-overlapping material contributions and accepted quantities for the selected objects and scenario."
+        },
+        {
+          "id": "match_factor",
+          "reads": [
+            "material_contributions.materialId",
+            "quantity_observations.measurement",
+            "reference_sets.version"
+          ],
+          "pseudocode": "Require an evidenced material/product-to-factor match and compatible declared quantity basis; an unsupported density conversion or name similarity is insufficient."
+        },
+        {
+          "id": "calculate_and_report",
+          "reads": [
+            "impact_lines.factorSetId",
+            "impact_lines.module",
+            "impact_lines.impact",
+            "impact_lines.status"
+          ],
+          "pseudocode": "Compute compatible impacts for the selected modules and factor version; show unmatched quantities and coverage denominator. Do not sum aggregate-module factors with their constituent modules."
+        }
+      ],
+      "policies": [
+        "quantity-selection",
+        "factor-match",
+        "identity-reconciliation",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Unmatched materials or incompatible quantity units yield unresolved impact. Unknown quantity or lifecycle coverage cannot be silently represented as zero.",
+      "countingBasis": "One material contribution, factor selection and non-overlapping lifecycle module per scenario; deduplicate confirmed repeated source representations.",
+      "acceptanceExamples": [
+        "Synthetic: 100 kg matched to 2 kgCO2e/kg yields 200 kgCO2e for the declared module.",
+        "Synthetic: a duplicate representation of that same confirmed contribution does not increase impact; an unmatched material stays unresolved."
+      ],
+      "openQuestions": [
+        "Reference factor payloads, impact indicators and scenario boundaries need explicit contracts before execution.",
+        "How should biogenic carbon, reuse allocation and uncertainty intervals be represented?"
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "egress",
+      "title": "Evidence coverage for a route-to-exit assessment",
+      "roleIds": [
+        "architect",
+        "safety_auditor",
+        "owner"
+      ],
+      "question": "Can these spaces be assessed for a route to a designated exit, and which missing route, width or rule inputs block a conclusion?",
+      "decision": "Prepare an explainable assessment and request missing inputs; avoid unsupported safety assurance.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "scenario",
+          "description": "Selected spaces, designated exits, occupancy and route assumptions.",
+          "required": true
+        },
+        {
+          "id": "rules",
+          "description": "Explicit versioned jurisdiction/project rules and applicability criteria.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "object_states",
+        "relationships",
+        "door_schedule",
+        "representations",
+        "coordinate_frames",
+        "assessments"
+      ],
+      "requiredFields": [
+        "object_states.kind",
+        "relationships.kind",
+        "relationships.status",
+        "relationships.sourceObjectId",
+        "relationships.targetObjectId",
+        "door_schedule.clearWidth",
+        "representations.purpose",
+        "coordinate_frames.lengthUnit",
+        "assessments.result",
+        "assessments.reason"
+      ],
+      "outputTables": [
+        "assessments"
+      ],
+      "steps": [
+        {
+          "id": "check_inputs",
+          "reads": [
+            "object_states.kind",
+            "relationships.kind",
+            "relationships.status",
+            "door_schedule.clearWidth"
+          ],
+          "pseudocode": "Require supported navigable space/portal topology, usable widths and supplied scenario/rule inputs; distinguish this graph from general physical adjacency."
+        },
+        {
+          "id": "prepare_route",
+          "reads": [
+            "representations.purpose",
+            "coordinate_frames.lengthUnit",
+            "relationships.sourceObjectId",
+            "relationships.targetObjectId"
+          ],
+          "pseudocode": "If inputs support it, pass the explicitly scoped route graph and compatible spatial measurements to an identified assessment method. Candidate geometry alone cannot establish a usable path."
+        },
+        {
+          "id": "report",
+          "reads": [
+            "assessments.result",
+            "assessments.reason"
+          ],
+          "pseudocode": "Report supported method results only for assessed scope; missing topology, obstacles or rule inputs keep the assessment incomplete. Do not claim whole-building safety from a partial graph."
+        }
+      ],
+      "policies": [
+        "topology-evidence",
+        "coordinate-resolution",
+        "assessment-completeness"
+      ],
+      "missingDataBehavior": "Missing paths are unresolved until topology coverage is established. Missing designated exits, occupancy, usable widths or applicable rules blocks a definitive outcome.",
+      "countingBasis": "One assessment per subject and requirement in the scenario; multiple representations or candidate paths do not multiply occupants or assessed spaces.",
+      "acceptanceExamples": [
+        "Synthetic: missing portal topology returns incomplete rather than 'no exit' or pass.",
+        "Synthetic: bounds touching two spaces does not establish a traversable portal."
+      ],
+      "openQuestions": [
+        "Portals, navigable route geometry, travel-distance methods and scenarios are required future contracts.",
+        "Which narrowly scoped assessment should be validated first?"
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "asset_handover",
+      "title": "Maintainable asset and handover register",
+      "roleIds": [
+        "owner",
+        "facility_manager",
+        "project_manager"
+      ],
+      "question": "Where are our maintainable assets, which manuals are linked, and which handover requirements remain unresolved?",
+      "decision": "Prioritize delivery corrections and locate assets without loading the whole model's geometry.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and project/building scope; do not combine overlapping revisions as additional objects.",
+          "required": true
+        },
+        {
+          "id": "asset_scope",
+          "description": "Selected building/system/package and maintainability criteria.",
+          "required": true
+        },
+        {
+          "id": "handover_requirements",
+          "description": "Versioned required documents and applicability criteria.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "asset_register",
+        "representations",
+        "assessments"
+      ],
+      "requiredFields": [
+        "asset_register.objectId",
+        "asset_register.name",
+        "asset_register.location",
+        "asset_register.maintainability",
+        "asset_register.manuals",
+        "representations.objectId",
+        "representations.purpose",
+        "assessments.result"
+      ],
+      "outputTables": [
+        "asset_register",
+        "assessments"
+      ],
+      "steps": [
+        {
+          "id": "select_assets",
+          "reads": [
+            "asset_register.objectId",
+            "asset_register.maintainability",
+            "asset_register.location"
+          ],
+          "pseudocode": "Select identified assets under explicit maintainability and scope criteria; report uncertain identity, classification or location separately."
+        },
+        {
+          "id": "check_handover",
+          "reads": [
+            "asset_register.manuals",
+            "assessments.result"
+          ],
+          "pseudocode": "Assess supplied applicable handover requirements against evidenced links; a document link does not itself establish document adequacy."
+        },
+        {
+          "id": "locate",
+          "reads": [
+            "representations.objectId",
+            "representations.purpose",
+            "asset_register.name"
+          ],
+          "pseudocode": "Return readable location and references to appropriate representations for requested assets; unknown geometry does not erase the asset."
+        }
+      ],
+      "policies": [
+        "identity-reconciliation",
+        "property-selection",
+        "assessment-completeness"
+      ],
+      "missingDataBehavior": "Unknown maintainability is not automatically excluded; expose it as a classification gap. Missing location or manuals remain explicit. Unmatched source objects are not automatically merged.",
+      "countingBasis": "One identified asset occurrence in selected delivery scope; type records, reusable meshes and duplicate representations are not extra assets.",
+      "acceptanceExamples": [
+        "Synthetic: an asset with a known room but no geometry appears in the register and can have an incomplete manual requirement.",
+        "Synthetic: two confirmed source records for one asset produce one asset-register entry."
+      ],
+      "openQuestions": [
+        "External document identity, warranties, maintenance requirements and document adequacy checks need dedicated contracts.",
+        "What asset classifications and required handover fields should lead?"
+      ],
+      "maturity": "detailed"
+    },
+    {
+      "id": "planning",
+      "title": "Package readiness",
+      "roleIds": [
+        "project_manager",
+        "general_contractor"
+      ],
+      "question": "Which packages lack decisions or delivery evidence needed to proceed?",
+      "decision": "Prioritize readiness blockers and identify the schedule or delivery information needed before committing work.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "work_packages",
+        "assessments"
+      ],
+      "requiredFields": [
+        "work_packages.id",
+        "work_packages.status",
+        "work_packages.objectIds",
+        "assessments.result"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "work_packages.id",
+            "work_packages.status",
+            "work_packages.objectIds",
+            "assessments.result"
+          ],
+          "pseudocode": "Select package scope; summarize supported blockers and unknown readiness. Modeled geometry does not establish readiness."
+        }
+      ],
+      "policies": [
+        "assessment-completeness",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Milestones, dependencies, responsibility and readiness policies need explicit contracts.",
+      "countingBasis": "One package; overlapping object assignments are not independent progress.",
+      "acceptanceExamples": [
+        "Synthetic: A package with no required delivery evidence remains readiness-unknown."
+      ],
+      "openQuestions": [
+        "Milestones, dependencies, responsibility and readiness policies need explicit contracts.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "coordination",
+      "title": "Cross-trade coordination",
+      "roleIds": [
+        "general_contractor",
+        "mechanical_trade",
+        "structural_engineer"
+      ],
+      "question": "Which trade objects have spatial coordination candidates needing investigation?",
+      "decision": "Prioritize cross-trade coordination review with identifiable participants and spatial evidence.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "work_packages",
+        "representations",
+        "coordinate_frames",
+        "assessments",
+        "spatial_bounds"
+      ],
+      "requiredFields": [
+        "work_packages.objectIds",
+        "representations.objectId",
+        "representations.purpose",
+        "representations.frameId",
+        "coordinate_frames.lengthUnit",
+        "assessments.result",
+        "spatial_bounds.objectId",
+        "spatial_bounds.frameId",
+        "spatial_bounds.dimension",
+        "spatial_bounds.min",
+        "spatial_bounds.max"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "filter_spatial_candidates",
+          "reads": [
+            "spatial_bounds.objectId",
+            "spatial_bounds.frameId",
+            "spatial_bounds.dimension",
+            "spatial_bounds.min",
+            "spatial_bounds.max"
+          ],
+          "pseudocode": "In a resolved common frame, filter envelopes by the requested region; deduplicate object identities. Return candidates for exact geometric testing, not confirmed clashes."
+        },
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "work_packages.objectIds",
+            "representations.objectId",
+            "representations.purpose",
+            "representations.frameId",
+            "coordinate_frames.lengthUnit",
+            "assessments.result"
+          ],
+          "pseudocode": "Select requested scope and registered representations; report spatial candidates under a named method. Require appropriate exact analysis before confirming interference."
+        }
+      ],
+      "policies": [
+        "spatial-candidate",
+        "coordinate-resolution",
+        "assessment-completeness"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Bounds, exact intersections, penetrations, clearances and temporary working envelopes need projections.",
+      "countingBasis": "One unordered object pair per rule; duplicate meshes do not multiply findings.",
+      "acceptanceExamples": [
+        "Synthetic: Bounds overlap alone is a candidate, not a confirmed clash."
+      ],
+      "openQuestions": [
+        "Bounds, exact intersections, penetrations, clearances and temporary working envelopes need projections.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "structural_takeoff",
+      "title": "Structural material takeoff",
+      "roleIds": [
+        "structural_trade",
+        "structural_engineer",
+        "estimator"
+      ],
+      "question": "What steel, concrete or timber quantities belong to this building or erection package?",
+      "decision": "Prepare structural procurement scope and identify unmeasured or ambiguously allocated material.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "component_schedule",
+        "material_contributions",
+        "quantity_observations"
+      ],
+      "requiredFields": [
+        "component_schedule.kind",
+        "component_schedule.objectId",
+        "material_contributions.objectId",
+        "material_contributions.materialId",
+        "material_contributions.quantityObservationId",
+        "quantity_observations.measurement",
+        "quantity_observations.basis"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "component_schedule.kind",
+            "component_schedule.objectId",
+            "material_contributions.objectId",
+            "material_contributions.materialId",
+            "material_contributions.quantityObservationId",
+            "quantity_observations.measurement",
+            "quantity_observations.basis"
+          ],
+          "pseudocode": "Select structural occurrences and accepted material contributions; group compatible quantities. Keep mass, volume and length distinct without evidenced conversions."
+        }
+      ],
+      "policies": [
+        "quantity-selection",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Grade, reinforcement, fabrication/pour/erection allocations and analytical properties need definitions.",
+      "countingBasis": "One non-overlapping material contribution; assembly and constituent totals are alternatives.",
+      "acceptanceExamples": [
+        "Synthetic: A duplicate representation of a 100 kg member does not add 100 kg."
+      ],
+      "openQuestions": [
+        "Grade, reinforcement, fabrication/pour/erection allocations and analytical properties need definitions.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "electrical_schedule",
+      "title": "Electrical device and circuit schedule",
+      "roleIds": [
+        "electrician",
+        "electrical_engineer",
+        "facility_manager"
+      ],
+      "question": "Which electrical devices are associated with each panel or circuit, and which associations lack evidence?",
+      "decision": "Review electrical scope and locate incomplete device-to-circuit or panel assignments.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "component_schedule",
+        "relationships",
+        "property_observations"
+      ],
+      "requiredFields": [
+        "component_schedule.objectId",
+        "component_schedule.kind",
+        "component_schedule.location",
+        "relationships.sourceObjectId",
+        "relationships.targetObjectId",
+        "relationships.kind",
+        "relationships.status",
+        "property_observations.value"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "component_schedule.objectId",
+            "component_schedule.kind",
+            "component_schedule.location",
+            "relationships.sourceObjectId",
+            "relationships.targetObjectId",
+            "relationships.kind",
+            "relationships.status",
+            "property_observations.value"
+          ],
+          "pseudocode": "Select electrical occurrences; follow evidenced circuit/panel associations; expose unmatched devices and unresolved load inputs. Proximity does not establish wiring."
+        }
+      ],
+      "policies": [
+        "topology-evidence",
+        "property-selection"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Circuit, panel, port, phase, diversified load and cable-route schemas remain undefined.",
+      "countingBasis": "Unique device occurrence; membership and physical connection have distinct meanings.",
+      "acceptanceExamples": [
+        "Synthetic: A nearby panel with no supported association is not assigned to a device."
+      ],
+      "openQuestions": [
+        "Circuit, panel, port, phase, diversified load and cable-route schemas remain undefined.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "plumbing_takeoff",
+      "title": "Plumbing and sanitation takeoff",
+      "roleIds": [
+        "plumbing_trade",
+        "plumbing_engineer",
+        "estimator"
+      ],
+      "question": "What pipe lengths, sizes, fittings and fixtures are supported for this supply or waste system?",
+      "decision": "Prepare pipework and fixture procurement while separating measurement gaps from topology gaps.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "component_schedule",
+        "quantity_observations",
+        "relationships"
+      ],
+      "requiredFields": [
+        "component_schedule.kind",
+        "component_schedule.objectId",
+        "quantity_observations.quantityKind",
+        "quantity_observations.measurement",
+        "quantity_observations.basis",
+        "relationships.kind",
+        "relationships.status"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "component_schedule.kind",
+            "component_schedule.objectId",
+            "quantity_observations.quantityKind",
+            "quantity_observations.measurement",
+            "quantity_observations.basis",
+            "relationships.kind",
+            "relationships.status"
+          ],
+          "pseudocode": "Select evidenced system scope and accepted lengths/counts; group compatible specifications; report unresolved membership and measurement basis."
+        }
+      ],
+      "policies": [
+        "quantity-selection",
+        "topology-evidence",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Pipe centerlines, sizes, slope, fittings and flow direction need typed projections.",
+      "countingBasis": "One pipe-run length or fitting/fixture occurrence; segmentation requires an explicit counting rule.",
+      "acceptanceExamples": [
+        "Synthetic: Unknown pipe length remains unmeasured rather than zero."
+      ],
+      "openQuestions": [
+        "Pipe centerlines, sizes, slope, fittings and flow direction need typed projections.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "landscape",
+      "title": "Planting, soil and land-cover scope",
+      "roleIds": [
+        "landscape_architect",
+        "landscape_trade",
+        "civil_engineer",
+        "earthworks_trade",
+        "sustainability_analyst"
+      ],
+      "question": "What planting, soil and permeable-surface quantities are supported for this site scenario?",
+      "decision": "Plan landscape procurement and identify inputs missing for ecological or water-demand analysis.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "component_schedule",
+        "quantity_observations",
+        "coordinate_frames",
+        "material_contributions"
+      ],
+      "requiredFields": [
+        "component_schedule.objectId",
+        "component_schedule.kind",
+        "component_schedule.location",
+        "quantity_observations.measurement",
+        "quantity_observations.basis",
+        "coordinate_frames.dimension",
+        "coordinate_frames.lengthUnit",
+        "material_contributions.materialId"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "component_schedule.objectId",
+            "component_schedule.kind",
+            "component_schedule.location",
+            "quantity_observations.measurement",
+            "quantity_observations.basis",
+            "coordinate_frames.dimension",
+            "coordinate_frames.lengthUnit",
+            "material_contributions.materialId"
+          ],
+          "pseudocode": "Select site scope in known frames; report accepted planting counts, surface areas and soil quantities separately. Ecological outcomes require supplied methods and inputs."
+        }
+      ],
+      "policies": [
+        "quantity-selection",
+        "coordinate-resolution",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Species, soil layers, land-cover classes, surveys, terrain, irrigation and habitat/water scenarios need contracts.",
+      "countingBasis": "Non-overlapping area/soil contributions or individual plants; planting areas are not plant counts.",
+      "acceptanceExamples": [
+        "Synthetic: Known soil area without depth does not establish soil volume."
+      ],
+      "openQuestions": [
+        "Species, soil layers, land-cover classes, surveys, terrain, irrigation and habitat/water scenarios need contracts.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "building_performance",
+      "title": "Building-performance input coverage",
+      "roleIds": [
+        "performance_analyst",
+        "mechanical_engineer",
+        "architect",
+        "owner"
+      ],
+      "question": "Which spaces and envelope components have the inputs needed for a stated performance scenario?",
+      "decision": "Prepare simulation inputs and distinguish comparable results from unsupported performance comparisons.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "object_states",
+        "property_observations",
+        "relationships",
+        "reference_sets",
+        "assessments"
+      ],
+      "requiredFields": [
+        "object_states.kind",
+        "object_states.location",
+        "property_observations.conceptId",
+        "property_observations.value",
+        "relationships.kind",
+        "reference_sets.kind",
+        "reference_sets.version",
+        "assessments.result"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "object_states.kind",
+            "object_states.location",
+            "property_observations.conceptId",
+            "property_observations.value",
+            "relationships.kind",
+            "reference_sets.kind",
+            "reference_sets.version",
+            "assessments.result"
+          ],
+          "pseudocode": "Assess supplied thermal, occupancy and boundary-condition requirements; compare results only under compatible method, period and denominator."
+        }
+      ],
+      "policies": [
+        "property-selection",
+        "assessment-completeness"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Observation series, simulation outputs, weather, occupancy schedules and thermal constructions are outside this draft.",
+      "countingBasis": "One input assessment; incompatible periods and repeated spaces are not additive.",
+      "acceptanceExamples": [
+        "Synthetic: Missing occupancy schedules prevents a complete input assessment."
+      ],
+      "openQuestions": [
+        "Observation series, simulation outputs, weather, occupancy schedules and thermal constructions are outside this draft.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "portfolio",
+      "title": "Comparable portfolio impact and coverage",
+      "roleIds": [
+        "portfolio_analyst",
+        "owner",
+        "sustainability_analyst"
+      ],
+      "question": "Which buildings have the greatest measured impact or data gaps on a comparable basis?",
+      "decision": "Prioritize portfolio investment or data investigation using compatible metrics and visible coverage.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "snapshots",
+        "object_states",
+        "source_links",
+        "quantity_observations",
+        "impact_lines"
+      ],
+      "requiredFields": [
+        "snapshots.id",
+        "object_states.kind",
+        "source_links.objectId",
+        "source_links.matchState",
+        "quantity_observations.basis",
+        "impact_lines.factorSetId",
+        "impact_lines.scenarioId",
+        "impact_lines.module",
+        "impact_lines.impact",
+        "impact_lines.status"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "snapshots.id",
+            "object_states.kind",
+            "source_links.objectId",
+            "source_links.matchState",
+            "quantity_observations.basis",
+            "impact_lines.factorSetId",
+            "impact_lines.scenarioId",
+            "impact_lines.module",
+            "impact_lines.impact",
+            "impact_lines.status"
+          ],
+          "pseudocode": "Choose non-overlapping building revisions and compatible scenarios, units and modules; report measured impact and unresolved scope. Do not rank intensity without comparable denominators."
+        }
+      ],
+      "policies": [
+        "identity-reconciliation",
+        "quantity-selection",
+        "factor-match",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Building metrics, portfolio membership, periods and denominator definitions remain open.",
+      "countingBasis": "One selected building/revision and metric basis; documents are not buildings.",
+      "acceptanceExamples": [
+        "Synthetic: Two revisions of one building are alternatives, not two buildings."
+      ],
+      "openQuestions": [
+        "Building metrics, portfolio membership, periods and denominator definitions remain open.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "architectural_spaces",
+      "title": "Space program and adjacency",
+      "roleIds": [
+        "architect",
+        "interior_designer",
+        "owner"
+      ],
+      "question": "Which spaces exist, how are they organized, and which program or adjacency requirements lack evidence?",
+      "decision": "Review spatial program completeness and identify unresolved design requirements.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "object_states",
+        "relationships",
+        "quantity_observations",
+        "assessments"
+      ],
+      "requiredFields": [
+        "object_states.objectId",
+        "object_states.kind",
+        "object_states.name",
+        "object_states.location",
+        "relationships.kind",
+        "relationships.sourceObjectId",
+        "relationships.targetObjectId",
+        "quantity_observations.measurement",
+        "assessments.result"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "object_states.objectId",
+            "object_states.kind",
+            "object_states.name",
+            "object_states.location",
+            "relationships.kind",
+            "relationships.sourceObjectId",
+            "relationships.targetObjectId",
+            "quantity_observations.measurement",
+            "assessments.result"
+          ],
+          "pseudocode": "Select spaces and supported containment/adjacency; compare supplied requirements against accepted area definitions. Touching, containing and navigably connected are distinct."
+        }
+      ],
+      "policies": [
+        "property-selection",
+        "topology-evidence",
+        "quantity-selection",
+        "assessment-completeness"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Space program, usable/gross area, boundaries and adjacency vocabulary need further definitions.",
+      "countingBasis": "Unique semantic spaces; overlapping zones are associations, not additional rooms.",
+      "acceptanceExamples": [
+        "Synthetic: One room in two zones counts once."
+      ],
+      "openQuestions": [
+        "Space program, usable/gross area, boundaries and adjacency vocabulary need further definitions.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "safety",
+      "title": "Work-area safety evidence",
+      "roleIds": [
+        "safety_auditor",
+        "general_contractor",
+        "project_manager"
+      ],
+      "question": "Which work areas have documented hazards or missing evidence for the selected work phase?",
+      "decision": "Prioritize inspections and supported mitigation review for a defined work phase.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "work_packages",
+        "object_states",
+        "representations",
+        "assessments"
+      ],
+      "requiredFields": [
+        "work_packages.id",
+        "work_packages.objectIds",
+        "work_packages.status",
+        "object_states.location",
+        "representations.purpose",
+        "assessments.result",
+        "assessments.reason"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "work_packages.id",
+            "work_packages.objectIds",
+            "work_packages.status",
+            "object_states.location",
+            "representations.purpose",
+            "assessments.result",
+            "assessments.reason"
+          ],
+          "pseudocode": "Select explicit phase and work scope; assess supplied rules with supported evidence. Permanent-object geometry cannot establish temporary-work safety."
+        }
+      ],
+      "policies": [
+        "assessment-completeness",
+        "spatial-candidate",
+        "coordinate-resolution"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Temporary assets, phase/time, hazards, inspections and mitigation responsibility need explicit contracts.",
+      "countingBasis": "One subject/requirement assessment in a work phase; observations are distinct from hazards.",
+      "acceptanceExamples": [
+        "Synthetic: No recorded hazards with unknown inspection coverage is not a safety pass."
+      ],
+      "openQuestions": [
+        "Temporary assets, phase/time, hazards, inspections and mitigation responsibility need explicit contracts.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "envelope",
+      "title": "Facade and envelope schedule",
+      "roleIds": [
+        "facade_trade",
+        "architect",
+        "performance_analyst",
+        "door_supplier"
+      ],
+      "question": "Which facade components and openings belong to each elevation and specification, and what remains unclassified?",
+      "decision": "Coordinate envelope procurement and identify unclassified components or missing specifications.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "component_schedule",
+        "property_observations",
+        "representations",
+        "coordinate_frames",
+        "quantity_observations"
+      ],
+      "requiredFields": [
+        "component_schedule.objectId",
+        "component_schedule.kind",
+        "component_schedule.location",
+        "property_observations.conceptId",
+        "property_observations.value",
+        "representations.frameId",
+        "coordinate_frames.lengthUnit",
+        "quantity_observations.basis"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "component_schedule.objectId",
+            "component_schedule.kind",
+            "component_schedule.location",
+            "property_observations.conceptId",
+            "property_observations.value",
+            "representations.frameId",
+            "coordinate_frames.lengthUnit",
+            "quantity_observations.basis"
+          ],
+          "pseudocode": "Select supported envelope classifications; group compatible quantities and specifications. Derive orientation only with established coordinate conventions."
+        }
+      ],
+      "policies": [
+        "property-selection",
+        "quantity-selection",
+        "coordinate-resolution",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Panels, glazing areas, elevation/orientation, performance specifications and interfaces need dedicated projections.",
+      "countingBasis": "One occurrence or surface contribution; gross wall and constituent glazing/opaque areas are not additive.",
+      "acceptanceExamples": [
+        "Synthetic: Missing frame orientation prevents an asserted north-facing classification."
+      ],
+      "openQuestions": [
+        "Panels, glazing areas, elevation/orientation, performance specifications and interfaces need dedicated projections.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    },
+    {
+      "id": "flooring",
+      "title": "Flooring, tiling and ceiling scope",
+      "roleIds": [
+        "flooring_trade",
+        "ceiling_trade",
+        "finishing_trade",
+        "interior_designer",
+        "estimator"
+      ],
+      "question": "What finish area belongs to each room and specification, and what skirting, transition or waste inputs are missing?",
+      "decision": "Prepare finish procurement scope and identify measurements, transitions and waste assumptions needing review.",
+      "parameters": [
+        {
+          "id": "snapshot_selection",
+          "description": "Explicit snapshot(s) and building/project scope, including non-overlap rules for revisions.",
+          "required": true
+        },
+        {
+          "id": "workflow_context",
+          "description": "Applicable scope, named measurement/assessment rules and external scenario inputs.",
+          "required": true
+        }
+      ],
+      "requiredTables": [
+        "finish_schedule",
+        "quantity_observations"
+      ],
+      "requiredFields": [
+        "finish_schedule.objectId",
+        "finish_schedule.space",
+        "finish_schedule.surfaceSide",
+        "finish_schedule.finish",
+        "finish_schedule.netArea",
+        "quantity_observations.basis",
+        "quantity_observations.selectionState"
+      ],
+      "outputTables": [],
+      "steps": [
+        {
+          "id": "explore_supported_inputs",
+          "reads": [
+            "finish_schedule.objectId",
+            "finish_schedule.space",
+            "finish_schedule.surfaceSide",
+            "finish_schedule.finish",
+            "finish_schedule.netArea",
+            "quantity_observations.basis",
+            "quantity_observations.selectionState"
+          ],
+          "pseudocode": "Select explicitly classified floor/ceiling contributions and accepted net areas; group by room/specification. Apply supplied waste separately from installed area."
+        }
+      ],
+      "policies": [
+        "quantity-selection",
+        "property-selection",
+        "scope-no-double-count"
+      ],
+      "missingDataBehavior": "Return supported partial facts and unresolved scope. Surface role, skirting, transitions, layout waste, supports and access panels need explicit projections.",
+      "countingBasis": "One finish surface contribution; room area and installed finish area are distinct bases.",
+      "acceptanceExamples": [
+        "Synthetic: 20 m2 installed and 10 percent waste gives 22 m2 procurement, not 42 m2 installed."
+      ],
+      "openQuestions": [
+        "Surface role, skirting, transitions, layout waste, supports and access panels need explicit projections.",
+        "Which source-backed example and bounded result shape should validate this candidate next?"
+      ],
+      "maturity": "candidate"
+    }
+  ]
+}

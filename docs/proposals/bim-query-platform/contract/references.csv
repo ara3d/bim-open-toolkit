@@ -1,0 +1,6 @@
+schema_path,target_table,scope,many,meaning
+/$defs/Evidence/properties/sourceRecordIds,source_records,snapshot,true,Original evidence records in the containing snapshot
+/$defs/Evidence/properties/referenceSetIds,reference_sets,global,true,Versioned external evidence sets
+/$defs/LocationValue/properties/placeIds,object_states,snapshot,true,Spatial object states; target kinds are checked semantically
+/$defs/Pose/properties/frameId,coordinate_frames,snapshot,false,Frame defining this pose
+/$defs/ObjectReferenceFact/oneOf/0/properties/value,object_states,snapshot,false,Available object association; finish schedules require a space

@@ -1,0 +1,67 @@
+domain_id,name,meaning,status,table_ids
+identity_source_history,Objects,Stable physical/place/logical identity separated from snapshot descriptions and source records,represented,objects;object_states
+identity_source_history,SourceDocuments,Source document identity is carried by record locators; document metadata and ownership need a dedicated contract,partial,source_records
+identity_source_history,SourceRevisions,Source revision identifiers occur in records and snapshots; addressable revision metadata and fingerprints remain undefined,partial,snapshots;source_records
+identity_source_history,SourceObjects,Original source row locators distinguish occurrence records from definitions and metadata,represented,source_records
+identity_source_history,Correspondences,Confirmed/candidate/rejected assertions relate source records to semantic identities with evidence,represented,source_links
+project_place,Projects,Project-kind objects and locations exist; a dedicated project overview and project-specific fields remain undefined,partial,objects;object_states
+project_place,Sites,Site-kind objects exist; site boundaries and geographical context need refinement,partial,objects;object_states
+project_place,Buildings,Building-kind objects exist; readable building summaries and source-to-building mapping need refinement,partial,objects;object_states
+project_place,Storeys,Storey-kind objects exist; elevations and multi-storey containment conventions remain undefined,partial,objects;object_states
+project_place,Spaces,Space-kind objects and finish associations exist; space boundaries and occupancy need refinement,partial,objects;object_states;finish_schedule
+project_place,Zones,Zone-kind objects exist; overlapping analytical zones need purpose and membership rules,partial,objects;object_states;relationships
+project_place,SpatialMemberships,Generic containment/location/membership assertions exist; spatial scope and overlap semantics remain provisional,partial,relationships;object_states
+coordinates_representations,CoordinateFrames,Declared dimensionality and parent transforms place coordinates in explicit frames,represented,coordinate_frames
+coordinates_representations,Placements,Available locations carry frame-referenced points; full occurrence orientation and reusable prototype placement remain incomplete,partial,object_states;coordinate_frames
+coordinates_representations,GeometryRepresentations,Addressable geometry is separated by object/purpose/frame with optional search envelopes,represented,representations;spatial_bounds
+building_fabric,Walls,Wall-kind component occurrences exist; typed wall construction and opening relationships need refinement,partial,object_states;component_schedule;relationships
+building_fabric,Floors,Floor-kind component occurrences exist; floor assemblies and typed floor schedules remain undefined,partial,object_states;component_schedule;finish_schedule
+building_fabric,Ceilings,Ceiling-kind component occurrences exist; ceiling assemblies and typed ceiling schedules remain undefined,partial,object_states;component_schedule;finish_schedule
+building_fabric,Roofs,Roof occurrences expose selected net surface and projected areas; full roof construction/specification remains incomplete,partial,object_states;roof_takeoff
+building_fabric,Doors,Door schedules expose fire rating and clear width; complete door/hardware specifications remain incomplete,partial,object_states;door_schedule
+building_fabric,Windows,Window-kind component occurrences exist; glazing and window performance specifications remain undefined,partial,object_states;component_schedule
+building_fabric,Openings,Opening-kind objects exist; void geometry and host/portal interpretation need refinement,partial,object_states;relationships
+building_fabric,Facades,Facade-kind component occurrences exist; panel/layer and thermal-envelope contracts remain undefined,partial,object_states;component_schedule
+building_fabric,Stairs,Stair-kind component occurrences exist; flights/landings/rises and navigable topology remain undefined,partial,object_states;component_schedule
+building_fabric,Railings,Railing-kind component occurrences exist; guard dimensions and safety specifications remain undefined,partial,object_states;component_schedule
+structure_civil,StructuralMembers,Structural-member occurrences exist; section/material/orientation and structural behavior fields need refinement,partial,object_states;component_schedule;material_contributions
+structure_civil,Foundations,Foundation-kind occurrences exist; foundation construction and load-bearing context remain undefined,partial,object_states;component_schedule
+structure_civil,Connections,Generic edges can associate structural objects; connection assemblies and structural joint semantics need a dedicated contract,partial,relationships
+structure_civil,Terrain,Terrain-kind objects and representations exist; existing/proposed surfaces and soil stratification remain undefined,partial,object_states;representations
+structure_civil,PavedAreas,Paved-area occurrences exist; pavement assemblies and surface grading remain undefined,partial,object_states;component_schedule
+structure_civil,DrainageAssets,Drainage-specific object types and catchment/capacity/service relationships require domain design,candidate,
+interiors_landscape,FinishSurfaces,Identified object faces retain selected finish/area and available or unresolved space association,represented,finish_schedule;quantity_scopes
+interiors_landscape,FinishLayers,Material parts and measurement scopes exist; ordered finish layers and their specifications remain undefined,partial,material_contributions;quantity_scopes
+interiors_landscape,Fixtures,Fixture-kind occurrences exist; fixture-specific specifications and service requirements remain undefined,partial,object_states;component_schedule
+interiors_landscape,Furniture,Furniture-kind occurrences exist; furniture schedules and procurement specifications remain undefined,partial,object_states;component_schedule
+interiors_landscape,PlantingAreas,Planting-area occurrences exist; soil/species/coverage and planting schedules remain undefined,partial,object_states;component_schedule
+interiors_landscape,LandscapeAssets,Landscape-asset occurrences exist; species/maturity and maintenance specifications remain undefined,partial,object_states;component_schedule;asset_register
+systems_equipment,Systems,System-kind objects and membership/serves edges exist; system-specific operating/design data need refinement,partial,object_states;relationships
+systems_equipment,Equipment,Equipment occurrences and maintainable-asset projections exist; engineering schedules remain incomplete,partial,object_states;component_schedule;asset_register
+systems_equipment,Ports,Port-kind objects and has_port edges exist; direction/capacity and compatible connector descriptions remain incomplete,partial,object_states;relationships
+systems_equipment,Connections,Accepted/candidate connectivity edges carry medium and evidence; electrical/fluid engineering constraints remain incomplete,partial,relationships
+systems_equipment,Circuits,Circuit-kind objects exist; phases/loads/protection and electrical calculation contracts remain undefined,partial,object_states;relationships
+systems_equipment,ServiceAreas,Generic serves edges and spatial objects exist; service-zone definitions and coverage rules remain incomplete,partial,object_states;relationships
+materials_measurement,MaterialDefinitions,Material identities exist; composition/product/specification fields need a dedicated contract,partial,objects;object_states
+materials_measurement,MaterialUses,An object material contribution references a scoped quantity and declares its accounting role,represented,material_contributions;quantity_scopes
+materials_measurement,Assemblies,Accounting roles distinguish assembly totals from leaf contributions; explicit ordered/nested assembly definitions remain incomplete,partial,material_contributions;relationships
+materials_measurement,QuantityObservations,Measurements retain scope/kind/basis/availability and selection provenance independently of geometry proxies,represented,quantity_observations;quantity_scopes
+commercial_delivery,WorkPackages,Named work scopes associate a trade and multiple objects without inventing geometry,represented,work_packages
+commercial_delivery,TradeAssignments,A work package carries a trade; multi-party assignments and responsibility history remain undefined,partial,work_packages
+commercial_delivery,EstimateItems,Scenario-specific estimate lines preserve quantity/rate matching and explicit unpriced outcomes,represented,estimate_lines
+commercial_delivery,Rates,Versioned reference sets and selected line rates exist; addressable rate-item catalogs and detailed pricing rules remain incomplete,partial,reference_sets;estimate_lines
+commercial_delivery,Deliveries,Delivery contents/status/acceptance and links to procurement or installation need a dedicated contract,candidate,
+commercial_delivery,Milestones,Schedule events/dependencies and completion evidence need a dedicated contract,candidate,
+operations_performance,Assets,Maintainable-object projections expose location and availability of manuals without counting representations as assets,represented,asset_register
+operations_performance,MaintenanceRequirements,Maintenance tasks/intervals/condition triggers and asset applicability need a dedicated contract,candidate,
+operations_performance,ObservationSeries,Timestamped measurements require time/unit/coverage and sensor-to-asset semantics,candidate,
+operations_performance,PerformanceResults,Observed/simulated operating performance requires scenario/time-period and calculation semantics,candidate,
+environment_assessment,EnvironmentalFactors,Reference editions and selected impact factors exist; addressable factor metadata and applicability remain incomplete,partial,reference_sets;impact_lines
+environment_assessment,ImpactResults,Scenario/module-specific material impact lines preserve factor references and incomplete outcomes,represented,impact_lines
+environment_assessment,Assessments,Subject/requirement/scenario results distinguish pass/fail/unknown/not-applicable with input completeness,represented,assessments
+environment_assessment,Findings,Assessment reasons exist; actionable findings with ownership/evidence/location and resolution history need a dedicated contract,partial,assessments
+environment_assessment,Requirements,Versioned requirement references exist; individual rule definitions and applicability need a dedicated contract,partial,reference_sets;assessments
+flexible_evidence,PropertyObservations,Typed property assertions preserve source labels and competing observations with availability and evidence,represented,property_observations
+flexible_evidence,Classifications,Versioned vocabularies and generic properties provide scaffolding; explicit classification assignments and editions remain incomplete,partial,reference_sets;property_observations
+flexible_evidence,Evidence,Shared inline evidence records distinguish source/derived/external/asserted origins and retain locators; replayable provenance remains incomplete,partial,source_links;relationships;property_observations;quantity_observations
+flexible_evidence,MappingDecisions,Correspondence and quantity-selection decisions retain evidence/policy identifiers; a complete versioned mapping-decision ledger remains undefined,partial,source_links;quantity_observations
