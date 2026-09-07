@@ -1,6 +1,6 @@
 # Persistence
 
-`serializeSceneDocument(document)` writes schema-v1 JSON. `parseSceneDocument(json)` and `validateSceneDocument(unknown)` return a `Result<SceneDocument>` with detached plain data. Invalid versions, missing fields, unknown fields, runtime objects, malformed tuples, nonfinite numbers and duplicate top-level IDs are rejected. Serialization throws on invalid data so callers cannot accidentally replace a valid save with a malformed save.
+`serializeSceneDocument(document)` writes schema-v1 JSON. `parseSceneDocument(json)` and `validateSceneDocument(unknown)` return a `Result<SceneDocument>` with detached plain data. Invalid versions, missing fields, unknown fields, runtime objects, malformed tuples, nonfinite numbers and duplicate top-level IDs are rejected. Color channels and opacity must lie in [0, 1]; camera zoom must be positive. Serialization throws on invalid data so callers cannot accidentally replace a valid save with a malformed save.
 
 ```ts
 const parsed = parseSceneDocument(savedJson);
@@ -19,9 +19,10 @@ Source strings are host-defined identifiers and must not contain credentials. No
 ## Track checkpoint
 
 - Contract: V1 acknowledged; shared checkout inspected clean before creating owned files.
-- State: verified.
+- State: verified, including numeric-domain and large-reference follow-up.
 - Owned files: `src/persistence.ts`, `test/persistence.test.ts`, `docs/persistence.md`.
-- Checks: `../../node_modules/.bin/vitest.cmd run test/persistence.test.ts --maxWorkers=1 --cache=false`: 19 passed (279 ms); standalone `tsc --noEmit` against `src/persistence.ts` with the package strict compiler flags passed. No build output or shared cache written.
+- Checks: `../../node_modules/.bin/vitest.cmd run test/persistence.test.ts --maxWorkers=1 --cache=false`: 25 passed (948 ms), including a 150,000-member set, selection and rule; standalone `tsc --noEmit` against `src/persistence.ts` with the package strict compiler flags passed. No build output or shared cache written.
 - Processes: none.
-- Outstanding: coordinated commit and supervisor integration.
+- Commit: `863f5cd` (`feat(scene): add validated scene persistence`); index clear after commit. This checkpoint update remains for the supervisor integration commit.
+- Outstanding: supervisor integration.
 - Blockers: none.

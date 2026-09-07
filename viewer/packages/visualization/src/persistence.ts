@@ -4,6 +4,8 @@ type Check = (value: unknown, path: string) => void;
 const invalid = (path: string, expected: string): never => { throw new Error(`${path}: expected ${expected}`); };
 const string: Check = (v, p) => { if (typeof v !== 'string') invalid(p, 'string'); };
 const number: Check = (v, p) => { if (typeof v !== 'number' || !Number.isFinite(v)) invalid(p, 'finite number'); };
+const unitInterval: Check = (v, p) => { number(v, p); if ((v as number) < 0 || (v as number) > 1) invalid(p, 'number in [0, 1]'); };
+const positive: Check = (v, p) => { number(v, p); if ((v as number) <= 0) invalid(p, 'positive number'); };
 const boolean: Check = (v, p) => { if (typeof v !== 'boolean') invalid(p, 'boolean'); };
 const enumeration = (...values: unknown[]): Check => (v, p) => { if (!values.includes(v)) invalid(p, values.join(' | ')); };
 const plainArray: Check = (v, p) => {
@@ -15,10 +17,10 @@ const plainArray: Check = (v, p) => {
     if (!descriptor || !('value' in descriptor) || !descriptor.enumerable) invalid(`${p}[${i}]`, 'plain array element');
   }
 };
-const tuple = (length: number): Check => (v, p) => {
+const tuple = (length: number, check: Check = number): Check => (v, p) => {
   plainArray(v, p);
   if (!Array.isArray(v) || v.length !== length) invalid(p, `${length}-number tuple`);
-  for (let i = 0; i < length; i++) number((v as unknown[])[i], `${p}[${i}]`);
+  for (let i = 0; i < length; i++) check((v as unknown[])[i], `${p}[${i}]`);
 };
 const array = (check: Check): Check => (v, p) => {
   plainArray(v, p);
@@ -41,7 +43,7 @@ const object = (required: Record<string, Check>, optional: Record<string, Check>
 };
 const ref = object({ modelId: string, objectId: string });
 const modelRef = object({ id: string, revision: string }, { source: string });
-const appearanceFields = { color: tuple(3), opacity: number, visible: boolean };
+const appearanceFields = { color: tuple(3, unitInterval), opacity: unitInterval, visible: boolean };
 const style = object({}, appearanceFields);
 const record = object({ ref, appearance: object(appearanceFields), transform: tuple(16) }, { name: string, sourceId: string });
 const operations: Record<string, Check> = {
@@ -57,7 +59,7 @@ const operation: Check = (v, p) => {
   if (typeof kind !== 'string' || !Object.hasOwn(operations, kind)) invalid(`${p}.kind`, 'add | delete | transform | style');
   operations[kind]!(v, p);
 };
-const camera = object({ position: tuple(3), target: tuple(3), up: tuple(3), projection: enumeration('perspective', 'orthographic'), zoom: number });
+const camera = object({ position: tuple(3), target: tuple(3), up: tuple(3), projection: enumeration('perspective', 'orthographic'), zoom: positive });
 const rule = object({ id: string, members: array(ref), style });
 const scene = object({
   schemaVersion: enumeration(1), models: array(modelRef),
@@ -126,10 +128,10 @@ export async function restoreSceneDocument(document: SceneDocument, resolver: Mo
     }
     const available = new Set(models.flatMap(model => model.objects.map(object => objectKey(object.ref))));
     const refs: ObjectRef[] = [];
-    for (const set of validated.value.sets) refs.push(...set.members);
+    for (const set of validated.value.sets) for (const member of set.members) refs.push(member);
     for (const view of validated.value.views) {
-      refs.push(...view.selection);
-      for (const rule of view.rules) refs.push(...rule.members);
+      for (const member of view.selection) refs.push(member);
+      for (const rule of view.rules) for (const member of rule.members) refs.push(member);
     }
     for (const layer of validated.value.layers) for (const edit of layer.operations) {
       if (edit.kind === 'add') available.add(objectKey(edit.object.ref));

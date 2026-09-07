@@ -51,6 +51,36 @@ describe('scene persistence', () => {
     expect(invoked).toBe(false);
   });
 
+  it.each([-0.01, 1.01])('rejects out-of-range appearance value %s in rules and added objects', value => {
+    const document = fixture();
+    const view = document.views[0]!;
+    const makeRule = (style: unknown) => ({ ...document, views: [{ ...view, rules: [{ id: 'bad', members: [ref], style }] }] });
+    expect(validateSceneDocument(makeRule({ opacity: value })).ok).toBe(false);
+    expect(validateSceneDocument(makeRule({ color: [0, value, 1] })).ok).toBe(false);
+    expect(validateSceneDocument({ ...document, layers: [{ id: 'bad', enabled: true, operations: [{ kind: 'add', object: { ...object, appearance: { ...object.appearance, opacity: value } } }] }] }).ok).toBe(false);
+  });
+
+  it.each([0, -1])('rejects nonpositive zoom %s', zoom => {
+    const document = fixture();
+    const view = document.views[0]!;
+    expect(validateSceneDocument({ ...document, views: [{ ...view, camera: { ...view.camera, zoom } }] }).ok).toBe(false);
+  });
+
+  it('accepts appearance endpoints and small positive zoom', () => {
+    const document = fixture();
+    const view = document.views[0]!;
+    expect(validateSceneDocument({ ...document, views: [{ ...view, camera: { ...view.camera, zoom: 0.001 }, rules: [{ id: 'endpoints', members: [], style: { color: [0, 0.5, 1], opacity: 0 } }] }] }).ok).toBe(true);
+  });
+
+  it('restores large reference collections without spreading function arguments', async () => {
+    const document = fixture();
+    const members = Array.from({ length: 150_000 }, () => ref);
+    const view = document.views[0]!;
+    const result = await restoreSceneDocument({ ...document, sets: [{ id: 'large', name: 'Large', members }], views: [{ ...view, selection: members, rules: [{ id: 'large-rule', members, style: {} }] }] }, async () => model());
+    expect(result.ok).toBe(true);
+    expect(result.diagnostics).toEqual([]);
+  });
+
   it('restores through host resolution and preserves saved data', async () => {
     const document = fixture();
     const result = await restoreSceneDocument(document, async reference => {
