@@ -8,6 +8,13 @@ September 7 performance follow-up: [Snowdon frame investigation](snowdon-perform
 
 ## Current direction
 
+September 7 BFAST follow-up: [prepared-model loading evidence](bfast-loading.md)
+records signature-based BFAST support through the existing BOS APIs, a local
+gallery fixture choice, exact-source Snowdon geometry parity and browser checks.
+The small CPU sample shows about 3.5× faster parsing plus group conversion;
+larger transfer size, absent property/source-ID tables and synchronous parsing
+remain explicit limits. This extends F02 without closing its remaining gates.
+
 Continue the authorized implementation through useful independent increments. Snowdon is the primary integration fixture. Each feature has a small demo viewer, reset/cleanup behavior, focused tests and explicit limitations. Keep all three subagent slots occupied when independent work is ready; coordinator owns integration, browser validation and plan updates. Postpone high-cost specialist features rather than compromising the common foundation.
 
 Skills: Parallel Wave and Platonic Coder. Shared checkout on main; preserve the pre-existing unpublished foundation commit. Agents commit only owned files under serialized commit turns. Publication must not accidentally include unrelated history. No private model/projection data enters the distribution.

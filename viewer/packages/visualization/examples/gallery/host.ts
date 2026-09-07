@@ -10,7 +10,7 @@ import { observeResize } from '../observe-resize.js';
 
 /** One route, one renderer; feature controls are mounted only after its model is ready. */
 export async function mountViewer(feature: FeatureDemo, root: HTMLElement): Promise<() => void> {
-  root.innerHTML = `<div class="feature-top"><a href="./">← Feature gallery</a><span id="model-count">Opening model</span></div><div class="lab"><section class="viewport"><canvas aria-label="3D feature viewer"></canvas><p class="viewport-note" role="status">Loading Snowdon…</p></section><aside><h1></h1><p class="description"></p><label>Model<select id="model-choice"><option value="snowdon">Snowdon · primary fixture</option><option value="small">Small deterministic fixture</option></select></label><div class="baseline"><button id="fit">Fit model</button><button id="reset">Reset feature</button><button id="cancel">Cancel load</button></div><div id="feature-controls"></div><details><summary>Source and verification</summary><a id="source-link">Feature source</a><p id="test-command"></p></details></aside></div>`;
+  root.innerHTML = `<div class="feature-top"><a href="./">← Feature gallery</a><span id="model-count">Opening model</span></div><div class="lab"><section class="viewport"><canvas aria-label="3D feature viewer"></canvas><p class="viewport-note" role="status">Loading Snowdon…</p></section><aside><h1></h1><p class="description"></p><label>Model<select id="model-choice"><option value="snowdon">Snowdon · primary fixture</option><option value="bfast">Snowdon · prepared BFAST</option><option value="small">Small deterministic fixture</option></select></label><div class="baseline"><button id="fit">Fit model</button><button id="reset">Reset feature</button><button id="cancel">Cancel load</button></div><div id="feature-controls"></div><details><summary>Source and verification</summary><a id="source-link">Feature source</a><p id="test-command"></p></details></aside></div>`;
   const canvas = root.querySelector('canvas')!;
   const panel = root.querySelector<HTMLElement>('#feature-controls')!;
   root.querySelector('h1')!.textContent = feature.title;
@@ -55,7 +55,8 @@ export async function mountViewer(feature: FeatureDemo, root: HTMLElement): Prom
   },{signal:controller.signal});
   root.querySelector<HTMLButtonElement>('#cancel')!.onclick = () => { controller.abort(); status('Load cancelled. Choose a model to retry.'); };
   const choice = root.querySelector<HTMLSelectElement>('#model-choice')!;
-  choice.value = new URLSearchParams(location.search).get('model') === 'small' ? 'small' : 'snowdon';
+  const requestedModel = new URLSearchParams(location.search).get('model');
+  choice.value = requestedModel === 'small' || requestedModel === 'bfast' ? requestedModel : 'snowdon';
   choice.onchange = () => { dispose(); const url = new URL(location.href); url.searchParams.set('model',choice.value); location.href = url.href; };
   try {
     viewer.attach(canvas);
@@ -69,15 +70,15 @@ export async function mountViewer(feature: FeatureDemo, root: HTMLElement): Prom
     openingStage='Model loading';
     const started = performance.now();
     let revision='small-fixture';
-    if(choice.value==='snowdon'){
-      const response=await fetch('/__fixtures/snowdon-info.json',{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(15000)])});
+    if(choice.value!=='small'){
+      const response=await fetch(choice.value === 'bfast' ? '/__fixtures/snowdon-bfast-info.json' : '/__fixtures/snowdon-info.json',{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(15000)])});
       if(!response.ok)throw new Error(`Snowdon metadata endpoint failed (${response.status}).`);
       const info:unknown=await response.json();
       if(!info||typeof info!=='object'||!('sha256'in info)||typeof info.sha256!=='string'||!/^[a-f0-9]{64}$/i.test(info.sha256))throw new Error('Invalid Snowdon fingerprint metadata.');
       revision=`sha256:${info.sha256}`;
     }
     let lastProgress = 0;
-    const result = choice.value === 'small' ? {ok:true as const,value:smallFixture(),diagnostics:[]} : await loadBosModel('/__fixtures/snowdon.bos',{id:'snowdon',revision},{sourceUp:'Z',signal:controller.signal,onProgress:p=>{
+    const result = choice.value === 'small' ? {ok:true as const,value:smallFixture(),diagnostics:[]} : await loadBosModel(choice.value === 'bfast' ? '/__fixtures/snowdon.bfast' : '/__fixtures/snowdon.bos',{id:'snowdon',revision},{sourceUp:'Z',signal:controller.signal,onProgress:p=>{
       if(performance.now()-lastProgress>100 || p.loaded===p.total){lastProgress=performance.now();status(`Snowdon · ${p.stage} ${p.loaded}${p.total ? ` / ${p.total}` : ''}`);}
     }});
     if (disposed || controller.signal.aborted) return dispose;

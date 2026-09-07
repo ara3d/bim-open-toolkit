@@ -20,6 +20,16 @@ knowledge lives here — viewer-core knows nothing about files.
   `{ stage: 'fetch' | 'parse' | 'convert', loaded, total? }`, and add each
   group to the scene as it is produced rather than in one batch.
 
+- **BFAST** (`loadBfast`, also auto-detected by `loadBos`): reads Ara 3D's
+  uncompressed render model without ZIP/Parquet decoding. `parseBfastModel`
+  and `bfastToGroups` expose parsing and conversion separately. Mesh vertices
+  and indices remain views on the source bytes. Triangle models with instance
+  RGBA, roughness/metalness, transforms, flags and entity row indices are
+  supported. Lines, quads and vertex colors return explicit errors.
+  BFAST is prepared geometry, not a lossless archive of BOS property tables:
+  LocalId and entities without instance records are unavailable. Do not mutate
+  source bytes while groups borrow them. Fetching is whole-file, not streaming.
+
 ## Usage
 
 ```ts
@@ -31,6 +41,7 @@ await loadGlb('model.glb', viewer.scene, {
   onProgress: (p) => console.log(p.stage, p.loaded, p.total),
 });
 await loadBos('model.bos', viewer.scene);
+await loadBos('model.bfast', viewer.scene); // detected by header, not extension
 ```
 
 Sources can be a URL, `ArrayBuffer`, or `Blob`. The lower-level pieces
@@ -46,6 +57,10 @@ The BOS reader is ported from the `@ara3d/ara3d-webgl` npm package v1.3.15
 (`src/loader/bimOpenSchemaLoader.ts`, `bimGeometry.ts`, `buildInstances.ts`,
 recovered from the package's published source map). Source repo:
 https://github.com/ara3d/ara3d-webgl
+
+The BFAST container and render-record readers are adapted from that repository's
+`src/loader/bfast.ts` and `renderModel.ts`, with its MIT notice retained in source
+and emitted JavaScript. Test fixture serialization uses its `tests/writeBFast.mts`.
 
 ## Tests
 

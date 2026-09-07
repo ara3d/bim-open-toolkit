@@ -20,3 +20,6 @@ export {
   bosToGroups,
 } from './bos-geometry.js';
 export { parseBosGeometry, loadBos } from './bos-loader.js';
+export { isBFast } from './bfast.js';
+export { parseBfastModel, bfastToGroups, loadBfast } from './bfast-loader.js';
+export type { RenderModel } from './renderModel.js';

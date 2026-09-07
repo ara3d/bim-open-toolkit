@@ -10,6 +10,8 @@ import { ViewerScene } from '@ara3d/viewer-core';
 import { LoadOptions, LoadSource } from './progress.js';
 import { toArrayBuffer } from './fetch-buffer.js';
 import { BosConvertResult, BosGeometry, bosToGroups } from './bos-geometry.js';
+import { isBFast } from './bfast.js';
+import { loadBfast } from './bfast-loader.js';
 
 type TypedArrayCtor =
   | Int32ArrayConstructor
@@ -115,6 +117,7 @@ export async function loadBos(
 ): Promise<BosConvertResult> {
   const onProgress = options.onProgress;
   const buffer = await toArrayBuffer(source, onProgress);
+  if (isBFast(buffer)) return loadBfast(buffer, scene, options);
   onProgress?.({ stage: 'parse', loaded: 0, total: 1 });
   const bos = await parseBosGeometry(buffer);
   onProgress?.({ stage: 'parse', loaded: 1, total: 1 });

@@ -1,5 +1,5 @@
 import { InstancedGroup } from '@ara3d/viewer-core';
-import { bosToGroups, parseBosGeometry, type LoadProgress, type LoadSource } from '@ara3d/viewer-loaders';
+import { bosToGroups, parseBosGeometry, isBFast, parseBfastModel, bfastToGroups, type LoadProgress, type LoadSource } from '@ara3d/viewer-loaders';
 import { Matrix4 as ThreeMatrix4 } from 'three';
 import { identityMatrix, type Matrix4, type ModelData, type ModelRef, type ObjectRecord, type Result } from './contracts.js';
 import type { InstanceBinding } from './render.js';
@@ -51,19 +51,22 @@ export async function loadBosModel(source: LoadSource, modelRef: ModelRef, optio
     check();
     const buffer = await sourceBuffer(source, { ...options, onProgress: progress });
     const signature = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 4));
-    if (signature.length < 4 || signature[0] !== 0x50 || signature[1] !== 0x4b || signature[2] !== 3 || signature[3] !== 4)
-      throw new Error('Invalid BOS file: expected a ZIP archive (PK header). The response may be an HTML error page or a truncated file.');
+    const bfast = isBFast(buffer);
+    if (!bfast && (signature.length < 4 || signature[0] !== 0x50 || signature[1] !== 0x4b || signature[2] !== 3 || signature[3] !== 4))
+      throw new Error('Invalid BOS file: expected a ZIP archive (PK header) or BFAST model. The response may be an HTML error page or a truncated file.');
     check(); progress({ stage: 'parse', loaded: 0, total: 1 });
-    const bos = await parseBosGeometry(buffer);
+    const prepared = bfast ? parseBfastModel(buffer) : null;
+    const bos = prepared ? null : await parseBosGeometry(buffer);
     check(); progress({ stage: 'parse', loaded: 1, total: 1 });
     // The converter's source-ID fallback can collide with another entity row's LocalId.
     // Use entity rows for runtime identity and keep source IDs as separate metadata.
-    const converted = bosToGroups({ ...bos, EntityLocalId: null }, (_group, index, total) => progress({ stage: 'convert', loaded: index + 1, total: total * 2 }));
+    const onGroup = (_group: InstancedGroup, index: number, total: number) => progress({ stage: 'convert', loaded: index + 1, total: total * 2 });
+    const converted = prepared ? bfastToGroups(prepared, onGroup) : bosToGroups({ ...bos!, EntityLocalId: null }, onGroup);
     const objects = new Map<number, ObjectRecord>();
     const addObject = (entity: number) => {
       if (!Number.isInteger(entity) || entity < 0) throw new Error('Invalid BOS entity index');
       if (!objects.has(entity)) {
-        const sourceId = bos.EntityLocalId?.[entity];
+        const sourceId = bos?.EntityLocalId?.[entity];
         objects.set(entity, {
           ref: { modelId: modelRef.id, objectId: `bos:${entity}` }, name: sourceId && sourceId > 0 ? `Object ${sourceId}` : `Entity ${entity}`,
           ...(sourceId !== undefined && sourceId > 0 ? { sourceId: String(sourceId) } : {}),
@@ -72,8 +75,9 @@ export async function loadBosModel(source: LoadSource, modelRef: ModelRef, optio
       }
       return objects.get(entity)!;
     };
-    for (let entity = 0; entity < (bos.EntityLocalId?.length ?? 0); entity++) addObject(entity);
-    for (const entity of bos.InstanceEntityIndex) addObject(entity);
+    for (let entity = 0; entity < (bos?.EntityLocalId?.length ?? 0); entity++) addObject(entity);
+    if (bos) for (const entity of bos.InstanceEntityIndex) addObject(entity);
+    if (prepared) for (let i = 13; i < prepared.instanceInts.length; i += 16) addObject(prepared.instanceInts[i]!);
     const conversion = options.sourceUp === 'Z' ? new ThreeMatrix4().makeRotationX(-Math.PI / 2) : new ThreeMatrix4();
     const matrix = new ThreeMatrix4(), sourceMatrix = new ThreeMatrix4();
     const transformBuffer = new Float32Array(16);

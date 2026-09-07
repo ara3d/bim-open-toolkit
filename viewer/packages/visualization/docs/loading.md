@@ -1,6 +1,25 @@
-# BOS model loading and representation placement
+# BOS and BFAST model loading and representation placement
 
 `loadBosModel(source, modelRef, options)` returns `Promise<Result<LoadedBosModel>>`, where the value contains `model: ModelData` and `bindings: InstanceBinding[]`. Source accepts URL, ArrayBuffer, or Blob. Options accept `signal`, `onProgress`, and `sourceUp: 'Y' | 'Z'` (default Y). A host explicitly adds the successful bindings to its render adapter; loading never populates a scene itself.
+
+BOS ZIP and prepared Ara 3D BFAST are detected by their byte signatures through
+this same API: `loadBosModel('/model.bfast', modelRef, options)`. BFAST skips ZIP,
+Parquet, fixed-point vertex conversion and TRS composition. Triangle geometry
+borrows file-backed vertex/index views; instance transforms and materials are
+converted directly. Source bytes must remain immutable while the model is used.
+Unsupported line/quad primitives and vertex colors fail visibly.
+
+Both formats use `bos:<entity-row>` object identity. BFAST retains records for
+hidden and mesh-free instances, but contains no LocalId/property tables or
+unreferenced entity rows; no source IDs or missing objects are invented. Use a
+new model revision for the prepared file. Hidden geometry is skipped, as in BOS.
+Cancellation and normalization use the same path; parsing/group conversion is
+synchronous and full-file, not a streaming or worker implementation.
+
+The gallery's **Snowdon · prepared BFAST** choice uses the sibling
+`ara3d-webgl/docs/snowdon.bfast` by default. Set `SNOWDON_BFAST_PATH` to override
+it before starting `npm run demo`; the model is served locally and never bundled.
+See [BFAST verification](bfast-loading.md) for exact-fixture parity and measurements.
 
 ```ts
 const controller = new AbortController();

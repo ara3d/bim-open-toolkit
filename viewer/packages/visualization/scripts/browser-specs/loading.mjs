@@ -8,6 +8,20 @@ const status = async (page, text) => {
 
 export const scenarios = [
   {
+    name: 'BFAST Snowdon loads, changes appearance and resets',
+    feature: 'appearance', model: 'bfast',
+    async run(page) {
+      assert.match(await page.locator('#model-count').innerText(), /objects/);
+      await button(page, 'Synthetic categories').click();
+      await status(page, /Synthetic index % 3: 0 blue/);
+      await button(page, 'Ghost objects').click();
+      await status(page, /opacity 18%/);
+      await button(page, 'Reset appearance demo').click();
+      await status(page, /Original source colors/);
+      await button(page, 'Fit model').click();
+    },
+  },
+  {
     name: 'Loading faults reject without replacing the small model',
     feature: 'loading-checks', model: 'small',
     async run(page) {
