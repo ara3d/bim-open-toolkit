@@ -22,7 +22,7 @@ describe('batched scene mirror', () => {
     expect(mirror.objectCount).toBe(1001);
     expect(mirror.getObject(model.groups[0])).toBeUndefined();
     expect(mirror.scene.children).toHaveLength(1);
-    const batch = mirror.scene.children[0] as BatchedMesh;
+    const batch = mirror.scene.children[0].children[0] as BatchedMesh;
     expect(batch.instanceCount).toBe(1001);
     expect(batch.geometry.getAttribute('position').count).toBe(3);
     expect(mirror.sync()).toBe(false);
@@ -82,7 +82,7 @@ describe('batched scene mirror', () => {
     expect(mirror.raycast(ray).map(hit => [hit.group, hit.instanceIndex, hit.distance])).toEqual([[item, 0, 5], [item, 1, 7]]);
     item.setColor(0, 1, 0, 0, 0);
     expect(mirror.raycast(ray).map(hit => hit.instanceIndex)).toEqual([1]);
-    const material = threshold === 0 ? (mirror.scene.children[0] as BatchedMesh).material : mirror.getObject(item)!.mesh!.material;
+    const material = threshold === 0 ? (mirror.scene.children[0].children[0] as BatchedMesh).material : mirror.getObject(item)!.mesh!.material;
     if (Array.isArray(material)) throw new Error('Expected one material');
     material.clippingPlanes = [new Plane(new Vector3(0, 0, 1), 1)];
     expect(mirror.raycast(ray)).toEqual([]);
@@ -103,7 +103,7 @@ describe('batched scene mirror', () => {
     model.addGroup(second);
     const mirror = new SceneObject(model, 0);
     mirror.sync();
-    const oldBatch = mirror.scene.children[0] as BatchedMesh;
+    const oldBatch = mirror.scene.children[0].children[0] as BatchedMesh;
     const geometryDisposed = vi.fn();
     const materialDisposed = vi.fn();
     oldBatch.geometry.addEventListener('dispose', geometryDisposed);
@@ -116,7 +116,7 @@ describe('batched scene mirror', () => {
     expect(mirror.objectCount).toBe(1);
     first.append(identity(), rgba(1, 1, 1, 1));
     mirror.sync();
-    expect((mirror.scene.children[0] as BatchedMesh).instanceCount).toBe(2);
+    expect((mirror.scene.children[0].children[0] as BatchedMesh).instanceCount).toBe(2);
     mirror.dispose();
     expect(mirror.scene.children).toHaveLength(0);
     expect(mirror.objectCount).toBe(0);

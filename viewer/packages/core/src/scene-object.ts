@@ -28,7 +28,7 @@ export class SceneObject {
   private batchMembers = new Map<InstancedGroup, number>();
   private batched = false;
 
-  constructor(model: ViewerScene, private readonly batchThreshold = 1000) {
+  constructor(model: ViewerScene, private readonly batchThreshold = 1000, private readonly packedGeometry = true) {
     this.model = model;
   }
 
@@ -54,8 +54,8 @@ export class SceneObject {
     if (useBatches) {
       if (groups.length !== this.batchMembers.size || groups.some(group => this.batchMembers.get(group) !== group.countVersion)) {
         this.clearMirrors();
-        this.batches = createBatchObjects(groups);
-        for (const batch of this.batches) this.scene.add(batch.mesh);
+        this.batches = createBatchObjects(groups, this.packedGeometry);
+        for (const batch of this.batches) this.scene.add(batch.root);
         this.batchMembers = new Map(groups.map(group => [group, group.countVersion]));
         return true;
       }
@@ -102,7 +102,7 @@ export class SceneObject {
         result.push({ group, instanceIndex, point, distance });
     };
     for (const batch of this.batches) {
-      if (!batch.mesh.visible) continue;
+      if (!batch.root.visible) continue;
       for (const hit of raycaster.intersectObject(batch.mesh, false)) {
         if (hit.batchId === undefined) continue;
         const instance = batch.instances[hit.batchId];
@@ -132,7 +132,7 @@ export class SceneObject {
     }
     this.objects.clear();
     for (const batch of this.batches) {
-      this.scene.remove(batch.mesh);
+      this.scene.remove(batch.root);
       batch.dispose();
     }
     this.batches = [];

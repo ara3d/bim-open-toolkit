@@ -18,6 +18,8 @@ export interface ViewerOptions {
   /** Background color as 0xRRGGBB, or null for transparent. */
   readonly background?: number | null;
   readonly antialias?: boolean;
+  /** Pack small opaque surfaces into fewer draws. Disable to reduce mirror memory. Default true. */
+  readonly packedGeometry?: boolean;
 }
 
 /**
@@ -30,7 +32,7 @@ export class Viewer {
   readonly scene = new ViewerScene();
   readonly camera: PerspectiveCamera;
 
-  private readonly sceneObject = new SceneObject(this.scene);
+  private readonly sceneObject: SceneObject;
   private readonly antialias: boolean;
   private renderer: WebGLRenderer | null = null;
   private running = false;
@@ -41,6 +43,7 @@ export class Viewer {
   private cameraOverride: Camera | null = null;
 
   constructor(options: ViewerOptions = {}) {
+    this.sceneObject = new SceneObject(this.scene, 1000, options.packedGeometry ?? true);
     this.camera = new PerspectiveCamera(
       options.fov ?? 50.0,
       1.0,

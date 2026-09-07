@@ -15,3 +15,22 @@ The original renderer creates 15 BatchedMesh objects, six of which contain fract
 Initial measurements show roughly 350–420 ms median RAF intervals. Opaque sorting removal substantially reduces CPU preparation without a corresponding frame-rate improvement. Halving both drawing-buffer dimensions and replacing standard lighting with an unlit override also leaves intervals near this range. Bypassing mirror synchronization does not remove the main bottleneck. These experiments implicate the number of tiny draw ranges, with CPU sorting and synchronization as additional costs. They do not establish exact GPU execution time.
 
 The initial exploratory run was interrupted by development-server hot reload after six variants. Its console observations motivated a repeated run with incremental report persistence. Keep benchmark code and build inputs stable during a run.
+
+## Packed opaque geometry milestone
+
+Pack meshes with at most 100 vertices into opaque draws, bounded at 262,144 expanded vertices per batch. Keep the existing BatchedMesh and logical instance mappings for picking and transparent rendering. Initial translucent groups have separate bins so a small amount of glass does not force a large opaque batch through sorting. Later fractional-alpha updates switch that batch to the existing sorted path without replacing its geometry. CPU-baked vertices use transformed normals and per-vertex RGBA; changed attribute ranges are uploaded on updates. All clipping/material state is shared by the two paths. Source geometry remains borrowed and unchanged.
+
+Local measurements before the synchronization optimization:
+
+| Profile | RAF interval p50 / p95 | CPU submission p50 / p95 |
+|---|---:|---:|
+| Original, clean confirmation | 316.7 / 471.0 ms | 201.9 / 375.9 ms |
+| Packed, verified run | 21.0 / 62.1 ms | 18.9 / 54.9 ms |
+| Packed, earlier repeat | 33.3 / 53.3 ms | 29.2 / 50.1 ms |
+| Packed without mirror sync, diagnostic only | 8.4 / 25.5 ms | 7.5 / 34.9 ms |
+
+The packed model has 26 material batches, 23 packed meshes, and two transparent batches. It submits 6,177,746 triangles on this orbit versus the original 6,161,044: packed geometry relies on GPU clipping rather than individual CPU frustum tests. This does not remove model detail. Reported renderer calls increase while actual draw-range processing falls substantially.
+
+Memory tradeoff: packed position, normal, RGBA and index arrays total 269,071,352 bytes (about 257 MiB), with corresponding GPU buffers in addition to the retained fallback data. This is not total process/GPU memory. `new Viewer({ packedGeometry: false })` avoids packed allocation for memory-constrained hosts. The fast path does not promise fast whole-model transparency; those batches retain the original sorted cost.
+
+`node packages/visualization/scripts/snowdon-frame-benchmark.mjs sorted --verify` compares offscreen rendered pixels with the native path at the identical camera, after color, hiding, transform and ghosting updates to 10,000 distinct represented objects, plus clipping. It uses a per-channel tolerance of 8/255 and a maximum differing-pixel fraction of 1%. The verified run differed at 89–557 of 700,000 pixels (at most 0.080%). A first comparison caught a missing neutral vertex-color attribute in the fallback; that error was fixed before accepting the optimization. CPU submission plus mirror synchronization for the individual 10,000-object checks was 299 ms color, 380 ms hiding, 853 ms transforms and 152 ms ghosting. These are single correctness-check samples, not p95 update qualification or display latency.

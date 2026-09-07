@@ -1,10 +1,13 @@
-import { BatchedMesh, BufferAttribute, BufferGeometry, Matrix4, MeshStandardMaterial, Vector4 } from 'three';
+import { BatchedMesh, BufferAttribute, BufferGeometry, Group, Matrix4, MeshStandardMaterial, Vector4 } from 'three';
 import { InstancedGroup } from './instanced-group.js';
 import { buildMaterial } from './group-object.js';
 import { MIN_VISIBLE_ALPHA } from './instance-alpha.js';
 import type { MeshBuffers } from './mesh-buffers.js';
+import { PackedGeometry } from './packed-geometry.js';
 
 const MAX_INSTANCES = 32768;
+const MAX_PACKED_VERTICES = 262144;
+const SMALL_MESH_VERTICES = 100;
 type Range = { group: InstancedGroup; start: number; count: number };
 type SyncedRange = Range & { offset: number; transforms: number; colors: number; visibility: number; fractional: number };
 export type BatchInstance = { group: InstancedGroup; instanceIndex: number };
@@ -21,13 +24,15 @@ function geometryFor(mesh: MeshBuffers): BufferGeometry {
 
 /** Owns one material-compatible batch and its stable logical instance mapping. */
 export class BatchObject {
+  readonly root = new Group();
   readonly mesh: BatchedMesh;
   readonly material: MeshStandardMaterial;
   readonly instances: readonly BatchInstance[];
   private readonly ranges: SyncedRange[];
   private disposed = false;
+  private readonly packed?: PackedGeometry;
 
-  constructor(ranges: readonly Range[]) {
+  constructor(ranges: readonly Range[], packedGeometry = true) {
     const resources = new Set(ranges.map(range => range.group.mesh));
     let vertices = 0;
     let indices = 0;
@@ -55,6 +60,17 @@ export class BatchObject {
       return { ...range, offset, transforms: -1, colors: -1, visibility: -1, fractional: 0 };
     });
     this.instances = instances;
+    this.root.add(this.mesh);
+    if (packedGeometry && ranges.every(range => range.group.mesh.positions.length / 3 <= SMALL_MESH_VERTICES)
+      && ranges.reduce((sum, range) => sum + range.group.mesh.positions.length / 3 * range.count, 0) <= MAX_PACKED_VERTICES) {
+      this.material.vertexColors = true;
+      this.material.alphaTest = MIN_VISIBLE_ALPHA;
+      // Both paths share clipping/material state. The fallback's tint comes from
+      // its instance texture, so its vertex color must remain neutral.
+      this.mesh.geometry.setAttribute('color', new BufferAttribute(new Uint8Array(vertices * 3).fill(255), 3, true));
+      this.packed = new PackedGeometry(this.ranges, this.material);
+      this.root.add(this.packed.mesh);
+    }
     this.sync();
   }
 
@@ -88,6 +104,7 @@ export class BatchObject {
       range.transforms = group.transformsVersion;
       range.colors = group.colorsVersion;
       range.visibility = group.visibilityVersion;
+      this.packed?.sync(range, transforms, colors);
       moved ||= transformsChanged;
       changed = true;
     }
@@ -95,7 +112,14 @@ export class BatchObject {
       this.mesh.boundingBox = null;
       this.mesh.boundingSphere = null;
     }
-    if (changed) this.material.transparent = this.material.opacity < 1 || this.ranges.some(range => range.fractional > 0);
+    if (changed) {
+      this.material.transparent = this.material.opacity < 1 || this.ranges.some(range => range.fractional > 0);
+      if (this.packed) {
+        this.packed.mesh.visible = !this.material.transparent;
+        this.mesh.visible = this.material.transparent;
+        this.packed.finishSync();
+      }
+    }
     return changed;
   }
 
@@ -103,30 +127,36 @@ export class BatchObject {
     if (this.disposed) return;
     this.disposed = true;
     this.mesh.dispose();
+    this.packed?.dispose();
     this.material.dispose();
   }
 }
 
 /** Linear planning, splitting large groups and deduplicating resources inside each batch. */
-export function createBatchObjects(groups: readonly InstancedGroup[]): BatchObject[] {
-  const bins = new Map<string, { ranges: Range[]; count: number }>();
+export function createBatchObjects(groups: readonly InstancedGroup[], packedGeometry = true): BatchObject[] {
+  const bins = new Map<string, { ranges: Range[]; count: number; vertices: number }>();
   const plans: Range[][] = [];
   for (const group of groups) {
     const material = group.material;
-    const key = JSON.stringify([material.metalness, material.roughness, material.opacity]);
+    const vertices = group.mesh.positions.length / 3;
+    const small = packedGeometry && vertices <= SMALL_MESH_VERTICES;
+    const colors = group.colors;
+    const fractional = material.opacity < 1 || colors.some((alpha, index) => index % 4 === 3 && alpha >= MIN_VISIBLE_ALPHA && alpha < 1);
+    const key = JSON.stringify([material.metalness, material.roughness, material.opacity, small, fractional]);
     let start = 0;
     while (start < group.instanceCount) {
       let bin = bins.get(key);
-      if (!bin || bin.count === MAX_INSTANCES) {
-        bin = { ranges: [], count: 0 };
+      if (!bin || bin.count === MAX_INSTANCES || (small && bin.vertices + vertices > MAX_PACKED_VERTICES)) {
+        bin = { ranges: [], count: 0, vertices: 0 };
         bins.set(key, bin);
         plans.push(bin.ranges);
       }
-      const count = Math.min(MAX_INSTANCES - bin.count, group.instanceCount - start);
+      const count = Math.min(MAX_INSTANCES - bin.count, group.instanceCount - start, small && vertices ? Math.floor((MAX_PACKED_VERTICES-bin.vertices)/vertices) : Infinity);
       bin.ranges.push({ group, start, count });
       bin.count += count;
+      bin.vertices += vertices * count;
       start += count;
     }
   }
-  return plans.map(ranges => new BatchObject(ranges));
+  return plans.map(ranges => new BatchObject(ranges, packedGeometry));
 }
