@@ -3,7 +3,9 @@ import {
   DirectionalLight,
   HemisphereLight,
   PerspectiveCamera,
+  OrthographicCamera,
   WebGLRenderer,
+  type Camera,
 } from 'three';
 import { ViewerScene } from './scene.js';
 import { SceneObject } from './scene-object.js';
@@ -36,6 +38,7 @@ export class Viewer {
   private renderRequested = false;
   private disposed = false;
   private localClipping = false;
+  private cameraOverride: Camera | null = null;
 
   constructor(options: ViewerOptions = {}) {
     this.camera = new PerspectiveCamera(
@@ -69,6 +72,17 @@ export class Viewer {
   get isAttached(): boolean { return this.renderer !== null; }
   get isRunning(): boolean { return this.running; }
 
+  /** Camera actually used to draw and pick; the default perspective camera stays available. */
+  get renderCamera(): Camera { return this.cameraOverride ?? this.camera; }
+
+  /** Borrows an alternate camera; null restores the existing perspective camera. */
+  setRenderCamera(camera: Camera | null): void {
+    if (this.disposed) throw new Error('Viewer is disposed');
+    this.cameraOverride = camera;
+    if (camera) this.resizeCamera(camera, this.camera.aspect);
+    this.requestRender();
+  }
+
   /** The three.js mirror of the scene model — for picking, clipping, and other integrations. */
   get objects(): SceneObject { return this.sceneObject; }
 
@@ -81,8 +95,9 @@ export class Viewer {
 
   /** Sets the drawing-buffer size and camera aspect. Floats accepted; CSS pixel units. */
   resize(width: number, height: number, pixelRatio: number = 1.0): void {
-    this.camera.aspect = height > 0 ? width / height : 1.0;
+    this.camera.aspect = height > 0 && width > 0 ? width / height : 1.0;
     this.camera.updateProjectionMatrix();
+    if (this.cameraOverride) this.resizeCamera(this.cameraOverride, this.camera.aspect);
     if (this.renderer) {
       this.renderer.setPixelRatio(pixelRatio);
       this.renderer.setSize(width, height, false);
@@ -115,7 +130,7 @@ export class Viewer {
   renderFrame(): void {
     this.renderRequested = false;
     this.sceneObject.sync();
-    if (this.renderer) this.renderer.render(this.sceneObject.scene, this.camera);
+    if (this.renderer) this.renderer.render(this.sceneObject.scene, this.renderCamera);
   }
 
   dispose(): void {
@@ -126,6 +141,20 @@ export class Viewer {
     this.sceneObject.dispose();
     this.renderer?.dispose();
     this.renderer = null;
+    this.cameraOverride = null;
+  }
+
+  private resizeCamera(camera: Camera, aspect: number): void {
+    if (camera instanceof PerspectiveCamera) {
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+    } else if (camera instanceof OrthographicCamera) {
+      const center = (camera.left + camera.right) / 2;
+      const halfWidth = (camera.top - camera.bottom) / 2 * aspect;
+      camera.left = center - halfWidth;
+      camera.right = center + halfWidth;
+      camera.updateProjectionMatrix();
+    }
   }
 
   private scheduleFrame(): void {
