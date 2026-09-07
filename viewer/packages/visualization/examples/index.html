@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BIM review foundation</title></head>
+<body><div id="app"><header><span class="brand">BIM / OPEN TOOLKIT</span><span class="badge">Visualization alpha</span></header>
+<main><aside><h1>Model review</h1><p class="muted">Independent state. Shared geometry.</p>
+<label>Find an object<input id="filter" placeholder="Search object names"></label>
+<div class="toolbar"><button id="all">Select all</button><button id="clear">Clear</button></div>
+<div id="table" role="group" aria-label="Model objects"></div>
+<p id="selection" aria-live="polite"></p></aside>
+<section class="view"><canvas id="canvas" aria-label="3D model. Drag to orbit, shift-drag to pan, scroll to zoom."></canvas><div class="overlay"><strong>Review sandbox</strong><span>Two models · independent identities</span></div><div id="status" role="status">Preparing scene…</div></section>
+<aside class="actions"><h2>Appearance & edits</h2><p class="muted">Actions apply to the selected objects.</p>
+<button id="color">Color selection coral</button><button id="hide">Hide selection</button><button id="move">Move selection up</button>
+<div class="toolbar"><button id="undo">Undo</button><button id="redo">Redo</button></div>
+<label class="check"><input id="heat" type="checkbox"> Color by object number</label><div class="legend"><span>0</span><i></i><span>49</span></div>
+<button id="fit">Fit model</button><button id="reset">Reset review</button>
+<h2>Saved review</h2><button id="save">Save review state</button><button id="restore">Restore saved state</button><p class="muted">Saved in this browser. Geometry remains a host-owned resource.</p>
+<h2>Bulk update laboratory</h2><button id="stress">Load 10,000 objects</button><button id="benchmark">Measure CPU updates</button><p class="muted">Synthetic boxes, 12 triangles each. CPU results do not measure display latency.</p>
+</aside></main><footer>Public API demonstration · WebGL 2 · Orbit / pan / zoom · No BIM classifications inferred</footer></div><script type="module" src="./main.ts"></script></body></html>

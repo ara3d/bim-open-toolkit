@@ -12,4 +12,4 @@ Example: `composeAppearance(composeEdits(base, layers).objects, {rules, selectio
 
 `createEditHistory()` creates an immutable history. `commitEditHistory(history, layers)` snapshots the complete layer list as one transaction and clears redo. `undoEditHistory` and `redoEditHistory` return histories; an empty stack returns the same history. Snapshot data uses platform `structuredClone`; history memory grows with transactions. History pruning and geometry replacement are postponed.
 
-Checks: `../../node_modules/.bin/vitest.cmd run test/appearance.test.ts test/edits.test.ts --maxWorkers=1 --cache=false` passed: 2 files, 6 tests, 480 ms (September 7, 2026). No running processes. No blockers. Commit pending supervisor turn.
+Checks: `../../node_modules/.bin/vitest.cmd run test/appearance.test.ts test/edits.test.ts --maxWorkers=1 --cache=false` passed: 2 files, 6 tests, 480 ms (September 7, 2026). No running processes. No blockers. Implementation commit: `6333d37c0f115d8d7969ad4488c4de3a5500c1ef`. This post-commit checkpoint line is available for the supervisor's integration commit.

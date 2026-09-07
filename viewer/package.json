@@ -6,10 +6,18 @@
   "workspaces": [
     "packages/*"
   ],
+  "scripts": {
+    "build": "npm run build -w @ara3d/viewer-core && npm run build -w @ara3d/viewer-controls && npm run build -w @ara3d/viewer-loaders && npm run build -w @bim-open-toolkit/visualization",
+    "test": "npm test --workspaces --if-present",
+    "demo": "vite packages/visualization/examples --host 127.0.0.1 --port 5173 --strictPort",
+    "demo:check": "tsc -p packages/visualization/tsconfig.examples.json",
+    "demo:build": "vite build packages/visualization/examples --outDir ../dist-demo"
+  },
   "devDependencies": {
     "@types/three": "^0.185.0",
     "three": "^0.185.0",
     "typescript": "^5.9.2",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "vite": "^8.2.2"
   }
 }

@@ -1,0 +1,30 @@
+import { expect, it } from 'vitest';
+import { InstancedGroup, ViewerScene } from '@ara3d/viewer-core';
+import { ModelRegistry, SelectionStore, composeEdits, composeAppearance, identityMatrix, createEditHistory, commitEditHistory, undoEditHistory, serializeSceneDocument, parseSceneDocument, restoreSceneDocument, type ObjectRecord, type SceneDocument } from '../src/index.js';
+import { RenderBinding } from '../src/render.js';
+
+it('composes public review APIs and restores a review without resurrecting hidden selection', async () => {
+  const object: ObjectRecord = { ref: { modelId:'m',objectId:'1' }, name:'Door', transform:identityMatrix, appearance:{ color:[1,1,1],opacity:1,visible:true } };
+  const registry = new ModelRegistry();
+  const model = { ref:{id:'m',revision:'r1'}, coordinates:{units:'unknown',up:'Y',registration:'unknown'} as const, objects:[object] };
+  registry.add(model);
+  const group = new InstancedGroup({ positions:new Float32Array([0,0,0,1,0,0,0,1,0]) });
+  group.append(new Float32Array(identityMatrix),new Float32Array([1,1,1,1]));
+  const render = new RenderBinding(new ViewerScene(), () => {});
+  render.addModel('m',[{ref:object.ref,group,instanceIndex:0,representationId:'body'}]);
+  const selection = new SelectionStore([object.ref]);
+  const history = commitEditHistory(createEditHistory(),[{ id:'hide',enabled:true,operations:[{kind:'style',ref:object.ref,style:{visible:false}}] }]);
+  const effective = composeAppearance(composeEdits(model.objects,history.present).objects,{selection:selection.snapshot(),selectionColor:[0,1,0]});
+  render.applySnapshot(effective);
+  expect(group.colors[3]).toBe(0);
+  const document: SceneDocument = {schemaVersion:1,models:[model.ref],sets:[],views:[],layers:history.present};
+  const parsed = parseSceneDocument(serializeSceneDocument(document));
+  expect(parsed.ok).toBe(true);
+  if (!parsed.ok) throw new Error('Round trip failed');
+  const restored = await restoreSceneDocument(parsed.value,async ref => registry.getModel(ref.id));
+  expect(restored.ok).toBe(true); expect(restored.diagnostics).toEqual([]);
+  render.applySnapshot(composeEdits(model.objects,undoEditHistory(history).present).objects);
+  expect(group.colors[3]).toBe(1);
+  expect(object.appearance.visible).toBe(true);
+  render.dispose(); selection.dispose(); registry.dispose();
+});

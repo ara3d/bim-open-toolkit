@@ -4,14 +4,15 @@ A general-purpose WebGL viewer for the web, built on [three.js](https://threejs.
 Successor to `@ara3d/ara3d-webgl`. BIM-free: it knows nothing about IFC, BOS, or
 any other file format.
 
-This is an npm workspace with three packages, split so they can be developed
+This is an npm workspace with four packages, split so they can be developed
 independently:
 
 | Package | Role |
 |---|---|
 | [`@ara3d/viewer-core`](packages/core/) | Renderer: scene management, instanced drawing, materials, per-instance color, frame loop |
-| `@ara3d/viewer-loaders` (planned) | Ingestion: BOS geometry and GLB loading with first-class progress reporting |
-| `@ara3d/viewer-controls` (planned) | Interaction: camera navigation, picking/selection, section planes |
+| `@ara3d/viewer-loaders` | Ingestion: BOS geometry and GLB loading with progress reporting |
+| `@ara3d/viewer-controls` | Interaction: camera navigation, picking/selection, section planes |
+| [`@bim-open-toolkit/visualization`](packages/visualization/) | Composable model identity, review state, appearance/edit layers, persistence and renderer bindings |
 
 Design requirements carried over from the previous viewer's lessons:
 
@@ -23,6 +24,10 @@ Design requirements carried over from the previous viewer's lessons:
   geometry in and report progress.
 
 This workspace is a candidate to move to its own repository once stable.
+
+The visualization alpha includes a standalone review demonstration. After installing and
+running `npm run build`, use `npm run demo` to open the local development server.
+See its package README for implemented scope, verification, and explicit deferrals.
 
 ## Developing
 
