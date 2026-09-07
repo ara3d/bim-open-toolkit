@@ -58,17 +58,17 @@ public sealed record ElectricalDevice(SnapshotKey<ElectricalDevice> Id, ElementI
     Fact<ElectricCurrent> RatedCurrent, Fact<Power> InputPower, Fact<Length> MountingHeight,
     Fact<string> EnclosureRating, Fact<int> GangCount, Fact<string> Protocol, LinkSet<ServicePort> Ports);
 
-/// <summary>One modeled cable run between terminations or explicit modeled breaks. Procurement length may include allowances that geometric route length excludes.</summary>
+/// <summary>One modeled cable run between terminations or explicit modeled breaks. Scheduled length may include declared allowances that geometric route length excludes.</summary>
 /// <param name="Id">Cable row identity.</param><param name="Element">Shared occurrence information.</param><param name="CircuitId">Assigned circuit when resolved.</param>
 /// <param name="CableDesignation">Recorded cable construction and standard designation.</param><param name="ConductorCount">Number of conductors, with protective and spare inclusion basis in evidence.</param>
 /// <param name="ConductorArea">Nominal cross-sectional area of each equal-sized conductor in square metres; unequal-core constructions require their product specification.</param>
 /// <param name="ConductorMaterialId">Conductor material.</param><param name="OutsideDiameter">Overall cable diameter.</param><param name="RouteLength">Developed modeled route length.</param>
-/// <param name="ProcurementLength">Specified purchasing length including documented allowances.</param><param name="RatedVoltage">Declared voltage rating.</param>
+/// <param name="ScheduledLength">Declared design length including documented allowances.</param><param name="RatedVoltage">Declared voltage rating.</param>
 /// <param name="FirePerformanceClass">Recorded cable fire performance classification and scheme in evidence.</param><param name="Containment">Assigned containment runs and completeness.</param><param name="Ports">Termination endpoints.</param>
 public sealed record CableSegment(SnapshotKey<CableSegment> Id, ElementInfo Element,
     Fact<SnapshotKey<ElectricalCircuit>> CircuitId, Fact<string> CableDesignation, Fact<int> ConductorCount,
     Fact<Area> ConductorArea, Fact<ReferenceKey<Material>> ConductorMaterialId, Fact<Length> OutsideDiameter,
-    Fact<Length> RouteLength, Fact<Length> ProcurementLength, Fact<Voltage> RatedVoltage,
+    Fact<Length> RouteLength, Fact<Length> ScheduledLength, Fact<Voltage> RatedVoltage,
     Fact<string> FirePerformanceClass, LinkSet<CableContainment> Containment, LinkSet<ServicePort> Ports);
 
 /// <summary>One cable containment run between fittings or modeled breaks, for route coordination, takeoff, and capacity review.</summary>

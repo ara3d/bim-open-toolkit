@@ -11,6 +11,5 @@
     <PackageReference Include="NUnit3TestAdapter" Version="$(Ara3DNUnit3TestAdapterVersion)" />
     <Using Include="NUnit.Framework" />
     <None Include="../../src/Ara3D.BimOpenSchema.BuildingModel/model-coverage.csv" Link="model-coverage.csv" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../docs/proposals/bim-query-platform/contract/domain-candidates.csv" Link="domain-candidates.csv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

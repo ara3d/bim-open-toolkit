@@ -10,15 +10,25 @@ public sealed class CatalogTests
     public void EveryWorkflowCandidateHasAnIndexEntryPointingToActualCompiledTypes()
     {
         var coverage = ReadCsv("model-coverage.csv");
-        var candidates = ReadCsv("domain-candidates.csv");
         Assert.That(coverage.Select(r => r[0]), Is.Unique, "A candidate has one authoritative coverage entry.");
-        Assert.That(coverage.Select(r => r[0]), Is.EquivalentTo(candidates.Select(r => r[0])));
         foreach (var row in coverage)
         foreach (var name in row[1].Split(';'))
         {
             var type = typeof(BimObject).Assembly.GetType($"Ara3D.BimOpenSchema.BuildingModel.{name}");
             Assert.That(type, Is.Not.Null, $"{row[0]} points to missing model type {name}");
         }
+    }
+
+    [Test, Category("Feature.Catalog"), Category("Workflow.ModelReview")]
+    public void CoreCoverageDoesNotListDeferredLifecycleOrAnalysisCapabilities()
+    {
+        var deferred = new[]
+        {
+            "work_package", "procurement_line", "installation_observation", "asset_service_requirements",
+            "maintenance_plan", "impact_breakdown", "requirement_assessment", "evidence_issue", "acoustic_response"
+        };
+
+        Assert.That(ReadCsv("model-coverage.csv").Select(row => row[0]), Does.Not.Contain(deferred));
     }
 
     [Test, Category("Feature.Identity"), Category("Workflow.ModelReview")]

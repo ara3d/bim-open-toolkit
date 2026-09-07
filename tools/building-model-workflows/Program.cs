@@ -7,7 +7,6 @@ using Ara3D.BimOpenSchema.BuildingModel;
 using Ara3D.BimOpenSchema.BuildingModel.Source;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows.IO;
-using Ara3D.BimOpenSchema.BuildingModel.Workflows.Operations;
 using Platonic;
 
 namespace BuildingModel.Workflows.Cli;
@@ -44,9 +43,6 @@ internal static class Program
                     if (args.Length == 5 && args[4] != "--complete-scope") return Usage();
                     Compare(args[1], args[2], args[3], args.Length == 5);
                     return 0;
-                case "calculate" when args.Length == 4:
-                    Calculate(args[1], args[2], args[3]);
-                    return 0;
                 default: return Usage();
             }
         }
@@ -61,7 +57,6 @@ internal static class Program
     {
         Console.Error.WriteLine("Commands: prepare <source.bos> <cache.bfast> | run <cache.bfast> <output-directory> [--declared-units|--revit-internal] | reopen <projection.json> <output-directory> | portfolio <output-directory> <projection.json> [...] | compare <before.json> <after.json> <output-directory> [--complete-scope]");
         Console.Error.WriteLine("BFAST preparation is explicit; run/reopen never read or decode the original BOS. --declared-units asserts stored numeric units, not merely display units.");
-        Console.Error.WriteLine("Supplemental workflows: calculate <estimate|reconcile|trace|coordinate|maintain|carbon> <request.json> <result.json>");
         return 2;
     }
 
@@ -117,7 +112,6 @@ internal static class Program
             WorkflowReports.Missing("02", "Revision comparison", projection.Snapshot.Id.Value,
                 "A second revision of the same source lineage and a correspondence policy are required. The three supplied files are not treated as revisions of each other."),
             ArchitecturalWorkflows.Takeoff(projection),
-            .. OperationsWorkflows.InputRequirements(projection),
             PortfolioWorkflows.Compare([projection])];
 
     private static void Portfolio(string directory, string[] files)
@@ -145,30 +139,6 @@ internal static class Program
         WriteJson(Path.Combine(directory, "comparison.json"), report);
         File.WriteAllText(Path.Combine(directory, "comparison.csv"), Csv(report), Encoding.UTF8);
         Console.WriteLine($"Revision comparison: {report.Status}, {report.Rows.Length} rows.");
-    }
-
-    private static void Calculate(string workflow, string input, string output)
-    {
-        object result = workflow switch
-        {
-            "estimate" => OperationsWorkflows.Estimate(ReadRequest<EstimateRequest>(input)),
-            "reconcile" => OperationsWorkflows.Reconcile(ReadRequest<ReconciliationRequest>(input)),
-            "trace" => OperationsWorkflows.Trace(ReadRequest<TraceRequest>(input)),
-            "coordinate" => OperationsWorkflows.Coordinate(ReadRequest<CoordinationRequest>(input)),
-            "maintain" => OperationsWorkflows.Maintain(ReadRequest<MaintenanceRequest>(input)),
-            "carbon" => OperationsWorkflows.Carbon(ReadRequest<CarbonRequest>(input)),
-            _ => throw new ArgumentException("Unknown supplemental workflow.")
-        };
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
-        WriteJson(output, result);
-        Console.WriteLine($"Calculated {workflow} from explicit supplemental inputs. Result: {Path.GetFullPath(output)}");
-    }
-
-    private static T ReadRequest<T>(string path)
-    {
-        using var input = File.OpenRead(path);
-        return JsonSerializer.Deserialize<T>(input, ProjectionStore.Options())
-            ?? throw new InvalidDataException("Supplemental request is empty.");
     }
 
     private static void WriteReports(string directory, BuildingProjection projection, ImmutableArray<WorkflowReport> reports)

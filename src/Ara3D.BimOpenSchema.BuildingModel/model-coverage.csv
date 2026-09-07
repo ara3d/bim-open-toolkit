@@ -1,10 +1,8 @@
 candidate_id,record_types,meaning
-source_revision_change,ObjectChange;ObjectCorrespondence,Snapshot comparison after identity reconciliation
+source_revision_change,ObjectCorrespondence,Source/object correspondence for future revision comparison
 space,Space;SpaceBoundary,Rooms and scheduled spaces with explicit boundaries
 storey,Storey,Named levels and their coordinate datum
 functional_zone,Zone;ZoneMembership,Overlapping purpose-specific groupings
-service_access,ServiceAccessEnvelope,Operational clearance requirements distinct from component shape
-spatial_candidates,SpatialConflict,Result records only; no spatial engine implemented
 door,Door,Door assembly with leaf count and clear dimensions
 window,Window;FacadePanel,Window units and separately scoped facade panels
 wall,Wall;SpaceBoundary,Construction host and space-facing boundary assertions
@@ -32,15 +30,6 @@ drain,Drain;DrainageCatchment,Drain terminals and contributing areas
 fire_protection_terminal,FireProtectionTerminal,Protection terminals and supplied ratings
 support_assembly,ServiceSupport;ServiceSupportAttachment,One support with multiple supported components
 assembly_specification,AssemblyDefinition;AssemblyLayer;Material,Versioned ordered construction layers
-quantity_takeoff,QuantityScope;QuantityObservation;QuantityTakeoff,Selected quantities and explicit missing scope
-work_package,WorkPackage;WorkPackageAssignment;Milestone,Trade scope and planning checkpoints
-procurement_line,ProcurementRequirement;DeliveryBatch;DeliveryLine,Required purchase scope and independent receipts
-installation_observation,InstallationObservation,Observed progress separate from design intent
-asset_service_requirements,Asset;AssetServiceRequirement,Asset registration and maintenance obligations
-maintenance_plan,MaintenanceTask,Planned or performed service actions; no scheduling engine
-impact_breakdown,EnvironmentalFactor;ImpactLine;ImpactSummary,Climate impact by quantity and lifecycle module
-requirement_assessment,RequirementSet;Requirement;Assessment;Finding,Explainable requirement-specific results
-evidence_issue,DataIssue;Evidence;PropertyObservation,Workflow-relevant missing or conflicting evidence
-acoustic_response,AcousticResult;AcousticBandResult,Specialist result representation; no acoustic solver
+quantity_observations,QuantityScope;QuantityObservation,Source or mapping measurements with explicit bases and selection state
 duct_segment,DuctSegment;DuctFitting;Damper,Air distribution dimensions and performance inputs
 pipe_segment,PipeSegment;PipeFitting;Valve,Service medium and nominal versus actual dimensions

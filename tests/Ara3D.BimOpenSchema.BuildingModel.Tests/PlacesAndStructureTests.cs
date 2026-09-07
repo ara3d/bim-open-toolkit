@@ -104,40 +104,6 @@ public sealed class PlacesAndStructureTests
         Assert.That(looseTransportInputs, Is.Empty, "In-situ cut volume alone does not establish loose hauling volume.");
     }
 
-    [Test, Category("Feature.Circulation"), Category("Workflow.EgressEvidence")]
-    public void ServingTwoLevelsDoesNotSupplyAnEgressAuthorization()
-    {
-        var lower = Key<Storey>("ground");
-        var upper = Key<Storey>("level-2");
-        var lift = new VerticalTransport(Key<VerticalTransport>("lift-01"), Element("lift-01"),
-            Known(VerticalTransportRole.PassengerLift), Unknown<ReferenceKey<ProductDefinition>>(),
-            Links(lower, upper), Known(new Mass(1000)), Known(13), Known(new Length(4)),
-            Known(new Length(1.6)), Known(new Length(1.8)), Known(new Length(0.9)), Known(new Length(2.1)),
-            LinkSet<Door>.Unknown(), Unknown<string>());
-        var lifts = new[] { lift };
-        var scenario = Ref<AnalysisScenario>("fire-evacuation-v1");
-        var requirement = Ref<Requirement>("authorized-lift-for-this-scenario");
-        var assessments = new[] {
-            Assessment(AssessmentOutcome.Unknown, Completeness.Partial) with {
-                Id = Key<Assessment>("fire-lift-review"), SubjectId = lift.Element.ObjectId, ScenarioId = scenario, RequirementId = requirement },
-            Assessment(AssessmentOutcome.Pass, Completeness.Complete) with {
-                Id = Key<Assessment>("ordinary-access-review"), SubjectId = lift.Element.ObjectId,
-                ScenarioId = Ref<AnalysisScenario>("ordinary-access"), RequirementId = requirement } };
-
-        var connecting = lifts.Where(l => l.ServedStoreys.Items.Contains(lower) && l.ServedStoreys.Items.Contains(upper)).ToArray();
-        // A query can expose existing conclusions; it cannot invent a safety rule from lift service reach.
-        var authorizedInScenario = connecting.Where(l => assessments.Any(a =>
-            a.Id.SnapshotId == l.Id.SnapshotId && a.SubjectId == l.Element.ObjectId &&
-            a.ScenarioId == scenario && a.RequirementId == requirement &&
-            a.Outcome == AssessmentOutcome.Pass && a.InputCoverage == Completeness.Complete)).ToArray();
-        var pending = connecting.Where(l => assessments.Any(a => a.SubjectId == l.Element.ObjectId &&
-            a.ScenarioId == scenario && a.Outcome == AssessmentOutcome.Unknown)).Select(l => l.Id).ToArray();
-
-        Assert.That(connecting.Select(l => l.Id), Is.EqualTo(new[] { lift.Id }));
-        Assert.That(authorizedInScenario, Is.Empty);
-        Assert.That(pending, Is.EqualTo(new[] { lift.Id }));
-    }
-
     private static Space ScheduledSpace(string id, string name, string use, Fact<Area> area) => new(
         Key<Space>(id), Element(id, name), Known(id), Known(Key<Building>("building-a")),
         Known(Key<Storey>("ground")), Known(use), Unknown<string>(), Known(SpaceEnclosureKind.ScheduledOnly),

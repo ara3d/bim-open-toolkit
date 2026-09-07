@@ -1,18 +1,14 @@
-# Building-model design experiments
+# Core BIM workflows
 
-Executable workflows over typed BuildingModel records, with real BOS-to-BFAST preparation and independent controlled fixtures. Open [BimBuildingModel.sln](../../BimBuildingModel.sln) to browse the implementation.
+This project maps prepared BIM Open Schema data into the core BuildingModel and runs source-backed architectural reports.
 
-| Boundary | Public entry points |
+| Boundary | Entry point |
 |---|---|
-| Source preparation | `BuildingModel.Source.SourceCache.Prepare`, `Inspect`, `Verify`, `Load` |
+| Source preparation | `SourceCache.Prepare`, `Inspect`, `Verify`, `Load` |
 | Architectural interpretation | `BuildingMapper.Map`, `ProjectionValidation.Validate` |
-| Workflows 1–3 | `ArchitecturalWorkflows.Schedule`, `Compare`, `Takeoff` |
-| Workflows 4–9 | `Operations.OperationsWorkflows.Estimate`, `Reconcile`, `Trace`, `Coordinate`, `Maintain`, `Carbon` |
-| Workflow 10 | `PortfolioWorkflows.Compare` |
-| Persistence | `BuildingModel.Workflows.IO.ProjectionStore.Write`, `Read`, `Options` |
+| Core reports | `ArchitecturalWorkflows.Schedule`, `Compare`, `Takeoff`, `PortfolioWorkflows.Compare` |
+| Persistence | `ProjectionStore.Write`, `Read`, `Options` |
 
-The mapper returns immutable domain records plus field coverage, diagnostics and resolvable source/policy evidence. It selects architectural occurrences using declared category and property aliases. Numeric storage is an explicit policy. Unsupported source meanings remain unresolved; no physical buildings are inferred from source documents, no clear door widths from nominal widths, and no finish faces from wall area.
+The mapper currently populates `Storey`, `Space`, `Door` and `Roof`. It records field coverage, diagnostics and source/policy evidence. Unsupported meanings stay unresolved: source documents are not inferred to be buildings, nominal door dimensions do not become clear openings, and wall area does not become a finish quantity.
 
-The operations request records make supplemental inputs explicit. Source files do not supply rates, receipt history, operational topology or environmental factors merely by containing architectural objects. The CLI emits input requirements for these workflows and accepts separately supplied JSON calculation requests. Synthetic examples are labeled and kept separate from real-source results.
-
-See [runner instructions](../../tools/building-model-workflows/README.md), [measured validation and findings](../../tools/building-model-workflows/VALIDATION.md), and the original [workflow proposal](../Ara3D.BimOpenSchema.BuildingModel/DESIGN-PROVING-WORKFLOWS.md).
+Commercial, maintenance, compliance and analysis calculations are intentionally absent from this project. They should consume core identities and source evidence from separate extension packages when real inputs and workflows justify them.

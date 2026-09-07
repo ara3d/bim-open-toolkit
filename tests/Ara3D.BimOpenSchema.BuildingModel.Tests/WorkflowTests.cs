@@ -63,17 +63,4 @@ public sealed class WorkflowTests
         Assert.That(LinkSet<Door>.Unknown().Completeness, Is.EqualTo(Completeness.NotObserved));
     }
 
-    [Test, Category("Feature.Delivery"), Category("Workflow.DeliveryAudit")]
-    public void AcceptedDeliveryIsNotAnInstallationObservation()
-    {
-        var receipt = new DeliveryLine(Key<DeliveryLine>("receipt-1"), Key<DeliveryBatch>("truck-1"),
-            Unknown<SnapshotKey<ProcurementRequirement>>(), Unknown<ReferenceKey<ProductDefinition>>(), Unknown<string>(),
-            Known(10m), Known(8m), Known(7m), QuantityUnit.Count, DeliveryState.PartiallyReceived,
-            Known("One rejected; two outstanding"), []);
-        var installation = new InstallationObservation(Key<InstallationObservation>("install-1"), Ref<BimObject>("door-1"),
-            Unknown<SnapshotKey<WorkPackage>>(), new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero),
-            "Hang door assembly", InstallationState.NotStarted, Known(new Ratio(0)), "Physical assembly completion", Unknown<string>(), Unknown<string>(), []);
-        Assert.That(((Fact<decimal>.Known)receipt.AcceptedQuantity).Value, Is.EqualTo(7));
-        Assert.That(installation.State, Is.EqualTo(InstallationState.NotStarted));
-    }
 }

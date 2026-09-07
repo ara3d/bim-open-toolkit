@@ -199,7 +199,6 @@ public sealed record SpaceBoundary(
 /// <param name="Purpose">Explicit grouping purpose, retaining the originating discipline's vocabulary.</param>
 /// <param name="Building">Primary building scope, when applicable.</param>
 /// <param name="Description">Human explanation of membership intent.</param>
-/// <param name="RequirementSet">Requirements governing the zone, when supplied.</param>
 /// <param name="Memberships">Membership assertions and their completeness.</param>
 public sealed record Zone(
     SnapshotKey<Zone> Id,
@@ -207,7 +206,6 @@ public sealed record Zone(
     Fact<string> Purpose,
     Fact<SnapshotKey<Building>> Building,
     Fact<string> Description,
-    Fact<ReferenceKey<RequirementSet>> RequirementSet,
     LinkSet<ZoneMembership> Memberships);
 
 /// <summary>One membership assertion connecting a zone to an object in this snapshot. An object may belong to multiple zones for different purposes; never sum overlapping zone totals without an allocation rule.</summary>

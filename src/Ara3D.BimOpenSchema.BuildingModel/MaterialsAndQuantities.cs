@@ -5,7 +5,7 @@ namespace Ara3D.BimOpenSchema.BuildingModel;
 public enum MaterialClass { Concrete, Steel, Timber, Masonry, Glass, Gypsum, Insulation, Metal, Polymer, Soil, Vegetation, Composite, Other, Unclassified }
 public enum AssemblyKind { Wall, Floor, Roof, Ceiling, Facade, Finish, Insulation, Pavement, Other }
 public enum QuantityScopeKind { WholeObject, MaterialPart, Surface, LinearPortion, WorkScope }
-public enum MeasureKind { Count, Length, Area, Volume, Mass, Energy, Power, Flow, Impact, Other }
+public enum MeasureKind { Count, Length, Area, Volume, Mass, Energy, Power, Flow, Other }
 public enum QuantityBasis { Gross, Net, Projected, Surface, Centerline, Nominal, Declared, Measured, Unspecified }
 public enum QuantitySelection { Unresolved, Selected, Alternative, Rejected }
 public enum ContributionRole { Unresolved, LeafContribution, AssemblyTotal, Alternative }
@@ -108,15 +108,4 @@ public sealed record MaterialUse(
     Fact<Volume> NetVolume,
     Fact<Mass> NetMass,
     LinkSet<QuantityObservation> Observations,
-    ImmutableArray<ReferenceKey<Evidence>> Evidence);
-
-/// <summary>A selected quantity result for a user-defined scope; unknown and conflicting counts accompany the known subtotal.</summary>
-public sealed record QuantityTakeoff(
-    SnapshotKey<QuantityTakeoff> Id,
-    string ScopeDescription,
-    QuantityBasis Basis,
-    Fact<Measurement> KnownSubtotal,
-    LinkSet<QuantityObservation> IncludedObservations,
-    Coverage Coverage,
-    string CountingRule,
     ImmutableArray<ReferenceKey<Evidence>> Evidence);

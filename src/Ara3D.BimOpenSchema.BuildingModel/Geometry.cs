@@ -72,18 +72,6 @@ public sealed record GeometryRepresentation(
     Fact<Transform3> InstanceTransform,
     ImmutableArray<ReferenceKey<Evidence>> Evidence);
 
-/// <summary>A required access/removal/operation region, distinct from the physical object geometry.</summary>
-/// <remarks>A supplied clearance is not a universally applicable safety rule. Analysis must record the requirement and coordinate frame.</remarks>
-public sealed record ServiceAccessEnvelope(
-    SnapshotKey<ServiceAccessEnvelope> Id,
-    ReferenceKey<BimObject> ObjectId,
-    string Operation,
-    Fact<SnapshotKey<GeometryRepresentation>> RequiredRegion,
-    Fact<SnapshotKey<CoordinateFrame>> FrameId,
-    Fact<Vector3> ApproachDirection,
-    Fact<ReferenceKey<RequirementSet>> RequirementSetId,
-    ImmutableArray<ReferenceKey<Evidence>> Evidence);
-
 /// <summary>Common routing geometry which concrete duct, pipe and cable models may reference without sharing engineering semantics.</summary>
 public sealed record RouteSegment(
     SnapshotKey<RouteSegment> Id,

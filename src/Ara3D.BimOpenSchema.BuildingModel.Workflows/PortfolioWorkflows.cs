@@ -17,8 +17,7 @@ public static class PortfolioWorkflows
                 N(x.Storeys.Length), N(x.Spaces.Length), N(x.Doors.Length), N(x.Roofs.Length),
                 N(x.Coverage.Sum(c => c.Total)), N(x.Coverage.Sum(c => c.Known)),
                 N(x.Coverage.Sum(c => c.Missing + c.Invalid + c.Conflicting)))).ToImmutableArray(),
-            ["Cost/carbon ranking requires comparable externally supplied scenarios and metric boundaries.",
-                "Buildings and cross-source object correspondences have not been established; counts are source-local and must not be summed as unique physical objects.",
+            ["Buildings and cross-source object correspondences have not been established; counts are source-local and must not be summed as unique physical objects.",
                 .. (duplicate ? new[] { "Duplicate snapshot selections were collapsed before comparison." } : Array.Empty<string>())]);
     }
 
