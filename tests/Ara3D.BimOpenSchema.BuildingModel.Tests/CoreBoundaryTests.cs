@@ -12,11 +12,13 @@ public sealed class CoreBoundaryTests
         var assembly = typeof(BimObject).Assembly;
         var excluded = new[]
         {
-            "AnalysisScenario", "WorkPackage", "EstimateLine", "ProcurementRequirement", "DeliveryBatch", "DeliveryLine",
+            "AnalysisScenario", "WorkPackage", "WorkPackageAssignment", "RateCatalog", "RateItem", "EstimateLine",
+            "EstimateSummary", "ProcurementRequirement", "DeliveryBatch", "DeliveryLine", "Milestone",
             "InstallationObservation", "Asset", "AssetServiceRequirement", "MaintenanceTask", "InspectionObservation",
             "RequirementSet", "Requirement", "Assessment", "Finding", "EnvironmentalFactor", "ImpactLine", "ImpactSummary",
-            "ObservationSeries", "PerformanceResult", "ObjectChange", "DataIssue", "SpatialConflict", "ServiceTraceResult",
-            "EgressStudy", "EgressRoute", "EgressAssessment", "AcousticResult", "ServiceAccessEnvelope"
+            "ObservationSeries", "ObservationSample", "PerformanceResult", "ObjectChange", "DataIssue", "SpatialConflict",
+            "ServiceTraceResult", "ServiceTraceMember", "EgressStudy", "EgressRoute", "EgressRouteStep", "EgressAssessment",
+            "AcousticResult", "AcousticBandResult", "ServiceAccessEnvelope", "QuantityTakeoff", "ModelViolation"
         };
 
         Assert.That(excluded.Select(name => assembly.GetType($"Ara3D.BimOpenSchema.BuildingModel.{name}")), Is.All.Null);
