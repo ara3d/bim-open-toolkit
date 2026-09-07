@@ -11,7 +11,7 @@ Supervisor: this session. Concurrent sessions in the checkout at wave start: thr
 | Chunk | Commit | Verification |
 |---|---|---|
 | Pre-flight: MCP wrapper, plan sections, decision record | `a879b8b` | MCP smoke test over `viewer/`: 33 tools |
-| Retrofit + tooling + 13 package skeletons | `a879b8b` | see baseline below |
+| Retrofit + tooling + 13 package skeletons | `5988f73` | see baseline below |
 
 Baseline after the skeleton chunk, alpha built from HEAD: `npm test` per alpha package unchanged (core 77, controls 32, loaders 33, visualization 149 passed, 1 skipped); `demo:check` passes; `node ../platonic-ts/node_modules/tsx/dist/cli.mjs tools/platonic-check.mts` passes (typecheck, lint, ratchet, 13 V2 smoke tests). Ratchet baseline rewritten to current counts: 2 `any`, 145 `as`, 181 `!`, 0 directives, 0 lint disables, 137 undocumented exports (all in alpha packages).
 
