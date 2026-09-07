@@ -15,6 +15,7 @@ const failure = (message: string): Result<number> => ({ ok: false, diagnostics: 
 
 /** Owns scene membership, borrows groups. Dispose mirrors/viewer separately to release GPU resources. */
 export class RenderBinding {
+  private readonly pickSources = new Set<(ray: Raycaster) => readonly ObjectHit[]>();
   private readonly models = new Map<string, readonly InstanceBinding[]>();
   private readonly objects = new Map<string, InstanceBinding[]>();
   private readonly instances = new Map<InstancedGroup, Map<number, InstanceBinding>>();
@@ -126,6 +127,13 @@ export class RenderBinding {
     return binding ? { ...binding, ref: { ...binding.ref } } : undefined;
   }
 
+  /** Host pick providers own visibility/clipping checks; only loaded references are accepted. */
+  addPickSource(source: (ray: Raycaster) => readonly ObjectHit[]): () => void {
+    if (this.disposed) throw new Error('Render binding is disposed');
+    this.pickSources.add(source);
+    return () => { this.pickSources.delete(source); };
+  }
+
   /** World-space closest visible hit. Ghosted objects remain pickable; alpha-zero objects do not. */
   pick(objects: SceneObject, camera: Camera, x: number, y: number): ObjectHit | undefined {
     if (this.disposed) return undefined;
@@ -133,19 +141,24 @@ export class RenderBinding {
     camera.updateMatrixWorld();
     const ray = new Raycaster();
     ray.setFromCamera(new Vector2(x, y), camera);
+    let nearest: ObjectHit | undefined;
     for (const hit of objects.raycast(ray)) {
       const binding = this.instances.get(hit.group)?.get(hit.instanceIndex);
-      if (binding) return {
+      if (binding) { nearest = {
         ref: { ...binding.ref }, representationId: binding.representationId,
         point: [hit.point.x, hit.point.y, hit.point.z], distance: hit.distance,
-      };
+      }; break; }
     }
-    return undefined;
+    for (const source of this.pickSources) for (const hit of source(ray)) {
+      if (this.objects.has(objectKey(hit.ref)) && Number.isFinite(hit.distance) && hit.distance >= ray.near && hit.distance <= ray.far && (!nearest || hit.distance < nearest.distance)) nearest = hit;
+    }
+    return nearest;
   }
 
   dispose(): void {
     if (this.disposed) return;
     for (const id of this.models.keys()) this.removeModel(id);
     this.disposed = true;
+    this.pickSources.clear();
   }
 }

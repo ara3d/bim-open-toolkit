@@ -13,6 +13,23 @@ const record = (modelId: string): ObjectRecord => ({ ref: { modelId, objectId: '
 const bind = (adapter: RenderBinding, modelId: string, mesh: InstancedGroup) => adapter.addModel(modelId, [{ ref: record(modelId).ref, group: mesh, instanceIndex: 0, representationId: 'body' }]);
 
 describe('render boundary', () => {
+  it('merges optional pick sources by distance, rejects unknown refs and removes providers', () => {
+    const scene = new ViewerScene(), adapter = new RenderBinding(scene, () => {}), mirror = new SceneObject(scene);
+    bind(adapter, 'a', group());
+    const camera = new PerspectiveCamera(50,1,0.1,100); camera.position.set(0,0,5); camera.lookAt(0,0,0);
+    const remove = adapter.addPickSource(() => [
+      { ref: record('unknown').ref, representationId: 'invalid', point: [0,0,4], distance: 1 },
+      { ref: record('a').ref, representationId: 'overlay', point: [0,0,3], distance: 2 },
+      { ref: record('a').ref, representationId: 'far', point: [0,0,-2], distance: 7 },
+    ]);
+    expect(adapter.pick(mirror,camera,0,0)?.representationId).toBe('overlay');
+    remove(); remove();
+    expect(adapter.pick(mirror,camera,0,0)?.representationId).toBe('body');
+    adapter.dispose();
+    expect(adapter.pick(mirror,camera,0,0)).toBeUndefined();
+    expect(() => adapter.addPickSource(() => [])).toThrow('disposed');
+    mirror.dispose();
+  });
   it('does not reupload unchanged transforms rounded to Float32 storage', () => {
     const adapter = new RenderBinding(new ViewerScene(), () => {}), mesh = group();
     const local = [1,0,0,0,0,Math.cos(-Math.PI/2),-1,0,0,1,Math.cos(-Math.PI/2),0,0.1,0,0,1] as const;
