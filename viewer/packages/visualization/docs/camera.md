@@ -1,0 +1,11 @@
+# Camera navigation checkpoint
+
+Contracts V1 and G1 acknowledged. State: verified by focused tests; integrated build and browser checks remain supervisor-owned. Owned files: controls `src/orbit-controls.ts` and `test/orbit-controls.test.ts`; visualization `src/camera.ts`, `test/camera.test.ts`, `examples/features/camera.ts`, and this document. No shared build outputs or manifests modified.
+
+OrbitControls retains left-drag orbit, right/shift-drag pan and wheel zoom. It owns one mouse pointer or up to two touch pointers at a time. One touch orbits; two pan using midpoint motion and zoom using the ratio of touch distances. Third pointers are ignored. Pointer cancellation/lost capture clear the corresponding pointer; returning from two touches to one preserves the remaining location. Dispose releases captures, resets drag state, removes listeners and restores the previous touch-action style. Hosts passing a wrapper should forward `style: canvas.style` or set CSS `touch-action: none` themselves.
+
+Pure `fitPerspectivePose(bounds, {verticalFov, aspect, direction?, padding?})` fits a bounding sphere against both viewport dimensions. Field of view is in radians. Pose output resets zoom to one. `overheadPose(target, distance)` gives a near-overhead Y-up perspective pose outside the orbit pole singularity. These helpers do not mutate caller bounds and require finite valid inputs. Hosts remain responsible for near/far clipping and orbit distance limits.
+
+`cameraDemo` provides one feature surface for fit, overhead, save/restore and upper-hemisphere constraints, with controls instructions. Pose storage lasts for that viewer session; scene-document persistence is a separate demo. Orthographic projection and first-person navigation are deferred because they require a wider core camera contract. Real touch hardware remains a separate verification gate.
+
+Focused gates (September 7, 2026), each run from its package with `../../node_modules/.bin/vitest.cmd run <test> --maxWorkers=1 --cache=false`: controls `test/orbit-controls.test.ts` passed 8 tests in 450 ms; visualization `test/camera.test.ts` passed 3 tests in 270 ms. Inputs stable, commands ran concurrently without shared caches. No processes running. Commit pending supervisor turn.
