@@ -1,12 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { InstancedGroup } from '../src/instanced-group.js';
-import { GroupObject } from '../src/group-object.js';
+import { GroupObject, buildGeometry } from '../src/group-object.js';
 import { triangle, identity, translation, concat, rgba } from './helpers.js';
 
 const red = rgba(1, 0, 0, 1);
 const blue = rgba(0, 0, 1, 0.5);
 
 describe('GroupObject', () => {
+  it('averages indexed face normals at shared vertices', () => {
+    const geometry = buildGeometry({
+      positions: new Float32Array([0,0,0, 1,0,0, 0,1,0, 0,0,1]),
+      indices: new Uint32Array([0,1,2, 0,3,1]),
+    });
+    const normals = geometry.getAttribute('normal');
+    for (const vertex of [0,1]) {
+      expect(normals.getX(vertex)).toBeCloseTo(0);
+      expect(normals.getY(vertex)).toBeCloseTo(Math.SQRT1_2);
+      expect(normals.getZ(vertex)).toBeCloseTo(Math.SQRT1_2);
+    }
+    expect([normals.getX(2),normals.getY(2),normals.getZ(2)]).toEqual([0,0,1]);
+    expect([normals.getX(3),normals.getY(3),normals.getZ(3)]).toEqual([0,1,0]);
+    geometry.dispose();
+  });
+
   it('builds an InstancedMesh with the group instance count on first sync', () => {
     const g = new InstancedGroup(triangle());
     g.append(concat(identity(), translation(1, 2, 3)), concat(red, blue));

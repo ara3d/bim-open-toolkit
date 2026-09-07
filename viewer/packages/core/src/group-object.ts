@@ -18,9 +18,9 @@ import {
 export function buildGeometry(mesh: MeshBuffers): BufferGeometry {
   const g = new BufferGeometry();
   g.setAttribute('position', new BufferAttribute(mesh.positions, 3));
+  if (mesh.indices) g.setIndex(new BufferAttribute(mesh.indices, 1));
   if (mesh.normals) g.setAttribute('normal', new BufferAttribute(mesh.normals, 3));
   else g.computeVertexNormals();
-  if (mesh.indices) g.setIndex(new BufferAttribute(mesh.indices, 1));
   return g;
 }
 

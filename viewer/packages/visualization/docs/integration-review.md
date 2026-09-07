@@ -23,6 +23,16 @@ Storage namespace isolation, explicit overwrite, validation-before-save, quota d
 
 Source-inspected persistence edge case sent to its owner: restoreSceneDocument treats additions from disabled edit layers as available for reference diagnostics even though composeEdits ignores those layers.
 
-Under an explicit replacement.ts/test ownership transfer, fixed source snapshotting to run before allocations or hiding. A regression test uses a structurally compatible host-extended record with an uncloneable callback and verifies that failure leaves source alpha/version, source picking, overlay count and undo state unchanged. Focused replacement tests passed 4/4 in 1.52 s on September 7, 2026. No further replacement edits pending; commit pending.
+Under an explicit replacement.ts/test ownership transfer, fixed source snapshotting to run before allocations or hiding. A regression test uses a structurally compatible host-extended record with an uncloneable callback and verifies that failure leaves source alpha/version, source picking, overlay count and undo state unchanged. Focused replacement tests passed 4/4 in 1.52 s on September 7, 2026. Commit: `40f29fb8fa3ee3170484b5ab767c33ed57a0aac5`.
 
 Coordinator requested broad stable-input verification: complete core suite passed 68 tests across 10 files in 7.01 s; complete controls suite passed 32 tests across 5 files in 4.03 s. Both ran concurrently with package-local Vitest `run --maxWorkers=1 --cache=false`. No processes remain. No browser measurements were run by this track.
+
+## Final isolated validation attempt
+
+An isolated hidden in-app browser tab could not be created: CUA returned `Browser is not available: iab`; its browser inventory then returned an empty array. No browser tab was opened or touched. Consequently this track claims no visual, route-reopening or live input verification. Coordinator owns the available browser and visual checks.
+
+Read-only follow-up confirms host cancellation/status/model-aware name/pagehide fixes are present. Anonymous canvas picking listeners still remain if a caller disposes while retaining the original canvas; normal route replacement discards that canvas. Projection cleanup removes its capture listeners/buttons and restores the prior render camera; host picking uses the active render camera. Replacement cleanup disposes its layer before host renderer teardown; React cleanup unmounts its root and controller. Gratify host reset clears remaining HTML controls through panel replacement.
+
+Concrete source finding: core `group-object.ts` computed fallback vertex normals before setting mesh indices. Small-scene indexed meshes without supplied normals could therefore shade incorrectly. Under a new explicit source fence, moved index assignment before normal generation and added an indexed two-face regression checking averaged shared-vertex normals and unshared face normals. Focused core group-object suite passed 10/10 tests in 809 ms with `--maxWorkers=1 --cache=false`. Batched and replacement geometry already assign indices first. Source writes stopped; commit pending.
+
+State: review complete, no processes or browser resources owned. Documentation ownership returned to coordinator for integration.
