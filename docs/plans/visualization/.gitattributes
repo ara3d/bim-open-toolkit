@@ -1,0 +1,3 @@
+# Preserve exact source and historical Git bytes across checkouts.
+PRODUCT-BRIEF.md -text
+history/*.md -text
