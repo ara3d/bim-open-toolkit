@@ -174,6 +174,26 @@ export {
   type LineSegment,
 } from './environment.js';
 
+// Ambient occlusion: contact shadow as settings, a resolved pass, the seam a renderer implements,
+// and a pure height-field estimator the GPU pass is judged against.
+export {
+  ambientOcclusionPass,
+  applyAmbientOcclusion,
+  checkAmbientOcclusion,
+  defaultAmbientOcclusion,
+  heightFieldVisibility,
+  leastResolutionScale,
+  mostSamples,
+  occlusionBufferSize,
+  occlusionRadiusFor,
+  type AmbientOcclusionOutput,
+  type AmbientOcclusionPass,
+  type AmbientOcclusionSettings,
+  type AmbientOcclusionTarget,
+  type HeightField,
+  type PixelSize,
+} from './ambient-occlusion.js';
+
 // Capture behind an adapter: draw, encode, and put the view back the size it was.
 export {
   captureImage,
