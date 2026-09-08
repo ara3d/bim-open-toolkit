@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  columnNames, completeFacts, conflicting, coverageOfFacts, deleteObjects, editLayer, emptyDocument,
+  cellOf, columnNames, completeFacts, conflicting, coverageOfFacts, deleteObjects, editLayer, emptyDocument,
   emptyTable, f32Column, fact, formatPath, getSlice, identityMatrix, indexFacts, instanceRecords,
   instanceTable, integer, joinTablesOn, known, object, objectKey, objectRef, parse, putSlice, reconcile,
   resolveStyles, rowsInSet, setKeys, setOf, stateSlice, string, stringColumn, styleComposition, styleOf,
@@ -52,8 +52,10 @@ describe('README examples', () => {
 
     const placed = instanceRecords(doors.map((_unused, index): InstanceRecord => ({
       meshIndex: 0, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: index,
+      visible: index !== 2,
     })));
     const rows = withColumn(instanceTable(placed), 'objectKey', stringColumn(keys));
+    expect(cellOf(rows, 'visible', 2)).toBe(false);
     expect(rowsInSet(rows, 'objectIndex', unrated, keys).rowCount).toBe(2);
     const schedule = tableFromRecord({ objectKey: stringColumn(keys), width: f32Column([0.9, 1.2, 0.8]) });
     const joined = joinTablesOn(rows, 'objectKey', schedule, 'objectKey', 'schedule.');

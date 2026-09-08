@@ -92,6 +92,75 @@ export declare const rowsInSet: (source: Table, keyColumn: string, set: ObjectSe
 export declare const setOfRows: (source: Table, keyColumn: string, keys?: readonly ObjectKey[]) => ObjectSet;
 ```
 
+## M1.2 additions
+
+Additive follow-up to Track F's four requests (`packages/formats/docs/CHECKPOINT-F.md`, "Requests")
+and to the instance-update study's recommendations 2, 7 and 10. Nothing below renames, removes or
+re-signs an M1 or M1.1 export, so the revision label stays M1; every new field is optional and the
+module blocks further down are the M1 declarations, which do not repeat these.
+
+### `mesh` — visibility, materials and a columnar mesh table
+
+An optional column absent means the default, so a producer that knows nothing about visibility or
+materials allocates nothing and every reader still gets an answer. A hidden placement is now a row,
+which is what lets hiding be a column write rather than a rebuild.
+
+`MeshTable` is `Geometry.meshes` as buffers: 171,569 meshes on the reference model are five typed
+arrays instead of 171,569 records holding two views and a bounds object each. A mesh's indices count
+from its own first vertex, which is what lets `meshAt` hand back a `Mesh` of views with nothing
+copied and nothing rebased. Normals survive only when every mesh has them, since one buffer cannot
+hold a gap.
+
+```ts
+export declare const boundsStride = 6;
+export declare const defaultRoughness = 1;
+export declare const defaultMetallic = 0;
+export type MeshTable = { readonly positions: Float32Array; readonly indices: Uint32Array; readonly normals?: Float32Array | undefined; readonly vertexStart: Int32Array; readonly vertexCount: Int32Array; readonly indexStart: Int32Array; readonly indexCount: Int32Array; readonly bounds: Float32Array; };
+export declare const meshTableFrom: (meshes: readonly Mesh[]) => MeshTable;
+export declare const meshCount: (source: MeshTable) => number;
+export declare const meshAt: (source: MeshTable, index: number) => Mesh;
+export declare const meshBoundsAt: (source: MeshTable, index: number) => Bounds;
+export declare const isInstanceVisible: (records: InstanceRecords, row: number) => boolean;
+export declare const instanceRoughness: (records: InstanceRecords, row: number) => number;
+export declare const instanceMetallic: (records: InstanceRecords, row: number) => number;
+```
+
+The three widened types, with the M1 fields unchanged and the new ones optional:
+
+```ts
+export type InstanceRecords = { /* M1 fields */ readonly visible?: Uint8Array | undefined; readonly roughness?: Float32Array | undefined; readonly metallic?: Float32Array | undefined; };
+export type InstanceRecord = { /* M1 fields */ readonly visible?: boolean | undefined; readonly roughness?: number | undefined; readonly metallic?: number | undefined; };
+export type Geometry = { /* M1 fields */ readonly meshTable?: MeshTable | undefined; };
+```
+
+Rules a reader may rely on:
+
+- `visible` holds 1 for a drawn row and 0 for a hidden one. Absent means every row is visible.
+- `roughness` and `metallic` absent read as `defaultRoughness` (1, fully diffuse) and
+  `defaultMetallic` (0, not metal). They are model-level because a source file carries them per
+  placement: the BFAST instance flags word holds a roughness byte and a metallic byte. What a
+  renderer decides for itself stays in `render`.
+- `Geometry.meshTable` is the same meshes as `meshes`, in the same order, so mesh index `i` is both
+  `meshes[i]` and `meshAt(meshTable, i)`. A producer that carries only the buffers leaves `meshes`
+  empty; whatever `meshes` holds never disagrees with the table. `geometryBounds` reads a mesh's box
+  from the table when `meshes` does not hold it.
+- `meshAt` and `meshBoundsAt` read an index outside the table as an empty mesh and empty bounds.
+- `instanceRecords` allocates an optional column only when some row gives it a value.
+
+### `instance-table` — the optional columns
+
+`instanceTable` adds `visible` as a `bool` column and `roughness` and `metallic` as `f32` columns,
+each only when the records carry it, each sharing the records' own array as `meshIndex` already does.
+Absent stays absent, so a table of records with no optional column has exactly its M1.1 columns.
+
+### `objects` — what `representation` means
+
+Unchanged and not deprecated, now stated: `ObjectRecord.representation` is the row in
+`Geometry.instances` of the object's first drawn placement, and nothing more. An object with many
+placements has many rows, and `InstanceRecords.objectIndex` is the whole mapping. Absent means the
+object draws nothing, which is what `hasRepresentation` reports. It is kept because it answers "does
+this object draw anything" without a pass over `objectIndex`.
+
 ## Signatures
 
 The emitted declarations, grouped by module, in dependency order.

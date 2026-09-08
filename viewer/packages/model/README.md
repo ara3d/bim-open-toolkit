@@ -46,7 +46,7 @@ correction:
 | `view` | camera pose, projection, framing, saved views |
 | `slices` | `StateSlice<S>`, the scene document, migration and round-trip |
 | `table` | columnar tables with select, filter, sort and joins on integer or string keys |
-| `mesh` | plain-data meshes and columnar instance records |
+| `mesh` | plain-data meshes, the same meshes as buffers, and columnar instance records |
 | `instance-table` | instance records as a table, one column per component |
 | `table-sets` | table rows selected by an object set, and read back into one |
 | `facts` | observations, evidence, missing reasons, conflicts, coverage |
@@ -98,7 +98,7 @@ Review the doors of a model: what is rated, what a survey settles, what to colou
 
 ```ts
 import {
-  completeFacts, conflicting, coverageOfFacts, f32Column, fact, identityMatrix, indexFacts,
+  cellOf, completeFacts, conflicting, coverageOfFacts, f32Column, fact, identityMatrix, indexFacts,
   instanceRecords, instanceTable, joinTablesOn, known, objectKey, objectRef, reconcile, resolveStyles,
   rowsInSet, setKeys, setOf, stringColumn, styleComposition, styleOf, styleRule, tableFromRecord, text,
   unknownFacts, withColumn, type InstanceRecord, type ModelRef,
@@ -126,11 +126,14 @@ const rules = [styleRule('unrated', 'Unrated doors', setKeys(unrated), { color: 
 const resolved = resolveStyles(styleComposition(new Map(), [], rules), keys);
 styleOf(resolved, objectKey(door('d2'))).color; // [1, 0, 0]
 
-// The rows that draw, the two that are unrated, and the schedule row beside each door.
+// The rows that draw, the third door placed but not drawn, the two that are unrated, and the
+// schedule row beside each door.
 const placed = instanceRecords(doors.map((_unused, index): InstanceRecord => ({
   meshIndex: 0, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: index,
+  visible: index !== 2,
 })));
 const rows = withColumn(instanceTable(placed), 'objectKey', stringColumn(keys));
+cellOf(rows, 'visible', 2); // false
 rowsInSet(rows, 'objectIndex', unrated, keys).rowCount; // 2
 const schedule = tableFromRecord({ objectKey: stringColumn(keys), width: f32Column([0.9, 1.2, 0.8]) });
 joinTablesOn(rows, 'objectKey', schedule, 'objectKey', 'schedule.'); // 3 rows, widths alongside
