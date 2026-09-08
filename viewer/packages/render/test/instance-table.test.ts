@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { colorStride, instanceRecords, transformStride } from '@bim-open-toolkit/model';
+import { groupBounds } from '@ara3d/viewer-core';
+import { colorStride, emptyInstances, instanceRecords, meshTableFrom, transformStride } from '@bim-open-toolkit/model';
+import {
+  geometryMeshAt,
+  geometryMeshCount,
+  geometryMeshTriangles,
+} from '../src/geometry-meshes.js';
 import {
   buildInstanceTable,
   colorOfRow,
@@ -15,7 +21,8 @@ import {
   transformOfRow,
   visibleRows,
 } from '../src/instance-table.js';
-import { cube, fixtureKey, fixtureKeys, instanceAt, scene, standardKeys, standardScene } from './fixture.js';
+import { resolveHit } from '../src/picking.js';
+import { cube, fixtureKey, fixtureKeys, instanceAt, scene, standardKeys, standardScene, tableOnly } from './fixture.js';
 
 const built = () => {
   const result = buildInstanceTable(standardScene(), standardKeys);
@@ -151,6 +158,82 @@ describe('meshBuffers', () => {
     expect(buffers.normals).toBeUndefined();
     expect(buffers.positions.length / 3).toBe(8);
     expect(source.indices.length).toBe(36);
+  });
+});
+
+describe('a geometry that carries its meshes only as a table', () => {
+  const fromRecords = built().value;
+  const tabled = buildInstanceTable(tableOnly(standardScene()), standardKeys);
+
+  it('builds, where reading `meshes` alone would have bound nothing', () => {
+    expect(tabled.ok).toBe(true);
+    if (!tabled.ok) return;
+    expect(groupCount(tabled.value)).toBe(3);
+    expect([...tabled.value.meshOfGroup]).toEqual([...fromRecords.meshOfGroup]);
+    expect([...tabled.value.groupStart]).toEqual([...fromRecords.groupStart]);
+    expect(tabled.value.rowCount).toBe(fromRecords.rowCount);
+  });
+
+  it('gives every group the same buffers, the same mesh and the same bounds', () => {
+    if (!tabled.ok) return;
+    for (let g = 0; g < groupCount(fromRecords); g++) {
+      const expected = fromRecords.groups[g];
+      const actual = tabled.value.groups[g];
+      if (expected === undefined || actual === undefined) throw new Error(`group ${g} is missing`);
+      expect([...actual.mesh.positions]).toEqual([...expected.mesh.positions]);
+      expect([...(actual.mesh.indices ?? [])]).toEqual([...(expected.mesh.indices ?? [])]);
+      expect(actual.mesh.normals).toBeUndefined();
+      expect([...(tabled.value.colors[g] ?? [])]).toEqual([...(fromRecords.colors[g] ?? [])]);
+      expect([...(tabled.value.transforms[g] ?? [])]).toEqual([...(fromRecords.transforms[g] ?? [])]);
+      expect(groupBounds(actual)).toEqual(groupBounds(expected));
+    }
+  });
+
+  it('counts the same rendered triangles', () => {
+    if (!tabled.ok) return;
+    expect(renderedTriangles(tabled.value, tableOnly(standardScene()))).toBe(
+      renderedTriangles(fromRecords, standardScene()),
+    );
+  });
+
+  it('resolves every hit to the same object', () => {
+    if (!tabled.ok) return;
+    for (let g = 0; g < groupCount(fromRecords); g++)
+      for (let slot = 0; slot < 3; slot++) {
+        const hit = { group: g, slot, point: [0, 0, 0] as const, distance: 1 };
+        expect(resolveHit(tabled.value, hit)).toEqual(resolveHit(fromRecords, hit));
+      }
+  });
+
+  it('prefers the table when the geometry carries both forms', () => {
+    const source = standardScene();
+    const both = { ...source, meshTable: meshTableFrom([cube(9)]) };
+    expect(geometryMeshCount(both)).toBe(1);
+    expect(geometryMeshAt(both, 0)?.bounds.max).toEqual([4.5, 4.5, 4.5]);
+    expect(geometryMeshAt(both, 1)).toBeUndefined();
+    expect(geometryMeshTriangles(both, 0)).toBe(12);
+  });
+});
+
+describe('a geometry that carries neither form', () => {
+  it('binds zero meshes rather than throwing', () => {
+    const result = buildInstanceTable(scene(0, [instanceAt(0, 0, 0)]), fixtureKeys(1));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(groupCount(result.value)).toBe(0);
+    expect(result.value.rowCount).toBe(0);
+    expect(result.diagnostics.map((item) => item.code)).toContain('geometry-free-instances');
+  });
+
+  it('binds zero meshes when the table it carries is empty', () => {
+    const empty = { meshes: [], instances: emptyInstances(2), meshTable: meshTableFrom([]) };
+    expect(geometryMeshCount(empty)).toBe(0);
+    expect(geometryMeshAt(empty, 0)).toBeUndefined();
+    expect(geometryMeshTriangles(empty, 0)).toBe(0);
+    const result = buildInstanceTable(empty, fixtureKeys(2));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(groupCount(result.value)).toBe(0);
   });
 });
 

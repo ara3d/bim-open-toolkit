@@ -5,6 +5,14 @@
 // test can substitute: `RaycastSource`, `EnvironmentTarget`, `OverlayRenderer`, `CaptureTarget`
 // and `GpuFrameTimer`.
 
+// Reading a geometry's meshes in whichever form it carries: the M1.2 `meshTable` when it has one,
+// the `meshes` records otherwise.
+export {
+  geometryMeshAt,
+  geometryMeshCount,
+  geometryMeshTriangles,
+} from './geometry-meshes.js';
+
 // Rows of rendered instances bound to viewer-core groups through index columns, with no
 // per-instance JavaScript object.
 export {

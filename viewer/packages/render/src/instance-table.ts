@@ -30,6 +30,7 @@ import {
   type ObjectKey,
   type Result,
 } from '@bim-open-toolkit/model';
+import { geometryMeshAt, geometryMeshCount, geometryMeshTriangles } from './geometry-meshes.js';
 
 // Offset of the alpha channel inside an RGBA instance colour.
 export const alphaChannel = 3;
@@ -57,7 +58,7 @@ export type InstanceTable = {
   readonly groupStart: Int32Array;
   // Group ordinal of each row.
   readonly groupOfRow: Int32Array;
-  // Index into `geometry.meshes` for each group.
+  // Mesh index each group draws, addressing whichever form the geometry carries.
   readonly meshOfGroup: Int32Array;
   // Object ordinal of each row.
   readonly objectOfRow: Int32Array;
@@ -152,10 +153,10 @@ export const transformOfRow = (table: InstanceTable, row: number): readonly numb
 export const renderedTriangles = (table: InstanceTable, geometry: Geometry): number => {
   let total = 0;
   for (let g = 0; g < table.groups.length; g++) {
-    const mesh = geometry.meshes[table.meshOfGroup[g] ?? -1];
-    if (mesh === undefined) continue;
+    const triangles = geometryMeshTriangles(geometry, table.meshOfGroup[g] ?? -1);
+    if (triangles === 0) continue;
     const rows = (table.groupStart[g + 1] ?? 0) - (table.groupStart[g] ?? 0);
-    total += rows * (mesh.indices.length / 3);
+    total += rows * triangles;
   }
   return total;
 };
@@ -176,7 +177,7 @@ type Plan = {
 };
 
 const planGroups = (geometry: Geometry): Plan => {
-  const meshCount = geometry.meshes.length;
+  const meshCount = geometryMeshCount(geometry);
   const rowsOfMesh = new Int32Array(meshCount);
   const instances = geometry.instances;
   let rowCount = 0;
@@ -298,7 +299,7 @@ export const buildInstanceTable = (
 
   const groups: InstancedGroup[] = [];
   for (let g = 0; g < plan.meshOfGroup.length; g++) {
-    const source = geometry.meshes[plan.meshOfGroup[g] ?? -1];
+    const source = geometryMeshAt(geometry, plan.meshOfGroup[g] ?? -1);
     if (source === undefined)
       return failure([diagnostic('missing-mesh', `Group ${g} names a mesh the library does not hold`, ['meshes', g])]);
     const start = groupStart[g] ?? 0;

@@ -5,6 +5,7 @@ import {
   identityMatrix,
   instanceRecords,
   mesh,
+  meshTableFrom,
   modelIdentity,
   objectKey,
   objectRef,
@@ -86,3 +87,11 @@ export const standardScene = (): Geometry =>
 
 // The five objects the standard scene names, the last of which draws nothing.
 export const standardKeys = fixtureKeys(5);
+
+// The same geometry with its meshes only as columns, which is what a BFAST model gives a binding:
+// `meshTable` holds every mesh and `meshes` is empty.
+export const tableOnly = (geometry: Geometry): Geometry => ({
+  instances: geometry.instances,
+  meshes: [],
+  meshTable: meshTableFrom(geometry.meshes),
+});
