@@ -57,6 +57,7 @@ import { Viewer, defaultMaterial } from '@ara3d/viewer-core';
 import { captureTarget, clippingTarget, environmentTarget, gpuFrameTimer, raycastSource } from './adapters.js';
 import { applyView, projectPointOnto, rayThroughClientPoint } from './camera.js';
 import { resolveModelSource } from './model-source.js';
+import { framingOf } from './framing.js';
 import { attachRenderHooks } from './render-hooks.js';
 import { viewSlice } from './view-slice.js';
 import type { FrameInfo, GalleryViewer, ModelSource, OpenedModel } from './contracts.js';
@@ -163,6 +164,10 @@ export const createGalleryViewer = (
   });
   writeCamera();
 
+  // What the camera frames and what the environment is sized to: the bulk of the model rather than
+  // the union of everything in it, because a real model carries strays kilometres from its building.
+  const framed = (): Bounds => framingOf(binding).bounds;
+
   const size = (): { readonly width: number; readonly height: number } => ({
     width: canvas.clientWidth,
     height: canvas.clientHeight,
@@ -190,7 +195,7 @@ export const createGalleryViewer = (
     const bound = binding.addModel(model.modelId, model.geometry, model.keys, { material: blendableMaterial });
     if (!bound.ok) return failure([...resolved.diagnostics, ...bound.diagnostics]);
     opened.push(model);
-    const box = binding.bounds();
+    const box = framed();
     applyEnvironmentTo(box);
     controller.setSession(navSession(fitted(box)));
     session.write(viewSlice, controller.session().nav.view);
@@ -198,7 +203,7 @@ export const createGalleryViewer = (
     drawing = attachRenderHooks(session, features, {
       binding,
       opened: () => [...opened],
-      bounds: () => binding.bounds(),
+      bounds: framed,
       clipping: clippingTarget(core),
       environmentTarget: (up) => environmentTarget(core, up),
       setView: (view) => {
@@ -263,7 +268,7 @@ export const createGalleryViewer = (
     bounds: () => (opened.length === 0 ? undefined : binding.bounds()),
     fit: () => {
       if (opened.length === 0) return;
-      controller.setSession(navSession(fitted(binding.bounds())));
+      controller.setSession(navSession(fitted(framed())));
       session.write(viewSlice, controller.session().nav.view);
     },
     flyTo: (bounds: Bounds) => {

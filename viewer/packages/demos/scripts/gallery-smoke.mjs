@@ -70,7 +70,12 @@ const smokeOne = async (runInBrowser, id, origin) => {
       screenshotSelector: '.gallery-viewport',
       viewportWidth: 1200,
       viewportHeight: 800,
-      timeoutMs: 60_000,
+      timeoutMs: 180_000,
+      // The real model is six million triangles. A software rasteriser never finishes drawing it -
+      // measured: still not ready after five minutes - so the machine's own GPU is used, and the
+      // pictures are what a person would see. `GALLERY_SMOKE_SOFTWARE=1` forces the software path
+      // for a machine with no GPU, which is only useful for the generated fixtures.
+      softwareWebGL: process.env.GALLERY_SMOKE_SOFTWARE === '1',
       collectGraphics: true,
     });
     const said = run.value ?? {};
