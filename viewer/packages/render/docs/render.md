@@ -23,6 +23,10 @@ but nothing in `src` imports it.
 
 ## Binding: `instance-table.ts`
 
+A model `Geometry` carries its meshes as records, as the M1.2 `meshTable`, or as both, and
+`geometry-meshes.ts` is the one place this package reads them: the table wins when both are there, so
+a BFAST model, whose `meshes` is empty, binds exactly as one carrying records does.
+
 A model `Geometry` is a mesh library plus columnar instance records. Binding it produces an
 `InstanceTable`: one **row** per rendered instance, and a set of typed-array index columns that
 connect rows to everything a caller might address.
