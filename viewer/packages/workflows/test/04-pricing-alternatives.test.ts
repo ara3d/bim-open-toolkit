@@ -29,6 +29,28 @@ describe('pricing alternatives', () => {
     expect(carpetException?.['reason']).toBe('unresolved-source');
   });
 
+  it('leaves a scope with two rates of the right unit unpriced rather than taking the first', () => {
+    const ambiguous = {
+      ...input,
+      rates: [
+        ...input.rates,
+        { id: 'r5', scopeType: 'Doors', scenario: 'base', currency: 'USD', unit: 'ea', ratePerUnit: 160 },
+      ],
+    };
+    const result2 = valueOfResult('pricing alternatives', runPricingAlternatives(ambiguous));
+    expect(
+      resultRows(result2, 'priced').filter((row) => row['objectId'] === 'SC-Doors' && row['scenario'] === 'base'),
+    ).toEqual([]);
+    expect(exceptionRows(result2)[0]).toEqual({
+      subjects: ['SC-Doors'],
+      field: 'rate',
+      scope: 'base',
+      detail: '2 rates matched this scope, scenario and unit',
+      kind: 'missing',
+      reason: 'unresolved-source',
+    });
+  });
+
   it('refuses a scopes table that repeats an id rather than losing a row', () => {
     const repeated = runPricingAlternatives({ ...input, scopes: [...input.scopes, ...input.scopes.slice(0, 1)] });
     expect(repeated.ok).toBe(false);
