@@ -188,7 +188,7 @@ Plan: [FEATURE-DEMOS-PLAN.md](FEATURE-DEMOS-PLAN.md). User request: show by leve
 | FD2 `separate` demo | Opus | same pattern, `separate` | working (FB verified; row layouts shimmed locally, requested from FB) | `CHECKPOINT-FD2.md` |
 | FD3 `hud-fps`, `hud-minimap`, `hud-gumball` demos | Opus | same pattern, three ids | working (host frame hook and GPU timer; FB hud verified) | `CHECKPOINT-FD3.md` |
 | FD-shared page frame, Vite config, browser helper | supervisor | `demos/{src,test}/feature-demos/_shared/**`, `host-smoke`, `demos/vite.feature-demos.config.mjs`, `demos/docs/feature-demos.md` | verified: shared host over viewer's session and feature host, SceneBinding on viewer-core, interact navigation, render adapters, pick, project, fit, capture, frame hook, real timer-query GPU timer (no `any`); smoke page draws the building with roof and ceilings in Edge software WebGL, 154 objects, GPU timing available; 9 unit tests plus the browser smoke; commits `f2ad8e1` `b454c00`; replaced by `createViewer` when V lands it | `viewer/packages/demos/docs/feature-demos.md` |
-| S4 opt-in room volumes for the building generator | Opus | `viewer/packages/synthetic/**` (after S3) | working | `viewer/packages/synthetic/docs/CHECKPOINT-S4.md` |
+| S4 opt-in room volumes for the building generator | Opus | `viewer/packages/synthetic/**` (after S3; fence released 2026-09-08) | verified: `roomVolumes` option, the Room object itself gains a shared unit-box representation scaled to its cell inset by half a wall, default building unchanged at 150 objects; 236 tests; commits `aaa641a` `8e45873`; supervisor re-ran tsc and tests | `viewer/packages/synthetic/docs/CHECKPOINT-S4.md` |
 
 ## Gallery wave — started 2026-09-08 (third session)
 

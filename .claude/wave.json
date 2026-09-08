@@ -179,11 +179,6 @@
         "viewer/packages/features/docs/CHECKPOINT-FC.md"
       ]
     },
-    "S3": {
-      "paths": [
-        "viewer/packages/synthetic/**"
-      ]
-    },
     "FD1": {
       "paths": [
         "viewer/packages/demos/src/feature-demos/show-by/**",
