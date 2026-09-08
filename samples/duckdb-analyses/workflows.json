@@ -1,0 +1,931 @@
+[
+  {
+    "id": "duckdb-door-schedule",
+    "title": "Door schedule",
+    "tag": "JOIN + PROJECT",
+    "description": "Join doors to their storeys, select schedule fields, and sort by mark. Widths are metres; NULL means the source value or its units were not established.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "doors",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "levels",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "attach-level",
+            "kind": "table.join",
+            "version": 1
+          },
+          {
+            "id": "schedule-fields",
+            "kind": "table.project",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "doors.table",
+            "to": "attach-level.a"
+          },
+          {
+            "from": "levels.table",
+            "to": "attach-level.b"
+          },
+          {
+            "from": "attach-level.table",
+            "to": "schedule-fields.table"
+          },
+          {
+            "from": "schedule-fields.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "doors.source"
+          },
+          {
+            "from": "database.source",
+            "to": "levels.source"
+          }
+        ]
+      },
+      "values": {
+        "doors": {
+          "sql": "SELECT element_mark AS Mark, element_name AS DoorType, element_location_primary_storey AS StoreyKey, nominal_width AS Width_m, nominal_width_reason AS WidthStatus FROM door"
+        },
+        "levels": {
+          "sql": "SELECT id AS StoreyKey, element_name AS Storey FROM storey"
+        },
+        "attach-level": {
+          "aKey": "StoreyKey",
+          "bKey": "StoreyKey",
+          "mode": "left"
+        },
+        "schedule-fields": {
+          "columns": "Mark, DoorType, Storey, Width_m, WidthStatus"
+        },
+        "answer": {
+          "A": "Storey",
+          "descendingA": "false",
+          "B": "Mark",
+          "descendingB": "false"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "doors": {
+          "x": 20,
+          "y": 20
+        },
+        "levels": {
+          "x": 330,
+          "y": 20
+        },
+        "attach-level": {
+          "x": 170,
+          "y": 245
+        },
+        "schedule-fields": {
+          "x": 20,
+          "y": 480
+        },
+        "answer": {
+          "x": 330,
+          "y": 480
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-door-types",
+    "title": "Most-used door types",
+    "tag": "AGGREGATE + LIMIT",
+    "description": "Count occurrences by source door type, rank the groups, and take the top ten. Change count on the final node to explore a longer list.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.limit",
+            "version": 1
+          },
+          {
+            "id": "doors",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "count-types",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "rank-types",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "doors.table",
+            "to": "count-types.table"
+          },
+          {
+            "from": "count-types.table",
+            "to": "rank-types.table"
+          },
+          {
+            "from": "rank-types.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "doors.source"
+          }
+        ]
+      },
+      "values": {
+        "doors": {
+          "sql": "SELECT element_name AS DoorType FROM door"
+        },
+        "count-types": {
+          "groupBy": "DoorType",
+          "aggregates": "count(*) as Doors"
+        },
+        "rank-types": {
+          "A": "Doors",
+          "descendingA": "true",
+          "B": "DoorType",
+          "descendingB": "false"
+        },
+        "answer": {
+          "count": "10",
+          "offset": "0"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "doors": {
+          "x": 20,
+          "y": 30
+        },
+        "count-types": {
+          "x": 330,
+          "y": 30
+        },
+        "rank-types": {
+          "x": 330,
+          "y": 265
+        },
+        "answer": {
+          "x": 20,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-room-schedule",
+    "title": "Room schedule",
+    "tag": "JOIN + SORT",
+    "description": "Join all 290 space records to storeys. Display source room numbers and names alongside area values and their availability, without turning missing areas into zero.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "rooms",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "levels",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "attach-level",
+            "kind": "table.join",
+            "version": 1
+          },
+          {
+            "id": "room-fields",
+            "kind": "table.project",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "rooms.table",
+            "to": "attach-level.a"
+          },
+          {
+            "from": "levels.table",
+            "to": "attach-level.b"
+          },
+          {
+            "from": "attach-level.table",
+            "to": "room-fields.table"
+          },
+          {
+            "from": "room-fields.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "rooms.source"
+          },
+          {
+            "from": "database.source",
+            "to": "levels.source"
+          }
+        ]
+      },
+      "values": {
+        "rooms": {
+          "sql": "SELECT number AS RoomNumber, element_name AS Room, storey AS StoreyKey, net_floor_area AS Area_m2, net_floor_area_reason AS AreaStatus FROM space"
+        },
+        "levels": {
+          "sql": "SELECT id AS StoreyKey, element_name AS Storey FROM storey"
+        },
+        "attach-level": {
+          "aKey": "StoreyKey",
+          "bKey": "StoreyKey",
+          "mode": "left"
+        },
+        "room-fields": {
+          "columns": "RoomNumber, Room, Storey, Area_m2, AreaStatus"
+        },
+        "answer": {
+          "A": "Storey",
+          "descendingA": "false",
+          "B": "RoomNumber",
+          "descendingB": "false"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "rooms": {
+          "x": 20,
+          "y": 20
+        },
+        "levels": {
+          "x": 330,
+          "y": 20
+        },
+        "attach-level": {
+          "x": 170,
+          "y": 245
+        },
+        "room-fields": {
+          "x": 20,
+          "y": 480
+        },
+        "answer": {
+          "x": 330,
+          "y": 480
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-room-distribution",
+    "title": "Rooms by storey",
+    "tag": "BRANCH + AGGREGATE",
+    "description": "Count rooms by their typed storey reference and join the counts to readable level names. This counts mapped records; it does not certify spatial completeness.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "sql.query",
+            "version": 1
+          },
+          {
+            "id": "rooms",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "levels",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "count-rooms",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "attach-level",
+            "kind": "table.join",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "rooms.table",
+            "to": "count-rooms.table"
+          },
+          {
+            "from": "count-rooms.table",
+            "to": "attach-level.a"
+          },
+          {
+            "from": "levels.table",
+            "to": "attach-level.b"
+          },
+          {
+            "from": "attach-level.table",
+            "to": "answer.t1"
+          },
+          {
+            "from": "database.source",
+            "to": "rooms.source"
+          },
+          {
+            "from": "database.source",
+            "to": "levels.source"
+          }
+        ]
+      },
+      "values": {
+        "rooms": {
+          "sql": "SELECT storey AS StoreyKey FROM space"
+        },
+        "levels": {
+          "sql": "SELECT id AS StoreyKey, element_name AS Storey FROM storey"
+        },
+        "count-rooms": {
+          "groupBy": "StoreyKey",
+          "aggregates": "count(*) as Rooms"
+        },
+        "attach-level": {
+          "aKey": "StoreyKey",
+          "bKey": "StoreyKey",
+          "mode": "left"
+        },
+        "answer": {
+          "sql": "SELECT Storey, Rooms FROM t ORDER BY Rooms DESC, Storey"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "rooms": {
+          "x": 20,
+          "y": 20
+        },
+        "levels": {
+          "x": 330,
+          "y": 20
+        },
+        "count-rooms": {
+          "x": 20,
+          "y": 240
+        },
+        "attach-level": {
+          "x": 330,
+          "y": 260
+        },
+        "answer": {
+          "x": 330,
+          "y": 480
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-missing-widths",
+    "title": "Missing door widths",
+    "tag": "FILTER + EXPLAIN",
+    "description": "Filter for unavailable nominal widths and retain the recorded reason and explanation. These are data-quality findings, not a door-clearance compliance verdict.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.project",
+            "version": 1
+          },
+          {
+            "id": "door-facts",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "missing-only",
+            "kind": "table.filter",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "door-facts.table",
+            "to": "missing-only.table"
+          },
+          {
+            "from": "missing-only.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "door-facts.source"
+          }
+        ]
+      },
+      "values": {
+        "door-facts": {
+          "sql": "SELECT element_mark AS Mark, element_name AS DoorType, nominal_width AS Width_m, CASE WHEN nominal_width IS NULL THEN 1 ELSE 0 END AS MissingWidth, nominal_width_reason AS Reason, nominal_width_explanation AS Explanation FROM door"
+        },
+        "missing-only": {
+          "expr": "MissingWidth > 0"
+        },
+        "answer": {
+          "columns": "Mark, DoorType, Width_m, Reason, Explanation"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "door-facts": {
+          "x": 20,
+          "y": 30
+        },
+        "missing-only": {
+          "x": 330,
+          "y": 30
+        },
+        "answer": {
+          "x": 330,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-roof-coverage",
+    "title": "Roof quantity coverage",
+    "tag": "AGGREGATE + NULLS",
+    "description": "Group roof areas by availability. KnownArea_m2 stays NULL when a group has no known quantities; missing quantities are never priced or treated as zero.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "roof-facts",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "coverage",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "roof-facts.table",
+            "to": "coverage.table"
+          },
+          {
+            "from": "coverage.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "roof-facts.source"
+          }
+        ]
+      },
+      "values": {
+        "roof-facts": {
+          "sql": "SELECT COALESCE(net_surface_area_reason, 'Known') AS AreaStatus, net_surface_area AS Area_m2 FROM roof"
+        },
+        "coverage": {
+          "groupBy": "AreaStatus",
+          "aggregates": "count(*) as Roofs, count(Area_m2) as KnownAreas, sum(Area_m2) as KnownArea_m2"
+        },
+        "answer": {
+          "A": "Roofs",
+          "descendingA": "true"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "roof-facts": {
+          "x": 20,
+          "y": 30
+        },
+        "coverage": {
+          "x": 330,
+          "y": 30
+        },
+        "answer": {
+          "x": 330,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-evidence-trace",
+    "title": "Trace a width to evidence",
+    "tag": "UNNEST + JOIN",
+    "description": "Expand the native evidence-key list, then join each reference to its evidence record. Follow a missing width back to the source mapping explanation.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "width-evidence",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "evidence",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "resolve-evidence",
+            "kind": "table.join",
+            "version": 1
+          },
+          {
+            "id": "trace-fields",
+            "kind": "table.project",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "width-evidence.table",
+            "to": "resolve-evidence.a"
+          },
+          {
+            "from": "evidence.table",
+            "to": "resolve-evidence.b"
+          },
+          {
+            "from": "resolve-evidence.table",
+            "to": "trace-fields.table"
+          },
+          {
+            "from": "trace-fields.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "width-evidence.source"
+          },
+          {
+            "from": "database.source",
+            "to": "evidence.source"
+          }
+        ]
+      },
+      "values": {
+        "width-evidence": {
+          "sql": "SELECT element_mark AS Mark, nominal_width_reason AS Reason, unnest(nominal_width_evidence) AS EvidenceId FROM door"
+        },
+        "evidence": {
+          "sql": "SELECT id AS EvidenceId, origin AS Origin, method AS Method, explanation AS Explanation FROM evidence"
+        },
+        "resolve-evidence": {
+          "aKey": "EvidenceId",
+          "bKey": "EvidenceId",
+          "mode": "left"
+        },
+        "trace-fields": {
+          "columns": "Mark, Reason, Origin, Method, Explanation"
+        },
+        "answer": {
+          "A": "Mark",
+          "descendingA": "false",
+          "B": "Method",
+          "descendingB": "false"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "width-evidence": {
+          "x": 20,
+          "y": 20
+        },
+        "evidence": {
+          "x": 330,
+          "y": 20
+        },
+        "resolve-evidence": {
+          "x": 170,
+          "y": 245
+        },
+        "trace-fields": {
+          "x": 20,
+          "y": 480
+        },
+        "answer": {
+          "x": 330,
+          "y": 480
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-source-lineage",
+    "title": "Source provenance",
+    "tag": "JOIN + AGGREGATE",
+    "description": "Join mapped source objects to their delivery and authoring document, then count occurrence and type records. Source documents are not assumed to be physical buildings.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "source-objects",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "deliveries",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "attach-delivery",
+            "kind": "table.join",
+            "version": 1
+          },
+          {
+            "id": "count-sources",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "source-objects.table",
+            "to": "attach-delivery.a"
+          },
+          {
+            "from": "deliveries.table",
+            "to": "attach-delivery.b"
+          },
+          {
+            "from": "attach-delivery.table",
+            "to": "count-sources.table"
+          },
+          {
+            "from": "count-sources.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "source-objects.source"
+          },
+          {
+            "from": "database.source",
+            "to": "deliveries.source"
+          }
+        ]
+      },
+      "values": {
+        "source-objects": {
+          "sql": "SELECT source_revision_id AS RevisionId, source_role AS SourceRole FROM source_object"
+        },
+        "deliveries": {
+          "sql": "SELECT r.id AS RevisionId, d.name AS Document, r.exporter AS Exporter FROM source_revision r LEFT JOIN source_document d ON d.id = r.document_id"
+        },
+        "attach-delivery": {
+          "aKey": "RevisionId",
+          "bKey": "RevisionId",
+          "mode": "left"
+        },
+        "count-sources": {
+          "groupBy": "Document, Exporter, SourceRole",
+          "aggregates": "count(*) as SourceObjects"
+        },
+        "answer": {
+          "A": "SourceObjects",
+          "descendingA": "true"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "source-objects": {
+          "x": 20,
+          "y": 20
+        },
+        "deliveries": {
+          "x": 330,
+          "y": 20
+        },
+        "attach-delivery": {
+          "x": 170,
+          "y": 245
+        },
+        "count-sources": {
+          "x": 20,
+          "y": 480
+        },
+        "answer": {
+          "x": 330,
+          "y": 480
+        }
+      }
+    }
+  },
+  {
+    "id": "duckdb-typed-schema",
+    "title": "Explore typed columns",
+    "tag": "CATALOG + FILTER",
+    "description": "Inspect the actual database schema. Filter to numeric columns and group them by table and SQL type. This describes the schema, including currently empty core tables.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "column-catalog",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "numeric-only",
+            "kind": "table.filter",
+            "version": 1
+          },
+          {
+            "id": "count-columns",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "column-catalog.table",
+            "to": "numeric-only.table"
+          },
+          {
+            "from": "numeric-only.table",
+            "to": "count-columns.table"
+          },
+          {
+            "from": "count-columns.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "column-catalog.source"
+          }
+        ]
+      },
+      "values": {
+        "column-catalog": {
+          "sql": "SELECT table_name AS TableName, column_name AS ColumnName, data_type AS SqlType, CASE WHEN data_type IN ('DOUBLE', 'INTEGER', 'BIGINT', 'DECIMAL(38,10)') THEN 1 ELSE 0 END AS IsNumeric FROM information_schema.columns WHERE table_schema = 'main'"
+        },
+        "numeric-only": {
+          "expr": "IsNumeric > 0"
+        },
+        "count-columns": {
+          "groupBy": "TableName, SqlType",
+          "aggregates": "count(*) as NumericColumns"
+        },
+        "answer": {
+          "A": "NumericColumns",
+          "descendingA": "true",
+          "B": "TableName",
+          "descendingB": "false"
+        },
+        "database": {
+          "path": "{DUCKDB}"
+        }
+      },
+      "layout": {
+        "column-catalog": {
+          "x": 20,
+          "y": 30
+        },
+        "numeric-only": {
+          "x": 330,
+          "y": 30
+        },
+        "count-columns": {
+          "x": 330,
+          "y": 265
+        },
+        "answer": {
+          "x": 20,
+          "y": 265
+        }
+      }
+    }
+  }
+]
