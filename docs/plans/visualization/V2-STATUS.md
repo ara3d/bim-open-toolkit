@@ -61,7 +61,7 @@ Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside
 | M3 model additions for formats and render (F requests) | Opus | `viewer/packages/model/**` | working | `viewer/packages/model/docs/CHECKPOINT-M3.md` |
 | M2 model bridges (review follow-up) | Opus | `viewer/packages/model/**` | verified: `instanceTable` (4.1 ms at 100k rows versus 15.5 ms per-row, shared index arrays, transposed in 512-row blocks), `rowsInSet`/`setOfRows`, `joinTablesOn` for string keys, typed column accessors, `tableFromRecord`, `Vec2` helpers, README fixed and its example tested; additive, contract stays M1 (section M1.1 in CONTRACTS-M1.md); 224 tests; commits `d1d3bb6` `b489031` `31ef243` `b6885cb` `d1645b8` `560c91d`; supervisor re-ran tsc and tests | `viewer/packages/model/docs/CHECKPOINT-M2.md` |
 | E2E vertical slice (review follow-up) | Opus | `viewer/packages/demos/src/slice/**` | queued until R's instance table lands | — |
-| S2 remaining generators | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S2.md` |
+| S2 remaining generators | Opus | `viewer/packages/synthetic/**` | verified: services, revisions, schedule, quantities, costs, carbon, assets, clearances, city, field, plus a fixture catalog and JSON snapshots for all twelve; 212 tests, every default fixture under 500 ms; W0 column convention chosen (`foo`, `fooUnit`, `fooState`, `fooMissingReason`, `fooConflict`, `fooEvidence`) with M1 vocabulary; last commit `c7efbd2`; supervisor re-ran tsc and tests | `viewer/packages/synthetic/docs/CHECKPOINT-S2.md` |
 | W workflow adapters | Opus | `viewer/packages/workflows/**` | working | `viewer/packages/workflows/docs/CHECKPOINT-W.md` |
 
 ### Independent review, 2026-09-08
@@ -86,6 +86,8 @@ Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committe
 
 ### Requests between tracks
 
+- S2 to M: workflow 07 needs a bounds-valued observation; `FactValue` is quantity, text, flag or reference only, so `clearances` writes the box state into columns. Request: a bounds `FactValue` in a later revision.
+- S2 finding: `tsconfig.build.json` fails for every V2 package because siblings resolve through unbuilt `dist`; a `build:v2` script in dependency order is a supervisor task before publication (not a track check).
 - I to M: `frameBounds` ignores viewport aspect for orthographic projections (portrait viewports cut the box off; interact uses `height = 2 * radius * max(1, 1/aspect)`); dot, cross and `unitSlerp` live in interact's `src/vec.ts` and belong in `model/math.ts`. Queued for Track M2 or the next model chunk.
 - S to M: `Vec2` landed in M2 (`d1645b8`); synthetic can drop its local `Vec2`, `turn` and `signedArea` in `src/triangulate.ts` at its next chunk. `Mesh.normals` stays optional (M's decision; synthetic's `ShadedMesh` narrows once).
 
