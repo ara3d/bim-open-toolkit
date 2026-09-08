@@ -16,7 +16,7 @@ Supported reports are room/door/storey schedules, roof/finish quantity readiness
 
 ## DuckDB export
 
-`export-duckdb` turns a prepared BOS cache into a queryable DuckDB file. It creates the canonical core schema: 83 tables and 862 direct columns. Fields that are relationships, facts, or value objects are represented as JSON so the relational contract remains aligned with the core model while preserving source evidence.
+`export-duckdb` turns a prepared BOS cache into a queryable DuckDB file. It creates all 83 core tables with typed SQL columns. Known facts become scalar values; missing facts become SQL NULL. Companion `_assurance`, `_reason`, `_explanation`, and `_evidence` columns preserve provenance. Measurements use canonical units (metres, square metres, and so on); durations use INTERVAL. Composite records flatten into prefixed columns such as `element_name` and `element_object_id`. Keys are VARCHAR; collections use native DuckDB lists (and structs for composite list items). Link sets retain `_completeness` and `_evidence` columns. No columns store JSON. This replaces the previous 862-column JSON layout; regenerate existing databases to migrate.
 
 ```powershell
 dotnet run --project tools/building-model-workflows -- export-duckdb `
@@ -25,3 +25,5 @@ dotnet run --project tools/building-model-workflows -- export-duckdb `
 ```
 
 The `IBuildingProjectionWriter` interface is the export boundary. `DuckDbProjectionWriter` is one implementation; other stores can implement the same interface without changing BOS preparation or core-model mapping. The current mapping populates model snapshots, source revisions and objects, BIM objects and evidence, storeys, spaces, doors, roofs, finishes, source documents, and interpretation policies. It creates every core table so consumers can depend on the complete schema as additional mapped concepts are added.
+
+For example, query `SELECT element_name, nominal_width FROM door WHERE nominal_width > 0.8`. Exports without an established numeric storage policy retain unknown measurements as NULL; use `--revit-internal` only for source values known to use Revit internal units.

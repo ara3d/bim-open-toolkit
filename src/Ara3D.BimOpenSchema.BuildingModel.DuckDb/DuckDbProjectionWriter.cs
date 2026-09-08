@@ -1,6 +1,3 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Text.Json;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows.IO;
 using DuckDB.NET.Data;
@@ -14,7 +11,7 @@ public interface IBuildingProjectionWriter
     void Write(BuildingProjection projection, string destinationPath);
 }
 
-/// <summary>Writes the direct 83-table core schema and the populated projection rows to DuckDB.</summary>
+/// <summary>Writes the typed 83-table core schema and the populated projection rows to DuckDB.</summary>
 [Impure]
 public sealed class DuckDbProjectionWriter : IBuildingProjectionWriter
 {
@@ -38,24 +35,22 @@ public sealed class DuckDbProjectionWriter : IBuildingProjectionWriter
     {
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
-        command.CommandText = $"CREATE TABLE {Quote(table.Name)} ({string.Join(", ", table.Columns.Select(column => $"{Quote(column.Name)} {SqlType(column.ValueType)}"))})";
+        command.CommandText = $"CREATE TABLE {Quote(table.Name)} ({string.Join(", ", ProjectionColumn.ForRecord(table.RecordType).Select(column => $"{Quote(column.Name)} {column.SqlType}"))})";
         command.ExecuteNonQuery();
     }
 
     private static void InsertRows(DuckDBConnection connection, DuckDBTransaction transaction, CoreTable table, IEnumerable<object> rows)
     {
+        var columns = ProjectionColumn.ForRecord(table.RecordType);
         foreach (var row in rows)
         {
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = $"INSERT INTO {Quote(table.Name)} ({string.Join(", ", table.Columns.Select(column => Quote(column.Name)))}) VALUES ({string.Join(", ", table.Columns.Select((_, index) => "$p" + index))})";
-            foreach (var (column, index) in table.Columns.Select((column, index) => (column, index)))
-                command.Parameters.Add(new DuckDBParameter("p" + index,
-                    SqlValue(table.RecordType.GetProperty(ToPascalCase(column.Name))!.GetValue(row), column.ValueType)));
+            var values = columns.Select(column => column.Parameter(command, row)).ToArray();
+            command.CommandText = $"INSERT INTO {Quote(table.Name)} ({string.Join(", ", columns.Select(column => Quote(column.Name)))}) VALUES ({string.Join(", ", values)})";
             command.ExecuteNonQuery();
         }
     }
-
     private static IEnumerable<object> Rows(BuildingProjection projection, Type type)
         => type == typeof(ModelSnapshot) ? [projection.Snapshot] :
             type == typeof(SourceRevision) ? projection.SourceRevisions :
@@ -70,38 +65,5 @@ public sealed class DuckDbProjectionWriter : IBuildingProjectionWriter
             type == typeof(SourceDocument) ? projection.Documents :
             type == typeof(InterpretationPolicy) ? projection.Policies : [];
 
-    private static string SqlType(Type type)
-    {
-        if (IsKey(type)) return "VARCHAR";
-        var valueType = Nullable.GetUnderlyingType(type) ?? type;
-        if (valueType == typeof(string) || valueType.IsEnum) return "VARCHAR";
-        if (valueType == typeof(bool)) return "BOOLEAN";
-        if (valueType == typeof(int)) return "INTEGER";
-        if (valueType == typeof(long)) return "BIGINT";
-        if (valueType == typeof(double) || valueType == typeof(float)) return "DOUBLE";
-        if (valueType == typeof(decimal)) return "DECIMAL(38, 10)";
-        if (valueType == typeof(DateOnly)) return "DATE";
-        if (valueType == typeof(DateTimeOffset)) return "TIMESTAMPTZ";
-        return "JSON";
-    }
-
-    private static object SqlValue(object? value, Type type)
-    {
-        if (value is null) return DBNull.Value;
-        if (IsKey(type)) return value.ToString()!;
-        var valueType = Nullable.GetUnderlyingType(type) ?? type;
-        if (valueType.IsEnum) return value.ToString()!;
-        if (valueType == typeof(string) || valueType == typeof(bool) || valueType == typeof(int) || valueType == typeof(long) ||
-            valueType == typeof(double) || valueType == typeof(float) || valueType == typeof(decimal) ||
-            valueType == typeof(DateOnly) || valueType == typeof(DateTimeOffset)) return value;
-        return JsonSerializer.Serialize(value, ProjectionStore.Options());
-    }
-
-    private static bool IsKey(Type type) => type.IsGenericType &&
-        (type.GetGenericTypeDefinition() == typeof(ReferenceKey<>) || type.GetGenericTypeDefinition() == typeof(SnapshotKey<>));
-
-    private static string Quote(string identifier) => '"' + identifier.Replace("\"", "\"\"") + '"';
-
-    private static string ToPascalCase(string name)
-        => string.Concat(name.Split('_').Select(part => char.ToUpperInvariant(part[0]) + part[1..]));
+    private static string Quote(string identifier) => ProjectionColumn.Quote(identifier);
 }
