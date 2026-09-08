@@ -22,5 +22,8 @@
   },
   "dependencies": {
     "@bim-open-toolkit/model": "0.1.0"
+  },
+  "devDependencies": {
+    "@bim-open-toolkit/synthetic": "0.1.0"
   }
 }

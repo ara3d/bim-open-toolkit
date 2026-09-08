@@ -53,6 +53,8 @@ Transcribed from track checkpoints and final reports; "caught" is the track's ow
 
 | M3 model additions (2026-09-08) | 6 s, clean: neutral | 10 s, clean: neutral | clean | 239 tests, 1.1 s: helpful | Downstream read-only typechecks (formats, synthetic) were the check that proved additivity. |
 
+| W workflows (2026-09-08) | clean | clean | clean | 121 tests; the exact-match tests against hand-written expected files caught a schema that silently passed extra columns through, which tsc could not see: helpful | Sonnet sub-workers (3) produced six adapters; lead review found four honesty gaps in them and one in the lead's own work found by a worker. Sonnet for adapters works with a reviewing lead, not without. |
+
 ## Review log
 
 - 2026-09-07, lint switched to untyped rules (user decision after measurement). Measured on the synthetic package with six agents loading the machine: type-aware rules 7.7 to 28 s per package, 18 s for a single file, no gain from `--cache`, because the rule set rebuilds a TypeScript program on every run; untyped rules 2.4 s per package and 2.8 s for all six V2 packages. Track S reported 8 typed runs that caught nothing while tsc caught two real defects. New rules: `viewer/eslint.config.js` is the untyped `recommended` set plus `no-explicit-any` and `no-unused-vars` over every V2 package and runs in `npm run lint` and the check wrapper on every chunk; `viewer/eslint.typed.config.js` is the type-aware set with `no-floating-promises` over the I/O packages (demos, mcp, viewer) and runs as `npm run lint:typed` at wave integration only. Both files carry the reason in their header comment. Also added `@types/node` to the workspace, which the fixture server needs and which the typed lint could not resolve without.
