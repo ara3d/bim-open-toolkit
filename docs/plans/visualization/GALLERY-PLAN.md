@@ -1,6 +1,6 @@
 # V2 gallery and demo plan
 
-Date: 2026-09-08. Status: chunk 0 landed; UG, GAL, D1, D2, D3 launched; D4 queued. Part of [V2-PLAN.md](V2-PLAN.md); it replaces that plan's Track D (port the 23 alpha demos) and regroups the wave 2 feature tracks and wave 3 workflow-demo tracks around a new gallery. Rolling status goes to [V2-STATUS.md](V2-STATUS.md). Requirements stay in [PRODUCT-BRIEF.md](PRODUCT-BRIEF.md) (F09 shell, F27 demos, section 6 workflows, section 9 demonstrations).
+Date: 2026-09-08. Status: chunk 0 landed; all six tracks ran and were stopped mid-chunk on 2026-09-08 (user out of tokens); resume from the shutdown section at the end of V2-STATUS.md. Part of [V2-PLAN.md](V2-PLAN.md); it replaces that plan's Track D (port the 23 alpha demos) and regroups the wave 2 feature tracks and wave 3 workflow-demo tracks around a new gallery. Rolling status goes to [V2-STATUS.md](V2-STATUS.md). Requirements stay in [PRODUCT-BRIEF.md](PRODUCT-BRIEF.md) (F09 shell, F27 demos, section 6 workflows, section 9 demonstrations).
 
 User basis (2026-09-08): plan a brand-new set of demos and a new gallery from scratch; useful and interesting; leverage Gratify for in-canvas widgets or a sidebar property inspector; a brand-new look and feel, the current gallery stays and is not deleted; move quickly and do not let gates slow the work; improve code that is touched so it is more future-proof.
 

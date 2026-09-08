@@ -223,3 +223,20 @@ Follow-up GAL2 (recorded 2026-09-08): the feature-demos session's `demos/src/fea
 
 Handoff (2026-09-08, session ended by the user): S3, S4 and the shared host are verified and committed. FD1 to FD3 were stopped mid-chunk; their untracked files are unverified and were not staged. To resume, relaunch each from its brief (the row above, `demos/docs/feature-demos.md`, FEATURE-DEMOS-PLAN.md section 2) telling the agent to inspect the files on disk first. Follow-ups after they land: switch the pages from `_shared/host.ts` to V's `createViewer` (`dbca382`) and offer V the timer-query GPU timer; move the host to a place the gallery wave can import (agreed with that session: one chunk of re-exports at the old paths); register the pages with the gallery through `demos/src/demos/<id>/index.ts` after asking the gallery session to widen the fence; combined gate at integration; nothing from this wave has been pushed.
 
+
+### Gallery wave shutdown, 2026-09-08 (user request: out of tokens)
+
+All six tracks were stopped mid-chunk by the supervisor; nothing was lost. State at shutdown, for the session that resumes (relaunch each track from its checkpoint and this section; fences unchanged in `.claude/wave.json`):
+
+| Track | Verified chunks | Work in progress committed (typechecks) | Parked, not compiling (`viewer/artifacts/gallery-wip/`, git-ignored, on this machine only) |
+|---|---|---|---|
+| UG | `c607798` hostPanel, Button, Tag, theme bridge (G1.1: `activate`, `onChanged` on `Hosted`); 18 tests | `97b02ab` inspector host, List, Badge, Tip widgets, coverage helpers | none |
+| GAL | `14ad930` GalleryViewer over render, interact and formats; page that draws a demo; discovery; placeholder | `1e5495d` shell, index page, routes, theme, chrome and inspector CSS; not wired end to end; no checkpoint written yet | none |
+| D1 | `02af324` point-and-read, `88a1d0c` its Tag through the widget | `2f3540c` colour-by, no test yet; no checkpoint written yet | none |
+| D2 | `f2bc8b6` environment, `0528034` capture, checkpoint `43318d0` | `5bdbe8b` ten-thousand, no test yet | `d2/`: explode-and-grid src and test (16 tests pass, one type error in `panels.ts`) |
+| D3 | `508ec08` `_workflows/apply-result` helper, checkpoint `da14868` | none | `d3/`: `_workflows/widgets.ts` and `door-schedule/` (22 type errors, unfinished) |
+| D4 | `968a675` portfolio, checkpoint `3f3b4cd` | `4d7ecc6` material-carbon, no test yet | none |
+
+Checks at shutdown from `viewer/`: `tsc -p packages/ui-gratify` clean, ui-gratify 18 tests pass; `tsc -p packages/demos` clean after parking; `vitest --root packages/demos test/gallery test/demos` 12 files, 100 tests pass. Not run: lint, the combined gate, any browser smoke (GAL's smoke runner, chunk 4, was not reached; no thumbnails exist). Peers: the feature-demos session stopped FD1 to FD3 the same way (`90d7743`) and keeps the shared demo host under `demos/src/feature-demos/_shared` (GAL2 follow-up above). The wave 2 supervisor exported every feature module (`a9f3e67`) and handed its D track to this wave. The fixture server on 5175 was stopped.
+
+To resume: restore the parked directories to their fence paths, relaunch D3 first (its `door-schedule` is the wave's headline workflow demo), GAL next (wire the shell, then chunk 4 smoke and thumbnails), then the rest. Root scripts (`gallery`, `gallery:smoke`) and `gratify` in `demos/package.json` were never added; do that at integration.
