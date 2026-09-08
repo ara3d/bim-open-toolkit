@@ -69,6 +69,17 @@ describe('style composition', () => {
     expect(styleOf(resolved, 'a')).toEqual(defaultAppearance);
   });
 
+  it('drops a key from byKey when the rule that styled it goes, which is what styleOf is for', () => {
+    const rules = [styleRule('r1', 'rule', ['a'], blue)];
+    const styled = resolveStyles(styleComposition(new Map(), noEditState, rules), keys);
+    expect([...styled.byKey.keys()]).toEqual(['a']);
+    // The rule is switched off, so 'a' is not in byKey at all rather than in it at the fallback:
+    // a binding that iterated byKey would never hear that 'a' went back to looking ordinary.
+    const plain = resolveStyles(styleComposition(new Map(), noEditState, []), keys);
+    expect(plain.byKey.has('a')).toBe(false);
+    expect(styleOf(plain, 'a')).toEqual(defaultAppearance);
+  });
+
   it('applies the base appearance a model gave an object', () => {
     const base = new Map([['a', { ...defaultAppearance, ...blue }]]);
     const resolved = resolveStyles(styleComposition(base, noEditState, []), keys);

@@ -44,7 +44,8 @@ export type StyleComposition = {
 };
 
 // The appearance of every object that ended up different from `fallback`, plus what was deleted.
-// Objects absent from `byKey` and from `deleted` look like `fallback`.
+// Objects absent from `byKey` and from `deleted` look like `fallback`. It is the difference from
+// `fallback`, not a list of the scene's objects, and it shrinks as styling is removed.
 export type ResolvedStyles = {
   readonly fallback: Appearance;
   readonly byKey: ReadonlyMap<ObjectKey, Appearance>;
@@ -145,6 +146,12 @@ export const styleComposition = (
 
 // The appearance of every object, composed in order: base, edits, rules, filter, then selection.
 // Deleted objects are left out. Selection marks an object but never makes a hidden one visible.
+// `byKey` holds only the keys whose appearance ended up different from `fallback`: a key that
+// resolved to the fallback and a key an edit layer deleted are both absent from it. Iterating
+// `byKey` is therefore not iterating the scene, and a renderer that binds from it alone never
+// restores an object a rule stopped applying to, because that object simply leaves the map. Address
+// the keys you know about and read each one with `styleOf`, which answers `fallback` for anything
+// absent; `isRemoved` and `deleted` say what is gone.
 export const resolveStyles = (
   composition: StyleComposition,
   keys: Iterable<ObjectKey>,

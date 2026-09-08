@@ -84,6 +84,14 @@ const resolved = resolveStyles(styleComposition(new Map(), layers, rules, setOf(
 styleOf(resolved, 'b').color; // [1, 0, 0]
 ```
 
+What comes back is the *difference* from the fallback appearance, not a picture of the scene:
+`byKey` holds only the objects that ended up looking different, and a deleted object is in `deleted`
+and nowhere else. Read each object with `styleOf`, which answers the fallback for anything absent,
+and drive a renderer from your own list of objects rather than from `byKey`. A binding that iterates
+`byKey` never restores an object a rule stopped applying to, because that object simply leaves the
+map when the rule goes; `render`'s `applyStyles` addresses every row instead and relies on change
+detection to keep that cheap.
+
 Save and reopen a feature's state:
 
 ```ts
