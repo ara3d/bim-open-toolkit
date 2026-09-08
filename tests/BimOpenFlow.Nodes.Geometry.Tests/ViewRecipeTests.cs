@@ -34,6 +34,7 @@ public sealed class ViewRecipeTests
     [TestCase("projection", "mode", "invalid")]
     [TestCase("environment", "theme", "invalid")]
     [TestCase("categoryStyle", "opacity", "2")]
+    [TestCase("categoryStyle", "palette", "invalid")]
     [TestCase("tint", "color", "red")]
     [TestCase("tint", "opacityPercent", "-1")]
     [TestCase("sectionRange", "range", "[0.9,0.2]")]
@@ -56,6 +57,30 @@ public sealed class ViewRecipeTests
             using var input = JsonDocument.Parse((string)output.Cell("input", 1)!);
             Assert.That(input.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Object));
         }
+    }
+
+    [Test]
+    public void CategoryStyleDefaultsToClassicForExistingGraphs()
+    {
+        var scene = Node("scene").EvalTable([], ("path", "Snowdon.bos"));
+        var colored = Node("categoryStyle").EvalTable([new TableValue(scene)]);
+        using var input = JsonDocument.Parse((string)colored.Cell("input", 1)!);
+        Assert.That(input.RootElement.GetProperty("palette").GetString(), Is.EqualTo("classic"));
+        Assert.That(input.RootElement.GetProperty("opacity").GetDouble(), Is.EqualTo(1));
+    }
+
+    [TestCase("classic")]
+    [TestCase("vivid")]
+    [TestCase("pastel")]
+    [TestCase("earth")]
+    [TestCase("grayscale")]
+    public void CategoryStylePreservesSelectedPaletteAndOpacity(string palette)
+    {
+        var scene = Node("scene").EvalTable([], ("path", "Snowdon.bos"));
+        var colored = Node("categoryStyle").EvalTable([new TableValue(scene)], ("palette", palette), ("opacity", "0.25"));
+        using var input = JsonDocument.Parse((string)colored.Cell("input", 1)!);
+        Assert.That(input.RootElement.GetProperty("palette").GetString(), Is.EqualTo(palette));
+        Assert.That(input.RootElement.GetProperty("opacity").GetDouble(), Is.EqualTo(.25));
     }
 
     [TestCase("0", 0)]

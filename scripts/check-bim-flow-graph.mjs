@@ -86,6 +86,13 @@ try {
     await page.waitForTimeout(350);
     await frame();
   };
+  const pickEnum = async (nodeId, value) => {
+    const field = await partRect(nodeId,"bof-slot-enum");
+    await page.mouse.click(field.x+field.w*.75,field.y+field.h/2);
+    await page.waitForTimeout(250);
+    const option = await partRect(nodeId,"bof-slot-option",value);
+    await page.mouse.click(option.x+option.w/2,option.y+option.h/2);
+  };
   const parity = async nodeId => {
     const expected = await page.evaluate(async nodeId => {
       const {buildLiveViewRecipe} = await import("/src/liveViewRecipe.ts");
@@ -125,6 +132,21 @@ try {
     assert.notEqual(await hash(),before,"A control gesture changes rendered pixels");
   };
   await select("categories");
+  const swatches = () => page.locator(".bof-panes-legend i").evaluateAll(items=>items.map(item=>getComputedStyle(item).backgroundColor));
+  const classicPixels = await hash();
+  const classicSwatches = await swatches();
+  assert.ok(classicSwatches.length>1,"Category legend contains source category colors");
+  await change(()=>pickEnum("categories","pastel"),g=>assert.equal(g.values.categories.palette,"pastel"));
+  const pastelRecipe = await parity("categories");
+  assert.equal(pastelRecipe[1].input.palette,"pastel");
+  assert.notEqual(await hash(),classicPixels,"Palette dropdown changes actual model colors");
+  assert.notDeepEqual(await swatches(),classicSwatches,"Palette dropdown updates category legend swatches");
+  await page.screenshot({path:resolve(output,"pastel-palette.png")});
+  await change(()=>pickEnum("categories","classic"),g=>assert.equal(g.values.categories.palette,"classic"));
+  assert.equal((await parity("categories"))[1].input.palette,"classic");
+  assert.equal(await hash(),classicPixels,"Returning to classic restores the model colors exactly");
+  assert.deepEqual(await swatches(),classicSwatches,"Returning to classic restores the category legend");
+  scenarios.push("Palette dropdown updates saved graph, live and server recipes, model colors and legend swatches");
   const opaqueCategories = await hash();
   await select("ghost");
   assert.notEqual(await hash(),opaqueCategories,"Ghost node makes its model transparent");
@@ -144,13 +166,7 @@ try {
     await page.mouse.up();
   },g => assert.ok(Number(g.values.cutaway.fraction)>.6));
   scenarios.push("Gratify slider updates graph, recipe and rendered cutaway at readable scale");
-  const axis = await partRect("cutaway","bof-slot-enum");
-  await change(async () => {
-    await page.mouse.click(axis.x+axis.w*.75,axis.y+axis.h/2);
-    await page.waitForTimeout(250);
-    const option = await partRect("cutaway","bof-slot-option","x");
-    await page.mouse.click(option.x+option.w/2,option.y+option.h/2);
-  },g => assert.equal(g.values.cutaway.axis,"x"));
+  await change(()=>pickEnum("cutaway","x"),g=>assert.equal(g.values.cutaway.axis,"x"));
   scenarios.push("Gratify dropdown changes section axis");
   await change(async () => {
     await input.fill("150");

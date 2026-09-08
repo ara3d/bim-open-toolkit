@@ -893,6 +893,7 @@ Color source categories, with a distinct unknown category; optionally ghost the 
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
+| `palette` | Enum | `classic` | `classic`, `vivid`, `pastel`, `earth`, `grayscale` | — |
 | `opacity` | Fraction | `1` | — | — |
 
 ### `view3d.tint` (v1) — Pure

@@ -29,7 +29,7 @@ complete recipe, so selecting a node reproduces its upstream presentation.
 | Node | Parameters | Useful example |
 |---|---|---|
 | `view3d.scene` | `path` | Snowdon model overview |
-| `view3d.categoryStyle` | Opacity 0–100% | Source categories with a legend; unknown categories are gray |
+| `view3d.categoryStyle` | Palette; Opacity 0–100% | Classic, vivid, pastel, earth or grayscale category colors with a matching legend; unknown categories are gray |
 | `view3d.section` | axis x/y/z; Position 0–100% | Horizontal floor cutaway or vertical inspection |
 | `view3d.sectionBox` | Box size 1–100% | Centered interior region, expressed relative to model bounds |
 | `view3d.explode` | strength 0–5 | Fan source categories apart |
@@ -106,6 +106,11 @@ and 24 API tests; the state suite passed 50 tests, including concurrent save rac
 Four real-viewer regressions verify source colors, opacity, transforms and camera
 restoration and intentional cumulative explosion. Counts below record the initial
 integration checks before this follow-up.
+
+Palette follow-up: all 18 browser scenarios pass, including selecting Pastel
+through the canvas dropdown, checking saved and live recipes, changed model
+pixels and legend swatches, and exact restoration when selecting Classic.
+Existing recipes without a palette retain Classic colors.
 
 - Graph demo follow-up: `BOF_DEMO_URL=http://127.0.0.1:5303 node scripts/check-bim-flow-graph.mjs` checks automatic
   Snowdon selection, both panes fitting the viewport, inline parameter editing
