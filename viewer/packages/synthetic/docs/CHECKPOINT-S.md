@@ -3,20 +3,22 @@
 Track S of visualization V2 wave 0. Fence: `viewer/packages/synthetic/**` except `package.json`,
 `tsconfig.json`, `tsconfig.build.json` and `vitest.config.ts`, which are supervisor-owned.
 
-**State:** working (chunks 1 and 2 of 5 verified).
+**State:** working (chunks 1, 2 and 3a of 6 verified).
 
-**Model revision built against:** none. Checked before chunk 2 on 2026-09-07:
-`viewer/packages/model/src/index.ts` is still the wave 0 skeleton (`export {}`), and
-`viewer/packages/model/docs/CHECKPOINT-M.md` records chunk 1 as *working*, so revision `M1-stub` has
-not landed. Chunk 2 therefore defines local structural types in `src/shapes.ts`, as the brief
-directs. They are not exported from `src/index.ts`, so the swap is a change to that one file.
+**Model revision built against:** `M1-stub` as it stood in the working tree at 2026-09-07 22:10,
+uncommitted by Track M (`viewer/packages/model/docs/CHECKPOINT-M.md` still records chunk 1 as
+*working*). Chunk 3a adopted it and deleted the private `src/shapes.ts`. Types taken:
+`Vec3`, `Bounds`, `Mesh`, `boundsOfPositions`, `triangleCount`, `vertexCount` from
+`@bim-open-toolkit/model`. If Track M's committed `M1-stub` differs from what was read, this
+package's chunk 3a needs a re-check; the surface it touches is four files.
 
 ## Chunks
 
 | # | Delivers | State | Commit |
 |---|---|---|---|
 | 1 | Seeded PRNG | verified | `7f896b2` |
-| 2 | Mesh primitives | verified | pending |
+| 2 | Mesh primitives | verified | `0bb504a` |
+| 3a | Adopt the model's types, drop `src/shapes.ts` | verified | pending |
 | 3 | Building generator | not started | |
 | 4 | Stress generator | not started | |
 | 5 | README and public surface review | not started | |
@@ -24,8 +26,7 @@ directs. They are not exported from `src/index.ts`, so the swap is a change to t
 ## Files
 
 - `src/prng.ts` — seeded generator.
-- `src/shapes.ts` — local stand-ins for the model geometry contracts, private to the package.
-- `src/mesh-builder.ts` — triangle accumulator, bounds, triangle and vertex counts.
+- `src/mesh-builder.ts` — triangle accumulator over the model's `Mesh`.
 - `src/triangulate.ts` — ear clipping for simple polygons in the XZ plane.
 - `src/primitives.ts` — box, cylinder, plane, wedge, extrude.
 - `src/index.ts` — public exports, one level.
@@ -62,6 +63,15 @@ transform. Faces do not share vertices, so flat faces stay flat.
 rather than producing a plausible but wrong mesh. Ear clipping is O(n squared), which is right for
 footprints with a handful of corners.
 
+Chunk 3a: the private `src/shapes.ts` is gone. `Vector3` became the model's `Vec3`, `Bounds3` its
+`Bounds`, `MeshData` its `Mesh`. Because `Mesh.normals` is optional and every primitive here
+produces normals, `src/mesh-builder.ts` exports `ShadedMesh = Mesh & { readonly normals:
+Float32Array }`; `build` returns that shape directly, so no cast is needed and callers read
+`mesh.normals` without a check. `triangleCount` and `vertexCount` are the model's and are no longer
+re-exported. The model has no two-dimensional vector, so `src/triangulate.ts` keeps a local
+`Vec2 = readonly [number, number]` for footprint corners; it is exported so `extrude`'s parameter
+type is nameable.
+
 ## Commands and actual results
 
 Run from `viewer/`.
@@ -77,6 +87,12 @@ Chunk 2:
 - `npx tsc --noEmit -p packages/synthetic/tsconfig.json` — passed, no output.
 - `npx eslint packages/synthetic` — passed, no output.
 - `npm test -w @bim-open-toolkit/synthetic` — 3 files, 24 tests passed, 1.18 s.
+
+Chunk 3a:
+
+- `npx tsc --noEmit -p packages/synthetic/tsconfig.json` — passed, no output.
+- `npx eslint packages/synthetic` — passed, no output.
+- `npm test -w @bim-open-toolkit/synthetic` — 3 files, 24 tests passed, 802 ms.
 
 The pinned integer sequences in `test/prng.test.ts` were produced by a second, independent
 implementation of splitmix32 and xoshiro128** written from the published algorithms in a scratch
@@ -98,14 +114,12 @@ None.
 
 ## Requests
 
-Model types this package needs, in the shape it assumed while `M1-stub` was unavailable
-(`src/shapes.ts`):
+To Track M, from chunk 3a:
 
-- `Vector2` as `readonly [number, number]`, `Vector3` as `readonly [number, number, number]`.
-- `Bounds3` as `{ min: Vector3; max: Vector3 }`.
-- `MeshData` as `{ positions: Float32Array; normals: Float32Array; indices: Uint32Array; bounds: Bounds3 }`.
-  If the model's mesh plain data carries no bounds, say so and this package will return bounds
-  alongside the mesh instead.
+- A two-dimensional vector (`Vec2 = readonly [number, number]`). Footprints, plan outlines and any
+  two-dimensional layout need one; this package defines a local `Vec2` until the model has it.
+- Nothing else is missing. `Vec3`, `Bounds`, `Mesh`, `InstanceRecords`, `ObjectRecord`, `ModelData`,
+  `Table`, `Column`, `Fact`, `Observation` and `Coverage` all cover what the generators need.
 
 ## Findings
 

@@ -4,7 +4,9 @@
 // here have a handful of corners, so the simple algorithm is the right one; a faster or more
 // permissive triangulator would be a separate function, not a change to this one.
 
-import type { Vector2 } from './shapes.js';
+// A point in the horizontal plane, as (x, z). The model package has no two-dimensional vector, so
+// footprints use this local type; replace it when the model publishes one.
+export type Vec2 = readonly [number, number];
 
 // A triangle as three indices into the polygon's points.
 export type TriangleIndices = readonly [number, number, number];
@@ -17,7 +19,7 @@ function at<T>(items: readonly T[], index: number): T {
 }
 
 // Twice the signed area of the polygon. Positive means counter-clockwise in (x, z).
-export function signedArea(points: readonly Vector2[]): number {
+export function signedArea(points: readonly Vec2[]): number {
   let total = 0;
   for (let index = 0; index < points.length; index++) {
     const current = at(points, index);
@@ -28,17 +30,17 @@ export function signedArea(points: readonly Vector2[]): number {
 }
 
 // Twice the signed area of the triangle a, b, c. Positive means counter-clockwise.
-const turn = (a: Vector2, b: Vector2, c: Vector2): number =>
+const turn = (a: Vec2, b: Vec2, c: Vec2): number =>
   (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
 
 // True when the point lies inside or on the counter-clockwise triangle a, b, c.
-const inside = (a: Vector2, b: Vector2, c: Vector2, point: Vector2): boolean =>
+const inside = (a: Vec2, b: Vec2, c: Vec2, point: Vec2): boolean =>
   turn(a, b, point) >= 0 && turn(b, c, point) >= 0 && turn(c, a, point) >= 0;
 
 // Splits a simple polygon into triangles, all wound counter-clockwise in (x, z), and returns them
 // as index triples. Requires at least three points and a counter-clockwise, non-self-intersecting
 // outline; anything else throws rather than producing a plausible but wrong mesh.
-export function triangulate(points: readonly Vector2[]): readonly TriangleIndices[] {
+export function triangulate(points: readonly Vec2[]): readonly TriangleIndices[] {
   if (points.length < 3) throw new Error(`a polygon needs at least three points, got ${points.length}`);
   if (!(signedArea(points) > 0)) throw new Error('a polygon must be counter-clockwise in (x, z) and have a positive area');
   const remaining = points.map((_, index) => index);
@@ -53,7 +55,7 @@ export function triangulate(points: readonly Vector2[]): readonly TriangleIndice
 }
 
 // Removes the first ear from the remaining ring and returns it, or undefined when there is none.
-function clipOneEar(points: readonly Vector2[], remaining: number[]): TriangleIndices | undefined {
+function clipOneEar(points: readonly Vec2[], remaining: number[]): TriangleIndices | undefined {
   for (let position = 0; position < remaining.length; position++) {
     const previous = at(remaining, (position + remaining.length - 1) % remaining.length);
     const current = at(remaining, position);

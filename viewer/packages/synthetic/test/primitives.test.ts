@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { triangleCount, vertexCount } from '../src/mesh-builder.js';
+import { triangleCount, vertexCount, type Vec3 } from '@bim-open-toolkit/model';
+import type { ShadedMesh } from '../src/mesh-builder.js';
 import { box, cylinder, extrude, plane, wedge } from '../src/primitives.js';
-import { signedArea, triangulate } from '../src/triangulate.js';
-import type { MeshData, Vector2, Vector3 } from '../src/shapes.js';
+import { signedArea, triangulate, type Vec2 } from '../src/triangulate.js';
 
 // Reads vertex `index` of a packed xyz array.
-function readVector(values: Float32Array, index: number): Vector3 {
+function readVector(values: Float32Array, index: number): Vec3 {
   const x = values[index * 3];
   const y = values[index * 3 + 1];
   const z = values[index * 3 + 2];
@@ -14,14 +14,14 @@ function readVector(values: Float32Array, index: number): Vector3 {
 }
 
 // Reads index `position` of the index buffer.
-function readIndex(mesh: MeshData, position: number): number {
+function readIndex(mesh: ShadedMesh, position: number): number {
   const value = mesh.indices[position];
   if (value === undefined) throw new Error(`index ${position} is out of range`);
   return value;
 }
 
 // Every index addresses a vertex, every normal is unit length, and the bounds hold every position.
-function checkWellFormed(mesh: MeshData): void {
+function checkWellFormed(mesh: ShadedMesh): void {
   expect(mesh.positions.length % 3).toBe(0);
   expect(mesh.normals.length).toBe(mesh.positions.length);
   expect(mesh.indices.length % 3).toBe(0);
@@ -51,7 +51,7 @@ function checkWellFormed(mesh: MeshData): void {
 // The volume enclosed by the triangles, by the divergence theorem. A closed solid wound outward
 // has a positive volume; one wound inward has the same value negated, so this checks the winding
 // of every triangle at once.
-function signedVolume(mesh: MeshData): number {
+function signedVolume(mesh: ShadedMesh): number {
   let total = 0;
   for (let position = 0; position < mesh.indices.length; position += 3) {
     const a = readVector(mesh.positions, readIndex(mesh, position));
@@ -64,14 +64,14 @@ function signedVolume(mesh: MeshData): number {
 }
 
 // Every triangle's normals agree with the direction its winding faces.
-function checkNormalsFaceOutward(mesh: MeshData): void {
+function checkNormalsFaceOutward(mesh: ShadedMesh): void {
   for (let position = 0; position < mesh.indices.length; position += 3) {
     const a = readVector(mesh.positions, readIndex(mesh, position));
     const b = readVector(mesh.positions, readIndex(mesh, position + 1));
     const c = readVector(mesh.positions, readIndex(mesh, position + 2));
-    const u: Vector3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-    const v: Vector3 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-    const facing: Vector3 = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    const u: Vec3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const v: Vec3 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    const facing: Vec3 = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
     for (const offset of [0, 1, 2]) {
       const normal = readVector(mesh.normals, readIndex(mesh, position + offset));
       expect(facing[0] * normal[0] + facing[1] * normal[1] + facing[2] * normal[2]).toBeGreaterThan(0);
@@ -122,7 +122,7 @@ describe('primitives', () => {
   });
 
   it('extrudes a convex footprint', () => {
-    const square: readonly Vector2[] = [
+    const square: readonly Vec2[] = [
       [0, 0],
       [4, 0],
       [4, 4],
@@ -137,7 +137,7 @@ describe('primitives', () => {
   });
 
   it('extrudes a concave footprint and ignores the winding it is given', () => {
-    const el: readonly Vector2[] = [
+    const el: readonly Vec2[] = [
       [0, 0],
       [6, 0],
       [6, 2],
@@ -187,7 +187,7 @@ describe('primitives', () => {
 
 describe('triangulate', () => {
   it('measures signed area with sign for winding', () => {
-    const square: readonly Vector2[] = [
+    const square: readonly Vec2[] = [
       [0, 0],
       [2, 0],
       [2, 2],
@@ -198,7 +198,7 @@ describe('triangulate', () => {
   });
 
   it('covers a concave polygon exactly once', () => {
-    const el: readonly Vector2[] = [
+    const el: readonly Vec2[] = [
       [0, 0],
       [6, 0],
       [6, 2],

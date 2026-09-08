@@ -4,9 +4,9 @@
 // face normal points away from the solid. Placement, rotation and scale belong to the instance
 // transform, not to the mesh. Meshes are closed solids except `plane`, which is a single face.
 
-import { addFlatQuad, addFlatTriangle, addQuad, build, builder, type MeshBuilder } from './mesh-builder.js';
-import { signedArea, triangulate } from './triangulate.js';
-import type { MeshData, Vector2, Vector3 } from './shapes.js';
+import { addFlatQuad, addFlatTriangle, addQuad, build, builder, type MeshBuilder, type ShadedMesh } from './mesh-builder.js';
+import { signedArea, triangulate, type Vec2 } from './triangulate.js';
+import type { Vec3 } from '@bim-open-toolkit/model';
 
 // Rejects a dimension that would produce a degenerate mesh.
 function positive(name: string, value: number): number {
@@ -15,7 +15,7 @@ function positive(name: string, value: number): number {
 }
 
 // The six faces of a box: an outward axis and two in-plane axes whose cross product is that axis.
-const boxFaces: readonly { readonly normal: Vector3; readonly u: Vector3; readonly v: Vector3 }[] = [
+const boxFaces: readonly { readonly normal: Vec3; readonly u: Vec3; readonly v: Vec3 }[] = [
   { normal: [1, 0, 0], u: [0, 1, 0], v: [0, 0, 1] },
   { normal: [-1, 0, 0], u: [0, 0, 1], v: [0, 1, 0] },
   { normal: [0, 1, 0], u: [0, 0, 1], v: [1, 0, 0] },
@@ -25,11 +25,11 @@ const boxFaces: readonly { readonly normal: Vector3; readonly u: Vector3; readon
 ];
 
 // A rectangular box of the given width, height and depth, centered on the origin.
-export function box(size: Vector3): MeshData {
-  const half: Vector3 = [positive('width', size[0]) / 2, positive('height', size[1]) / 2, positive('depth', size[2]) / 2];
+export function box(size: Vec3): ShadedMesh {
+  const half: Vec3 = [positive('width', size[0]) / 2, positive('height', size[1]) / 2, positive('depth', size[2]) / 2];
   const target = builder();
   for (const face of boxFaces) {
-    const corner = (u: number, v: number): Vector3 => [
+    const corner = (u: number, v: number): Vec3 => [
       face.normal[0] * half[0] + u * face.u[0] * half[0] + v * face.v[0] * half[0],
       face.normal[1] * half[1] + u * face.u[1] * half[1] + v * face.v[1] * half[1],
       face.normal[2] * half[2] + u * face.u[2] * half[2] + v * face.v[2] * half[2],
@@ -41,15 +41,15 @@ export function box(size: Vector3): MeshData {
 
 // A closed cylinder about the Y axis, centered on the origin, faceted into `segments` sides.
 // Side normals are radial, so the sides shade as a curved surface; the caps are flat.
-export function cylinder(radius: number, height: number, segments: number): MeshData {
+export function cylinder(radius: number, height: number, segments: number): ShadedMesh {
   positive('radius', radius);
   positive('height', height);
   if (!Number.isInteger(segments) || segments < 3) throw new Error(`segments must be an integer of at least 3, got ${segments}`);
   const half = height / 2;
   const target = builder();
   const angle = (step: number): number => (2 * Math.PI * step) / segments;
-  const ring = (step: number, y: number): Vector3 => [radius * Math.cos(angle(step)), y, radius * Math.sin(angle(step))];
-  const radial = (step: number): Vector3 => [Math.cos(angle(step)), 0, Math.sin(angle(step))];
+  const ring = (step: number, y: number): Vec3 => [radius * Math.cos(angle(step)), y, radius * Math.sin(angle(step))];
+  const radial = (step: number): Vec3 => [Math.cos(angle(step)), 0, Math.sin(angle(step))];
   for (let step = 0; step < segments; step++) {
     const outward = radial(step);
     const following = radial(step + 1);
@@ -65,7 +65,7 @@ export function cylinder(radius: number, height: number, segments: number): Mesh
 }
 
 // A single upward-facing rectangle in the XZ plane, centered on the origin. Not a solid.
-export function plane(width: number, depth: number): MeshData {
+export function plane(width: number, depth: number): ShadedMesh {
   const halfWidth = positive('width', width) / 2;
   const halfDepth = positive('depth', depth) / 2;
   const target = builder();
@@ -80,16 +80,16 @@ export function plane(width: number, depth: number): MeshData {
 
 // A right triangular prism centered on the origin: the cross-section is the half of the width by
 // height rectangle below its rising diagonal, extruded along Z. Used for roofs and ramps.
-export function wedge(size: Vector3): MeshData {
+export function wedge(size: Vec3): ShadedMesh {
   const halfWidth = positive('width', size[0]) / 2;
   const halfHeight = positive('height', size[1]) / 2;
   const halfDepth = positive('depth', size[2]) / 2;
-  const section: readonly [Vector2, Vector2, Vector2] = [
+  const section: readonly [Vec2, Vec2, Vec2] = [
     [-halfWidth, -halfHeight],
     [halfWidth, -halfHeight],
     [-halfWidth, halfHeight],
   ];
-  const point = (corner: Vector2, z: number): Vector3 => [corner[0], corner[1], z];
+  const point = (corner: Vec2, z: number): Vec3 => [corner[0], corner[1], z];
   const target = builder();
   addFlatTriangle(target, [point(section[0], halfDepth), point(section[1], halfDepth), point(section[2], halfDepth)]);
   addFlatTriangle(target, [point(section[2], -halfDepth), point(section[1], -halfDepth), point(section[0], -halfDepth)]);
@@ -105,14 +105,14 @@ export function wedge(size: Vector3): MeshData {
 // A solid formed by extruding a simple polygon along Y, spanning height/2 either side of the
 // origin. The footprint keeps its own X and Z coordinates. Winding may be either way; a
 // self-intersecting or zero-area outline throws.
-export function extrude(footprint: readonly Vector2[], height: number): MeshData {
+export function extrude(footprint: readonly Vec2[], height: number): ShadedMesh {
   const half = positive('height', height) / 2;
   const area = signedArea(footprint);
   if (area === 0) throw new Error('an extruded footprint must enclose an area');
   const points = area > 0 ? footprint : [...footprint].reverse();
   const target = builder();
-  const point = (corner: Vector2, y: number): Vector3 => [corner[0], y, corner[1]];
-  const corner = (index: number): Vector2 => {
+  const point = (corner: Vec2, y: number): Vec3 => [corner[0], y, corner[1]];
+  const corner = (index: number): Vec2 => {
     const value = points[index];
     if (value === undefined) throw new Error(`footprint index ${index} is out of range`);
     return value;
@@ -126,7 +126,7 @@ export function extrude(footprint: readonly Vector2[], height: number): MeshData
 }
 
 // Appends the vertical faces of an extruded footprint, one quad per edge.
-function addSides(target: MeshBuilder, points: readonly Vector2[], half: number): void {
+function addSides(target: MeshBuilder, points: readonly Vec2[], half: number): void {
   for (let index = 0; index < points.length; index++) {
     const from = points[index];
     const to = points[(index + 1) % points.length];
