@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { identityMatrix, translation } from '../src/math.js';
 import {
   boundsOfPositions, emptyInstances, geometryBounds, instanceColor, instanceOpacity, instanceRecords,
-  instanceTransform, isGeometryFree, isInstanceVisible, mesh, noMesh, triangleCount, vertexCount,
-  type Geometry, type InstanceRecord,
+  instanceTransform, isGeometryFree, isInstanceVisible, mesh, meshAt, meshBoundsAt, meshCount,
+  meshTableFrom, noMesh, triangleCount, vertexCount, type Geometry, type InstanceRecord,
 } from '../src/mesh.js';
 
 const triangle = mesh(
@@ -76,5 +76,62 @@ describe('mesh', () => {
 
   it('bounds geometry with no drawn instances as empty', () => {
     expect(geometryBounds({ meshes: [], instances: emptyInstances(3) }).min[0]).toBe(Infinity);
+  });
+});
+
+describe('meshTable', () => {
+  const square = mesh(
+    Float32Array.from([0, 0, 2, 1, 0, 2, 1, 1, 2, 0, 1, 2]),
+    Uint32Array.from([0, 1, 2, 0, 2, 3]),
+  );
+  const meshes = [triangle, square];
+  const gathered = meshTableFrom(meshes);
+
+  it('round trips every mesh, in order', () => {
+    expect(meshCount(gathered)).toBe(2);
+    meshes.forEach((source, index) => {
+      const read = meshAt(gathered, index);
+      expect(read.positions).toEqual(source.positions);
+      expect(read.indices).toEqual(source.indices);
+      expect(read.bounds).toEqual(source.bounds);
+      expect(vertexCount(read)).toBe(vertexCount(source));
+      expect(triangleCount(read)).toBe(triangleCount(source));
+    });
+  });
+
+  it('reads a mesh as views into the shared buffers rather than copies', () => {
+    const read = meshAt(gathered, 1);
+    expect(read.positions.buffer).toBe(gathered.positions.buffer);
+    expect(read.indices.buffer).toBe(gathered.indices.buffer);
+    expect(read.positions.byteOffset).toBe(triangle.positions.length * Float32Array.BYTES_PER_ELEMENT);
+  });
+
+  it('bounds each mesh exactly as its own positions do', () => {
+    meshes.forEach((_unused, index) => {
+      expect(meshBoundsAt(gathered, index)).toEqual(boundsOfPositions(meshAt(gathered, index).positions));
+    });
+  });
+
+  it('reads an index outside the table as an empty mesh', () => {
+    const read = meshAt(gathered, 5);
+    expect(read.positions.length).toBe(0);
+    expect(read.indices.length).toBe(0);
+    expect(read.bounds.min[0]).toBe(Infinity);
+    expect(meshBoundsAt(gathered, -1).min[0]).toBe(Infinity);
+  });
+
+  it('keeps normals when every mesh has them and drops them when one does not', () => {
+    const shaded = mesh(triangle.positions, triangle.indices, Float32Array.from([0, 0, 1, 0, 0, 1, 0, 0, 1]));
+    expect(meshAt(meshTableFrom([shaded, shaded]), 1).normals).toEqual(shaded.normals);
+    expect(meshTableFrom([shaded, triangle]).normals).toBeUndefined();
+    expect(meshTableFrom([]).normals).toBeUndefined();
+  });
+
+  it('bounds geometry whose meshes are only in the table', () => {
+    const instances = instanceRecords([
+      { meshIndex: 1, transform: translation([1, 0, 0]), color: [1, 1, 1], opacity: 1, objectIndex: 0 },
+    ]);
+    expect(geometryBounds({ meshes: [], instances, meshTable: gathered }))
+      .toEqual({ min: [1, 0, 2], max: [2, 1, 2] });
   });
 });

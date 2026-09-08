@@ -9,12 +9,31 @@ export const transformStride = 16;
 // Floats per instance colour factor: linear RGB then opacity.
 export const colorStride = 4;
 
+// Floats per mesh in a mesh table's bounds column: minimum xyz then maximum xyz.
+export const boundsStride = 6;
+
 // A triangle mesh as plain data. `positions` is xyz per vertex, `indices` is three per triangle.
 export type Mesh = {
   readonly positions: Float32Array;
   readonly indices: Uint32Array;
   readonly normals?: Float32Array | undefined;
   readonly bounds: Bounds;
+};
+
+// Many meshes as buffers rather than records: one position buffer, one index buffer, and one row per
+// mesh saying where its vertices and its indices start and how many it has. A mesh's indices count
+// from its own first vertex, so a mesh reads back as views on the buffers with nothing copied.
+// `bounds` is `boundsStride` floats per mesh; `normals` is present only when every mesh has them and
+// is laid out like `positions`.
+export type MeshTable = {
+  readonly positions: Float32Array;
+  readonly indices: Uint32Array;
+  readonly normals?: Float32Array | undefined;
+  readonly vertexStart: Int32Array;
+  readonly vertexCount: Int32Array;
+  readonly indexStart: Int32Array;
+  readonly indexCount: Int32Array;
+  readonly bounds: Float32Array;
 };
 
 // Instances as columns rather than objects: one row per drawn or geometry-free placement.
@@ -41,10 +60,14 @@ export type InstanceRecord = {
   readonly visible?: boolean | undefined;
 };
 
-// The meshes of a model together with the instances that place them.
+// The meshes of a model together with the instances that place them. `meshTable` is those same
+// meshes in the same order, so mesh index `i` is both `meshes[i]` and `meshAt(meshTable, i)`; a
+// producer that carries the geometry only as buffers leaves `meshes` empty, and whatever `meshes`
+// holds never disagrees with the table.
 export type Geometry = {
   readonly meshes: readonly Mesh[];
   readonly instances: InstanceRecords;
+  readonly meshTable?: MeshTable | undefined;
 };
 
 // The box containing every vertex of an xyz position buffer.
@@ -70,6 +93,67 @@ export const vertexCount = (source: Mesh): number => Math.floor(source.positions
 
 // Number of triangles in the mesh.
 export const triangleCount = (source: Mesh): number => Math.floor(source.indices.length / 3);
+
+// The number of meshes the table holds.
+export const meshCount = (source: MeshTable): number => source.vertexStart.length;
+
+// The box of one mesh of the table. An index outside the table reads as empty bounds.
+export const meshBoundsAt = (source: MeshTable, index: number): Bounds => {
+  if (index < 0 || index >= meshCount(source)) return emptyBounds;
+  const at = (offset: number): number => source.bounds[index * boundsStride + offset] ?? 0;
+  return { min: [at(0), at(1), at(2)], max: [at(3), at(4), at(5)] };
+};
+
+// One mesh of the table as views on its buffers: no vertex, index or normal is copied. An index
+// outside the table reads as an empty mesh.
+export const meshAt = (source: MeshTable, index: number): Mesh => {
+  const start = source.vertexStart[index] ?? 0;
+  const vertices = source.vertexCount[index] ?? 0;
+  const first = source.indexStart[index] ?? 0;
+  const indices = source.indexCount[index] ?? 0;
+  return {
+    positions: source.positions.subarray(start * 3, (start + vertices) * 3),
+    indices: source.indices.subarray(first, first + indices),
+    normals: source.normals?.subarray(start * 3, (start + vertices) * 3),
+    bounds: meshBoundsAt(source, index),
+  };
+};
+
+// Meshes gathered into one position buffer, one index buffer and one row each, keeping their order
+// and their bounds. Normals survive only when every mesh has them, since one buffer cannot hold a
+// gap. The buffers are copies, so the meshes may be released afterwards.
+export const meshTableFrom = (meshes: readonly Mesh[]): MeshTable => {
+  const count = meshes.length;
+  const vertexStart = new Int32Array(count);
+  const vertexCounts = new Int32Array(count);
+  const indexStart = new Int32Array(count);
+  const indexCounts = new Int32Array(count);
+  const bounds = new Float32Array(count * boundsStride);
+  let vertices = 0;
+  let indices = 0;
+  meshes.forEach((source, index) => {
+    const own = vertexCount(source);
+    vertexStart[index] = vertices;
+    vertexCounts[index] = own;
+    indexStart[index] = indices;
+    indexCounts[index] = source.indices.length;
+    bounds.set([...source.bounds.min, ...source.bounds.max], index * boundsStride);
+    vertices += own;
+    indices += source.indices.length;
+  });
+  const positions = new Float32Array(vertices * 3);
+  const gathered = new Uint32Array(indices);
+  const shaded = count > 0 && meshes.every((source) => source.normals !== undefined);
+  const normals = shaded ? new Float32Array(vertices * 3) : undefined;
+  meshes.forEach((source, index) => {
+    const at = (vertexStart[index] ?? 0) * 3;
+    const floats = (vertexCounts[index] ?? 0) * 3;
+    positions.set(source.positions.subarray(0, floats), at);
+    if (normals !== undefined) normals.set(source.normals?.subarray(0, floats) ?? [], at);
+    gathered.set(source.indices, indexStart[index] ?? 0);
+  });
+  return { positions, indices: gathered, normals, vertexStart, vertexCount: vertexCounts, indexStart, indexCount: indexCounts, bounds };
+};
 
 // Instance columns sized for a row count, every row geometry-free, at the origin, opaque white.
 export const emptyInstances = (count: number): InstanceRecords => {
@@ -135,14 +219,25 @@ export const isInstanceVisible = (records: InstanceRecords, row: number): boolea
 export const isGeometryFree = (records: InstanceRecords, row: number): boolean =>
   (records.meshIndex[row] ?? noMesh) === noMesh;
 
-// The box containing every instance of the geometry in model space.
+// The box of the mesh an instance names, read from `meshes` or, when the geometry carries only the
+// table, from the table. A row with no mesh, or a mesh index neither holds, has no box.
+const meshBoundsOf = (geometry: Geometry, index: number): Bounds | undefined => {
+  if (index === noMesh) return undefined;
+  const source = geometry.meshes[index];
+  if (source !== undefined) return source.bounds;
+  const meshes = geometry.meshTable;
+  return meshes !== undefined && index >= 0 && index < meshCount(meshes)
+    ? meshBoundsAt(meshes, index)
+    : undefined;
+};
+
+// The box containing every instance of the geometry in model space, hidden rows included.
 export const geometryBounds = (geometry: Geometry): Bounds => {
   let bounds = emptyBounds;
   for (let row = 0; row < geometry.instances.count; row += 1) {
-    const index = geometry.instances.meshIndex[row] ?? noMesh;
-    const source = index === noMesh ? undefined : geometry.meshes[index];
+    const source = meshBoundsOf(geometry, geometry.instances.meshIndex[row] ?? noMesh);
     if (source !== undefined) {
-      bounds = unionBounds(bounds, transformBounds(instanceTransform(geometry.instances, row), source.bounds));
+      bounds = unionBounds(bounds, transformBounds(instanceTransform(geometry.instances, row), source));
     }
   }
   return bounds;
