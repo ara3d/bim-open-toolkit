@@ -44,6 +44,15 @@ export {
   type DoorWidthPolicy,
 } from './building.js';
 
+// Two snapshots of one building and the correspondences somebody proposed between them.
+export {
+  defaultRevisionsOptions,
+  generateRevisions,
+  type ChangeCounts,
+  type Revisions,
+  type RevisionsOptions,
+} from './revisions.js';
+
 // A seeded services network: pipe runs, valves, equipment and the connections nobody verified.
 export {
   defaultServicesOptions,
