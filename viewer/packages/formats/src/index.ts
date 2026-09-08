@@ -6,3 +6,6 @@ export * from './detect.js';
 export * from './resolver.js';
 export * from './bfast.js';
 export * from './bos.js';
+export * from './gltf.js';
+export * from './obj.js';
+export * from './stl.js';

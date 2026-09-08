@@ -161,3 +161,101 @@ export const sampleBfast = (): Uint8Array =>
 
 // The bytes as a standalone ArrayBuffer, which is what the loaders take.
 export const asBuffer = (bytes: Uint8Array): ArrayBuffer => bytes.slice().buffer;
+
+// ---------------------------------------------------------------------------
+// glTF, OBJ and STL fixtures.
+// ---------------------------------------------------------------------------
+
+const padded = (length: number): number => Math.ceil(length / 4) * 4;
+
+/** Packs a glTF JSON document and an optional binary chunk into a GLB container. */
+export function writeGlb(json: unknown, binary?: Uint8Array): Uint8Array {
+  const text = new TextEncoder().encode(JSON.stringify(json));
+  const jsonLength = padded(text.byteLength);
+  const binaryLength = binary === undefined ? 0 : padded(binary.byteLength);
+  const total = 12 + 8 + jsonLength + (binary === undefined ? 0 : 8 + binaryLength);
+  const out = new Uint8Array(total);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, total, true);
+  view.setUint32(12, jsonLength, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  out.fill(0x20, 20 + text.byteLength, 20 + jsonLength);
+  out.set(text, 20);
+  if (binary !== undefined) {
+    const at = 20 + jsonLength;
+    view.setUint32(at, binaryLength, true);
+    view.setUint32(at + 4, 0x004e4942, true);
+    out.set(binary, at + 8);
+  }
+  return out;
+}
+
+/** The bytes a triangle glTF refers to: three positions then three unsigned short indices. */
+export const triangleBuffer = (): Uint8Array => {
+  const out = new Uint8Array(padded(36) + padded(6));
+  new Float32Array(out.buffer, 0, 9).set([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  new Uint16Array(out.buffer, 36, 3).set([0, 1, 2]);
+  return out;
+};
+
+/**
+ * A document with one mesh placed by two nodes, the second a child translated along x, with a red
+ * half-transparent material. The buffer is left for the caller to supply as a chunk or a data uri.
+ */
+export const triangleGltfJson = (bufferUri?: string): unknown => ({
+  asset: { version: '2.0' },
+  scene: 0,
+  scenes: [{ nodes: [0] }],
+  nodes: [
+    { name: 'root', children: [1] },
+    { name: 'placed', mesh: 0, translation: [2, 0, 0] },
+  ],
+  meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1, material: 0 }] }],
+  materials: [{ pbrMetallicRoughness: { baseColorFactor: [1, 0, 0, 0.5] } }],
+  accessors: [
+    { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+    { bufferView: 1, componentType: 5123, count: 3, type: 'SCALAR' },
+  ],
+  bufferViews: [
+    { buffer: 0, byteOffset: 0, byteLength: 36 },
+    { buffer: 0, byteOffset: 36, byteLength: 6 },
+  ],
+  buffers: [{ byteLength: padded(36) + padded(6), ...(bufferUri === undefined ? {} : { uri: bufferUri }) }],
+});
+
+// The same document as a GLB with its buffer in the binary chunk.
+export const triangleGlb = (): Uint8Array => writeGlb(triangleGltfJson(), triangleBuffer());
+
+// The same document as JSON text whose buffer is an external file the resolver must supply.
+export const triangleGltfText = (uri = 'scene.bin'): string => JSON.stringify(triangleGltfJson(uri));
+
+/** Packs triangles into a binary STL. Each triangle is a normal and three vertices. */
+export function writeBinaryStl(
+  triangles: readonly { readonly normal: readonly number[]; readonly corners: readonly number[] }[],
+  header = 'fixture',
+): Uint8Array {
+  const out = new Uint8Array(84 + triangles.length * 50);
+  const view = new DataView(out.buffer);
+  out.set(new TextEncoder().encode(header).subarray(0, 80));
+  view.setUint32(80, triangles.length, true);
+  triangles.forEach((triangle, index) => {
+    const at = 84 + index * 50;
+    triangle.normal.forEach((value, axis) => view.setFloat32(at + axis * 4, value, true));
+    triangle.corners.forEach((value, offset) => view.setFloat32(at + 12 + offset * 4, value, true));
+  });
+  return out;
+}
+
+// One triangle, for the binary STL fixtures.
+export const stlTriangle = (): { readonly normal: readonly number[]; readonly corners: readonly number[] } => ({
+  normal: [0, 0, 1],
+  corners: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+});
+
+// The same triangle written as ASCII STL.
+export const asciiStlText = (name = 'fixture'): string =>
+  `solid ${name}\n` +
+  '  facet normal 0 0 1\n    outer loop\n      vertex 0 0 0\n      vertex 1 0 0\n      vertex 0 1 0\n    endloop\n  endfacet\n' +
+  `endsolid ${name}\n`;
