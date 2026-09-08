@@ -11,6 +11,7 @@ export * from './instance-table.js';
 export * from './facts.js';
 export * from './schema.js';
 export * from './sets.js';
+export * from './table-sets.js';
 export * from './edits.js';
 export * from './view.js';
 export * from './slices.js';
