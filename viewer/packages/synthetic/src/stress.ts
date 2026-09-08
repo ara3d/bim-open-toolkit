@@ -27,9 +27,10 @@ import {
   type ObjectRecord,
   type Vec3,
 } from '@bim-open-toolkit/model';
+import { elementAt as at } from './arrays.js';
+import { cursor as newCursor, drawFloat, drawInt, type Cursor } from './cursor.js';
 import type { MeshGroup, ShadedMesh } from './mesh-builder.js';
 import { box, cylinder } from './primitives.js';
-import { float, int, seed, type Rng } from './prng.js';
 
 // The material classes an instance can be drawn with, in the order the `materialClass` column
 // indexes them. The order is part of the contract: a stored column stays readable.
@@ -93,30 +94,6 @@ function checkOptions(options: StressOptions): void {
       `${options.instances} instances need at least ${options.instances * smallestMesh} triangles, more than the budget of ${options.triangleBudget}`,
     );
   }
-}
-
-// A cursor over the generator's random state, created and discarded inside one call.
-type Cursor = { state: Rng };
-
-// Reads an element, treating an out-of-range index as a programming error.
-function at<T>(items: readonly T[], index: number): T {
-  const value = items[index];
-  if (value === undefined) throw new Error(`index ${index} is out of range`);
-  return value;
-}
-
-// Draws a number in [0, 1).
-function drawFloat(cursor: Cursor): number {
-  const draw = float(cursor.state);
-  cursor.state = draw.rng;
-  return draw.value;
-}
-
-// Draws an integer in [minimum, maximum).
-function drawInt(cursor: Cursor, minimum: number, maximum: number): number {
-  const draw = int(cursor.state, minimum, maximum);
-  cursor.state = draw.rng;
-  return draw.value;
 }
 
 // The colours each material class is drawn in. Fixed palettes rather than a hue computation, so
@@ -184,7 +161,7 @@ function drawMaterial(cursor: Cursor, mix: MaterialMix): MaterialClass {
 // Generates a stress scene from its options. The same options always give the same scene.
 export function generateStressScene(options: StressOptions): StressScene {
   checkOptions(options);
-  const cursor: Cursor = { state: seed(options.seed) };
+  const cursor: Cursor = newCursor(options.seed);
   const ref: ModelRef = { id: 'synthetic-stress', revision: `seed-${options.seed}`, source: 'generated' };
 
   const library = buildMeshes(options.meshes, options.maxMeshTriangles);

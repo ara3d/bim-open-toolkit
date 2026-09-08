@@ -50,9 +50,10 @@ import {
   type Table,
   type Vec3,
 } from '@bim-open-toolkit/model';
+import { elementAt as at } from './arrays.js';
+import { cursor as newCursor, drawFloat, drawInt, drawPick, drawRange, type Cursor } from './cursor.js';
 import type { MeshGroup, ShadedMesh } from './mesh-builder.js';
 import { box } from './primitives.js';
-import { float, int, pick, range, seed, type Rng } from './prng.js';
 import { quantityColumns, textColumns, type NamedColumn } from './schedule.js';
 
 // How much is recorded about the clear width of a door. Nominal width is always attempted.
@@ -107,45 +108,6 @@ function checkOptions(options: BuildingOptions): void {
   if (!Number.isInteger(options.roomsPerStorey) || options.roomsPerStorey < 1) throw new Error(`roomsPerStorey must be a positive integer, got ${options.roomsPerStorey}`);
   if (!(options.storeyHeight > 0.5) || !Number.isFinite(options.storeyHeight)) throw new Error(`storeyHeight must be more than 0.5 metres, got ${options.storeyHeight}`);
   if (!(options.gapScale >= 0) || !Number.isFinite(options.gapScale)) throw new Error(`gapScale must be a finite number of at least 0, got ${options.gapScale}`);
-}
-
-// A cursor over the generator's random state. It is created and discarded inside one call, so the
-// generator stays a pure function of its options.
-type Cursor = { state: Rng };
-
-// Reads an element, treating an out-of-range index as a programming error.
-function at<T>(items: readonly T[], index: number): T {
-  const value = items[index];
-  if (value === undefined) throw new Error(`index ${index} is out of range`);
-  return value;
-}
-
-// Draws a number in [0, 1).
-function drawFloat(cursor: Cursor): number {
-  const draw = float(cursor.state);
-  cursor.state = draw.rng;
-  return draw.value;
-}
-
-// Draws a number in [minimum, maximum).
-function drawRange(cursor: Cursor, minimum: number, maximum: number): number {
-  const draw = range(cursor.state, minimum, maximum);
-  cursor.state = draw.rng;
-  return draw.value;
-}
-
-// Draws an integer in [minimum, maximum).
-function drawInt(cursor: Cursor, minimum: number, maximum: number): number {
-  const draw = int(cursor.state, minimum, maximum);
-  cursor.state = draw.rng;
-  return draw.value;
-}
-
-// Draws one element of a non-empty array.
-function drawPick<T>(cursor: Cursor, items: readonly T[]): T {
-  const draw = pick(cursor.state, items);
-  cursor.state = draw.rng;
-  return draw.value;
 }
 
 // The thickness of a slab, and of an interior and an exterior wall, in metres.
@@ -351,7 +313,7 @@ function drawFireRating(cursor: Cursor, rated: boolean, typeId: string, gapScale
 // seeds give different room sizes, names, door widths and gaps.
 export function generateBuilding(options: BuildingOptions): Building {
   checkOptions(options);
-  const cursor: Cursor = { state: seed(options.seed) };
+  const cursor: Cursor = newCursor(options.seed);
   const gap = options.gapScale;
   const ref: ModelRef = { id: 'synthetic-building', revision: `seed-${options.seed}`, source: 'generated' };
   const idOf = (objectId: string): ObjectRef => objectRef(ref, objectId);

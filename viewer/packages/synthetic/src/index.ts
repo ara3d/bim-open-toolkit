@@ -7,6 +7,12 @@ export { float, gaussian, int, next, pick, range, seed, shuffle, type Draw, type
 // Mesh primitives as plain data, centered on the origin and wound outward.
 export { box, cylinder, extrude, plane, wedge } from './primitives.js';
 
+// Calendar dates as `YYYY-MM-DD` text and integer day numbers, with no clock and no time zone.
+export { addDays, dayOf, daysFromCivil, isoDate, type IsoDate } from './dates.js';
+
+// A list of ids inside one string cell of a table column, and the way to read it back.
+export { joinIds, splitIds } from './arrays.js';
+
 // A model mesh known to carry per-vertex normals, and one mesh of a scene with its instance count.
 export { type MeshGroup, type ShadedMesh } from './mesh-builder.js';
 
