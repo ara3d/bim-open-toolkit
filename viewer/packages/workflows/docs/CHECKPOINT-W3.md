@@ -32,7 +32,7 @@ No conflict with M5's in-flight edit to `src/observation.ts`; not touched here, 
 ## Commit
 
 `02-revision-comparison.ts`, `04-pricing-alternatives.ts`, `05-delivery-timeline.ts`,
-`09-material-carbon.ts`, `test/02-revision-comparison.test.ts`: pending, see commit hash below.
+`09-material-carbon.ts`, `test/02-revision-comparison.test.ts`, this file: `3bbad2a`.
 
 ## Tooling
 
