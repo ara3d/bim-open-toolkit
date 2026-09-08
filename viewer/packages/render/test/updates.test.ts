@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   boolColumn,
   f32Column,
+  instanceTable,
   stringColumn,
   table as makeTable,
+  transformColumnNames,
   transformStride,
   u32Column,
 } from '@bim-open-toolkit/model';
@@ -14,7 +16,6 @@ import {
   dirtySets,
   everyRow,
   publishDirty,
-  transformColumnNames,
   updateColumns,
   writeColors,
   writeOpacity,
@@ -268,7 +269,7 @@ describe('applyUpdates', () => {
     const table = built();
     const changes = makeTable([
       [updateColumns.key, stringColumn([fixtureKey(3)])],
-      [updateColumns.opacity, f32Column([0.2])],
+      [updateColumns.alpha, f32Column([0.2])],
     ]);
     const result = applyUpdates(table, changes);
     expect(result.ok).toBe(true);
@@ -296,7 +297,7 @@ describe('applyUpdates', () => {
     const table = built();
     const changes = makeTable([
       [updateColumns.object, u32Column([0, 99])],
-      [updateColumns.opacity, f32Column([0.5, 0.5])],
+      [updateColumns.alpha, f32Column([0.5, 0.5])],
     ]);
     const result = applyUpdates(table, changes);
     expect(result.ok).toBe(true);
@@ -310,7 +311,7 @@ describe('applyUpdates', () => {
     const table = built();
     const changes = makeTable([
       [updateColumns.key, stringColumn([fixtureKey(4)])],
-      [updateColumns.opacity, f32Column([0.1])],
+      [updateColumns.alpha, f32Column([0.1])],
     ]);
     const result = applyUpdates(table, changes);
     expect(result.ok).toBe(true);
@@ -320,7 +321,7 @@ describe('applyUpdates', () => {
   });
 
   it('refuses a table with no addressing column', () => {
-    const result = applyUpdates(built(), makeTable([[updateColumns.opacity, f32Column([1])]]));
+    const result = applyUpdates(built(), makeTable([[updateColumns.alpha, f32Column([1])]]));
     expect(result.ok).toBe(false);
     expect(result.diagnostics[0]?.code).toBe('no-addressing-column');
   });
@@ -338,11 +339,26 @@ describe('applyUpdates', () => {
   it('refuses half a transform', () => {
     const changes = makeTable([
       [updateColumns.object, u32Column([0])],
-      ['transform0', f32Column([1])],
+      ['m0', f32Column([1])],
     ]);
     const result = applyUpdates(built(), changes);
     expect(result.ok).toBe(false);
     expect(result.diagnostics[0]?.code).toBe('partial-transform');
+  });
+
+  it('takes a table the model package built from instance records, with no translation', () => {
+    const table = built();
+    const geometry = standardScene();
+    writeColors(table, everyRow, Float32Array.of(0, 0, 0));
+    const result = applyUpdates(table, instanceTable(geometry.instances));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // The instance table addresses object ordinals, so each of its rows restores every row that
+    // object draws; the five drawn rows are addressed by the six records, one of which is
+    // geometry-free and addresses none, and one object drawing two rows is named twice.
+    expect(result.value.rowsAddressed).toBeGreaterThanOrEqual(table.rowCount);
+    expect(colorOfRow(table, 0).slice(0, 3)).toEqual([1, 0, 0]);
+    expect(colorOfRow(table, 4).slice(0, 3)).toEqual([1, 1, 0]);
   });
 
   it('records dirty ranges the caller can publish', () => {

@@ -39,7 +39,6 @@ export {
   everyRow,
   publishDirty,
   selectionSize,
-  transformColumnNames,
   updateColumns,
   writeColors,
   writeOpacity,

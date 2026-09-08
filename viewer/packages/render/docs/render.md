@@ -55,7 +55,8 @@ allocates once per instance. `InstanceTable` holds both views in `colors[]` and 
 the writers use those. This is why nothing may append instances to a group after its table is
 built: appending can reallocate the underlying buffer and the captured views would then be stale.
 
-**Opacity and visibility are separate columns.** viewer-core draws per-instance alpha and its
+**Opacity and visibility are separate columns.** A source may declare a row hidden through
+`InstanceRecords.visible`, and that is honoured at build time. viewer-core draws per-instance alpha and its
 patched material discards fragments below `MIN_VISIBLE_ALPHA`, so hiding a row is a write of alpha
 zero. If that were the only record, showing the row again would not know what opacity it had. The
 table keeps `opacity` and `visible` per row, and the stored alpha is always `visible ? opacity : 0`.
@@ -75,10 +76,11 @@ returns how many rows it actually changed.
 - **`everyRow`** skips the row index entirely and walks the group buffers.
 - **`publishDirty`** tells viewer-core what moved, once per touched group.
 
-`applyUpdates` is the same thing driven by a model `Table`: an `object` or `key` column addresses
-objects, and `red`/`green`/`blue`, `opacity`, `visible` and `transform0` to `transform15` carry the
-values. One object expands to every row it draws. A partial colour or transform is refused rather
-than half applied.
+`applyUpdates` is the same thing driven by a model `Table`. The column names are the model package's
+own instance-table names - `objectIndex`, `red`, `green`, `blue`, `alpha`, `m0` to `m15` - plus
+`visible` and `key`, so a table produced by `instanceTable(records)` is a change table with no
+translation and there is one vocabulary rather than two. One object expands to every row it draws. A
+partial colour or transform is refused rather than half applied.
 
 ### What publishing costs, and the one thing viewer-core is missing
 

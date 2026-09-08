@@ -21,6 +21,7 @@ import {
   colorStride,
   diagnostic,
   failure,
+  isInstanceVisible,
   noMesh,
   success,
   transformStride,
@@ -235,7 +236,7 @@ export const buildInstanceTable = (
   const objectOfRow = new Int32Array(rowCount);
   const instanceOfRow = new Int32Array(rowCount);
   const opacity = new Float32Array(rowCount);
-  const visible = new Uint8Array(rowCount).fill(1);
+  const visible = new Uint8Array(rowCount);
   const transforms = new Float32Array(rowCount * transformStride);
   const colors = new Float32Array(rowCount * colorStride);
   const nextOfGroup = Int32Array.from(groupStart.subarray(0, plan.meshOfGroup.length));
@@ -261,7 +262,12 @@ export const buildInstanceTable = (
       row * transformStride,
     );
     colors.set(instances.color.subarray(i * colorStride, (i + 1) * colorStride), row * colorStride);
+    // A source that declares a hidden row keeps the opacity it had, and stores an alpha of zero,
+    // which is the same composition every later visibility write maintains.
+    const shown = isInstanceVisible(instances, i);
     opacity[row] = colors[row * colorStride + alphaChannel] ?? 1;
+    visible[row] = shown ? 1 : 0;
+    if (!shown) colors[row * colorStride + alphaChannel] = 0;
   }
 
   const objectStart = new Int32Array(keys.length + 1);

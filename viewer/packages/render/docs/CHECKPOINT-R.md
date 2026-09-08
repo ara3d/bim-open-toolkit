@@ -1,7 +1,9 @@
 # Track R checkpoint: the render package
 
 State: **verified** against the gates listed below, on the recorded inputs.
-Contract revision: **M1 at `641624b`**, unchanged and unedited.
+Contract revision: **M1 at `641624b`**, unchanged and unedited by this track. The model package
+landed additive M1.1 columns and an instance-table module during the track; this package followed
+them, see finding 9.
 Fence: `viewer/packages/render/**` except `package.json`, `tsconfig.json`, `tsconfig.build.json`,
 `vitest.config.ts`, `vitest.perf.config.ts`. Nothing outside it was written.
 
@@ -24,7 +26,7 @@ out of reading measurements, which is not work a written spec could have carried
 | `src/timing.ts` | 227 | Frame and GPU timing, percentiles, scene statistics, HUD data |
 | `src/scene-binding.ts` | 319 | Scene membership and the operations that cross modules |
 | `src/index.ts` | 219 | One level of re-exports, one `//` line per export |
-| `test/**` | 2 130 | 212 tests in 11 files, no browser |
+| `test/**` | 2 156 | 214 tests in 11 files, no browser |
 | `test/perf/**` | 623 | 14 measured cases at 10k, 100k and 456,598 rows |
 
 ## Delivered behaviour
@@ -82,7 +84,7 @@ Run from `viewer/` at the end of the track, all writers in this fence stopped.
 |---|---|---|
 | `npx tsc --noEmit -p packages/render/tsconfig.json` | exit 0, no output | 13 s |
 | `npx eslint packages/render` | exit 0, no output | 12 s |
-| `npm test -w @bim-open-toolkit/render` | 11 files, **212 passed**, 0 failed | 4 s |
+| `npm test -w @bim-open-toolkit/render` | 11 files, **214 passed**, 0 failed | 4 s |
 | `npm run perf -w @bim-open-toolkit/render` | 2 files, **14 passed**, 0 failed | 15 s |
 
 ## Chunk commits
@@ -95,7 +97,8 @@ Run from `viewer/` at the end of the track, all writers in this fence stopped.
 | `1c76ab2` | Representation registry, replacement and overlay primitives, 137 tests |
 | `7277d06` | Environment, capture and frame timing, 186 tests |
 | `1cd09be` | Scene binding onto viewer-core, 212 tests |
-| (this one) | `docs/render.md`, `README.md`, this checkpoint |
+| (this one) | Follow the model package's M1.1 additions: honour the source `visible` column, adopt its change-table names, 214 tests |
+| `3483a63` | `docs/render.md`, `README.md`, this checkpoint |
 
 Every commit staged by explicit pathspec inside the fence. One `index.lock` collision with another
 session, retried after six seconds. Nothing pushed. Modified and untracked files elsewhere in the
@@ -209,6 +212,32 @@ zero rows, which is asserted.
 The consequence for reporting: `applyStyles` cannot count a styled key the model does not hold if
 that key resolved to the fallback, because it is not named. The report says so and the limit is
 documented.
+
+### 9. The model contract moved past M1 during the track, additively, and this package followed
+
+At `641624b` the brief's revision, `InstanceRecords` had five columns and the model package had no
+instance-table module. By the end of the track the model had landed `ea3ddf2`, `bc75733` and
+`b57c237`, adding optional `visible`, `roughness` and `metallic` instance columns, a `MeshTable`,
+and an `instance-table` module exporting `instanceTable(records)` with column names `objectIndex`,
+`m0` to `m15` and `red`/`green`/`blue`/`alpha`. `CONTRACTS-M1.md` records these under "M1.1
+additions" and keeps the revision label M1, correctly: nothing was renamed, removed or re-signed.
+
+Two consequences, both handled here:
+
+- **`buildInstanceTable` now honours `records.visible`.** A source that declares a row hidden gets
+  `visible = 0` and a stored alpha of zero while keeping the opacity it had, which is the same
+  composition every later visibility write maintains. Before this it silently drew such rows.
+- **The change-table vocabulary was mine and is now the model's.** `updates.ts` had invented
+  `object`, `opacity` and `transform0` to `transform15`; it now uses `objectIndex`, `alpha` and the
+  model's `transformColumnNames` and `colorColumnNames`. A table from `instanceTable(records)` is
+  therefore a change table with no translation, which is asserted by a test. `transformColumnNames`
+  is no longer exported from this package, which also removes a name that would have collided with
+  the model's for a consumer re-exporting both.
+
+Had this landed a day later it would have been two vocabularies in wave 2. **The general point for
+the supervisor: an additive contract change that adds a name a downstream track has already invented
+is not neutral, even though it breaks nothing.** A note to wave 1 tracks when `instance-table.ts`
+landed would have cost one message.
 
 ## Requests
 

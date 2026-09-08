@@ -31,6 +31,7 @@
 // large fraction of it.
 
 import {
+  colorColumnNames,
   colorStride,
   columnOf,
   diagnostic,
@@ -39,6 +40,7 @@ import {
   numericColumnOf,
   stringAt,
   success,
+  transformColumnNames,
   transformStride,
   type Column,
   type Diagnostic,
@@ -409,30 +411,27 @@ export const publishDirty = (table: InstanceTable, dirty: DirtySets): PublishRep
   return { colorGroups, transformGroups };
 };
 
-// The column names a change table is read through. A table names objects, not rows, because an
-// object is what a command, a rule or a workflow result talks about.
+// The column names a change table is read through.
+//
+// These are the model package's own instance-table names - `objectIndex`, `m0` to `m15`, `red`,
+// `green`, `blue`, `alpha` - so a table produced by `instanceTable(records)` is a change table
+// without translation, and there is one vocabulary rather than two. A table names objects, not
+// rows, because an object is what a command, a rule or a workflow result talks about.
 export const updateColumns = {
   // Integer object ordinals, the fastest addressing.
-  object: 'object',
+  object: 'objectIndex',
   // Object keys, used when the caller has no ordinals.
   key: 'key',
   // Red, green and blue in [0, 1]; all three or none.
-  red: 'red',
-  green: 'green',
-  blue: 'blue',
-  // Opacity in [0, 1].
-  opacity: 'opacity',
+  red: colorColumnNames[0] ?? 'red',
+  green: colorColumnNames[1] ?? 'green',
+  blue: colorColumnNames[2] ?? 'blue',
+  // The opacity the row draws with when shown, in [0, 1]. Visibility is applied on top of it, so a
+  // hidden row still stores a zero alpha whatever this says.
+  alpha: colorColumnNames[3] ?? 'alpha',
   // Non-zero shows the object.
   visible: 'visible',
-  // Sixteen column-major transform elements named transform0 to transform15; all or none.
-  transform: 'transform',
 } as const;
-
-// Names of the sixteen transform element columns, in column-major order.
-export const transformColumnNames: readonly string[] = Array.from(
-  { length: transformStride },
-  (_unused, i) => `${updateColumns.transform}${i}`,
-);
 
 // What applying a change table did.
 export type UpdateReport = {
@@ -567,7 +566,7 @@ export const applyUpdates = (
       expand(rgb[element] ?? (() => 0), sourceOfRow, 3, element, values);
     written += writeColors(table, rows, values, dirty, options);
   }
-  const opacity = numericColumnOf(changes, updateColumns.opacity);
+  const opacity = numericColumnOf(changes, updateColumns.alpha);
   if (opacity !== undefined) {
     const values = new Float32Array(rows.length);
     expand((row) => numberAt(opacity, row) ?? 0, sourceOfRow, 1, 0, values);

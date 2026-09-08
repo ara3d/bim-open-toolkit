@@ -124,7 +124,7 @@ describe('applyChanges', () => {
     const { binding } = added();
     const changes = makeTable([
       [updateColumns.object, u32Column([1])],
-      [updateColumns.opacity, f32Column([0.3])],
+      [updateColumns.alpha, f32Column([0.3])],
     ]);
     expect(binding.applyChanges('m1', changes).ok).toBe(true);
     expect(binding.publish()).toEqual({ colorGroups: 0, transformGroups: 0 });

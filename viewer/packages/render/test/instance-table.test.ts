@@ -87,6 +87,21 @@ describe('buildInstanceTable', () => {
     expect(visibleRows(built().value)).toBe(5);
   });
 
+  it('honours a source that declares a row hidden, keeping the opacity it had', () => {
+    const geometry = scene(1, [
+      { ...instanceAt(0, 0, 0, [1, 0, 0], 0.4), visible: false },
+      instanceAt(0, 1, 1),
+    ]);
+    const result = buildInstanceTable(geometry, fixtureKeys(2));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const table = result.value;
+    expect([...table.visible]).toEqual([0, 1]);
+    expect(table.opacity[0]).toBeCloseTo(0.4, 6);
+    expect(colorOfRow(table, 0)[3]).toBe(0);
+    expect(visibleRows(table)).toBe(1);
+  });
+
   it('counts rendered triangles over instances, not over the mesh library', () => {
     const geometry = standardScene();
     const table = built().value;
