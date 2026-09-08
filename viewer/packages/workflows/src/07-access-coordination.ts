@@ -1,9 +1,11 @@
 import {
   array,
+  conflicting,
   contextTransform,
   failure,
   literal,
   missing,
+  text,
   modelRefSchema,
   number,
   object,
@@ -41,10 +43,15 @@ export type Box = {
   readonly maxZ: number;
 };
 
-// A box the input either states or reports as missing. Model's `Observation` carries a `FactValue`,
-// which has no shape for a box, so this workflow states its own purely validating equivalent: it
-// follows `src/observation.ts`'s `known`/`missing` shape but never converts what it accepts.
-export type BoxObservation = { readonly kind: 'known'; readonly value: Box } | { readonly kind: 'missing'; readonly reason: MissingReason };
+// A box the input states, reports as missing, or reports as disputed. Model's `Observation` carries
+// a `FactValue`, which has no shape for a box, so this workflow states its own purely validating
+// equivalent: it follows `src/observation.ts`'s shape but never converts what it accepts.
+// A disputed box carries how each source stated its bounds, as text. This workflow never parses
+// them: two sources that disagree about where something is have not given it a box it may use.
+export type BoxObservation =
+  | { readonly kind: 'known'; readonly value: Box }
+  | { readonly kind: 'missing'; readonly reason: MissingReason }
+  | { readonly kind: 'conflicting'; readonly values: readonly string[] };
 
 // An equipment clearance or access envelope.
 export type CoordinationEnvelope = { readonly objectId: string; readonly discipline: string; readonly bbox: BoxObservation };
@@ -76,6 +83,7 @@ const boxSchema: Schema<Box> = object({
 export const boxObservationSchema: Schema<BoxObservation> = union<BoxObservation>(
   object({ kind: literal('known'), value: boxSchema }),
   object({ kind: literal('missing'), reason: missingReasonSchema }),
+  object({ kind: literal('conflicting'), values: array(string()) }),
 );
 
 const participantSchema = object({ objectId: string(), discipline: string(), bbox: boxObservationSchema });
@@ -146,6 +154,27 @@ const gapException = (item: { readonly objectId: string }, reason: MissingReason
     detail: 'coordination gap: no registered coordinates',
   });
 
+// A participant whose sources disagree about where it is. It cannot be tested against anything, and
+// which of the disputed bounds is right is not this workflow's to decide, so both stay visible.
+const disputedException = (
+  item: { readonly objectId: string },
+  values: readonly string[],
+): WorkflowException =>
+  workflowException([item.objectId], 'bbox', conflicting(values.map((value) => text(value))), {
+    detail: 'coordination gap: the sources state different bounds',
+  });
+
+// The exception a participant that cannot be compared raises, or none when its bounds are known.
+const untestable = (item: {
+  readonly objectId: string;
+  readonly bbox: BoxObservation;
+}): readonly WorkflowException[] =>
+  item.bbox.kind === 'missing'
+    ? [gapException(item, item.bbox.reason)]
+    : item.bbox.kind === 'conflicting'
+      ? [disputedException(item, item.bbox.values)]
+      : [];
+
 // Shared penetrations and equipment access coordination: an axis-aligned bounding-box overlap
 // between an envelope and a penetration is reported as a candidate finding, never as a verified
 // clash, and a participant with no registered bounds is reported as a coordination gap instead of
@@ -198,8 +227,8 @@ export const runAccessCoordination = (input: AccessCoordinationInput): Result<Wo
           }),
         ]
       : []),
-    ...input.envelopes.flatMap((item) => (item.bbox.kind === 'missing' ? [gapException(item, item.bbox.reason)] : [])),
-    ...input.penetrations.flatMap((item) => (item.bbox.kind === 'missing' ? [gapException(item, item.bbox.reason)] : [])),
+    ...input.envelopes.flatMap(untestable),
+    ...input.penetrations.flatMap(untestable),
   ];
 
   const candidateIds = [...new Set(findings.flatMap((finding) => [finding.envelopeId, finding.penetrationId]))];
@@ -209,7 +238,14 @@ export const runAccessCoordination = (input: AccessCoordinationInput): Result<Wo
     'access-coordination',
     groupByOutcome([
       ...candidateIds.map((id): readonly [string, Outcome] => [keyOf(input.model, id), 'candidate']),
-      ...gapIds.map((id): readonly [string, Outcome] => [keyOf(input.model, id), 'missing']),
+      ...exceptions.flatMap((item) =>
+        item.subjects.map(
+          (id): readonly [string, Outcome] => [
+            keyOf(input.model, id),
+            item.observation.kind === 'conflicting' ? 'conflicting' : 'missing',
+          ],
+        ),
+      ),
     ]),
   );
 

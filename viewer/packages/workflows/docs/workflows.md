@@ -163,8 +163,11 @@ registration that is not stated — are not compared at all: the run reports the
 exception and produces no finding, because comparing boxes across an unstated frame is exactly how a
 confident wrong answer is produced. Two boxes are a candidate finding when their intervals intersect
 on all three axes; touching faces count. Every candidate names both participants, both disciplines,
-and the basis `bounding-box-overlap`. An item with no bounding box cannot be tested at all and is a
-coordination gap exception, never silently treated as not overlapping.
+and the basis `bounding-box-overlap`. An item with no bounding box, and an item whose sources state
+different bounds, cannot be tested at all: each is a coordination gap exception, never silently
+treated as not overlapping. A disputed box carries the bounds each source stated, as text; the
+workflow shows both and uses neither, because two sources that disagree about where something is
+have not given it a box it may compare.
 
 **Says.** Which pairs are worth a person's attention, and which items could not be tested.
 

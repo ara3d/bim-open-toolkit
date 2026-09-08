@@ -31,6 +31,27 @@ describe('access coordination', () => {
     expect(JSON.stringify(result.tables).toLowerCase()).not.toContain('clash');
   });
 
+  it('tests nothing against a participant whose sources disagree, and shows both bounds', () => {
+    const disputed = {
+      ...input,
+      penetrations: input.penetrations.map((item) =>
+        item.objectId === 'PEN-1'
+          ? { ...item, bbox: { kind: 'conflicting', values: ['1,1,0 to 3,3,2', '1,2,0 to 3,4,2'] } as const }
+          : item,
+      ),
+    };
+    const result2 = valueOfResult('access coordination', runAccessCoordination(disputed));
+    expect(resultRows(result2, 'candidateFindings')).toEqual([]);
+    expect(exceptionRows(result2)).toContainEqual({
+      subjects: ['PEN-1'],
+      field: 'bbox',
+      detail: 'coordination gap: the sources state different bounds',
+      kind: 'conflicting',
+      values: ['1,1,0 to 3,3,2', '1,2,0 to 3,4,2'],
+    });
+    expect(result2.rules.map((rule) => rule.id)).toContain('access-coordination/conflicting');
+  });
+
   it('compares no boxes at all when the two frames cannot be related', () => {
     const unrelated = valueOfResult(
       'access coordination',

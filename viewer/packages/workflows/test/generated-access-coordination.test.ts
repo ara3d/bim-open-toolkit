@@ -14,11 +14,9 @@ const textAt = (value: unknown): string => (typeof value === 'string' ? value : 
 const numberAt = (value: unknown): number => (typeof value === 'number' ? value : Number.NaN);
 
 // `clearances.ts` writes a box observation across six numeric columns plus the same `bboxState` /
-// `bboxMissingReason` columns `schedule.ts` produces for a scalar field. The access-coordination
-// adapter's own `BoxObservation` has no `conflicting` kind (model's box-valued fact is requested but
-// does not exist yet, per the generator's own comment), so a disputed box is read the same way the
-// rest of this package reads an unresolved dispute it has no representation for: missing for an
-// unresolved source. See the report for this mapping.
+// `bboxMissingReason` / `bboxConflict` columns `schedule.ts` produces for a scalar field. A disputed
+// box is published as the bounds each source stated, rendered as text, which is exactly what a
+// `BoxObservation` conflict carries: this workflow shows both and uses neither.
 const boxObservationOf = (cells: Readonly<Record<string, CellValue>>): BoxObservation => {
   const state = textAt(cells['bboxState']);
   if (state === 'known') {
@@ -35,7 +33,7 @@ const boxObservationOf = (cells: Readonly<Record<string, CellValue>>): BoxObserv
     };
   }
   if (state === 'missing') return { kind: 'missing', reason: 'not-provided' };
-  return { kind: 'missing', reason: 'unresolved-source' };
+  return { kind: 'conflicting', values: textAt(cells['bboxConflict']).split(' vs ') };
 };
 
 // `CoordinationEnvelope` and `CoordinationPenetration` are the same shape; either name reads either
