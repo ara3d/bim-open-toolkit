@@ -56,11 +56,11 @@ Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside
 | Track | Model | Fence | State | Checkpoint |
 |---|---|---|---|---|
 | F formats, BFAST first | Opus | `viewer/packages/formats/**` | verified: one `loadModel` entry returning `Result<LoadedModel>`, BFAST straight from the loaders' render tables to M1 `Geometry` with no grouping step, BOS through `bosToBfast`, pure glTF/OBJ/STL readers, detection, resolver, progress, diagnostics; 149 tests; Snowdon medians BFAST 353 to 455 ms and BOS 2082 to 2126 ms end to end (alpha: 1981 and 3797), 51,139 objects of which 28,976 geometry-free; a closure-allocating precondition helper cost 260 ms per load until inlined; commits `8c4f530` `4617096` `ebbfeaa` `36c441b` `5325138` `bf002e3` `df9b671`; supervisor re-ran tsc and tests | `viewer/packages/formats/docs/CHECKPOINT-F.md` |
-| R render, instance table | Opus | `viewer/packages/render/**` | working | `viewer/packages/render/docs/CHECKPOINT-R.md` |
+| R render, instance table | Opus | `viewer/packages/render/**` | verified: instance table, bulk column updates with change detection and dirty ranges, picking, clipping, representations and replacement, overlays, environment, capture, timing, scene binding onto viewer-core; no three import in src, six adapter interfaces are the whole WebGL surface; 214 tests, 14 perf cases (10,000 of 456,598 rows: colour 3.39/2.11/0.45 ms scattered/sorted/contiguous; publishing 5.31 ms versus 3.66 ms writing); last commit `3d3e302`; supervisor re-ran tsc and tests | `viewer/packages/render/docs/CHECKPOINT-R.md` |
 | T testing: fixtures, fake clock, headless scene, browser runner, benchmark protocol | Opus | `viewer/packages/testing/**` minus the PERF and BIND areas | working | `viewer/packages/testing/docs/CHECKPOINT-T.md` |
 | M3 model additions for formats and render (F requests) | Opus | `viewer/packages/model/**` | working | `viewer/packages/model/docs/CHECKPOINT-M3.md` |
 | M2 model bridges (review follow-up) | Opus | `viewer/packages/model/**` | verified: `instanceTable` (4.1 ms at 100k rows versus 15.5 ms per-row, shared index arrays, transposed in 512-row blocks), `rowsInSet`/`setOfRows`, `joinTablesOn` for string keys, typed column accessors, `tableFromRecord`, `Vec2` helpers, README fixed and its example tested; additive, contract stays M1 (section M1.1 in CONTRACTS-M1.md); 224 tests; commits `d1d3bb6` `b489031` `31ef243` `b6885cb` `d1645b8` `560c91d`; supervisor re-ran tsc and tests | `viewer/packages/model/docs/CHECKPOINT-M2.md` |
-| E2E vertical slice (review follow-up) | Opus | `viewer/packages/demos/src/slice/**` | queued until R's instance table lands | — |
+| E2E vertical slice (review follow-up) | Opus | `viewer/packages/demos/{src/slice,test/slice}/**`, `slice.html`, `vite.slice.config.mjs`, `docs/slice.md` | working | `viewer/packages/demos/docs/CHECKPOINT-E2E.md` |
 | S2 remaining generators | Opus | `viewer/packages/synthetic/**` | verified: services, revisions, schedule, quantities, costs, carbon, assets, clearances, city, field, plus a fixture catalog and JSON snapshots for all twelve; 212 tests, every default fixture under 500 ms; W0 column convention chosen (`foo`, `fooUnit`, `fooState`, `fooMissingReason`, `fooConflict`, `fooEvidence`) with M1 vocabulary; last commit `c7efbd2`; supervisor re-ran tsc and tests | `viewer/packages/synthetic/docs/CHECKPOINT-S2.md` |
 | W workflow adapters | Opus | `viewer/packages/workflows/**` | working | `viewer/packages/workflows/docs/CHECKPOINT-W.md` |
 
@@ -83,6 +83,12 @@ Binding is no longer the cost. Of the 896 ms columnar path on Snowdon, `bfastToG
 Also to the loader session: export the `renderModel.ts` accessors and `writeBFast`; formats and BIND both re-implemented the byte layout.
 
 Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committed the whole index and took four of S2's staged files into `ebbfeaa` (`synthetic/src/{city,field,index}.ts`, `test/city.test.ts`). Content intact, S2 committed on top; only attribution is wrong. History not rewritten. Rule: never amend in the shared checkout; write the message to a file before the first commit.
+
+### Requests from R
+
+- To the loader session (viewer-core, read-only for V2): `InstancedGroup.markColorsChanged(start, count)` and `markTransformsChanged(start, count)` so a bulk update can publish a range without a `setColors` self-copy (5.31 ms per 10,000-row update today); and a note that the `colors`/`transforms` getters allocate a view per call, which put garbage collection inside every per-row loop until the table captured the views once.
+- To the model docs: `resolveStyles` omits keys equal to the fallback and deleted keys, so a binding iterating `byKey` never restores an object a rule stopped applying to; render addresses every row and relies on change detection.
+- Process: an additive contract change that adds a name a downstream track already invented is not neutral (M2's `instance-table` columns versus R's own vocabulary; reconciled by R in `db9a63c`). Announce contract additions to running tracks through their checkpoints or the status file.
 
 ### Requests between tracks
 

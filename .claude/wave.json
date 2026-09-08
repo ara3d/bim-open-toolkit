@@ -99,6 +99,16 @@
       "paths": [
         "viewer/packages/model/**"
       ]
+    },
+    "E2E": {
+      "paths": [
+        "viewer/packages/demos/src/slice/**",
+        "viewer/packages/demos/test/slice/**",
+        "viewer/packages/demos/slice.html",
+        "viewer/packages/demos/vite.slice.config.mjs",
+        "viewer/packages/demos/docs/slice.md",
+        "viewer/packages/demos/docs/CHECKPOINT-E2E.md"
+      ]
     }
   }
 }
