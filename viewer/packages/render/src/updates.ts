@@ -19,9 +19,16 @@
 // double written into a Float32Array is rounded and comparing the unrounded double would report a
 // change that did not happen.
 //
-// The five writers repeat a similar loop shape. That repetition is deliberate: the study measured
-// the cost of this work in the tens of nanoseconds per row, so a shared per-row callback would be
-// a large fraction of it.
+// Two shapes here look like premature optimisation and are not. Every writer hoists the table's
+// columns into locals before its loop, and the selection is resolved to either a typed array or
+// null before the loop rather than compared against the `everyRow` string inside it. Leaving the
+// string comparison in the loop made a whole-table visibility write over 456,598 rows nine times
+// slower than the study's equivalent, because the loop variable was then sometimes a string and
+// sometimes an array. The perf suite holds both shapes in place.
+//
+// The five writers repeat a similar loop shape. That repetition is also deliberate: the study
+// measured this work in the tens of nanoseconds per row, so a shared per-row callback would be a
+// large fraction of it.
 
 import {
   colorStride,
@@ -132,6 +139,17 @@ const valueStep = (given: number, stride: number, rowCount: number): number => {
   throw new Error(`expected ${stride} or ${stride * rowCount} values, received ${given}`);
 };
 
+const sameSpan = (
+  stored: Float32Array,
+  at: number,
+  values: Float32Array,
+  from: number,
+  stride: number,
+): boolean => {
+  for (let j = 0; j < stride; j++) if (stored[at + j] !== values[from + j]) return false;
+  return true;
+};
+
 // Writes the red, green and blue channels, leaving alpha to opacity and visibility.
 export const writeColors = (
   table: InstanceTable,
@@ -144,44 +162,47 @@ export const writeColors = (
   const step = valueStep(rgb.length, 3, count);
   const detect = options.detectChanges;
   const ranges = dirty?.colors;
+  const buffers = table.colors;
+  const groupStart = table.groupStart;
   let written = 0;
   if (rows === everyRow) {
-    for (let g = 0; g < table.groups.length; g++) {
-      const buffer = table.groups[g]?.colors;
-      const start = table.groupStart[g] ?? 0;
-      const end = table.groupStart[g + 1] ?? start;
+    for (let g = 0; g < buffers.length; g++) {
+      const buffer = buffers[g];
+      const start = groupStart[g] ?? 0;
+      const end = groupStart[g + 1] ?? start;
       if (buffer === undefined) continue;
       for (let row = start; row < end; row++) {
         const at = (row - start) * colorStride;
         const from = row * step;
         const r = rgb[from] ?? 0;
-        const g1 = rgb[from + 1] ?? 0;
-        const b = rgb[from + 2] ?? 0;
-        if (detect && buffer[at] === r && buffer[at + 1] === g1 && buffer[at + 2] === b) continue;
+        const green = rgb[from + 1] ?? 0;
+        const blue = rgb[from + 2] ?? 0;
+        if (detect && buffer[at] === r && buffer[at + 1] === green && buffer[at + 2] === blue) continue;
         buffer[at] = r;
-        buffer[at + 1] = g1;
-        buffer[at + 2] = b;
+        buffer[at + 1] = green;
+        buffer[at + 2] = blue;
         ranges?.mark(g, row - start);
         written++;
       }
     }
     return written;
   }
+  const groupOfRow = table.groupOfRow;
   for (let k = 0; k < rows.length; k++) {
-    const row: number = rows[k] ?? 0;
-    const group = table.groupOfRow[row] ?? -1;
-    const buffer = table.groups[group]?.colors;
+    const row = rows[k] ?? 0;
+    const group = groupOfRow[row] ?? -1;
+    const buffer = buffers[group];
     if (buffer === undefined) continue;
-    const slot = row - (table.groupStart[group] ?? 0);
+    const slot = row - (groupStart[group] ?? 0);
     const at = slot * colorStride;
     const from = k * step;
     const r = rgb[from] ?? 0;
-    const g1 = rgb[from + 1] ?? 0;
-    const b = rgb[from + 2] ?? 0;
-    if (detect && buffer[at] === r && buffer[at + 1] === g1 && buffer[at + 2] === b) continue;
+    const green = rgb[from + 1] ?? 0;
+    const blue = rgb[from + 2] ?? 0;
+    if (detect && buffer[at] === r && buffer[at + 1] === green && buffer[at + 2] === blue) continue;
     buffer[at] = r;
-    buffer[at + 1] = g1;
-    buffer[at + 2] = b;
+    buffer[at + 1] = green;
+    buffer[at + 2] = blue;
     ranges?.mark(group, slot);
     written++;
   }
@@ -200,18 +221,24 @@ export const writeOpacity = (
   const step = valueStep(values.length, 1, count);
   const detect = options.detectChanges;
   const ranges = dirty?.colors;
+  const list = rows === everyRow ? null : rows;
+  const buffers = table.colors;
+  const groupStart = table.groupStart;
+  const groupOfRow = table.groupOfRow;
+  const opacity = table.opacity;
+  const visible = table.visible;
   let written = 0;
   for (let k = 0; k < count; k++) {
-    const row = rows === everyRow ? k : rows[k] ?? 0;
-    const group = table.groupOfRow[row] ?? -1;
-    const buffer = table.groups[group]?.colors;
+    const row = list === null ? k : list[k] ?? 0;
+    const group = groupOfRow[row] ?? -1;
+    const buffer = buffers[group];
     if (buffer === undefined) continue;
     const value = Math.fround(values[k * step] ?? 0);
-    const alpha = table.visible[row] === 1 ? value : 0;
-    const slot = row - (table.groupStart[group] ?? 0);
+    const alpha = visible[row] === 1 ? value : 0;
+    const slot = row - (groupStart[group] ?? 0);
     const at = slot * colorStride + alphaChannel;
-    if (detect && table.opacity[row] === value && buffer[at] === alpha) continue;
-    table.opacity[row] = value;
+    if (detect && opacity[row] === value && buffer[at] === alpha) continue;
+    opacity[row] = value;
     buffer[at] = alpha;
     ranges?.mark(group, slot);
     written++;
@@ -232,18 +259,24 @@ export const writeVisibility = (
   const step = valueStep(values.length, 1, count);
   const detect = options.detectChanges;
   const ranges = dirty?.colors;
+  const list = rows === everyRow ? null : rows;
+  const buffers = table.colors;
+  const groupStart = table.groupStart;
+  const groupOfRow = table.groupOfRow;
+  const opacity = table.opacity;
+  const visible = table.visible;
   let written = 0;
   for (let k = 0; k < count; k++) {
-    const row = rows === everyRow ? k : rows[k] ?? 0;
-    const group = table.groupOfRow[row] ?? -1;
-    const buffer = table.groups[group]?.colors;
+    const row = list === null ? k : list[k] ?? 0;
+    const group = groupOfRow[row] ?? -1;
+    const buffer = buffers[group];
     if (buffer === undefined) continue;
     const shown = (values[k * step] ?? 0) === 0 ? 0 : 1;
-    const alpha = shown === 1 ? table.opacity[row] ?? 0 : 0;
-    const slot = row - (table.groupStart[group] ?? 0);
+    const alpha = shown === 1 ? opacity[row] ?? 0 : 0;
+    const slot = row - (groupStart[group] ?? 0);
     const at = slot * colorStride + alphaChannel;
-    if (detect && table.visible[row] === shown && buffer[at] === alpha) continue;
-    table.visible[row] = shown;
+    if (detect && visible[row] === shown && buffer[at] === alpha) continue;
+    visible[row] = shown;
     buffer[at] = alpha;
     ranges?.mark(group, slot);
     written++;
@@ -263,12 +296,14 @@ export const writeTransforms = (
   const step = valueStep(values.length, transformStride, count);
   const detect = options.detectChanges;
   const ranges = dirty?.transforms;
+  const buffers = table.transforms;
+  const groupStart = table.groupStart;
   let written = 0;
   if (rows === everyRow) {
-    for (let g = 0; g < table.groups.length; g++) {
-      const buffer = table.groups[g]?.transforms;
-      const start = table.groupStart[g] ?? 0;
-      const end = table.groupStart[g + 1] ?? start;
+    for (let g = 0; g < buffers.length; g++) {
+      const buffer = buffers[g];
+      const start = groupStart[g] ?? 0;
+      const end = groupStart[g + 1] ?? start;
       if (buffer === undefined) continue;
       for (let row = start; row < end; row++) {
         const at = (row - start) * transformStride;
@@ -281,12 +316,13 @@ export const writeTransforms = (
     }
     return written;
   }
+  const groupOfRow = table.groupOfRow;
   for (let k = 0; k < rows.length; k++) {
-    const row: number = rows[k] ?? 0;
-    const group = table.groupOfRow[row] ?? -1;
-    const buffer = table.groups[group]?.transforms;
+    const row = rows[k] ?? 0;
+    const group = groupOfRow[row] ?? -1;
+    const buffer = buffers[group];
     if (buffer === undefined) continue;
-    const slot = row - (table.groupStart[group] ?? 0);
+    const slot = row - (groupStart[group] ?? 0);
     const at = slot * transformStride;
     const from = k * step;
     if (detect && sameSpan(buffer, at, values, from, transformStride)) continue;
@@ -309,13 +345,17 @@ export const writeTranslations = (
   const step = valueStep(values.length, translationStride, count);
   const detect = options.detectChanges;
   const ranges = dirty?.transforms;
+  const list = rows === everyRow ? null : rows;
+  const buffers = table.transforms;
+  const groupStart = table.groupStart;
+  const groupOfRow = table.groupOfRow;
   let written = 0;
   for (let k = 0; k < count; k++) {
-    const row = rows === everyRow ? k : rows[k] ?? 0;
-    const group = table.groupOfRow[row] ?? -1;
-    const buffer = table.groups[group]?.transforms;
+    const row = list === null ? k : list[k] ?? 0;
+    const group = groupOfRow[row] ?? -1;
+    const buffer = buffers[group];
     if (buffer === undefined) continue;
-    const slot = row - (table.groupStart[group] ?? 0);
+    const slot = row - (groupStart[group] ?? 0);
     const at = slot * transformStride + translationOffset;
     const from = k * step;
     const x = Math.fround(values[from] ?? 0);
@@ -329,17 +369,6 @@ export const writeTranslations = (
     written++;
   }
   return written;
-};
-
-const sameSpan = (
-  stored: Float32Array,
-  at: number,
-  values: Float32Array,
-  from: number,
-  stride: number,
-): boolean => {
-  for (let j = 0; j < stride; j++) if (stored[at + j] !== values[from + j]) return false;
-  return true;
 };
 
 // What a publish did: how many groups were told their colours or transforms moved.
@@ -421,6 +450,16 @@ type Addressing = {
   readonly missing: number;
 };
 
+const ordinalOfKey = (
+  table: InstanceTable,
+  keys: Column | undefined,
+  row: number,
+): number | undefined => {
+  if (keys === undefined || keys.type !== 'string') return undefined;
+  const key: ObjectKey | undefined = stringAt(keys, row);
+  return key === undefined ? undefined : table.objectOfKey.get(key);
+};
+
 const addressRows = (table: InstanceTable, changes: Table): Result<Addressing> => {
   const objects = numericColumnOf(changes, updateColumns.object);
   const keys = columnOf(changes, updateColumns.key);
@@ -462,16 +501,6 @@ const addressRows = (table: InstanceTable, changes: Table): Result<Addressing> =
   return success({ rows, sourceOfRow, missing });
 };
 
-const ordinalOfKey = (
-  table: InstanceTable,
-  keys: Column | undefined,
-  row: number,
-): number | undefined => {
-  if (keys === undefined || keys.type !== 'string') return undefined;
-  const key: ObjectKey | undefined = stringAt(keys, row);
-  return key === undefined ? undefined : table.objectOfKey.get(key);
-};
-
 // Expands one value per change row into one value per addressed table row.
 const expand = (
   source: (row: number) => number,
@@ -484,7 +513,10 @@ const expand = (
     target[k * stride + element] = source(sourceOfRow[k] ?? 0);
 };
 
-const readers = (changes: Table, names: readonly string[]): readonly ((row: number) => number)[] | undefined => {
+const readers = (
+  changes: Table,
+  names: readonly string[],
+): readonly ((row: number) => number)[] | undefined => {
   const columns = names.map((name) => numericColumnOf(changes, name));
   if (columns.some((column) => column === undefined)) return undefined;
   return columns.map((column) => (row: number) => (column === undefined ? 0 : numberAt(column, row) ?? 0));
@@ -492,6 +524,11 @@ const readers = (changes: Table, names: readonly string[]): readonly ((row: numb
 
 const partial = (changes: Table, names: readonly string[]): boolean =>
   names.some((name) => columnOf(changes, name) !== undefined);
+
+const shownAt = (column: Column, row: number): boolean => {
+  if (column.type === 'string') return column.values[row] !== '';
+  return (column.values[row] ?? 0) !== 0;
+};
 
 // Applies a table of changed columns: colour, opacity, visibility and transform, in that order.
 //
@@ -539,8 +576,7 @@ export const applyUpdates = (
   const visible = columnOf(changes, updateColumns.visible);
   if (visible !== undefined) {
     const values = new Uint8Array(rows.length);
-    for (let k = 0; k < rows.length; k++)
-      values[k] = shownAt(visible, sourceOfRow[k] ?? 0) ? 1 : 0;
+    for (let k = 0; k < rows.length; k++) values[k] = shownAt(visible, sourceOfRow[k] ?? 0) ? 1 : 0;
     written += writeVisibility(table, rows, values, dirty, options);
   }
   if (matrix !== undefined) {
@@ -550,9 +586,4 @@ export const applyUpdates = (
     written += writeTransforms(table, rows, values, dirty, options);
   }
   return success({ rowsAddressed: rows.length, rowsWritten: written, objectsMissing: missing }, notes);
-};
-
-const shownAt = (column: Column, row: number): boolean => {
-  if (column.type === 'string') return column.values[row] !== '';
-  return (column.values[row] ?? 0) !== 0;
 };

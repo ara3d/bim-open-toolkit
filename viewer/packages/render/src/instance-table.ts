@@ -46,6 +46,12 @@ export type InstanceTable = {
   readonly rowCount: number;
   // One group per mesh that has at least one instance, in mesh order.
   readonly groups: readonly InstancedGroup[];
+  // Each group's live colour buffer, captured once. `InstancedGroup.colors` allocates a new view
+  // on every access, so a per-row loop must never read it; these are the views the writers use.
+  // The table borrows them, so nothing may append instances to a group after the table is built.
+  readonly colors: readonly Float32Array[];
+  // Each group's live transform buffer, captured once, on the same terms as `colors`.
+  readonly transforms: readonly Float32Array[];
   // First row of each group, with a final entry equal to `rowCount`. Length is groups + 1.
   readonly groupStart: Int32Array;
   // Group ordinal of each row.
@@ -125,20 +131,19 @@ export const keyOfRow = (table: InstanceTable, row: number): ObjectKey | undefin
 
 // The stored RGBA of a row, read straight from the group buffer.
 export const colorOfRow = (table: InstanceTable, row: number): readonly number[] => {
-  const group = table.groups[groupOf(table, row)];
-  if (group === undefined) return [];
+  const colors = table.colors[groupOf(table, row)];
+  if (colors === undefined) return [];
   const at = slotOf(table, row) * colorStride;
-  const colors = group.colors;
   return [colors[at] ?? 0, colors[at + 1] ?? 0, colors[at + 2] ?? 0, colors[at + 3] ?? 0];
 };
 
 // The stored transform of a row, as sixteen column-major floats.
 export const transformOfRow = (table: InstanceTable, row: number): readonly number[] => {
-  const group = table.groups[groupOf(table, row)];
-  if (group === undefined) return [];
+  const stored = table.transforms[groupOf(table, row)];
+  if (stored === undefined) return [];
   const at = slotOf(table, row) * transformStride;
   const values: number[] = [];
-  for (let i = 0; i < transformStride; i++) values.push(group.transforms[at + i] ?? 0);
+  for (let i = 0; i < transformStride; i++) values.push(stored[at + i] ?? 0);
   return values;
 };
 
@@ -303,6 +308,8 @@ export const buildInstanceTable = (
   const table: InstanceTable = {
     rowCount,
     groups,
+    colors: groups.map((group) => group.colors),
+    transforms: groups.map((group) => group.transforms),
     groupStart,
     groupOfRow,
     meshOfGroup: plan.meshOfGroup,
