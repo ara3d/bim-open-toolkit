@@ -1,5 +1,5 @@
 import { parseBfastModel } from '@ara3d/viewer-loaders';
-import { instanceTransform, meshAt, meshCount, noMesh } from '@bim-open-toolkit/model';
+import { instanceTransform, isInstanceVisible, meshAt, meshCount, noMesh } from '@bim-open-toolkit/model';
 import { describe, expect, it } from 'vitest';
 import {
   bfastCoordinates,
@@ -36,6 +36,7 @@ describe('readBfastModel', () => {
       meshes: 2,
       instances: 3,
       drawnInstances: 2,
+      hiddenInstances: 0,
       meshVertices: 7,
       meshTriangles: 3,
     });
@@ -77,7 +78,7 @@ describe('readBfastModel', () => {
     expect(model.data.objects[0]?.ref.revision).toBe('3');
   });
 
-  it('leaves out the placements the file marks hidden, and says how many', async () => {
+  it('keeps a placement the file marks hidden as a row that is not drawn, and says how many', async () => {
     const bytes = bfastModel({
       meshes: [triangleMesh()],
       instances: [
@@ -86,9 +87,21 @@ describe('readBfastModel', () => {
       ],
     });
     const model = await readBfastModel(asBuffer(bytes));
-    expect(model.geometry.instances.count).toBe(1);
+    expect(model.geometry.instances.count).toBe(2);
+    expect(isInstanceVisible(model.geometry.instances, 0)).toBe(true);
+    expect(isInstanceVisible(model.geometry.instances, 1)).toBe(false);
+    expect(modelStatistics(model).hiddenInstances).toBe(1);
     expect(model.data.objects.length).toBe(2);
-    expect(model.diagnostics.map((each) => each.code)).toContain(formatCode.droppedHiddenInstances);
+    expect(model.data.objects[1]?.representation).toBe(1);
+    expect(validateLoadedModel(model)).toEqual([]);
+    expect(model.diagnostics.map((each) => each.code)).toContain(formatCode.hiddenInstances);
+  });
+
+  it('carries no visibility column when the file hides nothing', async () => {
+    const model = await readBfastModel(sample());
+    expect(model.geometry.instances.visible).toBeUndefined();
+    expect(isInstanceVisible(model.geometry.instances, 0)).toBe(true);
+    expect(model.diagnostics.map((each) => each.code)).not.toContain(formatCode.hiddenInstances);
   });
 
   it('reports a file with no BOS tables rather than pretending it has names', async () => {

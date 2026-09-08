@@ -50,9 +50,11 @@ in a combined file, every original BOS Parquet table byte for byte.
   is the label. An index that is absent, negative, out of range or names a blank string reads as no
   value. `metadata: 'identity'` decodes source ids only; `metadata: 'none'` reads no tables at all.
 - **Source ids** are the `LocalId` column, which is the id the source document (usually IFC) used.
-- **Lost: hidden placements.** A placement the file marks hidden is not an instance row, because
-  `InstanceRecords` has no visibility column and a row without one would be drawn. The count is
-  reported as `formats/dropped-hidden-instances`. The object stays.
+- **Hidden placements** are rows like any other, with `visible` 0, so a host can show one or unhide it
+  with a column write and nothing is rebuilt. The `visible` column exists only when the file marks
+  something hidden, and the count is reported as `formats/hidden-instances`. `ObjectRecord.representation`
+  names the object's first placement with geometry whether or not it is hidden, because hiding is a
+  state a host changes and the representation is not.
 - **Lost: per-instance roughness and metallic.** The file packs both into the flags word; the model
   contract has no column for them.
 - **Lost: hierarchy.** BOS records relations in a separate table this adapter does not read.
@@ -136,10 +138,11 @@ Every failure and every loss has a code. They divide into three kinds:
   `formats/empty-source`, `formats/fetch-failed`, `formats/unresolved-resource`,
   `formats/cancelled`, `formats/invalid-model`, `formats/load-failed`). `loadModel` returns these;
   it never raises.
-- **Losses**, at warning severity: `formats/dropped-hidden-instances`, `-textures`, `-animation`,
-  `-primitives`, `-material-library`, `-vertex-colors`, plus `formats/missing-entity-table` and
+- **Losses**, at warning severity: `formats/dropped-textures`, `-animation`, `-primitives`,
+  `-material-library`, `-vertex-colors`, plus `formats/missing-entity-table` and
   `formats/no-geometry`.
-- **Decisions**, at info severity: `formats/detected-format` and `formats/assumed-coordinates`.
+- **Decisions and observations**, at info severity: `formats/detected-format`,
+  `formats/assumed-coordinates` and `formats/hidden-instances`.
 
 A diagnostic carries a path into the value it is about, so a message can point at mesh 12's index 7
 rather than at the file.

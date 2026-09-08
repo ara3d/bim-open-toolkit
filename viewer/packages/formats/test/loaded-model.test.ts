@@ -61,6 +61,7 @@ describe('modelStatistics', () => {
       meshes: 2,
       instances: 3,
       drawnInstances: 2,
+      hiddenInstances: 0,
       meshVertices: 6,
       meshTriangles: 2,
     });

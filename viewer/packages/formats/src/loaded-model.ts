@@ -3,6 +3,7 @@ import {
   colorStride,
   failure,
   hasErrors,
+  isInstanceVisible,
   meshCount,
   noMesh,
   objectKey,
@@ -53,7 +54,10 @@ export type ModelStatistics = {
   readonly geometryFreeObjects: number;
   readonly meshes: number;
   readonly instances: number;
+  /** Rows naming a mesh, hidden ones included. */
   readonly drawnInstances: number;
+  /** Rows the source marks hidden: present in the table, not drawn. */
+  readonly hiddenInstances: number;
   /** Vertices across the mesh list, counted once per mesh however often it is placed. */
   readonly meshVertices: number;
   /** Triangles across the mesh list, counted once per mesh however often it is placed. */
@@ -70,7 +74,9 @@ export function modelStatistics(model: LoadedModel): ModelStatistics {
   const { meshes, instances, meshTable } = model.geometry;
   const drawn = new Set<number>();
   let drawnInstances = 0;
+  let hiddenInstances = 0;
   for (let row = 0; row < instances.count; row += 1) {
+    if (!isInstanceVisible(instances, row)) hiddenInstances += 1;
     const index = instances.meshIndex[row] ?? noMesh;
     if (index === noMesh) continue;
     drawnInstances += 1;
@@ -94,6 +100,7 @@ export function modelStatistics(model: LoadedModel): ModelStatistics {
     meshes: meshTable === undefined ? meshes.length : meshCount(meshTable),
     instances: instances.count,
     drawnInstances,
+    hiddenInstances,
     meshVertices,
     meshTriangles,
   };
@@ -245,9 +252,11 @@ function checkMeshes(model: LoadedModel, report: Report): void {
 }
 
 function checkInstances(model: LoadedModel, report: Report): void {
-  const { count, meshIndex, transform, color, objectIndex } = model.geometry.instances;
+  const { count, meshIndex, transform, color, objectIndex, visible } = model.geometry.instances;
   const meshes = geometryMeshCount(model.geometry);
   const objects = model.data.objects.length;
+  if (visible !== undefined && visible.length !== count)
+    report(`visible has ${visible.length} rows, not ${count}`, ['instances', 'visible']);
   if (meshIndex.length !== count) report(`meshIndex has ${meshIndex.length} rows, not ${count}`, ['instances', 'meshIndex']);
   if (objectIndex.length !== count) report(`objectIndex has ${objectIndex.length} rows, not ${count}`, ['instances', 'objectIndex']);
   if (transform.length !== count * transformStride)

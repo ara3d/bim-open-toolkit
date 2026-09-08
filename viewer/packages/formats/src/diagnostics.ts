@@ -16,7 +16,7 @@ export const formatCode = {
   invalidStl: 'formats/invalid-stl',
   invalidModel: 'formats/invalid-model',
   failed: 'formats/load-failed',
-  droppedHiddenInstances: 'formats/dropped-hidden-instances',
+  hiddenInstances: 'formats/hidden-instances',
   droppedTextures: 'formats/dropped-textures',
   droppedPrimitives: 'formats/dropped-primitives',
   droppedAnimation: 'formats/dropped-animation',

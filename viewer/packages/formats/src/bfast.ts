@@ -154,19 +154,21 @@ export function bfastEntityRows(model: RenderModel, declared: number): EntityRow
   return { rowOfEntity, entityOfRow: entityOfRow.subarray(0, count), declared };
 }
 
-// The instance rows of a model, plus how many hidden placements were left out.
+// The instance rows of a model, plus how many of them the file marks hidden.
 export type BfastInstances = {
   readonly geometry: Geometry;
   readonly hidden: number;
-  /** First drawn instance row of each object row, or -1 when the object draws nothing. */
+  /** First instance row with geometry of each object row, or -1 when the object draws nothing. */
   readonly firstDrawn: Int32Array;
 };
 
 /**
- * The instance columns: one row per placement the file draws or leaves geometry-free.
+ * The instance columns: one row per placement of the file, in the file's own order.
  *
- * A placement the file marks hidden is not a row, because `InstanceRecords` has no visibility column
- * and a row without one would be drawn. The count is reported so the loss is visible.
+ * A placement the file marks hidden is a row with `visible` 0, so a host can show it or unhide it and
+ * nothing has to be rebuilt. The `visible` column exists only when the file marks something hidden.
+ * `firstDrawn` names the first row with geometry whether or not it is hidden, because hiding is a
+ * state a host changes and the object's representation is not.
  */
 export function bfastInstances(
   model: RenderModel,
@@ -174,48 +176,60 @@ export function bfastInstances(
   rows: EntityRows,
   context: LoadContext,
 ): BfastInstances {
-  const total = bfastInstanceCount(model);
+  const count = bfastInstanceCount(model);
   const words = model.instanceInts;
   const floats = model.instanceFloats;
-  const hiddenAt = (row: number): boolean => (((words[row * instanceWords + flagsWord] ?? 0) >>> 8) & hiddenFlag) !== 0;
-
-  let count = 0;
-  for (let row = 0; row < total; row += 1) if (!hiddenAt(row)) count += 1;
 
   const meshIndex = new Int32Array(count);
   const objectIndex = new Int32Array(count);
   const transform = new Float32Array(count * transformStride);
   const color = new Float32Array(count * colorStride);
+  // Allocated on the first hidden row, so a file that hides nothing carries no column at all.
+  let visible: Uint8Array | undefined;
   const firstDrawn = new Int32Array(rows.entityOfRow.length).fill(-1);
   const meshes = meshCount(table);
 
   // The checks below are written inline rather than through `requireThat`, because building the
   // message closure of an assertion that holds costs more here than everything else in the loop.
-  let out = 0;
-  for (let source = 0; source < total; source += 1) {
-    if (source % cancellationCheckInterval === 0) throwIfCancelled(context);
-    if (hiddenAt(source)) continue;
-    const at = source * instanceWords;
+  let hidden = 0;
+  for (let row = 0; row < count; row += 1) {
+    if (row % cancellationCheckInterval === 0) throwIfCancelled(context);
+    const at = row * instanceWords;
     const mesh = words[at + meshWord] ?? noMesh;
     if (mesh !== noMesh && (mesh < 0 || mesh >= meshes))
-      fail(formatCode.invalidBfast, `Instance ${source} names mesh ${mesh} of ${meshes}`);
+      fail(formatCode.invalidBfast, `Instance ${row} names mesh ${mesh} of ${meshes}`);
     const object = rows.rowOfEntity[words[at + entityWord] ?? 0] ?? -1;
-    if (object < 0) fail(formatCode.invalidBfast, `Instance ${source} names an entity that is not an object`);
-    meshIndex[out] = mesh;
-    objectIndex[out] = object;
-    if (mesh !== noMesh && (firstDrawn[object] ?? -1) === -1) firstDrawn[object] = out;
-    writeColumnMajor(floats, at, transform, out * transformStride, source);
+    if (object < 0) fail(formatCode.invalidBfast, `Instance ${row} names an entity that is not an object`);
+    meshIndex[row] = mesh;
+    objectIndex[row] = object;
+    if (mesh !== noMesh && (firstDrawn[object] ?? -1) === -1) firstDrawn[object] = row;
+    writeColumnMajor(floats, at, transform, row * transformStride, row);
     const packed = words[at + colorWord] ?? 0;
-    const colorAt = out * colorStride;
+    const colorAt = row * colorStride;
     color[colorAt] = (packed & 0xff) / 255;
     color[colorAt + 1] = ((packed >>> 8) & 0xff) / 255;
     color[colorAt + 2] = ((packed >>> 16) & 0xff) / 255;
     color[colorAt + 3] = ((packed >>> 24) & 0xff) / 255;
-    out += 1;
+    if ((((words[at + flagsWord] ?? 0) >>> 8) & hiddenFlag) !== 0) {
+      visible ??= new Uint8Array(count).fill(1);
+      visible[row] = 0;
+      hidden += 1;
+    }
   }
   return {
-    geometry: { meshes: [], meshTable: table, instances: { count, meshIndex, transform, color, objectIndex } },
-    hidden: total - count,
+    geometry: {
+      meshes: [],
+      meshTable: table,
+      instances: {
+        count,
+        meshIndex,
+        transform,
+        color,
+        objectIndex,
+        ...(visible === undefined ? {} : { visible }),
+      },
+    },
+    hidden,
     firstDrawn,
   };
 }
@@ -417,7 +431,12 @@ export async function readBfastModel(buffer: ArrayBuffer, options: BfastOptions 
   return loadedModel('bfast', data, built.geometry, buffer.byteLength, [
     ...facts.diagnostics,
     ...(built.hidden > 0
-      ? [formatWarning(formatCode.droppedHiddenInstances, `${built.hidden} placements are marked hidden in the file and are not instance rows`)]
+      ? [
+          formatNote(
+            formatCode.hiddenInstances,
+            `${built.hidden} placements are marked hidden in the file and are rows with visible 0`,
+          ),
+        ]
       : []),
     ...(built.geometry.instances.count === 0
       ? [formatWarning(formatCode.noGeometry, 'The file declares no drawn placements')]

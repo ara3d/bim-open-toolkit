@@ -24,6 +24,7 @@ describe('readGltfModel on a GLB', () => {
       meshes: 1,
       instances: 1,
       drawnInstances: 1,
+      hiddenInstances: 0,
       meshVertices: 3,
       meshTriangles: 1,
     });
