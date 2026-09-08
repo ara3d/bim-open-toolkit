@@ -14,9 +14,13 @@ import { success, type Result } from '@bim-open-toolkit/model';
 import { defaultBuildingOptions, generateBuilding, type BuildingOptions } from '@bim-open-toolkit/synthetic';
 import type { DemoFixture, ModelSource } from '../../gallery/contracts.js';
 
-// The file the dev server looks for. `snowdon.bfast` is the geometry-and-parameters export;
-// `snowdon-bim.bfast` is the larger one with the full BIM tables.
-export const snowdonFile = 'snowdon.bfast';
+// The file the dev server looks for.
+//
+// `snowdon-bim.bfast` and not `snowdon.bfast`: the plain export is geometry and nothing else -
+// measured, 25,675 objects with no name, no category, no storey and no fact on any of them - so
+// every demo that reads what is known about an object would have had nothing to read. This one
+// carries the BOS tables: 51,139 objects, 48,844 of them named, in 98 categories.
+export const snowdonFile = 'snowdon-bim.bfast';
 
 // Where the dev server publishes it. Relative, so the gallery works on whatever port it is on.
 export const snowdonUrl = `/fixtures/${snowdonFile}`;

@@ -1,23 +1,36 @@
-// The synthetic building the four Inspect demos open, and the derivations all four read: the
-// object record and the facts of each object, the box each object occupies, the storey each object
-// belongs to, and one table of the columns a colouring can use.
+// The model the four Inspect demos read, and the derivations all four take from it: the object
+// record and the facts of each object, the box each object occupies, the storey each object belongs
+// to, and one table of the columns a colouring can use.
+//
+// Everything is computed from the `ModelData` and `Geometry` the viewer opened, not from the
+// generator that made one of them: the demos open Snowdon Towers by default, and a model read from
+// a file has no generator to ask. What the file does not carry stays absent rather than filled in.
+// A BFAST records geometry, and one name and one category per entity when it carries BOS tables; it
+// records no parent link and no observations. So a model read from one has no storey links and no
+// facts, and every reader here reports that instead of inventing them.
 //
 // It lives in this demo directory because the Inspect chapter has no shared module of its own:
 // `demos/src/demos/_shared` belongs to Track GAL. Moving it there is a request in CHECKPOINT-D1.md;
 // the other three demos import it from here until that happens.
 //
-// Generation is deterministic, so the building is generated once and kept. A demo's inspector runs
-// after every change event and cannot afford to generate it again.
+// The index of the open model is built once and held. A demo's inspector runs after every change
+// event and cannot walk half a million instance rows again; disposing the demo forgets it, so the
+// page does not keep a hundred megabytes of model alive behind a gallery it has left.
 
 import {
   boundsCenter,
   emptyBounds,
+  emptyInstances,
+  emptyModel,
   expandBounds,
   f64Column,
   failure,
   indexFacts,
   instanceTransform,
   isEmptyBounds,
+  meshBoundsAt,
+  modelKey,
+  noMesh,
   objectKey,
   stringColumn,
   styleRule,
@@ -45,10 +58,10 @@ import {
   type Building,
   type BuildingOptions,
 } from '@bim-open-toolkit/synthetic';
-import type { DemoFixture, ModelSource } from '../../gallery/contracts.js';
 
-// The building every Inspect demo opens: the generator's own default, three storeys of eight rooms
-// with the documented share of missing and disputed door facts.
+// The options the generated building is made with. They are the generator's own defaults, which is
+// what `_shared/snowdon.ts` generates the second fixture with; the two must agree, because the facts
+// held here are matched to that model by its reference and its object ids.
 export const inspectBuildingOptions: BuildingOptions = defaultBuildingOptions;
 
 // One storey and everything that belongs to it.
@@ -60,13 +73,16 @@ export type Storey = {
   readonly bounds: Bounds;
 };
 
-// The building with the lookups the demos read. Every map is addressed by object key, which is what
-// sets, style rules and picks all speak.
+// One open model with the lookups the demos read. Every map is addressed by object key, which is
+// what sets, style rules and picks all speak.
 export type InspectIndex = {
-  readonly building: Building;
+  readonly model: ModelData;
+  readonly geometry: Geometry;
   // Object keys in the order `ModelData.objects` holds them.
   readonly keys: readonly ObjectKey[];
   readonly records: ReadonlyMap<ObjectKey, ObjectRecord>;
+  // Every fact recorded about this model, in the order it was recorded. Empty for a loaded model.
+  readonly recorded: readonly Fact[];
   readonly facts: FactIndex;
   // The box an object occupies, or the point it sits at when it draws nothing.
   readonly bounds: ReadonlyMap<ObjectKey, Bounds>;
@@ -82,15 +98,33 @@ export type CommandCall = { readonly command: string; readonly input: unknown };
 // The name the generator records a door's nominal and clear width and fire rating under.
 export const doorFactNames: readonly string[] = ['nominalWidth', 'clearWidth', 'fireRating'];
 
-// The category that stands between a viewer and the doors: the generator cuts no opening, so a door
-// leaf sits entirely inside its wall.
-export const enclosureCategory = 'Wall';
+// The categories an object that stands between a viewer and the doors is recorded under, compared
+// without case: the generator writes `Wall`, a Revit export writes `Walls`.
+export const enclosureCategories: ReadonlySet<string> = new Set(['wall', 'walls']);
+
+// The categories a storey is recorded under, compared without case. The same set `features` matches
+// in `levelsOf`, so one convention answers the question everywhere.
+const storeyCategories: ReadonlySet<string> = new Set([
+  'storey',
+  'story',
+  'level',
+  'floor level',
+  'building storey',
+  'buildingstorey',
+  'ifcbuildingstorey',
+]);
+
+// True when the record is one of the categories, whatever case the model wrote it in.
+const inCategories = (categories: ReadonlySet<string>, record: ObjectRecord | undefined): boolean =>
+  categories.has((record?.category ?? '').trim().toLowerCase());
 
 const objectRowsByObjectId = (model: ModelData): ReadonlyMap<string, ObjectRecord> =>
   new Map(model.objects.map((record) => [record.ref.objectId, record]));
 
 // The storey a record belongs to, found by walking parent links. The walk is bounded by the number
-// of objects, so a cycle in the data cannot hang the gallery.
+// of objects, so a cycle in the data cannot hang the gallery. A model that records no parent link -
+// which is every model the loaders produce today - links nothing to a storey, and that is the
+// answer, not a reason to guess one from an elevation.
 const storeyIdOf = (
   byObjectId: ReadonlyMap<string, ObjectRecord>,
   record: ObjectRecord,
@@ -98,11 +132,19 @@ const storeyIdOf = (
 ): string | undefined => {
   let current: ObjectRecord | undefined = record;
   for (let step = 0; step < limit && current !== undefined; step += 1) {
-    if (current.category === 'Storey') return current.ref.objectId;
+    if (inCategories(storeyCategories, current)) return current.ref.objectId;
     const parentId: string | undefined = current.parentId;
     current = parentId === undefined ? undefined : byObjectId.get(parentId);
   }
   return undefined;
+};
+
+// The box of one mesh. A geometry carries its meshes as records, as a `MeshTable`, or as both; a
+// BFAST carries only the table, so the table is read whenever the record list is empty.
+const meshBounds = (geometry: Geometry, index: number): Bounds => {
+  const record = geometry.meshes[index];
+  if (record !== undefined) return record.bounds;
+  return geometry.meshTable === undefined ? emptyBounds : meshBoundsAt(geometry.meshTable, index);
 };
 
 // The box each object occupies, unioned over every instance row that draws it. An object that draws
@@ -111,12 +153,11 @@ const boundsByKey = (model: ModelData, geometry: Geometry): ReadonlyMap<ObjectKe
   const boxes = model.objects.map(() => emptyBounds);
   const instances = geometry.instances;
   for (let row = 0; row < instances.count; row += 1) {
-    const meshIndex = instances.meshIndex[row] ?? -1;
+    const meshIndex = instances.meshIndex[row] ?? noMesh;
     const objectIndex = instances.objectIndex[row] ?? -1;
-    const source = geometry.meshes[meshIndex];
     const held = boxes[objectIndex];
-    if (source === undefined || held === undefined) continue;
-    boxes[objectIndex] = unionBounds(held, transformBounds(instanceTransform(instances, row), source.bounds));
+    if (meshIndex === noMesh || held === undefined) continue;
+    boxes[objectIndex] = unionBounds(held, transformBounds(instanceTransform(instances, row), meshBounds(geometry, meshIndex)));
   }
   return new Map(
     model.objects.map((record, index) => {
@@ -127,25 +168,38 @@ const boundsByKey = (model: ModelData, geometry: Geometry): ReadonlyMap<ObjectKe
   );
 };
 
+// The members of each storey, in one pass, so a model with many storeys costs no more than a model
+// with three.
+const membersByStorey = (storeyOf: ReadonlyMap<ObjectKey, ObjectKey>): ReadonlyMap<ObjectKey, readonly ObjectKey[]> => {
+  const grouped = new Map<ObjectKey, ObjectKey[]>();
+  for (const [member, storey] of storeyOf) {
+    const held = grouped.get(storey);
+    if (held === undefined) grouped.set(storey, [member]);
+    else held.push(member);
+  }
+  return grouped;
+};
+
 const storeysOf = (
   model: ModelData,
   storeyOf: ReadonlyMap<ObjectKey, ObjectKey>,
   bounds: ReadonlyMap<ObjectKey, Bounds>,
-): readonly Storey[] =>
-  model.objects
-    .filter((record) => record.category === 'Storey')
+): readonly Storey[] => {
+  const grouped = membersByStorey(storeyOf);
+  return model.objects
+    .filter((record) => inCategories(storeyCategories, record))
     .map((record) => {
       const key = objectKey(record.ref);
-      const members = [...storeyOf].filter(([, storey]) => storey === key).map(([member]) => member);
+      const members = grouped.get(key) ?? [];
       const box = members.reduce(
         (whole, member) => unionBounds(whole, bounds.get(member) ?? emptyBounds),
         bounds.get(key) ?? emptyBounds,
       );
       return { key, objectId: record.ref.objectId, name: record.name ?? record.ref.objectId, members, bounds: box };
     });
+};
 
-const buildIndex = (building: Building): InspectIndex => {
-  const model = building.model;
+const buildIndex = (model: ModelData, geometry: Geometry, recorded: readonly Fact[]): InspectIndex => {
   const byObjectId = objectRowsByObjectId(model);
   const limit = model.objects.length + 1;
   const storeyOf = new Map<ObjectKey, ObjectKey>();
@@ -154,52 +208,81 @@ const buildIndex = (building: Building): InspectIndex => {
     const storey = storeyId === undefined ? undefined : byObjectId.get(storeyId);
     if (storey !== undefined) storeyOf.set(objectKey(record.ref), objectKey(storey.ref));
   }
-  const bounds = boundsByKey(model, building.geometry);
+  const bounds = boundsByKey(model, geometry);
   return {
-    building,
+    model,
+    geometry,
     keys: model.objects.map((record) => objectKey(record.ref)),
     records: new Map(model.objects.map((record) => [objectKey(record.ref), record])),
-    facts: indexFacts(building.facts),
+    recorded,
+    facts: indexFacts(recorded),
     bounds,
     storeyOf,
     storeys: storeysOf(model, storeyOf, bounds),
   };
 };
 
-let held: InspectIndex | undefined;
+let building: Building | undefined;
 
-// The building and its lookups, generated on first use and kept for the life of the page.
-export const inspectIndex = (): InspectIndex => {
-  const already = held;
+// The generated building, made once and kept. Generation is deterministic, so the model this holds
+// is the same model `_shared/snowdon.ts` hands the viewer as the second fixture, object for object.
+const generatedBuilding = (): Building => {
+  const already = building;
   if (already !== undefined) return already;
-  const made = buildIndex(generateBuilding(inspectBuildingOptions));
-  held = made;
+  const made = generateBuilding(inspectBuildingOptions);
+  building = made;
   return made;
 };
 
-// The synthetic building as a fixture: nothing is generated until it is chosen.
-export const buildingFixture: DemoFixture = {
-  id: 'synthetic-building',
-  title: 'Synthetic building, three storeys of eight rooms',
-  basis: 'synthetic',
-  source: () => {
-    const index = inspectIndex();
-    const source: ModelSource = {
-      kind: 'data',
-      id: index.building.model.ref.id,
-      data: index.building.model,
-      geometry: index.building.geometry,
-    };
-    return Promise.resolve(success(source));
-  },
+// What is recorded about a model, which is nothing unless it is the building generated here. No
+// format the loaders read carries observations, so a loaded model has no facts; reporting none is
+// the honest answer and the demo shows it as one.
+export const factsFor = (model: ModelData): readonly Fact[] =>
+  modelKey(model.ref) === modelKey(generatedBuilding().model.ref) ? generatedBuilding().facts : [];
+
+// The lookups for one opened model.
+export const inspectIndexOf = (model: ModelData, geometry: Geometry): InspectIndex =>
+  buildIndex(model, geometry, factsFor(model));
+
+let syntheticHeld: InspectIndex | undefined;
+
+// The generated building's own index. It is what the tests read, and what the demo holds when the
+// generated fixture is the one chosen.
+export const syntheticIndex = (): InspectIndex => {
+  const already = syntheticHeld;
+  if (already !== undefined) return already;
+  const made = inspectIndexOf(generatedBuilding().model, generatedBuilding().geometry);
+  syntheticHeld = made;
+  return made;
 };
+
+// No model open: every lookup empty, so a reader that runs before a fixture is opened reads nothing
+// rather than reading a model the viewer is not showing.
+const noModelIndex: InspectIndex = buildIndex(
+  emptyModel({ id: 'none', revision: '0' }, { units: 'unknown', up: 'z', registration: { kind: 'unknown' } }),
+  { meshes: [], instances: emptyInstances(0) },
+  [],
+);
+
+let held: InspectIndex | undefined;
+
+// Says which model the demo is reading. The demo calls it as it starts, with what the viewer opened,
+// and again with nothing as it is disposed.
+export const useInspectIndex = (index: InspectIndex | undefined): void => {
+  held = index;
+};
+
+// The model the demo is reading, or the empty index while none is open.
+export const inspectIndex = (): InspectIndex => held ?? noModelIndex;
 
 // The objects of one category, in model order.
 export const keysOfCategory = (index: InspectIndex, category: string): readonly ObjectKey[] =>
   index.keys.filter((key) => index.records.get(key)?.category === category);
 
-// The walls, which are what hides the doors.
-export const wallKeys = (index: InspectIndex): readonly ObjectKey[] => keysOfCategory(index, enclosureCategory);
+// The walls, which are what hides the doors. A model that records no category has none, and the rule
+// below then hides nothing, which is what that model earns.
+export const wallKeys = (index: InspectIndex): readonly ObjectKey[] =>
+  index.keys.filter((key) => inCategories(enclosureCategories, index.records.get(key)));
 
 // The id of the rule that takes the walls away.
 export const hideWallsRuleId = 'inspect/hide-walls';
@@ -222,7 +305,7 @@ export const storeyNameOf = (index: InspectIndex, key: ObjectKey): string | unde
   return storey === undefined ? undefined : index.records.get(storey)?.name;
 };
 
-// Every fact recorded about an object, in the order the generator recorded them.
+// Every fact recorded about an object, in the order they were recorded.
 export const factsOf = (index: InspectIndex, key: ObjectKey): readonly Fact[] => [
   ...(index.facts.get(key)?.values() ?? []),
 ];

@@ -16,6 +16,7 @@ import {
   captureSizeTitles,
   dataUrlBytes,
   lastCapture,
+  openingSize,
   type CaptureSizeName,
 } from './request.js';
 
@@ -63,7 +64,7 @@ export const pictureText = (picture: PictureSummary | undefined): string =>
     : `${picture.width}×${picture.height}, ${Math.round(picture.bytes / 1024)} kB`;
 
 export const captureApp: AppSpec<CaptureDoc, CaptureIntent> = {
-  init: { size: 'report', hud: false, asked: 0 },
+  init: { size: openingSize, hud: false, asked: 0 },
   update: (doc, intent) => {
     switch (intent.kind) {
       case 'size':

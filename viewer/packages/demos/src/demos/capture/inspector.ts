@@ -18,15 +18,20 @@ import {
   type PropertySheet,
   type PropertyValue,
 } from '@bim-open-toolkit/ui-gratify';
+import { openingNote } from './opening.js';
 import { captureSizeTitles, dataUrlBytes, lastCapture, sizeOfRecord } from './request.js';
 
 const flagValue = (on: boolean): PropertyValue => ({ kind: 'flag', text: on ? 'yes' : 'no', state: 'known' });
 
-// The rows describing a picture that was taken, or the one row saying none has been.
+// The rows describing a picture that was taken, or the one row saying why there is none.
+//
+// The reason comes from the opening move rather than from the slice: a capture that failed stores
+// nothing, so a sheet reading only the document could say no more than "none", which reads the same
+// whether the renderer refused or nobody asked.
 const pictureRows = (session: Session): readonly PropertyRow[] => {
   const record = lastCapture(session.read(captureSlice));
   if (record === undefined)
-    return [propertyRow('picture', 'Last picture', missingValue('no picture has been taken in this session'))];
+    return [propertyRow('picture', 'Last picture', missingValue(`no picture is stored: ${openingNote()}`))];
   const size = sizeOfRecord(record);
   return [
     propertyRow('size', 'Size', knownValue(size === undefined ? 'a size this demo does not offer' : captureSizeTitles[size])),

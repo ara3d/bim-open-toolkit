@@ -1,14 +1,33 @@
 // Point and read, through a session that records what the demo dispatched and a headless Gratify
 // runtime that draws the tag. No browser and no renderer: everything asserted here is a function of
-// the synthetic building and the session.
+// the model the demo is reading and the session.
+//
+// The demo opens Snowdon Towers by default and the generated building second. The real file is a
+// hundred megabytes and private, so it is not in the repository: everything that does not need it is
+// asserted on the generated building, and the one block that does is skipped, with its reason in the
+// block's name, on a machine that does not have the file.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { Runtime } from 'gratify';
 import { appearanceCommands, appearanceSlice, editsCommands, setsCommands, setsSlice } from '@bim-open-toolkit/features';
+import { loadModel } from '@bim-open-toolkit/formats';
 import type { ObjectKey, Observation } from '@bim-open-toolkit/model';
 import { sheetCoverage } from '@bim-open-toolkit/ui-gratify';
 import type { ObjectHit } from '@bim-open-toolkit/render';
-import { factsOf, hideWallsRuleId, inspectIndex, objectTable, runCalls, wallKeys } from '../../../src/demos/point-and-read/building.js';
+import { snowdonFile } from '../../../src/demos/_shared/snowdon.js';
+import {
+  factsOf,
+  hideWallsRuleId,
+  inspectIndex,
+  inspectIndexOf,
+  objectTable,
+  runCalls,
+  syntheticIndex,
+  useInspectIndex,
+  wallKeys,
+} from '../../../src/demos/point-and-read/building.js';
 import { identityRows, pointAndReadSheet } from '../../../src/demos/point-and-read/inspector.js';
 import { emptyTag, tagHudPanel, tagOf, tagSpec } from '../../../src/demos/point-and-read/panels.js';
 import {
@@ -22,6 +41,11 @@ import {
 } from '../../../src/demos/point-and-read/pinning.js';
 import { demo, pointAndReadReady, pointAndReadReport } from '../../../src/demos/point-and-read/index.js';
 import { commandNames, recordingSession, type RecordingSession } from './fake-session.js';
+
+// What the demo's `start` does with what the viewer opened, which a test with no viewer does itself.
+beforeEach(() => {
+  useInspectIndex(syntheticIndex());
+});
 
 const session = (): RecordingSession => recordingSession([...editsCommands, ...setsCommands, ...appearanceCommands]);
 
@@ -212,15 +236,22 @@ describe('point-and-read tag panel', () => {
 });
 
 describe('point-and-read demo', () => {
-  it('registers as an Inspect demo over the synthetic building', () => {
+  it('registers as an Inspect demo over the real model, the generated one behind it', () => {
     expect(demo.id).toBe('point-and-read');
     expect(demo.chapter).toBe('inspect');
-    expect(demo.fixtures[0]?.basis).toBe('synthetic');
+    expect(demo.fixtures.map((fixture) => fixture.basis)).toEqual(['source-backed', 'synthetic']);
     expect(demo.panels.map((panel) => panel.id)).toEqual(['point-and-read/tag']);
   });
 
-  it('opens the synthetic building as data already in memory', async () => {
+  it('asks for the real model by name, so a machine without it reports a missing file', async () => {
     const source = await demo.fixtures[0]?.source();
+    expect(source?.ok).toBe(true);
+    if (source === undefined || !source.ok) return;
+    expect(source.value.kind).toBe('url');
+  });
+
+  it('opens the generated building as data already in memory', async () => {
+    const source = await demo.fixtures[1]?.source();
     expect(source?.ok).toBe(true);
     if (source === undefined || !source.ok) return;
     expect(source.value.kind).toBe('data');
@@ -239,4 +270,45 @@ describe('point-and-read demo', () => {
     expect(report['shown']).toBe('none');
     expect(count('objects')).toBe(objectTable(inspectIndex()).rowCount);
   });
+});
+
+// Where the gallery's dev server looks for the real model, and where this reads it from directly.
+const snowdonPath = fileURLToPath(new URL(`../../../../visualization/artifacts/bfast/${snowdonFile}`, import.meta.url));
+
+// The derivations over the real model, which is the fixture the demo opens by default. Everything
+// asserted here is what the file itself carries; nothing is filled in for what it does not.
+describe.skipIf(!existsSync(snowdonPath))(`point-and-read on the real model (needs ${snowdonFile}; skipped when it is not on this machine)`, () => {
+  it('reads the object records and the boxes out of the file, and reports the rest as missing', async () => {
+    const loaded = await loadModel(new Uint8Array(readFileSync(snowdonPath)), { format: 'bfast' });
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const index = inspectIndexOf(loaded.value.data, loaded.value.geometry);
+    expect(index.keys.length).toBe(index.model.objects.length);
+    expect(index.keys.length).toBeGreaterThan(1000);
+
+    // A BFAST carries no observations, so the demo has no facts to show and shows none.
+    expect(index.recorded).toEqual([]);
+
+    // Every object placed by the file gets a real box, which is what the tag anchors to.
+    const drawn = index.keys.find((key) => index.records.get(key)?.representation !== undefined);
+    expect(drawn).toBeDefined();
+    if (drawn === undefined) return;
+    const box = index.bounds.get(drawn);
+    expect(box?.max[2]).toBeGreaterThan(box?.min[2] ?? 0);
+
+    useInspectIndex(index);
+    const held = session();
+    expect(runCalls(held, openingCalls()).ok).toBe(true);
+    expect(pointAndReadReady(held)).toBe(true);
+    runCalls(held, pinCalls(hitOn(drawn)));
+    const sheet = pointAndReadSheet(held);
+    expect(rowValue(sheet, 'identity', 'objectId').state).toBe('known');
+    // The file records no parent link, so nothing links an object to a storey and the sheet says so
+    // rather than reading one off an elevation.
+    expect(rowValue(sheet, 'identity', 'storey')).toMatchObject({ state: 'missing', text: '' });
+    expect(sheet.groups.find((group) => group.id === 'facts')?.rows).toEqual([]);
+    const report = pointAndReadReport(held);
+    expect(report['facts']).toBe(0);
+    expect(report['objects']).toBe(index.model.objects.length);
+  }, 120_000);
 });

@@ -11,6 +11,9 @@ export type CaptureSizeName = 'report' | 'slide' | 'thumbnail';
 // The sizes offered, in the order the row lists them.
 export const captureSizeNames: readonly CaptureSizeName[] = ['report', 'slide', 'thumbnail'];
 
+// The size the demo opens on and takes its opening picture at: the one the question asks for.
+export const openingSize: CaptureSizeName = 'report';
+
 // How big each one is, in pixels.
 export const captureSizes: Readonly<Record<CaptureSizeName, { readonly width: number; readonly height: number }>> = {
   report: { width: 1600, height: 1000 },

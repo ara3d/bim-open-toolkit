@@ -7,13 +7,15 @@ import {
   navigationAidsFeature,
   pendingCapture,
 } from '@bim-open-toolkit/features';
+import { diagnostic, failure, success, type Result } from '@bim-open-toolkit/model';
 import { pngFormat, type CaptureTarget } from '@bim-open-toolkit/render';
 import { describe, expect, it } from 'vitest';
-import { captureReady, captureReport, demo, startCapture } from '../../../src/demos/capture/index.js';
+import { captureReady, captureReport, demo, startCapture, type CapturingViewer } from '../../../src/demos/capture/index.js';
 import { captureSheet } from '../../../src/demos/capture/inspector.js';
+import { forgetOpening } from '../../../src/demos/capture/opening.js';
 import { captureApp, capturePanelSpec, pictureText } from '../../../src/demos/capture/panels.js';
 import { captureViewKey, dataUrlBytes } from '../../../src/demos/capture/request.js';
-import { sessionForFeatures } from '../_d2-support/fake-session.js';
+import { sessionForFeatures, type FakeSession } from '../_d2-support/fake-session.js';
 import { headlessPanel } from '../_d2-support/panel-harness.js';
 
 // A renderer that draws nothing and encodes a fixed number of bytes, so a test measures the demo
@@ -35,22 +37,90 @@ const fakeTarget = (bytes = 4096): CaptureTarget => {
 const session = (target: CaptureTarget = fakeTarget()) =>
   sessionForFeatures([navigationAidsFeature, hudFeature, captureFeatureWith(target)]);
 
+// The session with the one live capability the demo's opening move uses: a renderer that hands back
+// bytes, or the reason it could not. This is `GalleryViewer.capture` and nothing else, which is why
+// the opening move can be run without a canvas.
+const capturing = (live: FakeSession, image: Result<Uint8Array> = success(new Uint8Array(4096))): CapturingViewer => ({
+  ...live,
+  capture: () => Promise.resolve(image),
+});
+
+// A renderer that cannot draw, in the words `captureImage` uses when the drawing buffer is gone.
+const noPicture = failure<Uint8Array>([
+  diagnostic('empty-image', 'Encoding produced no bytes, which usually means the drawing buffer was already lost'),
+]);
+
 describe('the capture demo', () => {
   it('states what it is', () => {
     expect(demo.id).toBe('capture');
     expect(demo.chapter).toBe('cut-and-arrange');
     expect(demo.briefIds).toContain('F20');
-    expect(demo.fixtures[0]?.basis).toBe('synthetic');
   });
 
-  it('shows the readout the picture will not contain, and puts it back', () => {
+  it('opens the real model and lists the generated building behind it', () => {
+    expect(demo.fixtures.map((fixture) => fixture.id)).toEqual(['snowdon', 'building']);
+    expect(demo.fixtures[0]?.basis).toBe('source-backed');
+    expect(demo.fixtures[1]?.basis).toBe('synthetic');
+  });
+
+  // The real model is a private hundred-megabyte file the dev server hands out, so only the
+  // generated fixture is opened here; the other is a URL this test would have to fetch.
+  it('builds the generated building without a file', async () => {
+    const built = await demo.fixtures[1]?.source();
+    expect(built?.ok).toBe(true);
+  });
+
+  it('shows the readout the picture will not contain, and puts it back', async () => {
     const live = session();
     expect(captureReady(live)).toBe(false);
-    const started = startCapture(live);
+    const started = await startCapture(capturing(live));
     if (started.ok !== true) throw new Error('the demo did not start');
     expect(captureReady(live)).toBe(true);
     started.value.dispose();
     expect(live.read(hudSlice).visible).toBe(false);
+  });
+});
+
+describe('the opening picture', () => {
+  it('draws one through the viewer and stores it at the size it asked for', async () => {
+    const live = session();
+    const started = await startCapture(capturing(live, success(new Uint8Array(9000))));
+    if (started.ok !== true) throw new Error('the demo did not start');
+    const report = captureReport(live);
+    expect(report.captured).toBe(true);
+    expect(report.size).toBe('Report 1600×1000');
+    expect(report.width).toBe(1600);
+    expect(report.height).toBe(1000);
+    expect(report.bytes).toBe(9000);
+    expect(report.opening).toBe('taken');
+    started.value.dispose();
+  });
+
+  it('says why there is no picture when the renderer could not draw one', async () => {
+    const live = session();
+    const started = await startCapture(capturing(live, noPicture));
+    if (started.ok !== true) throw new Error('the demo did not start');
+    const report = captureReport(live);
+    expect(report.captured).toBe(false);
+    expect(report.bytes).toBe(0);
+    expect(report.size).toBe('none');
+    expect(String(report.opening)).toContain('drawing buffer was already lost');
+    // The demo still came up, and says so: a picture it could not take is not a demo that failed.
+    expect(report.hud).toBe(true);
+    expect(started.diagnostics.map((one) => one.code)).toContain('capture/no-opening-picture');
+    const rows = captureSheet(live).groups.find((group) => group.id === 'picture')?.rows ?? [];
+    expect(rows[0]?.value.missingReason).toContain('drawing buffer was already lost');
+    started.value.dispose();
+  });
+
+  it('is forgotten when the demo is disposed', async () => {
+    const live = session();
+    const started = await startCapture(capturing(live));
+    if (started.ok !== true) throw new Error('the demo did not start');
+    started.value.dispose();
+    const report = captureReport(live);
+    expect(report.captured).toBe(false);
+    expect(report.opening).toBe('no picture has been asked for');
   });
 });
 
@@ -69,6 +139,7 @@ describe('taking a picture', () => {
   });
 
   it('reports the picture it has, and says so when it has none', async () => {
+    forgetOpening();
     const live = session(fakeTarget(2048));
     expect(captureReport(live).captured).toBe(false);
     const pending = pendingCapture(live.dispatch('capture.image', { viewId: captureViewKey, width: 1600, height: 1000 }));
@@ -82,9 +153,11 @@ describe('taking a picture', () => {
 
 describe('the inspector sheet', () => {
   it('says no picture has been taken', () => {
+    forgetOpening();
     const sheet = captureSheet(session());
     const picture = sheet.groups.find((group) => group.id === 'picture');
     expect(picture?.rows[0]?.value.state).toBe('missing');
+    expect(picture?.rows[0]?.value.missingReason).toContain('no picture has been asked for');
   });
 
   it('reports size, bytes and format, and does not invent a time', () => {
