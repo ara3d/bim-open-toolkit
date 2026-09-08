@@ -4,7 +4,7 @@ import { at, calpha, part, rect as makeRect, v, type Element, type Intentish } f
 import type { ValueState } from '../contracts.js';
 import { coverageColour, coverageLabel } from '../coverage.js';
 import { fontSize, spaceOf } from '../theme.js';
-import { paintPill, pillWidth } from '../widgets/common.js';
+import { fitted, paintPill, pillWidth } from '../widgets/common.js';
 import { Tip } from '../widgets/tip.js';
 import { formatCell, tableColumns, valueStory, type SheetLine } from './lines.js';
 import type { PropertyRow, SheetTable } from '../contracts.js';
@@ -72,7 +72,6 @@ export const RowLine = part('inspector-row')
     const props = node.props;
     const value = props.row.value;
     painter.box(r, 0, style.hover);
-    painter.label(props.row.label, v(r.x + spaceOf(12), r.center.y), style.label, { size: style.size, align: 'left' });
     const badge = badgeOf(value.state);
     let right = r.right - spaceOf(12);
     if (badge !== '') {
@@ -82,6 +81,17 @@ export const RowLine = part('inspector-row')
       right = box.x - spaceOf(8);
     }
     const text = value.unit === undefined || value.text === '' ? value.text : `${value.text} ${value.unit}`;
+    // The value wins the row. A real file records units like FEET_AND_FRACTIONAL_INCHES beside a
+    // label like "Sub-divide Height", and the two together are wider than any column: the value is
+    // what was asked for and the label is context that can be read from the row above, so the label
+    // is the one that is cut. Neither is abbreviated - an abbreviated unit is an invented one.
+    const left = r.x + spaceOf(12);
+    const valueWidth = text === '' ? 0 : painter.measure.text(text, style.size).x;
+    const forLabel = right - left - valueWidth - spaceOf(12);
+    painter.label(fitted(painter.measure, props.row.label, style.size, forLabel), v(left, r.center.y), style.label, {
+      size: style.size,
+      align: 'left',
+    });
     if (text !== '') {
       painter.label(text, v(right, r.center.y), style.actionable > 0 ? style.link : style.value, {
         size: style.size,

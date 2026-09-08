@@ -41,3 +41,19 @@ export const paintPill = (painter: Painter, rect: Rect, colour: Color, text: str
 // How wide a pill has to be for its word.
 export const pillWidth = (measure: { text: (s: string, size?: number) => { x: number } }, text: string, size: number): number =>
   measure.text(text, size).x + spaceOf(12);
+
+// Text cut to fit a width, with an ellipsis when it had to be cut. Nothing is cut when it fits, and
+// a width too small for even one character gives the ellipsis alone rather than an empty string.
+export const fitted = (
+  measure: { readonly text: (s: string, size?: number) => { readonly x: number } },
+  text: string,
+  size: number,
+  width: number,
+): string => {
+  if (width <= 0) return '';
+  if (measure.text(text, size).x <= width) return text;
+  const ellipsis = '…';
+  let kept = text.length;
+  while (kept > 0 && measure.text(text.slice(0, kept) + ellipsis, size).x > width) kept--;
+  return kept === 0 ? ellipsis : text.slice(0, kept) + ellipsis;
+};
