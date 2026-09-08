@@ -338,6 +338,25 @@
         "viewer/packages/workflows/docs/workflows.md",
         "viewer/packages/workflows/README.md"
       ]
+    },
+    "M5": {
+      "paths": [
+        "viewer/packages/model/**",
+        "viewer/packages/workflows/src/observation.ts",
+        "viewer/packages/workflows/test/observation*",
+        "viewer/packages/synthetic/src/schedule.ts",
+        "viewer/packages/synthetic/test/schedule*"
+      ]
+    },
+    "X": {
+      "paths": [
+        "viewer/packages/ui-react/**"
+      ]
+    },
+    "C": {
+      "paths": [
+        "viewer/packages/mcp/**"
+      ]
     }
   }
 }
