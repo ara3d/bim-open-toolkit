@@ -28,9 +28,11 @@
       { "buildingId": "B-2", "documentId": "DOC-2", "metricName": "totalFloorAreaM2", "value": 3000, "unit": "m2" }
     ],
     "exceptions": [
-      { "metricId": "m3", "documentId": "DOC-3", "kind": "missing", "reason": "unresolved-source", "detail": "document maps to 2 candidate buildings", "candidateBuildingIds": ["B-1", "B-2"] },
-      { "metricId": "m4", "documentId": "DOC-4", "kind": "missing", "reason": "unresolved-source", "detail": "document maps to 0 candidate buildings", "candidateBuildingIds": [] },
-      { "metricId": "m5", "documentId": "DOC-5", "kind": "conflicting", "values": [7000, 7500] }
+      { "subjects": ["m3", "DOC-3"], "related": ["B-1", "B-2"], "field": "documentBuildings",
+        "detail": "The document maps to 2 candidate buildings.", "kind": "missing", "reason": "unresolved-source" },
+      { "subjects": ["m4", "DOC-4"], "field": "documentBuildings",
+        "detail": "The document maps to no building.", "kind": "missing", "reason": "unresolved-source" },
+      { "subjects": ["m5", "DOC-5"], "field": "value", "kind": "conflicting", "values": [7000, 7500] }
     ],
     "portfolioRollup": [
       { "siteId": "Site-A", "metricName": "totalFloorAreaM2", "total": 8000, "unit": "m2", "resolvedBuildingCount": 2, "excludedBuildingCount": 0 }

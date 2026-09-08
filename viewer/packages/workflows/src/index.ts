@@ -16,4 +16,5 @@ export * from './01-door-schedule.js';
 export * from './door-projection.js';
 export * from './02-revision-comparison.js';
 export * from './09-material-carbon.js';
+export * from './10-portfolio-drill-through.js';
 export * from './registry.js';
