@@ -13,3 +13,7 @@ export * from './sets.js';
 export * from './edits.js';
 export * from './view.js';
 export * from './slices.js';
+export * from './event.js';
+export * from './session.js';
+export * from './command.js';
+export * from './feature.js';
