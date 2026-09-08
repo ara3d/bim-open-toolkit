@@ -29,7 +29,7 @@ Fence `src/{clipping,layouts,environment,navigation-aids,hud}*` and matching tes
 
 ## Requests
 
-- **Supervisor (manifest)**: FB tests import `@bim-open-toolkit/viewer`, so it needs to be a dev dependency of `features`. It resolves from the workspace today.
+- **Supervisor (manifest)**: FB tests import `@bim-open-toolkit/viewer`; the supervisor has already added it as a dev dependency of `features`, so this is closed.
 - **Track V**: no `view` slice exists, so navigation aids holds the view in its own `navigation` slice; if the viewer defines a canonical one, `navigation.*` writes that instead — one reference. Seconding V's service request: a hook's `Session.write` publishes no event, so a UI cannot subscribe to the HUD reading.
 - **Track FA**: saved views carry `StyleRule`s, so `navigation-aids.ts` holds a module-private style rule schema; if FA exports one, delete mine.
 - **Wave 3**: `workflows/src/recipe.ts` calls the same operation `views.save` that FB calls `navigation.saveView`; one should win. `clipping.setBox` already matches.
