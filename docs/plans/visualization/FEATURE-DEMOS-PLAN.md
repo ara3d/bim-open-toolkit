@@ -1,6 +1,6 @@
 # Feature demos wave
 
-Date: 2026-09-08. Status: S3 running; FD1 to FD3 queued behind wave 2. Part of [V2-PLAN.md](V2-PLAN.md); rolling status in [V2-STATUS.md](V2-STATUS.md). A second session runs this wave beside the wave 2 supervisor ("V2 visualization plan prep"); the two coordinate through `.claude/wave.json`, the checkpoints, and session messages.
+Date: 2026-09-08. Status: S3 verified; shared host landed; S4, FD1, FD2, FD3 running. Part of [V2-PLAN.md](V2-PLAN.md); rolling status in [V2-STATUS.md](V2-STATUS.md). A second session runs this wave beside the wave 2 supervisor ("V2 visualization plan prep"); the two coordinate through `.claude/wave.json`, the checkpoints, and session messages.
 
 User basis (2026-09-08): add these features with tests and demos: show by level, room and category; separate the levels and the rooms side by side, and remove the ceilings and roofs (or cut away) to see inside; HUD examples: a 2D minimap, a 3D gumball, and FPS with CPU and GPU timing.
 
@@ -36,7 +36,8 @@ Every page: the viewport fills the page, DOM controls in a strip, a status line,
 - FD1: V exports `createViewer` and FA has committed its sets chunk (its checkpoint names the commit).
 - FD2: FD1's ready condition plus FB's layouts and clipping chunks committed.
 - FD3: V exports `createViewer` and its frame hook or GPU timer; FB's hud chunk committed.
-- The supervisor writes `_shared/page.ts` (the page frame over `createViewer`) as soon as V's contract is readable, before FD1 launches.
+- Revised 2026-09-08: V's `createViewer` is its chunk 3 and had not started when FA and FB were verified, so the supervisor wrote a thin host in `_shared/host.ts` over V's committed `createSession` and `featureHost`, and the FD tracks launched on it (`demos/docs/feature-demos.md`). The host is replaced by `createViewer` when it lands; its GPU timer is offered to V.
+- S4 (room volumes, `viewer/packages/synthetic/**`) runs beside the FD tracks because a `Room` object is geometry-free and "show by room" would otherwise show only doors.
 
 The gallery wave (third session, GALLERY-PLAN.md: UG, GAL, D1 to D4, ports 5190 to 5194) imports `_shared/protocol.ts` read-only so every browser smoke shares one page protocol; its exported names (`DemoReport`, `DemoWindow`, `demoReadyExpression`, `demoReportExpression`) are therefore a contract and any rename is announced here first. The FD pages may later register with the gallery through `demos/src/gallery/contracts.ts`.
 

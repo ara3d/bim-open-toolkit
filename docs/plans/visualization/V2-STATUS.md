@@ -181,10 +181,11 @@ Plan: [FEATURE-DEMOS-PLAN.md](FEATURE-DEMOS-PLAN.md). User request: show by leve
 | Track | Model | Fence | State | Checkpoint |
 |---|---|---|---|---|
 | S3 opt-in roof and ceilings for the building generator | Opus | `viewer/packages/synthetic/**` | verified: `roof` and `ceilings` options on `BuildingOptions`, default off and default output byte-identical (150 objects pinned); `Roof` over the top storey, one `Ceiling` plate per storey; `buildingWithRoof` catalog entry (154 objects); 223 tests; commits `10f5867` `5c3914a`; supervisor re-ran tsc and tests | `viewer/packages/synthetic/docs/CHECKPOINT-S3.md` |
-| FD1 `show-by` demo | Opus | `demos/{src,test}/feature-demos/show-by/**`, `demos/feature-demos/show-by.html` | queued: V exports `createViewer`, FA commits sets | `viewer/packages/demos/docs/CHECKPOINT-FD1.md` |
-| FD2 `separate` demo | Opus | same pattern, `separate` | queued: FD1's condition plus FB layouts and clipping | `CHECKPOINT-FD2.md` |
-| FD3 `hud-fps`, `hud-minimap`, `hud-gumball` demos | Opus | same pattern, three ids | queued: V's frame hook or GPU timer, FB hud | `CHECKPOINT-FD3.md` |
-| FD-shared page frame, Vite config, browser helper | supervisor | `demos/{src,test}/feature-demos/_shared/**`, `demos/vite.feature-demos.config.mjs`, `demos/docs/feature-demos.md` | protocol and browser helper written; page frame waits for V's `createViewer` | — |
+| FD1 `show-by` demo | Opus | `demos/{src,test}/feature-demos/show-by/**`, `demos/feature-demos/show-by.html` | working (launched on the shared host, FA verified) | `viewer/packages/demos/docs/CHECKPOINT-FD1.md` |
+| FD2 `separate` demo | Opus | same pattern, `separate` | working (FB verified; row layouts shimmed locally, requested from FB) | `CHECKPOINT-FD2.md` |
+| FD3 `hud-fps`, `hud-minimap`, `hud-gumball` demos | Opus | same pattern, three ids | working (host frame hook and GPU timer; FB hud verified) | `CHECKPOINT-FD3.md` |
+| FD-shared page frame, Vite config, browser helper | supervisor | `demos/{src,test}/feature-demos/_shared/**`, `host-smoke`, `demos/vite.feature-demos.config.mjs`, `demos/docs/feature-demos.md` | verified: shared host over viewer's session and feature host, SceneBinding on viewer-core, interact navigation, render adapters, pick, project, fit, capture, frame hook, real timer-query GPU timer (no `any`); smoke page draws the building with roof and ceilings in Edge software WebGL, 154 objects, GPU timing available; 9 unit tests plus the browser smoke; commits `f2ad8e1` `b454c00`; replaced by `createViewer` when V lands it | `viewer/packages/demos/docs/feature-demos.md` |
+| S4 opt-in room volumes for the building generator | Opus | `viewer/packages/synthetic/**` (after S3) | working | `viewer/packages/synthetic/docs/CHECKPOINT-S4.md` |
 
 ## Gallery wave — started 2026-09-08 (third session)
 
