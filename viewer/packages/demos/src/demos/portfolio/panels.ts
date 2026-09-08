@@ -8,7 +8,7 @@
 // does not change what a colour means.
 
 import { outcomeColor, setsSlice } from '@bim-open-toolkit/features';
-import type { Color, ObjectKey, Session, Vec3 } from '@bim-open-toolkit/model';
+import { isEmptyBounds, type Color, type ObjectKey, type Session, type Vec3 } from '@bim-open-toolkit/model';
 import { hudPanel, type AnyHudPanel } from '@bim-open-toolkit/ui-gratify';
 import {
   Focusable,
@@ -23,7 +23,8 @@ import {
 } from 'gratify';
 import { buildingBounds, buildingKey, cardPoint, estateBounds, type PortfolioIndex } from './city.js';
 import { buildingReadings, drilledBuildingId, type BuildingReading } from './readings.js';
-import { currentSubject } from './snowdon.js';
+import { documentAt, metricText, type DocumentRollup, type RecordedRollup } from './recorded.js';
+import { currentSubject, drillDocument, drilledDocument } from './snowdon.js';
 
 // An analytical colour of the features palette as a colour the painter takes. The palette states
 // its channels from zero to one; the painter counts them from zero to 255.
@@ -178,6 +179,188 @@ export const buildingCardPanel = (index: PortfolioIndex, buildingId: string): An
     },
   });
 
-// A card for every building of the estate, in the order the estate lists them.
-export const portfolioPanels = (index: PortfolioIndex): readonly AnyHudPanel[] =>
-  index.input.buildings.map((building) => buildingCardPanel(index, building.buildingId));
+// One row of the source-document roll-up: what the document is called, what it adds up to, and how
+// much of it that figure covers.
+export type DocumentRowDoc = {
+  readonly index: number;
+  readonly title: string;
+  readonly figure: string;
+  readonly coverage: string;
+  readonly outcome: string;
+  readonly drilled: boolean;
+};
+
+// The roll-up panel's whole document. `visible` is false whenever the demo is not on a model it
+// read from a file, and the panel then draws nothing at all rather than an empty frame.
+export type RollupDoc = {
+  readonly visible: boolean;
+  readonly heading: string;
+  readonly rows: readonly DocumentRowDoc[];
+  // The model-wide total, or what stopped there being one.
+  readonly total: string;
+  // The objects carrying no figure at all, said as a count and never as a zero total.
+  readonly without: string;
+  // The metrics the file records in more than one unit, so nothing was added up for them.
+  readonly notTotalled: string;
+  // Rises once per press, so `onCommit` runs the drill once per click.
+  readonly requests: number;
+  readonly chosen: number;
+};
+
+// The only thing the roll-up panel can say.
+export type RollupIntent = { readonly kind: 'drill'; readonly index: number };
+
+// A roll-up panel with nothing in it, which is what it shows on the estate.
+export const emptyRollupDoc: RollupDoc = {
+  visible: false,
+  heading: '',
+  rows: [],
+  total: '',
+  without: '',
+  notTotalled: '',
+  requests: 0,
+  chosen: -1,
+};
+
+// How much of a document the figure covers, as two counts rather than a percentage: an object that
+// records no figure is one nobody measured, and rounding that into a share hides how many.
+export const coverageText = (document: DocumentRollup): string =>
+  `${String(document.requested.objects)} of ${String(document.objects)} objects record it`;
+
+// One document as a row of the panel.
+export const documentRowDoc = (document: DocumentRollup, drilled: number | undefined): DocumentRowDoc => ({
+  index: document.index,
+  title: document.title,
+  figure: metricText(document.requested),
+  coverage: coverageText(document),
+  outcome: document.outcome,
+  drilled: document.index === drilled,
+});
+
+// The panel as the roll-up and the drill state stand. Ordering is the roll-up's own: largest total
+// first, and a document with no total after the ones that have one.
+export const rollupDoc = (rollup: RecordedRollup, drilled: number | undefined): RollupDoc => {
+  const requested = rollup.requested;
+  const unit = requested.unit;
+  return {
+    visible: true,
+    heading: `${rollup.requestedMetricName} by source document`,
+    rows: rollup.documents.map((document) => documentRowDoc(document, drilled)),
+    total:
+      requested.total === undefined || unit === undefined
+        ? `No total: ${metricText(requested)}`
+        : `${requested.total.toFixed(2)} ${unit} over ${String(rollup.documents.length)} documents`,
+    without: `${String(requested.without)} objects record no ${rollup.requestedMetricName}`,
+    notTotalled: rollup.metrics
+      .filter((metric) => metric.byUnit.length > 1)
+      .map((metric) => `${metric.metricName} is recorded in ${String(metric.byUnit.length)} units and is not added up`)
+      .join('; '),
+    requests: 0,
+    chosen: -1,
+  };
+};
+
+const DocumentRow = part('portfolio-document')
+  .props<DocumentRowDoc>()
+  .style((tokens, channels) => ({
+    fill: tokens.mix(tokens.surface, tokens.surfaceHi, 0.15 + 0.5 * channels.hover),
+    focus: channels.focus,
+  }))
+  .render((node, painter, style) =>
+    painter.box(node.rect, 6, style.fill, paintColor(outcomeColor(node.props.outcome)), style.focus > 0.01 ? 3 : 2),
+  )
+  .body((props): Element[] => [
+    Stack('layout', { gap: 2, pad: 7, align: 'start' }, [
+      Label('title', { text: props.title, size: 14 }),
+      Label('figure', { text: `${props.figure} — ${props.coverage}`, dim: true }),
+      ...(props.drilled ? [Label('action', { text: 'Click to show every document', dim: true })] : []),
+    ]),
+  ])
+  .on(Focusable())
+  .press((node): RollupIntent => ({ kind: 'drill', index: node.props.index }))
+  .semantics((node) => ({ role: 'button', label: node.props.title, value: node.props.figure }));
+
+// The roll-up as an element tree. Off the source fixture it is an empty stack, which sizes the
+// panel's canvas to nothing.
+export const rollupView = (doc: RollupDoc): Element =>
+  doc.visible
+    ? Stack('portfolio-rollup', { gap: 5, pad: 10, align: 'start' }, [
+        Label('heading', { text: doc.heading, size: 15 }),
+        Label('total', { text: doc.total }),
+        Label('without', { text: doc.without, dim: true }),
+        ...(doc.notTotalled === '' ? [] : [Label('not-totalled', { text: doc.notTotalled, dim: true })]),
+        Label('hint', { text: 'Click a document to drill into it', dim: true }),
+        ...doc.rows.map((row) => DocumentRow(`document/${String(row.index)}`, row)),
+      ])
+    : Stack('portfolio-rollup', { pad: 1 }, []);
+// The padding on the empty view is not styling. A surface writes its canvas's CSS size only when
+// the size it measures differs from the 1x1 it starts at, and a canvas with no CSS size falls back
+// to the HTML default of 300 by 150 - which on the estate is an empty box over the model. One pixel
+// of padding measures 2 by 2, which is written, and is nothing anybody can see.
+
+// Drills into one source document, or back out to the whole model when it is the one being shown.
+// Drilling isolates that document's objects and frames their box; nothing is selected, because a
+// selection of twenty thousand objects is not a thing a property sheet can show.
+export const drillIntoDocument = (session: Session, rollup: RecordedRollup, index: number): void => {
+  if (drilledDocument() === index) {
+    drillDocument(undefined);
+    session.dispatch('sets.showAll', {});
+    if (!isEmptyBounds(rollup.bounds)) session.dispatch('navigation.frame', { bounds: rollup.bounds });
+    return;
+  }
+  const document = documentAt(rollup, index);
+  if (document === undefined) return;
+  drillDocument(index);
+  session.dispatch('sets.isolate', { members: document.keys });
+  if (!isEmptyBounds(document.bounds)) session.dispatch('navigation.frame', { bounds: document.bounds });
+};
+
+// The roll-up the demo shows for a model it read from a file, or nothing to show.
+const currentRollup = (): RecordedRollup | undefined => {
+  const subject = currentSubject();
+  return subject.kind === 'source' ? subject.rollup : undefined;
+};
+
+// The source-document roll-up panel: one list in the corner rather than a card over each document,
+// because a document is a whole discipline model spread through the building and there is no one
+// place over it for a card to hang.
+export const rollupPanel: AnyHudPanel = hudPanel<RollupDoc, RollupIntent>({
+  id: 'portfolio/rollup',
+  place: { kind: 'corner', corner: 'top-left' },
+  spec: {
+    // Read when the panel is hosted, which is after the fixture is open and the demo has started,
+    // so the panel's first document is already the roll-up. That matters past the first frame: the
+    // gallery writes its DOM mirror from the semantics the panel has at mount, so a control that
+    // only appears on the first sync is a control a keyboard never reaches.
+    get init(): RollupDoc {
+      const rollup = currentRollup();
+      return rollup === undefined ? emptyRollupDoc : rollupDoc(rollup, drilledDocument());
+    },
+    update: (doc: RollupDoc, intent: RollupIntent): RollupDoc => ({
+      ...doc,
+      chosen: intent.index,
+      requests: doc.requests + 1,
+    }),
+    view: rollupView,
+  },
+  sync: (_session: Session, doc: RollupDoc): RollupDoc => {
+    const rollup = currentRollup();
+    return rollup === undefined
+      ? { ...emptyRollupDoc, requests: doc.requests, chosen: doc.chosen }
+      : { ...rollupDoc(rollup, drilledDocument()), requests: doc.requests, chosen: doc.chosen };
+  },
+  onCommit: (doc: RollupDoc, previous: RollupDoc, session: Session): void => {
+    const rollup = currentRollup();
+    if (doc.requests === previous.requests || rollup === undefined) return;
+    drillIntoDocument(session, rollup, doc.chosen);
+  },
+});
+
+// A card for every building of the estate, in the order the estate lists them, and the roll-up
+// panel the source fixture uses. Both are always hosted and each shows nothing on the other's
+// fixture: `demo.panels` is read once, before any model is open, so which fixture was chosen cannot
+// be known here.
+export const portfolioPanels = (index: PortfolioIndex): readonly AnyHudPanel[] => [
+  ...index.input.buildings.map((building) => buildingCardPanel(index, building.buildingId)),
+  rollupPanel,
+];

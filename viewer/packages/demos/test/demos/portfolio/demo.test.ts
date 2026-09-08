@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { appearanceSlice, setsSlice } from '@bim-open-toolkit/features';
 import { emptyObject, objectRef } from '@bim-open-toolkit/model';
+import type { AnyHudPanel } from '@bim-open-toolkit/ui-gratify';
 import { defaultBuildingOptions, generateBuilding } from '@bim-open-toolkit/synthetic';
 import { resultRows } from '@bim-open-toolkit/workflows';
 import {
@@ -44,6 +45,10 @@ const started = () => {
   const applied = applyPortfolio(session);
   return { session, applied };
 };
+
+// The building cards, which is every panel except the roll-up panel the source fixture uses.
+const cardPanels = (panels: readonly AnyHudPanel[]): readonly AnyHudPanel[] =>
+  panels.filter((panel) => panel.id.startsWith('portfolio/card/'));
 
 // The subject is held for the life of a mount, so every test starts on the estate.
 afterEach(resetLook);
@@ -157,9 +162,11 @@ describe('the portfolio sheet', () => {
 describe('the building cards', () => {
   it('draws one card per building, each over the top of its own mass', () => {
     const { session } = started();
+    // One card per building, plus the roll-up panel the source fixture uses, which hangs in a
+    // corner rather than over a point and shows nothing at all while the estate is open.
     const panels = portfolioPanels(index);
-    expect(panels).toHaveLength(index.input.buildings.length);
-    for (const panel of panels) {
+    expect(panels).toHaveLength(index.input.buildings.length + 1);
+    for (const panel of cardPanels(panels)) {
       const probe = probePanel(panel, session);
       expect(probe).toBeDefined();
       expect(probe?.point()).toBeDefined();
@@ -278,22 +285,23 @@ describe('the sheet for a model read from a file', () => {
   it('takes the cards away, because no building of the estate is in the picture', () => {
     const { session } = started();
     lookAt(subjectOf(index.city.model.ref.id, [foreignModel()]));
-    for (const panel of portfolioPanels(index)) {
+    for (const panel of cardPanels(portfolioPanels(index))) {
       const probe = probePanel(panel, session);
       expect(probe?.point()).toBeUndefined();
       probe?.stop();
     }
   });
 
-  it('reports what it read and says the workflow was not run', () => {
+  it('reports what it read and says the roll-up was not run', () => {
     const { session } = started();
     const reading = readingOf(foreignModel());
     lookAt(subjectOf(index.city.model.ref.id, [foreignModel()]));
     const report = portfolioReport(session);
     expect(report['basis']).toBe('source-backed');
     expect(report['objects']).toBe(reading.objects);
-    expect(report['workflow']).toContain('not run');
+    expect(report['rollup']).toContain('not run');
     expect(report['resolvedFigures']).toBeUndefined();
+    expect(report['total']).toBeUndefined();
     expect(portfolioReady(session)).toBe(true);
   });
 });
