@@ -34,6 +34,7 @@ import {
   table,
   text,
   translation,
+  triangleCount,
   type Appearance,
   type Coverage,
   type Evidence,
@@ -49,7 +50,7 @@ import {
   type Table,
   type Vec3,
 } from '@bim-open-toolkit/model';
-import type { ShadedMesh } from './mesh-builder.js';
+import type { MeshGroup, ShadedMesh } from './mesh-builder.js';
 import { box } from './primitives.js';
 import { float, int, pick, range, seed, type Rng } from './prng.js';
 import { quantityColumns, textColumns, type NamedColumn } from './schedule.js';
@@ -77,14 +78,6 @@ export const defaultBuildingOptions: BuildingOptions = {
   doorWidthPolicy: 'mixed',
   storeyHeight: 3.6,
   gapScale: 1,
-};
-
-// One mesh of a generated building and what it stands for. Its position in `meshGroups` is the
-// `meshIndex` its instances carry, so a reader can name what a batch of instances is drawing.
-export type MeshGroup = {
-  readonly name: string;
-  readonly mesh: ShadedMesh;
-  readonly instanceCount: number;
 };
 
 // How complete the door schedule is, field by field. The counts sum to the number of doors.
@@ -178,8 +171,10 @@ const windowSizes = [
 // What a room is used for. The use decides whether a fire rating applies to its door.
 const roomUses = ['Office', 'Meeting Room', 'Store', 'Plant Room', 'Lobby', 'WC', 'Laboratory'] as const;
 
-// Uses whose doors sit in a rated compartment wall; a door elsewhere has no rating to record.
-const ratedUses: readonly string[] = ['Plant Room', 'Store', 'Laboratory'];
+// Uses whose doors open onto a protected route and so carry a fire rating. A door elsewhere, such
+// as a WC cubicle door or an open lobby, has no rating to record, which is a fact about the door
+// and not a gap in the data.
+const unratedUses: readonly string[] = ['Lobby', 'WC'];
 
 // The fire ratings a door type can carry.
 const fireRatings = ['EI30', 'EI60', 'EI90'] as const;
@@ -487,7 +482,7 @@ export function generateBuilding(options: BuildingOptions): Building {
         area,
       });
 
-      const rated = ratedUses.includes(use);
+      const rated = !unratedUses.includes(use);
       const doorCount = drawFloat(cursor) < 0.25 ? 2 : 1;
       for (let leaf = 0; leaf < doorCount; leaf++) {
         const widthIndex = drawInt(cursor, 0, doorLeafWidths.length);
@@ -560,6 +555,7 @@ export function generateBuilding(options: BuildingOptions): Building {
     name: at(meshNames, index),
     mesh,
     instanceCount: rows.filter((row) => row.meshIndex === index).length,
+    triangleCount: triangleCount(mesh),
   }));
   const geometry: Geometry = { meshes, instances };
   const model: ModelData = { ref, coordinates: metresZUpLocal, objects: records };

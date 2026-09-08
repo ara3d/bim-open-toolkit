@@ -217,13 +217,18 @@ describe('generateBuilding door schedule', () => {
     }
   });
 
+  // The rarest gap is drawn at four per cent, so this uses a building large enough that seeing none
+  // of it would mean the generator is wrong rather than that the sample was small.
   it('leaves real exceptions for the workflow to show', () => {
-    expect(building.doorCoverage.nominalWidth.missing).toBeGreaterThan(0);
-    expect(building.doorCoverage.nominalWidth.conflicting).toBeGreaterThan(0);
-    expect(building.doorCoverage.clearWidth.missing).toBeGreaterThan(0);
-    expect(building.doorCoverage.fireRating.missing).toBeGreaterThan(0);
-    expect(building.doorCoverage.fireRating.conflicting).toBeGreaterThan(0);
-    expect(booleans(schedule, 'nameKnown').some((known) => !known)).toBe(true);
+    const large = generateBuilding(withOptions({ seed: 3, storeys: 10, roomsPerStorey: 24 }));
+    expect(large.doorSchedule.rowCount).toBeGreaterThan(250);
+    expect(large.doorCoverage.nominalWidth.missing).toBeGreaterThan(0);
+    expect(large.doorCoverage.nominalWidth.conflicting).toBeGreaterThan(0);
+    expect(large.doorCoverage.clearWidth.missing).toBeGreaterThan(0);
+    expect(large.doorCoverage.fireRating.missing).toBeGreaterThan(0);
+    expect(large.doorCoverage.fireRating.conflicting).toBeGreaterThan(0);
+    expect(booleans(large.doorSchedule, 'nameKnown').some((known) => !known)).toBe(true);
+    expect(booleans(large.roomSchedule, 'storeyKnown').some((known) => !known)).toBe(true);
   });
 
   it('separates a rating that does not apply from one nobody entered', () => {

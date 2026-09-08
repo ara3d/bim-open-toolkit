@@ -7,8 +7,8 @@ export { float, gaussian, int, next, pick, range, seed, shuffle, type Draw, type
 // Mesh primitives as plain data, centered on the origin and wound outward.
 export { box, cylinder, extrude, plane, wedge } from './primitives.js';
 
-// A model mesh known to carry per-vertex normals; every primitive here returns one.
-export { type ShadedMesh } from './mesh-builder.js';
+// A model mesh known to carry per-vertex normals, and one mesh of a scene with its instance count.
+export { type MeshGroup, type ShadedMesh } from './mesh-builder.js';
 
 // A footprint corner as (x, z), until the model package publishes a two-dimensional vector.
 export { type Vec2 } from './triangulate.js';
@@ -36,5 +36,16 @@ export {
   type BuildingOptions,
   type DoorCoverage,
   type DoorWidthPolicy,
-  type MeshGroup,
 } from './building.js';
+
+// A seeded stress scene: many instances across few meshes, inside a stated triangle budget.
+export {
+  defaultMaterialMix,
+  defaultStressOptions,
+  generateStressScene,
+  materialClasses,
+  type MaterialClass,
+  type MaterialMix,
+  type StressOptions,
+  type StressScene,
+} from './stress.js';

@@ -9,6 +9,15 @@ import { boundsOfPositions, type Mesh, type Vec3 } from '@bim-open-toolkit/model
 // A mesh that carries per-vertex normals. `Mesh.normals` is optional; every mesh built here has one.
 export type ShadedMesh = Mesh & { readonly normals: Float32Array };
 
+// One mesh of a generated scene and what it stands for. Its position in a scene's array of groups
+// is the `meshIndex` its instances carry, so a reader can name what a batch of instances draws.
+export type MeshGroup = {
+  readonly name: string;
+  readonly mesh: ShadedMesh;
+  readonly instanceCount: number;
+  readonly triangleCount: number;
+};
+
 // A mesh under construction. The arrays are appended to; the fields never change.
 export type MeshBuilder = { readonly positions: number[]; readonly normals: number[]; readonly indices: number[] };
 
