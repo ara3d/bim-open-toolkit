@@ -163,9 +163,20 @@ export const runTakeoff = (input: TakeoffInput): Result<WorkflowResult> => {
     ),
   );
 
+  // A surface whose own values are known but whose subtotal was withheld is not shown as settled:
+  // it did not reach a total either.
+  const withheld = new Set(mixedUnits.flatMap((item) => item.subjects));
   const rules = outcomeRules(
     'takeoff',
-    groupByOutcome(infos.map((info) => [keyOf(input.model, info.surface.objectId), surfaceOutcome(info)] as const)),
+    groupByOutcome(
+      infos.map(
+        (info) =>
+          [
+            keyOf(input.model, info.surface.objectId),
+            withheld.has(info.surface.objectId) ? worseOutcome(surfaceOutcome(info), 'missing') : surfaceOutcome(info),
+          ] as const,
+      ),
+    ),
   );
 
   return resultOf(

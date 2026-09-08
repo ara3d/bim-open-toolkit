@@ -20,6 +20,28 @@ describe('takeoff', () => {
     expect(exceptionRows(result)).toEqual(fixture.expected['exceptions']);
   });
 
+  it('withholds a subtotal whose areas are not all reported in one unit', () => {
+    const mixed = {
+      ...input,
+      surfaces: input.surfaces.map((surface) =>
+        surface.objectId === 'S-4'
+          ? { ...surface, areaM2: { kind: 'known', value: 5, unit: 'ft2' } as const }
+          : surface,
+      ),
+    };
+    const result2 = valueOfResult('takeoff', runTakeoff(mixed));
+    expect(resultRows(result2, 'subtotals').map((row) => row['finishType'])).toEqual(['Carpet']);
+    expect(result2.summary['totalKnownM2']).toBe(39);
+    const withheld = exceptionRows(result2).find((row) => row['field'] === 'areaM2' && row['reason'] === 'unresolved-source');
+    expect(withheld).toEqual({
+      subjects: ['S-4', 'S-9'],
+      field: 'areaM2',
+      detail: "areas for finish type 'Tile' are reported in more than one unit: ft2, m2",
+      kind: 'missing',
+      reason: 'unresolved-source',
+    });
+  });
+
   it('omits a finish type with no surface reporting a known area, rather than a zero subtotal', () => {
     expect(resultRows(result, 'subtotals').map((row) => row['finishType'])).not.toContain('Vinyl');
   });
