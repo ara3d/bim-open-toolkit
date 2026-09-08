@@ -1,6 +1,7 @@
 import { emptyDocument, getSlice, putSlice } from '@bim-open-toolkit/model';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { describe, expect, it } from 'vitest';
-import { annotationCommands, annotationsSlice } from '../src/annotations.js';
+import { annotationCommands, annotationsFeature, annotationsSlice } from '../src/annotations.js';
 import {
   applyDocument,
   defaultStorageNamespace,
@@ -12,9 +13,11 @@ import {
   sceneSource,
   storageCommands,
   storageFeature,
+  storageFeatureWith,
   storagePrefix,
   storageSlice,
   webStorageAdapter,
+  type SceneSource,
   type StorageAdapter,
   type WebStorageLike,
 } from '../src/storage.js';
@@ -209,5 +212,26 @@ describe('the feature', () => {
       'storage.delete',
     ]);
     expect(emptyScene.slices()).toEqual([]);
+  });
+});
+
+describe('through the viewer session', () => {
+  it('saves and reloads every slice the session has registered', () => {
+    const created = createSession();
+    if (!created.ok) throw new Error('no session');
+    const live = created.value;
+    const whole: SceneSource = { slices: () => [...live.sliceRegistry().values()], models: () => [] };
+    const host = featureHost(live);
+    const done = host.install([annotationsFeature, storageFeatureWith(memoryStorageAdapter(), whole)]);
+    expect(done.ok).toBe(true);
+
+    live.dispatch('annotations.add', { id: 'a', text: 'Loose fixing', position: [1, 1, 1] });
+    expect(live.dispatch('storage.save', { key: 'level-2' }).ok).toBe(true);
+    live.dispatch('annotations.remove', { id: 'a' });
+    const loaded = live.dispatch('storage.load', { key: 'level-2' });
+    expect(loaded.ok && loaded.value).toEqual(['annotations']);
+    expect(live.read(annotationsSlice).annotations[0]?.text).toBe('Loose fixing');
+    host.dispose();
+    expect(live.diagnostics()).toEqual([]);
   });
 });

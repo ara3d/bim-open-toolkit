@@ -1,4 +1,5 @@
-import { command, emptyDocument, getSlice, object, putSlice, string, success, type Command } from '@bim-open-toolkit/model';
+import { command, emptyDocument, getSlice, object, putSlice, string, success, type AnyFeature, type Command } from '@bim-open-toolkit/model';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { objectAnchor, overlayLayer, worldAnchor, type OverlayItem, type OverlayState } from '@bim-open-toolkit/render';
 import { describe, expect, it } from 'vitest';
 import {
@@ -200,5 +201,28 @@ describe('the render hook', () => {
       'overlays.add',
       'overlays.clear',
     ]);
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = (item: AnyFeature) => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((entry) => entry.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([item]);
+  if (!done.ok) throw new Error(done.diagnostics.map((entry) => entry.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs with a renderer, sets overlays, and dispatches a click action', () => {
+    const seen: OverlayState[] = [];
+    const { session: live, host } = installed(overlaysFeatureWith({ showOverlays: (state) => void seen.push(state) }));
+    expect(live.dispatch('overlays.set', { layers }).ok).toBe(true);
+    expect(seen[seen.length - 1]).toEqual(layers);
+    expect(overlayActionOf(live.read(overlaysSlice), 'm1')?.command).toBe('test.echo');
+    expect([...live.sliceRegistry().keys()]).toContain('overlays');
+    host.dispose();
+    expect(live.diagnostics()).toEqual([]);
   });
 });

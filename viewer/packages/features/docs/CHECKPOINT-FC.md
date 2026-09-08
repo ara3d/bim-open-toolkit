@@ -1,6 +1,7 @@
 # Checkpoint FC — annotations, overlays, animation, comparison, storage, capture
 
 State: implemented and verified against contract M1 of 2026-09-08; no contract additions needed.
+Each feature is exercised twice: through the shared fake session and through V's `createSession`.
 
 ## Files
 `src/{annotations,overlays,animation,comparison,storage,capture}.ts` and the matching
@@ -23,11 +24,11 @@ wave 3 needs no translation (`recipe.ts` names it); `capture.forget` removes a t
 no name collides, the order is free.
 
 ## Commits and commands
-- `b9a8d0c` the six modules and their tests; `690acea` this checkpoint.
+- `b9a8d0c` the six modules and their tests; `<next>` a test per feature through V's session.
 - `npx tsc --noEmit -p packages/features/tsconfig.json` — clean, ~13 s.
 - `npx eslint packages/features` — clean, ~3 s.
-- `npm test -w @bim-open-toolkit/features -- <six files>` — 110 passed, 1.3 s.
-- `npm test -w @bim-open-toolkit/features` — 16 files, 280 passed, 2.4 s (FA and FB included).
+- `npm test -w @bim-open-toolkit/features -- <six files>` — 116 passed, 1.3 s.
+- `npm test -w @bim-open-toolkit/features` — 16 files, 291 passed, 4.2 s (FA and FB included).
 
 ## Requests
 - Supervisor: add the six index lines, and `@bim-open-toolkit/{synthetic,testing}` as
@@ -35,7 +36,6 @@ no name collides, the order is free.
   clock; both already resolve through tsconfig paths and the vitest alias, so nothing is broken).
 - Track W: `recipe.ts`'s `timeline.setDate` is `animation.seek` over milliseconds here, and its
   `views.link` is `comparison.link`. Say which side moves before wave 3 wires recipes up.
-- Track V: one test per feature will be added through the headless session when it lands.
 
 ## Findings
 - A `Command` returns synchronously and encoding an image cannot, so `capture.image` returns a
@@ -55,5 +55,5 @@ no name collides, the order is free.
 |---|---|---|---|---|---|
 | `tsc --noEmit` | 3 | ~13 s | 0 in FC; caught FA's `Legend` import once | none | Keep: the strict flags are why no cast was needed |
 | `eslint` | 1 | ~3 s | 0 | none | Keep, but found nothing tsc had not |
-| `vitest` (six files) | 2 | ~1.3 s | 2 (my own wrong timeline expectations) | none | Keep: the only check that caught anything |
-| `vitest` (package) | 1 | ~2.4 s | 0 | none | Keep at hand-off; confirms FA and FB still pass |
+| `vitest` (six files) | 3 | ~1.3 s | 2 (my own wrong timeline expectations) | none | Keep: the only check that caught anything |
+| `vitest` (package) | 2 | ~4.2 s | 0 | none | Keep at hand-off; confirms FA and FB still pass |

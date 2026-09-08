@@ -6,7 +6,9 @@ import {
   putSlice,
   stringOf,
   type ModelRef,
+  type AnyFeature,
 } from '@bim-open-toolkit/model';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { defaultRevisionsOptions, generateRevisions } from '@bim-open-toolkit/synthetic';
 import { describe, expect, it } from 'vitest';
 import {
@@ -197,5 +199,26 @@ describe('the feature', () => {
       'comparison.link',
       'comparison.resolve',
     ]);
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = (item: AnyFeature) => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((entry) => entry.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([item]);
+  if (!done.ok) throw new Error(done.diagnostics.map((entry) => entry.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs, loads two revisions, and keeps the undecidable ones visible', () => {
+    const { session: live, host } = installed(comparisonFeature);
+    expect(live.dispatch('comparison.load', { before, after, correspondences: proposals }).ok).toBe(true);
+    expect(unresolvedCorrespondences(live.read(comparisonSlice)).map((item) => item.id)).toEqual(['p2', 'p5', 'p6']);
+    expect([...live.sliceRegistry().keys()]).toContain('comparison');
+    host.dispose();
+    expect(live.diagnostics()).toEqual([]);
   });
 });

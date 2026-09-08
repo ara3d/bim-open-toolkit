@@ -1,4 +1,5 @@
-import { emptyDocument, getSlice, putSlice } from '@bim-open-toolkit/model';
+import { emptyDocument, getSlice, putSlice, type AnyFeature } from '@bim-open-toolkit/model';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
@@ -141,5 +142,27 @@ describe('the feature', () => {
       'annotations.remove',
     ]);
     expect(annotationsFeature.install).toBeUndefined();
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = (item: AnyFeature) => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((entry) => entry.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([item]);
+  if (!done.ok) throw new Error(done.diagnostics.map((entry) => entry.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs, adds a note, and takes its slice away again on disposal', () => {
+    const { session: live, host } = installed(annotationsFeature);
+    expect(live.dispatch('annotations.add', { text: 'Loose fixing', position: [0, 0, 1] }).ok).toBe(true);
+    expect(live.read(annotationsSlice).annotations).toHaveLength(1);
+    expect([...live.sliceRegistry().keys()]).toContain('annotations');
+    host.dispose();
+    expect([...live.sliceRegistry().keys()]).not.toContain('annotations');
+    expect(live.diagnostics()).toEqual([]);
   });
 });

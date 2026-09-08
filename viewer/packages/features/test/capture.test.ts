@@ -1,4 +1,5 @@
-import { emptyDocument, getSlice, putSlice } from '@bim-open-toolkit/model';
+import { emptyDocument, getSlice, putSlice, type AnyFeature } from '@bim-open-toolkit/model';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { pngFormat, type CaptureTarget } from '@bim-open-toolkit/render';
 import { describe, expect, it } from 'vitest';
 import {
@@ -173,5 +174,29 @@ describe('the feature', () => {
     expect(captureFeature.id).toBe('capture');
     expect(captureFeature.commands.map((item) => item.name)).toEqual(['capture.image', 'capture.forget']);
     expect(captureFeatureWith(target).slice).toBe(captureSlice);
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = (item: AnyFeature) => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((entry) => entry.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([item]);
+  if (!done.ok) throw new Error(done.diagnostics.map((entry) => entry.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs with a target and stores the thumbnail of a saved view', async () => {
+    const { target } = fakeTarget();
+    const { session: live, host } = installed(captureFeatureWith(target));
+    const started = live.dispatch('capture.image', { viewId: 'view-1', maxEdge: 100 });
+    const image = await pendingCapture(started)?.image;
+    expect(image?.ok).toBe(true);
+    expect(thumbnailOf(live.read(captureSlice), 'view-1')?.width).toBe(100);
+    expect([...live.sliceRegistry().keys()]).toContain('capture');
+    host.dispose();
+    expect(live.diagnostics()).toEqual([]);
   });
 });

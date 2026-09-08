@@ -1,4 +1,5 @@
-import { emptyDocument, getSlice, putSlice, stringOf, type StyleRule } from '@bim-open-toolkit/model';
+import { emptyDocument, getSlice, putSlice, stringOf, type AnyFeature, type StyleRule } from '@bim-open-toolkit/model';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { defaultDeliveryOptions, generateDeliverySchedule } from '@bim-open-toolkit/synthetic';
 import { fakeClock } from '@bim-open-toolkit/testing';
 import { describe, expect, it } from 'vitest';
@@ -269,5 +270,31 @@ describe('the feature', () => {
       'animation.pause',
     ]);
     expect(animationFeature.install).toBeTypeOf('function');
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = (item: AnyFeature) => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((entry) => entry.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([item]);
+  if (!done.ok) throw new Error(done.diagnostics.map((entry) => entry.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs, plays on the injected clock, and stops scheduling when it is disposed', () => {
+    const clock = fakeClock();
+    const { session: live, host } = installed(animationFeatureWith(clock));
+    expect(live.dispatch('animation.load', { events }).ok).toBe(true);
+    expect(clock.pending()).toBe(0);
+    expect(live.dispatch('animation.play', {}).ok).toBe(true);
+    expect(clock.pending()).toBe(1);
+    clock.advance(50);
+    expect(live.read(animationSlice).currentMs).toBeGreaterThan(100);
+    host.dispose();
+    expect(clock.pending()).toBe(0);
+    expect(live.diagnostics()).toEqual([]);
   });
 });
