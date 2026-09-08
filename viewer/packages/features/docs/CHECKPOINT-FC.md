@@ -24,7 +24,7 @@ wave 3 needs no translation (`recipe.ts` names it); `capture.forget` removes a t
 no name collides, the order is free.
 
 ## Commits and commands
-- `b9a8d0c` the six modules and their tests; `<next>` a test per feature through V's session.
+- `b9a8d0c` the six modules and their tests; `bdd5e2b` a test per feature through V's session.
 - `npx tsc --noEmit -p packages/features/tsconfig.json` — clean, ~13 s.
 - `npx eslint packages/features` — clean, ~3 s.
 - `npm test -w @bim-open-toolkit/features -- <six files>` — 116 passed, 1.3 s.
