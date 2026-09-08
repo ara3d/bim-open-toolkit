@@ -1,6 +1,6 @@
-// A seeded building generator: storeys, rooms, walls, slabs, doors and windows, optionally a roof
-// and a suspended ceiling per storey, with the facts a room and door schedule reads and the gaps
-// such a schedule has to show.
+// A seeded building generator: storeys, rooms, walls, slabs, doors and windows, optionally a roof,
+// a suspended ceiling per storey and a translucent volume per room, with the facts a room and door
+// schedule reads and the gaps such a schedule has to show.
 //
 // The gaps are the point. A generator that produced a complete, consistent schedule would prove
 // nothing, because the workflow this data exists for is exception review. So a documented share of
@@ -61,9 +61,9 @@ import { quantityColumns, textColumns, type NamedColumn } from './schedule.js';
 export type DoorWidthPolicy = 'nominal-only' | 'nominal-and-clear' | 'mixed';
 
 // What to generate. The output is a function of this record alone: every field that shapes the
-// building is required, and the two elements a viewer hides to see inside - the roof and the
-// ceilings - are optional and off unless asked for, so an options record written before they
-// existed still gives the building it always gave.
+// building is required, and the three elements a viewer adds or takes away to see the inside - the
+// roof, the ceilings and the room volumes - are optional and off unless asked for, so an options
+// record written before they existed still gives the building it always gave.
 // `gapScale` multiplies every rate at which a value is missing or disputed: 0 gives a complete
 // building, 1 gives the documented rates, and above 1 the gaps grow until nothing is known.
 export type BuildingOptions = {
@@ -75,6 +75,7 @@ export type BuildingOptions = {
   readonly gapScale: number;
   readonly roof?: boolean;
   readonly ceilings?: boolean;
+  readonly roomVolumes?: boolean;
 };
 
 // A small, plausible building: three storeys of eight rooms with a mixed width policy, seen from
@@ -88,6 +89,7 @@ export const defaultBuildingOptions: BuildingOptions = {
   gapScale: 1,
   roof: false,
   ceilings: false,
+  roomVolumes: false,
 };
 
 // How complete the door schedule is, field by field. The counts sum to the number of doors.
@@ -164,8 +166,9 @@ const placeScaled = (centre: Vec3, size: Vec3): Matrix4 => multiplyMatrix(transl
 const placeTurned = (centre: Vec3, alongY: boolean): Matrix4 =>
   multiplyMatrix(translation(centre), alongY ? quarterTurnAboutUp : identityMatrix);
 
-// The appearance of each kind of element. Windows are translucent; rooms carry no geometry but
-// keep a tint so a schedule can colour the room it selected.
+// The appearance of each kind of element. Windows are translucent; a room keeps its tint whether it
+// is drawn as a translucent volume or carries no geometry at all, so a schedule can colour the room
+// it selected either way.
 const wallAppearance: Appearance = { color: [0.82, 0.8, 0.76], opacity: 1, visible: true };
 const slabAppearance: Appearance = { color: [0.62, 0.62, 0.64], opacity: 1, visible: true };
 const doorAppearance: Appearance = { color: [0.55, 0.38, 0.22], opacity: 1, visible: true };
@@ -333,11 +336,13 @@ export function generateBuilding(options: BuildingOptions): Building {
   const ref: ModelRef = { id: 'synthetic-building', revision: `seed-${options.seed}`, source: 'generated' };
   const idOf = (objectId: string): ObjectRef => objectRef(ref, objectId);
 
-  // The roof and the ceilings are scaled unit cubes like the walls and the slabs, but each keeps
-  // its own mesh group so a gallery names what it is looking at. Both are appended last and only
-  // when asked for, so the mesh indices of a building without them never move.
+  // The roof, the ceilings and the room volumes are scaled unit cubes like the walls and the slabs,
+  // but each keeps its own mesh group so a gallery names what it is looking at. All three are
+  // appended last and only when asked for, so the mesh indices of a building without them never
+  // move.
   const wantRoof = options.roof ?? false;
   const wantCeilings = options.ceilings ?? false;
+  const wantRoomVolumes = options.roomVolumes ?? false;
   const meshes: readonly ShadedMesh[] = [
     box([1, 1, 1]),
     box([1, 1, 1]),
@@ -345,6 +350,7 @@ export function generateBuilding(options: BuildingOptions): Building {
     ...windowSizes.map(([width, height]) => box([width, doorThickness, height])),
     ...(wantRoof ? [box([1, 1, 1])] : []),
     ...(wantCeilings ? [box([1, 1, 1])] : []),
+    ...(wantRoomVolumes ? [box([1, 1, 1])] : []),
   ];
   const meshNames: readonly string[] = [
     'wall-panel',
@@ -353,6 +359,7 @@ export function generateBuilding(options: BuildingOptions): Building {
     ...windowSizes.map(([width, height]) => `window-${width}x${height}`),
     ...(wantRoof ? ['roof-slab'] : []),
     ...(wantCeilings ? ['ceiling-panel'] : []),
+    ...(wantRoomVolumes ? ['room-volume'] : []),
   ];
   const wallMesh = 0;
   const slabMesh = 1;
@@ -360,6 +367,7 @@ export function generateBuilding(options: BuildingOptions): Building {
   const firstWindowMesh = firstDoorMesh + doorLeafWidths.length;
   const roofMesh = firstWindowMesh + windowSizes.length;
   const ceilingMesh = roofMesh + (wantRoof ? 1 : 0);
+  const roomVolumeMesh = ceilingMesh + (wantCeilings ? 1 : 0);
 
   const grid = drawGrid(cursor, options.roomsPerStorey);
   const wallHeight = options.storeyHeight - slabThickness;
@@ -450,16 +458,27 @@ export function generateBuilding(options: BuildingOptions): Building {
       const named = drawFloat(cursor) >= 0.05 * gap;
       const roomName = `${use} ${storey + 1}.${String(cell + 1).padStart(2, '0')}`;
       const linked = drawFloat(cursor) >= 0.04 * gap;
-      const area = (highX - lowX - interiorWallThickness) * (highY - lowY - interiorWallThickness);
+      // The room stops half an interior wall short of its grid lines on each side, which is the
+      // clear space between the wall faces and so the area the schedule reports.
+      const roomWidth = highX - lowX - interiorWallThickness;
+      const roomDepth = highY - lowY - interiorWallThickness;
+      const area = roomWidth * roomDepth;
+      const centreX = (lowX + highX) / 2;
+      const centreY = (lowY + highY) / 2;
+      // A room is a place, not a thing to draw, unless a demo asks to see the places themselves:
+      // then the same object carries a translucent volume filling its cell between the slabs, so
+      // the room keeps one identity for sets and schedules.
       emit(
         {
           objectId: roomId,
           name: named ? roomName : undefined,
           category: 'Room',
           parentId: linked ? storeyId : undefined,
-          transform: translation([(lowX + highX) / 2, (lowY + highY) / 2, elevation]),
+          transform: wantRoomVolumes
+            ? placeScaled([centreX, centreY, elevation + wallHeight / 2], [roomWidth, roomDepth, wallHeight])
+            : translation([centreX, centreY, elevation]),
         },
-        noMesh,
+        wantRoomVolumes ? roomVolumeMesh : noMesh,
         spaceAppearance,
       );
       roomRows.push({

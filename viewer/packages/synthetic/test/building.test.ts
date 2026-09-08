@@ -39,6 +39,13 @@ const withOptions = (overrides: Partial<BuildingOptions>): BuildingOptions => ({
 const ofCategory = (building: Building, category: string): readonly ObjectRecord[] =>
   building.model.objects.filter((record) => record.category === category);
 
+// The one object with the given id, refusing anything else so a renamed object fails loudly.
+function objectById(building: Building, objectId: string): ObjectRecord {
+  const found = building.model.objects.find((record) => record.ref.objectId === objectId);
+  if (found === undefined) throw new Error(`no object named ${objectId}`);
+  return found;
+}
+
 // The centre on z of a placed object, and the height of a box placed by a scaled unit cube. The
 // transform is column-major, so the translation is at 12 to 14 and the z scale at 10.
 const centreZ = (record: ObjectRecord): number => record.transform[14];
@@ -123,7 +130,7 @@ describe('generateBuilding objects and geometry', () => {
     }
   });
 
-  it('leaves storeys and rooms geometry-free and draws everything else', () => {
+  it('leaves storeys and rooms geometry-free and draws everything else, unless room volumes are asked for', () => {
     building.model.objects.forEach((record, row) => {
       const free = record.category === 'Storey' || record.category === 'Room';
       expect(isGeometryFree(building.geometry.instances, row)).toBe(free);
@@ -348,13 +355,6 @@ describe('generateBuilding roof and ceilings', () => {
   const plain = generateBuilding(options);
   const covered = generateBuilding({ ...options, roof: true, ceilings: true });
 
-  // The one object with the given id, refusing anything else so a renamed object fails loudly.
-  function objectById(building: Building, objectId: string): ObjectRecord {
-    const found = building.model.objects.find((record) => record.ref.objectId === objectId);
-    if (found === undefined) throw new Error(`no object named ${objectId}`);
-    return found;
-  }
-
   // The storey number in an object id of the form `door-3-2-1`.
   function storeyOf(objectId: string): string {
     const [, storey] = objectId.split('-');
@@ -454,6 +454,109 @@ describe('generateBuilding roof and ceilings', () => {
       // A door leaf is its own mesh at true size, so its 2.1 m height is in the mesh, not the transform.
       expect(undersideZ(ceiling)).toBeGreaterThan(centreZ(door) + 2.1 / 2);
     }
+  });
+});
+
+describe('generateBuilding room volumes', () => {
+  const options = withOptions({ seed: 11, storeys: 4, roomsPerStorey: 9 });
+  const plain = generateBuilding(options);
+  const solid = generateBuilding({ ...options, roomVolumes: true });
+
+  // The width, the depth and the centre on x and y of a box placed by a scaled unit cube.
+  const widthX = (record: ObjectRecord): number => record.transform[0];
+  const depthY = (record: ObjectRecord): number => record.transform[5];
+  const centreX = (record: ObjectRecord): number => record.transform[12];
+  const centreY = (record: ObjectRecord): number => record.transform[13];
+
+  // The storey number in a room id of the form `room-3-2`.
+  function storeyOfRoom(objectId: string): number {
+    const [, storey] = objectId.split('-');
+    if (storey === undefined) throw new Error(`no storey number in ${objectId}`);
+    return Number(storey);
+  }
+
+  it('leaves rooms geometry-free unless they are asked for', () => {
+    for (const room of ofCategory(plain, 'Room')) expect(room.representation).toBeUndefined();
+    for (const room of ofCategory(solid, 'Room')) expect(room.representation).toBeDefined();
+  });
+
+  it('gives the volume to the room itself, so the room keeps one identity', () => {
+    expect(solid.model.objects.length).toBe(plain.model.objects.length);
+    expect(solid.model.objects.map((record) => record.ref.objectId)).toEqual(
+      plain.model.objects.map((record) => record.ref.objectId),
+    );
+    expect(solid.model.objects.map((record) => record.parentId)).toEqual(plain.model.objects.map((record) => record.parentId));
+    expect(solid.facts).toEqual(plain.facts);
+    expect(solid.roomSchedule).toEqual(plain.roomSchedule);
+    expect(solid.doorSchedule).toEqual(plain.doorSchedule);
+  });
+
+  it('draws every room with one shared mesh appended after the ones that were there', () => {
+    const names = solid.meshGroups.map((group) => group.name);
+    expect(names.slice(0, plain.meshGroups.length)).toEqual(plain.meshGroups.map((group) => group.name));
+    expect(names.slice(plain.meshGroups.length)).toEqual(['room-volume']);
+    const group = solid.meshGroups[plain.meshGroups.length];
+    expect(group?.instanceCount).toBe(ofCategory(solid, 'Room').length);
+    // Everything outside the room volumes is drawn exactly as it was.
+    expect(solid.meshGroups.slice(0, plain.meshGroups.length)).toEqual(plain.meshGroups);
+  });
+
+  it('keeps the room translucent so what is inside it stays visible', () => {
+    for (const room of ofCategory(solid, 'Room')) {
+      expect(room.category).toBe('Room');
+      expect(room.appearance?.opacity).toBeLessThan(1);
+      expect(room.appearance).toEqual(objectById(plain, room.ref.objectId).appearance);
+    }
+  });
+
+  it('fills the cell inset by half an interior wall each side, which is the area the schedule reports', () => {
+    const areas = numbers(solid.roomSchedule, 'areaM2');
+    ofCategory(solid, 'Room').forEach((room, index) => {
+      expect(widthX(room) * depthY(room)).toBeCloseTo(areas[index] ?? Number.NaN, 6);
+      expect(centreX(room)).toBeCloseTo(centreX(objectById(plain, room.ref.objectId)), 6);
+      expect(centreY(room)).toBeCloseTo(centreY(objectById(plain, room.ref.objectId)), 6);
+    });
+  });
+
+  it('runs from the top of its floor slab to the underside of the slab above', () => {
+    for (const room of ofCategory(solid, 'Room')) {
+      const storey = storeyOfRoom(room.ref.objectId);
+      const below = objectById(solid, `slab-${storey}`);
+      expect(undersideZ(room)).toBeCloseTo(topZ(below), 6);
+      expect(heightZ(room)).toBeCloseTo(3.6 - 0.25, 6);
+      if (storey < options.storeys) {
+        expect(topZ(room)).toBeCloseTo(undersideZ(objectById(solid, `slab-${storey + 1}`)), 6);
+      }
+    }
+  });
+
+  it('gives a room that lost its storey link the volume of the storey it stands on', () => {
+    const orphaned = generateBuilding(withOptions({ seed: 12, storeys: 5, roomsPerStorey: 12, roomVolumes: true }));
+    const unlinked = ofCategory(orphaned, 'Room').filter((room) => room.parentId === undefined);
+    expect(unlinked.length).toBeGreaterThan(0);
+    for (const room of unlinked) {
+      expect(room.representation).toBeDefined();
+      expect(undersideZ(room)).toBeCloseTo((storeyOfRoom(room.ref.objectId) - 1) * 3.6, 6);
+    }
+  });
+
+  it('leaves the building it would otherwise have generated alone', () => {
+    const before = generateBuilding({ seed: 1, storeys: 3, roomsPerStorey: 8, doorWidthPolicy: 'mixed', storeyHeight: 3.6, gapScale: 1 });
+    const now = generateBuilding(defaultBuildingOptions);
+    expect(now.model).toEqual(before.model);
+    expect(now.geometry).toEqual(before.geometry);
+    expect(now.model.objects.length).toBe(150);
+    expect(now.meshGroups.map((group) => group.name)).not.toContain('room-volume');
+  });
+
+  it('stacks with the roof and the ceilings without moving their meshes', () => {
+    const everything = generateBuilding({ ...options, roof: true, ceilings: true, roomVolumes: true });
+    expect(everything.meshGroups.map((group) => group.name).slice(plain.meshGroups.length)).toEqual([
+      'roof-slab',
+      'ceiling-panel',
+      'room-volume',
+    ]);
+    expect(ofCategory(everything, 'Room').length).toBe(ofCategory(plain, 'Room').length);
   });
 });
 

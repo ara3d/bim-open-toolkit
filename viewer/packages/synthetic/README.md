@@ -6,7 +6,7 @@ them by name.
 
 | Generator | Produces | Read by |
 |---|---|---|
-| `building` | Storeys, rooms, walls, slabs, doors, windows, an optional roof and ceilings, and their schedules | Door schedule, fire-rating review, level navigation, hiding the roof to see inside |
+| `building` | Storeys, rooms, walls, slabs, doors, windows, an optional roof, ceilings and room volumes, and their schedules | Door schedule, fire-rating review, level navigation, hiding the roof to see inside, showing a building by room |
 | `services` | Pipe runs, valves, equipment, and connections nobody verified | Valve isolation trace |
 | `revisions` | Two snapshots of one building with correspondence proposals | Revision comparison, linked views |
 | `schedule` | Delivery, acceptance and installation events with dates and gaps | Delivery timeline, animation |
@@ -119,6 +119,9 @@ const building = generateBuilding({ ...defaultBuildingOptions, seed: 7, storeys:
 
 // A closed building, for a demo that hides the roof and the ceilings to see inside.
 const closed = generateBuilding({ ...defaultBuildingOptions, roof: true, ceilings: true });
+
+// A building whose rooms are translucent volumes, for a demo that shows the spaces themselves.
+const spaces = generateBuilding({ ...defaultBuildingOptions, roomVolumes: true });
 ```
 
 | Option | Meaning |
@@ -131,6 +134,7 @@ const closed = generateBuilding({ ...defaultBuildingOptions, roof: true, ceiling
 | `gapScale` | Multiplies every rate at which a value is missing or disputed. `0` gives a complete building; `1` gives the rates below. |
 | `roof` | Optional, off by default. One `Roof` slab over the top storey. |
 | `ceilings` | Optional, off by default. One `Ceiling` plate per storey. |
+| `roomVolumes` | Optional, off by default. Draws each `Room` as a translucent volume filling its cell. |
 
 The frame is metres, z up, local — the model package's `metresZUpLocal`.
 
@@ -141,7 +145,8 @@ The frame is metres, z up, local — the model package's `metresZUpLocal`.
   storey, doors to their room, everything else to its storey.
 - `geometry`: a `Geometry` — a small mesh library plus one columnar instance row per object, in the
   same order as `model.objects`, so `objectIndex` is the row itself. Storeys and rooms are
-  geometry-free (`meshIndex` is `noMesh`): a room is a place, not a thing to draw.
+  geometry-free (`meshIndex` is `noMesh`): a room is a place, not a thing to draw — unless
+  `roomVolumes` is on, when the room carries a volume of its own.
 - `meshGroups`: the mesh library named. Walls and slabs are a unit cube scaled by the instance
   transform; each standard door leaf width and each window size is its own mesh placed by
   translation alone, which is how repeated joinery actually behaves.
@@ -168,6 +173,24 @@ Both are off unless asked for, and both are emitted after everything else and dr
 numbers, so a building that asks for them is byte-identical to the one that does not, plus these
 objects. Each gets its own mesh group, `roof-slab` and `ceiling-panel`, appended after the window
 meshes, so the mesh indices of a building without them never move.
+
+### The room volumes
+
+A demo that shows a building by room needs the rooms to be visible. `roomVolumes: true` gives every
+`Room` a box instead of leaving it geometry-free, so "show by room" has something to see. The volume
+belongs to the room object itself rather than to a second object beside it, so a room keeps one
+identity for sets, selection and the room schedule.
+
+| | |
+|---|---|
+| Extent | The room's grid cell inset by half the interior wall thickness (0.12 m) on each side, so it stops at the wall faces. Its plan area is the `areaM2` the room schedule reports. |
+| Height | The top of its floor slab to the underside of the slab above — `storeyHeight` less `slabThickness`, the same height as the walls around it. A room that lost its storey link still stands on the storey it was generated for. |
+| Appearance | The translucent blue tint a geometry-free room already carried, so what is inside the room stays visible. |
+
+The volume is a unit cube scaled by the room's instance transform, one shared mesh group named
+`room-volume` for the whole building, appended after `roof-slab` and `ceiling-panel`. No random
+numbers are drawn for it and no object is added, so a building with room volumes has the same
+objects, ids, parents, facts and schedules as the building without them.
 
 ### Door schedule columns
 
