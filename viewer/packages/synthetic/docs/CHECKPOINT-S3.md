@@ -52,6 +52,8 @@ transforms of the slabs, walls and doors around them, not visually. At a
 `storeyHeight` near the 0.5 m minimum a ceiling would fall below the door heads,
 which is already true of the walls and is not newly checked.
 
+One chunk, commit `10f5867`; this line landed in the follow-up commit.
+
 ## Blockers and requests
 
 No blockers. To the E2E and demo tracks: `fixture('buildingWithRoof')` is the
