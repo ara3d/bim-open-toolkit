@@ -9,3 +9,4 @@ export * from './bos.js';
 export * from './gltf.js';
 export * from './obj.js';
 export * from './stl.js';
+export * from './load.js';
