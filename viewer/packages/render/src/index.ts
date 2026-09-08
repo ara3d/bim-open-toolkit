@@ -155,3 +155,56 @@ export {
   type ProjectedOverlay,
   type ScreenPoint,
 } from './overlays.js';
+
+// Background, light rig, scale-aware grid, ground plane and axes, as settings and line segments.
+export {
+  applyEnvironment,
+  axisLengthFor,
+  axisLines,
+  checkEnvironment,
+  defaultEnvironment,
+  environmentDrawing,
+  gridLines,
+  gridSpacingFor,
+  groundHeight,
+  type EnvironmentDrawing,
+  type EnvironmentSettings,
+  type EnvironmentTarget,
+  type GridSettings,
+  type LightRig,
+  type LineSegment,
+} from './environment.js';
+
+// Capture behind an adapter: draw, encode, and put the view back the size it was.
+export {
+  captureImage,
+  captureSize,
+  pngFormat,
+  thumbnailSize,
+  type CaptureFormat,
+  type CaptureImage,
+  type CaptureOptions,
+  type CaptureTarget,
+} from './capture.js';
+
+// Frame timing, GPU timing when it exists, and scene statistics, as data a HUD reads.
+export {
+  DurationLog,
+  FrameTimer,
+  frameBudgetMs,
+  framesPerSecond,
+  gpuUnavailable,
+  hudData,
+  noDurations,
+  noGpuTimer,
+  percentileOf,
+  readGpuTimer,
+  sceneStatistics,
+  type CameraKind,
+  type DurationStats,
+  type GpuAvailability,
+  type GpuFrameTimer,
+  type GpuReading,
+  type HudData,
+  type SceneStatistics,
+} from './timing.js';
