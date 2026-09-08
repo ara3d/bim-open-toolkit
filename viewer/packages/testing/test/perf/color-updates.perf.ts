@@ -5,11 +5,17 @@
  *
  * Everything here is CPU-side. No WebGL context is created, so nothing below
  * includes GPU upload or draw time.
+ *
+ * Every table below reports medians. Every assertion compares the fastest of the
+ * repetitions instead, because this machine is shared with other work:
+ * interference can only ever make a run slower, so the minimum is the estimate
+ * that survives a busy machine. Medians of two close cases swapped places under
+ * load; minimums did not.
  */
 import { describe, expect, it } from 'vitest';
 import { ViewerScene } from '@ara3d/viewer-core';
 import { DirtyRanges, createInstanceColumns, createSharedColumns, writeRows } from '../../src/perf/columns.js';
-import { measureCase, reportSamples, sampleFor, type Sample } from '../../src/perf/measure.js';
+import { measureAll, prepare, reportSamples, sampleFor, type Prepared } from '../../src/perf/measure.js';
 import { distinctIntegers } from '../../src/perf/prng.js';
 import { COLOR_FLOATS, contiguousRows, createSyntheticScene, referenceShape, sortRows } from '../../src/perf/scene.js';
 
@@ -55,13 +61,13 @@ const columnCase = (
   columns: typeof perGroup,
   rows: Int32Array,
   values: (rows: Int32Array) => Float32Array,
-): Sample =>
-  measureCase({ label, setup: () => values(rows), body: (color) => writeRows(columns, 'color', rows, color, null, false) });
+): Prepared =>
+  prepare({ label, setup: () => values(rows), body: (color) => writeRows(columns, 'color', rows, color, null, false) });
 
 describe('bulk colour updates', () => {
   it('is limited by memory layout more than by the per-instance call', () => {
-    const samples: Sample[] = [
-      measureCase({
+    const samples = measureAll([
+      prepare({
         label: 'setColor per instance, 10k scattered rows',
         setup: nextColor,
         body: (color) => setColorPerInstance(scattered, color),
@@ -72,14 +78,14 @@ describe('bulk colour updates', () => {
       columnCase('column write, one shared buffer, 10k scattered rows', shared, scattered, nextColor),
       columnCase('column write, one shared buffer, 10k sorted rows', shared, sorted, nextColor),
       columnCase('column write, one shared buffer, 10k rows, value per row', shared, sorted, perRowTable),
-      measureCase({
+      prepare({
         label: 'setColor per instance, all 456,598 rows',
         setup: nextColor,
         body: (color) => setColorPerInstance(allRows, color),
       }),
       columnCase('column write, per-group buffers, all rows', perGroup, allRows, nextColor),
       columnCase('column write, one shared buffer, all rows', shared, allRows, nextColor),
-      measureCase({
+      prepare({
         label: 'one pass over the shared colour store, no row indirection',
         setup: nextColor,
         body: (color) => {
@@ -94,7 +100,7 @@ describe('bulk colour updates', () => {
           return store.length / COLOR_FLOATS;
         },
       }),
-      measureCase({
+      prepare({
         label: 'setColors, one call per group, all rows',
         setup: () => {
           const color = nextColor();
@@ -109,7 +115,7 @@ describe('bulk colour updates', () => {
           return scene.groups.length;
         },
       }),
-    ];
+    ]);
     reportSamples(`colour updates over ${scene.rowCount} instances in ${scene.groups.length} groups`, samples);
 
     const perInstance = sampleFor(samples, 'setColor per instance, 10k scattered rows');
@@ -123,18 +129,18 @@ describe('bulk colour updates', () => {
     const wholeStore = sampleFor(samples, 'one pass over the shared colour store, no row indirection');
 
     // For a subset the bulk path is never slower than the per-instance path.
-    expect(columnScattered.medianMs).toBeLessThanOrEqual(perInstance.medianMs);
+    expect(columnScattered.minMs).toBeLessThanOrEqual(perInstance.minMs);
     // For the whole model the row indirection, not the method call, is the cost:
     // a straight pass over one array wins, a row-indexed pass does not.
-    expect(wholeStore.medianMs).toBeLessThan(perInstanceAll.medianMs);
-    expect(wholeStore.medianMs).toBeLessThan(columnAll.medianMs);
+    expect(wholeStore.minMs).toBeLessThan(perInstanceAll.minMs);
+    expect(wholeStore.minMs).toBeLessThan(columnAll.minMs);
     // Visiting rows in buffer order is not slower than visiting them at random.
-    expect(columnSorted.medianMs).toBeLessThanOrEqual(columnScattered.medianMs * 1.2);
-    expect(columnContiguous.medianMs).toBeLessThanOrEqual(columnScattered.medianMs * 1.2);
+    expect(columnSorted.minMs).toBeLessThanOrEqual(columnScattered.minMs * 1.2);
+    expect(columnContiguous.minMs).toBeLessThanOrEqual(columnScattered.minMs * 1.2);
     // One allocation for the whole model is not worse than thousands of small
     // ones. It is usually two to three times better on scattered rows, but that
     // margin is not stable enough to assert; being no worse is.
-    expect(sharedScattered.medianMs).toBeLessThanOrEqual(columnScattered.medianMs * 2);
+    expect(sharedScattered.minMs).toBeLessThanOrEqual(columnScattered.minMs * 2);
     // Every case did the work it claims to.
     expect(columnScattered.result).toBe(10_000);
     expect(columnAll.result).toBe(scene.rowCount);
@@ -145,18 +151,18 @@ describe('bulk colour updates', () => {
     const touched = new Set<number>();
     for (const row of scattered) touched.add(perGroup.groupOf[row] ?? -1);
 
-    const samples: Sample[] = [
-      measureCase({
+    const samples = measureAll([
+      prepare({
         label: 'column write only, 10k sorted rows',
         setup: nextColor,
         body: (color) => writeRows(perGroup, 'color', sorted, color, null, false),
       }),
-      measureCase({
+      prepare({
         label: 'column write and collect dirty ranges, 10k sorted rows',
         setup: () => { dirty.reset(); return nextColor(); },
         body: (color) => writeRows(perGroup, 'color', sorted, color, dirty, false),
       }),
-      measureCase({
+      prepare({
         label: 'column write then one setColor per touched group, 10k sorted rows',
         setup: nextColor,
         body: (color) => {
@@ -169,7 +175,7 @@ describe('bulk colour updates', () => {
           return written;
         },
       }),
-    ];
+    ]);
     reportSamples(
       `publishing the change: ${touched.size} groups hold the 10,000 changed instances`, samples);
 
@@ -180,9 +186,9 @@ describe('bulk colour updates', () => {
     // Under three instances per group, "one publish per touched group" is nearly
     // "one publish per instance", so it costs more than the write it publishes.
     expect(touched.size).toBeGreaterThan(scattered.length / 2);
-    expect(withVersions.medianMs).toBeGreaterThan(write.medianMs);
+    expect(withVersions.minMs).toBeGreaterThan(write.minMs);
     // Recording ranges instead is cheap enough to leave on.
-    expect(withRanges.medianMs).toBeLessThan(withVersions.medianMs);
+    expect(withRanges.minMs).toBeLessThan(withVersions.minMs);
     expect(dirty.touchedGroups).toBe(touched.size);
   });
 

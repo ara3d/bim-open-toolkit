@@ -1,54 +1,54 @@
 /**
- * Approximate heap accounting for the performance tests.
+ * Heap accounting for the performance tests.
  *
- * `heapUsed` is a sampled number, not an exact object size, so treat every
- * figure here as a comparison between two layouts measured the same way, not
- * as an allocation count. Run the perf suite with `NODE_OPTIONS=--expose-gc`
- * to have a collection run before each reading; without it the numbers still
- * work as a comparison but include garbage.
+ * `heapUsed` is a sampled number, so treat every figure as a comparison between
+ * two layouts measured the same way rather than an exact object size. A
+ * collection is forced before and after each reading: without one, a collection
+ * that happens to run during a reading makes a structure look free, or even
+ * negative.
  *
- * The package has no `@types/node`, so the two runtime shapes used here are
- * declared locally and checked before use.
+ * Node normally exposes a collection only under `--expose-gc`. `enableGarbageCollection`
+ * turns it on from inside the process instead, so the perf run needs no special
+ * command line.
  */
-
-/** The part of Node's `process.memoryUsage()` result this module reads. */
-interface HeapUsage {
-  readonly heapUsed: number;
-}
-
-interface ProcessLike {
-  memoryUsage(): HeapUsage;
-}
-
-const isProcessLike = (value: unknown): value is ProcessLike =>
-  typeof value === 'object' && value !== null && 'memoryUsage' in value
-  && typeof value.memoryUsage === 'function';
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 
 const isThunk = (value: unknown): value is () => void => typeof value === 'function';
 
-// Typed as `object` so `in` narrows the two properties to `unknown` rather than
-// reaching for the global type, which has no index signature.
-const globals: object = globalThis;
+let collector: (() => void) | undefined;
 
-const globalProcess = (): unknown => ('process' in globals ? globals.process : undefined);
-const globalGc = (): unknown => ('gc' in globals ? globals.gc : undefined);
+/** True when a collection can be forced. */
+export const canCollectGarbage = (): boolean => collector !== undefined;
 
-const nodeProcess = (): ProcessLike | undefined => {
-  const candidate = globalProcess();
-  return isProcessLike(candidate) ? candidate : undefined;
-};
-
-/** True when a collection can be forced, i.e. the process was started with --expose-gc. */
-export const canCollectGarbage = (): boolean => isThunk(globalGc());
-
-/** Runs a full collection when the runtime exposes one. Does nothing otherwise. */
-export function collectGarbage(): void {
-  const gc = globalGc();
-  if (isThunk(gc)) gc();
+/**
+ * Makes `collectGarbage` work. Returns whether it can. Safe to call repeatedly.
+ *
+ * Sets the flag the runtime reads and evaluates `gc` in a fresh context, which
+ * reaches the collector without restarting the process. The flag is turned off
+ * again so the rest of the run behaves as it did before.
+ */
+export function enableGarbageCollection(): boolean {
+  if (collector) return true;
+  const existing: unknown = globalThis.gc;
+  if (isThunk(existing)) {
+    collector = existing;
+    return true;
+  }
+  setFlagsFromString('--expose-gc');
+  const exposed: unknown = runInNewContext('gc');
+  setFlagsFromString('--no-expose-gc');
+  if (isThunk(exposed)) collector = exposed;
+  return collector !== undefined;
 }
 
-/** Heap bytes in use, or 0 when the runtime does not report them. */
-export const heapUsedBytes = (): number => nodeProcess()?.memoryUsage().heapUsed ?? 0;
+/** Runs a full collection when one is available. Does nothing otherwise. */
+export function collectGarbage(): void {
+  collector?.();
+}
+
+/** Heap bytes in use. */
+export const heapUsedBytes = (): number => process.memoryUsage().heapUsed;
 
 export interface HeapGrowth<TValue> {
   /** Heap bytes retained after `build`. */
@@ -57,13 +57,26 @@ export interface HeapGrowth<TValue> {
   readonly value: TValue;
 }
 
-/** Heap growth caused by `build`, with the result kept reachable while it is measured. */
-export function measureHeapGrowth<TValue>(build: () => TValue): HeapGrowth<TValue> {
-  collectGarbage();
-  const before = heapUsedBytes();
-  const value = build();
-  collectGarbage();
-  return { bytes: heapUsedBytes() - before, value };
+/**
+ * Heap growth caused by `build`, with the result kept reachable while it is
+ * measured. `attempts` readings are taken and the median is reported, so one
+ * disturbed reading does not decide the answer.
+ */
+export function measureHeapGrowth<TValue>(build: () => TValue, attempts = 3): HeapGrowth<TValue> {
+  const readings: number[] = [];
+  let value: TValue | undefined;
+  for (let i = 0; i < attempts; i++) {
+    collectGarbage();
+    const before = heapUsedBytes();
+    const built = build();
+    collectGarbage();
+    readings.push(heapUsedBytes() - before);
+    value = built;
+  }
+  if (value === undefined) throw new Error('measureHeapGrowth needs at least one attempt');
+  readings.sort((a, b) => a - b);
+  const middle = readings[readings.length >> 1];
+  return { bytes: middle ?? 0, value };
 }
 
 export const megabytes = (bytes: number): number => bytes / (1024 * 1024);

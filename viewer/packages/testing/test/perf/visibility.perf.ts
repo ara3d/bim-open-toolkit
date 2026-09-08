@@ -4,11 +4,17 @@
  * the drawn range, or rebuilding the renderer's batches?
  *
  * CPU-side only: no WebGL context, so no upload or draw cost is included.
+ *
+ * Every table below reports medians. Every assertion compares the fastest of the
+ * repetitions instead, because this machine is shared with other work:
+ * interference can only ever make a run slower, so the minimum is the estimate
+ * that survives a busy machine. Medians of two close cases swapped places under
+ * load; minimums did not.
  */
 import { describe, expect, it } from 'vitest';
 import { SceneObject, ViewerScene } from '@ara3d/viewer-core';
 import { createSharedColumns, writeChannel } from '../../src/perf/columns.js';
-import { measureCase, reportSamples, sampleFor, type Sample } from '../../src/perf/measure.js';
+import { measureAll, prepare, reportSamples, sampleFor, type Prepared } from '../../src/perf/measure.js';
 import { COLOR_FLOATS, TRANSFORM_FLOATS, createSyntheticScene, referenceShape, selectRows, sortRows } from '../../src/perf/scene.js';
 
 const scene = createSyntheticScene(referenceShape);
@@ -66,25 +72,26 @@ const hiddenFlags = (rows: Int32Array): Uint8Array => {
 
 describe('hiding and restoring instances', () => {
   it('costs the same order as the number of hidden rows, whichever column carries the flag', () => {
-    const samples: Sample[] = [];
+    const cases: Prepared[] = [];
     for (const fraction of fractions) {
       const rows = rowsFor(fraction);
-      samples.push(measureCase({
+      cases.push(prepare({
         label: `hide ${percent(fraction)} by writing alpha 0 (${rows.length} rows)`,
         setup: () => writeChannel(columns, 'color', 3, 1, rows, null, false),
         body: () => writeChannel(columns, 'color', 3, 0, rows, null, false),
       }));
-      samples.push(measureCase({
+      cases.push(prepare({
         label: `restore ${percent(fraction)} by writing alpha 1`,
         setup: () => writeChannel(columns, 'color', 3, 0, rows, null, false),
         body: () => writeChannel(columns, 'color', 3, 1, rows, null, false),
       }));
-      samples.push(measureCase({
+      cases.push(prepare({
         label: `hide ${percent(fraction)} by collapsing the transform`,
         setup: () => collapseTransforms(rows, 1),
         body: () => collapseTransforms(rows, 0),
       }));
     }
+    const samples = measureAll(cases);
     reportSamples(`hiding ${scene.rowCount} instances in ${scene.groups.length} groups`, samples);
 
     const hide1 = sampleFor(samples, `hide 1% by writing alpha 0 (${rowsFor(0.01).length} rows)`);
@@ -92,10 +99,10 @@ describe('hiding and restoring instances', () => {
     const hide50 = sampleFor(samples, `hide 50% by writing alpha 0 (${rowsFor(0.5).length} rows)`);
     const restore10 = sampleFor(samples, 'restore 10% by writing alpha 1');
 
-    expect(hide1.medianMs).toBeLessThan(hide10.medianMs);
-    expect(hide10.medianMs).toBeLessThan(hide50.medianMs);
+    expect(hide1.minMs).toBeLessThan(hide10.minMs);
+    expect(hide10.minMs).toBeLessThan(hide50.minMs);
     // Hiding and restoring are the same write, so they cost the same.
-    expect(restore10.medianMs).toBeLessThan(hide10.medianMs * 2);
+    expect(restore10.minMs).toBeLessThan(hide10.minMs * 2);
     // Nothing here approaches the size of the model: even hiding half is a
     // sub-model-size pass, unlike the rebuild measured below.
     expect(hide50.result).toBe(rowsFor(0.5).length);
@@ -105,26 +112,32 @@ describe('hiding and restoring instances', () => {
     const order = new Int32Array(scene.rowCount);
     const spareColors = new Float32Array(scene.rowCount * COLOR_FLOATS);
     const spareTransforms = new Float32Array(scene.rowCount * TRANSFORM_FLOATS);
-    const samples: Sample[] = [];
+    const cases: Prepared[] = [];
     for (const fraction of fractions) {
       const flags = hiddenFlags(rowsFor(fraction));
-      samples.push(measureCase({
+      cases.push(prepare({
         label: `rebuild the draw order with ${percent(fraction)} hidden`,
         setup: () => flags,
         body: (hidden) => compactDrawOrder(hidden, order),
       }));
     }
     const flags10 = hiddenFlags(rowsFor(0.1));
-    samples.push(measureCase({
+    cases.push(prepare({
       label: 'physically compact colours and transforms with 10% hidden',
       setup: () => flags10,
       body: (hidden) => compactStores(hidden, spareColors, spareTransforms),
+    }));
+    const half = rowsFor(0.5);
+    cases.push(prepare({
+      label: 'hide 50% by writing alpha 0, for scale',
+      setup: () => writeChannel(columns, 'color', 3, 1, half, null, false),
+      body: () => writeChannel(columns, 'color', 3, 0, half, null, false),
     }));
 
     const viewerScene = new ViewerScene();
     for (const group of scene.groups) viewerScene.addGroup(group);
     let mirror: SceneObject | undefined;
-    samples.push(measureCase({
+    cases.push(prepare({
       label: 'rebuild the three.js batches for the whole model',
       setup: () => { mirror?.dispose(); mirror = undefined; return viewerScene; },
       body: (model) => {
@@ -133,7 +146,11 @@ describe('hiding and restoring instances', () => {
         mirror = built;
         return built.objectCount;
       },
-    }, { repetitions: 5, warmups: 1 }));
+    }));
+    // Twelve repetitions, not the default twenty-five: one case rebuilds the
+    // whole model and takes about 270 ms. Five was too few — on a machine busy
+    // with other work it left the compaction case with no undisturbed run.
+    const samples = measureAll(cases, { repetitions: 12, warmups: 2 });
     mirror?.dispose();
 
     reportSamples('hiding strategies that move or rebuild data', samples);
@@ -142,33 +159,17 @@ describe('hiding and restoring instances', () => {
     const physical10 = sampleFor(samples, 'physically compact colours and transforms with 10% hidden');
     const rebuild = sampleFor(samples, 'rebuild the three.js batches for the whole model');
 
-    expect(drawOrder10.medianMs).toBeLessThan(physical10.medianMs);
-    expect(physical10.medianMs).toBeLessThan(rebuild.medianMs);
+    const hide50 = sampleFor(samples, 'hide 50% by writing alpha 0, for scale');
+
+    // Hiding half the model by writing a column and rebuilding the drawn-row
+    // list are in the same class, so no claim separates them. Both are an order
+    // of magnitude below moving the data.
+    expect(hide50.minMs * 10).toBeLessThan(physical10.minMs);
+    expect(drawOrder10.minMs).toBeLessThan(physical10.minMs);
+    expect(physical10.minMs).toBeLessThan(rebuild.minMs);
+    // Hiding half the model is two orders of magnitude below rebuilding it.
+    expect(hide50.minMs * 100).toBeLessThan(rebuild.minMs);
     expect(rebuild.result).toBe(scene.groups.length);
   });
 
-  it('keeps the alpha write two orders of magnitude below a batch rebuild', () => {
-    const rows = rowsFor(0.5);
-    const hide = measureCase({
-      label: 'hide 50% by writing alpha 0',
-      setup: () => writeChannel(columns, 'color', 3, 1, rows, null, false),
-      body: () => writeChannel(columns, 'color', 3, 0, rows, null, false),
-    });
-    const viewerScene = new ViewerScene();
-    for (const group of scene.groups) viewerScene.addGroup(group);
-    let mirror: SceneObject | undefined;
-    const rebuild = measureCase({
-      label: 'rebuild the three.js batches',
-      setup: () => { mirror?.dispose(); mirror = undefined; return viewerScene; },
-      body: (model) => {
-        const built = new SceneObject(model, 1000, false);
-        built.sync();
-        mirror = built;
-        return built.objectCount;
-      },
-    }, { repetitions: 5, warmups: 1 });
-    mirror?.dispose();
-    reportSamples('hiding half the model against rebuilding it', [hide, rebuild]);
-    expect(hide.medianMs * 100).toBeLessThan(rebuild.medianMs);
-  });
 });

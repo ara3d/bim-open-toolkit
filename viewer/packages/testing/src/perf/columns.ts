@@ -214,6 +214,35 @@ export function copyRows(
   return rows.length;
 }
 
+/**
+ * Rows where `candidate` differs from `current`, written into `changed`.
+ *
+ * This is the other way to detect change: instead of comparing row by row while
+ * writing a caller-supplied row list, compare two whole columns and derive the
+ * row list. Both arrays hold `stride` floats per row in row order. Returns the
+ * number of differing rows; `changed` must have room for every row.
+ */
+export function diffColumn(
+  current: Float32Array,
+  candidate: Float32Array,
+  stride: number,
+  changed: Int32Array,
+): number {
+  if (current.length !== candidate.length)
+    throw new Error(`columns differ in length: ${current.length} and ${candidate.length}`);
+  let found = 0;
+  const rows = current.length / stride;
+  for (let row = 0; row < rows; row++) {
+    const at = row * stride;
+    for (let j = 0; j < stride; j++) {
+      if (current[at + j] === candidate[at + j]) continue;
+      changed[found++] = row;
+      break;
+    }
+  }
+  return found;
+}
+
 /** Floats per translation. */
 export const TRANSLATION_FLOATS = 3;
 /** Offset of the translation inside a column-major 4x4 transform. */

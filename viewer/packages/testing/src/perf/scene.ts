@@ -42,6 +42,13 @@ export const referenceShape: SceneShape = {
   seed: 11,
 };
 
+/**
+ * Rendered instances per model object in the reference model: 456,598 instances
+ * belong to 51,139 objects. A colour or transform change is asked for per object
+ * and lands on nine rows on average.
+ */
+export const instancesPerObject = referenceShape.instances / 51_139;
+
 /** The reference shape scaled to `instances`, keeping its instances-per-group ratio. */
 export const scaledShape = (instances: number, seed = referenceShape.seed): SceneShape => ({
   instances,

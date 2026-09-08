@@ -78,6 +78,71 @@ export function measureCase<TState>(
   };
 }
 
+/**
+ * A case whose state type is hidden, so cases of different shapes can be
+ * measured together. Build one with `prepare`.
+ */
+export interface Prepared {
+  readonly label: string;
+  /** Setup and body, untimed. */
+  readonly warm: () => void;
+  /** Setup untimed, then the timed body. Returns the elapsed time and the body's result. */
+  readonly timed: () => readonly [number, number];
+}
+
+export const prepare = <TState>(subject: Case<TState>): Prepared => ({
+  label: subject.label,
+  warm: () => { subject.body(subject.setup()); },
+  timed: () => {
+    const state = subject.setup();
+    const start = nowMs();
+    const result = subject.body(state);
+    return [nowMs() - start, result];
+  },
+});
+
+/**
+ * Measures a group of cases together, which is what makes two of them
+ * comparable.
+ *
+ * Every case is warmed before any is timed, so the first case in a list does not
+ * carry the cost of compiling code the later ones then reuse. Repetitions are
+ * then interleaved — one round runs every case once — so a machine that slows
+ * down partway through slows every case, instead of only the ones measured while
+ * it was busy. Measuring each case to completion in turn produced medians that
+ * swapped places between runs; this does not.
+ */
+export function measureAll(
+  cases: readonly Prepared[],
+  options: MeasureOptions = defaultMeasureOptions,
+): Sample[] {
+  const times = cases.map((): number[] => []);
+  const results = cases.map(() => 0);
+  for (let round = 0; round < options.warmups; round++) for (const subject of cases) subject.warm();
+  for (let round = 0; round < options.repetitions; round++) {
+    for (let i = 0; i < cases.length; i++) {
+      const subject = cases[i];
+      const record = times[i];
+      if (!subject || !record) throw new Error('case list changed while measuring');
+      const [elapsed, result] = subject.timed();
+      record.push(elapsed);
+      results[i] = result;
+    }
+  }
+  return cases.map((subject, i) => {
+    const record = times[i];
+    if (!record) throw new Error('case list changed while measuring');
+    return {
+      label: subject.label,
+      medianMs: median(record),
+      minMs: Math.min(...record),
+      maxMs: Math.max(...record),
+      repetitions: options.repetitions,
+      result: results[i] ?? 0,
+    };
+  });
+}
+
 /** The sample with this label. Throws if it is missing, so an assertion cannot pass by accident. */
 export function sampleFor(samples: readonly Sample[], label: string): Sample {
   const found = samples.find((sample) => sample.label === label);
