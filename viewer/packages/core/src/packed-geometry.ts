@@ -18,7 +18,7 @@ export class PackedGeometry {
   private readonly vector = new Vector3();
   private initialized = false;
 
-  constructor(ranges: readonly PackedRange[], material: MeshStandardMaterial) {
+  constructor(ranges: readonly PackedRange[], material: MeshStandardMaterial, preparedNormals?: ReadonlyMap<MeshBuffers, ArrayLike<number>>) {
     let vertices = 0, indices = 0;
     for (const range of ranges) {
       this.offsets.set(range, vertices);
@@ -33,9 +33,13 @@ export class PackedGeometry {
     for (const range of ranges) {
       const source = range.group.mesh;
       if (!this.normals.has(source)) {
-        const geometry = buildGeometry(source);
-        this.normals.set(source, geometry.getAttribute('normal').array);
-        geometry.dispose();
+        const prepared = preparedNormals?.get(source);
+        if (prepared) this.normals.set(source, prepared);
+        else {
+          const geometry = buildGeometry(source);
+          this.normals.set(source, geometry.getAttribute('normal').array);
+          geometry.dispose();
+        }
       }
       const count = source.positions.length / 3;
       for (let i = 0; i < range.count; i++) {

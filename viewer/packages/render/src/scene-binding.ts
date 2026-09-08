@@ -78,6 +78,7 @@ export type GroupLocation = { readonly modelId: string; readonly group: number }
 export class SceneBinding {
   private readonly bound = new Map<string, BoundModel>();
   private readonly locations = new Map<InstancedGroup, GroupLocation>();
+  private readonly groupBoxes = new WeakMap<InstancedGroup, { transforms: number; count: number; bounds: ReturnType<typeof groupBounds> }>();
   private closed = false;
 
   constructor(
@@ -250,7 +251,7 @@ export class SceneBinding {
     let total = emptyBounds;
     for (const model of this.bound.values())
       for (const group of model.table.groups) {
-        const found = groupBounds(group);
+        const found = this.cachedGroupBounds(group);
         if (found !== null) total = unionBounds(total, { min: found.min, max: found.max });
       }
     return total;
@@ -262,10 +263,20 @@ export class SceneBinding {
     if (model === undefined) return emptyBounds;
     let total = emptyBounds;
     for (const group of model.table.groups) {
-      const found = groupBounds(group);
+      const found = this.cachedGroupBounds(group);
       if (found !== null) total = unionBounds(total, { min: found.min, max: found.max });
     }
     return total;
+  }
+
+  // Geometry is borrowed and immutable; group mutations publish version changes.
+  // Appearance changes do not change the geometric bounds used for fitting.
+  private cachedGroupBounds(group: InstancedGroup): ReturnType<typeof groupBounds> {
+    const cached = this.groupBoxes.get(group);
+    if (cached?.transforms === group.transformsVersion && cached.count === group.countVersion) return cached.bounds;
+    const bounds = groupBounds(group);
+    this.groupBoxes.set(group, { transforms: group.transformsVersion, count: group.countVersion, bounds });
+    return bounds;
   }
 
   // What is in the scene, summed over models.

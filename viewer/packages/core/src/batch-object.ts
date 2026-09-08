@@ -45,8 +45,10 @@ export class BatchObject {
     this.mesh = new BatchedMesh(count, vertices, indices, this.material);
     this.mesh.frustumCulled = false;
     const geometries = new Map<MeshBuffers, number>();
+    const normals = new Map<MeshBuffers, ArrayLike<number>>();
     for (const resource of resources) {
       const geometry = geometryFor(resource);
+      normals.set(resource, geometry.getAttribute('normal').array);
       geometries.set(resource, this.mesh.addGeometry(geometry));
       geometry.dispose();
     }
@@ -68,7 +70,7 @@ export class BatchObject {
       // Both paths share clipping/material state. The fallback's tint comes from
       // its instance texture, so its vertex color must remain neutral.
       this.mesh.geometry.setAttribute('color', new BufferAttribute(new Uint8Array(vertices * 3).fill(255), 3, true));
-      this.packed = new PackedGeometry(this.ranges, this.material);
+      this.packed = new PackedGeometry(this.ranges, this.material, normals);
       this.root.add(this.packed.mesh);
     }
     this.sync();
@@ -113,7 +115,11 @@ export class BatchObject {
       this.mesh.boundingSphere = null;
     }
     if (changed) {
-      this.material.transparent = this.material.opacity < 1 || this.ranges.some(range => range.fractional > 0);
+      const transparent = this.material.opacity < 1 || this.ranges.some(range => range.fractional > 0);
+      if (this.material.transparent !== transparent) {
+        this.material.transparent = transparent;
+        this.material.needsUpdate = true;
+      }
       if (this.packed) {
         this.packed.mesh.visible = !this.material.transparent;
         this.mesh.visible = this.material.transparent;

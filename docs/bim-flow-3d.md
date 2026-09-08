@@ -96,6 +96,10 @@ and standalone examples.
 
 ## Verification on 2026-09-08
 
+The [startup phase investigation](bim-flow-startup.md) extends measurement through
+the first model render submission, records remaining bottlenecks and LOD/worker
+opportunities, and documents the subsequent renderer and catalog improvements.
+
 Initial-load follow-up: the development graph demo now requests
 `/__bimflow/models/{catalog-id}`. The middleware reads the current source from
 the configured BIM host and checks its SHA-256 against the exact source/prepared
@@ -111,8 +115,9 @@ updates share one model-catalog request, including retry after failures.
 Thirteen focused endpoint/catalog tests and the app TypeScript check pass.
 
 `node scripts/benchmark-bim-flow-load.mjs` compares six alternating BOS/BFAST
-loads through the same app in fresh browser pages. Headless Edge, software
-WebGL, 1440×1000, running local dev server; API mutations blocked. All six
+loads through the same app in fresh browser pages. Headless Edge, 1440×1000,
+running local dev server; graphics backend was not recorded in that run and API
+mutations were blocked. All six
 loaded 456,598 instances without page errors, made one model-catalog request
 and one model request, and produced identical canvas screenshot hashes.
 

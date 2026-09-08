@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ViewerScene } from '@ara3d/viewer-core';
 import {
   defaultAppearance,
@@ -85,6 +85,27 @@ describe('addModel and removeModel', () => {
 });
 
 describe('groupIndex', () => {
+  it('reuses geometric bounds across appearance changes and invalidates moved groups', () => {
+    const { binding, table } = added();
+    const group = table.groups[0]!;
+    const reads = vi.spyOn(group, 'transforms', 'get');
+    const before = binding.bounds();
+    expect(reads).toHaveBeenCalled();
+    reads.mockClear();
+    group.setColor(0, 1, 0, 0, .2);
+    expect(binding.bounds()).toEqual(before);
+    expect(binding.modelBounds('m1')).toEqual(before);
+    expect(reads).not.toHaveBeenCalled();
+    const moved = group.transforms.slice(0, 16);
+    moved[12] = 1000;
+    group.setTransform(0, moved);
+    reads.mockClear();
+    expect(binding.bounds().max[0]).toBeGreaterThan(before.max[0]);
+    expect(reads).toHaveBeenCalled();
+    binding.removeModel('m1');
+    expect(binding.bounds()).toEqual(new SceneBinding(new ViewerScene()).bounds());
+  });
+
   it('says which model and ordinal each group is', () => {
     const { binding, table } = added();
     const index = binding.groupIndex();

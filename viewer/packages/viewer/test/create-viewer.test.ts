@@ -10,6 +10,8 @@ import { createViewer, type Viewer } from '../src/create-viewer.js';
 import { appearanceSlice, modelsSlice, viewSlice } from '../src/core-features.js';
 import { fakeRenderer, testFrames, type FakeRenderer } from './support/fake-renderer.js';
 import { twoObjectModel } from './support/model-fixture.js';
+import { SceneObject } from '@ara3d/viewer-core';
+import type { MeshStandardMaterial } from 'three';
 
 const started = (): {
   readonly viewer: Viewer;
@@ -36,6 +38,27 @@ const keyOf = (objectId: string): ObjectKey =>
 const redRule = (): StyleRule => styleRule('red', 'Red doors', [keyOf('b')], { color: [1, 0, 0] });
 
 describe('createViewer', () => {
+  it('keeps opaque rendering until instance alpha needs blending, then restores it', () => {
+    const { viewer, renderers } = started();
+    viewer.show(twoObjectModel());
+    const scene = renderers[0]!.scene;
+    const mirror = new SceneObject(scene);
+    mirror.sync();
+    const group = scene.groups[0]!;
+    const material = mirror.getObject(group)!.mesh!.material as MeshStandardMaterial;
+    expect(material.opacity).toBe(1);
+    expect(material.transparent).toBe(false);
+    const opaqueVersion = material.version;
+    viewer.apply(styleRule('ghost', 'Ghost', [keyOf('a'), keyOf('b')], { opacity: .2 }));
+    mirror.sync();
+    expect(material.transparent).toBe(true);
+    expect(material.version).toBeGreaterThan(opaqueVersion);
+    viewer.run('appearance.clear');
+    mirror.sync();
+    expect(material.transparent).toBe(false);
+    mirror.dispose();
+    viewer.dispose();
+  });
   it('installs the default features and their commands', () => {
     const { viewer } = started();
     expect(viewer.features.features().map((one) => one.id)).toEqual([

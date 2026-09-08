@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BatchedMesh, Matrix4, Plane, Raycaster, Vector3, Vector4 } from 'three';
+import { BatchedMesh, BufferGeometry, Matrix4, Plane, Raycaster, Vector3, Vector4 } from 'three';
 import { createBatchObjects } from '../src/batch-object.js';
 import { InstancedGroup } from '../src/instanced-group.js';
 import { SceneObject } from '../src/scene-object.js';
@@ -13,6 +13,13 @@ function group(mesh = triangle()) {
 }
 
 describe('batched scene mirror', () => {
+  it('shares computed normals between packed and instanced mirrors', () => {
+    const compute = vi.spyOn(BufferGeometry.prototype, 'computeVertexNormals');
+    const [batch] = createBatchObjects([group({ positions: triangle().positions })]);
+    expect(compute).toHaveBeenCalledTimes(1);
+    batch.dispose();
+    compute.mockRestore();
+  });
   it('automatically batches large group counts and shares geometry within a batch', () => {
     const model = new ViewerScene();
     const resource = triangle();
@@ -33,6 +40,7 @@ describe('batched scene mirror', () => {
     const item = group();
     const [batch] = createBatchObjects([item]);
     const geometry = batch.mesh.geometry;
+    const opaqueVersion = batch.material.version;
     const matrixVersion = batch.mesh.getMatrixAt(0, new Matrix4()).elements.slice();
     item.setColor(0, 0, 1, 0, 0.25);
     item.setTransform(0, translation(2, 0, 0));
@@ -40,6 +48,8 @@ describe('batched scene mirror', () => {
     expect(batch.mesh.geometry).toBe(geometry);
     expect(batch.mesh.getColorAt(0, new Vector4()).toArray()).toEqual([0, 1, 0, 0.25]);
     expect(batch.material.transparent).toBe(true);
+    expect(batch.material.version).toBeGreaterThan(opaqueVersion);
+    const blendedVersion = batch.material.version;
     expect(batch.mesh.getMatrixAt(0, new Matrix4()).elements).not.toEqual(matrixVersion);
     item.visible = false;
     batch.sync();
@@ -52,6 +62,7 @@ describe('batched scene mirror', () => {
     batch.sync();
     expect(batch.mesh.getVisibleAt(0)).toBe(true);
     expect(batch.material.transparent).toBe(false);
+    expect(batch.material.version).toBeGreaterThan(blendedVersion);
     batch.dispose();
   });
 

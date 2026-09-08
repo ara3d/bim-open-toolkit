@@ -168,6 +168,10 @@ export class GroupObject {
       const a = src[i * COLOR_STRIDE + 3];
       if (a >= MIN_VISIBLE_ALPHA && a < 1) { fractional = true; break; }
     }
-    this.material.transparent = this.group.material.opacity < 1 || fractional;
+    const transparent = this.group.material.opacity < 1 || fractional;
+    if (this.material.transparent !== transparent) {
+      this.material.transparent = transparent;
+      this.material.needsUpdate = true;
+    }
   }
 }

@@ -14,11 +14,9 @@ import { captureTarget, gpuFrameTimer } from './capture.js';
 import { raycastSource } from './raycast.js';
 import { clippingTarget, environmentTarget, overlayRenderer } from './scene-dressing.js';
 
-// viewer-core builds a group's material with `transparent: opacity < 1`, and per-instance alpha only
-// scales it, so a group whose material is fully opaque ignores every per-instance opacity: a model's
-// translucent objects would draw solid and a hidden row would still be drawn. One shade below opaque
-// switches blending on for every group, and the shade itself is not visible.
-export const blendableMaterial: MaterialConfig = { ...defaultMaterial, opacity: 0.999 };
+// Both core mirror paths enable blending from instance alpha and discard hidden instances.
+// Keep opaque groups opaque so they can use packed rendering without transparent sorting.
+export const blendableMaterial: MaterialConfig = defaultMaterial;
 
 // How the default renderer is built.
 export type WebglOptions = {
