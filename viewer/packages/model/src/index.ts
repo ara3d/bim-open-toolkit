@@ -8,3 +8,4 @@ export * from './objects.js';
 export * from './table.js';
 export * from './mesh.js';
 export * from './facts.js';
+export * from './schema.js';
