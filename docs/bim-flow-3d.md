@@ -96,6 +96,39 @@ and standalone examples.
 
 ## Verification on 2026-09-08
 
+Initial-load follow-up: the development graph demo now requests
+`/__bimflow/models/{catalog-id}`. The middleware reads the current source from
+the configured BIM host and checks its SHA-256 against the exact source/prepared
+pair recorded below. It serves the prepared BFAST only when both hashes match;
+missing or mismatched preparation falls back to original BOS bytes. Prepared
+file verification is cached by size/modification/change time; source bytes are
+checked on every request. No graph paths or model files are rewritten. The
+production graph retains the original host endpoint. The pane detects the byte
+signature for BOS endpoints so either response loads correctly.
+
+Analysis and node-catalog startup requests run concurrently. Simultaneous pane
+updates share one model-catalog request, including retry after failures.
+Thirteen focused endpoint/catalog tests and the app TypeScript check pass.
+
+`node scripts/benchmark-bim-flow-load.mjs` compares six alternating BOS/BFAST
+loads through the same app in fresh browser pages. Headless Edge, software
+WebGL, 1440×1000, running local dev server; API mutations blocked. All six
+loaded 456,598 instances without page errors, made one model-catalog request
+and one model request, and produced identical canvas screenshot hashes.
+
+| Format | Load-ready samples (ms) | Median load-ready (ms) | Median model request to ready (ms) |
+|---|---|---:|---:|
+| BOS | 4160, 8012, 4413 | 4413 | 3608 |
+| Prepared BFAST | 3216, 5284, 3327 | 3327 | 2537 |
+
+The median load-ready reduction is about 25%. Readiness is the pane's loaded
+status, followed by a screenshot check; it is not a GPU presentation timestamp.
+These small local samples include startup variation, use an already running
+server, and do not qualify cold-disk, remote-network or hardware performance.
+BFAST transfers 111,630,208 bytes rather than BOS's 9,362,255 bytes, avoiding
+browser conversion at the cost of larger transfer size. The fixed verified
+pair accelerates this Snowdon fixture only; other models retain BOS fallback.
+
 Responsiveness follow-up: changing a section, section box/range, explosion or
 environment inside an otherwise unchanged recipe updates the affected domain
 without replaying unrelated downstream steps. Upstream scrubbing preserves the
