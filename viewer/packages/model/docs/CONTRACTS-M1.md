@@ -161,6 +161,108 @@ placements has many rows, and `InstanceRecords.objectIndex` is the whole mapping
 object draws nothing, which is what `hasRepresentation` reports. It is kept because it answers "does
 this object draw anything" without a pass over `objectIndex`.
 
+## M1.3 additions
+
+Additive follow-up to the requests Tracks I, T, W and R left in
+`docs/plans/visualization/V2-STATUS.md`. Nothing below renames, removes or re-signs an M1, M1.1 or
+M1.2 export, so the revision label stays M1; the module blocks further down are the M1 declarations
+and do not repeat these.
+
+### `math` — space vectors and box equality
+
+The cross product existed three times outside this package (`interact/src/vec.ts`,
+`testing/src/bench/camera-path.ts`, and interact's `dot` and `unitSlerp` beside it). The names carry
+the `Vec3` suffix that `addVec3` and `crossVec2` already use, so `crossVec2` and `crossVec3` read as
+the pair they are; `perpendicularTo` and `unitSlerp` have no plane counterpart to be confused with.
+`unitSlerp` turns along the shorter arc, and through a fixed perpendicular for opposite directions,
+so a camera path is smooth and repeatable rather than undefined at the half turn.
+
+```ts
+export declare const dotVec3: (a: Vec3, b: Vec3) => number;
+export declare const crossVec3: (a: Vec3, b: Vec3) => Vec3;
+export declare const perpendicularTo: (direction: Vec3) => Vec3;
+export declare const unitSlerp: (a: Vec3, b: Vec3, t: number) => Vec3;
+export declare const sameBounds: (a: Bounds, b: Bounds) => boolean;
+```
+
+### `schema` — converting and enumerated schemas
+
+`mapped` is what lets a schema produce a value the JSON it read does not have, which `object` and
+`tuple` cannot do because they hand back the value they were given. That is also its one sharp edge:
+a `mapped` at a property position of an `object` or `tuple` is checked and then dropped, while
+`array`, `record` and `union` build their result from what they checked and do carry it. Wrap the
+object, not its properties. `enumeration` states a closed vocabulary as one schema instead of a
+union of literals, and describes itself as a JSON-schema `enum`, which is what a generated MCP
+descriptor should show. `JsonSchema` gains the optional `enum` field this needs.
+
+```ts
+export type JsonSchema = { /* M1 fields */ readonly enum?: readonly JsonLiteral[]; };
+export declare const enumeration: <T extends JsonLiteral>(values: readonly T[]) => Schema<T>;
+export declare const mapped: <T, U>(inner: Schema<T>, convert: (value: T) => U) => Schema<U>;
+```
+
+### `coordinates` — the frame as a schema
+
+The type was stated here and the schema for it was written in `workflows`. It is published here now,
+with the vocabularies as arrays so a caller can list them without repeating them.
+
+```ts
+export declare const lengthUnits: readonly LengthUnit[];
+export declare const upAxes: readonly UpAxis[];
+export declare const lengthUnitSchema: Schema<LengthUnit>;
+export declare const upAxisSchema: Schema<UpAxis>;
+export declare const geographicAnchorSchema: Schema<GeographicAnchor>;
+export declare const registrationSchema: Schema<Registration>;
+export declare const coordinateContextSchema: Schema<CoordinateContext>;
+```
+
+### `view` — framing for the viewport's shape
+
+`frameBounds` sizes an orthographic projection to the box alone, so a portrait viewport cuts the box
+off at its sides. `frameBoundsInViewport` is the same framing with the height sized for the viewport
+as well, which is the fit `interact` wrote for itself. It is a second function rather than a change
+to `frameBounds`: the two agree at aspect 1 and for every perspective projection.
+
+```ts
+export declare const fitOrthographicHeight: (radius: number, aspect: number) => number;
+export declare const frameBoundsInViewport: (bounds: Bounds, direction: Vec3, projection?: Projection, aspect?: number, up?: Vec3) => ViewState | undefined;
+```
+
+### `style` — what `resolveStyles` leaves out, stated
+
+No signature or behaviour change. `ResolvedStyles.byKey` holds only the keys whose appearance ended
+up different from `fallback`; a key that resolved to the fallback and a key an edit layer deleted are
+both absent from it. Iterating `byKey` is not iterating the scene, and a binding that does never
+restores an object a rule stopped applying to, because that object simply leaves the map. Address the
+keys you know about and read each with `styleOf`, which answers `fallback` for anything absent;
+`isRemoved` and `deleted` say what is gone. This is Track R's finding 8, and `render`'s `applyStyles`
+already works this way.
+
+## M1.3 proposed, not landed: a bounds `FactValue`
+
+Track S2 asked for a box-valued observation so workflow 07's disputed boxes can be observations
+rather than six columns that read NaN. The variant below is correct and was written; it is **not**
+landed, because widening a discriminated union is not an additive change and two packages outside
+this fence stop compiling, which was measured rather than assumed:
+
+- `workflows/src/observation.ts:34` — `factScalar` ends a chain of `kind` tests with
+  `objectKey(value.ref)`, and `ref` is not on the new variant (TS2339).
+- `synthetic/src/schedule.ts:54` — `formatValue`'s `switch` covers four kinds and then lacks an
+  ending return (TS2366).
+
+Landing it is a three-line change here plus one line in each of those two files, in one commit by
+someone whose fence covers all three. `sameBounds` is already in place for it.
+
+```ts
+export type FactValue = /* M1 variants */ | { readonly kind: 'bounds'; readonly bounds: Bounds };
+export declare const bounds: (value: Bounds) => FactValue;
+export declare const knownBounds: (observation: Observation) => Bounds | undefined;
+// sameFactValue gains: if (a.kind === 'bounds' && b.kind === 'bounds') return sameBounds(a.bounds, b.bounds);
+```
+
+`reconcile`, `mergeObservations`, `observedValues` and `coverageOf` need nothing: they work through
+`sameFactValue` and the observation's kind, not the value's.
+
 ## Signatures
 
 The emitted declarations, grouped by module, in dependency order.
