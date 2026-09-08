@@ -20,7 +20,7 @@ Verdicts: **keep**, **adjust**, **off**, **watch** (not enough evidence yet).
 | `wave.json` manifest (fences as data) | — | 1 | — | 0 | watch | Only useful if something reads it (hooks off, gate `clean` step not wired). Drop if unused by wave 2. |
 | Performance tests as `*.perf.ts` behind `npm run perf` | — | 0 | — | 0 | watch | PERF track is the first user. |
 | Parallel-wave checkpoints and briefs | supervisor time | 10 briefs | — | 1 | keep | Friction: none from the format. The checkpoints were what made the stalled tracks resumable: S and M could be relaunched from their own notes without re-deriving anything. |
-| Concurrent subagent count | — | 7 at once | — | 1 | adjust | Seven concurrent subagents stalled the host for two hours (2026-09-07 20:07 to 22:13). Limit set to three; four to be tried later. |
+| Concurrent subagent count | — | 7 at once | — | 1 | watch | Seven subagents stalled at once on 2026-09-07 20:07; the user reports a disconnection on their side at that time, so the count is not shown to be the cause. Documented default limit is 20 (`CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`). Running seven again from 22:40. |
 
 ## Review log
 
