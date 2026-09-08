@@ -1,6 +1,6 @@
 # Feature demos wave
 
-Date: 2026-09-08. Status: S3 verified; shared host landed; S4, FD1, FD2, FD3 running. Part of [V2-PLAN.md](V2-PLAN.md); rolling status in [V2-STATUS.md](V2-STATUS.md). A second session runs this wave beside the wave 2 supervisor ("V2 visualization plan prep"); the two coordinate through `.claude/wave.json`, the checkpoints, and session messages.
+Date: 2026-09-08. Status: S3, S4 and the shared host verified; FD1 to FD3 stopped mid-chunk at the user's request on 2026-09-08 with unverified files on disk (see V2-STATUS.md's handoff); resume from the briefs. Part of [V2-PLAN.md](V2-PLAN.md); rolling status in [V2-STATUS.md](V2-STATUS.md). A second session runs this wave beside the wave 2 supervisor ("V2 visualization plan prep"); the two coordinate through `.claude/wave.json`, the checkpoints, and session messages.
 
 User basis (2026-09-08): add these features with tests and demos: show by level, room and category; separate the levels and the rooms side by side, and remove the ceilings and roofs (or cut away) to see inside; HUD examples: a 2D minimap, a 3D gumball, and FPS with CPU and GPU timing.
 
