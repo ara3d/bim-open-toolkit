@@ -31,7 +31,8 @@
       { "aId": "D-2", "bIds": [], "changeType": "deleted" }
     ],
     "exceptions": [
-      { "aId": "D-1", "bIds": ["D-1b", "D-9"], "changeType": "ambiguous", "reason": "unresolved-source", "candidateCount": 2 }
+      { "subjects": ["D-1"], "related": ["D-1b", "D-9"], "field": "correspondence", "kind": "missing", "reason": "unresolved-source",
+        "detail": "2 candidate objects in revision B; the match stays unresolved." }
     ]
   },
   "notes": "D-9 is not reported as a standalone 'added' row because it only ever appears as an ambiguous candidate of correspondence c4 (see .md assumptions). The comparison table holds only resolved rows; every unresolved (ambiguous) correspondence goes to exceptions instead, never both."

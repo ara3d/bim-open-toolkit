@@ -14,4 +14,5 @@ export * from './result.js';
 export * from './workflow.js';
 export * from './01-door-schedule.js';
 export * from './door-projection.js';
+export * from './02-revision-comparison.js';
 export * from './registry.js';
