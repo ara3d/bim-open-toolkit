@@ -68,11 +68,13 @@ export {
   type WrittenReport,
 } from './report.js';
 
-// The page-side collector, as scripts the browser runner injects.
+// The page-side collector, as scripts the browser runner injects, and the check on what comes back.
 export {
   defaultFrameProbeOptions,
+  frameProbeResultSchema,
   frameTimeProbeScript,
   graphicsProbeScript,
+  parseFrameProbeResult,
   type FrameProbeOptions,
   type FrameProbeResult,
 } from './page-script.js';

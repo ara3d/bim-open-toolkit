@@ -9,6 +9,16 @@
 // state for the frame and the frame number; the script calls it once per frame and times that
 // call. A page that declares nothing still reports frame intervals, which is the idle cost.
 
+import {
+  array,
+  boolean,
+  integer,
+  number,
+  object,
+  parse,
+  type Infer,
+  type Result,
+} from '@bim-open-toolkit/model';
 import type { CameraPath } from './camera-path.js';
 
 // How the probe runs.
@@ -28,12 +38,21 @@ export const defaultFrameProbeOptions: FrameProbeOptions = {
   hookName: 'benchmarkFrame',
 };
 
-// What the probe returns, which is what `FrameTimeSample` holds plus what the page reported.
-export type FrameProbeResult = {
-  readonly samples: readonly { readonly frame: number; readonly cpuMs: number; readonly intervalMs: number }[];
-  // True when the page declared the hook. False means the numbers are idle frame intervals.
-  readonly drew: boolean;
-};
+// What the probe returns. It crosses from the page as JSON, so it is described as a schema and
+// checked on the way back in: a page can return anything, and a benchmark must not report numbers
+// it did not receive. `drew` is true when the page declared the hook; false means the frame times
+// are idle intervals with no drawing in them.
+export const frameProbeResultSchema = object({
+  drew: boolean(),
+  samples: array(object({ frame: integer(), cpuMs: number(), intervalMs: number() })),
+});
+
+// The result of a frame probe, as its schema accepts it.
+export type FrameProbeResult = Infer<typeof frameProbeResultSchema>;
+
+// Reads a probe result back from whatever the page returned, reporting what was wrong with it.
+export const parseFrameProbeResult = (value: unknown): Result<FrameProbeResult> =>
+  parse(frameProbeResultSchema, value);
 
 // A script that replays a camera path one view per animation frame and reports the frame times.
 // The result is a `FrameProbeResult`; evaluate it in a page and read it back as JSON.
