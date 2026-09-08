@@ -330,15 +330,6 @@
         "viewer/packages/demos/docs/CHECKPOINT-D4.md"
       ]
     },
-    "W2": {
-      "paths": [
-        "viewer/packages/workflows/src/recipe.ts",
-        "viewer/packages/workflows/test/recipe*",
-        "viewer/packages/workflows/docs/CHECKPOINT-W2.md",
-        "viewer/packages/workflows/docs/workflows.md",
-        "viewer/packages/workflows/README.md"
-      ]
-    },
     "M5": {
       "paths": [
         "viewer/packages/model/**",
@@ -356,6 +347,19 @@
     "C": {
       "paths": [
         "viewer/packages/mcp/**"
+      ]
+    },
+    "W3": {
+      "paths": [
+        "viewer/packages/workflows/src/02-revision-comparison.ts",
+        "viewer/packages/workflows/src/04-pricing-alternatives.ts",
+        "viewer/packages/workflows/src/05-delivery-timeline.ts",
+        "viewer/packages/workflows/src/09-material-carbon.ts",
+        "viewer/packages/workflows/test/02-revision-comparison.test.ts",
+        "viewer/packages/workflows/test/04-*",
+        "viewer/packages/workflows/test/05-*",
+        "viewer/packages/workflows/test/09-*",
+        "viewer/packages/workflows/docs/CHECKPOINT-W3.md"
       ]
     }
   }
