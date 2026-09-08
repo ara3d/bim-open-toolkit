@@ -31,7 +31,7 @@ Nested sub-agents spawned: 0.
 | 3a | Adopt the model's types, drop `src/shapes.ts` | verified | `a9c32ba` |
 | 3 | Building generator and schedules | verified | `de74166` |
 | 4 | Stress generator | verified | `ac28ec0` |
-| 5 | README and public surface review | verified | pending |
+| 5 | README and public surface review | verified | `b634d14` |
 
 ## Files
 
