@@ -12,6 +12,7 @@ import {
   type Matrix4,
   type Vec3,
 } from '@bim-open-toolkit/model';
+import { clamp } from './numbers.js';
 
 // Scalar product of two vectors.
 const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -22,9 +23,6 @@ const cross = (a: Vec3, b: Vec3): Vec3 => [
   a[2] * b[0] - a[0] * b[2],
   a[0] * b[1] - a[1] * b[0],
 ];
-
-// The value moved into the range. A range whose low end exceeds its high end yields the high end.
-const clamp = (value: number, low: number, high: number): number => Math.min(high, Math.max(low, value));
 
 // The axis-aligned unit vector least aligned with the direction, so a cross product with it is stable.
 const leastAlignedAxis = (v: Vec3): Vec3 => {

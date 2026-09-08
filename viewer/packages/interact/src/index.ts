@@ -23,3 +23,16 @@ export { walkPose } from './camera.js';
 export { viewMatrix } from './camera.js';
 // A camera looking straight down the up axis at a fixed heading, and the heading of such a camera.
 export { overheadPose, overheadHeading } from './camera.js';
+
+// Which of the two ways of projecting a view uses.
+export { type ProjectionKind } from './projection.js';
+// The camera-to-clip transform as a column-major matrix.
+export { projectionMatrix } from './projection.js';
+// How much of the scene a projection covers at a distance, and the distance that covers a height.
+export { frameHeightAt, distanceForHeight } from './projection.js';
+// Switch a view between perspective and orthographic while it keeps showing about the same thing.
+export { setProjectionKind, defaultFieldOfViewDegrees } from './projection.js';
+// Scale an orthographic frame within limits; perspective zooms by moving instead.
+export { zoomProjection, defaultZoomLimits, type ZoomLimits } from './projection.js';
+// Place a camera so a box fills the picture, re-cutting the depth planes around it.
+export { fitBounds, defaultFitOptions, type FitOptions } from './projection.js';
