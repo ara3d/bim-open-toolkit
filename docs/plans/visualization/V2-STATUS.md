@@ -41,7 +41,7 @@ Method: the alpha `loadBosModel` (parse, group conversion, normalized bindings; 
 | BFAST with tables | 2153, 2212, 1955, 1612, 1981 | 1981 | 51,139 |
 | BFAST geometry only | 1890, 1910, 1966, 1492, 1650 | 1890 | 25,675 |
 
-Result: 1.9× (with tables) to 2.0× (geometry only) faster end to end on the CPU. The loader session measured 3.5× on parse plus conversion alone; the difference is the alpha's normalized-binding step, which costs the same for both formats and which V2 removes. The BFAST file is 11 to 12 times larger, so over a network the gain depends on transfer; not measured. Proposed decision, awaiting the user: BFAST becomes the default prepared format for local fixtures and the fixture server in V2, BOS stays the source and interchange format, and Track F measures both again on the columnar path.
+Result: 1.9× (with tables) to 2.0× (geometry only) faster end to end on the CPU. The loader session measured 3.5× on parse plus conversion alone; the difference is the alpha's normalized-binding step, which costs the same for both formats and which V2 removes. The BFAST file is 11 to 12 times larger, so over a network the gain depends on transfer; not measured. Decision (user, 2026-09-07): BFAST is the default model format across V2; network transfer is optimized later. Track F re-measures both on the columnar path. Recorded in README.md.
 
 ### Queue
 

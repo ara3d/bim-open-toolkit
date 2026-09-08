@@ -53,3 +53,17 @@ Append a dated record with: affected original F-ID/stage and requirement; previo
 **User basis:** user request on 2026-09-07 to prepare V2 execution with the parallel-wave and platonic-coder skills and the platonic-ts toolset, aware of concurrent BFAST loader work.
 
 **Affected requirements:** none. F22, F24 and F25 remain postponed.
+
+## Decision record: 2026-09-07 — BFAST is the default model format for V2
+
+**Affected requirement:** F02 model loading (P0) and the F27 demos and fixtures; no acceptance criterion removed.
+
+**Previous decision:** BOS is the primary prepared-model format; BFAST is an added ingestion path (loader session, `viewer/packages/visualization/docs/bfast-loading.md`).
+
+**Revised decision:** BFAST is the default model format across V2: demos, fixture server, saved-scene references and the beginner path load BFAST, and BOS is loaded through conversion to BFAST. Network transfer of the larger file is a separate later optimization.
+
+**Reason and evidence:** supervisor measurement in [V2-STATUS.md](V2-STATUS.md): end-to-end CPU load of Snowdon through the alpha path is 1.9 to 2.0 times faster with BFAST (median 1981 ms with tables, 1890 ms geometry only, versus 3797 ms for BOS, five alternating fresh processes each); parse plus conversion alone is 3.5 times faster and V2 removes the shared per-instance binding step that dilutes it. The file is 11 to 12 times larger; transfer was not measured.
+
+**User basis:** user instruction 2026-09-07: "Switch to BFAST for now across the board. We will tackle network latency later by optimizing it."
+
+**Affected contracts and checks:** V2-PLAN.md `formats` package row and Track F deliverables; Track F must re-measure BFAST versus BOS on the columnar path and record transfer size. The alpha package is unchanged by this decision.

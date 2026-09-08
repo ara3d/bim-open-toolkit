@@ -31,7 +31,7 @@ All packages live under `viewer/packages/` and publish as `@bim-open-toolkit/<na
 |---|---|---|
 | `model` | Pure data contracts and operations: identity, coordinates, object sets, style rules and precedence, edit layers and history, view state, document slices and versioning, schema combinators, `Result` and `Diagnostic`, facts vocabulary (observation, coverage, evidence, missing reason), columnar `Table`, mesh data POD, command, event and feature contracts. | nothing |
 | `synthetic` | Seeded generators for buildings, networks, schedules, revisions, facts with gaps, stress scenes and mesh primitives. | `model` |
-| `formats` | BOS, GLB, GLTF, OBJ, STL adapters producing one normalized `LoadedModel` with a columnar representation table; resource resolver; format diagnostics. | `model`, `@ara3d/viewer-loaders` |
+| `formats` | BFAST (default prepared format), BOS, GLB, GLTF, OBJ, STL adapters producing one normalized `LoadedModel` with a columnar representation table; resource resolver; format diagnostics. | `model`, `@ara3d/viewer-loaders` |
 | `render` | Instance table bound to viewer-core groups, representation registry and replacement, picking, clipping, environment, overlay primitives, capture, frame timing. | `model`, `@ara3d/viewer-core`, three |
 | `interact` | Camera state math, orbit, first-person, overhead, configurable bindings, touch, interruptible camera animation. | `model`, `@ara3d/viewer-controls` |
 | `features` | One `Feature` module per capability, each owning its commands, state slice, schema and optional render hook. | `model`, `render`, `interact` |
@@ -127,7 +127,7 @@ Every brief includes: F-ID and stage, acceptance cases from the brief, contract 
 At the 2026-09-07 pre-flight review three other interactive sessions were active in this checkout. One is adding prepared BFAST model loading: commit `851a91e` landed during the review and `viewer/packages/loaders` still held uncommitted files (`bfast-writer.ts`, `bim-data.ts`, `bos-to-bfast.ts`, `scripts/`) plus an edit to `viewer/packages/visualization/src/loading.ts`. Rules that follow:
 
 - `viewer/packages/{core,controls,loaders,visualization}/**` are read-only for every V2 track and for the supervisor until the wave 4 cutover. V2 packages consume `@ara3d/viewer-core`, `@ara3d/viewer-controls` and `@ara3d/viewer-loaders` through their published exports at a commit recorded in `V2-STATUS.md`. Track F re-verifies against the loaders package at its HEAD before each checkpoint and reports any export change as a finding.
-- The BFAST `RenderModel` in the loaders package (typed-array mesh slices and 64-byte instance records, all views on the file) is the closest existing input to the V2 `RepresentationTable`. Track F builds the BOS and BFAST adapter on it, not on the alpha `InstanceBinding` objects.
+- BFAST is the default model format across V2 (user decision 2026-09-07, after the measurement in `V2-STATUS.md`): demos, the fixture server, saved-scene references and the beginner path load BFAST; BOS is loaded by converting to BFAST first. Network transfer of the larger file is a later optimization, not a reason to hold the default. The BFAST `RenderModel` in the loaders package (typed-array mesh slices and 64-byte instance records, all views on the file) is the closest existing input to the V2 `RepresentationTable`; Track F builds on it, not on the alpha `InstanceBinding` objects.
 - The supervisor edits `viewer/package.json` and the lockfile only to add V2 workspaces and their dev dependencies. Before every such edit run `git status --porcelain`; if another session has changed either file, re-run `npm install` and re-verify before committing.
 - Every commit is staged by explicit pathspec. Any modified or untracked file outside the active wave's fences is another session's work: leave it alone, never stage it, and note it in the checkpoint.
 - `npm test` at the workspace root includes the alpha packages, whose inputs can change under other sessions. V2 gates run per V2 package; combined runs record alpha results as informational until wave 4.
@@ -165,7 +165,7 @@ Ready when revision M1 is acknowledged.
 
 | Track | Writes only | Delivers | Sonnet sub-tasks |
 |---|---|---|---|
-| F (Opus) | `viewer/packages/formats/**` | Five format adapters producing `LoadedModel` with columnar representations, resolver, negative fixtures | Port alpha loader tests; fixture files |
+| F (Opus) | `viewer/packages/formats/**` | Six format adapters producing `LoadedModel` with columnar representations, BFAST first and default (decision 2026-09-07), BOS through conversion to BFAST, resolver, negative fixtures; BFAST versus BOS re-measured on the columnar path | Port alpha loader tests; fixture files |
 | R (Opus) | `viewer/packages/render/**` | Instance table, bulk column updates, representation registry, picking, clipping, environment, overlay primitives with click actions, capture, frame timing | Port alpha render tests |
 | I (Opus) | `viewer/packages/interact/**` | Camera math, orbit, first-person, overhead, bindings, touch, interruptible animation | Port controls tests |
 | S2 (Opus) | `viewer/packages/synthetic/**` | Remaining generators: services, revisions, schedule, quantities, costs, carbon, assets, clearances, city, field | Fixture JSON snapshots and expected-result tables |
