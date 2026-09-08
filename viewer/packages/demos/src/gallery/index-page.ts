@@ -61,6 +61,13 @@ const section = (chapter: DemoChapter, title: string, demos: readonly Demo[]): H
   return made;
 };
 
+// How many questions the gallery answers, in words, because a heading counting itself in digits
+// reads like a status line.
+const countWord = (count: number): string => {
+  const words = ['No questions', 'One question', 'Two questions', 'Three questions', 'Four questions', 'Five questions', 'Six questions', 'Seven questions', 'Eight questions', 'Nine questions', 'Ten questions'];
+  return words[count] ?? `${String(count)} questions`;
+};
+
 // Draws the index into the shell. Returns nothing to dispose: it is only elements.
 export const renderIndexPage = (shell: Shell, demos: readonly Demo[], duplicates: readonly string[]): void => {
   shell.reset();
@@ -76,13 +83,17 @@ export const renderIndexPage = (shell: Shell, demos: readonly Demo[], duplicates
       el('p', 'gallery-note', `Two demos claim the same id: ${duplicates.join(', ')}. Rename one of them.`),
     );
 
+  // The count is read off what was discovered rather than written down: a gallery that says
+  // twenty-one and lists five is worse than one that says five.
   body.append(
-    el('h1', 'index-title', 'Twenty-one questions, answered on a model'),
+    el('h1', 'index-title', `${countWord(demos.length)} answered on a real building`),
     el(
       'p',
       'index-lead',
-      'Every demo opens a generated model, shows one thing the toolkit can do with it, and says ' +
-        'what it does not know. Gaps, conflicts and unverified connections are shown as such.',
+      'Every demo opens Snowdon Towers - a real model, read from its file - shows one thing the ' +
+        'toolkit can do with it, and says what it does not know. Gaps, conflicts and unverified ' +
+        'connections are shown as such. Each demo also offers a generated building, whose gaps are ' +
+        'deliberate.',
     ),
   );
 
