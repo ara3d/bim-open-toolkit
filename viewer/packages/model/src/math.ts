@@ -90,6 +90,17 @@ export const subVec3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[
 // A vector scaled by a factor.
 export const scaleVec3 = (v: Vec3, factor: number): Vec3 => [v[0] * factor, v[1] * factor, v[2] * factor];
 
+// The scalar product of two vectors: zero when they are at right angles, negative when they oppose.
+export const dotVec3 = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+// The vector product, right-handed: `crossVec3([1, 0, 0], [0, 1, 0])` is the z axis. Its length is
+// zero when the two are parallel, which is why a basis built from it needs a direction to avoid.
+export const crossVec3 = (a: Vec3, b: Vec3): Vec3 => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+
 // The cross product of two plane vectors: positive when b turns counter-clockwise from a, zero when
 // they are parallel, and twice the signed area of the triangle they span.
 export const crossVec2 = (a: Vec2, b: Vec2): number => a[0] * b[1] - a[1] * b[0];
@@ -189,4 +200,40 @@ export const vec3Length = (v: Vec3): number => Math.sqrt(v[0] * v[0] + v[1] * v[
 export const normalizeVec3 = (v: Vec3): Vec3 | undefined => {
   const size = vec3Length(v);
   return size === 0 ? undefined : scaleVec3(v, 1 / size);
+};
+
+// The axis-aligned unit vector least aligned with the direction, so a cross product with it is stable.
+const leastAlignedAxis = (v: Vec3): Vec3 => {
+  const [x, y, z] = [Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2])];
+  return x <= y && x <= z ? [1, 0, 0] : y <= z ? [0, 1, 0] : [0, 0, 1];
+};
+
+// A unit vector at right angles to the direction, chosen the same way every time for a given input.
+// A direction with no length yields the x axis rather than nothing, so a basis always exists.
+export const perpendicularTo = (direction: Vec3): Vec3 => {
+  const unit = normalizeVec3(direction);
+  return unit === undefined ? [1, 0, 0] : (normalizeVec3(crossVec3(unit, leastAlignedAxis(unit))) ?? [1, 0, 0]);
+};
+
+// A unit vector turned a fraction of the way toward another along the shorter arc, staying unit
+// length throughout. Directly opposite vectors have no shorter arc, so the turn goes through a fixed
+// perpendicular: the path is arbitrary but smooth and the same every time. Inputs that are not unit
+// length are normalised first; a vector with no length is ignored rather than guessed at.
+export const unitSlerp = (a: Vec3, b: Vec3, t: number): Vec3 => {
+  const from = normalizeVec3(a);
+  const to = normalizeVec3(b);
+  if (from === undefined) return to ?? [0, 0, 1];
+  if (to === undefined) return from;
+  const angle = Math.acos(Math.min(1, Math.max(-1, dotVec3(from, to))));
+  if (angle < 1.0e-6) return to;
+  if (Math.PI - angle < 1.0e-6) {
+    const axis = perpendicularTo(from);
+    const turn = Math.PI * t;
+    return addVec3(scaleVec3(from, Math.cos(turn)), scaleVec3(crossVec3(axis, from), Math.sin(turn)));
+  }
+  const sine = Math.sin(angle);
+  return addVec3(
+    scaleVec3(from, Math.sin((1 - t) * angle) / sine),
+    scaleVec3(to, Math.sin(t * angle) / sine),
+  );
 };

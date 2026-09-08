@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addVec3, boundsCenter, boundsContain, boundsOf, boundsSize, crossVec2, emptyBounds, expandBounds,
-  identityMatrix, isEmptyBounds, multiplyMatrix, polygonArea, scaleVec3, scaling, subVec3, transformBounds,
-  transformDirection, normalizeVec3, transformPoint, translation, turnVec2, unionBounds, vec3Length,
+  addVec3, boundsCenter, boundsContain, boundsOf, boundsSize, crossVec2, crossVec3, dotVec3, emptyBounds,
+  expandBounds, identityMatrix, isEmptyBounds, multiplyMatrix, perpendicularTo, polygonArea, scaleVec3,
+  scaling, subVec3, transformBounds, transformDirection, normalizeVec3, transformPoint, translation,
+  turnVec2, unionBounds, unitSlerp, vec3Length,
   type Vec2, type Vec3,
 } from '../src/math.js';
 
@@ -93,5 +94,54 @@ describe('plane vectors', () => {
     expect(polygonArea([[0, 0], [1, 0], [0, 1]])).toBe(0.5);
     expect(polygonArea([[0, 0], [1, 1]])).toBe(0);
     expect(polygonArea([])).toBe(0);
+  });
+});
+
+describe('space vectors', () => {
+  const x: Vec3 = [1, 0, 0];
+  const y: Vec3 = [0, 1, 0];
+  const z: Vec3 = [0, 0, 1];
+
+  it('dots two vectors, reporting zero at right angles and negative when they oppose', () => {
+    expect(dotVec3([1, 2, 3], [4, 5, 6])).toBe(32);
+    expect(dotVec3(x, y)).toBe(0);
+    expect(dotVec3(x, [-1, 0, 0])).toBe(-1);
+  });
+
+  it('crosses two vectors right-handed, giving no length for parallel ones', () => {
+    expect(crossVec3(x, y)).toEqual(z);
+    expect(crossVec3(y, x)).toEqual([0, 0, -1]);
+    expect(crossVec3(x, [2, 0, 0])).toEqual([0, 0, 0]);
+    expect(dotVec3(crossVec3([1, 2, 3], [4, 5, 6]), [1, 2, 3])).toBe(0);
+  });
+
+  it('finds a unit perpendicular for any direction, including one with no length', () => {
+    const directions: readonly Vec3[] = [x, y, z, [1, 1, 1], [0, 0, -4]];
+    for (const direction of directions) {
+      const side = perpendicularTo(direction);
+      expect(vec3Length(side)).toBeCloseTo(1);
+      expect(dotVec3(side, normalizeVec3(direction) ?? side)).toBeCloseTo(0);
+    }
+    expect(perpendicularTo([0, 0, 0])).toEqual([1, 0, 0]);
+  });
+
+  it('turns one direction toward another along the shorter arc, staying unit length', () => {
+    expect(unitSlerp(x, y, 0)[0]).toBeCloseTo(1);
+    expect(unitSlerp(x, y, 1)[1]).toBeCloseTo(1);
+    const half = unitSlerp(x, y, 0.5);
+    expect(vec3Length(half)).toBeCloseTo(1);
+    expect(half[0]).toBeCloseTo(Math.SQRT1_2);
+    expect(half[1]).toBeCloseTo(Math.SQRT1_2);
+    expect(vec3Length(unitSlerp([3, 0, 0], [0, 0, 5], 0.25))).toBeCloseTo(1);
+  });
+
+  it('turns through a fixed perpendicular for opposite directions and ignores a zero vector', () => {
+    const opposed = unitSlerp(x, [-1, 0, 0], 0.5);
+    expect(vec3Length(opposed)).toBeCloseTo(1);
+    expect(dotVec3(opposed, x)).toBeCloseTo(0);
+    expect(unitSlerp(x, [-1, 0, 0], 1)[0]).toBeCloseTo(-1);
+    expect(unitSlerp([0, 0, 0], y, 0.5)).toEqual(y);
+    expect(unitSlerp(x, [0, 0, 0], 0.5)).toEqual(x);
+    expect(unitSlerp([0, 0, 0], [0, 0, 0], 0.5)).toEqual([0, 0, 1]);
   });
 });
