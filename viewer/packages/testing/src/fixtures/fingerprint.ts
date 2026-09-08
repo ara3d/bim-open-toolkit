@@ -28,7 +28,7 @@ export const hashInt = (digest: Digest, value: number): Digest => {
   return result;
 };
 
-// The bytes of any typed array or data view, and its length in elements.
+// The bytes of any typed array or data view, and how many bytes there were.
 export const hashBytes = (digest: Digest, view: ArrayBufferView): Digest => {
   const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
   let result = hashInt(digest, bytes.length);
