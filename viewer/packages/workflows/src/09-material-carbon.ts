@@ -81,13 +81,25 @@ const contributionOf = (
   if (observed.kind !== 'known')
     return { kind: 'unresolved', field: 'quantity', observation: observed, detail: '' };
   const value = observed.value;
-  const factor = input.factors.find((entry) => entry.materialId === item.materialId && entry.scenario === scenario);
+  const matching = input.factors.filter(
+    (entry) => entry.materialId === item.materialId && entry.scenario === scenario,
+  );
+  const factor = matching[0];
   if (factor === undefined)
     return {
       kind: 'unresolved',
       field: 'factor',
       observation: missing('not-provided'),
       detail: `no factor for material '${item.materialId}' in scenario '${scenario}'`,
+    };
+  // More than one factor for the same material and scenario is a decision this workflow does not
+  // get to make, so it stays unresolved rather than being settled by the order of the input.
+  if (matching.length > 1)
+    return {
+      kind: 'unresolved',
+      field: 'factor',
+      observation: missing('unresolved-source'),
+      detail: `${matching.length} factors match material '${item.materialId}' in scenario '${scenario}'`,
     };
   if (factor.lifecycleScope !== input.requestedLifecycleScope)
     return {

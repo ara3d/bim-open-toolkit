@@ -30,6 +30,26 @@ describe('material carbon', () => {
     expect(result.sets.find((set) => set.id === 'material-carbon/unresolved')?.members.size).toBe(2);
   });
 
+  it('leaves a material with two matching factors unresolved rather than taking the first', () => {
+    const ambiguous = {
+      ...input,
+      factors: [
+        ...input.factors,
+        { id: 'f5', materialId: 'concrete', scenario: 'asDesigned', unit: 'm3', lifecycleScope: 'A1-A3', factorValue: 250 },
+      ],
+    };
+    const result2 = valueOfResult('material carbon', runMaterialCarbon(ambiguous));
+    expect(exceptionRows(result2)[0]).toEqual({
+      subjects: ['OBJ-1'],
+      field: 'factor',
+      scope: 'asDesigned',
+      detail: "2 factors match material 'concrete' in scenario 'asDesigned'",
+      kind: 'missing',
+      reason: 'unresolved-source',
+    });
+    expect(result2.summary['totalKnownKgCO2e']).toEqual({ lowCarbonAlt: 1800 });
+  });
+
   it('reports a material with no factor at all as unresolved rather than as zero', () => {
     const withoutFactors = { ...input, factors: input.factors.filter((factor) => factor.materialId !== 'concrete') };
     const missing = valueOfResult('material carbon', runMaterialCarbon(withoutFactors));
