@@ -1,6 +1,6 @@
 # V2 gallery and demo plan
 
-Date: 2026-09-08. Status: planned, tracks not launched. Part of [V2-PLAN.md](V2-PLAN.md); it replaces that plan's Track D (port the 23 alpha demos) and regroups the wave 2 feature tracks and wave 3 workflow-demo tracks around a new gallery. Rolling status goes to [V2-STATUS.md](V2-STATUS.md). Requirements stay in [PRODUCT-BRIEF.md](PRODUCT-BRIEF.md) (F09 shell, F27 demos, section 6 workflows, section 9 demonstrations).
+Date: 2026-09-08. Status: chunk 0 landed; UG, GAL, D1, D2, D3 launched; D4 queued. Part of [V2-PLAN.md](V2-PLAN.md); it replaces that plan's Track D (port the 23 alpha demos) and regroups the wave 2 feature tracks and wave 3 workflow-demo tracks around a new gallery. Rolling status goes to [V2-STATUS.md](V2-STATUS.md). Requirements stay in [PRODUCT-BRIEF.md](PRODUCT-BRIEF.md) (F09 shell, F27 demos, section 6 workflows, section 9 demonstrations).
 
 User basis (2026-09-08): plan a brand-new set of demos and a new gallery from scratch; useful and interesting; leverage Gratify for in-canvas widgets or a sidebar property inspector; a brand-new look and feel, the current gallery stays and is not deleted; move quickly and do not let gates slow the work; improve code that is touched so it is more future-proof.
 
@@ -28,8 +28,8 @@ What Gratify is: a Canvas2D model-view-update framework. One immutable document,
 1. **Gratify draws every widget the demos add; the gallery chrome is DOM.** In-canvas widgets are Gratify panels, each on its own transparent canvas sized to its content and positioned by the host (corner, edge, or a world point projected each frame). The sidebar property inspector is one Gratify runtime on the sidebar canvas. The DOM shell owns what a canvas cannot do well: page navigation, fixture picker, theme and text size, source and verification links, and a visually hidden mirror of every canvas control for keyboards and screen readers, generated once from Gratify's `SemanticsNode` tree rather than hand-written per demo as the alpha did.
 2. **Pattern for hosting a Gratify runtime:** the alpha's headless-runtime-plus-owned-listeners pattern, re-implemented in `ui-gratify` with idempotent disposal. No upstream Gratify change is required for this wave. Upstream requests (public hit test on the runtime, listener teardown in `stop()`, the extensionless `dist/core` import) are recorded as findings for a later submodule bump, not blockers.
 3. **Inspector scrolling by virtualization, not clipping.** Rows have fixed height; `view(doc)` emits only the rows in the visible range, and the header is painted last with an opaque fill. This needs no clip primitive and scales to Snowdon's property counts. Editing a value uses a DOM island input. If the inspector part is not usable after Track UG's second chunk, the fallback is a DOM inspector with the same `PropertySheet` contract; the decision is recorded in UG's checkpoint.
-4. **Composition comes from the `viewer` package, not from the demos.** Track V delivers `createViewer` now (pulled forward from wave 2) so no demo hand-wires render, interact and formats. Until V's first chunk lands, GAL and the demo tracks build against the contract in section 4 with a fake session.
-5. **Feature modules are owned by the demo track that demonstrates them.** A feature and its demo have one owner (brief section 10, task packet). Cross-track feature use is through the package import once the owning chunk is committed; each brief lists what it waits on.
+4. **Composition comes from the `viewer` package, not from the demos.** Wave 2's Track V (another session) delivers `createViewer`. The demos drive the gallery's own `GalleryViewer` interface (section 4.3), which GAL implements over render, interact and formats first and over `createViewer` when it lands, so no demo hand-wires a renderer and no demo waits for V.
+5. **Feature modules are owned by wave 2's FA, FB and FC; the demo tracks own demos only.** Reconciled at chunk 0 (the plan first gave each demo track its features; those fences were already taken). A demo needing something a feature lacks requests it through its checkpoint and a session message and shims locally until it lands.
 6. **Look and feel is new and deliberately the inverse of the alpha.** Light chrome, dark viewport (the alpha is dark chrome, light viewport); serif display type and a real type scale (the alpha is Inter with uppercase eyebrows); one warm accent (the alpha is mint); readable multi-file CSS with custom properties (the alpha is one minified line); horizontal and in-canvas control surfaces (the alpha is a 300 px rail of left-aligned buttons). Details in section 3. The alpha gallery on port 5173 is untouched.
 7. **Analytical colours are never theme tokens.** Coverage states, change types, timeline states and the workflow heat maps use fixed palettes from `workflows` and `features`; switching theme or text size changes chrome only (F09 acceptance).
 8. **Gates are fast.** Per chunk: `tsc --noEmit -p packages/<name>/tsconfig.json` and `npm test -w @bim-open-toolkit/<name>`. Lint and the type-aware set only at integration by the supervisor. No performance assertions in this wave; timings are measured and reported, never gated. Browser smoke is one software-WebGL run per demo that captures the demo's thumbnail; it runs when the demo is implemented, not on every chunk.
@@ -118,24 +118,9 @@ applyGalleryTheme(name: 'light' | 'dark', textScale: number): void
 
 UG also exports the widget kit the panels are built from: `Button`, `Toggle`, `Segmented`, `Slider`, `NumberScrub`, `Card`, `Labeled`, `Legend`, `Sparkline`, `Timeline`, `Chip`, `Tag` (a world-anchored label with a leader line) and `List` (virtualized rows). These are new parts written in `ui-gratify`, informed by the Gratify examples, not copied from them.
 
-### 4.3 Viewer composition (`viewer/src/contracts.ts`, owned by V after chunk 0)
+### 4.3 The viewer a demo drives (`demos/src/gallery/contracts.ts`, `GalleryViewer`)
 
-```ts
-type ViewerOptions = { readonly canvas: HTMLCanvasElement; readonly features: readonly AnyFeature[];
-  readonly document?: SceneDocument; readonly frames?: FrameScheduler; readonly views?: 1 | 2 | 4 };
-type ModelSource = { readonly kind: 'geometry'; readonly id: string; readonly geometry: Geometry; readonly keys: ObjectKeys }
-  | { readonly kind: 'url'; readonly url: string } | { readonly kind: 'file'; readonly file: Blob; readonly name: string };
-type Viewer = Session & Disposable & {
-  readonly openModel: (source: ModelSource) => Promise<Result<ModelRef>>;
-  readonly binding: SceneBinding; readonly navigation: NavController;
-  readonly document: () => SceneDocument; readonly restore: (document: SceneDocument) => Result<void>;
-  readonly capture: (options?: CaptureOptions) => Promise<Result<Uint8Array>>;
-  readonly project: (point: Vec3, view?: number) => Vec2 | undefined;   // world to canvas pixels
-};
-createViewer(options: ViewerOptions): Result<Viewer>
-```
-
-Built-in slices in V: `models`, `views` (one `ViewState` per view, linked flag), and the command bus. Commands: `viewer/open`, `viewer/fit`, `viewer/fly-to`, `viewer/set-projection`, `viewer/link-views`, `viewer/save`, `viewer/restore`, `viewer/capture`. Every other capability is a feature from `features`. A `fakeSession(features)` test helper lives in `viewer/src/testing.ts` so GAL and the demo tracks test commands without a canvas.
+Reconciled 2026-09-08 at chunk 0: the wave 2 supervisor's Track V already owns `createViewer` (its session, command bus and feature host landed as `bbc9dfc`; adapters, view and `createViewer` are its chunk 3). This plan therefore defines no viewer contract. The gallery owns a small interface, `GalleryViewer`: a model `Session` plus `open(ModelSource)`, `models`, `bounds`, `fit`, `flyTo`, `project`, `pick`, `capture`, `onFrame`, `viewport`, `canvas` and disposal. Track GAL implements it first over render, interact and formats the way the E2E slice's `mount.ts` does, then over `createViewer` when V publishes it, and no demo changes. What V does not provide (a world-to-canvas projection, `pick(clientX, clientY)`, an after-frame hook) is already recorded by the wave 2 supervisor as V2 follow-ups; GAL keeps its own until then.
 
 ## 5. The demos
 
@@ -171,26 +156,27 @@ Each demo directory holds `index.ts` (the `Demo`), `panels.ts`, `inspector.ts`, 
 
 ## 6. Tracks and fences
 
-Wave name `gallery`. Seven tracks; all Opus leads; Sonnet sub-agents inside a lead's fence for mechanical work (thumbnails, README tables, widget variants). Every brief carries the parallel-wave and platonic-coder skill paths, this plan, revision G1, and the fast-gate rule. Paths not listed stay supervisor-owned as in `.claude/wave.json` (manifests, lockfile, tsconfigs, `features/src/index.ts`, `testing/src/index.ts`, plan documents).
+Reconciled 2026-09-08 at chunk 0 with the two other sessions in this checkout (wave 2: V, FA, FB, FC; feature demos: S3, FD1 to FD3, FD-shared; plus an ambient-occlusion track). Feature modules are owned by FA, FB and FC, so the demo tracks own demos only and consume features through `@bim-open-toolkit/features` as the wave 2 supervisor exports them. Wave name `gallery`. Six tracks; all Opus leads; Sonnet sub-agents inside a lead's fence for mechanical work. Every brief carries the parallel-wave and platonic-coder skill paths, this plan, revision G1, and the fast-gate rule. Paths not listed stay supervisor-owned as in `.claude/wave.json`.
 
 | Track | Fence | Delivers | Ready when |
 |---|---|---|---|
-| **V** viewer | `viewer/packages/viewer/**` including `src/index.ts` | `createViewer` per 4.3, command bus, feature host, slices, multi-view, `fakeSession`, disposal; render binding via `SceneBinding`, navigation via `attachNavigation`, loading via `loadModel` | chunk 0 |
 | **UG** gratify layer | `viewer/packages/ui-gratify/**` including `src/index.ts` | 4.2: `hostPanel`, `hostInspector`, the widget kit, theme bridge, semantics mirror; tests through the headless runtime | chunk 0 |
-| **GAL** gallery host | `viewer/packages/demos/src/gallery/**`, `demos/src/demos/_shared/**`, `demos/src/index.ts`, `demos/gallery.html`, `demos/vite.gallery.config.mjs`, `demos/thumbnails/README.md`, `demos/test/gallery/**`, `demos/docs/gallery.md`, `demos/docs/CHECKPOINT-GAL.md` | shell, index, routes, fixture picker, theme and text size, DOM mirror wiring, `gallery`, `gallery:check` and `gallery:smoke` scripts (scripts themselves are a supervisor edit to `viewer/package.json`), the smoke runner that captures thumbnails | chunk 0 |
-| **D1** inspect | `features/src/{selection,appearance,sets}*`, `features/test/{selection,appearance,sets}*`, `demos/src/demos/{point-and-read,colour-by,ghost-and-isolate,storey-navigator}/**`, `demos/thumbnails/{those ids}.png`, `demos/docs/CHECKPOINT-D1.md` | features selection, appearance with legend, sets; demos 1 to 4 | chunk 0; demos run in the browser once V and UG chunk 1 land |
-| **D2** cut, arrange, scale | `features/src/{clipping,layouts,environment,storage,capture,hud}*`, matching tests, `demos/src/demos/{section-studio,explode-and-grid,environment,saved-views,capture,load-a-file,ten-thousand}/**`, thumbnails, `CHECKPOINT-D2.md` | those six features; demos 5 to 11 | chunk 0; same browser condition |
-| **D3** workflows A | `features/src/{overlays,comparison,timeline,workflow-result}*`, tests, `demos/src/demos/{door-schedule,revision-comparison,takeoff,pricing-alternatives,delivery-timeline}/**`, thumbnails, `CHECKPOINT-D3.md` | overlays feature with click actions, two linked views, timeline, and `applyWorkflowResult` (rules, sets, overlays, views from a `WorkflowResult`); demos 12 to 16 | chunk 0; door-schedule and takeoff colouring wait on D1's appearance chunk |
-| **D4** workflows B | `features/src/annotations*`, tests, `demos/src/demos/{valve-isolation,access-coordination,asset-handover,material-carbon,portfolio}/**`, thumbnails, `CHECKPOINT-D4.md` | annotations with island text input; demos 17 to 21 | D1 appearance and sets, D3 overlays and `applyWorkflowResult` committed; starts last from the ready queue |
+| **GAL** gallery host | `viewer/packages/demos/src/gallery/**`, `demos/src/demos/_shared/**`, `demos/src/index.ts`, `demos/gallery.html`, `demos/vite.gallery.config.mjs`, `demos/thumbnails/README.md`, `demos/test/gallery/**`, `demos/docs/gallery.md`, `demos/docs/CHECKPOINT-GAL.md` | `GalleryViewer` over render, interact and formats, then over `createViewer`; shell, index, routes, fixture picker, theme and text size, DOM mirror wiring, the smoke runner that captures thumbnails; scripts in `viewer/package.json` are requested from the supervisor | chunk 0 |
+| **D1** inspect | `demos/{src,test}/demos/{point-and-read,colour-by,ghost-and-isolate,storey-navigator}/**`, their thumbnails, `CHECKPOINT-D1.md` | demos 1 to 4 on FA's selection, appearance and sets | chunk 0; browser once GAL chunk 1 and UG chunk 1 land; FA exports for the command wiring |
+| **D2** cut, arrange, scale | `demos/{src,test}/demos/{section-studio,explode-and-grid,environment,saved-views,capture,load-a-file,ten-thousand}/**`, thumbnails, `CHECKPOINT-D2.md` | demos 5 to 11 on FB's clipping, layouts, environment, hud and FC's storage and capture | chunk 0; same browser condition; FB and FC exports |
+| **D3** workflows A | `demos/{src,test}/demos/{_workflows,door-schedule,revision-comparison,takeoff,pricing-alternatives,delivery-timeline}/**`, thumbnails, `CHECKPOINT-D3.md` | `_workflows/apply-result.ts` (rules, sets, overlays and views from a `WorkflowResult` as commands), demos 12 to 16 on FA appearance, FC overlays and comparison | chunk 0; FA and FC exports |
+| **D4** workflows B | `demos/{src,test}/demos/{valve-isolation,access-coordination,asset-handover,material-carbon,portfolio}/**`, thumbnails, `CHECKPOINT-D4.md` | demos 17 to 21 on FC annotations and overlays, FB clipping | D3's `_workflows` helper committed; FA and FC exports; starts last |
 
-Chunk 0 (supervisor, one commit): the three contract files with their tests, `features/src/index.ts` exporting the planned modules as they land (a re-export per track, added by the supervisor when a track's first chunk commits), `testing/src/index.ts` re-exporting headless, browser, bench and fixtures (Track T's open request; T is another session's track, so this is done only if T's checkpoint still lists it), `gallery*` scripts in `viewer/package.json`, `demos/package.json` dependency on `gratify`, the wave entries in `.claude/wave.json`, and the status section in V2-STATUS.md.
+Until a feature is exported from `@bim-open-toolkit/features`, a demo track writes its panels, inspector sheets, README and fake-session tests against the feature's command names as they stand in the feature source, records the dependency in its checkpoint, and wires the install list when the export lands. No demo track writes a feature module.
 
-Suggested first chunks, so the browser path exists early: V chunk 1 is `createViewer` with `openModel({kind:'geometry'})`, fit and one view; UG chunk 1 is `hostPanel` with `Button` and `Tag`; GAL chunk 1 is the shell with one placeholder demo that draws the synthetic building through V and pins a `Tag`; that placeholder is the E2E slice the review asked for, and D1 replaces it with `point-and-read`.
+Chunk 0 (supervisor, one commit): the two contract files with their tests, `ui-gratify` depending on `model` and `render`, the wave entries in `.claude/wave.json`, and the status section in V2-STATUS.md. Scripts in `viewer/package.json` and `gratify` in `demos/package.json` follow when GAL's Vite config exists.
+
+Suggested first chunks: UG chunk 1 is `hostPanel` with `Button` and `Tag`; GAL chunk 1 is `GalleryViewer` over the slice pattern plus the shell with one placeholder demo that draws the synthetic building and pins a `Tag`; D1 replaces the placeholder with `point-and-read`.
 
 ## 7. Gates, resources and rules
 
 - Per chunk: `npx tsc --noEmit -p packages/<name>/tsconfig.json` and `npm test -w @bim-open-toolkit/<name>` from `viewer/`. Nothing else. Lint, the type-aware set and the combined `tools/platonic-check.mts` run once at integration by the supervisor.
-- Browser: `npm run gallery:smoke -- --demo <id> --port <n>` starts a Vite dev server on the track's port, runs the demo in software WebGL through `testing`'s runner, waits for `ready`, captures the thumbnail and reports the renderer string. Ports: GAL 5176, D1 5181, D2 5182, D3 5183, D4 5184; fixture server 5175 shared and read-only, started by the supervisor; alpha 5173 and MCP 5174 untouched. One browser process per track.
+- Browser: `npm run gallery:smoke -- --demo <id> --port <n>` starts a Vite dev server on the track's port, runs the demo in software WebGL through `testing`'s runner, waits for `ready`, captures the thumbnail and reports the renderer string. Ports: GAL 5190, D1 5191, D2 5192, D3 5193, D4 5194; fixture server 5175 shared and read-only, started by the supervisor; 5173, 5174, 5176, 5177 and 5181 to 5183 belong to the other sessions. One browser process per track.
 - Zero escape hatches in V2 code. `document.getElementById(...) as HTMLCanvasElement` is not allowed; narrow with `instanceof HTMLCanvasElement` and return a `Result`.
 - Improve what you touch (user instruction 2026-09-08): if a package you depend on needs a small addition to avoid a workaround, add it in your checkpoint's requests the same hour and use a local shim until it lands; do not build around it silently.
 - Commit by pathspec only, message from a file, never amend, never push (supervisor pushes). On `index.lock`, retry.
@@ -231,53 +217,7 @@ The wave is done when:
 
 ## 11. Manifest additions
 
-Added to `.claude/wave.json` at chunk 0 under the same schema.
-
-```json
-"V":   { "paths": ["viewer/packages/viewer/**"] },
-"UG":  { "paths": ["viewer/packages/ui-gratify/**"] },
-"GAL": { "paths": ["viewer/packages/demos/src/gallery/**", "viewer/packages/demos/src/demos/_shared/**",
-                   "viewer/packages/demos/src/index.ts", "viewer/packages/demos/gallery.html",
-                   "viewer/packages/demos/vite.gallery.config.mjs", "viewer/packages/demos/thumbnails/README.md",
-                   "viewer/packages/demos/test/gallery/**", "viewer/packages/demos/docs/gallery.md",
-                   "viewer/packages/demos/docs/CHECKPOINT-GAL.md"] },
-"D1":  { "paths": ["viewer/packages/features/src/selection*", "viewer/packages/features/src/appearance*", "viewer/packages/features/src/sets*",
-                   "viewer/packages/features/test/selection*", "viewer/packages/features/test/appearance*", "viewer/packages/features/test/sets*",
-                   "viewer/packages/demos/src/demos/point-and-read/**", "viewer/packages/demos/src/demos/colour-by/**",
-                   "viewer/packages/demos/src/demos/ghost-and-isolate/**", "viewer/packages/demos/src/demos/storey-navigator/**",
-                   "viewer/packages/demos/thumbnails/point-and-read.png", "viewer/packages/demos/thumbnails/colour-by.png",
-                   "viewer/packages/demos/thumbnails/ghost-and-isolate.png", "viewer/packages/demos/thumbnails/storey-navigator.png",
-                   "viewer/packages/demos/docs/CHECKPOINT-D1.md"] },
-"D2":  { "paths": ["viewer/packages/features/src/clipping*", "viewer/packages/features/src/layouts*", "viewer/packages/features/src/environment*",
-                   "viewer/packages/features/src/storage*", "viewer/packages/features/src/capture*", "viewer/packages/features/src/hud*",
-                   "viewer/packages/features/test/clipping*", "viewer/packages/features/test/layouts*", "viewer/packages/features/test/environment*",
-                   "viewer/packages/features/test/storage*", "viewer/packages/features/test/capture*", "viewer/packages/features/test/hud*",
-                   "viewer/packages/demos/src/demos/section-studio/**", "viewer/packages/demos/src/demos/explode-and-grid/**",
-                   "viewer/packages/demos/src/demos/environment/**", "viewer/packages/demos/src/demos/saved-views/**",
-                   "viewer/packages/demos/src/demos/capture/**", "viewer/packages/demos/src/demos/load-a-file/**",
-                   "viewer/packages/demos/src/demos/ten-thousand/**",
-                   "viewer/packages/demos/thumbnails/section-studio.png", "viewer/packages/demos/thumbnails/explode-and-grid.png",
-                   "viewer/packages/demos/thumbnails/environment.png", "viewer/packages/demos/thumbnails/saved-views.png",
-                   "viewer/packages/demos/thumbnails/capture.png", "viewer/packages/demos/thumbnails/load-a-file.png",
-                   "viewer/packages/demos/thumbnails/ten-thousand.png", "viewer/packages/demos/docs/CHECKPOINT-D2.md"] },
-"D3":  { "paths": ["viewer/packages/features/src/overlays*", "viewer/packages/features/src/comparison*", "viewer/packages/features/src/timeline*",
-                   "viewer/packages/features/src/workflow-result*",
-                   "viewer/packages/features/test/overlays*", "viewer/packages/features/test/comparison*", "viewer/packages/features/test/timeline*",
-                   "viewer/packages/features/test/workflow-result*",
-                   "viewer/packages/demos/src/demos/door-schedule/**", "viewer/packages/demos/src/demos/revision-comparison/**",
-                   "viewer/packages/demos/src/demos/takeoff/**", "viewer/packages/demos/src/demos/pricing-alternatives/**",
-                   "viewer/packages/demos/src/demos/delivery-timeline/**",
-                   "viewer/packages/demos/thumbnails/door-schedule.png", "viewer/packages/demos/thumbnails/revision-comparison.png",
-                   "viewer/packages/demos/thumbnails/takeoff.png", "viewer/packages/demos/thumbnails/pricing-alternatives.png",
-                   "viewer/packages/demos/thumbnails/delivery-timeline.png", "viewer/packages/demos/docs/CHECKPOINT-D3.md"] },
-"D4":  { "paths": ["viewer/packages/features/src/annotations*", "viewer/packages/features/test/annotations*",
-                   "viewer/packages/demos/src/demos/valve-isolation/**", "viewer/packages/demos/src/demos/access-coordination/**",
-                   "viewer/packages/demos/src/demos/asset-handover/**", "viewer/packages/demos/src/demos/material-carbon/**",
-                   "viewer/packages/demos/src/demos/portfolio/**",
-                   "viewer/packages/demos/thumbnails/valve-isolation.png", "viewer/packages/demos/thumbnails/access-coordination.png",
-                   "viewer/packages/demos/thumbnails/asset-handover.png", "viewer/packages/demos/thumbnails/material-carbon.png",
-                   "viewer/packages/demos/thumbnails/portfolio.png", "viewer/packages/demos/docs/CHECKPOINT-D4.md"] }
-```
+Landed in `.claude/wave.json` at chunk 0: `UG`, `GAL`, `D1`, `D2`, `D3`, `D4`, with the fences of section 6 (demo directories, their tests, thumbnails and checkpoints; no feature paths).
 
 ## Maintaining this plan
 

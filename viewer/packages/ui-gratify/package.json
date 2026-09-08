@@ -1,7 +1,7 @@
 {
   "name": "@bim-open-toolkit/ui-gratify",
   "version": "0.1.0",
-  "description": "Gratify shell, panels, theme tokens, big-text and keyboard map bound to viewer commands and subscriptions.",
+  "description": "Gratify layer of the V2 gallery: in-canvas panels, the sidebar property inspector, widget kit, theme bridge and semantics mirror.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,7 +21,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@bim-open-toolkit/viewer": "0.1.0"
+    "@bim-open-toolkit/model": "0.1.0",
+    "@bim-open-toolkit/render": "0.1.0"
   },
   "peerDependencies": {
     "gratify": "^0.2.0"

@@ -235,6 +235,109 @@
         "viewer/packages/demos/docs/CHECKPOINT-D.md",
         "viewer/packages/demos/scripts/browser-specs/**"
       ]
+    },
+    "UG": {
+      "paths": [
+        "viewer/packages/ui-gratify/**"
+      ]
+    },
+    "GAL": {
+      "paths": [
+        "viewer/packages/demos/src/gallery/**",
+        "viewer/packages/demos/src/demos/_shared/**",
+        "viewer/packages/demos/src/index.ts",
+        "viewer/packages/demos/gallery.html",
+        "viewer/packages/demos/vite.gallery.config.mjs",
+        "viewer/packages/demos/thumbnails/README.md",
+        "viewer/packages/demos/test/gallery/**",
+        "viewer/packages/demos/docs/gallery.md",
+        "viewer/packages/demos/docs/CHECKPOINT-GAL.md"
+      ]
+    },
+    "D1": {
+      "paths": [
+        "viewer/packages/demos/src/demos/point-and-read/**",
+        "viewer/packages/demos/src/demos/colour-by/**",
+        "viewer/packages/demos/src/demos/ghost-and-isolate/**",
+        "viewer/packages/demos/src/demos/storey-navigator/**",
+        "viewer/packages/demos/thumbnails/point-and-read.png",
+        "viewer/packages/demos/thumbnails/colour-by.png",
+        "viewer/packages/demos/thumbnails/ghost-and-isolate.png",
+        "viewer/packages/demos/thumbnails/storey-navigator.png",
+        "viewer/packages/demos/test/demos/point-and-read/**",
+        "viewer/packages/demos/test/demos/colour-by/**",
+        "viewer/packages/demos/test/demos/ghost-and-isolate/**",
+        "viewer/packages/demos/test/demos/storey-navigator/**",
+        "viewer/packages/demos/docs/CHECKPOINT-D1.md"
+      ]
+    },
+    "D2": {
+      "paths": [
+        "viewer/packages/demos/src/demos/section-studio/**",
+        "viewer/packages/demos/src/demos/explode-and-grid/**",
+        "viewer/packages/demos/src/demos/environment/**",
+        "viewer/packages/demos/src/demos/saved-views/**",
+        "viewer/packages/demos/src/demos/capture/**",
+        "viewer/packages/demos/src/demos/load-a-file/**",
+        "viewer/packages/demos/src/demos/ten-thousand/**",
+        "viewer/packages/demos/thumbnails/section-studio.png",
+        "viewer/packages/demos/thumbnails/explode-and-grid.png",
+        "viewer/packages/demos/thumbnails/environment.png",
+        "viewer/packages/demos/thumbnails/saved-views.png",
+        "viewer/packages/demos/thumbnails/capture.png",
+        "viewer/packages/demos/thumbnails/load-a-file.png",
+        "viewer/packages/demos/thumbnails/ten-thousand.png",
+        "viewer/packages/demos/test/demos/section-studio/**",
+        "viewer/packages/demos/test/demos/explode-and-grid/**",
+        "viewer/packages/demos/test/demos/environment/**",
+        "viewer/packages/demos/test/demos/saved-views/**",
+        "viewer/packages/demos/test/demos/capture/**",
+        "viewer/packages/demos/test/demos/load-a-file/**",
+        "viewer/packages/demos/test/demos/ten-thousand/**",
+        "viewer/packages/demos/docs/CHECKPOINT-D2.md"
+      ]
+    },
+    "D3": {
+      "paths": [
+        "viewer/packages/demos/src/demos/_workflows/**",
+        "viewer/packages/demos/test/demos/_workflows/**",
+        "viewer/packages/demos/src/demos/door-schedule/**",
+        "viewer/packages/demos/src/demos/revision-comparison/**",
+        "viewer/packages/demos/src/demos/takeoff/**",
+        "viewer/packages/demos/src/demos/pricing-alternatives/**",
+        "viewer/packages/demos/src/demos/delivery-timeline/**",
+        "viewer/packages/demos/thumbnails/door-schedule.png",
+        "viewer/packages/demos/thumbnails/revision-comparison.png",
+        "viewer/packages/demos/thumbnails/takeoff.png",
+        "viewer/packages/demos/thumbnails/pricing-alternatives.png",
+        "viewer/packages/demos/thumbnails/delivery-timeline.png",
+        "viewer/packages/demos/test/demos/door-schedule/**",
+        "viewer/packages/demos/test/demos/revision-comparison/**",
+        "viewer/packages/demos/test/demos/takeoff/**",
+        "viewer/packages/demos/test/demos/pricing-alternatives/**",
+        "viewer/packages/demos/test/demos/delivery-timeline/**",
+        "viewer/packages/demos/docs/CHECKPOINT-D3.md"
+      ]
+    },
+    "D4": {
+      "paths": [
+        "viewer/packages/demos/src/demos/valve-isolation/**",
+        "viewer/packages/demos/src/demos/access-coordination/**",
+        "viewer/packages/demos/src/demos/asset-handover/**",
+        "viewer/packages/demos/src/demos/material-carbon/**",
+        "viewer/packages/demos/src/demos/portfolio/**",
+        "viewer/packages/demos/thumbnails/valve-isolation.png",
+        "viewer/packages/demos/thumbnails/access-coordination.png",
+        "viewer/packages/demos/thumbnails/asset-handover.png",
+        "viewer/packages/demos/thumbnails/material-carbon.png",
+        "viewer/packages/demos/thumbnails/portfolio.png",
+        "viewer/packages/demos/test/demos/valve-isolation/**",
+        "viewer/packages/demos/test/demos/access-coordination/**",
+        "viewer/packages/demos/test/demos/asset-handover/**",
+        "viewer/packages/demos/test/demos/material-carbon/**",
+        "viewer/packages/demos/test/demos/portfolio/**",
+        "viewer/packages/demos/docs/CHECKPOINT-D4.md"
+      ]
     }
   }
 }

@@ -151,3 +151,18 @@ Plan: [FEATURE-DEMOS-PLAN.md](FEATURE-DEMOS-PLAN.md). User request: show by leve
 | FD2 `separate` demo | Opus | same pattern, `separate` | queued: FD1's condition plus FB layouts and clipping | `CHECKPOINT-FD2.md` |
 | FD3 `hud-fps`, `hud-minimap`, `hud-gumball` demos | Opus | same pattern, three ids | queued: V's frame hook or GPU timer, FB hud | `CHECKPOINT-FD3.md` |
 | FD-shared page frame, Vite config, browser helper | supervisor | `demos/{src,test}/feature-demos/_shared/**`, `demos/vite.feature-demos.config.mjs`, `demos/docs/feature-demos.md` | protocol and browser helper written; page frame waits for V's `createViewer` | — |
+
+## Gallery wave — started 2026-09-08 (third session)
+
+Plan: [GALLERY-PLAN.md](GALLERY-PLAN.md). Realizes wave 2's queued Track D (the gallery on `createViewer`) and wave 3's WD1 to WD4 and G: a new gallery with a new look, twenty-one demos, the Gratify in-canvas panels and sidebar property inspector. Fences are in `.claude/wave.json` (UG, GAL, D1 to D4); `demos/**` minus the slice, server, ambient-occlusion and feature-demos paths. Features come from wave 2's FA, FB and FC and `createViewer` from V; the gallery's own `GalleryViewer` interface (chunk 0, `demos/src/gallery/contracts.ts`) is implemented over render, interact and formats first and over `createViewer` when it lands. Ports: GAL 5190, D1 5191, D2 5192, D3 5193, D4 5194.
+
+Chunk 0 (supervisor): contract revision G1 as code, `ui-gratify/src/contracts.ts` (panels, property sheets, hosts, theme) and `demos/src/gallery/contracts.ts` (demo registration, model sources, `GalleryViewer`), each with a test; `ui-gratify` depends on `model` and `render`, no longer on `viewer`.
+
+| Track | Model | Fence | State | Checkpoint |
+|---|---|---|---|---|
+| UG Gratify layer | Opus | `viewer/packages/ui-gratify/**` | working | `viewer/packages/ui-gratify/docs/CHECKPOINT-UG.md` |
+| GAL gallery host and look | Opus | `demos/src/gallery/**`, `demos/src/demos/_shared/**`, `demos/gallery.html`, `demos/vite.gallery.config.mjs`, `demos/test/gallery/**`, `demos/docs/gallery.md` | working | `viewer/packages/demos/docs/CHECKPOINT-GAL.md` |
+| D1 inspect demos 1 to 4 | Opus | `demos/{src,test}/demos/{point-and-read,colour-by,ghost-and-isolate,storey-navigator}/**` | working | `viewer/packages/demos/docs/CHECKPOINT-D1.md` |
+| D2 cut, arrange, scale demos 5 to 11 | Opus | `demos/{src,test}/demos/{section-studio,explode-and-grid,environment,saved-views,capture,load-a-file,ten-thousand}/**` | working | `viewer/packages/demos/docs/CHECKPOINT-D2.md` |
+| D3 workflow demos 12 to 16 | Opus | `demos/{src,test}/demos/{_workflows,door-schedule,revision-comparison,takeoff,pricing-alternatives,delivery-timeline}/**` | working | `viewer/packages/demos/docs/CHECKPOINT-D3.md` |
+| D4 workflow demos 17 to 21 | Opus | `demos/{src,test}/demos/{valve-isolation,access-coordination,asset-handover,material-carbon,portfolio}/**` | queued: D3's `_workflows` helper and FA, FC exports | `viewer/packages/demos/docs/CHECKPOINT-D4.md` |
