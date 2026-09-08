@@ -8,15 +8,14 @@ State: implemented and verified against contract M1 of 2026-09-08; no contract a
 exported (empty) migration table, commands validating through schemas, and — where a port is
 injected — a factory beside the plain `Feature`: `overlaysFeatureWith(sink)`,
 `animationFeatureWith(clock, sink?)`, `storageFeatureWith(adapter, scene)`,
-`captureFeatureWith(target)`. `Feature<S>` has no slot for a dependency, so a bare `<name>Feature`
-refuses what it cannot do rather than no-ops.
+`captureFeatureWith(target)`. `Feature<S>` has no slot for a dependency, so a bare
+`<name>Feature` refuses what it cannot do rather than no-ops.
 
 ## Command names (public API)
 `annotations.add|edit|remove`; `overlays.set|add|clear`; `animation.load|seek|play|pause`;
 `comparison.load|link|resolve`; `storage.save|load|list|delete`; `capture.image|forget`.
-Two beyond the brief, deliberate: `overlays.add` takes a workflow result's `overlayRecord` as it
-stands, so wave 3 recipes need no translation (`recipe.ts` already names it); `capture.forget`
-removes a thumbnail, which nothing else could.
+Two beyond the brief: `overlays.add` takes a workflow result's `overlayRecord` as it stands, so
+wave 3 needs no translation (`recipe.ts` names it); `capture.forget` removes a thumbnail.
 
 ## Index export lines (supervisor owns `src/index.ts`)
 `export * from './annotations.js';` and the same for `./overlays.js`, `./animation.js`,
@@ -31,10 +30,9 @@ no name collides, the order is free.
 - `npm test -w @bim-open-toolkit/features` — 16 files, 280 passed, 2.4 s (FA and FB included).
 
 ## Requests
-- Supervisor: add the six index lines; add `@bim-open-toolkit/synthetic` and
-  `@bim-open-toolkit/testing` as devDependencies of `features` (tests use the `revisions` and
-  `schedule` fixtures and the fake clock; both already resolve through tsconfig paths and the
-  vitest alias, so nothing is broken today).
+- Supervisor: add the six index lines, and `@bim-open-toolkit/{synthetic,testing}` as
+  devDependencies of `features` (tests use the `revisions` and `schedule` fixtures and the fake
+  clock; both already resolve through tsconfig paths and the vitest alias, so nothing is broken).
 - Track W: `recipe.ts`'s `timeline.setDate` is `animation.seek` over milliseconds here, and its
   `views.link` is `comparison.link`. Say which side moves before wave 3 wires recipes up.
 - Track V: one test per feature will be added through the headless session when it lands.
