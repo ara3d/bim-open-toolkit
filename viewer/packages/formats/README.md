@@ -21,9 +21,12 @@ const { data, geometry, coordinates } = result.value;
   `ObjectRecord` per object, with its name, category, source id and parent where the format carries
   them. An object with no geometry is a normal object, which is what a model with property-only rows
   needs.
-- **`geometry`** is the model contract's `Geometry`: a list of `Mesh` and one columnar
-  `InstanceRecords`. Instances are four typed arrays for the whole model, not one object per
-  placement, and `objectIndex` maps every placement back to its object.
+- **`geometry`** is the model contract's `Geometry`: the meshes, and one columnar `InstanceRecords`.
+  Instances are typed arrays for the whole model, not one object per placement, and `objectIndex`
+  maps every placement back to its object. BFAST and BOS carry the meshes as a `meshTable` over the
+  file's own buffers and leave `meshes` empty; glTF, OBJ and STL carry a `Mesh` list. Read a mesh
+  with `meshAt(geometry.meshTable, i)` when the table is there and `geometry.meshes[i]` when it is
+  not; [docs/formats.md](docs/formats.md) has the table and the reason.
 - **`coordinates`** is the frame the model reports in, and the same object as `data.coordinates`.
 - **`diagnostics`** is what the loader observed: what it could not carry over, and what it assumed.
 

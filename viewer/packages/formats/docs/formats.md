@@ -19,12 +19,28 @@ prepared as BFAST with the loaders' own `bosToBfast` and then takes the BFAST pa
 drift apart. Loading a BOS and loading its prepared bytes give the same `data` and `geometry`; only
 `format` and `sourceBytes` differ, and those describe what the caller supplied.
 
+## How each format carries its meshes
+
+`Geometry` has two ways to hold the same meshes: `meshes`, a record per mesh, and `meshTable`, the
+buffers those records would view. A reader takes the table when there is one and the list otherwise,
+which `meshAt` and `geometryBounds` in the model package already do.
+
+| Format | `meshes` | `meshTable` | Why |
+|---|---|---|---|
+| `bfast`, `bos` | empty | yes | The file is already one vertex buffer, one index buffer and a range per mesh, with indices local to their mesh. The table is those buffers plus four integer columns, so no mesh record and no vertex copy exists on the load path. |
+| `glb`, `gltf`, `obj`, `stl` | yes | no | Each parser builds a separate buffer per mesh, so a table would be a second copy of every vertex for no reader that has asked for one. `meshTableFrom` makes one from the list when a caller wants it. |
+
 ## What each format carries, and what is lost
 
 ### BFAST (`.bfast`, `.vim`)
 
 Carries prepared triangle geometry as typed-array views on the file, 64-byte instance records, and,
 in a combined file, every original BOS Parquet table byte for byte.
+
+- **Geometry** is a `meshTable` whose position and index buffers are the file's own, whose four range
+  columns are the file's mesh slices, and whose bounds column is the file's stored per-mesh boxes.
+  `Geometry.meshes` is empty. Boxes are copied, with the unusable ones emptied, only when the file
+  holds one that is not finite or belongs to a mesh with no vertices.
 
 - **Objects** are the rows of the embedded `Entities` table when the file has one, so an entity that
   no placement draws is still an object. Without that table, objects are the entities the instance

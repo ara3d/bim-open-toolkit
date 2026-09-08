@@ -1,10 +1,10 @@
 import { parseBfastModel } from '@ara3d/viewer-loaders';
-import { instanceTransform, noMesh } from '@bim-open-toolkit/model';
+import { instanceTransform, meshAt, meshCount, noMesh } from '@bim-open-toolkit/model';
 import { describe, expect, it } from 'vitest';
 import {
   bfastCoordinates,
   bfastEntityRows,
-  bfastMeshes,
+  bfastMeshTable,
   entityFactsFrom,
   readBfastModel,
 } from '../src/bfast.js';
@@ -39,6 +39,14 @@ describe('readBfastModel', () => {
       meshVertices: 7,
       meshTriangles: 3,
     });
+  });
+
+  it('carries its geometry as a mesh table and builds no mesh record at all', async () => {
+    const model = await readBfastModel(sample());
+    const table = model.geometry.meshTable;
+    expect(model.geometry.meshes).toEqual([]);
+    expect(table === undefined ? 0 : meshCount(table)).toBe(2);
+    expect(validateLoadedModel(model)).toEqual([]);
   });
 
   it('reads the transform of every placement as a column-major matrix', async () => {
@@ -225,16 +233,40 @@ describe('bfastEntityRows', () => {
   });
 });
 
-describe('bfastMeshes', () => {
-  it('reads each mesh as views on the file, with the bounds the file stores', () => {
-    const meshes = bfastMeshes(
-      parseFor(bfastModel({ meshes: [triangleMesh(), squareMesh()], instances: [{ mesh: 0, entity: 0 }] })),
-    );
-    expect(meshes.length).toBe(2);
-    expect([...(meshes[0]?.positions ?? [])]).toEqual([0, 0, 0, 1, 0, 0, 0, 1, 0]);
-    expect([...(meshes[1]?.indices ?? [])]).toEqual([0, 1, 2, 0, 2, 3]);
-    expect(meshes[1]?.bounds).toEqual({ min: [0, 0, 0], max: [2, 2, 0] });
-    expect(meshes[1]?.positions.buffer).toBe(meshes[0]?.positions.buffer);
+describe('bfastMeshTable', () => {
+  const twoMeshes = (): ReturnType<typeof parseFor> =>
+    parseFor(bfastModel({ meshes: [triangleMesh(), squareMesh()], instances: [{ mesh: 0, entity: 0 }] }));
+
+  it('reads each mesh as a range of the file, with the bounds the file stores', () => {
+    const parsed = twoMeshes();
+    const table = bfastMeshTable(parsed);
+    expect(meshCount(table)).toBe(2);
+    expect(table.positions).toBe(parsed.vertices);
+    expect(table.indices).toBe(parsed.indices);
+    expect(table.bounds).toBe(parsed.meshBounds);
+    expect([...table.vertexStart]).toEqual([0, 3]);
+    expect([...table.vertexCount]).toEqual([3, 4]);
+    expect([...table.indexStart]).toEqual([0, 3]);
+    expect([...table.indexCount]).toEqual([3, 6]);
+  });
+
+  it('reads back as the same meshes the record list gave, without copying a vertex', () => {
+    const table = bfastMeshTable(twoMeshes());
+    const first = meshAt(table, 0);
+    const second = meshAt(table, 1);
+    expect([...first.positions]).toEqual([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    expect([...second.indices]).toEqual([0, 1, 2, 0, 2, 3]);
+    expect(second.bounds).toEqual({ min: [0, 0, 0], max: [2, 2, 0] });
+    expect(second.positions.buffer).toBe(first.positions.buffer);
+    expect(first.positions.buffer).toBe(table.positions.buffer);
+  });
+
+  it('empties the box of a mesh with no vertices instead of reporting the zeros the file stores', () => {
+    const parsed = parseFor(bfastModel({ meshes: [{ positions: [], indices: [] }, triangleMesh()], instances: [] }));
+    const table = bfastMeshTable(parsed);
+    expect(table.bounds).not.toBe(parsed.meshBounds);
+    expect(meshAt(table, 0).bounds).toEqual({ min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] });
+    expect(meshAt(table, 1).bounds).toEqual({ min: [0, 0, 0], max: [1, 1, 0] });
   });
 });
 

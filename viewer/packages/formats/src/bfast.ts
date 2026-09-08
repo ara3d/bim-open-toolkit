@@ -1,16 +1,17 @@
 import { parseBfastModel, readBimTable, type BimData, type RenderModel } from '@ara3d/viewer-loaders';
 import {
+  boundsStride,
   colorStride,
   emptyBounds,
   identityMatrix,
+  meshCount,
   noMesh,
   objectRef,
   transformStride,
-  type Bounds,
   type CoordinateContext,
   type Diagnostic,
   type Geometry,
-  type Mesh,
+  type MeshTable,
   type ModelData,
   type ModelRef,
   type ObjectRecord,
@@ -60,39 +61,59 @@ export const bfastMeshCount = (model: RenderModel): number => Math.floor(model.m
 export const bfastInstanceCount = (model: RenderModel): number => Math.floor(model.instanceInts.length / instanceWords);
 
 /**
- * One `Mesh` per mesh slice, whose position and index arrays are views on the file.
+ * The model's meshes as a `MeshTable` over the file's own buffers: nothing is copied but the four
+ * range columns, and no `Mesh` object is built.
  *
- * The stored per-mesh bounds are used when they are finite, because recomputing them is a second
- * pass over every vertex of the model for an answer the file already gives.
+ * `parseBfastModel` accepts triangle models without vertex colours only, so a vertex is three floats
+ * and the whole vertex buffer is the table's position buffer; the file's indices already count from
+ * each mesh's own first vertex, which is what `MeshTable` asks for. The stored per-mesh boxes are the
+ * bounds column as they are, and are copied with the unusable ones emptied only when one is unusable.
  */
-export function bfastMeshes(model: RenderModel): readonly Mesh[] {
+export function bfastMeshTable(model: RenderModel): MeshTable {
   const count = bfastMeshCount(model);
-  const meshes: Mesh[] = [];
+  const vertexStart = new Int32Array(count);
+  const vertexCount = new Int32Array(count);
+  const indexStart = new Int32Array(count);
+  const indexCount = new Int32Array(count);
+  let stored = true;
   for (let index = 0; index < count; index += 1) {
     const at = index * meshSliceInts;
-    const baseVertex = model.meshSlices[at] ?? 0;
-    const vertexCount = model.meshSlices[at + 1] ?? 0;
-    const firstIndex = model.meshSlices[at + 2] ?? 0;
-    const indexCount = model.meshSlices[at + 3] ?? 0;
-    meshes.push({
-      positions: model.vertices.subarray(baseVertex * 3, (baseVertex + vertexCount) * 3),
-      indices: model.indices.subarray(firstIndex, firstIndex + indexCount),
-      bounds: storedBounds(model.meshBounds, index, vertexCount),
-    });
+    const vertices = model.meshSlices[at + 1] ?? 0;
+    vertexStart[index] = model.meshSlices[at] ?? 0;
+    vertexCount[index] = vertices;
+    indexStart[index] = model.meshSlices[at + 2] ?? 0;
+    indexCount[index] = model.meshSlices[at + 3] ?? 0;
+    if (stored && !usableBox(model.meshBounds, index, vertices)) stored = false;
   }
-  return meshes;
+  return {
+    positions: model.vertices,
+    indices: model.indices,
+    vertexStart,
+    vertexCount,
+    indexStart,
+    indexCount,
+    bounds: stored ? model.meshBounds : emptiedBoxes(model.meshBounds, vertexCount),
+  };
 }
 
-// The stored box of one mesh, or the empty box when the mesh has no vertices or the box is unusable.
-function storedBounds(all: Float32Array, index: number, vertexCount: number): Bounds {
-  if (vertexCount === 0) return emptyBounds;
-  const at = index * 6;
-  const values = [0, 1, 2, 3, 4, 5].map((offset) => all[at + offset] ?? Number.NaN);
-  if (!values.every(Number.isFinite)) return emptyBounds;
-  return {
-    min: [values[0] ?? 0, values[1] ?? 0, values[2] ?? 0],
-    max: [values[3] ?? 0, values[4] ?? 0, values[5] ?? 0],
-  };
+// True when the file's box for a mesh can be believed: the mesh has vertices and every float is finite.
+function usableBox(all: Float32Array, index: number, vertices: number): boolean {
+  if (vertices === 0) return false;
+  const at = index * boundsStride;
+  for (let offset = 0; offset < boundsStride; offset += 1) if (!Number.isFinite(all[at + offset])) return false;
+  return true;
+}
+
+// The stored boxes with the unusable ones replaced by the empty box, so no reader believes a NaN.
+function emptiedBoxes(all: Float32Array, vertexCount: Int32Array): Float32Array {
+  const bounds = new Float32Array(vertexCount.length * boundsStride);
+  const empty = [...emptyBounds.min, ...emptyBounds.max];
+  for (let index = 0; index < vertexCount.length; index += 1) {
+    const at = index * boundsStride;
+    if (usableBox(all, index, vertexCount[index] ?? 0)) bounds.set(all.subarray(at, at + boundsStride), at);
+    else bounds.set(empty, at);
+  }
+  return bounds;
 }
 
 // The objects of the model as rows, and the row each source entity index maps to.
@@ -149,7 +170,7 @@ export type BfastInstances = {
  */
 export function bfastInstances(
   model: RenderModel,
-  meshes: readonly Mesh[],
+  table: MeshTable,
   rows: EntityRows,
   context: LoadContext,
 ): BfastInstances {
@@ -166,7 +187,7 @@ export function bfastInstances(
   const transform = new Float32Array(count * transformStride);
   const color = new Float32Array(count * colorStride);
   const firstDrawn = new Int32Array(rows.entityOfRow.length).fill(-1);
-  const meshCount = meshes.length;
+  const meshes = meshCount(table);
 
   // The checks below are written inline rather than through `requireThat`, because building the
   // message closure of an assertion that holds costs more here than everything else in the loop.
@@ -176,8 +197,8 @@ export function bfastInstances(
     if (hiddenAt(source)) continue;
     const at = source * instanceWords;
     const mesh = words[at + meshWord] ?? noMesh;
-    if (mesh !== noMesh && (mesh < 0 || mesh >= meshCount))
-      fail(formatCode.invalidBfast, `Instance ${source} names mesh ${mesh} of ${meshCount}`);
+    if (mesh !== noMesh && (mesh < 0 || mesh >= meshes))
+      fail(formatCode.invalidBfast, `Instance ${source} names mesh ${mesh} of ${meshes}`);
     const object = rows.rowOfEntity[words[at + entityWord] ?? 0] ?? -1;
     if (object < 0) fail(formatCode.invalidBfast, `Instance ${source} names an entity that is not an object`);
     meshIndex[out] = mesh;
@@ -192,7 +213,11 @@ export function bfastInstances(
     color[colorAt + 3] = ((packed >>> 24) & 0xff) / 255;
     out += 1;
   }
-  return { geometry: { meshes, instances: { count, meshIndex, transform, color, objectIndex } }, hidden: total - count, firstDrawn };
+  return {
+    geometry: { meshes: [], meshTable: table, instances: { count, meshIndex, transform, color, objectIndex } },
+    hidden: total - count,
+    firstDrawn,
+  };
 }
 
 /**
@@ -361,8 +386,9 @@ export const defaultModelRef = (source: string | undefined): ModelRef => ({
 });
 
 /**
- * A prepared BFAST as a `LoadedModel`: mesh views on the file, one columnar instance row per drawn or
- * geometry-free placement, and one object per entity the file declares or an instance names.
+ * A prepared BFAST as a `LoadedModel`: a `Geometry.meshTable` over the file's own buffers with no
+ * `Geometry.meshes`, one columnar instance row per drawn or geometry-free placement, and one object
+ * per entity the file declares or an instance names.
  *
  * Raises a `FormatError`; `loadModel` is the entry that returns failures instead of raising them.
  */
@@ -376,9 +402,9 @@ export async function readBfastModel(buffer: ArrayBuffer, options: BfastOptions 
   throwIfCancelled(options);
 
   const rows = bfastEntityRows(parsed, facts.declared);
-  const meshes = bfastMeshes(parsed);
+  const table = bfastMeshTable(parsed);
   reportProgress(options, 'convert', 0, 2);
-  const built = bfastInstances(parsed, meshes, rows, options);
+  const built = bfastInstances(parsed, table, rows, options);
   reportProgress(options, 'convert', 1, 2);
 
   const ref = options.ref ?? defaultModelRef(undefined);

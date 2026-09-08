@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bfastEntityRows,
   bfastInstances,
-  bfastMeshes,
+  bfastMeshTable,
   defaultModelRef,
   readEntityFacts,
   readBfastModel,
@@ -69,7 +69,7 @@ describe('BFAST versus BOS on the columnar path', () => {
       );
       measurements.push(rows.measurement);
 
-      const meshes = await repeat('mesh list as views on the file', repetitions, () => bfastMeshes(parsed.last));
+      const meshes = await repeat('mesh table over the file buffers', repetitions, () => bfastMeshTable(parsed.last));
       measurements.push(meshes.measurement);
 
       const columns = await repeat('instance columns', repetitions, () =>
@@ -160,7 +160,7 @@ Node ${process.version}, ${process.platform}. Warm up then ${repetitions} repeti
       // The two paths meet at the same prepared bytes, so they describe the same model.
       expect(throughBos.last.data.objects.length).toBe(throughBfast.last.data.objects.length);
       expect(throughBos.last.geometry.instances.count).toBe(throughBfast.last.geometry.instances.count);
-      expect(throughBos.last.geometry.meshes.length).toBe(throughBfast.last.geometry.meshes.length);
+      expect(modelStatistics(throughBos.last).meshes).toBe(modelStatistics(throughBfast.last).meshes);
       // Reading a prepared file is faster than preparing one and then reading it.
       expect(throughBfast.measurement.median).toBeLessThan(throughBos.measurement.median);
       // The prepared file is larger than the archive it came from; transfer is a separate concern.

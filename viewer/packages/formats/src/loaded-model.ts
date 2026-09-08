@@ -1,7 +1,9 @@
 import {
+  boundsStride,
   colorStride,
   failure,
   hasErrors,
+  meshCount,
   noMesh,
   objectKey,
   success,
@@ -9,6 +11,7 @@ import {
   type CoordinateContext,
   type Diagnostic,
   type Geometry,
+  type MeshTable,
   type ModelData,
   type Result,
 } from '@bim-open-toolkit/model';
@@ -57,9 +60,14 @@ export type ModelStatistics = {
   readonly meshTriangles: number;
 };
 
-// Counts the model. One pass over the instance column and the mesh list, nothing materialized.
+/**
+ * Counts the model. One pass over the instance column and one over the meshes, nothing materialized.
+ *
+ * A geometry carries its meshes as records, as a `MeshTable`, or as both saying the same thing, so
+ * the counts come from the table when there is one and from the record list otherwise.
+ */
 export function modelStatistics(model: LoadedModel): ModelStatistics {
-  const { meshes, instances } = model.geometry;
+  const { meshes, instances, meshTable } = model.geometry;
   const drawn = new Set<number>();
   let drawnInstances = 0;
   for (let row = 0; row < instances.count; row += 1) {
@@ -70,14 +78,20 @@ export function modelStatistics(model: LoadedModel): ModelStatistics {
   }
   let meshVertices = 0;
   let meshTriangles = 0;
-  for (const each of meshes) {
-    meshVertices += Math.floor(each.positions.length / 3);
-    meshTriangles += Math.floor(each.indices.length / 3);
-  }
+  if (meshTable === undefined)
+    for (const each of meshes) {
+      meshVertices += Math.floor(each.positions.length / 3);
+      meshTriangles += Math.floor(each.indices.length / 3);
+    }
+  else
+    for (let index = 0; index < meshCount(meshTable); index += 1) {
+      meshVertices += meshTable.vertexCount[index] ?? 0;
+      meshTriangles += Math.floor((meshTable.indexCount[index] ?? 0) / 3);
+    }
   return {
     objects: model.data.objects.length,
     geometryFreeObjects: model.data.objects.length - drawn.size,
-    meshes: meshes.length,
+    meshes: meshTable === undefined ? meshes.length : meshCount(meshTable),
     instances: instances.count,
     drawnInstances,
     meshVertices,
@@ -91,6 +105,9 @@ export function modelStatistics(model: LoadedModel): ModelStatistics {
  * A loader checks what its own format does not guarantee, so this is not run on every load: it walks
  * every index and every float, which for a large model costs as much as building the columns. Use it
  * in tests, and on input from somewhere you do not trust.
+ *
+ * A geometry may carry its meshes as records, as a `MeshTable`, or as both; each form is checked as
+ * it stands, and a geometry carrying both is checked for holding the same number of meshes in each.
  */
 export function validateLoadedModel(model: LoadedModel): readonly Diagnostic[] {
   const problems: Diagnostic[] = [];
@@ -135,7 +152,74 @@ function checkObjects(model: LoadedModel, report: Report): void {
   });
 }
 
+// How many meshes the geometry has, from the table when it carries one and from the records otherwise.
+const geometryMeshCount = (geometry: Geometry): number =>
+  geometry.meshTable === undefined ? geometry.meshes.length : meshCount(geometry.meshTable);
+
+/**
+ * The mesh table's own invariants: columns of one length, a bounds row per mesh, and every range
+ * inside the buffers it names. A mesh's indices count from its own first vertex, so an index is
+ * checked against that mesh's vertex count rather than against the whole buffer.
+ */
+function checkMeshTable(table: MeshTable, report: Report): void {
+  const count = meshCount(table);
+  const columns: readonly (readonly [string, number])[] = [
+    ['vertexCount', table.vertexCount.length],
+    ['indexStart', table.indexStart.length],
+    ['indexCount', table.indexCount.length],
+    ['bounds', Math.floor(table.bounds.length / boundsStride)],
+  ];
+  for (const [name, length] of columns)
+    if (length !== count) report(`Mesh table column ${name} has ${length} rows, not ${count}`, ['meshTable', name]);
+  if (table.positions.length % 3 !== 0)
+    report(`Mesh table has ${table.positions.length} position floats, not a multiple of three`, ['meshTable', 'positions']);
+  if (table.normals !== undefined && table.normals.length !== table.positions.length)
+    report(
+      `Mesh table has ${table.normals.length} normal floats for ${table.positions.length} position floats`,
+      ['meshTable', 'normals'],
+    );
+  for (let at = 0; at < table.positions.length; at += 1)
+    if (!Number.isFinite(table.positions[at])) {
+      report(`Mesh table has a non-finite position at ${at}`, ['meshTable', 'positions', at]);
+      break;
+    }
+
+  const vertices = Math.floor(table.positions.length / 3);
+  for (let index = 0; index < count; index += 1) {
+    const path = ['meshTable', index] as const;
+    const start = table.vertexStart[index] ?? 0;
+    const own = table.vertexCount[index] ?? 0;
+    const first = table.indexStart[index] ?? 0;
+    const indices = table.indexCount[index] ?? 0;
+    if (start < 0 || own < 0 || start + own > vertices) {
+      report(`Mesh ${index} claims vertices ${start} to ${start + own} of ${vertices}`, [...path, 'vertexStart']);
+      continue;
+    }
+    if (first < 0 || indices < 0 || first + indices > table.indices.length) {
+      report(`Mesh ${index} claims indices ${first} to ${first + indices} of ${table.indices.length}`, [...path, 'indexStart']);
+      continue;
+    }
+    if (indices % 3 !== 0) report(`Mesh ${index} has ${indices} indices, not a multiple of three`, [...path, 'indexCount']);
+    for (let at = first; at < first + indices; at += 1) {
+      const vertex = table.indices[at] ?? 0;
+      if (vertex >= own) {
+        report(`Mesh ${index} index ${at - first} names vertex ${vertex} of its own ${own}`, [...path, 'indices', at - first]);
+        break;
+      }
+    }
+  }
+}
+
 function checkMeshes(model: LoadedModel, report: Report): void {
+  const table = model.geometry.meshTable;
+  if (table !== undefined) {
+    checkMeshTable(table, report);
+    if (model.geometry.meshes.length > 0 && model.geometry.meshes.length !== meshCount(table))
+      report(
+        `The geometry lists ${model.geometry.meshes.length} meshes and its table holds ${meshCount(table)}`,
+        ['meshTable'],
+      );
+  }
   model.geometry.meshes.forEach((each, index) => {
     const path = ['meshes', index] as const;
     if (each.positions.length % 3 !== 0)
@@ -162,7 +246,7 @@ function checkMeshes(model: LoadedModel, report: Report): void {
 
 function checkInstances(model: LoadedModel, report: Report): void {
   const { count, meshIndex, transform, color, objectIndex } = model.geometry.instances;
-  const meshes = model.geometry.meshes.length;
+  const meshes = geometryMeshCount(model.geometry);
   const objects = model.data.objects.length;
   if (meshIndex.length !== count) report(`meshIndex has ${meshIndex.length} rows, not ${count}`, ['instances', 'meshIndex']);
   if (objectIndex.length !== count) report(`objectIndex has ${objectIndex.length} rows, not ${count}`, ['instances', 'objectIndex']);
