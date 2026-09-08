@@ -25,7 +25,7 @@
       { "nodeId": "N3", "reachedVia": "SEG-2", "note": "closed valve V1 stops the trace beyond this node" }
     ],
     "exceptions": [
-      { "objectId": "SEG-4", "kind": "missing", "reason": "unresolved-source", "detail": "unverified topology touching affected node N2; may extend the affected set toward N5" }
+      { "subjects": ["SEG-4"], "field": "topologyStatus", "detail": "unverified topology touching affected node N2; may extend the affected set toward N5", "kind": "missing", "reason": "unresolved-source" }
     ]
   },
   "notes": "SEG-3 and SEG-5 (and node N4/N6) are excluded because closed valve V1 blocks the trace at N3 as intended -- this is not a coverage gap. SEG-4 is flagged only because it touches N2, which is already in the affected set; an unverified segment elsewhere in the network would not be reported."

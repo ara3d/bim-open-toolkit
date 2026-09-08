@@ -33,8 +33,8 @@
       { "objectId": "A-5", "name": "Chiller-1", "eventCount": 1, "lastServiceDate": "2025-08-01" }
     ],
     "exceptions": [
-      { "objectId": "A-3", "field": "serviceHistoryStatus", "kind": "missing", "reason": "not-provided", "detail": "service history was never tracked for this asset" },
-      { "objectId": "A-4", "field": "installDate", "kind": "missing", "reason": "not-provided" }
+      { "subjects": ["A-3"], "field": "serviceHistoryStatus", "detail": "service history was never tracked for this asset", "kind": "missing", "reason": "not-provided" },
+      { "subjects": ["A-4"], "field": "installDate", "kind": "missing", "reason": "not-provided" }
     ]
   },
   "notes": "A-2 has eventCount 0 but serviceHistoryStatus 'recorded', so it is NOT an exception -- a tracked, genuinely empty history is a legitimate known fact. A-3 also has eventCount 0 but status 'not-recorded', so it IS an exception: the zero is not trustworthy because history was never tracked."

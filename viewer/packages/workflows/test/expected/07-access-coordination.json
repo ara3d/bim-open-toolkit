@@ -17,7 +17,7 @@
       { "envelopeId": "ENV-1", "penetrationId": "PEN-1", "disciplines": ["Mechanical", "Structural"], "basis": "bounding-box-overlap" }
     ],
     "exceptions": [
-      { "objectId": "ENV-3", "field": "bbox", "kind": "missing", "reason": "not-provided", "detail": "coordination gap: no registered coordinates" }
+      { "subjects": ["ENV-3"], "field": "bbox", "detail": "coordination gap: no registered coordinates", "kind": "missing", "reason": "not-provided" }
     ]
   },
   "notes": "PEN-3 shares x and y overlap with ENV-1 but not z ([0,2] vs [5,6] do not intersect), so it is not a candidate finding -- all three axes must intersect. ENV-2 and PEN-2 overlap nothing and produce no rows at all (not an exception; simply no candidate)."
