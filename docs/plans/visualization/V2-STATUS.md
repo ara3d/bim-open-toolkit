@@ -51,7 +51,17 @@ Result: 1.9× (with tables) to 2.0× (geometry only) faster end to end on the CP
 
 ## Wave 1: independent foundations — started 2026-09-08; core tracks verified 2026-09-08
 
-F, R, S2, W, T, I verified (see the table); F2, E2E and M4 are follow-ups in flight. Wave 2's ready condition (R, I and F verified) is met. Track V (viewer composition) was offered to the user's own agent through JOIN-THE-WAVE.md; the supervisor does not launch V until that is settled. The combined gate over stable inputs runs when F2 and E2E finish.
+F, R, S2, W, T, I verified (see the table); F2, E2E and M4 are follow-ups in flight. Wave 2's ready condition (R, I and F verified) is met. User instruction 2026-09-08: "Do whatever it takes to unblock the features and gallery." Wave 2 started at once: V launched by the supervisor (the user's own agent had not taken it), and FA, FB, FC launched in parallel against M1's `Feature`, `Command` and `StateSlice` contracts and render's public API, tested through a shared fake session (`features/test/support/fake-session.ts`, supervisor-owned). D (gallery host) starts the moment V publishes `createViewer`. The combined gate runs when the in-flight tracks finish.
+
+## Wave 2: composition and features — started 2026-09-08
+
+| Track | Model | Fence | State | Checkpoint |
+|---|---|---|---|---|
+| V viewer composition | Opus | `viewer/packages/viewer/**` | working | `viewer/packages/viewer/docs/CHECKPOINT-V.md` |
+| FA appearance, sets, edits, replacement | Opus | features `src/{appearance,sets,edits,replacement}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FA.md` |
+| FB clipping, layouts, environment, navigation aids, HUD | Opus | features `src/{clipping,layouts,environment,navigation-aids,hud}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FB.md` |
+| FC annotations, overlays, animation, comparison, storage, capture | Opus | features `src/{annotations,overlays,animation,comparison,storage,capture}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FC.md` |
+| D gallery on createViewer | Opus, Sonnet sub-agents | `viewer/packages/demos/**` minus slice and server | queued until V publishes `createViewer` | — |
 
 Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside the still-running wave 0 tracks PERF, BIND, I and D0. T (testing package) started once PERF and BIND finished. Perf configs added to formats and render (`npm run perf -w`).
 

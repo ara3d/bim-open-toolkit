@@ -1,5 +1,5 @@
 {
-  "name": "visualization-v2-wave-0-1",
+  "name": "visualization-v2-wave-1-2",
   "supervisor": [
     "viewer/package.json",
     "viewer/package-lock.json",
@@ -127,6 +127,56 @@
         "viewer/packages/testing/test/headless*",
         "viewer/packages/testing/test/headless/**",
         "viewer/packages/testing/docs/CHECKPOINT-R2.md"
+      ]
+    },
+    "V": {
+      "paths": [
+        "viewer/packages/viewer/**"
+      ]
+    },
+    "FA": {
+      "paths": [
+        "viewer/packages/features/src/appearance*",
+        "viewer/packages/features/src/sets*",
+        "viewer/packages/features/src/edits*",
+        "viewer/packages/features/src/replacement*",
+        "viewer/packages/features/test/appearance*",
+        "viewer/packages/features/test/sets*",
+        "viewer/packages/features/test/edits*",
+        "viewer/packages/features/test/replacement*",
+        "viewer/packages/features/docs/CHECKPOINT-FA.md"
+      ]
+    },
+    "FB": {
+      "paths": [
+        "viewer/packages/features/src/clipping*",
+        "viewer/packages/features/src/layouts*",
+        "viewer/packages/features/src/environment*",
+        "viewer/packages/features/src/navigation-aids*",
+        "viewer/packages/features/src/hud*",
+        "viewer/packages/features/test/clipping*",
+        "viewer/packages/features/test/layouts*",
+        "viewer/packages/features/test/environment*",
+        "viewer/packages/features/test/navigation-aids*",
+        "viewer/packages/features/test/hud*",
+        "viewer/packages/features/docs/CHECKPOINT-FB.md"
+      ]
+    },
+    "FC": {
+      "paths": [
+        "viewer/packages/features/src/annotations*",
+        "viewer/packages/features/src/overlays*",
+        "viewer/packages/features/src/animation*",
+        "viewer/packages/features/src/comparison*",
+        "viewer/packages/features/src/storage*",
+        "viewer/packages/features/src/capture*",
+        "viewer/packages/features/test/annotations*",
+        "viewer/packages/features/test/overlays*",
+        "viewer/packages/features/test/animation*",
+        "viewer/packages/features/test/comparison*",
+        "viewer/packages/features/test/storage*",
+        "viewer/packages/features/test/capture*",
+        "viewer/packages/features/docs/CHECKPOINT-FC.md"
       ]
     }
   }
