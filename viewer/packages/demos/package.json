@@ -33,7 +33,8 @@
     "@bim-open-toolkit/ui-gratify": "0.1.0",
     "@bim-open-toolkit/ui-react": "0.1.0",
     "@bim-open-toolkit/mcp": "0.1.0",
-    "@bim-open-toolkit/testing": "0.1.0"
+    "@bim-open-toolkit/testing": "0.1.0",
+    "@ara3d/viewer-core": "0.1.0"
   },
   "peerDependencies": {
     "three": ">=0.180.0",

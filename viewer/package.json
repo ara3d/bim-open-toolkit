@@ -21,7 +21,8 @@
     "lint": "eslint .",
     "check": "npm run typecheck && npm run lint",
     "test:v2": "vitest run --config vitest.v2.config.ts",
-    "lint:typed": "eslint --config eslint.typed.config.js ."
+    "lint:typed": "eslint --config eslint.typed.config.js .",
+    "demo:slice": "vite packages/demos --config packages/demos/vite.slice.config.mjs --host 127.0.0.1 --port 5176 --strictPort"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

@@ -222,6 +222,19 @@
         "viewer/packages/demos/docs/feature-demos.md"
       ],
       "note": "supervisor of the feature-demos wave (session 'Feature demos wave'); ports 5181 FD1, 5182 FD2, 5183 FD3"
+    },
+    "D": {
+      "paths": [
+        "viewer/packages/demos/src/gallery/**",
+        "viewer/packages/demos/src/demos/**",
+        "viewer/packages/demos/test/gallery/**",
+        "viewer/packages/demos/test/demos/**",
+        "viewer/packages/demos/gallery.html",
+        "viewer/packages/demos/vite.gallery.config.mjs",
+        "viewer/packages/demos/docs/gallery.md",
+        "viewer/packages/demos/docs/CHECKPOINT-D.md",
+        "viewer/packages/demos/scripts/browser-specs/**"
+      ]
     }
   }
 }
