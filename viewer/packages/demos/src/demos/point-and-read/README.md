@@ -10,47 +10,47 @@ there is nothing and the pin is dropped.
 
 Two fixtures. The first, and the default, is source-backed; the second is generated.
 
-**Snowdon Towers** (`/fixtures/snowdon.bfast`, read from wherever the machine keeps its models).
-25,675 objects, 171,569 meshes and 471,462 placements, of which 14,864 are marked hidden in the
-file. That is everything the file carries. It has no embedded BOS tables, so the loader reports
-"This BFAST carries no BOS tables, so its objects come from its instance records only", and each
-object arrives as an id (`bos:1165`), a transform and the placements that draw it - no name, no
-category, no source id, no parent link, and no observations of any kind. The demo shows exactly
-that: the tag reads "No name recorded (bos:1165)" over "No category recorded, no storey link
-recorded", the identity group gives three missing rows and the object id, and the facts group is
-titled "Facts: none recorded" with nothing under it. Nothing is inferred to fill a gap - not a
-category from a mesh, not a storey from an elevation.
+**Snowdon Towers** (`/fixtures/snowdon-bim.bfast`, read from wherever the machine keeps its models).
+51,139 objects, 471,462 placements and 6,250,792 triangles. It carries the BOS tables, so it records
+far more than geometry: 48,844 of its objects are named, in 98 categories including 1,348 Walls; its
+parameter table is 1,620,524 rows over 2,545 descriptors, none of them dropped; and every one of the
+51,139 objects is attributed to one of seven source documents - Architectural, Facades, Structural,
+Plumbing, HVAC, Site and Electrical, each with the path of the `.rvt` it was exported from.
 
-What the demo can read from that file is geometric, and it does: each object's box comes from the
-meshes its placements draw, which is what the tag anchors to and what a colouring or a fit uses.
-
-The sibling export `snowdon-bim.bfast` does carry the BOS tables - 51,139 objects, 48,844 of them
-named, 98 categories including 1,348 Walls, 167 Doors and 92 Levels - and pointing this demo at it
-would give the identity group something to say. It still records no parent link and no observations,
-so the storey row and the facts group would stay empty. Which file `/fixtures/snowdon.bfast` names is
-`demos/src/demos/_shared/snowdon.ts`, not this demo.
+Every object carries a property sheet: between three and a hundred and twenty properties, thirty-two
+on average. The demo shows them in the groups the file puts them in - `Dimensions`, `Constraints`,
+`Identity Data`, `RevitAPI`, `Electrical - Loads` and the rest - in the order the file records them.
+Picking the wall `bos:1165` gives 44 properties in 9 groups: `Area` reads `465.619 SQUARE_FEET` and
+`Volume` reads `525.759 CUBIC_FEET`, both in the unit the exporter wrote and neither converted.
 
 **Synthetic building.** From `@bim-open-toolkit/synthetic`, generated with the generator's own
 default options: seed 1, three storeys of eight rooms, the mixed door-width policy, and the
 documented rates at which a value is missing or disputed. 150 objects: 3 storeys, 3 slabs, 66 walls,
-24 rooms, 29 doors and 25 windows. Five of them carry no recorded name. The generator records three
-facts about each door, 87 in all: 47 are known, 36 are missing and 4 have sources that disagree. The
-fire rating alone is known for 11 doors, missing for 16 and disputed for 2. It is the second fixture
-because it is the one with facts, storey links and deliberate conflicts to point at, and this demo is
-about what is known.
+24 rooms, 29 doors and 25 windows. Five of them carry no recorded name. It records no properties and
+no source documents at all, so the demo shows neither for it. What it does record, and what no file
+the loaders read records, is 87 observations about its doors: 47 known, 36 missing and 4 whose
+sources disagree. That is why it is still the second fixture - it is the only one with the
+known/missing/conflicting states to point at.
 
 ## The widget
 
 A tag anchored to the centre of the object's box, drawn on its own Gratify canvas. It shows the
-object's name, its category, the storey it belongs to, and whether it is pinned. An object with no
+object's name, its category and the storey it belongs to, and whether it is pinned. An object with no
 recorded name says so and prints its id instead of borrowing its category; an object with no storey
 link says that too.
 
 ## The inspector
 
-Two groups. **Identity** is what the model itself records: category, name, storey and object id,
-each shown as known or as missing with the reason. **Facts** is every observation recorded about that
-object, one row each, in the state the data leaves it in:
+Four kinds of group, and a sheet only shows the ones the model has something to put in.
+
+**Identity** is what the object record itself says: category, name, storey and object id, each known
+or missing with the reason.
+
+**Source** is which of the file's documents the object came from, and the path that document was
+exported from. Absent for a model that names no documents.
+
+**Facts** is every observation recorded about the object - the known/missing/conflicting vocabulary -
+one row each:
 
 - a known value with its unit and the sources that back it;
 - a missing value with the reason from the data - not provided, not applicable, not measured,
@@ -59,23 +59,59 @@ object, one row each, in the state the data leaves it in:
 
 A door on an unrated partition has no fire rating to record. That reads as missing for the reason
 "not applicable", which is a different answer from a rating nobody entered, and the sheet keeps the
-two apart.
+two apart. When there are none, the group's title says which kind of nothing it is: *none recorded
+for this object*, or *this file records no observations*, which is what a BOS export earns - it has a
+million and a half properties and not one observation, and those are different things.
+
+**One group per property group the file records**, in the file's own order. Every kind of value the
+tables hold has its own answer, and every one of them that carries no value says so with the reason
+its encoding gives rather than showing zero or an empty cell:
+
+- a number or an integer, printed to six significant figures with the unit exactly as recorded -
+  `SQUARE_FEET` stays `SQUARE_FEET`, `FEET_AND_FRACTIONAL_INCHES` stays that. Nothing is converted,
+  because a converted number that has lost the name it was recorded in cannot be checked;
+- a string, or *recorded, with no text written in it* where the exporter pooled the empty string;
+- an entity, which is a reference to another object of the same model. It reads as that object's
+  name, with its object id kept as the evidence line - `Base Constraint` on `bos:1165` reads
+  `L1 - Block 35`, evidenced `references bos:1057 (Levels)`. The row number the file actually holds
+  is never printed as if it were a value, and the `-1` an exporter writes for a property that
+  references nothing reads as *recorded as a reference to nothing*;
+- a point, as its three coordinates in the file's own coordinates;
+- anything else as *recorded under a value kind this reader does not know*.
+
+The subtitle counts what is there: "44 properties in 9 groups".
+
+### Where a storey comes from
+
+Three things in the file can say which storey an object sits on, and the sheet names which one
+answered, as the evidence line under the value.
+
+A **parent link** is the model saying so directly. A **recorded level** is the `Rvt:Element:Level`
+property, an entity value naming the level object; 17,106 of Snowdon's objects carry one and every
+one of them resolves to an object recorded under `Levels`. A storey object is its own storey, and
+that reads as *found by being a storey itself*. An object that carries none of the three reads as
+*no storey link recorded* - 33,941 of Snowdon's do - and no level is guessed from an elevation.
 
 ## Limitations
 
-- No format the loaders read carries observations, so a model read from a file has no facts and the
-  demo shows none. The generated building is the only fixture here with any.
-- A storey is read by walking parent links to an object recorded as one. No loaded model records a
-  parent link today, so on Snowdon nothing is linked to a storey and every storey row is missing.
-  An elevation would let one be guessed; guessing is not what this demo does.
+- No format the loaders read carries observations, so a model read from a file has no facts. It has
+  properties, which are a different thing and are shown as one: a property is a value somebody
+  recorded, with no statement about whether it was measured, disputed or left out.
+- A number is printed to six significant figures, which is more than the `float32` the file stores
+  carries. That is a rounding for the eye and the only one on the sheet; the unit and the scale are
+  untouched.
+- A long unit name can run past the right edge of the inspector column - `FEET_AND_FRACTIONAL_INCHES`
+  does at the default width. The value is drawn in full and the unit is clipped rather than
+  abbreviated, because abbreviating it would be inventing a unit name the file does not use. Widening
+  or wrapping that column belongs to `ui-gratify`'s inspector, not to this demo.
 - The generator cuts no openings, so a door leaf sits entirely inside its wall. The demo hides the
-  walls as it opens, through one style rule over every object recorded under `Wall` or `Walls` -
-  all 66 in the generated building, none at all in a model that records no category. Slabs stay, so
-  the storeys remain readable.
+  walls as it opens, through one style rule over every object recorded under `Wall` or `Walls` - all
+  66 in the generated building, 1,348 on Snowdon. Slabs stay, so the storeys remain readable.
 - Pointing writes the selection, so the object under the pointer is also the marked object. There is
   no separate hover state in the features yet.
-- The tag has no leader line and no callout shape: it is built from Gratify's `Stack` and `Label`
-  until Track UG's `Tag` widget lands.
+- A reference row names the object it points at but does not pin it when clicked. Making the row an
+  action would give the sheet a fresh input object after every change event, which is what the
+  inspector compares to decide whether to keep the scroll position and the opened rows.
 - Objects that draw no geometry have no box, so their tag anchors at the point their transform
   places them.
 
@@ -94,4 +130,17 @@ npx vitest run --root packages/demos test/demos/point-and-read
 ```
 
 The block that reads the real file is skipped when the file is not on the machine; everything else
-runs on the generated building.
+runs on the generated building, with the parameter tables built by hand through the loader's own
+decoder in `test/demos/point-and-read/properties-fixture.ts`.
+
+In the browser, from `viewer/`:
+
+```
+node packages/demos/scripts/.check.mjs point-and-read out.png
+```
+
+which prints `report()`. On the real model it reads `properties: 1620524`, `propertyDescriptors:
+2545`, `propertiesDropped: 0`, `documents: 7`, `storeyLinks: 17198` and `facts: 0`, and once an
+object is picked it also reports `shownProperties`, `shownPropertyGroups`, `shownDocument`,
+`shownStorey`, `shownStoreyVia` and `shownQuantity` - one real reading with its real unit, so the
+smoke records a value and not only a count.

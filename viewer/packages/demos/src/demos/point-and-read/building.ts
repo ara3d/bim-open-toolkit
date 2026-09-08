@@ -5,9 +5,19 @@
 // Everything is computed from the `ModelData` and `Geometry` the viewer opened, not from the
 // generator that made one of them: the demos open Snowdon Towers by default, and a model read from
 // a file has no generator to ask. What the file does not carry stays absent rather than filled in.
-// A BFAST records geometry, and one name and one category per entity when it carries BOS tables; it
-// records no parent link and no observations. So a model read from one has no storey links and no
-// facts, and every reader here reports that instead of inventing them.
+//
+// A BFAST carrying the BOS tables records far more than geometry: one parameter table of 1.6 million
+// rows over Snowdon, every one of its 51,139 objects carrying a sheet of between three and a hundred
+// and twenty properties, and one of seven source documents named for each. The loader decodes those
+// into columns (`formats/src/properties.ts`); this index says which columns belong to which object
+// key and holds nothing else, so the inspector reads one object's few dozen rows rather than walking
+// the table again after every change event.
+//
+// It still records no observations - the known/missing/conflicting vocabulary of `Fact` - so a
+// loaded model has no facts and this says so rather than dressing a property up as one. What it does
+// record, and what the parent walk alone missed, is the level each object sits on: `Rvt:Element:Level`
+// is an entity value naming another object, and 17,106 objects on Snowdon carry one. That is a
+// recorded storey link, so it is read as one, and the sheet says which way found it.
 //
 // It lives in this demo directory because the Inspect chapter has no shared module of its own:
 // `demos/src/demos/_shared` belongs to Track GAL. Moving it there is a request in CHECKPOINT-D1.md;
@@ -53,6 +63,18 @@ import {
   type Vec3,
 } from '@bim-open-toolkit/model';
 import {
+  documentOfObject,
+  noModelProperties,
+  objectProperties,
+  propertyCount,
+  propertyRowEnd,
+  propertyRowStart,
+  propertyValue,
+  type ModelDocuments,
+  type ModelProperties,
+  type PropertyReading,
+} from '@bim-open-toolkit/formats';
+import {
   defaultBuildingOptions,
   generateBuilding,
   type Building,
@@ -73,6 +95,28 @@ export type Storey = {
   readonly bounds: Bounds;
 };
 
+// How a storey link was found, worded to finish the sentence "found by". A parent link is the model
+// saying so directly, a recorded level is the `Rvt:Element:Level` property naming the level object,
+// and a storey object is on itself. All three are recorded, none is guessed, and the sheet names
+// which one answered so a reader can check it rather than trusting the row.
+export type StoreyLink = 'a parent link' | 'the level it records' | 'being a storey itself';
+
+// The storey an object sits on and what said so.
+export type StoreyOfObject = { readonly key: ObjectKey; readonly name: string | undefined; readonly via: StoreyLink };
+
+// The source document an object came from, as the file names it.
+export type SourceDocument = { readonly title: string | undefined; readonly path: string | undefined };
+
+// What the loader decoded of what the file records, when it was asked for it and the file carries
+// it. A generated model and a format that carries neither pass nothing and read as empty.
+export type RecordedTables = {
+  readonly properties?: ModelProperties | undefined;
+  readonly documents?: ModelDocuments | undefined;
+};
+
+// A model that names no source documents.
+export const noModelDocuments: ModelDocuments = { count: 0, title: [], path: [], ofObject: new Int32Array(0) };
+
 // One open model with the lookups the demos read. Every map is addressed by object key, which is
 // what sets, style rules and picks all speak.
 export type InspectIndex = {
@@ -81,13 +125,21 @@ export type InspectIndex = {
   // Object keys in the order `ModelData.objects` holds them.
   readonly keys: readonly ObjectKey[];
   readonly records: ReadonlyMap<ObjectKey, ObjectRecord>;
+  // The object row of each key, which is what the property and document columns are addressed by.
+  readonly rowOf: ReadonlyMap<ObjectKey, number>;
   // Every fact recorded about this model, in the order it was recorded. Empty for a loaded model.
   readonly recorded: readonly Fact[];
   readonly facts: FactIndex;
+  // The parameter tables the file records, empty when it records none or none were asked for.
+  readonly properties: ModelProperties;
+  // The source documents the file names, empty when it names none.
+  readonly documents: ModelDocuments;
   // The box an object occupies, or the point it sits at when it draws nothing.
   readonly bounds: ReadonlyMap<ObjectKey, Bounds>;
   // The storey an object belongs to, absent when nothing links it to one.
   readonly storeyOf: ReadonlyMap<ObjectKey, ObjectKey>;
+  // What found each of those links.
+  readonly storeyVia: ReadonlyMap<ObjectKey, StoreyLink>;
   readonly storeys: readonly Storey[];
 };
 
@@ -103,16 +155,27 @@ export const doorFactNames: readonly string[] = ['nominalWidth', 'clearWidth', '
 export const enclosureCategories: ReadonlySet<string> = new Set(['wall', 'walls']);
 
 // The categories a storey is recorded under, compared without case. The same set `features` matches
-// in `levelsOf`, so one convention answers the question everywhere.
+// in `levelsOf`, so one convention answers the question everywhere: Revit writes the plural and IFC
+// the singular, and both are listed as themselves rather than matched by a rule loose enough to turn
+// names that mean something else into names in this set.
 const storeyCategories: ReadonlySet<string> = new Set([
   'storey',
+  'storeys',
   'story',
+  'stories',
   'level',
+  'levels',
   'floor level',
+  'floor levels',
   'building storey',
+  'building storeys',
   'buildingstorey',
   'ifcbuildingstorey',
 ]);
+
+// The name the BOS exporter records an object's level under. It is an entity value, so it names
+// another object of the same model rather than a string somebody typed.
+export const levelPropertyName = 'Rvt:Element:Level';
 
 // True when the record is one of the categories, whatever case the model wrote it in.
 const inCategories = (categories: ReadonlySet<string>, record: ObjectRecord | undefined): boolean =>
@@ -199,14 +262,54 @@ const storeysOf = (
     });
 };
 
-const buildIndex = (model: ModelData, geometry: Geometry, recorded: readonly Fact[]): InspectIndex => {
+// The object each object records as its level, read once over the parameter columns rather than
+// per object later. Only the object's own rows are scanned - a few dozen each, not the whole table -
+// and only the descriptors named `Rvt:Element:Level`, so a file that records no such property costs
+// one map lookup and nothing else. An object naming itself is not a link and is left out.
+const levelRowOf = (properties: ModelProperties): ReadonlyMap<number, number> => {
+  const found = new Map<number, number>();
+  const wanted = properties.descriptors.byName.get(levelPropertyName);
+  if (wanted === undefined || wanted.length === 0) return found;
+  const set = new Set(wanted);
+  for (let object = 0; object < properties.objects; object += 1) {
+    const end = propertyRowEnd(properties, object);
+    for (let row = propertyRowStart(properties, object); row < end; row += 1) {
+      if (!set.has(properties.descriptor[row] ?? -1)) continue;
+      const target = propertyValue(properties, row);
+      if (typeof target === 'number' && target >= 0 && target !== object) found.set(object, target);
+      break;
+    }
+  }
+  return found;
+};
+
+const buildIndex = (
+  model: ModelData,
+  geometry: Geometry,
+  recorded: readonly Fact[],
+  tables: RecordedTables,
+): InspectIndex => {
+  const properties = tables.properties ?? noModelProperties;
+  const documents = tables.documents ?? noModelDocuments;
   const byObjectId = objectRowsByObjectId(model);
   const limit = model.objects.length + 1;
   const storeyOf = new Map<ObjectKey, ObjectKey>();
+  const storeyVia = new Map<ObjectKey, StoreyLink>();
   for (const record of model.objects) {
     const storeyId = storeyIdOf(byObjectId, record, limit);
     const storey = storeyId === undefined ? undefined : byObjectId.get(storeyId);
-    if (storey !== undefined) storeyOf.set(objectKey(record.ref), objectKey(storey.ref));
+    if (storey === undefined) continue;
+    storeyOf.set(objectKey(record.ref), objectKey(storey.ref));
+    storeyVia.set(objectKey(record.ref), storeyId === record.ref.objectId ? 'being a storey itself' : 'a parent link');
+  }
+  for (const [objectRow, levelRow] of levelRowOf(properties)) {
+    const record = model.objects[objectRow];
+    const level = model.objects[levelRow];
+    if (record === undefined || level === undefined) continue;
+    const key = objectKey(record.ref);
+    if (storeyOf.has(key)) continue;
+    storeyOf.set(key, objectKey(level.ref));
+    storeyVia.set(key, 'the level it records');
   }
   const bounds = boundsByKey(model, geometry);
   return {
@@ -214,10 +317,14 @@ const buildIndex = (model: ModelData, geometry: Geometry, recorded: readonly Fac
     geometry,
     keys: model.objects.map((record) => objectKey(record.ref)),
     records: new Map(model.objects.map((record) => [objectKey(record.ref), record])),
+    rowOf: new Map(model.objects.map((record, row) => [objectKey(record.ref), row])),
     recorded,
     facts: indexFacts(recorded),
+    properties,
+    documents,
     bounds,
     storeyOf,
+    storeyVia,
     storeys: storeysOf(model, storeyOf, bounds),
   };
 };
@@ -240,9 +347,9 @@ const generatedBuilding = (): Building => {
 export const factsFor = (model: ModelData): readonly Fact[] =>
   modelKey(model.ref) === modelKey(generatedBuilding().model.ref) ? generatedBuilding().facts : [];
 
-// The lookups for one opened model.
-export const inspectIndexOf = (model: ModelData, geometry: Geometry): InspectIndex =>
-  buildIndex(model, geometry, factsFor(model));
+// The lookups for one opened model, with whatever the loader read of what the file records.
+export const inspectIndexOf = (model: ModelData, geometry: Geometry, tables: RecordedTables = {}): InspectIndex =>
+  buildIndex(model, geometry, factsFor(model), tables);
 
 let syntheticHeld: InspectIndex | undefined;
 
@@ -262,6 +369,7 @@ const noModelIndex: InspectIndex = buildIndex(
   emptyModel({ id: 'none', revision: '0' }, { units: 'unknown', up: 'z', registration: { kind: 'unknown' } }),
   { meshes: [], instances: emptyInstances(0) },
   [],
+  {},
 );
 
 let held: InspectIndex | undefined;
@@ -298,11 +406,41 @@ export const centreOf = (index: InspectIndex, key: ObjectKey): Vec3 | undefined 
   return box === undefined ? undefined : boundsCenter(box);
 };
 
-// The name of the storey an object belongs to, or undefined when nothing links it to one. A room
-// whose storey link was lost reads as undefined rather than as a guessed level.
-export const storeyNameOf = (index: InspectIndex, key: ObjectKey): string | undefined => {
+// The storey an object belongs to and what said so, or undefined when nothing links it to one. A
+// room whose storey link was lost reads as undefined rather than as a guessed level.
+export const storeyOfObject = (index: InspectIndex, key: ObjectKey): StoreyOfObject | undefined => {
   const storey = index.storeyOf.get(key);
-  return storey === undefined ? undefined : index.records.get(storey)?.name;
+  const via = index.storeyVia.get(key);
+  if (storey === undefined || via === undefined) return undefined;
+  return { key: storey, name: index.records.get(storey)?.name, via };
+};
+
+// The name of the storey an object belongs to, or undefined when nothing links it to one.
+export const storeyNameOf = (index: InspectIndex, key: ObjectKey): string | undefined =>
+  storeyOfObject(index, key)?.name;
+
+// The source document an object came from, or undefined when the file names none for it. On a
+// federated model this is which of the discipline files the object was exported from.
+export const documentOf = (index: InspectIndex, key: ObjectKey): SourceDocument | undefined => {
+  const row = index.rowOf.get(key);
+  if (row === undefined || index.documents.count === 0) return undefined;
+  const document = documentOfObject(index.documents, row);
+  if (document < 0) return undefined;
+  return { title: index.documents.title[document], path: index.documents.path[document] };
+};
+
+// Every property the file records about one object, resolved, in the order the file records them.
+// Only that object's own rows are read - between three and a hundred and twenty on Snowdon - which
+// is why the row range is held here and not looked up again in the table.
+export const propertiesOf = (index: InspectIndex, key: ObjectKey): readonly PropertyReading[] => {
+  const row = index.rowOf.get(key);
+  return row === undefined ? [] : objectProperties(index.properties, row);
+};
+
+// How many properties the file records about one object, without resolving any of them.
+export const propertyCountOf = (index: InspectIndex, key: ObjectKey): number => {
+  const row = index.rowOf.get(key);
+  return row === undefined ? 0 : propertyCount(index.properties, row);
 };
 
 // Every fact recorded about an object, in the order they were recorded.

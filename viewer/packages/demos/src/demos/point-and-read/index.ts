@@ -23,6 +23,7 @@ import {
   success,
   type AnyFeature,
   type Disposable,
+  type ObjectKey,
   type Result,
   type Session,
 } from '@bim-open-toolkit/model';
@@ -30,15 +31,19 @@ import type { DemoReport } from '../../feature-demos/_shared/protocol.js';
 import { snowdonThenSynthetic } from '../_shared/snowdon.js';
 import type { Demo, GalleryViewer } from '../../gallery/contracts.js';
 import {
+  documentOf,
   factsOf,
   hideWallsRuleId,
   inspectIndex,
   inspectIndexOf,
+  propertiesOf,
+  propertyCountOf,
   runCalls,
+  storeyOfObject,
   useInspectIndex,
   wallKeys,
 } from './building.js';
-import { pointAndReadSheet } from './inspector.js';
+import { pointAndReadSheet, propertyGroupsOf, readingValue } from './inspector.js';
 import { pointAndReadPanels } from './panels.js';
 import { hoverCalls, openingCalls, pinCalls, pinnedSetId, resetCalls, shownKey } from './pinning.js';
 
@@ -49,11 +54,24 @@ export const pointAndReadFeatures: readonly AnyFeature[] = [editsFeature, setsFe
 export const pointAndReadReady = (session: Session): boolean =>
   session.read(appearanceSlice).rules.some((rule) => rule.id === hideWallsRuleId);
 
-// The counts the README quotes and the browser smoke reads back.
+// The first property of the shown object that was recorded with a unit, printed the way the sheet
+// prints it. It is in the report so the browser smoke records a real reading with its real unit
+// rather than only a count: nothing here converts, so what the smoke prints is what the file says.
+const shownQuantity = (index: ReturnType<typeof inspectIndex>, key: ObjectKey | undefined): string => {
+  if (key === undefined) return 'none';
+  const found = propertiesOf(index, key).find((reading) => reading.units !== undefined && reading.kind === 'number');
+  if (found === undefined) return 'none';
+  const value = readingValue(index, found);
+  return value.state === 'known' ? `${found.name ?? '?'} ${value.text} ${found.units ?? ''}`.trim() : 'none';
+};
+
+// The counts the README quotes and the browser smoke reads back: what the file records over the
+// whole model, and what the sheet is showing for the object being read.
 export const pointAndReadReport = (session: Session): DemoReport => {
   const index = inspectIndex();
   const key = shownKey(session);
   const coverage = coverageOf(index.recorded.map((item) => item.observation));
+  const storey = key === undefined ? undefined : storeyOfObject(index, key);
   return {
     objects: index.model.objects.length,
     wallsHidden: wallKeys(index).length,
@@ -61,8 +79,21 @@ export const pointAndReadReport = (session: Session): DemoReport => {
     factsKnown: coverage.known,
     factsMissing: coverage.missing,
     factsConflicting: coverage.conflicting,
+    // What the file records beyond its geometry, and none of which is an observation.
+    properties: index.properties.rows,
+    propertyDescriptors: index.properties.descriptors.count,
+    propertiesDropped: index.properties.dropped,
+    documents: index.documents.count,
+    storeyLinks: index.storeyOf.size,
     shown: key === undefined ? 'none' : (index.records.get(key)?.ref.objectId ?? 'none'),
+    shownCategory: (key === undefined ? undefined : index.records.get(key)?.category) ?? 'none',
     shownFacts: key === undefined ? 0 : factsOf(index, key).length,
+    shownProperties: key === undefined ? 0 : propertyCountOf(index, key),
+    shownPropertyGroups: key === undefined ? 0 : propertyGroupsOf(index, key).length,
+    shownDocument: (key === undefined ? undefined : documentOf(index, key)?.title) ?? 'none',
+    shownStorey: storey?.name ?? 'none',
+    shownStoreyVia: storey?.via ?? 'none',
+    shownQuantity: shownQuantity(index, key),
     pinned: session.read(setsSlice).sets.some((set) => set.id === pinnedSetId),
   };
 };
@@ -73,7 +104,7 @@ const start = (viewer: GalleryViewer): Promise<Result<Disposable>> => {
     return Promise.resolve(
       failure([diagnostic('point-and-read/no-model', 'The demo reads the model the viewer opened, and it opened none.')]),
     );
-  useInspectIndex(inspectIndexOf(model.data, model.geometry));
+  useInspectIndex(inspectIndexOf(model.data, model.geometry, { properties: model.properties, documents: model.documents }));
   const opened = runCalls(viewer, openingCalls());
   if (!opened.ok) return Promise.resolve(failure(opened.diagnostics));
   const hover = (event: PointerEvent): void => {
