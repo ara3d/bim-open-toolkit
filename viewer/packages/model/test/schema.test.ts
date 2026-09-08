@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { formatPath, type Result } from '../src/result.js';
 import {
-  array, boolean, described, integer, literal, nullValue, nullable, number, object, optional, parse,
-  record, refine, string, tuple, union, unknownValue, type Infer, type Schema,
+  array, boolean, described, enumeration, integer, literal, mapped, nullValue, nullable, number, object,
+  optional, parse, record, refine, string, tuple, union, unknownValue, type Infer, type Schema,
 } from '../src/schema.js';
 
 const paths = <T>(result: Result<T>): readonly string[] => result.diagnostics.map((item) => formatPath(item.path));
@@ -165,5 +165,83 @@ describe('schema types', () => {
     const vec: Schema<readonly [number, number, number]> = tuple(number(), number(), number());
     const result = parse(vec, [1, 2, 3]);
     expect(result.ok && result.value[2]).toBe(3);
+  });
+});
+
+describe('closed vocabularies', () => {
+  const axis = enumeration(['x', 'y', 'z']);
+
+  it('accepts a listed value and names the whole vocabulary when it rejects', () => {
+    expect(parse(axis, 'y')).toEqual({ ok: true, value: 'y', diagnostics: [] });
+    const rejected = parse(axis, 'w');
+    expect(rejected.ok).toBe(false);
+    expect(codes(rejected)).toEqual(['schema/enum']);
+    expect(rejected.diagnostics[0]?.message).toBe('Expected one of "x", "y", "z".');
+    expect(parse(axis, 1).ok).toBe(false);
+  });
+
+  it('describes itself as an enum, with the type the values share', () => {
+    expect(axis.describe()).toEqual({ type: 'string', enum: ['x', 'y', 'z'] });
+    expect(enumeration([1, 2, 3]).describe()).toEqual({ type: 'number', enum: [1, 2, 3] });
+    expect(enumeration(['a', 1]).describe()).toEqual({ enum: ['a', 1] });
+    expect(object({ up: axis }).describe()).toEqual({
+      type: 'object',
+      properties: { up: { type: 'string', enum: ['x', 'y', 'z'] } },
+      required: ['up'],
+    });
+  });
+
+  it('narrows to the literal union, not to the value type', () => {
+    const chosen: Infer<typeof axis> = 'z';
+    const read = parse(axis, chosen);
+    const value: 'x' | 'y' | 'z' = read.ok ? read.value : 'x';
+    expect(value).toBe('z');
+  });
+});
+
+describe('converting schemas', () => {
+  // What `object()` alone cannot do: read flat JSON and hand back a nested value.
+  const stamp = mapped(object({ id: string(), at: string() }), (value) => ({
+    id: value.id,
+    recorded: { at: value.at },
+  }));
+
+  it('converts what it accepted and keeps its description', () => {
+    expect(parse(stamp, { id: 'a', at: '2026-09-08' })).toEqual({
+      ok: true,
+      value: { id: 'a', recorded: { at: '2026-09-08' } },
+      diagnostics: [],
+    });
+    expect(stamp.describe()).toEqual(object({ id: string(), at: string() }).describe());
+  });
+
+  it('does not convert what it rejected, and reports where the value was wrong', () => {
+    const rejected = parse(stamp, { id: 'a', at: 7 });
+    expect(rejected.ok).toBe(false);
+    expect(paths(rejected)).toEqual(['at']);
+  });
+
+  it('converts where the enclosing schema rebuilds its value, and nowhere else', () => {
+    const counted = mapped(string(), (value) => value.length);
+    // `object` and `tuple` hand back the value they were given, so a conversion at a property
+    // position never reaches their result: wrap the object, do not wrap one of its properties.
+    expect(parse(object({ tag: counted }), { tag: 'abc' })).toEqual({
+      ok: true,
+      value: { tag: 'abc' },
+      diagnostics: [],
+    });
+    expect(parse(mapped(object({ tag: string() }), (value) => ({ tag: value.tag.length })), { tag: 'abc' })).toEqual({
+      ok: true,
+      value: { tag: 3 },
+      diagnostics: [],
+    });
+    // `array`, `record` and `union` build their result from what they checked, so it does reach them.
+    expect(parse(array(counted), ['ab', 'c'])).toEqual({ ok: true, value: [2, 1], diagnostics: [] });
+    expect(parse(record(counted), { a: 'ab' })).toEqual({ ok: true, value: { a: 2 }, diagnostics: [] });
+  });
+
+  it('stays optional when its inner schema is', () => {
+    expect(mapped(optional(string()), (value) => value ?? 'none').isOptional).toBe(true);
+    expect(mapped(string(), (value) => value).isOptional).toBe(false);
   });
 });

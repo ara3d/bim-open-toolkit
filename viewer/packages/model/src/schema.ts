@@ -20,6 +20,7 @@ export type JsonSchema = {
   readonly maxItems?: number;
   readonly anyOf?: readonly JsonSchema[];
   readonly const?: JsonLiteral;
+  readonly enum?: readonly JsonLiteral[];
 };
 
 // A validator of `unknown` that reports path-addressed diagnostics and describes itself.
@@ -125,6 +126,33 @@ export const literal = <T extends JsonLiteral>(value: T): Schema<T> =>
         ? success(value)
         : failure([diagnostic('schema/literal', `Expected ${JSON.stringify(value)}.`, path)]),
     () => ({ const: value }),
+  );
+
+// The JSON-schema type name of a literal value.
+const literalType = (value: JsonLiteral): JsonSchemaType =>
+  value === null ? 'null' : typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string';
+
+// The one type every literal has, or undefined when they do not all have the same one.
+const uniformType = (values: readonly JsonLiteral[]): JsonSchemaType | undefined => {
+  const types = values.map(literalType);
+  const first = types[0];
+  return first !== undefined && types.every((item) => item === first) ? first : undefined;
+};
+
+// Accepts exactly one of the given values, which is what a closed vocabulary is.
+// It describes itself as a JSON-schema `enum`, with the type as well when the values share one, so a
+// generated descriptor states the whole vocabulary rather than a list of alternatives.
+export const enumeration = <T extends JsonLiteral>(values: readonly T[]): Schema<T> =>
+  schemaOf(
+    (value, path) => {
+      const matched = values.some((candidate) => candidate === value);
+      const message = `Expected one of ${values.map((item) => JSON.stringify(item)).join(', ')}.`;
+      return narrow<T>(value, matched) ? success(value) : failure([diagnostic('schema/enum', message, path)]);
+    },
+    () => {
+      const type = uniformType(values);
+      return type === undefined ? { enum: [...values] } : { type, enum: [...values] };
+    },
   );
 
 // Accepts a list whose every element the item schema accepts. The accepted value is a new array.
@@ -245,6 +273,24 @@ export const refine = <T>(inner: Schema<T>, predicate: (value: T) => boolean, co
 // The same schema with a description attached, for generated tool and documentation text.
 export const described = <T>(inner: Schema<T>, description: string): Schema<T> =>
   schemaOf(inner.check, () => ({ ...inner.describe(), description }), inner.isOptional);
+
+// Accepts what the inner schema accepts and converts it, so a schema can produce a value of a shape
+// the JSON it read does not have: an object schema over flat properties can build an `Observation`.
+// Wrap the object, not one of its properties: `object` and `tuple` hand back the value they were
+// given, so a conversion at a property position is checked and then dropped, while `array`, `record`
+// and `union` build their result from what they checked and do carry it.
+// The description stays the inner schema's, because it describes what is accepted, not what is made.
+// The conversion runs only on success and is expected to be total; a conversion that can fail is a
+// `refine` on the input, or an inner schema whose own check rejects.
+export const mapped = <T, U>(inner: Schema<T>, convert: (value: T) => U): Schema<U> =>
+  schemaOf(
+    (value, path) => {
+      const result = inner.check(value, path);
+      return result.ok ? success(convert(result.value), result.diagnostics) : failure(result.diagnostics);
+    },
+    () => inner.describe(),
+    inner.isOptional,
+  );
 
 // Checks a value against a schema from the root of a document.
 export const parse = <T>(schema: Schema<T>, value: unknown): Result<T> => schema.check(value, rootPath);

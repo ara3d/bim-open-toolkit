@@ -1,4 +1,5 @@
 import { multiplyMatrix, scaling, type Matrix4, type Vec3 } from './math.js';
+import { enumeration, literal, number, object, string, union, type Schema } from './schema.js';
 
 // A length unit a model can report in. `unknown` stays explicit and is never guessed.
 export type LengthUnit = 'metres' | 'centimetres' | 'millimetres' | 'feet' | 'inches' | 'unknown';
@@ -106,3 +107,45 @@ export const metresZUpLocal: CoordinateContext = {
   up: 'z',
   registration: { kind: 'local' },
 };
+
+// Every length unit a frame can report in, including the honest one.
+export const lengthUnits: readonly LengthUnit[] = [
+  'metres',
+  'centimetres',
+  'millimetres',
+  'feet',
+  'inches',
+  'unknown',
+];
+
+// Both up-axis conventions.
+export const upAxes: readonly UpAxis[] = ['y', 'z'];
+
+// The unit a frame reports lengths in.
+export const lengthUnitSchema: Schema<LengthUnit> = enumeration(lengthUnits);
+
+// Which axis a frame calls up.
+export const upAxisSchema: Schema<UpAxis> = enumeration(upAxes);
+
+// Where a project frame sits on the earth.
+export const geographicAnchorSchema: Schema<GeographicAnchor> = object({
+  latitude: number(),
+  longitude: number(),
+  altitude: number(),
+  trueNorthDegrees: number(),
+});
+
+// How a frame is registered: on its own, against a project, against the world, or not stated.
+export const registrationSchema: Schema<Registration> = union<Registration>(
+  object({ kind: literal('local') }),
+  object({ kind: literal('project'), projectId: string() }),
+  object({ kind: literal('geographic'), anchor: geographicAnchorSchema }),
+  object({ kind: literal('unknown') }),
+);
+
+// A coordinate frame as a document carries it, which is what a workflow comparing two sources reads.
+export const coordinateContextSchema: Schema<CoordinateContext> = object({
+  units: lengthUnitSchema,
+  up: upAxisSchema,
+  registration: registrationSchema,
+});
