@@ -16,6 +16,16 @@ describe('access coordination', () => {
     expect(exceptionRows(result)).toEqual(fixture.expected['exceptions']);
   });
 
+  it('states every finding as a candidate and never as a verified clash', () => {
+    for (const row of resultRows(result, 'candidateFindings')) expect(row['basis']).toBe('bounding-box-overlap');
+    expect(result.rules.map((rule) => rule.id)).toEqual([
+      'access-coordination/candidate',
+      'access-coordination/missing',
+    ]);
+    expect(result.overlays.every((overlay) => overlay.outcome === 'candidate')).toBe(true);
+    expect(JSON.stringify(result.tables).toLowerCase()).not.toContain('clash');
+  });
+
   it('refuses an envelopes table that repeats an id rather than losing a row', () => {
     const repeated = runAccessCoordination({ ...input, envelopes: [...input.envelopes, ...input.envelopes.slice(0, 1)] });
     expect(repeated.ok).toBe(false);
