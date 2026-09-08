@@ -33,6 +33,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.DataMod
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingModel.Workflows.Cli", "tools\building-model-workflows\BuildingModel.Workflows.Cli.csproj", "{54DD1FF5-3521-47AE-99B5-656FC294591A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.BuildingModel.DuckDb", "src\Ara3D.BimOpenSchema.BuildingModel.DuckDb\Ara3D.BimOpenSchema.BuildingModel.DuckDb.csproj", "{80F81E14-57D2-43AE-BA2B-31011A51D01B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -187,6 +191,18 @@ Global
 		{54DD1FF5-3521-47AE-99B5-656FC294591A}.Release|x64.Build.0 = Release|Any CPU
 		{54DD1FF5-3521-47AE-99B5-656FC294591A}.Release|x86.ActiveCfg = Release|Any CPU
 		{54DD1FF5-3521-47AE-99B5-656FC294591A}.Release|x86.Build.0 = Release|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Debug|x64.Build.0 = Debug|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Debug|x86.Build.0 = Debug|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Release|x64.ActiveCfg = Release|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Release|x64.Build.0 = Release|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Release|x86.ActiveCfg = Release|Any CPU
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -204,5 +220,6 @@ Global
 		{FC2BBE80-E85E-4726-80DE-B6E4386B272E} = {218B6F35-38A8-8894-4A45-A70D6B0063B3}
 		{59EA2F8C-7284-43B3-B6B3-521F4EEFC6F3} = {218B6F35-38A8-8894-4A45-A70D6B0063B3}
 		{54DD1FF5-3521-47AE-99B5-656FC294591A} = {218B6F35-38A8-8894-4A45-A70D6B0063B3}
+		{80F81E14-57D2-43AE-BA2B-31011A51D01B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

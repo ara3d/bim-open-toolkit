@@ -4,5 +4,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Source/Ara3D.BimOpenSchema.BuildingModel.Source.csproj" />
     <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO.csproj" />
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.DuckDb/Ara3D.BimOpenSchema.BuildingModel.DuckDb.csproj" />
   </ItemGroup>
 </Project>

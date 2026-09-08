@@ -4,11 +4,13 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Workflows/Ara3D.BimOpenSchema.BuildingModel.Workflows.csproj" />
     <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO/Ara3D.BimOpenSchema.BuildingModel.Workflows.IO.csproj" />
+    <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.DuckDb/Ara3D.BimOpenSchema.BuildingModel.DuckDb.csproj" />
     <ProjectReference Include="../../src/Ara3D.BimOpenSchema.BuildingModel.Source/Ara3D.BimOpenSchema.BuildingModel.Source.csproj" />
     <ProjectReference Include="../../src/Ara3D.BimOpenSchema.DataModel.IO/Ara3D.BimOpenSchema.DataModel.IO.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(Ara3DMicrosoftNetTestSdkVersion)" />
     <PackageReference Include="NUnit" Version="$(Ara3DNUnitVersion)" />
     <PackageReference Include="NUnit3TestAdapter" Version="$(Ara3DNUnit3TestAdapterVersion)" />
+    <PackageReference Include="DuckDB.NET.Data.Full" Version="1.3.2" />
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 </Project>

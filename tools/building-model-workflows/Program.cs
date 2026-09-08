@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Ara3D.BimOpenSchema.BuildingModel;
+using Ara3D.BimOpenSchema.BuildingModel.DuckDb;
 using Ara3D.BimOpenSchema.BuildingModel.Source;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows.IO;
@@ -36,6 +37,9 @@ internal static class Program
                 case "reopen" when args.Length == 3:
                     Reopen(args[1], args[2]);
                     return 0;
+                case "export-duckdb" when args.Length is 3 or 4:
+                    ExportDuckDb(args[1], args[2], args.Length == 4 ? StoragePolicy(args[3]) : NumericStoragePolicy.Unknown);
+                    return 0;
                 case "portfolio" when args.Length >= 3:
                     Portfolio(args[1], args.Skip(2).ToArray());
                     return 0;
@@ -55,7 +59,7 @@ internal static class Program
 
     private static int Usage()
     {
-        Console.Error.WriteLine("Commands: prepare <source.bos> <cache.bfast> | run <cache.bfast> <output-directory> [--declared-units|--revit-internal] | reopen <projection.json> <output-directory> | portfolio <output-directory> <projection.json> [...] | compare <before.json> <after.json> <output-directory> [--complete-scope]");
+        Console.Error.WriteLine("Commands: prepare <source.bos> <cache.bfast> | run <cache.bfast> <output-directory> [--declared-units|--revit-internal] | reopen <projection.json> <output-directory> | export-duckdb <cache.bfast> <output.duckdb> [--declared-units|--revit-internal] | portfolio <output-directory> <projection.json> [...] | compare <before.json> <after.json> <output-directory> [--complete-scope]");
         Console.Error.WriteLine("BFAST preparation is explicit; run/reopen never read or decode the original BOS. --declared-units asserts stored numeric units, not merely display units.");
         return 2;
     }
@@ -106,6 +110,23 @@ internal static class Program
         WriteMetrics(directory, "prepared-projection-open-query", load, 0, query, new FileInfo(path).Length);
         Console.WriteLine($"Prepared projection opened and queried in {query:F3}s. Results: {Path.GetFullPath(directory)}");
     }
+
+    private static void ExportDuckDb(string cache, string destination, NumericStoragePolicy storagePolicy)
+    {
+        var metadata = SourceCache.Inspect(cache);
+        var projection = BuildingMapper.Map(SourceCache.Load(cache), new MappingOptions(metadata.SourceSha256,
+            "sha256:" + metadata.SourceSha256, Path.GetFileNameWithoutExtension(metadata.SourcePath),
+            DateTimeOffset.UtcNow, NumericStorage: storagePolicy));
+        new DuckDbProjectionWriter().Write(projection, destination);
+        Console.WriteLine($"DuckDB core projection: {Path.GetFullPath(destination)}");
+    }
+
+    private static NumericStoragePolicy StoragePolicy(string option) => option switch
+    {
+        "--declared-units" => NumericStoragePolicy.DeclaredDescriptor,
+        "--revit-internal" => NumericStoragePolicy.RevitInternal,
+        _ => throw new ArgumentException("Unknown storage policy option.")
+    };
 
     private static ImmutableArray<WorkflowReport> Reports(BuildingProjection projection)
         => [ArchitecturalWorkflows.Schedule(projection),
