@@ -1,0 +1,173 @@
+/* The demo page's layout, and the inspector in it.
+
+   The viewport is full-bleed and the inspector is docked right at 360 px; under 750 px the
+   inspector becomes a bottom sheet, because a 360 px rail beside a phone-width viewport leaves
+   neither of them usable. */
+
+.demo-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--inspector-width);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "viewport inspector"
+    "status   status"
+    "mirror   mirror";
+  flex: 1;
+  min-height: 0;
+}
+
+.demo-page > .gallery-viewport {
+  grid-area: viewport;
+}
+
+.demo-page.inspector-closed {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "viewport"
+    "status"
+    "mirror";
+}
+
+.inspector {
+  grid-area: inspector;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  background: var(--panel);
+  border-left: 1px solid var(--rule);
+}
+
+.inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding: 8px var(--gap);
+  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+}
+
+.inspector-title {
+  margin: 0;
+  font: var(--size-body) / 1.2 var(--display);
+  font-weight: 600;
+}
+
+.inspector-toggle {
+  padding: 3px 8px;
+  font: var(--size-small) / 1.2 var(--body);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.inspector-sheet {
+  padding: var(--gap);
+}
+
+.sheet-title {
+  margin: 0 0 2px;
+  font: var(--size-lead) / 1.2 var(--display);
+}
+
+.sheet-subtitle {
+  margin: 0 0 var(--gap);
+  font-size: var(--size-small);
+  color: var(--ink-muted);
+}
+
+.sheet-group-title,
+.sheet-table-title {
+  margin: var(--gap) 0 6px;
+  font: var(--size-small) / 1.2 var(--body);
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.sheet-rows {
+  display: grid;
+  grid-template-columns: minmax(8ch, 40%) minmax(0, 1fr);
+  gap: 2px var(--gap);
+  margin: 0;
+}
+
+.sheet-label {
+  font-size: var(--size-small);
+  color: var(--ink-muted);
+}
+
+.sheet-value {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--size-small);
+  /* `--state-color` is analytical: it comes from `analytical.ts`, never from a theme token. */
+  border-left: 3px solid var(--state-color, transparent);
+  padding-left: 6px;
+}
+
+.sheet-value.state-missing,
+.sheet-value.state-conflicting {
+  font-style: italic;
+}
+
+.sheet-evidence {
+  display: block;
+  font-family: var(--body);
+  font-style: normal;
+  color: var(--ink-muted);
+}
+
+.sheet-action {
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: calc(var(--size-small) * 0.9);
+  color: var(--link);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.sheet-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: calc(var(--size-small) * 0.92);
+}
+
+.sheet-grid th,
+.sheet-grid td {
+  padding: 2px 6px 2px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.sheet-empty {
+  margin: 0;
+  font-size: var(--size-small);
+  color: var(--ink-muted);
+}
+
+@media (max-width: 750px) {
+  .demo-page {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "viewport"
+      "inspector"
+      "status"
+      "mirror";
+  }
+
+  .inspector {
+    max-height: 45vh;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+}

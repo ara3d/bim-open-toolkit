@@ -1,0 +1,183 @@
+/* The index: a 220 px chapter rail and the demos, two to a row.
+
+   A card leads with the question, because that is what a person is choosing between; the title is
+   what they will call it afterwards. The thumbnail is the picture the browser smoke captured, at
+   the size it captured it. */
+
+.index-page {
+  display: grid;
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
+  gap: var(--gap-wide);
+  align-items: start;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--gap-wide);
+}
+
+.chapter-rail {
+  position: sticky;
+  top: var(--gap-wide);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rail-link {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding: 8px 10px;
+  font: var(--size-body) / 1.3 var(--display);
+  text-align: left;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-left: 2px solid var(--rule);
+  cursor: pointer;
+  transition: border-color var(--motion) ease, color var(--motion) ease;
+}
+
+.rail-link:hover:not(:disabled) {
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+
+.rail-link:disabled {
+  color: var(--ink-muted);
+  cursor: default;
+}
+
+.rail-count {
+  font-family: var(--mono);
+  font-size: var(--size-small);
+  color: var(--ink-muted);
+}
+
+.index-body {
+  min-width: 0;
+}
+
+.index-title {
+  margin: 0 0 8px;
+  font: var(--size-display) / 1.15 var(--display);
+  font-weight: 600;
+}
+
+.index-lead {
+  margin: 0 0 var(--gap-wide);
+  max-width: 62ch;
+  font-size: var(--size-lead);
+  color: var(--ink-muted);
+}
+
+.chapter {
+  margin: 0 0 var(--gap-wide);
+  padding-top: var(--gap);
+}
+
+.chapter-title {
+  margin: 0 0 var(--gap);
+  padding-bottom: 6px;
+  font: var(--size-title) / 1.2 var(--display);
+  font-weight: 600;
+  border-bottom: 1px solid var(--rule);
+}
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap-wide);
+}
+
+@media (max-width: 900px) {
+  .index-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chapter-rail {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .chapter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.demo-card {
+  display: block;
+  padding: var(--gap);
+  color: inherit;
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  transition: border-color var(--motion) ease, transform var(--motion) ease;
+}
+
+.demo-card:hover {
+  border-color: var(--accent);
+}
+
+.card-thumbnail {
+  display: block;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  background: var(--viewport-clear);
+  border-radius: var(--radius);
+}
+
+.card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-thumbnail-none {
+  display: grid;
+  place-items: center;
+  font-size: var(--size-small);
+  color: var(--on-dark-muted);
+  background:
+    repeating-linear-gradient(45deg, transparent 0 8px, rgb(255 255 255 / 4%) 8px 16px),
+    var(--viewport-clear);
+}
+
+.card-question {
+  margin: var(--gap) 0 4px;
+  font-size: var(--size-lead);
+  font-family: var(--display);
+}
+
+.card-title {
+  margin: 0 0 8px;
+  font: var(--size-small) / 1.3 var(--body);
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.card-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: calc(var(--size-small) * 0.9);
+}
+
+.card-labels li {
+  padding: 1px 6px;
+  color: var(--ink-muted);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.card-labels .label-fixture {
+  color: var(--ink);
+  border-color: var(--accent);
+}

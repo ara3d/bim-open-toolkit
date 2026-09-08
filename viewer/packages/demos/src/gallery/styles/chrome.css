@@ -1,0 +1,194 @@
+/* The frame: a 48 px bar and the area under it. Light chrome, serif headings, one warm accent,
+   cobalt for anything you can follow. Nothing here sets a colour directly; every value is a token
+   from `tokens.css`, so the dark theme is a change of ten declarations and not of this file. */
+
+.gallery-bar {
+  display: flex;
+  gap: var(--gap-wide);
+  align-items: center;
+  min-height: var(--bar-height);
+  padding: 0 var(--gap-wide);
+  background: var(--panel);
+  border-bottom: 1px solid var(--rule);
+}
+
+.bar-lead {
+  display: flex;
+  gap: var(--gap-wide);
+  align-items: baseline;
+  min-width: 0;
+  flex: 1;
+}
+
+.bar-trail {
+  display: flex;
+  gap: var(--gap-wide);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.bar-chrome {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.bar-button {
+  padding: 5px 10px;
+  font: var(--size-small) / 1.2 var(--body);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--motion) ease, border-color var(--motion) ease;
+}
+
+.bar-button:hover {
+  border-color: var(--accent);
+}
+
+.bar-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-size: var(--size-lead);
+}
+
+.wordmark-note,
+.crumb-sep {
+  color: var(--ink-muted);
+  font-size: var(--size-small);
+}
+
+/* Breadcrumb and fixture picker: both are lists of one-line links, so they share their rules. */
+.breadcrumb,
+.fixture-picker {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+  font-size: var(--size-small);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumb,
+.fixture-choice {
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+a.crumb,
+.fixture-choice {
+  color: var(--link);
+}
+
+a.crumb:hover,
+.fixture-choice:hover {
+  text-decoration: underline;
+}
+
+.crumb-here {
+  color: var(--ink);
+}
+
+.fixture-picker::before {
+  content: "Fixture";
+  color: var(--ink-muted);
+}
+
+.fixture-choice[aria-current="true"] {
+  color: var(--ink);
+  border-bottom: 2px solid var(--accent);
+  text-decoration: none;
+}
+
+.bar-source,
+.bar-verify {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--size-small);
+}
+
+.bar-source .label,
+.bar-verify .label {
+  color: var(--ink-muted);
+}
+
+.bar-source code,
+.bar-verify code {
+  font-family: var(--mono);
+  font-size: calc(var(--size-small) * 0.92);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1px 5px;
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gallery-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-strip {
+  grid-area: status;
+  margin: 0;
+  padding: 6px var(--gap-wide);
+  font-size: var(--size-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  background: var(--panel);
+  border-top: 1px solid var(--rule);
+}
+
+/* The DOM mirror: present for a keyboard and a screen reader, out of the way of a pointer. It is
+   not `display: none`, because that would take it out of the accessibility tree as well. */
+.semantics-mirror {
+  grid-area: mirror;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.semantics-mirror:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: var(--gap);
+  clip-path: none;
+  background: var(--panel);
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 860px) {
+  .gallery-bar {
+    flex-wrap: wrap;
+    padding: 6px var(--gap);
+  }
+
+  .bar-trail {
+    order: 3;
+    flex-basis: 100%;
+  }
+}

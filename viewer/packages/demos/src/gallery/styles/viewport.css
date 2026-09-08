@@ -21,10 +21,12 @@ body {
   min-height: 0;
 }
 
+/* The stage. It is the element `GalleryViewer` is given, so a panel or a tag placed by projection
+   is positioned against it and needs no other reference frame. */
 .gallery-viewport {
   position: relative;
-  flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
   background: var(--viewport-clear);
 }
