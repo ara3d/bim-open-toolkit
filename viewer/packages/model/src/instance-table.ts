@@ -42,14 +42,20 @@ const componentColumns = (
   );
 };
 
+// The records' optional columns, present only when the records carry them, sharing their arrays.
+const optionalColumns = (records: InstanceRecords): readonly (readonly [string, Column])[] =>
+  records.visible === undefined ? [] : [['visible', { type: 'bool', values: records.visible }] as const];
+
 // Instance records as a table, one row per instance. `meshIndex` and `objectIndex` are the records'
 // own arrays, not copies; each transform and colour component is its own column, so filtering,
 // sorting, taking and joining rows keep every column of a row together. Building the table costs
-// one pass and one allocation per component column, never one per row.
+// one pass and one allocation per component column, never one per row. An optional records column
+// becomes a table column only when the records carry it, so absent stays absent.
 export const instanceTable = (records: InstanceRecords): Table =>
   table([
     ['meshIndex', { type: 'i32', values: records.meshIndex }],
     ['objectIndex', { type: 'i32', values: records.objectIndex }],
     ...componentColumns(transformColumnNames, records.transform, transformStride, records.count),
     ...componentColumns(colorColumnNames, records.color, colorStride, records.count),
+    ...optionalColumns(records),
   ]);

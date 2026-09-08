@@ -19,21 +19,26 @@ export type Mesh = {
 
 // Instances as columns rather than objects: one row per drawn or geometry-free placement.
 // `meshIndex` is `noMesh` when the row has no geometry; `objectIndex` is the row in `ModelData.objects`.
+// `visible` holds 1 for a drawn row and 0 for a hidden one; absent means every row is visible, so
+// hiding is a column write on a records value that keeps every row.
 export type InstanceRecords = {
   readonly count: number;
   readonly meshIndex: Int32Array;
   readonly transform: Float32Array;
   readonly color: Float32Array;
   readonly objectIndex: Int32Array;
+  readonly visible?: Uint8Array | undefined;
 };
 
 // One instance read out of the columns, for building and for tests. Bulk code uses the columns.
+// `visible` defaults to true; a row that sets it false is what gives the built records a column.
 export type InstanceRecord = {
   readonly meshIndex: number;
   readonly transform: Matrix4;
   readonly color: Color;
   readonly opacity: number;
   readonly objectIndex: number;
+  readonly visible?: boolean | undefined;
 };
 
 // The meshes of a model together with the instances that place them.
@@ -84,15 +89,20 @@ export const emptyInstances = (count: number): InstanceRecords => {
 };
 
 // Instance columns built from rows. Use it in generators and tests, not in bulk update paths.
+// The `visible` column is allocated only when some row is hidden, since absent reads as all visible.
 export const instanceRecords = (rows: readonly InstanceRecord[]): InstanceRecords => {
   const records = emptyInstances(rows.length);
+  const visible = rows.some((row) => row.visible === false)
+    ? new Uint8Array(rows.length).fill(1)
+    : undefined;
   rows.forEach((row, index) => {
     records.meshIndex[index] = row.meshIndex;
     records.objectIndex[index] = row.objectIndex;
     records.transform.set(row.transform, index * transformStride);
     records.color.set([row.color[0], row.color[1], row.color[2], row.opacity], index * colorStride);
+    if (visible !== undefined && row.visible === false) visible[index] = 0;
   });
-  return records;
+  return visible === undefined ? records : { ...records, visible };
 };
 
 // The transform of one instance, copied out of the column.
@@ -116,6 +126,10 @@ export const instanceColor = (records: InstanceRecords, row: number): Color => [
 // The opacity factor of one instance.
 export const instanceOpacity = (records: InstanceRecords, row: number): number =>
   records.color[row * colorStride + 3] ?? 1;
+
+// True when the instance row is drawn. Records with no `visible` column have every row visible.
+export const isInstanceVisible = (records: InstanceRecords, row: number): boolean =>
+  records.visible === undefined || (records.visible[row] ?? 1) !== 0;
 
 // True when the instance row draws no geometry.
 export const isGeometryFree = (records: InstanceRecords, row: number): boolean =>

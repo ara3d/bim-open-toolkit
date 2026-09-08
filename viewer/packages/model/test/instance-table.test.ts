@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  colorColumnNames, emptyInstances, instanceColor, instanceOpacity, instanceTable, instanceTransform,
-  numberOf, table, transformColumnNames, type InstanceRecords, type Table,
+  cellOf, colorColumnNames, emptyInstances, identityMatrix, instanceColor, instanceOpacity,
+  instanceRecords, instanceTable, instanceTransform, numberOf, rowsInSet, setOf, setOfRows, table,
+  transformColumnNames, type InstanceRecord, type InstanceRecords, type Table,
 } from '../src/index.js';
 import { colorStride, transformStride } from '../src/mesh.js';
 
@@ -84,6 +85,31 @@ describe('instanceTable', () => {
 
   it('has no rows when the records have none', () => {
     expect(instanceTable(emptyInstances(0)).rowCount).toBe(0);
+  });
+
+  it('has no visibility column when the records have none', () => {
+    expect(rows.columns.has('visible')).toBe(false);
+  });
+});
+
+describe('instanceTable visibility', () => {
+  const keys = ['a', 'b', 'c'];
+  const placed = instanceRecords(keys.map((_unused, index): InstanceRecord => ({
+    meshIndex: 0, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: index,
+    visible: index !== 1,
+  })));
+
+  it('exposes the records own visibility bytes as a bool column', () => {
+    const rows = instanceTable(placed);
+    expect(rows.columns.get('visible')?.values).toBe(placed.visible);
+    expect([0, 1, 2].map((row) => cellOf(rows, 'visible', row))).toEqual([true, false, true]);
+  });
+
+  it('keeps a hidden row hidden through a set selection', () => {
+    const kept = rowsInSet(instanceTable(placed), 'objectIndex', setOf(['b', 'c']), keys);
+    expect(kept.rowCount).toBe(2);
+    expect([0, 1].map((row) => cellOf(kept, 'visible', row))).toEqual([false, true]);
+    expect(setOfRows(kept, 'objectIndex', keys)).toEqual(setOf(['b', 'c']));
   });
 });
 

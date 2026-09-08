@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { identityMatrix, translation } from '../src/math.js';
 import {
   boundsOfPositions, emptyInstances, geometryBounds, instanceColor, instanceOpacity, instanceRecords,
-  instanceTransform, isGeometryFree, mesh, noMesh, triangleCount, vertexCount, type Geometry,
+  instanceTransform, isGeometryFree, isInstanceVisible, mesh, noMesh, triangleCount, vertexCount,
+  type Geometry, type InstanceRecord,
 } from '../src/mesh.js';
 
 const triangle = mesh(
@@ -42,6 +43,24 @@ describe('mesh', () => {
     expect(instanceColor(records, 0)).toEqual([1, 0, 0]);
     expect(instanceOpacity(records, 0)).toBeCloseTo(0.5);
     expect(isGeometryFree(records, 1)).toBe(true);
+  });
+
+  it('reads every row of records with no visibility column as visible', () => {
+    const records = emptyInstances(2);
+    expect(records.visible).toBeUndefined();
+    expect(isInstanceVisible(records, 0)).toBe(true);
+    expect(isInstanceVisible(records, 1)).toBe(true);
+  });
+
+  it('allocates a visibility column only when a row is hidden', () => {
+    const row = (visible?: boolean): InstanceRecord => ({
+      meshIndex: 0, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: 0,
+      ...(visible === undefined ? {} : { visible }),
+    });
+    expect(instanceRecords([row(), row(true)]).visible).toBeUndefined();
+    const mixed = instanceRecords([row(true), row(false), row()]);
+    expect(mixed.visible).toEqual(Uint8Array.from([1, 0, 1]));
+    expect([0, 1, 2].map((index) => isInstanceVisible(mixed, index))).toEqual([true, false, true]);
   });
 
   it('bounds the placed geometry and ignores geometry-free rows', () => {
