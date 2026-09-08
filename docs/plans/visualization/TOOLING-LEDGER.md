@@ -19,7 +19,8 @@ Verdicts: **keep**, **adjust**, **off**, **watch** (not enough evidence yet).
 | Standing per-fence commit grants (deviation from one-holder rule) | 0 | 0 | — | 0 | watch | Count `index.lock` collisions and any cross-fence staging. |
 | `wave.json` manifest (fences as data) | — | 1 | — | 0 | watch | Only useful if something reads it (hooks off, gate `clean` step not wired). Drop if unused by wave 2. |
 | Performance tests as `*.perf.ts` behind `npm run perf` | — | 0 | — | 0 | watch | PERF track is the first user. |
-| Parallel-wave checkpoints and briefs | supervisor time | 3 briefs | — | 0 | watch | Judge by rework and blocked time per track at wave end. |
+| Parallel-wave checkpoints and briefs | supervisor time | 10 briefs | — | 1 | keep | Friction: none from the format. The checkpoints were what made the stalled tracks resumable: S and M could be relaunched from their own notes without re-deriving anything. |
+| Concurrent subagent count | — | 7 at once | — | 1 | adjust | Seven concurrent subagents stalled the host for two hours (2026-09-07 20:07 to 22:13). Limit set to three; four to be tried later. |
 
 ## Review log
 
