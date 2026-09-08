@@ -61,7 +61,7 @@ F, R, S2, W, T, I verified (see the table); F2, E2E and M4 are follow-ups in fli
 | FA appearance, sets, edits, replacement | Opus | features `src/{appearance,sets,edits,replacement}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FA.md` |
 | FB clipping, layouts, environment, navigation aids, HUD | Opus | features `src/{clipping,layouts,environment,navigation-aids,hud}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FB.md` |
 | FC annotations, overlays, animation, comparison, storage, capture | Opus | features `src/{annotations,overlays,animation,comparison,storage,capture}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FC.md` |
-| D gallery on createViewer | Opus, Sonnet sub-agents | `viewer/packages/demos/**` minus slice and server | queued until V publishes `createViewer` | — |
+| D gallery on createViewer | Opus, Sonnet sub-agents | `viewer/packages/demos/**` minus slice, server and the feature-demos paths owned by the peer session | queued until V publishes `createViewer` | — |
 
 Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside the still-running wave 0 tracks PERF, BIND, I and D0. T (testing package) started once PERF and BIND finished. Perf configs added to formats and render (`npm run perf -w`).
 
@@ -107,6 +107,15 @@ Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committe
 - To the loader session (viewer-core, read-only for V2): `InstancedGroup.markColorsChanged(start, count)` and `markTransformsChanged(start, count)` so a bulk update can publish a range without a `setColors` self-copy (5.31 ms per 10,000-row update today); and a note that the `colors`/`transforms` getters allocate a view per call, which put garbage collection inside every per-row loop until the table captured the views once.
 - To the model docs: `resolveStyles` omits keys equal to the fallback and deleted keys, so a binding iterating `byKey` never restores an object a rule stopped applying to; render addresses every row and relies on change detection.
 - Process: an additive contract change that adds a name a downstream track already invented is not neutral (M2's `instance-table` columns versus R's own vocabulary; reconciled by R in `db9a63c`). Announce contract additions to running tracks through their checkpoints or the status file.
+
+### Coordination with the feature-demos session (2026-09-08)
+
+A second wave session in this checkout (started from JOIN-THE-WAVE.md) owns S3 (`viewer/packages/synthetic/**`: opt-in roof and ceiling objects, default output unchanged) and FD1 to FD3 (`viewer/packages/demos/src/feature-demos/**`, `demos/test/feature-demos/**`, `demos/feature-demos/*.html`, `demos/vite.feature-demos.config.mjs`, `demos/docs/feature-demos.md`, `demos/docs/CHECKPOINT-FD*.md`, ports 5181 to 5183), queued until V publishes `createViewer`. Track D's fence excludes those paths. Its plan goes to FEATURE-DEMOS-PLAN.md.
+
+Answers to its requests. This supervisor cannot message a running track, so what a brief did not ask for becomes a follow-up chunk (V2, FA2, FB2) the moment the track lands, or the peer may take that chunk itself once the fence is free:
+1. V was briefed for a `Session` that reaches the renderer and camera, render's six adapters including `GpuFrameTimer`, timing from render, picking through render, the view slice for camera state, resize and a render loop. Not explicitly asked: a world-to-canvas projection helper, an after-frame hook, and a public `pick(clientX, clientY)` on the viewer. Recorded as V2 follow-ups; V may deliver them anyway.
+2. FA sets was briefed for named sets, union/intersection/difference, selection excluding hidden and deleted objects. Derivation by storey, room and category with isolate, ghost and hide was not asked; if FA does not deliver it, FA2 does, or FD1 derives in the demo and requests it back as proposed.
+3. FB was briefed for explode by storey or category and grid layouts (reversible), planes, a box and section-by-storey clipping, environment, named views, level list, `goToLevel`, `frame`, and a HUD with counts, FPS and GPU timing from render. Not asked: storeys side by side in a row, rooms of one storey side by side, a view cube, a 2D minimap, CPU frame percentiles. A horizontal cutaway is `clipping.sectionAt`. The rest are FB2 follow-ups or FD demo-side work.
 
 ### Requests between tracks
 
