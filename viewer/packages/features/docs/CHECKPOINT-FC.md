@@ -19,18 +19,12 @@ unchanged so wave 3 recipes need no translation (`recipe.ts` already names it); 
 removes a thumbnail, which nothing else could.
 
 ## Index export lines (supervisor owns `src/index.ts`)
-```ts
-export * from './annotations.js';
-export * from './overlays.js';
-export * from './animation.js';
-export * from './comparison.js';
-export * from './storage.js';
-export * from './capture.js';
-```
-No module exports anything that is not public surface, so `export *` is exact; no name collides.
+`export * from './annotations.js';` and the same for `./overlays.js`, `./animation.js`,
+`./comparison.js`, `./storage.js`, `./capture.js`. No module exports anything that is not public
+surface, so `export *` is exact; no name collides and the order is free.
 
 ## Commits
-`b9a8d0c` feat(features): annotations, overlays, animation, comparison, storage, capture.
+`b9a8d0c` the six modules and their tests; `690acea` this checkpoint.
 
 ## Commands run
 - `npx tsc --noEmit -p packages/features/tsconfig.json` — clean, ~13 s.
