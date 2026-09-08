@@ -159,11 +159,15 @@ export const runPricingAlternatives = (input: PricingAlternativesInput): Result<
 
   // One colour per scope across every scenario: resolved only when every scenario priced it, so a
   // scene never shows a scope as settled while one scenario still cannot price it.
+  const worstByScope = new Map<string, Outcome>();
+  for (const entry of computed)
+    worstByScope.set(
+      entry.scope.objectId,
+      worseOutcome(worstByScope.get(entry.scope.objectId) ?? 'resolved', outcomeOf(entry.pricing)),
+    );
   const outcomeByScope = input.scopes.map((scope): readonly [string, Outcome] => [
     keyOf(input.model, scope.objectId),
-    computed
-      .filter((entry) => entry.scope.objectId === scope.objectId)
-      .reduce<Outcome>((outcome, entry) => worseOutcome(outcome, outcomeOf(entry.pricing)), 'resolved'),
+    worstByScope.get(scope.objectId) ?? 'resolved',
   ]);
   const rules = outcomeRules('pricing-alternatives', groupByOutcome(outcomeByScope));
 

@@ -181,11 +181,15 @@ export const runMaterialCarbon = (input: MaterialCarbonInput): Result<WorkflowRe
 
   // One colour per object across every scenario: resolved only when every scenario resolved it, so
   // a scene never shows an object as settled while one scenario still cannot account for it.
+  const worstByObject = new Map<string, Outcome>();
+  for (const entry of computed)
+    worstByObject.set(
+      entry.item.objectId,
+      worseOutcome(worstByObject.get(entry.item.objectId) ?? 'resolved', outcomeOf(entry.contribution)),
+    );
   const outcomeByObject = input.quantities.map((item): readonly [string, Outcome] => [
     keyOf(input.model, item.objectId),
-    computed
-      .filter((entry) => entry.item.objectId === item.objectId)
-      .reduce<Outcome>((outcome, entry) => worseOutcome(outcome, outcomeOf(entry.contribution)), 'resolved'),
+    worstByObject.get(item.objectId) ?? 'resolved',
   ]);
   const rules = outcomeRules('material-carbon', groupByOutcome(outcomeByObject));
 

@@ -175,14 +175,16 @@ export const runPortfolioDrillThrough = (input: PortfolioInput): Result<Workflow
         ],
   );
 
-  const resolvedFor = (buildingId: string): readonly Observation[] =>
-    attributed.flatMap((entry) =>
-      entry.attribution.kind === 'resolved' &&
-      entry.attribution.buildingId === buildingId &&
-      entry.metric.metricName === input.requestedMetricName
-        ? [entry.attribution.observation]
-        : [],
-    );
+  // The resolved figures of the requested metric, by building, read once rather than scanned for
+  // each building of each site.
+  const resolvedByBuilding = new Map<string, readonly Observation[]>();
+  for (const entry of attributed)
+    if (entry.attribution.kind === 'resolved' && entry.metric.metricName === input.requestedMetricName)
+      resolvedByBuilding.set(entry.attribution.buildingId, [
+        ...(resolvedByBuilding.get(entry.attribution.buildingId) ?? []),
+        entry.attribution.observation,
+      ]);
+  const resolvedFor = (buildingId: string): readonly Observation[] => resolvedByBuilding.get(buildingId) ?? [];
 
   const sites: readonly string[] = [...new Set(input.buildings.map((item) => item.siteId))];
   const rollup: readonly ResultRow[] = sites.flatMap((siteId) => {
@@ -217,17 +219,16 @@ export const runPortfolioDrillThrough = (input: PortfolioInput): Result<Workflow
   const candidateOf = (metric: PortfolioMetric): readonly string[] =>
     input.documents.find((item) => item.documentId === metric.documentId)?.buildingIds ?? [];
 
+  const disputed = new Set(
+    attributed.flatMap((entry) =>
+      entry.attribution.kind === 'unresolved' && entry.attribution.observation.kind === 'conflicting'
+        ? candidateOf(entry.metric)
+        : [],
+    ),
+  );
+
   const outcomeOf = (buildingId: string): Outcome =>
-    resolvedFor(buildingId).length > 0
-      ? 'resolved'
-      : attributed.some(
-            (entry) =>
-              entry.attribution.kind === 'unresolved' &&
-              entry.attribution.observation.kind === 'conflicting' &&
-              candidateOf(entry.metric).includes(buildingId),
-          )
-        ? 'conflicting'
-        : 'missing';
+    resolvedFor(buildingId).length > 0 ? 'resolved' : disputed.has(buildingId) ? 'conflicting' : 'missing';
 
   const rules = outcomeRules(
     'portfolio',
