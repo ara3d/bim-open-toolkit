@@ -139,6 +139,13 @@ describe('orbit navigation', () => {
     const state = start();
     expect(stepNavigation(state, emptyFrame(viewport), dt)).toBe(state);
   });
+
+  it('does not drift while a button is held still, however many frames pass', () => {
+    const state = start();
+    let held = state;
+    for (let i = 0; i < 600; i++) held = stepNavigation(held, drag(['left'], 0, 0), dt);
+    expect(held).toBe(state);
+  });
 });
 
 describe('touch navigation', () => {

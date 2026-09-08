@@ -46,7 +46,10 @@ export const cancelFlight = (session: NavSession): NavSession =>
 export const stepSession = (session: NavSession, input: InputFrame, dtMs: number): NavSession => {
   const seconds = Math.max(finite(dtMs), 0) / 1000;
   const flight = session.flight;
-  if (flight === undefined) return { ...session, nav: stepNavigation(session.nav, input, seconds) };
+  if (flight === undefined) {
+    const nav = stepNavigation(session.nav, input, seconds);
+    return nav === session.nav ? session : { ...session, nav };
+  }
   if (interrupts(input)) {
     const handedBack: NavState = { ...session.nav, view: flightView(flight) };
     return { nav: stepNavigation(handedBack, input, seconds), flight: undefined };

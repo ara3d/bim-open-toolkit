@@ -107,3 +107,10 @@ export { type NavSession, navSession, isFlying } from './session.js';
 export { startFlight, cancelFlight } from './session.js';
 // One step of the whole view, in milliseconds.
 export { stepSession } from './session.js';
+
+// Attach navigation to an element: the only impure part of this package.
+export { attachNavigation, type NavController, type NavOptions } from './dom.js';
+// What the adapter needs from an element and from an event; a real element has all of it.
+export { type NavElement, type NavEvent } from './dom.js';
+// Where frames come from: the browser's own, or a clock a test winds by hand.
+export { browserFrames, type FrameScheduler } from './dom.js';

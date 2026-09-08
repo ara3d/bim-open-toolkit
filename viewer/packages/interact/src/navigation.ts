@@ -150,6 +150,9 @@ const applyDrag = (state: NavState, input: InputFrame): NavState => {
   const delta = dragDelta(input.pointers);
   const dx = normalizedDrag(finite(delta.dx), input.viewport);
   const dy = normalizedDrag(finite(delta.dy), input.viewport);
+  // A held button that has not moved must change nothing at all: rebuilding the pose from its
+  // angles is not exactly the identity, and a still hand would otherwise drift over many frames.
+  if (dx === 0 && dy === 0) return state;
   const { rotateSpeed, invertLook, orbit } = state.settings;
   const up = upOf(state);
   const camera = state.view.camera;

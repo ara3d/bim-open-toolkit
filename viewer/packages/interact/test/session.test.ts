@@ -57,9 +57,9 @@ describe('a session without a flight', () => {
     expect(after.nav.view.camera.position[1]).toBeLessThan(0);
   });
 
-  it('does nothing when nothing happens', () => {
+  it('does nothing at all when nothing happens, so a caller can tell there was no change', () => {
     const idle = session();
-    expect(stepSession(idle, emptyFrame(viewport), 16)).toEqual(idle);
+    expect(stepSession(idle, emptyFrame(viewport), 16)).toBe(idle);
   });
 });
 
