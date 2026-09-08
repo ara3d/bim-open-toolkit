@@ -18,20 +18,19 @@
 //     tables, which the loader never decodes and `LoadedModel` never exposes.
 // Each of those is a request to the formats track, not a gap to fill in here.
 //
-// The file named is the BIM export rather than `_shared/snowdon.ts`'s `snowdon.bfast`: that one
-// carries no BOS tables at all, so every one of its objects loads unnamed and uncategorised, and a
-// demo about attribution would have nothing to read off it. `_shared/snowdon.ts` names this export
-// as the one with the full BIM tables.
+// The file is the one `_shared/snowdon.ts` names, which is the BIM export: the plain export carries
+// no BOS tables at all, so every one of its objects loads unnamed and uncategorised, and a demo
+// about attribution would have nothing to read off it. The title differs from the shared fixture's
+// because here it is a second entry beside the estate and has to say which of the two it is.
 
 import type { ObjectRecord } from '@bim-open-toolkit/model';
 import { success, type Result } from '@bim-open-toolkit/model';
 import type { DemoFixture, ModelSource, OpenedModel } from '../../gallery/contracts.js';
+import { snowdonFile, snowdonUrl } from '../_shared/snowdon.js';
 
-// The export that carries the BOS tables, and where the gallery's dev server publishes it.
-export const snowdonFile = 'snowdon-bim.bfast';
+// Re-exported so a test can name the file this demo reads without reaching past it.
+export { snowdonFile };
 
-// Relative, so the gallery works on whatever port it is on and nothing here holds a machine path.
-export const snowdonUrl = `/fixtures/${snowdonFile}`;
 
 // What the picker calls it. The demo names its own fixtures, so a sheet can say which one it reads.
 export const snowdonTitle = 'Snowdon Towers, the BIM export';
