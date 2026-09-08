@@ -157,3 +157,12 @@ export const transformBounds = (matrix: Matrix4, bounds: Bounds): Bounds =>
           return transformPoint(matrix, source);
         }),
       );
+
+// The length of a vector.
+export const vec3Length = (v: Vec3): number => Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
+// The vector scaled to unit length, or undefined when it has no length to scale.
+export const normalizeVec3 = (v: Vec3): Vec3 | undefined => {
+  const size = vec3Length(v);
+  return size === 0 ? undefined : scaleVec3(v, 1 / size);
+};

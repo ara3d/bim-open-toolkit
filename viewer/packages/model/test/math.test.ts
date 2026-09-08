@@ -2,10 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   addVec3, boundsCenter, boundsContain, boundsOf, boundsSize, emptyBounds, expandBounds, identityMatrix,
   isEmptyBounds, multiplyMatrix, scaleVec3, scaling, subVec3, transformBounds, transformDirection,
-  transformPoint, translation, unionBounds, type Vec3,
+  normalizeVec3, transformPoint, translation, unionBounds, vec3Length, type Vec3,
 } from '../src/math.js';
 
 describe('math', () => {
+  it('measures and normalizes a vector, reporting no direction for a zero vector', () => {
+    expect(vec3Length([3, 4, 0])).toBe(5);
+    expect(normalizeVec3([0, 0, 2])).toEqual([0, 0, 1]);
+    expect(normalizeVec3([0, 0, 0])).toBeUndefined();
+  });
+
   it('stores a translation in the last column, column-major', () => {
     expect(translation([1, 2, 3])[12]).toBe(1);
     expect(translation([1, 2, 3])[13]).toBe(2);
