@@ -236,7 +236,7 @@ All six tracks were stopped mid-chunk by the supervisor; nothing was lost. State
 | D2 | `f2bc8b6` environment, `0528034` capture, checkpoint `43318d0` | `5bdbe8b` ten-thousand, no test yet | `d2/`: explode-and-grid src and test (16 tests pass, one type error in `panels.ts`) |
 | D3 | `508ec08` `_workflows/apply-result` helper, checkpoint `da14868` | none | `d3/`: `_workflows/widgets.ts` and `door-schedule/` (22 type errors, unfinished) |
 | D4 | `968a675` portfolio, checkpoint `3f3b4cd` | `4d7ecc6` material-carbon, no test yet | none |
-| D2 addendum | | | `d2/src/section-studio` (type errors: 2) |
+| D2 addendum | `2da0ac4` explode-and-grid (16 tests, rewritten clean by D2's nested worker after the stop) | | `d2/src/section-studio` second draft (2 type errors); the earlier parked copies were removed as superseded |
 
 Checks at shutdown from `viewer/`: `tsc -p packages/ui-gratify` clean, ui-gratify 18 tests pass; `tsc -p packages/demos` clean after parking; `vitest --root packages/demos test/gallery test/demos` 12 files, 100 tests pass. Not run: lint, the combined gate, any browser smoke (GAL's smoke runner, chunk 4, was not reached; no thumbnails exist). Peers: the feature-demos session stopped FD1 to FD3 the same way (`90d7743`) and keeps the shared demo host under `demos/src/feature-demos/_shared` (GAL2 follow-up above). The wave 2 supervisor exported every feature module (`a9f3e67`) and handed its D track to this wave. The fixture server on 5175 was stopped.
 
