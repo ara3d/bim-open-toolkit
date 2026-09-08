@@ -64,7 +64,16 @@ describe('fixture server catalog endpoints', () => {
     });
   });
 
-  it('ignores a directory that does not exist', async () => {
+  it('starts and serves an empty catalog when no configured directory exists', async () => {
+    const empty = await createFixtureServer({ dirs: [join(root, 'missing-directory')] });
+    const listed = await body(await fetch(`${empty.url}/fixtures`));
+    const health = await body(await fetch(`${empty.url}/health`));
+    await empty.close();
+    expect(listed).toEqual({ fixtures: [] });
+    expect(health).toEqual({ status: 'ok', fixtures: 0 });
+  });
+
+  it('binds the loopback address', () => {
     expect(server?.url.startsWith('http://127.0.0.1:')).toBe(true);
   });
 });

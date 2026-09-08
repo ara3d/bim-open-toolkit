@@ -2,56 +2,49 @@
 
 Track D0, wave 0. Contract revision: none consumed; this track imports nothing from `model`.
 
-**State: implemented and locally verified, with one blocker outside the fence.**
+**State: verified.**
 
-Every behavior in the brief is delivered, tested and smoke-tested against the real Snowdon file.
-The package typecheck does not pass because `@types/node` is not installed in the workspace. With
-node types supplied from a scratch config, the same sources typecheck clean. See **Blocker**.
+Every behavior in the brief is delivered, tested, linted, typechecked, and smoke-tested against the
+real Snowdon file. No process is left running.
 
-## Blocker (needs the supervisor)
+## Blocker — raised, then resolved by the supervisor mid-track
 
-`viewer/package.json` has no `@types/node`, and no copy exists anywhere under
-`viewer/node_modules`. A server cannot be written without `node:http`, so
-`npx tsc --noEmit -p packages/demos/tsconfig.json` reports 22 errors, all of the form
-`Cannot find module 'node:http'`, `Cannot find name 'process'`, and the implicit-`any` parameters
-that follow from them.
+`viewer/package.json` had no `@types/node`, and no copy existed anywhere under
+`viewer/node_modules`. A server cannot be written without `node:http`, so the package typecheck
+failed with 22 errors: `Cannot find module 'node:http'`, `Cannot find name 'process'`, and the
+implicit-`any` parameters that follow. Because `viewer/tsconfig.json` includes `packages/demos/src`
+and `packages/demos/test`, this also broke the workspace-wide `npm run typecheck` and
+`tools/platonic-check.mts`.
 
-`viewer/tsconfig.json` includes `packages/demos/src` and `packages/demos/test`, so this also breaks
-the workspace-wide `npm run typecheck` and `tools/platonic-check.mts` until it is fixed. Per-package
-typechecks of other tracks are unaffected: they override `include`. Nothing else in the wave depends
-on these files.
+The work was carried to completion rather than halted: the missing dependency changed nothing about
+the design, the tests ran and passed without it, and leaving the files unwritten or uncommitted
+would have had the same effect on the shared typecheck. Type-cleanliness was proven meanwhile
+against a scratch config — `viewer/tsconfig.json` plus
+`typeRoots: ["C:/Users/cdigg/git/platonic-ts/node_modules/@types"]` and `types: ["node"]` — which
+reported zero errors over the same two directories. No repository file was changed to obtain it.
 
-**Requested fix (one line plus an install, supervisor-owned):** add `"@types/node": "^22.20.0"` to
-`viewer/package.json` `devDependencies` and run `npm install` in `viewer/`. Version 22.20.1 is what
-the sibling `../platonic-ts` checkout uses and is what this track verified against; Node here is
-22.13.1.
-
-**Proof the code is otherwise clean:** the same two directories typecheck with zero errors under a
-scratch config that is `viewer/tsconfig.json` plus
-`typeRoots: ["C:/Users/cdigg/git/platonic-ts/node_modules/@types"]` and `types: ["node"]`. That
-config lives in the session scratchpad; no repository file was changed to obtain it.
-
-This was raised as a stop-and-reassess condition (work needing edits outside the fence). The work
-was carried to completion rather than halted, because the missing dependency changes nothing about
-the design, the tests run and pass without it, and the alternative — leaving unwritten or
-uncommitted files — has exactly the same effect on the shared typecheck.
+The supervisor added `"@types/node": "^22.20.1"` in `f31c931` and installed it. Re-verified after
+that landed: typecheck, both lint configurations and the test suite all pass. **Nothing is
+outstanding.**
 
 ## Requests to the supervisor
 
-1. **`@types/node` in `viewer/package.json`** — the blocker above. Everything else waits on it.
-2. **A package script** in `viewer/packages/demos/package.json`:
-   `"serve:fixtures": "node ../../../platonic-ts/node_modules/tsx/dist/cli.mjs src/server/main.ts"`,
-   or a workspace-level `"fixtures"` script in `viewer/package.json`. The path is the same tsx the
-   repository already uses for `tools/*.mts`. Until then the command in `docs/fixture-server.md`
-   works as written. If `tsx` is added to `viewer` devDependencies, the script becomes
-   `tsx src/server/main.ts`.
-3. **Port 5175** was used for the manual smoke and released. No process is left running.
-4. If the fixture server should also be reachable as `@bim-open-toolkit/demos`, `src/index.ts`
-   (supervisor-owned) needs `export * from './server/index.js';`. Not required by this brief.
+1. **A package script** in `viewer/packages/demos/package.json`:
+   `"serve:fixtures": "node ../../../../platonic-ts/node_modules/tsx/dist/cli.mjs src/server/main.ts"`,
+   or a workspace-level `"fixtures"` script in `viewer/package.json`. That is the same tsx the
+   repository already uses for its `tools/*.mts` wrappers. Until it exists, the command in
+   `docs/fixture-server.md` works as written. If `tsx` is ever added to `viewer` devDependencies the
+   script becomes `tsx src/server/main.ts`.
+2. **Port 5175** was used for the manual smoke and released. Nothing is listening on it now.
+3. If the fixture server should also be reachable through the package entry point, `src/index.ts`
+   (supervisor-owned) needs `export * from './server/index.js';`. Not required by this brief, and
+   the browser specs and gallery can import `../src/server/index.js` directly.
+4. Consider adding `packages/testing` to `ioPackages` in `eslint.typed.config.js` when the browser
+   runner lands; the one defect the typed lint found here was in a test file.
 
 ## Files
 
-Written (all inside the fence):
+Written, all inside the fence:
 
 | File | Pure? | Owns |
 |---|---|---|
@@ -65,7 +58,7 @@ Written (all inside the fence):
 | `src/server/server.ts` | no | the HTTP service and its lifetime |
 | `src/server/main.ts` | no | the only reader of environment variables |
 | `src/server/index.ts` | — | public surface |
-| `test/server/{catalog,range,plan,config,server}.test.ts` | — | 61 tests |
+| `test/server/{catalog,range,config,plan,server}.test.ts` | — | 61 tests |
 | `docs/fixture-server.md` | — | how to run, endpoints, safety rules, what is not there |
 | `docs/CHECKPOINT-D0.md` | — | this file |
 
@@ -96,7 +89,7 @@ Nothing outside the fence was written. `src/index.ts`, `package.json`, `tsconfig
 - **`createFixtureServer(options)`** returns `{url, port, close}` — a promise, because the bound port
   is only known after listening. Defaults `127.0.0.1` and port `0`. `close()` drops keep-alive
   connections as well as the listener, and closing twice is harmless.
-- **No compression.** Noted in the README as a later, separate task.
+- **No compression.** Recorded in `docs/fixture-server.md` as a later, separate task.
 
 ### Safe path handling
 
@@ -126,19 +119,21 @@ is deliberate for now.
 
 ## Commands and actual results
 
-Run from `viewer/` unless stated.
+Run from `viewer/`. All results below are from after `@types/node` landed.
 
 | Command | Result |
 |---|---|
-| `npm test -w @bim-open-toolkit/demos` | **pass** — 6 files, 61 tests, 672 ms (first run 1.49 s) |
-| `npx eslint packages/demos` | **pass** — 17 files linted, 0 errors, 0 warnings, 4.4 s |
-| `npx tsc --noEmit -p packages/demos/tsconfig.json` | **fail** — 22 errors, all from the missing `@types/node` (see Blocker), 4.6 s |
-| `npx tsc --noEmit -p <scratch>/tsconfig.demos-with-node.json` | **pass** — 0 errors, 3.2 s. Same sources, node types supplied from `../platonic-ts` |
+| `npm test -w @bim-open-toolkit/demos` | **pass** — 6 files, 62 tests, 724 ms |
+| `npx tsc --noEmit -p packages/demos/tsconfig.json` | **pass** — 0 errors, 4.4 s |
+| `npx eslint packages/demos` | **pass** — 17 files, 0 errors, 0 warnings, 4.5 s |
+| `npx eslint --config eslint.typed.config.js packages/demos` | **pass** — 0 errors, 7.4 s |
 | escape-hatch grep over `src/server` and `test/server` | **pass** — 0 `any`, 0 `as` casts, 0 `!`, 0 directives, 0 disables |
 
-Tests per file: `catalog` 8, `range` 9, `config` 6, `plan` 12, `server` 25 — 60 new — plus the
-pre-existing `test/index.test.ts` with 1. Sixty-one across six files. The 35 in `catalog`, `range`,
-`config` and `plan` need no socket, no temporary directory and no timing.
+Tests per file: `catalog` 8, `range` 9, `config` 6, `plan` 12, `server` 26 — 61 new — plus the
+pre-existing `test/index.test.ts` with 1. The 35 in `catalog`, `range`, `config` and `plan` need no
+socket, no temporary directory and no timing. `server.test.ts` runs on port 0 against a temporary
+directory of three small generated files plus a `.txt` that must be ignored, and a `secret.txt` one
+level up that must stay unreachable. No test touches Snowdon.
 
 ### Manual smoke against the real directory
 
@@ -197,69 +192,73 @@ command from this track is running.
 | Chunk | Commit | Contents |
 |---|---|---|
 | 1 | `84a43ef` | `src/server/**`, `test/server/**`, `docs/fixture-server.md` |
-| 2 | this file | `docs/CHECKPOINT-D0.md` |
+| 2 | `dd8f898` | `docs/CHECKPOINT-D0.md` as first written, with the blocker open |
+| 3 | this commit | the typed-lint fix in `test/server/server.test.ts` and this checkpoint brought current |
 
-Both staged by explicit pathspec. No `git add .`, no `-A`, no `commit -a`, no push. `git status`
-showed uncommitted files from tracks M, PERF, I, BIND and W0 throughout; none were staged.
+All staged by explicit pathspec. No `git add .`, no `-A`, no `commit -a`, no push. `git status`
+showed uncommitted files from tracks M, PERF, I, BIND and W0 throughout; none were staged. Commits
+from other tracks (`6bcd29d`, `815f275`, `f31c931`) landed between chunks 1 and 2.
 
 ## Remaining work
 
-- Re-run `npx tsc --noEmit -p packages/demos/tsconfig.json` and `npx eslint packages/demos` once
-  `@types/node` lands. The lint pass above was obtained with the node imports unresolved, so their
-  values were untyped; real types could surface `no-unsafe-*` findings that the current run could
-  not see. The typecheck with node types was clean, so the risk is low, but the lint result is not
-  final until then. **This is the one open verification limit.**
-- The `SIGINT`/`SIGTERM` shutdown path in `main.ts` is not covered by a test and was not exercised:
-  Windows has no real signal delivery for a non-console child, and the smoke server was stopped with
-  `taskkill /F`. `close()` itself is covered by two tests.
-- No browser has loaded from this server yet. That belongs to the gallery task, not this one.
-- Compression, `ETag`/conditional requests, `If-Range`, multi-range responses and file watching are
-  deliberately absent and listed in `docs/fixture-server.md`.
+- No browser has loaded a model from this server yet. That belongs to the gallery task, not this one.
+- The `SIGINT`/`SIGTERM` shutdown path in `main.ts` is not covered by a test and was not exercised.
+  Windows has no real signal delivery to a non-console child, so it is not testable here; the smoke
+  server was stopped with `taskkill /F`. `close()` itself is covered by two tests.
+- Compression, `ETag` and conditional requests, `If-Range`, multi-range responses and file watching
+  are deliberately absent and listed in `docs/fixture-server.md`.
 - The catalog is a snapshot taken before listening. A model added or replaced while the server runs
-  needs a restart. If a demo ever needs live re-scanning, that is a new, small change to `scan.ts`
-  and `server.ts`.
+  needs a restart. If a demo ever needs live re-scanning, that is a small change to `scan.ts` and
+  `server.ts`.
+- No verification limits remain beyond those two points.
 
 ## Findings
 
-- **`@types/node` is missing from the whole `viewer` workspace.** Any V2 track that writes a Node
-  process — the fixture server, the MCP bridge in `packages/mcp`, the browser runner in
-  `packages/testing`, any script under a package — hits this immediately. It is worth adding once,
-  at the workspace level, rather than per track.
-- **The alpha fixture endpoint is a different shape and should not be copied forward.**
+- **`@types/node` was missing from the whole `viewer` workspace** and is now added. Any V2 track that
+  writes a Node process — this server, `packages/mcp`, the browser runner in `packages/testing`, any
+  package script — would have hit it.
+- **The alpha fixture endpoint should not be copied forward.**
   `packages/visualization/examples/vite.config.mjs` hardcodes two model paths from environment
-  variables, exposes one fixed name each, and has no range support. The V2 server replaces the
-  hardcoded name with a catalog, which is what lets a demo offer a model picker without a config
-  edit. The alpha `Cache-Control: private, max-age=3600` was kept deliberately.
-- **The 111 MB BFAST file is 369 ms over loopback.** Whatever the transfer optimization turns out to
-  be, it will not be visible in local demo work; it needs a real network or a throttled one to
-  measure. Worth remembering when that task is scheduled, so it is not "verified" on loopback.
-- **`snowdon.bfast` (101,607,040 bytes, geometry only) and `snowdon-bim.bfast` (111,630,208 bytes,
-  with the BOS Parquet tables) are both present** in the default directory and both catalogued. A
-  demo that wants the source IDs and property tables must ask for `snowdon-bim.bfast` by name; the
-  server does not choose.
-- **No nested sub-agents were spawned.** The work was one coherent module and splitting it would
-  have cost more coordination than it saved. Count: 0.
+  variables, exposes one fixed name each, and has no range support. Replacing the hardcoded name
+  with a catalog is what lets a demo offer a model picker without a config edit. The alpha
+  `Cache-Control: private, max-age=3600` was kept deliberately.
+- **The 111 MB BFAST file takes 369 ms over loopback.** Whatever the later transfer optimization
+  turns out to be, it will not be visible in local demo work; it needs a real or throttled network.
+  Worth remembering so it is not "verified" on loopback.
+- **Both Snowdon conversions are catalogued**: `snowdon.bfast` (101,607,040 bytes, geometry only) and
+  `snowdon-bim.bfast` (111,630,208 bytes, with the BOS Parquet tables). A demo that needs source IDs
+  and property tables must ask for `snowdon-bim.bfast` by name; the server does not choose.
+- **The untyped lint switch in `f31c931` is a clear win here, but not for the reason given.** Its
+  comment says type-aware rules "caught nothing that tsc did not". On this package they caught one
+  thing tsc did not: `require-await` on an async test with no `await`, which was also a weak test.
+  The saving is real (about 4.5 s untyped versus 7.4 s typed on this package, three warm runs each),
+  just smaller than 8–28 s. Keeping `demos` in `eslint.typed.config.js` is the right call.
+- **No nested sub-agents were spawned.** Count: 0. The work was one coherent module; splitting it
+  would have cost more coordination than it saved.
 
 ## Tooling
 
-Scored per the brief, for the wave-end tooling review.
+Scored per the brief, for the wave-end tooling review. Timings are warm runs on this package while
+other sessions were active in the same checkout; one cold run of each was 3 to 4 times slower and is
+excluded.
 
 | Check | Runs | Wall time | Real defects caught | False positives / friction | Verdict |
 |---|---|---|---|---|---|
-| `tsc --noEmit -p packages/demos/tsconfig.json` | 4 | 3.2–4.6 s | 1 real (`Uint8Array<ArrayBufferLike>` not assignable to `BufferSource` in the test's SHA-256 helper — a genuine mistake vitest would never have caught, since esbuild strips types) plus the missing-`@types/node` discovery, which is a real environment defect | 21 of 22 errors were cascade noise from that one missing dependency; needed a scratch config to see past them | **helpful** |
-| `eslint packages/demos` | 3 | 4.4 s | 0 | 0. Cheap at this size, but its type-aware rules were reading unresolved imports, so this run proves less than it looks like | **neutral so far** — re-judge once node types resolve |
-| escape-hatch grep (`any`, `as`, `!`, `@ts-`, disables) | 1 | under 1 s | 0 | 5 false hits, all English words in comments (`any transport`, `as lower-case hex`) — a word-boundary grep cannot tell prose from code | **helpful, but the pattern needs to skip comments** |
-| `vitest run` (`npm test -w @bim-open-toolkit/demos`) | 3 | 0.67–1.49 s | 0 after the first green run; the value was in writing the tests, which is where the range edge cases (`bytes=-0`, empty file, `bytes=19-10`) got settled | 0 | **helpful** — fast enough to run on every edit |
-| Manual smoke against the real model | 1 | ~30 s including the 111 MB download | 0, and it confirmed the SHA-256 against an independently recorded value | 0. The one thing tests cannot do: prove the default directories and a 111 MB file work | **helpful, and not replaceable by a unit test** |
+| `tsc --noEmit -p packages/demos/tsconfig.json` | 6 | 3.2–4.6 s | 2 real: `Uint8Array<ArrayBufferLike>` not assignable to `BufferSource` in the test's SHA-256 helper, which vitest can never catch because esbuild strips types; and the missing `@types/node`, a real environment defect | 21 of the 22 errors in the failing run were cascade noise from the one missing dependency, and seeing past them needed a scratch config | **helpful** |
+| `eslint packages/demos` (untyped) | 5 | 4.5–4.9 s | 0 | 0 | **neutral** — cheap, but found nothing here that tsc did not |
+| `eslint --config eslint.typed.config.js packages/demos` | 4 | 7.4–8.7 s | 1 real: `require-await` on an async test with no `await`; fixing it turned a tautological assertion into a real empty-catalog test | 0 | **helpful** — 3 s more than the untyped run for one genuine finding in an I/O package |
+| escape-hatch grep (`any`, `as`, `!`, `@ts-`, disables) | 2 | under 1 s | 0 | 5 false hits, all English words in comments (`any transport`, `as lower-case hex`); a word-boundary grep cannot tell prose from code | **helpful, but the pattern should skip comments** |
+| `vitest run` (`npm test -w @bim-open-toolkit/demos`) | 6 | 0.67–1.5 s | 0 after the first green run; the value was in writing the tests, where the range edge cases (`bytes=-0`, empty file, `bytes=19-10`, `bytes=95-1000`) got settled | 0 | **helpful** — fast enough to run on every edit |
+| Manual smoke against the real model | 1 | about 30 s including the 111 MB download | 0, and it confirmed the SHA-256 against an independently recorded value | 0. It is the only check that can prove the default directories and a 111 MB file work | **helpful, and not replaceable by a unit test** |
 
 Notes for the ledger:
 
-- The strict flags earned their keep quietly. `noUncheckedIndexedAccess` forced explicit handling of
-  `RegExpExecArray` groups in `range.ts`, which is exactly where an off-by-one would hide.
-- The no-`as` rule had one real cost and one real benefit. Cost: `server.address()` needed a
-  `typeof address === 'string'` guard instead of a cast. Benefit: that guard is the code that turns
-  a missing port into a thrown error rather than a wrong `url`.
-- Writing the pure layer first made the whole track cheap to test: 35 of the 61 tests need no socket,
-  no temporary directory and no timing, and the whole suite runs in under a second.
-- The one genuine friction was the missing `@types/node`, and it is an environment gap rather than a
-  tool being wrong.
+- The strict compiler flags earned their keep quietly. `noUncheckedIndexedAccess` forced explicit
+  handling of the `RegExpExecArray` groups in `range.ts`, which is exactly where an off-by-one hides.
+- The no-`as` rule had one cost and one benefit. Cost: `server.address()` needed a
+  `typeof address === 'string'` guard instead of a cast. Benefit: that guard is the code that turns a
+  missing port into a thrown error rather than a wrong `url`.
+- Writing the pure layer first is what made the track cheap to check: 35 of the 62 tests need no
+  socket, no temporary directory and no timing, and the whole suite runs in under a second.
+- The only real friction in the track was the missing `@types/node`, and that is an environment gap
+  rather than a tool behaving badly.
