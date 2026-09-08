@@ -30,6 +30,8 @@ Transcribed from track checkpoints and final reports; "caught" is the track's ow
 |---|---|---|---|---|
 | S synthetic (2026-09-07) | 14 runs, 6.7 s each, caught 2 real defects (one a silently ignored option), no false positives: helpful | 8 runs, 11.6 s each, caught nothing, more wall time than the other three combined; its live rules overlap the escape-hatch rule in a package with no async code: neutral, first candidate to drop | under 1 s, changed one design for the better (an intersection type instead of a cast): helpful | 78 tests, about 1 s, caught one issue in a test; building and stress suites passed first run, so their value is regression protection: helpful |
 
+| W0 workflows fixtures (2026-09-07, Sonnet, documents only) | no code checks run; JSON parse check only, 10 of 10 pass | — | — | — |
+
 ## Review log
 
 - 2026-09-07, wave 0 start: the Agent tool cannot message a running subagent in this session (SendMessage disabled), so the three wave 0 tracks were not told to keep a "Tooling" section; their reported command runs and results are transcribed here by the supervisor instead. Every later brief includes the section.
