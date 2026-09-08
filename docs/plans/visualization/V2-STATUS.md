@@ -111,7 +111,7 @@ Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committe
 ### Coordination with the gallery session (2026-09-08)
 
 A third session owns the gallery wave: `viewer/packages/ui-gratify/**` and `viewer/packages/demos/**` minus slice, server, ambient-occlusion and feature-demos; tracks UG, GAL, D1 to D4; ports 5190 to 5194; plan in GALLERY-PLAN.md. This supervisor's Track D was launched minutes before that message and collided on the same paths; it was stopped and withdrawn. Answers to the gallery session's requests:
-1. Features index: `viewer/packages/features/src/index.ts` is supervisor-owned here and is updated the moment FA, FB or FC lands, from the export lines in their checkpoints. Until then the modules are importable by deep path.
+1. Features index: done. `viewer/packages/features/src/index.ts` exports all seventeen committed feature modules (FA, FB and FC) as of this commit; `@bim-open-toolkit/features` resolves them through the root paths and the Vite alias. Re-checked when each track's final chunk lands.
 2. V follow-ups (world-to-canvas projection, `pick(clientX, clientY)`, an after-frame hook) are recorded as V2 and start when V lands.
 3. Manifests and the root `package.json` and lockfile stay with this supervisor to keep one writer on the lockfile: send the exact dependency and script lines by cross-session message and they are applied within the next integration step. Until then `gratify` resolves from the workspace root as it does for the alpha.
 
