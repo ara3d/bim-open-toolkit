@@ -18,5 +18,6 @@ public static class GeometryNodes
         new BoundingBoxesNode(),
         new VoxelizeNode(),
         new CameraNode(),
+        .. ViewRecipeNodes.All,
     ];
 }

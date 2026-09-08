@@ -1,0 +1,1 @@
+{"compilerOptions":{"paths":{"@bim-open-toolkit/*":["../../viewer/packages/*/src/index.ts"]}}}

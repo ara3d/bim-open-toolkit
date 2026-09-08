@@ -7,7 +7,13 @@ every other pack.
 
 3D content flows through graphs as tables. Mesh bytes never enter the graph:
 the host loads a `ModelGeometry` (via `ModelGeometryCache`) and serves the
-meshes to the viewer itself; nodes only produce and transform instance tables.
+meshes to the viewer itself; nodes produce instance tables or compact view recipes.
+
+The visualization toolkit integration adds seven composable recipe nodes:
+`view3d.scene`, `categoryStyle`, `section`, `sectionBox`, `explode`,
+`projection` and `environment`. Each uses a `view` table port.
+See [BIM Flow 3D](../../docs/bim-flow-3d.md) for the Snowdon graph, parameters,
+local setup, verification and limits.
 
 ## Library
 

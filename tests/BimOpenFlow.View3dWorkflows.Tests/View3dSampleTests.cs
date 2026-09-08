@@ -29,6 +29,20 @@ public sealed class View3dSampleTests
     public void ThereAreSampleAnalyses()
         => Assert.That(SampleFiles.Count(), Is.GreaterThanOrEqualTo(6));
 
+    [Test]
+    public void SnowdonToolkitGraph_ComposesEveryRecipeWithoutReadingPrivateModelBytes()
+    {
+        var path = Path.Combine(RepoRoot, "samples", "snowdon-analyses", "snowdon-toolkit.json");
+        var doc = Load(path);
+        Assert.That(doc.Validate(Registry), Is.Empty);
+        var session = Evaluate(path);
+        Assert.That(session.Snapshot.Results.Values.All(r => r.Status == NodeStatus.Ok), Is.True);
+        var plan = OutputTable(session, "plan", "view");
+        Assert.That(plan.Rows.Count, Is.EqualTo(4));
+        Assert.That(plan[0, 0], Is.EqualTo("scene"));
+        Assert.That(plan[0, 3], Is.EqualTo("projection"));
+    }
+
     [TestCaseSource(nameof(SampleFiles))]
     public void ParsesAndValidates(string file)
     {

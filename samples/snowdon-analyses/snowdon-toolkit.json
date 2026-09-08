@@ -1,0 +1,155 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "snowdon": {
+      "x": 40,
+      "y": 300
+    },
+    "categories": {
+      "x": 340,
+      "y": 240
+    },
+    "cutaway": {
+      "x": 640,
+      "y": 60
+    },
+    "interior": {
+      "x": 640,
+      "y": 240
+    },
+    "exploded": {
+      "x": 640,
+      "y": 420
+    },
+    "plan": {
+      "x": 940,
+      "y": 60
+    },
+    "orthographic": {
+      "x": 640,
+      "y": 600
+    },
+    "ghost": {
+      "x": 340,
+      "y": 600
+    },
+    "night": {
+      "x": 640,
+      "y": 780
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "snowdon.view",
+        "to": "categories.view"
+      },
+      {
+        "from": "categories.view",
+        "to": "cutaway.view"
+      },
+      {
+        "from": "categories.view",
+        "to": "interior.view"
+      },
+      {
+        "from": "categories.view",
+        "to": "exploded.view"
+      },
+      {
+        "from": "cutaway.view",
+        "to": "plan.view"
+      },
+      {
+        "from": "categories.view",
+        "to": "orthographic.view"
+      },
+      {
+        "from": "snowdon.view",
+        "to": "ghost.view"
+      },
+      {
+        "from": "ghost.view",
+        "to": "night.view"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "snowdon",
+        "kind": "view3d.scene",
+        "version": 1
+      },
+      {
+        "id": "categories",
+        "kind": "view3d.categoryStyle",
+        "version": 1
+      },
+      {
+        "id": "cutaway",
+        "kind": "view3d.section",
+        "version": 1
+      },
+      {
+        "id": "interior",
+        "kind": "view3d.sectionBox",
+        "version": 1
+      },
+      {
+        "id": "exploded",
+        "kind": "view3d.explode",
+        "version": 1
+      },
+      {
+        "id": "plan",
+        "kind": "view3d.projection",
+        "version": 1
+      },
+      {
+        "id": "orthographic",
+        "kind": "view3d.projection",
+        "version": 1
+      },
+      {
+        "id": "ghost",
+        "kind": "view3d.categoryStyle",
+        "version": 1
+      },
+      {
+        "id": "night",
+        "kind": "view3d.environment",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "snowdon": {
+      "path": "{SNOWDON}"
+    },
+    "categories": {
+      "opacity": "1"
+    },
+    "cutaway": {
+      "axis": "z",
+      "fraction": "0.5"
+    },
+    "interior": {
+      "fraction": "0.5"
+    },
+    "exploded": {
+      "strength": "0.5"
+    },
+    "plan": {
+      "mode": "plan"
+    },
+    "orthographic": {
+      "mode": "orthographic"
+    },
+    "ghost": {
+      "opacity": "0.22"
+    },
+    "night": {
+      "theme": "dark",
+      "grid": "true"
+    }
+  }
+}
