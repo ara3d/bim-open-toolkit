@@ -53,7 +53,7 @@ assumed, to be the same 150 objects with the same geometry. Zero escape hatches.
 Limits: nothing was rendered; the volume is asserted against the slabs above and
 below it and against the schedule's area. At the perimeter it overlaps the thicker
 exterior wall, deliberately: the inset matches the recorded area, not that face.
-One chunk, commit `PENDING`.
+One chunk, commit `aaa641a`; this line landed in the follow-up commit.
 
 ## Blockers, requests and findings
 
