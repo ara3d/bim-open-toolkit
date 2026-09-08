@@ -24,5 +24,9 @@
     "@bim-open-toolkit/model": "0.1.0",
     "@bim-open-toolkit/render": "0.1.0",
     "@bim-open-toolkit/interact": "0.1.0"
+  },
+  "devDependencies": {
+    "@bim-open-toolkit/viewer": "0.1.0",
+    "@bim-open-toolkit/testing": "0.1.0"
   }
 }
