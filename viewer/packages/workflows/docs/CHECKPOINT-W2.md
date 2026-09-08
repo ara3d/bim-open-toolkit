@@ -71,7 +71,7 @@ built inside a workflow file rather than inside `standardRecipe`.
 ## Commit
 
 `recipe.ts`, `test/recipe.test.ts`, `test/recipe-names.test.ts`, `docs/workflows.md`, `README.md`:
-committed together, hash below.
+committed together at `2471ed3`.
 
 ## Tooling
 
