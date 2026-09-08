@@ -71,7 +71,7 @@ try {
   const stateResponse = await fetch(base + "/api/analyses/snowdon-toolkit/state");
   assert.equal(stateResponse.status, 200, "Start the BIM-profile host and seed snowdon-toolkit.");
   const state = await stateResponse.json();
-  assert.equal(state.nodes.length, 9);
+  assert.equal(state.nodes.length, 11);
   assert.ok(state.nodes.every(node => node.status === "Ok"));
   await page.setViewportSize({width:1680,height:1100});
   await page.goto(base);
@@ -93,7 +93,7 @@ try {
   assert.match(await page.locator(".bof-panes-viewstatus").innerText(),/Selected entity/);
   assert.ok(await editorCanvas.isVisible(), "Picking an object keeps the graph node and pane open.");
   await page.screenshot({path:resolve(output,"editor-cutaway.png")});
-  evidence.scenarios.push("Nine-node graph evaluates on host","Editor applies host recipe","Object picking preserves node focus");
+  evidence.scenarios.push("Eleven-node graph evaluates on host","Editor applies host recipe","Object picking preserves node focus");
   assert.deepEqual(errors,[]);
   await writeFile(resolve(output,"evidence.json"),JSON.stringify(evidence,null,2));
   console.log(JSON.stringify(evidence,null,2));

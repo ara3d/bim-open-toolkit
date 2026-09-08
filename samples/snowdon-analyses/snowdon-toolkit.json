@@ -11,15 +11,15 @@
     },
     "cutaway": {
       "x": 640,
-      "y": 60
+      "y": 40
     },
     "interior": {
       "x": 640,
-      "y": 240
+      "y": 280
     },
     "exploded": {
       "x": 640,
-      "y": 420
+      "y": 480
     },
     "plan": {
       "x": 940,
@@ -27,15 +27,23 @@
     },
     "orthographic": {
       "x": 640,
-      "y": 600
+      "y": 680
     },
     "ghost": {
       "x": 340,
-      "y": 600
+      "y": 650
     },
     "night": {
       "x": 640,
-      "y": 780
+      "y": 880
+    },
+    "tint": {
+      "x": 340,
+      "y": 900
+    },
+    "band": {
+      "x": 940,
+      "y": 320
     }
   },
   "structure": {
@@ -71,6 +79,14 @@
       {
         "from": "ghost.view",
         "to": "night.view"
+      },
+      {
+        "from": "snowdon.view",
+        "to": "tint.view"
+      },
+      {
+        "from": "categories.view",
+        "to": "band.view"
       }
     ],
     "nodes": [
@@ -118,6 +134,16 @@
         "id": "night",
         "kind": "view3d.environment",
         "version": 1
+      },
+      {
+        "id": "tint",
+        "kind": "view3d.tint",
+        "version": 1
+      },
+      {
+        "id": "band",
+        "kind": "view3d.sectionRange",
+        "version": 1
       }
     ]
   },
@@ -150,6 +176,14 @@
     "night": {
       "theme": "dark",
       "grid": "true"
+    },
+    "tint": {
+      "color": "#2b8bd6",
+      "opacityPercent": "100"
+    },
+    "band": {
+      "axis": "z",
+      "range": "[0.3,0.7]"
     }
   }
 }

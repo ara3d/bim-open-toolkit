@@ -34,10 +34,15 @@ public sealed class ViewRecipeTests
     [TestCase("projection", "mode", "invalid")]
     [TestCase("environment", "theme", "invalid")]
     [TestCase("categoryStyle", "opacity", "2")]
+    [TestCase("tint", "color", "red")]
+    [TestCase("tint", "opacityPercent", "-1")]
+    [TestCase("sectionRange", "range", "[0.9,0.2]")]
+    [TestCase("sectionRange", "range", "[-0.1,0.7]")]
+    [TestCase("sectionRange", "range", "[0.1,0.7,0.9]")]
     public void InvalidViewParametersFail(string node, string param, string value)
     {
         var scene = Node("scene").EvalTable([], ("path", "Snowdon.bos"));
-        Assert.Throws<ArgumentException>(() => Node(node).EvalTable([new TableValue(scene)], (param, value)));
+        Assert.Catch<ArgumentException>(() => Node(node).EvalTable([new TableValue(scene)], (param, value)));
     }
 
     [Test]
@@ -51,5 +56,28 @@ public sealed class ViewRecipeTests
             using var input = JsonDocument.Parse((string)output.Cell("input", 1)!);
             Assert.That(input.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Object));
         }
+    }
+
+    [TestCase("0", 0)]
+    [TestCase("25", .25)]
+    [TestCase("100", 1)]
+    public void TintConvertsDisplayPercentToRecipeFraction(string percent, double fraction)
+    {
+        var scene = Node("scene").EvalTable([], ("path", "Snowdon.bos"));
+        var tinted = Node("tint").EvalTable([new TableValue(scene)], ("opacityPercent", percent));
+        using var input = JsonDocument.Parse((string)tinted.Cell("input", 1)!);
+        Assert.That(input.RootElement.GetProperty("opacity").GetDouble(), Is.EqualTo(fraction));
+    }
+
+    [TestCase("section", "fraction", 0)]
+    [TestCase("sectionBox", "fraction", .01)]
+    [TestCase("categoryStyle", "opacity", 0)]
+    public void FractionControlsDeclarePercentDisplayAndCanonicalBounds(string node, string parameter, double minimum)
+    {
+        var spec = Node(node).Spec.Params.Single(p => p.Name == parameter);
+        Assert.That(spec.Kind, Is.EqualTo(ParamKind.Fraction));
+        Assert.That(spec.Control!.Unit, Is.EqualTo("percent"));
+        Assert.That(spec.Control.Min, Is.EqualTo(minimum));
+        Assert.That(spec.Control.Max, Is.EqualTo(1));
     }
 }

@@ -124,7 +124,9 @@ internal static class Evaluator
         counts[node.Id] = counts.GetValueOrDefault(node.Id) + 1;
         try
         {
-            var outputs = flowNode.Eval(context, inputs, new ParamValues(parameters));
+            var values = new ParamValues(parameters);
+            values.Validate(spec.Params);
+            var outputs = flowNode.Eval(context, inputs, values);
             if (outputs.Count != spec.Outputs.Count)
                 throw new InvalidOperationException(
                     $"Node returned {outputs.Count} outputs; spec declares {spec.Outputs.Count}");

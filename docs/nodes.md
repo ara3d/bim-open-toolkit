@@ -46,7 +46,7 @@ is the content itself, not the path or a timestamp.
 |---|---|---|
 | BOS — `BimOpenFlow.Nodes.Bos` | 6 | `bos.load`, `bos.query`, `table.filter`, `table.derive`, `table.aggregate`, `table.sort` |
 | BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 12 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops` |
-| Geometry — `BimOpenFlow.Nodes.Geometry` | 18 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle` |
+| Geometry — `BimOpenFlow.Nodes.Geometry` | 20 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
 | DuckDB — `BimOpenFlow.Nodes.DuckDb` | 8 | `duck.read`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
@@ -782,7 +782,7 @@ Cut along an axis at a fraction of the model bounds (0–1). Keeps the lower sid
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
 | `axis` | Enum | `z` | `x`, `y`, `z` | — |
-| `fraction` | Number | `0.5` | — | — |
+| `fraction` | Fraction | `0.5` | — | — |
 
 ### `view3d.sectionBox` (v1) — Pure
 
@@ -804,7 +804,7 @@ Reveal a centered box inside the model. Fraction 1 keeps the full model; 0.5 kee
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `fraction` | Number | `0.5` | — | — |
+| `fraction` | Fraction | `0.5` | — | — |
 
 ### `view3d.explode` (v1) — Pure
 
@@ -893,7 +893,53 @@ Color source categories, with a distinct unknown category; optionally ghost the 
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `opacity` | Number | `1` | — | — |
+| `opacity` | Fraction | `1` | — | — |
+
+### `view3d.tint` (v1) — Pure
+
+Apply a uniform color and opacity to the model.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `view` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `view` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `color` | Text | `#2b8bd6` | — | — |
+| `opacityPercent` | Percent | `100` | — | — |
+
+### `view3d.sectionRange` (v1) — Pure
+
+Keep the band between two fractions of the original model bounds along an axis.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `view` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `view` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `axis` | Enum | `z` | `x`, `y`, `z` | — |
+| `range` | Text | `[0.3,0.7]` | — | — |
 
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
 

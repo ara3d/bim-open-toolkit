@@ -16,6 +16,8 @@ public enum ParamKind
     Expression,
     Json,
     DateTime,
+    Fraction,
+    Percent,
 }
 
 public enum SuggestKind
@@ -39,12 +41,17 @@ public sealed record SuggestSource(SuggestKind Kind, string Source)
         => new(SuggestKind.TablesInFile, pathParam);
 }
 
+/// <summary>Optional editor presentation. Evaluation still validates canonical values.</summary>
+public sealed record ParamControl(string Kind, double? Min = null, double? Max = null, double? Step = null,
+    string? Unit = null, string? Label = null);
+
 public sealed record ParamSpec(
     string Name,
     ParamKind Kind,
     string Default = "",
     IReadOnlyList<string>? EnumValues = null,
-    SuggestSource? Suggest = null);
+    SuggestSource? Suggest = null,
+    ParamControl? Control = null);
 
 /// <summary>
 /// A node's parameter values as delivered by the engine: canonical string form
@@ -73,4 +80,18 @@ public sealed class ParamValues
 
     public double GetNumber(string name, double @default = 0)
         => _values.TryGetValue(name, out var v) ? double.Parse(v, CultureInfo.InvariantCulture) : @default;
+
+    public Fraction GetFraction(string name, double @default = 0) => new(GetNumber(name, @default));
+    public Percent GetPercent(string name, double @default = 0) => new(GetNumber(name, @default));
+
+    public void Validate(IReadOnlyList<ParamSpec> specs)
+    {
+        foreach (var spec in specs)
+        {
+            if (spec.Kind is not (ParamKind.Fraction or ParamKind.Percent)) continue;
+            var value = GetNumber(spec.Name, string.IsNullOrEmpty(spec.Default) ? 0 : double.Parse(spec.Default, CultureInfo.InvariantCulture));
+            if (spec.Kind == ParamKind.Fraction) _ = new Fraction(value);
+            else _ = new Percent(value);
+        }
+    }
 }

@@ -7,10 +7,15 @@ category colors selected automatically. The divider resizes the two panes.
 
 Select a node or use **Preview** to see its result. Edit the fields inside nodes,
 drag nodes to rearrange them, and drag between sockets to connect them. Edits
-autosave and re-evaluate on the host. **Fit graph** frames the whole graph;
+update the connected 3D recipe locally, then autosave and re-evaluate on the host.
+The preview includes only the selected node and its upstream chain; highlighted
+wires and the preview breadcrumb show that chain. **Fit graph** frames the whole graph;
 **Nodes** opens the catalog to add nodes. The flow picker switches graphs.
 Clearing graph selection keeps the preview visible. Recipe branches reuse the
 loaded model. These are edits to the stored flow, retained after reload.
+**100%** restores readable graph scale. Selected nodes keep their position and
+use a composable Gratify border pulse (static under reduced motion). Right-click
+a node for **Delete node**; Undo restores the node and its connections.
 
 The button-based examples and local-file picker remain at `/showcase.html`.
 Both pages share the same pane, loader, renderer and recipe runner.
@@ -24,14 +29,16 @@ complete recipe, so selecting a node reproduces its upstream presentation.
 | Node | Parameters | Useful example |
 |---|---|---|
 | `view3d.scene` | `path` | Snowdon model overview |
-| `view3d.categoryStyle` | `opacity` 0–1 | Source categories with a legend; unknown categories are gray |
-| `view3d.section` | axis x/y/z; fraction 0–1 | Horizontal floor cutaway or vertical inspection |
-| `view3d.sectionBox` | fraction 0.01–1 | Centered interior region, expressed relative to model bounds |
+| `view3d.categoryStyle` | Opacity 0–100% | Source categories with a legend; unknown categories are gray |
+| `view3d.section` | axis x/y/z; Position 0–100% | Horizontal floor cutaway or vertical inspection |
+| `view3d.sectionBox` | Box size 1–100% | Centered interior region, expressed relative to model bounds |
 | `view3d.explode` | strength 0–5 | Fan source categories apart |
 | `view3d.projection` | perspective / orthographic / plan | Fixed overhead section inspection |
 | `view3d.environment` | light / dark; grid | Ghosted review against a dark background |
+| `view3d.tint` | Color picker; Opacity 0–100% | Uniform model color, composed with sections |
+| `view3d.sectionRange` | axis x/y/z; dual-handle Band 0–100% | Inspect a bounded slice through the model |
 
-The [Snowdon graph](../samples/snowdon-analyses/snowdon-toolkit.json) has nine nodes,
+The [Snowdon graph](../samples/snowdon-analyses/snowdon-toolkit.json) has eleven nodes,
 including composed category/cutaway/plan and ghost/environment branches.
 The existing instance, color, isolation, offset and box-table nodes continue to
 use their existing table conventions. Recipe tables use two text columns,
@@ -39,7 +46,16 @@ use their existing table conventions. Recipe tables use two text columns,
 They carry neither mesh bytes nor arbitrary executable commands. The browser
 validates the complete recipe before applying it.
 
-Fit, reset, reapply, retry and PNG capture are available in both hosts.
+Numeric controls clamp edits to their legal bounds. `Fraction` stores 0–1 and
+uses percentage presentation metadata where useful; `Percent` stores 0–100 and
+converts to a fraction when constructing the rendering recipe. Both types reject
+invalid values on the host. Existing stored fractions remain compatible.
+Dropdowns, sliders and range handles use Gratify; spinners and color pickers use
+its DOM input islands. Explode scrubbing preserves the current camera and styles,
+coalesces rendering to the next frame, and does not wait for the save request.
+
+Fit, retry and PNG capture are available in both hosts. Reset and reapply are
+available in the standalone showcase; the graph preview follows graph state.
 Reset restores source placement, per-placement colors, camera and environment.
 The category legend counts source objects, including records without geometry.
 Object picking preserves the selected graph node.
@@ -80,7 +96,18 @@ and standalone examples.
 
 ## Verification on 2026-09-08
 
-- Graph demo follow-up: `node scripts/check-bim-flow-graph.mjs` checks automatic
+Controls follow-up: 17 isolated browser scenarios passed, including actual
+dropdown/slider/spinner/color/range gestures, percentage bounds, socket rewiring,
+Delete/Undo, exact host/local recipe parity, and exact rendered-pixel restoration
+after leaving ghost and explode branches. Explode changed pixels during a held
+drag while all save requests were blocked. This proves independence from backend
+saving, not a frame-rate guarantee. The host suites passed 74 engine, 95 geometry
+and 24 API tests; the state suite passed 50 tests, including concurrent save races.
+Four real-viewer regressions verify source colors, opacity, transforms and camera
+restoration and intentional cumulative explosion. Counts below record the initial
+integration checks before this follow-up.
+
+- Graph demo follow-up: `BOF_DEMO_URL=http://127.0.0.1:5303 node scripts/check-bim-flow-graph.mjs` checks automatic
   Snowdon selection, both panes fitting the viewport, inline parameter editing
   through autosave/evaluation to changed rendered pixels, one model load across
   recipe branches, persistent preview, catalog toggling, and graph fitting.
