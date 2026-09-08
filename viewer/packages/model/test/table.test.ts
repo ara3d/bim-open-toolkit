@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   boolColumn, boolColumnOf, cellAt, cellOf, columnLength, columnNames, columnOf, dropColumns, emptyTable,
-  f32Column, f64Column, filterRows, findRows, i32Column, indexByKey, isIntegerColumn, isNumericColumn,
-  joinTables, matchRows, numberAt, numberOf, numericColumnOf, orderRowsBy, rowOf, selectColumns, sortRows,
-  stringAt, stringColumn, stringColumnOf, stringOf, table, tableFromRecord, takeRows, u32Column, withColumn,
+  f32Column, f64Column, filterRows, findRows, i32Column, indexByKey, indexByStringKey, isIntegerColumn,
+  isNumericColumn, joinTables, joinTablesOn, matchRows, matchStringRows, numberAt, numberOf, numericColumnOf,
+  orderRowsBy, rowOf, selectColumns, sortRows, stringAt, stringColumn, stringColumnOf, stringOf, table,
+  tableFromRecord, takeRows, u32Column, withColumn,
 } from '../src/table.js';
 
 const doors = table([
@@ -168,6 +169,35 @@ describe('table operations', () => {
   it('refuses a join that would give two columns the same name', () => {
     const joined = joinTables(doors, 'storey', table([['name', stringColumn(['x'])], ['id', i32Column([0])]]), 'id');
     expect(joined.diagnostics.map((item) => item.code)).toEqual(['table/collision']);
+  });
+
+  it('matches rows by a string key, reporting no match as -1', () => {
+    expect(matchStringRows(stringColumn(['b', 'a', 'z']), stringColumn(['a', 'b'])))
+      .toEqual(Int32Array.from([1, 0, -1]));
+    expect(indexByStringKey(stringColumn(['a', 'a']))).toEqual(new Map([['a', 0]]));
+  });
+
+  it('joins on string keys, which is what a schedule keyed by an object id needs', () => {
+    const schedule = table([
+      ['objectId', stringColumn(['D3', 'D1'])],
+      ['fireRating', stringColumn(['EI60', 'EI30'])],
+    ]);
+    const joined = joinTablesOn(doors, 'name', schedule, 'objectId', 'schedule.');
+    expect(joined.ok).toBe(true);
+    const value = joined.ok ? joined.value : emptyTable;
+    expect(value.rowCount).toBe(2);
+    expect(columnOf(value, 'name')?.values).toEqual(['D1', 'D3']);
+    expect(columnOf(value, 'schedule.fireRating')?.values).toEqual(['EI30', 'EI60']);
+  });
+
+  it('joins on integer keys through the same door', () => {
+    const joined = joinTablesOn(doors, 'storey', storeys, 'id', 'storey.');
+    expect(joined.ok && columnOf(joined.value, 'storey.label')?.values).toEqual(['Ground', 'First', 'First']);
+  });
+
+  it('refuses a join between a string column and an integer column', () => {
+    expect(joinTablesOn(doors, 'name', storeys, 'id').diagnostics.map((item) => item.code)).toEqual(['table/key']);
+    expect(joinTablesOn(doors, 'missing', storeys, 'id').diagnostics.map((item) => item.code)).toEqual(['table/key']);
   });
 
   it('reads one row as named values, leaving out columns that have no such row', () => {

@@ -242,6 +242,26 @@ export const matchRows = (left: IntegerColumn, right: IntegerColumn): Int32Array
   return matches;
 };
 
+// The first row of each string value, so a join can find its match in one lookup. The map holds one
+// entry per distinct string, which is what a string key costs over an integer one.
+export const indexByStringKey = (column: StringColumn): ReadonlyMap<string, number> => {
+  const rows = new Map<string, number>();
+  for (let row = column.values.length - 1; row >= 0; row -= 1) {
+    const key = column.values[row];
+    if (key !== undefined) rows.set(key, row);
+  }
+  return rows;
+};
+
+// For each row of the left column, the row of the right column with the same string, or -1.
+export const matchStringRows = (left: StringColumn, right: StringColumn): Int32Array => {
+  const index = indexByStringKey(right);
+  const matches = new Int32Array(left.values.length);
+  for (let row = 0; row < left.values.length; row += 1)
+    matches[row] = index.get(left.values[row] ?? '') ?? -1;
+  return matches;
+};
+
 // One row read out as named values, for tests and for reporting. Bulk code reads columns.
 export const rowOf = (source: Table, row: number): Readonly<Record<string, CellValue>> =>
   Object.fromEntries(
@@ -257,6 +277,24 @@ export const integerColumnOf = (source: Table, name: string): IntegerColumn | un
   return column !== undefined && isIntegerColumn(column) ? column : undefined;
 };
 
+// Both tables side by side on a computed row match, one output row per matching left row.
+const joinMatched = (left: Table, right: Table, matches: Int32Array, prefix: string): Result<Table> => {
+  const collisions = columnNames(right)
+    .map((name) => `${prefix}${name}`)
+    .filter((name) => left.columns.has(name));
+  if (collisions.length > 0)
+    return failure([
+      diagnostic('table/collision', `Joining would give two columns named ${collisions.join(', ')}.`),
+    ]);
+  const leftRows = findRows(left, (row) => (matches[row] ?? -1) >= 0);
+  const rightRows = leftRows.map((row) => matches[row] ?? 0);
+  const joined = [
+    ...takeRows(left, leftRows).columns,
+    ...[...takeRows(right, rightRows).columns].map(([name, column]) => [`${prefix}${name}`, column] as const),
+  ];
+  return success(table(joined));
+};
+
 // The rows of both tables whose integer key columns match, one output row per matching left row.
 // Right column names take the prefix; a name that would collide with a left column is an error.
 export const joinTables = (
@@ -268,23 +306,35 @@ export const joinTables = (
 ): Result<Table> => {
   const leftColumn = integerColumnOf(left, leftKey);
   const rightColumn = integerColumnOf(right, rightKey);
-  if (leftColumn === undefined || rightColumn === undefined)
-    return failure([
-      diagnostic('table/key', `A join needs an integer column on both sides: "${leftKey}" and "${rightKey}".`),
-    ]);
-  const collisions = columnNames(right)
-    .map((name) => `${prefix}${name}`)
-    .filter((name) => left.columns.has(name));
-  if (collisions.length > 0)
-    return failure([
-      diagnostic('table/collision', `Joining would give two columns named ${collisions.join(', ')}.`),
-    ]);
-  const matches = matchRows(leftColumn, rightColumn);
-  const leftRows = findRows(left, (row) => (matches[row] ?? -1) >= 0);
-  const rightRows = leftRows.map((row) => matches[row] ?? 0);
-  const joined = [
-    ...takeRows(left, leftRows).columns,
-    ...[...takeRows(right, rightRows).columns].map(([name, column]) => [`${prefix}${name}`, column] as const),
-  ];
-  return success(table(joined));
+  return leftColumn === undefined || rightColumn === undefined
+    ? failure([
+        diagnostic('table/key', `A join needs an integer column on both sides: "${leftKey}" and "${rightKey}".`),
+      ])
+    : joinMatched(left, right, matchRows(leftColumn, rightColumn), prefix);
+};
+
+// The same join for two integer key columns or two string key columns, which is what a schedule
+// keyed by an object id needs. A string key costs a map of the right column's distinct strings and
+// one string hash per left row, where the integer key hashes a number; the result is the same shape.
+export const joinTablesOn = (
+  left: Table,
+  leftKey: string,
+  right: Table,
+  rightKey: string,
+  prefix = '',
+): Result<Table> => {
+  const leftColumn = columnOf(left, leftKey);
+  const rightColumn = columnOf(right, rightKey);
+  if (leftColumn !== undefined && rightColumn !== undefined) {
+    if (isIntegerColumn(leftColumn) && isIntegerColumn(rightColumn))
+      return joinMatched(left, right, matchRows(leftColumn, rightColumn), prefix);
+    if (leftColumn.type === 'string' && rightColumn.type === 'string')
+      return joinMatched(left, right, matchStringRows(leftColumn, rightColumn), prefix);
+  }
+  return failure([
+    diagnostic(
+      'table/key',
+      `A join needs two integer columns or two string columns: "${leftKey}" and "${rightKey}".`,
+    ),
+  ]);
 };
