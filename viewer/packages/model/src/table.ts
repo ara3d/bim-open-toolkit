@@ -1,3 +1,5 @@
+import { diagnostic, failure, success, type Result } from './result.js';
+
 // The element type of a column. Booleans are stored as bytes; strings stay a plain array.
 export type ColumnType = 'f32' | 'f64' | 'i32' | 'u32' | 'bool' | 'string';
 
@@ -96,3 +98,159 @@ export const columnNames = (source: Table): readonly string[] => [...source.colu
 
 // A table with no columns and no rows.
 export const emptyTable: Table = { rowCount: 0, columns: new Map() };
+
+// Row numbers into a table, as a plain array or as a typed array of indices.
+export type RowIndices = readonly number[] | Int32Array | Uint32Array;
+
+// The direction a sort orders rows in.
+export type SortDirection = 'ascending' | 'descending';
+
+// Copies the given rows of a numeric column into the target array, in the order they are given.
+const gather = <A extends { [index: number]: number }>(
+  values: { readonly [index: number]: number | undefined },
+  rows: RowIndices,
+  target: A,
+): A => {
+  for (let index = 0; index < rows.length; index += 1) target[index] = values[rows[index] ?? 0] ?? 0;
+  return target;
+};
+
+// The given rows of a column, in the order they are given, as a new column of the same type.
+export const takeColumn = (column: Column, rows: RowIndices): Column => {
+  const count = rows.length;
+  switch (column.type) {
+    case 'f32':
+      return { type: 'f32', values: gather(column.values, rows, new Float32Array(count)) };
+    case 'f64':
+      return { type: 'f64', values: gather(column.values, rows, new Float64Array(count)) };
+    case 'i32':
+      return { type: 'i32', values: gather(column.values, rows, new Int32Array(count)) };
+    case 'u32':
+      return { type: 'u32', values: gather(column.values, rows, new Uint32Array(count)) };
+    case 'bool':
+      return { type: 'bool', values: gather(column.values, rows, new Uint8Array(count)) };
+    case 'string': {
+      const values: string[] = [];
+      for (let index = 0; index < count; index += 1) values.push(column.values[rows[index] ?? 0] ?? '');
+      return { type: 'string', values };
+    }
+  }
+};
+
+// The named columns, in the order named. A name the table does not have is left out.
+export const selectColumns = (source: Table, names: readonly string[]): Table =>
+  table(names.flatMap((name) => {
+    const column = source.columns.get(name);
+    return column === undefined ? [] : [[name, column] as const];
+  }));
+
+// The table without the named columns.
+export const dropColumns = (source: Table, names: readonly string[]): Table =>
+  table([...source.columns].filter(([name]) => !names.includes(name)));
+
+// The table with a column added or replaced. The row count follows from the shortest column.
+export const withColumn = (source: Table, name: string, column: Column): Table =>
+  table([...source.columns].filter(([existing]) => existing !== name).concat([[name, column]]));
+
+// The given rows of every column, in the order they are given.
+export const takeRows = (source: Table, rows: RowIndices): Table =>
+  table([...source.columns].map(([name, column]) => [name, takeColumn(column, rows)]));
+
+// The row numbers the predicate keeps, in table order.
+export const findRows = (source: Table, keep: (row: number) => boolean): readonly number[] => {
+  const rows: number[] = [];
+  for (let row = 0; row < source.rowCount; row += 1) if (keep(row)) rows.push(row);
+  return rows;
+};
+
+// The rows the predicate keeps, in table order.
+export const filterRows = (source: Table, keep: (row: number) => boolean): Table =>
+  takeRows(source, findRows(source, keep));
+
+// Compares two cells of the same column type. Absent values sort first.
+const compareCells = (a: CellValue | undefined, b: CellValue | undefined): number => {
+  if (a === undefined) return b === undefined ? 0 : -1;
+  if (b === undefined) return 1;
+  if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : a > b ? 1 : 0;
+  return Number(a) - Number(b);
+};
+
+// The row numbers ordered by the named column. Rows with equal values keep their table order.
+// A name the table does not have leaves the rows in table order.
+export const orderRowsBy = (source: Table, name: string, direction: SortDirection = 'ascending'): readonly number[] => {
+  const column = source.columns.get(name);
+  const rows = Array.from({ length: source.rowCount }, (_unused, row) => row);
+  if (column === undefined) return rows;
+  const sign = direction === 'ascending' ? 1 : -1;
+  return rows.sort((a, b) => sign * compareCells(cellAt(column, a), cellAt(column, b)));
+};
+
+// The table ordered by the named column.
+export const sortRows = (source: Table, name: string, direction: SortDirection = 'ascending'): Table =>
+  takeRows(source, orderRowsBy(source, name, direction));
+
+// The first row of each key value, so a join can find its match in one lookup.
+export const indexByKey = (column: IntegerColumn): ReadonlyMap<number, number> => {
+  const rows = new Map<number, number>();
+  for (let row = column.values.length - 1; row >= 0; row -= 1) {
+    const key = column.values[row];
+    if (key !== undefined) rows.set(key, row);
+  }
+  return rows;
+};
+
+// For each row of the left column, the row of the right column with the same key, or -1.
+export const matchRows = (left: IntegerColumn, right: IntegerColumn): Int32Array => {
+  const index = indexByKey(right);
+  const matches = new Int32Array(left.values.length);
+  for (let row = 0; row < left.values.length; row += 1)
+    matches[row] = index.get(left.values[row] ?? 0) ?? -1;
+  return matches;
+};
+
+// One row read out as named values, for tests and for reporting. Bulk code reads columns.
+export const rowOf = (source: Table, row: number): Readonly<Record<string, CellValue>> =>
+  Object.fromEntries(
+    [...source.columns].flatMap(([name, column]) => {
+      const value = cellAt(column, row);
+      return value === undefined ? [] : [[name, value] as const];
+    }),
+  );
+
+// The named column when it holds whole numbers usable as a join key, otherwise undefined.
+export const integerColumnOf = (source: Table, name: string): IntegerColumn | undefined => {
+  const column = source.columns.get(name);
+  return column !== undefined && isIntegerColumn(column) ? column : undefined;
+};
+
+// The rows of both tables whose integer key columns match, one output row per matching left row.
+// Right column names take the prefix; a name that would collide with a left column is an error.
+export const joinTables = (
+  left: Table,
+  leftKey: string,
+  right: Table,
+  rightKey: string,
+  prefix = '',
+): Result<Table> => {
+  const leftColumn = integerColumnOf(left, leftKey);
+  const rightColumn = integerColumnOf(right, rightKey);
+  if (leftColumn === undefined || rightColumn === undefined)
+    return failure([
+      diagnostic('table/key', `A join needs an integer column on both sides: "${leftKey}" and "${rightKey}".`),
+    ]);
+  const collisions = columnNames(right)
+    .map((name) => `${prefix}${name}`)
+    .filter((name) => left.columns.has(name));
+  if (collisions.length > 0)
+    return failure([
+      diagnostic('table/collision', `Joining would give two columns named ${collisions.join(', ')}.`),
+    ]);
+  const matches = matchRows(leftColumn, rightColumn);
+  const leftRows = findRows(left, (row) => (matches[row] ?? -1) >= 0);
+  const rightRows = leftRows.map((row) => matches[row] ?? 0);
+  const joined = [
+    ...takeRows(left, leftRows).columns,
+    ...[...takeRows(right, rightRows).columns].map(([name, column]) => [`${prefix}${name}`, column] as const),
+  ];
+  return success(table(joined));
+};
