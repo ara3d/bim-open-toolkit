@@ -27,9 +27,15 @@ Tooling decisions taken while landing the retrofit:
 
 | Track | Model | Fence | State | Checkpoint |
 |---|---|---|---|---|
-| M model contracts | Opus | `viewer/packages/model/**` | not started | `viewer/packages/model/docs/CHECKPOINT-M.md` |
-| S synthetic generators | Opus | `viewer/packages/synthetic/**` | not started | `viewer/packages/synthetic/docs/CHECKPOINT-S.md` |
-| PERF instance-update study (user request 2026-09-07) | Opus | `viewer/packages/testing/{src/perf,test/perf,docs}/**` | working | `viewer/packages/testing/docs/CHECKPOINT-perf.md` |
+| M model contracts | Opus | `viewer/packages/model/**` | working | `viewer/packages/model/docs/CHECKPOINT-M.md` |
+| S synthetic generators | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S.md` |
+| PERF instance-update study (user request 2026-09-07) | Opus | `viewer/packages/testing/src/perf/**`, `test/perf/*.perf.ts`, its two docs | working | `viewer/packages/testing/docs/CHECKPOINT-perf.md` |
+| BIND normalized-binding cost study (user request 2026-09-07) | Opus | `viewer/packages/testing/src/bindings/**`, `test/bindings/**`, `test/perf/bindings/**`, its two docs | working | `viewer/packages/testing/docs/CHECKPOINT-bind.md` |
+| I interact (pulled forward from wave 1; decides wrap-or-replace of viewer-controls) | Opus | `viewer/packages/interact/**` | working | `viewer/packages/interact/docs/CHECKPOINT-I.md` |
+| W0 hand-written expected tables for the ten workflows | Sonnet | `viewer/packages/workflows/test/expected/**`, `docs/**` | working | `viewer/packages/workflows/docs/CHECKPOINT-W0.md` |
+| D0 BFAST fixture server (pulled forward from wave 2) | Opus | `viewer/packages/demos/src/server/**`, `test/server/**`, `docs/**` | working | `viewer/packages/demos/docs/CHECKPOINT-D0.md` |
+
+Parallelism (user request 2026-09-07 to get more subagents working at once): seven background subagents were accepted by the host at once. Ways used: tracks start against small structural stub types instead of waiting for revision M1 and switch to the model imports when the stub lands; one package is split into sub-fences by directory (three tracks inside `testing`); independent pieces of later waves are pulled forward when they need no unlanded contract (fixture server, expected-result tables); Sonnet takes work that needs only the brief. Track M's stub chunk is the main unblocker for everything else.
 
 ### BFAST versus BOS loading (user request 2026-09-07)
 
