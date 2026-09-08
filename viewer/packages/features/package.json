@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@bim-open-toolkit/viewer": "0.1.0",
-    "@bim-open-toolkit/testing": "0.1.0"
+    "@bim-open-toolkit/testing": "0.1.0",
+    "@bim-open-toolkit/synthetic": "0.1.0"
   }
 }

@@ -218,6 +218,10 @@
       "paths": [
         "viewer/packages/demos/src/feature-demos/_shared/**",
         "viewer/packages/demos/test/feature-demos/_shared/**",
+        "viewer/packages/demos/src/feature-demos/host-smoke/**",
+        "viewer/packages/demos/test/feature-demos/host-smoke/**",
+        "viewer/packages/demos/feature-demos/host-smoke.html",
+        "viewer/packages/demos/feature-demos/demo.css",
         "viewer/packages/demos/vite.feature-demos.config.mjs",
         "viewer/packages/demos/docs/feature-demos.md"
       ],
@@ -324,6 +328,15 @@
         "viewer/packages/demos/test/demos/material-carbon/**",
         "viewer/packages/demos/test/demos/portfolio/**",
         "viewer/packages/demos/docs/CHECKPOINT-D4.md"
+      ]
+    },
+    "W2": {
+      "paths": [
+        "viewer/packages/workflows/src/recipe.ts",
+        "viewer/packages/workflows/test/recipe*",
+        "viewer/packages/workflows/docs/CHECKPOINT-W2.md",
+        "viewer/packages/workflows/docs/workflows.md",
+        "viewer/packages/workflows/README.md"
       ]
     }
   }
