@@ -81,6 +81,11 @@
       "paths": [
         "viewer/packages/workflows/**"
       ]
+    },
+    "M2": {
+      "paths": [
+        "viewer/packages/model/**"
+      ]
     }
   }
 }

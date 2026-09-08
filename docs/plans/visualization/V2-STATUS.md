@@ -57,8 +57,16 @@ Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside
 |---|---|---|---|---|
 | F formats, BFAST first | Opus | `viewer/packages/formats/**` | working | `viewer/packages/formats/docs/CHECKPOINT-F.md` |
 | R render, instance table | Opus | `viewer/packages/render/**` | working | `viewer/packages/render/docs/CHECKPOINT-R.md` |
+| M2 model bridges (review follow-up) | Opus | `viewer/packages/model/**` | working | `viewer/packages/model/docs/CHECKPOINT-M2.md` |
+| E2E vertical slice (review follow-up) | Opus | `viewer/packages/demos/src/slice/**` | queued until R's instance table lands | — |
 | S2 remaining generators | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S2.md` |
 | W workflow adapters | Opus | `viewer/packages/workflows/**` | working | `viewer/packages/workflows/docs/CHECKPOINT-W.md` |
+
+### Independent review, 2026-09-08
+
+[REVIEW-2026-09-08.md](REVIEW-2026-09-08.md) (fresh-eyes Opus, read-only, own numbers, composition probe). Verdict: real progress with waste. Evidence for progress: a throwaway script used `model` and `synthetic` together to list doors with fire-rating coverage, reconcile a conflict and colour unrated doors red, each in a few lines and as documented. Waste named: 156k tokens of workflow fixtures written before the facts contract existed; 1,736 lines of checkpoint and decision prose for one day of work on two packages. Gaps found by the probe: no bridge from instance records to `Table` without a per-row allocation; no bridge from `ObjectSet` to table rows; joins need integer keys on both sides so schedules keyed by string ids cannot join; no string column accessor; three README mismatches. Nothing user-visible yet.
+
+Actions taken: Track M2 launched to add the bridges and fix the README (model fence was free). Track W's brief already allows it to correct the W0 fixtures against M1 and S2's generators; the review's first recommendation (regenerate them from `synthetic` and `facts.ts`) is recorded here for W's integration review. The second recommendation, one end-to-end slice (synthetic building drawn in a page with unrated doors red), is queued as Track E2E to start when Track R's instance-table chunk lands, because it needs that binding and would otherwise duplicate R.
 
 ### Requests between tracks
 
