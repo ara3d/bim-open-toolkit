@@ -114,6 +114,11 @@
       "paths": [
         "viewer/packages/formats/**"
       ]
+    },
+    "M4": {
+      "paths": [
+        "viewer/packages/model/**"
+      ]
     }
   }
 }
