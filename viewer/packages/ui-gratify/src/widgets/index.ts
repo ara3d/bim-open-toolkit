@@ -3,3 +3,6 @@
 export * from './common.js';
 export * from './button.js';
 export * from './tag.js';
+export * from './badge.js';
+export * from './tip.js';
+export * from './list.js';

@@ -31,3 +31,13 @@ export const paintFocus = (painter: Painter, rect: Rect, ring: Color): void => {
 
 // The label size a compact control uses.
 export const controlText = (): number => fontSize('small');
+
+// A small coloured pill with a word in it. Shared so a badge and an inspector row cannot drift.
+export const paintPill = (painter: Painter, rect: Rect, colour: Color, text: string, size: number): void => {
+  painter.box(rect, rect.h / 2, calpha(colour, 0.16), calpha(colour, 0.5), 1);
+  painter.label(text, rect.center, colour, { size, weight: 600 });
+};
+
+// How wide a pill has to be for its word.
+export const pillWidth = (measure: { text: (s: string, size?: number) => { x: number } }, text: string, size: number): number =>
+  measure.text(text, size).x + spaceOf(12);

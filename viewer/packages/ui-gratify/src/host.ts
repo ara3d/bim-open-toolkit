@@ -17,6 +17,8 @@ import {
   ScaledPainter,
   surfaceScale,
   type FrameScheduler,
+  type InputModifiers,
+  type SurfaceInput,
 } from './surface.js';
 
 // How wide and tall the canvas is: as big as what the app drew, or as big as the element it is in.
@@ -32,6 +34,10 @@ export type SurfaceOptions<D, I> = {
   // Scrolls by a wheel delta and reports whether it used the wheel. Without it the wheel is left to
   // the viewport underneath, which is what a HUD panel over a 3D scene wants.
   readonly onWheel?: ((delta: number, at: Vec) => boolean) | undefined;
+  // Tried after the runtime has refused a key, and reports whether it used it. Gratify routes keys
+  // to the focused part, then the hovered chain, then the root, so a surface-wide binding that must
+  // work with the pointer anywhere belongs here.
+  readonly onKey?: ((key: string, mods: InputModifiers) => boolean) | undefined;
   readonly frames?: FrameScheduler | undefined;
 };
 
@@ -139,7 +145,17 @@ export const hostSurface = <D, I>(
 
   const loop = renderLoop(step, options.frames);
 
-  const input = bindSurfaceInput(canvas, runtime, {
+  const onKey = options.onKey;
+  const pipeline: SurfaceInput = {
+    pointerDown: (point, mods) => runtime.pointerDown(point, mods),
+    pointerMove: (point, mods) => runtime.pointerMove(point, mods),
+    pointerUp: (point) => runtime.pointerUp(point),
+    key: (key, mods) =>
+      runtime.key(key, mods) ||
+      (onKey?.(key, { shift: mods?.shift === true, alt: mods?.alt === true, ctrl: mods?.ctrl === true }) ?? false),
+  };
+
+  const input = bindSurfaceInput(canvas, pipeline, {
     toLocal: (event) => localPoint(canvas, event, logical),
     wake: loop.wake,
     onWheel: options.onWheel,

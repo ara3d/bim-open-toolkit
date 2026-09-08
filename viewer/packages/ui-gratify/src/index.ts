@@ -7,3 +7,5 @@ export * from './surface.js';
 export * from './host.js';
 export * from './panel.js';
 export * from './widgets/index.js';
+export * from './coverage.js';
+export * from './inspector/index.js';
