@@ -85,5 +85,9 @@ to one is listed in `docs/CHECKPOINT-W.md` with its reason.
 The door schedule is additionally tested against a hand-made sample in the shape of a real
 BuildingModel workflow projection. No private artifact is read by any test.
 
-Not tested here: any generated synthetic fixture (the generators these workflows will consume are
-still landing), and any behaviour that needs a renderer, which is by design outside this package.
+Several workflows are also run against `@bim-open-toolkit/synthetic`'s generators, which publish
+their observations as model facts and their deliberate gaps as model coverage. Those tests assert
+that the exceptions are exactly the gaps the generator documents, so the two packages have to agree
+about what is missing rather than both being checked against the same hand-written numbers.
+
+Not tested here: any behaviour that needs a renderer, which is by design outside this package.

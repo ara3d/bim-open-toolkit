@@ -36,6 +36,9 @@ tests; that work is listed under remaining work until it is reviewed.
 | Coordinate frames for access coordination (open question 6) | `50a3b66` |
 | Two delivery records of one type read as a conflict | `29f9799` |
 | Note on where the expected files and the adapters differ | `25284eb` |
+| Checkpoint after all ten adapters | `50de1d3` |
+| Place a door schedule exception by lookup, not by scan | `dc98fa8` |
+| Colour and roll up by lookup, not by rescanning | `b342216` |
 
 Every commit staged its own files by explicit pathspec. Twice another track's
 files were staged in the shared index while this track was committing; the
@@ -151,9 +154,10 @@ From `viewer/`:
 
 From `viewer/packages/workflows/`:
 
-- `npx vitest run` — 15 files, 81 tests passed, at commit `eb1308f`; the runs
-  after it were per-file while a nested worker was writing in this package.
-  The full run is repeated at the end of this checkpoint.
+- `npm test -w @bim-open-toolkit/workflows` — 16 files, 92 tests passed, at
+  commit `b342216` with the README edit in the working tree. Runs while a
+  nested worker was writing in this package were per-file, so its unfinished
+  files could not fail a check of mine.
 
 ## Blockers
 
