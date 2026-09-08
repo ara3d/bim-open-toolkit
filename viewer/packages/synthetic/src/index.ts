@@ -44,6 +44,12 @@ export {
   type DoorWidthPolicy,
 } from './building.js';
 
+// Priceable scopes, rate sets and scenario policies, with the scopes no rate set covers.
+export { defaultCostOptions, generateCosts, type CostOptions, type Costs } from './costs.js';
+
+// Material quantities and carbon factors whose units and lifecycle scopes do not always apply.
+export { defaultCarbonOptions, generateCarbon, type Carbon, type CarbonOptions } from './carbon.js';
+
 // Roof and room-finish faces with supplied measurements, unassigned finishes and disputed areas.
 export {
   defaultQuantityOptions,
