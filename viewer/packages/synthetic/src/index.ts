@@ -44,6 +44,14 @@ export {
   type DoorWidthPolicy,
 } from './building.js';
 
+// Roof and room-finish faces with supplied measurements, unassigned finishes and disputed areas.
+export {
+  defaultQuantityOptions,
+  generateQuantities,
+  type Quantities,
+  type QuantityOptions,
+} from './quantities.js';
+
 // A seeded procurement record: delivery, acceptance and installation events, with dates and gaps.
 export {
   defaultDeliveryOptions,
