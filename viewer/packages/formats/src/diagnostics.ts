@@ -23,6 +23,9 @@ export const formatCode = {
   droppedMaterialLibrary: 'formats/dropped-material-library',
   droppedVertexColors: 'formats/dropped-vertex-colors',
   missingEntityTable: 'formats/missing-entity-table',
+  missingPropertyTables: 'formats/missing-property-tables',
+  missingDocumentTable: 'formats/missing-document-table',
+  droppedProperties: 'formats/dropped-properties',
   noGeometry: 'formats/no-geometry',
   assumedCoordinates: 'formats/assumed-coordinates',
 } as const;

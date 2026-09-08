@@ -52,7 +52,7 @@ import {
   type SceneStatistics,
   type UpdateReport,
 } from '@bim-open-toolkit/render';
-import { captureFeatureWith } from '@bim-open-toolkit/features';
+import { captureFeatureWith, layoutPlacements, placementsOf, type Placement } from '@bim-open-toolkit/features';
 import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { Viewer, defaultMaterial } from '@ara3d/viewer-core';
 import { captureTarget, clippingTarget, environmentTarget, gpuFrameTimer, raycastSource } from './adapters.js';
@@ -272,6 +272,14 @@ export const createGalleryViewer = (
     canvas,
     open,
     models: () => opened.map((model) => model.ref),
+    placements: (): readonly Placement[] => {
+      const model = opened[0];
+      const bound = binding.models[0];
+      if (model === undefined) return [];
+      if (bound === undefined) return placementsOf(model.data);
+      const found = layoutPlacements(model.data, bound.table);
+      return found.ok ? found.value : placementsOf(model.data);
+    },
     opened: () => [...opened],
     applyStyles: (modelId: string, resolved: ResolvedStyles): Result<UpdateReport> =>
       binding.applyStyles(modelId, resolved),

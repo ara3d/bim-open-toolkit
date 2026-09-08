@@ -18,15 +18,24 @@ describe('the environment demo', () => {
   it('states what it is', () => {
     expect(demo.id).toBe('environment');
     expect(demo.chapter).toBe('cut-and-arrange');
-    expect(demo.fixtures[0]?.basis).toBe('synthetic');
+    expect(demo.fixtures[0]?.basis).toBe('source-backed');
+    expect(demo.fixtures[1]?.basis).toBe('synthetic');
     expect(demo.briefIds).toContain('F10');
   });
 
-  it('opens the synthetic building', async () => {
-    const source = await demo.fixtures[0]?.source();
-    expect(source?.ok).toBe(true);
-    if (source?.ok !== true) return;
-    expect(source.value.kind).toBe('data');
+  // The real model is a URL the dev server answers; the generated building behind it is data this
+  // process makes, so only the second one is actually built here - a test that needed the hundred
+  // megabyte file would not run on a machine that does not have it.
+  it('opens the real model first and the generated building second', async () => {
+    const real = await demo.fixtures[0]?.source();
+    expect(real?.ok).toBe(true);
+    if (real?.ok !== true) return;
+    expect(real.value.kind).toBe('url');
+
+    const generated = await demo.fixtures[1]?.source();
+    expect(generated?.ok).toBe(true);
+    if (generated?.ok !== true) return;
+    expect(generated.value.kind).toBe('data');
   });
 });
 

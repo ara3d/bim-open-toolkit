@@ -9,6 +9,13 @@
 // Offsets are computed from the model's placements: an object's centre is where its own transform
 // puts it. That is enough for both layouts and needs no geometry, so the whole computation is a
 // pure function tested in Node.
+//
+// Some formats do not put the placement there. BFAST leaves every object record at the identity
+// because the real placement is on the instance rows and the render path composes it, so reading
+// the records alone puts a whole building at one point and no layout can separate anything. A
+// layout can therefore be given the placements to compute from - `layoutPlacements` takes them off
+// the rows when the records carry none - and every offset function takes them as an optional
+// argument, so a model whose records do carry placements computes exactly what it always did.
 
 import {
   array,
@@ -22,6 +29,7 @@ import {
   feature,
   integer,
   literal,
+  note,
   number,
   object,
   objectKey,
@@ -40,6 +48,7 @@ import {
   type Migration,
   type ModelData,
   type ObjectKey,
+  type Result,
   type Schema,
   type Session,
   type StateSlice,
@@ -80,6 +89,11 @@ export type Placement = { readonly key: ObjectKey; readonly center: Vec3 };
 export type LayoutHost = {
   readonly table: InstanceTable;
   readonly model: ModelData;
+  // Where the objects are, when that is not what their own records say. Absent means the records
+  // are the answer, which is what every layout computed from before anything took rows into
+  // account. Read once, when the hook is installed, so it is the placement the model loaded with
+  // and not whatever a layout already in force moved the rows to.
+  readonly placements?: readonly Placement[] | undefined;
   readonly dirty?: DirtySets | undefined;
   readonly moved?: ((rows: number) => void) | undefined;
 };
@@ -126,6 +140,9 @@ export const layoutsSlice: StateSlice<LayoutsState> = stateSlice(
 // The index of each axis in a column-major transform's translation.
 const translationAt = 12;
 
+// Floats in one column-major transform.
+const transformFloats = 16;
+
 // The two ground axes and the up axis, for the frame the model reports in.
 const axesFor = (up: UpAxis): { readonly first: number; readonly second: number; readonly up: number } =>
   up === 'y' ? { first: 0, second: 2, up: 1 } : { first: 0, second: 1, up: 2 };
@@ -149,24 +166,115 @@ export const placementsOf = (model: ModelData): readonly Placement[] =>
 export const placementBounds = (placements: readonly Placement[]): Bounds =>
   boundsOf(placements.map((placement) => placement.center));
 
+// How many distinct points a set of placements puts objects at. One means the placements tell no
+// two objects apart, and then nothing computed from them can separate anything.
+export const distinctPlacements = (placements: readonly Placement[]): number =>
+  new Set(placements.map((placement) => placement.center.join(','))).size;
+
+// Where the drawn rows put each object: the centre of the box around the translations of the rows
+// that object draws. An object the table draws no row for gets no placement, because the rows are
+// the only thing here that says where it is, and saying nothing is more honest than saying zero.
+export const rowPlacements = (table: InstanceTable): readonly Placement[] => {
+  const placements: Placement[] = [];
+  for (let object = 0; object < table.keys.length; object++) {
+    const key = table.keys[object];
+    if (key === undefined) continue;
+    const start = table.objectStart[object] ?? 0;
+    const end = table.objectStart[object + 1] ?? start;
+    const low = [Infinity, Infinity, Infinity];
+    const high = [-Infinity, -Infinity, -Infinity];
+    for (let at = start; at < end; at++) {
+      const row = table.objectRows[at] ?? -1;
+      const group = table.groupOfRow[row] ?? -1;
+      const buffer = table.transforms[group];
+      if (buffer === undefined) continue;
+      const from = (row - (table.groupStart[group] ?? 0)) * transformFloats + translationAt;
+      for (let axis = 0; axis < 3; axis++) {
+        const value = buffer[from + axis] ?? 0;
+        low[axis] = Math.min(low[axis] ?? Infinity, value);
+        high[axis] = Math.max(high[axis] ?? -Infinity, value);
+      }
+    }
+    if (!Number.isFinite(low[0])) continue;
+    placements.push({
+      key,
+      center: [
+        ((low[0] ?? 0) + (high[0] ?? 0)) / 2,
+        ((low[1] ?? 0) + (high[1] ?? 0)) / 2,
+        ((low[2] ?? 0) + (high[2] ?? 0)) / 2,
+      ],
+    });
+  }
+  return placements;
+};
+
+// The placements a layout should compute from, for a model drawn by an instance table.
+//
+// The model's own records win whenever they tell two objects apart, so a format that places its
+// objects there computes exactly what it always did. When they do not - every record at the
+// identity, the whole building at one point - the rows are asked instead. Failing says the rows do
+// not separate the objects either, which is a fact about the model and not something to work
+// around: the caller keeps the records' answer and whatever it reports about it stays true.
+export const layoutPlacements = (
+  model: ModelData,
+  table: InstanceTable,
+): Result<readonly Placement[]> => {
+  const own = placementsOf(model);
+  if (distinctPlacements(own) > 1) return success(own);
+  const rows = rowPlacements(table);
+  if (distinctPlacements(rows) > 1)
+    return success(rows, [
+      note(
+        'layouts/placements-from-rows',
+        `The object records place all ${model.objects.length} objects at one point, so the layout uses the ${rows.length} placements its instance rows carry.`,
+      ),
+    ]);
+  return failure([
+    diagnostic(
+      'layouts/no-placements',
+      `Neither the object records nor the ${table.rowCount} instance rows place any two objects apart, so no layout computed from placements can separate them.`,
+    ),
+  ]);
+};
+
+// The height each placed object sits at, along the model's up axis.
+export const placementElevations = (
+  placements: readonly Placement[],
+  up: UpAxis,
+): ReadonlyMap<ObjectKey, number> => {
+  const axis = axesFor(up).up;
+  return new Map(placements.map((placement) => [placement.key, placement.center[axis] ?? 0]));
+};
+
 // Offsets that separate the storeys of a building along the up axis, in storey order.
 //
 // The separation is one average storey height per storey per unit of strength, so strength 1
 // doubles the spacing between floors and strength 0 is the model's own placement. A model with no
 // storey objects has nothing to separate and gets no offsets, which is a fact about the model.
+// Neither does a model whose storey objects are all at the same height: there is no gap between
+// floors to measure a separation against, and inventing one would move the whole building at once.
+//
+// The storeys are read from the given placements when there are any, so a model that places its
+// objects on its rows separates by the storeys those rows sit on. A storey object with no
+// placement among them is not a storey this can use, because nothing says how high it is.
 export const storeyExplodeOffsets = (
   model: ModelData,
   strength: number,
+  placements?: readonly Placement[],
 ): ReadonlyMap<ObjectKey, Vec3> => {
-  const levels = levelsOf(model);
+  const placed = placements ?? placementsOf(model);
+  const levels =
+    placements === undefined
+      ? levelsOf(model)
+      : levelsOf(model, placementElevations(placements, model.coordinates.up));
   const offsets = new Map<ObjectKey, Vec3>();
   if (levels.length < 2 || strength === 0) return offsets;
   const lowest = levels[0]?.elevation ?? 0;
   const highest = levels[levels.length - 1]?.elevation ?? 0;
-  const spread = (highest - lowest) / (levels.length - 1);
-  const step = spread > 0 ? spread : 1;
+  const step = (highest - lowest) / (levels.length - 1);
+  if (step <= 0) return offsets;
   const axis = axesFor(model.coordinates.up);
-  for (const placement of placementsOf(model)) {
+  for (const placement of placed) {
     const height = placement.center[axis.up] ?? 0;
     const level = levelAt(levels, height);
     const index = level === undefined ? 0 : levels.indexOf(level);
@@ -179,16 +287,19 @@ export const storeyExplodeOffsets = (
 // Offsets that fan the categories of a model outwards in the ground plane, one direction each.
 //
 // Categories are taken in name order so the same model always fans the same way. The distance is
-// the model's own ground radius per unit of strength.
+// the model's own ground radius per unit of strength, measured over the given placements when
+// there are any, so a building whose records sit at one point still fans across its real footprint
+// rather than across a single unit.
 export const categoryExplodeOffsets = (
   model: ModelData,
   strength: number,
+  placements?: readonly Placement[],
 ): ReadonlyMap<ObjectKey, Vec3> => {
   const offsets = new Map<ObjectKey, Vec3>();
   if (strength === 0) return offsets;
   const categories = [...new Set(model.objects.map((record) => record.category ?? ''))].sort();
   if (categories.length < 2) return offsets;
-  const bounds = placementBounds(placementsOf(model));
+  const bounds = placementBounds(placements ?? placementsOf(model));
   const size = boundsSize(bounds);
   const axis = axesFor(model.coordinates.up);
   const radius =
@@ -216,13 +327,17 @@ export const categoryExplodeOffsets = (
 // No keys means every object. Columns of zero gives as square an arrangement as the count allows,
 // and spacing of zero spreads the objects over about the model's own footprint: the wider ground
 // extent divided by the number of columns, and never less than one unit.
+//
+// A grid arranges what the given placements place, so an object with no placement among them is
+// left where it is rather than sent to a cell chosen by its position in the file.
 export const gridOffsets = (
   model: ModelData,
   keys: readonly ObjectKey[],
   spacing: number,
   columns: number,
+  from?: readonly Placement[],
 ): ReadonlyMap<ObjectKey, Vec3> => {
-  const placements = placementsOf(model);
+  const placements = from ?? placementsOf(model);
   const named = keys.length === 0 ? placements : placements.filter((item) => keys.includes(item.key));
   const offsets = new Map<ObjectKey, Vec3>();
   if (named.length === 0) return offsets;
@@ -244,17 +359,22 @@ export const gridOffsets = (
   return offsets;
 };
 
-// The translation each object gets under a layout. `none` moves nothing.
-export const layoutOffsets = (model: ModelData, layout: Layout): ReadonlyMap<ObjectKey, Vec3> => {
+// The translation each object gets under a layout. `none` moves nothing. Without placements every
+// layout reads the object records, which is what a model that places its objects there wants.
+export const layoutOffsets = (
+  model: ModelData,
+  layout: Layout,
+  placements?: readonly Placement[],
+): ReadonlyMap<ObjectKey, Vec3> => {
   switch (layout.kind) {
     case 'none':
       return new Map();
     case 'explode':
       return layout.by === 'storey'
-        ? storeyExplodeOffsets(model, layout.strength)
-        : categoryExplodeOffsets(model, layout.strength);
+        ? storeyExplodeOffsets(model, layout.strength, placements)
+        : categoryExplodeOffsets(model, layout.strength, placements);
     case 'grid':
-      return gridOffsets(model, layout.keys, layout.spacing, layout.columns);
+      return gridOffsets(model, layout.keys, layout.spacing, layout.columns, placements);
   }
 };
 
@@ -266,7 +386,7 @@ export const captureTranslations = (table: InstanceTable): Float32Array => {
     const group = table.groupOfRow[row] ?? -1;
     const buffer = table.transforms[group];
     if (buffer === undefined) continue;
-    const at = (row - (table.groupStart[group] ?? 0)) * 16 + translationAt;
+    const at = (row - (table.groupStart[group] ?? 0)) * transformFloats + translationAt;
     base[row * translationStride] = buffer[at] ?? 0;
     base[row * translationStride + 1] = buffer[at + 1] ?? 0;
     base[row * translationStride + 2] = buffer[at + 2] ?? 0;
@@ -379,7 +499,7 @@ export const layoutsHook =
     const base = captureTranslations(host.table);
     const scratch = new Float32Array(base.length);
     const apply = (layout: Layout): void => {
-      const offsets = layoutOffsets(host.model, layout);
+      const offsets = layoutOffsets(host.model, layout, host.placements);
       const values = layoutTranslations(host.table, base, offsets, scratch);
       const moved = writeLayout(host.table, values, host.dirty);
       host.moved?.(moved);

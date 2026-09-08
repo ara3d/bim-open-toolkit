@@ -5,6 +5,7 @@
 // six objects. Every position is a whole number so an expected offset is written down, not computed.
 
 import {
+  identityMatrix,
   instanceRecords,
   mesh,
   metresZUpLocal,
@@ -51,6 +52,15 @@ export const building = (): ModelData => ({
     record('door-1', 'Door', 'Door 2', [4, 0, 4]),
   ],
 });
+
+// The same building as a format that places its instances and leaves every object record at the
+// identity, which is what BFAST does and why a layout cannot read placements off the records alone.
+// The objects, their order and their categories are unchanged, so `buildingGeometry(building())`
+// places the same rows in the same places for this model as it does for the one above.
+export const rowPlacedBuilding = (): ModelData => {
+  const placed = building();
+  return { ...placed, objects: placed.objects.map((item) => ({ ...item, transform: identityMatrix })) };
+};
 
 // A unit cube, two triangles per face.
 const cube = (): Mesh => {

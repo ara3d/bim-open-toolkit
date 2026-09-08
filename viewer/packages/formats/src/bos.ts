@@ -35,7 +35,10 @@ export async function readBosModel(buffer: ArrayBuffer, options: BosOptions = {}
   throwIfCancelled(options);
   reportProgress(options, 'parse', 1, 2);
   const model = await readBfastModel(prepared, options);
-  return loadedModel('bos', model.data, model.geometry, buffer.byteLength, model.diagnostics);
+  return loadedModel('bos', model.data, model.geometry, buffer.byteLength, model.diagnostics, {
+    ...(model.properties === undefined ? {} : { properties: model.properties }),
+    ...(model.documents === undefined ? {} : { documents: model.documents }),
+  });
 }
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));

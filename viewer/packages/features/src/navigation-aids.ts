@@ -25,6 +25,7 @@ import {
   normalizeVec3,
   number,
   object,
+  objectKey,
   onSlices,
   optional,
   panBy,
@@ -153,12 +154,21 @@ export const navigationSlice: StateSlice<NavigationState> = stateSlice(
 );
 
 // The categories a storey object is recorded under, compared without case or surrounding space.
+//
+// Both numbers of each name are listed rather than matched by a rule, because a rule loose enough
+// to turn "Levels" into "level" also turns names that mean something else into names in this set.
+// Revit writes the plural, IFC writes the singular, and both are here as themselves.
 const storeyCategories: ReadonlySet<string> = new Set([
   'storey',
+  'storeys',
   'story',
+  'stories',
   'level',
+  'levels',
   'floor level',
+  'floor levels',
   'building storey',
+  'building storeys',
   'buildingstorey',
   'ifcbuildingstorey',
 ]);
@@ -169,15 +179,28 @@ const upComponent = (up: UpAxis): number => (up === 'y' ? 13 : 14);
 // The storeys of a model, lowest first: one level per object recorded as a storey, at the height its
 // transform places it. `height` is the distance to the storey above, so the topmost storey has none.
 // A model with no storey objects has no levels, which is a fact about the model rather than an error.
-export const levelsOf = (model: ModelData): readonly Level[] => {
+//
+// `elevations` is for a model whose object records do not carry the placement - the height comes
+// from wherever the caller found the objects instead. It is then the whole answer: a storey object
+// it does not name is left out, because a caller that had to look elsewhere for the heights has
+// found nothing that says how high that storey is, and reading zero off the record would put every
+// such storey on the ground.
+export const levelsOf = (
+  model: ModelData,
+  elevations?: ReadonlyMap<ObjectKey, number>,
+): readonly Level[] => {
   const component = upComponent(model.coordinates.up);
   const found = model.objects
     .filter((record) => storeyCategories.has((record.category ?? '').trim().toLowerCase()))
     .map((record) => ({
       id: record.ref.objectId,
       name: record.name ?? record.ref.objectId,
-      elevation: record.transform[component] ?? 0,
+      elevation:
+        elevations === undefined
+          ? record.transform[component] ?? 0
+          : elevations.get(objectKey(record.ref)),
     }))
+    .filter((level): level is Level => level.elevation !== undefined)
     .sort((a, b) => a.elevation - b.elevation);
   return found.map((level, index) => {
     const above = found[index + 1];

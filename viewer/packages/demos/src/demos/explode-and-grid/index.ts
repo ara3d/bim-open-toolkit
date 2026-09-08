@@ -10,7 +10,7 @@
 // the inspector and the report all say how many objects moved and why that number is zero, rather
 // than showing a slider that appears to do nothing.
 
-import { layoutsFeature, layoutsSlice } from '@bim-open-toolkit/features';
+import { layoutsFeature, layoutsSlice, type Placement } from '@bim-open-toolkit/features';
 import {
   diagnostic,
   disposable,
@@ -30,12 +30,16 @@ import { heldSurvey, holdSurvey, layoutCaveat, movedBy, openingExplode, surveyEx
 
 // Surveys the open model, separates it by whatever that survey says it can be separated by, and
 // hands back the way to put it back together.
-export const startExplode = (session: Session, model: ModelData | undefined): Result<Disposable> => {
+export const startExplode = (
+  session: Session,
+  model: ModelData | undefined,
+  placements?: readonly Placement[],
+): Result<Disposable> => {
   if (model === undefined)
     return failure([
       diagnostic('explode/no-model', 'No model is open, so there is nothing to separate.', []),
     ]);
-  const survey = surveyExplode(model);
+  const survey = surveyExplode(model, placements);
   const applied = session.dispatch('layouts.explode', openingExplode(survey));
   if (!applied.ok) return failure(applied.diagnostics);
   holdSurvey(survey);
@@ -85,7 +89,7 @@ export const demo: Demo = {
   fixtures: snowdonThenSynthetic,
   panels: explodePanels,
   inspector: explodeSheet,
-  start: (viewer) => Promise.resolve(startExplode(viewer, viewer.opened()[0]?.data)),
+  start: (viewer) => Promise.resolve(startExplode(viewer, viewer.opened()[0]?.data, viewer.placements())),
   ready: explodeReady,
   report: explodeReport,
   source: 'viewer/packages/demos/src/demos/explode-and-grid',

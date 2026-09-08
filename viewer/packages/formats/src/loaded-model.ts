@@ -17,6 +17,7 @@ import {
   type Result,
 } from '@bim-open-toolkit/model';
 import { formatCode, formatDiagnostic } from './diagnostics.js';
+import type { ModelDocuments, ModelProperties } from './properties.js';
 
 // A file format this package can turn into a `LoadedModel`.
 export type ModelFormat = 'bfast' | 'bos' | 'glb' | 'gltf' | 'obj' | 'stl';
@@ -37,6 +38,28 @@ export type LoadedModel = {
   readonly coordinates: CoordinateContext;
   readonly sourceBytes: number;
   readonly diagnostics: readonly Diagnostic[];
+  /**
+   * Every property of every object, columnar, when the source carried them and the caller asked for
+   * them with `LoadOptions.properties`. Absent otherwise: reading a million parameter rows is not
+   * something a load does unless it is told to. See `properties.ts` for what it costs.
+   */
+  readonly properties?: ModelProperties;
+  /**
+   * Which source file each object came from, when the source records more than a single document.
+   * A BFAST or BOS load at the default metadata level carries this; other formats have no such thing.
+   */
+  readonly documents?: ModelDocuments;
+};
+
+/**
+ * What a format decoded beyond the geometry and the object records.
+ *
+ * A record rather than more positional parameters, and every field optional, so that a format with
+ * nothing to say passes nothing and `LoadedModel` grows without any existing caller changing.
+ */
+export type LoadedModelExtras = {
+  readonly properties?: ModelProperties;
+  readonly documents?: ModelDocuments;
 };
 
 // Builds a `LoadedModel`, taking the coordinate frame from the model data so the two cannot disagree.
@@ -46,7 +69,17 @@ export const loadedModel = (
   geometry: Geometry,
   sourceBytes: number,
   diagnostics: readonly Diagnostic[] = [],
-): LoadedModel => ({ format, data, geometry, coordinates: data.coordinates, sourceBytes, diagnostics });
+  extras: LoadedModelExtras = {},
+): LoadedModel => ({
+  format,
+  data,
+  geometry,
+  coordinates: data.coordinates,
+  sourceBytes,
+  diagnostics,
+  ...(extras.properties === undefined ? {} : { properties: extras.properties }),
+  ...(extras.documents === undefined ? {} : { documents: extras.documents }),
+});
 
 // What a model contains, for reports, demos and the format table.
 export type ModelStatistics = {
@@ -129,7 +162,59 @@ export function validateLoadedModel(model: LoadedModel): readonly Diagnostic[] {
   checkInstances(model, report);
   checkMeshes(model, report);
   checkObjects(model, report);
+  checkProperties(model, report);
+  checkDocuments(model, report);
   return problems;
+}
+
+/**
+ * The property columns' own invariants: one offset per object plus the closing one, offsets that
+ * only rise, a last offset that is the row count, and a descriptor index per row that names a
+ * descriptor. The values are not checked, because a raw `Value` word may legitimately index nothing.
+ */
+function checkProperties(model: LoadedModel, report: Report): void {
+  const properties = model.properties;
+  if (properties === undefined) return;
+  const objects = model.data.objects.length;
+  if (properties.objects !== objects)
+    report(`Properties cover ${properties.objects} objects, not ${objects}`, ['properties', 'objects']);
+  if (properties.start.length !== properties.objects + 1)
+    report(`Property offsets have ${properties.start.length} entries, not ${properties.objects + 1}`, ['properties', 'start']);
+  for (const [name, length] of [
+    ['descriptor', properties.descriptor.length],
+    ['value', properties.value.length],
+  ] as const)
+    if (length !== properties.rows) report(`Property column ${name} has ${length} rows, not ${properties.rows}`, ['properties', name]);
+  if ((properties.start[properties.start.length - 1] ?? -1) !== properties.rows)
+    report(`Property offsets end at ${properties.start[properties.start.length - 1] ?? -1}, not ${properties.rows}`, ['properties', 'start']);
+  for (let at = 1; at < properties.start.length; at += 1)
+    if ((properties.start[at] ?? 0) < (properties.start[at - 1] ?? 0)) {
+      report(`Property offsets fall at object ${at - 1}`, ['properties', 'start', at]);
+      break;
+    }
+  for (let row = 0; row < properties.rows; row += 1) {
+    const index = properties.descriptor[row] ?? -1;
+    if (index < 0 || index >= properties.descriptors.count) {
+      report(`Property row ${row} names descriptor ${index} of ${properties.descriptors.count}`, ['properties', 'descriptor', row]);
+      break;
+    }
+  }
+}
+
+// Every object names a document the table holds, or no document at all.
+function checkDocuments(model: LoadedModel, report: Report): void {
+  const documents = model.documents;
+  if (documents === undefined) return;
+  const objects = model.data.objects.length;
+  if (documents.ofObject.length !== objects)
+    report(`Document attribution has ${documents.ofObject.length} rows, not ${objects}`, ['documents', 'ofObject']);
+  for (let row = 0; row < documents.ofObject.length; row += 1) {
+    const index = documents.ofObject[row] ?? -1;
+    if (index < -1 || index >= documents.count) {
+      report(`Object ${row} names document ${index} of ${documents.count}`, ['documents', 'ofObject', row]);
+      break;
+    }
+  }
 }
 
 // The model when it holds together, and its problems when it does not.

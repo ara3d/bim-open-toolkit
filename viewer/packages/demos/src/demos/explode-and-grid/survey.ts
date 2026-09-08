@@ -1,11 +1,12 @@
 // What the open model lets a layout do, measured on the model itself rather than assumed.
 //
-// A layout is computed from `ObjectRecord.transform`: `placementsOf` reads each object's own
-// translation, storeys come from objects in a storey category, and the category fan comes from the
-// category each object records. A model that carries none of those has nothing for a layout to
-// separate, and the demo has to say so rather than open on a slider that moves nothing. So the
-// opening move is chosen from a measurement, and the same measurement is what the bar, the
-// inspector and the report quote.
+// A layout is computed from where the objects are: `layoutPlacements` reads each object's own
+// translation when the records tell two objects apart, and the instance rows that draw it when they
+// do not, which is every model read from a BFAST file. Storeys come from objects in a storey
+// category, and the category fan comes from the category each object records. A model that carries
+// none of those has nothing for a layout to separate, and the demo has to say so rather than open
+// on a slider that moves nothing. So the opening move is chosen from a measurement, and the same
+// measurement is what the bar, the inspector and the report quote.
 //
 // The survey is taken once, when the demo starts, and held: `ready`, `report` and the inspector are
 // given a session and never the model, and the inspector runs after every change event, which is
@@ -14,11 +15,13 @@
 
 import {
   categoryExplodeOffsets,
+  distinctPlacements,
   levelsOf,
   placementsOf,
   storeyExplodeOffsets,
   type ExplodeBy,
   type Layout,
+  type Placement,
 } from '@bim-open-toolkit/features';
 import type { ModelData, ObjectKey, Vec3 } from '@bim-open-toolkit/model';
 
@@ -57,18 +60,24 @@ const moves = (offsets: ReadonlyMap<ObjectKey, Vec3>): number =>
 const namedCategories = (model: ModelData): ReadonlySet<string> =>
   new Set(model.objects.map((record) => (record.category ?? '').trim()).filter((name) => name !== ''));
 
-const distinctPlacements = (model: ModelData): number =>
-  new Set(placementsOf(model).map((placement) => placement.center.join(','))).size;
+// The placements a layout would actually use. The viewer knows them, because only the viewer has
+// the bound rows; without it - a test with no scene - the object records are all there is.
+export const surveyPlacements = (model: ModelData, given?: readonly Placement[]): readonly Placement[] =>
+  given === undefined || given.length === 0 ? placementsOf(model) : given;
 
-// What the model offers, measured by running the offset computations the layouts feature would run.
-export const surveyExplode = (model: ModelData): ExplodeSurvey => ({
-  objects: model.objects.length,
-  storeys: levelsOf(model).length,
-  categories: namedCategories(model).size,
-  placements: distinctPlacements(model),
-  movedByStorey: moves(storeyExplodeOffsets(model, measuringStrength)),
-  movedByCategory: moves(categoryExplodeOffsets(model, measuringStrength)),
-});
+// What the model offers, measured by running the offset computations the layouts feature would run,
+// on the placements it would run them on.
+export const surveyExplode = (model: ModelData, given?: readonly Placement[]): ExplodeSurvey => {
+  const placements = surveyPlacements(model, given);
+  return {
+    objects: model.objects.length,
+    storeys: levelsOf(model).length,
+    categories: namedCategories(model).size,
+    placements: distinctPlacements(placements),
+    movedByStorey: moves(storeyExplodeOffsets(model, measuringStrength, placements)),
+    movedByCategory: moves(categoryExplodeOffsets(model, measuringStrength, placements)),
+  };
+};
 
 // The opening move: by storey when the model has storeys to separate, by category when it has only
 // categories, and by storey when it has neither, because that is the demo's headline and the report

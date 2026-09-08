@@ -21,6 +21,14 @@ import {
 import { fail, formatCode, formatNote, formatWarning } from './diagnostics.js';
 import { loadedModel, type LoadedModel } from './loaded-model.js';
 import { cancellationCheckInterval, reportProgress, throwIfCancelled, type LoadContext } from './progress.js';
+import {
+  modelDocumentsFrom,
+  modelPropertiesFrom,
+  parquetInteger,
+  parquetText,
+  type ModelDocuments,
+  type ModelProperties,
+} from './properties.js';
 
 // 32-bit words in one BFAST instance record, and the word each field sits at.
 const instanceWords = 16;
@@ -47,6 +55,12 @@ export type BfastOptions = LoadContext & {
   readonly ref?: ModelRef;
   readonly coordinates?: CoordinateContext;
   readonly metadata?: MetadataLevel;
+  /**
+   * Decodes the embedded parameter tables onto `LoadedModel.properties`. Off by default: the
+   * Snowdon federated model has 1.6 million parameter rows, and reading them costs about a second
+   * and a transient 175 MB that no caller who is only drawing the model should have to pay.
+   */
+  readonly properties?: boolean;
 };
 
 /**
@@ -281,11 +295,23 @@ export type EntityFacts = {
   readonly localId: Int32Array | null;
   readonly name: readonly (string | undefined)[] | null;
   readonly category: readonly (string | undefined)[] | null;
+  /** Document index of each entity, -1 where the file names none. Null when nothing was decoded. */
+  readonly document: Int32Array | null;
+  /** The string table, kept so the property decode does not read it a second time. */
+  readonly strings: readonly (string | undefined)[] | null;
   readonly diagnostics: readonly Diagnostic[];
 };
 
 // Nothing decoded: the model's objects are whatever its instance records name.
-export const noEntityFacts: EntityFacts = { declared: 0, localId: null, name: null, category: null, diagnostics: [] };
+export const noEntityFacts: EntityFacts = {
+  declared: 0,
+  localId: null,
+  name: null,
+  category: null,
+  document: null,
+  strings: null,
+  diagnostics: [],
+};
 
 /**
  * Reads the entity table embedded in a combined BFAST.
@@ -312,7 +338,7 @@ export async function readEntityFacts(
     };
 
   reportProgress(context, 'metadata', 0, 1);
-  const columns = level === 'full' ? ['LocalId', 'Name', 'Category'] : ['LocalId'];
+  const columns = level === 'full' ? ['LocalId', 'Name', 'Category', 'Document'] : ['LocalId'];
   const entities = await readBimTable(data, 'Entities.parquet', columns).catch((error: unknown): never =>
     fail(formatCode.invalidBfast, `The embedded Entities table could not be read: ${messageOf(error)}`, [
       'Entities.parquet',
@@ -342,6 +368,10 @@ export async function readEntityFacts(
  * BOS stores both labels as indices: `Name` indexes the string table, and `Category` names another
  * entity row whose own name is the category label. An index that is absent, negative, out of range
  * or names an empty string reads as no value rather than as a made-up one.
+ *
+ * `Document` is a document-table index rather than a label, and is decoded whenever the labels are:
+ * it is one more integer column on a table already being read, and it is what says which of a
+ * federated model's source files an object came from.
  */
 export function entityFactsFrom(
   entities: readonly Readonly<Record<string, unknown>>[],
@@ -350,9 +380,11 @@ export function entityFactsFrom(
   const declared = entities.length;
   const localId = new Int32Array(declared);
   for (let row = 0; row < declared; row += 1) localId[row] = integerOf(entities[row]?.['LocalId']) ?? 0;
-  if (strings === null) return { declared, localId, name: null, category: null, diagnostics: [] };
+  if (strings === null)
+    return { declared, localId, name: null, category: null, document: null, strings: null, diagnostics: [] };
   const name: (string | undefined)[] = [];
   const category: (string | undefined)[] = [];
+  const document = new Int32Array(declared).fill(-1);
   for (let row = 0; row < declared; row += 1) {
     const entity = entities[row];
     name.push(labelOf(strings, integerOf(entity?.['Name'])));
@@ -362,8 +394,9 @@ export function entityFactsFrom(
         ? undefined
         : labelOf(strings, integerOf(entities[owner]?.['Name'])),
     );
+    document[row] = integerOf(entity?.['Document']) ?? -1;
   }
-  return { declared, localId, name, category, diagnostics: [] };
+  return { declared, localId, name, category, document, strings, diagnostics: [] };
 }
 
 // The BOS string table, or null when the file has none.
@@ -372,6 +405,113 @@ async function readStrings(data: BimData): Promise<readonly (string | undefined)
   return rows === null ? null : rows.map((row) => textOf(row['Strings']));
 }
 
+/**
+ * The source documents of a federated model, one per row of `Documents.parquet`, with the document
+ * of each object row.
+ *
+ * Decoded whenever the entity labels were, because `Entities.Document` is already in hand by then
+ * and the document table itself is a handful of rows. An absent table is a warning and no documents,
+ * never a failure: a single-document export is a normal file.
+ */
+export async function readDocuments(
+  data: BimData,
+  facts: EntityFacts,
+  rows: EntityRows,
+): Promise<{ readonly documents: ModelDocuments | null; readonly diagnostics: readonly Diagnostic[] }> {
+  if (facts.document === null || facts.strings === null) return { documents: null, diagnostics: [] };
+  const table = await readBimTable(data, 'Documents.parquet', ['Title', 'Path']).catch(() => null);
+  if (table === null)
+    return {
+      documents: null,
+      diagnostics: [
+        formatWarning(
+          formatCode.missingDocumentTable,
+          'This BFAST has no document table, so objects carry no source-document attribution',
+          ['Documents.parquet'],
+        ),
+      ],
+    };
+  return {
+    documents: modelDocumentsFrom(table, facts.strings, facts.document, rows.entityOfRow),
+    diagnostics: [],
+  };
+}
+
+/**
+ * Every property of every object, decoded columnar, when the caller asked for it.
+ *
+ * `Descriptors` and `Parameters` are the two tables that must be there; `Numbers` and `Points` are
+ * value pools that a model using neither kind does not carry, so an absent one is an empty pool
+ * rather than a problem. A missing descriptor or parameter table is a warning and no properties,
+ * which is what a file that carries only geometry looks like.
+ *
+ * The string table is reused from the entity read when there was one, so the default load path reads
+ * it once whatever else is asked for.
+ */
+export async function readProperties(
+  data: BimData,
+  facts: EntityFacts,
+  rows: EntityRows,
+  context: LoadContext,
+): Promise<{ readonly properties: ModelProperties | null; readonly diagnostics: readonly Diagnostic[] }> {
+  reportProgress(context, 'metadata', 0, 2);
+  const strings = facts.strings ?? (await readStrings(data));
+  throwIfCancelled(context);
+  const descriptors = await readBimTable(data, 'Descriptors.parquet').catch(() => null);
+  throwIfCancelled(context);
+  const parameters =
+    descriptors === null
+      ? null
+      : await readBimTable(data, 'Parameters.parquet', ['Entity', 'Descriptor', 'Value']).catch(() => null);
+  throwIfCancelled(context);
+  if (strings === null || descriptors === null || parameters === null)
+    return {
+      properties: null,
+      diagnostics: [
+        formatWarning(
+          formatCode.missingPropertyTables,
+          `This BFAST is missing the ${missingNames(strings, descriptors, parameters)} it would take to read object properties`,
+          ['Parameters.parquet'],
+        ),
+      ],
+    };
+  reportProgress(context, 'metadata', 1, 2);
+  const numbers = await readBimTable(data, 'Numbers.parquet', ['Numbers']).catch(() => []);
+  const points = await readBimTable(data, 'Points.parquet', ['X', 'Y', 'Z']).catch(() => []);
+  throwIfCancelled(context);
+  const properties = modelPropertiesFrom({
+    descriptors,
+    parameters,
+    numbers,
+    points,
+    strings,
+    objectOfEntity: rows.rowOfEntity,
+    objects: rows.entityOfRow.length,
+  });
+  reportProgress(context, 'metadata', 2, 2);
+  return {
+    properties,
+    diagnostics:
+      properties.dropped === 0
+        ? []
+        : [
+            formatWarning(
+              formatCode.droppedProperties,
+              `${properties.dropped} parameter rows name an entity that is not an object of this model and were dropped`,
+              ['Parameters.parquet'],
+            ),
+          ],
+  };
+}
+
+// Which of the tables the property decode needs were not there, for the warning that says so.
+const missingNames = (strings: unknown, descriptors: unknown, parameters: unknown): string =>
+  [
+    ...(strings === null ? ['string table'] : []),
+    ...(descriptors === null ? ['descriptor table'] : []),
+    ...(parameters === null ? ['parameter table'] : []),
+  ].join(' and ');
+
 // A string-table entry, empty entries read as absent so nothing fabricates a name.
 const labelOf = (strings: readonly (string | undefined)[], index: number | undefined): string | undefined => {
   if (index === undefined || index < 0) return undefined;
@@ -379,15 +519,9 @@ const labelOf = (strings: readonly (string | undefined)[], index: number | undef
   return found === undefined || found.trim() === '' ? undefined : found;
 };
 
-// A Parquet cell read as an integer. BOS stores ids as 64-bit values, which arrive as bigints.
-const integerOf = (value: unknown): number | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
-  if (typeof value === 'bigint') return Number(value);
-  return undefined;
-};
-
-// A Parquet cell read as text.
-const textOf = (value: unknown): string | undefined => (typeof value === 'string' ? value : undefined);
+// The Parquet cell readers, shared with the property decode so both read the encoding the same way.
+const integerOf = parquetInteger;
+const textOf = parquetText;
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
@@ -443,6 +577,14 @@ export async function readBfastModel(buffer: ArrayBuffer, options: BfastOptions 
   const built = bfastInstances(parsed, table, rows, options);
   reportProgress(options, 'convert', 1, 2);
 
+  const documents = await readDocuments(parsed.bimData, facts, rows);
+  throwIfCancelled(options);
+  const properties =
+    options.properties === true
+      ? await readProperties(parsed.bimData, facts, rows, options)
+      : { properties: null, diagnostics: [] as readonly Diagnostic[] };
+  throwIfCancelled(options);
+
   const ref = options.ref ?? defaultModelRef(undefined);
   const data: ModelData = {
     ref,
@@ -450,8 +592,15 @@ export async function readBfastModel(buffer: ArrayBuffer, options: BfastOptions 
     objects: bfastObjects(ref, rows, facts, built.firstDrawn),
   };
   reportProgress(options, 'convert', 2, 2);
-  return loadedModel('bfast', data, built.geometry, buffer.byteLength, [
+  return loadedModel(
+    'bfast',
+    data,
+    built.geometry,
+    buffer.byteLength,
+    [
     ...facts.diagnostics,
+    ...documents.diagnostics,
+    ...properties.diagnostics,
     ...(built.hidden > 0
       ? [
           formatNote(
@@ -471,7 +620,12 @@ export async function readBfastModel(buffer: ArrayBuffer, options: BfastOptions 
           ),
         ]
       : []),
-  ]);
+    ],
+    {
+      ...(properties.properties === null ? {} : { properties: properties.properties }),
+      ...(documents.documents === null ? {} : { documents: documents.documents }),
+    },
+  );
 }
 
 // Parses the container and the render tables, turning the loader's errors into format diagnostics.

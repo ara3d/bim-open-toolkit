@@ -15,6 +15,7 @@ import {
   clippingHook,
   environmentHook,
   environmentSlice,
+  layoutPlacements,
   layoutsHook,
   navigationHook,
   sceneRenderTarget,
@@ -75,9 +76,16 @@ const hookFor = (
     const model = host.opened()[0];
     const bound = host.binding.models[0];
     if (model === undefined || bound === undefined) return undefined;
+    // A layout separates objects by where they are, and a real BFAST does not say where they are on
+    // the object records: it leaves them at the identity and places each instance instead. The
+    // table is the only thing in the viewer that has the placements composed, so the hook is given
+    // them from it. A failure here means the model places nothing apart from anything else, and the
+    // hook then falls back to the records, so what the demo reports about that stays true.
+    const placements = layoutPlacements(model.data, bound.table);
     return layoutsHook({
       table: bound.table,
       model: model.data,
+      ...(placements.ok ? { placements: placements.value } : {}),
       dirty: bound.dirty,
       // A layout writes into the group buffers; nothing is on screen until they are published.
       moved: () => {

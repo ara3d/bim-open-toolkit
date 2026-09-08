@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   emptyDocument,
   getSlice,
+  identityMatrix,
+  objectKey,
+  objectRef,
   putSlice,
   type ViewState,
 } from '@bim-open-toolkit/model';
@@ -17,7 +20,7 @@ import {
   viewAtLevel,
   type Level,
 } from '../src/navigation-aids.js';
-import { building } from './navigation-aids-fixture.js';
+import { building, fixtureModel } from './navigation-aids-fixture.js';
 import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { fakeSession } from './support/fake-session.js';
 
@@ -35,6 +38,43 @@ describe('levels', () => {
 
   it('leaves the topmost storey without a height, because the model does not say', () => {
     expect(levels()[1]?.height).toBeUndefined();
+  });
+
+  it('reads a storey category in either number, because exporters disagree about it', () => {
+    const plural = (category: string): number =>
+      levelsOf({
+        ...building(),
+        objects: building().objects.map((item) =>
+          item.category === 'Storey' ? { ...item, category } : item,
+        ),
+      }).length;
+    expect(plural('Levels')).toBe(2);
+    expect(plural('Storeys')).toBe(2);
+    expect(plural('Stories')).toBe(2);
+    expect(plural('Level')).toBe(2);
+    expect(plural('Walls')).toBe(0);
+    expect(plural('Level Heads')).toBe(0);
+  });
+
+  it('takes the heights from the elevations it is given, not from the records', () => {
+    const flat = {
+      ...building(),
+      objects: building().objects.map((item) => ({ ...item, transform: identityMatrix })),
+    };
+    expect(levelsOf(flat).map((level) => level.elevation)).toEqual([0, 0]);
+    const elevations = new Map([
+      [objectKey(objectRef(fixtureModel, 'storey-0')), 0],
+      [objectKey(objectRef(fixtureModel, 'storey-1')), 9],
+    ]);
+    expect(levelsOf(flat, elevations)).toEqual([
+      { id: 'storey-0', name: 'Level 1', elevation: 0, height: 9 },
+      { id: 'storey-1', name: 'Level 2', elevation: 9 },
+    ]);
+  });
+
+  it('leaves out a storey the elevations do not name, because nothing says how high it is', () => {
+    const elevations = new Map([[objectKey(objectRef(fixtureModel, 'storey-1')), 9]]);
+    expect(levelsOf(building(), elevations).map((level) => level.id)).toEqual(['storey-1']);
   });
 
   it('finds the storey a height is on, and none below the lowest', () => {

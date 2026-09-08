@@ -22,6 +22,12 @@ export type LoadOptions = LoadContext & {
   readonly resolver?: Resolver;
   /** How much of a BFAST or BOS model's embedded tables to decode. Defaults to everything. */
   readonly metadata?: MetadataLevel;
+  /**
+   * Decodes a BFAST or BOS model's parameter tables onto `LoadedModel.properties`. Off by default,
+   * because a federated model carries over a million parameter rows and a caller who only wants to
+   * draw it should not pay for them. See `properties.ts` for the measured cost.
+   */
+  readonly properties?: boolean;
   /** Runs `validateLoadedModel` over the result. Off by default: it costs as much as building it. */
   readonly validate?: boolean;
   /** How a BOS archive is prepared as BFAST. Defaults to the loaders' own conversion. */

@@ -18,6 +18,7 @@ import type {
   Vec3,
 } from '@bim-open-toolkit/model';
 import type { LoadedModel } from '@bim-open-toolkit/formats';
+import type { Placement } from '@bim-open-toolkit/features';
 import type { CaptureOptions, ObjectHit, SceneStatistics, UpdateReport } from '@bim-open-toolkit/render';
 import type { AnyHudPanel, PropertySheet } from '@bim-open-toolkit/ui-gratify';
 import type { DemoReport } from '../feature-demos/_shared/protocol.js';
@@ -78,6 +79,10 @@ export type GalleryViewer = Session &
     readonly canvas: HTMLCanvasElement;
     readonly open: (source: ModelSource) => Promise<Result<ModelRef>>;
     readonly models: () => readonly ModelRef[];
+    // Where each object is: its own record when the records tell two objects apart, and the rows
+    // that draw it when they do not, which is every model read from a BFAST file. A demo asks the
+    // viewer because only the viewer has the bound rows.
+    readonly placements: () => readonly Placement[];
     // The open models with their derived pieces, in the order they were opened.
     readonly opened: () => readonly OpenedModel[];
     // Writes a whole style resolution into the instance buffers; only rows that differ are written.
