@@ -7,6 +7,7 @@ export * from './style.js';
 export * from './objects.js';
 export * from './table.js';
 export * from './mesh.js';
+export * from './instance-table.js';
 export * from './facts.js';
 export * from './schema.js';
 export * from './sets.js';
