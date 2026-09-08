@@ -132,9 +132,11 @@ Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committe
 - To the model docs: `resolveStyles` omits keys equal to the fallback and deleted keys, so a binding iterating `byKey` never restores an object a rule stopped applying to; render addresses every row and relies on change detection.
 - Process: an additive contract change that adds a name a downstream track already invented is not neutral (M2's `instance-table` columns versus R's own vocabulary; reconciled by R in `db9a63c`). Announce contract additions to running tracks through their checkpoints or the status file.
 
-### Branch warning (2026-09-08)
+### Branch warning (2026-09-08) — resolved
 
 A session working on the C# DuckDB projection switched the shared checkout from `main` to a new branch `build` (reflog: checkout main → build, then `fa938c2 fix(duckdb)`). Every commit from every track after that point lands on `build`, including this supervisor's `c19ab99`. Nothing is lost, but `origin/main` stops receiving V2 work until `build` is merged or the checkout returns to `main`. Tracks: keep committing by pathspec as before; do not switch branches. Supervisors: do not push `build` to `main` from a different session; the user decides when to merge. If the checkout is switched back to `main` while tracks run, their committed files revert in the working tree until the merge, which is why the switch must be coordinated.
+
+Resolved on the user's instruction: `main` was fast-forwarded to `build` (18 commits, no divergence) by updating the ref without a checkout, then the checkout switched to `main` with an identical tree so no working file changed, then pushed. The `build` branch still exists locally and is unused; delete it when the DuckDB session confirms it is done with it.
 
 ### Coordination with the gallery session (2026-09-08)
 
