@@ -12,3 +12,29 @@ export { type ShadedMesh } from './mesh-builder.js';
 
 // A footprint corner as (x, z), until the model package publishes a two-dimensional vector.
 export { type Vec2 } from './triangulate.js';
+
+// Observations rendered as table columns, so a schedule can show what is not known.
+export {
+  conflictOf,
+  evidenceOf,
+  missingReasonOf,
+  observationState,
+  observationText,
+  quantityColumns,
+  quantityNumber,
+  quantityUnit,
+  textColumns,
+  type NamedColumn,
+  type ObservationState,
+} from './schedule.js';
+
+// A seeded building: storeys, rooms, walls, slabs, doors, windows, and schedules with real gaps.
+export {
+  defaultBuildingOptions,
+  generateBuilding,
+  type Building,
+  type BuildingOptions,
+  type DoorCoverage,
+  type DoorWidthPolicy,
+  type MeshGroup,
+} from './building.js';
