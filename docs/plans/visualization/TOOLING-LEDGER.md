@@ -57,6 +57,8 @@ Transcribed from track checkpoints and final reports; "caught" is the track's ow
 
 | T testing tools (2026-09-08) | clean | clean | clean | 133 tests, 6.8 s quiet, 28 s under load: helpful | Browser tests skip with a reason when no browser launches rather than failing; machine load, not the runner, is the browser cost (4 s versus 147 s). |
 
+| F2 formats (2026-09-08) | clean; the downstream render typecheck caught M4's in-flight unused import, correctly attributed | clean | clean | 155 tests; perf run twice: helpful | Whole-load numbers moved 12 to 16% between runs on a loaded machine; only the step that changed is a claim. |
+
 ## Review log
 
 - 2026-09-07, lint switched to untyped rules (user decision after measurement). Measured on the synthetic package with six agents loading the machine: type-aware rules 7.7 to 28 s per package, 18 s for a single file, no gain from `--cache`, because the rule set rebuilds a TypeScript program on every run; untyped rules 2.4 s per package and 2.8 s for all six V2 packages. Track S reported 8 typed runs that caught nothing while tsc caught two real defects. New rules: `viewer/eslint.config.js` is the untyped `recommended` set plus `no-explicit-any` and `no-unused-vars` over every V2 package and runs in `npm run lint` and the check wrapper on every chunk; `viewer/eslint.typed.config.js` is the type-aware set with `no-floating-promises` over the I/O packages (demos, mcp, viewer) and runs as `npm run lint:typed` at wave integration only. Both files carry the reason in their header comment. Also added `@types/node` to the workspace, which the fixture server needs and which the typed lint could not resolve without.

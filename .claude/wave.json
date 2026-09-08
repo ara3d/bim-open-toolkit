@@ -119,6 +119,15 @@
       "paths": [
         "viewer/packages/model/**"
       ]
+    },
+    "R2": {
+      "paths": [
+        "viewer/packages/render/**",
+        "viewer/packages/testing/src/headless/**",
+        "viewer/packages/testing/test/headless*",
+        "viewer/packages/testing/test/headless/**",
+        "viewer/packages/testing/docs/CHECKPOINT-R2.md"
+      ]
     }
   }
 }
