@@ -105,6 +105,18 @@ const doorOutcome = (door: ScheduleDoor, exceptionFacts: readonly string[]): Out
     'resolved',
   );
 
+// The first of the ids that names a door, so an exception can be placed on the door it is about.
+const doorOf = (
+  byId: ReadonlyMap<string, ScheduleDoor>,
+  ids: readonly string[],
+): ScheduleDoor | undefined => {
+  for (const id of ids) {
+    const door = byId.get(id);
+    if (door !== undefined) return door;
+  }
+  return undefined;
+};
+
 const exceptionText = (item: WorkflowException): string =>
   `${item.field} ${item.observation.kind === 'missing' ? item.observation.reason : 'conflicting'}`;
 
@@ -174,8 +186,9 @@ export const runDoorSchedule = (input: DoorScheduleInput): Result<WorkflowResult
     names.map((name) => fact(objectRef(input.model, door.objectId), name, factOf(door, name))),
   );
 
+  const byId = new Map(doors.map((door) => [door.objectId, door]));
   const overlays: readonly Overlay[] = exceptions.flatMap((item) => {
-    const door = doors.find((candidate) => item.subjects.includes(candidate.objectId));
+    const door = doorOf(byId, item.subjects);
     return door === undefined || !door.hasGeometry
       ? []
       : [
