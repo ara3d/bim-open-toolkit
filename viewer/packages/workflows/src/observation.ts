@@ -52,26 +52,17 @@ const evidenceCells = (items: readonly Evidence[]): readonly ResultValue[] | und
 
 // An observation as a result cell: what is known, or why it is not. It never substitutes a value.
 // Evidence is written only when there is some, so an unevidenced observation reads as one field less.
-export const observationCell = (observation: Observation): ResultRecord =>
-  observation.kind === 'known'
-    ? resultRecord({
-        kind: 'known',
-        value: factScalar(observation.value),
-        unit: unitOf(observation.value),
-        evidence: evidenceCells(observation.evidence),
-      })
-    : observation.kind === 'missing'
-      ? resultRecord({
-          kind: 'missing',
-          reason: observation.reason,
-          evidence: evidenceCells(observation.evidence),
-        })
-      : resultRecord({
-          kind: 'conflicting',
-          values: observation.values.map(factScalar),
-          unit: sharedUnit(observation.values),
-          evidence: evidenceCells(observation.evidence),
-        });
+export const observationCell = (observation: Observation): ResultRecord => {
+  const value = observationJson(observation);
+  return resultRecord({
+    kind: value.kind,
+    value: value.kind === 'known' ? value.value : undefined,
+    values: value.kind === 'conflicting' ? [...value.values] : undefined,
+    reason: value.kind === 'missing' ? value.reason : undefined,
+    unit: value.kind === 'missing' ? undefined : value.unit,
+    evidence: value.evidence === undefined ? undefined : evidenceCells(value.evidence),
+  });
+};
 
 // Every reason a value can be unavailable, as model states them.
 export const missingReasons: readonly MissingReason[] = [
@@ -131,6 +122,22 @@ export const observationJsonSchema: Schema<ObservationJson> = union<ObservationJ
     evidence: optional(array(evidenceSchema)),
   }),
 );
+
+// An observation of model's in the JSON form workflow inputs and result rows carry. Evidence is
+// written only when there is some, and a conflict keeps a unit only when its values agree on one.
+export const observationJson = (observation: Observation): ObservationJson => {
+  const evidence = observation.evidence.length === 0 ? undefined : observation.evidence;
+  return observation.kind === 'known'
+    ? { kind: 'known', value: factScalar(observation.value), unit: unitOf(observation.value), evidence }
+    : observation.kind === 'missing'
+      ? { kind: 'missing', reason: observation.reason, evidence }
+      : {
+          kind: 'conflicting',
+          values: observation.values.map(factScalar),
+          unit: sharedUnit(observation.values),
+          evidence,
+        };
+};
 
 // A scalar and its unit as a fact value: a number is a quantity, a text is text, a flag is a flag.
 export const scalarFactValue = (value: ObservationScalar, unit: string | undefined): FactValue =>

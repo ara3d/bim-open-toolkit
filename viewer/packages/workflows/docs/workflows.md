@@ -92,6 +92,8 @@ observed `areaM2` and the `basis` the measurement came from.
 **Rules.** Subtotal by finish type over the surfaces whose finish type and area are both known. A
 finish type with no contributing surface gets no subtotal row at all. A surface whose finish type or
 area is unavailable or disputed is an exception, one per offending field, and contributes to nothing.
+A finish type whose known areas are not all reported in one unit is not added up either: the subtotal
+is withheld and the surfaces are reported instead.
 
 **Says.** The area that is actually supported by known measurements, per finish type and in total.
 
@@ -124,6 +126,8 @@ date; with none, it is `scheduled`. A date that is unavailable or disputed does 
 A higher state is not demoted because a lower step was never recorded: the unrecorded steps are a
 coverage note on the row. An object with no events at all is an exception; a disputed date is an
 exception; a known future date is not — it is reported separately and simply has not happened yet.
+Two rows of the same event type for one object are merged rather than one replacing the other, so
+two records that disagree read as a conflict.
 
 **Says.** One state per object as of one date, with the known dates behind it, and which lower steps
 were never recorded.
