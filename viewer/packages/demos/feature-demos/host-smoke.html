@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/feature-demos/demo.css" />
+    <title>Feature demo host: smoke</title>
+  </head>
+  <body>
+    <header>
+      <h1>Host smoke</h1>
+      <p>
+        The synthetic building with its roof and ceilings, drawn through the shared demo host. Drag to
+        orbit, scroll to zoom, shift-drag to pan, click to pick. Synthetic data, not a real building.
+      </p>
+    </header>
+    <div id="controls"></div>
+    <div id="stage"><canvas id="viewport" aria-label="Synthetic building drawn through the demo host"></canvas></div>
+    <p id="status"></p>
+    <script type="module" src="/src/feature-demos/host-smoke/main.ts"></script>
+  </body>
+</html>
