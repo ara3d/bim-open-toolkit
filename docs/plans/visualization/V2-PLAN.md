@@ -33,7 +33,7 @@ All packages live under `viewer/packages/` and publish as `@bim-open-toolkit/<na
 | `synthetic` | Seeded generators for buildings, networks, schedules, revisions, facts with gaps, stress scenes and mesh primitives. | `model` |
 | `formats` | BFAST (default prepared format), BOS, GLB, GLTF, OBJ, STL adapters producing one normalized `LoadedModel` with a columnar representation table; resource resolver; format diagnostics. | `model`, `@ara3d/viewer-loaders` |
 | `render` | Instance table bound to viewer-core groups, representation registry and replacement, picking, clipping, environment, overlay primitives, capture, frame timing. | `model`, `@ara3d/viewer-core`, three |
-| `interact` | Camera state math, orbit, first-person, overhead, configurable bindings, touch, interruptible camera animation. | `model`, `@ara3d/viewer-controls` |
+| `interact` | Camera state math, orbit, first-person, overhead, configurable bindings, touch, interruptible camera animation. | `model` |
 | `features` | One `Feature` module per capability, each owning its commands, state slice, schema and optional render hook. | `model`, `render`, `interact` |
 | `workflows` | Result adapters and recipes for the ten brief section 6 workflows. Pure: input tables in, typed results plus rules, sets, overlays and views out. | `model` |
 | `viewer` | Default composition: `createViewer`, command bus, feature host, persistence of slices, multi-view. | `model`, `formats`, `render`, `interact`, `features` |
@@ -231,7 +231,7 @@ F22 maps, F24 tracing and F25 mesh-derived voxels stay postponed. The `city` gen
 
 1. Gratify consumption for publication: pinned submodule build artifacts or an upstream release. Decide before wave 3.
 2. MCP transport: a WebSocket bridge from a Node process to the browser session is the default; confirm the client used for the walkthrough.
-3. Whether `interact` replaces `@ara3d/viewer-controls` or wraps it. Track I decides in its first chunk and records the reason.
+3. Whether `interact` replaces `@ara3d/viewer-controls` or wraps it. Decided 2026-09-08: replaces (README.md decision record; `viewer/packages/interact/docs/DECISION-controls.md`).
 4. Package count: thirteen is deliberate for ownership; merge later only if a boundary proves to have no independent consumer.
 5. Fence enforcement by hooks. The platonic-ts PreToolUse and pre-commit hooks refuse edits outside `.claude/wave.json` fences, `git add .` and `commit -a`, and commits that mix owners. Project hooks apply to every session in this checkout, including the concurrent loader work, and the hook code in `../platonic-ts` was itself mid-change on 2026-09-07. Recommendation: do not install them for wave 0; enforce fences at the commit turn instead; revisit at the start of wave 1 when the concurrent sessions and the hook code are stable, and if installed give the concurrent work its own track entry in the manifest.
 

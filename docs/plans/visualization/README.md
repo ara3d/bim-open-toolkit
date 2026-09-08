@@ -81,3 +81,17 @@ Append a dated record with: affected original F-ID/stage and requirement; previo
 **User basis:** plan approved 2026-09-07; contract review is a supervisor responsibility under that plan.
 
 **Affected contracts and checks:** every wave 1 brief names M1 at `641624b`; the P0 snippet in V2-PLAN.md is annotated, not rewritten.
+
+## Decision record: 2026-09-08 — `interact` replaces `@ara3d/viewer-controls`
+
+**Affected requirement:** F04 navigation, F05 views and projection; unresolved decision 3 in V2-PLAN.md.
+
+**Previous decision:** open; Track I to decide in its first chunk.
+
+**Revised decision:** the `interact` package replaces the alpha controls package with its own implementation (`viewer/packages/interact/docs/DECISION-controls.md`, commit `9545032`). The alpha's verified behaviours were carried over as tests against the new API.
+
+**Reason and evidence:** the wrappable surface is about 325 lines and hardcodes +Y up, while V2 views declare their up axis and BIM data is Z-up; it has no projection, first-person, overhead, bindings or animation, so most of F04 is new either way; wrapping would pull `three` and mutable class state into what must be a pure reducer; and it would put a V2 package behind an alpha package no V2 track may change and that is removed at the wave 4 cutover. Result: 11 modules, 202 tests, no browser, no `three`, no DOM, one impure DOM adapter module.
+
+**User basis:** plan approved 2026-09-07 delegated this decision to Track I.
+
+**Affected contracts and checks:** `@ara3d/viewer-controls` removed from the interact manifest; nothing imports it.
