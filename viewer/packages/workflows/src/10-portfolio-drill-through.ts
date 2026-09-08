@@ -16,7 +16,14 @@ import {
   type Schema,
 } from '@bim-open-toolkit/model';
 import { workflowException, type WorkflowException } from './exception.js';
-import { duplicateDiagnostics, keyOf, keysOf, namedObjectSet, suggestedView } from './keys.js';
+import {
+  duplicateDiagnostics,
+  keyOf,
+  keysOf,
+  namedObjectSet,
+  suggestedView,
+  unknownReferenceDiagnostic,
+} from './keys.js';
 import { observationJsonSchema, toObservation, type ObservationJson } from './observation.js';
 import { label, onObject, type Overlay } from './overlay.js';
 import { groupByOutcome, outcomeRules, type Outcome } from './outcome.js';
@@ -125,7 +132,14 @@ export const runPortfolioDrillThrough = (input: PortfolioInput): Result<Workflow
   ];
   if (duplicates.length > 0) return failure(duplicates);
 
-  const diagnostics: Diagnostic[] = [];
+  // A document naming a building the portfolio does not contain: the figure is still attributed to
+  // the building the document names, and the unresolved link stays visible as a diagnostic.
+  const buildingIds = new Set(input.buildings.map((item) => item.buildingId));
+  const diagnostics: Diagnostic[] = input.documents.flatMap((document) =>
+    document.buildingIds
+      .filter((buildingId) => !buildingIds.has(buildingId))
+      .map((buildingId) => unknownReferenceDiagnostic('documents', 'buildingIds', buildingId)),
+  );
   const attributed = input.metrics.flatMap((metric) =>
     attributionOf(input, metric).map((attribution) => ({ metric, attribution })),
   );

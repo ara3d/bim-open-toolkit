@@ -51,6 +51,17 @@ describe('portfolio drill-through', () => {
     ]);
   });
 
+  it('reports a document naming a building the portfolio does not contain', () => {
+    const stray = {
+      ...input,
+      documents: input.documents.map((document) =>
+        document.documentId === 'DOC-1' ? { ...document, buildingIds: ['B-9'] } : document,
+      ),
+    };
+    const reported = runPortfolioDrillThrough(stray);
+    expect(reported.diagnostics.map((item) => item.code)).toEqual(['workflow/unknown-reference']);
+  });
+
   it('labels each resolved building with the figure and its unit', () => {
     expect(result.overlays.map((overlay) => overlay.text)).toEqual(['B-1: 5000 m2', 'B-2: 3000 m2']);
   });
