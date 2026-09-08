@@ -208,3 +208,12 @@ export {
   type HudData,
   type SceneStatistics,
 } from './timing.js';
+
+// The composition: models bound to a viewer-core scene, and the operations that cross modules.
+export {
+  SceneBinding,
+  instanceColorStride,
+  type BoundModel,
+  type GroupLocation,
+  type ModelRaycastHit,
+} from './scene-binding.js';
