@@ -131,6 +131,10 @@ Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committe
 - To the model docs: `resolveStyles` omits keys equal to the fallback and deleted keys, so a binding iterating `byKey` never restores an object a rule stopped applying to; render addresses every row and relies on change detection.
 - Process: an additive contract change that adds a name a downstream track already invented is not neutral (M2's `instance-table` columns versus R's own vocabulary; reconciled by R in `db9a63c`). Announce contract additions to running tracks through their checkpoints or the status file.
 
+### Branch warning (2026-09-08)
+
+A session working on the C# DuckDB projection switched the shared checkout from `main` to a new branch `build` (reflog: checkout main → build, then `fa938c2 fix(duckdb)`). Every commit from every track after that point lands on `build`, including this supervisor's `c19ab99`. Nothing is lost, but `origin/main` stops receiving V2 work until `build` is merged or the checkout returns to `main`. Tracks: keep committing by pathspec as before; do not switch branches. Supervisors: do not push `build` to `main` from a different session; the user decides when to merge. If the checkout is switched back to `main` while tracks run, their committed files revert in the working tree until the merge, which is why the switch must be coordinated.
+
 ### Coordination with the gallery session (2026-09-08)
 
 A third session owns the gallery wave: `viewer/packages/ui-gratify/**` and `viewer/packages/demos/**` minus slice, server, ambient-occlusion and feature-demos; tracks UG, GAL, D1 to D4; ports 5190 to 5194; plan in GALLERY-PLAN.md. This supervisor's Track D was launched minutes before that message and collided on the same paths; it was stopped and withdrawn. Answers to the gallery session's requests:

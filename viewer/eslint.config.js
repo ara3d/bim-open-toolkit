@@ -6,7 +6,7 @@
 // (eslint.typed.config.js) over the packages that do I/O, at wave integration only.
 import tseslint from 'typescript-eslint'
 
-export const v2Files = ['packages/*/src/**/*.ts', 'packages/*/test/**/*.ts']
+export const v2Files = ['packages/*/src/**/*.ts', 'packages/*/src/**/*.tsx', 'packages/*/test/**/*.ts', 'packages/*/test/**/*.tsx']
 export const alphaPackages = ['packages/core/**', 'packages/controls/**', 'packages/loaders/**', 'packages/visualization/**']
 
 export default tseslint.config(

@@ -3,7 +3,7 @@
 // `npm run lint:typed`. Extend `ioPackages` when a new package gains I/O.
 import tseslint from 'typescript-eslint'
 
-const ioPackages = ['demos', 'mcp', 'viewer']
+const ioPackages = ['demos', 'mcp', 'viewer', 'ui-react']
 const files = ioPackages.flatMap((name) => [`packages/${name}/src/**/*.ts`, `packages/${name}/test/**/*.ts`])
 
 export default tseslint.config(
