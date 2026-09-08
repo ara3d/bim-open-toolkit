@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- An empty icon, so a browser does not ask for one that is not there. -->
+    <link rel="icon" href="data:," />
+    <title>V2 slice — synthetic building, unrated doors red</title>
+    <style>
+      :root { color-scheme: light; }
+      body {
+        margin: 0;
+        font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #17202a;
+        background: #f4f6f8;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header { padding: 12px 16px 8px; }
+      h1 { font-size: 16px; margin: 0 0 4px; }
+      header p { margin: 0; color: #55606d; }
+      #stage {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 0 16px 12px;
+      }
+      #viewport {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        display: block;
+        border: 1px solid #c9d0d8;
+        border-radius: 4px;
+        background: #e6e9ec;
+        touch-action: none;
+      }
+      .slice-status,
+      .slice-readout,
+      .slice-control { margin: 8px 0 0; font-variant-numeric: tabular-nums; display: block; }
+      .slice-status { color: #55606d; }
+      .slice-readout { font-weight: 600; }
+      .slice-control { color: #55606d; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Synthetic building, unrated doors red</h1>
+      <p>
+        Drag to orbit, scroll to zoom, shift-drag to pan. Click an object to see what is known about
+        it. Every door whose fire rating is missing or disputed is red. A door leaf is modelled
+        inside its wall with no opening cut, so the walls are hidden to let the doors
+        show; untick the box to see the building solid. The data is synthetic: it is generated from
+        a seed and is not a measurement of any real building.
+      </p>
+    </header>
+    <main id="stage">
+      <canvas id="viewport" aria-label="Synthetic building, drawn with the V2 packages"></canvas>
+    </main>
+    <script type="module" src="/src/slice/main.ts"></script>
+  </body>
+</html>
