@@ -1,0 +1,40 @@
+{
+  "workflow": "portfolio-drill-through",
+  "inputs": {
+    "requestedMetricName": "totalFloorAreaM2",
+    "buildings": [
+      { "buildingId": "B-1", "name": "Tower A", "siteId": "Site-A" },
+      { "buildingId": "B-2", "name": "Tower B", "siteId": "Site-A" },
+      { "buildingId": "B-3", "name": "Warehouse C", "siteId": "Site-B" }
+    ],
+    "documents": [
+      { "documentId": "DOC-1", "buildingIds": ["B-1"] },
+      { "documentId": "DOC-2", "buildingIds": ["B-2"] },
+      { "documentId": "DOC-3", "buildingIds": ["B-1", "B-2"] },
+      { "documentId": "DOC-4", "buildingIds": [] },
+      { "documentId": "DOC-5", "buildingIds": ["B-3"] }
+    ],
+    "metrics": [
+      { "id": "m1", "documentId": "DOC-1", "metricName": "totalFloorAreaM2", "value": { "kind": "known", "value": 5000, "unit": "m2" } },
+      { "id": "m2", "documentId": "DOC-2", "metricName": "totalFloorAreaM2", "value": { "kind": "known", "value": 3000, "unit": "m2" } },
+      { "id": "m3", "documentId": "DOC-3", "metricName": "totalFloorAreaM2", "value": { "kind": "known", "value": 4000, "unit": "m2" } },
+      { "id": "m4", "documentId": "DOC-4", "metricName": "totalFloorAreaM2", "value": { "kind": "known", "value": 2000, "unit": "m2" } },
+      { "id": "m5", "documentId": "DOC-5", "metricName": "totalFloorAreaM2", "value": { "kind": "conflicting", "values": [7000, 7500] } }
+    ]
+  },
+  "expected": {
+    "drillThrough": [
+      { "buildingId": "B-1", "documentId": "DOC-1", "metricName": "totalFloorAreaM2", "value": 5000, "unit": "m2" },
+      { "buildingId": "B-2", "documentId": "DOC-2", "metricName": "totalFloorAreaM2", "value": 3000, "unit": "m2" }
+    ],
+    "exceptions": [
+      { "metricId": "m3", "documentId": "DOC-3", "kind": "missing", "reason": "unresolved-source", "detail": "document maps to 2 candidate buildings", "candidateBuildingIds": ["B-1", "B-2"] },
+      { "metricId": "m4", "documentId": "DOC-4", "kind": "missing", "reason": "unresolved-source", "detail": "document maps to 0 candidate buildings", "candidateBuildingIds": [] },
+      { "metricId": "m5", "documentId": "DOC-5", "kind": "conflicting", "values": [7000, 7500] }
+    ],
+    "portfolioRollup": [
+      { "siteId": "Site-A", "metricName": "totalFloorAreaM2", "total": 8000, "unit": "m2", "resolvedBuildingCount": 2, "excludedBuildingCount": 0 }
+    ]
+  },
+  "notes": "Site-B has no rollup row: its only building (B-3) has no resolved metric (m5 is conflicting), so there is no resolved contributor and no total is emitted -- not a 0. DOC-3's ambiguity produces an exception on m3 but does not affect B-1 or B-2's own resolved rows, which come from DOC-1 and DOC-2 respectively."
+}

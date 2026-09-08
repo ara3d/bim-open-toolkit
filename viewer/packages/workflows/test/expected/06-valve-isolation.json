@@ -1,0 +1,32 @@
+{
+  "workflow": "valve-isolation",
+  "inputs": {
+    "startNodeId": "N1",
+    "closedValveIds": ["V1"],
+    "nodes": [
+      { "nodeId": "N1" }, { "nodeId": "N2" }, { "nodeId": "N3" },
+      { "nodeId": "N4" }, { "nodeId": "N5" }, { "nodeId": "N6" }
+    ],
+    "segments": [
+      { "objectId": "SEG-1", "fromNodeId": "N1", "toNodeId": "N2", "topologyStatus": "accepted" },
+      { "objectId": "SEG-2", "fromNodeId": "N2", "toNodeId": "N3", "topologyStatus": "accepted" },
+      { "objectId": "SEG-3", "fromNodeId": "N3", "toNodeId": "N4", "topologyStatus": "accepted" },
+      { "objectId": "SEG-4", "fromNodeId": "N2", "toNodeId": "N5", "topologyStatus": "unverified" },
+      { "objectId": "SEG-5", "fromNodeId": "N4", "toNodeId": "N6", "topologyStatus": "accepted" }
+    ],
+    "valves": [
+      { "objectId": "V1", "nodeId": "N3" }
+    ]
+  },
+  "expected": {
+    "affected": [
+      { "nodeId": "N1" },
+      { "nodeId": "N2", "reachedVia": "SEG-1" },
+      { "nodeId": "N3", "reachedVia": "SEG-2", "note": "closed valve V1 stops the trace beyond this node" }
+    ],
+    "exceptions": [
+      { "objectId": "SEG-4", "kind": "missing", "reason": "unresolved-source", "detail": "unverified topology touching affected node N2; may extend the affected set toward N5" }
+    ]
+  },
+  "notes": "SEG-3 and SEG-5 (and node N4/N6) are excluded because closed valve V1 blocks the trace at N3 as intended -- this is not a coverage gap. SEG-4 is flagged only because it touches N2, which is already in the affected set; an unverified segment elsewhere in the network would not be reported."
+}

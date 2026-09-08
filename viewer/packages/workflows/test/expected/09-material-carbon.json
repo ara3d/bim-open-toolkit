@@ -1,0 +1,31 @@
+{
+  "workflow": "material-carbon",
+  "inputs": {
+    "requestedLifecycleScope": "A1-A3",
+    "quantities": [
+      { "objectId": "OBJ-1", "materialId": "concrete", "quantity": { "kind": "known", "value": 10, "unit": "m3" } },
+      { "objectId": "OBJ-2", "materialId": "steel", "quantity": { "kind": "known", "value": 500, "unit": "kg" } },
+      { "objectId": "OBJ-3", "materialId": "timber", "quantity": { "kind": "conflicting", "values": [2.5, 3.0] } }
+    ],
+    "factors": [
+      { "id": "f1", "materialId": "concrete", "scenario": "asDesigned", "unit": "m3", "lifecycleScope": "A1-A3", "factorValue": 300 },
+      { "id": "f2", "materialId": "steel", "scenario": "asDesigned", "unit": "kg", "lifecycleScope": "A1-A5", "factorValue": 2.5 },
+      { "id": "f3", "materialId": "concrete", "scenario": "lowCarbonAlt", "unit": "m3", "lifecycleScope": "A1-A3", "factorValue": 180 },
+      { "id": "f4", "materialId": "steel", "scenario": "lowCarbonAlt", "unit": "t", "lifecycleScope": "A1-A3", "factorValue": 2.0 }
+    ]
+  },
+  "expected": {
+    "contributions": [
+      { "objectId": "OBJ-1", "scenario": "asDesigned", "kgCO2e": 3000 },
+      { "objectId": "OBJ-1", "scenario": "lowCarbonAlt", "kgCO2e": 1800 }
+    ],
+    "totalKnownKgCO2e": { "asDesigned": 3000, "lowCarbonAlt": 1800 },
+    "exceptions": [
+      { "objectId": "OBJ-2", "scenario": "asDesigned", "kind": "missing", "reason": "unresolved-source", "detail": "factor lifecycleScope 'A1-A5' does not match requested 'A1-A3'" },
+      { "objectId": "OBJ-3", "scenario": "asDesigned", "field": "quantity", "kind": "conflicting", "values": [2.5, 3.0] },
+      { "objectId": "OBJ-2", "scenario": "lowCarbonAlt", "kind": "missing", "reason": "unresolved-source", "detail": "factor unit 't' does not match quantity unit 'kg'" },
+      { "objectId": "OBJ-3", "scenario": "lowCarbonAlt", "field": "quantity", "kind": "conflicting", "values": [2.5, 3.0] }
+    ]
+  },
+  "notes": "OBJ-3 is unresolved in both scenarios purely because its own quantity is conflicting -- no timber factor even needs to be consulted. OBJ-2 is unresolved in both scenarios but for two different reasons: wrong lifecycle scope in asDesigned, wrong unit in lowCarbonAlt. totalKnownKgCO2e sums resolved contributions only, per scenario."
+}

@@ -1,0 +1,24 @@
+{
+  "workflow": "access-coordination",
+  "inputs": {
+    "envelopes": [
+      { "objectId": "ENV-1", "discipline": "Mechanical", "bbox": { "kind": "known", "value": { "minX": 0, "minY": 0, "minZ": 0, "maxX": 2, "maxY": 2, "maxZ": 2 } } },
+      { "objectId": "ENV-2", "discipline": "Mechanical", "bbox": { "kind": "known", "value": { "minX": 10, "minY": 0, "minZ": 0, "maxX": 12, "maxY": 2, "maxZ": 2 } } },
+      { "objectId": "ENV-3", "discipline": "Structural", "bbox": { "kind": "missing", "reason": "not-provided" } }
+    ],
+    "penetrations": [
+      { "objectId": "PEN-1", "discipline": "Structural", "bbox": { "kind": "known", "value": { "minX": 1, "minY": 1, "minZ": 0, "maxX": 3, "maxY": 3, "maxZ": 2 } } },
+      { "objectId": "PEN-2", "discipline": "Structural", "bbox": { "kind": "known", "value": { "minX": 5, "minY": 0, "minZ": 0, "maxX": 6, "maxY": 2, "maxZ": 2 } } },
+      { "objectId": "PEN-3", "discipline": "Structural", "bbox": { "kind": "known", "value": { "minX": 1, "minY": 1, "minZ": 5, "maxX": 2, "maxY": 2, "maxZ": 6 } } }
+    ]
+  },
+  "expected": {
+    "candidateFindings": [
+      { "envelopeId": "ENV-1", "penetrationId": "PEN-1", "disciplines": ["Mechanical", "Structural"], "basis": "bounding-box-overlap" }
+    ],
+    "exceptions": [
+      { "objectId": "ENV-3", "field": "bbox", "kind": "missing", "reason": "not-provided", "detail": "coordination gap: no registered coordinates" }
+    ]
+  },
+  "notes": "PEN-3 shares x and y overlap with ENV-1 but not z ([0,2] vs [5,6] do not intersect), so it is not a candidate finding -- all three axes must intersect. ENV-2 and PEN-2 overlap nothing and produce no rows at all (not an exception; simply no candidate)."
+}

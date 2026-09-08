@@ -1,0 +1,29 @@
+{
+  "workflow": "takeoff",
+  "inputs": {
+    "surfaces": [
+      { "objectId": "S-1", "roomId": "room-A", "finishType": { "kind": "known", "value": "Carpet" }, "areaM2": { "kind": "known", "value": 12, "unit": "m2" }, "basis": "supplied-measurement" },
+      { "objectId": "S-2", "roomId": "room-A", "finishType": { "kind": "known", "value": "Carpet" }, "areaM2": { "kind": "known", "value": 8, "unit": "m2" }, "basis": "supplied-measurement" },
+      { "objectId": "S-3", "roomId": "room-A", "finishType": { "kind": "known", "value": "Carpet" }, "areaM2": { "kind": "known", "value": 10, "unit": "m2" }, "basis": "supplied-measurement" },
+      { "objectId": "S-4", "roomId": "room-A", "finishType": { "kind": "known", "value": "Tile" }, "areaM2": { "kind": "known", "value": 5, "unit": "m2" }, "basis": "supplied-measurement" },
+      { "objectId": "S-5", "roomId": "room-A", "finishType": { "kind": "known", "value": "Tile" }, "areaM2": { "kind": "conflicting", "values": [18, 20] }, "basis": "derived-from-drawing" },
+      { "objectId": "S-6", "roomId": "room-B", "finishType": { "kind": "known", "value": "Carpet" }, "areaM2": { "kind": "known", "value": 9, "unit": "m2" }, "basis": "supplied-measurement" },
+      { "objectId": "S-7", "roomId": "room-B", "finishType": { "kind": "missing", "reason": "not-provided" }, "areaM2": { "kind": "known", "value": 7, "unit": "m2" }, "basis": "supplied-measurement" },
+      { "objectId": "S-8", "roomId": "room-B", "finishType": { "kind": "known", "value": "Vinyl" }, "areaM2": { "kind": "missing", "reason": "not-measured" }, "basis": "supplied-measurement" },
+      { "objectId": "S-9", "roomId": "room-B", "finishType": { "kind": "known", "value": "Tile" }, "areaM2": { "kind": "known", "value": 6, "unit": "m2" }, "basis": "supplied-measurement" }
+    ]
+  },
+  "expected": {
+    "subtotals": [
+      { "finishType": "Carpet", "areaM2": 39, "unit": "m2", "surfaceCount": 4 },
+      { "finishType": "Tile", "areaM2": 11, "unit": "m2", "surfaceCount": 2 }
+    ],
+    "totalKnownM2": 50,
+    "exceptions": [
+      { "objectId": "S-5", "field": "areaM2", "kind": "conflicting", "values": [18, 20], "finishType": "Tile" },
+      { "objectId": "S-7", "field": "finishType", "kind": "missing", "reason": "not-provided", "areaM2": 7 },
+      { "objectId": "S-8", "field": "areaM2", "kind": "missing", "reason": "not-measured", "finishType": "Vinyl" }
+    ]
+  },
+  "notes": "No Vinyl subtotal is emitted: its only surface (S-8) has a missing area, so there is no known contributor. totalKnownM2 (50) is the sum of the emitted subtotals only (39 + 11), never including exception surfaces."
+}

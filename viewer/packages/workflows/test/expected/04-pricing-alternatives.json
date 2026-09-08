@@ -1,0 +1,33 @@
+{
+  "workflow": "pricing-alternatives",
+  "inputs": {
+    "scopes": [
+      { "objectId": "SC-Doors", "scopeType": "Doors", "quantity": { "kind": "known", "value": 12, "unit": "ea" } },
+      { "objectId": "SC-Carpet", "scopeType": "Carpet", "quantity": { "kind": "known", "value": 120, "unit": "m2" } },
+      { "objectId": "SC-Paint", "scopeType": "Paint", "quantity": { "kind": "missing", "reason": "not-measured" } }
+    ],
+    "rates": [
+      { "id": "r1", "scopeType": "Doors", "scenario": "base", "currency": "USD", "unit": "ea", "ratePerUnit": 150 },
+      { "id": "r2", "scopeType": "Carpet", "scenario": "base", "currency": "USD", "unit": "m2", "ratePerUnit": 20 },
+      { "id": "r3", "scopeType": "Doors", "scenario": "alternate", "currency": "USD", "unit": "ea", "ratePerUnit": 175 },
+      { "id": "r4", "scopeType": "Carpet", "scenario": "alternate", "currency": "USD", "unit": "ea", "ratePerUnit": 5 }
+    ],
+    "scenarios": [
+      { "id": "base", "name": "Base estimate" },
+      { "id": "alternate", "name": "Alternate estimate" }
+    ]
+  },
+  "expected": {
+    "priced": [
+      { "objectId": "SC-Doors", "scenario": "base", "quantity": 12, "unit": "ea", "ratePerUnit": 150, "cost": 1800, "currency": "USD" },
+      { "objectId": "SC-Carpet", "scenario": "base", "quantity": 120, "unit": "m2", "ratePerUnit": 20, "cost": 2400, "currency": "USD" },
+      { "objectId": "SC-Doors", "scenario": "alternate", "quantity": 12, "unit": "ea", "ratePerUnit": 175, "cost": 2100, "currency": "USD" }
+    ],
+    "exceptions": [
+      { "objectId": "SC-Paint", "scenario": "base", "kind": "missing", "reason": "not-measured", "field": "quantity" },
+      { "objectId": "SC-Carpet", "scenario": "alternate", "kind": "missing", "reason": "unresolved-source", "field": "rate", "detail": "rate unit 'ea' does not match quantity unit 'm2'" },
+      { "objectId": "SC-Paint", "scenario": "alternate", "kind": "missing", "reason": "not-measured", "field": "quantity" }
+    ]
+  },
+  "notes": "Carpet's alternate-scenario rate (r4) is priced per 'ea' but Carpet's quantity is in 'm2', so it is unresolved-source, not silently priced with mismatched units. Paint has no rate in either scenario and its quantity is itself missing, so both scenario rows report the quantity's own missing reason rather than 'no rate found'."
+}

@@ -1,0 +1,41 @@
+{
+  "workflow": "asset-handover",
+  "inputs": {
+    "assets": [
+      { "objectId": "A-1", "name": "Pump-1", "category": "Pump", "installDate": { "kind": "known", "value": "2025-01-10" } },
+      { "objectId": "A-2", "name": "Pump-2", "category": "Pump", "installDate": { "kind": "known", "value": "2025-02-01" } },
+      { "objectId": "A-3", "name": "AHU-1", "category": "AHU", "installDate": { "kind": "known", "value": "2025-03-01" } },
+      { "objectId": "A-4", "name": "AHU-2", "category": "AHU", "installDate": { "kind": "missing", "reason": "not-provided" } },
+      { "objectId": "A-5", "name": "Chiller-1", "category": "Chiller", "installDate": { "kind": "known", "value": "2025-04-01" } }
+    ],
+    "maintenanceEvents": [
+      { "id": "m1", "assetId": "A-1", "date": "2025-06-01", "note": "Filter change" },
+      { "id": "m2", "assetId": "A-1", "date": "2025-09-01", "note": "Inspection" },
+      { "id": "m3", "assetId": "A-1", "date": "2025-12-01", "note": "Bearing replacement" },
+      { "id": "m4", "assetId": "A-4", "date": "2025-07-01", "note": "Belt tension check" },
+      { "id": "m5", "assetId": "A-4", "date": "2025-10-01", "note": "Inspection" },
+      { "id": "m6", "assetId": "A-5", "date": "2025-08-01", "note": "Refrigerant check" }
+    ],
+    "serviceHistoryStatus": [
+      { "assetId": "A-1", "status": "recorded" },
+      { "assetId": "A-2", "status": "recorded" },
+      { "assetId": "A-3", "status": "not-recorded" },
+      { "assetId": "A-4", "status": "recorded" },
+      { "assetId": "A-5", "status": "recorded" }
+    ]
+  },
+  "expected": {
+    "handover": [
+      { "objectId": "A-1", "name": "Pump-1", "eventCount": 3, "lastServiceDate": "2025-12-01" },
+      { "objectId": "A-2", "name": "Pump-2", "eventCount": 0, "lastServiceDate": null },
+      { "objectId": "A-3", "name": "AHU-1", "eventCount": 0, "lastServiceDate": null },
+      { "objectId": "A-4", "name": "AHU-2", "eventCount": 2, "lastServiceDate": "2025-10-01" },
+      { "objectId": "A-5", "name": "Chiller-1", "eventCount": 1, "lastServiceDate": "2025-08-01" }
+    ],
+    "exceptions": [
+      { "objectId": "A-3", "field": "serviceHistoryStatus", "kind": "missing", "reason": "not-provided", "detail": "service history was never tracked for this asset" },
+      { "objectId": "A-4", "field": "installDate", "kind": "missing", "reason": "not-provided" }
+    ]
+  },
+  "notes": "A-2 has eventCount 0 but serviceHistoryStatus 'recorded', so it is NOT an exception -- a tracked, genuinely empty history is a legitimate known fact. A-3 also has eventCount 0 but status 'not-recorded', so it IS an exception: the zero is not trustworthy because history was never tracked."
+}

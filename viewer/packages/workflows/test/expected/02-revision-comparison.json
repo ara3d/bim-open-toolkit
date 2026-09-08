@@ -1,0 +1,38 @@
+{
+  "workflow": "revision-comparison",
+  "inputs": {
+    "objectsA": [
+      { "objectId": "W-1", "name": "Wall-01", "category": "Wall" },
+      { "objectId": "W-2", "name": "Wall-02", "category": "Wall" },
+      { "objectId": "W-3", "name": "Wall-03", "category": "Wall" },
+      { "objectId": "D-1", "name": "Door-01", "category": "Door" },
+      { "objectId": "D-2", "name": "Door-02", "category": "Door" }
+    ],
+    "objectsB": [
+      { "objectId": "W-1b", "name": "Wall-01", "category": "Wall" },
+      { "objectId": "W-2b", "name": "Wall-02-Revised", "category": "Wall" },
+      { "objectId": "W-3b", "name": "Wall-03", "category": "Curtain Wall" },
+      { "objectId": "D-1b", "name": "Door-01", "category": "Door" },
+      { "objectId": "D-9", "name": "Door-09", "category": "Door" }
+    ],
+    "correspondences": [
+      { "id": "c1", "aId": "W-1", "bIds": ["W-1b"], "basis": "same-id" },
+      { "id": "c2", "aId": "W-2", "bIds": ["W-2b"], "basis": "geometry-match" },
+      { "id": "c3", "aId": "W-3", "bIds": ["W-3b"], "basis": "geometry-match" },
+      { "id": "c4", "aId": "D-1", "bIds": ["D-1b", "D-9"], "basis": "name-match" },
+      { "id": "c5", "aId": "D-2", "bIds": [], "basis": "same-id" }
+    ]
+  },
+  "expected": {
+    "comparison": [
+      { "aId": "W-1", "bIds": ["W-1b"], "changeType": "unchanged" },
+      { "aId": "W-2", "bIds": ["W-2b"], "changeType": "renamed", "detail": { "nameA": "Wall-02", "nameB": "Wall-02-Revised" } },
+      { "aId": "W-3", "bIds": ["W-3b"], "changeType": "recategorized", "detail": { "categoryA": "Wall", "categoryB": "Curtain Wall" } },
+      { "aId": "D-2", "bIds": [], "changeType": "deleted" }
+    ],
+    "exceptions": [
+      { "aId": "D-1", "bIds": ["D-1b", "D-9"], "changeType": "ambiguous", "reason": "unresolved-source", "candidateCount": 2 }
+    ]
+  },
+  "notes": "D-9 is not reported as a standalone 'added' row because it only ever appears as an ambiguous candidate of correspondence c4 (see .md assumptions). The comparison table holds only resolved rows; every unresolved (ambiguous) correspondence goes to exceptions instead, never both."
+}
