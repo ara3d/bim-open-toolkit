@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  boolColumn, cellAt, columnLength, columnNames, columnOf, dropColumns, emptyTable, f32Column, f64Column,
-  filterRows, findRows, i32Column, indexByKey, isIntegerColumn, isNumericColumn, joinTables, matchRows,
-  numberAt, numericColumnOf, orderRowsBy, rowOf, selectColumns, sortRows, stringAt, stringColumn, table,
-  takeRows, u32Column, withColumn,
+  boolColumn, boolColumnOf, cellAt, cellOf, columnLength, columnNames, columnOf, dropColumns, emptyTable,
+  f32Column, f64Column, filterRows, findRows, i32Column, indexByKey, isIntegerColumn, isNumericColumn,
+  joinTables, matchRows, numberAt, numberOf, numericColumnOf, orderRowsBy, rowOf, selectColumns, sortRows,
+  stringAt, stringColumn, stringColumnOf, stringOf, table, tableFromRecord, takeRows, u32Column, withColumn,
 } from '../src/table.js';
 
 const doors = table([
@@ -54,6 +54,35 @@ describe('table', () => {
   it('keeps column order', () => {
     expect(columnNames(doors)).toEqual(['width', 'storey', 'name']);
     expect(columnOf(doors, 'missing')).toBeUndefined();
+  });
+
+  it('builds the same table from a record as from entries', () => {
+    const fromRecord = tableFromRecord({
+      width: f32Column([0.9, 1.2, 0.8]),
+      storey: i32Column([0, 1, 1]),
+      name: stringColumn(['D1', 'D2', 'D3']),
+    });
+    expect(columnNames(fromRecord)).toEqual(columnNames(doors));
+    expect(fromRecord.rowCount).toBe(doors.rowCount);
+    expect(rowOf(fromRecord, 2)).toEqual(rowOf(doors, 2));
+  });
+
+  it('narrows a column by its type', () => {
+    expect(stringColumnOf(doors, 'name')?.values).toEqual(['D1', 'D2', 'D3']);
+    expect(stringColumnOf(doors, 'width')).toBeUndefined();
+    expect(boolColumnOf(withColumn(doors, 'fire', boolColumn([true, false, true])), 'fire')?.values)
+      .toEqual(Uint8Array.from([1, 0, 1]));
+    expect(boolColumnOf(doors, 'name')).toBeUndefined();
+  });
+
+  it('reads a cell without narrowing the column by hand', () => {
+    expect(cellOf(doors, 'name', 1)).toBe('D2');
+    expect(cellOf(doors, 'missing', 0)).toBeUndefined();
+    expect(cellOf(doors, 'name', 9)).toBeUndefined();
+    expect(numberOf(doors, 'storey', 2)).toBe(1);
+    expect(numberOf(doors, 'name', 0)).toBeUndefined();
+    expect(stringOf(doors, 'name', 0)).toBe('D1');
+    expect(stringOf(doors, 'storey', 0)).toBeUndefined();
   });
 });
 

@@ -84,6 +84,10 @@ export const table = (entries: Iterable<readonly [string, Column]>): Table => {
   return { rowCount: lengths.length === 0 ? 0 : Math.min(...lengths), columns };
 };
 
+// A table of the named columns given as a record. Property order is column order.
+export const tableFromRecord = (columns: Readonly<Record<string, Column>>): Table =>
+  table(Object.entries(columns));
+
 // The named column, or undefined when the table has no such column.
 export const columnOf = (source: Table, name: string): Column | undefined => source.columns.get(name);
 
@@ -91,6 +95,36 @@ export const columnOf = (source: Table, name: string): Column | undefined => sou
 export const numericColumnOf = (source: Table, name: string): NumericColumn | undefined => {
   const column = source.columns.get(name);
   return column !== undefined && isNumericColumn(column) ? column : undefined;
+};
+
+// The named column when it holds strings, otherwise undefined.
+export const stringColumnOf = (source: Table, name: string): StringColumn | undefined => {
+  const column = source.columns.get(name);
+  return column !== undefined && column.type === 'string' ? column : undefined;
+};
+
+// The named column when it holds booleans, otherwise undefined.
+export const boolColumnOf = (source: Table, name: string): BoolColumn | undefined => {
+  const column = source.columns.get(name);
+  return column !== undefined && column.type === 'bool' ? column : undefined;
+};
+
+// The value at a row of the named column, or undefined when the column or the row is not there.
+export const cellOf = (source: Table, name: string, row: number): CellValue | undefined => {
+  const column = source.columns.get(name);
+  return column === undefined ? undefined : cellAt(column, row);
+};
+
+// The number at a row of the named column, or undefined when it does not read back as numbers.
+export const numberOf = (source: Table, name: string, row: number): number | undefined => {
+  const column = numericColumnOf(source, name);
+  return column === undefined ? undefined : numberAt(column, row);
+};
+
+// The string at a row of the named column, or undefined when the column does not hold strings.
+export const stringOf = (source: Table, name: string, row: number): string | undefined => {
+  const column = stringColumnOf(source, name);
+  return column === undefined ? undefined : stringAt(column, row);
 };
 
 // The names of every column, in insertion order.
