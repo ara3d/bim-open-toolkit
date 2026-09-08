@@ -1,4 +1,4 @@
-import type { ObjectRef } from './identity.js';
+import { objectKey, sameObject, type ObjectKey, type ObjectRef } from './identity.js';
 
 // Why a value is not available. A missing value is never reported as zero or as a default.
 export type MissingReason =
@@ -118,3 +118,125 @@ export const coverageRatio = (coverage: Coverage): number | undefined =>
 
 // Coverage of no observations at all.
 export const emptyCoverage: Coverage = { total: 0, known: 0, missing: 0, conflicting: 0 };
+
+// Facts looked up by the object they are about and then by name.
+export type FactIndex = ReadonlyMap<ObjectKey, ReadonlyMap<string, Fact>>;
+
+// True when two values say the same thing. Quantities must agree on the unit as well as the number.
+export const sameFactValue = (a: FactValue, b: FactValue): boolean => {
+  if (a.kind === 'quantity' && b.kind === 'quantity')
+    return a.quantity.value === b.quantity.value && a.quantity.unit === b.quantity.unit;
+  if (a.kind === 'text' && b.kind === 'text') return a.text === b.text;
+  if (a.kind === 'flag' && b.kind === 'flag') return a.value === b.value;
+  if (a.kind === 'reference' && b.kind === 'reference') return sameObject(a.ref, b.ref);
+  return false;
+};
+
+// The values an observation carries: one when known, several when sources disagree, none when missing.
+export const observedValues = (observation: Observation): readonly FactValue[] =>
+  observation.kind === 'known' ? [observation.value] : observation.kind === 'conflicting' ? observation.values : [];
+
+// The observation with more evidence recorded for it. The value itself does not change.
+export const withEvidence = (observation: Observation, evidence: readonly Evidence[]): Observation => ({
+  ...observation,
+  evidence: [...observation.evidence, ...evidence],
+});
+
+// The values reduced to one observation: known when they agree, conflicting when they do not.
+// An empty list is missing for the stated reason, never a zero or a default.
+export const reconcile = (
+  values: readonly FactValue[],
+  evidence: readonly Evidence[] = [],
+  absent: MissingReason = 'not-provided',
+): Observation => {
+  const distinct = values.filter(
+    (value, index) => values.findIndex((other) => sameFactValue(value, other)) === index,
+  );
+  const first = distinct[0];
+  if (first === undefined) return missing(absent, evidence);
+  return distinct.length === 1 ? known(first, evidence) : conflicting(distinct, evidence);
+};
+
+// Two observations of the same thing combined. Sources that disagree stay visible as a conflict.
+export const mergeObservations = (a: Observation, b: Observation): Observation => {
+  const evidence = [...a.evidence, ...b.evidence];
+  const values = [...observedValues(a), ...observedValues(b)];
+  return values.length === 0
+    ? missing(a.kind === 'missing' ? a.reason : 'not-provided', evidence)
+    : reconcile(values, evidence);
+};
+
+// Facts by subject and name. Two facts about the same thing are merged, so a conflict stays visible.
+export const indexFacts = (facts: Iterable<Fact>): FactIndex => {
+  const index = new Map<ObjectKey, Map<string, Fact>>();
+  for (const item of facts) {
+    const key = objectKey(item.subject);
+    const byName = index.get(key) ?? new Map<string, Fact>();
+    const existing = byName.get(item.name);
+    byName.set(
+      item.name,
+      existing === undefined
+        ? item
+        : { ...item, observation: mergeObservations(existing.observation, item.observation) },
+    );
+    index.set(key, byName);
+  }
+  return index;
+};
+
+// The fact of that name about that object, or undefined when there is none.
+export const lookupFact = (index: FactIndex, subject: ObjectRef, name: string): Fact | undefined =>
+  index.get(objectKey(subject))?.get(name);
+
+// What is known about that name for that object. Nothing recorded reads as missing, never as absent data.
+export const observationAt = (index: FactIndex, subject: ObjectRef, name: string): Observation =>
+  lookupFact(index, subject, name)?.observation ?? missing('not-provided');
+
+// A fact per subject and name, with an explicit missing observation wherever nothing was recorded.
+// This is what a schedule reports from: every row exists, and gaps are stated rather than dropped.
+export const completeFacts = (
+  index: FactIndex,
+  subjects: readonly ObjectRef[],
+  names: readonly string[],
+): readonly Fact[] =>
+  subjects.flatMap((subject) => names.map((name) => fact(subject, name, observationAt(index, subject, name))));
+
+// How complete a set of facts is.
+export const coverageOfFacts = (facts: Iterable<Fact>): Coverage =>
+  coverageOf([...facts].map((item) => item.observation));
+
+// How complete the set of facts is for each name, so a report can say which column has gaps.
+export const coverageByName = (facts: Iterable<Fact>): ReadonlyMap<string, Coverage> => {
+  const byName = new Map<string, Observation[]>();
+  for (const item of facts) byName.set(item.name, [...(byName.get(item.name) ?? []), item.observation]);
+  return new Map([...byName].map(([name, observations]) => [name, coverageOf(observations)]));
+};
+
+// The facts whose value is not known, which is what an exception list reports.
+export const unknownFacts = (facts: Iterable<Fact>): readonly Fact[] =>
+  [...facts].filter((item) => item.observation.kind !== 'known');
+
+// The facts whose sources disagree.
+export const conflictingFacts = (facts: Iterable<Fact>): readonly Fact[] =>
+  [...facts].filter((item) => item.observation.kind === 'conflicting');
+
+// The units a set of observations reported for one name, in the order first seen.
+// More than one unit means the values cannot be added up without a conversion the data does not state.
+export const reportedUnits = (facts: Iterable<Fact>): readonly string[] => {
+  const units: string[] = [];
+  for (const item of facts)
+    for (const value of observedValues(item.observation))
+      if (value.kind === 'quantity' && !units.includes(value.quantity.unit)) units.push(value.quantity.unit);
+  return units;
+};
+
+// The sum of the known quantities, or undefined when they do not all report the same unit.
+// Undefined rather than a number, so a total is never quietly wrong about what it added.
+export const sumQuantities = (facts: Iterable<Fact>): Quantity | undefined => {
+  const items = [...facts];
+  const units = reportedUnits(items);
+  const unit = units[0];
+  if (unit === undefined || units.length > 1) return undefined;
+  const total = items.reduce((sum, item) => sum + (knownQuantity(item.observation)?.value ?? 0), 0);
+  return { value: total, unit };
+};
