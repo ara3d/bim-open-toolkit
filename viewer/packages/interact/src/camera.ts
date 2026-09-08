@@ -13,29 +13,7 @@ import {
   type Vec3,
 } from '@bim-open-toolkit/model';
 import { clamp } from './numbers.js';
-
-// Scalar product of two vectors.
-const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-
-// Vector product, right-handed: `cross(x, y)` points along z.
-const cross = (a: Vec3, b: Vec3): Vec3 => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0],
-];
-
-// The axis-aligned unit vector least aligned with the direction, so a cross product with it is stable.
-const leastAlignedAxis = (v: Vec3): Vec3 => {
-  const [x, y, z] = [Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2])];
-  return x <= y && x <= z ? [1, 0, 0] : y <= z ? [0, 1, 0] : [0, 0, 1];
-};
-
-// A unit vector at right angles to the direction, chosen the same way every time for a given input.
-// A direction with no length yields the x axis.
-export const perpendicularTo = (direction: Vec3): Vec3 => {
-  const unit = normalizeVec3(direction);
-  return unit === undefined ? [1, 0, 0] : (normalizeVec3(cross(unit, leastAlignedAxis(unit))) ?? [1, 0, 0]);
-};
+import { cross, dot, perpendicularTo } from './vec.js';
 
 // The up axis as a unit vector, falling back to z when the input has no length.
 const upAxis = (up: Vec3): Vec3 => normalizeVec3(up) ?? [0, 0, 1];

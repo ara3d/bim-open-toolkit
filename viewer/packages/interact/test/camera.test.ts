@@ -10,7 +10,6 @@ import {
   screenHeading,
   overheadPose,
   panPose,
-  perpendicularTo,
   poseFromOrbit,
   viewMatrix,
   walkPose,
@@ -27,22 +26,6 @@ const closeToVec = (actual: Vec3, expected: Vec3, digits = 10): void => {
 };
 
 const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-
-describe('perpendicularTo', () => {
-  it('returns a unit vector at right angles to any axis', () => {
-    const axes: readonly Vec3[] = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 1], [-3, 0.5, 2]];
-    for (const v of axes) {
-      const p = perpendicularTo(v);
-      expect(Math.hypot(...p)).toBeCloseTo(1, 12);
-      expect(dot(p, v)).toBeCloseTo(0, 12);
-    }
-  });
-
-  it('is deterministic and falls back to x for a zero direction', () => {
-    expect(perpendicularTo([0, 0, 0])).toEqual([1, 0, 0]);
-    expect(perpendicularTo([0, 0, 5])).toEqual(perpendicularTo([0, 0, 1]));
-  });
-});
 
 describe('cameraBasis', () => {
   it('is orthonormal and right-handed', () => {

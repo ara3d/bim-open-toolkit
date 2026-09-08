@@ -1,8 +1,12 @@
 // Public API of @bim-open-toolkit/interact: camera state, navigation modes, input bindings and
 // camera animation. Pure except for `dom.ts`, and free of any renderer or DOM types elsewhere.
 
+// Vector arithmetic model does not carry: scalar and vector products.
+export { dot, cross } from './vec.js';
 // A unit vector at right angles to a direction, chosen the same way for a given input.
-export { perpendicularTo } from './camera.js';
+export { perpendicularTo } from './vec.js';
+// Blend two points along a straight line, and turn one direction toward another along the shorter arc.
+export { lerpVec3, unitSlerp } from './vec.js';
 // The camera's own orthonormal axes, safe for degenerate poses.
 export { cameraBasis, type CameraBasis } from './camera.js';
 // Tilt and distance limits for an orbiting camera, and a default that keeps it off both poles.
@@ -85,3 +89,21 @@ export { orbitMode, firstPersonMode, overheadMode, modeReducers } from './naviga
 export { setMode, constrainToMode } from './navigation.js';
 // Frame a box, keeping what the mode requires.
 export { fitState } from './navigation.js';
+
+// The curves an animation runs on, by name and as functions.
+export { type Ease, type EaseName, easings } from './animation.js';
+// A camera flight as plain data, and how long one lasts when nobody says.
+export { type CameraFlight, flyTo, defaultFlightMs } from './animation.js';
+// Step a flight on a clock the caller owns, and ask where it has got to.
+export { advanceFlight, flightFraction, isFlightDone, flightView } from './animation.js';
+// Blend a pose or a projection directly, for a caller composing its own animation.
+export { blendPose, blendProjection } from './animation.js';
+// Whether the user did something that should take the camera back from a flight.
+export { interrupts } from './animation.js';
+
+// Navigation and an optional flight together: the whole interactive state of one view.
+export { type NavSession, navSession, isFlying } from './session.js';
+// Start a flight to a view, or drop the one running and keep where it reached.
+export { startFlight, cancelFlight } from './session.js';
+// One step of the whole view, in milliseconds.
+export { stepSession } from './session.js';
