@@ -146,7 +146,7 @@ Plan: [FEATURE-DEMOS-PLAN.md](FEATURE-DEMOS-PLAN.md). User request: show by leve
 
 | Track | Model | Fence | State | Checkpoint |
 |---|---|---|---|---|
-| S3 opt-in roof and ceilings for the building generator | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S3.md` |
+| S3 opt-in roof and ceilings for the building generator | Opus | `viewer/packages/synthetic/**` | verified: `roof` and `ceilings` options on `BuildingOptions`, default off and default output byte-identical (150 objects pinned); `Roof` over the top storey, one `Ceiling` plate per storey; `buildingWithRoof` catalog entry (154 objects); 223 tests; commits `10f5867` `5c3914a`; supervisor re-ran tsc and tests | `viewer/packages/synthetic/docs/CHECKPOINT-S3.md` |
 | FD1 `show-by` demo | Opus | `demos/{src,test}/feature-demos/show-by/**`, `demos/feature-demos/show-by.html` | queued: V exports `createViewer`, FA commits sets | `viewer/packages/demos/docs/CHECKPOINT-FD1.md` |
 | FD2 `separate` demo | Opus | same pattern, `separate` | queued: FD1's condition plus FB layouts and clipping | `CHECKPOINT-FD2.md` |
 | FD3 `hud-fps`, `hud-minimap`, `hud-gumball` demos | Opus | same pattern, three ids | queued: V's frame hook or GPU timer, FB hud | `CHECKPOINT-FD3.md` |
