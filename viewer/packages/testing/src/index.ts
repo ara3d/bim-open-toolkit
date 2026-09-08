@@ -1,2 +1,2 @@
-// Public API of @bim-open-toolkit/testing. Wave 0 skeleton: exports land with the owning track.
-export {};
+// Public API of @bim-open-toolkit/testing. Columnar binding prototype (Track BIND); more lands with Track T.
+export * from './bindings/index.js';

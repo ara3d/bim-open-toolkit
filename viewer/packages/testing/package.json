@@ -24,6 +24,11 @@
   "dependencies": {
     "@bim-open-toolkit/model": "0.1.0",
     "@bim-open-toolkit/synthetic": "0.1.0",
-    "@bim-open-toolkit/render": "0.1.0"
+    "@bim-open-toolkit/render": "0.1.0",
+    "@ara3d/viewer-core": "0.1.0",
+    "@ara3d/viewer-loaders": "0.1.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.180.0"
   }
 }
