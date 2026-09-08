@@ -1,0 +1,71 @@
+/* The gallery's whole palette and type scale, in one place, so the Gratify theme bridge and the
+   DOM chrome read the same values (GALLERY-PLAN.md section 3).
+
+   Two rules hold here and nowhere else:
+   - Analytical colours are never tokens. Coverage states, change types, timeline states and heat
+     maps come from `workflows` and `features` with fixed values; switching theme or text size
+     changes chrome only.
+   - No external font. The browser gate has no network, so every family is one a machine already
+     has, with a stack that degrades rather than falls back to a default the design did not expect. */
+
+:root {
+  color-scheme: light;
+
+  --paper: #f4f1ea;
+  --panel: #fbfaf7;
+  --ink: #17181c;
+  --ink-muted: #6b6a66;
+  --rule: #d9d4c8;
+  --accent: #d1461f;
+  --link: #1f5bd1;
+  --viewport-clear: #1b1d22;
+
+  /* Derived, so a surface over the viewport does not need its own colour decision. */
+  --scrim: rgb(20 21 26 / 62%);
+  --on-dark: #ebe8e0;
+  --on-dark-muted: #a5a29a;
+
+  --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --body: system-ui, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
+  /* One multiplier drives the whole scale; big-text mode raises it and nothing is hidden. */
+  --text-scale: 1;
+  --size-small: calc(13px * var(--text-scale));
+  --size-body: calc(15px * var(--text-scale));
+  --size-lead: calc(18px * var(--text-scale));
+  --size-title: calc(24px * var(--text-scale));
+  --size-display: calc(34px * var(--text-scale));
+
+  --gap: 12px;
+  --gap-wide: 20px;
+  --radius: 3px;
+  --rail-width: 220px;
+  --inspector-width: 360px;
+  --bar-height: 48px;
+  --motion: 160ms;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #141519;
+  --panel: #1c1e24;
+  --ink: #ebe8e0;
+  --ink-muted: #9a978f;
+  --rule: #2c2f37;
+  --accent: #e8623a;
+  --link: #6b93ff;
+  --viewport-clear: #0e0f12;
+  --scrim: rgb(8 9 12 / 70%);
+}
+
+:root[data-text="big"] {
+  --text-scale: 1.25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion: 0ms;
+  }
+}

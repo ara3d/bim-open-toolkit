@@ -1,0 +1,80 @@
+/* The viewport: the dark stage the model is drawn on, and the things pinned over it. Everything
+   here is positioned against `.gallery-viewport`, which is the element `GalleryViewer` is given, so
+   a panel or a tag placed by projection needs no other reference frame. */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font: var(--size-body) / 1.55 var(--body);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+#gallery {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.gallery-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--viewport-clear);
+}
+
+.gallery-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  outline: none;
+}
+
+.gallery-canvas:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+
+/* A label pinned to a world point. The transform puts its anchor at the projected pixel; the
+   translate moves the box up and right of it so the leader line ends where the point is. */
+.gallery-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 4px 8px;
+  margin: -34px 0 0 14px;
+  font-size: var(--size-small);
+  color: var(--on-dark);
+  background: var(--scrim);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  pointer-events: none;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.gallery-tag::before {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  left: -14px;
+  width: 14px;
+  height: 14px;
+  border-bottom: 1px solid var(--accent);
+  border-left: 1px solid var(--accent);
+}
+
+.gallery-note {
+  margin: 0;
+  padding: var(--gap) var(--gap-wide);
+  font-family: var(--display);
+  font-size: var(--size-lead);
+  color: var(--accent);
+}

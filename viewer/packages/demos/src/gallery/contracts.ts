@@ -4,18 +4,21 @@
 // first, and over the viewer package's `createViewer` when that lands, without a demo changing.
 import type {
   AnyFeature,
+  Appearance,
   Bounds,
   Disposable,
   Geometry,
   ModelData,
   ModelRef,
+  ObjectKey,
+  ResolvedStyles,
   Result,
   Session,
   Vec2,
   Vec3,
 } from '@bim-open-toolkit/model';
 import type { LoadedModel } from '@bim-open-toolkit/formats';
-import type { CaptureOptions, ObjectHit } from '@bim-open-toolkit/render';
+import type { CaptureOptions, ObjectHit, SceneStatistics, UpdateReport } from '@bim-open-toolkit/render';
 import type { AnyHudPanel, PropertySheet } from '@bim-open-toolkit/ui-gratify';
 import type { DemoReport } from '../feature-demos/_shared/protocol.js';
 
@@ -52,6 +55,20 @@ export type DemoFixture = {
 // What one frame reports to listeners: when it was drawn and how long the previous one took.
 export type FrameInfo = { readonly time: number; readonly intervalMs: number };
 
+// A model the viewer has open, with the two pieces every style pass needs and neither the model
+// nor the render package produces: the object key of each object ordinal, which is the order
+// instance rows are addressed in, and the appearance each object was loaded with, without which
+// resolving styles paints the whole model grey.
+export type OpenedModel = {
+  // The handle the source was opened under; `applyStyles` and `bounds` take it.
+  readonly modelId: string;
+  readonly ref: ModelRef;
+  readonly data: ModelData;
+  readonly geometry: Geometry;
+  readonly keys: readonly ObjectKey[];
+  readonly base: ReadonlyMap<ObjectKey, Appearance>;
+};
+
 // The viewer a demo drives. It is a session (state changes only through commands) plus the few
 // live capabilities a demo needs that are not plain data.
 export type GalleryViewer = Session &
@@ -61,6 +78,12 @@ export type GalleryViewer = Session &
     readonly canvas: HTMLCanvasElement;
     readonly open: (source: ModelSource) => Promise<Result<ModelRef>>;
     readonly models: () => readonly ModelRef[];
+    // The open models with their derived pieces, in the order they were opened.
+    readonly opened: () => readonly OpenedModel[];
+    // Writes a whole style resolution into the instance buffers; only rows that differ are written.
+    readonly applyStyles: (modelId: string, resolved: ResolvedStyles) => Result<UpdateReport>;
+    // What the scene draws now: objects, groups, instances and triangles.
+    readonly statistics: () => SceneStatistics;
     readonly bounds: () => Bounds | undefined;
     readonly fit: () => void;
     readonly flyTo: (bounds: Bounds) => void;
