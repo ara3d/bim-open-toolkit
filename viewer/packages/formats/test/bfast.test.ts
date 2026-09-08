@@ -1,5 +1,15 @@
 import { parseBfastModel } from '@ara3d/viewer-loaders';
-import { instanceTransform, isInstanceVisible, meshAt, meshCount, noMesh } from '@bim-open-toolkit/model';
+import {
+  defaultMetallic,
+  defaultRoughness,
+  instanceMetallic,
+  instanceRoughness,
+  instanceTransform,
+  isInstanceVisible,
+  meshAt,
+  meshCount,
+  noMesh,
+} from '@bim-open-toolkit/model';
 import { describe, expect, it } from 'vitest';
 import {
   bfastCoordinates,
@@ -102,6 +112,31 @@ describe('readBfastModel', () => {
     expect(model.geometry.instances.visible).toBeUndefined();
     expect(isInstanceVisible(model.geometry.instances, 0)).toBe(true);
     expect(model.diagnostics.map((each) => each.code)).not.toContain(formatCode.hiddenInstances);
+  });
+
+  it('reads the roughness and metallic bytes of the flags word into columns', async () => {
+    const bytes = bfastModel({
+      meshes: [triangleMesh()],
+      instances: [
+        { mesh: 0, entity: 0 },
+        { mesh: 0, entity: 1, roughness: 51, metallic: 255 },
+      ],
+    });
+    const model = await readBfastModel(asBuffer(bytes));
+    const { instances } = model.geometry;
+    expect(instanceRoughness(instances, 0)).toBe(1);
+    expect(instanceRoughness(instances, 1)).toBeCloseTo(51 / 255, 6);
+    expect(instanceMetallic(instances, 0)).toBe(0);
+    expect(instanceMetallic(instances, 1)).toBe(1);
+    expect(validateLoadedModel(model)).toEqual([]);
+  });
+
+  it('carries no material column when every placement holds the default surface', async () => {
+    const { instances } = (await readBfastModel(sample())).geometry;
+    expect(instances.roughness).toBeUndefined();
+    expect(instances.metallic).toBeUndefined();
+    expect(instanceRoughness(instances, 1)).toBe(defaultRoughness);
+    expect(instanceMetallic(instances, 1)).toBe(defaultMetallic);
   });
 
   it('reports a file with no BOS tables rather than pretending it has names', async () => {

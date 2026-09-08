@@ -2,6 +2,8 @@ import { parseBfastModel, readBimTable, type BimData, type RenderModel } from '@
 import {
   boundsStride,
   colorStride,
+  defaultMetallic,
+  defaultRoughness,
   emptyBounds,
   identityMatrix,
   meshCount,
@@ -32,6 +34,10 @@ const meshSliceInts = 4;
 
 // Byte 1 of the flags word holds the instance flags; bit 0 of those means the instance is not drawn.
 const hiddenFlag = 0x1;
+
+// Bytes 2 and 3 of the flags word hold the placement's surface factors, 0 to 255 over 0 to 1.
+const roughnessShift = 16;
+const metallicShift = 24;
 
 // How much of the embedded BOS tables to decode. Names and categories cost one Parquet read each.
 export type MetadataLevel = 'none' | 'identity' | 'full';
@@ -169,6 +175,10 @@ export type BfastInstances = {
  * nothing has to be rebuilt. The `visible` column exists only when the file marks something hidden.
  * `firstDrawn` names the first row with geometry whether or not it is hidden, because hiding is a
  * state a host changes and the object's representation is not.
+ *
+ * The flags word also carries a roughness byte and a metallic byte per placement. Each becomes a
+ * column only when some row differs from the contract's default, since an absent column reads as that
+ * default: a file whose placements are all fully diffuse dielectrics allocates neither.
  */
 export function bfastInstances(
   model: RenderModel,
@@ -184,8 +194,11 @@ export function bfastInstances(
   const objectIndex = new Int32Array(count);
   const transform = new Float32Array(count * transformStride);
   const color = new Float32Array(count * colorStride);
-  // Allocated on the first hidden row, so a file that hides nothing carries no column at all.
+  // Each allocated on the first row that differs from the default, so a file saying nothing new
+  // carries no column at all and every row reads as the default.
   let visible: Uint8Array | undefined;
+  let roughness: Float32Array | undefined;
+  let metallic: Float32Array | undefined;
   const firstDrawn = new Int32Array(rows.entityOfRow.length).fill(-1);
   const meshes = meshCount(table);
 
@@ -210,11 +223,18 @@ export function bfastInstances(
     color[colorAt + 1] = ((packed >>> 8) & 0xff) / 255;
     color[colorAt + 2] = ((packed >>> 16) & 0xff) / 255;
     color[colorAt + 3] = ((packed >>> 24) & 0xff) / 255;
-    if ((((words[at + flagsWord] ?? 0) >>> 8) & hiddenFlag) !== 0) {
+    const flags = words[at + flagsWord] ?? 0;
+    if (((flags >>> 8) & hiddenFlag) !== 0) {
       visible ??= new Uint8Array(count).fill(1);
       visible[row] = 0;
       hidden += 1;
     }
+    const rough = ((flags >>> roughnessShift) & 0xff) / 255;
+    if (rough !== defaultRoughness) roughness ??= new Float32Array(count).fill(defaultRoughness);
+    if (roughness !== undefined) roughness[row] = rough;
+    const metal = ((flags >>> metallicShift) & 0xff) / 255;
+    if (metal !== defaultMetallic) metallic ??= new Float32Array(count).fill(defaultMetallic);
+    if (metallic !== undefined) metallic[row] = metal;
   }
   return {
     geometry: {
@@ -227,6 +247,8 @@ export function bfastInstances(
         color,
         objectIndex,
         ...(visible === undefined ? {} : { visible }),
+        ...(roughness === undefined ? {} : { roughness }),
+        ...(metallic === undefined ? {} : { metallic }),
       },
     },
     hidden,

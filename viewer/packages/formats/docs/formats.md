@@ -55,8 +55,10 @@ in a combined file, every original BOS Parquet table byte for byte.
   something hidden, and the count is reported as `formats/hidden-instances`. `ObjectRecord.representation`
   names the object's first placement with geometry whether or not it is hidden, because hiding is a
   state a host changes and the representation is not.
-- **Lost: per-instance roughness and metallic.** The file packs both into the flags word; the model
-  contract has no column for them.
+- **Roughness and metallic** are the two high bytes of the flags word, one value per placement, and
+  become the `roughness` and `metallic` instance columns. Each column exists only when some placement
+  differs from the contract's default, since an absent column reads as that default: fully diffuse
+  and not metal.
 - **Lost: hierarchy.** BOS records relations in a separate table this adapter does not read.
 - **Assumed: coordinates.** BFAST records neither units nor an up axis. The model is reported as Z up
   with unknown units, with a `formats/assumed-coordinates` note, because the models this path is for

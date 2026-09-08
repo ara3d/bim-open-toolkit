@@ -252,11 +252,25 @@ function checkMeshes(model: LoadedModel, report: Report): void {
 }
 
 function checkInstances(model: LoadedModel, report: Report): void {
-  const { count, meshIndex, transform, color, objectIndex, visible } = model.geometry.instances;
+  const { count, meshIndex, transform, color, objectIndex, visible, roughness, metallic } = model.geometry.instances;
   const meshes = geometryMeshCount(model.geometry);
   const objects = model.data.objects.length;
   if (visible !== undefined && visible.length !== count)
     report(`visible has ${visible.length} rows, not ${count}`, ['instances', 'visible']);
+  for (const [name, column] of [
+    ['roughness', roughness],
+    ['metallic', metallic],
+  ] as const) {
+    if (column === undefined) continue;
+    if (column.length !== count) report(`${name} has ${column.length} rows, not ${count}`, ['instances', name]);
+    for (let row = 0; row < column.length; row += 1) {
+      const value = column[row] ?? 0;
+      if (!Number.isFinite(value) || value < 0 || value > 1) {
+        report(`Instance ${row} has a ${name} factor outside zero to one`, ['instances', name, row]);
+        break;
+      }
+    }
+  }
   if (meshIndex.length !== count) report(`meshIndex has ${meshIndex.length} rows, not ${count}`, ['instances', 'meshIndex']);
   if (objectIndex.length !== count) report(`objectIndex has ${objectIndex.length} rows, not ${count}`, ['instances', 'objectIndex']);
   if (transform.length !== count * transformStride)

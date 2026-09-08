@@ -50,7 +50,11 @@ export type FixtureInstance = {
   /** RGBA, one byte per channel. Opaque white by default. */
   readonly color?: readonly [number, number, number, number];
   readonly hidden?: boolean;
-  /** Roughness and metallic, one byte each, as the converter packs them. */
+  /**
+   * Roughness and metallic, one byte each, as the converter packs them. The defaults are the bytes
+   * that mean the model contract's own defaults, 255 for fully diffuse and 0 for not metal, so an
+   * instance that says nothing about its surface produces no material column.
+   */
   readonly roughness?: number;
   readonly metallic?: number;
 };
@@ -108,7 +112,7 @@ export function bfastModel(spec: BfastModelSpec): Uint8Array {
     instanceWords[row * 16 + 13] = instance.entity;
     const [red, green, blue, alpha] = instance.color ?? [255, 255, 255, 255];
     instanceWords[row * 16 + 14] = (red | (green << 8) | (blue << 16) | (alpha << 24)) | 0;
-    const material = ((instance.roughness ?? 0) | ((instance.metallic ?? 0) << 8)) << 16;
+    const material = ((instance.roughness ?? 255) | ((instance.metallic ?? 0) << 8)) << 16;
     instanceWords[row * 16 + 15] = material | ((instance.hidden === true ? 1 : 0) << 8);
     instanceBounds.push(0, 0, 0, 1, 1, 1);
   });
