@@ -8,10 +8,12 @@
 //
 // One group per mesh: instances of the same mesh are drawn together, which is the arrangement the
 // instance table binds to. Rows with no geometry keep their place in the row mapping and are drawn
-// by nothing.
+// by nothing. The meshes are read from `Geometry.meshTable` when there is one and from `meshes`
+// otherwise, so a model whose loader carries only the columns - BFAST, the default format - builds
+// the same scene as one carrying records.
 
 import { InstancedGroup, ViewerScene, defaultMaterial, sceneBounds, type Bounds3, type MaterialConfig, type MeshBuffers } from '@ara3d/viewer-core';
-import { colorStride, noMesh, transformStride, type Geometry, type Mesh } from '@bim-open-toolkit/model';
+import { colorStride, meshAt, meshCount, noMesh, transformStride, type Geometry, type Mesh } from '@bim-open-toolkit/model';
 
 // A built scene, and every mapping needed to talk about it in terms of instance rows and objects.
 export type HeadlessScene = {
@@ -46,10 +48,26 @@ export const meshBuffersOf = (source: Mesh): MeshBuffers => ({
   ...(source.normals === undefined ? {} : { normals: source.normals }),
 });
 
-// The mesh a row draws, or undefined when the row draws nothing or names a mesh that is not there.
-const meshOfRow = (geometry: Geometry, row: number): number => {
+// Meshes the geometry holds, in whichever form it carries them. M1.2 lets a producer keep them as
+// the columnar `meshTable` and leave `meshes` empty, which is what the BFAST loader does; when both
+// are present they describe the same meshes and the table is the form read.
+const meshesInGeometry = (geometry: Geometry): number =>
+  geometry.meshTable === undefined ? geometry.meshes.length : meshCount(geometry.meshTable);
+
+// The mesh at an index, or undefined when the geometry holds none there. Reading the table builds a
+// `Mesh` of views per call, so this is called once per drawn mesh and never once per row.
+const meshInGeometry = (geometry: Geometry, index: number): Mesh | undefined => {
+  const table = geometry.meshTable;
+  if (table === undefined) return geometry.meshes[index];
+  if (index < 0 || index >= meshCount(table)) return undefined;
+  return meshAt(table, index);
+};
+
+// The mesh a row draws, or `noMesh` when the row draws nothing or names a mesh that is not there.
+// `meshes` is the count resolved once, so a per-row loop does not ask the geometry its form again.
+const meshOfRow = (geometry: Geometry, row: number, meshes: number): number => {
   const index = geometry.instances.meshIndex[row] ?? noMesh;
-  return index >= 0 && index < geometry.meshes.length ? index : noMesh;
+  return index >= 0 && index < meshes ? index : noMesh;
 };
 
 // Builds the groups and the scene. One pass counts the instances of each mesh, a second fills the
@@ -57,15 +75,16 @@ const meshOfRow = (geometry: Geometry, row: number): number => {
 export function headlessScene(geometry: Geometry, options: Partial<HeadlessSceneOptions> = {}): HeadlessScene {
   const materialOfMesh = options.materialOfMesh ?? ((): MaterialConfig => defaultMaterial);
   const rows = geometry.instances.count;
-  const perMesh = new Int32Array(geometry.meshes.length);
+  const meshes = meshesInGeometry(geometry);
+  const perMesh = new Int32Array(meshes);
   for (let row = 0; row < rows; row += 1) {
-    const index = meshOfRow(geometry, row);
+    const index = meshOfRow(geometry, row, meshes);
     if (index !== noMesh) perMesh[index] = (perMesh[index] ?? 0) + 1;
   }
 
   const drawnMeshes: number[] = [];
   for (let index = 0; index < perMesh.length; index += 1) if ((perMesh[index] ?? 0) > 0) drawnMeshes.push(index);
-  const groupOfMesh = new Int32Array(geometry.meshes.length).fill(-1);
+  const groupOfMesh = new Int32Array(meshes).fill(-1);
   drawnMeshes.forEach((meshIndex, ordinal) => { groupOfMesh[meshIndex] = ordinal; });
 
   const entryStartOfGroup = new Int32Array(drawnMeshes.length + 1);
@@ -82,7 +101,7 @@ export function headlessScene(geometry: Geometry, options: Partial<HeadlessScene
   const rowOfEntry = new Int32Array(drawnCount);
 
   for (let row = 0; row < rows; row += 1) {
-    const meshIndex = meshOfRow(geometry, row);
+    const meshIndex = meshOfRow(geometry, row, meshes);
     if (meshIndex === noMesh) continue;
     const ordinal = groupOfMesh[meshIndex] ?? -1;
     const target = transforms[ordinal];
@@ -98,22 +117,18 @@ export function headlessScene(geometry: Geometry, options: Partial<HeadlessScene
   }
 
   const scene = new ViewerScene();
+  let triangles = 0;
   const groups = drawnMeshes.map((meshIndex, ordinal) => {
-    const source = geometry.meshes[meshIndex];
+    const source = meshInGeometry(geometry, meshIndex);
     const transform = transforms[ordinal];
     const color = colors[ordinal];
     if (source === undefined || transform === undefined || color === undefined) throw new Error('mesh list changed while building the scene');
     const group = new InstancedGroup(meshBuffersOf(source), materialOfMesh(meshIndex), Math.max(1, perMesh[meshIndex] ?? 1));
     group.append(transform, color);
     scene.addGroup(group);
+    triangles += Math.floor(source.indices.length / 3) * (perMesh[meshIndex] ?? 0);
     return group;
   });
-
-  let triangles = 0;
-  for (const meshIndex of drawnMeshes) {
-    const source = geometry.meshes[meshIndex];
-    if (source !== undefined) triangles += Math.floor(source.indices.length / 3) * (perMesh[meshIndex] ?? 0);
-  }
 
   return {
     scene,

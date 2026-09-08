@@ -4,6 +4,7 @@ import {
   identityMatrix,
   instanceRecords,
   mesh,
+  meshTableFrom,
   noMesh,
   transformStride,
   type Geometry,
@@ -98,6 +99,46 @@ describe('building a scene from geometry', () => {
       instances: instanceRecords([{ meshIndex: 7, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: 0 }]),
     };
     expect(headlessScene(stray).drawnCount).toBe(0);
+  });
+});
+
+describe('a geometry that carries its meshes only as a table', () => {
+  // What the BFAST loader produces: `meshTable` holds every mesh and `meshes` is empty.
+  const tabled: Geometry = {
+    instances: twoBoxes.instances,
+    meshes: [],
+    meshTable: meshTableFrom(twoBoxes.meshes),
+  };
+  const built = headlessScene(twoBoxes);
+  const fromTable = headlessScene(tabled);
+
+  it('builds the same scene as the same meshes as records', () => {
+    expect(fromTable.groups.length).toBe(built.groups.length);
+    expect(fromTable.meshIndexOfGroup).toEqual(built.meshIndexOfGroup);
+    expect(fromTable.drawnCount).toBe(built.drawnCount);
+    expect(fromTable.triangleCount).toBe(built.triangleCount);
+    expect(Array.from(fromTable.groupOfRow)).toEqual(Array.from(built.groupOfRow));
+    expect(Array.from(fromTable.indexInGroup)).toEqual(Array.from(built.indexInGroup));
+    expect(Array.from(fromTable.rowOfEntry)).toEqual(Array.from(built.rowOfEntry));
+    expect(boundsOfScene(fromTable)).toEqual(boundsOfScene(built));
+  });
+
+  it('gives each group the same mesh buffers and the same instance columns', () => {
+    const source = built.groups[0];
+    const copy = fromTable.groups[0];
+    if (source === undefined || copy === undefined) throw new Error('one of the scenes built no group');
+    expect(Array.from(copy.mesh.positions)).toEqual(Array.from(source.mesh.positions));
+    expect(Array.from(copy.mesh.indices ?? [])).toEqual(Array.from(source.mesh.indices ?? []));
+    expect(Array.from(transformInScene(fromTable, 2))).toEqual(Array.from(transformInScene(built, 2)));
+    expect(Array.from(colorInScene(fromTable, 0))).toEqual(Array.from(colorInScene(built, 0)));
+  });
+
+  it('draws nothing when the table it carries is empty, and does not throw', () => {
+    const empty = headlessScene({ meshes: [], instances: twoBoxes.instances, meshTable: meshTableFrom([]) });
+    expect(empty.groups).toEqual([]);
+    expect(empty.drawnCount).toBe(0);
+    expect(empty.triangleCount).toBe(0);
+    expect(boundsOfScene(empty)).toBeNull();
   });
 });
 
