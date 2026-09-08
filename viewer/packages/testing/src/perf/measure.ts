@@ -32,8 +32,16 @@ export interface MeasureOptions {
   readonly warmups: number;
 }
 
-/** At least five timed repetitions, as the measurement protocol requires. */
-export const defaultMeasureOptions: MeasureOptions = { repetitions: 7, warmups: 2 };
+/**
+ * Well above the five timed repetitions the measurement protocol requires.
+ *
+ * Seven was tried first and was not enough: on a busy machine the medians of two
+ * cases a few hundred microseconds apart swapped places between runs, so a test
+ * asserting the relationship between them failed at random. Twenty-five costs
+ * milliseconds and made those medians stable. Cases whose body takes tens of
+ * milliseconds pass their own smaller count.
+ */
+export const defaultMeasureOptions: MeasureOptions = { repetitions: 25, warmups: 5 };
 
 const nowMs = (): number => performance.now();
 

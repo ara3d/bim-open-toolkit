@@ -181,6 +181,81 @@ export function writeRows(
   return written;
 }
 
+/**
+ * The same write as `writeRows` without change detection, but each row is
+ * copied with `TypedArray.set` instead of an element loop.
+ *
+ * `writeRows` has to look at every float to decide whether it changed, so it
+ * loops. When no detection is wanted the copy can be one call, which for a wide
+ * attribute like a 16-float transform is a different order of work. Kept
+ * separate from `writeRows` so the two can be measured against each other.
+ */
+export function copyRows(
+  columns: InstanceColumns,
+  attribute: InstanceAttribute,
+  rows: Int32Array,
+  values: Float32Array,
+  dirty: DirtyRanges | null,
+): number {
+  const stride = attributeStride(attribute);
+  const broadcast = values.length === stride;
+  if (!broadcast && values.length !== rows.length * stride)
+    throw new Error(`values length ${values.length} is neither ${stride} nor ${rows.length * stride}`);
+  const buffers = attribute === 'color' ? columns.colors : columns.transforms;
+  for (let k = 0; k < rows.length; k++) {
+    const row = rows[k] ?? 0;
+    const group = columns.groupOf[row] ?? 0;
+    const buffer = buffers[group];
+    const slot = columns.indexInGroup[row] ?? 0;
+    if (!buffer) throw new Error(`row ${row} has no group buffer`);
+    buffer.set(broadcast ? values : values.subarray(k * stride, (k + 1) * stride), slot * stride);
+    if (dirty) dirty.mark(group, slot);
+  }
+  return rows.length;
+}
+
+/** Floats per translation. */
+export const TRANSLATION_FLOATS = 3;
+/** Offset of the translation inside a column-major 4x4 transform. */
+export const TRANSLATION_OFFSET = 12;
+
+/**
+ * Writes only the translation of the listed rows' transforms, leaving the
+ * rotation and scale alone. `values` is either three floats broadcast to every
+ * row or three per row. Moving objects is the common transform edit, and it
+ * touches 3 of the 16 floats.
+ */
+export function writeTranslations(
+  columns: InstanceColumns,
+  rows: Int32Array,
+  values: Float32Array,
+  dirty: DirtyRanges | null,
+  detectChanges: boolean,
+): number {
+  const broadcast = values.length === TRANSLATION_FLOATS;
+  if (!broadcast && values.length !== rows.length * TRANSLATION_FLOATS)
+    throw new Error(`values length ${values.length} is neither 3 nor ${rows.length * TRANSLATION_FLOATS}`);
+  const step = broadcast ? 0 : TRANSLATION_FLOATS;
+  let written = 0;
+  for (let k = 0; k < rows.length; k++) {
+    const row = rows[k] ?? 0;
+    const group = columns.groupOf[row] ?? 0;
+    const buffer = columns.transforms[group];
+    const slot = columns.indexInGroup[row] ?? 0;
+    if (!buffer) throw new Error(`row ${row} has no group buffer`);
+    const target = slot * TRANSFORM_FLOATS + TRANSLATION_OFFSET;
+    const source = k * step;
+    const x = values[source] ?? 0, y = values[source + 1] ?? 0, z = values[source + 2] ?? 0;
+    if (detectChanges && buffer[target] === x && buffer[target + 1] === y && buffer[target + 2] === z) continue;
+    buffer[target] = x;
+    buffer[target + 1] = y;
+    buffer[target + 2] = z;
+    if (dirty) dirty.mark(group, slot);
+    written++;
+  }
+  return written;
+}
+
 /** Sets one channel of an attribute for the listed rows. Used for visibility through alpha. */
 export function writeChannel(
   columns: InstanceColumns,
