@@ -6,6 +6,7 @@ import {
   isGeometryFree,
   isNumericColumn,
   noMesh,
+  type ObjectRecord,
   type Table,
 } from '@bim-open-toolkit/model';
 import { defaultBuildingOptions, generateBuilding, type Building, type BuildingOptions } from '../src/building.js';
@@ -35,8 +36,17 @@ function booleans(source: Table, name: string): readonly boolean[] {
 const withOptions = (overrides: Partial<BuildingOptions>): BuildingOptions => ({ ...defaultBuildingOptions, ...overrides });
 
 // The object records of one category.
-const ofCategory = (building: Building, category: string): readonly { readonly ref: { readonly objectId: string } }[] =>
+const ofCategory = (building: Building, category: string): readonly ObjectRecord[] =>
   building.model.objects.filter((record) => record.category === category);
+
+// The centre on z of a placed object, and the height of a box placed by a scaled unit cube. The
+// transform is column-major, so the translation is at 12 to 14 and the z scale at 10.
+const centreZ = (record: ObjectRecord): number => record.transform[14];
+const heightZ = (record: ObjectRecord): number => record.transform[10];
+
+// The underside and the top of a box placed by a scaled unit cube.
+const undersideZ = (record: ObjectRecord): number => centreZ(record) - heightZ(record) / 2;
+const topZ = (record: ObjectRecord): number => centreZ(record) + heightZ(record) / 2;
 
 describe('generateBuilding options', () => {
   it('rejects options that cannot produce a building', () => {
@@ -330,6 +340,120 @@ describe('generateBuilding room schedule', () => {
     const counts = numbers(building.roomSchedule, 'doorCount');
     expect(counts.reduce((total, count) => total + count, 0)).toBe(building.doorSchedule.rowCount);
     for (const count of counts) expect([1, 2]).toContain(count);
+  });
+});
+
+describe('generateBuilding roof and ceilings', () => {
+  const options = withOptions({ seed: 11, storeys: 4, roomsPerStorey: 9 });
+  const plain = generateBuilding(options);
+  const covered = generateBuilding({ ...options, roof: true, ceilings: true });
+
+  // The one object with the given id, refusing anything else so a renamed object fails loudly.
+  function objectById(building: Building, objectId: string): ObjectRecord {
+    const found = building.model.objects.find((record) => record.ref.objectId === objectId);
+    if (found === undefined) throw new Error(`no object named ${objectId}`);
+    return found;
+  }
+
+  // The storey number in an object id of the form `door-3-2-1`.
+  function storeyOf(objectId: string): string {
+    const [, storey] = objectId.split('-');
+    if (storey === undefined) throw new Error(`no storey number in ${objectId}`);
+    return storey;
+  }
+
+  it('generates neither unless they are asked for', () => {
+    expect(ofCategory(plain, 'Roof')).toEqual([]);
+    expect(ofCategory(plain, 'Ceiling')).toEqual([]);
+  });
+
+  it('gives an options record written before they existed the building it always gave', () => {
+    const before = generateBuilding({ seed: 1, storeys: 3, roomsPerStorey: 8, doorWidthPolicy: 'mixed', storeyHeight: 3.6, gapScale: 1 });
+    const now = generateBuilding(defaultBuildingOptions);
+    expect(before.model).toEqual(now.model);
+    expect(before.geometry).toEqual(now.geometry);
+    expect(before.doorSchedule).toEqual(now.doorSchedule);
+    expect(before.roomSchedule).toEqual(now.roomSchedule);
+    // The count the fixture snapshot records, and what other packages build on.
+    expect(now.model.objects.length).toBe(150);
+  });
+
+  it('adds them to the building it would otherwise have generated, changing nothing else', () => {
+    expect(covered.model.objects.length).toBe(plain.model.objects.length + 1 + options.storeys);
+    expect(covered.model.objects.slice(0, plain.model.objects.length)).toEqual(plain.model.objects);
+    expect(covered.facts).toEqual(plain.facts);
+    expect(covered.doorSchedule).toEqual(plain.doorSchedule);
+    expect(covered.roomSchedule).toEqual(plain.roomSchedule);
+  });
+
+  it('names their mesh groups without moving the ones that were there', () => {
+    const names = covered.meshGroups.map((group) => group.name);
+    expect(names.slice(0, plain.meshGroups.length)).toEqual(plain.meshGroups.map((group) => group.name));
+    expect(names.slice(plain.meshGroups.length)).toEqual(['roof-slab', 'ceiling-panel']);
+  });
+
+  it('adds each of them on its own', () => {
+    const roofOnly = generateBuilding({ ...options, roof: true });
+    expect(ofCategory(roofOnly, 'Roof').length).toBe(1);
+    expect(ofCategory(roofOnly, 'Ceiling')).toEqual([]);
+    const ceilingsOnly = generateBuilding({ ...options, ceilings: true });
+    expect(ofCategory(ceilingsOnly, 'Roof')).toEqual([]);
+    expect(ofCategory(ceilingsOnly, 'Ceiling').length).toBe(options.storeys);
+    expect(ceilingsOnly.meshGroups.map((group) => group.name)).toContain('ceiling-panel');
+  });
+
+  it('puts one roof on the top storey, over the whole plan', () => {
+    const roof = objectById(covered, 'roof');
+    const slab = objectById(covered, 'slab-1');
+    expect(ofCategory(covered, 'Roof').length).toBe(1);
+    expect(roof.category).toBe('Roof');
+    expect(roof.parentId).toBe('storey-4');
+    expect(heightZ(roof)).toBeCloseTo(0.25, 6);
+    // It takes the place the floor slab of a fifth storey would have occupied.
+    expect(undersideZ(roof)).toBeCloseTo(4 * 3.6 - 0.25, 6);
+    expect(roof.transform[0]).toBeCloseTo(slab.transform[0], 6);
+    expect(roof.transform[5]).toBeCloseTo(slab.transform[5], 6);
+  });
+
+  it('sits the roof above every wall of the top storey', () => {
+    const roof = objectById(covered, 'roof');
+    const topWalls = ofCategory(covered, 'Wall').filter((record) => record.parentId === 'storey-4');
+    expect(topWalls.length).toBeGreaterThan(0);
+    for (const wall of ofCategory(covered, 'Wall')) {
+      expect(undersideZ(roof)).toBeGreaterThanOrEqual(topZ(wall) - 1e-9);
+    }
+  });
+
+  it('hangs one ceiling per storey against the underside of what is above it', () => {
+    const ceilings = ofCategory(covered, 'Ceiling');
+    expect(ceilings.length).toBe(options.storeys);
+    ceilings.forEach((ceiling, index) => {
+      expect(ceiling.ref.objectId).toBe(`ceiling-${index + 1}`);
+      expect(ceiling.parentId).toBe(`storey-${index + 1}`);
+      expect(heightZ(ceiling)).toBeCloseTo(0.03, 6);
+      const above = index + 2 <= options.storeys ? objectById(covered, `slab-${index + 2}`) : objectById(covered, 'roof');
+      expect(topZ(ceiling)).toBeCloseTo(undersideZ(above), 6);
+    });
+  });
+
+  it('insets the ceilings from the exterior walls so they read as suspended', () => {
+    const slab = objectById(covered, 'slab-1');
+    for (const ceiling of ofCategory(covered, 'Ceiling')) {
+      expect(ceiling.transform[0]).toBeLessThan(slab.transform[0]);
+      expect(ceiling.transform[5]).toBeLessThan(slab.transform[5]);
+      expect(ceiling.transform[12]).toBeCloseTo(slab.transform[12], 6);
+      expect(ceiling.transform[13]).toBeCloseTo(slab.transform[13], 6);
+    }
+  });
+
+  it('keeps every ceiling above the doors of its own storey', () => {
+    const doors = ofCategory(covered, 'Door');
+    expect(doors.length).toBeGreaterThan(0);
+    for (const door of doors) {
+      const ceiling = objectById(covered, `ceiling-${storeyOf(door.ref.objectId)}`);
+      // A door leaf is its own mesh at true size, so its 2.1 m height is in the mesh, not the transform.
+      expect(undersideZ(ceiling)).toBeGreaterThan(centreZ(door) + 2.1 / 2);
+    }
   });
 });
 

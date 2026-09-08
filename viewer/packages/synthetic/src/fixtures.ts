@@ -1,8 +1,9 @@
-// The catalog: every generator's default fixture, by name.
+// The catalog: every generator's default fixture, by name, plus the few named variants a demo asks
+// for by name rather than by options.
 //
 // A demo, a browser spec and a snapshot test all want the same thing - "give me the standard
 // services fixture" - without repeating which options are the standard ones. The catalog is that
-// one place. Every entry is a function, so asking for one fixture never builds the other eleven.
+// one place. Every entry is a function, so asking for one fixture never builds the others.
 //
 // `summaryOf` reduces any fixture to the same shape: how many objects it draws, what its mesh
 // library is, how many facts it records and which tables it publishes. That is what a gallery lists
@@ -10,7 +11,7 @@
 
 import type { Fact, ModelData, Table } from '@bim-open-toolkit/model';
 import { defaultAssetOptions, generateAssets } from './assets.js';
-import { defaultBuildingOptions, generateBuilding } from './building.js';
+import { defaultBuildingOptions, generateBuilding, type Building } from './building.js';
 import { defaultCarbonOptions, generateCarbon } from './carbon.js';
 import { defaultCityOptions, generateCity } from './city.js';
 import { defaultClearanceOptions, generateClearances } from './clearances.js';
@@ -29,6 +30,7 @@ import { defaultStressOptions, generateStressScene } from './stress.js';
 export const fixtures = {
   assets: () => generateAssets(defaultAssetOptions),
   building: () => generateBuilding(defaultBuildingOptions),
+  buildingWithRoof: () => generateBuilding({ ...defaultBuildingOptions, roof: true, ceilings: true }),
   carbon: () => generateCarbon(defaultCarbonOptions),
   city: () => generateCity(defaultCityOptions),
   clearances: () => generateClearances(defaultClearanceOptions),
@@ -52,6 +54,7 @@ export type Fixture = ReturnType<(typeof fixtures)[FixtureName]>;
 export const fixtureNames: readonly FixtureName[] = [
   'assets',
   'building',
+  'buildingWithRoof',
   'carbon',
   'city',
   'clearances',
@@ -109,6 +112,18 @@ const summary = (name: FixtureName, parts: SummaryParts): FixtureSummary => ({
   extras: parts.extras ?? {},
 });
 
+// A building's summary. Every building variant publishes the same two schedules.
+const buildingSummary = (name: FixtureName, built: Building): FixtureSummary =>
+  summary(name, {
+    model: built.model,
+    meshGroups: built.meshGroups,
+    facts: built.facts,
+    tables: [
+      ['roomSchedule', built.roomSchedule],
+      ['doorSchedule', built.doorSchedule],
+    ],
+  });
+
 // How each fixture describes itself. One entry per generator, so adding a generator is one entry
 // here and nothing anywhere else.
 const summaries: { readonly [K in FixtureName]: () => FixtureSummary } = {
@@ -126,18 +141,8 @@ const summaries: { readonly [K in FixtureName]: () => FixtureSummary } = {
       ],
     });
   },
-  building: () => {
-    const built = fixtures.building();
-    return summary('building', {
-      model: built.model,
-      meshGroups: built.meshGroups,
-      facts: built.facts,
-      tables: [
-        ['roomSchedule', built.roomSchedule],
-        ['doorSchedule', built.doorSchedule],
-      ],
-    });
-  },
+  building: () => buildingSummary('building', fixtures.building()),
+  buildingWithRoof: () => buildingSummary('buildingWithRoof', fixtures.buildingWithRoof()),
   carbon: () => {
     const built = fixtures.carbon();
     return summary('carbon', {

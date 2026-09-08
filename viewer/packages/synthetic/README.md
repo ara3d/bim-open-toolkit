@@ -6,7 +6,7 @@ them by name.
 
 | Generator | Produces | Read by |
 |---|---|---|
-| `building` | Storeys, rooms, walls, slabs, doors, windows, and their schedules | Door schedule, fire-rating review, level navigation |
+| `building` | Storeys, rooms, walls, slabs, doors, windows, an optional roof and ceilings, and their schedules | Door schedule, fire-rating review, level navigation, hiding the roof to see inside |
 | `services` | Pipe runs, valves, equipment, and connections nobody verified | Valve isolation trace |
 | `revisions` | Two snapshots of one building with correspondence proposals | Revision comparison, linked views |
 | `schedule` | Delivery, acceptance and installation events with dates and gaps | Delivery timeline, animation |
@@ -116,6 +116,9 @@ handful of corners.
 import { generateBuilding, defaultBuildingOptions } from '@bim-open-toolkit/synthetic';
 
 const building = generateBuilding({ ...defaultBuildingOptions, seed: 7, storeys: 10, roomsPerStorey: 24 });
+
+// A closed building, for a demo that hides the roof and the ceilings to see inside.
+const closed = generateBuilding({ ...defaultBuildingOptions, roof: true, ceilings: true });
 ```
 
 | Option | Meaning |
@@ -126,14 +129,16 @@ const building = generateBuilding({ ...defaultBuildingOptions, seed: 7, storeys:
 | `doorWidthPolicy` | `nominal-only`, `nominal-and-clear` or `mixed`; see below. |
 | `storeyHeight` | Metres. Storey elevation is the top of its slab. |
 | `gapScale` | Multiplies every rate at which a value is missing or disputed. `0` gives a complete building; `1` gives the rates below. |
+| `roof` | Optional, off by default. One `Roof` slab over the top storey. |
+| `ceilings` | Optional, off by default. One `Ceiling` plate per storey. |
 
 The frame is metres, z up, local — the model package's `metresZUpLocal`.
 
 ### What it produces
 
 - `model`: a `ModelData` of `ObjectRecord`s with categories `Storey`, `Slab`, `Wall`, `Room`,
-  `Door` and `Window`. Rooms are parented to their storey, doors to their room, everything else to
-  its storey.
+  `Door` and `Window`, and `Roof` and `Ceiling` when they are asked for. Rooms are parented to their
+  storey, doors to their room, everything else to its storey.
 - `geometry`: a `Geometry` — a small mesh library plus one columnar instance row per object, in the
   same order as `model.objects`, so `objectIndex` is the row itself. Storeys and rooms are
   geometry-free (`meshIndex` is `noMesh`): a room is a place, not a thing to draw.
@@ -148,6 +153,21 @@ Each room gets one door, and a quarter of rooms get a second one in the adjacent
 exterior wall segments get a window. Wall segments are shared between neighbouring rooms, because
 they sit on the plan grid rather than around each room, and the same grid repeats on every storey so
 the walls stack.
+
+### The roof and the ceilings
+
+A viewer that shows the inside of a building has to take something off it first. `roof: true` adds
+one `Roof`, `ceilings: true` adds one `Ceiling` per storey, and a demo hides those two categories.
+
+| Element | Where it is |
+|---|---|
+| `Roof`, object id `roof`, parented to the top storey | The plan extent by `slabThickness` (0.25 m), in the place the floor slab of one more storey would have occupied, so it rests on the top storey's walls. |
+| `Ceiling`, object ids `ceiling-1` up, each parented to its storey | A 0.03 m plate against the underside of the slab above, or of the roof on the top storey, inset by half the exterior wall thickness on each side so it stops at the inner wall face rather than at the plan extent. It clears the 2.1 m doors below it. |
+
+Both are off unless asked for, and both are emitted after everything else and draw no random
+numbers, so a building that asks for them is byte-identical to the one that does not, plus these
+objects. Each gets its own mesh group, `roof-slab` and `ceiling-panel`, appended after the window
+meshes, so the mesh indices of a building without them never move.
 
 ### Door schedule columns
 
@@ -499,8 +519,10 @@ const services = fixture('services');
 const rows = summaryOf('city').tables;
 ```
 
-`fixtures` holds one function per generator, so asking for one fixture never builds the other
-eleven. `fixture(name)` builds one; `fixtureNames` lists them in the order a gallery shows them.
+`fixtures` holds one function per generator, so asking for one fixture never builds the others.
+`fixture(name)` builds one; `fixtureNames` lists them in the order a gallery shows them. A generator
+may have more than one entry where a demo wants a variant by name: `buildingWithRoof` is the default
+building with `roof` and `ceilings` on, which is what a demo opens to remove them.
 
 `summaryOf(name)` reduces any fixture to the same shape — objects drawn, mesh library, facts
 recorded, tables published, and a few generator-specific numbers — which is what a gallery lists and

@@ -1,5 +1,6 @@
-// A seeded building generator: storeys, rooms, walls, slabs, doors and windows, with the facts a
-// room and door schedule reads and the gaps such a schedule has to show.
+// A seeded building generator: storeys, rooms, walls, slabs, doors and windows, optionally a roof
+// and a suspended ceiling per storey, with the facts a room and door schedule reads and the gaps
+// such a schedule has to show.
 //
 // The gaps are the point. A generator that produced a complete, consistent schedule would prove
 // nothing, because the workflow this data exists for is exception review. So a documented share of
@@ -59,7 +60,10 @@ import { quantityColumns, textColumns, type NamedColumn } from './schedule.js';
 // How much is recorded about the clear width of a door. Nominal width is always attempted.
 export type DoorWidthPolicy = 'nominal-only' | 'nominal-and-clear' | 'mixed';
 
-// What to generate. Every field is required, so the output is a function of this record alone.
+// What to generate. The output is a function of this record alone: every field that shapes the
+// building is required, and the two elements a viewer hides to see inside - the roof and the
+// ceilings - are optional and off unless asked for, so an options record written before they
+// existed still gives the building it always gave.
 // `gapScale` multiplies every rate at which a value is missing or disputed: 0 gives a complete
 // building, 1 gives the documented rates, and above 1 the gaps grow until nothing is known.
 export type BuildingOptions = {
@@ -69,9 +73,12 @@ export type BuildingOptions = {
   readonly doorWidthPolicy: DoorWidthPolicy;
   readonly storeyHeight: number;
   readonly gapScale: number;
+  readonly roof?: boolean;
+  readonly ceilings?: boolean;
 };
 
-// A small, plausible building: three storeys of eight rooms with a mixed width policy.
+// A small, plausible building: three storeys of eight rooms with a mixed width policy, seen from
+// above with nothing in the way.
 export const defaultBuildingOptions: BuildingOptions = {
   seed: 1,
   storeys: 3,
@@ -79,6 +86,8 @@ export const defaultBuildingOptions: BuildingOptions = {
   doorWidthPolicy: 'mixed',
   storeyHeight: 3.6,
   gapScale: 1,
+  roof: false,
+  ceilings: false,
 };
 
 // How complete the door schedule is, field by field. The counts sum to the number of doors.
@@ -110,10 +119,12 @@ function checkOptions(options: BuildingOptions): void {
   if (!(options.gapScale >= 0) || !Number.isFinite(options.gapScale)) throw new Error(`gapScale must be a finite number of at least 0, got ${options.gapScale}`);
 }
 
-// The thickness of a slab, and of an interior and an exterior wall, in metres.
+// The thickness of a slab, of an interior and an exterior wall, and of a suspended ceiling plate,
+// in metres.
 const slabThickness = 0.25;
 const interiorWallThickness = 0.12;
 const exteriorWallThickness = 0.25;
+const ceilingThickness = 0.03;
 
 // Door leaf height and thickness, and window sill height, in metres.
 const doorHeight = 2.1;
@@ -160,6 +171,10 @@ const slabAppearance: Appearance = { color: [0.62, 0.62, 0.64], opacity: 1, visi
 const doorAppearance: Appearance = { color: [0.55, 0.38, 0.22], opacity: 1, visible: true };
 const windowAppearance: Appearance = { color: [0.55, 0.72, 0.85], opacity: 0.35, visible: true };
 const spaceAppearance: Appearance = { color: [0.35, 0.55, 0.75], opacity: 0.25, visible: true };
+// The roof and the ceilings are the two things a viewer hides to see inside, so neither shares a
+// colour with the slabs they sit on top of.
+const roofAppearance: Appearance = { color: [0.42, 0.3, 0.26], opacity: 1, visible: true };
+const ceilingAppearance: Appearance = { color: [0.93, 0.93, 0.9], opacity: 1, visible: true };
 
 // One wall segment of a storey's grid.
 type WallSegment = {
@@ -318,22 +333,33 @@ export function generateBuilding(options: BuildingOptions): Building {
   const ref: ModelRef = { id: 'synthetic-building', revision: `seed-${options.seed}`, source: 'generated' };
   const idOf = (objectId: string): ObjectRef => objectRef(ref, objectId);
 
+  // The roof and the ceilings are scaled unit cubes like the walls and the slabs, but each keeps
+  // its own mesh group so a gallery names what it is looking at. Both are appended last and only
+  // when asked for, so the mesh indices of a building without them never move.
+  const wantRoof = options.roof ?? false;
+  const wantCeilings = options.ceilings ?? false;
   const meshes: readonly ShadedMesh[] = [
     box([1, 1, 1]),
     box([1, 1, 1]),
     ...doorLeafWidths.map((width) => box([width / 1000, doorThickness, doorHeight])),
     ...windowSizes.map(([width, height]) => box([width, doorThickness, height])),
+    ...(wantRoof ? [box([1, 1, 1])] : []),
+    ...(wantCeilings ? [box([1, 1, 1])] : []),
   ];
   const meshNames: readonly string[] = [
     'wall-panel',
     'floor-slab',
     ...doorLeafWidths.map((width) => `door-${width}`),
     ...windowSizes.map(([width, height]) => `window-${width}x${height}`),
+    ...(wantRoof ? ['roof-slab'] : []),
+    ...(wantCeilings ? ['ceiling-panel'] : []),
   ];
   const wallMesh = 0;
   const slabMesh = 1;
   const firstDoorMesh = 2;
   const firstWindowMesh = firstDoorMesh + doorLeafWidths.length;
+  const roofMesh = firstWindowMesh + windowSizes.length;
+  const ceilingMesh = roofMesh + (wantRoof ? 1 : 0);
 
   const grid = drawGrid(cursor, options.roomsPerStorey);
   const wallHeight = options.storeyHeight - slabThickness;
@@ -510,6 +536,46 @@ export function generateBuilding(options: BuildingOptions): Building {
         windowAppearance,
       );
     });
+  }
+
+  // The roof and the ceilings are emitted after everything else and draw no random numbers, so a
+  // building that asks for them is the building without them plus these objects, unchanged.
+  if (wantRoof) {
+    // The roof takes the place the floor slab of a storey above would occupy.
+    const roofCentreZ = options.storeys * options.storeyHeight - slabThickness / 2;
+    emit(
+      {
+        objectId: 'roof',
+        name: 'Roof',
+        category: 'Roof',
+        parentId: `storey-${options.storeys}`,
+        transform: placeScaled([extentX / 2, extentY / 2, roofCentreZ], [extentX, extentY, slabThickness]),
+      },
+      roofMesh,
+      roofAppearance,
+    );
+  }
+
+  if (wantCeilings) {
+    for (let storey = 0; storey < options.storeys; storey++) {
+      // A suspended ceiling hangs against the underside of the slab, or of the roof on the top
+      // storey, and stops at the inner face of the exterior walls rather than at the plan extent.
+      const underside = storey * options.storeyHeight + wallHeight;
+      emit(
+        {
+          objectId: `ceiling-${storey + 1}`,
+          name: `Ceiling Level ${storey + 1}`,
+          category: 'Ceiling',
+          parentId: `storey-${storey + 1}`,
+          transform: placeScaled(
+            [extentX / 2, extentY / 2, underside - ceilingThickness / 2],
+            [extentX - exteriorWallThickness, extentY - exteriorWallThickness, ceilingThickness],
+          ),
+        },
+        ceilingMesh,
+        ceilingAppearance,
+      );
+    }
   }
 
   const instances = instanceRecords(rows);
