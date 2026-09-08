@@ -38,6 +38,8 @@ Every page: the viewport fills the page, DOM controls in a strip, a status line,
 - FD3: V exports `createViewer` and its frame hook or GPU timer; FB's hud chunk committed.
 - The supervisor writes `_shared/page.ts` (the page frame over `createViewer`) as soon as V's contract is readable, before FD1 launches.
 
+The gallery wave (third session, GALLERY-PLAN.md: UG, GAL, D1 to D4, ports 5190 to 5194) imports `_shared/protocol.ts` read-only so every browser smoke shares one page protocol; its exported names (`DemoReport`, `DemoWindow`, `demoReadyExpression`, `demoReportExpression`) are therefore a contract and any rename is announced here first. The FD pages may later register with the gallery through `demos/src/gallery/contracts.ts`.
+
 Ports: FD1 5181, FD2 5182, FD3 5183 (5176 slice, 5177 ambient occlusion, 5175 fixture server, 5173 alpha, 5174 MCP are taken). One browser process per track. Screenshots go to `viewer/artifacts/feature-demos/`.
 
 ## 4. Gates and rules
