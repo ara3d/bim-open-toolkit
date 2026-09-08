@@ -12,6 +12,7 @@ import {
 } from '../src/clipping.js';
 import { levelsOf } from '../src/navigation-aids.js';
 import { building } from './navigation-aids-fixture.js';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { fakeSession } from './support/fake-session.js';
 
 const session = () => fakeSession(clippingCommands);
@@ -171,5 +172,26 @@ describe('the feature', () => {
       'clipping.sectionAt',
       'clipping.clear',
     ]);
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = () => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((item) => item.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([clippingFeature]);
+  if (!done.ok) throw new Error(done.diagnostics.map((item) => item.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs, sections, and leaves the slice in the document', () => {
+    const { session: live, host } = installed();
+    expect(live.dispatch('clipping.setBox', { min: [0, 0, 0], max: [1, 1, 1] }).ok).toBe(true);
+    expect(live.read(clippingSlice).enabled).toBe(true);
+    expect([...live.sliceRegistry().keys()]).toContain('clipping');
+    host.dispose();
+    expect([...live.sliceRegistry().keys()]).not.toContain('clipping');
   });
 });

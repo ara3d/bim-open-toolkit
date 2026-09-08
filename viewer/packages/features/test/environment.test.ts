@@ -10,6 +10,7 @@ import {
   environmentSlice,
   withPatch,
 } from '../src/environment.js';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { fakeSession } from './support/fake-session.js';
 
 const bounds: Bounds = { min: [0, 0, 0], max: [10, 10, 4] };
@@ -128,5 +129,30 @@ describe('the feature', () => {
     expect(environmentFeature.id).toBe('environment');
     expect(environmentFeature.slice.id).toBe('environment');
     expect(environmentFeature.commands.map((item) => item.name)).toEqual(['environment.set']);
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = () => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((item) => item.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([environmentFeature]);
+  if (!done.ok) throw new Error(done.diagnostics.map((item) => item.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs, changes the background, and draws through the hook', () => {
+    const { session: live, host } = installed();
+    const drawings: (EnvironmentDrawing | undefined)[] = [];
+    const hook = environmentHook({
+      target: { setEnvironment: (drawing) => drawings.push(drawing) },
+      bounds: () => bounds,
+    })(live);
+    expect(live.dispatch('environment.set', { background: [0, 0, 0] }).ok).toBe(true);
+    expect(drawings[drawings.length - 1]?.background).toEqual([0, 0, 0]);
+    hook.dispose();
+    host.dispose();
   });
 });

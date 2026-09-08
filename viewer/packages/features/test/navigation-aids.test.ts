@@ -18,6 +18,7 @@ import {
   type Level,
 } from '../src/navigation-aids.js';
 import { building } from './navigation-aids-fixture.js';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { fakeSession } from './support/fake-session.js';
 
 const levels = (): readonly Level[] => levelsOf(building());
@@ -166,5 +167,28 @@ describe('the feature', () => {
       'navigation.saveView',
       'navigation.restoreView',
     ]);
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = () => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((item) => item.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([navigationAidsFeature]);
+  if (!done.ok) throw new Error(done.diagnostics.map((item) => item.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs, goes to a level, and hands the view to the target', () => {
+    const { session: live, host } = installed();
+    const applied: ViewState[] = [];
+    const hook = navigationHook({ setView: (view) => applied.push(view) })(live);
+    expect(live.dispatch('navigation.goToLevel', { level: levels()[1] }).ok).toBe(true);
+    expect(applied[applied.length - 1]?.camera.target).toEqual([0, 0, 3]);
+    expect(live.read(navigationSlice).level?.name).toBe('Level 2');
+    hook.dispose();
+    host.dispose();
   });
 });

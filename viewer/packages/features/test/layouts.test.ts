@@ -17,6 +17,7 @@ import {
   writeLayout,
 } from '../src/layouts.js';
 import { building, buildingGeometry, buildingTable, keyOf } from './navigation-aids-fixture.js';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { fakeSession } from './support/fake-session.js';
 
 const model = building();
@@ -231,5 +232,28 @@ describe('the feature', () => {
       'layouts.grid',
       'layouts.reset',
     ]);
+  });
+});
+
+// A real viewer session with the feature installed, or a thrown error saying why there is none.
+const installed = () => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((item) => item.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([layoutsFeature]);
+  if (!done.ok) throw new Error(done.diagnostics.map((item) => item.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs, explodes, and moves the rows its hook is given', () => {
+    const { session: live, host } = installed();
+    const table = buildingTable(model, buildingGeometry(model));
+    const hook = layoutsHook({ table, model })(live);
+    expect(live.dispatch('layouts.explode', { by: 'storey', strength: 1 }).ok).toBe(true);
+    expect(live.read(layoutsSlice).layout).toEqual({ kind: 'explode', by: 'storey', strength: 1 });
+    expect(translationOfRow(table, 2)).toEqual([2, 0, 7]);
+    hook.dispose();
+    host.dispose();
   });
 });

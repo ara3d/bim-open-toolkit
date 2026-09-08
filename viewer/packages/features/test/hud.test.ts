@@ -22,6 +22,7 @@ import { environmentFeature } from '../src/environment.js';
 import { layoutsFeature } from '../src/layouts.js';
 import { navigationAidsFeature, navigationCommands } from '../src/navigation-aids.js';
 import { building, buildingGeometry, buildingTable } from './navigation-aids-fixture.js';
+import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { fakeSession } from './support/fake-session.js';
 
 const model = building();
@@ -247,5 +248,27 @@ describe('the feature', () => {
     expect(hudFeature.slice.id).toBe('hud');
     expect(hudFeature.commands.map((item) => item.name)).toEqual(['hud.toggle']);
     expect(hudFeature.dependsOn).toEqual(['navigation-aids']);
+  });
+});
+
+// A real viewer session with the HUD and the navigation aids it depends on installed.
+const installed = () => {
+  const created = createSession();
+  if (!created.ok) throw new Error(created.diagnostics.map((item) => item.message).join('; '));
+  const host = featureHost(created.value);
+  const done = host.install([navigationAidsFeature, hudFeature]);
+  if (!done.ok) throw new Error(done.diagnostics.map((item) => item.message).join('; '));
+  return { session: created.value, host };
+};
+
+describe('through the viewer session', () => {
+  it('installs beside the feature it depends on, and samples into its slice', () => {
+    const { session: live, host } = installed();
+    expect(live.dispatch('hud.toggle', { visible: true }).ok).toBe(true);
+    const sampler = hudHook(source())(live);
+    expect(sampler.sample(0)).toBe(true);
+    expect(live.read(hudSlice).reading?.data.scene.renderedInstances).toBe(4);
+    sampler.dispose();
+    host.dispose();
   });
 });
