@@ -1,0 +1,56 @@
+{
+  "name": "assets",
+  "objectCount": 12,
+  "factCount": 12,
+  "meshes": [
+    {"name":"asset-pump","instanceCount":3,"triangleCount":12},
+    {"name":"asset-air-handling-unit","instanceCount":3,"triangleCount":12},
+    {"name":"asset-chiller","instanceCount":3,"triangleCount":12},
+    {"name":"asset-distribution-panel","instanceCount":3,"triangleCount":12}
+  ],
+  "extras": {},
+  "tables": {
+    "assets": {
+      "rowCount": 12,
+      "columns": {
+        "objectId": {"type":"string","values":["asset-1","asset-2","asset-3","asset-4","asset-5","asset-6","asset-7","asset-8","asset-9","asset-10","asset-11","asset-12"]},
+        "name": {"type":"string","values":["Pump 01","Air handling unit 02","Chiller 03","Distribution panel 04","Pump 05","Air handling unit 06","Chiller 07","Distribution panel 08","Pump 09","Air handling unit 10","Chiller 11","Distribution panel 12"]},
+        "category": {"type":"string","values":["Pump","Air handling unit","Chiller","Distribution panel","Pump","Air handling unit","Chiller","Distribution panel","Pump","Air handling unit","Chiller","Distribution panel"]},
+        "installDate": {"type":"string","values":["2025-06-12","2025-03-02","2025-05-28","","","2025-06-27","2025-06-19","2025-05-17","2025-06-23","2025-05-05","2025-05-22","2025-05-17"]},
+        "installDateState": {"type":"string","values":["known","known","known","missing","conflicting","known","known","known","known","known","known","known"]},
+        "installDateMissingReason": {"type":"string","values":["","","","not-provided","","","","","","","",""]},
+        "installDateConflict": {"type":"string","values":["","","","","2025-04-09 vs 2025-04-30","","","","","","",""]},
+        "installDateEvidence": {"type":"string","values":["commissioning-record (CX-2025)","commissioning-record (CX-2025)","commissioning-record (CX-2025)","om-manual (OM-2026-01)","commissioning-record (CX-2025); om-manual (OM-2026-01)","commissioning-record (CX-2025)","commissioning-record (CX-2025)","commissioning-record (CX-2025)","commissioning-record (CX-2025)","commissioning-record (CX-2025)","commissioning-record (CX-2025)","commissioning-record (CX-2025)"]}
+      }
+    },
+    "maintenanceEvents": {
+      "rowCount": 13,
+      "columns": {
+        "id": {"type":"string","values":["svc-1","svc-2","svc-3","svc-4","svc-5","svc-6","svc-7","svc-8","svc-9","svc-10","svc-11","svc-12","svc-13"]},
+        "assetId": {"type":"string","values":["asset-1","asset-1","asset-1","asset-4","asset-4","asset-5","asset-6","asset-7","asset-7","asset-11","asset-11","asset-11","asset-12"]},
+        "date": {"type":"string","values":["2025-10-16","2026-05-01","2026-10-24","2025-11-07","2026-05-08","2025-09-01","2025-11-12","2025-10-29","2026-05-11","2025-09-25","2026-04-16","2026-09-29","2025-09-27"]},
+        "note": {"type":"string","values":["Routine service, no defects","Filter replaced","Bearing noise investigated","Belt tension adjusted","Commissioning check","Commissioning check","Routine service, no defects","Filter replaced","Bearing noise investigated","Routine service, no defects","Filter replaced","Bearing noise investigated","Filter replaced"]}
+      }
+    },
+    "serviceHistoryStatus": {
+      "rowCount": 12,
+      "columns": {
+        "assetId": {"type":"string","values":["asset-1","asset-2","asset-3","asset-4","asset-5","asset-6","asset-7","asset-8","asset-9","asset-10","asset-11","asset-12"]},
+        "status": {"type":"string","values":["recorded","recorded","not-recorded","recorded","recorded","recorded","recorded","recorded","recorded","recorded","recorded","recorded"]},
+        "tracked": {"type":"bool","values":[true,true,false,true,true,true,true,true,true,true,true,true]}
+      }
+    },
+    "pointsOfInterest": {
+      "rowCount": 18,
+      "columns": {
+        "id": {"type":"string","values":["poi-1","poi-2","poi-3","poi-4","poi-5","poi-6","poi-7","poi-8","poi-9","poi-10","poi-11","poi-12","poi-13","poi-14","poi-15","poi-16","poi-17","poi-18"]},
+        "assetId": {"type":"string","values":["asset-1","asset-2","asset-2","asset-3","asset-3","asset-4","asset-5","asset-5","asset-6","asset-7","asset-7","asset-8","asset-9","asset-10","asset-10","asset-11","asset-11","asset-12"]},
+        "name": {"type":"string","values":["Filter access","Isolator","Drain point","Drain point","Nameplate","Nameplate","Filter access","Isolator","Isolator","Drain point","Nameplate","Nameplate","Filter access","Isolator","Drain point","Drain point","Nameplate","Nameplate"]},
+        "note": {"type":"string","values":["Filter access for pump 1","Isolator for air handling unit 2","Drain point for air handling unit 2","Drain point for chiller 3","Nameplate for chiller 3","Nameplate for distribution panel 4","Filter access for pump 5","Isolator for pump 5","Isolator for air handling unit 6","Drain point for chiller 7","Nameplate for chiller 7","Nameplate for distribution panel 8","Filter access for pump 9","Isolator for air handling unit 10","Drain point for air handling unit 10","Drain point for chiller 11","Nameplate for chiller 11","Nameplate for distribution panel 12"]},
+        "x": {"type":"f64","values":[0.2838981688022614,5.783786392211914,5.10324993133545,10.71814444065094,11.62935312986374,18.273537039756775,0.1333994925022125,0.5408457338809967,5.350664520263672,13.007765591144562,12.617452919483185,18.36924018859863,-0.07045056223869323,4.616231155395508,7.490115737915039,13.271140325069428,11.300639688968658,18.023390632867812]},
+        "y": {"type":"f64","values":[0.4,0.9,0.9,0.8,0.8,0.2,6.4,6.4,6.9,6.8,6.8,6.2,12.4,12.9,12.9,12.8,12.8,12.2]},
+        "z": {"type":"f64","values":[0.8109634280204772,0.8494381248950958,1.1090324342250826,1.3941722542047499,0.6650386065244674,0.7354649931192399,0.5633073806762695,0.4449991464614868,1.3608311086893083,0.7432728767395019,0.9909405261278152,1.3329785913228989,0.5886717438697815,1.4068922638893127,1.570801430940628,1.246713563799858,0.6929504215717315,0.7902401089668274]}
+      }
+    }
+  }
+}

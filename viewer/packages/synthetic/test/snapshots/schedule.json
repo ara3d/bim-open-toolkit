@@ -1,0 +1,32 @@
+{
+  "name": "schedule",
+  "objectCount": 24,
+  "factCount": 0,
+  "meshes": [
+    {"name":"delivery-item","instanceCount":24,"triangleCount":12}
+  ],
+  "extras": {"asOfDate":"2026-06-01"},
+  "tables": {
+    "objects": {
+      "rowCount": 24,
+      "columns": {
+        "objectId": {"type":"string","values":["EQ-1","EQ-2","EQ-3","EQ-4","EQ-5","EQ-6","EQ-7","EQ-8","EQ-9","EQ-10","EQ-11","EQ-12","EQ-13","EQ-14","EQ-15","EQ-16","EQ-17","EQ-18","EQ-19","EQ-20","EQ-21","EQ-22","EQ-23","EQ-24"]},
+        "name": {"type":"string","values":["Air handling unit 01","Fan coil unit 02","Valve set 03","Chiller 04","Valve set 05","Valve set 06","Pump 07","Distribution panel 08","Distribution panel 09","Chiller 10","Distribution panel 11","Air handling unit 12","Fan coil unit 13","Air handling unit 14","Fan coil unit 15","Air handling unit 16","Distribution panel 17","Valve set 18","Pump 19","Valve set 20","Valve set 21","Chiller 22","Pump 23","Fan coil unit 24"]},
+        "category": {"type":"string","values":["Air handling unit","Fan coil unit","Valve set","Chiller","Valve set","Valve set","Pump","Distribution panel","Distribution panel","Chiller","Distribution panel","Air handling unit","Fan coil unit","Air handling unit","Fan coil unit","Air handling unit","Distribution panel","Valve set","Pump","Valve set","Valve set","Chiller","Pump","Fan coil unit"]}
+      }
+    },
+    "events": {
+      "rowCount": 49,
+      "columns": {
+        "id": {"type":"string","values":["evt-1","evt-2","evt-3","evt-4","evt-5","evt-6","evt-7","evt-8","evt-9","evt-10","evt-11","evt-12","evt-13","evt-14","evt-15","evt-16","evt-17","evt-18","evt-19","evt-20","evt-21","evt-22","evt-23","evt-24","evt-25","evt-26","evt-27","evt-28","evt-29","evt-30","evt-31","evt-32","evt-33","evt-34","evt-35","evt-36","evt-37","evt-38","evt-39","evt-40","evt-41","evt-42","evt-43","evt-44","evt-45","evt-46","evt-47","evt-48","evt-49"]},
+        "objectId": {"type":"string","values":["EQ-2","EQ-2","EQ-2","EQ-3","EQ-3","EQ-4","EQ-4","EQ-6","EQ-6","EQ-6","EQ-7","EQ-7","EQ-8","EQ-8","EQ-9","EQ-10","EQ-11","EQ-12","EQ-12","EQ-13","EQ-13","EQ-14","EQ-14","EQ-15","EQ-15","EQ-15","EQ-16","EQ-16","EQ-17","EQ-17","EQ-17","EQ-18","EQ-18","EQ-18","EQ-19","EQ-19","EQ-19","EQ-20","EQ-20","EQ-20","EQ-21","EQ-21","EQ-21","EQ-22","EQ-22","EQ-23","EQ-23","EQ-24","EQ-24"]},
+        "eventType": {"type":"string","values":["delivered","accepted","installed","delivered","accepted","delivered","accepted","delivered","accepted","installed","delivered","accepted","delivered","accepted","installed","delivered","delivered","delivered","accepted","delivered","accepted","delivered","accepted","delivered","accepted","installed","delivered","accepted","delivered","accepted","installed","delivered","accepted","installed","delivered","accepted","installed","delivered","accepted","installed","delivered","accepted","installed","delivered","accepted","delivered","installed","delivered","installed"]},
+        "date": {"type":"string","values":["2026-03-10","2026-03-26","2026-04-21","2026-05-19","","2026-03-23","","2026-01-27","2026-02-12","2026-03-16","2026-02-13","2026-02-28","2026-05-23","2026-06-07","2026-05-25","2026-06-19","2026-06-18","2026-06-10","2026-06-17","2026-06-07","2026-06-10","2026-01-14","2026-01-23","2026-03-25","2026-04-05","2026-04-28","2026-02-11","2026-02-21","2026-06-10","2026-06-17","2026-07-07","2026-01-12","2026-01-27","2026-02-10","2026-04-13","","2026-05-06","2026-02-15","2026-02-23","2026-02-28","2026-06-15","2026-06-25","2026-06-30","2026-05-13","2026-05-31","2026-03-19","2026-04-27","2026-05-14","2026-06-23"]},
+        "dateState": {"type":"string","values":["known","known","known","known","conflicting","known","missing","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","conflicting","known","known","known","known","known","known","known","known","known","known","known","known","known"]},
+        "dateMissingReason": {"type":"string","values":["","","","","","","not-provided","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]},
+        "dateConflict": {"type":"string","values":["","","","","2026-05-31 vs 2026-06-03","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","2026-04-28 vs 2026-05-01","","","","","","","","","","","","",""]},
+        "dateEvidence": {"type":"string","values":["delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026); site-inspection (QA-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","delivery-note (GRN-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026); site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","site-inspection (QA-2026)","delivery-note (GRN-2026)","installation-record (INST-2026)","delivery-note (GRN-2026)","installation-record (INST-2026)"]}
+      }
+    }
+  }
+}

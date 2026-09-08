@@ -1,0 +1,35 @@
+{
+  "name": "carbon",
+  "objectCount": 0,
+  "factCount": 0,
+  "meshes": [
+  ],
+  "extras": {"requestedLifecycleScope":"A1-A3","scenarios":"asDesigned lowCarbonAlt"},
+  "tables": {
+    "quantities": {
+      "rowCount": 18,
+      "columns": {
+        "objectId": {"type":"string","values":["obj-1","obj-2","obj-3","obj-4","obj-5","obj-6","obj-7","obj-8","obj-9","obj-10","obj-11","obj-12","obj-13","obj-14","obj-15","obj-16","obj-17","obj-18"]},
+        "materialId": {"type":"string","values":["concrete","steel","timber","glass","aluminium","insulation","concrete","steel","timber","glass","aluminium","insulation","concrete","steel","timber","glass","aluminium","insulation"]},
+        "materialName": {"type":"string","values":["In-situ concrete","Structural steel","Glued laminated timber","Insulating glass unit","Aluminium framing","Mineral wool","In-situ concrete","Structural steel","Glued laminated timber","Insulating glass unit","Aluminium framing","Mineral wool","In-situ concrete","Structural steel","Glued laminated timber","Insulating glass unit","Aluminium framing","Mineral wool"]},
+        "quantity": {"type":"f64","values":[19.8,3283.6,"NaN",1175,"NaN",14.5,39.1,"NaN",7.6,"NaN",321,29.8,"NaN",2379.9,"NaN",614.2,138.7,"NaN"]},
+        "quantityUnit": {"type":"string","values":["m3","kg","","kg","","m3","m3","","m3","","kg","m3","","kg","","kg","kg",""]},
+        "quantityState": {"type":"string","values":["known","known","conflicting","known","missing","known","known","conflicting","known","missing","known","known","conflicting","known","missing","known","known","conflicting"]},
+        "quantityMissingReason": {"type":"string","values":["","","","","not-provided","","","","","not-provided","","","","","not-provided","","",""]},
+        "quantityConflict": {"type":"string","values":["","","3 m3 vs 3.7 m3","","","","","3414.3 kg vs 4152.1 kg","","","","","39.4 m3 vs 45.5 m3","","","","","47.9 m3 vs 59.1 m3"]},
+        "quantityEvidence": {"type":"string","values":["material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01); supplier-declaration (EPD-2026)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01); supplier-declaration (EPD-2026)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01); supplier-declaration (EPD-2026)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01)","material-takeoff (MT-2026-01); supplier-declaration (EPD-2026)"]}
+      }
+    },
+    "factors": {
+      "rowCount": 9,
+      "columns": {
+        "id": {"type":"string","values":["factor-1","factor-2","factor-3","factor-4","factor-5","factor-6","factor-7","factor-8","factor-9"]},
+        "materialId": {"type":"string","values":["concrete","steel","glass","aluminium","insulation","concrete","steel","glass","insulation"]},
+        "scenario": {"type":"string","values":["asDesigned","asDesigned","asDesigned","asDesigned","asDesigned","lowCarbonAlt","lowCarbonAlt","lowCarbonAlt","lowCarbonAlt"]},
+        "unit": {"type":"string","values":["m3","kg","kg","kg","m3","m3","t","kg","m3"]},
+        "lifecycleScope": {"type":"string","values":["A1-A3","A1-A5","A1-A3","A1-A3","A1-A3","A1-A3","A1-A3","A1-A3","A1-A3"]},
+        "factorValue": {"type":"f64","values":[312.66,1.93,1.46,7.94,52.57,325.52,2.27,1.13,48.32]}
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "stress",
+  "objectCount": 10000,
+  "factCount": 0,
+  "meshes": [
+    {"name":"box","instanceCount":447,"triangleCount":12},
+    {"name":"cylinder-3","instanceCount":456,"triangleCount":12},
+    {"name":"cylinder-4","instanceCount":435,"triangleCount":16},
+    {"name":"cylinder-5","instanceCount":448,"triangleCount":20},
+    {"name":"cylinder-7","instanceCount":485,"triangleCount":28},
+    {"name":"cylinder-10","instanceCount":473,"triangleCount":40},
+    {"name":"cylinder-13","instanceCount":448,"triangleCount":52},
+    {"name":"cylinder-18","instanceCount":439,"triangleCount":72},
+    {"name":"cylinder-24","instanceCount":543,"triangleCount":96},
+    {"name":"cylinder-32","instanceCount":462,"triangleCount":128},
+    {"name":"cylinder-43","instanceCount":461,"triangleCount":172},
+    {"name":"cylinder-58","instanceCount":501,"triangleCount":232},
+    {"name":"cylinder-78","instanceCount":491,"triangleCount":312},
+    {"name":"cylinder-105","instanceCount":423,"triangleCount":420},
+    {"name":"cylinder-142","instanceCount":490,"triangleCount":568},
+    {"name":"cylinder-191","instanceCount":427,"triangleCount":764},
+    {"name":"cylinder-257","instanceCount":478,"triangleCount":1028},
+    {"name":"cylinder-345","instanceCount":455,"triangleCount":1380},
+    {"name":"cylinder-465","instanceCount":455,"triangleCount":1860},
+    {"name":"cylinder-625","instanceCount":438,"triangleCount":2500},
+    {"name":"cylinder-841","instanceCount":376,"triangleCount":3364},
+    {"name":"cylinder-1132","instanceCount":198,"triangleCount":4528},
+    {"name":"cylinder-1522","instanceCount":95,"triangleCount":6088},
+    {"name":"cylinder-2048","instanceCount":76,"triangleCount":8192}
+  ],
+  "extras": {"instances":10000,"triangles":7779292,"opaque":5542,"transparent":531,"metal":1460,"painted":2467},
+  "tables": {
+  }
+}

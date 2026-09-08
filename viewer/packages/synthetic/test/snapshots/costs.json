@@ -1,0 +1,44 @@
+{
+  "name": "costs",
+  "objectCount": 0,
+  "factCount": 0,
+  "meshes": [
+  ],
+  "extras": {"scenarios":"base alternate value"},
+  "tables": {
+    "scopes": {
+      "rowCount": 14,
+      "columns": {
+        "objectId": {"type":"string","values":["scope-1","scope-2","scope-3","scope-4","scope-5","scope-6","scope-7","scope-8","scope-9","scope-10","scope-11","scope-12","scope-13","scope-14"]},
+        "scopeType": {"type":"string","values":["Doors","Windows","Carpet","Tile","Paint","Ductwork","Steelwork","Doors","Windows","Carpet","Tile","Paint","Ductwork","Steelwork"]},
+        "description": {"type":"string","values":["Doors package 1","Windows package 1","Carpet package 1","Tile package 1","Paint package 1","Ductwork package 1","Steelwork package 1","Doors package 2","Windows package 2","Carpet package 2","Tile package 2","Paint package 2","Ductwork package 2","Steelwork package 2"]},
+        "quantity": {"type":"f64","values":[9.6,"NaN",207.1,"NaN",660,88.6,"NaN",14.5,"NaN",219.1,101.1,"NaN",40.5,"NaN"]},
+        "quantityUnit": {"type":"string","values":["ea","","m2","","m2","m","","ea","","m2","m2","","m",""]},
+        "quantityState": {"type":"string","values":["known","conflicting","known","missing","known","known","conflicting","known","missing","known","known","conflicting","known","missing"]},
+        "quantityMissingReason": {"type":"string","values":["","","","not-measured","","","","","not-measured","","","","","not-measured"]},
+        "quantityConflict": {"type":"string","values":["","28.3 ea vs 35.1 ea","","","","","7.3 t vs 8.3 t","","","","","223.3 m2 vs 273.9 m2","",""]},
+        "quantityEvidence": {"type":"string","values":["measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02); takeoff-review (QS-2026-05)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02); takeoff-review (QS-2026-05)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02); takeoff-review (QS-2026-05)","measured-takeoff (QS-2026-02)","measured-takeoff (QS-2026-02)"]}
+      }
+    },
+    "rates": {
+      "rowCount": 15,
+      "columns": {
+        "id": {"type":"string","values":["rate-1","rate-2","rate-3","rate-4","rate-5","rate-6","rate-7","rate-8","rate-9","rate-10","rate-11","rate-12","rate-13","rate-14","rate-15"]},
+        "scopeType": {"type":"string","values":["Doors","Windows","Carpet","Tile","Paint","Ductwork","Doors","Windows","Carpet","Tile","Ductwork","Doors","Doors","Carpet","Tile"]},
+        "scenario": {"type":"string","values":["base","base","base","base","base","base","alternate","alternate","alternate","alternate","alternate","value","value","value","value"]},
+        "currency": {"type":"string","values":["USD","USD","USD","USD","USD","USD","USD","USD","USD","USD","USD","EUR","EUR","EUR","EUR"]},
+        "unit": {"type":"string","values":["ea","ea","m2","m2","m2","m","ea","ea","ea","m2","m","ea","ea","m2","m2"]},
+        "ratePerUnit": {"type":"f64","values":[155.73,483.02,35.66,51.49,6.57,122.63,221.2,382.81,14.48,94.66,86.61,125.84,155.49,21.18,86.37]}
+      }
+    },
+    "scenarios": {
+      "rowCount": 3,
+      "columns": {
+        "id": {"type":"string","values":["base","alternate","value"]},
+        "name": {"type":"string","values":["Base tender","Alternate supplier","Value engineered"]},
+        "currency": {"type":"string","values":["USD","USD","EUR"]},
+        "policy": {"type":"string","values":["as-tendered","alternate-supplier","value-engineered"]}
+      }
+    }
+  }
+}

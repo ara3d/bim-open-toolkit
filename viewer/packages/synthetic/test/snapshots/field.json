@@ -1,0 +1,10 @@
+{
+  "name": "field",
+  "objectCount": 0,
+  "factCount": 0,
+  "meshes": [
+  ],
+  "extras": {"field":"operativeTemperature","unit":"degC","dimensions":"24x16x6","spacing":"1.5x1.5x3","cells":2304,"sampled":2149,"minimum":19.807742,"maximum":32.696726,"mean":23.661113},
+  "tables": {
+  }
+}

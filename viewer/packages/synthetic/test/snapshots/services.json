@@ -1,0 +1,61 @@
+{
+  "name": "services",
+  "objectCount": 35,
+  "factCount": 42,
+  "meshes": [
+    {"name":"pipe-run","instanceCount":21,"triangleCount":48},
+    {"name":"valve-body","instanceCount":7,"triangleCount":12},
+    {"name":"plant-unit","instanceCount":1,"triangleCount":12},
+    {"name":"terminal-unit","instanceCount":6,"triangleCount":12}
+  ],
+  "extras": {"startNodeId":"node-branch-3-1-3","closedValveIds":"valve-3-1"},
+  "tables": {
+    "nodes": {
+      "rowCount": 22,
+      "columns": {
+        "nodeId": {"type":"string","values":["node-source","node-riser-1","node-riser-2","node-riser-3","node-branch-1-1-1","node-branch-1-1-2","node-branch-1-1-3","node-branch-1-2-1","node-branch-1-2-2","node-branch-1-2-3","node-branch-2-1-1","node-branch-2-1-2","node-branch-2-1-3","node-branch-2-2-1","node-branch-2-2-2","node-branch-2-2-3","node-branch-3-1-1","node-branch-3-1-2","node-branch-3-1-3","node-branch-3-2-1","node-branch-3-2-2","node-branch-3-2-3"]},
+        "kind": {"type":"string","values":["source","riser","riser","riser","branch","branch","fixture","branch","branch","fixture","branch","branch","fixture","branch","branch","fixture","branch","branch","fixture","branch","branch","fixture"]},
+        "x": {"type":"f64","values":[0,0,0,0,3.3685402870178223,6.7370805740356445,10.105620861053467,0,0,0,3.1956673860549927,6.391334772109985,9.587002158164978,0,0,0,3.1415510177612305,6.283102035522461,9.424653053283691,0,0,0]},
+        "y": {"type":"f64","values":[0,0,0,0,0,0,0,3.79876446723938,7.59752893447876,11.39629340171814,0,0,0,3.6569321155548096,7.313864231109619,10.970796346664429,0,0,0,4.437539219856262,8.875078439712524,13.312617659568787]},
+        "z": {"type":"f64","values":[0,3.6,7.2,10.8,3.6,3.6,3.6,3.6,3.6,3.6,7.2,7.2,7.2,7.2,7.2,7.2,10.8,10.8,10.8,10.8,10.8,10.8]}
+      }
+    },
+    "segments": {
+      "rowCount": 21,
+      "columns": {
+        "objectId": {"type":"string","values":["pipe-riser-1","pipe-riser-2","pipe-riser-3","pipe-branch-1-1-1","pipe-branch-1-1-2","pipe-branch-1-1-3","pipe-branch-1-2-1","pipe-branch-1-2-2","pipe-branch-1-2-3","pipe-branch-2-1-1","pipe-branch-2-1-2","pipe-branch-2-1-3","pipe-branch-2-2-1","pipe-branch-2-2-2","pipe-branch-2-2-3","pipe-branch-3-1-1","pipe-branch-3-1-2","pipe-branch-3-1-3","pipe-branch-3-2-1","pipe-branch-3-2-2","pipe-branch-3-2-3"]},
+        "fromNodeId": {"type":"string","values":["node-source","node-riser-1","node-riser-2","node-riser-1","node-branch-1-1-1","node-branch-1-1-2","node-riser-1","node-branch-1-2-1","node-branch-1-2-2","node-riser-2","node-branch-2-1-1","node-branch-2-1-2","node-riser-2","node-branch-2-2-1","node-branch-2-2-2","node-riser-3","node-branch-3-1-1","node-branch-3-1-2","node-riser-3","node-branch-3-2-1","node-branch-3-2-2"]},
+        "toNodeId": {"type":"string","values":["node-riser-1","node-riser-2","node-riser-3","node-branch-1-1-1","node-branch-1-1-2","node-branch-1-1-3","node-branch-1-2-1","node-branch-1-2-2","node-branch-1-2-3","node-branch-2-1-1","node-branch-2-1-2","node-branch-2-1-3","node-branch-2-2-1","node-branch-2-2-2","node-branch-2-2-3","node-branch-3-1-1","node-branch-3-1-2","node-branch-3-1-3","node-branch-3-2-1","node-branch-3-2-2","node-branch-3-2-3"]},
+        "topologyStatus": {"type":"string","values":["accepted","accepted","accepted","accepted","accepted","accepted","accepted","unverified","accepted","accepted","unverified","unverified","unverified","unverified","unverified","accepted","accepted","accepted","accepted","unverified","accepted"]},
+        "system": {"type":"string","values":["Riser","Riser","Riser","Domestic hot water","Domestic hot water","Domestic hot water","Domestic cold water","Domestic cold water","Domestic cold water","Domestic cold water","Domestic cold water","Domestic cold water","Domestic hot water","Domestic hot water","Domestic hot water","Heating flow","Heating flow","Heating flow","Heating flow","Heating flow","Heating flow"]},
+        "lengthM": {"type":"f64","values":[3.6,3.6,3.6000000000000005,3.3685402870178223,3.3685402870178223,3.3685402870178223,3.79876446723938,3.79876446723938,3.79876446723938,3.1956673860549927,3.1956673860549927,3.1956673860549927,3.6569321155548096,3.6569321155548096,3.6569321155548096,3.1415510177612305,3.1415510177612305,3.1415510177612305,4.437539219856262,4.437539219856262,4.437539219856262]},
+        "diameter": {"type":"f64","values":["NaN",100,100,50,40,32,50,40,32,50,40,32,50,40,32,50,40,32,"NaN",40,32]},
+        "diameterUnit": {"type":"string","values":["","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","mm","","mm","mm"]},
+        "diameterState": {"type":"string","values":["missing","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","known","missing","known","known"]},
+        "diameterMissingReason": {"type":"string","values":["not-provided","","","","","","","","","","","","","","","","","","not-provided","",""]},
+        "diameterConflict": {"type":"string","values":["","","","","","","","","","","","","","","","","","","","",""]},
+        "diameterEvidence": {"type":"string","values":["design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)","design-model (MEP-2026-01)"]}
+      }
+    },
+    "valves": {
+      "rowCount": 7,
+      "columns": {
+        "objectId": {"type":"string","values":["valve-1-1","valve-1-2","valve-2-1","valve-2-2","valve-3-1","valve-3-2","valve-main"]},
+        "name": {"type":"string","values":["Isolation valve 1.1","Isolation valve 1.2","Isolation valve 2.1","Isolation valve 2.2","Isolation valve 3.1","Isolation valve 3.2","Main isolation valve"]},
+        "nodeId": {"type":"string","values":["node-branch-1-1-1","node-branch-1-2-1","node-branch-2-1-1","node-branch-2-2-1","","node-branch-3-2-1","node-source"]},
+        "nodeIdKnown": {"type":"bool","values":[true,true,true,true,false,true,true]},
+        "valveType": {"type":"string","values":["ball","ball","ball","ball","ball","ball","gate"]}
+      }
+    },
+    "equipment": {
+      "rowCount": 7,
+      "columns": {
+        "objectId": {"type":"string","values":["equip-terminal-1-1","equip-terminal-1-2","equip-terminal-2-1","equip-terminal-2-2","equip-terminal-3-1","equip-terminal-3-2","equip-pump"]},
+        "name": {"type":"string","values":["Terminal unit 1.1","Terminal unit 1.2","Terminal unit 2.1","Terminal unit 2.2","Terminal unit 3.1","Terminal unit 3.2","Booster pump set"]},
+        "nodeId": {"type":"string","values":["node-branch-1-1-3","node-branch-1-2-3","node-branch-2-1-3","node-branch-2-2-3","node-branch-3-1-3","node-branch-3-2-3","node-source"]},
+        "category": {"type":"string","values":["Terminal unit","Terminal unit","Terminal unit","","Terminal unit","Terminal unit","Pump"]},
+        "categoryKnown": {"type":"bool","values":[true,true,true,false,true,true,true]}
+      }
+    }
+  }
+}

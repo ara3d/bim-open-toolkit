@@ -13,6 +13,24 @@ export { addDays, dayOf, daysFromCivil, isoDate, type IsoDate } from './dates.js
 // A list of ids inside one string cell of a table column, and the way to read it back.
 export { joinIds, splitIds } from './arrays.js';
 
+// The catalog: every generator's default fixture by name, and the summary a gallery lists.
+export {
+  fixture,
+  fixtureNames,
+  fixtures,
+  summaryOf,
+  type Fixture,
+  type FixtureName,
+  type FixtureSummary,
+  type MeshSummary,
+} from './fixtures.js';
+
+// A scene under construction, and the model plus geometry plus named mesh library it freezes into.
+export { add, scene, sceneBuilder, type ObjectSpec, type Scene, type SceneBuilder } from './scene.js';
+
+// Instance transforms: a box scaled to a size, and an axis-aligned run between two points.
+export { alignYTo, midpoint, placeRun, placeScaled, runAxis, type Axis } from './placement.js';
+
 // A model mesh known to carry per-vertex normals, and one mesh of a scene with its instance count.
 export { type MeshGroup, type ShadedMesh } from './mesh-builder.js';
 

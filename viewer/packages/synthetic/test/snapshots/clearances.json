@@ -1,0 +1,47 @@
+{
+  "name": "clearances",
+  "objectCount": 14,
+  "factCount": 0,
+  "meshes": [
+    {"name":"coordination-box","instanceCount":14,"triangleCount":12}
+  ],
+  "extras": {"candidateOverlaps":3,"registration":"project"},
+  "tables": {
+    "envelopes": {
+      "rowCount": 6,
+      "columns": {
+        "objectId": {"type":"string","values":["env-1","env-2","env-3","env-4","env-5","env-6"]},
+        "name": {"type":"string","values":["Access envelope 1","Access envelope 2","Access envelope 3","Access envelope 4","Access envelope 5","Access envelope 6"]},
+        "discipline": {"type":"string","values":["Mechanical","Mechanical","Mechanical","Mechanical","Mechanical","Mechanical"]},
+        "minX": {"type":"f64","values":[-1.6916105031967164,7.749448621273041,16.743225252628328,25.578751623630524,34.46498215198517,"NaN"]},
+        "minY": {"type":"f64","values":[-1.1693861782550812,-1.2452780306339264,-1.045775979757309,-1.4164714217185974,-1.2007391452789307,"NaN"]},
+        "minZ": {"type":"f64","values":[0.162062656879425,0.33131548166275016,0.1125123023986816,0.4811824440956114,0.7136712193489076,"NaN"]},
+        "maxX": {"type":"f64","values":[1.6916105031967164,10.250551378726959,19.256774747371672,28.421248376369476,37.53501784801483,"NaN"]},
+        "maxY": {"type":"f64","values":[1.1693861782550812,1.2452780306339264,1.045775979757309,1.4164714217185974,1.2007391452789307,"NaN"]},
+        "maxZ": {"type":"f64","values":[2.5048946022987364,2.3994528889656066,2.469734716415405,2.7153740525245667,2.7607333779335024,"NaN"]},
+        "bboxState": {"type":"string","values":["known","known","known","known","known","missing"]},
+        "bboxMissingReason": {"type":"string","values":["","","","","","not-provided"]},
+        "bboxConflict": {"type":"string","values":["","","","","",""]},
+        "bboxEvidence": {"type":"string","values":["coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model"]}
+      }
+    },
+    "penetrations": {
+      "rowCount": 8,
+      "columns": {
+        "objectId": {"type":"string","values":["pen-1","pen-2","pen-3","pen-4","pen-5","pen-6","pen-7","pen-8"]},
+        "name": {"type":"string","values":["Penetration 1","Penetration 2","Penetration 3","Penetration 4","Penetration 5","Penetration 6","Penetration 7","Penetration 8"]},
+        "discipline": {"type":"string","values":["Structural","Structural","Structural","Structural","Structural","Structural","Structural","Structural"]},
+        "minX": {"type":"f64","values":[-0.15711096525192264,-0.6816386818885803,"NaN",8.872738885879516,17.57563401460648,17.55053550004959,26.743999278545378,26.33855971097946]},
+        "minY": {"type":"f64","values":[-0.2234282851219177,11.795652621984482,"NaN",11.761820745468139,-0.15853421688079833,11.780817526578904,-0.2402605175971985,11.791612738370896]},
+        "minZ": {"type":"f64","values":[1.022007131576538,1.0683825612068176,"NaN",1.0681394696235655,0.9352651357650756,1.0444738864898682,1.3634553313255309,1.2569472432136535]},
+        "maxX": {"type":"f64","values":[0.2583880305290222,-0.015069043636322,"NaN",9.582444047927856,18.15289181470871,18.0338192820549,27.50489522218704,26.973547184467314]},
+        "maxY": {"type":"f64","values":[0.2234282851219177,12.204347378015518,"NaN",12.238179254531861,0.15853421688079833,12.219182473421096,0.2402605175971985,12.208387261629104]},
+        "maxZ": {"type":"f64","values":[1.6449501276016236,1.598574697971344,"NaN",1.6626289010047912,1.6469818830490113,1.5377731323242188,1.8331011652946472,1.9396092534065246]},
+        "bboxState": {"type":"string","values":["known","known","conflicting","known","known","known","known","known"]},
+        "bboxMissingReason": {"type":"string","values":["","","","","","","",""]},
+        "bboxConflict": {"type":"string","values":["","","x:[8.31,8.93] y:[-0.20,0.20] z:[1.09,1.64] vs x:[8.91,9.53] y:[0.20,0.60] z:[1.09,1.64]","","","","",""]},
+        "bboxEvidence": {"type":"string","values":["coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","setting-out-survey (SO-2026-03); coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)","coordination-model (MEP-2026-01)"]}
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "city",
+  "objectCount": 6,
+  "factCount": 0,
+  "meshes": [
+    {"name":"building-mass","instanceCount":6,"triangleCount":12}
+  ],
+  "extras": {"registered":5,"metricNames":"totalFloorAreaM2 annualEnergyKwh"},
+  "tables": {
+    "buildings": {
+      "rowCount": 6,
+      "columns": {
+        "buildingId": {"type":"string","values":["B-1","B-2","B-3","B-4","B-5","B-6"]},
+        "name": {"type":"string","values":["Building 1","Building 2","Building 3","Building 4","Building 5","Building 6"]},
+        "siteId": {"type":"string","values":["site-1","site-1","site-1","site-2","site-2","site-2"]},
+        "registration": {"type":"string","values":["geographic","geographic","geographic","geographic","unknown","geographic"]},
+        "registered": {"type":"bool","values":[true,true,true,true,false,true]},
+        "latitude": {"type":"f64","values":[51.50785303225517,51.51734360685348,51.51350175132751,51.51281037201881,"NaN",51.50636980404853]},
+        "longitude": {"type":"f64","values":[-0.12354236631393432,-0.14046523599624633,-0.1366048791885376,-0.1258998945236206,"NaN",-0.14102660207748413]},
+        "altitude": {"type":"f64","values":[25.294499397277832,21.36332082748413,5.770461082458496,24.593252658843994,"NaN",14.536532402038574]},
+        "trueNorthDegrees": {"type":"f64","values":[-0.44860410690307617,1.080315113067627,-2.67645263671875,9.636214256286621,"NaN",8.86732292175293]}
+      }
+    },
+    "documents": {
+      "rowCount": 9,
+      "columns": {
+        "documentId": {"type":"string","values":["doc-b-1","doc-b-2","doc-b-3","doc-b-4","doc-b-5","doc-b-6","doc-site-1","doc-site-2","doc-unmapped"]},
+        "name": {"type":"string","values":["Building 1 model","Building 2 model","Building 3 model","Building 4 model","Building 5 model","Building 6 model","Site 1 campus report","Site 2 campus report","Unfiled survey report"]},
+        "buildingIds": {"type":"string","values":["B-1","B-2","B-3","B-4","B-5","B-6","B-1 B-2","B-4 B-5",""]},
+        "buildingIdCount": {"type":"i32","values":[1,1,1,1,1,1,2,2,0]}
+      }
+    },
+    "metrics": {
+      "rowCount": 18,
+      "columns": {
+        "id": {"type":"string","values":["m-1","m-2","m-3","m-4","m-5","m-6","m-7","m-8","m-9","m-10","m-11","m-12","m-13","m-14","m-15","m-16","m-17","m-18"]},
+        "documentId": {"type":"string","values":["doc-b-1","doc-b-1","doc-b-2","doc-b-2","doc-b-3","doc-b-3","doc-b-4","doc-b-4","doc-b-5","doc-b-5","doc-b-6","doc-b-6","doc-site-1","doc-site-1","doc-site-2","doc-site-2","doc-unmapped","doc-unmapped"]},
+        "metricName": {"type":"string","values":["totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh","totalFloorAreaM2","annualEnergyKwh"]},
+        "value": {"type":"f64","values":[9493,2162636,7458,1901721,8606,1563831,"NaN","NaN","NaN","NaN","NaN","NaN",2422,1491785,6947,2235787,5467,2029863]},
+        "valueUnit": {"type":"string","values":["m2","kWh","m2","kWh","m2","kWh","","","","","","","m2","kWh","m2","kWh","m2","kWh"]},
+        "valueState": {"type":"string","values":["known","known","known","known","known","known","conflicting","missing","conflicting","missing","conflicting","missing","known","known","known","known","known","known"]},
+        "valueMissingReason": {"type":"string","values":["","","","","","","","not-provided","","not-provided","","not-provided","","","","","",""]},
+        "valueConflict": {"type":"string","values":["","","","","","","8197 m2 vs 9800 m2","","21334 m2 vs 23265 m2","","22260 m2 vs 25610 m2","","","","","","",""]},
+        "valueEvidence": {"type":"string","values":["portfolio-return (PR-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026); metered-reading (EM-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026); metered-reading (EM-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026); metered-reading (EM-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026)","metered-reading (EM-2026)","portfolio-return (PR-2026)","metered-reading (EM-2026)"]}
+      }
+    }
+  }
+}
