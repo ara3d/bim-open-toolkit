@@ -7,7 +7,8 @@ Verdicts: **keep**, **adjust**, **off**, **watch** (not enough evidence yet).
 | Tool or rule | Cost per run | Runs | Caught | Friction incidents | Verdict | Notes |
 |---|---|---|---|---|---|---|
 | `tsc --noEmit` over V2 packages (root tsconfig, strict plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) | 4 to 5 s | 3 | 0 (skeletons only) | 0 | watch | Expected to be the main defect catcher once tracks write code. |
-| ESLint `recommendedTypeChecked` over V2 packages | 63 s first run, 22 s second | 3 | 0 | 0 | watch | Highest cost in the gate. If it catches nothing beyond tsc by end of wave 1, scope it to the three rules that matter or turn it off. |
+| ESLint, untyped `recommended` over V2 packages (`npm run lint`, in the gate) | 2 to 4.5 s for all packages | 3 | 0 | 0 | keep | Replaced the type-aware set on 2026-09-07 (see review log). Cost is process startup; file count does not matter. |
+| ESLint, type-aware set over I/O packages only (`npm run lint:typed`, demos, mcp, viewer; wave integration only) | 15 s | 2 | 0 | 0 | watch | Kept only for `no-floating-promises` and the unsafe-any family where I/O code lives. Drop if it catches nothing by end of wave 2. |
 | Escape-hatch ratchet (`any`, `as`, `!`, directives, disables) | 0.5 s | 3 | 0 | 2 | watch | Friction: platonic-ts's step shells out to a platonic-ts-only command (worked around in the wrapper); the counts include alpha packages another session edits, so the baseline moved without any V2 change and had to be rewritten. |
 | `undocumentedExports` counter (one `//` line above every export) | included above | 3 | 0 | 0 | watch | Risk: pushes agents to write comments that restate the signature. Judge by sampling comments at wave end. |
 | V2 smoke tests (`npm run test:v2`) | 3 s | 4 | 0 | 1 | keep | Friction: a root `vitest.config.ts` hid the alpha tests; renamed. |
@@ -33,6 +34,8 @@ Transcribed from track checkpoints and final reports; "caught" is the track's ow
 | W0 workflows fixtures (2026-09-07, Sonnet, documents only) | no code checks run; JSON parse check only, 10 of 10 pass | — | — | — |
 
 ## Review log
+
+- 2026-09-07, lint switched to untyped rules (user decision after measurement). Measured on the synthetic package with six agents loading the machine: type-aware rules 7.7 to 28 s per package, 18 s for a single file, no gain from `--cache`, because the rule set rebuilds a TypeScript program on every run; untyped rules 2.4 s per package and 2.8 s for all six V2 packages. Track S reported 8 typed runs that caught nothing while tsc caught two real defects. New rules: `viewer/eslint.config.js` is the untyped `recommended` set plus `no-explicit-any` and `no-unused-vars` over every V2 package and runs in `npm run lint` and the check wrapper on every chunk; `viewer/eslint.typed.config.js` is the type-aware set with `no-floating-promises` over the I/O packages (demos, mcp, viewer) and runs as `npm run lint:typed` at wave integration only. Both files carry the reason in their header comment. Also added `@types/node` to the workspace, which the fixture server needs and which the typed lint could not resolve without.
 
 - 2026-09-07, wave 0 start: the Agent tool cannot message a running subagent in this session (SendMessage disabled), so the three wave 0 tracks were not told to keep a "Tooling" section; their reported command runs and results are transcribed here by the supervisor instead. Every later brief includes the section.
 - 2026-09-07, wave 0 start: ledger created after the retrofit. No V2 code exists yet, so no check has caught anything; the two friction incidents are both ratchet-related and both fixed in the wrapper.
