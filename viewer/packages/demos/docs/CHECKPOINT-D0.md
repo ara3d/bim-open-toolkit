@@ -193,7 +193,7 @@ command from this track is running.
 |---|---|---|
 | 1 | `84a43ef` | `src/server/**`, `test/server/**`, `docs/fixture-server.md` |
 | 2 | `dd8f898` | `docs/CHECKPOINT-D0.md` as first written, with the blocker open |
-| 3 | this commit | the typed-lint fix in `test/server/server.test.ts` and this checkpoint brought current |
+| 3 | `5b671e8` | the typed-lint fix in `test/server/server.test.ts` and this checkpoint brought current |
 
 All staged by explicit pathspec. No `git add .`, no `-A`, no `commit -a`, no push. `git status`
 showed uncommitted files from tracks M, PERF, I, BIND and W0 throughout; none were staged. Commits
