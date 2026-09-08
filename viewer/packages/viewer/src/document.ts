@@ -41,7 +41,7 @@ import type { ViewerSession } from './session.js';
 
 // The slice id the document's own model fingerprint is stored under. It belongs to no feature, and
 // `loadScene` never restores it into a session.
-export const fingerprintSliceId = 'viewer.models';
+export const fingerprintSliceId = 'viewer.fingerprint';
 
 const fingerprintSlice = stateSlice(fingerprintSliceId, 1, object({ fingerprint: string() }), {
   fingerprint: '',
