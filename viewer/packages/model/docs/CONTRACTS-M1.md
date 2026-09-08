@@ -31,6 +31,67 @@ None. No `any`, no `as` cast, no non-null assertion, no compiler or lint directi
 check establishes a static type, used by `object` and `tuple` only: TypeScript cannot prove that a
 structure walked key by key inhabits a mapped or a tuple type, and the alternative is a cast.
 
+## M1.1 additions
+
+Additive follow-up to the independent review of 2026-09-08, whose composition probe had to
+hand-write four bridges. Nothing below renames, removes or re-signs an M1 export, so the revision
+label stays M1; the module blocks further down are the M1 declarations and do not repeat these.
+
+### `math` — plane vectors, for Track S
+
+```ts
+export type Vec2 = readonly [number, number];
+export declare const crossVec2: (a: Vec2, b: Vec2) => number;
+export declare const turnVec2: (a: Vec2, b: Vec2, c: Vec2) => number;
+export declare const polygonArea: (points: readonly Vec2[]) => number;
+```
+
+### `table` — accessors, a record constructor, and string-key joins
+
+`joinTablesOn` accepts two integer key columns or two string key columns; `joinTables` is unchanged
+and still refuses anything but integers. A string key costs one map of the right column's distinct
+strings plus one string hash per left row, against a number hash per row for the integer path.
+
+```ts
+export declare const tableFromRecord: (columns: Readonly<Record<string, Column>>) => Table;
+export declare const stringColumnOf: (source: Table, name: string) => StringColumn | undefined;
+export declare const boolColumnOf: (source: Table, name: string) => BoolColumn | undefined;
+export declare const cellOf: (source: Table, name: string, row: number) => CellValue | undefined;
+export declare const numberOf: (source: Table, name: string, row: number) => number | undefined;
+export declare const stringOf: (source: Table, name: string, row: number) => string | undefined;
+export declare const indexByStringKey: (column: StringColumn) => ReadonlyMap<string, number>;
+export declare const matchStringRows: (left: StringColumn, right: StringColumn) => Int32Array;
+export declare const joinTablesOn: (left: Table, leftKey: string, right: Table, rightKey: string, prefix?: string) => Result<Table>;
+```
+
+### `instance-table` — instance records as a table
+
+`meshIndex` and `objectIndex` are the records' own arrays, not copies. The transform becomes sixteen
+`f32` columns `m0`..`m15`, where `m{c * 4 + r}` is element (row r, column c) of the column-major
+transform, so `m12`, `m13` and `m14` are the translation; the colour becomes `red`, `green`, `blue`
+and `alpha`. One allocation and one pass per component column, none per row.
+
+A strided view of a typed array does not exist in JavaScript, so a column that shared the transform
+buffer would be sixteen times longer than the row count, and `takeRows`, `filterRows`, `sortRows`
+and the joins would silently mix rows up. Correctness before the copy.
+
+```ts
+export declare const transformColumnNames: readonly string[];
+export declare const colorColumnNames: readonly string[];
+export declare const instanceTable: (records: InstanceRecords) => Table;
+```
+
+### `table-sets` — object sets and table rows
+
+A string key column holds object keys; an integer key column holds indices into `keys`, which is
+what an instance table's `objectIndex` is. A key column of neither kind keeps no rows and reads back
+as the empty set, rather than guessing.
+
+```ts
+export declare const rowsInSet: (source: Table, keyColumn: string, set: ObjectSet, keys?: readonly ObjectKey[]) => Table;
+export declare const setOfRows: (source: Table, keyColumn: string, keys?: readonly ObjectKey[]) => ObjectSet;
+```
+
 ## Signatures
 
 The emitted declarations, grouped by module, in dependency order.

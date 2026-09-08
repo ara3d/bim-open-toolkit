@@ -21,6 +21,15 @@ Four decisions shape the whole package.
 4. **Failure is a value.** Operations return `Result<T>` with path-addressed diagnostics rather than
    throwing, so a caller can report exactly which part of a document was wrong and still open it.
 
+Three things the type names do not say out loud, each of which cost an independent reviewer a
+correction:
+
+- An object record carries `ref`, an `ObjectRef`, not an `id`. The id within the model revision is
+  `record.ref.objectId`.
+- `objectKey` joins three percent-encoded parts with `|`, and `parseObjectKey` reads them back.
+- `table()` takes entries, `[name, column]` pairs, the way `new Map()` does. `tableFromRecord()`
+  takes `{ name: column }`.
+
 ## Module map
 
 | Module | Holds |
@@ -36,8 +45,10 @@ Four decisions shape the whole package.
 | `edits` | edit layers, their resolved effect, and a generic undo history |
 | `view` | camera pose, projection, framing, saved views |
 | `slices` | `StateSlice<S>`, the scene document, migration and round-trip |
-| `table` | columnar tables with select, filter, sort and integer-key join |
+| `table` | columnar tables with select, filter, sort and joins on integer or string keys |
 | `mesh` | plain-data meshes and columnar instance records |
+| `instance-table` | instance records as a table, one column per component |
+| `table-sets` | table rows selected by an object set, and read back into one |
 | `facts` | observations, evidence, missing reasons, conflicts, coverage |
 | `event` | change events, listeners, disposal |
 | `session` | what a command may read and change |
@@ -81,6 +92,48 @@ import { emptyDocument, getSlice, integer, object, putSlice, stateSlice } from '
 const clipping = stateSlice('clipping', 1, object({ planes: integer() }), { planes: 0 });
 const document = putSlice(emptyDocument(), clipping, { planes: 2 });
 getSlice(document, clipping); // { ok: true, value: { planes: 2 }, diagnostics: [] }
+```
+
+Review the doors of a model: what is rated, what a survey settles, what to colour, what to draw.
+
+```ts
+import {
+  completeFacts, conflicting, coverageOfFacts, f32Column, fact, identityMatrix, indexFacts,
+  instanceRecords, instanceTable, joinTablesOn, known, objectKey, objectRef, reconcile, resolveStyles,
+  rowsInSet, setKeys, setOf, stringColumn, styleComposition, styleOf, styleRule, tableFromRecord, text,
+  unknownFacts, withColumn, type InstanceRecord, type ModelRef,
+} from '@bim-open-toolkit/model';
+
+const model: ModelRef = { id: 'tower', revision: '2026-09' };
+const door = (id: string) => objectRef(model, id);
+const doors = [door('d1'), door('d2'), door('d3')];
+const keys = doors.map(objectKey);
+
+// What the sources say: one door rated, one with nothing recorded, one they disagree about.
+const recorded = indexFacts([
+  fact(door('d1'), 'fireRating', known(text('EI60'), [{ source: 'ifc' }])),
+  fact(door('d3'), 'fireRating', conflicting([text('EI90'), text('EI60')])),
+]);
+const rated = completeFacts(recorded, doors, ['fireRating']);
+coverageOfFacts(rated); // { total: 3, known: 1, missing: 1, conflicting: 1 }
+
+// A site survey settles the disagreement.
+reconcile([text('FD60')], [{ source: 'survey' }]).kind; // 'known'
+
+// Colour every door without a known rating red.
+const unrated = setOf(unknownFacts(rated).map((item) => objectKey(item.subject)));
+const rules = [styleRule('unrated', 'Unrated doors', setKeys(unrated), { color: [1, 0, 0] })];
+const resolved = resolveStyles(styleComposition(new Map(), [], rules), keys);
+styleOf(resolved, objectKey(door('d2'))).color; // [1, 0, 0]
+
+// The rows that draw, the two that are unrated, and the schedule row beside each door.
+const placed = instanceRecords(doors.map((_unused, index): InstanceRecord => ({
+  meshIndex: 0, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: index,
+})));
+const rows = withColumn(instanceTable(placed), 'objectKey', stringColumn(keys));
+rowsInSet(rows, 'objectIndex', unrated, keys).rowCount; // 2
+const schedule = tableFromRecord({ objectKey: stringColumn(keys), width: f32Column([0.9, 1.2, 0.8]) });
+joinTablesOn(rows, 'objectKey', schedule, 'objectKey', 'schedule.'); // 3 rows, widths alongside
 ```
 
 ## What is not here
