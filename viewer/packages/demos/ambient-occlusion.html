@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- An empty icon, so a browser does not ask for one that is not there. -->
+    <link rel="icon" href="data:," />
+    <title>Ambient occlusion — contact shadow on a synthetic building</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f4f1ea;
+        --panel: #fbfaf7;
+        --ink: #17181c;
+        --ink-muted: #6b6a66;
+        --rule: #d9d4c8;
+        --accent: #d1461f;
+        --viewport: #1b1d22;
+      }
+      body {
+        margin: 0;
+        font: 15px/1.5 system-ui, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: var(--paper);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header { padding: 12px 16px 8px; }
+      h1 {
+        font: 24px/1.2 "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+        margin: 0 0 4px;
+      }
+      header p { margin: 0; color: var(--ink-muted); max-width: 72ch; }
+      #stage {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 12px;
+        padding: 0 16px 12px;
+      }
+      #viewport {
+        min-height: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: var(--viewport);
+        touch-action: none;
+      }
+      #controls {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: auto;
+      }
+      #controls label { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+      #controls input[type="range"] { width: 100%; grid-column: 1 / -1; }
+      #controls .value { font: 13px ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--ink-muted); }
+      #controls button {
+        font: inherit;
+        padding: 6px 10px;
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        background: var(--panel);
+        color: var(--accent);
+        cursor: pointer;
+      }
+      #controls button:active { background: var(--accent); color: var(--panel); }
+      .ao-status { grid-column: 1 / -1; margin: 0; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+      @media (max-width: 750px) {
+        #stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Ambient occlusion</h1>
+      <p>
+        A screen-space contact shadow darkens corners, the foot of every wall and the gap under
+        each door, which is what makes a flat-lit model readable. Drag to orbit, scroll to zoom,
+        shift-drag to pan. Hold <strong>Compare</strong>, or the <kbd>a</kbd> key, to see the same
+        view without it. Every fixture is synthetic: generated from a seed, not a measurement of any
+        real building.
+      </p>
+    </header>
+    <main id="stage">
+      <canvas id="viewport" aria-label="A synthetic model drawn with ambient occlusion"></canvas>
+      <aside id="controls" aria-label="Ambient occlusion settings"></aside>
+    </main>
+    <script type="module" src="/src/ambient-occlusion/main.ts"></script>
+  </body>
+</html>
