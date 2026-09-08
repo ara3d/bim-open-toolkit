@@ -226,8 +226,8 @@ export const runRevisionComparison = (input: RevisionComparisonInput): Result<Wo
       extraSteps: [
         step(
           workflowCommands.linkViews,
-          { views: [{ model: input.modelA.revision }, { model: input.modelB.revision }] },
-          'Show both revisions side by side.',
+          { linked: true },
+          `Show both revisions side by side (${input.modelA.revision} and ${input.modelB.revision}).`,
         ),
       ],
     }),

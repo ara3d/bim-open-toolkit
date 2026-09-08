@@ -251,8 +251,8 @@ export const runMaterialCarbon = (input: MaterialCarbonInput): Result<WorkflowRe
       extraSteps: [
         step(
           workflowCommands.linkViews,
-          { views: scenarios.map((scenario) => ({ scenario })) },
-          'Compare the scenarios side by side.',
+          { linked: true },
+          `Compare the scenarios side by side (${scenarios.join(', ')}).`,
         ),
       ],
     }),

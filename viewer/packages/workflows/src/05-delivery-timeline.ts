@@ -200,7 +200,21 @@ export const runDeliveryTimeline = (input: DeliveryTimelineInput): Result<Workfl
     if (!objectIds.has(event.objectId)) diagnostics.push(unknownReferenceDiagnostic('events', 'objectId', event.objectId));
 
   const rows = input.objects.map((object) => timelineRowOf(input, object));
-  const exceptions = [...conflictingExceptions(input), ...noEventExceptions(input)];
+  // `asOfDate` drives `animation.seek`, which takes milliseconds since the epoch. A date
+  // `Date.parse` cannot read is not guessed at as zero or "now": it is reported as an exception and
+  // the timeline is left wherever it already was, rather than moved on a fabricated time.
+  const asOfMs = Date.parse(input.asOfDate);
+  const exceptions = [
+    ...conflictingExceptions(input),
+    ...noEventExceptions(input),
+    ...(Number.isFinite(asOfMs)
+      ? []
+      : [
+          workflowException([], 'asOfDate', missing('unresolved-source'), {
+            detail: `"${input.asOfDate}" is not a date Date.parse can read, so the timeline was not moved to it`,
+          }),
+        ]),
+  ];
   const exceptionIds = [...new Set(exceptions.flatMap((item) => item.subjects))];
 
   const keysOfState = (state: TimelineState): readonly ObjectKey[] =>
@@ -243,7 +257,9 @@ export const runDeliveryTimeline = (input: DeliveryTimelineInput): Result<Workfl
       overlays,
       view: suggestedView('delivery-timeline', 'Delivery timeline exceptions', keysOf(input.model, exceptionIds), rules),
       selectSetId: 'delivery-timeline/exceptions',
-      extraSteps: [step(workflowCommands.setTimelineDate, { date: input.asOfDate }, 'Set the timeline to the as-of date.')],
+      extraSteps: Number.isFinite(asOfMs)
+        ? [step(workflowCommands.setTimelineDate, { timeMs: asOfMs }, `Set the timeline to ${input.asOfDate}.`)]
+        : [],
     }),
     diagnostics,
   );

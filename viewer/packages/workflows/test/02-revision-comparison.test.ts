@@ -32,7 +32,7 @@ describe('revision comparison', () => {
   });
 
   it('reads the two revisions at two revisions of one model identity', () => {
-    expect(result.recipe.steps.map((item) => item.command)).toContain('views.link');
+    expect(result.recipe.steps.map((item) => item.command)).toContain('comparison.link');
     expect(keyOf(fixtureModel, 'W-1')).not.toBe(keyOf(fixtureModelB, 'W-1'));
   });
 

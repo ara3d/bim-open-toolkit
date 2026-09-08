@@ -226,8 +226,8 @@ export const runPricingAlternatives = (input: PricingAlternativesInput): Result<
       extraSteps: [
         step(
           workflowCommands.linkViews,
-          { views: input.scenarios.map((scenario) => ({ scenario: scenario.id })) },
-          'Compare the pricing scenarios side by side.',
+          { linked: true },
+          `Compare the pricing scenarios side by side (${input.scenarios.map((scenario) => scenario.id).join(', ')}).`,
         ),
       ],
     }),
