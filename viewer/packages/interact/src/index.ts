@@ -51,3 +51,22 @@ export { hasModifiers, isKeyDown, normalizeKey, mouseButtons, heldButton } from 
 export { safeViewport, aspectOf, normalizedDrag } from './input.js';
 // Gesture arithmetic over the pointers of a frame: which ones, how they moved, how they spread.
 export { pointersOfKind, dragDelta, pinchScale } from './input.js';
+
+// The three ways a view responds to input, and the list of them for a user interface to offer.
+export { type NavMode, navModes } from './bindings.js';
+// The named things navigation can be asked to do by a drag, a wheel, a pinch or a held key.
+export { type DragAction, type WheelAction, type PinchAction, type MoveAction } from './bindings.js';
+// The configurable map from device input to those actions, entry by entry.
+export {
+  type Bindings,
+  type DragBinding,
+  type WheelBinding,
+  type KeyBinding,
+  type TouchBinding,
+} from './bindings.js';
+// The table each mode starts with, and which actions each mode acts on.
+export { defaultBindings, supportedActions, type SupportedActions } from './bindings.js';
+// Check a rebound table against a mode: repeats are errors, actions the mode ignores are warnings.
+export { validateBindings } from './bindings.js';
+// Read a frame through a binding table.
+export { resolveDrag, resolveWheel, resolveMoves } from './bindings.js';
