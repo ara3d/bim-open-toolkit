@@ -96,6 +96,17 @@ and standalone examples.
 
 ## Verification on 2026-09-08
 
+Responsiveness follow-up: changing a section, section box/range, explosion or
+environment inside an otherwise unchanged recipe updates the affected domain
+without replaying unrelated downstream steps. Upstream scrubbing preserves the
+current camera and material buffers; later overrides in the same domain still
+win. Recipe structure, source, style and projection changes retain full replay.
+The focused viewer-binding regression reduces an upstream section update from
+at least ten viewer commands plus styling to one clipping command, with unchanged
+color-buffer versions. This is avoided-work evidence, not an FPS measurement.
+A fresh headless Edge page loaded all 456,598 Snowdon instances without page
+errors; API writes were blocked during that smoke check.
+
 Controls follow-up: 17 isolated browser scenarios passed, including actual
 dropdown/slider/spinner/color/range gestures, percentage bounds, socket rewiring,
 Delete/Undo, exact host/local recipe parity, and exact rendered-pixel restoration
