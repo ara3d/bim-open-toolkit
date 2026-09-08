@@ -28,7 +28,15 @@ import {
   type NumericScale,
 } from '../src/appearance.js';
 import type { RenderTarget } from '../src/appearance-render.js';
-import { boundScene, categoryTable, featureSession, fixtureKeys, key, stored } from './appearance-fixture.js';
+import {
+  boundScene,
+  categoryTable,
+  featureSession,
+  fixtureKeys,
+  installedSession,
+  key,
+  stored,
+} from './appearance-fixture.js';
 
 const red: readonly [number, number, number] = [1, 0, 0];
 const green: readonly [number, number, number] = [0, 1, 0];
@@ -322,5 +330,23 @@ describe('the appearance feature', () => {
 
   it('describes every command input as a JSON schema a tool descriptor is built from', () => {
     for (const item of appearanceFeature.commands) expect(item.describeInput().type).toBe('object');
+  });
+});
+
+describe('the appearance feature in a real session', () => {
+  it('installs into Track V’s session, runs its command and publishes the slice that changed', () => {
+    const { session, host } = installedSession();
+    expect(host.installed('appearance')).toBe(true);
+    const changed: string[] = [];
+    const stop = session.subscribe((event) => changed.push(`${event.command}:${event.changed.join(',')}`));
+    const ran = session.dispatch('appearance.addRule', {
+      rule: styleRule('a', 'a', [key(0)], { color: red }),
+    });
+    expect(ran.ok).toBe(true);
+    expect(session.read(appearanceSlice).rules.map((item) => item.id)).toEqual(['a']);
+    expect(changed).toEqual(['appearance.addRule:appearance']);
+    expect(session.dispatch('appearance.addRule', { rule: { id: 5 } }).ok).toBe(false);
+    stop.dispose();
+    host.dispose();
   });
 });

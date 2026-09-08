@@ -37,6 +37,11 @@ import { sceneRenderTarget, type RenderTarget } from '../src/appearance-render.j
 import { editsCommands } from '../src/edits.js';
 import { replacementCommands } from '../src/replacement.js';
 import { setsCommands } from '../src/sets.js';
+import { createSession, featureHost, type FeatureHost, type ViewerSession } from '@bim-open-toolkit/viewer';
+import { appearanceFeature } from '../src/appearance.js';
+import { editsFeature } from '../src/edits.js';
+import { replacementFeature } from '../src/replacement.js';
+import { setsFeature } from '../src/sets.js';
 import { fakeSession, type FakeSession } from './support/fake-session.js';
 
 // The model every fixture object belongs to.
@@ -109,6 +114,17 @@ export const stored = (color: readonly number[]): readonly number[] => color.map
 // A session holding every Track FA command, so a test dispatches across features as a UI would.
 export const featureSession = (): FakeSession =>
   fakeSession([...editsCommands, ...setsCommands, ...appearanceCommands, ...replacementCommands]);
+
+// Track V's real session with the four Track FA features installed through its feature host, which
+// is what a viewer actually runs: install order, one command bus, one slice registry.
+export const installedSession = (): { readonly session: ViewerSession; readonly host: FeatureHost } => {
+  const created = createSession();
+  if (!created.ok) throw new Error('the session did not start');
+  const host = featureHost(created.value);
+  const installed = host.install([editsFeature, setsFeature, appearanceFeature, replacementFeature]);
+  if (!installed.ok) throw new Error(installed.diagnostics.map((item) => item.message).join('; '));
+  return { session: created.value, host };
+};
 
 // A representation target that keeps what it was last handed.
 export type RecordingRepresentations = RepresentationTarget & {

@@ -21,7 +21,7 @@ import {
   type EditsState,
 } from '../src/edits.js';
 import { appearanceFeatureFor, resolveAppearance } from '../src/appearance.js';
-import { boundScene, featureSession, fixtureKeys, key, stored } from './appearance-fixture.js';
+import { boundScene, featureSession, fixtureKeys, installedSession, key, stored } from './appearance-fixture.js';
 
 const hide = (targets: readonly string[]) => ({ kind: 'hide', targets });
 
@@ -261,5 +261,19 @@ describe('the edits feature', () => {
       'edits.redo',
       'edits.clear',
     ]);
+  });
+});
+
+describe('the edits feature in a real session', () => {
+  it('installs into Track V’s session and undoes one command exactly', () => {
+    const { session, host } = installedSession();
+    expect(host.installed('edits')).toBe(true);
+    session.dispatch('edits.apply', { layerId: 'a', operation: hide([key(0)]) });
+    session.dispatch('edits.apply', { layerId: 'a', operation: hide([key(1)]) });
+    expect(editEffect(session.read(editsSlice)).hidden.size).toBe(2);
+    session.dispatch('edits.undo', {});
+    expect(editEffect(session.read(editsSlice)).hidden.size).toBe(1);
+    expect(session.dispatch('edits.apply', { layerId: 'a', operation: { kind: 'levitate' } }).ok).toBe(false);
+    host.dispose();
   });
 });

@@ -23,7 +23,7 @@ import {
 } from '../src/sets.js';
 import { appearanceFeatureFor, resolveAppearance } from '../src/appearance.js';
 import { editEffectOf } from '../src/edits.js';
-import { boundScene, featureSession, fixtureKeys, key, stored } from './appearance-fixture.js';
+import { boundScene, featureSession, fixtureKeys, installedSession, key, stored } from './appearance-fixture.js';
 
 describe('the sets slice', () => {
   it('round-trips through a document as JSON', () => {
@@ -249,5 +249,17 @@ describe('the sets feature', () => {
     session.dispatch('sets.isolate', { members: [key(0)] });
     expect(session.dispatch('sets.clear', {}).ok).toBe(true);
     expect(session.read(setsSlice)).toEqual(noSetsState);
+  });
+});
+
+describe('the sets feature in a real session', () => {
+  it('installs into Track V’s session and keeps a deleted object out of the selection', () => {
+    const { session, host } = installedSession();
+    expect(host.installed('sets')).toBe(true);
+    session.dispatch('edits.apply', { layerId: 'a', operation: { kind: 'delete', targets: [key(1)] } });
+    expect(session.dispatch('sets.select', { members: [key(0), key(1)] }).ok).toBe(true);
+    expect(session.read(setsSlice).selection).toEqual([key(0)]);
+    expect(session.dispatch('sets.select', { members: [key(0)], mode: 'invert' }).ok).toBe(false);
+    host.dispose();
   });
 });

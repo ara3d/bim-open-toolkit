@@ -28,6 +28,7 @@ import {
   boundScene,
   featureSession,
   fixtureRegistry,
+  installedSession,
   key,
   recordingRepresentations,
   stored,
@@ -219,5 +220,18 @@ describe('the replacement feature', () => {
       'replacement.set',
       'replacement.clear',
     ]);
+  });
+});
+
+describe('the replacement feature in a real session', () => {
+  it('installs into Track V’s session, replaces one object and restores it', () => {
+    const { session, host } = installedSession();
+    expect(host.installed('replacement')).toBe(true);
+    expect(session.dispatch('replacement.set', { key: key(0), representationId: 'box' }).ok).toBe(true);
+    expect(session.read(replacementSlice).replacements).toHaveLength(1);
+    expect(session.dispatch('replacement.clear', { key: key(1) }).ok).toBe(false);
+    expect(session.dispatch('replacement.clear', { key: key(0) }).ok).toBe(true);
+    expect(session.read(replacementSlice)).toEqual(noReplacementsState);
+    host.dispose();
   });
 });
