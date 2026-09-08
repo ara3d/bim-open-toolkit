@@ -61,8 +61,10 @@ back as a `formats/cancelled` diagnostic, not as an exception.
 ## Checking a model
 
 `validateLoadedModel` walks every index and every float and reports what does not hold: an instance
-naming a mesh or an object that is not there, a non-finite transform, a colour factor outside zero to
-one, a mesh index past its vertices, two objects sharing a key. It is not run on every load, because
+naming a mesh or an object that is not there, a non-finite transform, a colour, roughness or metallic
+factor outside zero to one, an optional column of the wrong length, a mesh-table range outside the
+buffer it names, a mesh index past its own vertices, two objects sharing a key. It is not run on
+every load, because
 it costs about as much as building the model; pass `validate: true`, or call it yourself, for input
 you do not trust.
 
@@ -78,3 +80,7 @@ npm run perf -w @bim-open-toolkit/formats            # needs a real model; skips
 The performance suite measures BFAST against BOS on the columnar path and writes its numbers to
 `docs/measurements-bfast.md` and `docs/measurements-bfast-versus-bos.md`. It never commits model
 bytes; set `SNOWDON_BFAST_PATH` and `SNOWDON_BOS_PATH` to point it at your own files.
+
+On the 111 MB reference model the mesh step costs 24 ms and a whole load 283 to 316 ms, against 73 to
+94 ms and 353 to 455 ms when the meshes were 171,569 `Mesh` records. `docs/CHECKPOINT-F2.md` has the
+before and after and what is comparable between the two runs.
