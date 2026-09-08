@@ -21,8 +21,8 @@ export { panPose } from './camera.js';
 export { walkPose } from './camera.js';
 // The world-to-camera transform as a column-major matrix.
 export { viewMatrix } from './camera.js';
-// A camera looking straight down the up axis at a fixed heading, and the heading of such a camera.
-export { overheadPose, overheadHeading } from './camera.js';
+// A camera looking straight down the up axis at a fixed heading, and which way is up the screen.
+export { overheadPose, screenHeading } from './camera.js';
 
 // Which of the two ways of projecting a view uses.
 export { type ProjectionKind } from './projection.js';
@@ -70,3 +70,18 @@ export { defaultBindings, supportedActions, type SupportedActions } from './bind
 export { validateBindings } from './bindings.js';
 // Read a frame through a binding table.
 export { resolveDrag, resolveWheel, resolveMoves } from './bindings.js';
+
+// How fast and how far navigation responds, and a set of values suited to a metre-scale building.
+export { type NavSettings, defaultNavSettings } from './navigation.js';
+// Everything a navigating view holds, as plain data that can be saved and restored.
+export { type NavState, navState } from './navigation.js';
+// A navigation mode: what shows, what the device did, how long the step lasted, what shows next.
+export { type ModeReducer } from './navigation.js';
+// One step of navigation in whichever mode the state is in.
+export { stepNavigation } from './navigation.js';
+// The three modes as reducers of their own, and the reducer for a mode held as data.
+export { orbitMode, firstPersonMode, overheadMode, modeReducers } from './navigation.js';
+// Switch mode, and hold a view to what its mode requires.
+export { setMode, constrainToMode } from './navigation.js';
+// Frame a box, keeping what the mode requires.
+export { fitState } from './navigation.js';

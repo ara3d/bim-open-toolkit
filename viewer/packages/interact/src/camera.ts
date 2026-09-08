@@ -151,8 +151,8 @@ export const orbitPose = (
   };
 };
 
-// The camera turned in place, keeping its position and how far away it looks. Angles follow
-// `orbitPose`, so one drag turns the scene the way orbit does and the view the opposite way.
+// The camera turned in place, keeping its position and how far away it looks. The angles mean the
+// same as in `orbitPose`: azimuth about the up axis, polar away from it.
 export const lookPose = (
   pose: CameraPose,
   up: Vec3,
@@ -230,11 +230,17 @@ export const overheadPose = (pose: CameraPose, up: Vec3, heading = 0): CameraPos
   };
 };
 
-// The angle the picture is turned by in the ground plane, for a camera looking down the up axis.
-// Reports zero when the camera is not looking along the up axis.
-export const overheadHeading = (pose: CameraPose, up: Vec3): number => {
+// Which way in the ground plane is up the screen, as an angle about the up axis. For a camera
+// looking down it is the heading `overheadPose` set; for a camera looking along the ground it is
+// the direction the camera faces, so lifting a walking camera overhead keeps the picture pointing
+// the same way.
+export const screenHeading = (pose: CameraPose, up: Vec3): number => {
   const axis = upAxis(up);
   const frame = azimuthFrame(axis);
-  const hint = normalizeVec3(subVec3(pose.up, scaleVec3(axis, dot(pose.up, axis))));
-  return hint === undefined ? 0 : Math.atan2(dot(hint, frame.b), dot(hint, frame.a));
+  const basis = cameraBasis(pose);
+  const flatten = (v: Vec3): Vec3 | undefined => normalizeVec3(subVec3(v, scaleVec3(axis, dot(v, axis))));
+  // Screen-up and forward are at right angles, so at most one of them lies along the up axis and
+  // the second fallback is unreachable; it is here to make that plain rather than to be taken.
+  const bearing = flatten(basis.up) ?? flatten(basis.forward) ?? frame.a;
+  return Math.atan2(dot(bearing, frame.b), dot(bearing, frame.a));
 };

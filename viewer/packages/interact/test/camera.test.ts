@@ -7,7 +7,7 @@ import {
   lookPose,
   orbitAngles,
   orbitPose,
-  overheadHeading,
+  screenHeading,
   overheadPose,
   panPose,
   perpendicularTo,
@@ -232,7 +232,7 @@ describe('overheadPose', () => {
 
   it('holds its heading and reports it back', () => {
     for (const heading of [0, 0.7, -2.5, Math.PI / 2]) {
-      expect(overheadHeading(overheadPose(eastward(), zUp, heading), zUp)).toBeCloseTo(heading);
+      expect(screenHeading(overheadPose(eastward(), zUp, heading), zUp)).toBeCloseTo(heading);
     }
   });
 
@@ -242,7 +242,10 @@ describe('overheadPose', () => {
     expect(Math.hypot(...basis.right)).toBeCloseTo(1, 12);
   });
 
-  it('reports no heading for a camera that is not looking down the up axis', () => {
-    expect(overheadHeading(eastward(), zUp)).toBe(0);
+  it('takes its heading from where a level camera was facing, so the picture keeps pointing there', () => {
+    const heading = screenHeading(eastward(), zUp);
+    const lifted = overheadPose(eastward(), zUp, heading);
+    closeToVec(lifted.up, cameraBasis(eastward()).forward, 8);
+    expect(screenHeading(lifted, zUp)).toBeCloseTo(heading);
   });
 });
