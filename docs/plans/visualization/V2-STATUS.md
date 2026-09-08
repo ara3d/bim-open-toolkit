@@ -57,7 +57,7 @@ Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside
 |---|---|---|---|---|
 | F formats, BFAST first | Opus | `viewer/packages/formats/**` | working | `viewer/packages/formats/docs/CHECKPOINT-F.md` |
 | R render, instance table | Opus | `viewer/packages/render/**` | working | `viewer/packages/render/docs/CHECKPOINT-R.md` |
-| M2 model bridges (review follow-up) | Opus | `viewer/packages/model/**` | working | `viewer/packages/model/docs/CHECKPOINT-M2.md` |
+| M2 model bridges (review follow-up) | Opus | `viewer/packages/model/**` | verified: `instanceTable` (4.1 ms at 100k rows versus 15.5 ms per-row, shared index arrays, transposed in 512-row blocks), `rowsInSet`/`setOfRows`, `joinTablesOn` for string keys, typed column accessors, `tableFromRecord`, `Vec2` helpers, README fixed and its example tested; additive, contract stays M1 (section M1.1 in CONTRACTS-M1.md); 224 tests; commits `d1d3bb6` `b489031` `31ef243` `b6885cb` `d1645b8` `560c91d`; supervisor re-ran tsc and tests | `viewer/packages/model/docs/CHECKPOINT-M2.md` |
 | E2E vertical slice (review follow-up) | Opus | `viewer/packages/demos/src/slice/**` | queued until R's instance table lands | — |
 | S2 remaining generators | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S2.md` |
 | W workflow adapters | Opus | `viewer/packages/workflows/**` | working | `viewer/packages/workflows/docs/CHECKPOINT-W.md` |
@@ -75,7 +75,7 @@ Binding is no longer the cost. Of the 896 ms columnar path on Snowdon, `bfastToG
 ### Requests between tracks
 
 - I to M: `frameBounds` ignores viewport aspect for orthographic projections (portrait viewports cut the box off; interact uses `height = 2 * radius * max(1, 1/aspect)`); dot, cross and `unitSlerp` live in interact's `src/vec.ts` and belong in `model/math.ts`. Queued for Track M2 or the next model chunk.
-- S to M: export `Vec2 = readonly [number, number]` from model (S exports a local one from `src/triangulate.ts` meanwhile); consider making `Mesh.normals` required or providing a shaded-mesh type, since every consumer narrows it. For the M1 review.
+- S to M: `Vec2` landed in M2 (`d1645b8`); synthetic can drop its local `Vec2`, `turn` and `signedArea` in `src/triangulate.ts` at its next chunk. `Mesh.normals` stays optional (M's decision; synthetic's `ShadedMesh` narrows once).
 
 ### Queue
 
