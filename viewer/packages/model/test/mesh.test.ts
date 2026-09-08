@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { identityMatrix, translation } from '../src/math.js';
 import {
-  boundsOfPositions, emptyInstances, geometryBounds, instanceColor, instanceOpacity, instanceRecords,
-  instanceTransform, isGeometryFree, isInstanceVisible, mesh, meshAt, meshBoundsAt, meshCount,
-  meshTableFrom, noMesh, triangleCount, vertexCount, type Geometry, type InstanceRecord,
+  boundsOfPositions, defaultMetallic, defaultRoughness, emptyInstances, geometryBounds, instanceColor,
+  instanceMetallic, instanceOpacity, instanceRecords, instanceRoughness, instanceTransform,
+  isGeometryFree, isInstanceVisible, mesh, meshAt, meshBoundsAt, meshCount, meshTableFrom, noMesh,
+  triangleCount, vertexCount, type Geometry, type InstanceRecord,
 } from '../src/mesh.js';
 
 const triangle = mesh(
@@ -61,6 +62,26 @@ describe('mesh', () => {
     const mixed = instanceRecords([row(true), row(false), row()]);
     expect(mixed.visible).toEqual(Uint8Array.from([1, 0, 1]));
     expect([0, 1, 2].map((index) => isInstanceVisible(mixed, index))).toEqual([true, false, true]);
+  });
+
+  it('reads material factors of records with no material columns as the defaults', () => {
+    const records = emptyInstances(2);
+    expect(records.roughness).toBeUndefined();
+    expect(records.metallic).toBeUndefined();
+    expect(instanceRoughness(records, 0)).toBe(defaultRoughness);
+    expect(instanceMetallic(records, 0)).toBe(defaultMetallic);
+  });
+
+  it('allocates a material column only when a row gives a value', () => {
+    const plain: InstanceRecord = {
+      meshIndex: 0, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: 0,
+    };
+    expect(instanceRecords([plain, plain]).roughness).toBeUndefined();
+    const mixed = instanceRecords([{ ...plain, roughness: 0.25, metallic: 1 }, plain]);
+    expect(instanceRoughness(mixed, 0)).toBeCloseTo(0.25);
+    expect(instanceMetallic(mixed, 0)).toBe(1);
+    expect(instanceRoughness(mixed, 1)).toBe(defaultRoughness);
+    expect(instanceMetallic(mixed, 1)).toBe(defaultMetallic);
   });
 
   it('bounds the placed geometry and ignores geometry-free rows', () => {

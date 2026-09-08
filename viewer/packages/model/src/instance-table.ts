@@ -43,8 +43,11 @@ const componentColumns = (
 };
 
 // The records' optional columns, present only when the records carry them, sharing their arrays.
-const optionalColumns = (records: InstanceRecords): readonly (readonly [string, Column])[] =>
-  records.visible === undefined ? [] : [['visible', { type: 'bool', values: records.visible }] as const];
+const optionalColumns = (records: InstanceRecords): readonly (readonly [string, Column])[] => [
+  ...(records.visible === undefined ? [] : [['visible', { type: 'bool', values: records.visible }] as const]),
+  ...(records.roughness === undefined ? [] : [['roughness', { type: 'f32', values: records.roughness }] as const]),
+  ...(records.metallic === undefined ? [] : [['metallic', { type: 'f32', values: records.metallic }] as const]),
+];
 
 // Instance records as a table, one row per instance. `meshIndex` and `objectIndex` are the records'
 // own arrays, not copies; each transform and colour component is its own column, so filtering,

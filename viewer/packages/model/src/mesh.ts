@@ -12,6 +12,12 @@ export const colorStride = 4;
 // Floats per mesh in a mesh table's bounds column: minimum xyz then maximum xyz.
 export const boundsStride = 6;
 
+// Roughness of an instance whose records carry no roughness column: fully diffuse.
+export const defaultRoughness = 1;
+
+// Metallic factor of an instance whose records carry no metallic column: not metal.
+export const defaultMetallic = 0;
+
 // A triangle mesh as plain data. `positions` is xyz per vertex, `indices` is three per triangle.
 export type Mesh = {
   readonly positions: Float32Array;
@@ -39,7 +45,8 @@ export type MeshTable = {
 // Instances as columns rather than objects: one row per drawn or geometry-free placement.
 // `meshIndex` is `noMesh` when the row has no geometry; `objectIndex` is the row in `ModelData.objects`.
 // `visible` holds 1 for a drawn row and 0 for a hidden one; absent means every row is visible, so
-// hiding is a column write on a records value that keeps every row.
+// hiding is a column write on a records value that keeps every row. `roughness` and `metallic` are
+// the surface factors a source file carries per placement; absent reads as the defaults below.
 export type InstanceRecords = {
   readonly count: number;
   readonly meshIndex: Int32Array;
@@ -47,10 +54,12 @@ export type InstanceRecords = {
   readonly color: Float32Array;
   readonly objectIndex: Int32Array;
   readonly visible?: Uint8Array | undefined;
+  readonly roughness?: Float32Array | undefined;
+  readonly metallic?: Float32Array | undefined;
 };
 
 // One instance read out of the columns, for building and for tests. Bulk code uses the columns.
-// `visible` defaults to true; a row that sets it false is what gives the built records a column.
+// An optional field left out reads as its default, and only a row that gives one allocates a column.
 export type InstanceRecord = {
   readonly meshIndex: number;
   readonly transform: Matrix4;
@@ -58,6 +67,8 @@ export type InstanceRecord = {
   readonly opacity: number;
   readonly objectIndex: number;
   readonly visible?: boolean | undefined;
+  readonly roughness?: number | undefined;
+  readonly metallic?: number | undefined;
 };
 
 // The meshes of a model together with the instances that place them. `meshTable` is those same
@@ -172,8 +183,24 @@ export const emptyInstances = (count: number): InstanceRecords => {
   };
 };
 
+// One optional float column, allocated only when some row gives a value. A row that gives none holds
+// the default, which is what the accessor reads when the column is absent altogether.
+const optionalFloats = (
+  rows: readonly InstanceRecord[],
+  read: (row: InstanceRecord) => number | undefined,
+  fallback: number,
+): Float32Array | undefined => {
+  if (!rows.some((row) => read(row) !== undefined)) return undefined;
+  const values = new Float32Array(rows.length);
+  rows.forEach((row, index) => {
+    values[index] = read(row) ?? fallback;
+  });
+  return values;
+};
+
 // Instance columns built from rows. Use it in generators and tests, not in bulk update paths.
-// The `visible` column is allocated only when some row is hidden, since absent reads as all visible.
+// An optional column is allocated only when some row gives it a value, since absent reads as the
+// default: every row visible, `defaultRoughness`, `defaultMetallic`.
 export const instanceRecords = (rows: readonly InstanceRecord[]): InstanceRecords => {
   const records = emptyInstances(rows.length);
   const visible = rows.some((row) => row.visible === false)
@@ -186,7 +213,14 @@ export const instanceRecords = (rows: readonly InstanceRecord[]): InstanceRecord
     records.color.set([row.color[0], row.color[1], row.color[2], row.opacity], index * colorStride);
     if (visible !== undefined && row.visible === false) visible[index] = 0;
   });
-  return visible === undefined ? records : { ...records, visible };
+  const roughness = optionalFloats(rows, (row) => row.roughness, defaultRoughness);
+  const metallic = optionalFloats(rows, (row) => row.metallic, defaultMetallic);
+  return {
+    ...records,
+    ...(visible === undefined ? {} : { visible }),
+    ...(roughness === undefined ? {} : { roughness }),
+    ...(metallic === undefined ? {} : { metallic }),
+  };
 };
 
 // The transform of one instance, copied out of the column.
@@ -210,6 +244,14 @@ export const instanceColor = (records: InstanceRecords, row: number): Color => [
 // The opacity factor of one instance.
 export const instanceOpacity = (records: InstanceRecords, row: number): number =>
   records.color[row * colorStride + 3] ?? 1;
+
+// Surface roughness of one instance, 0 mirror to 1 diffuse. No column reads as `defaultRoughness`.
+export const instanceRoughness = (records: InstanceRecords, row: number): number =>
+  records.roughness?.[row] ?? defaultRoughness;
+
+// Metallic factor of one instance, 0 dielectric to 1 metal. No column reads as `defaultMetallic`.
+export const instanceMetallic = (records: InstanceRecords, row: number): number =>
+  records.metallic?.[row] ?? defaultMetallic;
 
 // True when the instance row is drawn. Records with no `visible` column have every row visible.
 export const isInstanceVisible = (records: InstanceRecords, row: number): boolean =>

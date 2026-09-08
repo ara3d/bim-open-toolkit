@@ -105,6 +105,18 @@ describe('instanceTable visibility', () => {
     expect([0, 1, 2].map((row) => cellOf(rows, 'visible', row))).toEqual([true, false, true]);
   });
 
+  it('exposes material columns only when the records carry them', () => {
+    expect(instanceTable(placed).columns.has('roughness')).toBe(false);
+    const shiny = instanceRecords([{
+      meshIndex: 0, transform: identityMatrix, color: [1, 1, 1], opacity: 1, objectIndex: 0,
+      roughness: 0.25, metallic: 1,
+    }]);
+    const rows = instanceTable(shiny);
+    expect(rows.columns.get('roughness')?.values).toBe(shiny.roughness);
+    expect(rows.columns.get('metallic')?.values).toBe(shiny.metallic);
+    expect(numberOf(rows, 'roughness', 0)).toBeCloseTo(0.25);
+  });
+
   it('keeps a hidden row hidden through a set selection', () => {
     const kept = rowsInSet(instanceTable(placed), 'objectIndex', setOf(['b', 'c']), keys);
     expect(kept.rowCount).toBe(2);
