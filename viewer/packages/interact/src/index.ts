@@ -36,3 +36,18 @@ export { setProjectionKind, defaultFieldOfViewDegrees } from './projection.js';
 export { zoomProjection, defaultZoomLimits, type ZoomLimits } from './projection.js';
 // Place a camera so a box fills the picture, re-cutting the depth planes around it.
 export { fitBounds, defaultFitOptions, type FitOptions } from './projection.js';
+
+// The normalised input record the navigation reducers read, and what a pointer looks like in it.
+export { type InputFrame, type PointerSample, type PointerKind, type Viewport } from './input.js';
+// The names bindings use for buttons and modifier keys.
+export { type MouseButton, type ModifierName } from './input.js';
+// Build a frame with nothing happening, and clear the movement out of one after a step.
+export { emptyFrame, restFrame } from './input.js';
+// Whether anything is happening, and whether a pointer is actually pressed rather than hovering.
+export { isIdle, isDragging } from './input.js';
+// Read what is held: modifiers, keys and mouse buttons.
+export { hasModifiers, isKeyDown, normalizeKey, mouseButtons, heldButton } from './input.js';
+// Viewport arithmetic: a size that is never zero, its aspect, and a drag measured against it.
+export { safeViewport, aspectOf, normalizedDrag } from './input.js';
+// Gesture arithmetic over the pointers of a frame: which ones, how they moved, how they spread.
+export { pointersOfKind, dragDelta, pinchScale } from './input.js';
