@@ -44,6 +44,14 @@ export {
   type DoorWidthPolicy,
 } from './building.js';
 
+// A seeded services network: pipe runs, valves, equipment and the connections nobody verified.
+export {
+  defaultServicesOptions,
+  generateServices,
+  type Services,
+  type ServicesOptions,
+} from './services.js';
+
 // A seeded stress scene: many instances across few meshes, inside a stated triangle budget.
 export {
   defaultMaterialMix,
