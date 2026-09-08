@@ -36,8 +36,8 @@ describe('readBfastModel', () => {
       meshes: 2,
       instances: 3,
       drawnInstances: 2,
-      vertices: 7,
-      triangles: 3,
+      meshVertices: 7,
+      meshTriangles: 3,
     });
   });
 

@@ -18,6 +18,7 @@ export const formatCode = {
   failed: 'formats/load-failed',
   droppedHiddenInstances: 'formats/dropped-hidden-instances',
   droppedTextures: 'formats/dropped-textures',
+  droppedPrimitives: 'formats/dropped-primitives',
   droppedAnimation: 'formats/dropped-animation',
   droppedMaterialLibrary: 'formats/dropped-material-library',
   droppedVertexColors: 'formats/dropped-vertex-colors',
@@ -43,12 +44,17 @@ export class FormatError extends Error {
 }
 
 // Raises a `FormatError`. Used where returning a Result would cost an allocation per row.
-export const fail = (code: FormatCode, message: string, path: DiagnosticPath = []): never => {
+export function fail(code: FormatCode, message: string, path: DiagnosticPath = []): never {
   throw new FormatError(code, message, path);
-};
+}
 
 // Raises unless `condition` holds. The message is built only when it does not.
-export function requireThat(condition: boolean, code: FormatCode, message: () => string, path: DiagnosticPath = []): void {
+export function requireThat(
+  condition: boolean,
+  code: FormatCode,
+  message: () => string,
+  path: DiagnosticPath = [],
+): asserts condition {
   if (!condition) fail(code, message(), path);
 }
 

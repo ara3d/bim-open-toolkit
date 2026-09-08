@@ -51,8 +51,10 @@ export type ModelStatistics = {
   readonly meshes: number;
   readonly instances: number;
   readonly drawnInstances: number;
-  readonly vertices: number;
-  readonly triangles: number;
+  /** Vertices across the mesh list, counted once per mesh however often it is placed. */
+  readonly meshVertices: number;
+  /** Triangles across the mesh list, counted once per mesh however often it is placed. */
+  readonly meshTriangles: number;
 };
 
 // Counts the model. One pass over the instance column and the mesh list, nothing materialized.
@@ -66,11 +68,11 @@ export function modelStatistics(model: LoadedModel): ModelStatistics {
     drawnInstances += 1;
     drawn.add(instances.objectIndex[row] ?? -1);
   }
-  let vertices = 0;
-  let triangles = 0;
+  let meshVertices = 0;
+  let meshTriangles = 0;
   for (const each of meshes) {
-    vertices += Math.floor(each.positions.length / 3);
-    triangles += Math.floor(each.indices.length / 3);
+    meshVertices += Math.floor(each.positions.length / 3);
+    meshTriangles += Math.floor(each.indices.length / 3);
   }
   return {
     objects: model.data.objects.length,
@@ -78,8 +80,8 @@ export function modelStatistics(model: LoadedModel): ModelStatistics {
     meshes: meshes.length,
     instances: instances.count,
     drawnInstances,
-    vertices,
-    triangles,
+    meshVertices,
+    meshTriangles,
   };
 }
 

@@ -61,8 +61,8 @@ describe('modelStatistics', () => {
       meshes: 2,
       instances: 3,
       drawnInstances: 2,
-      vertices: 6,
-      triangles: 2,
+      meshVertices: 6,
+      meshTriangles: 2,
     });
   });
 });

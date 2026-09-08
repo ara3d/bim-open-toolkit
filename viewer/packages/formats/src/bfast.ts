@@ -15,7 +15,7 @@ import {
   type ModelRef,
   type ObjectRecord,
 } from '@bim-open-toolkit/model';
-import { fail, formatCode, formatNote, formatWarning, requireThat } from './diagnostics.js';
+import { fail, formatCode, formatNote, formatWarning } from './diagnostics.js';
 import { loadedModel, type LoadedModel } from './loaded-model.js';
 import { cancellationCheckInterval, reportProgress, throwIfCancelled, type LoadContext } from './progress.js';
 
@@ -111,14 +111,12 @@ export type EntityRows = {
 export function bfastEntityRows(model: RenderModel, declared: number): EntityRows {
   const instances = bfastInstanceCount(model);
   let largest = declared - 1;
+  // Inline checks, not `requireThat`: a message closure allocated per instance is the whole cost.
   for (let row = 0; row < instances; row += 1) {
     const entity = model.instanceInts[row * instanceWords + entityWord] ?? -1;
-    requireThat(entity >= 0, formatCode.invalidBfast, () => `Instance ${row} names entity ${entity}`);
-    requireThat(
-      declared === 0 || entity < declared,
-      formatCode.invalidBfast,
-      () => `Instance ${row} names entity ${entity}, beyond the ${declared} rows of the entity table`,
-    );
+    if (entity < 0) fail(formatCode.invalidBfast, `Instance ${row} names entity ${entity}`);
+    if (declared > 0 && entity >= declared)
+      fail(formatCode.invalidBfast, `Instance ${row} names entity ${entity}, beyond the ${declared} rows of the entity table`);
     if (entity > largest) largest = entity;
   }
   const rowOfEntity = new Int32Array(Math.max(largest + 1, 0)).fill(-1);
@@ -156,40 +154,43 @@ export function bfastInstances(
   context: LoadContext,
 ): BfastInstances {
   const total = bfastInstanceCount(model);
-  const kept: number[] = [];
-  for (let row = 0; row < total; row += 1) {
-    const flags = ((model.instanceInts[row * instanceWords + flagsWord] ?? 0) >>> 8) & 0xff;
-    if ((flags & hiddenFlag) === 0) kept.push(row);
-  }
+  const words = model.instanceInts;
+  const floats = model.instanceFloats;
+  const hiddenAt = (row: number): boolean => (((words[row * instanceWords + flagsWord] ?? 0) >>> 8) & hiddenFlag) !== 0;
 
-  const count = kept.length;
+  let count = 0;
+  for (let row = 0; row < total; row += 1) if (!hiddenAt(row)) count += 1;
+
   const meshIndex = new Int32Array(count);
   const objectIndex = new Int32Array(count);
   const transform = new Float32Array(count * transformStride);
   const color = new Float32Array(count * colorStride);
   const firstDrawn = new Int32Array(rows.entityOfRow.length).fill(-1);
-  const floats = model.instanceFloats;
-  const words = model.instanceInts;
+  const meshCount = meshes.length;
 
-  for (let out = 0; out < count; out += 1) {
-    if (out % cancellationCheckInterval === 0) throwIfCancelled(context);
-    const source = kept[out] ?? 0;
+  // The checks below are written inline rather than through `requireThat`, because building the
+  // message closure of an assertion that holds costs more here than everything else in the loop.
+  let out = 0;
+  for (let source = 0; source < total; source += 1) {
+    if (source % cancellationCheckInterval === 0) throwIfCancelled(context);
+    if (hiddenAt(source)) continue;
     const at = source * instanceWords;
     const mesh = words[at + meshWord] ?? noMesh;
-    requireThat(
-      mesh === noMesh || (mesh >= 0 && mesh < meshes.length),
-      formatCode.invalidBfast,
-      () => `Instance ${source} names mesh ${mesh} of ${meshes.length}`,
-    );
+    if (mesh !== noMesh && (mesh < 0 || mesh >= meshCount))
+      fail(formatCode.invalidBfast, `Instance ${source} names mesh ${mesh} of ${meshCount}`);
     const object = rows.rowOfEntity[words[at + entityWord] ?? 0] ?? -1;
-    requireThat(object >= 0, formatCode.invalidBfast, () => `Instance ${source} names an entity that is not an object`);
+    if (object < 0) fail(formatCode.invalidBfast, `Instance ${source} names an entity that is not an object`);
     meshIndex[out] = mesh;
     objectIndex[out] = object;
     if (mesh !== noMesh && (firstDrawn[object] ?? -1) === -1) firstDrawn[object] = out;
-    writeColumnMajor(floats, at, transform, out * transformStride);
+    writeColumnMajor(floats, at, transform, out * transformStride, source);
     const packed = words[at + colorWord] ?? 0;
-    for (let channel = 0; channel < colorStride; channel += 1)
-      color[out * colorStride + channel] = ((packed >>> (channel * 8)) & 0xff) / 255;
+    const colorAt = out * colorStride;
+    color[colorAt] = (packed & 0xff) / 255;
+    color[colorAt + 1] = ((packed >>> 8) & 0xff) / 255;
+    color[colorAt + 2] = ((packed >>> 16) & 0xff) / 255;
+    color[colorAt + 3] = ((packed >>> 24) & 0xff) / 255;
+    out += 1;
   }
   return { geometry: { meshes, instances: { count, meshIndex, transform, color, objectIndex } }, hidden: total - count, firstDrawn };
 }
@@ -200,11 +201,11 @@ export function bfastInstances(
  * The file stores the three rows of a 3x4 matrix with translation in the fourth column of each row;
  * `InstanceRecords.transform` is column-major 4x4, so this is a transpose plus the last row.
  */
-function writeColumnMajor(floats: Float32Array, at: number, out: Float32Array, target: number): void {
+function writeColumnMajor(floats: Float32Array, at: number, out: Float32Array, target: number, source: number): void {
   for (let column = 0; column < 4; column += 1)
     for (let row = 0; row < 3; row += 1) {
       const value = floats[at + row * 4 + column] ?? 0;
-      requireThat(Number.isFinite(value), formatCode.invalidBfast, () => `Instance transform holds ${value}`);
+      if (!Number.isFinite(value)) fail(formatCode.invalidBfast, `Instance ${source} has a transform holding ${value}`);
       out[target + column * 4 + row] = value;
     }
   out[target + 3] = 0;
