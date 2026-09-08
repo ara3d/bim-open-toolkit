@@ -27,9 +27,13 @@ It does, and it is about five times faster and twenty-four times smaller.
   benchmark reads `SNOWDON_BFAST_PATH` and skips with a printed reason when the
   file is absent.
 - File reading is excluded. The buffer is read once and reused.
-- Every case is warmed once, then five repetitions are interleaved — one round
+- Every case is warmed once, then the repetitions are interleaved — one round
   runs every case — and the median is reported. Interleaving is what makes two
   cases on the same machine comparable; see `src/perf/measure.ts` (Track PERF).
+  Five repetitions on the reference model, 25 to 5 on the synthetic scales.
+- The machine was otherwise idle for the numbers below. Repeating the same run
+  while three other agents were working made every figure five to ten times
+  larger while leaving the relationships intact.
 - Heap figures are `process.memoryUsage().heapUsed` growth with a forced
   collection before and after, with the built value kept reachable. They are
   sampled numbers, not allocation counts.
@@ -127,14 +131,19 @@ MB, not the 4.6 MB.
 the same shape — many groups holding few instances, several instances per object,
 plus hidden and geometry-free rows — and runs everywhere.
 
-| Instance records | Rendered | Groups | alpha ms | columnar ms | alpha heap | columnar heap |
-|---:|---:|---:|---:|---:|---:|---:|
-| 10,000 | 9,533 | 7,242 | 12.2 | 6.9 | 6.3 MB | 1.8 MB |
-| 100,000 | 94,870 | 72,406 | 130.4 | 61.2 | 63.3 MB | 18.2 MB |
-| 500,000 | 474,875 | 124,997 | 598.7 | 158.0 | 262.1 MB | 32.9 MB |
+| Instance records | Rendered | Groups | Reps | alpha ms | columnar ms | alpha heap | columnar heap | columns |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 10,000 | 9,533 | 7,242 | 25 | 12.0 | 4.8 | 6.3 MB | 1.8 MB | 0.11 MB |
+| 100,000 | 94,870 | 72,406 | 10 | 135.2 | 69.0 | 63.3 MB | 18.2 MB | 1.09 MB |
+| 500,000 | 474,875 | 124,997 | 5 | 568.0 | 157.9 | 262.1 MB | 32.9 MB | 5.43 MB |
 
 Both paths are linear in instances. The gap widens with size because the alpha's
 cost is dominated by allocation and the columnar path's by two linear passes.
+
+Repetitions fall as the model grows so that every scale costs about the same
+wall time. Five rounds at ten thousand instances turned out not to be enough on a
+machine running several agents at once: the two medians are only a few
+milliseconds apart there and swapped places once. Twenty-five rounds hold.
 
 ## Recommended shape for V2
 

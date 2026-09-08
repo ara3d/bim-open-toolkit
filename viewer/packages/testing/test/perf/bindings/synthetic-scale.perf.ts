@@ -17,7 +17,19 @@ import { measureAll, prepare, reportSamples, sampleFor } from '../../../src/perf
 import { canCollectGarbage, measureHeapGrowth, megabytes } from '../../../src/perf/memory.js';
 
 const modelId = 'synthetic';
-const scales = [10_000, 100_000, 500_000] as const;
+
+/**
+ * Repetitions fall as the model grows, so every scale takes a similar time and
+ * the small ones get enough rounds to be stable. Ten thousand instances is only
+ * a few milliseconds either way, and on a machine running several agents at once
+ * five rounds were not enough to keep the two medians in order.
+ */
+const scales = [
+  { instances: 10_000, repetitions: 25 },
+  { instances: 100_000, repetitions: 10 },
+  { instances: 500_000, repetitions: 5 },
+] as const;
+
 const alphaLabel = 'alpha bindings';
 const columnarLabel = 'columnar table';
 
@@ -27,14 +39,14 @@ const sourceOf = (instances: number): BindingSource => {
 };
 
 describe('binding layouts at scale', () => {
-  it(`compares both layouts at ${scales.join(', ')} instances`, () => {
+  it(`compares both layouts at ${scales.map((s) => s.instances).join(', ')} instances`, () => {
     console.log(`\nforced collection available: ${canCollectGarbage() ? 'yes' : 'no (heap figures include garbage)'}`);
-    for (const instances of scales) {
+    for (const { instances, repetitions } of scales) {
       const source = sourceOf(instances);
       const samples = measureAll([
         prepare({ label: alphaLabel, setup: () => source, body: (s) => buildAlphaBindings(s, modelId).bindings.length }),
         prepare({ label: columnarLabel, setup: () => source, body: (s) => buildColumnarBinding(s).table.count }),
-      ], { repetitions: 5, warmups: 1 });
+      ], { repetitions, warmups: 1 });
 
       const alpha = sampleFor(samples, alphaLabel);
       const columnar = sampleFor(samples, columnarLabel);

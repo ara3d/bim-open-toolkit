@@ -78,6 +78,7 @@ Run from `viewer/`, 2026-09-07:
 | `npm test -w @bim-open-toolkit/testing` | pass, 5 files, 28 tests, 1.3 s |
 | `npm run perf -w @bim-open-toolkit/testing` | 6 files, 13 tests, 351 s: this track's 2 files and 4 tests passed; 2 tests failed outside the fence (see below) |
 | `NODE_OPTIONS=--expose-gc npx vitest run --config vitest.perf.config.ts test/perf/bindings` | pass, 2 files, 4 tests; numbers in `docs/normalized-bindings.md` |
+| the same, repeated while three other tracks were running | the 10,000 instance case of the synthetic benchmark failed once at five repetitions; fixed by raising it to 25, and the whole run took 210 s instead of 30 s |
 | the same with `SNOWDON_BFAST_PATH` pointing at a missing file | the reference-model file skips with a printed reason; the synthetic benchmark still runs |
 | escape-hatch scan over the fence | 0 `any`, 0 casts, 0 non-null assertions, 0 directives |
 
@@ -176,4 +177,4 @@ None.
 | `eslint` | 2 | ~30 s each | 0 | slow relative to what it found on 9 files | neutral |
 | escape-hatch scan (grep for `any`, `as`, `!`, directives) | 1 | <1 s | 0 | every prose "as" and "any" matched | neutral, cheap |
 | `vitest` unit run | 3 | 1.3 s | 0; the regression tests passed on their first run | none | helpful as a guard, caught nothing yet because parity was designed in |
-| `vitest` perf run | 6 | 10-30 s | 1, and an important one: the memory assertion failed and showed that heap growth sampled without a forced collection is noise, so the assertion is now gated on `--expose-gc` | needs an environment variable to produce its memory numbers | helpful |
+| `vitest` perf run | 9 | 10-30 s alone, 210-390 s while other tracks ran | 2: heap growth sampled without a forced collection is noise, so that assertion is now gated on `--expose-gc`; and five repetitions were not enough to keep two medians a few milliseconds apart in order under load | needs an environment variable to produce its memory numbers; a loaded machine makes every figure 5-10x larger, so a benchmark run has to be read together with what else was running | helpful, and the two defects it caught were both in the measurement rather than the code |
