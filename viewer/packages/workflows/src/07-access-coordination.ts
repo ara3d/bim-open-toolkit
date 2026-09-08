@@ -1,5 +1,6 @@
 import {
   array,
+  contextTransform,
   failure,
   literal,
   missing,
@@ -8,14 +9,19 @@ import {
   object,
   resultOf,
   string,
+  transformBounds,
   union,
+  type Bounds,
+  type CoordinateContext,
   type Diagnostic,
+  type Matrix4,
   type MissingReason,
   type ModelRef,
   type Result,
   type Schema,
   type Vec3,
 } from '@bim-open-toolkit/model';
+import { coordinateContextSchema } from './coordinates.js';
 import { workflowException, type WorkflowException } from './exception.js';
 import { duplicateDiagnostics, keyOf, keysOf, namedObjectSet, suggestedView } from './keys.js';
 import { missingReasonSchema } from './observation.js';
@@ -46,9 +52,13 @@ export type CoordinationEnvelope = { readonly objectId: string; readonly discipl
 // A wall or slab opening.
 export type CoordinationPenetration = { readonly objectId: string; readonly discipline: string; readonly bbox: BoxObservation };
 
-// The envelopes and penetrations this coordination check compares, sharing one coordinate frame.
+// The envelopes and penetrations this coordination check compares, each table declaring the frame
+// its boxes are stated in. Findings are reported in the envelope frame; a penetration box is brought
+// into that frame before any comparison, and two frames that cannot be related are not compared.
 export type AccessCoordinationInput = {
   readonly model: ModelRef;
+  readonly envelopeFrame: CoordinateContext;
+  readonly penetrationFrame: CoordinateContext;
   readonly envelopes: readonly CoordinationEnvelope[];
   readonly penetrations: readonly CoordinationPenetration[];
 };
@@ -73,9 +83,30 @@ const participantSchema = object({ objectId: string(), discipline: string(), bbo
 // The JSON an access coordination check is given.
 export const accessCoordinationInputSchema: Schema<AccessCoordinationInput> = object({
   model: modelRefSchema,
+  envelopeFrame: coordinateContextSchema,
+  penetrationFrame: coordinateContextSchema,
   envelopes: array(participantSchema),
   penetrations: array(participantSchema),
 });
+
+// A box as model states bounds, and back, so a frame change can be applied to it.
+const boundsOfBox = (box: Box): Bounds => ({
+  min: [box.minX, box.minY, box.minZ],
+  max: [box.maxX, box.maxY, box.maxZ],
+});
+
+const boxOfBounds = (bounds: Bounds): Box => ({
+  minX: bounds.min[0],
+  minY: bounds.min[1],
+  minZ: bounds.min[2],
+  maxX: bounds.max[0],
+  maxY: bounds.max[1],
+  maxZ: bounds.max[2],
+});
+
+// A box read in another frame. Under a rotation this is the box around the turned box, which is
+// wider than the original: a candidate test may only ever become less certain, never more.
+const inFrame = (box: Box, transform: Matrix4): Box => boxOfBounds(transformBounds(transform, boundsOfBox(box)));
 
 // Whether two boxes overlap on every axis: the standard AABB overlap test, with touching bounds
 // (equal on an axis) counted as overlapping.
@@ -128,28 +159,45 @@ export const runAccessCoordination = (input: AccessCoordinationInput): Result<Wo
 
   const diagnostics: Diagnostic[] = [];
 
-  const findings: readonly Finding[] = input.envelopes.flatMap((envelope) => {
-    const envelopeBox = envelope.bbox;
-    return envelopeBox.kind !== 'known'
+  // Two frames that cannot be related are not compared at all. Comparing boxes stated in different
+  // units, or in a frame whose registration is unknown, is exactly the mistake that produces a
+  // confident wrong answer, so the run reports the frames instead of any finding.
+  const transform = contextTransform(input.penetrationFrame, input.envelopeFrame);
+
+  const findings: readonly Finding[] =
+    transform === undefined
       ? []
-      : input.penetrations.flatMap((penetration) => {
-          const penetrationBox = penetration.bbox;
-          return penetrationBox.kind === 'known' && boxesOverlap(envelopeBox.value, penetrationBox.value)
-            ? [
-                {
-                  envelopeId: envelope.objectId,
-                  envelopeDiscipline: envelope.discipline,
-                  envelopeBox: envelopeBox.value,
-                  penetrationId: penetration.objectId,
-                  penetrationDiscipline: penetration.discipline,
-                  penetrationBox: penetrationBox.value,
-                },
-              ]
-            : [];
+      : input.envelopes.flatMap((envelope) => {
+          const envelopeBox = envelope.bbox;
+          return envelopeBox.kind !== 'known'
+            ? []
+            : input.penetrations.flatMap((penetration) => {
+                const penetrationBox = penetration.bbox;
+                if (penetrationBox.kind !== 'known') return [];
+                const moved = inFrame(penetrationBox.value, transform);
+                return boxesOverlap(envelopeBox.value, moved)
+                  ? [
+                      {
+                        envelopeId: envelope.objectId,
+                        envelopeDiscipline: envelope.discipline,
+                        envelopeBox: envelopeBox.value,
+                        penetrationId: penetration.objectId,
+                        penetrationDiscipline: penetration.discipline,
+                        penetrationBox: moved,
+                      },
+                    ]
+                  : [];
+              });
         });
-  });
 
   const exceptions: readonly WorkflowException[] = [
+    ...(transform === undefined
+      ? [
+          workflowException([], 'coordinates', missing('unresolved-source'), {
+            detail: `the penetration frame (${input.penetrationFrame.units}, ${input.penetrationFrame.registration.kind}) cannot be related to the envelope frame (${input.envelopeFrame.units}, ${input.envelopeFrame.registration.kind}), so no boxes were compared`,
+          }),
+        ]
+      : []),
     ...input.envelopes.flatMap((item) => (item.bbox.kind === 'missing' ? [gapException(item, item.bbox.reason)] : [])),
     ...input.penetrations.flatMap((item) => (item.bbox.kind === 'missing' ? [gapException(item, item.bbox.reason)] : [])),
   ];

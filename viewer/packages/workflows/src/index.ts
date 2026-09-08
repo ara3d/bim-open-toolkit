@@ -4,6 +4,7 @@
 export * from './values.js';
 export * from './schema-tools.js';
 export * from './observation.js';
+export * from './coordinates.js';
 export * from './outcome.js';
 export * from './overlay.js';
 export * from './records.js';

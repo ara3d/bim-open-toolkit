@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { metresZUpLocal, unknownCoordinates } from '@bim-open-toolkit/model';
 import { accessCoordinationInputSchema, runAccessCoordination } from '../src/07-access-coordination.js';
 import { exceptionRows, resultRows } from '../src/result.js';
 import { fixtureInput, fixtureModel, loadFixture, valueOfResult } from './fixtures.js';
 
 const fixture = loadFixture('07-access-coordination');
-const input = fixtureInput(accessCoordinationInputSchema, fixture, { model: fixtureModel });
+const input = fixtureInput(accessCoordinationInputSchema, fixture, {
+  model: fixtureModel,
+  envelopeFrame: metresZUpLocal,
+  penetrationFrame: metresZUpLocal,
+});
 const result = valueOfResult('access coordination', runAccessCoordination(input));
 
 describe('access coordination', () => {
@@ -24,6 +29,39 @@ describe('access coordination', () => {
     ]);
     expect(result.overlays.every((overlay) => overlay.outcome === 'candidate')).toBe(true);
     expect(JSON.stringify(result.tables).toLowerCase()).not.toContain('clash');
+  });
+
+  it('compares no boxes at all when the two frames cannot be related', () => {
+    const unrelated = valueOfResult(
+      'access coordination',
+      runAccessCoordination({ ...input, penetrationFrame: unknownCoordinates }),
+    );
+    expect(resultRows(unrelated, 'candidateFindings')).toEqual([]);
+    expect(exceptionRows(unrelated)[0]).toEqual({
+      subjects: [],
+      field: 'coordinates',
+      detail:
+        'the penetration frame (unknown, unknown) cannot be related to the envelope frame (metres, local), so no boxes were compared',
+      kind: 'missing',
+      reason: 'unresolved-source',
+    });
+  });
+
+  it('reads a penetration box in the envelope frame before comparing it', () => {
+    const millimetres = valueOfResult(
+      'access coordination',
+      runAccessCoordination({
+        ...input,
+        penetrationFrame: { ...metresZUpLocal, units: 'millimetres' },
+      }),
+    );
+    // Every penetration is a thousand times smaller once it is read in metres, so all three fall
+    // inside the first envelope. The units decide the answer, which is why they are stated.
+    expect(resultRows(millimetres, 'candidateFindings').map((row) => row['penetrationId'])).toEqual([
+      'PEN-1',
+      'PEN-2',
+      'PEN-3',
+    ]);
   });
 
   it('refuses an envelopes table that repeats an id rather than losing a row', () => {

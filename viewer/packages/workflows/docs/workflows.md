@@ -154,13 +154,17 @@ by this trace.
 
 ## 7. Shared penetrations and equipment access — synthetic
 
-**Input.** `envelopes` and `penetrations`, each with an observed axis-aligned bounding box in one
-registered coordinate frame.
+**Input.** `envelopes` and `penetrations`, each with an observed axis-aligned bounding box, and the
+coordinate frame each of the two tables states its boxes in.
 
-**Rules.** Two boxes are a candidate finding when their intervals intersect on all three axes; touching
-faces count. Every candidate names both participants, both disciplines, and the basis
-`bounding-box-overlap`. An item with no bounding box cannot be tested at all and is a coordination gap
-exception, never silently treated as not overlapping.
+**Rules.** A penetration box is read into the envelope frame before anything is compared, and the
+findings are reported in that frame. Two frames that cannot be related — different units, or a
+registration that is not stated — are not compared at all: the run reports the two frames as an
+exception and produces no finding, because comparing boxes across an unstated frame is exactly how a
+confident wrong answer is produced. Two boxes are a candidate finding when their intervals intersect
+on all three axes; touching faces count. Every candidate names both participants, both disciplines,
+and the basis `bounding-box-overlap`. An item with no bounding box cannot be tested at all and is a
+coordination gap exception, never silently treated as not overlapping.
 
 **Says.** Which pairs are worth a person's attention, and which items could not be tested.
 
