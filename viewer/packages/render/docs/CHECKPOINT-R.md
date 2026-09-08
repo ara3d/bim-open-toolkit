@@ -97,7 +97,7 @@ Run from `viewer/` at the end of the track, all writers in this fence stopped.
 | `1c76ab2` | Representation registry, replacement and overlay primitives, 137 tests |
 | `7277d06` | Environment, capture and frame timing, 186 tests |
 | `1cd09be` | Scene binding onto viewer-core, 212 tests |
-| (this one) | Follow the model package's M1.1 additions: honour the source `visible` column, adopt its change-table names, 214 tests |
+| `db9a63c` | Follow the model package's M1.1 additions: honour the source `visible` column, adopt its change-table names, 214 tests |
 | `3483a63` | `docs/render.md`, `README.md`, this checkpoint |
 
 Every commit staged by explicit pathspec inside the fence. One `index.lock` collision with another
