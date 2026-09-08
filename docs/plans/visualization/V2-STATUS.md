@@ -135,3 +135,15 @@ Answers to its requests. This supervisor cannot message a running track, so what
 ### Findings
 
 - platonic-ts: the check gate's ratchet step shells out to a platonic-ts-only command, so the wrapper reuses its pure scanner instead. Its scan globs are fixed to `packages/*/src`, so alpha edits by other sessions move the counts; a regression caused by alpha edits is re-baselined by the supervisor and noted here. Upstream items: `--repo <dir>` for the entry points, configurable scan globs.
+
+## Feature demos wave — started 2026-09-08 (second session)
+
+Plan: [FEATURE-DEMOS-PLAN.md](FEATURE-DEMOS-PLAN.md). User request: show by level, room and category; separate the levels and rooms side by side with the ceilings and roof removed or cut away; HUD examples (2D minimap, 3D gumball, FPS with CPU and GPU timing), each with tests and demos. Wave 2 already builds the feature side (FA sets and appearance, FB layouts, clipping, navigation aids and HUD, V `createViewer`), so this wave takes only what is unclaimed: the building's roof and ceilings, and one demo page per request built on wave 2's features. Fences are in `.claude/wave.json` (S3, FD1 to FD3, FD-shared); the wave 2 supervisor was sent the fence list and three requests (V frame hook and GPU timer, FA derived sets by storey, room and category, FB layouts, cutaway and navigation aids) by session message.
+
+| Track | Model | Fence | State | Checkpoint |
+|---|---|---|---|---|
+| S3 opt-in roof and ceilings for the building generator | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S3.md` |
+| FD1 `show-by` demo | Opus | `demos/{src,test}/feature-demos/show-by/**`, `demos/feature-demos/show-by.html` | queued: V exports `createViewer`, FA commits sets | `viewer/packages/demos/docs/CHECKPOINT-FD1.md` |
+| FD2 `separate` demo | Opus | same pattern, `separate` | queued: FD1's condition plus FB layouts and clipping | `CHECKPOINT-FD2.md` |
+| FD3 `hud-fps`, `hud-minimap`, `hud-gumball` demos | Opus | same pattern, three ids | queued: V's frame hook or GPU timer, FB hud | `CHECKPOINT-FD3.md` |
+| FD-shared page frame, Vite config, browser helper | supervisor | `demos/{src,test}/feature-demos/_shared/**`, `demos/vite.feature-demos.config.mjs`, `demos/docs/feature-demos.md` | protocol and browser helper written; page frame waits for V's `createViewer` | — |

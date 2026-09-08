@@ -178,6 +178,50 @@
         "viewer/packages/features/test/capture*",
         "viewer/packages/features/docs/CHECKPOINT-FC.md"
       ]
+    },
+    "S3": {
+      "paths": [
+        "viewer/packages/synthetic/**"
+      ]
+    },
+    "FD1": {
+      "paths": [
+        "viewer/packages/demos/src/feature-demos/show-by/**",
+        "viewer/packages/demos/test/feature-demos/show-by/**",
+        "viewer/packages/demos/feature-demos/show-by.html",
+        "viewer/packages/demos/docs/CHECKPOINT-FD1.md"
+      ]
+    },
+    "FD2": {
+      "paths": [
+        "viewer/packages/demos/src/feature-demos/separate/**",
+        "viewer/packages/demos/test/feature-demos/separate/**",
+        "viewer/packages/demos/feature-demos/separate.html",
+        "viewer/packages/demos/docs/CHECKPOINT-FD2.md"
+      ]
+    },
+    "FD3": {
+      "paths": [
+        "viewer/packages/demos/src/feature-demos/hud-fps/**",
+        "viewer/packages/demos/src/feature-demos/hud-minimap/**",
+        "viewer/packages/demos/src/feature-demos/hud-gumball/**",
+        "viewer/packages/demos/test/feature-demos/hud-fps/**",
+        "viewer/packages/demos/test/feature-demos/hud-minimap/**",
+        "viewer/packages/demos/test/feature-demos/hud-gumball/**",
+        "viewer/packages/demos/feature-demos/hud-fps.html",
+        "viewer/packages/demos/feature-demos/hud-minimap.html",
+        "viewer/packages/demos/feature-demos/hud-gumball.html",
+        "viewer/packages/demos/docs/CHECKPOINT-FD3.md"
+      ]
+    },
+    "FD-shared": {
+      "paths": [
+        "viewer/packages/demos/src/feature-demos/_shared/**",
+        "viewer/packages/demos/test/feature-demos/_shared/**",
+        "viewer/packages/demos/vite.feature-demos.config.mjs",
+        "viewer/packages/demos/docs/feature-demos.md"
+      ],
+      "note": "supervisor of the feature-demos wave (session 'Feature demos wave'); ports 5181 FD1, 5182 FD2, 5183 FD3"
     }
   }
 }
