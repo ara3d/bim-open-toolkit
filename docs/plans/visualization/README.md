@@ -95,3 +95,17 @@ Append a dated record with: affected original F-ID/stage and requirement; previo
 **User basis:** plan approved 2026-09-07 delegated this decision to Track I.
 
 **Affected contracts and checks:** `@ara3d/viewer-controls` removed from the interact manifest; nothing imports it.
+
+## Decision record: 2026-09-08 — new gallery and demo set on Gratify
+
+**Affected requirements:** F09 default UI (shell, themes, big-text), F27 demos and gallery, section 6 workflows, section 9 demonstrations. No acceptance criterion removed.
+
+**Previous decision:** V2-PLAN.md wave 2 Track D ports the 23 alpha demos onto a gallery host on `createViewer`; wave 3 Tracks WD1 to WD4 add eleven workflow demos; Track G builds the Gratify shell in wave 3.
+
+**Revised decision:** [GALLERY-PLAN.md](GALLERY-PLAN.md). A new gallery and twenty-one demos are built from scratch in `viewer/packages/demos` with a new look and feel (light chrome, dark viewport, serif display type, one warm accent); the alpha gallery stays untouched on port 5173. Gratify draws every in-canvas widget and the sidebar property inspector; the DOM shell owns navigation, fixture choice, theme and an accessibility mirror. `createViewer` (Track V) and the Gratify layer (Track UG) are pulled forward and built alongside; feature modules are owned by the demo track that demonstrates them (D1 to D4). Per-chunk gates are typecheck and package tests only; lint and the combined gate run at integration; performance is measured, not asserted. The alpha demos are not ported; the wave 4 parity gate checks each alpha behaviour against the new demos instead.
+
+**Reason and evidence:** two surveys on 2026-09-08. Gratify 0.2.0 is a Canvas2D model-view-update framework with six built-in parts and no published widgets, text input, scrolling or clip primitive, and its `mount()` leaks listeners; the alpha's headless-runtime pattern avoids the leak and the pointer-capture problem, so the layer is built on that. The `demos` package holds only the fixture server, and `viewer`, `features` and `ui-gratify` are empty, so nothing is lost by starting the gallery fresh, and porting 23 alpha demos would carry the alpha's hand-wired host into V2.
+
+**User basis:** user request 2026-09-08 for a brand-new demo set and gallery leveraging Gratify for in-canvas widgets or a sidebar inspector, a new look and feel with the old gallery kept, speed over gates, and improving touched code.
+
+**Affected contracts and checks:** new contract revision G1 (demo registration, Gratify layer, viewer composition) in GALLERY-PLAN.md section 4, landed as code at the wave's chunk 0. Model contract M1 unchanged. Track C (MCP) and the E2E slice track are unchanged; GAL's first chunk supersedes the slice if it has not landed.

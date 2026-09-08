@@ -25,6 +25,7 @@ Tracks that are ready and unclaimed, in value order:
 | V viewer composition | `viewer/packages/viewer/**` | `createViewer`, command bus, feature host, slice persistence with migration, multi-view, disposal; a headless `Session` the tests drive | M1 (landed); renderer binding waits for R |
 | C MCP bridge | `viewer/packages/mcp/**` | Node bridge exposing viewer commands as MCP tools over a WebSocket, descriptors generated from `describeCommands`, client walkthrough | M1 (landed); the MCP SDK dependency is a supervisor task, ask for it |
 | E2E vertical slice | `viewer/packages/demos/src/slice/**` | One page: synthetic building drawn, unrated doors red | R's instance table |
+| Gallery wave: V, UG, GAL, D1 to D4 | see [GALLERY-PLAN.md](GALLERY-PLAN.md) section 6 | `createViewer`, the Gratify widget and inspector layer, a new gallery and twenty-one demos | G1 contracts at the gallery wave's chunk 0 |
 
 Tell the supervisor session (or the user) the letter you take so it is added to the manifest and status table. If you must invent a track, name it, name its fence, and add both to your checkpoint's first line.
 
