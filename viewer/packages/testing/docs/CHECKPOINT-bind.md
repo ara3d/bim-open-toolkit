@@ -1,6 +1,6 @@
 # Track BIND checkpoint — normalized binding cost
 
-State: implemented (chunk 1 verified)
+State: verified (both chunks)
 Contract revision in force: P0 (`docs/plans/visualization/V2-PLAN.md`) plus `M1-stub` from Track M. Acknowledged.
 
 Fence: `viewer/packages/testing/src/bindings/**`, `test/bindings/**`, `test/perf/bindings/**`,
@@ -14,7 +14,7 @@ Nested sub-agents spawned so far: 0.
 | # | Concern | Files | State |
 |---|---|---|---|
 | 1 | Columnar binding builder, alpha baseline, synthetic model, regression tests | `src/bindings/**`, `test/bindings/**` | verified, committed `e936857` |
-| 2 | Benchmarks and the report | `test/perf/bindings/**`, `docs/**` | verified, committed `<chunk 2>` |
+| 2 | Benchmarks and the report | `test/perf/bindings/**`, `docs/**` | verified, committed `3ccea84` |
 
 ## Delivered
 
@@ -94,8 +94,16 @@ two sets of numbers incomparable — but a change to `measureAll`, `prepare` or 
 invalidates the numbers recorded here. Track PERF's uncommitted edits at the time of writing were to
 `src/perf/columns.ts`, `src/perf/measure.ts` and four `test/perf/*.perf.ts` files.
 
-Another session's changes to `viewer/packages/demos/test/server/server.test.ts` were present in the
-working tree throughout and were never staged.
+Other sessions' changes to `viewer/packages/demos/**`, `viewer/packages/interact/**` and
+`viewer/packages/synthetic/**` were present in the working tree throughout and were never staged.
+
+Incident to report to the supervisor: the chunk 2 commit was first issued as `git commit -F -` at the
+head of a shell pipeline, so the here-document fed the pipeline's last command and `git` waited on an
+empty standard input. It held `.git/index.lock` for about four minutes, which blocks every other track
+in this checkout. Recovery: killed the one `git.exe`, confirmed no other git process was running,
+removed the stale lock, confirmed the index still held exactly this track's five files, and committed
+again with the message in a scratch file. Rule for the wave: never pipe `git commit`, and pass a commit
+message as a file rather than on standard input.
 
 ## Failures outside the fence
 
