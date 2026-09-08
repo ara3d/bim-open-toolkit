@@ -120,6 +120,17 @@ relationships that did not hold on a machine running several sessions at once:
 Not investigated; they are Track PERF's to judge. This track's own files were verified with
 `npx vitest run --config vitest.perf.config.ts test/perf/bindings`.
 
+## Remaining work
+
+None inside this fence; the study is finished. What it hands on, all outside the fence:
+
+- Track R takes the `RepresentationTable` shape into `render` and merges it with Track PERF's
+  `InstanceColumns`; Track F builds it in `formats` from `InstanceRecords`.
+- The BOS path was not measured. The columnar builder consumes `bosToGroups` output unchanged because
+  it has the same `groupEntities` shape, but no number backs that.
+- The two loaders changes in findings 2 and 3 need the loaders session, not this track.
+- Group conversion, not binding, is where the remaining load time is (finding 4).
+
 ## Blockers
 
 None.
