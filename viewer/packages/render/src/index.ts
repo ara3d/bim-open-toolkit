@@ -52,3 +52,43 @@ export {
   type UpdateOptions,
   type UpdateReport,
 } from './updates.js';
+
+// Clipping planes and boxes as plain data, with the one-method seam a renderer implements.
+export {
+  applyClipping,
+  boundsClipped,
+  boxPlanes,
+  clipPlane,
+  isClipped,
+  noClipping,
+  planeThrough,
+  planesOf,
+  signedDistance,
+  type ClipPlane,
+  type ClipRegion,
+  type ClippingTarget,
+} from './clipping.js';
+
+// Picking: object identity and a world hit point, with hidden and clipped surfaces rejected.
+export {
+  defaultPickOptions,
+  groupOrdinals,
+  instanceSource,
+  intersectMesh,
+  intersectTriangle,
+  isPickable,
+  nearestHit,
+  pick,
+  pickInstances,
+  pointOnRay,
+  projectPoint,
+  rayThroughNdc,
+  resolveHit,
+  rowOfSlot,
+  type ObjectHit,
+  type ObjectHitSource,
+  type PickOptions,
+  type Ray,
+  type RaycastHit,
+  type RaycastSource,
+} from './picking.js';
