@@ -26,9 +26,16 @@
     "@bim-open-toolkit/synthetic": "0.1.0",
     "@bim-open-toolkit/render": "0.1.0",
     "@ara3d/viewer-core": "0.1.0",
-    "@ara3d/viewer-loaders": "0.1.0"
+    "@ara3d/viewer-loaders": "0.1.0",
+    "@bim-open-toolkit/interact": "0.1.0"
   },
   "peerDependencies": {
-    "three": ">=0.180.0"
+    "three": ">=0.180.0",
+    "playwright-core": ">=1.60.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright-core": {
+      "optional": true
+    }
   }
 }
