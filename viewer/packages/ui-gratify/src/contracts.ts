@@ -25,10 +25,16 @@ export type HudPanel<D, I> = {
   readonly onCommit?: ((doc: D, previous: D, session: Session) => void) | undefined;
 };
 
-// What hosting a panel returns.
+// What hosting a panel returns. Revision G1.1 (Track UG) added `activate` and `onChanged`, which
+// are what a DOM mirror needs to run the same intents as the canvas and to know when to rebuild.
 export type Hosted = Disposable & {
   readonly canvas: HTMLCanvasElement;
   readonly semantics: () => SemanticsNode;
+  // Presses the control at a semantics path exactly as a pointer would. False when nothing on
+  // screen has that path.
+  readonly activate: (path: string) => boolean;
+  // Runs the given work after each committed change to the hosted document.
+  readonly onChanged: (run: () => void) => Disposable;
 };
 
 // The host's way of mounting a panel of any doc and intent type.
