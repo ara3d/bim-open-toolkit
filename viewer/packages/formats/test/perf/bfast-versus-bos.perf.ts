@@ -103,7 +103,7 @@ Node ${process.version}, ${process.platform}. Warm up then ${repetitions} repeti
           ...modelStatistics(whole.last),
           'objects with a name': whole.last.data.objects.filter((each) => each.name !== undefined).length,
           'objects with a category': whole.last.data.objects.filter((each) => each.category !== undefined).length,
-          diagnostics: whole.last.diagnostics.map((each) => each.code).join(', '),
+          diagnostics: whole.last.diagnostics.map((each) => `${each.code}: ${each.message}`).join('; '),
         }),
       ]);
 

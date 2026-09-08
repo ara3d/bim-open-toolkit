@@ -6,9 +6,9 @@ Node v22.13.1, win32. Warm up then 5 repetitions, 3 for the steps that prepare t
 
 | Step | Median ms | Samples |
 |---|---:|---|
-| prepare the BOS archive as BFAST | 1649.9 | 1650, 1676, 1557 |
-| BFAST, whole load | 353.3 | 352, 353, 421, 349, 422 |
-| BOS, whole load including preparation | 2082.1 | 2133, 2082, 2052 |
+| prepare the BOS archive as BFAST | 1686.1 | 1694, 1686, 1590 |
+| BFAST, whole load | 393.5 | 471, 390, 394, 361, 409 |
+| BOS, whole load including preparation | 2126.0 | 2126, 2089, 2140 |
 
 ### Sizes and counts
 

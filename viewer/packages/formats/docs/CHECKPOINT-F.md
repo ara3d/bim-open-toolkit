@@ -1,6 +1,6 @@
 # Track F checkpoint — formats
 
-State: **verified** (all four chunks committed and green).
+State: **verified** (all five chunks committed and green).
 Contract revision in force: **M1** at `641624b` (`viewer/packages/model/docs/CONTRACTS-M1.md`). Acknowledged.
 Fence: `viewer/packages/formats/**` except `package.json`, `tsconfig.json`, `tsconfig.build.json`,
 `vitest.config.ts`, `vitest.perf.config.ts`, which are supervisor-owned. Nothing outside was written.
@@ -18,7 +18,7 @@ designed alongside the adapters. Writing them directly was cheaper than specifyi
 | 2 | BFAST as the default path, BOS through conversion to it | `4617096` | `src/{bfast,bos}.ts`, `test/{bfast,bos}.test.ts` |
 | 3 | Measurement on the real model, and the hot-loop fix it found | `ebbfeaa` | `test/perf/**`, `src/{bfast,diagnostics,loaded-model}.ts` |
 | 4 | glTF, OBJ and STL adapters | `36c441b` | `src/{gltf,obj,stl}.ts`, three test files |
-| 5 | The `loadModel` entry, docs and this checkpoint | this chunk | `src/load.ts`, `test/load.test.ts`, `README.md`, `docs/**` |
+| 5 | The `loadModel` entry, docs and this checkpoint | `5325138` | `src/load.ts`, `test/load.test.ts`, `README.md`, `docs/**` |
 
 ## Delivered
 
@@ -55,39 +55,43 @@ Reference model: the private prepared Snowdon BFAST (111,630,208 bytes) and its 
 (9,362,255 bytes). No model bytes are committed. Regenerate with `npm run perf`; the numbers land in
 `docs/measurements-bfast.md` and `docs/measurements-bfast-versus-bos.md`.
 
-| Step | Median ms |
-|---|---:|
-| parse container and render tables | 88 |
-| decode entity ids, names and categories | 102 |
-| decode entity ids only | 21 |
-| object rows | 5 |
-| mesh list as views on the file | 94 |
-| instance columns | 105 |
-| **whole load, metadata full** | **455** |
-| whole load, metadata none | 296 |
-| `validateLoadedModel` over the whole model | 128 |
+Two runs an hour apart, with different numbers of other agents on the machine, are given because the
+spread between them is the honest error bar: the second run is 5 to 20 percent faster throughout.
 
-| Whole load | Median ms |
-|---|---:|
-| prepare the BOS archive as BFAST | 1650 |
-| **BFAST** | **353** |
-| **BOS, including preparation** | **2082** |
+| Step | Median ms, first run | Median ms, second run |
+|---|---:|---:|
+| parse container and render tables | 88 | 83 |
+| decode entity ids, names and categories | 102 | 87 |
+| decode entity ids only | 21 | 20 |
+| object rows | 5 | 8 |
+| mesh list as views on the file | 94 | 73 |
+| instance columns | 105 | 93 |
+| **whole load, metadata full** | **455** | **379** |
+| whole load, metadata none | 296 | 268 |
+| `validateLoadedModel` over the whole model | 128 | 153 |
+
+| Whole load | Median ms, first run | Median ms, second run |
+|---|---:|---:|
+| prepare the BOS archive as BFAST | 1650 | 1686 |
+| **BFAST** | **353** | **394** |
+| **BOS, including preparation** | **2082** | **2126** |
 
 The model: 51,139 objects (28,976 with no drawn geometry), 171,569 meshes, 456,598 instance rows,
-2,190,963 mesh triangles, 48,844 objects with a name, 31,679 with a category.
+14,864 further placements marked hidden and left out, 2,190,963 mesh triangles, 48,844 objects with
+a name, 31,679 with a category.
 
 ### What this says against the earlier measurements
 
 | Path | Alpha (V2-STATUS.md) | This package | Change |
 |---|---:|---:|---|
-| BFAST end to end | 1981 ms | 353 to 455 ms | 4.3 to 5.6 times faster |
-| BOS end to end | 3797 ms | 2082 ms | 1.8 times faster |
-| BFAST against BOS | 1.9 times | 5.9 times | the ratio the default rests on is larger, not smaller |
+| BFAST end to end | 1981 ms | 353 to 455 ms | 4.4 to 5.6 times faster |
+| BOS end to end | 3797 ms | 2082 to 2126 ms | 1.8 times faster |
+| BFAST against BOS | 1.9 times | 5.4 to 5.9 times | the ratio the default rests on is larger, not smaller |
 
 The BFAST default (user decision, 2026-09-07) holds on the columnar path and by a wider margin than
 the measurement it was taken on. The reason is that the alpha's cost was mostly the two steps V2 does
 not perform: building viewer-core groups (Track BIND measured 574 ms) and then one binding object per
-instance (348 ms, 234.8 MB). Neither exists here; the whole build after parsing is 204 ms.
+instance (348 ms, 234.8 MB). Neither exists here; the whole build after parsing is 174 to 204 ms.
 
 Transfer is still not measured, and the prepared file is 11.9 times the archive. That trade is
 unchanged and remains a later optimization, as the decision record says.
@@ -100,12 +104,13 @@ unchanged and remains a later optimization, as the decision record says.
    transform float: about five million allocations per load. Writing the same checks as
    `if (...) fail(...)` took the step to 105 ms and the whole load from 724 ms to 455 ms. The
    assertion helper is still right everywhere that is not per row.
-2. **Where the load time goes now.** Parsing 88 ms, metadata 102 ms, mesh list 94 ms, instance
-   columns 105 ms. There is no dominant step left. The next reduction available is the mesh list:
-   171,569 `Mesh` objects, each holding two typed-array views and a bounds object, for a model whose
-   geometry is three buffers. `Geometry.meshes` being an array of records is what forces it. A
-   columnar mesh table (slice offsets into shared buffers) would remove about 850,000 objects and the
-   94 ms; it is a model-contract change, recorded as a request below rather than made here.
+2. **Where the load time goes now.** Parsing 83 to 88 ms, metadata 87 to 102 ms, mesh list 73 to
+   94 ms, instance columns 93 to 105 ms. There is no dominant step left. The largest reduction still
+   available is the mesh list: 171,569 `Mesh` objects, each holding two typed-array views and a
+   bounds object, for a model whose geometry is three buffers. `Geometry.meshes` being an array of
+   records is what forces it. A columnar mesh table (slice offsets into shared buffers) would remove
+   about 850,000 objects and that step; it is a model-contract change, recorded as a request below
+   rather than made here.
 3. **Names and categories are worth their 81 ms.** BOS stores `Entities.Name` as a string-table index
    and `Entities.Category` as another entity row whose name is the label. Decoding both gives 48,844
    named and 31,679 categorized objects on the reference model, against the alpha's generated
@@ -114,9 +119,11 @@ unchanged and remains a later optimization, as the decision record says.
 4. **The entity table is what makes geometry-free objects real.** 28,976 of 51,139 objects draw
    nothing. They exist because the combined BFAST embeds the BOS `Entities` table; a geometry-only
    BFAST has only the 22,163 entities its placements name. F01 depends on the combined file.
-5. **Hidden placements have nowhere to go.** `InstanceRecords` has no visibility column, so a
-   placement the file marks hidden cannot be a row without being drawn. They are dropped and counted.
-   The reference model has none, but the format has the flag and the alpha honoured it.
+5. **Hidden placements have nowhere to go, and there are real ones.** `InstanceRecords` has no
+   visibility column, so a placement the file marks hidden cannot be a row without being drawn. They
+   are dropped and counted: the reference model has **14,864** of them, 3.2 percent of its 471,462
+   placements, and the load says so through `formats/dropped-hidden-instances`. Their objects stay.
+   Until the contract has a visibility column, a host cannot show a hidden placement or unhide one.
 6. **`ObjectRecord.representation` is a single row, and objects have many placements.** It is set to
    the object's first drawn instance row, so `hasRepresentation` means something; the full mapping is
    `InstanceRecords.objectIndex`, which is the direction the render package needs anyway.
@@ -173,14 +180,15 @@ To the loaders session, through the supervisor:
 
 ## Verification
 
-From `viewer/`, at this chunk:
+From `viewer/`, at `5325138`. The performance run was taken at `36c441b`; chunk 5 added `load.ts`
+and documentation and changed nothing the performance suite exercises.
 
 | Command | Result |
 |---|---|
 | `npx tsc --noEmit -p packages/formats/tsconfig.json` | pass, no output |
 | `npx eslint packages/formats` | pass, no output |
 | `npm test -w @bim-open-toolkit/formats` | pass, 11 files, 149 tests, 1.2 s |
-| `npm run perf -w @bim-open-toolkit/formats` | pass, 2 tests, see the tables above |
+| `npm run perf -w @bim-open-toolkit/formats` | pass, 2 tests, twice, see the tables above |
 | escape-hatch scan over `src` and `test` | 0 `any`, 0 `as` casts, 0 non-null assertions, 0 directives |
 
 ### Limits of this verification

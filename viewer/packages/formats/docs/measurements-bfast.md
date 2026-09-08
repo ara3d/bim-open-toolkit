@@ -6,15 +6,15 @@ Node v22.13.1, win32. Warm up then 5 repetitions.
 
 | Step | Median ms | Samples |
 |---|---:|---|
-| parse container and render tables | 87.8 | 89, 92, 77, 79, 88 |
-| decode entity ids, names and categories | 101.7 | 137, 121, 102, 100, 84 |
-| decode entity ids only | 21.0 | 25, 26, 21, 19, 20 |
-| object rows from the entity table and placements | 5.1 | 10, 12, 5, 5, 5 |
-| mesh list as views on the file | 93.8 | 93, 98, 94, 105, 80 |
-| instance columns | 105.2 | 122, 93, 96, 118, 105 |
-| whole load, metadata full | 454.9 | 410, 477, 514, 455, 446 |
-| whole load, metadata none | 296.4 | 302, 354, 262, 296, 270 |
-| validateLoadedModel over the whole model | 128.0 | 128 |
+| parse container and render tables | 83.0 | 83, 77, 99, 81, 84 |
+| decode entity ids, names and categories | 87.3 | 109, 92, 79, 87, 87 |
+| decode entity ids only | 19.6 | 19, 21, 19, 20, 21 |
+| object rows from the entity table and placements | 7.5 | 8, 8, 4, 8, 7 |
+| mesh list as views on the file | 72.7 | 64, 85, 65, 73, 84 |
+| instance columns | 93.0 | 97, 109, 79, 93, 77 |
+| whole load, metadata full | 378.5 | 375, 426, 333, 378, 427 |
+| whole load, metadata none | 267.6 | 310, 239, 288, 251, 268 |
+| validateLoadedModel over the whole model | 153.0 | 153 |
 
 ### The model
 
@@ -28,4 +28,4 @@ Node v22.13.1, win32. Warm up then 5 repetitions.
 - meshTriangles: 2,190,963
 - objects with a name: 48,844
 - objects with a category: 31,679
-- diagnostics: formats/dropped-hidden-instances, formats/assumed-coordinates
+- diagnostics: formats/dropped-hidden-instances: 14864 placements are marked hidden in the file and are not instance rows; formats/assumed-coordinates: BFAST records no units or up axis; the model is reported as Z up with unknown units
