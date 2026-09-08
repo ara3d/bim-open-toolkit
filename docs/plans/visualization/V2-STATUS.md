@@ -59,7 +59,7 @@ F, R, S2, W, T, I verified (see the table); F2, E2E and M4 are follow-ups in fli
 |---|---|---|---|---|
 | V viewer composition | Opus | `viewer/packages/viewer/**` | working | `viewer/packages/viewer/docs/CHECKPOINT-V.md` |
 | FA appearance, sets, edits, replacement | Opus | features `src/{appearance,sets,edits,replacement}*` and tests | verified: four features with version-1 slices, schema-validated commands and render hooks; colour-by-category and banded numeric builders returning plain style rules plus a legend; M1 composition in `appearance`; one undo step per edits command; replacement hides by change table and runs after appearance by dependency; 86 tests, each feature also run through V's real session; commits `ddc4f8d` `1913b6e` `b8ed230` `33a0afe`; supervisor exported the index, added viewer and testing as dev dependencies, re-ran the package tests | `viewer/packages/features/docs/CHECKPOINT-FA.md` |
-| FB clipping, layouts, environment, navigation aids, HUD | Opus | features `src/{clipping,layouts,environment,navigation-aids,hud}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FB.md` |
+| FB clipping, layouts, environment, navigation aids, HUD | Opus | features `src/{clipping,layouts,environment,navigation-aids,hud}*` and tests | verified: planes, section box, `sectionAt` and `sectionForLevel` as saved state; explode by storey or category and plan grid with the base captured at install so reset is exact; environment patches plus a bounding-box display; `levelsOf`, level navigation, framing, saved views; HUD from `sceneStatistics` and render timing at a bounded rate; 88 tests, package 291; commits `b07648d` `eef7081` `9f485d2` `9a50472`; supervisor re-ran tsc and tests | `viewer/packages/features/docs/CHECKPOINT-FB.md` |
 | FC annotations, overlays, animation, comparison, storage, capture | Opus | features `src/{annotations,overlays,animation,comparison,storage,capture}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FC.md` |
 | D gallery on createViewer | — | — | handed to the gallery session (third session in this checkout): it owns the gallery wave (UG, GAL, D1 to D4) under GALLERY-PLAN.md and had landed contract G1 before this supervisor's D wrote anything committed; this supervisor stopped its own D agent and moved its four uncommitted draft files out of the tree | see GALLERY-PLAN.md |
 
@@ -101,6 +101,13 @@ Status: all four answered by M3 (M1.2). Remaining: Track F2 to consume them (fil
 Also to the loader session: export the `renderModel.ts` accessors and `writeBFast`; formats and BIND both re-implemented the byte layout.
 
 Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committed the whole index and took four of S2's staged files into `ebbfeaa` (`synthetic/src/{city,field,index}.ts`, `test/city.test.ts`). Content intact, S2 committed on top; only attribution is wrong. History not rewritten. Rule: never amend in the shared checkout; write the message to a file before the first commit.
+
+### Requests from FB
+
+- View slice ownership: no canonical `view` slice exists, so navigation-aids holds view state in its `navigation` slice; if V defines one, `navigation.*` writes that instead (one-reference change, V2 or FB2).
+- Recipe names: `views.save` in `workflows/src/recipe.ts` versus `navigation.saveView`; decided with FA's item: feature names win, W2 updates the recipe list.
+- Model access: a feature cannot reach `ModelData`, an `InstanceTable` or bounds through `Session`, so model-derived work is pure functions the host calls, and `navigation.goToLevel` carries the level rather than resolving it. Seconds V's request for a service vocabulary in `model` (M5).
+- FA's exported `styleRuleSchema` should replace the private copy in `navigation-aids.ts` at the wave sweep.
 
 ### Requests from FA
 
