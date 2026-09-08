@@ -104,21 +104,31 @@ Limits of that verification:
 | `assets` and `clearances` | `c73030a` |
 | `city` and `field` | `ebbfeaa` — see the note below |
 | Fixture catalog and snapshots | `2ac2b34` |
-| README and this checkpoint | recorded below when it lands |
+| README and this checkpoint | `2a76aa0` |
 
 **Note on `ebbfeaa`.** That commit holds exactly this track's four files
 (`city.ts`, `field.ts`, `index.ts`, `city.test.ts`) but carries Track F's commit
 message, "perf(formats): measure the BFAST path and drop the per-instance
-closures". What happened: this track's `git add` succeeded, this track's `git
-commit` was refused with `index.lock` held by another session, and that
-session's next `git commit` then committed the index, which still held this
-track's staged files. Its own files had already gone in as `daf335a`, which is
-why the same message appears twice. No content was lost and no file was
-committed twice. The lesson for the wave: a chunk commit that fails on
-`index.lock` leaves the index staged, and another track's commit can pick it up,
-so a failed commit should be retried immediately or the staging dropped. A
-commit turn granted by the supervisor would prevent it; the standing per-fence
-grant in `V2-STATUS.md` does not.
+closures". Track F recorded the cause in
+`viewer/packages/formats/docs/CHECKPOINT-F.md` and it agrees with what was seen
+from this side: Track F's chunk 3 committed its own files correctly by
+pathspec as `daf335a`, then amended that commit to fix a mangled message, and
+`git commit --amend` **without** a pathspec re-committed the whole index — which
+at that moment held this track's four files, staged and waiting because this
+track's own `commit` had just been refused with `index.lock`.
+
+No content was lost, nothing was committed twice, and this track built on top of
+it. Only the attribution in `git log` is wrong, and repairing it would mean
+rewriting shared history, which neither track may do.
+
+Two rules follow, both for the supervisor:
+
+1. `--amend` is the operation to remove, not to guard. Every ordinary commit in
+   this wave already carries a pathspec; an amend silently does not, so it can
+   commit files the amending track does not own however careful that track is.
+2. A commit refused with `index.lock` leaves the index staged and another track
+   can carry it away. Retry within seconds or unstage. The standing per-fence
+   grant in `V2-STATUS.md` cannot prevent this; a real commit turn would.
 
 ## Where a W0 contract and M1 disagreed
 
