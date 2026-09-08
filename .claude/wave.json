@@ -109,6 +109,11 @@
         "viewer/packages/demos/docs/slice.md",
         "viewer/packages/demos/docs/CHECKPOINT-E2E.md"
       ]
+    },
+    "F2": {
+      "paths": [
+        "viewer/packages/formats/**"
+      ]
     }
   }
 }
