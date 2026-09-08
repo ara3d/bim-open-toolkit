@@ -44,6 +44,18 @@ export {
   type DoorWidthPolicy,
 } from './building.js';
 
+// Equipment assets, their service history and the points of interest a technician needs.
+export { defaultAssetOptions, generateAssets, type AssetOptions, type Assets } from './assets.js';
+
+// Access envelopes and penetrations whose bounding boxes are candidates, never verified clashes.
+export {
+  defaultClearanceOptions,
+  generateClearances,
+  projectFrame,
+  type ClearanceOptions,
+  type Clearances,
+} from './clearances.js';
+
 // Priceable scopes, rate sets and scenario policies, with the scopes no rate set covers.
 export { defaultCostOptions, generateCosts, type CostOptions, type Costs } from './costs.js';
 
