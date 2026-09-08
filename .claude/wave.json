@@ -129,11 +129,6 @@
         "viewer/packages/testing/docs/CHECKPOINT-R2.md"
       ]
     },
-    "V": {
-      "paths": [
-        "viewer/packages/viewer/**"
-      ]
-    },
     "FA": {
       "paths": [
         "viewer/packages/features/src/appearance*",
@@ -323,25 +318,6 @@
         "viewer/packages/demos/test/demos/material-carbon/**",
         "viewer/packages/demos/test/demos/portfolio/**",
         "viewer/packages/demos/docs/CHECKPOINT-D4.md"
-      ]
-    },
-    "M5": {
-      "paths": [
-        "viewer/packages/model/**",
-        "viewer/packages/workflows/src/observation.ts",
-        "viewer/packages/workflows/test/observation*",
-        "viewer/packages/synthetic/src/schedule.ts",
-        "viewer/packages/synthetic/test/schedule*"
-      ]
-    },
-    "X": {
-      "paths": [
-        "viewer/packages/ui-react/**"
-      ]
-    },
-    "C": {
-      "paths": [
-        "viewer/packages/mcp/**"
       ]
     }
   }
