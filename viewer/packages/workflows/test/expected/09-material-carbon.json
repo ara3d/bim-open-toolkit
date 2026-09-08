@@ -21,10 +21,10 @@
     ],
     "totalKnownKgCO2e": { "asDesigned": 3000, "lowCarbonAlt": 1800 },
     "exceptions": [
-      { "objectId": "OBJ-2", "scenario": "asDesigned", "kind": "missing", "reason": "unresolved-source", "detail": "factor lifecycleScope 'A1-A5' does not match requested 'A1-A3'" },
-      { "objectId": "OBJ-3", "scenario": "asDesigned", "field": "quantity", "kind": "conflicting", "values": [2.5, 3.0] },
-      { "objectId": "OBJ-2", "scenario": "lowCarbonAlt", "kind": "missing", "reason": "unresolved-source", "detail": "factor unit 't' does not match quantity unit 'kg'" },
-      { "objectId": "OBJ-3", "scenario": "lowCarbonAlt", "field": "quantity", "kind": "conflicting", "values": [2.5, 3.0] }
+      { "subjects": ["OBJ-2"], "field": "factor", "scope": "asDesigned", "detail": "factor lifecycleScope 'A1-A5' does not match requested 'A1-A3'", "kind": "missing", "reason": "unresolved-source" },
+      { "subjects": ["OBJ-3"], "field": "quantity", "scope": "asDesigned", "kind": "conflicting", "values": [2.5, 3.0] },
+      { "subjects": ["OBJ-2"], "field": "factor", "scope": "lowCarbonAlt", "detail": "factor unit 't' does not match quantity unit 'kg'", "kind": "missing", "reason": "unresolved-source" },
+      { "subjects": ["OBJ-3"], "field": "quantity", "scope": "lowCarbonAlt", "kind": "conflicting", "values": [2.5, 3.0] }
     ]
   },
   "notes": "OBJ-3 is unresolved in both scenarios purely because its own quantity is conflicting -- no timber factor even needs to be consulted. OBJ-2 is unresolved in both scenarios but for two different reasons: wrong lifecycle scope in asDesigned, wrong unit in lowCarbonAlt. totalKnownKgCO2e sums resolved contributions only, per scenario."

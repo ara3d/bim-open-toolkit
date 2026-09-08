@@ -15,4 +15,5 @@ export * from './workflow.js';
 export * from './01-door-schedule.js';
 export * from './door-projection.js';
 export * from './02-revision-comparison.js';
+export * from './09-material-carbon.js';
 export * from './registry.js';
