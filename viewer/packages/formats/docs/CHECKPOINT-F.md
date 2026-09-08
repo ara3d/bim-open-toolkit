@@ -209,6 +209,26 @@ and documentation and changed nothing the performance suite exercises.
   costs less than decoding the property tables), never absolute times.
 - **No large glTF, OBJ or STL was measured.** The three adapters are correctness-tested only.
 
+## Incident: this track's commit `ebbfeaa` contains four of Track S2's files
+
+**What happened.** Chunk 3's first commit used an explicit pathspec, correctly. Its message was then
+mangled by the shell (backticks in the message were run as commands), so it was corrected with
+`git commit --amend -F <file>` — **without a pathspec**. An amend with no pathspec re-commits the
+whole index, and at that moment Track S2 had `viewer/packages/synthetic/src/{city,field,index}.ts`
+and `test/city.test.ts` staged. They went into `ebbfeaa` under this track's message.
+
+**State.** Nothing is lost or changed: the four files are committed with S2's content, and S2 has
+committed further work on top (`2ac2b34`). `git log` for those files names `ebbfeaa`, which is
+misleading about who wrote them.
+
+**Not repaired here.** Rewriting `ebbfeaa` would rewrite history other sessions in this shared
+checkout have already built on. The supervisor decides; this record is the repair for the history.
+
+**Cause and rule.** The pathspec discipline was applied to `commit` but not to `amend`, and an amend
+is a commit. Any `git commit --amend` in a shared checkout needs the same explicit pathspec, or the
+message should be written to a file before the first commit so no amend is needed. The second is
+better: it removes the operation rather than guarding it.
+
 ## Blockers
 
 None.
