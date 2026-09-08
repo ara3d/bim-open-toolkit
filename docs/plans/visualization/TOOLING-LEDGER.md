@@ -22,6 +22,14 @@ Verdicts: **keep**, **adjust**, **off**, **watch** (not enough evidence yet).
 | Parallel-wave checkpoints and briefs | supervisor time | 10 briefs | — | 1 | keep | Friction: none from the format. The checkpoints were what made the stalled tracks resumable: S and M could be relaunched from their own notes without re-deriving anything. |
 | Concurrent subagent count | — | 7 at once | — | 1 | watch | Seven subagents stalled at once on 2026-09-07 20:07; the user reports a disconnection on their side at that time, so the count is not shown to be the cause. Documented default limit is 20 (`CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`). Running seven again from 22:40. |
 
+## Track reports
+
+Transcribed from track checkpoints and final reports; "caught" is the track's own count of real defects.
+
+| Track | tsc | ESLint (typed) | Escape-hatch rules | vitest |
+|---|---|---|---|---|
+| S synthetic (2026-09-07) | 14 runs, 6.7 s each, caught 2 real defects (one a silently ignored option), no false positives: helpful | 8 runs, 11.6 s each, caught nothing, more wall time than the other three combined; its live rules overlap the escape-hatch rule in a package with no async code: neutral, first candidate to drop | under 1 s, changed one design for the better (an intersection type instead of a cast): helpful | 78 tests, about 1 s, caught one issue in a test; building and stress suites passed first run, so their value is regression protection: helpful |
+
 ## Review log
 
 - 2026-09-07, wave 0 start: the Agent tool cannot message a running subagent in this session (SendMessage disabled), so the three wave 0 tracks were not told to keep a "Tooling" section; their reported command runs and results are transcribed here by the supervisor instead. Every later brief includes the section.
