@@ -30,6 +30,9 @@ export type Schema<T> = {
   readonly isOptional: boolean;
 };
 
+// A schema whose value may be absent from an enclosing object. Only `optional` produces one.
+export type OptionalSchema<T> = Schema<T | undefined> & { readonly isOptional: true };
+
 // The type a schema accepts.
 export type Infer<S> = S extends Schema<infer T> ? T : never;
 
@@ -37,7 +40,7 @@ export type Infer<S> = S extends Schema<infer T> ? T : never;
 export type ObjectShape = Readonly<Record<string, Schema<unknown>>>;
 
 type OptionalKeys<Shape extends ObjectShape> = {
-  [K in keyof Shape]: undefined extends Infer<Shape[K]> ? K : never;
+  [K in keyof Shape]: Shape[K] extends { readonly isOptional: true } ? K : never;
 }[keyof Shape];
 
 type RequiredKeys<Shape extends ObjectShape> = Exclude<keyof Shape, OptionalKeys<Shape>>;
@@ -210,12 +213,12 @@ export const union = <T>(...alternatives: readonly Schema<T>[]): Schema<T> =>
   );
 
 // Accepts what the inner schema accepts, and also an absent or undefined value.
-export const optional = <T>(inner: Schema<T>): Schema<T | undefined> =>
-  schemaOf<T | undefined>(
-    (value, path) => (value === undefined ? success(undefined) : inner.check(value, path)),
-    () => inner.describe(),
-    true,
-  );
+// This is the only combinator that makes a property of an enclosing object optional.
+export const optional = <T>(inner: Schema<T>): OptionalSchema<T> => ({
+  check: (value, path) => (value === undefined ? success(undefined) : inner.check(value, path)),
+  describe: () => inner.describe(),
+  isOptional: true,
+});
 
 // Accepts what the inner schema accepts, and also null.
 export const nullable = <T>(inner: Schema<T>): Schema<T | null> =>

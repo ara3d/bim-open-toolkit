@@ -12,3 +12,4 @@ export * from './schema.js';
 export * from './sets.js';
 export * from './edits.js';
 export * from './view.js';
+export * from './slices.js';
