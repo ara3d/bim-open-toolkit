@@ -18,3 +18,16 @@ export { featureHost, type FeatureHost } from './features.js';
 
 // Live capabilities a session carries beside its slices, because a renderer is not plain data.
 export { service, type Service } from './services.js';
+
+// The scene document: the composition of the installed slices, saved, restored and migrated.
+export {
+  documentFingerprint,
+  fingerprintSliceId,
+  loadScene,
+  modelFingerprint,
+  readScene,
+  saveScene,
+  writeScene,
+  type LoadOptions,
+  type SceneLoad,
+} from './document.js';
