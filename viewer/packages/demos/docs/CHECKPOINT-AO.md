@@ -22,7 +22,7 @@ State: **verified** against the gates below. Contract revision: M1 with M1.1 and
 | `npx vitest run test/ambient-occlusion/steps.test.ts` (in `packages/demos`) | 15 passed | 7 s |
 | `npx vitest run test/ambient-occlusion/page.test.ts` | 1 passed, Edge headless, SwiftShader | 65 s |
 
-Browser smoke numbers (software WebGL, 1280 by 800): shaded mean below plain mean; occlusion term max above 0.9 and min below 0.8. Screenshots under `viewer/artifacts/ambient-occlusion/`. Hardware check in the desktop app's browser: frame interval 3.8 ms with the pass on the building; the pane throttles animation frames to one a second while hidden, which is the pane, not the page.
+Browser smoke numbers (software WebGL, 1280 by 800, building, automatic radius 0.82 m): occlusion term min 0.620, max 1.000; whole-frame luminance mean 0.174 plain against 0.173 with the pass, a small move because most of the frame is background and unlit wall. The shaded-darker assertion held on four runs; the occlusion-term assertion is the strong one. Screenshots under `viewer/artifacts/ambient-occlusion/`. Hardware check in the desktop app's browser: frame interval 3.8 ms with the pass on the building; the pane throttles animation frames to one a second while hidden, which is the pane, not the page.
 
 ## Chunk commits
 
@@ -31,7 +31,8 @@ Browser smoke numbers (software WebGL, 1280 by 800): shaded mean below plain mea
 | `5c2cf06` | Render module, tests, index export |
 | `0de20b9` | Drop `denoise` (GTAO always filters before blending); buffer size takes settings or pass |
 | `1d73bd6` | Automatic radius a twentieth of the model, exported share |
-| `<demo>` | Demo page, adapter, Node and browser tests, README, this checkpoint |
+| `9c66f83` | Demo page, adapter, Node and browser tests, README, this checkpoint |
+| follow-up | This file: commit hash and the smoke run's measured numbers |
 
 Staged by explicit pathspec, message from a file, no amend, nothing pushed. Untracked slice files and other tracks' modified files were never staged.
 
