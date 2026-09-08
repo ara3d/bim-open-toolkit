@@ -30,8 +30,8 @@ A `WorkflowResult` carries:
   point. An input that states no coordinates produces no positioned overlay; nothing invents a place.
 - **`view`** — a suggested saved view: the selection and the rules, with the default camera, because
   an input of tables alone states no geometry to frame.
-- **`recipe`** — the ordered public command names and inputs a demonstration dispatches. The commands
-  do not exist yet; the names are in `src/recipe.ts` and nowhere else.
+- **`recipe`** — the ordered public command names and inputs a demonstration dispatches, matched to
+  the names the feature packages actually export; the names are in `src/recipe.ts` and nowhere else.
 
 Observations travel as JSON: `{kind:'known', value, unit?}`, `{kind:'missing', reason}` or
 `{kind:'conflicting', values}`, with `evidence` written only when there is some. The five missing

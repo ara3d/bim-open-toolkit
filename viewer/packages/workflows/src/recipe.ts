@@ -1,22 +1,24 @@
 import { type ModelRef, type NamedSet, type SavedView, type StyleRule } from '@bim-open-toolkit/model';
 import { overlayRecord, type Overlay } from './overlay.js';
-import { modelRecord, namedSetRecord, savedViewRecord, styleRuleRecord } from './records.js';
-import { type ResultRecord, type ResultTable } from './values.js';
+import { modelRecord, namedSetRecord, styleRuleRecord } from './records.js';
+import { resultRecord, type ResultRecord, type ResultTable } from './values.js';
 
-// The public command names a workflow demonstration dispatches.
-// The commands themselves land with the feature packages in wave 3; these names are the contract
-// between a workflow and its demonstration, and this is the one place they are written down.
+// The public command names a workflow demonstration dispatches, matched to the feature packages'
+// own `command({ name: ... })` calls (`features/docs/CHECKPOINT-FA.md`, `FB.md`, `FC.md`, "Command
+// names"; the source wins over a checkpoint). `model.open` and `results.showTable` are not feature
+// commands: they belong to the viewer host that opens a model and renders a table, outside
+// `features`. This is still the one place every name a recipe dispatches is written down.
 export const workflowCommands = {
   openModel: 'model.open',
   showTable: 'results.showTable',
-  createSet: 'sets.create',
-  selectSet: 'selection.setFromSet',
+  createSet: 'sets.define',
+  selectSet: 'sets.selectSet',
   isolateSet: 'sets.isolate',
-  addRule: 'style.addRule',
+  addRule: 'appearance.addRule',
   addOverlay: 'overlays.add',
-  saveView: 'views.save',
-  linkViews: 'views.link',
-  setTimelineDate: 'timeline.setDate',
+  saveView: 'navigation.saveView',
+  linkViews: 'comparison.link',
+  setTimelineDate: 'animation.seek',
   setSectionBox: 'clipping.setBox',
   captureImage: 'capture.image',
 } as const;
@@ -42,6 +44,11 @@ export type RecipeParts = {
   readonly extraSteps: readonly RecipeStep[];
 };
 
+// navigation.saveView saves the camera the session currently holds; it takes no camera in its
+// input. Only the name, the selection and the rules a saved view carries travel in the command.
+const saveViewInput = (view: SavedView): ResultRecord =>
+  resultRecord({ id: view.id, name: view.name, selection: view.selection, rules: view.rules.map(styleRuleRecord) });
+
 // The ordered commands a demonstration dispatches: open the model, show the tables, make the sets,
 // colour by result, add the overlays, run whatever the workflow adds, select and save the view.
 export const standardRecipe = (id: string, title: string, parts: RecipeParts): Recipe => ({
@@ -53,13 +60,15 @@ export const standardRecipe = (id: string, title: string, parts: RecipeParts): R
       step(workflowCommands.showTable, { id: table.id, title: table.title }, `Show the ${table.title} table.`),
     ),
     ...parts.sets.map((set) => step(workflowCommands.createSet, namedSetRecord(set), `Create the ${set.name} set.`)),
-    ...parts.rules.map((rule) => step(workflowCommands.addRule, styleRuleRecord(rule), `Colour by ${rule.name}.`)),
+    ...parts.rules.map((rule) =>
+      step(workflowCommands.addRule, { rule: styleRuleRecord(rule) }, `Colour by ${rule.name}.`),
+    ),
     ...parts.overlays.map((overlay) =>
       step(workflowCommands.addOverlay, overlayRecord(overlay), `Add the ${overlay.id} overlay.`),
     ),
     ...parts.extraSteps,
-    step(workflowCommands.selectSet, { setId: parts.selectSetId }, 'Select what the reader should look at.'),
-    step(workflowCommands.saveView, savedViewRecord(parts.view), 'Save the view this workflow ends at.'),
+    step(workflowCommands.selectSet, { id: parts.selectSetId }, 'Select what the reader should look at.'),
+    step(workflowCommands.saveView, saveViewInput(parts.view), 'Save the view this workflow ends at.'),
     step(workflowCommands.captureImage, { name: id }, 'Capture the image the demonstration ends with.'),
   ],
 });

@@ -18,7 +18,7 @@ const parts = {
   overlays: [marker('m', 'a is unmeasured', 'missing', onObject(key))],
   view: suggestedView('w', 'W', [key], rules),
   selectSetId: 'w/exceptions',
-  extraSteps: [step(workflowCommands.linkViews, { views: [] }, 'Compare side by side.')],
+  extraSteps: [step(workflowCommands.linkViews, { linked: true }, 'Compare side by side.')],
 };
 
 describe('a recipe', () => {
@@ -26,12 +26,12 @@ describe('a recipe', () => {
     expect(recipeCommands(standardRecipe('w', 'W', parts))).toEqual([
       'model.open',
       'results.showTable',
-      'sets.create',
-      'style.addRule',
+      'sets.define',
+      'appearance.addRule',
       'overlays.add',
-      'views.link',
-      'selection.setFromSet',
-      'views.save',
+      'comparison.link',
+      'sets.selectSet',
+      'navigation.saveView',
       'capture.image',
     ]);
   });
@@ -60,11 +60,11 @@ describe('a recipe', () => {
       'model.open',
       'results.showTable',
       'results.showTable',
-      'sets.create',
-      'style.addRule',
+      'sets.define',
+      'appearance.addRule',
       'overlays.add',
-      'selection.setFromSet',
-      'views.save',
+      'sets.selectSet',
+      'navigation.saveView',
       'capture.image',
     ]);
     expect(result.recipe.id).toBe('w');

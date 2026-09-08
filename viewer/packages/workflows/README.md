@@ -24,8 +24,8 @@ candidates that are still open, and stays visible in the result rather than bein
   as input. This package multiplies and adds supplied numbers under stated rules; it derives no
   quantity from geometry and proposes no correspondence of its own.
 - No rendering, no I/O, no clock. Every function is a pure function of its input.
-- No commands. A recipe carries the command *names* a demonstration will dispatch. The commands
-  themselves arrive with the feature packages; wave 3 wires them up.
+- No commands. A recipe carries the command *names* a demonstration will dispatch, matched to the
+  names the feature packages export; this package never dispatches one itself.
 - No coverage of every real source. Only the door schedule has a real-data counterpart today.
 
 ## Using one
