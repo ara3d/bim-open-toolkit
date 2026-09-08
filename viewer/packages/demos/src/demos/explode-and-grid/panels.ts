@@ -8,16 +8,23 @@
 // `Grid` and `Reset` use ui-gratify's published `Button`. The separator chip and the strength slider
 // stay local parts because `Segmented` and `Slider` have not been published yet; each is marked
 // below and is deleted when its counterpart lands.
+//
+// The bar also carries what the layout in force actually does to the model that is open, counted off
+// the model by `survey.ts`. A separator a model cannot be separated by reads as "moves 0 of 25675
+// objects" rather than as a slider that does nothing.
 
 import { layoutsSlice, type ExplodeBy, type Layout } from '@bim-open-toolkit/features';
 import { Button, hudPanel, type AnyHudPanel, type HudPanel } from '@bim-open-toolkit/ui-gratify';
 import { Drag1D, Label, part, Press, rect, Row, Stack, surface, v, type AppSpec, type Element } from 'gratify';
+import { heldSurvey, movedBy, type ExplodeSurvey } from './survey.js';
 
-// What the bar shows: the separator and strength it will next ask for, and how many times the
-// grid and reset buttons have been pressed.
+// What the bar shows: the separator and strength it will next ask for, what the applied layout moves
+// of the open model, and how many times the grid and reset buttons have been pressed.
 export type ExplodeDoc = {
   readonly by: ExplodeBy;
   readonly strength: number;
+  readonly objects: number;
+  readonly moved: number;
   readonly gridAsked: number;
   readonly resetAsked: number;
 };
@@ -84,8 +91,12 @@ const StrengthSlider = part<StrengthProps>()('explode-strength-slider', {
 
 const strengthText = (strength: number): string => `Strength ${strength.toFixed(2)}`;
 
+// What the applied layout does to the open model, counted rather than promised.
+export const movedText = (doc: ExplodeDoc): string =>
+  doc.objects === 0 ? 'No model surveyed' : `Moves ${doc.moved} of ${doc.objects} objects`;
+
 export const explodeApp: AppSpec<ExplodeDoc, ExplodeIntent> = {
-  init: { by: 'storey', strength: 0, gridAsked: 0, resetAsked: 0 },
+  init: { by: 'storey', strength: 0, objects: 0, moved: 0, gridAsked: 0, resetAsked: 0 },
   update: (doc, intent) => {
     switch (intent.kind) {
       case 'by':
@@ -108,6 +119,7 @@ export const explodeApp: AppSpec<ExplodeDoc, ExplodeIntent> = {
         Label('explode-strength-label', { text: strengthText(doc.strength), size: 12, dim: true }),
         StrengthSlider('strength', { strength: doc.strength }),
       ]),
+      Label('explode-moved-label', { text: movedText(doc), size: 12, dim: true }),
       Row('explode-actions', { gap: 6 }, [
         Button('grid', { label: 'Grid', press: { kind: 'grid' } }),
         Button('reset', { label: 'Reset', press: { kind: 'reset' } }),
@@ -115,12 +127,22 @@ export const explodeApp: AppSpec<ExplodeDoc, ExplodeIntent> = {
     ]),
 };
 
-// The bar's `by` and `strength` as an applied explode holds them now. Grid and reset carry no
-// separator or strength of their own, so the bar keeps offering what was last asked for.
-export const explodeDocFrom = (doc: ExplodeDoc, layout: Layout): ExplodeDoc => {
-  if (layout.kind !== 'explode') return doc;
-  const same = layout.by === doc.by && layout.strength === doc.strength;
-  return same ? doc : { ...doc, by: layout.by, strength: layout.strength };
+// The bar's `by` and `strength` as an applied explode holds them now, and what that layout moves of
+// the surveyed model. Grid and reset carry no separator or strength of their own, so the bar keeps
+// offering what was last asked for while still counting what the grid moved.
+export const explodeDocFrom = (
+  doc: ExplodeDoc,
+  layout: Layout,
+  survey: ExplodeSurvey | undefined,
+): ExplodeDoc => {
+  const asked = layout.kind === 'explode' ? { by: layout.by, strength: layout.strength } : {};
+  const next: ExplodeDoc = { ...doc, ...asked, objects: survey?.objects ?? 0, moved: movedBy(survey, layout) };
+  const same =
+    next.by === doc.by &&
+    next.strength === doc.strength &&
+    next.objects === doc.objects &&
+    next.moved === doc.moved;
+  return same ? doc : next;
 };
 
 // The explode bar with its types open, so a test can drive `sync` and `onCommit` directly.
@@ -128,7 +150,7 @@ export const explodePanelSpec: HudPanel<ExplodeDoc, ExplodeIntent> = {
   id: 'explode-bar',
   place: { kind: 'edge', edge: 'bottom' },
   spec: explodeApp,
-  sync: (session, doc) => explodeDocFrom(doc, session.read(layoutsSlice).layout),
+  sync: (session, doc) => explodeDocFrom(doc, session.read(layoutsSlice).layout, heldSurvey()),
   onCommit: (doc, previous, session) => {
     if (doc.by !== previous.by || doc.strength !== previous.strength) {
       session.dispatch('layouts.explode', { by: doc.by, strength: doc.strength });
