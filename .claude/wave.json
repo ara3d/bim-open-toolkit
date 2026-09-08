@@ -86,6 +86,14 @@
       "paths": [
         "viewer/packages/model/**"
       ]
+    },
+    "T": {
+      "paths": [
+        "viewer/packages/testing/src/**",
+        "viewer/packages/testing/test/**",
+        "viewer/packages/testing/docs/**",
+        "viewer/packages/testing/README.md"
+      ]
     }
   }
 }

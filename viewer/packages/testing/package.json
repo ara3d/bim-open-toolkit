@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "perf": "vitest run --config vitest.perf.config.ts"
+    "perf": "vitest run --config vitest.perf.config.ts --reporter=verbose"
   },
   "dependencies": {
     "@bim-open-toolkit/model": "0.1.0",
