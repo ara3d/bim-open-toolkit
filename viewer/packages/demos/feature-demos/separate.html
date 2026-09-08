@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/feature-demos/demo.css" />
+    <title>Feature demo: separate the levels and the rooms</title>
+  </head>
+  <body>
+    <header>
+      <h1>Separate the levels and the rooms, lift the lid</h1>
+      <p>
+        Pull the storeys apart, lay them side by side on the ground, or lay the rooms of one storey
+        side by side; take the roof and the ceilings off, or cut through at a height, to see inside.
+        Drag to orbit, scroll to zoom, shift-drag to pan. Synthetic data, not a real building.
+      </p>
+    </header>
+    <div id="controls"></div>
+    <div id="stage"><canvas id="viewport" aria-label="Synthetic building arranged storey by storey"></canvas></div>
+    <p id="status"></p>
+    <script type="module" src="/src/feature-demos/separate/main.ts"></script>
+  </body>
+</html>

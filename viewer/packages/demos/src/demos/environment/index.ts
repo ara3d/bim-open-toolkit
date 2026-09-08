@@ -6,23 +6,12 @@
 
 import { environmentFeature, environmentSlice } from '@bim-open-toolkit/features';
 import { disposable, failure, success, type Disposable, type Result, type Session } from '@bim-open-toolkit/model';
-import { defaultBuildingOptions, generateBuilding } from '@bim-open-toolkit/synthetic';
+import { snowdonThenSynthetic } from '../_shared/snowdon.js';
 import type { DemoReport } from '../../feature-demos/_shared/protocol.js';
-import type { Demo, DemoFixture, ModelSource } from '../../gallery/contracts.js';
+import type { Demo } from '../../gallery/contracts.js';
 import { environmentSheet } from './inspector.js';
 import { environmentPanels } from './panels.js';
 import { openingPreset, presetOf, presets, presetTitles } from './presets.js';
-
-// The synthetic building, which is what every environment in this demo is judged against.
-const building: DemoFixture = {
-  id: 'building',
-  title: 'Synthetic building',
-  basis: 'synthetic',
-  source: async (): Promise<Result<ModelSource>> => {
-    const built = generateBuilding(defaultBuildingOptions);
-    return success({ kind: 'data', id: 'building', data: built.model, geometry: built.geometry });
-  },
-};
 
 // Applies the opening preset and hands back the way to put the environment back as it was.
 export const startEnvironment = (session: Session): Result<Disposable> => {
@@ -62,7 +51,7 @@ export const demo: Demo = {
   question: 'Make it readable: light, ground, grid.',
   briefIds: ['F10'],
   features: [environmentFeature],
-  fixtures: [building],
+  fixtures: snowdonThenSynthetic,
   panels: environmentPanels,
   inspector: environmentSheet,
   start: (viewer) => Promise.resolve(startEnvironment(viewer)),

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/feature-demos/demo.css" />
+    <title>Show by level, room and category</title>
+  </head>
+  <body>
+    <header>
+      <h1>Show by level, room and category</h1>
+      <p>
+        Pick a storey, a room or a category, then say what happens to everything else: isolate it,
+        ghost the rest, or hide it. Drag to orbit, scroll to zoom, shift-drag to pan, click an object
+        to read where it sits. Synthetic data, not a real building.
+      </p>
+    </header>
+    <div id="controls"></div>
+    <div id="stage"><canvas id="viewport" aria-label="Synthetic building shown by storey, room or category"></canvas></div>
+    <p id="status"></p>
+    <script type="module" src="/src/feature-demos/show-by/main.ts"></script>
+  </body>
+</html>
