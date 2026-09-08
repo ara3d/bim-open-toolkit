@@ -4,6 +4,9 @@ import { identityMatrix, type Matrix4 } from './math.js';
 import type { Appearance } from './style.js';
 
 // One addressable object of a model. A record without a representation is still a valid object.
+// `representation` is the row in `Geometry.instances` of the object's first drawn placement, and
+// nothing more: an object with many placements has many rows, and `InstanceRecords.objectIndex` is
+// the whole mapping. It is absent when the object draws nothing.
 export type ObjectRecord = {
   readonly ref: ObjectRef;
   readonly name?: string | undefined;
@@ -25,7 +28,7 @@ export type ModelData = {
 // An object record placed at the origin with no geometry and no name.
 export const emptyObject = (ref: ObjectRef): ObjectRecord => ({ ref, transform: identityMatrix });
 
-// True when the record points at a row of the representation table.
+// True when the object has a drawn placement, whose first instance row `representation` names.
 export const hasRepresentation = (record: ObjectRecord): boolean => record.representation !== undefined;
 
 // Every object of the model addressed by its key. Later duplicates replace earlier ones.
