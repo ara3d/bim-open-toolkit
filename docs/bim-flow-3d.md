@@ -1,8 +1,19 @@
 # BIM Flow 3D integration
 
 BIM Flow uses the V2 visualization packages through their public entry points.
-The editor and **Snowdon 3D lab** share the same pane, loader, renderer and recipe
-runner. Open the lab from the editor's top bar, or visit `/3d.html`.
+The **Snowdon graph demo** at `/3d.html` opens an editable graph on the left and
+its 3D result on the right. It uses the original editor, with Snowdon opened and
+category colors selected automatically. The divider resizes the two panes.
+
+Select a node or use **Preview** to see its result. Edit the fields inside nodes,
+drag nodes to rearrange them, and drag between sockets to connect them. Edits
+autosave and re-evaluate on the host. **Fit graph** frames the whole graph;
+**Nodes** opens the catalog to add nodes. The flow picker switches graphs.
+Clearing graph selection keeps the preview visible. Recipe branches reuse the
+loaded model. These are edits to the stored flow, retained after reload.
+
+The button-based examples and local-file picker remain at `/showcase.html`.
+Both pages share the same pane, loader, renderer and recipe runner.
 
 ## Nodes and composition
 
@@ -48,7 +59,8 @@ Its directory is also registered as a model catalog root. An existing store is
 left intact: import the sample through `PUT /api/analyses/snowdon-toolkit`,
 replacing `{SNOWDON}` with the actual model path, or use a separate empty store.
 
-The standalone lab uses one prepared local BFAST file. From the repository root:
+The standalone examples at `/showcase.html` use one prepared local BFAST file.
+The graph demo loads through the BIM host's model catalog. From the repository root:
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts/bim-flow
@@ -63,9 +75,17 @@ model endpoint or use the file picker. Private model bytes are not committed.
 
 From `bimopenflow/web`, run `npm run dev -w @bimopenflow/app`.
 The default editor port is 5300 and the host proxy defaults to 5214.
-Set `BOF_HOST` to change the backend. The build includes both the editor and lab.
+Set `BOF_HOST` to change the backend. The build includes the editor, graph demo,
+and standalone examples.
 
 ## Verification on 2026-09-08
+
+- Graph demo follow-up: `node scripts/check-bim-flow-graph.mjs` checks automatic
+  Snowdon selection, both panes fitting the viewport, inline parameter editing
+  through autosave/evaluation to changed rendered pixels, one model load across
+  recipe branches, persistent preview, catalog toggling, and graph fitting.
+  Use an isolated BIM-profile host: the check edits the Snowdon flow and restores
+  its original document in `finally`. Evidence is in `artifacts/bim-flow/graph-browser`.
 
 - Geometry node suite: 84 passed, including ten recipe cases.
 - Snowdon graph: all nine nodes evaluate successfully without reading private

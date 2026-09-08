@@ -22,7 +22,7 @@ const evidence = { modelBytes: served.length, sha256: hash(served), browser: bro
 try {
   const page = await browser.newPage({viewport:evidence.viewport,acceptDownloads:true});
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto(base + "/3d.html");
+  await page.goto(base + "/showcase.html");
   await page.waitForFunction(() => /instances/.test(document.querySelector(".bof-panes-viewstatus")?.textContent ?? ""), {}, {timeout:180000});
   assert.match(await page.locator(".bof-panes-viewstatus").innerText(), /456,598/);
   const canvas = page.locator("#viewer canvas");
