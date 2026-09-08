@@ -117,6 +117,34 @@ export const frameBounds = (
   return viewState(cameraPose(position, center, up), framed);
 };
 
+// The orthographic height that fits a sphere of the radius in a viewport of that aspect, aspect
+// being width over height. A viewport taller than it is wide covers the sphere's width only by
+// showing more height, which is the factor `frameBounds` leaves out; at aspect 1 the two agree.
+export const fitOrthographicHeight = (radius: number, aspect: number): number =>
+  radius * 2 * Math.max(1, 1 / Math.max(aspect, Number.EPSILON));
+
+// `frameBounds`, with the orthographic height sized for the viewport's shape rather than for the
+// box alone, so a portrait viewport does not cut the box off at its sides. A perspective projection
+// is framed exactly as `frameBounds` frames it, which already fits the narrower of its two fields.
+// This is a second function rather than a change to `frameBounds`, whose framing callers depend on.
+export const frameBoundsInViewport = (
+  bounds: Bounds,
+  direction: Vec3,
+  projection: Projection = perspective(),
+  aspect = 1,
+  up: Vec3 = [0, 0, 1],
+): ViewState | undefined => {
+  const framed = frameBounds(bounds, direction, projection, aspect, up);
+  const radius = boundsRadius(bounds);
+  if (framed === undefined || radius === undefined || framed.projection.kind !== 'orthographic') return framed;
+  const fitted = orthographic(
+    fitOrthographicHeight(radius, aspect),
+    framed.projection.near,
+    framed.projection.far,
+  );
+  return { ...framed, projection: fitted };
+};
+
 // The camera moved by an offset, keeping what it looks at relative to it.
 export const panBy = (pose: CameraPose, offset: Vec3): CameraPose => ({
   ...pose,
