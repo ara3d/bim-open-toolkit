@@ -55,9 +55,10 @@ Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside
 
 | Track | Model | Fence | State | Checkpoint |
 |---|---|---|---|---|
-| F formats, BFAST first | Opus | `viewer/packages/formats/**` | working | `viewer/packages/formats/docs/CHECKPOINT-F.md` |
+| F formats, BFAST first | Opus | `viewer/packages/formats/**` | verified: one `loadModel` entry returning `Result<LoadedModel>`, BFAST straight from the loaders' render tables to M1 `Geometry` with no grouping step, BOS through `bosToBfast`, pure glTF/OBJ/STL readers, detection, resolver, progress, diagnostics; 149 tests; Snowdon medians BFAST 353 to 455 ms and BOS 2082 to 2126 ms end to end (alpha: 1981 and 3797), 51,139 objects of which 28,976 geometry-free; a closure-allocating precondition helper cost 260 ms per load until inlined; commits `8c4f530` `4617096` `ebbfeaa` `36c441b` `5325138` `bf002e3` `df9b671`; supervisor re-ran tsc and tests | `viewer/packages/formats/docs/CHECKPOINT-F.md` |
 | R render, instance table | Opus | `viewer/packages/render/**` | working | `viewer/packages/render/docs/CHECKPOINT-R.md` |
 | T testing: fixtures, fake clock, headless scene, browser runner, benchmark protocol | Opus | `viewer/packages/testing/**` minus the PERF and BIND areas | working | `viewer/packages/testing/docs/CHECKPOINT-T.md` |
+| M3 model additions for formats and render (F requests) | Opus | `viewer/packages/model/**` | working | `viewer/packages/model/docs/CHECKPOINT-M3.md` |
 | M2 model bridges (review follow-up) | Opus | `viewer/packages/model/**` | verified: `instanceTable` (4.1 ms at 100k rows versus 15.5 ms per-row, shared index arrays, transposed in 512-row blocks), `rowsInSet`/`setOfRows`, `joinTablesOn` for string keys, typed column accessors, `tableFromRecord`, `Vec2` helpers, README fixed and its example tested; additive, contract stays M1 (section M1.1 in CONTRACTS-M1.md); 224 tests; commits `d1d3bb6` `b489031` `31ef243` `b6885cb` `d1645b8` `560c91d`; supervisor re-ran tsc and tests | `viewer/packages/model/docs/CHECKPOINT-M2.md` |
 | E2E vertical slice (review follow-up) | Opus | `viewer/packages/demos/src/slice/**` | queued until R's instance table lands | — |
 | S2 remaining generators | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S2.md` |
@@ -72,6 +73,16 @@ Actions taken: Track M2 launched to add the bridges and fix the README (model fe
 ### Next optimization target (from BIND)
 
 Binding is no longer the cost. Of the 896 ms columnar path on Snowdon, `bfastToGroups` in the loaders package is 574 ms and allocates 316,110 small `Float32Array`s for 158,055 groups averaging under three instances each. Track F builds the BFAST path and should consider producing render groups straight from the `RenderModel` columns instead of through `bfastToGroups`, measured against the same benchmark. Requests to the loader session (read-only for V2): export `writeBFast` and `bytesOf` so downstream packages can build BFAST fixtures; emit opaque materials from the converters; let consumers trust `parseBfastModel`'s transform validation.
+
+### Model contract requests from F (Track M3 launched)
+
+1. A columnar mesh table beside `Geometry.meshes: readonly Mesh[]`: 171,569 mesh records on Snowdon cost about 850,000 allocations and 73 to 94 ms for what is three buffers.
+2. A visibility column on `InstanceRecords`: 14,864 hidden placements in Snowdon are dropped today because a row without one would be drawn.
+3. Per-instance material columns (roughness, metallic), or a decision that they belong to render.
+4. Document or drop `ObjectRecord.representation` (one row, but objects have many placements).
+Also to the loader session: export the `renderModel.ts` accessors and `writeBFast`; formats and BIND both re-implemented the byte layout.
+
+Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committed the whole index and took four of S2's staged files into `ebbfeaa` (`synthetic/src/{city,field,index}.ts`, `test/city.test.ts`). Content intact, S2 committed on top; only attribution is wrong. History not rewritten. Rule: never amend in the shared checkout; write the message to a file before the first commit.
 
 ### Requests between tracks
 

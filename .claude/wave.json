@@ -94,6 +94,11 @@
         "viewer/packages/testing/docs/**",
         "viewer/packages/testing/README.md"
       ]
+    },
+    "M3": {
+      "paths": [
+        "viewer/packages/model/**"
+      ]
     }
   }
 }
