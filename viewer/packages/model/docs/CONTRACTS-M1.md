@@ -1,8 +1,10 @@
-# Model contracts, revision M1
+# Model contracts, revision M1.4
 
-Package `@bim-open-toolkit/model`. Proposed revision M1 of the contracts the visualization V2 plan
-(revision P0, `docs/plans/visualization/V2-PLAN.md`) assigns to this package. For the supervisor to
-review before the wave 1 briefs go out.
+Package `@bim-open-toolkit/model`. Revision M1 of the contracts the visualization V2 plan
+(revision P0, `docs/plans/visualization/V2-PLAN.md`) assigns to this package, plus the additive
+sections M1.1, M1.2 and M1.3, plus M1.4. M1.4 is the first revision that is **not** additive: it
+widens `FactValue`, which costs one line in every reader that ends a chain of kind tests. The
+revision label moved from M1 to M1.4 for that reason, and for that reason alone.
 
 ## What M1 changes from P0, and why
 
@@ -238,30 +240,45 @@ keys you know about and read each with `styleOf`, which answers `fallback` for a
 `isRemoved` and `deleted` say what is gone. This is Track R's finding 8, and `render`'s `applyStyles`
 already works this way.
 
-## M1.3 proposed, not landed: a bounds `FactValue`
+## M1.4 additions
+
+Landed by Track M5 as one commit across `model`, `workflows` and `synthetic`. The `facts` change is
+a revision, not an addition, and supersedes the `FactValue` line in the `facts` block below; the
+`style` change is additive. Nothing is renamed or removed.
+
+### `facts` — a bounds `FactValue`
 
 Track S2 asked for a box-valued observation so workflow 07's disputed boxes can be observations
-rather than six columns that read NaN. The variant below is correct and was written; it is **not**
-landed, because widening a discriminated union is not an additive change and two packages outside
-this fence stop compiling, which was measured rather than assumed:
+rather than six columns that read NaN. Widening a discriminated union is not additive: Track M4
+measured the cost before it landed, and it was exactly what M4 predicted — one line in
+`workflows/src/observation.ts` (`factScalar` ended its chain of kind tests with `objectKey(value.ref)`,
+TS2339) and one in `synthetic/src/schedule.ts` (`formatValue`'s `switch` then lacked an ending return,
+TS2366). No third reader broke.
 
-- `workflows/src/observation.ts:34` — `factScalar` ends a chain of `kind` tests with
-  `objectKey(value.ref)`, and `ref` is not on the new variant (TS2339).
-- `synthetic/src/schedule.ts:54` — `formatValue`'s `switch` covers four kinds and then lacks an
-  ending return (TS2366).
-
-Landing it is a three-line change here plus one line in each of those two files, in one commit by
-someone whose fence covers all three. `sameBounds` is already in place for it.
+A box carries no frame, exactly as a quantity carries no frame beyond its unit string, so boxes are
+comparable only within one frame. Both downstream readers render a box as `"minX minY minZ to maxX
+maxY maxZ"`, because a row cell is one scalar; a caller that wants the numbers reads `knownBounds`
+rather than parsing that back.
 
 ```ts
-export type FactValue = /* M1 variants */ | { readonly kind: 'bounds'; readonly bounds: Bounds };
+export type FactValue =
+  | { readonly kind: 'quantity'; readonly quantity: Quantity }
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'flag'; readonly value: boolean }
+  | { readonly kind: 'reference'; readonly ref: ObjectRef }
+  | { readonly kind: 'bounds'; readonly bounds: Bounds };
 export declare const bounds: (value: Bounds) => FactValue;
 export declare const knownBounds: (observation: Observation) => Bounds | undefined;
-// sameFactValue gains: if (a.kind === 'bounds' && b.kind === 'bounds') return sameBounds(a.bounds, b.bounds);
 ```
 
-`reconcile`, `mergeObservations`, `observedValues` and `coverageOf` need nothing: they work through
-`sameFactValue` and the observation's kind, not the value's.
+`sameFactValue` gains one line, through `sameBounds`. `reconcile`, `mergeObservations`,
+`observedValues` and `coverageOf` needed nothing: they work through `sameFactValue` and the
+observation's kind, not the value's. `reportedUnits` and `sumQuantities` needed nothing either: a box
+is not a quantity, so it reports no unit and is never added into a total.
+
+The rule a reader should follow from now on: name the kinds you read and answer for the rest, as
+`sameFactValue` and `demos`'s `describeValue` do. A chain or `switch` that ends on the last kind it
+knows is what a later kind breaks.
 
 ## Signatures
 
@@ -652,7 +669,7 @@ The vocabulary the workflows need: an observation is known, missing for a stated
 export type MissingReason = 'not-provided' | 'not-applicable' | 'not-measured' | 'unresolved-source' | 'out-of-scope';
 export type Evidence = { readonly source: string; readonly reference?: string | undefined; readonly recordedAt?: string | undefined; };
 export type Quantity = { readonly value: number; readonly unit: string; };
-export type FactValue = { readonly kind: 'quantity'; readonly quantity: Quantity; } | { readonly kind: 'text'; readonly text: string; } | { readonly kind: 'flag'; readonly value: boolean; } | { readonly kind: 'reference'; readonly ref: ObjectRef; };
+export type FactValue = { readonly kind: 'quantity'; readonly quantity: Quantity; } | { readonly kind: 'text'; readonly text: string; } | { readonly kind: 'flag'; readonly value: boolean; } | { readonly kind: 'reference'; readonly ref: ObjectRef; } | { readonly kind: 'bounds'; readonly bounds: Bounds; };
 export type Observation = { readonly kind: 'known'; readonly value: FactValue; readonly evidence: readonly Evidence[]; } | { readonly kind: 'missing'; readonly reason: MissingReason; readonly evidence: readonly Evidence[]; } | { readonly kind: 'conflicting'; readonly values: readonly FactValue[]; readonly evidence: readonly Evidence[]; };
 export type Fact = { readonly subject: ObjectRef; readonly name: string; readonly observation: Observation; };
 export type Coverage = { readonly total: number; readonly known: number; readonly missing: number; readonly conflicting: number; };
@@ -660,11 +677,13 @@ export declare const quantity: (value: number, unit: string) => FactValue;
 export declare const text: (value: string) => FactValue;
 export declare const flag: (value: boolean) => FactValue;
 export declare const reference: (ref: ObjectRef) => FactValue;
+export declare const bounds: (value: Bounds) => FactValue;
 export declare const known: (value: FactValue, evidence?: readonly Evidence[]) => Observation;
 export declare const missing: (reason: MissingReason, evidence?: readonly Evidence[]) => Observation;
 export declare const conflicting: (values: readonly FactValue[], evidence?: readonly Evidence[]) => Observation;
 export declare const knownValue: (observation: Observation) => FactValue | undefined;
 export declare const knownQuantity: (observation: Observation) => Quantity | undefined;
+export declare const knownBounds: (observation: Observation) => Bounds | undefined;
 export declare const fact: (subject: ObjectRef, name: string, observation: Observation) => Fact;
 export declare const coverageOf: (observations: Iterable<Observation>) => Coverage;
 export declare const coverageRatio: (coverage: Coverage) => number | undefined;

@@ -61,6 +61,8 @@ const formatValue = (value: FactValue): string => {
       return value.value ? 'true' : 'false';
     case 'reference':
       return value.ref.objectId;
+    case 'bounds':
+      return `${value.bounds.min.join(' ')} to ${value.bounds.max.join(' ')}`;
   }
 };
 

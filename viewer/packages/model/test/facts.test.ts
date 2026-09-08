@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { objectRef, type ModelRef, type ObjectRef } from '../src/identity.js';
 import {
-  completeFacts, conflicting, conflictingFacts, coverageByName, coverageOf, coverageOfFacts,
-  coverageRatio, emptyCoverage, fact, flag, indexFacts, known, knownQuantity, knownValue, lookupFact,
-  mergeObservations, missing, observationAt, observedValues, quantity, reconcile, reference,
+  bounds, completeFacts, conflicting, conflictingFacts, coverageByName, coverageOf, coverageOfFacts,
+  coverageRatio, emptyCoverage, fact, flag, indexFacts, known, knownBounds, knownQuantity, knownValue,
+  lookupFact, mergeObservations, missing, observationAt, observedValues, quantity, reconcile, reference,
   reportedUnits, sameFactValue, sumQuantities, text, unknownFacts, withEvidence, type Evidence,
 } from '../src/facts.js';
+import type { Bounds } from '../src/math.js';
 
 const model: ModelRef = { id: 'tower', revision: 'r1' };
 const evidence: readonly Evidence[] = [{ source: 'schedule.csv', reference: 'row 12' }];
@@ -95,6 +96,51 @@ describe('fact values and observations', () => {
     expect(mergeObservations(missing('not-applicable'), missing('not-provided'))).toEqual(
       missing('not-applicable'),
     );
+  });
+});
+
+const boxA: Bounds = { min: [0, 0, 0], max: [1, 2, 3] };
+const boxB: Bounds = { min: [0, 0, 0], max: [1, 2, 4] };
+
+describe('box-valued observations', () => {
+  it('carries a box as a value and reads it back', () => {
+    expect(bounds(boxA)).toEqual({ kind: 'bounds', bounds: boxA });
+    expect(knownBounds(known(bounds(boxA)))).toEqual(boxA);
+  });
+
+  it('reads a box back only from a known box observation', () => {
+    expect(knownBounds(missing('not-measured'))).toBeUndefined();
+    expect(knownBounds(conflicting([bounds(boxA), bounds(boxB)]))).toBeUndefined();
+    expect(knownBounds(known(quantity(1, 'm')))).toBeUndefined();
+    expect(knownQuantity(known(bounds(boxA)))).toBeUndefined();
+  });
+
+  it('compares boxes corner by corner, and never across kinds', () => {
+    expect(sameFactValue(bounds(boxA), bounds({ min: [0, 0, 0], max: [1, 2, 3] }))).toBe(true);
+    expect(sameFactValue(bounds(boxA), bounds(boxB))).toBe(false);
+    expect(sameFactValue(bounds(boxA), text('0 0 0'))).toBe(false);
+    expect(sameFactValue(text('0 0 0'), bounds(boxA))).toBe(false);
+  });
+
+  it('reconciles agreeing boxes and keeps disagreeing ones as a conflict', () => {
+    expect(reconcile([bounds(boxA), bounds(boxA)])).toEqual(known(bounds(boxA)));
+    const disputed = reconcile([bounds(boxA), bounds(boxB)], [drawing]);
+    expect(disputed).toEqual(conflicting([bounds(boxA), bounds(boxB)], [drawing]));
+    expect(knownBounds(disputed)).toBeUndefined();
+  });
+
+  it('merges two sources of a box, keeping a disagreement visible', () => {
+    expect(mergeObservations(known(bounds(boxA), [drawing]), known(bounds(boxA), [survey]))).toEqual(
+      known(bounds(boxA), [drawing, survey]),
+    );
+    expect(mergeObservations(known(bounds(boxA)), known(bounds(boxB))).kind).toBe('conflicting');
+  });
+
+  it('counts a box like any other observation and never totals it as a quantity', () => {
+    const boxes = [fact(door('1'), 'bbox', known(bounds(boxA))), fact(door('2'), 'bbox', missing('not-provided'))];
+    expect(coverageOfFacts(boxes)).toEqual({ total: 2, known: 1, missing: 1, conflicting: 0 });
+    expect(reportedUnits(boxes)).toEqual([]);
+    expect(sumQuantities(boxes)).toBeUndefined();
   });
 });
 

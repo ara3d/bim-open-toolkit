@@ -23,7 +23,9 @@ import {
 import { enumeration } from './schema-tools.js';
 import { listOrNothing, resultRecord, type ResultRecord, type ResultValue } from './values.js';
 
-// The scalar a fact value reads as in a row: a quantity's number, a text, a flag, or an object key.
+// The scalar a fact value reads as in a row: a quantity's number, a text, a flag, an object key, or
+// a box written as its two corners. A row cell is one scalar, so a box reads as text here; a caller
+// that needs the numbers reads `knownBounds` instead of parsing this back.
 export const factScalar = (value: FactValue): string | number | boolean =>
   value.kind === 'quantity'
     ? value.quantity.value
@@ -31,7 +33,9 @@ export const factScalar = (value: FactValue): string | number | boolean =>
       ? value.text
       : value.kind === 'flag'
         ? value.value
-        : objectKey(value.ref);
+        : value.kind === 'reference'
+          ? objectKey(value.ref)
+          : `${value.bounds.min.join(' ')} to ${value.bounds.max.join(' ')}`;
 
 // The unit a value reports, or nothing when it is not a quantity or states no unit.
 export const unitOf = (value: FactValue): string | undefined =>

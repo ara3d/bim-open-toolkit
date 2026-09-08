@@ -1,4 +1,5 @@
 import { objectKey, sameObject, type ObjectKey, type ObjectRef } from './identity.js';
+import { sameBounds, type Bounds } from './math.js';
 
 // Why a value is not available. A missing value is never reported as zero or as a default.
 export type MissingReason =
@@ -22,13 +23,15 @@ export type Quantity = {
 };
 
 // The value an observation carries. Adding a kind here is a revision, not an addition: a reader that
-// ends a chain of kind tests with the last kind it knows stops compiling. See "M1.3 proposed" in
-// docs/CONTRACTS-M1.md for the bounds value Track S2 needs and what landing it costs.
+// ends a chain of kind tests with the last kind it knows stops compiling, which is why every kind
+// added costs one line in each such reader. Name the kinds you read and answer for the rest, as
+// `sameFactValue` does, and a later kind leaves you compiling.
 export type FactValue =
   | { readonly kind: 'quantity'; readonly quantity: Quantity }
   | { readonly kind: 'text'; readonly text: string }
   | { readonly kind: 'flag'; readonly value: boolean }
-  | { readonly kind: 'reference'; readonly ref: ObjectRef };
+  | { readonly kind: 'reference'; readonly ref: ObjectRef }
+  | { readonly kind: 'bounds'; readonly bounds: Bounds };
 
 // What is known about one value: a value, a reason it is absent, or sources that disagree.
 export type Observation =
@@ -63,6 +66,10 @@ export const flag = (value: boolean): FactValue => ({ kind: 'flag', value });
 // A value that points at another object.
 export const reference = (ref: ObjectRef): FactValue => ({ kind: 'reference', ref });
 
+// A box-valued observation: where something is, as an axis-aligned box in a stated frame. The frame
+// is not carried here, so a reader compares boxes only within one frame, as it does units.
+export const bounds = (value: Bounds): FactValue => ({ kind: 'bounds', bounds: value });
+
 // An observation with a value and the evidence for it.
 export const known = (value: FactValue, evidence: readonly Evidence[] = []): Observation => ({
   kind: 'known',
@@ -92,6 +99,12 @@ export const knownValue = (observation: Observation): FactValue | undefined =>
 export const knownQuantity = (observation: Observation): Quantity | undefined => {
   const value = knownValue(observation);
   return value !== undefined && value.kind === 'quantity' ? value.quantity : undefined;
+};
+
+// The box of an observation, or undefined when it is not a known box.
+export const knownBounds = (observation: Observation): Bounds | undefined => {
+  const value = knownValue(observation);
+  return value !== undefined && value.kind === 'bounds' ? value.bounds : undefined;
 };
 
 // A fact about an object.
@@ -124,13 +137,16 @@ export const emptyCoverage: Coverage = { total: 0, known: 0, missing: 0, conflic
 // Facts looked up by the object they are about and then by name.
 export type FactIndex = ReadonlyMap<ObjectKey, ReadonlyMap<string, Fact>>;
 
-// True when two values say the same thing. Quantities must agree on the unit as well as the number.
+// True when two values say the same thing. Quantities must agree on the unit as well as the number,
+// and boxes on every corner. Two values of different kinds never say the same thing, so a kind added
+// to `FactValue` needs one line here and leaves the rest of this module unchanged.
 export const sameFactValue = (a: FactValue, b: FactValue): boolean => {
   if (a.kind === 'quantity' && b.kind === 'quantity')
     return a.quantity.value === b.quantity.value && a.quantity.unit === b.quantity.unit;
   if (a.kind === 'text' && b.kind === 'text') return a.text === b.text;
   if (a.kind === 'flag' && b.kind === 'flag') return a.value === b.value;
   if (a.kind === 'reference' && b.kind === 'reference') return sameObject(a.ref, b.ref);
+  if (a.kind === 'bounds' && b.kind === 'bounds') return sameBounds(a.bounds, b.bounds);
   return false;
 };
 
