@@ -16,6 +16,9 @@ Nested sub-agents spawned so far: 0.
 | 1 | Columnar binding builder, alpha baseline, synthetic model, regression tests | `src/bindings/**`, `test/bindings/**` | verified, committed `e936857` |
 | 2 | Benchmarks and the report | `test/perf/bindings/**`, `docs/**` | verified, committed `3ccea84` |
 
+Commits: `e936857` builder and regression tests, `3ccea84` benchmarks and report, `947f395` checkpoint
+state, `c318094` steadied the small-scale benchmark, and one further checkpoint edit recording these.
+
 ## Delivered
 
 `src/bindings/` builds a columnar binding from the loader's own output, copying nothing:
