@@ -4,7 +4,7 @@ import { setOf } from '../src/sets.js';
 import {
   applyAppearance, defaultAppearance, defaultSelectionChange, enabledRules, isRemoved, isVisible,
   noStyling, orderRules, resolveStyles, sameAppearance, sameExtras, styleComposition, styleOf,
-  styleRule, type Appearance,
+  styleRule, withSelectionChange, type Appearance, type AppearanceChange,
 } from '../src/style.js';
 
 const red = { color: [1, 0, 0] } as const;
@@ -147,5 +147,32 @@ describe('style composition', () => {
     const rules = [styleRule('r1', 'ghost', ['a'], { opacity: 0 })];
     const resolved = resolveStyles(styleComposition(new Map(), noEditState, rules), keys);
     expect(isVisible(resolved, 'a')).toBe(false);
+  });
+
+  it('marks the selection the way the host asks, and the M1 way when it does not ask', () => {
+    const marking: AppearanceChange = { color: [0, 1, 1], extras: { outline: true } };
+    const asked = styleComposition(new Map(), noEditState, [], setOf(['a']), undefined, marking);
+    const resolvedAsked = resolveStyles(asked, keys);
+    expect(styleOf(resolvedAsked, 'a').color).toEqual([0, 1, 1]);
+    expect(styleOf(resolvedAsked, 'a').extras).toEqual({ outline: true });
+
+    const silent = styleComposition(new Map(), noEditState, [], setOf(['a']));
+    expect(silent.selectionChange).toEqual(defaultSelectionChange);
+    expect(styleOf(resolveStyles(silent, keys), 'a').color).toEqual(defaultSelectionChange.color);
+  });
+
+  it('changes the marking of a composition it did not build', () => {
+    const composition = styleComposition(new Map(), noEditState, [], setOf(['a']), setOf(keys));
+    const restyled = withSelectionChange(composition, { color: [0, 0, 1] });
+    expect(styleOf(resolveStyles(restyled, keys), 'a').color).toEqual([0, 0, 1]);
+    expect(restyled.filter).toBe(composition.filter);
+    expect(composition.selectionChange).toEqual(defaultSelectionChange);
+  });
+
+  it('never lets a host-supplied marking show what was hidden', () => {
+    const edits: EditState = [editLayer('l1', 'edit', [hideObjects(['a'])])];
+    const shouting: AppearanceChange = { color: [1, 0, 1], visible: true, opacity: 1 };
+    const composition = styleComposition(new Map(), edits, [], setOf(['a']), undefined, shouting);
+    expect(isVisible(resolveStyles(composition, keys), 'a')).toBe(false);
   });
 });

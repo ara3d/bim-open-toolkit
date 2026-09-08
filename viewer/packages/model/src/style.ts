@@ -129,20 +129,31 @@ export const noStyling: StyleComposition = {
 };
 
 // The composition of a scene's base appearances, edit layers, rules, filter and selection.
+// `selectionChange` is how a selected object is marked; it defaults to `defaultSelectionChange`, so
+// a host that says nothing gets the colour M1 always used. It stays a change rather than an
+// appearance: whatever a host supplies, selection still cannot make a hidden object visible.
 export const styleComposition = (
   base: ReadonlyMap<ObjectKey, Appearance>,
   edits: EditState,
   rules: readonly StyleRule[],
   selection: ObjectSet = emptySet,
   filter?: ObjectSet,
+  selectionChange: AppearanceChange = defaultSelectionChange,
 ): StyleComposition => ({
   base,
   edits: resolveEdits(edits),
   rules,
   filter,
   selection,
-  selectionChange: defaultSelectionChange,
+  selectionChange,
 });
+
+// The same composition marking its selection differently. This is what a host that builds a
+// composition elsewhere uses, so configuring the selection colour never means rebuilding one.
+export const withSelectionChange = (
+  composition: StyleComposition,
+  selectionChange: AppearanceChange,
+): StyleComposition => ({ ...composition, selectionChange });
 
 // The appearance of every object, composed in order: base, edits, rules, filter, then selection.
 // Deleted objects are left out. Selection marks an object but never makes a hidden one visible.

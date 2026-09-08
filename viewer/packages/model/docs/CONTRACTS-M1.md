@@ -280,6 +280,22 @@ The rule a reader should follow from now on: name the kinds you read and answer 
 `sameFactValue` and `demos`'s `describeValue` do. A chain or `switch` that ends on the last kind it
 knows is what a later kind breaks.
 
+### `style` — the selection marking, configurable
+
+Track FA's first finding: `styleComposition` always wrote `defaultSelectionChange`, so the selection
+colour was fixed at M1's orange and F08 could not make selected-versus-context its own. It is now a
+sixth optional argument defaulting to that same value, so every existing call means what it meant.
+`withSelectionChange` is for a host that did not build the composition it holds.
+
+It stays an `AppearanceChange`, not an `Appearance`: whatever a host supplies, `resolveStyles` still
+applies the filter and the hide after it, so selection cannot show what was hidden, filtered or
+deleted. That is M1's composition order and it did not move.
+
+```ts
+export declare const styleComposition: (base: ReadonlyMap<ObjectKey, Appearance>, edits: EditState, rules: readonly StyleRule[], selection?: ObjectSet, filter?: ObjectSet, selectionChange?: AppearanceChange) => StyleComposition;
+export declare const withSelectionChange: (composition: StyleComposition, selectionChange: AppearanceChange) => StyleComposition;
+```
+
 ## Signatures
 
 The emitted declarations, grouped by module, in dependency order.
@@ -490,7 +506,8 @@ export declare const styleRule: (id: string, name: string, targets: readonly Obj
 export declare const enabledRules: (rules: readonly StyleRule[]) => readonly StyleRule[];
 export declare const orderRules: (rules: readonly StyleRule[]) => readonly StyleRule[];
 export declare const noStyling: StyleComposition;
-export declare const styleComposition: (base: ReadonlyMap<ObjectKey, Appearance>, edits: EditState, rules: readonly StyleRule[], selection?: ObjectSet, filter?: ObjectSet) => StyleComposition;
+export declare const styleComposition: (base: ReadonlyMap<ObjectKey, Appearance>, edits: EditState, rules: readonly StyleRule[], selection?: ObjectSet, filter?: ObjectSet, selectionChange?: AppearanceChange) => StyleComposition;
+export declare const withSelectionChange: (composition: StyleComposition, selectionChange: AppearanceChange) => StyleComposition;
 export declare const resolveStyles: (composition: StyleComposition, keys: Iterable<ObjectKey>, fallback?: Appearance) => ResolvedStyles;
 export declare const styleOf: (resolved: ResolvedStyles, key: ObjectKey) => Appearance;
 export declare const isRemoved: (resolved: ResolvedStyles, key: ObjectKey) => boolean;
