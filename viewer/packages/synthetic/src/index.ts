@@ -44,6 +44,26 @@ export {
   type DoorWidthPolicy,
 } from './building.js';
 
+// Buildings with geographic anchors, and the documents that do not automatically equal buildings.
+export {
+  defaultCityOptions,
+  generateCity,
+  type City,
+  type CityAnchor,
+  type CityOptions,
+} from './city.js';
+
+// A scalar field sampled on a grid, with the cells nobody sampled left as NaN.
+export {
+  cellCount,
+  cellIndex,
+  defaultFieldOptions,
+  generateField,
+  type Dimensions,
+  type FieldOptions,
+  type ScalarField,
+} from './field.js';
+
 // Equipment assets, their service history and the points of interest a technician needs.
 export { defaultAssetOptions, generateAssets, type AssetOptions, type Assets } from './assets.js';
 
