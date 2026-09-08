@@ -1,40 +1,28 @@
-// The tag that floats over the object being read: its name, its category and its storey, anchored
-// to the centre of the object's box.
+// The tag that floats over the object being read: its name on one line, its category and storey on
+// the next, with a leader line down to the centre of the object's box.
 //
-// It takes no intents. Everything it shows is a function of the session, so `sync` is the whole
-// story and `update` has nothing to do. It is built from Gratify's own `Stack` and `Label` because
-// Track UG's `Tag` widget, with its leader line, has not landed; CHECKPOINT-D1.md records the swap.
+// The document is a function of the session, so `sync` brings it in; the one thing the tag does on
+// its own is drop the pin when it is pressed, which `onCommit` turns back into a command.
 
-import { setsSlice, findSet } from '@bim-open-toolkit/features';
-import type { ObjectKey, Session, Vec3 } from '@bim-open-toolkit/model';
-import { hudPanel, type AnyHudPanel } from '@bim-open-toolkit/ui-gratify';
-import { Label, Stack, type AppSpec, type Element } from 'gratify';
-import { centreOf, inspectIndex, storeyNameOf } from './building.js';
-
-// The set the demo pins the object it is reading into. It holds one member, or none.
-export const pinnedSetId = 'point-and-read/pinned';
-
-// The object the tag and the inspector show: the pinned one, or the one under the pointer.
-export const shownKey = (session: Session): ObjectKey | undefined => {
-  const state = session.read(setsSlice);
-  return findSet(state, pinnedSetId)?.members[0] ?? state.selection[0];
-};
-
-// True when the object being shown was pinned by a click rather than pointed at.
-export const isPinned = (session: Session): boolean =>
-  findSet(session.read(setsSlice), pinnedSetId)?.members[0] !== undefined;
+import type { Session, Vec3 } from '@bim-open-toolkit/model';
+import { hudPanel, Tag, type AnyHudPanel, type HudPanel } from '@bim-open-toolkit/ui-gratify';
+import { Stack, type AppSpec, type Element } from 'gratify';
+import { centreOf, inspectIndex, runCalls, storeyNameOf } from './building.js';
+import { isPinned, shownKey, unpinCalls } from './pinning.js';
 
 // What the tag draws. Every field is text already, so the view asks the model nothing.
 export type TagDoc = {
   readonly present: boolean;
   readonly name: string;
-  readonly category: string;
-  readonly storey: string;
+  readonly detail: string;
   readonly pinned: boolean;
 };
 
+// Pressing a pinned tag drops the pin.
+export type TagIntent = { readonly kind: 'unpin' };
+
 // Nothing pointed at and nothing pinned.
-export const emptyTag: TagDoc = { present: false, name: '', category: '', storey: '', pinned: false };
+export const emptyTag: TagDoc = { present: false, name: '', detail: '', pinned: false };
 
 // The tag for whatever the session is showing. An object with no recorded name says so rather than
 // borrowing its category, and an object with no storey link says that too.
@@ -43,11 +31,12 @@ export const tagOf = (session: Session): TagDoc => {
   const index = inspectIndex();
   const record = key === undefined ? undefined : index.records.get(key);
   if (key === undefined || record === undefined) return emptyTag;
+  const category = record.category ?? 'No category recorded';
+  const storey = storeyNameOf(index, key) ?? 'no storey link recorded';
   return {
     present: true,
     name: record.name ?? `No name recorded (${record.ref.objectId})`,
-    category: record.category ?? 'No category recorded',
-    storey: storeyNameOf(index, key) ?? 'No storey link recorded',
+    detail: `${category}, ${storey}`,
     pinned: isPinned(session),
   };
 };
@@ -58,35 +47,34 @@ export const tagPoint = (session: Session): Vec3 | undefined => {
   return key === undefined ? undefined : centreOf(inspectIndex(), key);
 };
 
-// The tag as an element tree: name, category, storey, and whether it is pinned.
-export const tagView = (doc: TagDoc): Element =>
-  Stack(
-    'tag',
-    { gap: 2, pad: 8, align: 'start' },
-    doc.present
-      ? [
-          Label('name', { text: doc.name, size: 15 }),
-          Label('category', { text: doc.category, dim: true }),
-          Label('storey', { text: doc.storey, dim: true }),
-          Label('pin', { text: doc.pinned ? 'Pinned' : 'Click to pin', dim: true }),
-        ]
-      : [],
-  );
+const unpin: TagIntent = { kind: 'unpin' };
 
-// The tag's app: a document that only ever comes from the session.
-export const tagSpec: AppSpec<TagDoc, never> = {
+// The tag as an element. Nothing pointed at draws nothing at all, rather than an empty box.
+export const tagView = (doc: TagDoc): Element =>
+  doc.present
+    ? Tag('tag', { text: doc.name, detail: doc.detail, ...(doc.pinned ? { press: unpin } : {}) })
+    : Stack('tag', { pad: 0 }, []);
+
+// The tag's app. Its only intent drops the pin; everything else it shows comes from `sync`.
+export const tagSpec: AppSpec<TagDoc, TagIntent> = {
   init: emptyTag,
-  update: (doc) => doc,
+  update: (doc) => ({ ...doc, pinned: false }),
   view: tagView,
 };
 
 // The tag, anchored to the object it describes.
-export const tagPanel: AnyHudPanel = hudPanel<TagDoc, never>({
+export const tagHudPanel: HudPanel<TagDoc, TagIntent> = {
   id: 'point-and-read/tag',
   place: { kind: 'world', point: tagPoint },
   spec: tagSpec,
   sync: (session) => tagOf(session),
-});
+  onCommit: (doc, previous, session) => {
+    if (previous.pinned && !doc.pinned) runCalls(session, unpinCalls());
+  },
+};
+
+// The same panel with its document and intent types closed over, which is what a demo lists.
+export const tagPanel: AnyHudPanel = hudPanel(tagHudPanel);
 
 // Every panel this demo draws.
 export const pointAndReadPanels: readonly AnyHudPanel[] = [tagPanel];

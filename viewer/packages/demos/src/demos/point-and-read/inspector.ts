@@ -19,7 +19,7 @@ import {
   type PropertyValue,
 } from '@bim-open-toolkit/ui-gratify';
 import { factsOf, inspectIndex, storeyNameOf } from './building.js';
-import { isPinned, shownKey } from './panels.js';
+import { isPinned, shownKey } from './pinning.js';
 
 // The evidence of an observation as text, one line per source.
 export const evidenceTexts = (evidence: readonly Evidence[]): readonly string[] =>

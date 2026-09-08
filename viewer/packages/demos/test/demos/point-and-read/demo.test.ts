@@ -3,23 +3,24 @@
 // the synthetic building and the session.
 
 import { describe, expect, it } from 'vitest';
-import { Runtime, type Element } from 'gratify';
+import { Runtime } from 'gratify';
 import { appearanceCommands, appearanceSlice, editsCommands, setsCommands, setsSlice } from '@bim-open-toolkit/features';
 import type { ObjectKey, Observation } from '@bim-open-toolkit/model';
 import { sheetCoverage } from '@bim-open-toolkit/ui-gratify';
 import type { ObjectHit } from '@bim-open-toolkit/render';
 import { factsOf, hideWallsRuleId, inspectIndex, objectTable, runCalls, wallKeys } from '../../../src/demos/point-and-read/building.js';
 import { identityRows, pointAndReadSheet } from '../../../src/demos/point-and-read/inspector.js';
-import { emptyTag, isPinned, pinnedSetId, shownKey, tagOf, tagSpec, tagView } from '../../../src/demos/point-and-read/panels.js';
+import { emptyTag, tagHudPanel, tagOf, tagSpec } from '../../../src/demos/point-and-read/panels.js';
 import {
-  demo,
   hoverCalls,
+  isPinned,
   openingCalls,
   pinCalls,
-  pointAndReadReady,
-  pointAndReadReport,
+  pinnedSetId,
   resetCalls,
-} from '../../../src/demos/point-and-read/index.js';
+  shownKey,
+} from '../../../src/demos/point-and-read/pinning.js';
+import { demo, pointAndReadReady, pointAndReadReport } from '../../../src/demos/point-and-read/index.js';
 import { commandNames, recordingSession, type RecordingSession } from './fake-session.js';
 
 const session = (): RecordingSession => recordingSession([...editsCommands, ...setsCommands, ...appearanceCommands]);
@@ -39,14 +40,6 @@ const doorRated = (kind: Observation['kind']): ObjectKey => {
   const found = index.keys.find((key) => index.facts.get(key)?.get('fireRating')?.observation.kind === kind);
   if (found === undefined) throw new Error(`the building has no door whose fire rating is ${kind}`);
   return found;
-};
-
-// A label element's text, without assuming what else its props hold.
-const labelText = (element: Element): string | undefined => {
-  const props: unknown = element.props;
-  return typeof props === 'object' && props !== null && 'text' in props && typeof props.text === 'string'
-    ? props.text
-    : undefined;
 };
 
 const rowValue = (
@@ -182,20 +175,39 @@ describe('point-and-read inspector', () => {
 describe('point-and-read tag panel', () => {
   it('draws nothing until something is pointed at', () => {
     expect(tagOf(session())).toEqual(emptyTag);
-    expect(tagView(emptyTag).children).toEqual([]);
   });
 
-  it('shows the pointed object through a headless runtime', () => {
+  it('names the pointed object and its place through a headless runtime', () => {
+    const held = session();
+    runCalls(held, hoverCalls(hitOn(doorRated('known'))));
+    const doc = tagOf(held);
+    const runtime = new Runtime(null, { ...tagSpec, init: doc }, { headless: true, width: 240, height: 120 });
+    runtime.step(2);
+    expect(doc.detail).toContain('Door');
+    expect(doc.detail).toContain('Level');
+    const notes = runtime.semanticsTree().filter((node) => node.role === 'note');
+    expect(notes.map((node) => node.label)).toEqual([`${doc.name}: ${doc.detail}`]);
+  });
+
+  it('drops the pin when the tag is pressed', () => {
     const held = session();
     const door = doorRated('known');
-    runCalls(held, hoverCalls(hitOn(door)));
-    const doc = tagOf(held);
-    const runtime = new Runtime<typeof doc, never>(null, { ...tagSpec, init: doc }, { headless: true, width: 240, height: 120 });
-    runtime.step(2);
-    const texts = (tagView(runtime.doc).children ?? []).map(labelText);
-    expect(texts).toContain(doc.name);
-    expect(texts).toContain('Door');
-    expect(texts).toContain('Click to pin');
+    runCalls(held, pinCalls(hitOn(door)));
+    const pinnedDoc = tagOf(held);
+    expect(pinnedDoc.pinned).toBe(true);
+    const runtime = new Runtime(null, { ...tagSpec, init: pinnedDoc }, { headless: true, width: 240, height: 120 });
+    runtime.step(1);
+    runtime.dispatch({ kind: 'unpin' });
+    expect(runtime.doc.pinned).toBe(false);
+    tagHudPanel.onCommit?.(runtime.doc, pinnedDoc, held);
+    expect(isPinned(held)).toBe(false);
+    expect(shownKey(held)).toBe(door);
+  });
+
+  it('brings what the session holds into the document', () => {
+    const held = session();
+    runCalls(held, pinCalls(hitOn(doorRated('known'))));
+    expect(tagHudPanel.sync?.(held, emptyTag)).toEqual(tagOf(held));
   });
 });
 

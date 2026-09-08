@@ -20,50 +20,15 @@ import {
   type Result,
   type Session,
 } from '@bim-open-toolkit/model';
-import type { ObjectHit } from '@bim-open-toolkit/render';
 import type { DemoReport } from '../../feature-demos/_shared/protocol.js';
 import type { Demo, GalleryViewer } from '../../gallery/contracts.js';
-import {
-  buildingFixture,
-  factsOf,
-  hideWallsRule,
-  hideWallsRuleId,
-  inspectIndex,
-  runCalls,
-  wallKeys,
-  type CommandCall,
-} from './building.js';
+import { buildingFixture, factsOf, hideWallsRuleId, inspectIndex, runCalls, wallKeys } from './building.js';
 import { pointAndReadSheet } from './inspector.js';
-import { pinnedSetId, pointAndReadPanels, shownKey } from './panels.js';
+import { pointAndReadPanels } from './panels.js';
+import { hoverCalls, openingCalls, pinCalls, pinnedSetId, resetCalls, shownKey } from './pinning.js';
 
 // The features the demo installs: rules to hide the walls, sets to hold the pin and the selection.
 export const pointAndReadFeatures: readonly AnyFeature[] = [editsFeature, setsFeature, appearanceFeature];
-
-// What the demo does as it opens: take the walls away so the doors inside them can be seen.
-export const openingCalls = (): readonly CommandCall[] => [
-  { command: 'appearance.addRules', input: { rules: [hideWallsRule(inspectIndex())] } },
-];
-
-// What pointing at something does. Pointing at nothing empties the selection rather than keeping
-// the last object under a pointer that has moved off it.
-export const hoverCalls = (hit: ObjectHit | undefined): readonly CommandCall[] => [
-  { command: 'sets.select', input: { members: hit === undefined ? [] : [hit.key], mode: 'replace' } },
-];
-
-// What clicking does: pin what was clicked, or unpin when the click hit nothing.
-export const pinCalls = (hit: ObjectHit | undefined): readonly CommandCall[] => [
-  {
-    command: 'sets.define',
-    input: { id: pinnedSetId, name: 'Pinned object', members: hit === undefined ? [] : [hit.key] },
-  },
-  ...hoverCalls(hit),
-];
-
-// What the demo undoes when it is disposed: the rule it added and everything it selected or pinned.
-export const resetCalls = (): readonly CommandCall[] => [
-  { command: 'appearance.removeRule', input: { id: hideWallsRuleId } },
-  { command: 'sets.clear', input: {} },
-];
 
 // True once the walls have been taken away, which is the first thing the demo does.
 export const pointAndReadReady = (session: Session): boolean =>
