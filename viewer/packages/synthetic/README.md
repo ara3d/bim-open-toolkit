@@ -1,7 +1,23 @@
 # @bim-open-toolkit/synthetic
 
-Seeded generators for demonstration and test data: a pseudo-random generator, mesh primitives, a
-building with a room and door schedule, and a stress scene sized to a triangle budget.
+Seeded generators for demonstration and test data: a pseudo-random generator, mesh primitives,
+twelve generators covering the workflows in the product brief, and a catalog that builds any of
+them by name.
+
+| Generator | Produces | Read by |
+|---|---|---|
+| `building` | Storeys, rooms, walls, slabs, doors, windows, and their schedules | Door schedule, fire-rating review, level navigation |
+| `services` | Pipe runs, valves, equipment, and connections nobody verified | Valve isolation trace |
+| `revisions` | Two snapshots of one building with correspondence proposals | Revision comparison, linked views |
+| `schedule` | Delivery, acceptance and installation events with dates and gaps | Delivery timeline, animation |
+| `quantities` | Roof and finish faces with supplied measurements | Takeoff |
+| `costs` | Scopes, rate sets, scenario policies, unpriced scopes | Pricing alternatives |
+| `carbon` | Material quantities and factors with unit and scope mismatches | Material carbon heat map |
+| `assets` | Equipment, service history and points of interest | Asset handover |
+| `clearances` | Access envelopes and penetrations with candidate overlaps | Access coordination |
+| `city` | Buildings with geographic anchors, and documents that are not buildings | Portfolio drill-through, maps |
+| `field` | A scalar field sampled on a grid | Heat maps, voxel preview |
+| `stress` | N instances across M meshes inside a triangle budget | Benchmarks |
 
 The package depends on `@bim-open-toolkit/model` and nothing else. It does not touch a browser, a
 renderer or a file. Everything it produces is plain data: typed arrays for numeric columns, frozen
@@ -21,6 +37,24 @@ with the values that disagree. Nothing is ever filled in with a plausible defaul
 reads as `NaN` in its column, never as zero, and the `<field>State` column beside it is what a
 reader should test.
 
+## Table conventions
+
+Every generator publishes `Table`s from `@bim-open-toolkit/model`: one typed array per column, one
+scalar per cell. Three conventions follow from that and hold everywhere.
+
+**An observed field is several columns.** A column of numbers cannot say "nobody measured this" or
+"two sources disagree", so a field named `foo` becomes `foo` (the value), `fooUnit` for a quantity,
+`fooState` (`known`, `missing` or `conflicting`), `fooMissingReason`, `fooConflict` (the disagreeing
+values joined by ` vs `) and `fooEvidence` (the sources, `source (reference)` joined by `; `). Read
+the state column, not the value: the value column is only meaningful where the state is `known`.
+
+**An unknown number is NaN and an unknown string is empty.** Never zero, never a plausible default.
+Where an identifier can be absent, a `<field>Known` boolean column sits beside it.
+
+**A list lives in one cell.** `bIds` and `buildingIds` hold their ids separated by spaces, with a
+count column beside them. Read them with `splitIds` and test the count column; the empty string is
+no ids, not one empty id.
+
 ## Determinism
 
 The same options give byte-identical output on every engine and platform.
@@ -36,6 +70,14 @@ The same options give byte-identical output on every engine and platform.
   draw is made anyway and discarded; those places are commented.
 
 Seeding is a plain integer: `seed(42)`. There is no global state to reset.
+
+Dates are the ten characters `YYYY-MM-DD` and integer day numbers, converted by Howard Hinnant's
+civil algorithms in `dates.ts`. `Date` is avoided: it carries a time zone and a time of day this
+data does not have, and it would put a clock inside a function that must be a function of its seed.
+
+Some gaps are drawn at a rate and some are structural — a fixed position in the sequence, so every
+run exercises them. Where a generator's cases are structural its section says so, and `gapScale`
+switches them off at 0 rather than scaling a rate.
 
 ## `prng` — seeded pseudo-random generator
 
@@ -186,6 +228,300 @@ one, between 0.2 and 0.5.
 
 Every instance is an addressable object in `scene.model.objects`, in instance-row order, which is
 what the "ten thousand independently addressable render instances" target needs.
+
+## `services` — pipe runs, valves, equipment and the connections nobody verified
+
+```ts
+import { generateServices, defaultServicesOptions } from '@bim-open-toolkit/synthetic';
+
+const network = generateServices({ ...defaultServicesOptions, seed: 4, storeys: 6 });
+```
+
+A riser off a plant room with `branchesPerStorey` branches on each storey, every run axis aligned.
+Pipes are one unit cylinder scaled to a run; valves, the pump and terminal units are their own
+meshes placed by translation.
+
+| Table | Columns |
+|---|---|
+| `nodes` | `nodeId`, `kind`, `x`, `y`, `z` |
+| `segments` | `objectId`, `fromNodeId`, `toNodeId`, `topologyStatus`, `system`, `lengthM`, and the six `diameter` columns |
+| `valves` | `objectId`, `name`, `nodeId`, `nodeIdKnown`, `valveType` |
+| `equipment` | `objectId`, `name`, `nodeId`, `category`, `categoryKnown` |
+
+`startNodeId` and `closedValveIds` are one trace worth running: the terminal of the top storey's
+first branch, with that branch's isolation valve closed.
+
+| Gap | Rate | Reason it exists |
+|---|---|---|
+| `topologyStatus` is `unverified` | `unverifiedRate` on branch runs | A trace must leave an unverified connection out of its affected set and report it as a coverage gap at the boundary. The riser is always accepted, so a trace has something to walk. |
+| `diameter` conflicting | 5% | The design model and the as-built survey disagree. |
+| `diameter` missing, `not-provided` | 8% | Never scheduled. |
+| Valve with no `nodeId` | 8% | Nobody recorded where the valve is, so it cannot block anything. `nodeIdKnown` is false and `nodeId` is `''`. |
+| Equipment with no category | 10% | The schedule has to show it as unclassified. |
+
+## `revisions` — two snapshots and the proposals between them
+
+```ts
+import { generateRevisions, defaultRevisionsOptions } from '@bim-open-toolkit/synthetic';
+
+const pair = generateRevisions(defaultRevisionsOptions);
+```
+
+`before` is exactly what `generateBuilding` produces for `options.building`. `after` is derived from
+it, keeping the model id and taking a new revision, which is how `identity.ts` models the same
+object at two revisions. Its object ids are nonetheless disjoint from A's — every id gains a `-b`
+suffix — because a comparison that could match by id would not exercise the correspondence table.
+
+`objectsA` and `objectsB` carry `objectId`, `name`, `nameKnown`, `category`, `categoryKnown` and the
+position `x`, `y`, `z`, so a move is visible without a precomputed answer column.
+`correspondences` carries `id`, `aId`, `aIdKnown`, `bIds`, `candidateCount`, `basis`, `confidence`
+and `confidenceKnown`. `bIds` is a space-separated list in one cell; read it with `splitIds` and
+test `candidateCount`, never the string.
+
+| Case | Rate | What it forces |
+|---|---|---|
+| Renamed | `renameRate` | A match that is not an addition and a deletion. |
+| Recategorized | `recategorizeRate` | The same, on the category axis. |
+| Moved | `moveRate` | A change no name or category comparison can see. |
+| Deleted | `deleteRate` | `bIds` empty: no candidate in B. |
+| Added | `additions` | `aIdKnown` false: no candidate in A. |
+| Ambiguous | `ambiguousRate` | An element split in two: `candidateCount` is 2 and neither is chosen. |
+| Duplicated | exactly one | One object of A named by two separate proposals, the other way a match goes unresolved. |
+| Confidence not recorded | 6% | `confidence` is NaN beside `confidenceKnown`, never 0. |
+
+`changeCounts` reports how many of each the generator produced. It is a summary for a reader and a
+test, not an input column: a comparison that read the answer would prove nothing.
+
+## `schedule` — delivery, acceptance and installation
+
+```ts
+import { generateDeliverySchedule, defaultDeliveryOptions } from '@bim-open-toolkit/synthetic';
+
+const record = generateDeliverySchedule({ ...defaultDeliveryOptions, asOfDate: '2026-07-01' });
+```
+
+The module is `deliveries.ts`, because `schedule.ts` is the helper that turns observations into
+schedule columns. The catalog name is `schedule`, which is what the plan calls it.
+
+`objects` carries `objectId`, `name`, `category`; `events` carries `id`, `objectId`, `eventType` and
+the five `date` columns. Every item is drawn as a crate in a laydown area, so a timeline has
+something to colour.
+
+| Case | Rate | Reason it exists |
+|---|---|---|
+| No events at all | 6% | "Nothing recorded yet" is not "delivered". |
+| Delivered, accepted or installed absent | 10%, 25%, 45% | Progress, not a gap: an item that is not installed yet is not missing data. `gapScale` does not remove these. |
+| `date` missing, `not-provided` | 6% | The event happened; nobody wrote down when. It cannot rank the item. |
+| `date` conflicting | 7% | The delivery note and the site record differ by three days. |
+| Event dated after `asOfDate` | window | Normal timeline behaviour, not an exception. |
+
+Acceptance always postdates delivery and installation always postdates acceptance, so a workflow
+that ranks the three states can be checked against the dates.
+
+## `quantities` — roof and finish faces
+
+```ts
+import { generateQuantities, defaultQuantityOptions } from '@bim-open-toolkit/synthetic';
+
+const takeoff = generateQuantities(defaultQuantityOptions);
+```
+
+`surfaces` carries `objectId`, `roomId`, `roomIdKnown`, `scope` (`room-finish` or `roof`), `basis`,
+the five `finishType` columns and the six `areaM2` columns. Each face is drawn as one unit plane
+scaled to its size.
+
+The area is a supplied measurement drawn separately from the face's geometry and differing from it
+by a few per cent, the way a measurement taken to the finish face differs from a model face. A
+takeoff that computed area from the mesh would disagree with the table, which is what makes the
+rule testable.
+
+| Gap | Rate | Reason it exists |
+|---|---|---|
+| `finishType` missing, `not-provided` | 8% | An unassigned face contributes to no subtotal. |
+| `finishType` conflicting | 5% | Two candidate finishes, always two different ones. |
+| `areaM2` missing, `not-measured` | 7% | No usable number, so no subtotal and no zero. |
+| `areaM2` conflicting | 5% | Two surveys disagree. |
+| Finish face with no room | 3% | The face is not attributable to a room subtotal. |
+| Roof face with no room | policy | A roof belongs to the building. `gapScale` does not change it. |
+
+## `costs` — scopes, rates, scenarios
+
+```ts
+import { generateCosts, defaultCostOptions } from '@bim-open-toolkit/synthetic';
+
+const pricing = generateCosts(defaultCostOptions);
+```
+
+`scopes` carries `objectId`, `scopeType`, `description` and the six `quantity` columns; `rates`
+carries `id`, `scopeType`, `scenario`, `currency`, `unit`, `ratePerUnit`; `scenarios` carries `id`,
+`name`, `currency`, `policy`.
+
+Which cases exist is structural rather than drawn, so an adapter that dropped one would fail on
+every seed rather than on some:
+
+- **Steelwork is priced by nobody**, in any scenario. Unpriced, reason `not-provided`.
+- **Paint is priced in the base scenario only.** The same scope is priced in one scenario and not in
+  another, which is the point of scenarios.
+- **The alternate carpet rate is quoted per `ea`** against a quantity in `m2`. A usable rate exists
+  and still does not apply: unpriced, reason `unresolved-source`, never converted.
+- **The value scenario is quoted in EUR.** A total that added scenarios together would be wrong in a
+  way a reader can see.
+- **The value scenario quotes Doors twice.** Two rates match one scope, which W0's contract left as
+  an open question; the fixture exercises it so the answer can be tested rather than assumed.
+- **Quantities**: every fifth scope is disputed and every fifth is unmeasured, by position.
+
+`gapScale` switches the quantity gaps off at 0. It does not remove the absent rates: what a rate
+set does not cover is a fact about the rate set.
+
+## `carbon` — material quantities and factors
+
+```ts
+import { generateCarbon, defaultCarbonOptions } from '@bim-open-toolkit/synthetic';
+
+const carbon = generateCarbon({ ...defaultCarbonOptions, requestedLifecycleScope: 'A1-A3' });
+```
+
+`quantities` carries `objectId`, `materialId`, `materialName` and the six `quantity` columns;
+`factors` carries `id`, `materialId`, `scenario`, `unit`, `lifecycleScope`, `factorValue`.
+
+- **Timber has no factor at all**, in either scenario: unresolved, `not-provided`.
+- **The as-designed steel factor covers `A1-A5`** when `A1-A3` was requested: unresolved,
+  `unresolved-source`.
+- **The low-carbon steel factor is quoted per tonne** against a quantity in kilogrammes: the same
+  reason, a different mismatch. Neither is converted.
+- **Aluminium has a factor in the as-designed scenario only.**
+- **Quantities**: every fifth object is disputed and every fifth is missing, by position.
+
+## `assets` — handover and maintenance
+
+```ts
+import { generateAssets, defaultAssetOptions } from '@bim-open-toolkit/synthetic';
+
+const handover = generateAssets(defaultAssetOptions);
+```
+
+`assets` carries `objectId`, `name`, `category` and the five `installDate` columns;
+`maintenanceEvents` carries `id`, `assetId`, `date`, `note`; `serviceHistoryStatus` carries
+`assetId`, `status` and `tracked`; `pointsOfInterest` carries `id`, `assetId`, `name`, `note` and
+`x`, `y`, `z`.
+
+The register of what is tracked is a separate table from the events, because the same zero events
+means two different things. The first five assets carry the cases a handover has to tell apart:
+
+| Asset | Service history | Events | Install date |
+|---|---|---|---|
+| 1 | recorded | 3 | known |
+| 2 | recorded | 0 | known — a genuine, tracked zero, not an exception |
+| 3 | **not recorded** | 0 | known — never tracked, which is an exception |
+| 4 | recorded | 2 | **missing**, `not-provided` |
+| 5 | recorded | 1 | **conflicting** — commissioning record and manual differ by three weeks |
+
+A recorded maintenance event always has a date: the row exists because somebody wrote it down.
+
+## `clearances` — envelopes, penetrations and candidates
+
+```ts
+import { generateClearances, defaultClearanceOptions } from '@bim-open-toolkit/synthetic';
+
+const coordination = generateClearances(defaultClearanceOptions);
+```
+
+`envelopes` and `penetrations` carry the same columns: `objectId`, `name`, `discipline`, the six box
+columns `minX` to `maxZ`, and `bboxState`, `bboxMissingReason`, `bboxConflict`, `bboxEvidence`.
+`coordinates` is the frame both report in, registered to the project; a comparison between boxes in
+different frames is meaningless, so the frame is stated rather than assumed.
+
+Every other penetration is placed inside an access envelope, so a candidate overlap is structural
+rather than a matter of which numbers came up. `candidateOverlaps` reports how many pairs overlap
+on all three axes, for a test to check an adapter against.
+
+- **One envelope was never registered.** `bboxState` is `missing` and its six box columns are NaN.
+  It cannot be tested, and it is not "no overlap".
+- **One penetration was surveyed twice** and the two boxes disagree. `bboxState` is `conflicting`,
+  `bboxConflict` shows both boxes, and the numeric columns are NaN. It would otherwise have been a
+  candidate, so a review can neither report it nor clear it.
+
+A box is not a `FactValue` in model revision M1, so these tables carry the observation state in
+columns rather than as a `Fact`. See the track checkpoint.
+
+## `city` — buildings, anchors and documents
+
+```ts
+import { generateCity, defaultCityOptions } from '@bim-open-toolkit/synthetic';
+
+const portfolio = generateCity({ ...defaultCityOptions, sites: 3 });
+```
+
+`buildings` carries `buildingId`, `name`, `siteId`, `registration`, `registered`, `latitude`,
+`longitude`, `altitude`, `trueNorthDegrees`. `anchors` is the same information as one
+`CoordinateContext` per building, which is what a map reads: the model's own frame places every
+building in one local site plan, while each building is registered on its own.
+
+`documents` carries `documentId`, `name`, `buildingIds` (a space-separated list in one cell) and
+`buildingIdCount`. `metrics` carries `id`, `documentId`, `metricName` and the six `value` columns.
+
+- **One building was never surveyed.** Its registration is `unknown` and its latitude is NaN. A map
+  has to leave it off rather than place it at the origin.
+- **One document per site names two buildings.** Its figures cannot be attributed to either.
+- **One document names none.** Nobody has mapped it to a building yet.
+- **Every figure reported about the last site is disputed or absent**, so the site has no resolved
+  contributor and a rollup for it has to be left out rather than reported as zero.
+
+## `field` — a sampled scalar field
+
+```ts
+import { generateField, defaultFieldOptions, cellIndex } from '@bim-open-toolkit/synthetic';
+
+const field = generateField(defaultFieldOptions);
+const middle = field.values[cellIndex(field.dimensions, 12, 8, 3)];
+```
+
+`values` is one `Float32Array` in x-fastest order: `index = x + nx * (y + ny * z)`. `dimensions`,
+`spacing` and `origin` say where each cell is; `bounds` is the box the samples occupy, which is what
+a voxel preview needs before any mesh exists. `sampled`, `minimum`, `maximum` and `mean` are over
+the sampled cells only.
+
+An unsampled cell is NaN, never zero: a heat map that painted an unsampled cell at the bottom of its
+colour scale would be inventing a cold spot. A quarter of the plate on the lowest two levels was
+never covered at all, so the map has a hole in it rather than a cold corner, and
+`unsampledRate` scatters further dropouts.
+
+The value is a sum of four sources with a quadratic falloff plus a vertical gradient. That shape is
+arbitrary; what matters is that it uses multiplication and division only, so the field is
+bit-identical on every engine, which a field built out of sines would not be.
+
+## The catalog
+
+```ts
+import { fixture, fixtureNames, summaryOf } from '@bim-open-toolkit/synthetic';
+
+const services = fixture('services');
+const rows = summaryOf('city').tables;
+```
+
+`fixtures` holds one function per generator, so asking for one fixture never builds the other
+eleven. `fixture(name)` builds one; `fixtureNames` lists them in the order a gallery shows them.
+
+`summaryOf(name)` reduces any fixture to the same shape — objects drawn, mesh library, facts
+recorded, tables published, and a few generator-specific numbers — which is what a gallery lists and
+what the snapshot test compares. Adding a generator is one entry in the catalog and no change
+anywhere else.
+
+## Snapshots
+
+`test/snapshots/*.json` holds the summary of every default fixture, one line per column.
+`test/fixtures.test.ts` regenerates them and compares, so a change to a generator shows up in review
+as a diff of the columns it changed. A number JSON cannot hold is written as text: `"NaN"`, not
+`null` and not `0`, because reporting an unknown number as nothing is the mistake these fixtures
+exist to catch.
+
+To accept a deliberate change:
+
+```
+SYNTHETIC_UPDATE_SNAPSHOTS=1 npm test -w @bim-open-toolkit/synthetic
+```
+
+then read the diff before committing it.
 
 ## Labelling
 
