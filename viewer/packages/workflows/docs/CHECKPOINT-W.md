@@ -12,10 +12,11 @@ against the working tree at each check recorded below.
 
 ## State
 
-implemented and verified for everything listed under "Delivered": all ten
-adapters, the shared shapes, the recipes, the Snowdon projection input and
-the tests. One nested worker is still finishing the remaining generated-fixture
-tests; that work is listed under remaining work until it is reviewed.
+verified. All ten adapters, the shared shapes, the recipes, the Snowdon
+projection input, one exact test per workflow against its hand-written expected
+file, and one test per workflow against Track S2's generated fixtures.
+`tsc`, `eslint` and `npm test -w @bim-open-toolkit/workflows` are all clean at
+commit `029fd37`: 24 test files, 121 tests.
 
 ## Chunk commits
 
@@ -39,6 +40,12 @@ tests; that work is listed under remaining work until it is reviewed.
 | Checkpoint after all ten adapters | `50de1d3` |
 | Place a door schedule exception by lookup, not by scan | `dc98fa8` |
 | Colour and roll up by lookup, not by rescanning | `b342216` |
+| Full suite result and README | `835e197` |
+| The withheld takeoff subtotal, tested and no longer coloured settled | `fa438dc` |
+| Two rates matching one scope leave it unpriced, tested | `58bbad5` |
+| The other eight adapters on generated fixtures | `11e197d` |
+| An unverified pipe away from the trace is not a coverage gap | `da93dc9` |
+| Bounds a coordination participant's sources dispute | `029fd37` |
 
 Every commit staged its own files by explicit pathspec. Twice another track's
 files were staged in the shared index while this track was committing; the
@@ -138,10 +145,15 @@ disputed values, with the one exception marked. A note beside the fixtures
 
 ## Remaining work
 
-- Review and commit the remaining generated-fixture tests (workflows 2, 4, 5,
-  6, 7, 8, 9 and 10) from the nested worker.
 - Wave 3 wires the recipes: the command names in `src/recipe.ts` do not exist
   yet, and nothing here has ever dispatched one.
+- Two generated-fixture tests lean on a generator setting rather than on the
+  adapter's own reachability: the valve isolation test asks for one fixture per
+  branch so that every unverified connection touches the trace, and the carbon
+  and pricing tests count only the quantity gaps because the factor and rate
+  sets' own holes are policy rather than coverage. Both are explained in place.
+  A generator that published which of its gaps a trace should reach would let
+  those assertions stand without the tuning.
 
 ## Commands and their actual results
 
@@ -154,10 +166,9 @@ From `viewer/`:
 
 From `viewer/packages/workflows/`:
 
-- `npm test -w @bim-open-toolkit/workflows` — 16 files, 92 tests passed, at
-  commit `b342216` with the README edit in the working tree. Runs while a
-  nested worker was writing in this package were per-file, so its unfinished
-  files could not fail a check of mine.
+- `npm test -w @bim-open-toolkit/workflows` — 24 files, 121 tests passed, at
+  commit `029fd37`. Runs while a nested worker was writing in this package were
+  per-file, so its unfinished files could not fail a check of mine.
 
 ## Blockers
 
@@ -215,6 +226,12 @@ None.
   model `Coverage`, which is what let an adapter be run against one and checked
   against the generator's own numbers rather than against numbers observed by
   running it. That is worth keeping as the convention for the rest.
+- A type with two states where the data has three hides the third. Workflow
+  07's box observation had only known and missing, so a participant surveyed
+  twice with two different answers had to be read as simply missing, losing the
+  fact that somebody measured it and the answers disagree. It has three now.
+  The generated fixtures found this, because the generator models the case and
+  the adapter had nowhere to put it.
 - Asking the building generator for a building with no gaps still leaves fire
   ratings that do not apply. That is correct: a door in a room whose use is not
   fire rated has no rating to record, `not-applicable` says so, and it still
@@ -230,4 +247,4 @@ None.
 | `vitest run <files>` | 20 | 0.7 s warm, 20 s cold | 3: the schema that silently did not convert, a subtotal that would have added two units together, and an assumption that a complete building has no unavailable fire rating | None. Per-file runs keep concurrent workers from tripping over each other | helpful |
 | Hand-written expected files as the acceptance test | — | — | They are the reason the adapters are honest rather than plausible: every row was decided before any code existed | Their exception rows were ten different shapes, which cost one unifying pass | helpful |
 | Generated fixtures as a second test | — | — | Confirms the adapters agree with an independently generated data set and its documented gap counts | Needs a small reader per generator, and an undeclared dev dependency | helpful |
-| Sonnet workers for adapters 3 to 8 and the generated tests | 3 agents | about 12 minutes each | They produced adapters that matched the fixtures on the first run | Each needed the full brief, the pattern and an exact sub-fence; they cannot commit, so integration is a review pass. Review found four honesty gaps in their six adapters (a subtotal across two units, two records of one event silently replacing each other, a directed line between segments that only happened to be adjacent, and a workflow with no overlays at all), which is the cost of the speed | helpful with review, not without |
+| Sonnet workers for adapters 3 to 8 and the generated tests | 3 agents | 12, 12 and 22 minutes | They produced adapters and tests that matched the fixtures on the first run, and the third found a real hole in an adapter's types | Each needed the full brief, the pattern and an exact sub-fence; they cannot commit, so integration is a review pass. Review found four honesty gaps in their six adapters (a subtotal across two units, two records of one event silently replacing each other, a directed line between segments that only happened to be adjacent, and a workflow with no overlays at all), which is the cost of the speed | helpful with review, not without |
