@@ -57,6 +57,7 @@ import { Viewer, defaultMaterial } from '@ara3d/viewer-core';
 import { captureTarget, clippingTarget, environmentTarget, gpuFrameTimer, raycastSource } from './adapters.js';
 import { applyView, projectPointOnto, rayThroughClientPoint } from './camera.js';
 import { resolveModelSource } from './model-source.js';
+import { attachRenderHooks } from './render-hooks.js';
 import { viewSlice } from './view-slice.js';
 import type { FrameInfo, GalleryViewer, ModelSource, OpenedModel } from './contracts.js';
 
@@ -138,6 +139,12 @@ export const createGalleryViewer = (
   const gpu = gpuFrameTimer(canvas);
   const opened: OpenedModel[] = [];
   let environment: Disposable | undefined;
+  // The features' own render hooks, attached once a model is open because every one of them needs
+  // the bound scene. Replaced, not added to, when another model is opened.
+  let drawing: Disposable | undefined;
+  // A demo that installs the environment feature owns the environment; applying the gallery's own
+  // on top of it would undo the demo's opening move on the next model.
+  const environmentIsDemos = features.some((one) => one.id === 'environment');
 
   // Navigation owns the camera; every step is written to the view slice, and the slice is what the
   // renderer's camera is written from, so nothing reads the camera to know where it is.
@@ -168,6 +175,7 @@ export const createGalleryViewer = (
   };
 
   const applyEnvironmentTo = (bounds: Bounds): void => {
+    if (environmentIsDemos) return;
     environment?.dispose();
     environment = undefined;
     const settings = options.environment ?? galleryEnvironment;
@@ -186,6 +194,19 @@ export const createGalleryViewer = (
     applyEnvironmentTo(box);
     controller.setSession(navSession(fitted(box)));
     session.write(viewSlice, controller.session().nav.view);
+    drawing?.dispose();
+    drawing = attachRenderHooks(session, features, {
+      binding,
+      opened: () => [...opened],
+      bounds: () => binding.bounds(),
+      clipping: clippingTarget(core),
+      environmentTarget: (up) => environmentTarget(core, up),
+      setView: (view) => {
+        controller.setSession(navSession(navState(view, 'orbit')));
+        session.write(viewSlice, view);
+      },
+      requestRender: () => core.requestRender(),
+    });
     return success(model.ref, [...resolved.diagnostics, ...bound.diagnostics]);
   };
 
@@ -272,6 +293,8 @@ export const createGalleryViewer = (
       listeners.clear();
       sizes.disconnect();
       cameraFollowsSlice.dispose();
+      drawing?.dispose();
+      drawing = undefined;
       controller.dispose();
       environment?.dispose();
       if (clipping.ok) clipping.value.dispose();

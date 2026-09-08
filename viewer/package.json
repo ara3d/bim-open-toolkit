@@ -17,6 +17,8 @@
     "docs:api": "node packages/visualization/scripts/generate-api.mjs",
     "demo:browser": "node packages/visualization/scripts/browser-smoke.mjs",
     "demo:normalized": "node packages/visualization/scripts/check-normalized-snowdon.mjs",
+    "gallery": "vite --config packages/demos/vite.gallery.config.mjs",
+    "gallery:smoke": "npm run gallery:smoke -w @bim-open-toolkit/demos",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "check": "npm run typecheck && npm run lint",

@@ -44,6 +44,9 @@ export type BrowserRunOptions = {
   readonly script: string | undefined;
   // Where to write a screenshot. No screenshot is taken when this is undefined.
   readonly screenshotPath: string | undefined;
+  // The element to photograph, instead of the whole page. A selector that matches nothing falls
+  // back to the page, so a missing element costs a worse picture rather than a failed run.
+  readonly screenshotSelector: string | undefined;
   readonly viewportWidth: number;
   readonly viewportHeight: number;
   readonly deviceScaleFactor: number;
@@ -60,6 +63,7 @@ export const defaultRunOptions: BrowserRunOptions = {
   readyExpression: undefined,
   script: undefined,
   screenshotPath: undefined,
+  screenshotSelector: undefined,
   viewportWidth: 1280,
   viewportHeight: 800,
   deviceScaleFactor: 1,
@@ -168,7 +172,11 @@ export async function runInBrowser(options: Partial<BrowserRunOptions>): Promise
       ? await page.evaluate<GraphicsInfo | null>(graphicsProbeScript)
       : null;
     const value = settings.script === undefined ? undefined : await page.evaluate<unknown>(settings.script);
-    if (settings.screenshotPath !== undefined) await page.screenshot({ path: settings.screenshotPath });
+    if (settings.screenshotPath !== undefined) {
+      const target =
+        settings.screenshotSelector === undefined ? null : await page.$(settings.screenshotSelector);
+      await (target ?? page).screenshot({ path: settings.screenshotPath });
+    }
     return {
       channel,
       browserVersion: browser.version(),

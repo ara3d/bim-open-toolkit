@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "serve:fixtures": "node ../../../../platonic-ts/node_modules/tsx/dist/cli.mjs src/server/main.ts"
+    "serve:fixtures": "node ../../../../platonic-ts/node_modules/tsx/dist/cli.mjs src/server/main.ts",
+    "gallery:smoke": "node scripts/gallery-smoke.mjs"
   },
   "dependencies": {
     "@bim-open-toolkit/model": "0.1.0",

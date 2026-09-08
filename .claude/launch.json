@@ -26,8 +26,26 @@
     {
       "name": "bof-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "bimopenflow/web", "run", "dev", "--workspace", "packages/app"],
+      "runtimeArgs": [
+        "--prefix",
+        "bimopenflow/web",
+        "run",
+        "dev",
+        "--workspace",
+        "packages/app"
+      ],
       "port": 5300
+    },
+    {
+      "name": "gallery",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "viewer",
+        "run",
+        "gallery"
+      ],
+      "port": 5190
     }
   ]
 }
