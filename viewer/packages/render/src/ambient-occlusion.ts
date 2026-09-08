@@ -87,14 +87,19 @@ export const checkAmbientOcclusion = (
   return success(settings);
 };
 
-// The radius to use for a model of these bounds when the settings leave it to be chosen: two per
-// cent of the widest extent, which reaches across a door reveal on a building and a fillet on a
-// handle. One unit for an empty or degenerate model, the same fallback the grid uses.
+// The share of a model's widest extent the automatic radius takes: a twentieth. Seen whole, the
+// shadow then spans a few per cent of the picture, which reads as a gradient along a wall rather
+// than a line at its foot; a fiftieth was tried first and read as a line.
+export const occlusionRadiusShare = 0.05;
+
+// The radius to use for a model of these bounds when the settings leave it to be chosen:
+// `occlusionRadiusShare` of the widest extent, so a building and a handle are shaded alike when
+// each fills the view. One unit for an empty or degenerate model, the same fallback the grid uses.
 export const occlusionRadiusFor = (bounds: Bounds): number => {
   const size = boundsSize(bounds);
   if (size === undefined) return 1;
   const widest = Math.max(size[0] ?? 0, size[1] ?? 0, size[2] ?? 0);
-  return Number.isFinite(widest) && widest > 0 ? widest * 0.02 : 1;
+  return Number.isFinite(widest) && widest > 0 ? widest * occlusionRadiusShare : 1;
 };
 
 // A size in pixels.

@@ -194,6 +194,7 @@ export {
   mostSamples,
   occlusionBufferSize,
   occlusionRadiusFor,
+  occlusionRadiusShare,
   type AmbientOcclusionOutput,
   type AmbientOcclusionPass,
   type AmbientOcclusionSettings,

@@ -10,6 +10,7 @@ import {
   mostSamples,
   occlusionBufferSize,
   occlusionRadiusFor,
+  occlusionRadiusShare,
   type AmbientOcclusionPass,
   type HeightField,
 } from '../src/ambient-occlusion.js';
@@ -45,9 +46,10 @@ describe('checkAmbientOcclusion', () => {
 });
 
 describe('occlusionRadiusFor', () => {
-  it('reaches two per cent of the widest extent', () => {
-    expect(occlusionRadiusFor(building)).toBeCloseTo(0.8);
-    expect(occlusionRadiusFor(handle)).toBeCloseTo(0.0024);
+  it('reaches a twentieth of the widest extent', () => {
+    expect(occlusionRadiusShare).toBe(0.05);
+    expect(occlusionRadiusFor(building)).toBeCloseTo(2);
+    expect(occlusionRadiusFor(handle)).toBeCloseTo(0.006);
   });
 
   it('falls back to one unit for an empty or degenerate model', () => {
@@ -78,7 +80,7 @@ describe('ambientOcclusionPass', () => {
     const pass = ambientOcclusionPass(defaultAmbientOcclusion, building);
     expect(pass.ok).toBe(true);
     if (!pass.ok) return;
-    expect(pass.value?.radius).toBeCloseTo(0.8);
+    expect(pass.value?.radius).toBeCloseTo(2);
     expect(pass.value?.intensity).toBe(defaultAmbientOcclusion.intensity);
     expect(pass.value?.samples).toBe(defaultAmbientOcclusion.samples);
     expect(pass.value?.output).toBe('shaded');
@@ -111,7 +113,7 @@ describe('applyAmbientOcclusion', () => {
     const result = applyAmbientOcclusion(target, defaultAmbientOcclusion, building);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(target.applied[0]?.radius).toBeCloseTo(0.8);
+    expect(target.applied[0]?.radius).toBeCloseTo(2);
     result.value.dispose();
     expect(target.applied).toHaveLength(2);
     expect(target.applied[1]).toBeUndefined();
