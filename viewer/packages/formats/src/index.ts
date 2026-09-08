@@ -4,3 +4,5 @@ export * from './progress.js';
 export * from './loaded-model.js';
 export * from './detect.js';
 export * from './resolver.js';
+export * from './bfast.js';
+export * from './bos.js';
