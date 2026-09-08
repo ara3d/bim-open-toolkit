@@ -28,6 +28,18 @@ describe('valve isolation trace', () => {
     expect(exceptionRows(result)).toHaveLength(1);
   });
 
+  it('says nothing about an unverified connection the trace never came near', () => {
+    const elsewhere = {
+      ...input,
+      segments: [
+        ...input.segments,
+        { objectId: 'SEG-6', fromNodeId: 'N5', toNodeId: 'N6', topologyStatus: 'unverified' as const },
+      ],
+    };
+    const rows = exceptionRows(valueOfResult('valve isolation', runValveIsolation(elsewhere)));
+    expect(rows.map((row) => row['subjects'])).toEqual([['SEG-4']]);
+  });
+
   it('draws one directed line along the path the trace actually took', () => {
     expect(result.overlays.map((overlay) => overlay.id)).toEqual(['valve-isolation/SEG-1-SEG-2']);
   });
