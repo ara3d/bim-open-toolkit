@@ -1,3 +1,6 @@
+// A point or direction in two dimensions: a plan footprint, a texture coordinate, a screen point.
+export type Vec2 = readonly [number, number];
+
 // A point or direction in three dimensions.
 export type Vec3 = readonly [number, number, number];
 
@@ -86,6 +89,27 @@ export const subVec3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[
 
 // A vector scaled by a factor.
 export const scaleVec3 = (v: Vec3, factor: number): Vec3 => [v[0] * factor, v[1] * factor, v[2] * factor];
+
+// The cross product of two plane vectors: positive when b turns counter-clockwise from a, zero when
+// they are parallel, and twice the signed area of the triangle they span.
+export const crossVec2 = (a: Vec2, b: Vec2): number => a[0] * b[1] - a[1] * b[0];
+
+// Twice the signed area of the triangle a, b, c: positive when it is wound counter-clockwise, zero
+// when the three points are collinear. This is the orientation test a triangulator asks per corner.
+export const turnVec2 = (a: Vec2, b: Vec2, c: Vec2): number =>
+  (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+
+// The signed area of the closed polygon through the points, positive when they are counter-clockwise.
+// A self-intersecting outline gives the sum of its signed parts, which is why it is not an area test.
+export const polygonArea = (points: readonly Vec2[]): number => {
+  let total = 0;
+  for (let index = 0; index < points.length; index += 1) {
+    const current = points[index];
+    const following = points[(index + 1) % points.length];
+    if (current !== undefined && following !== undefined) total += crossVec2(current, following);
+  }
+  return total / 2;
+};
 
 // The box that contains nothing; unioning it with anything gives that thing.
 export const emptyBounds: Bounds = {

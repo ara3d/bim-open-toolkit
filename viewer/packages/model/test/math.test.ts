@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addVec3, boundsCenter, boundsContain, boundsOf, boundsSize, emptyBounds, expandBounds, identityMatrix,
-  isEmptyBounds, multiplyMatrix, scaleVec3, scaling, subVec3, transformBounds, transformDirection,
-  normalizeVec3, transformPoint, translation, unionBounds, vec3Length, type Vec3,
+  addVec3, boundsCenter, boundsContain, boundsOf, boundsSize, crossVec2, emptyBounds, expandBounds,
+  identityMatrix, isEmptyBounds, multiplyMatrix, polygonArea, scaleVec3, scaling, subVec3, transformBounds,
+  transformDirection, normalizeVec3, transformPoint, translation, turnVec2, unionBounds, vec3Length,
+  type Vec2, type Vec3,
 } from '../src/math.js';
 
 describe('math', () => {
@@ -68,5 +69,29 @@ describe('math', () => {
     const box = boundsOf([[0, 0, 0], [1, 1, 1]]);
     expect(transformBounds(translation([1, 0, 0]), box)).toEqual({ min: [1, 0, 0], max: [2, 1, 1] });
     expect(transformBounds(translation([1, 0, 0]), emptyBounds)).toEqual(emptyBounds);
+  });
+});
+
+describe('plane vectors', () => {
+  const square: readonly Vec2[] = [[0, 0], [2, 0], [2, 2], [0, 2]];
+
+  it('crosses two plane vectors, signing the turn between them', () => {
+    expect(crossVec2([1, 0], [0, 1])).toBe(1);
+    expect(crossVec2([0, 1], [1, 0])).toBe(-1);
+    expect(crossVec2([2, 0], [3, 0])).toBe(0);
+  });
+
+  it('signs the turn at a corner, reporting collinear points as no turn', () => {
+    expect(turnVec2([0, 0], [1, 0], [1, 1])).toBe(1);
+    expect(turnVec2([0, 0], [1, 1], [1, 0])).toBe(-1);
+    expect(turnVec2([0, 0], [1, 1], [2, 2])).toBe(0);
+  });
+
+  it('measures a polygon, signing it by winding', () => {
+    expect(polygonArea(square)).toBe(4);
+    expect(polygonArea([...square].reverse())).toBe(-4);
+    expect(polygonArea([[0, 0], [1, 0], [0, 1]])).toBe(0.5);
+    expect(polygonArea([[0, 0], [1, 1]])).toBe(0);
+    expect(polygonArea([])).toBe(0);
   });
 });
