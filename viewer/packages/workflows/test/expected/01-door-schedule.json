@@ -12,29 +12,37 @@
     ],
     "doors": [
       { "objectId": "D-101", "name": "D-101", "storeyId": "L1", "roomId": "room-101", "hasGeometry": true,
-        "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
-        "fireRatingMinutes": { "kind": "known", "value": 60, "unit": "min" } },
+        "facts": {
+          "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
+          "fireRatingMinutes": { "kind": "known", "value": 60, "unit": "min" } } },
       { "objectId": "D-102", "name": "D-102", "storeyId": "L1", "roomId": "room-102", "hasGeometry": true,
-        "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
-        "fireRatingMinutes": { "kind": "known", "value": 90, "unit": "min" } },
+        "facts": {
+          "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
+          "fireRatingMinutes": { "kind": "known", "value": 90, "unit": "min" } } },
       { "objectId": "D-103", "name": "D-103", "storeyId": "L1", "roomId": "room-102", "hasGeometry": true,
-        "widthMm": { "kind": "known", "value": 800, "unit": "mm" },
-        "fireRatingMinutes": { "kind": "missing", "reason": "not-provided" } },
+        "facts": {
+          "widthMm": { "kind": "known", "value": 800, "unit": "mm" },
+          "fireRatingMinutes": { "kind": "missing", "reason": "not-provided" } } },
       { "objectId": "D-104", "name": "D-104", "storeyId": "L1", "roomId": null, "hasGeometry": false,
-        "widthMm": { "kind": "missing", "reason": "not-applicable" },
-        "fireRatingMinutes": { "kind": "known", "value": 20, "unit": "min" } },
+        "facts": {
+          "widthMm": { "kind": "missing", "reason": "not-applicable" },
+          "fireRatingMinutes": { "kind": "known", "value": 20, "unit": "min" } } },
       { "objectId": "D-201", "name": "D-201", "storeyId": "L2", "roomId": "room-201", "hasGeometry": true,
-        "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
-        "fireRatingMinutes": { "kind": "known", "value": 60, "unit": "min" } },
+        "facts": {
+          "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
+          "fireRatingMinutes": { "kind": "known", "value": 60, "unit": "min" } } },
       { "objectId": "D-202", "name": "D-202", "storeyId": "L2", "roomId": "room-201", "hasGeometry": true,
-        "widthMm": { "kind": "known", "value": 1000, "unit": "mm" },
-        "fireRatingMinutes": { "kind": "conflicting", "values": [60, 90] } },
+        "facts": {
+          "widthMm": { "kind": "known", "value": 1000, "unit": "mm" },
+          "fireRatingMinutes": { "kind": "conflicting", "values": [60, 90] } } },
       { "objectId": "D-203", "name": "D-203", "storeyId": "L2", "roomId": null, "hasGeometry": true,
-        "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
-        "fireRatingMinutes": { "kind": "missing", "reason": "not-measured" } },
+        "facts": {
+          "widthMm": { "kind": "known", "value": 900, "unit": "mm" },
+          "fireRatingMinutes": { "kind": "missing", "reason": "not-measured" } } },
       { "objectId": "D-204", "name": "D-204", "storeyId": "L2", "roomId": "room-201", "hasGeometry": true,
-        "widthMm": { "kind": "known", "value": 850, "unit": "mm" },
-        "fireRatingMinutes": { "kind": "known", "value": 45, "unit": "min" } }
+        "facts": {
+          "widthMm": { "kind": "known", "value": 850, "unit": "mm" },
+          "fireRatingMinutes": { "kind": "known", "value": 45, "unit": "min" } } }
     ]
   },
   "expected": {
@@ -65,9 +73,9 @@
         "fireRatingMinutes": { "kind": "known", "value": 45, "unit": "min" } }
     ],
     "exceptions": [
-      { "objectId": "D-103", "field": "fireRatingMinutes", "kind": "missing", "reason": "not-provided" },
-      { "objectId": "D-202", "field": "fireRatingMinutes", "kind": "conflicting", "values": [60, 90] },
-      { "objectId": "D-203", "field": "fireRatingMinutes", "kind": "missing", "reason": "not-measured" }
+      { "subjects": ["D-103"], "field": "fireRatingMinutes", "kind": "missing", "reason": "not-provided" },
+      { "subjects": ["D-202"], "field": "fireRatingMinutes", "kind": "conflicting", "values": [60, 90] },
+      { "subjects": ["D-203"], "field": "fireRatingMinutes", "kind": "missing", "reason": "not-measured" }
     ]
   },
   "notes": "Fire rating is the only exception axis (see the .md rules). D-104 has hasGeometry:false and still gets a schedule row per the brief ('schedules still work without geometry'). Width observations pass through unchanged and never generate exceptions in this workflow."
