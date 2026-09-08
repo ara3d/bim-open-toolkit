@@ -38,19 +38,16 @@ export type AmbientOcclusionSettings = {
   readonly samples: number;
   // The occlusion buffer's size as a fraction of the drawing buffer's, between a quarter and one.
   readonly resolutionScale: number;
-  // Whether the sampled estimate is filtered before it is applied. Off shows the raw noise.
-  readonly denoise: boolean;
   readonly output: AmbientOcclusionOutput;
 };
 
-// Contact shadow on, at a radius chosen from the model, strong enough to read and filtered.
+// Contact shadow on, at a radius chosen from the model, strong enough to read.
 export const defaultAmbientOcclusion: AmbientOcclusionSettings = {
   enabled: true,
   radius: 0,
   intensity: 0.8,
   samples: 16,
   resolutionScale: 1,
-  denoise: true,
   output: 'shaded',
 };
 
@@ -104,10 +101,13 @@ export const occlusionRadiusFor = (bounds: Bounds): number => {
 export type PixelSize = { readonly width: number; readonly height: number };
 
 // The size of the occlusion buffer for a drawing buffer of this size, never smaller than one
-// pixel on a side.
-export const occlusionBufferSize = (settings: AmbientOcclusionSettings, view: PixelSize): PixelSize => ({
-  width: Math.max(1, Math.round(view.width * settings.resolutionScale)),
-  height: Math.max(1, Math.round(view.height * settings.resolutionScale)),
+// pixel on a side. Takes the settings or the resolved pass, whichever a renderer holds.
+export const occlusionBufferSize = (
+  scaled: { readonly resolutionScale: number },
+  view: PixelSize,
+): PixelSize => ({
+  width: Math.max(1, Math.round(view.width * scaled.resolutionScale)),
+  height: Math.max(1, Math.round(view.height * scaled.resolutionScale)),
 });
 
 // Everything a renderer needs to set the pass up, with the radius resolved so it has nothing left
@@ -118,7 +118,6 @@ export type AmbientOcclusionPass = {
   readonly intensity: number;
   readonly samples: number;
   readonly resolutionScale: number;
-  readonly denoise: boolean;
   readonly output: AmbientOcclusionOutput;
 };
 
@@ -135,7 +134,6 @@ export const ambientOcclusionPass = (
     intensity: settings.intensity,
     samples: settings.samples,
     resolutionScale: settings.resolutionScale,
-    denoise: settings.denoise,
     output: settings.output,
   });
 };
