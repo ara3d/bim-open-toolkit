@@ -76,8 +76,8 @@ describe('the panel text', () => {
 
   it('counts the scene the three ways the HUD data distinguishes', () => {
     const lines = hudLines(reading());
-    expect(lines[4]).toBe('1 234 objects  4 321 instances  4 000 shown');
-    expect(lines[5]).toBe('9 876 543 triangles  7 groups  perspective');
+    expect(lines[4]).toBe('1 234 objects  4 321 instances  4 000 shown');
+    expect(lines[5]).toBe('9 876 543 triangles  7 groups  perspective');
   });
 
   it('adds the level only when navigation has been to one', () => {
@@ -88,8 +88,8 @@ describe('the panel text', () => {
   it('groups thousands and keeps a negative sign', () => {
     expect(withThousands(0)).toBe('0');
     expect(withThousands(999)).toBe('999');
-    expect(withThousands(1000)).toBe('1 000');
-    expect(withThousands(-12345)).toBe('-12 345');
+    expect(withThousands(1000)).toBe('1 000');
+    expect(withThousands(-12345)).toBe('-12 345');
   });
 
   it('reports a frame time outside the budget as outside it', () => {
