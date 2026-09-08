@@ -1,6 +1,6 @@
 # Visualization V2 status
 
-Rolling status for [V2-PLAN.md](V2-PLAN.md). Decisions go to [README.md](README.md), not here.
+Rolling status for [V2-PLAN.md](V2-PLAN.md). Decisions go to [README.md](README.md), not here. A new agent joining the wave starts at [JOIN-THE-WAVE.md](JOIN-THE-WAVE.md).
 
 ## Wave 0: contracts and skeleton — in progress (started 2026-09-07)
 
