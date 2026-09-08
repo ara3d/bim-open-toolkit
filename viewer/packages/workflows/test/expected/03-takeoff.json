@@ -20,9 +20,9 @@
     ],
     "totalKnownM2": 50,
     "exceptions": [
-      { "objectId": "S-5", "field": "areaM2", "kind": "conflicting", "values": [18, 20], "finishType": "Tile" },
-      { "objectId": "S-7", "field": "finishType", "kind": "missing", "reason": "not-provided", "areaM2": 7 },
-      { "objectId": "S-8", "field": "areaM2", "kind": "missing", "reason": "not-measured", "finishType": "Vinyl" }
+      { "subjects": ["S-5"], "field": "areaM2", "detail": "finishType is known as 'Tile'", "kind": "conflicting", "values": [18, 20] },
+      { "subjects": ["S-7"], "field": "finishType", "detail": "areaM2 is known as 7 m2", "kind": "missing", "reason": "not-provided" },
+      { "subjects": ["S-8"], "field": "areaM2", "detail": "finishType is known as 'Vinyl'", "kind": "missing", "reason": "not-measured" }
     ]
   },
   "notes": "No Vinyl subtotal is emitted: its only surface (S-8) has a missing area, so there is no known contributor. totalKnownM2 (50) is the sum of the emitted subtotals only (39 + 11), never including exception surfaces."

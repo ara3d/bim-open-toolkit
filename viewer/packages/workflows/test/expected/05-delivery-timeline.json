@@ -32,15 +32,15 @@
       { "objectId": "EQ-1", "state": "installed", "knownDates": { "delivered": "2026-01-10", "accepted": "2026-01-20", "installed": "2026-02-01" } },
       { "objectId": "EQ-2", "state": "accepted", "knownDates": { "delivered": "2026-03-01", "accepted": "2026-03-10" } },
       { "objectId": "EQ-3", "state": "delivered", "knownDates": { "delivered": "2026-04-01" } },
-      { "objectId": "EQ-4", "state": "installed", "knownDates": { "installed": "2026-05-01" }, "coverageNote": "accepted not observed" },
+      { "objectId": "EQ-4", "state": "installed", "knownDates": { "installed": "2026-05-01" }, "coverageNote": "delivered, accepted not observed" },
       { "objectId": "EQ-5", "state": "scheduled", "knownDates": {} },
       { "objectId": "EQ-6", "state": "scheduled", "knownDates": {} },
       { "objectId": "EQ-7", "state": "accepted", "knownDates": { "delivered": "2026-01-01", "accepted": "2026-01-15" }, "futureDates": { "installed": "2026-07-01" } },
       { "objectId": "EQ-8", "state": "accepted", "knownDates": { "accepted": "2026-02-01" }, "coverageNote": "delivered not observed" }
     ],
     "exceptions": [
-      { "objectId": "EQ-5", "field": "delivered", "kind": "conflicting", "values": ["2026-01-05", "2026-01-08"] },
-      { "objectId": "EQ-6", "kind": "missing", "reason": "not-provided", "detail": "no events observed" }
+      { "subjects": ["EQ-5"], "field": "delivered", "kind": "conflicting", "values": ["2026-01-05", "2026-01-08"] },
+      { "subjects": ["EQ-6"], "field": "events", "detail": "no events observed", "kind": "missing", "reason": "not-provided" }
     ]
   },
   "notes": "EQ-7's installed date (2026-07-01) is after asOfDate (2026-06-01) so it does not count yet; state stays 'accepted' and the future date is reported separately under futureDates, not dropped. EQ-4 and EQ-8 show a non-blocking coverageNote for a lower step that was never recorded, per the .md assumption that a higher observed state is not demoted."

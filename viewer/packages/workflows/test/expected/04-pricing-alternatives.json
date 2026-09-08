@@ -24,9 +24,9 @@
       { "objectId": "SC-Doors", "scenario": "alternate", "quantity": 12, "unit": "ea", "ratePerUnit": 175, "cost": 2100, "currency": "USD" }
     ],
     "exceptions": [
-      { "objectId": "SC-Paint", "scenario": "base", "kind": "missing", "reason": "not-measured", "field": "quantity" },
-      { "objectId": "SC-Carpet", "scenario": "alternate", "kind": "missing", "reason": "unresolved-source", "field": "rate", "detail": "rate unit 'ea' does not match quantity unit 'm2'" },
-      { "objectId": "SC-Paint", "scenario": "alternate", "kind": "missing", "reason": "not-measured", "field": "quantity" }
+      { "subjects": ["SC-Paint"], "field": "quantity", "scope": "base", "kind": "missing", "reason": "not-measured" },
+      { "subjects": ["SC-Carpet"], "field": "rate", "scope": "alternate", "detail": "rate unit 'ea' does not match quantity unit 'm2'", "kind": "missing", "reason": "unresolved-source" },
+      { "subjects": ["SC-Paint"], "field": "quantity", "scope": "alternate", "kind": "missing", "reason": "not-measured" }
     ]
   },
   "notes": "Carpet's alternate-scenario rate (r4) is priced per 'ea' but Carpet's quantity is in 'm2', so it is unresolved-source, not silently priced with mismatched units. Paint has no rate in either scenario and its quantity is itself missing, so both scenario rows report the quantity's own missing reason rather than 'no rate found'."
