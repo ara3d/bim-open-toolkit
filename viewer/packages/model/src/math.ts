@@ -172,6 +172,12 @@ export const boundsCenter = (bounds: Bounds): Vec3 | undefined =>
 export const boundsSize = (bounds: Bounds): Vec3 | undefined =>
   isEmptyBounds(bounds) ? undefined : subVec3(bounds.max, bounds.min);
 
+// True when two boxes have the same corners. Empty boxes are compared corner by corner like any
+// other, so two boxes that are both empty in different ways are not reported as the same box.
+export const sameBounds = (a: Bounds, b: Bounds): boolean =>
+  a.min[0] === b.min[0] && a.min[1] === b.min[1] && a.min[2] === b.min[2] &&
+  a.max[0] === b.max[0] && a.max[1] === b.max[1] && a.max[2] === b.max[2];
+
 // True when the point is inside or on the box.
 export const boundsContain = (bounds: Bounds, point: Vec3): boolean =>
   point[0] >= bounds.min[0] && point[0] <= bounds.max[0] &&

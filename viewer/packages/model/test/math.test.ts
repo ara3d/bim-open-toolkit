@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addVec3, boundsCenter, boundsContain, boundsOf, boundsSize, crossVec2, crossVec3, dotVec3, emptyBounds,
   expandBounds, identityMatrix, isEmptyBounds, multiplyMatrix, perpendicularTo, polygonArea, scaleVec3,
-  scaling, subVec3, transformBounds, transformDirection, normalizeVec3, transformPoint, translation,
+  sameBounds, scaling, subVec3, transformBounds, transformDirection, normalizeVec3, transformPoint, translation,
   turnVec2, unionBounds, unitSlerp, vec3Length,
   type Vec2, type Vec3,
 } from '../src/math.js';
@@ -64,6 +64,14 @@ describe('math', () => {
     const b = boundsOf([[-1, 0, 0], [0, 0, 2]]);
     expect(unionBounds(a, b)).toEqual({ min: [-1, 0, 0], max: [1, 1, 2] });
     expect(unionBounds(a, emptyBounds)).toEqual(a);
+  });
+
+  it('compares boxes corner by corner', () => {
+    const box = boundsOf([[0, 0, 0], [1, 1, 1]]);
+    expect(sameBounds(box, boundsOf([[1, 1, 1], [0, 0, 0]]))).toBe(true);
+    expect(sameBounds(box, boundsOf([[0, 0, 0], [1, 1, 2]]))).toBe(false);
+    expect(sameBounds(emptyBounds, emptyBounds)).toBe(true);
+    expect(sameBounds(emptyBounds, { min: [1, 1, 1], max: [0, 0, 0] })).toBe(false);
   });
 
   it('bounds every corner after a transform and leaves an empty box empty', () => {

@@ -21,7 +21,9 @@ export type Quantity = {
   readonly unit: string;
 };
 
-// The value an observation carries.
+// The value an observation carries. Adding a kind here is a revision, not an addition: a reader that
+// ends a chain of kind tests with the last kind it knows stops compiling. See "M1.3 proposed" in
+// docs/CONTRACTS-M1.md for the bounds value Track S2 needs and what landing it costs.
 export type FactValue =
   | { readonly kind: 'quantity'; readonly quantity: Quantity }
   | { readonly kind: 'text'; readonly text: string }
