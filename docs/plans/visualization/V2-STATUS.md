@@ -61,7 +61,7 @@ F, R, S2, W, T, I verified (see the table); F2, E2E and M4 are follow-ups in fli
 | FA appearance, sets, edits, replacement | Opus | features `src/{appearance,sets,edits,replacement}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FA.md` |
 | FB clipping, layouts, environment, navigation aids, HUD | Opus | features `src/{clipping,layouts,environment,navigation-aids,hud}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FB.md` |
 | FC annotations, overlays, animation, comparison, storage, capture | Opus | features `src/{annotations,overlays,animation,comparison,storage,capture}*` and tests | working | `viewer/packages/features/docs/CHECKPOINT-FC.md` |
-| D gallery on createViewer | Opus, Sonnet sub-agents | `viewer/packages/demos/**` minus slice, server, feature-demos and ambient-occlusion paths | working: starts on the host shell, demo registry and ported demo content while V finishes `createViewer` | `viewer/packages/demos/docs/CHECKPOINT-D.md` |
+| D gallery on createViewer | — | — | handed to the gallery session (third session in this checkout): it owns the gallery wave (UG, GAL, D1 to D4) under GALLERY-PLAN.md and had landed contract G1 before this supervisor's D wrote anything committed; this supervisor stopped its own D agent and moved its four uncommitted draft files out of the tree | see GALLERY-PLAN.md |
 
 Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside the still-running wave 0 tracks PERF, BIND, I and D0. T (testing package) started once PERF and BIND finished. Perf configs added to formats and render (`npm run perf -w`).
 
@@ -107,6 +107,13 @@ Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committe
 - To the loader session (viewer-core, read-only for V2): `InstancedGroup.markColorsChanged(start, count)` and `markTransformsChanged(start, count)` so a bulk update can publish a range without a `setColors` self-copy (5.31 ms per 10,000-row update today); and a note that the `colors`/`transforms` getters allocate a view per call, which put garbage collection inside every per-row loop until the table captured the views once.
 - To the model docs: `resolveStyles` omits keys equal to the fallback and deleted keys, so a binding iterating `byKey` never restores an object a rule stopped applying to; render addresses every row and relies on change detection.
 - Process: an additive contract change that adds a name a downstream track already invented is not neutral (M2's `instance-table` columns versus R's own vocabulary; reconciled by R in `db9a63c`). Announce contract additions to running tracks through their checkpoints or the status file.
+
+### Coordination with the gallery session (2026-09-08)
+
+A third session owns the gallery wave: `viewer/packages/ui-gratify/**` and `viewer/packages/demos/**` minus slice, server, ambient-occlusion and feature-demos; tracks UG, GAL, D1 to D4; ports 5190 to 5194; plan in GALLERY-PLAN.md. This supervisor's Track D was launched minutes before that message and collided on the same paths; it was stopped and withdrawn. Answers to the gallery session's requests:
+1. Features index: `viewer/packages/features/src/index.ts` is supervisor-owned here and is updated the moment FA, FB or FC lands, from the export lines in their checkpoints. Until then the modules are importable by deep path.
+2. V follow-ups (world-to-canvas projection, `pick(clientX, clientY)`, an after-frame hook) are recorded as V2 and start when V lands.
+3. Manifests and the root `package.json` and lockfile stay with this supervisor to keep one writer on the lockfile: send the exact dependency and script lines by cross-session message and they are applied within the next integration step. Until then `gratify` resolves from the workspace root as it does for the alpha.
 
 ### Coordination with the feature-demos session (2026-09-08)
 
