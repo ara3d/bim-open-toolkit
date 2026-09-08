@@ -130,15 +130,23 @@ export const hostPanel = <D, I>(
   reposition?.();
 
   const sync = panel.sync;
+  // Puts what the session holds into the panel's document.
+  const pull = (): void => {
+    if (sync === undefined) return;
+    const next = sync(session, surface.doc());
+    if (next === surface.doc()) return;
+    syncing = true;
+    surface.dispatch({ [syncField]: next });
+    syncing = false;
+  };
+
+  // Once at mount, before anything has changed. A panel is hosted after the demo has already
+  // dispatched its opening commands, so waiting for the next change event leaves the panel showing
+  // the state its `init` invented - a strength of zero beside a model that is already exploded.
+  pull();
+
   const subscription = session.subscribe(() => {
-    if (sync !== undefined) {
-      const next = sync(session, surface.doc());
-      if (next !== surface.doc()) {
-        syncing = true;
-        surface.dispatch({ [syncField]: next });
-        syncing = false;
-      }
-    }
+    pull();
     reposition?.();
     surface.wake();
   });

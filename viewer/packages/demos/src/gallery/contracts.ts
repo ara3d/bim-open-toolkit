@@ -17,7 +17,7 @@ import type {
   Vec2,
   Vec3,
 } from '@bim-open-toolkit/model';
-import type { LoadedModel } from '@bim-open-toolkit/formats';
+import type { LoadedModel, ModelDocuments, ModelProperties } from '@bim-open-toolkit/formats';
 import type { Placement } from '@bim-open-toolkit/features';
 import type { CaptureOptions, ObjectHit, SceneStatistics, UpdateReport } from '@bim-open-toolkit/render';
 import type { AnyHudPanel, PropertySheet } from '@bim-open-toolkit/ui-gratify';
@@ -68,6 +68,12 @@ export type OpenedModel = {
   readonly geometry: Geometry;
   readonly keys: readonly ObjectKey[];
   readonly base: ReadonlyMap<ObjectKey, Appearance>;
+  // What the file records about each object, when the file carries it and the loader was asked for
+  // it: the parameter tables, and which of the source documents each object came from. Absent for a
+  // generated model and for a format that carries neither, which is what a demo has to say when it
+  // reads them.
+  readonly properties?: ModelProperties | undefined;
+  readonly documents?: ModelDocuments | undefined;
 };
 
 // The viewer a demo drives. It is a session (state changes only through commands) plus the few

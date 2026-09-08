@@ -16,7 +16,7 @@ import {
   type ObjectKey,
   type Result,
 } from '@bim-open-toolkit/model';
-import { detectFormat, loadModel } from '@bim-open-toolkit/formats';
+import { detectFormat, loadModel, type ModelDocuments, type ModelProperties } from '@bim-open-toolkit/formats';
 import type { ModelSource, OpenedModel } from './contracts.js';
 
 // The object key of each object ordinal, in the order `Geometry.instances.objectIndex` counts.
@@ -27,11 +27,13 @@ export const objectKeysOf = (model: ModelData): readonly ObjectKey[] =>
 export const baseAppearancesOf = (model: ModelData): ReadonlyMap<ObjectKey, Appearance> =>
   new Map(model.objects.map((record) => [objectKey(record.ref), record.appearance ?? defaultAppearance]));
 
-// One opened model from its data and geometry, with the derived pieces filled in.
+// One opened model from its data and geometry, with the derived pieces filled in, and whatever the
+// loader read of what the file records.
 export const openedModel = (
   modelId: string,
   data: ModelData,
   geometry: OpenedModel['geometry'],
+  recorded: { readonly properties?: ModelProperties | undefined; readonly documents?: ModelDocuments | undefined } = {},
 ): OpenedModel => ({
   modelId,
   ref: data.ref,
@@ -39,7 +41,14 @@ export const openedModel = (
   geometry,
   keys: objectKeysOf(data),
   base: baseAppearancesOf(data),
+  properties: recorded.properties,
+  documents: recorded.documents,
 });
+
+// Reading the parameter tables costs about half a second and thirteen megabytes on a real model,
+// and every demo in the gallery is about what is known rather than only about what is drawn, so the
+// gallery always asks. A format that carries none says so in a diagnostic and loads as before.
+export const galleryLoadOptions = { properties: true } as const;
 
 // Everything a source comes to. A url is fetched and a file is read by `formats`; a format is
 // detected from the bytes and from the name the file arrived under, so a picked `.bfast` with no
@@ -47,18 +56,18 @@ export const openedModel = (
 export const resolveModelSource = async (source: ModelSource): Promise<Result<OpenedModel>> => {
   if (source.kind === 'data') return success(openedModel(source.id, source.data, source.geometry));
   if (source.kind === 'loaded')
-    return success(openedModel(source.id, source.model.data, source.model.geometry), source.model.diagnostics);
+    return success(openedModel(source.id, source.model.data, source.model.geometry, source.model), source.model.diagnostics);
   if (source.kind === 'url') {
-    const loaded = await loadModel(source.url);
+    const loaded = await loadModel(source.url, galleryLoadOptions);
     return loaded.ok
-      ? success(openedModel(source.id, loaded.value.data, loaded.value.geometry), loaded.diagnostics)
+      ? success(openedModel(source.id, loaded.value.data, loaded.value.geometry, loaded.value), loaded.diagnostics)
       : failure(loaded.diagnostics);
   }
   const bytes = new Uint8Array(await source.file.arrayBuffer());
   const format = detectFormat(bytes, source.name);
   if (!format.ok) return failure(format.diagnostics);
-  const loaded = await loadModel(bytes, { format: format.value });
+  const loaded = await loadModel(bytes, { ...galleryLoadOptions, format: format.value });
   return loaded.ok
-    ? success(openedModel(source.id, loaded.value.data, loaded.value.geometry), loaded.diagnostics)
+    ? success(openedModel(source.id, loaded.value.data, loaded.value.geometry, loaded.value), loaded.diagnostics)
     : failure(loaded.diagnostics);
 };
