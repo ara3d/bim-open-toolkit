@@ -44,6 +44,16 @@ export {
   type DoorWidthPolicy,
 } from './building.js';
 
+// A seeded procurement record: delivery, acceptance and installation events, with dates and gaps.
+export {
+  defaultDeliveryOptions,
+  eventTypes,
+  generateDeliverySchedule,
+  type DeliveryOptions,
+  type DeliverySchedule,
+  type EventType,
+} from './deliveries.js';
+
 // Two snapshots of one building and the correspondences somebody proposed between them.
 export {
   defaultRevisionsOptions,
