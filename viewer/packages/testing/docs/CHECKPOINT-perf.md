@@ -108,7 +108,7 @@ here.
 | Colour and visibility (found work plus the strict-mode fix) | `b08d6b4` | the four commands above |
 | Transforms and bounds | `e91d856` | the four commands above |
 | Change detection and binding objects | `36d9f87` | the four commands above |
-| Renderer sync, findings document | (this chunk) | the four commands above |
+| Renderer sync, findings document | `9c071b2` | the four commands above |
 
 ## Blockers
 
