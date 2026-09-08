@@ -54,7 +54,7 @@ type Feature<S> = {
   readonly id: string;
   readonly dependsOn: readonly string[];
   readonly slice: StateSlice<S>;            // schema, version, migrate, default
-  readonly commands: readonly Command[];     // typed name, input schema, run(session, input)
+  readonly commands: readonly Command[];     // typed name, input schema, run(session, input); M1: run takes unknown and validates with the schema
   install?(session: Session): Disposable;   // optional render or interaction hook
 };
 ```

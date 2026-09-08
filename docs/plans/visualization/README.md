@@ -67,3 +67,17 @@ Append a dated record with: affected original F-ID/stage and requirement; previo
 **User basis:** user instruction 2026-09-07: "Switch to BFAST for now across the board. We will tackle network latency later by optimizing it."
 
 **Affected contracts and checks:** V2-PLAN.md `formats` package row and Track F deliverables; Track F must re-measure BFAST versus BOS on the columnar path and record transfer size. The alpha package is unchanged by this decision.
+
+## Decision record: 2026-09-08 — model contract revision M1 accepted
+
+**Affected requirement:** F01, F07, F08, F17, F26 contracts in the `model` package; no acceptance criterion removed.
+
+**Previous decision:** the P0 sketch in V2-PLAN.md ("The one extension mechanism"), with `run(session, input)` typed per command.
+
+**Revised decision:** revision M1 as documented in `viewer/packages/model/docs/CONTRACTS-M1.md` (commit `641624b`) is the contract for waves 1 to 3. Departures from P0: `Session` is its own module; `Command.run` takes `unknown` and validates with the command's own schema, with the `command()` constructor giving authors a typed input; `OptionalSchema` marks optional properties explicitly; `resolveStyles` takes the scene's object keys; edit targets and saved-view members are keys, not sets; undo is a generic history over whole immutable states. Follow-ups for wave 1: export `Vec2` (Track S request); a bound on history length; group and instance indices stay the render package's concern.
+
+**Reason and evidence:** 198 tests in 18 files, zero escape hatches, a 40-line `Session` fixture proves the contract implementable, README examples run as tests; the supervisor re-ran typecheck, lint and tests. The erased command input is what lets a registry hold commands of different input types and lets MCP descriptors be generated exactly.
+
+**User basis:** plan approved 2026-09-07; contract review is a supervisor responsibility under that plan.
+
+**Affected contracts and checks:** every wave 1 brief names M1 at `641624b`; the P0 snippet in V2-PLAN.md is annotated, not rewritten.

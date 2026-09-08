@@ -1,5 +1,5 @@
 {
-  "name": "visualization-v2-wave-0",
+  "name": "visualization-v2-wave-0-1",
   "supervisor": [
     "viewer/package.json",
     "viewer/package-lock.json",
@@ -23,11 +23,6 @@
     "M": {
       "paths": [
         "viewer/packages/model/**"
-      ]
-    },
-    "S": {
-      "paths": [
-        "viewer/packages/synthetic/**"
       ]
     },
     "PERF": {
@@ -60,17 +55,31 @@
         "viewer/packages/interact/**"
       ]
     },
-    "W0": {
-      "paths": [
-        "viewer/packages/workflows/test/expected/**",
-        "viewer/packages/workflows/docs/**"
-      ]
-    },
     "D0": {
       "paths": [
         "viewer/packages/demos/src/server/**",
         "viewer/packages/demos/test/server/**",
         "viewer/packages/demos/docs/**"
+      ]
+    },
+    "F": {
+      "paths": [
+        "viewer/packages/formats/**"
+      ]
+    },
+    "R": {
+      "paths": [
+        "viewer/packages/render/**"
+      ]
+    },
+    "S2": {
+      "paths": [
+        "viewer/packages/synthetic/**"
+      ]
+    },
+    "W": {
+      "paths": [
+        "viewer/packages/workflows/**"
       ]
     }
   }

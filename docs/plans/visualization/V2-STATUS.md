@@ -27,7 +27,7 @@ Tooling decisions taken while landing the retrofit:
 
 | Track | Model | Fence | State | Checkpoint |
 |---|---|---|---|---|
-| M model contracts | Opus | `viewer/packages/model/**` | working | `viewer/packages/model/docs/CHECKPOINT-M.md` |
+| M model contracts | Opus | `viewer/packages/model/**` | verified and accepted as M1 (`641624b`): 19 modules, 198 tests, zero escape hatches; supervisor re-ran tsc, lint, tests; decision record in README.md | `viewer/packages/model/docs/CHECKPOINT-M.md` |
 | S synthetic generators | Opus | `viewer/packages/synthetic/**` | verified: PRNG, primitives, building generator with gap-filled door and room schedules, stress generator; 78 tests; commits `7f896b2` `0bb504a` `a9c32ba` `de74166` `ac28ec0` `b634d14` `8a587af`; built against M1-stub `325e9d1`; supervisor re-ran tsc and tests clean; awaiting combined gate | `viewer/packages/synthetic/docs/CHECKPOINT-S.md` |
 | PERF instance-update study (user request 2026-09-07) | Opus | `viewer/packages/testing/src/perf/**`, `test/perf/*.perf.ts`, its two docs | working | `viewer/packages/testing/docs/CHECKPOINT-perf.md` |
 | BIND normalized-binding cost study (user request 2026-09-07) | Opus | `viewer/packages/testing/src/bindings/**`, `test/bindings/**`, `test/perf/bindings/**`, its two docs | working | `viewer/packages/testing/docs/CHECKPOINT-bind.md` |
@@ -48,6 +48,17 @@ Method: the alpha `loadBosModel` (parse, group conversion, normalized bindings; 
 | BFAST geometry only | 1890, 1910, 1966, 1492, 1650 | 1890 | 25,675 |
 
 Result: 1.9× (with tables) to 2.0× (geometry only) faster end to end on the CPU. The loader session measured 3.5× on parse plus conversion alone; the difference is the alpha's normalized-binding step, which costs the same for both formats and which V2 removes. The BFAST file is 11 to 12 times larger, so over a network the gain depends on transfer; not measured. Decision (user, 2026-09-07): BFAST is the default model format across V2; network transfer is optimized later. Track F re-measures both on the columnar path. Recorded in README.md.
+
+## Wave 1: independent foundations — started 2026-09-08
+
+Ready condition met: M1 accepted at `641624b`. Launched F, R, S2 and W alongside the still-running wave 0 tracks PERF, BIND, I and D0. T (testing package) waits for PERF and BIND to leave that package. Perf configs added to formats and render (`npm run perf -w`).
+
+| Track | Model | Fence | State | Checkpoint |
+|---|---|---|---|---|
+| F formats, BFAST first | Opus | `viewer/packages/formats/**` | working | `viewer/packages/formats/docs/CHECKPOINT-F.md` |
+| R render, instance table | Opus | `viewer/packages/render/**` | working | `viewer/packages/render/docs/CHECKPOINT-R.md` |
+| S2 remaining generators | Opus | `viewer/packages/synthetic/**` | working | `viewer/packages/synthetic/docs/CHECKPOINT-S2.md` |
+| W workflow adapters | Opus | `viewer/packages/workflows/**` | working | `viewer/packages/workflows/docs/CHECKPOINT-W.md` |
 
 ### Requests between tracks
 
