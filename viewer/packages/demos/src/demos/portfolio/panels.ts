@@ -23,6 +23,7 @@ import {
 } from 'gratify';
 import { buildingBounds, buildingKey, cardPoint, estateBounds, type PortfolioIndex } from './city.js';
 import { buildingReadings, drilledBuildingId, type BuildingReading } from './readings.js';
+import { currentSubject } from './snowdon.js';
 
 // An analytical colour of the features palette as a colour the painter takes. The palette states
 // its channels from zero to one; the painter counts them from zero to 255.
@@ -158,7 +159,11 @@ export const buildingCardPanel = (index: PortfolioIndex, buildingId: string): An
     id: `portfolio/card/${buildingId}`,
     place: {
       kind: 'world',
+      // A card states a figure about one building of the estate, so it hangs over the estate and
+      // over nothing else: with another model open there is no building for it to be about, and
+      // hanging it over that model's geometry would say the figure belongs to it.
       point: (session: Session): Vec3 | undefined => {
+        if (currentSubject().kind !== 'estate') return undefined;
         const drilled = drilledBuildingId(index, session.read(setsSlice).isolated);
         return drilled !== undefined && drilled !== buildingId ? undefined : cardPoint(index, buildingId);
       },

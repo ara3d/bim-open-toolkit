@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { appearanceSlice, setsSlice } from '@bim-open-toolkit/features';
+import { emptyObject, objectRef } from '@bim-open-toolkit/model';
+import { defaultBuildingOptions, generateBuilding } from '@bim-open-toolkit/synthetic';
 import { resultRows } from '@bim-open-toolkit/workflows';
 import {
   applyPortfolio,
@@ -10,19 +12,41 @@ import {
   resetPortfolio,
 } from '../../../src/demos/portfolio/index.js';
 import { buildingKey, portfolioIndex } from '../../../src/demos/portfolio/city.js';
-import { portfolioSheet } from '../../../src/demos/portfolio/inspector.js';
+import { portfolioSheet, sourceSheet } from '../../../src/demos/portfolio/inspector.js';
 import { cardOf, drill, portfolioPanels } from '../../../src/demos/portfolio/panels.js';
 import { drilledBuildingId, rollupsOf } from '../../../src/demos/portfolio/readings.js';
+import {
+  categoryCounts,
+  lookAt,
+  readingOf,
+  resetLook,
+  snowdonFile,
+  snowdonFixture,
+  snowdonTitle,
+  subjectOf,
+} from '../../../src/demos/portfolio/snowdon.js';
+import { openedModel } from '../../../src/gallery/model-source.js';
 import { commandNames, refusedCalls, sessionForFeatures } from '../_d4-support/fake-session.js';
 import { probePanel, semanticLabels } from '../_d4-support/panel-probe.js';
 
 const index = portfolioIndex();
+
+// A model the demo did not generate, standing in for one read from a file: everything the reading
+// counts is a field of an object record, so a generated building exercises it without the private
+// model file being anywhere near the test.
+const foreignModel = () => {
+  const built = generateBuilding(defaultBuildingOptions);
+  return openedModel('snowdon', built.model, built.geometry);
+};
 
 const started = () => {
   const session = sessionForFeatures(portfolioFeatures);
   const applied = applyPortfolio(session);
   return { session, applied };
 };
+
+// The subject is held for the life of a mount, so every test starts on the estate.
+afterEach(resetLook);
 
 describe('the estate the portfolio demo opens', () => {
   it('states the gaps the generator documents rather than filling them in', () => {
@@ -196,12 +220,96 @@ describe('the building cards', () => {
   });
 });
 
+describe('reading a model the demo did not generate', () => {
+  it('counts only fields the records carry, and every record lands in one category row', () => {
+    const model = foreignModel();
+    const reading = readingOf(model);
+    expect(reading.objects).toBe(model.data.objects.length);
+    expect(reading.named).toBe(model.data.objects.filter((record) => record.name !== undefined).length);
+    expect(reading.categorised).toBe(model.data.objects.filter((record) => record.category !== undefined).length);
+    expect(reading.drawn).toBe(model.data.objects.filter((record) => record.representation !== undefined).length);
+    expect(reading.categories.reduce((total, item) => total + item.count, 0)).toBe(reading.objects);
+  });
+
+  it('counts records with no category under their own row rather than folding them into one', () => {
+    const ref = index.city.model.ref;
+    const walls = { ...emptyObject(objectRef(ref, 'a')), category: 'Walls' };
+    const counts = categoryCounts([walls, emptyObject(objectRef(ref, 'b'))]);
+    expect(counts.find((item) => item.name === 'No category')?.count).toBe(1);
+    expect(counts.find((item) => item.name === 'Walls')?.count).toBe(1);
+  });
+
+  it('stays on the estate while only the estate is open, and leaves it for any other model', () => {
+    const estateId = index.city.model.ref.id;
+    const estate = openedModel(estateId, index.city.model, index.city.geometry);
+    expect(subjectOf(estateId, [estate]).kind).toBe('estate');
+    expect(subjectOf(estateId, []).kind).toBe('estate');
+    const subject = subjectOf(estateId, [foreignModel()]);
+    expect(subject.kind).toBe('source');
+    if (subject.kind !== 'source') return;
+    expect(subject.title).toBe(snowdonTitle);
+  });
+});
+
+describe('the sheet for a model read from a file', () => {
+  it('states what the file carries and why the drill-through is not run, never a zero figure', () => {
+    const reading = readingOf(foreignModel());
+    const sheet = sourceSheet(snowdonTitle, reading);
+    expect(sheet.title).toBe(snowdonTitle);
+    const needs = sheet.groups.find((group) => group.id === 'drill-through');
+    expect(needs?.rows.length).toBeGreaterThan(0);
+    for (const row of needs?.rows ?? []) {
+      expect(row.value.state).toBe('missing');
+      expect(row.value.missingReason ?? '').not.toBe('');
+    }
+    const file = sheet.groups.find((group) => group.id === 'file');
+    expect(file?.rows.find((row) => row.key === 'objects')?.value.text).toBe(String(reading.objects));
+  });
+
+  it('replaces the estate sheet entirely, so no generated document is listed against it', () => {
+    const { session } = started();
+    lookAt(subjectOf(index.city.model.ref.id, [foreignModel()]));
+    const sheet = portfolioSheet(index)(session);
+    expect(sheet.groups.map((group) => group.id)).not.toContain('documents');
+    expect(sheet.groups.map((group) => group.id)).not.toContain('estate');
+    expect(sheet.tables).toBeUndefined();
+  });
+
+  it('takes the cards away, because no building of the estate is in the picture', () => {
+    const { session } = started();
+    lookAt(subjectOf(index.city.model.ref.id, [foreignModel()]));
+    for (const panel of portfolioPanels(index)) {
+      const probe = probePanel(panel, session);
+      expect(probe?.point()).toBeUndefined();
+      probe?.stop();
+    }
+  });
+
+  it('reports what it read and says the workflow was not run', () => {
+    const { session } = started();
+    const reading = readingOf(foreignModel());
+    lookAt(subjectOf(index.city.model.ref.id, [foreignModel()]));
+    const report = portfolioReport(session);
+    expect(report['basis']).toBe('source-backed');
+    expect(report['objects']).toBe(reading.objects);
+    expect(report['workflow']).toContain('not run');
+    expect(report['resolvedFigures']).toBeUndefined();
+    expect(portfolioReady(session)).toBe(true);
+  });
+});
+
 describe('the portfolio demo registration', () => {
   it('names itself, its chapter and the command that verifies it', () => {
     expect(demo.id).toBe('portfolio');
     expect(demo.chapter).toBe('workflows');
     expect(demo.fixtures[0]?.basis).toBe('synthetic');
     expect(demo.verify).toContain('test/demos/portfolio');
+  });
+
+  it('lists the real building second, source-backed, from the export that carries the BIM tables', () => {
+    expect(demo.fixtures.map((fixture) => fixture.id)).toEqual(['synthetic-city', 'snowdon']);
+    expect(snowdonFixture.basis).toBe('source-backed');
+    expect(snowdonFile).toBe('snowdon-bim.bfast');
   });
 
   it('reports counts a reader can check against the estate', () => {
