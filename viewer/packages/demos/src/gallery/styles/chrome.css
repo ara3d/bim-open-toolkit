@@ -181,6 +181,29 @@ a.crumb:hover,
   border-top: 1px solid var(--rule);
 }
 
+/* The mirror's own controls. Invisible until something in the mirror has focus, at which point the
+   rule above shows the whole strip and these have to look like the buttons they stand for. */
+.mirror-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--gap) / 2);
+}
+
+.mirror-control {
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.mirror-control:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 1px;
+}
+
 @media (max-width: 860px) {
   .gallery-bar {
     flex-wrap: wrap;

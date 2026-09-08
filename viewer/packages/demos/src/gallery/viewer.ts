@@ -52,6 +52,7 @@ import {
   type SceneStatistics,
   type UpdateReport,
 } from '@bim-open-toolkit/render';
+import { captureFeatureWith } from '@bim-open-toolkit/features';
 import { createSession, featureHost } from '@bim-open-toolkit/viewer';
 import { Viewer, defaultMaterial } from '@ara3d/viewer-core';
 import { captureTarget, clippingTarget, environmentTarget, gpuFrameTimer, raycastSource } from './adapters.js';
@@ -107,14 +108,10 @@ export const createGalleryViewer = (
   const started = createSession({ slices: [viewSlice] });
   if (!started.ok) return failure(started.diagnostics);
   const session = started.value;
-  const host = featureHost(session);
-  const installed = host.install(features);
-  if (!installed.ok) {
-    host.dispose();
-    session.dispose();
-    return failure(installed.diagnostics);
-  }
 
+  // The renderer is made before the features are installed, because a feature that draws needs a
+  // renderer at installation and not afterwards: `captureFeature` with no target refuses every
+  // request to draw a picture, and nothing later can give it one.
   const canvas = viewportCanvas();
   container.append(canvas);
   const core = new Viewer({ background: 0x1b1d22 });
@@ -123,11 +120,26 @@ export const createGalleryViewer = (
     core.attach(canvas);
   } catch (cause) {
     canvas.remove();
-    host.dispose();
+    core.dispose();
     session.dispose();
     return failure([
       diagnostic('gallery/no-webgl', `The canvas has no WebGL context: ${describe(cause)}`, ['canvas']),
     ]);
+  }
+  const capture = captureTarget(core, canvas);
+
+  const host = featureHost(session);
+  // A demo names the target-less capture feature because a demo has no renderer to name; the one
+  // bound to this canvas takes its place, and every other feature is installed as the demo named it.
+  const installed = host.install(
+    features.map((one) => (one.id === 'capture' ? captureFeatureWith(capture) : one)),
+  );
+  if (!installed.ok) {
+    host.dispose();
+    canvas.remove();
+    core.dispose();
+    session.dispose();
+    return failure(installed.diagnostics);
   }
   const applySize = (): void => {
     core.resize(canvas.clientWidth, canvas.clientHeight, Math.min(window.devicePixelRatio, ratio));
@@ -136,7 +148,6 @@ export const createGalleryViewer = (
 
   const binding = new SceneBinding(core.scene, () => core.requestRender());
   const clipping = applyClipping(clippingTarget(core), noClipping);
-  const capture = captureTarget(core, canvas);
   const gpu = gpuFrameTimer(canvas);
   const opened: OpenedModel[] = [];
   let environment: Disposable | undefined;

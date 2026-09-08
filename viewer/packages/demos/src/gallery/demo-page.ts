@@ -11,6 +11,7 @@ import { chapters, type Demo, type DemoFixture, type GalleryViewer } from './con
 import { button, clear, el, link } from './elements.js';
 import { basisLabel, chosenFixture, fixtureChoices } from './fixtures.js';
 import { routeHref, type Route } from './routes.js';
+import { hostPanels } from './panels.js';
 import { renderSheet } from './sheet.js';
 import type { Shell } from './shell.js';
 import { createGalleryViewer, type GalleryViewerOptions } from './viewer.js';
@@ -191,6 +192,11 @@ export const renderDemoPage = async (
   }
   const page = mounted.value;
 
+  // The demo's own controls, on the canvas and in the DOM mirror beside them.
+  const panels = hostPanels(frame.viewport, frame.mirror, demo.panels, page.viewer);
+  for (const failure of panels.failed)
+    frame.status.textContent = `${demo.title}: the ${failure.id} panel did not draw: ${failure.reason}`;
+
   const drawSheet = (): void => {
     renderSheet(frame.sheet, demo.inspector?.(page.viewer), (row: PropertyRow) => {
       if (row.action !== undefined) page.viewer.dispatch(row.action.command, row.action.input);
@@ -220,6 +226,7 @@ export const renderDemoPage = async (
       mounted: page,
       dispose: () => {
         window.removeEventListener('keydown', keys);
+        panels.dispose();
         strip.dispose();
         sheetFollows.dispose();
         page.dispose();
