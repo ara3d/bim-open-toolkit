@@ -159,7 +159,7 @@ supervisor owns the combined run.
 | 5 | configurable bindings with defaults and validation | `97bf8f9` |
 | 6 | orbit, first-person and overhead as pure reducers | `366299a` |
 | 7 | interruptible camera flight and the session that composes it | `e1877ff` |
-| 8 | DOM adapter, README, public API contract test | recorded on commit |
+| 8 | DOM adapter, README, public API contract test | `deed724` |
 
 ## Blockers
 
