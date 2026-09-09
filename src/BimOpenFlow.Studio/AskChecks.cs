@@ -24,7 +24,7 @@ public static class AskChecks
         var broken = snapshot.Results.Values
             .Where(r => r.Status != NodeStatus.Ok)
             .OrderBy(r => r.NodeId, StringComparer.Ordinal)
-            .Select(r => $"{r.NodeId} is {r.Status}{(string.IsNullOrEmpty(r.Error) ? "" : ": " + Clip(r.Error))}")
+            .Select(r => $"{r.NodeId} is {r.Status}{Because(services, snapshot, r)}")
             .ToList();
         if (broken.Count > 0)
             return "Not every node evaluates: " + string.Join("; ", broken) + ".";
@@ -40,6 +40,28 @@ public static class AskChecks
             ? $"The '{AnswerNode}' table has no rows. Rows along the way: {UpstreamRowCounts(services, snapshot)}. "
               + "Fix the step where the rows disappear (a filter, key or join), or explain why the answer is empty."
             : null;
+    }
+
+    /// <summary>Why a node is not Ok, in words the agent can act on: the error
+    /// text, or for an Unready node the required inputs nothing is connected to.</summary>
+    private static string Because(FlowServices services, EvalSnapshot snapshot, NodeResult result)
+    {
+        if (!string.IsNullOrEmpty(result.Error))
+            return ": " + Clip(result.Error);
+        if (result.Status != NodeStatus.Unready)
+            return string.IsNullOrEmpty(result.BlockingNodeId) ? "" : $" (waiting on {result.BlockingNodeId})";
+        var node = snapshot.Document.FindNode(result.NodeId);
+        var spec = node is null ? null : services.Host.Registry.Find(node.Kind, node.Version)?.Spec;
+        if (spec is null)
+            return "";
+        var connected = snapshot.Document.Edges
+            .Where(e => e.ToRef.NodeId == result.NodeId)
+            .Select(e => e.ToRef.Port)
+            .ToHashSet(StringComparer.Ordinal);
+        var missing = spec.Inputs.Where(p => !p.Optional && !connected.Contains(p.Name)).Select(p => $"'{p.Name}'").ToList();
+        return missing.Count > 0
+            ? $": input {string.Join(", ", missing)} is not connected (removeNode also removes a node's edges; connect it again)"
+            : "";
     }
 
     /// <summary>Row counts of every table-producing node upstream of the answer,

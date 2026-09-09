@@ -30,6 +30,14 @@ public static class AskEndpoint
     private const int ConversationsKept = 24;
     private const int CheckRounds = 2;
 
+    /// <summary>Not offered to the Ask agent: the prompt already carries the
+    /// catalog and the database list, and runs, models and whole-document saves
+    /// play no part in building a graph from a request.</summary>
+    public static readonly IReadOnlySet<string> HiddenTools = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "getNodeCatalog", "listDatabases", "listModels", "saveAnalysis", "createRun", "listRuns",
+    };
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
@@ -85,7 +93,7 @@ public static class AskEndpoint
                     ? AskPrompts.FollowUp(body.Request, id, resumed: known is null)
                     : AskPrompts.User(body.Request, id);
                 await Emit(new { type = "start", analysisId = id, model, continuing });
-                var agent = new AskAgent(tools, new OpenAiChat(http, apiKey, model));
+                var agent = new AskAgent(tools, new OpenAiChat(http, apiKey, model)) { Hidden = HiddenTools };
                 Task Report(AskEvent e)
                     => Emit(new { type = e.Type, name = e.Name, args = e.Args, ok = e.Ok, summary = e.Summary, text = e.Text });
                 var outcome = await agent.RunAsync(messages, user, Report, ct);

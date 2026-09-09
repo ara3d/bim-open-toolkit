@@ -87,6 +87,8 @@ public sealed class AskChecksTests
     public void AnUnreadyNodeIsAFinding()
     {
         FlowEditTools.EditGraph(_services, "g", """[{"op":"addNode","nodeId":"answer","kind":"table.sort"}]""");
-        Assert.That(AskChecks.Verify(_services, "g"), Does.Contain("answer is Unready"));
+        var finding = AskChecks.Verify(_services, "g");
+        Assert.That(finding, Does.Contain("answer is Unready: input 'table' is not connected"));
+        Assert.That(finding, Does.Contain("removeNode also removes"));
     }
 }
