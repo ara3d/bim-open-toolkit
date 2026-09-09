@@ -90,10 +90,14 @@ try {
   const door = schema.tables.find(t => t.name === 'door');
   const storey = schema.tables.find(t => t.name === 'storey');
   expect(door && storey, 'expected door and storey tables');
-  const columns = door.columns.map(c => c.name);
+  const columns = door.columns;
   for (const name of ['element_mark', 'element_name', 'element_location_primary_storey', 'nominal_width', 'nominal_width_reason'])
     expect(columns.includes(name), `door table has no ${name} column`);
-  console.log(`    ${schema.tables.length} tables; door has ${door.rowCount} rows and ${door.columns.length} columns\n`);
+  console.log(`    ${schema.tables.length} tables; door has ${door.rowCount} rows and ${door.columns.length} columns`);
+  const doorDetail = await call('describeDatabase', { path: database.path, table: 'door' });
+  const width = doorDetail.tables[0].columns.find(c => c.name === 'nominal_width');
+  expect(width?.type, 'describeDatabase with table should give column types');
+  console.log(`    door.nominal_width is ${width.type}\n`);
 
   console.log(`Agent: building the graph "${id}" node by node.`);
   await call('addNode', { id, nodeId: 'database', kind: 'duck.source' });

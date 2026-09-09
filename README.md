@@ -342,9 +342,11 @@ compatible database, run `node scripts/prepare-bim-flow-duckdb.mjs <database> <s
 See [docs/bim-flow-duckdb.md](docs/bim-flow-duckdb.md) for the workflow catalog and the
 verification script.
 
-An agent can build these graphs from a plain-language request through the `bimopenflow-duckdb`
-MCP server registered in `.mcp.json`; see [docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md)
-for the setup, the request, the tool sequence, and a scripted replay (`duckdb:mcp-demo`).
+The studio's **Ask** box builds a new graph from a plain-language request: an agent (OpenAI, key
+from `OPENAI_API_KEY_FILE`) works through the `bimopenflow` MCP tools and the result opens in the
+editor. The same server is registered in `.mcp.json` for Claude Code. See
+[docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md) for the setup, example requests, how the
+loop works, and a scripted replay (`duckdb:mcp-demo`).
 
 ## Boundary and provenance
 

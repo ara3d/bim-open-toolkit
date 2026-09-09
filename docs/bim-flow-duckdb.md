@@ -1,12 +1,12 @@
 # BIM Flow DuckDB workflow studio
 
-The local demo at `/duckdb.html` is the same graph-demo shell as the 3D demo: the BIM Flow graph editor on the left, its result-table pane on the right. The flow picker in the top bar switches between the sample graphs. Nine editable sample graphs run through the C# dataflow engine against the typed Snowdon database. Clicking a node or choosing it in **Preview** inspects that stage. Parameter edits save to a separate demo store and recompute results. **Download** in the top bar exports the current edited graph.
+The local demo at `/duckdb.html` is the same graph-demo shell as the 3D demo: the BIM Flow graph editor on the left, its result-table pane on the right. The flow picker in the top bar switches between the sample graphs, and the **Ask** box next to it has an agent build a new graph from a plain-language request (see below). Nine editable sample graphs run through the C# dataflow engine against the typed Snowdon database. Clicking a node or choosing it in **Preview** inspects that stage. Parameter edits save to a separate demo store and recompute results. **Download** in the top bar exports the current edited graph.
 
-An agent can build graphs into this same store through the MCP server; see [Building a DuckDB BIM Flow graph from natural language](bim-flow-mcp-demo.md).
+The Ask box and the MCP server behind it are described in [Building a DuckDB BIM Flow graph from natural language](bim-flow-mcp-demo.md), including the OpenAI key the Ask box needs.
 
 ## Start
 
-From the repository root, with .NET 8 and the existing `bimopenflow/web` and `viewer` npm dependencies installed. Once, to prepare the graphs and build an isolated host under `artifacts/bim-flow-duckdb/host`:
+From the repository root, with .NET 8 and the existing `bimopenflow/web` and `viewer` npm dependencies installed. Once, to prepare the graphs and build the studio host (`bimopenflow-studio`: the host API plus the Ask endpoint) under `artifacts/bim-flow-duckdb/studio`:
 
 ```powershell
 npm run duckdb:prepare --prefix bimopenflow/web
@@ -23,7 +23,7 @@ npm run duckdb:host --prefix bimopenflow/web
 npm run duckdb:web --prefix bimopenflow/web
 ```
 
-Open [the workflow studio](http://127.0.0.1:5308/duckdb.html). Host port 5218, web port 5308; each service logs to its own terminal and stops with Ctrl+C. Existing graph edits are preserved when preparing again. Rerun `duckdb:build` after changing C# nodes. Because that build has its own output directory, this host does not collide with the 3D demo's and the two can run at the same time.
+Open [the workflow studio](http://127.0.0.1:5308/duckdb.html). Host port 5218, web port 5308; each service logs to its own terminal and stops with Ctrl+C. Existing graph edits are preserved when preparing again. Rerun `duckdb:build` after changing C# nodes. Because that build has its own output directory, this host does not collide with the 3D demo's and the two can run at the same time. Set `OPENAI_API_KEY_FILE` (or `OPENAI_API_KEY`) before `duckdb:host` for the Ask box to work; everything else runs without it.
 
 The default input is `artifacts/building-model-workflows/snowdon-cli.duckdb`. Prepare a store for another compatible export with `node scripts/prepare-bim-flow-duckdb.mjs <database> <store>`. Existing graph paths are preserved with their edits; change those paths in the editor or prepare a fresh store. A single `duck.source` holds the path and opens the database read-only. Its output branches into `duck.query` nodes containing SQL. Queries share a bounded connection cache (up to eight databases), including when SQL changes; eviction or a changed file stamp reopens the connection. Changing a graph never modifies the database. The private database and query results are not bundled with the page or committed.
 

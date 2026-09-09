@@ -68,6 +68,46 @@
         "duckdb:web"
       ],
       "port": 5308
+    },
+    {
+      "name": "bof-duckdb-studio",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "artifacts/bim-flow-duckdb/studio/bimopenflow-studio.dll",
+        "--profile",
+        "tables",
+        "--port",
+        "5219",
+        "--store",
+        "artifacts/bim-flow-duckdb/store",
+        "--cache",
+        "artifacts/bim-flow-duckdb/cache",
+        "--models",
+        "artifacts/building-model-workflows"
+      ],
+      "port": 5219,
+      "env": {
+        "OPENAI_API_KEY_FILE": "C:\\dev\\keys\\gpt.txt"
+      }
+    },
+    {
+      "name": "bof-duckdb-web-alt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "bimopenflow/web",
+        "run",
+        "duckdb",
+        "--workspace",
+        "@bimopenflow/app",
+        "--",
+        "--port",
+        "5309"
+      ],
+      "port": 5309,
+      "env": {
+        "BOF_DUCKDB_HOST": "http://127.0.0.1:5219"
+      }
     }
   ]
 }
