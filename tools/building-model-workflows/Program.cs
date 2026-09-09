@@ -94,7 +94,7 @@ internal static class Program
         });
         WriteMetrics(directory, "bfast-load-map-query", loadSeconds, projectionSeconds, firstQuerySeconds,
             new FileInfo(cache).Length);
-        Console.WriteLine($"{metadata.SourcePath}: {Summary(projection)}; BFAST load/map/query {firstQuerySeconds:F3}s. Results: {Path.GetFullPath(directory)}");
+        Console.WriteLine($"{metadata.SourcePath}: {projection.Storeys.Length} storeys, {projection.Spaces.Length} spaces, {projection.Doors.Length} doors, {projection.Roofs.Length} roofs; BFAST load/map/query {firstQuerySeconds:F3}s. Results: {Path.GetFullPath(directory)}");
     }
 
     private static void Reopen(string path, string directory)
@@ -118,16 +118,8 @@ internal static class Program
             "sha256:" + metadata.SourceSha256, Path.GetFileNameWithoutExtension(metadata.SourcePath),
             DateTimeOffset.UtcNow, NumericStorage: storagePolicy));
         new DuckDbProjectionWriter().Write(projection, destination);
-        Console.WriteLine($"DuckDB core projection ({Summary(projection)}): {Path.GetFullPath(destination)}");
+        Console.WriteLine($"DuckDB core projection: {Path.GetFullPath(destination)}");
     }
-
-    private static readonly HashSet<Type> Bookkeeping =
-        [typeof(SourceRevision), typeof(SourceObject), typeof(BimObject), typeof(Evidence), typeof(SourceDocument), typeof(InterpretationPolicy)];
-
-    // Every populated domain table, so new domains show up without touching the CLI.
-    private static string Summary(BuildingProjection projection)
-        => string.Join(", ", ProjectionTables.All.Where(t => !Bookkeeping.Contains(t.RecordType))
-            .Select(t => (Count: t.Rows(projection).Count, t.Name)).Where(x => x.Count > 0).Select(x => $"{x.Count} {x.Name}"));
 
     private static NumericStoragePolicy StoragePolicy(string option) => option switch
     {
