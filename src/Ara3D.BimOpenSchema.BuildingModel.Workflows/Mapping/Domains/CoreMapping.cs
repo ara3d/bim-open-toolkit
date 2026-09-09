@@ -59,19 +59,23 @@ public static class CoreMapping
         if (kind is "Space" or "Roof")
         {
             k.Count(e, "FinishSurfaces", MappingKernel.Unknown<string>());
-            if (k.Rows(e).Any(p => TextNormalization.Key(p.Name) is "AREA" or "FLÄCHE"))
-                k.Diagnose("quantity.unspecified-basis", e, "Area", "Generic Area is retained in the source cache; its net/surface/deduction basis is not established by its name.");
+            k.DiagnoseUnspecifiedQuantity(e, "Area", "Area", "Fläche");
         }
     }
 
-    // Back-links from storeys to spaces and spaces to doors need every row of both tables.
+    // Back-links from storeys to spaces and spaces to doors need every row of both tables. Each link set carries the
+    // identity evidence of the rows that produced it; an empty one is NotObserved, never a Partial claim about nothing.
     private static void Complete(MappingKernel k, ProjectionBuilder b)
     {
         var spacesByStorey = b.Rows<Space>().Where(s => s.Storey is Fact<SnapshotKey<Storey>>.Known)
-            .GroupBy(s => ((Fact<SnapshotKey<Storey>>.Known)s.Storey).Value).ToDictionary(g => g.Key, g => g.Select(s => s.Id).ToImmutableArray());
-        b.Update<Storey>(s => s with { Spaces = new(spacesByStorey.GetValueOrDefault(s.Id, []), Completeness.Partial, []) });
-        var doorsBySpace = b.Rows<Door>().SelectMany(d => d.AdjacentSpaces.Items.Select(s => (Space: s, Door: d.Id)))
-            .GroupBy(x => x.Space).ToDictionary(g => g.Key, g => g.Select(x => x.Door).Distinct().ToImmutableArray());
-        b.Update<Space>(s => s with { Doors = new(doorsBySpace.GetValueOrDefault(s.Id, []), Completeness.Partial, []) });
+            .GroupBy(s => ((Fact<SnapshotKey<Storey>>.Known)s.Storey).Value)
+            .ToDictionary(g => g.Key, g => MappingKernel.Observed(g.Select(s => s.Id).ToImmutableArray(),
+                g.SelectMany(s => s.Element.Evidence).Distinct().ToImmutableArray()));
+        b.Update<Storey>(s => s with { Spaces = spacesByStorey.GetValueOrDefault(s.Id, LinkSet<Space>.Unknown()) });
+        var doorsBySpace = b.Rows<Door>().SelectMany(d => d.AdjacentSpaces.Items.Select(s => (Space: s, Door: d)))
+            .GroupBy(x => x.Space)
+            .ToDictionary(g => g.Key, g => MappingKernel.Observed(g.Select(x => x.Door.Id).Distinct().ToImmutableArray(),
+                g.SelectMany(x => x.Door.Element.Evidence).Distinct().ToImmutableArray()));
+        b.Update<Space>(s => s with { Doors = doorsBySpace.GetValueOrDefault(s.Id, LinkSet<Door>.Unknown()) });
     }
 }

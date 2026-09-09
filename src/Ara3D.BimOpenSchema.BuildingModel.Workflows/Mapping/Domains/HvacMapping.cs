@@ -23,7 +23,7 @@ public static class HvacMapping
     {
         if (kind == "ServiceSystem")
         {
-            b.Add(BuildServiceSystem(k, e));
+            b.Add(ServiceSystems.Build(k, e));
             return;
         }
         var element = k.Element(e);
@@ -38,25 +38,23 @@ public static class HvacMapping
         }
     }
 
-    // Air system, flow, pressure, power and sound level are not convertible from a Revit-internal number by this kernel;
-    // the unit keys below are unfamiliar to it on purpose, so the fact stays unavailable rather than guessed.
     private static Fact<FlowRate> ReadFlow(MappingKernel k, EntityRow e, string field, params string[] aliases)
-        => k.Number(e, field, "m3/s", x => new FlowRate(x), false, aliases);
+        => ServiceSystems.ReadFlow(k, e, field, aliases);
 
     private static Fact<Pressure> ReadPressure(MappingKernel k, EntityRow e, string field, params string[] aliases)
-        => k.Number(e, field, "Pa", x => new Pressure(x), false, aliases);
+        => ServiceSystems.ReadPressure(k, e, field, aliases);
 
     private static Fact<Power> ReadPower(MappingKernel k, EntityRow e, string field, params string[] aliases)
-        => k.Number(e, field, "W", x => new Power(x), false, aliases);
+        => ServiceSystems.ReadPower(k, e, field, aliases);
 
     private static Fact<SoundLevel> ReadSound(MappingKernel k, EntityRow e, string field, params string[] aliases)
-        => k.Number(e, field, "dB", x => new SoundLevel(x), false, aliases);
+        => ServiceSystems.ReadSound(k, e, field, aliases);
 
-    private static Fact<SnapshotKey<ServiceSystem>> SystemId(MappingKernel k, EntityRow e)
-        => k.Reference<ServiceSystem>(e, "SystemId", "System Type");
+    // The system an occurrence belongs to is joined by exact name in Complete, once every system row exists.
+    private static Fact<SnapshotKey<ServiceSystem>> UnresolvedSystem => MappingKernel.Unknown<SnapshotKey<ServiceSystem>>();
 
     private static DuctSegment BuildDuctSegment(MappingKernel k, EntityRow e, ElementInfo element)
-        => new(k.Key<DuctSegment>(e), element, SystemId(k, e), MappingKernel.Unknown<FlowSectionShape>(),
+        => new(k.Key<DuctSegment>(e), element, UnresolvedSystem, MappingKernel.Unknown<FlowSectionShape>(),
             k.Number(e, "Width", "m", x => new Length(x), false, "Width"),
             k.Number(e, "Height", "m", x => new Length(x), false, "Height"),
             k.Number(e, "Diameter", "m", x => new Length(x), false, "Diameter"),
@@ -69,7 +67,7 @@ public static class HvacMapping
             LinkSet<ServicePort>.Unknown());
 
     private static DuctFitting BuildDuctFitting(MappingKernel k, EntityRow e, ElementInfo element)
-        => new(k.Key<DuctFitting>(e), element, SystemId(k, e), FittingFunction.Unknown,
+        => new(k.Key<DuctFitting>(e), element, UnresolvedSystem, FittingFunction.Unknown,
             MappingKernel.Unknown<ReferenceKey<Material>>(),
             k.Number(e, "BendAngle", "rad", x => new Angle(x), false, "Angle"),
             k.Number(e, "CenterlineRadius", "m", x => new Length(x), false, "Radius"),
@@ -78,7 +76,7 @@ public static class HvacMapping
             LinkSet<ServicePort>.Unknown());
 
     private static AirTerminal BuildAirTerminal(MappingKernel k, EntityRow e, ElementInfo element)
-        => new(k.Key<AirTerminal>(e), element, SystemId(k, e),
+        => new(k.Key<AirTerminal>(e), element, UnresolvedSystem,
             k.Reference<Space>(e, "SpaceId", "Rvt:FamilyInstance:Space"),
             k.Text(e, "TerminalStyle", "Terminal Style"),
             ReadFlow(k, e, "DesignFlow", "Flow"),
@@ -90,7 +88,7 @@ public static class HvacMapping
             LinkSet<ServicePort>.Unknown());
 
     private static Damper BuildDamper(MappingKernel k, EntityRow e, ElementInfo element)
-        => new(k.Key<Damper>(e), element, SystemId(k, e), DamperFunction.Unknown,
+        => new(k.Key<Damper>(e), element, UnresolvedSystem, DamperFunction.Unknown,
             k.Text(e, "Actuation", "Actuation"),
             k.Text(e, "FailPosition", "Fail Position"),
             k.FireResistance(e),
@@ -99,7 +97,7 @@ public static class HvacMapping
             LinkSet<ServicePort>.Unknown());
 
     private static Fan BuildFan(MappingKernel k, EntityRow e, ElementInfo element)
-        => new(k.Key<Fan>(e), element, SystemId(k, e),
+        => new(k.Key<Fan>(e), element, UnresolvedSystem,
             k.Text(e, "FanType", "Fan Type"),
             ReadFlow(k, e, "DesignFlow", "Flow"),
             ReadPressure(k, e, "PressureRise", "Pressure Rise"),
@@ -110,7 +108,7 @@ public static class HvacMapping
             LinkSet<ServicePort>.Unknown());
 
     private static AirHandlingUnit BuildAirHandlingUnit(MappingKernel k, EntityRow e, ElementInfo element)
-        => new(k.Key<AirHandlingUnit>(e), element, k.Links<ServiceSystem>(e, "Systems", "System Type"),
+        => new(k.Key<AirHandlingUnit>(e), element, LinkSet<ServiceSystem>.Unknown(),
             ReadFlow(k, e, "SupplyFlow", "Supply Air Flow"),
             ReadFlow(k, e, "OutsideAirFlow", "Outside Air Flow"),
             ReadPower(k, e, "HeatingCapacity", "Heating Capacity"),
@@ -123,39 +121,23 @@ public static class HvacMapping
             k.Number(e, "MaintenanceClearance", "m", x => new Length(x), false, "Maintenance Clearance"),
             LinkSet<ServicePort>.Unknown());
 
-    // ServiceSystem has no element identity or storey/space context; the discipline is only fixed when the source text
-    // equals a ServiceDiscipline member name exactly once its spaces are removed, never inferred otherwise.
-    private static ServiceSystem BuildServiceSystem(MappingKernel k, EntityRow e)
-    {
-        var classification = k.Text(e, "Classification", "System Classification");
-        var discipline = classification is Fact<string>.Known known
-            && Enum.TryParse<ServiceDiscipline>(known.Value.Replace(" ", ""), out var parsed) && parsed != ServiceDiscipline.Unknown
-            ? parsed : ServiceDiscipline.Unknown;
-        var name = string.IsNullOrWhiteSpace(e.Name) ? "System " + e.Id : e.Name;
-        return new(k.Key<ServiceSystem>(e), name, discipline,
-            MappingKernel.Unknown<string>(),
-            ReadFlow(k, e, "DesignFlow", "Flow"),
-            MappingKernel.Unknown<Temperature>(),
-            ReadPressure(k, e, "DesignPressure", "Static Pressure"),
-            LinkSet<Space>.Unknown(), LinkSet<ServicePort>.Unknown(),
-            k.IdentityEvidence(e.Id));
-    }
-
-    // Back-links a mapped duct, fitting or terminal to its resolved air system; membership carries the segment's own
-    // identity evidence and an unknown role, the way CoreMapping links spaces to doors.
+    // Every mapped occurrence is joined to its air system by exact "System Name" text, once every system row exists:
+    // the source's "System Type" parameter names the system type element, not this occurrence's system.
     private static void Complete(MappingKernel k, ProjectionBuilder b)
     {
-        void Link(IEnumerable<(ElementInfo Element, Fact<SnapshotKey<ServiceSystem>> SystemId)> rows)
-        {
-            foreach (var (element, systemId) in rows)
-            {
-                if (systemId is not Fact<SnapshotKey<ServiceSystem>>.Known known) continue;
-                var id = new SnapshotKey<SystemMembership>(k.Snapshot, "membership/" + BuildingMapper.Digest(known.Value.Value + "/" + element.ObjectId.Value));
-                b.Add(new SystemMembership(id, known.Value, element.ObjectId, MappingKernel.Unknown<string>(), element.Evidence.Single()));
-            }
-        }
-        Link(b.Rows<DuctSegment>().Select(d => (d.Element, d.SystemId)));
-        Link(b.Rows<DuctFitting>().Select(d => (d.Element, d.SystemId)));
-        Link(b.Rows<AirTerminal>().Select(d => (d.Element, d.SystemId)));
+        var systems = ServiceSystems.Index(k, "Duct Systems", "IFCDISTRIBUTIONSYSTEM");
+        var ids = ServiceSystems.SystemIds(k, systems, "DuctSegment", "DuctFitting", "AirTerminal", "Damper", "Fan", "AirHandlingUnit");
+        Fact<SnapshotKey<ServiceSystem>> Id(ElementInfo element) => ids.GetValueOrDefault(element.ObjectId, UnresolvedSystem);
+        b.Update<DuctSegment>(r => r with { SystemId = Id(r.Element) });
+        b.Update<DuctFitting>(r => r with { SystemId = Id(r.Element) });
+        b.Update<AirTerminal>(r => r with { SystemId = Id(r.Element) });
+        b.Update<Damper>(r => r with { SystemId = Id(r.Element) });
+        b.Update<Fan>(r => r with { SystemId = Id(r.Element) });
+        b.Update<AirHandlingUnit>(r => r with { Systems = ServiceSystems.Links(Id(r.Element)) });
+        ServiceSystems.Memberships(k, b, b.Rows<DuctSegment>().Select(r => (r.Element, r.SystemId)));
+        ServiceSystems.Memberships(k, b, b.Rows<DuctFitting>().Select(r => (r.Element, r.SystemId)));
+        ServiceSystems.Memberships(k, b, b.Rows<AirTerminal>().Select(r => (r.Element, r.SystemId)));
+        ServiceSystems.Memberships(k, b, b.Rows<Damper>().Select(r => (r.Element, r.SystemId)));
+        ServiceSystems.Memberships(k, b, b.Rows<Fan>().Select(r => (r.Element, r.SystemId)));
     }
 }

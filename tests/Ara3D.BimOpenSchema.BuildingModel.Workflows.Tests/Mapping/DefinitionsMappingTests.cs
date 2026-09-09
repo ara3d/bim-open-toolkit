@@ -58,6 +58,17 @@ public sealed class DefinitionsMappingTests
     }
 
     [Test]
+    public void Definition_field_coverage_is_counted_under_the_definition_kind_not_the_type_bucket()
+    {
+        var p = Map(BasicFixture());
+        Assert.Multiple(() =>
+        {
+            Assert.That(p.Coverage.Single(c => c.EntityKind == nameof(ProductDefinition) && c.Field == "Manufacturer").Known, Is.EqualTo(1));
+            Assert.That(p.Coverage.Any(c => c.EntityKind == nameof(AssemblyDefinition) && c.Field == "FireResistance"), Is.True);
+        });
+    }
+
+    [Test]
     public void Principal_material_reference_to_a_non_material_occurrence_is_invalid_not_guessed()
     {
         var p = Map(BasicFixture());
@@ -112,9 +123,7 @@ public sealed class DefinitionsMappingTests
             Assert.That(p.AssemblyDefinitions, Is.Not.Empty);
             Assert.That(references.Where(r => r.Target == typeof(ProductDefinition)).Select(r => r.Key).Distinct(), Is.SubsetOf(productKeys));
             Assert.That(references.Where(r => r.Target == typeof(AssemblyDefinition)).Select(r => r.Key).Distinct(), Is.SubsetOf(assemblyKeys));
-            var mine = p.Diagnostics.Where(d => d.Code.StartsWith("validation.")
-                && (d.Subject.StartsWith("Materials/") || d.Subject.StartsWith("ProductDefinitions/") || d.Subject.StartsWith("AssemblyDefinitions/")));
-            Assert.That(mine, Is.Empty);
+            Assert.That(ProjectionFindings.Validation(p, typeof(Material), typeof(ProductDefinition), typeof(AssemblyDefinition)), Is.Empty);
         });
     }
 }

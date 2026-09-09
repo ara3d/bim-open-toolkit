@@ -110,10 +110,6 @@ public sealed class StructureMappingTests
         Assert.That(((Fact<ReferenceKey<Material>>.Missing)beamWithBadMaterial.Material).Reason, Is.EqualTo(Availability.Invalid));
     }
 
-    [Test]
-    public void Projects_cleanly_through_validation_with_every_kind_present()
-        => Assert.That(ProjectionValidation.Validate(Map(BasicFixture(), MappingFixture.Options(storage: NumericStoragePolicy.RevitInternal))), Is.Empty);
-
     [Test, Category("Size.Large"), Category("Source.Snowdon")]
     public void Snowdon_row_counts_match_the_source_inventory_and_stay_clean()
     {
@@ -125,10 +121,8 @@ public sealed class StructureMappingTests
             Assert.That(p.Foundations, Has.Length.EqualTo(90), "Structural Foundations");
             Assert.That(p.StructuralConnections, Has.Length.EqualTo(70), "Structural Connections");
             Assert.That(p.ReinforcementGroups, Has.Length.EqualTo(14), "Structural Rebar");
-            var mine = p.Diagnostics.Where(d => d.Code.StartsWith("validation.") &&
-                (d.Subject.StartsWith("StructuralMember/") || d.Subject.StartsWith("Foundation/")
-                    || d.Subject.StartsWith("StructuralConnection/") || d.Subject.StartsWith("ReinforcementGroup/")));
-            Assert.That(mine, Is.Empty);
+            Assert.That(ProjectionFindings.Validation(p, typeof(StructuralMember), typeof(Foundation),
+                typeof(StructuralConnection), typeof(ReinforcementGroup)), Is.Empty);
         });
     }
 }

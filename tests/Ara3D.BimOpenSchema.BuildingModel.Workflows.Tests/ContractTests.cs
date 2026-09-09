@@ -100,4 +100,35 @@ public sealed class ContractTests
         Assert.That(ProjectionValidation.Validate(danglingGlobal).Single(d => d.Code == "validation.reference").Field, Is.EqualTo("AssemblyDefinition"));
         Assert.That(RowReferences.Of(storey).Select(r => r.Target), Does.Contain(typeof(BimObject)));
     }
+
+    /// <summary>An unobserved field is the coverage denominator's business. One diagnostic per occurrence per field
+    /// only repeats FieldCoverage, at the scale of the whole model; an invalid or conflicting value still reports.</summary>
+    [Test]
+    public void An_unobserved_field_is_reported_by_coverage_and_not_by_a_diagnostic_per_occurrence()
+    {
+        // "GENERAL" has no canonical dimension, so the height descriptor is present but resolves to nothing: exactly
+        // the case that used to raise one diagnostic per occurrence per field.
+        var p = new MappingFixture().Entity(0, "level-a", "Level 1", "Levels").Entity(1, "wall-a", "Wall 1", "Walls")
+            .Reference(1, "Level", 0).Number(1, "Unconnected Height", 3000, units: "GENERAL", group: "Constraints")
+            .Integer(1, "Structural", 2, group: "Structural").Map();
+        Assert.Multiple(() =>
+        {
+            Assert.That(p.Coverage.Single(c => c.EntityKind == "Wall" && c.Field == "Height").Missing, Is.EqualTo(1));
+            Assert.That(p.Diagnostics.Where(d => d.Code == "field.notobserved"), Is.Empty);
+            Assert.That(p.Diagnostics.Count(d => d.Code == "field.invalid" && d.Field == "IsLoadBearing"), Is.EqualTo(1));
+        });
+    }
+
+    /// <summary>A finding's subject is built from the projection's table name, which is plural, so the per-domain
+    /// "no validation findings" filters must be built from that name rather than the singular record name.</summary>
+    [Test]
+    public void The_per_domain_validation_filter_actually_selects_a_finding_about_its_own_records()
+    {
+        var projection = new MappingFixture().Entity(0, "level-a", "Level 1", "Levels").Map();
+        var storey = projection.Storeys.Single();
+        var broken = projection with { Storeys = [storey with { Spaces = new([new(projection.Snapshot.Id, "missing-space")], Completeness.Partial, []) }] };
+        broken = broken with { Diagnostics = broken.Diagnostics.AddRange(ProjectionValidation.Validate(broken)) };
+        Assert.That(ProjectionFindings.Validation(broken, typeof(Storey)).Select(d => d.Code), Does.Contain("validation.reference"));
+        Assert.That(ProjectionFindings.Validation(broken, typeof(Wall)), Is.Empty);
+    }
 }

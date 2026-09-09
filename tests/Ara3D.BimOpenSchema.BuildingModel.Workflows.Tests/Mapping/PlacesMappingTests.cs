@@ -65,10 +65,24 @@ public sealed class PlacesMappingTests
         {
             Assert.That(((Fact<Length>.Known)internalPolicy.TerrainSurfaces.Single().MinimumElevation).Value.Metres,
                 Is.EqualTo(-10 * 0.3048).Within(1e-9));
-            Assert.That(((Fact<Area>.Known)internalPolicy.PavedAreas.Single().NetSurfaceArea).Value.SquareMetres,
-                Is.EqualTo(100 * 0.09290304).Within(1e-9));
             Assert.That(((Fact<Length>.Known)internalPolicy.LandscapeAssets.Single().InstallationHeight).Value.Metres,
                 Is.EqualTo(12 * 0.3048).Within(1e-9));
+        });
+    }
+
+    [Test]
+    public void Generic_area_never_fills_a_field_that_states_its_own_measurement_basis()
+    {
+        var p = Map(BasicFixture(), MappingFixture.Options(storage: NumericStoragePolicy.RevitInternal));
+        Assert.Multiple(() =>
+        {
+            Assert.That(p.PavedAreas.Single().NetSurfaceArea, Is.TypeOf<Fact<Area>.Missing>(),
+                "Revit's computed Area is a sketch plan area, not a net paved surface.");
+            Assert.That(p.PavedAreas.Single().ProjectedArea, Is.TypeOf<Fact<Area>.Missing>());
+            Assert.That(p.TerrainSurfaces.Single().SurfaceArea, Is.TypeOf<Fact<Area>.Missing>());
+            Assert.That(p.Sites.Single().LandArea, Is.TypeOf<Fact<Area>.Missing>());
+            Assert.That(p.Diagnostics.Count(d => d.Code == "quantity.unspecified-basis" && d.Field == "Area"), Is.EqualTo(1),
+                "Only the Hardscape occurrence carries an Area descriptor in this fixture.");
         });
     }
 
@@ -161,11 +175,10 @@ public sealed class PlacesMappingTests
             Assert.That(p.TerrainSurfaces, Has.Length.EqualTo(10), "Toposolid");
             Assert.That(p.PavedAreas, Has.Length.EqualTo(10), "Hardscape");
             Assert.That(p.LandscapeAssets, Has.Length.EqualTo(117), "Planting");
-            var mine = p.Diagnostics.Where(d => d.Code.StartsWith("validation.") &&
-                (d.Subject.StartsWith("Projects/") || d.Subject.StartsWith("Sites/") || d.Subject.StartsWith("Buildings/")
-                    || d.Subject.StartsWith("Zones/") || d.Subject.StartsWith("TerrainSurfaces/") || d.Subject.StartsWith("PavedAreas/")
-                    || d.Subject.StartsWith("LandscapeAssets/")));
-            Assert.That(mine, Is.Empty);
+            Assert.That(p.TerrainSurfaces.Where(t => t.SurfaceArea is Fact<Area>.Known), Is.Empty, "Toposolid Area is a plan area.");
+            Assert.That(p.PavedAreas.Where(a => a.NetSurfaceArea is Fact<Area>.Known), Is.Empty, "Hardscape Area is a plan area.");
+            Assert.That(ProjectionFindings.Validation(p, typeof(Project), typeof(Site), typeof(Building), typeof(Zone),
+                typeof(TerrainSurface), typeof(PavedArea), typeof(LandscapeAsset)), Is.Empty);
         });
     }
 }

@@ -9,7 +9,10 @@ namespace Ara3D.BimOpenSchema.BuildingModel.Workflows;
 /// shared kernel; unknown stored units and ambiguous quantity bases stay unavailable.</summary>
 public static class BuildingMapper
 {
-    public const string PolicyVersion = "architectural-mapping/1";
+    /// <summary>Identifies the interpretation policy in every snapshot, object and evidence key. Wave R5 widened the
+    /// mapping from the architectural scope to the whole building model, so projections keyed under the previous
+    /// identifier are not comparable with these and have to be re-mapped.</summary>
+    public const string PolicyVersion = "building-mapping/2";
 
     /// <summary>Registered domains. Every category key is claimed by exactly one domain; Rules checks this.</summary>
     public static ImmutableArray<DomainMapping> Domains { get; } =

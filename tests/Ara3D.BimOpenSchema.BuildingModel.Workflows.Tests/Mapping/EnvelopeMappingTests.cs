@@ -64,7 +64,9 @@ public sealed class EnvelopeMappingTests
             return BuildingMapper.Map(model, MappingFixture.Options(), Domains).Walls.Single().IsExterior;
         }
         Assert.That(((Fact<bool>.Known)IsExterior(1)).Value, Is.True, "Code 1 is documented as Exterior.");
-        Assert.That(((Fact<bool>.Known)IsExterior(2)).Value, Is.False, "Code 2 (Foundation) is documented but not exterior.");
+        Assert.That(((Fact<bool>.Known)IsExterior(0)).Value, Is.False, "Code 0 is documented as Interior.");
+        Assert.That(IsExterior(2), Is.TypeOf<Fact<bool>.Missing>(), "Code 2 (Foundation) is soil facing; it reports neither exterior nor interior.");
+        Assert.That(IsExterior(4), Is.TypeOf<Fact<bool>.Missing>(), "Code 4 (Soffit) reports neither exterior nor interior.");
         Assert.That(IsExterior(9), Is.TypeOf<Fact<bool>.Missing>(), "Code 9 is outside the documented WallFunction values.");
     }
 
@@ -79,6 +81,21 @@ public sealed class EnvelopeMappingTests
 
         var undeclared = BuildingMapper.Map(model, MappingFixture.Options(declared: false), Domains);
         Assert.That(undeclared.Walls.Single().Length, Is.TypeOf<Fact<Length>.Missing>());
+    }
+
+    [Test]
+    public void Ifc_step_boolean_text_is_read_exactly_and_anything_else_is_invalid()
+    {
+        Fact<bool> LoadBearing(string stored)
+        {
+            var model = new MappingFixture().Entity(0, "wall-a", "Wall 1", "IFCWALL")
+                .Text(0, "Structural", stored, group: "Pset_WallCommon").Model();
+            return BuildingMapper.Map(model, MappingFixture.Options(), Domains).Walls.Single().IsLoadBearing;
+        }
+        Assert.That(((Fact<bool>.Known)LoadBearing(".T.")).Value, Is.True);
+        Assert.That(((Fact<bool>.Known)LoadBearing(".F.")).Value, Is.False);
+        Assert.That(((Fact<bool>.Known)LoadBearing("True")).Value, Is.True);
+        Assert.That(((Fact<bool>.Missing)LoadBearing(".Maybe.")).Reason, Is.EqualTo(Availability.Invalid));
     }
 
     [Test]
@@ -119,8 +136,6 @@ public sealed class EnvelopeMappingTests
             Assert.That(p.FacadePanels, Has.Length.EqualTo(681));
             Assert.That(p.Openings, Has.Length.EqualTo(19));
         });
-        var myTables = new[] { "Wall", "Floor", "Ceiling", "Window", "Opening", "FacadePanel" };
-        var mine = p.Diagnostics.Where(d => d.Code.StartsWith("validation.") && myTables.Any(t => d.Subject == t || d.Subject.StartsWith(t + "/")));
-        Assert.That(mine, Is.Empty);
+        Assert.That(ProjectionFindings.Validation(p, typeof(Wall), typeof(Floor), typeof(Ceiling), typeof(Window), typeof(Opening), typeof(FacadePanel)), Is.Empty);
     }
 }

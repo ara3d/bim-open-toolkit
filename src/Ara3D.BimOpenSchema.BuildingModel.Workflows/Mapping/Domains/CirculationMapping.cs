@@ -50,8 +50,10 @@ public static class CirculationMapping
                     element.Location.PrimaryStorey,
                     k.Number(e, "ClearWidth", "m", x => new Length(x), false, "Clear Width"),
                     k.Number(e, "ClearDepth", "m", x => new Length(x), false, "Clear Depth"),
-                    k.Number(e, "NetArea", "m2", x => new Area(x), false, "Area"),
+                    MappingKernel.Unknown<Area>(),
                     k.Assembly(e), LinkSet<Railing>.Unknown()));
+                // A landing's plan "Area" does not state the net basis the field asks for.
+                k.DiagnoseUnspecifiedQuantity(e, "NetArea", "Area", "Fläche");
                 break;
             case "Ramp":
                 b.Add(new Ramp(k.Key<Ramp>(e), element, k.Assembly(e),
@@ -65,7 +67,7 @@ public static class CirculationMapping
                         "Ramp Max Slope (1/x) is an inverse slope ratio in unestablished display units; not converted without an inference.");
                 break;
             case "Railing":
-                b.Add(new Railing(k.Key<Railing>(e), element, k.Product(e), HostObject(k, e, "Host", "Host", "Host Id"),
+                b.Add(new Railing(k.Key<Railing>(e), element, k.Product(e), k.Object(e, "Host", "Host", "Host Id"),
                     MappingKernel.Unknown<string>(),
                     k.Number(e, "PathLength", "m", x => new Length(x), false, "Length"),
                     k.Number(e, "Height", "m", x => new Length(x), false, "Railing Height", "Height"),
@@ -93,28 +95,34 @@ public static class CirculationMapping
         }
     }
 
-    // No BimObject-typed reference kernel helper exists yet; a host may be any selected occurrence, not one fixed kind.
-    private static Fact<ReferenceKey<BimObject>> HostObject(MappingKernel k, EntityRow e, string field, params string[] aliases)
-        => k.Resolve<ReferenceKey<BimObject>>(e, field, k.Select(e, ParameterType.Entity, aliases), p => p.ReferenceEntityId is { } id && k.Kind(id) != ""
-            ? new Fact<ReferenceKey<BimObject>>.Known(k.Identity(id), Assurance.Observed, [])
-            : new Fact<ReferenceKey<BimObject>>.Missing(Availability.Invalid, "Source reference target is not a selected occurrence.", []));
-
-    // Flights, landings and railings back-link to their stair once every row of both tables exists, the way CoreMapping links storeys to spaces.
+    // Flights, landings and railings back-link to their stair once every row of both tables exists, the way CoreMapping
+    // links storeys to spaces. Each link set carries the identity evidence of the rows that produced it, and an empty
+    // one is NotObserved: Partial would claim members were seen.
     private static void Complete(MappingKernel k, ProjectionBuilder b)
     {
-        var flightsByStair = b.Rows<StairFlight>().Where(f => f.Stair is Fact<SnapshotKey<Stair>>.Known)
-            .GroupBy(f => ((Fact<SnapshotKey<Stair>>.Known)f.Stair).Value).ToDictionary(g => g.Key, g => g.Select(f => f.Id).ToImmutableArray());
-        var landingsByStair = b.Rows<Landing>().Where(l => l.Stair is Fact<SnapshotKey<Stair>>.Known)
-            .GroupBy(l => ((Fact<SnapshotKey<Stair>>.Known)l.Stair).Value).ToDictionary(g => g.Key, g => g.Select(l => l.Id).ToImmutableArray());
-        var railingsByHost = b.Rows<Railing>().Where(r => r.Host is Fact<ReferenceKey<BimObject>>.Known)
-            .GroupBy(r => ((Fact<ReferenceKey<BimObject>>.Known)r.Host).Value).ToDictionary(g => g.Key, g => g.Select(r => r.Id).ToImmutableArray());
+        var flights = Group(b.Rows<StairFlight>(), f => f.Stair, f => f.Id, f => f.Element);
+        var landings = Group(b.Rows<Landing>(), l => l.Stair, l => l.Id, l => l.Element);
+        var railings = Group(b.Rows<Railing>(), r => r.Host, r => r.Id, r => r.Element);
         b.Update<Stair>(s => s with
         {
-            Flights = new(flightsByStair.GetValueOrDefault(s.Id, []), Completeness.Partial, []),
-            Landings = new(landingsByStair.GetValueOrDefault(s.Id, []), Completeness.Partial, []),
-            Railings = new(railingsByHost.GetValueOrDefault(s.Element.ObjectId, []), Completeness.Partial, [])
+            Flights = Links(flights, s.Id),
+            Landings = Links(landings, s.Id),
+            Railings = Links(railings, s.Element.ObjectId)
         });
-        b.Update<Landing>(l => l with { Railings = new(railingsByHost.GetValueOrDefault(l.Element.ObjectId, []), Completeness.Partial, []) });
-        b.Update<Ramp>(r => r with { Railings = new(railingsByHost.GetValueOrDefault(r.Element.ObjectId, []), Completeness.Partial, []) });
+        b.Update<Landing>(l => l with { Railings = Links(railings, l.Element.ObjectId) });
+        b.Update<Ramp>(r => r with { Railings = Links(railings, r.Element.ObjectId) });
     }
+
+    /// <summary>The rows linking back to one owner, and the identity evidence they contribute.</summary>
+    private readonly record struct Linked<T>(ImmutableArray<SnapshotKey<T>> Items, ImmutableArray<ReferenceKey<Evidence>> Evidence);
+
+    private static Dictionary<TOwner, Linked<TRow>> Group<TSource, TOwner, TRow>(IEnumerable<TSource> rows,
+        Func<TSource, Fact<TOwner>> owner, Func<TSource, SnapshotKey<TRow>> key, Func<TSource, ElementInfo> element)
+        where TOwner : notnull
+        => rows.Where(r => owner(r) is Fact<TOwner>.Known).GroupBy(r => ((Fact<TOwner>.Known)owner(r)).Value)
+            .ToDictionary(g => g.Key, g => new Linked<TRow>(g.Select(key).ToImmutableArray(),
+                g.SelectMany(r => element(r).Evidence).Distinct().ToImmutableArray()));
+
+    private static LinkSet<TRow> Links<TOwner, TRow>(Dictionary<TOwner, Linked<TRow>> groups, TOwner owner) where TOwner : notnull
+        => groups.TryGetValue(owner, out var linked) ? MappingKernel.Observed(linked.Items, linked.Evidence) : LinkSet<TRow>.Unknown();
 }

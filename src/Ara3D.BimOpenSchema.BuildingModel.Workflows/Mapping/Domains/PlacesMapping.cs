@@ -22,6 +22,10 @@ public static class PlacesMapping
     private static void Map(MappingKernel k, EntityRow e, string kind, ProjectionBuilder b)
     {
         var element = k.Element(e);
+        // Revit's computed "Area" is the sketch plan area. It does not establish a declared land area, a terrain
+        // surface area or a net paved surface, so those fields stay unavailable and the descriptor is diagnosed.
+        if (kind is "Site" or "TerrainSurface" or "PavedArea")
+            k.DiagnoseUnspecifiedQuantity(e, "Area", "Area", "Fläche");
         switch (kind)
         {
             // A source document is never a building; each Project Information/IFCPROJECT occurrence is its own project row.
@@ -39,7 +43,7 @@ public static class PlacesMapping
                     MappingKernel.Unknown<SnapshotKey<Project>>(),
                     k.Text(e, "Address", "Project Address", "Projektadresse"),
                     k.Text(e, "ParcelIdentifier", "Grundstücksnummer", "Parcel Number", "Parcel Identifier"),
-                    k.Number(e, "LandArea", "m2", x => new Area(x), false, "Area"),
+                    MappingKernel.Unknown<Area>(),
                     MappingKernel.Unknown<SnapshotKey<CoordinateFrame>>(),
                     LinkSet<Building>.Unknown(), LinkSet<TerrainSurface>.Unknown()));
                 break;
@@ -71,7 +75,7 @@ public static class PlacesMapping
                     MappingKernel.Unknown<SnapshotKey<Site>>(), MappingKernel.Unknown<string>(), MappingKernel.Unknown<string>(),
                     MappingKernel.Unknown<SnapshotKey<GeometryRepresentation>>(),
                     MappingKernel.Unknown<Area>(),
-                    k.Number(e, "SurfaceArea", "m2", x => new Area(x), false, "Area"),
+                    MappingKernel.Unknown<Area>(),
                     MappingKernel.Unknown<Length>(),
                     k.Number(e, "MinimumElevation", "m", x => new Length(x), true, "Elevation at Bottom"),
                     k.Number(e, "MaximumElevation", "m", x => new Length(x), true, "Elevation at Top"),
@@ -80,7 +84,7 @@ public static class PlacesMapping
             case "PavedArea":
                 b.Add(new PavedArea(k.Key<PavedArea>(e), element,
                     MappingKernel.Unknown<SnapshotKey<Site>>(), MappingKernel.Unknown<string>(), k.Assembly(e),
-                    k.Number(e, "NetSurfaceArea", "m2", x => new Area(x), false, "Area"),
+                    MappingKernel.Unknown<Area>(),
                     MappingKernel.Unknown<Area>(), MappingKernel.Unknown<Length>(), MappingKernel.Unknown<bool>(), MappingKernel.Unknown<Angle>(),
                     LinkSet<DrainageCatchment>.Unknown()));
                 break;

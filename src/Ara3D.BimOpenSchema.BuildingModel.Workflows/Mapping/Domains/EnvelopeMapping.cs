@@ -46,8 +46,8 @@ public static class EnvelopeMapping
                     k.Number(e, "Thickness", "m", x => new Length(x), false, "Thickness"),
                     MappingKernel.Unknown<Area>(), MappingKernel.Unknown<Area>(), MappingKernel.Unknown<Volume>(),
                     MappingKernel.Unknown<Angle>(), LinkSet<Opening>.Unknown(), LinkSet<FinishSurface>.Unknown()));
-                DiagnoseUnspecifiedArea(k, e);
-                DiagnoseUnspecifiedVolume(k, e);
+                k.DiagnoseUnspecifiedQuantity(e, "Area", "Area", "Fläche");
+                k.DiagnoseUnspecifiedQuantity(e, "Volume", "Volume", "Volumen");
                 break;
 
             case "Ceiling":
@@ -55,7 +55,7 @@ public static class EnvelopeMapping
                     LinkSet<Space>.Unknown(), MappingKernel.Unknown<bool>(), MappingKernel.Unknown<Area>(),
                     k.Number(e, "Thickness", "m", x => new Length(x), false, "Thickness"),
                     MappingKernel.Unknown<Length>(), k.FireResistance(e), LinkSet<FinishSurface>.Unknown()));
-                DiagnoseUnspecifiedArea(k, e);
+                k.DiagnoseUnspecifiedQuantity(e, "Area", "Area", "Fläche");
                 break;
 
             case "Window":
@@ -67,7 +67,7 @@ public static class EnvelopeMapping
                     MappingKernel.Unknown<bool>(), k.Text(e, "OperationDescription", "Operation"),
                     MappingKernel.Unknown<ThermalTransmittance>(), MappingKernel.Unknown<Ratio>(), MappingKernel.Unknown<Ratio>(),
                     k.Text(e, "GlazingSpecification", "Glazing Type")));
-                DiagnoseUnspecifiedArea(k, e);
+                k.DiagnoseUnspecifiedQuantity(e, "Area", "Area", "Fläche");
                 break;
 
             case "Opening":
@@ -77,51 +77,33 @@ public static class EnvelopeMapping
                     k.Number(e, "Height", "m", x => new Length(x), false, "Height", "Unconnected Height"),
                     k.Number(e, "Depth", "m", x => new Length(x), false, "Depth"),
                     MappingKernel.Unknown<Area>(), element.Location.Spaces, LinkSet<Door>.Unknown(), LinkSet<Window>.Unknown()));
-                DiagnoseUnspecifiedArea(k, e);
+                k.DiagnoseUnspecifiedQuantity(e, "Area", "Area", "Fläche");
                 break;
 
             case "FacadePanel":
-                b.Add(new FacadePanel(k.Key<FacadePanel>(e), element, HostObject(k, e, "Host Id", "Rvt:FamilyInstance:Host"), k.Product(e),
+                b.Add(new FacadePanel(k.Key<FacadePanel>(e), element, k.Object(e, "Host", "Host Id", "Rvt:FamilyInstance:Host"), k.Product(e),
                     MappingKernel.Unknown<string>(),
                     k.Number(e, "Width", "m", x => new Length(x), false, "Width"),
                     k.Number(e, "Height", "m", x => new Length(x), false, "Height"),
                     MappingKernel.Unknown<Area>(),
                     k.Number(e, "Thickness", "m", x => new Length(x), false, "Thickness"),
                     MappingKernel.Unknown<ThermalTransmittance>(), MappingKernel.Unknown<bool>()));
-                DiagnoseUnspecifiedArea(k, e);
+                k.DiagnoseUnspecifiedQuantity(e, "Area", "Area", "Fläche");
                 break;
         }
     }
 
     // Revit's documented WallFunction codes: 0 Interior, 1 Exterior, 2 Foundation, 3 Retaining, 4 Soffit, 5 CoreShaft.
-    // Only code 1 asserts an exterior enclosure; every other documented code is not exterior. Undocumented codes stay unavailable.
+    // The field reports an exterior enclosure function, so only code 1 asserts it and only code 0 denies it: a
+    // foundation, retaining, soffit or core-shaft wall is neither, and every other code is undocumented.
     private static Fact<bool> IsExteriorFromFunction(Fact<int> function) => function switch
     {
         Fact<int>.Known { Value: 1 } known => new Fact<bool>.Known(true, Assurance.Derived, known.Evidence),
-        Fact<int>.Known { Value: 0 or 2 or 3 or 4 or 5 } known => new Fact<bool>.Known(false, Assurance.Derived, known.Evidence),
+        Fact<int>.Known { Value: 0 } known => new Fact<bool>.Known(false, Assurance.Derived, known.Evidence),
+        Fact<int>.Known { Value: 2 or 3 or 4 or 5 } known => Fact<bool>.Unknown(
+            $"Function code {known.Value} (foundation, retaining, soffit or core shaft) states neither an exterior nor an interior enclosure function."),
         Fact<int>.Known known => Fact<bool>.Unknown($"Function code {known.Value} is outside the documented WallFunction values."),
         Fact<int>.Missing missing => new Fact<bool>.Missing(missing.Reason, "Function: " + missing.Explanation, missing.Evidence),
         _ => Fact<bool>.Unknown("Function not observed.")
     };
-
-    // A host wall, panel or slab can be any occurrence kind, so this resolves to the shared object identity rather
-    // than a single-kind SnapshotKey the way k.Reference<T> does.
-    private static Fact<ReferenceKey<BimObject>> HostObject(MappingKernel k, EntityRow e, params string[] aliases)
-        => k.Resolve<ReferenceKey<BimObject>>(e, "Host", k.Select(e, ParameterType.Entity, aliases), p => p.ReferenceEntityId is { } id && k.Kind(id) != ""
-            ? new Fact<ReferenceKey<BimObject>>.Known(k.Identity(id), Assurance.Observed, [])
-            : new Fact<ReferenceKey<BimObject>>.Missing(Availability.Invalid, "Host reference does not resolve to a selected occurrence in this snapshot.", []));
-
-    // A bare "Area"/"Volume" descriptor never establishes which net/gross/deduction basis a typed field needs;
-    // this mirrors CoreMapping's roof precedent instead of guessing.
-    private static void DiagnoseUnspecifiedArea(MappingKernel k, EntityRow e)
-    {
-        if (k.Rows(e).Any(p => TextNormalization.Key(p.Name) is "AREA" or "FLÄCHE"))
-            k.Diagnose("quantity.unspecified-basis", e, "Area", "Generic Area is retained in the source cache; its net/gross/deduction basis is not established by its name.");
-    }
-
-    private static void DiagnoseUnspecifiedVolume(MappingKernel k, EntityRow e)
-    {
-        if (k.Rows(e).Any(p => TextNormalization.Key(p.Name) is "VOLUME" or "VOLUMEN"))
-            k.Diagnose("quantity.unspecified-basis", e, "Volume", "Generic Volume is retained in the source cache; its net/gross/deduction basis is not established by its name.");
-    }
 }

@@ -21,7 +21,8 @@ public static class ArchitecturalWorkflows
             rows.ToImmutable(), [$"Selected occurrences: {projection.Storeys.Length} storeys, {projection.Spaces.Length} spaces, {projection.Doors.Length} doors; every door appears once.",
                 "Source documents do not establish physical buildings. Building assignments, relationship completeness and unobserved specifications remain gaps.",
                 "No accessibility/fire compliance assertion is made without a supplied requirement and complete evidence.",
-                "Field evidence is attached to the persisted typed facts; field coverage denominators include every occurrence in that typed table."]);
+                "Field evidence is attached to the persisted typed facts; field coverage denominators include every occurrence in that typed table.",
+                CoveredKinds]);
     }
 
     public static WorkflowReport Takeoff(BuildingProjection projection)
@@ -52,7 +53,8 @@ public static class ArchitecturalWorkflows
                 "Roof assembly, membrane assignment and deduction policy need evidence before this becomes a priced material takeoff.",
                 $"Supported finish net-area subtotal: {finishSubtotal.ToString("G17", CultureInfo.InvariantCulture)} m2 across {selectedFinishes} explicit host/face/installation scopes; unresolved scopes: {unresolvedFinishes}; input finish rows: {projection.Finishes.Length}.",
                 "Finish quantities require explicitly identified disjoint installation scopes and documented deductions. Opposite wall faces remain separate; duplicate representations do not multiply a scope. Material/assembly allocation is still required for material takeoff.",
-                projection.Finishes.IsEmpty ? "Room-facing finish faces/material assignments remain an input gap. No wall area is substituted." : "Supplied finish records are measured installation scopes, not exporter-inferred wall finishes."]);
+                projection.Finishes.IsEmpty ? "Room-facing finish faces/material assignments remain an input gap. No wall area is substituted." : "Supplied finish records are measured installation scopes, not exporter-inferred wall finishes.",
+                CoveredKinds]);
     }
 
     public static WorkflowReport Compare(BuildingProjection before, BuildingProjection after, bool completeComparableScope)
@@ -85,7 +87,8 @@ public static class ArchitecturalWorkflows
             ["Object", "Kind", "Change", "Before facts", "After facts"], result.ToImmutable(),
             ["Comparison uses document-scoped global identity and typed semantic values. Export row order, snapshot keys and evidence addresses are excluded from semantic equality.",
                 "Local-only and duplicate identifiers remain unresolved. Caller completeness authorizes removals only inside the same established document lineages.",
-                string.Join("; ", result.GroupBy(r => r[2]).Select(g => $"{g.Key}: {g.Count()}"))]);
+                string.Join("; ", result.GroupBy(r => r[2]).Select(g => $"{g.Key}: {g.Count()}")),
+                CoveredKinds]);
     }
 
     private static bool SupportedArea(Fact<Area> fact) => fact is Fact<Area>.Known k && double.IsFinite(k.Value.SquareMetres) && k.Value.SquareMetres >= 0;
@@ -146,5 +149,10 @@ public static class ArchitecturalWorkflows
     };
     private static string EvidenceOf<T>(Fact<T> fact) => string.Join(";", fact switch
     { Fact<T>.Known k => k.Evidence, Fact<T>.Missing m => m.Evidence, _ => [] });
-    private static string Scope(BuildingProjection p) => $"Snapshot {p.Snapshot.Id}; source deliveries {string.Join(", ", p.SourceRevisions.Select(r => r.RevisionLabel))}; architectural adapter scope";
+    // These three reports predate the wave that widened the mapping to every discipline. They still read only the four
+    // architectural tables, so the scope string and the notes say which kinds are covered rather than letting an
+    // unchanged verdict or an empty subtotal imply the whole model was examined.
+    internal const string CoveredKinds = "Reads Storey, Space, Door and Roof rows only. Walls, openings, circulation, structure, services, places, materials and definitions are outside this report and are neither summarized nor compared.";
+
+    private static string Scope(BuildingProjection p) => $"Snapshot {p.Snapshot.Id}; source deliveries {string.Join(", ", p.SourceRevisions.Select(r => r.RevisionLabel))}; architectural adapter scope: storeys, spaces, doors and roofs";
 }

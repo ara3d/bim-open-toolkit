@@ -26,7 +26,6 @@ public static class DefinitionsMapping
 
     private static void Map(MappingKernel k, EntityRow e, string kind, ProjectionBuilder b)
     {
-        if (kind != "Material") return;
         var classText = k.Text(e, "Class", "Class", "Material Class", "Rvt:Material:Class");
         b.Add(new Material(new ReferenceKey<Material>(k.Identity(e.Id).Value), Name(e, "Material " + e.Id), ClassOf(classText),
             k.Text(e, "Grade", "Grade"), MappingKernel.Unknown<MassDensity>(), MappingKernel.Unknown<ThermalConductivity>(),
@@ -37,6 +36,7 @@ public static class DefinitionsMapping
 
     private static void Complete(MappingKernel k, ProjectionBuilder b)
     {
+        using (k.CountingAs(nameof(ProductDefinition)))
         foreach (var typeId in k.UsedProductTypes.Order())
         {
             var type = k.Entity(typeId);
@@ -45,6 +45,7 @@ public static class DefinitionsMapping
                 PrincipalMaterial(k, type), MappingKernel.Unknown<ReferenceKey<AssemblyDefinition>>(), Documents(k, type),
                 [k.Evidence([k.Source(typeId)], "Product", $"Type entity row {typeId} declares this product.")]));
         }
+        using (k.CountingAs(nameof(AssemblyDefinition)))
         foreach (var typeId in k.UsedAssemblyTypes.Order())
         {
             var type = k.Entity(typeId);
@@ -56,13 +57,8 @@ public static class DefinitionsMapping
         }
     }
 
-    // Reference<T> only builds SnapshotKey<T> targets; Material's identity is a global ReferenceKey<T>, so its
-    // resolution is written directly on top of Resolve/Select rather than the generic Reference helper.
     private static Fact<ReferenceKey<Material>> PrincipalMaterial(MappingKernel k, EntityRow type)
-        => k.Resolve<ReferenceKey<Material>>(type, "PrincipalMaterial", k.Select(type, ParameterType.Entity, "Structural Material", "Material"),
-            p => p.ReferenceEntityId is { } id && k.Kind(id) == "Material"
-                ? new Fact<ReferenceKey<Material>>.Known(new(k.Identity(id).Value), Assurance.Observed, [])
-                : new Fact<ReferenceKey<Material>>.Missing(Availability.Invalid, "Source reference target is outside the mapped Material table.", []));
+        => k.Global<Material>(type, "PrincipalMaterial", "Structural Material", "Material");
 
     // Description/Assembly Code are locators only when their stored text is itself an absolute URI or file path;
     // nothing here is inferred from the field's name.
@@ -76,6 +72,8 @@ public static class DefinitionsMapping
         return docs.ToImmutable();
     }
 
+    // Only text equal to a MaterialClass member name fixes the class; anything else, "Generic" included, stays
+    // Unclassified. Snowdon's plain "Class" descriptor is an Int, so only the "Rvt:Material:Class" alias resolves there.
     private static MaterialClass ClassOf(Fact<string> text)
         => text is Fact<string>.Known known && MaterialClassNames.Contains(known.Value) ? Enum.Parse<MaterialClass>(known.Value) : MaterialClass.Unclassified;
 

@@ -32,6 +32,7 @@ public sealed class MappingKernel
     private readonly HashSet<int> usedProducts = [];
     private readonly HashSet<int> usedAssemblies = [];
     private ImmutableHashSet<string> domainGroups = [];
+    private string? countingAs;
 
     public BimModel Model => model;
     public MappingOptions Options => options;
@@ -123,11 +124,22 @@ public sealed class MappingKernel
             ? new Fact<int>.Known((int)p.IntegerValue.Value, Assurance.Observed, [])
             : new Fact<int>.Missing(Availability.Invalid, "Integer is absent or outside the supported range.", []));
 
-    /// <summary>A yes/no parameter stored as 0 or 1; any other stored value is invalid rather than guessed.</summary>
+    /// <summary>A yes/no parameter: 0 or 1 in a Revit delivery, the STEP text ".T." or ".F." in an IFC one.
+    /// Both are exact stored forms; any other stored value is invalid rather than guessed.</summary>
     public Fact<bool> Flag(EntityRow e, string field, params string[] aliases)
-        => Resolve<bool>(e, field, Select(e, ParameterType.Int, aliases), p => p.IntegerValue is 0 or 1
-            ? new Fact<bool>.Known(p.IntegerValue == 1, Assurance.Observed, [])
-            : new Fact<bool>.Missing(Availability.Invalid, "Yes/no value is not stored as 0 or 1.", []));
+        => Resolve(e, field, Select(e, ParameterType.Int, aliases).AddRange(Select(e, ParameterType.String, aliases)), FlagValue);
+
+    private static Fact<bool> FlagValue(PropertyRow p)
+        => p.Key.Kind == ParameterType.Int
+            ? p.IntegerValue is 0 or 1
+                ? new Fact<bool>.Known(p.IntegerValue == 1, Assurance.Observed, [])
+                : new Fact<bool>.Missing(Availability.Invalid, "Yes/no value is not stored as 0 or 1.", [])
+            : TextNormalization.Key(p.TextValue) switch
+            {
+                ".T." or "TRUE" => new Fact<bool>.Known(true, Assurance.Observed, []),
+                ".F." or "FALSE" => new Fact<bool>.Known(false, Assurance.Observed, []),
+                _ => new Fact<bool>.Missing(Availability.Invalid, "Yes/no text is not \".T.\", \".F.\", \"True\" or \"False\".", [])
+            };
 
     public Fact<DurationValue> FireResistance(EntityRow e) => Duration(e, "FireResistance", "Fire Rating", "Fire Resistance");
 
@@ -180,6 +192,47 @@ public sealed class MappingKernel
         => Resolve<SnapshotKey<T>>(e, field, Select(e, ParameterType.Entity, aliases), p => p.ReferenceEntityId is { } id && Kind(id) == typeof(T).Name
             ? new Fact<SnapshotKey<T>>.Known(Key<T>(id), Assurance.Observed, [])
             : new Fact<SnapshotKey<T>>.Missing(Availability.Invalid, "Source reference target is outside the expected typed occurrence table.", []));
+
+    /// <summary>An entity-valued parameter that must point at a selected occurrence of kind T, keyed by the shared
+    /// global identity that non-element tables such as Material use instead of a snapshot key.</summary>
+    public Fact<ReferenceKey<T>> Global<T>(EntityRow e, string field, params string[] aliases)
+        => Resolve<ReferenceKey<T>>(e, field, Select(e, ParameterType.Entity, aliases), p => p.ReferenceEntityId is { } id && Kind(id) == typeof(T).Name
+            ? new Fact<ReferenceKey<T>>.Known(new(Identity(id).Value), Assurance.Observed, [])
+            : new Fact<ReferenceKey<T>>.Missing(Availability.Invalid, $"Source reference target is outside the mapped {typeof(T).Name} table.", []));
+
+    /// <summary>An entity-valued parameter pointing at any selected occurrence, such as a host whose kind is not fixed.</summary>
+    public Fact<ReferenceKey<BimObject>> Object(EntityRow e, string field, params string[] aliases)
+        => Resolve<ReferenceKey<BimObject>>(e, field, Select(e, ParameterType.Entity, aliases), p => p.ReferenceEntityId is { } id && Kind(id) != ""
+            ? new Fact<ReferenceKey<BimObject>>.Known(Identity(id), Assurance.Observed, [])
+            : new Fact<ReferenceKey<BimObject>>.Missing(Availability.Invalid, "Source reference target is not a selected occurrence.", []));
+
+    /// <summary>The single space an occurrence sits in. Zero or several associations stay unavailable and are
+    /// diagnosed rather than resolved by picking one.</summary>
+    public Fact<SnapshotKey<Space>> SingleSpace(EntityRow e, LinkSet<Space> spaces, string field = "SpaceId")
+    {
+        var single = spaces.Items.Length == 1;
+        var fact = single ? new Fact<SnapshotKey<Space>>.Known(spaces.Items[0], Assurance.Observed, spaces.Evidence) : Unknown<SnapshotKey<Space>>();
+        if (!single)
+            Diagnose("field.ambiguous-space", e, field, spaces.Items.Length == 0
+                ? "No room/space association observed."
+                : "Multiple room/space associations observed; single-space assignment is not resolved.");
+        Count(e, field, fact);
+        return fact;
+    }
+
+    /// <summary>Records that a generic quantity descriptor is present whose net/gross/deduction basis its name does not
+    /// establish, so the typed field stays unavailable instead of being guessed.</summary>
+    public void DiagnoseUnspecifiedQuantity(EntityRow e, string field, params string[] names)
+    {
+        var keys = names.Select(TextNormalization.Key).ToHashSet();
+        if (Rows(e).Any(p => keys.Contains(TextNormalization.Key(p.Name))))
+            Diagnose("quantity.unspecified-basis", e, field,
+                $"A generic {names[0]} descriptor is retained in the source cache; its net/gross/deduction basis is not established by its name.");
+    }
+
+    /// <summary>Links built from resolved rows. An empty set is NotObserved: Partial would claim something was seen.</summary>
+    public static LinkSet<T> Observed<T>(ImmutableArray<SnapshotKey<T>> items, ImmutableArray<ReferenceKey<Evidence>> evidence)
+        => items.IsEmpty ? LinkSet<T>.Unknown() : new(items, Completeness.Partial, evidence);
 
     public LinkSet<Space> SpaceLinks(EntityRow e)
         => Links<Space>(e, "Spaces", "From Room", "To Room", "Room", "Space", "FromRoom", "ToRoom", "Von Raum", "Nach Raum",
@@ -246,7 +299,9 @@ public sealed class MappingKernel
             rows.Length == 0 ? "No matching source descriptor observation." : "An applicable source observation lacks a value or established stored units.", evs);
         else result = new Fact<T>.Known(known[0], Assurance.Observed, evs);
         Count(e, field, result);
-        if (result is Fact<T>.Missing m && rows.Length > 0)
+        // NotObserved is already the coverage denominator's business; one diagnostic per occurrence per field only
+        // repeats FieldCoverage at the scale of the whole model.
+        if (result is Fact<T>.Missing m && rows.Length > 0 && m.Reason != Availability.NotObserved)
             Diagnose("field." + m.Reason.ToString().ToLowerInvariant(), e, field, m.Explanation);
         return result;
     }
@@ -285,7 +340,24 @@ public sealed class MappingKernel
     internal void Bind(DomainMapping domain)
         => domainGroups = domain.ApprovedGroups.Select(TextNormalization.Key).ToImmutableHashSet();
 
-    private string CoverageKind(EntityRow e) => kinds[e.Id] is "" ? (e.IsType ? "Type" : "Other") : kinds[e.Id];
+    /// <summary>Counts field observations under the named record kind until disposed. A definitions pass reads type
+    /// entities no domain claims, which would otherwise all land in the single "Type" coverage bucket.</summary>
+    public IDisposable CountingAs(string kind) => new CoverageScope(this, kind);
+
+    private sealed class CoverageScope : IDisposable
+    {
+        private readonly MappingKernel kernel;
+        private readonly string? previous;
+        internal CoverageScope(MappingKernel kernel, string kind)
+        {
+            this.kernel = kernel;
+            previous = kernel.countingAs;
+            kernel.countingAs = kind;
+        }
+        public void Dispose() => kernel.countingAs = previous;
+    }
+
+    private string CoverageKind(EntityRow e) => countingAs ?? (kinds[e.Id] is "" ? (e.IsType ? "Type" : "Other") : kinds[e.Id]);
 
     private bool ApprovedGroup(string? group) => TextNormalization.Key(group) is var key && (key is
         "" or "IDENTITY DATA" or "DIMENSIONS" or "CONSTRAINTS" or "DATA" or "GEOMETRY" or "TEXT" or "OTHER"
@@ -343,14 +415,14 @@ public sealed class MappingKernel
     {
         var total = model.Tables.Entities.Length;
         diagnostics.Add(new("scope.inventory", options.SourceId, "Entities", $"{total} source entities; {objects.Count} selected occurrences; {total - objects.Count} other/type/category entities outside the registered domains' declared scope."));
-        diagnostics.Add(new("mapping.policy", options.SourceId, "Policy", $"{policy.Value}; domains {string.Join(", ", domains.Select(d => d.Name))}; exact normalized aliases and approved groups/kinds; type conflicts retained; no buildings inferred from documents; no finishes inferred from wall area. Numeric storage policy {Storage}; caller assertion, canonical metadata takes precedence."));
+        diagnostics.Add(new("mapping.policy", options.SourceId, "Policy", $"{policy.Value}; domains {string.Join(", ", domains.Select(d => d.Name))}; exact normalized aliases and approved groups/kinds; type conflicts retained; no buildings inferred from documents; no finishes inferred from wall area; no quantity basis, enumeration or system membership inferred from a name. Numeric storage policy {Storage}; caller assertion, canonical metadata takes precedence."));
         diagnostics.AddRange(model.Tables.Issues.Select(i => new MappingDiagnostic("source." + i.Code, i.EntityId?.ToString(CultureInfo.InvariantCulture) ?? i.Table, i.Table, i.Message)));
         var usedSources = objects.SelectMany(o => o.SourceIdentities).Concat(evidence.SelectMany(e => e.Sources)).ToHashSet();
         var fieldCoverage = coverage.OrderBy(p => p.Key.Kind).ThenBy(p => p.Key.Field).Select(p => new FieldCoverage(p.Key.Kind, p.Key.Field,
             p.Value.Count, p.Value.Count(v => v is null), p.Value.Count(v => v is Availability.NotObserved or Availability.NotExported),
             p.Value.Count(v => v is Availability.Invalid), p.Value.Count(v => v is Availability.Conflicting), p.Value.Count(v => v is Availability.NotApplicable))).ToImmutableArray();
         var policyRecord = new InterpretationPolicy(policy, "Source adapter", BuildingMapper.PolicyVersion, BuildingMapper.Digest(policy.Value),
-            $"Numeric storage policy {Storage}, explicitly supplied by caller; canonical numbers take precedence. Exact descriptor aliases, approved groups and parameter kinds. All type-chain alternatives remain evidence; disagreements are unavailable conflicts. Only explicit net surface aliases supply roof surface takeoff. Global identifiers are document scoped; duplicates disputed; local identifiers delivery scoped. Documents are not buildings. Domains: {string.Join(", ", domains.Select(d => d.Name))}.");
+            $"Numeric storage policy {Storage}, explicitly supplied by caller; canonical numbers take precedence. Exact descriptor aliases, approved groups and parameter kinds; nothing is inferred from a name or from display units. All type-chain alternatives remain evidence; disagreements are unavailable conflicts. A quantity whose net/gross/deduction basis the source does not state stays unavailable and is diagnosed, for every discipline. Plain enumerations are fixed only by the claiming source category or by text equal to a member name. Global identifiers are document scoped; duplicates disputed; local identifiers delivery scoped. Documents are not buildings. Domains: {string.Join(", ", domains.Select(d => d.Name))}.");
         var projection = tables.Apply(new BuildingProjection(new(Snapshot, options.SourceId, "1.0", revisions.Select(r => r.Id).ToImmutableArray(), [policy], options.PreparedAt),
             revisions.ToImmutableArray(), sourceObjects.Where(s => usedSources.Contains(s.Id)).ToImmutableArray(), objects.ToImmutableArray(), evidence.ToImmutableArray(),
             [], [], [], [], [], fieldCoverage, diagnostics.ToImmutableArray(), documents.ToImmutableArray(), [policyRecord]));

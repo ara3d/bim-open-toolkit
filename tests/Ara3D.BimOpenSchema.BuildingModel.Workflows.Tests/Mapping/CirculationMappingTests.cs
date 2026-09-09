@@ -123,10 +123,6 @@ public sealed class CirculationMappingTests
         Assert.That(p.VerticalTransports.Single().Role, Is.EqualTo(MappingKernel.Unknown<VerticalTransportRole>()));
     }
 
-    [Test]
-    public void Projects_cleanly_through_validation_with_every_kind_present()
-        => Assert.That(ProjectionValidation.Validate(Map(BasicFixture(), MappingFixture.Options(storage: NumericStoragePolicy.RevitInternal))), Is.Empty);
-
     [Test, Category("Size.Large"), Category("Source.Snowdon")]
     public void Snowdon_row_counts_match_the_source_inventory_and_stay_clean()
     {
@@ -140,11 +136,8 @@ public sealed class CirculationMappingTests
             Assert.That(p.Ramps, Has.Length.EqualTo(2), "Ramps");
             Assert.That(p.Railings, Has.Length.EqualTo(133 + 121 + 93), "Railings + Handrails + Top Rails");
             Assert.That(p.FurnitureItems, Has.Length.EqualTo(168 + 177), "Furniture + Casework");
-            var mine = p.Diagnostics.Where(d => d.Code.StartsWith("validation.") &&
-                (d.Subject.StartsWith("Stair/") || d.Subject.StartsWith("StairFlight/") || d.Subject.StartsWith("Landing/")
-                    || d.Subject.StartsWith("Ramp/") || d.Subject.StartsWith("Railing/") || d.Subject.StartsWith("VerticalTransport/")
-                    || d.Subject.StartsWith("Furniture/")));
-            Assert.That(mine, Is.Empty);
+            Assert.That(ProjectionFindings.Validation(p, typeof(Stair), typeof(StairFlight), typeof(Landing), typeof(Ramp),
+                typeof(Railing), typeof(VerticalTransport), typeof(Furniture)), Is.Empty);
         });
     }
 }

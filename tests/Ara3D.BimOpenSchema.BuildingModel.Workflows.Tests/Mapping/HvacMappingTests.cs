@@ -21,7 +21,8 @@ public sealed class HvacMappingTests
             .Entity(5, "fan-a", "Fan 1", "IFCFAN")
             .Entity(6, "ahu-a", "AHU 1", "IFCUNITARYEQUIPMENT")
             .Text(0, "System Classification", "Supply Air", group: "Mechanical")
-            .Reference(1, "System Type", 0, group: "Mechanical")
+            .Text(0, "System Name", "Mechanical Supply Air 1", group: "Mechanical")
+            .Text(1, "System Name", "Mechanical Supply Air 1", group: "Mechanical")
             .Number(1, "Diameter", 300, group: "Dimensions")
             .Model();
         var p = BuildingMapper.Map(model, MappingFixture.Options(), Domains);
@@ -96,10 +97,21 @@ public sealed class HvacMappingTests
         var isolated = BuildingMapper.Map(SnowdonSource.Model, SnowdonSource.Options(), Domains);
         Assert.That(isolated.ServiceSystems, Has.Length.EqualTo(179));
 
-        var tableNames = new[] { "DuctSegments", "DuctFittings", "AirTerminals", "Dampers", "Fans", "AirHandlingUnits", "ServiceSystems", "SystemMemberships" };
-        var kindNames = new[] { "DuctSegment", "DuctFitting", "AirTerminal", "Damper", "Fan", "AirHandlingUnit", "ServiceSystem", "SystemMembership" };
-        var mine = p.Diagnostics.Where(d => d.Code.StartsWith("validation.")
-            && (tableNames.Any(t => d.Subject == t || d.Subject.StartsWith(t + "/")) || kindNames.Contains(d.Field)));
-        Assert.That(mine, Is.Empty);
+        Assert.That(ProjectionFindings.Validation(p, typeof(DuctSegment), typeof(DuctFitting), typeof(AirTerminal), typeof(Damper),
+            typeof(Fan), typeof(AirHandlingUnit), typeof(ServiceSystem), typeof(SystemMembership)), Is.Empty);
+
+        // The source's "System Type" parameter names the system type, not the system occurrence, so membership is
+        // joined on the exact "System Name" text both sides carry. No system reference may be reported as invalid.
+        var rows = p.DuctSegments.Select(r => (Object: r.Element.ObjectId, r.SystemId))
+            .Concat(p.DuctFittings.Select(r => (Object: r.Element.ObjectId, r.SystemId)))
+            .Concat(p.AirTerminals.Select(r => (Object: r.Element.ObjectId, r.SystemId))).ToArray();
+        var matched = rows.Where(x => x.SystemId is Fact<SnapshotKey<ServiceSystem>>.Known).Select(x => x.Object).ToHashSet();
+        var all = rows.Select(x => x.Object).ToHashSet();
+        Assert.Multiple(() =>
+        {
+            Assert.That(matched, Is.Not.Empty);
+            Assert.That(p.SystemMemberships.Count(m => all.Contains(m.ObjectId)), Is.EqualTo(matched.Count));
+            Assert.That(p.Diagnostics.Count(d => d.Code == "field.invalid" && d.Field == "SystemId"), Is.Zero);
+        });
     }
 }

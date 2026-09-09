@@ -22,7 +22,7 @@ public static class ElectricalMapping
         new("IFCSENSOR", "ElectricalDevice"), new("IFCALARM", "ElectricalDevice"),
         new("Wires", "CableSegment"), new("IFCCABLESEGMENT", "CableSegment"),
         new("Conduits", "CableContainment"), new("Cable Trays", "CableContainment"), new("IFCCABLECARRIERSEGMENT", "CableContainment"),
-        new("IFCELECTRICDISTRIBUTIONBOARD", "ElectricalPanel"),
+        new("IFCELECTRICDISTRIBUTIONBOARD", "ElectricalPanel")
     ],
     ["Electrical - Loads", "Electrical - Circuiting", "Electrical - Lighting", "Electrical Engineering", "Electrical"],
     Map, Complete);
@@ -60,7 +60,7 @@ public static class ElectricalMapping
     private static void MapLightingFixture(MappingKernel k, EntityRow e, ProjectionBuilder b)
     {
         var element = k.Element(e);
-        b.Add(new LightingFixture(k.Key<LightingFixture>(e), element, SingleSpace(k, e, element),
+        b.Add(new LightingFixture(k.Key<LightingFixture>(e), element, k.SingleSpace(e, element.Location.Spaces),
             k.Reference<ElectricalCircuit>(e, "CircuitId", "Circuit Number", "Circuit"),
             MappingKernel.Unknown<string>(), k.Number(e, "InputPower", "W", x => new Power(x), false, "Apparent Load", "Apparent Power"),
             MappingKernel.Unknown<double>(), MappingKernel.Unknown<double>(), MappingKernel.Unknown<double>(),
@@ -71,7 +71,7 @@ public static class ElectricalMapping
     private static void MapDevice(MappingKernel k, EntityRow e, ProjectionBuilder b)
     {
         var element = k.Element(e);
-        b.Add(new ElectricalDevice(k.Key<ElectricalDevice>(e), element, DeviceKind(e), SingleSpace(k, e, element),
+        b.Add(new ElectricalDevice(k.Key<ElectricalDevice>(e), element, DeviceKind(e), k.SingleSpace(e, element.Location.Spaces),
             k.Reference<ElectricalCircuit>(e, "CircuitId", "Circuit Number", "Circuit"),
             MappingKernel.Unknown<Voltage>(), MappingKernel.Unknown<ElectricCurrent>(),
             k.Number(e, "InputPower", "W", x => new Power(x), false, "Apparent Load", "Apparent Power"),
@@ -93,11 +93,19 @@ public static class ElectricalMapping
     // Neither Snowdon Wires nor the source inventory carry an approved, reviewed field for cable construction,
     // conductor count/area, length or rated voltage; every fact stays unavailable rather than guessing an alias.
     private static void MapCableSegment(MappingKernel k, EntityRow e, ProjectionBuilder b)
-        => b.Add(new CableSegment(k.Key<CableSegment>(e), k.Element(e), MappingKernel.Unknown<SnapshotKey<ElectricalCircuit>>(),
-            MappingKernel.Unknown<string>(), MappingKernel.Unknown<int>(), MappingKernel.Unknown<Area>(),
-            MappingKernel.Unknown<ReferenceKey<Material>>(), MappingKernel.Unknown<Length>(), MappingKernel.Unknown<Length>(),
-            MappingKernel.Unknown<Length>(), MappingKernel.Unknown<Voltage>(), MappingKernel.Unknown<string>(),
-            LinkSet<CableContainment>.Unknown(), LinkSet<ServicePort>.Unknown()));
+        => b.Add(new CableSegment(k.Key<CableSegment>(e), k.Element(e),
+            CircuitId: MappingKernel.Unknown<SnapshotKey<ElectricalCircuit>>(),
+            CableDesignation: MappingKernel.Unknown<string>(),
+            ConductorCount: MappingKernel.Unknown<int>(),
+            ConductorArea: MappingKernel.Unknown<Area>(),
+            ConductorMaterialId: MappingKernel.Unknown<ReferenceKey<Material>>(),
+            OutsideDiameter: MappingKernel.Unknown<Length>(),
+            RouteLength: MappingKernel.Unknown<Length>(),
+            ScheduledLength: MappingKernel.Unknown<Length>(),
+            RatedVoltage: MappingKernel.Unknown<Voltage>(),
+            FirePerformanceClass: MappingKernel.Unknown<string>(),
+            Containment: LinkSet<CableContainment>.Unknown(),
+            Ports: LinkSet<ServicePort>.Unknown()));
 
     private static void MapCableContainment(MappingKernel k, EntityRow e, ProjectionBuilder b)
     {
@@ -129,37 +137,22 @@ public static class ElectricalMapping
     private static void MapPanel(MappingKernel k, EntityRow e, ProjectionBuilder b)
     {
         var element = k.Element(e);
-        b.Add(new ElectricalPanel(k.Key<ElectricalPanel>(e), element, SingleSpace(k, e, element),
+        b.Add(new ElectricalPanel(k.Key<ElectricalPanel>(e), element, k.SingleSpace(e, element.Location.Spaces),
             MappingKernel.Unknown<string>(), MappingKernel.Unknown<Voltage>(), MappingKernel.Unknown<int>(),
             MappingKernel.Unknown<ElectricCurrent>(), MappingKernel.Unknown<ElectricCurrent>(), MappingKernel.Unknown<ElectricCurrent>(),
             MappingKernel.Unknown<int>(), MappingKernel.Unknown<string>(),
             LinkSet<ElectricalCircuit>.Unknown(), LinkSet<ServicePort>.Unknown(), MappingKernel.Unknown<Length>()));
     }
 
-    // A single observed room/space is kept; zero or several stay Unknown rather than picking one.
-    private static Fact<SnapshotKey<Space>> SingleSpace(MappingKernel k, EntityRow e, ElementInfo element)
-    {
-        var spaces = element.Location.Spaces;
-        Fact<SnapshotKey<Space>> fact;
-        if (spaces.Items.Length == 1) fact = new Fact<SnapshotKey<Space>>.Known(spaces.Items[0], Assurance.Observed, spaces.Evidence);
-        else
-        {
-            k.Diagnose("field.ambiguous-space", e, "SpaceId", spaces.Items.Length == 0
-                ? "No room/space association observed."
-                : "Multiple room/space associations observed; single-space assignment is not resolved.");
-            fact = MappingKernel.Unknown<SnapshotKey<Space>>();
-        }
-        k.Count(e, "SpaceId", fact);
-        return fact;
-    }
-
     // Circuits' PanelId is Unknown throughout Snowdon (Electrical Equipment is unmapped), so this never populates
-    // today; it stays correct for a source where panels and circuits are both mapped.
+    // today; it stays correct for a source where panels and circuits are both mapped. A panel with no observed
+    // circuit gets a NotObserved link set, not a Partial claim about nothing.
     private static void Complete(MappingKernel k, ProjectionBuilder b)
     {
         var circuitsByPanel = b.Rows<ElectricalCircuit>().Where(c => c.PanelId is Fact<SnapshotKey<ElectricalPanel>>.Known)
             .GroupBy(c => ((Fact<SnapshotKey<ElectricalPanel>>.Known)c.PanelId).Value)
-            .ToDictionary(g => g.Key, g => g.Select(c => c.Id).ToImmutableArray());
-        b.Update<ElectricalPanel>(p => p with { Circuits = new(circuitsByPanel.GetValueOrDefault(p.Id, []), Completeness.Partial, []) });
+            .ToDictionary(g => g.Key, g => MappingKernel.Observed(g.Select(c => c.Id).ToImmutableArray(),
+                g.Select(c => c.Evidence).Distinct().ToImmutableArray()));
+        b.Update<ElectricalPanel>(p => p with { Circuits = circuitsByPanel.GetValueOrDefault(p.Id, LinkSet<ElectricalCircuit>.Unknown()) });
     }
 }

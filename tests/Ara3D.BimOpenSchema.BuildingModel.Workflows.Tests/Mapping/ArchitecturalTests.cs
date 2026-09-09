@@ -165,6 +165,30 @@ public sealed class ArchitecturalTests
         Assert.That(ArchitecturalWorkflows.Compare(first, changed, true).Rows.Count(r => r[2] == "Changed"), Is.EqualTo(1));
     }
 
+    /// <summary>These three reports read only the four architectural tables. A wall-only change therefore compares as
+    /// unchanged, so every report has to say which kinds it covers instead of letting that verdict speak for the model.</summary>
+    [Test]
+    public void Reports_state_the_kinds_they_cover_because_they_read_only_four_tables()
+    {
+        var wall = new MappingFixture().Entity(0, "level-a", "Level 1", "Levels").Entity(1, "wall-a", "Wall 1", "Walls")
+            .Reference(1, "Level", 0).Number(1, "Length", 10, units: "m");
+        var before = wall.Map(MappingFixture.Options(storage: NumericStoragePolicy.RevitInternal));
+        var thicker = new MappingFixture().Entity(0, "level-a", "Level 1", "Levels").Entity(1, "wall-a", "Wall 1", "Walls")
+            .Reference(1, "Level", 0).Number(1, "Length", 20, units: "m")
+            .Map(MappingFixture.Options("sha256:second", storage: NumericStoragePolicy.RevitInternal));
+
+        var report = ArchitecturalWorkflows.Compare(before, thicker, true);
+        Assert.Multiple(() =>
+        {
+            Assert.That(((Fact<Length>.Known)before.Walls.Single().Length).Value, Is.Not.EqualTo(((Fact<Length>.Known)thicker.Walls.Single().Length).Value));
+            Assert.That(report.Rows.Any(r => r[1] == "Wall"), Is.False, "Walls are outside the compared kinds.");
+            Assert.That(report.Findings, Has.One.Contain("Storey, Space, Door and Roof rows only"));
+            Assert.That(ArchitecturalWorkflows.Schedule(before).Findings, Has.One.Contain("Storey, Space, Door and Roof rows only"));
+            Assert.That(ArchitecturalWorkflows.Takeoff(before).Findings, Has.One.Contain("Storey, Space, Door and Roof rows only"));
+            Assert.That(ArchitecturalWorkflows.Schedule(before).Scope, Does.Contain("storeys, spaces, doors and roofs"));
+        });
+    }
+
     [Test]
     public void Omission_is_removal_only_in_complete_comparable_scope()
     {

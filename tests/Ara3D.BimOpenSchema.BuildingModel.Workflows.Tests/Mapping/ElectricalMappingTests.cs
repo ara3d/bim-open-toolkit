@@ -157,7 +157,7 @@ public sealed class ElectricalMappingTests
             Assert.That(p.CableSegments, Has.Length.EqualTo(436));
             Assert.That(p.CableContainments, Has.Length.EqualTo(530));
         });
-        string[] tables = ["ElectricalPanels", "ElectricalCircuits", "LightingFixtures", "ElectricalDevices", "CableSegments", "CableContainments"];
-        Assert.That(p.Diagnostics.Where(d => d.Code.StartsWith("validation.") && tables.Any(t => d.Subject.StartsWith(t + "/"))), Is.Empty);
+        Assert.That(ProjectionFindings.Validation(p, typeof(ElectricalPanel), typeof(ElectricalCircuit), typeof(LightingFixture),
+            typeof(ElectricalDevice), typeof(CableSegment), typeof(CableContainment)), Is.Empty);
     }
 }

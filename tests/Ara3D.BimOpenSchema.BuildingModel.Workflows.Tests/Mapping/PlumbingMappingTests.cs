@@ -25,15 +25,16 @@ public sealed class PlumbingMappingTests
             .Entity(9, "drain-a", "Drain 1", "IFCWASTETERMINAL")
             .Entity(10, "material-a", "Copper", "Materials")
             .Text(2, "System Classification", "Domestic Cold Water", group: "Mechanical")
-            .Reference(3, "System Type", 2, group: "Mechanical").Text(3, "Size", "2\"").Number(3, "Outside Diameter", 60)
+            .Text(2, "System Name", "Domestic Cold Water 1", group: "Mechanical")
+            .Text(3, "System Name", "Domestic Cold Water 1", group: "Mechanical").Text(3, "Size", "2\"").Number(3, "Outside Diameter", 60)
             .Number(3, "Inside Diameter", 55).Number(3, "Length", 4000).Number(3, "Wall Thickness", 3)
             .Number(3, "Insulation Thickness", 25, group: "Insulation").Reference(3, "Material", 10, group: "Mechanical")
-            .Reference(4, "System Type", 2, group: "Mechanical").Number(4, "Center Radius", 100)
-            .Reference(5, "System Type", 2, group: "Mechanical").Text(5, "Size", "1\"")
+            .Text(4, "System Name", "Domestic Cold Water 1", group: "Mechanical").Number(4, "Center Radius", 100)
+            .Text(5, "System Name", "Domestic Cold Water 1", group: "Mechanical").Text(5, "Size", "1\"")
             .Reference(6, "Rvt:FamilyInstance:Room", 1).Number(6, "Sanitary Diameter", 100)
-            .Reference(7, "System Type", 2, group: "Mechanical").Reference(7, "Rvt:FamilyInstance:Room", 1)
-            .Reference(8, "System Type", 2, group: "Mechanical")
-            .Reference(9, "System Type", 2, group: "Mechanical").Reference(9, "Rvt:FamilyInstance:Room", 1)
+            .Text(7, "System Name", "Domestic Cold Water 1", group: "Mechanical").Reference(7, "Rvt:FamilyInstance:Room", 1)
+            .Text(8, "System Name", "Domestic Cold Water 1", group: "Mechanical")
+            .Text(9, "System Name", "Domestic Cold Water 1", group: "Mechanical").Reference(9, "Rvt:FamilyInstance:Room", 1)
             .Model();
         var p = BuildingMapper.Map(model, MappingFixture.Options(), Domains);
 
@@ -106,11 +107,19 @@ public sealed class PlumbingMappingTests
     public void Slope_is_known_only_when_the_descriptor_carries_no_explicit_units()
     {
         var dimensionless = new MappingFixture().Entity(0, "pipe-a", "Pipe 1", "Pipes").Number(0, "Slope", 0.02, units: "").Model();
-        var known = BuildingMapper.Map(dimensionless, MappingFixture.Options(), [PlumbingMapping.Domain]).PipeSegments.Single().Slope;
+        var known = BuildingMapper.Map(dimensionless, MappingFixture.Options(storage: NumericStoragePolicy.RevitInternal), [PlumbingMapping.Domain])
+            .PipeSegments.Single().Slope;
         Assert.That(((Fact<Ratio>.Known)known).Value.Value, Is.EqualTo(0.02).Within(1e-12));
 
+        // Empty units is exactly what an IFC delivery carries, so a bare number is not a rise/run ratio until the
+        // caller states what the source stores.
+        var undeclared = BuildingMapper.Map(dimensionless, MappingFixture.Options(declared: false), [PlumbingMapping.Domain])
+            .PipeSegments.Single().Slope;
+        Assert.That(undeclared, Is.TypeOf<Fact<Ratio>.Missing>());
+
         var withUnits = new MappingFixture().Entity(0, "pipe-a", "Pipe 1", "Pipes").Number(0, "Slope", 1, units: "RISE_12_INCHES").Model();
-        var unavailable = BuildingMapper.Map(withUnits, MappingFixture.Options(), [PlumbingMapping.Domain]).PipeSegments.Single().Slope;
+        var unavailable = BuildingMapper.Map(withUnits, MappingFixture.Options(storage: NumericStoragePolicy.RevitInternal), [PlumbingMapping.Domain])
+            .PipeSegments.Single().Slope;
         Assert.That(unavailable, Is.TypeOf<Fact<Ratio>.Missing>());
     }
 
@@ -126,9 +135,10 @@ public sealed class PlumbingMappingTests
         Assert.That(Map("Domestic Cold Water"), Is.EqualTo(ServiceDiscipline.DomesticColdWater));
         Assert.That(Map("Sanitary"), Is.EqualTo(ServiceDiscipline.Unknown), "Sanitary alone does not equal a ServiceDiscipline member name.");
 
+        // A persisted name must identify the system, not the positional export row it happened to arrive in.
         var unnamed = new MappingFixture().Entity(0, "system-a", "", "Piping Systems").Model();
         var system = BuildingMapper.Map(unnamed, MappingFixture.Options(), [PlumbingMapping.Domain]).ServiceSystems.Single();
-        Assert.That(system.Name, Is.EqualTo("System 0"));
+        Assert.That(system.Name, Is.EqualTo("System system-a"));
     }
 
     [Test, Category("Size.Large"), Category("Source.Snowdon")]
@@ -148,8 +158,24 @@ public sealed class PlumbingMappingTests
         });
 
         var p = SnowdonSource.Projection;
-        var myTables = new[] { "PipeSegment", "PipeFitting", "Valve", "SanitaryFixture", "FireProtectionTerminal", "Pump", "Drain", "ServiceSystem" };
-        var mine = p.Diagnostics.Where(d => d.Code.StartsWith("validation.") && myTables.Any(t => d.Subject == t || d.Subject.StartsWith(t + "/")));
-        Assert.That(mine, Is.Empty);
+        Assert.That(ProjectionFindings.Validation(p, typeof(PipeSegment), typeof(PipeFitting), typeof(Valve), typeof(SanitaryFixture),
+            typeof(FireProtectionTerminal), typeof(Pump), typeof(Drain), typeof(ServiceSystem), typeof(SystemMembership)), Is.Empty);
+
+        // Membership joins on the exact "System Name" text both the pipe and the system carry: the source's
+        // "System Type" parameter names the system type element, which is not a mapped occurrence.
+        var rows = p.PipeSegments.Select(r => (Object: r.Element.ObjectId, r.SystemId))
+            .Concat(p.PipeFittings.Select(r => (Object: r.Element.ObjectId, r.SystemId)))
+            .Concat(p.Valves.Select(r => (Object: r.Element.ObjectId, r.SystemId)))
+            .Concat(p.Pumps.Select(r => (Object: r.Element.ObjectId, r.SystemId)))
+            .Concat(p.Drains.Select(r => (Object: r.Element.ObjectId, r.SystemId)))
+            .Concat(p.FireProtectionTerminals.Select(r => (Object: r.Element.ObjectId, r.SystemId))).ToArray();
+        var matched = rows.Where(x => x.SystemId is Fact<SnapshotKey<ServiceSystem>>.Known).Select(x => x.Object).ToHashSet();
+        var all = rows.Select(x => x.Object).ToHashSet();
+        Assert.Multiple(() =>
+        {
+            Assert.That(matched, Is.Not.Empty);
+            Assert.That(p.SystemMemberships.Count(m => all.Contains(m.ObjectId)), Is.EqualTo(matched.Count));
+            Assert.That(p.Diagnostics.Count(d => d.Code == "field.invalid" && d.Field == "SystemId"), Is.Zero);
+        });
     }
 }
