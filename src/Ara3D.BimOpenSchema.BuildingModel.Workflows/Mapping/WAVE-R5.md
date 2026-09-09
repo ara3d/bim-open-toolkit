@@ -99,4 +99,8 @@ Findings kept for the user (from artifacts/wave/REVIEW.md and the track checkpoi
 - Units the kernel deliberately does not convert stay unavailable: flow, pressure, power, voltage, current, mass, thermal values.
 - IFC category rules are exercised by synthetic fixtures only; no Golden Nugget or all-medium assertion exists yet.
 - The evidence table (about 147,000 rows) still goes through INSERT text because DuckDB.NET 1.3.2 cannot append struct lists.
-- The demo database artifacts/building-model-workflows/snowdon-cli.duckdb was left in place because the demo host was running; the new export is snowdon-cli.r5.duckdb beside it.
+- The demo database artifacts/building-model-workflows/snowdon-cli.duckdb was left in place because the demo host was running; the new export was snowdon-cli.r5.duckdb beside it.
+
+## Demo swap (2026-09-09)
+
+The R5 export now is artifacts/building-model-workflows/snowdon-cli.duckdb; the four-kind export is kept beside it as snowdon-cli.pre-r5.duckdb until nobody needs it. Every demo path (store graphs, scripts, README) was unchanged by the swap. scripts/check-bim-flow-duckdb.mjs passes against it: the schedule, room, roof and evidence counts (142 / 290 / 34 / 26 / 156) are the same because the sample graphs only query the four original kinds; the source-provenance graph grew from 8 to 14 groups because every document now records a type row, and the check asserts that. The check had also been failing on a page-height assertion since the Ask box landed: the transcript banner stacked above a full-viewport editor; docs/bim-flow-duckdb.md and the demo stylesheet were updated with the swap.

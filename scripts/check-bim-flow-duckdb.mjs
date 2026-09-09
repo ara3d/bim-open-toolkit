@@ -38,6 +38,9 @@ assert.equal(rows.get('duckdb-room-distribution').rows.reduce((total, row) => to
 const roofs = rows.get('duckdb-roof-coverage');
 assert.equal(roofs.rows[0][roofs.columns.findIndex(column => column.name === 'Roofs')], 26);
 assert.equal(roofs.rows[0][roofs.columns.findIndex(column => column.name === 'KnownArea_m2')], null);
+// The wave R5 export records a type row as well as an occurrence row for each of the seven Snowdon documents.
+assert.equal(rows.get('duckdb-source-lineage').totalRows, 14);
+assert.equal(rows.get('duckdb-evidence-trace').totalRows, 156);
 scenarios.push('All 48 nodes across nine source-backed graphs evaluate successfully', 'Schedule counts, room grouping totals and missing quantity semantics verified');
 
 const endpoint = '/api/analyses/duckdb-door-types';

@@ -42,12 +42,12 @@ To upgrade an existing demo store after rebuilding and restarting the host, run 
 | Missing door widths | Query → filter → projection | 142 unavailable widths with reasons and explanations |
 | Roof quantity coverage | Query → aggregate → sort | 26 roofs; missing area totals remain NULL |
 | Trace a width to evidence | UNNEST query + evidence query → join → projection → sort | 156 evidence references supporting door-width facts |
-| Source provenance | Two queries → join → aggregate → sort | Eight document/exporter/source-role groups |
+| Source provenance | Two queries → join → aggregate → sort | 14 document/exporter/source-role groups: an occurrence row and a type row for each of the seven Snowdon documents |
 | Explore typed columns | Schema query → numeric filter → aggregate → sort | 84 table/type groups, including empty core tables |
 
 The graphs and their descriptions live in `samples/duckdb-analyses/workflows.json`. `{DUCKDB}` is replaced with the selected local path during preparation. Each graph's final node is named `answer`, so it is the initial preview under the editor's canonical node ordering. All intermediate nodes remain selectable and editable.
 
-The supplied database retains its original **Unknown** numeric storage policy. Its missing dimensions are not inferred from names, converted to zero, or treated as compliance failures. Evidence and availability remain visible. Count summaries are usable even when source measurements are unavailable. This is a source-backed dataflow demo, not a geometry viewer or a compliance assessment.
+The supplied database is the wave R5 export of the core building model (`export-duckdb` from the Snowdon cache; see [the CLI README](../tools/building-model-workflows/README.md)). It populates 48 of the 83 core tables: besides the storeys, spaces, doors and roofs the sample graphs use, it holds walls, windows, floors, ceilings, stairs, structural members, pipes, ducts, lighting fixtures, electrical circuits, materials and the other mapped kinds, with about 147,000 evidence rows. The sample graphs only query the four original kinds, so their counts did not change with the swap; the Ask box and your own `duck.query` SQL can reach every populated table. The supplied database retains its original **Unknown** numeric storage policy. Its missing dimensions are not inferred from names, converted to zero, or treated as compliance failures. Evidence and availability remain visible. Count summaries are usable even when source measurements are unavailable. This is a source-backed dataflow demo, not a geometry viewer or a compliance assessment.
 
 ## Verify
 
