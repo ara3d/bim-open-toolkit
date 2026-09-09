@@ -1,5 +1,4 @@
 using Ara3D.BimOpenSchema.BuildingModel.DuckDb;
-using Ara3D.BimOpenSchema.BuildingModel.Source;
 using DuckDB.NET.Data;
 using Platonic;
 
@@ -40,16 +39,9 @@ public sealed class DuckDbProjectionWriterTests
     [Test, Category("Size.Large"), Category("Source.Snowdon")]
     public void SnowdonBosExportsItsMappedArchitecturalRowsToDuckDb()
     {
-        var source = Environment.GetEnvironmentVariable("BIM_OPEN_SCHEMA_SNOWDON")
-            ?? "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos";
-        if (!File.Exists(source)) Assert.Ignore($"Snowdon BOS fixture is unavailable: {source}");
-
-        var cache = Path.Combine(directory, "snowdon.bfast");
+        SnowdonSource.Require();
+        var projection = SnowdonSource.Projection;
         var database = Path.Combine(directory, "snowdon.duckdb");
-        var metadata = SourceCache.Prepare(source, cache);
-        var projection = BuildingMapper.Map(SourceCache.Load(cache), new MappingOptions(metadata.SourceSha256,
-            "sha256:" + metadata.SourceSha256, "snowdon", DateTimeOffset.UnixEpoch,
-            NumericStorage: NumericStoragePolicy.RevitInternal));
         new DuckDbProjectionWriter().Write(projection, database);
 
         using var connection = Open(database);
