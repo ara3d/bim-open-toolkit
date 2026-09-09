@@ -28,6 +28,7 @@ public static class AskEndpoint
     public const string Route = "/api/ask";
     public const string ModelInfoRoute = "/api/ask/model";
     private const int ConversationsKept = 24;
+    private const int CheckRounds = 2;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly SemaphoreSlim Gate = new(1, 1);
@@ -89,10 +90,10 @@ public static class AskEndpoint
                     => Emit(new { type = e.Type, name = e.Name, args = e.Args, ok = e.Ok, summary = e.Summary, text = e.Text });
                 var outcome = await agent.RunAsync(messages, user, Report, ct);
 
-                // The host's own check: the agent gets one more turn to fix or explain
-                // a graph that does not evaluate or answers with no rows.
+                // The host's own check: the agent gets up to two more turns to fix or
+                // explain a graph that does not evaluate or answers with no rows.
                 var problem = AskChecks.Verify(services, id);
-                if (problem is not null)
+                for (var round = 0; problem is not null && round < CheckRounds; round++)
                 {
                     await Emit(new { type = "check", ok = false, summary = problem });
                     var retry = await agent.RunAsync(messages, AskPrompts.Check(problem), Report, ct);
@@ -290,7 +291,10 @@ public static class AskPrompts
     public const string Rules =
         "How to work:\n"
         + "1. Call describeDatabase for the database (tables, row counts, column names), then describeDatabase with 'table' "
-        + "for each table you will query, to see the column types. Do not guess column names.\n"
+        + "for each table you will query: it gives each column's type, NULL count, distinct count and sample values. Do not "
+        + "guess column names or values. Before you filter, sort or rank on a measure, look at its NULL count: if every "
+        + "value is NULL, the measure is not available in this export, so do not filter on it; say so, and use another "
+        + "column the request allows (a count, a volume, an occupancy) or ask which to use.\n"
         + "2. Build the whole graph with one editGraph call: a duck.source node with the id 'database' and its 'path'; a "
         + "duck.query node per query, each with one read-only SELECT in 'sql' and 'database.source' connected to its 'source' "
         + "input; then the table.* nodes; then the edges. Use addNode/setParam/connect/removeNode only for small fixes.\n"

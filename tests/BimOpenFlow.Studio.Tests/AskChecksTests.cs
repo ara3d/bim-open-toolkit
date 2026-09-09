@@ -64,7 +64,10 @@ public sealed class AskChecksTests
              {"op":"setParam","nodeId":"answer","name":"expr","value":"false"},
              {"op":"connect","from":"rows.table","to":"answer.table"}]
             """);
-        Assert.That(AskChecks.Verify(_services, "g"), Does.Contain("has no rows"));
+        var finding = AskChecks.Verify(_services, "g");
+        Assert.That(finding, Does.Contain("has no rows"));
+        // table.range 0..3 is inclusive: four rows in, none out.
+        Assert.That(finding, Does.Contain("rows 4 rows -> answer 0 rows"), "names the step where the rows disappear");
     }
 
     [Test]
