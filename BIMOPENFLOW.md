@@ -1,6 +1,6 @@
 # BIM Open Flow: local 3D demo
 
-Requires Node.js/npm, .NET 8 SDK, and the private Snowdon BOS model. Run from the repository root (PowerShell).
+Requires Node.js/npm, .NET 8 SDK, and the private Snowdon BOS model. Run from the repository root.
 
 One-time setup:
 
@@ -11,14 +11,22 @@ npm run build --prefix viewer
 npm install --prefix bimopenflow/web
 ```
 
-Start both services with one command (replace `-ModelPath` if the model is elsewhere):
+Start the two services in two terminals:
 
 ```powershell
-./scripts/start-bimopenflow.ps1
+npm run host --prefix bimopenflow/web
 ```
 
-The launcher starts the BIM host on port 5214 and the editor on port 5300, waits until both respond, and prints their process IDs and per-run logs in `artifacts/bim-flow/launch`. It defaults to `%USERPROFILE%/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos`; pass `-ModelPath 'C:/models/Snowdon Towers Sample Architectural.bos'` to use another copy. Stop the printed process IDs when finished. It refuses occupied ports; use `-HostPort` and `-WebPort` to choose alternatives.
+```powershell
+npm run web --prefix bimopenflow/web
+```
+
+The first builds and runs the BIM host on port 5214; the second runs the editor on port 5300. Each logs to its own terminal; Ctrl+C stops it. Both ports are fixed: the editor proxies `/api` to `127.0.0.1:5214`.
 
 Open [3d.html](http://127.0.0.1:5300/3d.html). Select graph nodes to preview category colors, ghosting, sections and explosion on the right. Edit node controls to update the view; graph edits autosave. Drag the divider to resize; use **Fit graph** or viewer **Fit** to reframe.
 
-Snowdon is seeded only into an empty store; use a new store directory if absent. Do not start duplicate servers on occupied ports. Optional prepared BFAST setup: [3D guide](docs/bim-flow-3d.md); timing breakdown: [startup profile](docs/bim-flow-startup.md).
+The host reads `%USERPROFILE%\Documents\BIM Open Schema\Snowdon Towers Sample Architectural.bos`; set `BIMOPENFLOW_SNOWDON` to a full path to use another copy. Snowdon is seeded only into an empty store; delete `artifacts/bim-flow/store` to reseed.
+
+If port 5214 is refused, an earlier host is still running — stop it rather than picking another port. A second host cannot run alongside the first: `dotnet run` rebuilds into `src/BimOpenFlow.Host/bin`, which the running host holds open, so the build fails. Note that `dotnet run` gives the host the project directory as its working directory, which is why the `--store` and `--cache` paths in `bimopenflow/web/package.json` are written relative to `src/BimOpenFlow.Host`.
+
+Optional prepared BFAST setup: [3D guide](docs/bim-flow-3d.md); timing breakdown: [startup profile](docs/bim-flow-startup.md).
