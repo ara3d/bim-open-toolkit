@@ -2,7 +2,24 @@
   "mcpServers": {
     "platonic": {
       "command": "node",
-      "args": ["../platonic-ts/node_modules/tsx/dist/cli.mjs", "tools/platonic-mcp.mts"]
+      "args": [
+        "../platonic-ts/node_modules/tsx/dist/cli.mjs",
+        "tools/platonic-mcp.mts"
+      ]
+    },
+    "bimopenflow-duckdb": {
+      "command": "dotnet",
+      "args": [
+        "artifacts/bim-flow-duckdb/mcp/bimopenflow-mcp.dll",
+        "--profile",
+        "tables",
+        "--store",
+        "artifacts/bim-flow-duckdb/store",
+        "--cache",
+        "artifacts/bim-flow-duckdb/cache",
+        "--models",
+        "artifacts/building-model-workflows"
+      ]
     }
   }
 }

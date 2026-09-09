@@ -2,6 +2,8 @@
 
 The local demo at `/duckdb.html` is the same graph-demo shell as the 3D demo: the BIM Flow graph editor on the left, its result-table pane on the right. The flow picker in the top bar switches between the sample graphs. Nine editable sample graphs run through the C# dataflow engine against the typed Snowdon database. Clicking a node or choosing it in **Preview** inspects that stage. Parameter edits save to a separate demo store and recompute results. **Download** in the top bar exports the current edited graph.
 
+An agent can build graphs into this same store through the MCP server; see [Building a DuckDB BIM Flow graph from natural language](bim-flow-mcp-demo.md).
+
 ## Start
 
 From the repository root, with .NET 8 and the existing `bimopenflow/web` and `viewer` npm dependencies installed. Once, to prepare the graphs and build an isolated host under `artifacts/bim-flow-duckdb/host`:

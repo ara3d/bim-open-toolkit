@@ -46,6 +46,28 @@
         "gallery"
       ],
       "port": 5190
+    },
+    {
+      "name": "bof-duckdb-host",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "bimopenflow/web",
+        "run",
+        "duckdb:host"
+      ],
+      "port": 5218
+    },
+    {
+      "name": "bof-duckdb-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "bimopenflow/web",
+        "run",
+        "duckdb:web"
+      ],
+      "port": 5308
     }
   ]
 }
