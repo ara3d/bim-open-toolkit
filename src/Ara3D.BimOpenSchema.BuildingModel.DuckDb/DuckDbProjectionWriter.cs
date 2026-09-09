@@ -52,18 +52,7 @@ public sealed class DuckDbProjectionWriter : IBuildingProjectionWriter
         }
     }
     private static IEnumerable<object> Rows(BuildingProjection projection, Type type)
-        => type == typeof(ModelSnapshot) ? [projection.Snapshot] :
-            type == typeof(SourceRevision) ? projection.SourceRevisions :
-            type == typeof(SourceObject) ? projection.SourceObjects :
-            type == typeof(BimObject) ? projection.Objects :
-            type == typeof(Evidence) ? projection.Evidence :
-            type == typeof(Storey) ? projection.Storeys :
-            type == typeof(Space) ? projection.Spaces :
-            type == typeof(Door) ? projection.Doors :
-            type == typeof(Roof) ? projection.Roofs :
-            type == typeof(FinishSurface) ? projection.Finishes :
-            type == typeof(SourceDocument) ? projection.Documents :
-            type == typeof(InterpretationPolicy) ? projection.Policies : [];
+        => type == typeof(ModelSnapshot) ? [projection.Snapshot] : ProjectionTables.Rows(projection, type);
 
     private static string Quote(string identifier) => ProjectionColumn.Quote(identifier);
 }

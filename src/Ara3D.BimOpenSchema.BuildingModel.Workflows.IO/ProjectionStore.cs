@@ -42,35 +42,18 @@ public static class ProjectionStore
         ArgumentNullException.ThrowIfNull(model);
         if (model.Snapshot is null || string.IsNullOrWhiteSpace(model.Snapshot.Id.Value))
             throw new InvalidDataException("The projection must identify its snapshot.");
-        if (model.SourceRevisions.IsDefault || model.SourceObjects.IsDefault || model.Objects.IsDefault ||
-            model.Evidence.IsDefault || model.Storeys.IsDefault || model.Spaces.IsDefault || model.Doors.IsDefault ||
-            model.Roofs.IsDefault || model.Finishes.IsDefault || model.Coverage.IsDefault || model.Diagnostics.IsDefault ||
-            model.Documents.IsDefault || model.Policies.IsDefault)
+        if (model.Coverage.IsDefault || model.Diagnostics.IsDefault || ProjectionTables.All.Any(table => !table.IsPresent(model)))
             throw new InvalidDataException("Projection collections must be present, even when empty.");
         var objectIds = new HashSet<ReferenceKey<BimObject>>();
         foreach (var item in model.Objects)
             if (string.IsNullOrWhiteSpace(item.Id.Value) || !objectIds.Add(item.Id))
                 throw new InvalidDataException("Object identities must be nonempty and unique.");
-        ValidateRows(model.Storeys.Select(x => (x.Id.SnapshotId, x.Id.Value, x.Element)), model, objectIds);
-        ValidateRows(model.Spaces.Select(x => (x.Id.SnapshotId, x.Id.Value, x.Element)), model, objectIds);
-        ValidateRows(model.Doors.Select(x => (x.Id.SnapshotId, x.Id.Value, x.Element)), model, objectIds);
-        ValidateRows(model.Roofs.Select(x => (x.Id.SnapshotId, x.Id.Value, x.Element)), model, objectIds);
+        foreach (var (_, row) in ProjectionTables.ElementRows(model))
+            if (row.Element is null || !objectIds.Contains(row.Element.ObjectId))
+                throw new InvalidDataException("Domain row must reference an object in the projection.");
         var findings = ProjectionValidation.Validate(model);
         if (findings.Length > 0)
             throw new InvalidDataException(string.Join("; ", findings.Take(10).Select(x => x.Code + ": " + x.Message)));
-    }
-
-    private static void ValidateRows(IEnumerable<(ReferenceKey<ModelSnapshot> Snapshot, string Key, ElementInfo Element)> rows,
-        BuildingProjection model, HashSet<ReferenceKey<BimObject>> objectIds)
-    {
-        var keys = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var row in rows)
-        {
-            if (row.Snapshot != model.Snapshot.Id || string.IsNullOrWhiteSpace(row.Key) || !keys.Add(row.Key))
-                throw new InvalidDataException("Domain row identities must be unique and belong to the prepared snapshot.");
-            if (row.Element is null || !objectIds.Contains(row.Element.ObjectId))
-                throw new InvalidDataException("Domain row must reference an object in the projection.");
-        }
     }
 }
 

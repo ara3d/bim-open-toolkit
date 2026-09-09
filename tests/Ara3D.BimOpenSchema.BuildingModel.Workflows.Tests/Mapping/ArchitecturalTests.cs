@@ -228,36 +228,14 @@ public sealed class ArchitecturalTests
 
     private static BimModel Fixture(bool conflictingWidth = false, string roomName = "Office")
     {
-        var entities = new[]
-        {
-            Entity(0, "level-a", "Level 1", "Levels"), Entity(1, "room-a", roomName, "Rooms"),
-            Entity(2, "room-b", "Hall", "Rooms"), Entity(3, "door-a", "D1", "Doors") with { TypeId = 5 },
-            Entity(4, "roof-a", "Pitched roof", "Roofs"), Entity(5, "door-type", "Type 900", "Doors") with { IsType = true }
-        };
-        var descriptors = new List<DescriptorRow>();
-        var rows = new List<PropertyRow>();
-        void Add(int owner, string name, string group, string units, ParameterType kind, double? number = null, string? text = null, int? reference = null)
-        {
-            var key = new PropertyKey(TextNormalization.Key(name), TextNormalization.Key(group), TextNormalization.UnitKey(units), kind);
-            var descriptor = descriptors.FirstOrDefault(d => d.Key == key);
-            if (descriptor is null) { descriptor = new(descriptors.Count, name, group, units, kind, key); descriptors.Add(descriptor); }
-            rows.Add(new(rows.Count, owner, descriptor.Id, name, group, units, key, true, 0, NumberValue: number, TextValue: text, ReferenceEntityId: reference));
-        }
-        foreach (var id in new[] { 1, 2, 3, 4 }) Add(id, "Level", "Constraints", "", ParameterType.Entity, reference: 0);
-        Add(0, "Elevation", "Dimensions", "m", ParameterType.Number, number: -1);
-        Add(1, "Number", "Identity Data", "", ParameterType.String, text: "101");
-        Add(2, "Number", "Identity Data", "", ParameterType.String, text: "101");
-        Add(3, "From Room", "Other", "", ParameterType.Entity, reference: 1);
-        Add(3, "To Room", "Other", "", ParameterType.Entity, reference: 2);
-        Add(5, "Width", "Dimensions", "mm", ParameterType.Number, number: 900);
-        if (conflictingWidth) Add(3, "Width", "Dimensions", "mm", ParameterType.Number, number: 1000);
-        Add(4, "Net Surface Area", "Dimensions", "m2", ParameterType.Number, number: 125);
-        Add(4, "Projected Area", "Dimensions", "m2", ParameterType.Number, number: 100);
-        Add(4, "Area", "Dimensions", "m2", ParameterType.Number, number: 200);
-        return BimModel.Create(new(new("1.0", "fixture", "1.0", "Fixture"), [new(0, "Fixture", "fixture.rvt")],
-            entities.ToImmutableArray(), descriptors.ToImmutableArray(), rows.ToImmutableArray(), [], [], [], []));
+        var fixture = new MappingFixture()
+            .Entity(0, "level-a", "Level 1", "Levels").Entity(1, "room-a", roomName, "Rooms").Entity(2, "room-b", "Hall", "Rooms")
+            .Entity(3, "door-a", "D1", "Doors", typeId: 5).Entity(4, "roof-a", "Pitched roof", "Roofs").Entity(5, "door-type", "Type 900", "Doors", isType: true);
+        foreach (var id in new[] { 1, 2, 3, 4 }) fixture.Reference(id, "Level", 0);
+        fixture.Number(0, "Elevation", -1, "m").Text(1, "Number", "101").Text(2, "Number", "101")
+            .Reference(3, "From Room", 1, "Other").Reference(3, "To Room", 2, "Other").Number(5, "Width", 900);
+        if (conflictingWidth) fixture.Number(3, "Width", 1000);
+        fixture.Number(4, "Net Surface Area", 125, "m2").Number(4, "Projected Area", 100, "m2").Number(4, "Area", 200, "m2");
+        return fixture.Model();
     }
-
-    private static EntityRow Entity(int id, string global, string name, string category)
-        => new(id, "row/" + id, 1000 + id, global, 0, "Fixture", name, null, category, null, null, false, false);
 }

@@ -27,14 +27,7 @@ public static class CoreSchema
                     .ToImmutableArray()))
             .ToImmutableArray();
 
-    private static bool IsCoreTable(Type type)
-    {
-        var id = type.GetProperty("Id", BindingFlags.Instance | BindingFlags.Public);
-        return id is not null && id.PropertyType.IsGenericType &&
-            id.PropertyType.GetGenericTypeDefinition() is var definition &&
-            (definition == typeof(ReferenceKey<>) || definition == typeof(SnapshotKey<>)) &&
-            id.PropertyType.GetGenericArguments()[0] == type;
-    }
+    private static bool IsCoreTable(Type type) => Workflows.ProjectionTables.IsCoreRecord(type);
 
     internal static string TableName(Type type) => SnakeCase(type.Name);
     internal static string ColumnName(string name) => SnakeCase(name);
