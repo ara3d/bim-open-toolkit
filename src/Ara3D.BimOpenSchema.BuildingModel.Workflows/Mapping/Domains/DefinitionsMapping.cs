@@ -1,32 +1,83 @@
+using System.Collections.Immutable;
 using Ara3D.BimOpenSchema.DataModel;
 
 namespace Ara3D.BimOpenSchema.BuildingModel.Workflows;
 
-/// <summary>Materials, product definitions and assembly definitions for referenced types. Wave R5 track H; see WAVE-R5.md.
-/// Runs last: the definition rows cover every type another domain referenced through the kernel's Product or Assembly.</summary>
+/// <summary>Materials, product definitions and assembly definitions. Wave R5 track H; see WAVE-R5.md.
+/// Materials map from Materials/IFCMATERIAL occurrences during Map; product and assembly definitions run last in
+/// Complete, covering every type another domain referenced through the kernel's Product or Assembly.</summary>
 public static class DefinitionsMapping
 {
-    public static readonly DomainMapping Domain = new("Definitions", [], [], (kernel, entity, kind, builder) => { }, Complete);
+    public static readonly DomainMapping Domain = new("Definitions",
+        [new("Materials", "Material"), new("IFCMATERIAL", "Material")],
+        ["Materials and Finishes"], Map, Complete);
+
+    private static readonly ImmutableHashSet<string> MaterialClassNames = Enum.GetNames<MaterialClass>().ToImmutableHashSet(StringComparer.Ordinal);
+
+    // Only the category names Track A's Envelope domain claims for these kinds; a type outside them stays Other.
+    private static readonly ImmutableDictionary<string, AssemblyKind> AssemblyKindByCategory = new Dictionary<string, AssemblyKind>
+    {
+        ["WALLS"] = AssemblyKind.Wall, ["IFCWALL"] = AssemblyKind.Wall, ["IFCWALLSTANDARDCASE"] = AssemblyKind.Wall, ["IFCCURTAINWALL"] = AssemblyKind.Wall, ["WÄNDE"] = AssemblyKind.Wall,
+        ["FLOORS"] = AssemblyKind.Floor, ["IFCSLAB"] = AssemblyKind.Floor, ["GESCHOSSDECKEN"] = AssemblyKind.Floor,
+        ["ROOFS"] = AssemblyKind.Roof, ["IFCROOF"] = AssemblyKind.Roof, ["DÄCHER"] = AssemblyKind.Roof,
+        ["CEILINGS"] = AssemblyKind.Ceiling, ["DECKEN"] = AssemblyKind.Ceiling,
+        ["CURTAIN PANELS"] = AssemblyKind.Facade, ["IFCPLATE"] = AssemblyKind.Facade,
+    }.ToImmutableDictionary();
+
+    private static void Map(MappingKernel k, EntityRow e, string kind, ProjectionBuilder b)
+    {
+        if (kind != "Material") return;
+        var classText = k.Text(e, "Class", "Class", "Material Class", "Rvt:Material:Class");
+        b.Add(new Material(new ReferenceKey<Material>(k.Identity(e.Id).Value), Name(e, "Material " + e.Id), ClassOf(classText),
+            k.Text(e, "Grade", "Grade"), MappingKernel.Unknown<MassDensity>(), MappingKernel.Unknown<ThermalConductivity>(),
+            MappingKernel.Unknown<SpecificHeatCapacity>(), MappingKernel.Unknown<Ratio>(),
+            k.Text(e, "FireReactionClassification", "FireReactionClassification", "Fire Reaction Classification", "Reaction to Fire Classification"),
+            [k.IdentityEvidence(e.Id)]));
+    }
 
     private static void Complete(MappingKernel k, ProjectionBuilder b)
     {
         foreach (var typeId in k.UsedProductTypes.Order())
         {
             var type = k.Entity(typeId);
-            b.Add(new ProductDefinition(k.ProductKey(typeId), Name(type, typeId), k.Options.ContentFingerprint,
+            b.Add(new ProductDefinition(k.ProductKey(typeId), Name(type, "Type " + typeId), k.Options.ContentFingerprint,
                 k.Text(type, "Manufacturer", "Manufacturer"), k.Text(type, "ProductCode", "Type Mark"), k.Text(type, "ModelNumber", "Model"),
-                MappingKernel.Unknown<ReferenceKey<Material>>(), MappingKernel.Unknown<ReferenceKey<AssemblyDefinition>>(), [],
+                PrincipalMaterial(k, type), MappingKernel.Unknown<ReferenceKey<AssemblyDefinition>>(), Documents(k, type),
                 [k.Evidence([k.Source(typeId)], "Product", $"Type entity row {typeId} declares this product.")]));
         }
         foreach (var typeId in k.UsedAssemblyTypes.Order())
         {
             var type = k.Entity(typeId);
-            b.Add(new AssemblyDefinition(k.AssemblyKey(typeId), Name(type, typeId), k.Options.ContentFingerprint, AssemblyKind.Other, "NotObserved", [],
-                Completeness.NotObserved, MappingKernel.Unknown<ThermalTransmittance>(), MappingKernel.Unknown<ThermalResistance>(),
+            b.Add(new AssemblyDefinition(k.AssemblyKey(typeId), Name(type, "Type " + typeId), k.Options.ContentFingerprint,
+                AssemblyKindByCategory.GetValueOrDefault(TextNormalization.Key(type.Category), AssemblyKind.Other),
+                "NotObserved", [], Completeness.NotObserved, MappingKernel.Unknown<ThermalTransmittance>(), MappingKernel.Unknown<ThermalResistance>(),
                 k.FireResistance(type), MappingKernel.Unknown<string>(),
                 [k.Evidence([k.Source(typeId)], "Assembly", $"Type entity row {typeId} declares this assembly.")]));
         }
     }
 
-    private static string Name(EntityRow type, int typeId) => string.IsNullOrWhiteSpace(type.Name) ? "Type " + typeId : type.Name;
+    // Reference<T> only builds SnapshotKey<T> targets; Material's identity is a global ReferenceKey<T>, so its
+    // resolution is written directly on top of Resolve/Select rather than the generic Reference helper.
+    private static Fact<ReferenceKey<Material>> PrincipalMaterial(MappingKernel k, EntityRow type)
+        => k.Resolve<ReferenceKey<Material>>(type, "PrincipalMaterial", k.Select(type, ParameterType.Entity, "Structural Material", "Material"),
+            p => p.ReferenceEntityId is { } id && k.Kind(id) == "Material"
+                ? new Fact<ReferenceKey<Material>>.Known(new(k.Identity(id).Value), Assurance.Observed, [])
+                : new Fact<ReferenceKey<Material>>.Missing(Availability.Invalid, "Source reference target is outside the mapped Material table.", []));
+
+    // Description/Assembly Code are locators only when their stored text is itself an absolute URI or file path;
+    // nothing here is inferred from the field's name.
+    private static ImmutableArray<ExternalReference> Documents(MappingKernel k, EntityRow type)
+    {
+        var candidates = new[] { ("AssemblyCode", k.Text(type, "AssemblyCode", "Assembly Code")), ("Description", k.Text(type, "Description", "Description")) };
+        var docs = ImmutableArray.CreateBuilder<ExternalReference>();
+        foreach (var (field, fact) in candidates)
+            if (fact is Fact<string>.Known known && Uri.TryCreate(known.Value, UriKind.Absolute, out _))
+                docs.Add(new("Source", field, k.Options.ContentFingerprint, known.Value));
+        return docs.ToImmutable();
+    }
+
+    private static MaterialClass ClassOf(Fact<string> text)
+        => text is Fact<string>.Known known && MaterialClassNames.Contains(known.Value) ? Enum.Parse<MaterialClass>(known.Value) : MaterialClass.Unclassified;
+
+    private static string Name(EntityRow entity, string fallback) => string.IsNullOrWhiteSpace(entity.Name) ? fallback : entity.Name;
 }
