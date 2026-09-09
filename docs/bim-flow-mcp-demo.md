@@ -14,7 +14,7 @@ npm run duckdb:build --prefix bimopenflow/web
 npm run duckdb:host --prefix bimopenflow/web
 ```
 
-`OPENAI_API_KEY` in the environment works too. The model defaults to `gpt-5`; set `OPENAI_MODEL` to change it. `duckdb:build` builds `bimopenflow-studio`, which is the whole `bimopenflow-host` API plus `POST /api/ask`, into `artifacts/bim-flow-duckdb/studio`. Start the web page with `duckdb:web` as before and open the studio. If the key is not configured, the transcript strip says so as soon as the page loads.
+`OPENAI_API_KEY` in the environment works too. The model defaults to `gpt-5`; set `OPENAI_MODEL` to change it (`gpt-5.4-nano` is about five times faster and far cheaper, and with the guides below it builds most graphs; see the measurements). `OPENAI_REASONING_EFFORT` (minimal, low, medium, high) is passed through when set. `duckdb:build` builds `bimopenflow-studio`, which is the whole `bimopenflow-host` API plus `POST /api/ask`, into `artifacts/bim-flow-duckdb/studio`. Start the web page with `duckdb:web` as before and open the studio. If the key is not configured, the transcript strip says so as soon as the page loads.
 
 ## Asking
 
@@ -46,6 +46,14 @@ Success on arbitrary requests came from four things, found by running varied req
 
 The prompt tells the agent to prefer several small nodes over one large query, to keep ids readable, to name the final node `answer`, to evaluate and read the result before answering, and to finish with a plain-language summary that names any missing values.
 
+A second round of tricky requests on the small `gpt-5.4-nano` model added five more, each from a transcript:
+
+5. **Value profiles.** `describeDatabase` with `table` now reports each column's NULL count, distinct count, up to five sample values, and the numeric range. The agent sees that `net_floor_area` is NULL for all 290 rooms before it filters on it, and which reason codes and storey names exist, without a query round trip. The rules tell it to read the NULL count before filtering, sorting or ranking on a measure.
+6. **A check by the host.** After the agent says it is done, the host evaluates the graph itself: every node Ok, an `answer` node present, rows in its table. A finding goes back as one more turn, up to twice. The no-rows finding lists the row count of every node upstream of the answer ("doors 142 rows -> doors_wide 0 rows -> answer 0 rows"), and an Unready finding names the input port nothing is connected to. Two nano failures had been 0-row answers the agent never noticed; another was a node left unconnected after a `removeNode`.
+7. **Repeat detection.** When the model makes the same call with the same result twice in a row, the tool message says so and asks for a different action. Nano had called `evaluate` five times in a row on an unchanged graph.
+8. **Fewer, clearer tools.** The Ask agent is not offered `getNodeCatalog` or `listDatabases` (the prompt carries both), nor the run, model and whole-document tools. Nano spent a turn on each. `editGraph` tolerates real line breaks inside JSON string values, which small models write in multi-line SQL, and a failed batch says "nothing was saved", because nano assumed partial application and then removed nodes that never existed.
+9. **Honesty over rows.** The check message and the rules both allow "explain why the answer is empty" as a valid outcome. For "doors wider than one metre" the right answer on this export is that no door has a width, and the agent now says so instead of looping.
+
 ## Measuring it
 
 `scripts/ask-bim-flow.mjs` asks the studio from the command line, without the page, and is how the requests above were tested:
@@ -58,7 +66,9 @@ node scripts/ask-bim-flow.mjs --continue ask-doors-fire-rated-rating "Only doors
 
 It streams the tool calls, prints the first rows of the answer table, and ends with one line per request: `OK` (a graph with rows), `ANSWERED` (a reply without a graph, such as a question back or "no walls in this export"), or `FAIL`, with the turns, tool calls, and tokens. `BOF_STUDIO_URL` selects the host; `BOF_ASK_ROWS` the rows to print.
 
-The last run before this was written, ten requests over rooms, roofs, storeys, doors, lineage and table sizes, plus walls and windows that the export lacks: eight built correct graphs, two answered honestly, none failed. Where a hand-built sample graph exists for the same question, the counts match (290 rooms, 26 roofs, 33 storeys with rooms).
+On `gpt-5`, ten requests over rooms, roofs, storeys, doors, lineage and table sizes, plus walls and windows that the export lacks: eight built correct graphs, two answered honestly, none failed. Where a hand-built sample graph exists for the same question, the counts match (290 rooms, 26 roofs, 33 storeys with rooms).
+
+On `gpt-5.4-nano`, a harder set of eight (rooms without doors, singleton door types, fire-rating shares, a one-row building summary, rooms connected through doors, storey-to-storey comparison, the evidence behind door widths, and the deliberately vague "show the biggest rooms") went from five correct graphs and two 0-row failures before strategies 5 to 9 to seven correct graphs and one honest "cannot be satisfied" after them. The final run of twelve requests (those eight plus doors wider than a metre, rooms per department, the busiest storey, and evidence per source document) produced ten correct graphs, one answer without a graph, and one graph that is correctly empty with an explanation, at 13 to 36 seconds and 150 to 480 thousand input tokens a request. Nano still needs the host's check more often than gpt-5 does and makes more failed tool calls on the way, so the larger model remains the safer choice for multi-hop lineage questions. The command-line script's verdict is mechanical: read the transcript before trusting an OK on a question with no hand-built reference.
 
 ## How it works
 
@@ -73,7 +83,7 @@ The repository's `.mcp.json` registers the same server as `bimopenflow-duckdb` f
 | Tool | What it does |
 |---|---|
 | `listDatabases` | The `.duckdb` files under the model roots, with paths ready for a `duck.source` node. |
-| `describeDatabase` | Without `table`: every table with its row count and base column names, companions folded. With `table`: that table's columns with DuckDB types. |
+| `describeDatabase` | Without `table`: every table with its row count and base column names, companions folded. With `table`: that table's columns with DuckDB types, NULL and distinct counts, sample values, and numeric range. |
 | `getNodeCatalog` | Every node kind with its ports, parameters, enum values, and capability. |
 | `listAnalyses`, `getAnalysis`, `saveAnalysis` | The graph library: list, read as canonical JSON, or replace a whole document. |
 | `editGraph` | A list of addNode / setParam / connect / removeNode edits, validated together and saved once. |
