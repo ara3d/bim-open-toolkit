@@ -85,14 +85,28 @@ public static class AskEndpoint
                     : AskPrompts.User(body.Request, id);
                 await Emit(new { type = "start", analysisId = id, model, continuing });
                 var agent = new AskAgent(tools, new OpenAiChat(http, apiKey, model));
-                var outcome = await agent.RunAsync(messages, user,
-                    e => Emit(new { type = e.Type, name = e.Name, args = e.Args, ok = e.Ok, summary = e.Summary, text = e.Text }),
-                    ct);
+                Task Report(AskEvent e)
+                    => Emit(new { type = e.Type, name = e.Name, args = e.Args, ok = e.Ok, summary = e.Summary, text = e.Text });
+                var outcome = await agent.RunAsync(messages, user, Report, ct);
+
+                // The host's own check: the agent gets one more turn to fix or explain
+                // a graph that does not evaluate or answers with no rows.
+                var problem = AskChecks.Verify(services, id);
+                if (problem is not null)
+                {
+                    await Emit(new { type = "check", ok = false, summary = problem });
+                    var retry = await agent.RunAsync(messages, AskPrompts.Check(problem), Report, ct);
+                    outcome = new AskOutcome(retry.Text, outcome.Turns + retry.Turns,
+                        outcome.InputTokens + retry.InputTokens, outcome.OutputTokens + retry.OutputTokens);
+                    problem = AskChecks.Verify(services, id);
+                }
                 await Emit(new
                 {
                     type = "done",
                     analysisId = id,
                     built = host.Store.Exists(id),
+                    verified = host.Store.Exists(id) && problem is null,
+                    problem,
                     text = outcome.Text,
                     turns = outcome.Turns,
                     inputTokens = outcome.InputTokens,
@@ -248,7 +262,9 @@ public static class AskPrompts
         + "replace NULL with 0, never infer a size from a name, and when a requested measure is missing, include its reason "
         + "column and say so in the summary.\n"
         + "- Lineage: source_object (table, row, local_id, source_role) -> source_revision (document_id, exporter) -> "
-        + "source_document (name, discipline). List columns are VARCHAR[]: in SQL use len(x) for the count, "
+        + "source_document (name, discipline). The evidence behind a fact x is the list x_evidence of evidence.id values: "
+        + "UNNEST the list and join evidence on id (its columns are origin, method, explanation, sources); evidence rows "
+        + "do not mention the fact by name, so never search them by text. List columns are VARCHAR[]: in SQL use len(x) for the count, "
         + "list_contains(x, v), or UNNEST(x) to expand; there is no list_length. Never select a list column into a "
         + "duck.query output that feeds table.* nodes (they cannot join, group or sort on lists): count or unnest it in SQL.\n"
         + "- Units are metres, square metres, cubic metres.";
@@ -258,8 +274,10 @@ public static class AskPrompts
         + "- table.derive 'expr' and table.filter 'expr' use a small expression language, not SQL: literals true/false, "
         + "numbers, 'text', null; column names bare or in [brackets]; operators + - * / % & (text concat), comparisons "
         + "== != < <= > >=, and/or/not, cond ? a : b; builtins abs min max round floor ceil len lower upper contains "
-        + "startswith endswith coalesce. Null propagates through every operator, so there is no null test: to flag or "
-        + "filter missing values use SQL (x IS NULL) in a duck.query or sql.query node instead.\n"
+        + "startswith endswith coalesce. Null propagates through every operator, so there is no null test: "
+        + "'x == null' and 'x != null' are always null and a filter on them drops every row, and 'x IS NULL' does not "
+        + "parse. To flag or keep rows by missing values, do it in SQL (x IS NULL, x IS NOT NULL) in the duck.query or "
+        + "a sql.query node.\n"
         + "- table.aggregate: 'groupBy' is a comma-separated column list; 'aggregates' is comma-separated "
         + "'func(column) as name' with func count/sum/min/max/avg (count(*) allowed).\n"
         + "- table.join: 'aKey' and 'bKey' name the key columns of inputs a and b; 'mode' left/inner/full/semi/anti. "
@@ -292,6 +310,11 @@ public static class AskPrompts
 
     public static string User(string request, string analysisId)
         => $"Analysis id: {analysisId}\n\nRequest: {request.Trim()}";
+
+    /// <summary>The host's automatic check, handed to the agent as one more turn.</summary>
+    public static string Check(string problem)
+        => $"Automatic check of the graph: {problem} Fix the graph and evaluate again, or, if the request cannot be "
+           + "satisfied from this database, say so plainly in your answer.";
 
     /// <summary>A follow-up on an existing graph. When the conversation was lost
     /// (host restarted), the agent is told to read the graph first.</summary>

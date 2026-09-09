@@ -75,8 +75,13 @@ for (const request of requests) {
           console.log(`   ${event.ok ? '→' : '✗'} ${event.name}(${shortArgs(event.args)})${event.summary ? `  · ${event.summary}` : ''}`);
           break;
         case 'text': console.log(`   agent: ${event.text}`); break;
+        case 'check':
+          verdict.checked = true;
+          console.log(`   check: ${event.summary}`);
+          break;
         case 'done':
-          verdict.turns = event.turns; verdict.text = event.text; verdict.ok = event.built;
+          verdict.turns = event.turns; verdict.text = event.text; verdict.ok = event.built; verdict.verified = event.verified;
+          if (event.built && !event.verified) console.log(`   unverified: ${event.problem}`);
           verdict.tokens = `${event.inputTokens} in / ${event.outputTokens} out`;
           console.log(`   done: ${event.text}`);
           break;
@@ -104,7 +109,7 @@ for (const request of requests) {
 // OK: a graph with rows. ANSWERED: the agent replied without building (a
 // question back, or the data is not in this export). FAIL: an error, an empty
 // answer table, or a graph that did not evaluate.
-const verdictOf = v => (v.ok && v.rows ? 'OK      ' : !v.ok && v.turns > 0 && !v.text.startsWith('ERROR') ? 'ANSWERED' : 'FAIL    ');
+const verdictOf = v => (v.ok && v.rows && v.verified !== false ? 'OK      ' : !v.ok && v.turns > 0 && !v.text.startsWith('ERROR') ? 'ANSWERED' : 'FAIL    ');
 console.log('━━ Summary');
 for (const v of verdicts)
   console.log(`${verdictOf(v)} ${v.seconds}s ${v.turns} turns ${v.tools} tools (${v.failedTools} failed) ${v.rows ?? '-'} rows ${v.tokens ?? ''} · ${v.id ?? ''} · ${v.request}`);

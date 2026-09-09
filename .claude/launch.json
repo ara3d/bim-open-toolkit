@@ -87,7 +87,8 @@
       ],
       "port": 5219,
       "env": {
-        "OPENAI_API_KEY_FILE": "C:\\dev\\keys\\gpt.txt"
+        "OPENAI_API_KEY_FILE": "C:\\dev\\keys\\gpt.txt",
+        "OPENAI_MODEL": "gpt-5.4-nano"
       }
     },
     {
