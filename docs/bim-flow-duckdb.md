@@ -1,6 +1,6 @@
 # BIM Flow DuckDB workflow studio
 
-The local demo at `/duckdb.html` pairs the real BIM Flow graph editor on the left with its result-table pane on the right. Nine editable sample graphs run through the C# dataflow engine against the typed Snowdon database. Clicking a node or choosing it in **Preview** inspects that stage. Parameter edits save to a separate demo store and recompute results. **Download graph** exports the current edited graph.
+The local demo at `/duckdb.html` is the same graph-demo shell as the 3D demo: the BIM Flow graph editor on the left, its result-table pane on the right. The flow picker in the top bar switches between the sample graphs. Nine editable sample graphs run through the C# dataflow engine against the typed Snowdon database. Clicking a node or choosing it in **Preview** inspects that stage. Parameter edits save to a separate demo store and recompute results. **Download** in the top bar exports the current edited graph.
 
 ## Start
 

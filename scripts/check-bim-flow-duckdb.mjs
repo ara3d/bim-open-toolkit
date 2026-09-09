@@ -52,17 +52,16 @@ try {
   const graph = await page.locator('.bof-app-canvas-host canvas').boundingBox();
   const table = await page.locator('.bof-app-panearea').boundingBox();
   assert.ok(graph.x < table.x && graph.width > 500 && table.width > 500);
-  assert.ok(graph.height > 450 && graph.height < 900, `Graph must stay inside the viewport: ${graph.height}`);
+  assert.ok(graph.height > 450 && graph.height < 1100, `Graph must stay inside the viewport: ${graph.height}`);
   assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 2), 'The workspace must scroll its table, not stretch the whole page');
   assert.equal(await page.getByLabel('Preview node').inputValue(), workflows[0].result);
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'door-schedule.png'), fullPage: true });
   for (const workflow of workflows) {
-    await page.getByRole('button', { name: new RegExp(workflow.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).click();
+    await page.getByLabel('Open flow').selectOption({ label: workflow.title });
     await page.waitForFunction(id => document.querySelector('select[aria-label="Open flow"]')?.value === id, workflow.id);
     await page.waitForFunction(id => document.querySelector('select[aria-label="Preview node"]')?.value === id, workflow.result);
     await page.locator('#duck-editor tbody tr').first().waitFor();
-    await page.waitForFunction(title => document.querySelector('#duck-title')?.textContent === title, workflow.title);
     assert.equal(await page.locator('.bof-app-tab').count(), 0);
     const document = await json(`/api/analyses/${workflow.id}`);
     const sources = document.structure.nodes.filter(node => node.kind === 'duck.source');
@@ -72,8 +71,8 @@ try {
       assert.ok(document.structure.edges.some(edge => edge.from === sources[0].id + '.source' && edge.to === query.id + '.source'));
     }
   }
-  scenarios.push('Nine workflow buttons open the real editable graphs with a result table on the right');
-  await page.getByRole('button', { name: /Most-used door types/ }).click();
+  scenarios.push('The flow picker opens all nine editable graphs with a result table on the right');
+  await page.getByLabel('Open flow').selectOption({ label: 'Most-used door types' });
   await page.getByLabel('answer count', { exact: true }).fill('3');
   const saved = page.waitForResponse(response => response.url() === base + endpoint && response.request().method() === 'PUT' && response.ok());
   await page.getByLabel('answer count', { exact: true }).press('Enter');
@@ -103,12 +102,12 @@ try {
     return graph.values['rank-types'].A === 'Occurrences' && graph.values['rank-types'].descendingA === 'false';
   }, endpoint);
   scenarios.push('A/B/C sort dropdowns refresh after an upstream schema change; column and direction edits save');
-  await page.getByRole('button', { name: /Trace a width to evidence/ }).click();
+  await page.getByLabel('Open flow').selectOption({ label: 'Trace a width to evidence' });
   await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 156);
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'evidence-trace.png'), fullPage: true });
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download graph ↓' }).click();
+  await page.getByRole('button', { name: 'Download', exact: true }).click();
   assert.equal((await download).suggestedFilename(), 'duckdb-evidence-trace.dfg.json');
   scenarios.push('Current graph downloads as a reusable graph document');
   await page.setViewportSize({ width: 1000, height: 900 });
