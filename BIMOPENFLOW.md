@@ -11,18 +11,13 @@ npm run build --prefix viewer
 npm install --prefix bimopenflow/web
 ```
 
-Start the backend in one terminal (replace the model path):
+Start both services with one command (replace `-ModelPath` if the model is elsewhere):
 
 ```powershell
-$env:BIMOPENFLOW_SNOWDON = "C:/models/Snowdon Towers Sample Architectural.bos"
-dotnet run --project src/BimOpenFlow.Host -- --profile bim --port 5214 --store artifacts/bim-flow/store --cache artifacts/bim-flow/cache
+./scripts/start-bimopenflow.ps1
 ```
 
-Start the frontend in another terminal:
-
-```powershell
-npm run dev --prefix bimopenflow/web -w @bimopenflow/app
-```
+The launcher starts the BIM host on port 5214 and the editor on port 5300, waits until both respond, and prints their process IDs and per-run logs in `artifacts/bim-flow/launch`. It defaults to `%USERPROFILE%/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos`; pass `-ModelPath 'C:/models/Snowdon Towers Sample Architectural.bos'` to use another copy. Stop the printed process IDs when finished. It refuses occupied ports; use `-HostPort` and `-WebPort` to choose alternatives.
 
 Open [3d.html](http://127.0.0.1:5300/3d.html). Select graph nodes to preview category colors, ghosting, sections and explosion on the right. Edit node controls to update the view; graph edits autosave. Drag the divider to resize; use **Fit graph** or viewer **Fit** to reframe.
 
