@@ -4,15 +4,26 @@ The local demo at `/duckdb.html` pairs the real BIM Flow graph editor on the lef
 
 ## Start
 
-From the repository root, with .NET 8 and the existing `bimopenflow/web` and `viewer` npm dependencies installed:
+From the repository root, with .NET 8 and the existing `bimopenflow/web` and `viewer` npm dependencies installed. Once, to prepare the graphs and build an isolated host under `artifacts/bim-flow-duckdb/host`:
 
 ```powershell
-./scripts/start-bim-flow-duckdb.ps1
+npm run duckdb:prepare --prefix bimopenflow/web
+npm run duckdb:build --prefix bimopenflow/web
 ```
 
-Open [the workflow studio](http://127.0.0.1:5308/duckdb.html). The script builds an isolated host under `artifacts/bim-flow-duckdb/host`, prepares graphs in `artifacts/bim-flow-duckdb/store`, and launches hidden local processes on host port 5218 and web port 5308. Logs and process IDs are in `artifacts/bim-flow-duckdb`. Existing graph edits are preserved on subsequent starts. Stop the two process IDs reported by the launcher when finished. Use `-SkipBuild` after the initial build, or `-HostPort` and `-WebPort` if the default ports are occupied.
+Then start the two services in two terminals:
 
-The default input is `artifacts/building-model-workflows/snowdon-cli.duckdb`. Supply `-Database C:/path/model.duckdb` when initially preparing a store for another compatible export. Existing graph paths are preserved with their edits; change those paths in the editor or prepare a fresh store with `node scripts/prepare-bim-flow-duckdb.mjs <database> <store>`. A single `duck.source` holds the path and opens the database read-only. Its output branches into `duck.query` nodes containing SQL. Queries share a bounded connection cache (up to eight databases), including when SQL changes; eviction or a changed file stamp reopens the connection. Changing a graph never modifies the database. The private database and query results are not bundled with the page or committed.
+```powershell
+npm run duckdb:host --prefix bimopenflow/web
+```
+
+```powershell
+npm run duckdb:web --prefix bimopenflow/web
+```
+
+Open [the workflow studio](http://127.0.0.1:5308/duckdb.html). Host port 5218, web port 5308; each service logs to its own terminal and stops with Ctrl+C. Existing graph edits are preserved when preparing again. Rerun `duckdb:build` after changing C# nodes. Because that build has its own output directory, this host does not collide with the 3D demo's and the two can run at the same time.
+
+The default input is `artifacts/building-model-workflows/snowdon-cli.duckdb`. Prepare a store for another compatible export with `node scripts/prepare-bim-flow-duckdb.mjs <database> <store>`. Existing graph paths are preserved with their edits; change those paths in the editor or prepare a fresh store. A single `duck.source` holds the path and opens the database read-only. Its output branches into `duck.query` nodes containing SQL. Queries share a bounded connection cache (up to eight databases), including when SQL changes; eviction or a changed file stamp reopens the connection. Changing a graph never modifies the database. The private database and query results are not bundled with the page or committed.
 
 Sort nodes expose **A**, **B**, and **C** column dropdowns, applied in that order, with an ascending/descending arrow for each. Their choices follow the upstream table schema. A removed column stays visibly marked unavailable until another column is selected; choosing None skips that key. Graphs automatically arrange and fit on opening. The right panel displays the selected node's table without Chart, Params, or Inspector tabs.
 
