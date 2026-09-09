@@ -80,3 +80,23 @@ Tests each track must add:
 ## Checkpoint format
 
 Track / owner / contract revision; state (working, implemented, verified); files; commands run and actual results; categories deliberately left unmapped and why; fields that stay unavailable and why; requests for the supervisor; findings for the reviewer.
+
+## Integration record (2026-09-09)
+
+Outcome: verified success. Commits 9c32bf4 (contract), 7a10cba through 80a2b83 (tracks A–H), ff739cc (CLI), bb1260b and 07b00a7 (DuckDB writer performance), b690b4e (review applied). All pushed to origin/main.
+
+Stable input state: all eight track agents, the reviewer and the improver had stopped before each gate; the working tree held only the files listed in the corresponding commit plus unrelated edits from the user's other session, which were never staged.
+
+Gates (dotnet build BimBuildingModel.sln, then dotnet test, isolated under artifacts/wave/supervisor):
+- After tracks A–H: 0 errors; 19 + 92 tests pass; Workflows suite 9 m 24 s.
+- After the review was applied: 0 errors; 19 + 96 tests pass; Workflows suite 43 s. The Snowdon DuckDB export takes 28 s (was 6 m 46 s at the first integration).
+- Snowdon counts unchanged for the pre-R5 kinds (84 storeys, 290 spaces, 142 doors, 26 roofs) and as recorded per track for the new kinds; the regenerated export has 48 populated tables, 1277 walls, 174 windows, 7872 system memberships, 753 materials.
+- Not run: the browser check for the DuckDB demo (scripts/check-bim-flow-duckdb.mjs); its fixed row counts and the docs/bim-flow-duckdb.md figures describe the old four-kind export and need updating when the demo database is swapped.
+
+Findings kept for the user (from artifacts/wave/REVIEW.md and the track checkpoints):
+- Core record additions need a decision: Project has no name field; SanitaryFixture has no SystemId; AssemblyDefinition.LayerDirection is a bare string.
+- Largest populations still unmapped by design: Curtain Wall Mullions, Supports, Balusters, Conduit Fittings, Wall Sweeps, Specialty Equipment, Electrical Equipment, architectural Columns, Pipe Accessories. Each needs a core record before it can be mapped.
+- Units the kernel deliberately does not convert stay unavailable: flow, pressure, power, voltage, current, mass, thermal values.
+- IFC category rules are exercised by synthetic fixtures only; no Golden Nugget or all-medium assertion exists yet.
+- The evidence table (about 147,000 rows) still goes through INSERT text because DuckDB.NET 1.3.2 cannot append struct lists.
+- The demo database artifacts/building-model-workflows/snowdon-cli.duckdb was left in place because the demo host was running; the new export is snowdon-cli.r5.duckdb beside it.
