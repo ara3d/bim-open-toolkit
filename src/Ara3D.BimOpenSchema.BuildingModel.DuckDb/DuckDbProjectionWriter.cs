@@ -39,15 +39,19 @@ public sealed class DuckDbProjectionWriter : IBuildingProjectionWriter
         command.ExecuteNonQuery();
     }
 
+    // Statement planning dominates per-row inserts, so rows are batched into one INSERT per RowsPerStatement.
+    private const int RowsPerStatement = 256;
+
     private static void InsertRows(DuckDBConnection connection, DuckDBTransaction transaction, CoreTable table, IEnumerable<object> rows)
     {
         var columns = ProjectionColumn.ForRecord(table.RecordType);
-        foreach (var row in rows)
+        var names = string.Join(", ", columns.Select(column => Quote(column.Name)));
+        foreach (var batch in rows.Chunk(RowsPerStatement))
         {
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
-            var values = columns.Select(column => column.Parameter(command, row)).ToArray();
-            command.CommandText = $"INSERT INTO {Quote(table.Name)} ({string.Join(", ", columns.Select(column => Quote(column.Name)))}) VALUES ({string.Join(", ", values)})";
+            var tuples = batch.Select(row => "(" + string.Join(", ", columns.Select(column => column.Parameter(command, row))) + ")");
+            command.CommandText = $"INSERT INTO {Quote(table.Name)} ({names}) VALUES {string.Join(", ", tuples)}";
             command.ExecuteNonQuery();
         }
     }

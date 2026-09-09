@@ -82,12 +82,12 @@ internal sealed record ProjectionColumn(string Name, Type Type, Func<object?, ob
         }
         if (value is not null && !IsKey(type) && ScalarType(type) is null)
             return "struct_pack(" + string.Join(", ", ForRecord(type).Select(column => Quote(column.Name) + " := " + column.Parameter(command, value))) + ")";
-        var name = "p" + command.Parameters.Count;
-        command.Parameters.Add(new DuckDBParameter(name, value is null ? DBNull.Value :
+        // Positional parameters: the provider resolves named ones by scanning, which dominates large batches.
+        command.Parameters.Add(new DuckDBParameter(value is null ? DBNull.Value :
             IsKey(type) || type.IsEnum ? value.ToString()! :
             value is DateTimeOffset timestamp ? timestamp.ToString("O", CultureInfo.InvariantCulture) :
             value is DateOnly date ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : value));
-        return "$" + name;
+        return "?";
     }
 
     private static string? ScalarType(Type type)
