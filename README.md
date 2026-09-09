@@ -256,11 +256,91 @@ dotnet run --project src/BimOpenFlow.Host -- --port 5214 --models ./data
 Run the web editor against it:
 
 ```bash
-npm --prefix bimopenflow/web run dev --workspace packages/app
+npm run web --prefix bimopenflow/web
 ```
 
 Tests need fixtures: run `./data/get-test-data.ps1` first. The sample analyses in
 `samples/` run without them.
+
+## Running the demos
+
+Two local demos show BimOpenFlow graphs end to end: a **3D demo** that colors, sections
+and explodes a building model, and a **DuckDB demo** that runs SQL-backed schedules,
+joins and aggregations. Both need Node.js, npm, the .NET 8 SDK, and the private
+Snowdon sample model. Every command below runs from the repository root, and each
+service keeps its own terminal until you press Ctrl+C.
+
+One-time setup for both demos:
+
+```bash
+git submodule update --init --recursive
+npm install --prefix viewer
+npm run build --prefix viewer
+npm install --prefix bimopenflow/web
+```
+
+### 3D demo
+
+The host reads `%USERPROFILE%\Documents\BIM Open Schema\Snowdon Towers Sample Architectural.bos`.
+Set `BIMOPENFLOW_SNOWDON` to a full path to use another copy.
+
+Start the host in one terminal (port 5214):
+
+```bash
+npm run host --prefix bimopenflow/web
+```
+
+Start the editor in a second terminal (port 5300):
+
+```bash
+npm run web --prefix bimopenflow/web
+```
+
+Open http://127.0.0.1:5300/3d.html. Select graph nodes to preview category colors,
+ghosting, sections and explosion on the right; edit node controls to update the view.
+Graph edits autosave. Use **Fit graph** or the viewer's **Fit** button to reframe.
+
+Snowdon is seeded only into an empty store. Delete `artifacts/bim-flow/store` to reseed.
+If port 5214 is refused, an earlier host is still running: stop it rather than picking
+another port, because a second `dotnet run` cannot rebuild over the binaries the running
+host holds open. See [BIMOPENFLOW.md](BIMOPENFLOW.md) for the full notes.
+
+### DuckDB demo
+
+The demo reads `artifacts/building-model-workflows/snowdon-cli.duckdb`. Once, prepare the
+nine sample graphs and build a separate host under `artifacts/bim-flow-duckdb/host`:
+
+```bash
+npm run duckdb:prepare --prefix bimopenflow/web
+```
+
+```bash
+npm run duckdb:build --prefix bimopenflow/web
+```
+
+Start the host in one terminal (port 5218):
+
+```bash
+npm run duckdb:host --prefix bimopenflow/web
+```
+
+Start the page in a second terminal (port 5308):
+
+```bash
+npm run duckdb:web --prefix bimopenflow/web
+```
+
+Open http://127.0.0.1:5308/duckdb.html. The flow picker in the top bar switches between
+the sample graphs (door and room schedules, rooms by storey, missing door widths,
+provenance, and more). Click a node to inspect that stage's table; parameter edits save
+to the demo store and recompute; **Download** exports the current graph.
+
+Preparing again preserves existing edits. Rerun `duckdb:build` after changing C# nodes.
+Because this host builds into its own output directory, it does not collide with the 3D
+demo's host, and the two demos can run at the same time. To point the demo at another
+compatible database, run `node scripts/prepare-bim-flow-duckdb.mjs <database> <store>`.
+See [docs/bim-flow-duckdb.md](docs/bim-flow-duckdb.md) for the workflow catalog and the
+verification script.
 
 ## Boundary and provenance
 
