@@ -68,9 +68,46 @@ Five layers, each depending only on the ones above it.
    lives in one pack, which makes the purity rule enforceable by project reference alone.
 5. **Surfaces** (`BimOpenFlow.Host*`, `BimOpenFlow.Mcp`, `bimopenflow/web`, `viewer/`) — one
    headless core; every UI is a client of it. An HTTP host generated from the contracts,
-   thirteen MCP tools over the same services, the web editor, the standalone 3D viewer, and
-   the publishing path that turns a run into self-contained HTML or an evidence package with
-   a SHA-256 per file.
+   thirteen MCP tools over the same services, the web editor, the 3D viewer workspace below,
+   and the publishing path that turns a run into self-contained HTML or an evidence package
+   with a SHA-256 per file.
+
+## The 3D viewer
+
+`viewer/` is a separate npm workspace of seventeen packages: a general-purpose WebGL viewer
+built on three.js, deliberately BIM-free — it knows nothing about IFC, BOS, or any other
+file format. `three` is a peer dependency of every package, so the host application picks
+the version and only one copy ever loads.
+
+| Package | Role |
+|---|---|
+| `@ara3d/viewer-core` | Renderer: scene management, instanced drawing, materials, per-instance color, frame loop |
+| `@ara3d/viewer-loaders` | Ingestion: BOS geometry and GLB loading with progress reporting |
+| `@ara3d/viewer-controls` | Interaction: camera navigation, picking and selection, section planes |
+| `@bim-open-toolkit/model` | Data contracts and pure operations with no runtime dependencies at all — no three.js, no browser API, no sibling package |
+| `render`, `interact` | The instance table and bulk column updates, picking, clipping, overlays, capture; camera arithmetic and three navigation modes |
+| `formats`, `workflows` | One `LoadedModel` entry point that reports its failures instead of raising them; ten review workflows as pure result adapters |
+| `synthetic`, `testing` | Seeded generators for demonstration and test data; named scenes, a hand-wound clock, and a scene built without a browser |
+| `ui-react`, `ui-gratify`, `demos`, `mcp` | UI bindings, the demo gallery, and an MCP surface over the same model layer |
+
+The facade is three lines:
+
+```ts
+import { createViewer } from '@bim-open-toolkit/viewer';
+
+const viewer = createViewer(canvas);
+await viewer.open('/models/building.bfast');
+viewer.run('view.fit', {});
+```
+
+That is a renderer on the canvas, a model loaded and drawn, navigation on the pointer, click
+to select, a frame loop that draws only when something changed, and one `dispose()` that
+leaves nothing behind. Coloring objects goes through the same door — `viewer.apply(styleRule(...))`
+— for the same reason BimOpenFlow has four operations: one path, so there is no second API to
+keep in sync.
+
+Because the model layer is pure and the three.js object-graph logic is kept separate from
+`WebGLRenderer`, the unit tests run headless under Node and never need a WebGL context.
 
 ## Where it sits
 
@@ -85,7 +122,7 @@ Five layers, each depending only on the ones above it.
 
 Three pieces are already positioned to split off. The engine group contains no BIM at all
 and could stand alone as a specified dataflow engine, useful well outside construction. The
-viewer packages are similarly standalone. And because the spec is the authority, anything
+viewer workspace is similarly standalone and BIM-free. And because the spec is the authority, anything
 that passes the conformance vectors is a valid engine — a TypeScript or Python runtime is a
 port, not a rewrite.
 
