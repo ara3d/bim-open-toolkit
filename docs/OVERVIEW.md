@@ -3,7 +3,7 @@
 An open, verifiable data layer for building information — and a node graph on top of it
 that people and AI agents edit with the same four operations.
 
-`89 nodes` · `11 node packs` · `39 C# projects` · `37 test suites` · MIT
+`98 nodes` · `11 node packs` · `46 C# projects` · `41 test projects` · MIT
 
 ## What it is
 
@@ -134,5 +134,6 @@ with the run record as proof.
 
 ---
 
-See [README.md](../README.md) for build and run instructions, and
-[docs/nodes.md](nodes.md) for the generated node reference.
+See [README.md](../README.md) for build and run instructions,
+[ARCHITECTURE.md](ARCHITECTURE.md) for the layer-by-layer design, and
+[nodes.md](nodes.md) for the generated node reference.
