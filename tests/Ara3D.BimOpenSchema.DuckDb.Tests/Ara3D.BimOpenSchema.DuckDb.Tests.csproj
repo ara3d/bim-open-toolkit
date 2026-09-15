@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj" />
     <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
     <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\src\Ara3D.Ifc.Bos\Ara3D.Ifc.Bos.csproj" />
   </ItemGroup>
 
   <ItemGroup>

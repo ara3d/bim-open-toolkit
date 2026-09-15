@@ -104,10 +104,10 @@ public class IfcToBosConverter
             && !name.StartsWith("IFCREL", StringComparison.Ordinal);
     }
 
-    public static void Convert(FilePath input, FilePath output, ILogger logger = null)
+    public static void Convert(FilePath input, FilePath output, ILogger? logger = null)
         => new IfcToBosConverter(input, logger).SaveToBos(output);
 
-    public IfcToBosConverter(FilePath input, ILogger logger = null)
+    public IfcToBosConverter(FilePath input, ILogger? logger = null)
     {
         Input = input;
 
@@ -377,7 +377,7 @@ public class IfcToBosConverter
     {
         if (val.IsId)
         {
-            var refId = GetBosEntityIndexFromIfc(p.Value.Value.AsId());
+            var refId = GetBosEntityIndexFromIfc(p.Value!.Value.AsId());
             BimDataBuilder.AddParameter(bosId, refId, name, "", propSetName);
         }
         else if (val.IsEntity)
@@ -448,7 +448,7 @@ public class IfcToBosConverter
         }
     }
 
-    public void SaveToBos(FilePath output, ILogger logger = null)
+    public void SaveToBos(FilePath output, ILogger? logger = null)
     {
         // Writing output 
 

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ara3D.Logging" Version="$(Ara3DSdkVersion)" />
     <PackageReference Include="ClosedXML" Version="$(Ara3DClosedXmlVersion)" />
     <PackageReference Include="DuckDB.NET.Data.Full" Version="$(Ara3DDuckDbNetDataFullVersion)" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="$(Ara3DMicrosoftDataSqliteVersion)" />
@@ -20,7 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
-    <ProjectReference Include="..\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
   </ItemGroup>
 
 </Project>
