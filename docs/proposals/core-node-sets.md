@@ -6,7 +6,7 @@
 > (`BimOpenFlow.Nodes.Bos`, `.Geometry`, `.Compliance`, `.Effects`), which are
 > keepers. Scope is V1 per `docs/proposals/bimopenflow-ux-proposal.md`: linear
 > pipelines, no subgraphs, no 4D, no batch. Every PoC kind
-> (`platoflow/web/src/flow/defs-*.ts`) is accounted for in the coverage table
+> (the deleted `platoflow/` prototype, git history) is accounted for in the coverage table
 > at the end.
 
 ## Ground rules

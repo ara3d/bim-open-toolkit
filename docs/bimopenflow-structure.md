@@ -1,8 +1,8 @@
 # BimOpenFlow — proposed project structure
 
 > Proposal (Claude + Christopher Diggins, 2026-08-30). The from-scratch
-> replacement for the PlatoFlow PoC (`platoflow/` remains reference material
-> until deleted). Product name **BimOpenFlow** is provisional; every other name
+> replacement for the PlatoFlow PoC (deleted 2026-09-15; its design record is in
+> `docs/platoflow/`). Product name **BimOpenFlow** is provisional; every other name
 > below is intended as final unless noted. Design inputs:
 > `docs/platoflow/platoflow-design-principles.md` (P0 agent velocity, P1 one
 > headless core) and `platoflow-graph-semantics.md` (analysis / graph / run

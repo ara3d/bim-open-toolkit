@@ -20,17 +20,3 @@ jobs:
       # fixture download source exists (data is not committed to this repo).
       - run: dotnet test BimOpenToolkit.sln -c Release --no-build --filter "TestCategory!=RequiresTestData"
         continue-on-error: true
-
-  platoflow-web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install
-        working-directory: platoflow/web
-      - run: npm run build --if-present
-        working-directory: platoflow/web

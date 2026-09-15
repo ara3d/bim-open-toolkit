@@ -2,7 +2,7 @@ namespace BimOpenFlow.PocParity.Tests;
 
 /// <summary>
 /// The living parity map from the PlatoFlow PoC node vocabulary
-/// (platoflow/web/src/flow/defs-*.ts) to the production packs. Replaced kinds
+/// (the deleted platoflow prototype; see docs/platoflow) to the production packs. Replaced kinds
 /// must exist in the combined registry; everything else needs an explicit
 /// reason. When a gap is closed, this map must be updated — that is the point.
 /// </summary>

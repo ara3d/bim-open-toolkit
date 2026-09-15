@@ -75,7 +75,7 @@ code in Gratify.
   (`bimopenflow/web/packages/graph/`, `@bimopenflow/graph`), consumed by
   `@bimopenflow/app`. It is versioned with the app; it is not a library with an
   external API-stability commitment.
-- `platoflow/web/src/editor/` (~6,500 lines on Gratify) is reference material
+- the deleted `platoflow/web/src/editor/` (~6,500 lines on Gratify, git history before 2026-09-15) is reference material
   for the module, not an upstream. It is the best available evidence of what a
   mature version needs — wires, widgets, cards, subgraphs, layout, picker,
   context menu — and should be harvested deliberately rather than ported

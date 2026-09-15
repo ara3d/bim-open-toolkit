@@ -116,7 +116,7 @@ Install from `bimopenflow/web/`; use `npm run <script> -w <package-name>` where 
 | [Visualization planning index](plans/visualization/README.md) | Original brief, alpha history, V2 and gallery/feature plans | Preserve immutable history; reconcile rolling status |
 | [Query-platform proposal](proposals/bim-query-platform/PLAN.md) and [contract](proposals/bim-query-platform/contract/README.md) | Semantic design and generated review material | Some concepts became the core model; broader service/performance claims remain proposals |
 | [Other proposals](proposals/) | Node vocabulary, parameter suggestions/types, UX and agent workflow design | Design inputs; existence of prose does not establish implementation |
-| [PoC](../platoflow/README.md) / [host manifest](../platoflow/host/PlatoFlowHost.csproj) | Throwaway Studio Graph prototype and its executable host | Older renderer/UI/runtime assumptions; preserve NOTES and parity evidence |
+| [PlatoFlow design record](platoflow/README.md) | Notes and design documents from the deleted Studio Graph prototype (code in git history before 2026-09-15) | Older renderer/UI/runtime assumptions; the README lists features not yet ported |
 | [Data](../data/README.md), [vendor](../vendor/), [Gratify](../submodules/gratify/) | Fixtures, SDK package feed, UI submodule | Different provisioning/versioning rules; data/get-test-data copies a sibling repo |
 | [Progress notes](../progress-notes/) and [CONTRACTS](../CONTRACTS.md) | Historical integration/ownership context | Reconcile before treating an old track assignment as current |
 | `artifacts/`, `viewer/artifacts/`, package artifacts | Generated files, test evidence, prepared private fixtures and parked unfinished work | Mostly ignored; inventory and recover drafts before deleting; do not assume a clone contains them |
@@ -148,31 +148,10 @@ These links identify graph documents, not web routes. Profile seeding, fixture r
 | samples/view3d-analyses | [massing-boxes](../samples/view3d-analyses/massing-boxes.json) | 2026-09-01 · `e3edfdd` |
 | samples/view3d-analyses | [voxel-density](../samples/view3d-analyses/voxel-density.json) | 2026-09-01 · `e3edfdd` |
 | samples/snowdon-analyses | [snowdon-toolkit](../samples/snowdon-analyses/snowdon-toolkit.json) | 2026-09-08 · `f8745e0` |
-| platoflow/demo | [carbon-by-level](../platoflow/demo/carbon-by-level.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [carbon-walls](../platoflow/demo/carbon-walls.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [checklist-live](../platoflow/demo/checklist-live.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [cost-estimate](../platoflow/demo/cost-estimate.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [disciplines](../platoflow/demo/disciplines.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [door-egress-check](../platoflow/demo/door-egress-check.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [explode-levels](../platoflow/demo/explode-levels.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [filter-sort](../platoflow/demo/filter-sort.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [group-color](../platoflow/demo/group-color.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [hvac-composition](../platoflow/demo/hvac-composition.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [inspect-flow](../platoflow/demo/inspect-flow.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [level-takeoff-export](../platoflow/demo/level-takeoff-export.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [massing-boxes](../platoflow/demo/massing-boxes.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [quality-audit](../platoflow/demo/quality-audit.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [set-algebra](../platoflow/demo/set-algebra.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [simple-color](../platoflow/demo/simple-color.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [sql-explore](../platoflow/demo/sql-explore.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [wall-roles-overlap](../platoflow/demo/wall-roles-overlap.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [wall-stats-explore](../platoflow/demo/wall-stats-explore.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [whatif-expr](../platoflow/demo/whatif-expr.json) | 2026-08-30 · `bc970ce` |
-| platoflow/demo | [write-pset](../platoflow/demo/write-pset.json) | 2026-08-30 · `bc970ce` |
 
 The [DuckDB workflow catalog](../samples/duckdb-analyses/workflows.json) is a working-tree addition containing nine graphs: door schedule, most-used door types, room schedule, rooms by storey, missing door widths, roof quantity coverage, trace a width to evidence, source provenance, and explore typed columns. Its launcher and schema dependencies are in the [DuckDB guide](bim-flow-duckdb.md).
 
-The [sample table directory](../samples/tables/README.md) supplies customers/products/orders CSVs, monthly CSVs, JSON/JSONL, XLSX and SQLite inputs. Some derived sample artifacts are produced by seeders. PoC public copies under [web/public/demo](../platoflow/web/public/demo/) are a second copy of several historical demo documents, not additional workflows.
+The [sample table directory](../samples/tables/README.md) supplies customers/products/orders CSVs, monthly CSVs, JSON/JSONL, XLSX and SQLite inputs. Some derived sample artifacts are produced by seeders. The 21 PlatoFlow PoC demo graphs were deleted with the prototype on 2026-09-15 and remain in git history.
 
 ## Reading the inventory safely
 

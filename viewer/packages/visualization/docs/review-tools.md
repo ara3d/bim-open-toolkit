@@ -1,6 +1,6 @@
 # Bounded assistant review tools
 
-`createReviewTools(host, {allowWrites})` provides `list()` descriptors and asynchronous `call(name, arguments)` results. It has no renderer, transport, filesystem, network or evaluation dependency. Descriptors expose `name`, `description`, `inputSchema` and a read-only annotation. Results use MCP-compatible text content and `isError`, matching the repository's existing `platoflow/host/McpEndpoint.cs` pattern.
+`createReviewTools(host, {allowWrites})` provides `list()` descriptors and asynchronous `call(name, arguments)` results. It has no renderer, transport, filesystem, network or evaluation dependency. Descriptors expose `name`, `description`, `inputSchema` and a read-only annotation. Results use MCP-compatible text content and `isError`, matching the former `platoflow/host/McpEndpoint.cs` pattern (git history).
 
 The registry defaults to read-only; those hosts expose `list_models`, `list_objects` and `scene_state`. Explicit `allowWrites: true` adds `select`, camera-changing `fit`, `set_style` and `reset_style`. A host injects current models/selection and the three typed command callbacks. It should implement style changes in a reversible override layer; `reset_style` removes those overrides to restore host base appearance. Authoritative model records remain outside tool mutation.
 

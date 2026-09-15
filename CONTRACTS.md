@@ -15,7 +15,6 @@ Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES
 | A tiers 0–1 | `src/Ara3D.Utils/**`, `src/Ara3D.Memory/**`, `src/Ara3D.Collections/**`, `src/Ara3D.Logging/**`, `src/Ara3D.F8/**`, `src/Ara3D.PropKit/**`, `src/Ara3D.Geometry/**`, `src/Ara3D.DataTable/**`, `src/Ara3D.IO.BFAST/**`, `src/Ara3D.IO.StepParser/**`, `src/Ara3D.Models/**` |
 | B tier 2 | `src/Ara3D.BimOpenSchema/**`, `src/Ara3D.BimOpenSchema.IO/**`, `src/Ara3D.BimOpenSchema.Harmonizer/**`, `src/Ara3D.IfcLoader/**`, `src/Ara3D.IfcTypes/**`, `src/Ara3D.Ifc.Mesher/**`, `src/Ara3D.IO.GltfExporter/**`, `src/Ara3D.Ifc.Editing/**` |
 | C tiers 3–4 | `src/Ara3D.MCP/**`, `src/Ara3D.Ifc.Mcp/**`, `tests/**` (except tests/Directory.Build.props) |
-| D PlatoFlow | `platoflow/**` |
 | S supervisor | everything else; solution file; integration + full gate |
 
 ## Seams
@@ -158,7 +157,7 @@ UI improvements to the table sandbox. Supervisor pre-landed: green web baseline
 ## Fences (who writes where)
 
 Supervisor-owned (tracks READ only; request via NOTES.md): `bimopenflow/web/packages/{state,panes,viz,api-client,contracts}/**`,
-`contracts/**`, `src/BimOpenFlow.Host.Api/**`, `submodules/gratify`, `platoflow/**`,
+`contracts/**`, `src/BimOpenFlow.Host.Api/**`, `submodules/gratify`,
 `samples/tables/*.csv`, `BimOpenToolkit.sln`, this doc.
 
 | Track | Writes only |
@@ -171,7 +170,7 @@ Supervisor-owned (tracks READ only; request via NOTES.md): `bimopenflow/web/pack
 
 - Theme: canvasTheme.ts names are the contract; A renders the picker + persists
   choice in localStorage and calls editor.setTheme; B implements the themes
-  (platoflow/web/src/theme.ts is the light-theme model) and the actual setTheme.
+  (the former PlatoFlow cream theme, see docs/platoflow/NOTES.md, is the light-theme model) and the actual setTheme.
 - A may not change the CanvasEditor interface; B may not change shell/topbar.
 - Sample analyses (C) must validate against HostComposition.TablePacks() and use
   a {SAMPLES} path placeholder rewritten to the absolute samples/tables dir at
