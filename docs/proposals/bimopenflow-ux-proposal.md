@@ -5,7 +5,7 @@
 > (`docs/bimopenflow-structure.md`, the `@bimopenflow/app` README), then checked
 > against two earlier brainstorms — the node-editor idea bank
 > (`studio/docs/kea-node-editor-ui-ux-ideas.md`, 2026-07-10) and the workflow
-> brainstorm (§1 of `platoflow/docs/platoflow-v1-nodes.md`, 2026-08-30, 56
+> brainstorm (§1 of `docs/platoflow/platoflow-v1-nodes.md`, 2026-08-30, 56
 > workflows across 9 personas). This document records both the proposal and how
 > the brainstorms shaped it.
 

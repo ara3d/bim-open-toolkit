@@ -4,7 +4,7 @@
 > replacement for the PlatoFlow PoC (`platoflow/` remains reference material
 > until deleted). Product name **BimOpenFlow** is provisional; every other name
 > below is intended as final unless noted. Design inputs:
-> `platoflow/docs/platoflow-design-principles.md` (P0 agent velocity, P1 one
+> `docs/platoflow/platoflow-design-principles.md` (P0 agent velocity, P1 one
 > headless core) and `platoflow-graph-semantics.md` (analysis / graph / run
 > vocabulary).
 

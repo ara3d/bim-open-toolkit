@@ -4,7 +4,7 @@ Studio Graph is a browser-based dataflow editor for building models. You wire no
 canvas — load a model, filter it, join a spreadsheet, run a SQL query, pick a color ramp —
 and the connected 3D view, data grid and legend update live as you edit. It is a proof of
 concept built to test the ideas in the PlatoFlow × IFC design
-(`docs/platoflow-ifc-design.md`) before the real implementation starts.
+(`platoflow-ifc-design.md`) before the real implementation starts.
 
 **Maturity: throwaway prototype.** Built 2026-08-09, extended through 2026-08-20. Nothing
 here is load-bearing; the code exists to answer design questions, and the answers live in

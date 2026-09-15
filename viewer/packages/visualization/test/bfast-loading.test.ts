@@ -8,7 +8,7 @@ import { parseBosGeometry, readBimTable } from '@ara3d/viewer-loaders';
 
 afterEach(() => vi.unstubAllGlobals());
 const ref = { id: 'model', revision: 'bfast' };
-const duplex = fileURLToPath(new URL('../../../../platoflow/data/duplex.bos', import.meta.url));
+const duplex = fileURLToPath(new URL('../../../../data/duplex.bos', import.meta.url));
 it.skipIf(!existsSync(duplex))('restores all entity rows/source IDs and exposes lazy BIM data', async () => {
   const file = readFileSync(duplex), source = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength);
   const zip = await JSZip.loadAsync(source), bos = await parseBosGeometry(source);

@@ -18,7 +18,7 @@ vi.mock('hyparquet', async importOriginal => {
 });
 
 const bosPath = fileURLToPath(
-  new URL('../../../../platoflow/data/duplex.bos', import.meta.url),
+  new URL('../../../../data/duplex.bos', import.meta.url),
 );
 
 describe('BOS column chunks', () => {

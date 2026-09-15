@@ -100,5 +100,5 @@ The production writer and converter adapt `tests/writeBFast.mts` and
 
 `npm test` — vitest, node environment, no network and no GL. Conversion logic
 runs against hand-built glTF/BOS structures; a container integration test runs
-against `platoflow/data/duplex.bos` when that local test file exists and skips
+against `data/duplex.bos` when that local test file exists and skips
 otherwise.
