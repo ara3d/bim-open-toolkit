@@ -115,7 +115,7 @@ model, and each has its own setup guide:
 This is pre-release software under active development, assessed on 2026-09-13. Working
 and covered by tests:
 
-- The engine passes every conformance vector in `spec/dataflow-graph/`, which is what
+- The engine passes every conformance vector in `submodules/ara3d-dataflow/spec/dataflow-graph/`, which is what
   makes it the canonical implementation of the spec.
 - 41 NUnit test projects sit beside the 46 C# source projects. Twelve source projects
   have no test project of their own, mostly IO and loader layers exercised through
@@ -135,7 +135,7 @@ assessment from 2026-09-08.
 
 | Where | What |
 |---|---|
-| `spec/dataflow-graph/` | The normative graph specification and its conformance vectors |
+| `submodules/ara3d-dataflow/spec/dataflow-graph/` | The normative graph specification and its conformance vectors |
 | `contracts/` | Shared type definitions and the C#/TypeScript generator |
 | `src/` | 46 C# projects: engine, BIM data layer, node packs, host, MCP servers |
 | `tests/` | 41 NUnit test projects, including the spec conformance suite |

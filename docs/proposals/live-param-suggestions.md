@@ -23,7 +23,7 @@ affordance, never a constraint.
 
 ## 2. Why not specialized data types
 
-The stored value stays a canonical string (as `spec/dataflow-graph/format.md` §4
+The stored value stays a canonical string (as `submodules/ara3d-dataflow/spec/dataflow-graph/format.md` §4
 requires). Suggestion source is a separate, orthogonal piece of metadata. Two
 reasons:
 
@@ -40,7 +40,7 @@ reasons:
 
 ## 3. Declaring suggestion sources
 
-Extend `ParamSpec` (`src/Ara3D.DataFlowEngine.Abstractions/Params.cs`):
+Extend `ParamSpec` (`submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/Params.cs`):
 
 ```csharp
 record ParamSpec(string Name, ParamKind Kind, string Default = "",

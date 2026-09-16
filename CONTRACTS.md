@@ -37,22 +37,22 @@ Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES
 # Contracts — BimOpenFlow rewrite, waves 0–1 (2026-08-31)
 
 Implements `docs/bimopenflow-structure.md`. Wave 0 (landed by supervisor):
-`spec/dataflow-graph/` drafts (SPEC track), `contracts/` + codegen,
+`submodules/ara3d-dataflow/spec/dataflow-graph/` drafts (SPEC track), `contracts/` + codegen,
 `Ara3D.DataFlowEngine.Abstractions`, web workspace root + `@bimopenflow/contracts`.
 
 ## Fences (who writes where)
 
 Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES.md):
 `docs/bimopenflow-structure.md`, `contracts/**`,
-`src/Ara3D.DataFlowEngine.Abstractions/**`, `bimopenflow/web/package.json`,
+`submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/**`, `bimopenflow/web/package.json`,
 `bimopenflow/web/packages/contracts/**`, `BimOpenToolkit.sln`,
 `Directory.Build.props` (all), this doc.
 
 | Track | Writes only |
 |---|---|
-| SPEC | `spec/dataflow-graph/**` |
-| NG NodeGraph | `src/Ara3D.NodeGraph/**`, `tests/Ara3D.NodeGraph.Tests/**` |
-| EXP Expressions | `src/Ara3D.DataFlowEngine.Expressions/**`, `tests/Ara3D.DataFlowEngine.Expressions.Tests/**` |
+| SPEC | `submodules/ara3d-dataflow/spec/dataflow-graph/**` |
+| NG NodeGraph | `submodules/ara3d-dataflow/src/Ara3D.NodeGraph/**`, `submodules/ara3d-dataflow/tests/Ara3D.NodeGraph.Tests/**` |
+| EXP Expressions | `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Expressions/**`, `submodules/ara3d-dataflow/tests/Ara3D.DataFlowEngine.Expressions.Tests/**` |
 | DUCK DuckDb | `src/Ara3D.BimOpenSchema.DuckDb/**`, `tests/Ara3D.BimOpenSchema.DuckDb.Tests/**` |
 | VCORE viewer | `viewer/**` (whole workspace this wave, incl. its package.json + lockfile) |
 | VIZ viz | `bimopenflow/web/packages/viz/**` + may run `npm install` in `bimopenflow/web` and commit the lockfile |
@@ -99,7 +99,7 @@ Supervisor additionally owns: `bimopenflow/web/packages/api-client/**` (fully ge
 | Track | Writes only |
 |---|---|
 | EFF | `src/BimOpenFlow.Nodes.Effects/**`, `tests/BimOpenFlow.Nodes.Effects.Tests/**` |
-| MIG | `src/Ara3D.NodeGraph.Migrations/**`, `tests/Ara3D.NodeGraph.Migrations.Tests/**` |
+| MIG | `submodules/ara3d-dataflow/src/Ara3D.NodeGraph.Migrations/**`, `submodules/ara3d-dataflow/tests/Ara3D.NodeGraph.Migrations.Tests/**` |
 | CAT | `src/BimOpenFlow.Host.Catalog/**`, `tests/BimOpenFlow.Host.Catalog.Tests/**` |
 | STO | `src/BimOpenFlow.Host.Store/**`, `tests/BimOpenFlow.Host.Store.Tests/**` |
 | STATE | `bimopenflow/web/packages/state/**` + may run `npm install` in `bimopenflow/web` and commit the lockfile |
@@ -122,7 +122,7 @@ under samples/tables/.
 ## Fences (who writes where)
 
 Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES.md):
-`src/Ara3D.DataFlowEngine.Abstractions/**`, `src/Ara3D.DataFlowEngine/**`,
+`submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/**`, `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine/**`,
 `contracts/**`, `samples/tables/*.csv`, `BimOpenToolkit.sln`,
 `Directory.Build.props` (all), this doc.
 

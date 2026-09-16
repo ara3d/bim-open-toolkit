@@ -27,7 +27,7 @@
 ## Specification and contracts
 
 ### DataFlow Graph Specification
-**Location:** `spec/dataflow-graph/`
+**Location:** `submodules/ara3d-dataflow/spec/dataflow-graph/`
 The normative definition, partitioned into four separately versioned documents
 so spec+implementation pairs can evolve in parallel: `format.md` (the graph
 document: structure + values layers), `semantics.md` (evaluation: dirtiness,
@@ -52,7 +52,7 @@ sources with a small codegen step emitting C# into the host and TypeScript into
 ## Engine group (C#, BIM-free)
 
 ### Ara3D.DataFlowEngine.Abstractions
-**Location:** `src/Ara3D.DataFlowEngine.Abstractions/`
+**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/`
 The node SDK: node and port interfaces, the value/table types that flow along
 edges, capability declarations (pure vs. effectful, Run-gated), and the node
 registry. Deliberately tiny and stable — it is the contract every node pack
@@ -60,7 +60,7 @@ compiles against, so churn here is churn everywhere.
 **Depends on:** Ara3D.Utils, Ara3D.Collections, Ara3D.DataTable (vendored SDK).
 
 ### Ara3D.NodeGraph
-**Location:** `src/Ara3D.NodeGraph/`
+**Location:** `submodules/ara3d-dataflow/src/Ara3D.NodeGraph/`
 The graph *document* object model and the NodeGraph API: load/save/validate
 per the spec, plus transactional editing operations (add/remove/connect,
 undo/redo, structural validation against a node catalog). Knows nothing about
@@ -68,7 +68,7 @@ evaluation — it is what editors, agents, and the MCP surface manipulate.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions; Ara3D.Utils (vendored SDK).
 
 ### Ara3D.DataFlowEngine
-**Location:** `src/Ara3D.DataFlowEngine/`
+**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine/`
 The canonical evaluator: dependency scheduling, memoization, dirty propagation,
 and standing evaluation sessions that observers (panes, sinks) subscribe to.
 Executes any registered node vocabulary over a NodeGraph document; contains no
@@ -77,14 +77,14 @@ I/O and no BIM.
 Ara3D.DataTable (vendored SDK).
 
 ### Ara3D.DataFlowEngine.Expressions
-**Location:** `src/Ara3D.DataFlowEngine.Expressions/`
+**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Expressions/`
 The expression language used by derive/filter/what-if nodes: parser, type
 checker, and evaluator over the table/value types. Pure and dependency-light
 with a large test surface — ideal for an agent to own end-to-end.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions.
 
 ### Ara3D.DataFlowEngine.Runs
-**Location:** `src/Ara3D.DataFlowEngine.Runs/`
+**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Runs/`
 The definition-vs-run split made concrete: freezing an evaluation into a run
 record (graph hash + input hashes + outputs + timestamp), replay, and signing.
 Runs are the only artifact archived or submitted as evidence, and the input to
@@ -92,14 +92,14 @@ both generators below.
 **Depends on:** Ara3D.DataFlowEngine, Ara3D.NodeGraph.
 
 ### Ara3D.NodeGraph.Migrations
-**Location:** `src/Ara3D.NodeGraph.Migrations/`
+**Location:** `submodules/ara3d-dataflow/src/Ara3D.NodeGraph.Migrations/`
 Version-to-version graph document upgrades, driven by the spec's migration
 notes. Kept out of `Ara3D.NodeGraph` so handling old formats never complicates
 the current document model, and so migration work can proceed in its own fence.
 **Depends on:** Ara3D.NodeGraph.
 
 ### Ara3D.DataFlowEngine.TestKit
-**Location:** `src/Ara3D.DataFlowEngine.TestKit/`
+**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.TestKit/`
 Test infrastructure for everyone building on the engine: fluent graph
 builders, fake/probe nodes, and evaluation assertions. This is what makes
 every other agent's tests cheap to write, and what third-party node-pack
@@ -332,8 +332,8 @@ selection events; owns no scene content.
 ## Tests and gates
 
 ### Ara3D.DataFlowEngine.Conformance
-**Location:** `tests/Ara3D.DataFlowEngine.Conformance/`
-Runs every vector in `spec/dataflow-graph/conformance/` against the canonical
+**Location:** `submodules/ara3d-dataflow/tests/Ara3D.DataFlowEngine.Conformance/`
+Runs every vector in `submodules/ara3d-dataflow/spec/dataflow-graph/conformance/` against the canonical
 engine. This suite is the definition of "canonical" — it gates all engine
 changes and doubles as the acceptance test for any future second
 implementation.
@@ -360,7 +360,7 @@ gate, successor to the PoC's `tools/*.mjs`.
 
 ```mermaid
 graph BT
-  spec[spec/dataflow-graph]
+  spec[submodules/ara3d-dataflow/spec/dataflow-graph]
   contracts[contracts/]
   ABS[Ara3D.DataFlowEngine.Abstractions]
   NG[Ara3D.NodeGraph]

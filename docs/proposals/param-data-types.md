@@ -22,7 +22,7 @@ three-column table and stays one.
 
 **`ParamKind`** — how one authored value is edited and written down. Ten
 members today. The document layer stores every parameter as a canonical
-string (`spec/dataflow-graph/format/format.md` §4); `ParamKind` says how to
+string (`submodules/ara3d-dataflow/spec/dataflow-graph/format/format.md` §4); `ParamKind` says how to
 parse that string and which editor to show. Adding one costs:
 
 1. a row in the spec's canonical-form table,

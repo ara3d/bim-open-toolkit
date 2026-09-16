@@ -31,23 +31,23 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Ifc.Mcp.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Ifc.Tests", "tests\Ara3D.Ifc.Tests\Ara3D.Ifc.Tests.csproj", "{5AF4B320-3FBB-4402-951D-931140B52C57}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Abstractions", "src\Ara3D.DataFlowEngine.Abstractions\Ara3D.DataFlowEngine.Abstractions.csproj", "{89AEF883-9DD0-42E5-B744-B6AD805986AC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Abstractions", "submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.Abstractions\Ara3D.DataFlowEngine.Abstractions.csproj", "{89AEF883-9DD0-42E5-B744-B6AD805986AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph", "src\Ara3D.NodeGraph\Ara3D.NodeGraph.csproj", "{970AC0AD-EA8F-45FD-9DC7-3029C7C1B067}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph", "submodules\ara3d-dataflow\src\Ara3D.NodeGraph\Ara3D.NodeGraph.csproj", "{970AC0AD-EA8F-45FD-9DC7-3029C7C1B067}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Tests", "tests\Ara3D.NodeGraph.Tests\Ara3D.NodeGraph.Tests.csproj", "{5A7B130D-AFBA-48AF-9DD9-775A69CD9CDF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Tests", "submodules\ara3d-dataflow\tests\Ara3D.NodeGraph.Tests\Ara3D.NodeGraph.Tests.csproj", "{5A7B130D-AFBA-48AF-9DD9-775A69CD9CDF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.DuckDb", "src\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj", "{D4251F96-F6DF-446C-BCDE-AE54E90F6B1E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.DuckDb.Tests", "tests\Ara3D.BimOpenSchema.DuckDb.Tests\Ara3D.BimOpenSchema.DuckDb.Tests.csproj", "{ECD47E01-AA59-4EBA-AEBB-1916B02C3221}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Expressions", "src\Ara3D.DataFlowEngine.Expressions\Ara3D.DataFlowEngine.Expressions.csproj", "{5604D6C4-9F84-4AFD-B564-1120C1AB3CF2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Expressions", "submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.Expressions\Ara3D.DataFlowEngine.Expressions.csproj", "{5604D6C4-9F84-4AFD-B564-1120C1AB3CF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Expressions.Tests", "tests\Ara3D.DataFlowEngine.Expressions.Tests\Ara3D.DataFlowEngine.Expressions.Tests.csproj", "{55332ADE-C890-42E2-9527-7BA418362DDD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Expressions.Tests", "submodules\ara3d-dataflow\tests\Ara3D.DataFlowEngine.Expressions.Tests\Ara3D.DataFlowEngine.Expressions.Tests.csproj", "{55332ADE-C890-42E2-9527-7BA418362DDD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine", "src\Ara3D.DataFlowEngine\Ara3D.DataFlowEngine.csproj", "{FA30FE19-97D1-4E84-A37B-C9D3C2B15DCC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine", "submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine\Ara3D.DataFlowEngine.csproj", "{FA30FE19-97D1-4E84-A37B-C9D3C2B15DCC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Tests", "tests\Ara3D.DataFlowEngine.Tests\Ara3D.DataFlowEngine.Tests.csproj", "{980A2E76-EC97-4A68-A388-830C1ED1F914}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Tests", "submodules\ara3d-dataflow\tests\Ara3D.DataFlowEngine.Tests\Ara3D.DataFlowEngine.Tests.csproj", "{980A2E76-EC97-4A68-A388-830C1ED1F914}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Nodes.Compliance", "src\BimOpenFlow.Nodes.Compliance\BimOpenFlow.Nodes.Compliance.csproj", "{5CC75C0E-7862-4717-A1E7-87A13A4C7141}"
 EndProject
@@ -61,19 +61,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Nodes.Bos", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Nodes.Bos.Tests", "tests\BimOpenFlow.Nodes.Bos.Tests\BimOpenFlow.Nodes.Bos.Tests.csproj", "{33B2F869-8A84-4EEF-8814-80EF78AE6C99}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.TestKit", "src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj", "{8F0147F4-DE76-463D-82A6-9DE2D38D9205}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.TestKit", "submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj", "{8F0147F4-DE76-463D-82A6-9DE2D38D9205}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.TestKit.Tests", "tests\Ara3D.DataFlowEngine.TestKit.Tests\Ara3D.DataFlowEngine.TestKit.Tests.csproj", "{B7FCE7CB-1C88-4C61-BE72-1E90CFB68C08}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.TestKit.Tests", "submodules\ara3d-dataflow\tests\Ara3D.DataFlowEngine.TestKit.Tests\Ara3D.DataFlowEngine.TestKit.Tests.csproj", "{B7FCE7CB-1C88-4C61-BE72-1E90CFB68C08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Conformance", "tests\Ara3D.DataFlowEngine.Conformance\Ara3D.DataFlowEngine.Conformance.csproj", "{68884AF1-4A8C-4FE7-92D6-785439EE822B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Conformance", "submodules\ara3d-dataflow\tests\Ara3D.DataFlowEngine.Conformance\Ara3D.DataFlowEngine.Conformance.csproj", "{68884AF1-4A8C-4FE7-92D6-785439EE822B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Runs", "src\Ara3D.DataFlowEngine.Runs\Ara3D.DataFlowEngine.Runs.csproj", "{6C1B3746-1DBB-4E5E-868C-403231DCF725}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Runs", "submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.Runs\Ara3D.DataFlowEngine.Runs.csproj", "{6C1B3746-1DBB-4E5E-868C-403231DCF725}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Runs.Tests", "tests\Ara3D.DataFlowEngine.Runs.Tests\Ara3D.DataFlowEngine.Runs.Tests.csproj", "{C892C565-386D-4D7A-8575-819348DE6B25}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataFlowEngine.Runs.Tests", "submodules\ara3d-dataflow\tests\Ara3D.DataFlowEngine.Runs.Tests\Ara3D.DataFlowEngine.Runs.Tests.csproj", "{C892C565-386D-4D7A-8575-819348DE6B25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Migrations", "src\Ara3D.NodeGraph.Migrations\Ara3D.NodeGraph.Migrations.csproj", "{46EB9BBC-6BBB-4E1B-A2A7-CFA52AA938DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Migrations", "submodules\ara3d-dataflow\src\Ara3D.NodeGraph.Migrations\Ara3D.NodeGraph.Migrations.csproj", "{46EB9BBC-6BBB-4E1B-A2A7-CFA52AA938DA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Migrations.Tests", "tests\Ara3D.NodeGraph.Migrations.Tests\Ara3D.NodeGraph.Migrations.Tests.csproj", "{A9D99397-4246-49C3-984A-46DA5E501EE9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Migrations.Tests", "submodules\ara3d-dataflow\tests\Ara3D.NodeGraph.Migrations.Tests\Ara3D.NodeGraph.Migrations.Tests.csproj", "{A9D99397-4246-49C3-984A-46DA5E501EE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Host.Catalog", "src\BimOpenFlow.Host.Catalog\BimOpenFlow.Host.Catalog.csproj", "{60C9151D-3E34-41C5-A8E1-4710BD758639}"
 EndProject

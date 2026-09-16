@@ -67,7 +67,7 @@ descriptors, shared enums. Edit `contracts/contracts.json`, run the generator, a
 the C# host and the TypeScript client are regenerated. Types are never hand-copied
 across the language boundary.
 
-### 2. Engine — `src/Ara3D.DataFlowEngine*`, `src/Ara3D.NodeGraph*`
+### 2. Engine — `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine*`, `submodules/ara3d-dataflow/src/Ara3D.NodeGraph*`
 
 Contains no BIM whatsoever, and is a candidate to graduate to its own repo.
 
