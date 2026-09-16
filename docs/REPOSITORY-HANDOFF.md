@@ -362,7 +362,7 @@ PoC READMEs still show `ara3d-sdk/wip/...` paths. Current C# project references 
 
 | Dependency | Current relationship | Handoff consequence |
 |---|---|---|
-| [Vendored Ara3D SDK](../vendor/) | Local NuGet feed; SDK version `1.6.2-local` in [central props](../Directory.Build.props) | Package bytes must travel with the repo; do not substitute an identically named public version without verification |
+| [Ara3D SDK submodule](../submodules/ara3d-sdk/) | Built from source at the pinned commit; [Directory.Build.targets](../Directory.Build.targets) maps `Ara3D.*` package references to project references | nuget.org 1.6.1 is older than the pinned commit, so standalone submodule builds that fall back to it may miss newer APIs |
 | [Gratify submodule](../submodules/gratify/) | Shared canvas UI; consumed through source aliases and build output | Clone recursively and document upstream revision. It is used by old and new surfaces |
 | Three.js | Current viewer/editor use 0.185-range declarations; PoC uses 0.169 with `@ara3d/ara3d-webgl` | Another reason to isolate the PoC. Source aliases/hoisting are not proof that published packages have complete dependency declarations |
 | `Platonic.CSharp` sibling | Supplies Core/Analyzers packages for newer data/model work | `PlatonicRoot` override or a pinned feed is required on another machine; analyzers are intentionally mandatory |

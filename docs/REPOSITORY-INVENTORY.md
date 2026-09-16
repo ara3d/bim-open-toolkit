@@ -116,7 +116,7 @@ Install from `bimopenflow/web/`; use `npm run <script> -w <package-name>` where 
 | [Query-platform proposal](proposals/bim-query-platform/PLAN.md) and [contract](proposals/bim-query-platform/contract/README.md) | Semantic design and generated review material | Some concepts became the core model; broader service/performance claims remain proposals |
 | [Other proposals](proposals/) | Node vocabulary, parameter suggestions/types, UX and agent workflow design | Design inputs; existence of prose does not establish implementation |
 | [PlatoFlow design record](platoflow/README.md) | Notes and design documents from the deleted Studio Graph prototype (code in git history before 2026-09-15) | Older renderer/UI/runtime assumptions; the README lists features not yet ported |
-| [Data](../data/README.md), [vendor](../vendor/), [Gratify](../submodules/gratify/) | Fixtures, SDK package feed, UI submodule | Different provisioning/versioning rules; data/get-test-data copies a sibling repo |
+| [Data](../data/README.md), [ara3d-sdk](../submodules/ara3d-sdk/), [Gratify](../submodules/gratify/) | Fixtures, SDK source submodule, UI submodule | Different provisioning/versioning rules; data/get-test-data copies a sibling repo |
 | [Progress notes](../progress-notes/) and [CONTRACTS](../CONTRACTS.md) | Historical integration/ownership context | Reconcile before treating an old track assignment as current |
 | `artifacts/`, `viewer/artifacts/`, package artifacts | Generated files, test evidence, prepared private fixtures and parked unfinished work | Mostly ignored; inventory and recover drafts before deleting; do not assume a clone contains them |
 

@@ -7,3 +7,6 @@
 [submodule "submodules/bim-open-schema"]
 	path = submodules/bim-open-schema
 	url = https://github.com/ara3d/bim-open-schema
+[submodule "submodules/ara3d-sdk"]
+	path = submodules/ara3d-sdk
+	url = https://github.com/ara3d/ara3d-sdk

@@ -144,7 +144,7 @@ assessment from 2026-09-08.
 | `samples/` | Runnable sample analyses: tables, BIM, and 3D, with sample data |
 | `gates/` | Headless integration smoke checks |
 | `docs/` | Architecture, design decisions, demo guides, and the generated [node reference](docs/nodes.md) |
-| `vendor/` | Vendored general-purpose Ara3D.SDK NuGet packages |
+| `submodules/ara3d-sdk` | The Ara3D SDK, built from source; `Directory.Build.targets` turns every `Ara3D.*` package reference into a project reference into it |
 | `submodules/gratify` | The Gratify canvas UI library (git submodule) |
 | `data/` | Test fixtures, not committed; populate with `./data/get-test-data.ps1` |
 
