@@ -4,3 +4,6 @@
 [submodule "submodules/ara3d-dataflow"]
 	path = submodules/ara3d-dataflow
 	url = https://github.com/ara3d/ara3d-dataflow
+[submodule "submodules/bim-open-schema"]
+	path = submodules/bim-open-schema
+	url = https://github.com/ara3d/bim-open-schema

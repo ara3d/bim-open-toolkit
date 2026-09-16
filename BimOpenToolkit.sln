@@ -5,11 +5,11 @@ VisualStudioVersion = 18.9.12120.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.Harmonizer", "src\Ara3D.BimOpenSchema.Harmonizer\Ara3D.BimOpenSchema.Harmonizer.csproj", "{D04ACAAB-2648-4081-8CCF-AF2C5E3EE029}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.Harmonizer", "submodules\bim-open-schema\src\Ara3D.BimOpenSchema.Harmonizer\Ara3D.BimOpenSchema.Harmonizer.csproj", "{D04ACAAB-2648-4081-8CCF-AF2C5E3EE029}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema", "src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj", "{2BFA32ED-D019-4F7E-B282-09932C67CEE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema", "submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj", "{2BFA32ED-D019-4F7E-B282-09932C67CEE7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.IO", "src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj", "{AB404EB2-E055-4F7B-A1C1-9E3D6A839CF7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.IO", "submodules\bim-open-schema\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj", "{AB404EB2-E055-4F7B-A1C1-9E3D6A839CF7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IfcLoader", "src\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj", "{E0B72FA9-A47A-4B10-BCE8-A5FE1E1B6968}"
 EndProject
@@ -37,7 +37,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph", "submodul
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Tests", "submodules\ara3d-dataflow\tests\Ara3D.NodeGraph.Tests\Ara3D.NodeGraph.Tests.csproj", "{5A7B130D-AFBA-48AF-9DD9-775A69CD9CDF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.DuckDb", "src\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj", "{D4251F96-F6DF-446C-BCDE-AE54E90F6B1E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.DuckDb", "submodules\bim-open-schema\src\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj", "{D4251F96-F6DF-446C-BCDE-AE54E90F6B1E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.DuckDb.Tests", "tests\Ara3D.BimOpenSchema.DuckDb.Tests\Ara3D.BimOpenSchema.DuckDb.Tests.csproj", "{ECD47E01-AA59-4EBA-AEBB-1916B02C3221}"
 EndProject

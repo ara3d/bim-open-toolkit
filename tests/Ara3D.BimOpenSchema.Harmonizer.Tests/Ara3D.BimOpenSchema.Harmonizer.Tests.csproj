@@ -18,11 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.Harmonizer\Ara3D.BimOpenSchema.Harmonizer.csproj" />
-    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema.Harmonizer\Ara3D.BimOpenSchema.Harmonizer.csproj" />
+    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
     <ProjectReference Include="..\..\src\Ara3D.Ifc.Bos\Ara3D.Ifc.Bos.csproj" />
     <ProjectReference Include="..\..\src\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
-    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
   </ItemGroup>
 
   <ItemGroup>

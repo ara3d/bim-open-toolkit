@@ -100,8 +100,7 @@ Install from `bimopenflow/web/`; use `npm run <script> -w <package-name>` where 
 | Entry | Purpose / status | Dependencies / next action |
 |---|---|---|
 | [BimOpenToolkit.sln](../BimOpenToolkit.sln) | Main engine/BIM/host/test solution, also carries historical code | Windows/native prerequisites; not a substitute for the two newer data-model build roots |
-| [BimBuildingModel.sln](../BimBuildingModel.sln) | Core model, source/mapping/IO/DuckDB, workflow CLI, tests and earlier generated review contracts | Platonic.CSharp packages; earlier generated contracts are review/reference projects, not the canonical core |
-| [BimDataModel.slnx](../BimDataModel.slnx) | Source-snapshot model, IO and tests | Documented .NET 10 SDK/Platonic setup |
+| [BimOpenSchema.slnx](../submodules/bim-open-schema/BimOpenSchema.slnx) | The BIM Open Schema submodule: core, IO, DuckDb, Harmonizer, DataModel, BuildingModel and their tests (replaces BimBuildingModel.sln and BimDataModel.slnx) | Platonic.CSharp packages; earlier generated contracts are review/reference projects, not the canonical core |
 | [Core workflow CLI](../tools/building-model-workflows/README.md) | prepare/run/reopen/export-duckdb/compare/portfolio | BOS source, .NET cache, mapped projection; do not substitute browser BFAST |
 | [Source probe](../tools/building-model-source-probe/Program.cs) | Produces source cache, descriptor/category/identity/relation/timing profiles | Diagnostic executable; outputs go under ignored artifacts |
 | [DataModel test runner](../tools/bim-data-model/README.md) | Small/large/local-sample suites and analyzer verification | Platonic.CSharp and optional local BOS samples |

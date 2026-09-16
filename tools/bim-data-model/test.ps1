@@ -12,7 +12,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-$project = Join-Path $repository 'tests/Ara3D.BimOpenSchema.DataModel.Tests/Ara3D.BimOpenSchema.DataModel.Tests.csproj'
+$project = Join-Path $repository 'submodules/bim-open-schema/tests/Ara3D.BimOpenSchema.DataModel.Tests/Ara3D.BimOpenSchema.DataModel.Tests.csproj'
 $outputDirectory = Join-Path $repository ('artifacts/bim-data-model/' + [Guid]::NewGuid().ToString('N'))
 $conditions = @()
 switch ($Suite)

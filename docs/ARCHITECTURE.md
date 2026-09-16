@@ -84,7 +84,7 @@ Contains no BIM whatsoever, and is a candidate to graduate to its own repo.
 Five value kinds travel on edges: Boolean, Integer, Number, Text, and **Table**. Tables
 are the currency; almost everything useful is an immutable table flowing between nodes.
 
-### 3. BIM data — `src/Ara3D.BimOpenSchema*`, `src/Ara3D.Ifc*`
+### 3. BIM data — `submodules/bim-open-schema/src/Ara3D.BimOpenSchema*`, `src/Ara3D.Ifc*`
 
 **BIM Open Schema** is the model. The problem it solves: BIM data is locked behind
 per-tool APIs, and the exchange formats that exist are shaped for geometry interchange,

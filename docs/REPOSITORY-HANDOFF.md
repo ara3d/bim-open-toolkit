@@ -333,8 +333,8 @@ Open [selection with a small fixture](http://127.0.0.1:5173/?feature=selection&m
 First satisfy the [Platonic.CSharp dependency setup](../tools/bim-data-model/README.md). These commands use the **.NET source cache**, not the browser BFAST:
 
 ```powershell
-dotnet restore BimBuildingModel.sln
-dotnet build BimBuildingModel.sln --no-restore
+dotnet restore submodules/bim-open-schema/BimOpenSchema.slnx
+dotnet build submodules/bim-open-schema/BimOpenSchema.slnx --no-restore
 dotnet run --project tools/building-model-workflows -- prepare 'C:/path/Snowdon.bos' artifacts/handoff/source-cache.bfast
 dotnet run --project tools/building-model-workflows -- run artifacts/handoff/source-cache.bfast artifacts/handoff/source-reports
 dotnet run --project tools/building-model-workflows -- export-duckdb artifacts/handoff/source-cache.bfast artifacts/handoff/core.duckdb

@@ -13,7 +13,7 @@ Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES
 | Track | Writes only |
 |---|---|
 | A tiers 0–1 | `src/Ara3D.Utils/**`, `src/Ara3D.Memory/**`, `src/Ara3D.Collections/**`, `src/Ara3D.Logging/**`, `src/Ara3D.F8/**`, `src/Ara3D.PropKit/**`, `src/Ara3D.Geometry/**`, `src/Ara3D.DataTable/**`, `src/Ara3D.IO.BFAST/**`, `src/Ara3D.IO.StepParser/**`, `src/Ara3D.Models/**` |
-| B tier 2 | `src/Ara3D.BimOpenSchema/**`, `src/Ara3D.BimOpenSchema.IO/**`, `src/Ara3D.BimOpenSchema.Harmonizer/**`, `src/Ara3D.IfcLoader/**`, `src/Ara3D.IfcTypes/**`, `src/Ara3D.Ifc.Mesher/**`, `src/Ara3D.IO.GltfExporter/**`, `src/Ara3D.Ifc.Editing/**` |
+| B tier 2 | `submodules/bim-open-schema/src/Ara3D.BimOpenSchema/**`, `submodules/bim-open-schema/src/Ara3D.BimOpenSchema.IO/**`, `submodules/bim-open-schema/src/Ara3D.BimOpenSchema.Harmonizer/**`, `src/Ara3D.IfcLoader/**`, `src/Ara3D.IfcTypes/**`, `src/Ara3D.Ifc.Mesher/**`, `src/Ara3D.IO.GltfExporter/**`, `src/Ara3D.Ifc.Editing/**` |
 | C tiers 3–4 | `src/Ara3D.MCP/**`, `src/Ara3D.Ifc.Mcp/**`, `tests/**` (except tests/Directory.Build.props) |
 | S supervisor | everything else; solution file; integration + full gate |
 
@@ -53,7 +53,7 @@ Supervisor-owned (tracks READ only; request smallest unblocking change via NOTES
 | SPEC | `submodules/ara3d-dataflow/spec/dataflow-graph/**` |
 | NG NodeGraph | `submodules/ara3d-dataflow/src/Ara3D.NodeGraph/**`, `submodules/ara3d-dataflow/tests/Ara3D.NodeGraph.Tests/**` |
 | EXP Expressions | `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Expressions/**`, `submodules/ara3d-dataflow/tests/Ara3D.DataFlowEngine.Expressions.Tests/**` |
-| DUCK DuckDb | `src/Ara3D.BimOpenSchema.DuckDb/**`, `tests/Ara3D.BimOpenSchema.DuckDb.Tests/**` |
+| DUCK DuckDb | `submodules/bim-open-schema/src/Ara3D.BimOpenSchema.DuckDb/**`, `tests/Ara3D.BimOpenSchema.DuckDb.Tests/**` |
 | VCORE viewer | `viewer/**` (whole workspace this wave, incl. its package.json + lockfile) |
 | VIZ viz | `bimopenflow/web/packages/viz/**` + may run `npm install` in `bimopenflow/web` and commit the lockfile |
 | S supervisor | everything else; sln membership; integration + full gate |

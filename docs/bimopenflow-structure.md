@@ -111,7 +111,7 @@ authors test against; shipped as a real package, not test-project internals.
 ## BIM data layer (C#)
 
 ### Ara3D.BimOpenSchema.DuckDb
-**Location:** `src/Ara3D.BimOpenSchema.DuckDb/`
+**Location:** `submodules/bim-open-schema/src/Ara3D.BimOpenSchema.DuckDb/`
 The DuckDB view/query layer over BOS (`CreateViews`: EntityText, ParameterText,
 RelationText — today buried in the PoC's MCP project; fix-on-entry item 2).
 A dedicated project so the DuckDB native dependency is isolated here instead of
