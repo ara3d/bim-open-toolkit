@@ -6,8 +6,10 @@ IFC stack. Nothing here references `src/flow` or `src/mcp`; those build on this.
 | Project | Role |
 |---|---|
 | `Ara3D.BimOpenSchema.ObjectModel` | Builders, accessors, and a navigable object graph over the spec types (the `bim-open-schema` submodule) |
-| `Ara3D.BimOpenSchema.IO` | Reading and writing `.bos` archives, with Excel, DuckDB, and BFAST export |
-| `Ara3D.BimOpenSchema.DuckDb` | Loading BOS into DuckDB, views, and queries |
+| `Ara3D.BimOpenSchema.IO` | Reading and writing `.bos` archives (Parquet in a zip); Parquet.Net is its only external dependency |
+| `Ara3D.BimOpenSchema.IO.Export` | Excel, CSV, Markdown, HTML, and SQLite exports of a table |
+| `Ara3D.BimOpenSchema.IO.Bfast` | BFAST serialization of BOS data |
+| `Ara3D.BimOpenSchema.DuckDb` | Loading BOS into DuckDB, views, queries, and the DuckDB table helpers |
 | `Ara3D.BimOpenSchema.Harmonizer` | Canonical names and SI units across models from different tools |
 | `Ara3D.BimOpenSchema.DataModel`, `.DataModel.IO` | Relational snapshot model with validation and spatial index |
 | `Ara3D.BimOpenSchema.BuildingModel`, `.Source`, `.Workflows`, `.Workflows.IO`, `.DuckDb` | Typed building model with source mapping and DuckDB projection |

@@ -2,16 +2,13 @@
 
   <PropertyGroup>
     <PackageId>Ara3D.BimOpenSchema.IO</PackageId>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>Reading and writing BIM Open Schema archives: Parquet tables in a zip.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Ara3D.Logging" Version="$(Ara3DSdkVersion)" />
-    <PackageReference Include="ClosedXML" Version="$(Ara3DClosedXmlVersion)" />
-    <PackageReference Include="DuckDB.NET.Data.Full" Version="$(Ara3DDuckDbNetDataFullVersion)" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="$(Ara3DMicrosoftDataSqliteVersion)" />
     <PackageReference Include="Parquet.Net" Version="$(Ara3DParquetNetVersion)" />
   </ItemGroup>
 

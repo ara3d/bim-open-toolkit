@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>BFAST serialization of BIM Open Schema data.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ara3D.Collections" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.IO.BFAST" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Memory" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../submodules/bim-open-schema/src/Ara3D.BimOpenSchema/Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="../Ara3D.BimOpenSchema.ObjectModel/Ara3D.BimOpenSchema.ObjectModel.csproj" />
+  </ItemGroup>
+
+</Project>

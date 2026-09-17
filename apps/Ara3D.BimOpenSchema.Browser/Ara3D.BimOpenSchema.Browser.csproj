@@ -21,6 +21,8 @@
   <ItemGroup>
     <PackageReference Include="Ara3D.IO.GltfExporter" Version="$(Ara3DSdkVersion)" />
     <ProjectReference Include="..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\src\data\Ara3D.BimOpenSchema.IO.Export\Ara3D.BimOpenSchema.IO.Export.csproj" />
+    <ProjectReference Include="..\..\src\data\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj" />
     <PackageReference Include="Ara3D.Utils.Wpf" Version="$(Ara3DSdkVersion)" />
   </ItemGroup>
 

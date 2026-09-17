@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Description>Exports of a data table to Excel, CSV, Markdown, HTML, and SQLite.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ara3D.DataTable" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="ClosedXML" Version="$(Ara3DClosedXmlVersion)" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="$(Ara3DMicrosoftDataSqliteVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../submodules/bim-open-schema/src/Ara3D.BimOpenSchema/Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="../Ara3D.BimOpenSchema.ObjectModel/Ara3D.BimOpenSchema.ObjectModel.csproj" />
+  </ItemGroup>
+
+</Project>

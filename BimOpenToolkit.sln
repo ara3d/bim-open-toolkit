@@ -287,6 +287,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Studio.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenToolkit.Layering.Tests", "tests\BimOpenToolkit.Layering.Tests\BimOpenToolkit.Layering.Tests.csproj", "{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.IO.Export", "src\data\Ara3D.BimOpenSchema.IO.Export\Ara3D.BimOpenSchema.IO.Export.csproj", "{34634394-2039-47EE-B009-C280268EEDEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.IO.Bfast", "src\data\Ara3D.BimOpenSchema.IO.Bfast\Ara3D.BimOpenSchema.IO.Bfast.csproj", "{8E7F774E-B755-4915-931E-C6CF1510A666}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1797,6 +1801,30 @@ Global
 		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|x64.Build.0 = Release|Any CPU
 		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|x86.ActiveCfg = Release|Any CPU
 		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|x86.Build.0 = Release|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Debug|x64.Build.0 = Debug|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Debug|x86.Build.0 = Debug|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Release|x64.ActiveCfg = Release|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Release|x64.Build.0 = Release|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Release|x86.ActiveCfg = Release|Any CPU
+		{34634394-2039-47EE-B009-C280268EEDEE}.Release|x86.Build.0 = Release|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Debug|x64.Build.0 = Debug|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Debug|x86.Build.0 = Debug|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Release|x64.ActiveCfg = Release|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Release|x64.Build.0 = Release|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Release|x86.ActiveCfg = Release|Any CPU
+		{8E7F774E-B755-4915-931E-C6CF1510A666}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1935,6 +1963,8 @@ Global
 		{AFA35269-1A08-DE98-9883-2602CF94763E} = {E7FC634A-46D6-8D60-CF2F-7736DEAAEBAC}
 		{B6C93981-F54A-4C37-9362-520CBA71B02C} = {AFA35269-1A08-DE98-9883-2602CF94763E}
 		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{34634394-2039-47EE-B009-C280268EEDEE} = {C46823FC-942A-1FCC-CF24-8E351A967A5B}
+		{8E7F774E-B755-4915-931E-C6CF1510A666} = {C46823FC-942A-1FCC-CF24-8E351A967A5B}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Ara3D.IfcTypes\Ara3D.IfcTypes.projitems*{e0b72fa9-a47a-4b10-bce8-a5fe1e1b6968}*SharedItemsImports = 5
