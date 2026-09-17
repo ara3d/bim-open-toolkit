@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.9.12120.119
@@ -284,6 +284,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AFA35269-1A08-DE98-9883-2602CF94763E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Studio.Tests", "tests\studio\BimOpenFlow.Studio.Tests\BimOpenFlow.Studio.Tests.csproj", "{B6C93981-F54A-4C37-9362-520CBA71B02C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenToolkit.Layering.Tests", "tests\BimOpenToolkit.Layering.Tests\BimOpenToolkit.Layering.Tests.csproj", "{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1783,6 +1785,18 @@ Global
 		{B6C93981-F54A-4C37-9362-520CBA71B02C}.Release|x64.Build.0 = Release|Any CPU
 		{B6C93981-F54A-4C37-9362-520CBA71B02C}.Release|x86.ActiveCfg = Release|Any CPU
 		{B6C93981-F54A-4C37-9362-520CBA71B02C}.Release|x86.Build.0 = Release|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Debug|x64.Build.0 = Debug|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Debug|x86.Build.0 = Debug|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|x64.ActiveCfg = Release|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|x64.Build.0 = Release|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|x86.ActiveCfg = Release|Any CPU
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1920,6 +1934,7 @@ Global
 		{3BEE42A9-B7F1-4926-8BA4-93ECECF04A07} = {5CD3AC2F-0D70-4AB2-2566-A29D002FBCA4}
 		{AFA35269-1A08-DE98-9883-2602CF94763E} = {E7FC634A-46D6-8D60-CF2F-7736DEAAEBAC}
 		{B6C93981-F54A-4C37-9362-520CBA71B02C} = {AFA35269-1A08-DE98-9883-2602CF94763E}
+		{82D083D8-7C4D-4F3A-B33C-F7831DCA19D6} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Ara3D.IfcTypes\Ara3D.IfcTypes.projitems*{e0b72fa9-a47a-4b10-bce8-a5fe1e1b6968}*SharedItemsImports = 5
