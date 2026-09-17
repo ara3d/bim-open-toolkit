@@ -16,7 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
     <PackageReference Include="Ara3D.IO.PLY" Version="$(Ara3DSdkVersion)" />
-    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
     <ProjectReference Include="..\Ara3D.Bowerbird.Revit2025\Ara3D.Bowerbird.Revit2025.csproj" />
     <ProjectReference Include="..\..\submodules\ara3d-sdk\plugins\Ara3D.Bowerbird\Ara3D.Bowerbird.csproj" />
   </ItemGroup>

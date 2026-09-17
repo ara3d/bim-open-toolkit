@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Ara3D.IO.GltfExporter" Version="$(Ara3DSdkVersion)" />
-    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
     <PackageReference Include="Ara3D.Utils.Wpf" Version="$(Ara3DSdkVersion)" />
   </ItemGroup>
 
