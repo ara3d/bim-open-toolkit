@@ -2,6 +2,7 @@
 using System.Text;
 using Ara3D.Parakeet;
 using Ara3D.Parakeet.Grammars;
+using Ara3D.Parakeet.Tests;
 using Ara3D.Utils;
 
 namespace Ara3D.IfcTypeGen;
@@ -16,27 +17,17 @@ public record IfcEntity(string Name, string SubType, IReadOnlyList<IfcAttribute>
 public record IfcSchema(IReadOnlyList<IfcEntity> Entities, IReadOnlyList<IIfcTypeDecl> Decls);
 
 /// <summary>
-/// Generates the Ara3D.IfcTypes source from the buildingSMART EXPRESS schema files.
-/// The folder holding IFC2X3.exp, IFC4.exp, and IFC4X3.exp is read from the
-/// IFC_EXPRESS_DIR environment variable; the files are not committed.
+/// Generates the Ara3D.IfcTypes source from the buildingSMART EXPRESS schema files
+/// that ship with the Parakeet submodule (submodules/parakeet/input/exp).
 /// </summary>
 public static class IfcCodeGenTest
 {
-    public const string ExpressDirVariable = "IFC_EXPRESS_DIR";
-
-    public static ParserInput ExpressFile(string name)
-    {
-        var dir = Environment.GetEnvironmentVariable(ExpressDirVariable)
-            ?? throw new InvalidOperationException($"Set {ExpressDirVariable} to the folder holding the IFC .exp schema files");
-        return ParserInput.FromFile(Path.Combine(dir, name));
-    }
-
     [Test, Explicit]
     public static void TestGenerate()
     {
-        var pi2x3 = ExpressFile("IFC2X3.exp");
-        var pi4 = ExpressFile("IFC4.exp");
-        var pi4x3 = ExpressFile("IFC4X3.exp");
+        var pi2x3 = ExpressTests.GetIfc2x3ExpressFileAsParserInput();
+        var pi4 = ExpressTests.GetIfc4ExpressFileAsParserInput();
+        var pi4x3 = ExpressTests.GetIfc4x3ExpressFileAsParserInput();
 
         Generate(pi2x3, "Ifc2x3");
         Generate(pi4, "Ifc4");

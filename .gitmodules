@@ -10,3 +10,6 @@
 [submodule "submodules/ara3d-sdk"]
 	path = submodules/ara3d-sdk
 	url = https://github.com/ara3d/ara3d-sdk
+[submodule "submodules/parakeet"]
+	path = submodules/parakeet
+	url = https://github.com/ara3d/parakeet
