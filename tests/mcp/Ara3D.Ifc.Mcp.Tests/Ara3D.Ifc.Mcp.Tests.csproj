@@ -2,12 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <PlatformTarget>x64</PlatformTarget>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <RootNamespace>BimOpenFlow.Studio.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BimOpenFlow.Studio\BimOpenFlow.Studio.csproj" />
+    <ProjectReference Include="..\..\..\src\mcp\Ara3D.Ifc.Mcp\Ara3D.Ifc.Mcp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
