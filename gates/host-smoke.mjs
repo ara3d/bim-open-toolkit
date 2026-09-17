@@ -86,7 +86,7 @@ const run = async () => {
   console.log("unknown model bytes -> 404");
 };
 
-const child = spawn("dotnet", ["run", "--project", join(root, "src", "BimOpenFlow.Host"), "--",
+const child = spawn("dotnet", ["run", "--project", join(root, "src", "flow", "BimOpenFlow.Host"), "--",
   "--port", String(port),
   "--models", join(work, "models"),
   "--cache", join(work, "cache"),

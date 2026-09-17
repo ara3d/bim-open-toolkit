@@ -7,7 +7,7 @@
       "runtimeArgs": [
         "run",
         "--project",
-        "src/BimOpenFlow.Host",
+        "src/flow/BimOpenFlow.Host",
         "--no-build",
         "--",
         "--port",
