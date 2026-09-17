@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Revit_All_Main_Versions_API_x64" Version="$(Ara3DRevitAllMainVersionsApiX64Version)" />
+    <Content Include="ara3d.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="ara3d-32x32.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="$(Ara3DNewtonsoftJsonVersion)" />
+    <PackageReference Include="System.Drawing.Common" Version="$(Ara3DSystemDrawingCommonVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(Ara3DSystemRuntimeLoaderVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="..\..\plugins\Ara3D.Bowerbird.Revit2025\Ara3D.Bowerbird.Revit2025.csproj" />
+    <ProjectReference Include="..\..\plugins\Ara3D.Bowerbird.RevitSamples\Ara3D.Bowerbird.RevitSamples.csproj" />
+  </ItemGroup>
+
+  <Target Name="RemoveUnwantedFiles" AfterTargets="Build">
+    <Delete Files="$(OutDir)RevitAPI.dll" />
+    <Delete Files="$(OutDir)RevitAPIUI.dll" />
+    <Delete Files="$(OutDir)AdWindows.dll" />
+    <Delete Files="$(OutDir)UIFramework.dll" />
+    <Delete Files="$(OutDir)runtimes\**\*.*" />
+    <Delete Files="$(OutDir)*.pdb" />
+    <RemoveDir Directories="$(OutDir)runtimes" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call &quot;$(MSBuildProjectDirectory)\post-build.bat&quot; $(OutDir)" IgnoreExitCode="true" />
+  </Target>
+</Project>

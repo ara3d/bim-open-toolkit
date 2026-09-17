@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<UseWPF>true</UseWPF>
+		<AssemblyName>Ara3D.Revit2025.Bowerbird</AssemblyName>
+		<Configurations>Debug;Release</Configurations>
+		<Platforms>AnyCPU</Platforms>
+		<PlatformTarget>x64</PlatformTarget>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <AssemblyVersion>2.1.0</AssemblyVersion>
+    <FileVersion>2.1.0</FileVersion>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<OutputPath>bin\Debug\</OutputPath>
+		<DefineConstants>TRACE;DEBUG;REVIT2025</DefineConstants>
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<DebugType>none</DebugType>
+		<Optimize>true</Optimize>
+		<OutputPath>bin\Release\</OutputPath>
+		<DefineConstants>REVIT2025</DefineConstants>
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+	</PropertyGroup>
+	<ItemGroup>
+	  <None Remove="Bowerbird-32x32.png" />
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Include="Bowerbird-32x32.png" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="$(Ara3DMicrosoftExtensionsConfigurationVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="$(Ara3DMicrosoftExtensionsConfigurationVersion)" />
+		<PackageReference Include="Newtonsoft.Json" Version="$(Ara3DNewtonsoftJsonVersion)" />
+		<PackageReference Include="Revit_All_Main_Versions_API_x64" Version="$(Ara3DRevitAllMainVersionsApiX64Version)" />
+		<PackageReference Include="System.ComponentModel.Annotations" Version="$(Ara3DSystemComponentModelAnnotationsVersion)" />
+		<PackageReference Include="System.Drawing.Common" Version="$(Ara3DSystemDrawingCommonVersion)" />
+		<PackageReference Include="System.Runtime.Loader" Version="$(Ara3DSystemRuntimeLoaderVersion)" />
+	</ItemGroup>	
+	<ItemGroup>
+	  <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+	  <PackageReference Include="Ara3D.IO.PLY" Version="$(Ara3DSdkVersion)" />
+	  <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+	  <ProjectReference Include="..\..\submodules\ara3d-sdk\plugins\Ara3D.Bowerbird.Demo\Ara3D.Bowerbird.Demo.csproj" />
+	  <ProjectReference Include="..\..\submodules\ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj" />
+	  <ProjectReference Include="..\..\submodules\ara3d-sdk\plugins\Ara3D.Bowerbird\Ara3D.Bowerbird.csproj" />
+	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="call &quot;$(MSBuildProjectDirectory)\post-build.bat&quot; $(OutDir)" IgnoreExitCode="true" />
+	</Target>
+</Project>

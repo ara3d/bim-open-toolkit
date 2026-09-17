@@ -30,7 +30,9 @@
     <Ara3DNUnitAnalyzersVersion>3.9.0</Ara3DNUnitAnalyzersVersion>
     <Ara3DNUnitVersion>3.14.0</Ara3DNUnitVersion>
     <Ara3DNUnit3TestAdapterVersion>4.5.0</Ara3DNUnit3TestAdapterVersion>
+    <Ara3DParakeetVersion>1.4.5</Ara3DParakeetVersion>
     <Ara3DParquetNetVersion>5.2.0</Ara3DParquetNetVersion>
+    <Ara3DRevitAllMainVersionsApiX64Version>2025.0.0</Ara3DRevitAllMainVersionsApiX64Version>
     <Ara3DSystemComponentModelAnnotationsVersion>5.0.0</Ara3DSystemComponentModelAnnotationsVersion>
     <Ara3DSystemDrawingCommonVersion>8.0.6</Ara3DSystemDrawingCommonVersion>
     <Ara3DSystemIoPipesVersion>4.3.0</Ara3DSystemIoPipesVersion>

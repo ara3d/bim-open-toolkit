@@ -15,6 +15,9 @@ data/**
 # under src/ and tests/ so only actual data *files* stay ignored.
 !src/**/
 !tests/**/
+!plugins/**/
+!apps/**/
+!tools/**/
 
 # Build output — last, so it wins over the re-includes above.
 bin/

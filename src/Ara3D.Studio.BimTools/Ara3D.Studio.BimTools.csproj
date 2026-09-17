@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <IsPackable>false</IsPackable>
+    <Description>Ara 3D Studio scripts that read BIM Open Schema data: filters, room and level tools, door clearance, and diagrams.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Lakehouse\**\*.cs" />
+    <Compile Remove="Demos\SimulateSequence.cs" />
+    <Compile Remove="Demos\SimulateSquence2.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ara3D.Collections" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.DataTable" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Geometry" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Logging" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Memory" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.PropKit" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Studio.API" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\submodules\ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj" />
+    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="..\Ara3D.BimOpenSchema.ObjectModel\Ara3D.BimOpenSchema.ObjectModel.csproj" />
+    <ProjectReference Include="..\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+  </ItemGroup>
+
+</Project>

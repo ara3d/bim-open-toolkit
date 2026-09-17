@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Core tier. References RevitAPI.dll only (DB context) so the assembly
+       works under Design Automation and headless hosts. No RevitAPIUI.dll here. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>Ara3D.Revit.Utils</RootNamespace>
+    <AssemblyName>Ara3D.Revit.Utils</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Revit_All_Main_Versions_API_x64" Version="$(Ara3DRevitAllMainVersionsApiX64Version)" ExcludeAssets="runtime" />
+    <PackageReference Include="Ara3D.Geometry" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
+  </ItemGroup>
+
+</Project>

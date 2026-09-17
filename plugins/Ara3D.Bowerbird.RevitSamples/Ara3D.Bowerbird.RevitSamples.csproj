@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseWindowsForms>true</UseWindowsForms> 
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Revit_All_Main_Versions_API_x64" Version="$(Ara3DRevitAllMainVersionsApiX64Version)" />
+    <PackageReference Include="Newtonsoft.Json" Version="$(Ara3DNewtonsoftJsonVersion)" />
+    <PackageReference Include="System.IO.Pipes" Version="$(Ara3DSystemIoPipesVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+    <PackageReference Include="Ara3D.IO.PLY" Version="$(Ara3DSdkVersion)" />
+    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\Ara3D.Bowerbird.Revit2025\Ara3D.Bowerbird.Revit2025.csproj" />
+    <ProjectReference Include="..\..\submodules\ara3d-sdk\plugins\Ara3D.Bowerbird\Ara3D.Bowerbird.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="BIMOpenSchemaExporterForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call &quot;$(MSBuildProjectDirectory)\post-build.bat&quot; $(OutDir)" IgnoreExitCode="true" />
+  </Target>
+
+
+</Project>
+  
