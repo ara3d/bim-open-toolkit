@@ -1,0 +1,35 @@
+candidate_id,record_types,meaning
+source_revision_change,ObjectCorrespondence,Source/object correspondence for future revision comparison
+space,Space;SpaceBoundary,Rooms and scheduled spaces with explicit boundaries
+storey,Storey,Named levels and their coordinate datum
+functional_zone,Zone;ZoneMembership,Overlapping purpose-specific groupings
+door,Door,Door assembly with leaf count and clear dimensions
+window,Window;FacadePanel,Window units and separately scoped facade panels
+wall,Wall;SpaceBoundary,Construction host and space-facing boundary assertions
+floor,Floor,Floor construction distinct from finish installation
+roof,Roof,Actual surface and projected quantities
+stair,Stair;StairFlight;Landing;Ramp;VerticalTransport,Circulation components without implied egress approval
+penetration,ServicePenetration;PenetratingService,Cross-trade opening and passing-service associations
+structural_member,StructuralMember;StructuralConnection,Role-based beam and column schedules
+foundation,Foundation,Foundation occurrences and quantities
+reinforcement_takeoff,ReinforcementGroup,Explicit group counting and reinforcement quantity scope
+earthwork_zone,EarthworkZone;TerrainSurface,Cut and fill against declared terrain assumptions
+finish_surface,FinishSurface,Independently measurable host-face installation scope
+ceiling,Ceiling,Ceiling construction and service void
+room_fitout,Furniture;FinishSurface;Space,Room schedules over concrete linked records
+planting_area,PlantingArea,Area-based planting and landscape quantities
+landscape_asset,LandscapeAsset,Individual plant and site-asset occurrences
+equipment,AirHandlingUnit;Fan;Pump;ElectricalPanel,Concrete equipment examples with shared identity
+air_terminal,AirTerminal,Room-facing supply and extract terminals
+sanitary_fixture,SanitaryFixture;ToiletSpecification,Sanitary occurrences with optional toilet-specific details
+service_run,RouteSegment;DuctSegment;PipeSegment;CableSegment,Geometry routes and discipline-specific physical segments
+distribution_panel,ElectricalPanel;ElectricalCircuit,Panel schedules and circuit demand
+lighting_fixture,LightingFixture,Lighting installation and photometric inputs
+valve,Valve,Isolation and regulation components
+drain,Drain;DrainageCatchment,Drain terminals and contributing areas
+fire_protection_terminal,FireProtectionTerminal,Protection terminals and supplied ratings
+support_assembly,ServiceSupport;ServiceSupportAttachment,One support with multiple supported components
+assembly_specification,AssemblyDefinition;AssemblyLayer;Material,Versioned ordered construction layers
+quantity_observations,QuantityScope;QuantityObservation,Source or mapping measurements with explicit bases and selection state
+duct_segment,DuctSegment;DuctFitting;Damper,Air distribution dimensions and performance inputs
+pipe_segment,PipeSegment;PipeFitting;Valve,Service medium and nominal versus actual dimensions

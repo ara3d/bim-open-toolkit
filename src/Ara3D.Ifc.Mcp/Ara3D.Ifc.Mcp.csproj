@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Ara3D.MCP" Version="$(Ara3DSdkVersion)" />
     <ProjectReference Include="..\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
-    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\src\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
     <ProjectReference Include="..\Ara3D.Ifc.Bos\Ara3D.Ifc.Bos.csproj" />
     <ProjectReference Include="..\Ara3D.Ifc.Mesher\Ara3D.Ifc.Mesher.csproj" />
     <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />

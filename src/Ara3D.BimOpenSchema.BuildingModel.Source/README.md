@@ -1,0 +1,13 @@
+# Prepared BOS source cache
+
+`SourceCache.Prepare(bosPath, cachePath)` decodes the BOS Parquet columns once and writes an uncompressed BFAST file. It preserves column CLR types and values, all row groups, geometry columns, the original manifest JSON, source SHA-256 and cache format version. One Parquet table and one decoded column chunk are staged at a time; the writer streams staged buffers into BFAST. Inputs remain read-only. Existing matching caches are fully verified before reuse.
+
+`SourceCache.Load(cachePath)` returns the existing `DataModel.BimModel`, with geometry omitted by default. It opens BFAST buffers directly and verifies only the buffers it reads; it does not open the BOS or decode Parquet. Pass explicit `ConversionOptions` with `IncludeGeometry: true` to load geometry. The core path preserves stored numeric values and does not interpret display-unit labels as storage units.
+
+`Inspect` reads metadata, `ReadColumns` exposes detached typed columns, and `Verify` checks every buffer including geometry. Core buffer corruption is rejected during normal loading. The cache is a local acceleration artifact, not a replacement for the source BOS. SHA-256 checks detect accidental corruption; this is not an authenticated package format.
+
+The cache uses Ara3D.IO.BFAST's writer and header reader. Numeric primitive buffers are little-endian; strings are nullable length-prefixed UTF-8 and preserve embedded NUL. The typed codec also supports nullable scalars, decimals, DateTime, TimeSpan, Guid and binary arrays. Unsupported scalar types fail explicitly. Nested Parquet lists/structs are outside this BOS table contract. CLR type identifiers currently include assembly names, so this first cache version is a .NET cache and may need regeneration when runtime type identities change. Empty tables without any Parquet row groups are not yet represented; ordinary zero-length column chunks are supported.
+
+Named-column decoding in `SourceColumnDecoder` is adapted from `DataModel.IO/BosReader` within this repository. It supports both unified Parameters and legacy per-type parameter tables. A later cleanup should share that decoder through a small source-table module; this track deliberately leaves the existing reader unchanged.
+
+The probe under `tools/building-model-source-probe` prepares then loads a cache and writes descriptor, category, identity, relation and timing profiles. Generated caches and profiles belong under ignored `artifacts/`, never in source control. The probe's peak process memory includes preparation, core conversion and profile generation; it is not a standalone core-load peak.

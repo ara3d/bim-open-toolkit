@@ -3,7 +3,7 @@
 For an architectural summary of the integration and its limits, see
 [PLATONIC-INTEGRATION.md](../../src/Ara3D.BimOpenSchema.DataModel/PLATONIC-INTEGRATION.md).
 
-The new projects import `../../tools/bim-data-model/Platonic.props`. This applies all twelve
+The new projects import `../../Platonic.props` (repository root). This applies all twelve
 Platonic analyzers as compiler errors, nullable analysis, and warnings as errors, and references
 `Platonic.Core` for `Result`, `Option`, `Unit`, and the boundary attributes. Existing projects are
 unaffected. NuGet vulnerability warnings remain visible without blocking compilation, following
