@@ -7,9 +7,10 @@ against a vendor's API.
 
 Two things live here:
 
-- **BIM Open Schema (BOS)** and its converters: a columnar, tool-independent
-  representation of federated BIM data, plus IFC loading, meshing, and byte-exact
-  IFC editing.
+- **BIM Open Schema (BOS)** and everything that produces or consumes it: the C#
+  reference implementation of the columnar, tool-independent schema (the
+  specification itself is the `bim-open-schema` submodule), IFC loading, meshing,
+  and byte-exact IFC editing, the Revit 2025 exporter add-in, and the BOS Browser.
 - **BimOpenFlow**: a specified dataflow graph, with an engine, a node vocabulary, a
   headless host, an MCP server, and a web editor, for building ETL pipelines, 3D
   views, charts, reports, and database queries out of that data.
@@ -45,8 +46,8 @@ the design in detail. [docs/OVERVIEW.md](docs/OVERVIEW.md) is the one-page versi
 
 - It does not author or edit geometry. IFC editing is limited to property sets, written
   back byte-exactly.
-- It is not a Revit plugin and has no live connection to any authoring tool. Models
-  arrive as IFC or BOS files.
+- BimOpenFlow has no live connection to any authoring tool. Models arrive as IFC or
+  BOS files; the Revit 2025 add-in under `plugins/` is how a BOS file leaves Revit.
 - BOS is not built for ad-hoc queries on its own. The intended workflow is to load it
   into DuckDB and build wide views for the question at hand.
 - The host is a single-user local process. There is no multi-user service, authentication,
@@ -54,9 +55,10 @@ the design in detail. [docs/OVERVIEW.md](docs/OVERVIEW.md) is the one-page versi
 
 ## Prerequisites
 
-- **.NET 8 SDK.** Twenty-one projects, including the host and the IFC stack, target
-  `net8.0-windows`, so the full toolkit builds and runs on Windows only. The engine
-  group and the schema libraries target plain `net8.0`.
+- **.NET 8 SDK**, plus the **.NET 10 SDK** for the BOS Browser. The host, the IFC
+  stack, the Revit add-ins, and the Browser target Windows, so the full toolkit builds
+  and runs on Windows only. The engine group and the schema libraries target plain
+  `net8.0`. Building the Revit add-ins needs no Revit install; the API comes from NuGet.
 - **Node.js 18 or newer** with npm, for the web editor, the 3D viewer, and the gates.
 - **Git with submodules.** The editor canvas comes from the Gratify submodule.
 
@@ -137,24 +139,28 @@ assessment from 2026-09-08.
 |---|---|
 | `submodules/ara3d-dataflow/spec/dataflow-graph/` | The normative graph specification and its conformance vectors |
 | `contracts/` | Shared type definitions and the C#/TypeScript generator |
-| `src/` | 46 C# projects: engine, BIM data layer, node packs, host, MCP servers |
-| `tests/` | 41 NUnit test projects, including the spec conformance suite |
+| `src/` | 42 C# projects: the BOS reference implementation, IFC, Studio BIM tools, node packs, host, MCP servers |
+| `tests/` | 35 NUnit test projects, including the spec conformance suite and the IFC meshing comparison harness |
+| `plugins/` | The Revit 2025 add-ins: BOS exporter, Bowerbird host, samples, and `Ara3D.Revit.Utils` |
+| `apps/` | The BOS Browser, a WPF grid viewer with glTF and Excel export |
 | `bimopenflow/web/` | The web editor workspace (npm workspaces) |
 | `viewer/` | The standalone 3D viewer workspace, seventeen packages |
 | `samples/` | Runnable sample analyses: tables, BIM, and 3D, with sample data |
 | `gates/` | Headless integration smoke checks |
 | `docs/` | Architecture, design decisions, demo guides, and the generated [node reference](docs/nodes.md) |
+| `submodules/bim-open-schema` | The BIM Open Schema specification: five dependency-free C# files and the sample `.bos` archives |
 | `submodules/ara3d-sdk` | The Ara3D SDK, built from source; `Directory.Build.targets` turns every `Ara3D.*` package reference into a project reference into it |
 | `submodules/gratify` | The Gratify canvas UI library (git submodule) |
 | `data/` | Test fixtures, not committed; populate with `./data/get-test-data.ps1` |
 
 ## Related projects
 
-- [bim-open-schema](https://github.com/ara3d/bim-open-schema) is the schema's spec repo.
-  This repository is its reference implementation.
+- [bim-open-schema](https://github.com/ara3d/bim-open-schema) holds only the schema's
+  specification as code. This repository is its reference implementation.
 - [ara3d-sdk](https://github.com/ara3d/ara3d-sdk) holds the general-purpose libraries
-  (utilities, geometry, data tables, glTF export, the MCP protocol). They are consumed
-  here as vendored NuGet packages, and only BIM-specific code lives in this repository.
+  (utilities, geometry, data tables, file formats, glTF export, the Bowerbird plug-in
+  host, the MCP protocol). It is built from source through the submodule. Everything
+  specific to BIM authoring tools, Revit, IFC, or BOS lives here, not there.
 - web-ifc parses IFC underneath the loader. DuckDB is the analytical engine on the far end.
 
 ## License

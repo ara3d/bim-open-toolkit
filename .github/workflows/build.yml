@@ -14,7 +14,9 @@ jobs:
           submodules: recursive
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
       - run: dotnet build BimOpenToolkit.sln -c Release
       # Tests that need the IFC Test Kit are skipped in CI until a public
       # fixture download source exists (data is not committed to this repo).
