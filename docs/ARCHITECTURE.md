@@ -84,7 +84,7 @@ Contains no BIM whatsoever, and is a candidate to graduate to its own repo.
 Five value kinds travel on edges: Boolean, Integer, Number, Text, and **Table**. Tables
 are the currency; almost everything useful is an immutable table flowing between nodes.
 
-### 3. BIM data — `src/Ara3D.BimOpenSchema.*`, `src/Ara3D.Ifc*`, `plugins/`, `apps/`
+### 3. BIM data — `src/data/`, `plugins/`, `apps/`
 
 **BIM Open Schema** is the model. The problem it solves: BIM data is locked behind
 per-tool APIs, and the exchange formats that exist are shaped for geometry interchange,
@@ -133,7 +133,7 @@ add-in under `plugins/` and the BOS Browser under `apps/`.
 - `BimOpenMcp.Ifc` — an MCP server exposing IFC models directly to an agent: entities,
   properties, relations, geometry, analytics, and a session cache.
 
-### 4. Node packs — `src/BimOpenFlow.Nodes.*`
+### 4. Node packs — `src/flow/BimOpenFlow.Nodes.*`
 
 The vocabulary: **98 nodes across 11 packs**, each pack a separate project with its own
 dependencies and its own tests. Packs never reference each other. The counts below come
@@ -158,7 +158,7 @@ alone. File-reading nodes are still pure: their cache key is a hash of the file'
 *content*, so an unchanged file is never re-read and an edited one is picked up
 automatically.
 
-### 5. Surfaces — `src/BimOpenFlow.Host*`, `src/BimOpenMcp.Flow`, `bimopenflow/web`, `viewer/`
+### 5. Surfaces — `src/flow/BimOpenFlow.Host*`, `src/mcp/BimOpenMcp.Flow`, `bimopenflow/web`, `viz/`
 
 One headless core; every UI is a client of it.
 
@@ -175,7 +175,7 @@ One headless core; every UI is a client of it.
   `contracts` / `api-client` packages. The canvas is built on the Gratify submodule's
   primitives; graph-specific behaviour stays here, deliberately, rather than upstream
   (see [graph-module-layering.md](graph-module-layering.md)).
-- **`viewer/`** — the standalone 3D viewer workspace of seventeen packages, described in
+- **`viz/`** — the standalone 3D viewer workspace of seventeen packages, described in
   [OVERVIEW.md](OVERVIEW.md#the-3d-viewer).
 - **`Publishing` / `Reports` / `Dashboards` / `Evidence`** — turning a run into an
   artifact: self-contained HTML with inlined data, verdict tables, dashboards, and

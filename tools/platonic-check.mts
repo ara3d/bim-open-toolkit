@@ -10,7 +10,7 @@ import { compareToBaseline, type RatchetBaseline } from '../../platonic-ts/packa
 import { runCheck } from '../../platonic-ts/packages/check/src/run.ts'
 import { scanRepo } from '../../platonic-ts/packages/check/src/scan.ts'
 
-const repoDir = resolve(import.meta.dirname, '..', 'viewer')
+const repoDir = resolve(import.meta.dirname, '..', 'viz')
 const baselinePath = resolve(repoDir, 'ratchet.json')
 
 const report = (name: string, ok: boolean, detail: string): boolean => {

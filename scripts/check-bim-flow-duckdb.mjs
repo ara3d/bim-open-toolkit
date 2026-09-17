@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
-import { chromium } from '../viewer/node_modules/playwright-core/index.mjs';
+import { chromium } from '../viz/node_modules/playwright-core/index.mjs';
 
 const base = process.env.BOF_DUCKDB_URL ?? 'http://127.0.0.1:5308';
 const workflows = JSON.parse(await readFile('samples/duckdb-analyses/workflows.json', 'utf8'));

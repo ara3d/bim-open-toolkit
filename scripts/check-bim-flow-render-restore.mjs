@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chromium } from '../viewer/node_modules/playwright-core/index.mjs';
+import { chromium } from '../viz/node_modules/playwright-core/index.mjs';
 
 const browser = await chromium.launch({ channel: 'msedge', headless: true, args: ['--enable-unsafe-swiftshader'] });
 try {

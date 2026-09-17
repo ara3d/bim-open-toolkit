@@ -41,7 +41,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "viewer",
+        "viz",
         "run",
         "gallery"
       ],

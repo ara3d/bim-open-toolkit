@@ -5,7 +5,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const viewer = join(root, "viewer");
+const viewer = join(root, "viz");
 const web = join(root, "bimopenflow", "web");
 
 const steps = [

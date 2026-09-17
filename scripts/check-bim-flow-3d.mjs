@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { chromium } from "../viewer/node_modules/playwright-core/index.mjs";
+import { chromium } from "../viz/node_modules/playwright-core/index.mjs";
 
 const base = process.env.BOF_DEMO_URL ?? "http://127.0.0.1:5302";
 const fixture = process.env.BOF_SNOWDON_BFAST ?? "artifacts/bim-flow/snowdon.bfast";

@@ -82,7 +82,7 @@ node gates/host-smoke.mjs
 Run the headless host by hand, pointing it at a directory of models:
 
 ```bash
-dotnet run --project src/BimOpenFlow.Host -- --port 5214 --models ./data
+dotnet run --project src/flow/BimOpenFlow.Host -- --port 5214 --models ./data
 ```
 
 Run the web editor against it in a second terminal, then open http://127.0.0.1:5300:
@@ -139,12 +139,15 @@ assessment from 2026-09-08.
 |---|---|
 | `submodules/ara3d-dataflow/spec/dataflow-graph/` | The normative graph specification and its conformance vectors |
 | `contracts/` | Shared type definitions and the C#/TypeScript generator |
-| `src/` | 42 C# projects: the BOS reference implementation, IFC, Studio BIM tools, node packs, host, MCP servers |
-| `tests/` | 35 NUnit test projects, including the spec conformance suite and the IFC meshing comparison harness |
+| `src/data/` | The BOS reference implementation and the IFC stack; depends on nothing above it |
+| `src/flow/` | BimOpenFlow: node packs, host, and run outputs; depends on `data` and the engine submodule |
+| `src/mcp/` | The two MCP servers, `BimOpenMcp.Ifc` over `data` and `BimOpenMcp.Flow` over `flow` |
+| `src/studio/` | Ara 3D Studio integration: BIM scripts and the Studio hosting of the flow host |
+| `tests/` | NUnit projects mirroring `src/`, plus `BimOpenToolkit.Layering.Tests`, which fails on a reference that points up the layering |
 | `plugins/` | The Revit 2025 add-ins: BOS exporter, Bowerbird host, samples, and `Ara3D.Revit.Utils` |
 | `apps/` | The BOS Browser, a WPF grid viewer with glTF and Excel export |
 | `bimopenflow/web/` | The web editor workspace (npm workspaces) |
-| `viewer/` | The standalone 3D viewer workspace, seventeen packages |
+| `viz/` | The standalone 3D viewer workspace, seventeen packages |
 | `samples/` | Runnable sample analyses: tables, BIM, and 3D, with sample data |
 | `gates/` | Headless integration smoke checks |
 | `docs/` | Architecture, design decisions, demo guides, and the generated [node reference](docs/nodes.md) |

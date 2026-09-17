@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { chromium } from '../viewer/node_modules/playwright-core/index.mjs';
+import { chromium } from '../viz/node_modules/playwright-core/index.mjs';
 
 // Read-only comparison: use the same graph/app, changing only its model response.
 const base = process.env.BOF_DEMO_URL ?? 'http://127.0.0.1:5300';

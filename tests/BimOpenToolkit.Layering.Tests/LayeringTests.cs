@@ -103,7 +103,7 @@ public class LayeringTests
     [Test]
     public void ViewerDoesNotDependOnTheFlowEditor()
     {
-        var viewer = new DirectoryInfo(Path.Combine(Layering.Root.FullName, "viewer", "packages"));
+        var viewer = new DirectoryInfo(Path.Combine(Layering.Root.FullName, "viz", "packages"));
         var offenders = viewer.EnumerateFiles("package.json", SearchOption.AllDirectories)
             .Where(f => !f.FullName.Contains("node_modules"))
             .Where(f => File.ReadAllText(f.FullName).Contains("\"@bimopenflow/"))

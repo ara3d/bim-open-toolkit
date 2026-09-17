@@ -3,7 +3,7 @@
 import { resolve } from 'node:path'
 import { serve } from '../../platonic-ts/packages/mcp/src/server.ts'
 
-const repoDir = resolve(import.meta.dirname, '..', 'viewer')
+const repoDir = resolve(import.meta.dirname, '..', 'viz')
 
 serve(
   {

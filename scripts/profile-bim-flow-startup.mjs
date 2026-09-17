@@ -1,4 +1,4 @@
-import { chromium } from '../viewer/node_modules/playwright-core/index.mjs';
+import { chromium } from '../viz/node_modules/playwright-core/index.mjs';
 
 const base = process.env.BOF_DEMO_URL ?? 'http://127.0.0.1:5300';
 const browser = await chromium.launch({ channel: 'msedge', headless: true, args: ['--enable-unsafe-swiftshader'] });

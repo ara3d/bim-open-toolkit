@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { chromium } from "../viewer/node_modules/playwright-core/index.mjs";
+import { chromium } from "../viz/node_modules/playwright-core/index.mjs";
 
 // Run against an isolated BIM-profile host: edits are restored in finally.
 const base = process.env.BOF_DEMO_URL;

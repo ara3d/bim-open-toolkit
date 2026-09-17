@@ -52,7 +52,7 @@ sources with a small codegen step emitting C# into the host and TypeScript into
 ## Engine group (C#, BIM-free)
 
 ### Ara3D.DataFlowEngine.Abstractions
-**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/`
 The node SDK: node and port interfaces, the value/table types that flow along
 edges, capability declarations (pure vs. effectful, Run-gated), and the node
 registry. Deliberately tiny and stable — it is the contract every node pack
@@ -60,7 +60,7 @@ compiles against, so churn here is churn everywhere.
 **Depends on:** Ara3D.Utils, Ara3D.Collections, Ara3D.DataTable (vendored SDK).
 
 ### Ara3D.NodeGraph
-**Location:** `submodules/ara3d-dataflow/src/Ara3D.NodeGraph/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.NodeGraph/`
 The graph *document* object model and the NodeGraph API: load/save/validate
 per the spec, plus transactional editing operations (add/remove/connect,
 undo/redo, structural validation against a node catalog). Knows nothing about
@@ -68,7 +68,7 @@ evaluation — it is what editors, agents, and the MCP surface manipulate.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions; Ara3D.Utils (vendored SDK).
 
 ### Ara3D.DataFlowEngine
-**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine/`
 The canonical evaluator: dependency scheduling, memoization, dirty propagation,
 and standing evaluation sessions that observers (panes, sinks) subscribe to.
 Executes any registered node vocabulary over a NodeGraph document; contains no
@@ -77,14 +77,14 @@ I/O and no BIM.
 Ara3D.DataTable (vendored SDK).
 
 ### Ara3D.DataFlowEngine.Expressions
-**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Expressions/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Expressions/`
 The expression language used by derive/filter/what-if nodes: parser, type
 checker, and evaluator over the table/value types. Pure and dependency-light
 with a large test surface — ideal for an agent to own end-to-end.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions.
 
 ### Ara3D.DataFlowEngine.Runs
-**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Runs/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Runs/`
 The definition-vs-run split made concrete: freezing an evaluation into a run
 record (graph hash + input hashes + outputs + timestamp), replay, and signing.
 Runs are the only artifact archived or submitted as evidence, and the input to
@@ -92,14 +92,14 @@ both generators below.
 **Depends on:** Ara3D.DataFlowEngine, Ara3D.NodeGraph.
 
 ### Ara3D.NodeGraph.Migrations
-**Location:** `submodules/ara3d-dataflow/src/Ara3D.NodeGraph.Migrations/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.NodeGraph.Migrations/`
 Version-to-version graph document upgrades, driven by the spec's migration
 notes. Kept out of `Ara3D.NodeGraph` so handling old formats never complicates
 the current document model, and so migration work can proceed in its own fence.
 **Depends on:** Ara3D.NodeGraph.
 
 ### Ara3D.DataFlowEngine.TestKit
-**Location:** `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.TestKit/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.TestKit/`
 Test infrastructure for everyone building on the engine: fluent graph
 builders, fake/probe nodes, and evaluation assertions. This is what makes
 every other agent's tests cheap to write, and what third-party node-pack
@@ -111,7 +111,7 @@ authors test against; shipped as a real package, not test-project internals.
 ## BIM data layer (C#)
 
 ### Ara3D.BimOpenSchema.DuckDb
-**Location:** `submodules/bim-open-schema/src/Ara3D.BimOpenSchema.DuckDb/`
+**Location:** `submodules/bim-open-schema/src/data/Ara3D.BimOpenSchema.DuckDb/`
 The DuckDB view/query layer over BOS (`CreateViews`: EntityText, ParameterText,
 RelationText — today buried in the PoC's MCP project; fix-on-entry item 2).
 A dedicated project so the DuckDB native dependency is isolated here instead of
@@ -123,7 +123,7 @@ riding along with `Ara3D.BimOpenSchema.IO` into every consumer.
 ## BIM node packs (C#)
 
 ### BimOpenFlow.Nodes.Bos
-**Location:** `src/BimOpenFlow.Nodes.Bos/`
+**Location:** `src/flow/BimOpenFlow.Nodes.Bos/`
 Source and query nodes over BIM Open Schema: model/parameter sources,
 select/derive/aggregate via DuckDB, and unit-aware columns via the Harmonizer.
 The workhorse vocabulary for takeoffs, audits, and analytics.
@@ -132,7 +132,7 @@ Ara3D.DataFlowEngine.Expressions; Ara3D.BimOpenSchema,
 Ara3D.BimOpenSchema.DuckDb, Ara3D.BimOpenSchema.Harmonizer.
 
 ### BimOpenFlow.Nodes.Geometry
-**Location:** `src/BimOpenFlow.Nodes.Geometry/`
+**Location:** `src/flow/BimOpenFlow.Nodes.Geometry/`
 Nodes that produce or transform 3D content for the viewer: mesh extraction,
 coloring, isolation/explosion, massing, camera/view tables. The only pack that
 touches meshing, keeping the geometry dependency (and its windows/x64 native
@@ -141,7 +141,7 @@ constraint) out of everything else.
 Ara3D.IfcLoader; Ara3D.Geometry, Ara3D.Models (vendored SDK).
 
 ### BimOpenFlow.Nodes.Compliance
-**Location:** `src/BimOpenFlow.Nodes.Compliance/`
+**Location:** `src/flow/BimOpenFlow.Nodes.Compliance/`
 Verdict nodes: rule checks, pass/fail/needs-review rollups, and the check
 metadata the compliance track hands to officials. Kept separate so the
 evidence-bearing vocabulary has a small, auditable surface.
@@ -149,7 +149,7 @@ evidence-bearing vocabulary has a small, auditable surface.
 Ara3D.DataFlowEngine.Expressions.
 
 ### BimOpenFlow.Nodes.Effects
-**Location:** `src/BimOpenFlow.Nodes.Effects/`
+**Location:** `src/flow/BimOpenFlow.Nodes.Effects/`
 All Run-gated sinks in one place: byte-exact pset write-back (via
 Ara3D.Ifc.Editing), file exports (GLB, CSV, BOS), and report/dashboard
 emission triggers. Isolating effects makes the purity rule enforceable by
@@ -165,7 +165,7 @@ The host is split four ways up front — it is the likeliest fence-contention
 hotspot, and these seams let four agents work it concurrently.
 
 ### BimOpenFlow.Host.Catalog
-**Location:** `src/BimOpenFlow.Host.Catalog/`
+**Location:** `src/flow/BimOpenFlow.Host.Catalog/`
 Model discovery and the conversion pipeline: watching/registering model files,
 IFC → BOS conversion with caching, and model metadata. Owns all knowledge of
 where models live and how they become BOS.
@@ -173,14 +173,14 @@ where models live and how they become BOS.
 Ara3D.Utils (vendored SDK).
 
 ### BimOpenFlow.Host.Store
-**Location:** `src/BimOpenFlow.Host.Store/`
+**Location:** `src/flow/BimOpenFlow.Host.Store/`
 Persistence for graph documents and run records: the analysis library on disk,
 versioned saves, and run archival. No HTTP and no evaluation — storage
 semantics only.
 **Depends on:** Ara3D.NodeGraph, Ara3D.DataFlowEngine.Runs.
 
 ### BimOpenFlow.Host.Api
-**Location:** `src/BimOpenFlow.Host.Api/`
+**Location:** `src/flow/BimOpenFlow.Host.Api/`
 The HTTP surface, generated-contract-first: endpoint handlers, the
 standing-evaluation subscription channel, and request/response mapping. Holds
 no business logic — every handler delegates to Catalog, Store, or the engine.
@@ -188,7 +188,7 @@ no business logic — every handler delegates to Catalog, Store, or the engine.
 BimOpenFlow.Host.Store; Ara3D.DataFlowEngine.
 
 ### BimOpenFlow.Host
-**Location:** `src/BimOpenFlow.Host/`
+**Location:** `src/flow/BimOpenFlow.Host/`
 The composition root and deployable: wires Catalog, Store, Api, the engine,
 and the node packs together into the headless host process. This is P1's "one
 headless core" as an executable — the web app is strictly a client of it.
@@ -199,7 +199,7 @@ BimOpenFlow.Host.Store; Ara3D.DataFlowEngine (+ Runs, Expressions); all four
 node packs.
 
 ### BimOpenMcp.Flow
-**Location:** `src/BimOpenMcp.Flow/`
+**Location:** `src/mcp/BimOpenMcp.Flow/`
 The agent surface: an MCP server exposing graph authoring (via the NodeGraph
 API), evaluation, and run retrieval. A thin adapter over the host — it holds
 no logic of its own, so agents and humans manipulate graphs through the same
@@ -208,7 +208,7 @@ operations.
 (or its API client).
 
 ### BimOpenFlow.Publishing
-**Location:** `src/BimOpenFlow.Publishing/`
+**Location:** `src/flow/BimOpenFlow.Publishing/`
 The shared document-emission layer under both generators: HTML templating,
 asset embedding (the `viz` bundle, fonts, images as data URIs), theming, and
 self-contained-file assembly. Exists so Dashboards and Reports stay thin and
@@ -217,7 +217,7 @@ visually consistent instead of growing two copies of the same plumbing.
 (build artifact, not a project reference).
 
 ### BimOpenFlow.Dashboards
-**Location:** `src/BimOpenFlow.Dashboards/`
+**Location:** `src/flow/BimOpenFlow.Dashboards/`
 The dashboard generator: turns a graph's output tables and views into a
 self-contained interactive HTML dashboard (charts, tables, embedded 3D
 snapshots) by binding run/session data to the `viz` components via Publishing.
@@ -225,7 +225,7 @@ Live dashboards observe a running host; exported ones embed frozen run data.
 **Depends on:** BimOpenFlow.Publishing; Ara3D.DataFlowEngine.Runs.
 
 ### BimOpenFlow.Reports
-**Location:** `src/BimOpenFlow.Reports/`
+**Location:** `src/flow/BimOpenFlow.Reports/`
 The report generator: renders a run record into a static, archivable document
 (HTML, printable to PDF) — the audit deliverable with verdicts, provenance
 hashes, and evidence tables. Static by construction: a report never requires a
@@ -233,7 +233,7 @@ running host to read.
 **Depends on:** BimOpenFlow.Publishing; Ara3D.DataFlowEngine.Runs.
 
 ### BimOpenFlow.Evidence
-**Location:** `src/BimOpenFlow.Evidence/`
+**Location:** `src/flow/BimOpenFlow.Evidence/`
 The compliance hand-off package (the semantics doc's open question 4 made
 concrete): one archive holding the graph, pinned input snapshots or content
 hashes, the run record, and the rendered report — the thing actually given to
@@ -332,7 +332,7 @@ selection events; owns no scene content.
 ## Tests and gates
 
 ### Ara3D.DataFlowEngine.Conformance
-**Location:** `submodules/ara3d-dataflow/tests/Ara3D.DataFlowEngine.Conformance/`
+**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/tests/Ara3D.DataFlowEngine.Conformance/`
 Runs every vector in `submodules/ara3d-dataflow/spec/dataflow-graph/conformance/` against the canonical
 engine. This suite is the definition of "canonical" — it gates all engine
 changes and doubles as the acceptance test for any future second
