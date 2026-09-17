@@ -229,8 +229,8 @@ The complete [inventory](REPOSITORY-INVENTORY.md) lists **45 C# source projects,
 
 ### MCP means four different things here
 
-1. **IFC MCP:** [C# server](../src/Ara3D.Ifc.Mcp/README.md) for direct IFC entity/property/SQL/geometry queries; executable implementation, with inherited stale path examples.
-2. **BimOpenFlow MCP:** [C# server source](../src/BimOpenFlow.Mcp/Program.cs) over graph services; stdio default or HTTP. It is not the unfinished browser bridge. It does not run the Host executable's sample-seeding startup path; seed a shared store through the host first if needed.
+1. **IFC MCP:** [C# server](../src/BimOpenMcp.Ifc/README.md) for direct IFC entity/property/SQL/geometry queries; executable implementation, with inherited stale path examples.
+2. **BimOpenFlow MCP:** [C# server source](../src/BimOpenMcp.Flow/Program.cs) over graph services; stdio default or HTTP. It is not the unfinished browser bridge. It does not run the Host executable's sample-seeding startup path; seed a shared store through the host first if needed.
 3. **Visualization alpha assistant demo:** bounded commands inside the page. It demonstrates a tool boundary, not an external assistant connection.
 4. **V2 viewer MCP:** [package](../viewer/packages/mcp/) with internal tool/dispatch/protocol/client/host work but empty public export, no completed server/walkthrough. Still unfinished. The [Platonic MCP wrapper](../tools/README.md) is another developer tool, unrelated to BIM-user functionality.
 
@@ -351,8 +351,8 @@ Stop only the launcher-reported host and web PIDs when finished. Do not kill eve
 
 | Purpose | Command from repository root | Notes |
 |---|---|---|
-| IFC MCP | `dotnet run --project src/Ara3D.Ifc.Mcp -- --http 8766` | HTTP at `http://127.0.0.1:8766/mcp`; omit `--http` for stdio |
-| Graph MCP | `dotnet run --project src/BimOpenFlow.Mcp -- --http 8767 --profile tables --store ./artifacts/handoff/tables-store` | Separate process over graph services; use the intended existing store; omit HTTP arguments for stdio |
+| IFC MCP | `dotnet run --project src/BimOpenMcp.Ifc -- --http 8766` | HTTP at `http://127.0.0.1:8766/mcp`; omit `--http` for stdio |
+| Graph MCP | `dotnet run --project src/BimOpenMcp.Flow -- --http 8767 --profile tables --store ./artifacts/handoff/tables-store` | Separate process over graph services; use the intended existing store; omit HTTP arguments for stdio |
 | Fixture service | `npm --prefix viewer run serve:fixtures -w @bim-open-toolkit/demos` | Default 5175; currently requires sibling `platonic-ts` runtime; set `V2_FIXTURES_DIRS` |
 | Node reference generator | `dotnet run --project src/BimOpenFlow.NodeDocs` | Developer generator; inspect arguments/output before regenerating committed docs |
 

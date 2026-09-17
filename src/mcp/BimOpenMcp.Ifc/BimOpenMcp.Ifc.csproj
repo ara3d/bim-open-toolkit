@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>bimopenmcp-ifc</AssemblyName>
+    <RootNamespace>BimOpenMcp.Ifc</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ara3D.MCP" Version="$(Ara3DSdkVersion)" />
+    <ProjectReference Include="..\..\data\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
+    <ProjectReference Include="..\..\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\data\Ara3D.Ifc.Bos\Ara3D.Ifc.Bos.csproj" />
+    <ProjectReference Include="..\..\data\Ara3D.Ifc.Mesher\Ara3D.Ifc.Mesher.csproj" />
+    <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
+    <PackageReference Include="Ara3D.IO.GltfExporter" Version="$(Ara3DSdkVersion)" />
+  </ItemGroup>
+
+</Project>

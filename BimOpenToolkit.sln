@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.9.12120.119
@@ -257,17 +257,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "mcp", "mcp", "{60D02A9B-BD8
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9FED3C2F-EF6E-FA8F-66F9-2CE0D07730B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Ifc.Mcp", "src\mcp\Ara3D.Ifc.Mcp\Ara3D.Ifc.Mcp.csproj", "{31C9C094-074C-4117-8842-B5CE8FF1C0CA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Ifc", "src\mcp\BimOpenMcp.Ifc\BimOpenMcp.Ifc.csproj", "{31C9C094-074C-4117-8842-B5CE8FF1C0CA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.MCP", "submodules\ara3d-sdk\wip\Ara3D.MCP\Ara3D.MCP.csproj", "{8EF5E2FF-603E-4B1C-A180-EC19F22C80C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Mcp", "src\mcp\BimOpenFlow.Mcp\BimOpenFlow.Mcp.csproj", "{613B8411-4E90-4B1F-A57C-4B3B2959CA3C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Flow", "src\mcp\BimOpenMcp.Flow\BimOpenMcp.Flow.csproj", "{613B8411-4E90-4B1F-A57C-4B3B2959CA3C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D97FE15B-1488-14BC-6E4E-A2CE3480960D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Ifc.Mcp.Tests", "tests\mcp\Ara3D.Ifc.Mcp.Tests\Ara3D.Ifc.Mcp.Tests.csproj", "{C157C53C-CD99-4D0E-93B0-B155545AEA12}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Ifc.Tests", "tests\mcp\BimOpenMcp.Ifc.Tests\BimOpenMcp.Ifc.Tests.csproj", "{C157C53C-CD99-4D0E-93B0-B155545AEA12}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Mcp.Tests", "tests\mcp\BimOpenFlow.Mcp.Tests\BimOpenFlow.Mcp.Tests.csproj", "{BB017A4C-C89A-48A2-8E4F-D2CA96EB9D26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Flow.Tests", "tests\mcp\BimOpenMcp.Flow.Tests\BimOpenMcp.Flow.Tests.csproj", "{BB017A4C-C89A-48A2-8E4F-D2CA96EB9D26}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "studio", "studio", "{E7FC634A-46D6-8D60-CF2F-7736DEAAEBAC}"
 EndProject

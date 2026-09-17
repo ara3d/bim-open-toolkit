@@ -130,7 +130,7 @@ add-in under `plugins/` and the BOS Browser under `apps/`.
   psets, `IfcDiff` and `IfcPatcher` splice them in. Everything you did not edit comes out
   identical, byte for byte. This is what makes write-back to a client's IFC file
   defensible.
-- `Ara3D.Ifc.Mcp` — an MCP server exposing IFC models directly to an agent: entities,
+- `BimOpenMcp.Ifc` — an MCP server exposing IFC models directly to an agent: entities,
   properties, relations, geometry, analytics, and a session cache.
 
 ### 4. Node packs — `src/BimOpenFlow.Nodes.*`
@@ -158,7 +158,7 @@ alone. File-reading nodes are still pure: their cache key is a hash of the file'
 *content*, so an unchanged file is never re-read and an edited one is picked up
 automatically.
 
-### 5. Surfaces — `src/BimOpenFlow.Host*`, `src/BimOpenFlow.Mcp`, `bimopenflow/web`, `viewer/`
+### 5. Surfaces — `src/BimOpenFlow.Host*`, `src/BimOpenMcp.Flow`, `bimopenflow/web`, `viewer/`
 
 One headless core; every UI is a client of it.
 

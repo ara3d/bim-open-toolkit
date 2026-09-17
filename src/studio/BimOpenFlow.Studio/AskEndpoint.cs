@@ -7,7 +7,7 @@ using Ara3D.MCP;
 using BimOpenFlow.Host;
 using BimOpenFlow.Host.Api;
 using BimOpenFlow.Host.Store;
-using BimOpenFlow.Mcp;
+using BimOpenMcp.Flow;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;

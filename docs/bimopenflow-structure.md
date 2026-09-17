@@ -198,8 +198,8 @@ modules above.
 BimOpenFlow.Host.Store; Ara3D.DataFlowEngine (+ Runs, Expressions); all four
 node packs.
 
-### BimOpenFlow.Mcp
-**Location:** `src/BimOpenFlow.Mcp/`
+### BimOpenMcp.Flow
+**Location:** `src/BimOpenMcp.Flow/`
 The agent surface: an MCP server exposing graph authoring (via the NodeGraph
 API), evaluation, and run retrieval. A thin adapter over the host — it holds
 no logic of its own, so agents and humans manipulate graphs through the same
@@ -375,7 +375,7 @@ graph BT
   CMP[Nodes.Compliance]
   EFF[Nodes.Effects]
   HOST["BimOpenFlow.Host (root + Api/Catalog/Store)"]
-  MCP[BimOpenFlow.Mcp]
+  MCP[BimOpenMcp.Flow]
   PUB[BimOpenFlow.Publishing]
   DASH[BimOpenFlow.Dashboards]
   REP[BimOpenFlow.Reports]

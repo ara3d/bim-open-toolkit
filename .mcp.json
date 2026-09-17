@@ -10,7 +10,7 @@
     "bimopenflow-duckdb": {
       "command": "dotnet",
       "args": [
-        "artifacts/bim-flow-duckdb/mcp/bimopenflow-mcp.dll",
+        "artifacts/bim-flow-duckdb/mcp/bimopenmcp-flow.dll",
         "--profile",
         "tables",
         "--store",

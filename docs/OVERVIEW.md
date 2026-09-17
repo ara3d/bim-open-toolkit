@@ -66,7 +66,7 @@ Five layers, each depending only on the ones above it.
    geometry, DuckDB, tables, table ops, cleaning, dates, compliance, viz, effects — each its
    own project with its own dependencies. Packs never reference each other, and every effect
    lives in one pack, which makes the purity rule enforceable by project reference alone.
-5. **Surfaces** (`BimOpenFlow.Host*`, `BimOpenFlow.Mcp`, `bimopenflow/web`, `viewer/`) — one
+5. **Surfaces** (`BimOpenFlow.Host*`, `BimOpenMcp.Flow`, `bimopenflow/web`, `viewer/`) — one
    headless core; every UI is a client of it. An HTTP host generated from the contracts,
    thirteen MCP tools over the same services, the web editor, the 3D viewer workspace below,
    and the publishing path that turns a run into self-contained HTML or an evidence package

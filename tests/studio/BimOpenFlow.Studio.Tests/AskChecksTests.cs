@@ -1,5 +1,5 @@
 using BimOpenFlow.Host;
-using BimOpenFlow.Mcp;
+using BimOpenMcp.Flow;
 
 namespace BimOpenFlow.Studio.Tests;
 
