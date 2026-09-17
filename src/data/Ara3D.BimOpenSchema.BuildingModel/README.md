@@ -28,6 +28,16 @@ LinkSet<Space>          // relationship rows plus coverage of the observed set
 
 The core model does not claim that every export supplies every field. The current BOS workflow adapter populates a small architectural slice—storeys, spaces, doors and roofs—and preserves source evidence and unresolved values. See the workflow project for the source-backed schedule, takeoff, revision-comparison and portfolio-coverage reports.
 
+## Specification rule
+
+This project is the specification half of the building model; `Ara3D.BimOpenSchema.BuildingModel.Workflows`, `.Source`, `.DuckDb` and `.Workflows.IO` are the implementation. The same rule that keeps the table schema in the `bim-open-schema` repository dependency-free applies here, so the records can move beside it later without refactoring:
+
+- Only records, record structs, enums and the `Fact<T>`/`LinkSet<T>`/key value types. No mapping, validation, reporting or persistence code.
+- No project references and no package references beyond the repository-wide `Platonic.props` import. The compiled assembly references only the .NET base library.
+- The one permitted behavior is a static factory on a value type that returns that type, such as `Fact<T>.Unknown` and `LinkSet<T>.Unknown`.
+
+`CoreBoundaryTests` in the test project enforces the last two points. Whether the records become a second published specification, alongside the table schema, or stay a toolkit library is undecided; see `docs/plans/BUILDING-MODEL-STATUS.md`.
+
 ## Core boundary
 
 Core records describe authoring intent or explicit exported observations. They do not state that a delivery was received, an asset was serviced, a design complies with a rule, a route is legal, a clash is real, or a carbon calculation is comparable. Those conclusions require inputs and policies outside an authoring export.
@@ -37,9 +47,8 @@ For example, `Door.ClearWidth` may be source-backed, while accessibility approva
 ## Verification
 
 ```powershell
-dotnet build BimBuildingModel.sln --no-restore
-dotnet test tests/Ara3D.BimOpenSchema.BuildingModel.Tests/Ara3D.BimOpenSchema.BuildingModel.Tests.csproj --no-build --no-restore
-dotnet test tests/Ara3D.BimOpenSchema.BuildingModel.Workflows.Tests/Ara3D.BimOpenSchema.BuildingModel.Workflows.Tests.csproj --no-build --no-restore
+dotnet test tests/data/Ara3D.BimOpenSchema.BuildingModel.Tests/Ara3D.BimOpenSchema.BuildingModel.Tests.csproj
+dotnet test tests/data/Ara3D.BimOpenSchema.BuildingModel.Workflows.Tests/Ara3D.BimOpenSchema.BuildingModel.Workflows.Tests.csproj
 ```
 
 The core-boundary tests assert that lifecycle, commercial and analysis-result records cannot re-enter this assembly unnoticed.
