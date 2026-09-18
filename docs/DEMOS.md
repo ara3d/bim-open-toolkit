@@ -28,7 +28,8 @@ The editor proxies `/api` to the host named by `BOF_HOST` (default
 `http://127.0.0.1:5214`). An empty store is seeded with every sample graph the
 profile can run; graphs the profile lacks nodes for are skipped and named in the
 host log. Pages: `/` (editor with table, chart, 3D, and verdict panes),
-`/3d.html?analysis=<id>` (3D-first layout), `/duckdb.html` (DuckDB demo with a
+`/3d.html?analysis=<id>` (3D-first layout, where picking an element lists its
+property sets under the status line), `/duckdb.html` (DuckDB demo with a
 flow picker and an Ask box), `/showcase.html` (button-driven 3D recipes).
 
 ## Sample graphs by input
