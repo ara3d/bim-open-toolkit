@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>bimopenmcp-ifc-ask</AssemblyName>
+    <RootNamespace>BimOpenMcp.Ifc.Ask</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
+    <ProjectReference Include="..\..\mcp\BimOpenMcp.Ifc\BimOpenMcp.Ifc.csproj" />
+  </ItemGroup>
+
+</Project>
