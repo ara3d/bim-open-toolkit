@@ -1,8 +1,9 @@
 # Table graph: from the current engine to the four layers
 
 > Proposal, 2026-09-17. Companion to `table-graph-layers.md`. Compares the
-> four-layer design with what BimOpenFlow does today and lays out the steps
-> to move between them. File references are to `main` at `8ecc3df`.
+> four-layer design with what BimOpenFlow did at `main` `8ecc3df` and lays
+> out the steps to move between them. The status section at the end records
+> what landed on `worktree-table-graph-layers` on 2026-09-18.
 
 ## Where the current engine stands
 
@@ -151,6 +152,34 @@ throughout.
   with a different registry.
 - Inspection of a filter over a large table returns as fast as DuckDB can
   scan it with a limit, instead of after the whole upstream has materialized.
+
+## Status on 2026-09-18
+
+All six chunks landed on branch `worktree-table-graph-layers`, with one
+difference from the plan: the relational node kinds were added as a new
+`rel.*` pack rather than rewriting the existing `table.*` and `duck.*`
+nodes in place. The old nodes keep working unchanged, and `rel.materialize`
+bridges a relation into their `Table` wires. Porting the old kinds one at a
+time is the remaining work of chunk 6.
+
+| Chunk | Where | Tests |
+|-------|-------|-------|
+| 1. Relation wire kind | `ara3d-dataflow` branch `relation-value` (`a7dccd5`): `RelationValue`, `PortType.Relation`, hash tag `0x06`, run-record JSON | 5 in the engine |
+| 2. Expression tree in the plan | `BimOpenFlow.Relations/Plan`: reuses the engine's parsed AST, renders it back canonically | 19 |
+| 3. Schema layer | `BimOpenFlow.Relations/Schema`: one rule per operator, `ICatalog`, `SchemaCache` | 27 |
+| 4. Compile layer | `BimOpenFlow.Relations/Compile`: one CTE per node, symbolic sources | 29 |
+| 5. Registry and Execute | `BimOpenFlow.Relations.DuckDb`: `ConnectionRegistry`, `DuckDbSession`, `DuckDbCatalog`, `DuckDbExecutor`, `ResultCache` | 15 |
+| 6. Nodes and host | `BimOpenFlow.Nodes.Relations` (11 kinds); `IRelationResults` in Host.Api; `RelationHostResults` and registry-from-roots in the host | 9 pack, 2 host, 1 API |
+
+The host derives the connection registry from its model roots: each root
+folder is a CSV source named after the folder, and each `.duckdb` file
+directly inside a root is a database source named after the file. A
+`sources.json` with explicit names and connection strings is the natural
+next step and is not written.
+
+Two test failures on the branch predate it and touch no file it changed:
+`TablePacks_ContainsExactlyTheTableKinds` (an unlisted `duck.source`) and
+`EmptyStore_SeedsBimAndView3dSamples` (an extra `snowdon-toolkit` sample).
 
 ## What stays open
 

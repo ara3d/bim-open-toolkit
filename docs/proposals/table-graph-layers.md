@@ -1,10 +1,14 @@
 # Table graph: a four-layer design
 
-> Proposal, 2026-09-17. Describes how a node graph that joins databases,
-> CSV files, and other tabular sources into new tables should be built so
-> that planning, typing, compiling, and running data are separate layers.
-> Nothing here is implemented yet. It does not depend on any earlier
-> BimOpenFlow node design.
+> Proposal, 2026-09-17; implemented 2026-09-18 on branch
+> `worktree-table-graph-layers`. Describes how a node graph that joins
+> databases, CSV files, and other tabular sources into new tables is built
+> so that planning, typing, compiling, and running data are separate layers.
+> The code lives in `src/flow/BimOpenFlow.Relations` (Plan, Schema, Compile),
+> `src/flow/BimOpenFlow.Relations.DuckDb` (Execute), and
+> `src/flow/BimOpenFlow.Nodes.Relations` (the `rel.*` node pack). Where the
+> implementation departs from the text below, the departure is noted in
+> place.
 
 ## The problem
 
@@ -33,7 +37,7 @@ layer through one or two functions.
 |---------|----------------------|----------------------|----------------------|
 | Plan    | operator arguments   | immutable plan tree  | never                |
 | Schema  | plan + catalog       | typed columns, or an error | catalog only (headers, `information_schema`) |
-| Compile | plan                 | SQL text             | never                |
+| Compile | plan + schemas       | SQL text             | never                |
 | Execute | SQL + connection     | table                | yes                  |
 
 Each layer is a separate project or package with its own tests. A layer is
@@ -156,14 +160,18 @@ WITH
 SELECT * FROM n4
 ```
 
-Compile is pure text generation, so its tests are string comparisons. The
-name `compile` is used generically; there can be several compilers over the
+Compile is pure text generation, so its tests are string comparisons. In
+the implementation it also reads the Schema layer: a join needs its inputs'
+column lists to name the output columns explicitly, and an aggregate needs
+the column type to cast a sum. It therefore takes a `SchemaCache` and fails
+with the first schema error. The name `compile` is used generically; there can be several compilers over the
 same plan. The first is DuckDB SQL. A second, worth building early because it
 is cheap, renders a plan as a one-line English description for node tooltips
 and a "what does this node do" panel.
 
-`RawSql` compiles to its own text with its inputs exposed under fixed names.
-This is the escape hatch. Everything the typed operators cannot express goes
+`RawSql` compiles to its own text with its inputs exposed under fixed names
+(`t1`..`tN`), and its constructor rejects anything but a single SELECT or
+WITH statement, so an unsafe plan cannot be built. This is the escape hatch. Everything the typed operators cannot express goes
 here, and it keeps the operator set from growing to cover every case.
 
 ### Layer 4: Execute
@@ -180,6 +188,11 @@ This is the only layer that touches rows. It owns:
 - A materialization cache keyed by plan hash and limit.
 - Validating the returned columns against the inferred schema, and reporting
   a mismatch as a node error rather than returning surprise columns.
+
+A compiled query refers to sources symbolically as `"name"."reference"`.
+The executor binds them in an in-memory DuckDB session: a database file is
+attached read-only as catalog `name`, and a folder becomes schema `name`
+holding one view per CSV file the query reads.
 
 Execute never sees a plan. It sees SQL and a connection. That is what makes
 the executor swappable: SQLite, Postgres, or an in-memory engine can sit
