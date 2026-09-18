@@ -287,3 +287,89 @@ acknowledge the plan including this section.
    `--artifacts-path C:\Users\cdigg\AppData\Local\Temp\claude\nrc-wave\track-<id>`
    so concurrent builds do not collide on `bin` and `obj`. Wave gates run
    from the default output after all writers stop.
+
+## Integration record (2026-09-18)
+
+Tested revision `731f1cd` on `worktree-table-graph-layers`, working tree
+clean, all five track agents and every background build stopped. Gates run
+from the default build output:
+
+| Gate | Result |
+|------|--------|
+| `BimOpenFlow.Nodes.Relations.Tests` | 30 passed |
+| `BimOpenFlow.Relations.DuckDb.Tests` | 24 passed |
+| `BimOpenFlow.NrcWorkflows.Tests` | 8 passed (five CSV graphs, three model graphs) |
+| `BimOpenFlow.Nodes.Effects.Tests` | 54 passed |
+| `BimOpenFlow.Host.Tests` | 16 passed (three new NRC seeding tests) |
+| `BimOpenToolkit.Layering.Tests` | 4 passed |
+
+Outside the gates, `BimOpenFlow.TableWorkflows.Tests` (31 of 32) and
+`BimOpenFlow.BimWorkflows.Tests` (22 of 23) fail only on the two baseline
+failures named above. `BimOpenFlow.Relations.Tests` passed 87 in track C's
+run.
+
+Browser check: host `bof-rel-host` on 5224 (`--profile tables`) with the
+editor on 5310. `nrc-q8-per-storey` and `nrc-storey-of-element` both show
+four rows on the `answer` node: Level 1 103 / 49451.2, Level 2 93, T/FDN
+14, Roof 8. Limits: the preview tool started the host from the main
+checkout's launch config against a non-empty store, and stopping it was
+denied, so seeding did not run in that host; the two graphs were loaded by
+PUT (the paper's own path) and seeding is covered by `NrcSeedingTests`,
+which asserts both profiles seed the eight ids and register `samples/nrc`
+with its built database.
+
+Acceptance: all five criteria met. The tables host seeds the eight graphs;
+`nrc-dc-w1-verdicts` and `nrc-enrich-run` evaluate only in the bim profile
+(amendment 2). The DuckDB is built by `IfcDuckDbBuild` from the committed
+IFC, on demand at host start and once per test run. `rel.fromTable` is
+registered and tested. `sink.writePsets` writes typed values. Every asserted
+number cites `expected_answers.json` or `nrc_analytics_storeys.csv`.
+
+## Consolidated findings
+
+Defects fixed during the wave:
+
+- `NrcPaths` resolved the repo from the test binary's folder, which every
+  track's private `--artifacts-path` put outside the checkout (B). Fixed in
+  `b9fcf0f` with a `[CallerFilePath]` anchor. `SampleGraphTests` in
+  `Nodes.Relations.Tests` and the workflow test projects still walk from
+  `AppContext.BaseDirectory`, so they cannot run under an out-of-tree
+  artifacts path; an in-repo `artifacts/` path works.
+- `InlineTable.Hash` hid `Plan.Hash`; renamed to `TableHash` (C).
+
+Findings about the data and the paper:
+
+- The Duplex conversion emits aggregation as `MemberOf`, never `PartOf`.
+  Walking containment and `PartOf` alone places 52 of Level 1's 103
+  elements; the transcript's Q2 undercount has this shape (A).
+- `StoreyOfEntity` raw rows per storey exceed the element counts (Level 1
+  is 114) because spaces, aggregates, and the storey itself are included;
+  count elements by joining to the elements CSV (A, E).
+- The door width parameter is `Ifc:OverallWidth` in metres; the DC-W1
+  graph multiplies by 1000, and its 14 doors match `door_verdicts.csv` (E).
+- The roof has two rows in `nrc_analytics_long.csv`, so the Q7 anti join
+  aggregates by GlobalId before selecting (B).
+- `psets_to_write.csv` uses `Real`, `Label`, `Identifier`, and `Text`;
+  `Integer`, `Number`, and `Boolean` do not occur (D).
+
+Design notes deferred to a later pass:
+
+- The expression grammar has no numeric cast, so `nrc-dc-w1-verdicts` uses
+  a `rel.sql` node to convert `ParameterText.Value`; a conversion builtin
+  would remove the SQL (E).
+- `rel.sql` sees only `t1..t3` and cannot name another view of the same
+  database (E).
+- The engine has no graph-level Run; effect nodes return `EffectPending`,
+  so the enrichment test executes the sink itself with an `IsRun` context (E).
+- `DuckDbUtils.WriteTable` cannot target a schema, so inline tables are
+  staged under a private name and exposed as a view in `_inline` (C).
+- `Fixture` is a `SetUpFixture`, so a CSV-only filter still pays the twenty
+  second IFC conversion; a lazy database would skip it (A).
+- The mini IFC fixture is duplicated between `WritePsetsTests` and
+  `WritePsetsTypedTests`; hoist it into `TestSupport.cs` (D).
+- `CsvGraphTests` carries its own repo-root workaround from before the
+  `NrcPaths` fix; remove it (B).
+- Committed CSV and IFC copies are LF in the index and will check out CRLF
+  on Windows without a `.gitattributes` rule (A).
+- The `--nologo` flag on `dotnet run --project src/flow/BimOpenFlow.NodeDocs`
+  reaches the program as its output path; run it with no options.
