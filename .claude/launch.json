@@ -120,6 +120,37 @@
         "dev"
       ],
       "port": 5199
+    },
+    {
+      "name": "bof-rel-host",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "src/flow/BimOpenFlow.Host",
+        "--",
+        "--port",
+        "5224",
+        "--profile",
+        "tables",
+        "--models",
+        "samples/tables",
+        "--store",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-rel/store",
+        "--cache",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-rel/cache"
+      ],
+      "port": 5224
+    },
+    {
+      "name": "bof-rel-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:BOF_HOST='http://127.0.0.1:5224'; npm --prefix bimopenflow/web run dev --workspace packages/app -- --port 5310"
+      ],
+      "port": 5310
     }
   ]
 }
