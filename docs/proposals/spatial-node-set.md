@@ -1,12 +1,14 @@
 # Spatial node set: geometric queries as table joins
 
-> Proposal, 2026-09-18. A node pack, `BimOpenFlow.Nodes.Spatial` (kind prefix
+> Proposal, 2026-09-18; implemented the same day (chunks 1 to 6 below, commits
+> `72d335b`..`742ce5b`). A node pack, `BimOpenFlow.Nodes.Spatial` (kind prefix
 > `spatial.*`), that gives graphs the predicate and measure vocabulary of a
 > GIS database (nearest, within, intersects, contains, area, perimeter,
 > volume) over the column conventions the packs already use for points,
 > boxes, and footprints. Geometry math comes from `Ara3D.Geometry`; nothing
 > here depends on DuckDB's spatial extension. Where the implementation
-> departs from this text, the departure is noted in place.
+> departs from this text, the departure is noted in place; the list is
+> collected under "As built" at the end.
 
 ## The problem
 
@@ -154,3 +156,38 @@ left in place and the TODO stays until that follow-up.
    structure), rooms within 3 m of a stair, room footprints with perimeter.
 6. `view3d.measures` in the Geometry pack.
 7. Regenerate `docs/nodes.md`; review; sweep.
+
+## As built
+
+Departures from the text above, in the order they were made:
+
+- **One `x`, `y`, `z` param triple per node, applied to both sides.** The
+  table proposed `aKey`/`bKey` but only one set of point columns; six point
+  params would have doubled the parameter list for the common case where
+  both sides come from `bim.*` tables. Each side still decides box versus
+  point on its own.
+- **`spatial.footprint` emits only the WKT column.** Area and perimeter
+  come from `spatial.polygon`, so a `bim.bounds` table (which already has
+  `FootprintArea`) never collides. Shape conversion and measurement are
+  separate nodes.
+- **Area-weighted centroid is computed in the pack.** `PolygonOps.Centroid`
+  is the vertex average, which is not the GIS `ST_Centroid`. Everything else
+  polygonal (area, perimeter, convexity, point containment, edge crossing)
+  is the SDK's.
+- **Polygons are handed to the SDK translated to their bounds minimum.** The
+  SDK is single precision; translating first makes rounding scale with a
+  polygon's extent instead of with site coordinates (tested at 500 000 m).
+- **`view3d.measures` has no oriented-bounding-box columns.** It emits
+  `surfaceArea`, `meshVolume`, `triangleCount` with the instance keys. OBB
+  extents (length and width) stay an extension point; `MeshFeatures` in the
+  SDK has the PCA to build them from.
+- **The pack is in both host profiles.** It is BIM-free, so the tables
+  profile gets it too.
+- **The `bim.*` copies of `Numeric` and `CopyColumns` are untouched**, as
+  planned; the migration of `bim.containment` and `bim.nearest` is the
+  open follow-up. Their samples still pass.
+
+Samples added: `bim-duct-rooms`, `bim-door-rooms`, `bim-room-footprints`.
+
+Open items: the `bim.*` migration; OBB extents; polygon booleans in the
+SDK; MULTIPOLYGON and holes in `Wkt` if a real source needs them.
