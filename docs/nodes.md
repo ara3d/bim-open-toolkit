@@ -2698,7 +2698,7 @@ Adds Area, Perimeter, CentroidX, CentroidY (area-weighted), Vertices, and IsConv
 
 ### `spatial.polygonContains` (v1) — Pure
 
-Emits one row per (a, polygons) pair where the WKT POLYGON in the 'polygon' column (default Footprint) contains a's point in plan, boundary included: A, B, and Area of the polygon. a's point is the x, y columns, or the box center when a has MinX..MaxZ columns; Z is ignored. With smallest (the default) only the smallest containing polygon is kept per a row. Typical use: columns inside zone outlines from a CSV.
+Emits one row per (a, polygons) pair where the WKT POLYGON in the 'polygon' column (default Footprint) contains a's point in plan, boundary included: A, B, and Area of the polygon. a's point is the x, y columns, or the box center when a has MinX..MaxZ columns; Z is ignored. With smallest (the default) only the smallest containing polygon is kept per a row; excludeSelf drops pairs whose keys are equal. Typical use: columns inside zone outlines from a CSV.
 
 **Inputs**
 
@@ -2724,6 +2724,7 @@ Emits one row per (a, polygons) pair where the WKT POLYGON in the 'polygon' colu
 | `z` | Text | `CenterZ` | — | columns of input `a` |
 | `polygon` | Text | `Footprint` | — | columns of input `polygons` |
 | `smallest` | Boolean | `true` | — | — |
+| `excludeSelf` | Boolean | `true` | — | — |
 
 ### `spatial.polygonIntersects` (v1) — Pure
 
