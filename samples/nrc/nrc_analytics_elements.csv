@@ -1,0 +1,219 @@
+GlobalId,EntityId,IfcType,Name,Storey,StoreyEntityId,Category,EmbodiedCarbon_A1A3_kgCO2e,EmbodiedCarbon_A1A5_kgCO2e,OperationalCarbon_kgCO2e_per_year,EnergyUseIntensity_kWh_per_m2_year,ScenarioName,AnalysisRunId
+2O2Fr$t4X7Zf8NOew3FNtn,3797,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:138062,Level 1,39,Wall,615.5,689.4,372.0,83.6,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FNqI,3999,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:138157,Level 1,39,Wall,690.0,772.8,332.0,79.2,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FNr2,4043,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:138237,Level 1,39,Wall,887.5,994.0,310.8,63.9,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FNhv,4087,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:138310,Level 1,39,Wall,1037.8,1162.3,368.6,55.5,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FNld,4131,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):138584,Level 1,39,Wall,768.3,860.5,354.2,49.4,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FNau,4219,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):139143,Level 1,39,Wall,664.2,743.9,360.8,45.4,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FNbT,4287,IFCWALLSTANDARDCASE,Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139234,Level 1,39,Wall,694.1,777.4,328.6,51.1,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKRi,4399,IFCWALLSTANDARDCASE,Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139347,Level 1,39,Wall,741.0,829.9,330.8,65.1,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKRH,4465,IFCWALLSTANDARDCASE,Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:139374,Level 1,39,Wall,764.9,856.7,297.5,64.8,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKST,4508,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):139682,Level 1,39,Wall,874.4,979.3,310.8,63.9,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKIu,4553,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):139783,Level 1,39,Wall,1042.6,1167.7,333.1,86.2,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKGS,4598,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):139939,Level 1,39,Wall,842.1,943.2,297.5,64.8,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FK80,4643,IFCWALLSTANDARDCASE,Basic Wall:Foundation - Concrete (417mm):140479,T/FDN,47,Wall,850.5,952.6,247.5,82.3,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FK9N,4818,IFCWALLSTANDARDCASE,Basic Wall:Foundation - Concrete (417mm):140520,T/FDN,47,Wall,1029.6,1153.2,278.6,69.6,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKEr,4868,IFCWALLSTANDARDCASE,Basic Wall:Foundation - Concrete (417mm):140554,T/FDN,47,Wall,844.6,946.0,326.4,83.1,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKE5,4918,IFCWALLSTANDARDCASE,Basic Wall:Foundation - Concrete (417mm):140602,T/FDN,47,Wall,576.8,646.0,265.3,70.5,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FK3E,4968,IFCWALLSTANDARDCASE,Basic Wall:Foundation - Concrete (435mm):140913,T/FDN,47,Wall,654.4,732.9,263.1,56.5,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FK04,5057,IFCWALLSTANDARDCASE,Basic Wall:Foundation - Concrete (435mm):140987,T/FDN,47,Wall,618.2,692.4,243.1,54.3,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FK1b,5106,IFCWALLSTANDARDCASE,Basic Wall:Foundation - Concrete (435mm):141018,T/FDN,47,Wall,624.4,699.3,290.8,61.7,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FK4F,5165,IFCSLAB,Floor:127mm Slab on Grade:141232,Level 1,39,Floor,2933.1,3285.1,204.3,65.5,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKcz,5267,IFCSLAB,Floor:127mm Slab on Grade:143106,Level 1,39,Floor,2182.5,2444.4,303.2,68.5,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FKau,5399,IFCWALL,Basic Wall:Party Wall - CMU Residential Unit Dimising Wall:143239,Level 2,43,Wall,999.6,1119.6,357.5,70.4,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLQD,5448,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:143410,Level 2,43,Wall,642.9,720.0,293.1,82.8,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLR9,5498,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:143478,Level 2,43,Wall,706.6,791.4,283.1,58.7,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLOH,5548,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:143534,Level 2,43,Wall,700.1,784.1,295.3,50.8,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLPP,5598,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:143590,Level 2,43,Wall,996.8,1116.4,304.2,67.9,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLTF,5642,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):143856,Level 1,39,Wall,803.7,900.1,298.6,71.8,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLIE,5687,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):143921,Level 2,43,Wall,951.9,1066.1,286.4,79.7,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLJd,5731,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):143960,Level 2,43,Wall,660.2,739.4,318.6,73.0,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLMr,5775,IFCWALLSTANDARDCASE,Basic Wall:Interior - Plumbing (152mm Stud):144138,Level 2,43,Wall,624.7,699.7,335.3,54.2,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLKI,5859,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):144301,Level 2,43,Wall,678.1,759.5,292.0,75.8,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FL8v,5903,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):144518,Level 1,39,Wall,827.4,926.7,318.6,73.0,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FL9r,5948,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):144586,Level 2,43,Wall,785.7,880.0,315.3,52.0,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FL96,5992,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):144633,Level 2,43,Wall,844.6,946.0,255.3,46.4,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLEJ,6036,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):144684,Level 2,43,Wall,915.6,1025.5,287.5,86.7,Baseline,run-2026-09-17-01
+2O2Fr$t4X7Zf8NOew3FLCm,6080,IFCWALLSTANDARDCASE,Basic Wall:Interior - Plumbing (152mm Stud):144783,Level 2,43,Wall,832.6,932.5,320.8,87.0,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlRqU,6132,IFCSLAB,Floor:Residential - Wood Joist with Subflooring:144800,Level 2,43,Floor,2277.2,2550.5,211.1,47.4,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlRrM,6247,IFCSLAB,Floor:Residential - Wood Joist with Subflooring:144872,Level 2,43,Floor,3003.1,3363.5,204.4,44.3,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlR72,6426,IFCWINDOW,M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788,Level 1,39,Window,199.6,223.6,15.8,26.4,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlRBU,6531,IFCWINDOW,M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016,Level 1,39,Window,190.7,213.6,15.4,10.9,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlRGQ,6652,IFCDOOR,M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146596,Level 1,39,Other,110.6,123.9,59.5,25.9,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlRH8,6757,IFCDOOR,M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146678,Level 1,39,Other,91.6,102.6,146.1,43.7,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlRLx,6921,IFCWINDOW,M_Fixed:750mm x 2200mm:750mm x 2200mm:146885,Level 1,39,Window,179.6,201.2,60.9,13.3,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlRRL,7025,IFCWINDOW,M_Fixed:750mm x 2200mm:750mm x 2200mm:147051,Level 1,39,Window,169.0,189.3,22.1,33.0,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlSXO,7190,IFCWINDOW,M_Fixed:2800mm x 2410mm:2800mm x 2410mm:147686,Level 2,43,Window,143.3,160.5,32.1,25.1,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlSga,7407,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:147994,Level 2,43,Window,123.8,138.7,19.4,22.4,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlSp1,7639,IFCWINDOW,M_Casement:819mm x 759mm:819mm x 759mm:148607,Level 2,43,Window,162.6,182.1,26.5,35.0,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlSnC,7743,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:148722,Level 2,43,Window,128.1,143.5,42.1,17.2,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlS_W,7795,IFCWINDOW,M_Fixed:2800mm x 2410mm:2800mm x 2410mm:149278,Level 2,43,Window,145.6,163.1,47.6,26.2,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlS2V,7847,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:149537,Level 2,43,Window,154.8,173.4,47.0,16.8,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlS1M,7899,IFCWINDOW,M_Casement:819mm x 759mm:819mm x 759mm:149736,Level 2,43,Window,144.7,162.1,37.0,24.7,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlS4Q,7951,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:149924,Level 2,43,Window,161.7,181.1,44.7,21.7,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlS8Z,8066,IFCDOOR,M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173,Level 1,39,Other,88.7,99.3,54.0,21.9,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlS9F,8169,IFCDOOR,M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257,Level 1,39,Other,104.7,117.3,146.1,43.7,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlSFK,8283,IFCDOOR,M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150378,Level 2,43,Other,109.3,122.4,53.9,45.8,Baseline,run-2026-09-17-01
+1hOSvn6df7F8_7GcBWlSDm,8386,IFCDOOR,M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150478,Level 2,43,Other,94.1,105.4,85.1,21.2,Baseline,run-2026-09-17-01
+1oKjKg9PD3fP1iIwXLh3lK,8970,IFCSTAIRFLIGHT,Stair:Residential - 200mm Max Riser 250mm Tread:151086:1,Level 1,39,Stair,243.6,272.8,168.5,45.0,Baseline,run-2026-09-17-01
+1gtrSK5QnDuxDwygd0EDGO,9002,IFCMEMBER,Stair:Residential - 200mm Max Riser 250mm Tread:151086:1,Level 1,39,Stair,130.1,145.7,96.5,45.3,Baseline,run-2026-09-17-01
+34qUFGjJzFKwVWpXe2dTPt,9020,IFCMEMBER,Stair:Residential - 200mm Max Riser 250mm Tread:151086:2,Level 1,39,Stair,97.8,109.5,174.2,40.1,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4v_O1,9021,IFCSTAIR,Stair:Residential - 200mm Max Riser 250mm Tread:151086,Level 1,39,Stair,778.3,871.7,100.9,21.3,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4v_PL,9326,IFCRAILING,Railing:900mm Handrail Only:151162,Level 1,39,Railing,68.4,76.6,49.7,22.6,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4v_PH,12184,IFCRAILING,Railing:1100mm Guard Rail:151166,Level 1,39,Railing,59.2,66.3,45.3,9.6,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vyu$,12574,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200,Level 2,43,Door,42.7,47.8,16.0,15.9,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vy_8,12976,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607,Level 2,43,Door,39.9,44.7,14.8,17.8,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vy3H,13331,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950,Level 2,43,Door,56.4,63.2,17.0,13.6,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vy3G,13685,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951,Level 2,43,Door,32.9,36.8,16.9,6.5,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vy4m,14040,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983,Level 2,43,Door,43.9,49.2,24.8,7.9,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vy4F,14394,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984,Level 2,43,Door,52.6,58.9,16.9,6.5,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vy6l,14749,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080,Level 2,43,Door,42.2,47.3,25.9,14.9,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vy6k,15103,IFCFURNISHINGELEMENT,M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081,Level 2,43,Door,43.3,48.5,24.8,7.9,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vyMO,15463,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159,Level 1,39,Door,32.3,36.2,19.3,20.9,Baseline,run-2026-09-17-01
+0wkEuT1wr1kOyafLY4vyOn,15856,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262,Level 1,39,Door,47.8,53.5,21.6,11.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUuXp,15962,IFCDOOR,M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159734,Level 2,43,Other,75.4,84.4,41.9,27.9,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvVV,16013,IFCDOOR,M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159834,Level 2,43,Other,98.3,110.1,125.2,24.7,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvR4,16064,IFCDOOR,M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160065,Level 2,43,Other,117.5,131.6,87.4,37.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvPL,16115,IFCDOOR,M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160208,Level 2,43,Other,85.9,96.2,109.6,36.5,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvGQ,16149,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160671,Level 1,39,Door,35.6,39.9,40.2,5.5,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvH8,16175,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:160717,Level 1,39,Door,43.7,48.9,16.8,13.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUv88,16261,IFCFURNISHINGELEMENT,M_Counter Top w Sink Hole:600mm Depth:600mm Depth:161165,Level 1,39,Other,49.9,55.9,65.2,38.1,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUv3h,16411,IFCFURNISHINGELEMENT,M_Counter Top:600mm Depth:600mm Depth:161646,Level 1,39,Other,46.9,52.5,108.5,29.5,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvup,16485,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162230,Level 1,39,Door,56.9,63.7,24.9,16.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvuo,16531,IFCFURNISHINGELEMENT,M_Counter Top:600mm Depth:600mm Depth:162231,Level 1,39,Other,43.1,48.3,70.8,44.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvs2,16563,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162311,Level 1,39,Door,31.8,35.6,22.5,16.6,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvsm,16589,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162357,Level 1,39,Door,36.4,40.8,19.4,13.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvtA,16615,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162383,Level 1,39,Door,50.7,56.8,38.1,16.8,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvqp,16641,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162486,Level 1,39,Door,36.8,41.2,20.5,20.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvqo,16667,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162487,Level 1,39,Door,45.9,51.4,19.4,13.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvqz,16693,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162488,Level 1,39,Door,32.6,36.5,30.5,10.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvqy,16719,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162489,Level 1,39,Door,32.3,36.2,29.4,19.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvq$,16802,IFCFURNISHINGELEMENT,M_Counter Top w Sink Hole:600mm Depth:600mm Depth:162490,Level 1,39,Other,41.5,46.5,102.9,18.4,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvq_,16884,IFCFURNISHINGELEMENT,M_Counter Top:600mm Depth:600mm Depth:162491,Level 1,39,Other,38.7,43.3,50.8,28.0,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvqu,16914,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162493,Level 1,39,Door,35.4,39.6,25.0,7.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvqx,16940,IFCFURNISHINGELEMENT,M_Counter Top:600mm Depth:600mm Depth:162494,Level 1,39,Other,45.6,51.1,75.3,17.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvqw,16971,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162495,Level 1,39,Door,51.9,58.1,27.2,5.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvr5,16997,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162496,Level 1,39,Door,40.3,45.1,24.7,14.6,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUvr4,17023,IFCFURNISHINGELEMENT,M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:162497,Level 1,39,Door,49.4,55.3,23.6,7.6,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUshs,17341,IFCFURNISHINGELEMENT,M_Sofa:1830mm:1830mm:167283,Level 1,39,Other,35.6,39.9,58.6,22.1,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUsc7,17409,IFCFURNISHINGELEMENT,M_Sofa:1830mm:1830mm:167426,Level 1,39,Other,35.2,39.4,104.1,32.5,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUsab,17532,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167584,Level 1,39,Other,47.1,52.8,145.2,40.9,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUsbY,17602,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:167655,Level 1,39,Other,46.4,52.0,137.4,15.8,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtVQ,17716,IFCFURNISHINGELEMENT,M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168031,Level 1,39,Other,31.5,35.3,118.5,37.6,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtOy,17786,IFCFURNISHINGELEMENT,M_Sofa:1830mm:1830mm:168377,Level 1,39,Other,43.4,48.6,40.8,20.9,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtO$,17815,IFCFURNISHINGELEMENT,M_Sofa:1830mm:1830mm:168378,Level 1,39,Other,58.3,65.3,66.3,45.1,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtO_,17844,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168379,Level 1,39,Other,51.9,58.1,125.2,24.7,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtOv,17873,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:168380,Level 1,39,Other,41.4,46.4,148.5,30.9,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtOu,17902,IFCFURNISHINGELEMENT,M_Table-Coffee:0915 x 1830 x 0457mm:0915 x 1830 x 0457mm:168381,Level 1,39,Other,47.0,52.6,147.4,23.9,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtM4,19275,IFCFURNISHINGELEMENT,M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:168449,Level 2,43,Other,48.1,53.9,80.7,19.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtI8,20657,IFCFURNISHINGELEMENT,M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168717,Level 2,43,Other,39.5,44.2,80.7,19.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtHN,20726,IFCFURNISHINGELEMENT,M_Bed-Standard:1981 x 2032mm - King:1981 x 2032mm - King:168914,Level 2,43,Other,35.9,40.2,101.8,42.4,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtEr,20755,IFCFURNISHINGELEMENT,M_Bed-Standard:1525 x 2007mm - Queen:1525 x 2007mm - Queen:169008,Level 2,43,Other,54.3,60.8,134.1,25.8,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtC0,20792,IFCSLAB,Floor:Finish Floor - Wood:169093,Level 2,43,Floor,2563.3,2870.9,283.3,45.1,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtDX,20903,IFCSLAB,Floor:Finish Floor - Wood:169188,Level 2,43,Floor,2143.3,2400.5,324.4,56.5,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtBP,20958,IFCSLAB,Floor:Finish Floor - Wood:169308,Level 2,43,Floor,1896.2,2123.7,314.4,78.4,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUt8F,21013,IFCSLAB,Floor:Finish Floor - Wood:169354,Level 2,43,Floor,1748.3,1958.1,294.4,76.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUt8s,21080,IFCSLAB,Floor:Finish Floor - Wood:169395,Level 2,43,Floor,2202.9,2467.2,339.9,69.6,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUt5W,21147,IFCSLAB,Floor:Finish Floor - Wood:169701,Level 2,43,Floor,1973.6,2210.4,308.8,82.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUt2f,21195,IFCSLAB,Floor:Finish Floor - Ceramic Tile:169772,Level 2,43,Floor,2478.6,2776.0,320.0,74.5,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUt0F,21336,IFCSLAB,Floor:Finish Floor - Ceramic Tile:169866,Level 2,43,Floor,1950.5,2184.6,286.6,66.1,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtxr,21401,IFCSLAB,Floor:Finish Floor - Wood:170352,Level 1,39,Floor,2905.0,3253.6,221.2,50.3,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtoa,21449,IFCSLAB,Floor:Finish Floor - Ceramic Tile:170785,Level 1,39,Floor,2766.9,3098.9,195.6,52.0,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtjR,21497,IFCSLAB,Floor:Finish Floor - Ceramic Tile:171230,Level 1,39,Floor,1915.6,2145.5,356.6,50.8,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtju,21545,IFCSLAB,Floor:Finish Floor - Ceramic Tile:171261,Level 1,39,Floor,2729.9,3057.5,210.1,65.2,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUtgP,21610,IFCSLAB,Floor:Finish Floor - Wood:171292,Level 1,39,Floor,2662.7,2982.2,351.1,61.8,Baseline,run-2026-09-17-01
+2OBrcmyk58NupXoVOHUten,21658,IFCSLAB,Floor:Finish Floor - Ceramic Tile:171444,Level 1,39,Floor,2460.9,2756.2,198.9,73.0,Baseline,run-2026-09-17-01
+1s1jVhK8z0pgKYcr9jt781,21821,IFCDOOR,M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171853,Level 1,39,Other,95.4,106.8,105.1,37.4,Baseline,run-2026-09-17-01
+1s1jVhK8z0pgKYcr9jt7AB,21929,IFCDOOR,M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171975,Level 1,39,Other,68.5,76.7,131.7,33.6,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4$e,21980,IFCWINDOW,M_Fixed:2800mm x 2410mm:2800mm x 2410mm:180318,Level 2,43,Window,152.7,171.0,56.7,33.9,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4u1,22032,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:180663,Level 2,43,Window,116.3,130.3,39.6,28.2,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4qs,22084,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:180864,Level 2,43,Window,163.8,183.5,55.8,20.8,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4oq,22136,IFCWINDOW,M_Casement:819mm x 759mm:819mm x 759mm:180994,Level 2,43,Window,150.2,168.2,51.4,18.8,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4pU,22188,IFCWINDOW,M_Fixed:2800mm x 2410mm:2800mm x 2410mm:181096,Level 2,43,Window,183.7,205.7,24.7,11.5,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4kJ,22240,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:181285,Level 2,43,Window,179.6,201.2,54.1,29.4,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4gQ,22292,IFCWINDOW,M_Casement:819mm x 759mm:819mm x 759mm:181548,Level 2,43,Window,162.8,182.3,57.4,24.4,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4hv,22344,IFCWINDOW,M_Fixed:819mm x 759mm:819mm x 759mm:181583,Level 2,43,Window,126.7,141.9,49.2,30.8,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4aS,22396,IFCWINDOW,M_Fixed:750mm x 2200mm:750mm x 2200mm:181930,Level 2,43,Window,186.4,208.8,53.0,22.4,Baseline,run-2026-09-17-01
+1l0GAJtRTFv8$zmKJOH4ZZ,22448,IFCWINDOW,M_Fixed:750mm x 2200mm:750mm x 2200mm:182101,Level 2,43,Window,131.0,146.7,53.0,22.4,Baseline,run-2026-09-17-01
+0jf0rYHfX3RAB3bSIRjmxl,22475,IFCROOF,Basic Roof:Live Roof over Wood Joist Flat Roof:184483,Roof,51,Roof,,,251.3,73.6,Baseline,run-2026-09-17-01
+3ThA22djr8AQQ9eQMA5s7I,22492,IFCSLAB,Basic Roof:Live Roof over Wood Joist Flat Roof:184483,Roof,51,Roof,1838.5,2059.1,223.4,62.8,Baseline,run-2026-09-17-01
+0jf0rYHfX3RAB3bSIRjmmy,22663,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:184944,Roof,51,Wall,1004.2,1124.7,276.5,82.6,Baseline,run-2026-09-17-01
+0jf0rYHfX3RAB3bSIRjmpw,22708,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:185014,Roof,51,Wall,965.4,1081.2,277.6,89.6,Baseline,run-2026-09-17-01
+0jf0rYHfX3RAB3bSIRjmoa,22753,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:185064,Roof,51,Wall,673.1,753.9,254.3,66.4,Baseline,run-2026-09-17-01
+0jf0rYHfX3RAB3bSIRjmr1,22798,IFCWALLSTANDARDCASE,Basic Wall:Exterior - Brick on Block:185101,Roof,51,Wall,958.6,1073.6,410.8,73.9,Baseline,run-2026-09-17-01
+1Eo2$BaHX42AEkDvQQDocD,23162,IFCWINDOW,M_Skylight:1180 x 1170mm:1180 x 1170mm:185337,Roof,51,Window,197.8,221.5,34.5,35.7,Baseline,run-2026-09-17-01
+1Eo2$BaHX42AEkDvQQDoy2,23251,IFCWINDOW,M_Skylight:1180 x 1170mm:1180 x 1170mm:185718,Roof,51,Window,183.4,205.4,38.9,11.7,Baseline,run-2026-09-17-01
+0kF45Qs8L9PAM9kmb1lT5d,23286,IFCFOOTING,Wall Foundation:Bearing Footing - 900 x 300:186596,T/FDN,47,Wall,801.1,897.2,314.2,45.0,Baseline,run-2026-09-17-01
+0kF45Qs8L9PAM9kmb1lT5l,23369,IFCFOOTING,Wall Foundation:Bearing Footing - 900 x 300:186604,T/FDN,47,Wall,973.8,1090.7,322.0,55.1,Baseline,run-2026-09-17-01
+0kF45Qs8L9PAM9kmb1lT5t,23408,IFCFOOTING,Wall Foundation:Bearing Footing - 900 x 300:186612,T/FDN,47,Wall,1132.7,1268.6,330.8,65.1,Baseline,run-2026-09-17-01
+0kF45Qs8L9PAM9kmb1lT5$,23446,IFCFOOTING,Wall Foundation:Bearing Footing - 900 x 300:186620,T/FDN,47,Wall,1204.9,1349.5,250.8,57.3,Baseline,run-2026-09-17-01
+0kF45Qs8L9PAM9kmb1lT2B,23485,IFCFOOTING,Wall Foundation:Bearing Footing - 900 x 300:186632,T/FDN,47,Wall,760.2,851.4,277.5,62.6,Baseline,run-2026-09-17-01
+0kF45Qs8L9PAM9kmb1lT2N,23524,IFCFOOTING,Wall Foundation:Bearing Footing - 900 x 300:186644,T/FDN,47,Wall,946.6,1060.2,289.7,54.7,Baseline,run-2026-09-17-01
+0kF45Qs8L9PAM9kmb1lT2Z,23562,IFCFOOTING,Wall Foundation:Bearing Footing - 900 x 300:186656,T/FDN,47,Wall,743.5,832.7,301.9,46.8,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc5T8,23671,IFCCOVERING,Compound Ceiling:Gypsum Board:187149,Level 1,39,Finish,77.2,86.5,30.1,28.1,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc503,23768,IFCCOVERING,Compound Ceiling:Gypsum Board:187462,Level 1,39,Finish,54.2,60.7,80.0,27.7,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc50B,23826,IFCCOVERING,Compound Ceiling:Gypsum Board:187470,Level 1,39,Finish,56.6,63.4,95.5,28.8,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc50U,23884,IFCCOVERING,Compound Ceiling:Gypsum Board:187483,Level 1,39,Finish,65.7,73.6,114.4,31.0,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc50n,23992,IFCCOVERING,Compound Ceiling:Gypsum Board:187508,Level 1,39,Finish,78.9,88.4,48.9,24.2,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc52o,24060,IFCCOVERING,Compound Ceiling:Gypsum Board:187639,Level 2,43,Finish,58.5,65.5,51.2,19.3,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc554,24128,IFCCOVERING,Compound Ceiling:Gypsum Board:187649,Level 2,43,Finish,56.7,63.5,86.6,17.7,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc55E,24186,IFCCOVERING,Compound Ceiling:Gypsum Board:187659,Level 2,43,Finish,61.9,69.3,103.3,32.9,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc55M,24268,IFCCOVERING,Compound Ceiling:Gypsum Board:187667,Level 2,43,Finish,48.3,54.1,111.1,36.0,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc55U,24326,IFCCOVERING,Compound Ceiling:Gypsum Board:187675,Level 2,43,Finish,82.3,92.2,119.9,40.0,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc55c,24408,IFCCOVERING,Compound Ceiling:Gypsum Board:187683,Level 2,43,Finish,46.4,52.0,42.3,34.2,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc55k,24476,IFCCOVERING,Compound Ceiling:Gypsum Board:187691,Level 2,43,Finish,49.2,55.1,50.1,38.3,Baseline,run-2026-09-17-01
+3bXiCStxP6Fgxdej$yc55m,24544,IFCCOVERING,Compound Ceiling:Gypsum Board:187701,Level 2,43,Finish,59.5,66.6,52.3,26.3,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jZ1,24596,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (152 mm Stud):189074,Level 1,39,Wall,934.7,1046.9,331.9,72.1,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4j_U,24680,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (152 mm Stud):189901,Level 1,39,Wall,661.6,741.0,372.0,83.6,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jpl,24723,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):190140,Level 1,39,Wall,796.6,892.2,412.0,87.0,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jDb,24768,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (152 mm Stud):190774,Level 1,39,Wall,709.1,794.2,358.6,77.4,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jE6,24813,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (152 mm Stud):190933,Level 1,39,Wall,789.9,884.7,315.3,52.0,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4j7w,26941,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401,Level 1,39,Wall,33.9,38.0,366.4,87.5,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jOM,29098,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557,Level 1,39,Wall,38.8,43.5,348.6,53.3,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jQJ,29127,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680,Level 1,39,Wall,52.9,59.2,347.5,46.3,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jTB,31241,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768,Level 1,39,Wall,49.2,55.1,342.0,57.3,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jJA,31313,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153,Level 1,39,Wall,32.3,36.2,331.9,72.1,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jKO,31342,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331,Level 1,39,Wall,52.0,58.2,346.4,85.3,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4jMl,31371,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508,Level 1,39,Wall,42.3,47.4,377.5,72.6,Baseline,run-2026-09-17-01
+0iEHWY1$XA8eQeeULq4ien,31400,IFCFURNISHINGELEMENT,M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610,Level 1,39,Wall,43.1,48.3,402.0,63.9,Baseline,run-2026-09-17-01
+0dxE1Sy6nDqfpDb5vIMNiA,31431,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (152 mm Stud):193247,Level 2,43,Wall,888.8,995.5,295.4,77.8,Baseline,run-2026-09-17-01
+0dxE1Sy6nDqfpDb5vIMN_Z,31476,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (152 mm Stud):194166,Level 2,43,Wall,875.1,980.1,310.9,90.9,Baseline,run-2026-09-17-01
+3KMJUyUe9DfQ2FOCd5ZoiN,32063,IFCSTAIRFLIGHT,Stair:Residential - 200mm Max Riser 250mm Tread:198878:1,Level 1,39,Stair,282.6,316.5,143.0,26.8,Baseline,run-2026-09-17-01
+01KzA4SPn5IOODwLEb5RNY,32096,IFCMEMBER,Stair:Residential - 200mm Max Riser 250mm Tread:198878:1,Level 1,39,Stair,128.7,144.1,164.0,38.0,Baseline,run-2026-09-17-01
+37Fy90kSD2PvviizyM7EKl,32115,IFCMEMBER,Stair:Residential - 200mm Max Riser 250mm Tread:198878:2,Level 1,39,Stair,132.6,148.5,125.3,35.6,Baseline,run-2026-09-17-01
+21ldoMpbP4VfsJ0XGY_34d,32116,IFCSTAIR,Stair:Residential - 200mm Max Riser 250mm Tread:198878,Level 1,39,Stair,601.1,673.2,171.8,40.0,Baseline,run-2026-09-17-01
+21ldoMpbP4VfsJ0XGY_34P,32346,IFCRAILING,Railing:900mm Handrail Only:198880,Level 1,39,Railing,51.5,57.7,23.8,14.8,Baseline,run-2026-09-17-01
+21ldoMpbP4VfsJ0XGY_335,35163,IFCRAILING,Railing:1100mm Guard Rail:198972,Level 1,39,Railing,77.3,86.6,46.0,13.6,Baseline,run-2026-09-17-01
+1aj$VJZFn2TxepZUBcKpvt,35199,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):203347,Level 2,43,Wall,718.0,804.2,357.6,51.4,Baseline,run-2026-09-17-01
+1aj$VJZFn2TxepZUBcKp$i,35318,IFCDOOR,M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720,Level 2,43,Other,83.4,93.4,117.3,28.5,Baseline,run-2026-09-17-01
+1aj$VJZFn2TxepZUBcKpZw,35357,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):203998,Level 2,43,Wall,578.2,647.6,332.1,60.2,Baseline,run-2026-09-17-01
+1aj$VJZFn2TxepZUBcKpac,35413,IFCDOOR,M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034,Level 2,43,Other,122.7,137.4,61.8,41.0,Baseline,run-2026-09-17-01
+1aj$VJZFn2TxepZUBcKpee,35452,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):204300,Level 1,39,Wall,1036.5,1160.9,325.4,57.1,Baseline,run-2026-09-17-01
+1aj$VJZFn2TxepZUBcKphf,35497,IFCWALLSTANDARDCASE,Basic Wall:Interior - Partition (92mm Stud):204493,Level 1,39,Wall,764.9,856.7,329.8,85.1,Baseline,run-2026-09-17-01
+2gRXFgjRn2HPE$YoDLX0mp,35783,IFCFURNISHINGELEMENT,M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:204934,Level 2,43,Door,47.7,53.4,14.2,11.0,Baseline,run-2026-09-17-01
+2gRXFgjRn2HPE$YoDLX0q2,35854,IFCFURNISHINGELEMENT,M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205239,Level 2,43,Door,47.1,52.8,18.4,5.4,Baseline,run-2026-09-17-01
+2gRXFgjRn2HPE$YoDLX0rb,36125,IFCFURNISHINGELEMENT,M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205264,Level 2,43,Door,39.8,44.6,36.3,12.9,Baseline,run-2026-09-17-01
+2gRXFgjRn2HPE$YoDLX0ra,36151,IFCFURNISHINGELEMENT,M_Vanity Cabinet-Double Door Sink Unit:650 x 450 mm:650 x 450 mm:205265,Level 2,43,Door,39.0,43.7,35.2,5.9,Baseline,run-2026-09-17-01
+2gRXFgjRn2HPE$YoDLX0vP,36423,IFCFURNISHINGELEMENT,M_Vanity Cabinet-Double Door Sink Unit:450 x 450 mm:450 x 450 mm:205548,Level 1,39,Door,35.6,39.9,22.9,10.7,Baseline,run-2026-09-17-01
+2kvhekJrnDjRw0CDkKW$UD,36497,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206283,Level 2,43,Other,46.0,51.5,54.1,23.0,Baseline,run-2026-09-17-01
+2kvhekJrnDjRw0CDkKW$JW,36526,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206502,Level 2,43,Other,41.0,45.9,62.9,17.0,Baseline,run-2026-09-17-01
+2kvhekJrnDjRw0CDkKW$KL,36555,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206675,Level 2,43,Other,41.3,46.3,52.9,40.9,Baseline,run-2026-09-17-01
+2kvhekJrnDjRw0CDkKW$fQ,36584,IFCFURNISHINGELEMENT,M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 x 0610mm:206876,Level 2,43,Other,37.1,41.6,84.1,16.3,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK_l8,36686,IFCBEAM,M_W-Wide Flange:W310X60:W310X60:207325,Level 1,39,Other,277.6,310.9,139.5,27.7,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK$8W,36892,IFCBEAM,M_W-Wide Flange:W410X60:W410X60:208949,Level 1,39,Other,243.1,272.3,59.5,25.9,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK$Bq,37065,IFCBEAM,M_W-Wide Flange:W410X60:W410X60:209121,Level 2,43,Other,222.1,248.8,95.1,29.3,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK$CR,37195,IFCBEAM,M_W-Wide Flange:W410X60:W410X60:209166,Level 2,43,Other,311.7,349.1,65.1,36.0,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK$Dv,37325,IFCBEAM,M_W-Wide Flange:W310X60:W310X60:209260,Level 1,39,Other,286.5,320.9,102.8,16.3,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK$Du,37456,IFCBEAM,M_W-Wide Flange:W410X60:W410X60:209261,Level 1,39,Other,361.2,404.5,101.7,40.3,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK$Dx,37586,IFCBEAM,M_W-Wide Flange:W410X60:W410X60:209262,Level 2,43,Other,323.0,361.8,104.0,30.4,Baseline,run-2026-09-17-01
+2OrWItJ6zAwBNp0OUxK$Dw,37716,IFCBEAM,M_W-Wide Flange:W410X60:W410X60:209263,Level 2,43,Other,355.2,397.8,103.9,23.3,Baseline,run-2026-09-17-01
+1CZILmCaHETO8tf3SgGEWh,37777,IFCSLAB,Floor:150mm Exterior Slab on Grade:216507,Level 1,39,Floor,3069.5,3437.8,325.4,84.7,Baseline,run-2026-09-17-01
+1CZILmCaHETO8tf3SgGEXu,37864,IFCSLAB,Floor:150mm Exterior Slab on Grade:216552,Level 1,39,Floor,1684.3,1886.4,339.8,44.8,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5IVS,37913,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217414,Level 2,43,Wall,942.8,1055.9,398.6,81.8,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5IVT,37970,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217415,Level 2,43,Wall,588.9,659.6,399.7,88.8,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5IVI,38015,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217416,Level 2,43,Wall,934.3,1046.4,388.6,57.7,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5IVJ,38060,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217417,Level 2,43,Wall,874.5,979.4,389.7,64.7,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5ITp,38105,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217577,Level 2,43,Wall,1010.4,1131.6,224.3,86.1,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5ITm,38150,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217578,Level 2,43,Wall,912.3,1021.8,221.0,65.1,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5ITn,38195,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217579,Level 2,43,Wall,976.9,1094.1,222.1,72.1,Baseline,run-2026-09-17-01
+3Y4YRln2r91vflHcHE5ITs,38240,IFCWALLSTANDARDCASE,Basic Wall:Interior - Furring (38 mm Stud):217580,Level 2,43,Wall,770.3,862.7,227.6,61.1,Baseline,run-2026-09-17-01

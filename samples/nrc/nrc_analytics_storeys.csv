@@ -1,0 +1,6 @@
+Container,EntityId,Elements,EmbodiedCarbon_A1A3_kgCO2e,EmbodiedCarbon_A1A5_kgCO2e,OperationalCarbon_kgCO2e_per_year,MeanEnergyUseIntensity_kWh_per_m2_year
+Level 1,39,103,49451.2,55385.4,17457.0,40.5
+Level 2,43,93,48696.8,54540.6,13970.2,40.56
+Roof,51,8,5821.0,6519.4,1767.3,62.04
+T/FDN,47,14,11761.3,13172.7,4001.7,61.76
+Building,36,218,115730.3,129618.1,37196.2,42.68
