@@ -55,7 +55,7 @@ is the content itself, not the path or a timestamp.
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
 | Viz — `BimOpenFlow.Nodes.Viz` | 3 | `chart.bar`, `chart.line`, `view.table` |
-| Spatial — `BimOpenFlow.Nodes.Spatial` | 4 | `spatial.intersects`, `spatial.within`, `spatial.nearest`, `spatial.contains` |
+| Spatial — `BimOpenFlow.Nodes.Spatial` | 8 | `spatial.intersects`, `spatial.within`, `spatial.nearest`, `spatial.contains`, `spatial.footprint`, `spatial.polygon`, `spatial.polygonContains`, `spatial.polygonIntersects` |
 | Relations — `BimOpenFlow.Nodes.Relations` | 12 | `rel.csv`, `rel.table`, `rel.fromTable`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
 
 ## BOS — `BimOpenFlow.Nodes.Bos`
@@ -2632,6 +2632,105 @@ Emits one row per (a, boxes) pair where the boxes row's box contains a's box or 
 | `z` | Text | `CenterZ` | — | columns of input `a` |
 | `smallest` | Boolean | `true` | — | — |
 | `ignoreZ` | Boolean | `false` | — | — |
+| `excludeSelf` | Boolean | `true` | — | — |
+
+### `spatial.footprint` (v1) — Pure
+
+Adds a Text column ('as', default Footprint) holding the WKT POLYGON of each row's MinX..MaxY rectangle; rows with a missing bound get null. The column feeds spatial.polygon, spatial.polygonContains, and spatial.polygonIntersects, and reads unchanged in DuckDB spatial, PostGIS, or QGIS. Errors if the column already exists.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `boxes` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `as` | Text | `Footprint` | — | — |
+
+### `spatial.polygon` (v1) — Pure
+
+Adds Area, Perimeter, CentroidX, CentroidY (area-weighted), Vertices, and IsConvex computed from the WKT POLYGON in the 'polygon' column (default Footprint); rows with an empty cell get nulls, unparsable text is an error naming the row, and holes are ignored with a warning. Errors if any added column already exists.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `polygon` | Text | `Footprint` | — | columns of input `table` |
+
+### `spatial.polygonContains` (v1) — Pure
+
+Emits one row per (a, polygons) pair where the WKT POLYGON in the 'polygon' column (default Footprint) contains a's point in plan, boundary included: A, B, and Area of the polygon. a's point is the x, y columns, or the box center when a has MinX..MaxZ columns; Z is ignored. With smallest (the default) only the smallest containing polygon is kept per a row. Typical use: columns inside zone outlines from a CSV.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `a` | Table | required |
+| `polygons` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `aKey` | Text | `Name` | — | columns of input `a` |
+| `bKey` | Text | `Name` | — | columns of input `polygons` |
+| `x` | Text | `CenterX` | — | columns of input `a` |
+| `y` | Text | `CenterY` | — | columns of input `a` |
+| `z` | Text | `CenterZ` | — | columns of input `a` |
+| `polygon` | Text | `Footprint` | — | columns of input `polygons` |
+| `smallest` | Boolean | `true` | — | — |
+
+### `spatial.polygonIntersects` (v1) — Pure
+
+Emits one row per (a, b) pair whose WKT POLYGONs (the 'polygon' column of both inputs, default Footprint) intersect in plan, touching included: A and B. With excludeSelf, pairs whose two keys are equal are dropped. Rows with an empty polygon cell never match; holes are ignored with a warning.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `a` | Table | required |
+| `b` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `aKey` | Text | `Name` | — | columns of input `a` |
+| `bKey` | Text | `Name` | — | columns of input `b` |
+| `polygon` | Text | `Footprint` | — | columns of input `a` |
 | `excludeSelf` | Boolean | `true` | — | — |
 
 ## Relations — `BimOpenFlow.Nodes.Relations`
