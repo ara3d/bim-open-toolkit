@@ -16,7 +16,15 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 | `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced) | tables, bim |
 | `nrc-dc-w1-verdicts` | rule DC-W1 over doors, coloured in 3D | bim only (`check.rule`, `view3d.color`) |
 | `nrc-enrich-run` | `psets_to_write.csv` written back into a copy of the IFC | bim only (`sink.writePsets`) |
+| `nrc-color-operational-carbon` | the Duplex model coloured by operational carbon, viridis gradient, unmatched instances grey (paper Figure 5) | bim only (`view3d.instances`, `view3d.color`) |
+| `nrc-color-embodied-carbon` | the same model coloured by embodied carbon A1-A3; the roof, which has no value, stays grey (Figure 6) | bim only |
+| `nrc-color-category` | one colour per analysis category, nine in all (Figure 7) | bim only |
+| `nrc-storey-carbon-chart` | embodied and operational carbon per storey as a bar chart (Figure 2) | tables, bim |
+| `nrc-property-values` | the 2,438 rows the byte-exact writer turned into property values (Figure 4) | tables, bim |
 
 Expected numbers come from `nrc-ifc-llm/poc/results/expected_answers.json` and
 `poc/data/nrc_analytics_storeys.csv`; the tests in
-`tests/flow/BimOpenFlow.NrcWorkflows.Tests` cite them.
+`tests/flow/BimOpenFlow.NrcWorkflows.Tests` cite them. The five figure graphs are
+what `scripts/nrc-walkthrough.mjs` captures for the paper; `FigureGraphTests`
+guards them (216 of the 218 analysed elements have a mesh, so that is the
+coloured count).

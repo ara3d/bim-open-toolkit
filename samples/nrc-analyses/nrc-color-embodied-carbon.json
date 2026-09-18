@@ -1,0 +1,59 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "model": {
+      "x": 40,
+      "y": 40
+    },
+    "values": {
+      "x": 40,
+      "y": 260
+    },
+    "answer": {
+      "x": 420,
+      "y": 140
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "model.instances",
+        "to": "answer.instances"
+      },
+      {
+        "from": "values.table",
+        "to": "answer.values"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "model",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "values",
+        "kind": "csv.read",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view3d.color",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "model": {
+      "path": "{SAMPLES}/duplex-enriched.ifc"
+    },
+    "values": {
+      "path": "{SAMPLES}/nrc_analytics_elements.csv"
+    },
+    "answer": {
+      "joinColumn": "globalId",
+      "valueColumn": "EmbodiedCarbon_A1A3_kgCO2e",
+      "colorMap": "viridis"
+    }
+  }
+}

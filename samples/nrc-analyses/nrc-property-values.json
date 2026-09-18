@@ -1,0 +1,41 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "psets": {
+      "x": 40,
+      "y": 40
+    },
+    "answer": {
+      "x": 420,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "psets.table",
+        "to": "answer.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "psets",
+        "kind": "csv.read",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "psets": {
+      "path": "{SAMPLES}/psets_to_write.csv"
+    },
+    "answer": {
+      "title": "NRC property values written into duplex-enriched.ifc"
+    }
+  }
+}

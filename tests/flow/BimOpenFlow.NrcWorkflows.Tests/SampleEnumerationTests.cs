@@ -5,7 +5,7 @@ using BimOpenFlow.Host;
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
 /// <summary>Every samples/nrc-analyses/*.json parses, validates against the bim-profile registry
-/// (which includes rel.*), and is the subject of a named test in CsvGraphTests or ModelGraphTests,
+/// (which includes rel.*), and is the subject of a named test in CsvGraphTests, ModelGraphTests, or FigureGraphTests,
 /// so a graph cannot land in the folder without a test that checks its answer. Coverage is read
 /// from those two source files: every "nrc-..." string literal they contain is a graph id.</summary>
 [TestFixture]
@@ -13,7 +13,7 @@ public sealed class SampleEnumerationTests
 {
     private static readonly Regex GraphIdLiteral = new("\"(nrc-[a-z0-9-]+)\"");
 
-    private static readonly IReadOnlyList<string> CoveringTestSources = ["CsvGraphTests.cs", "ModelGraphTests.cs"];
+    private static readonly IReadOnlyList<string> CoveringTestSources = ["CsvGraphTests.cs", "ModelGraphTests.cs", "FigureGraphTests.cs"];
 
     public static IEnumerable<TestCaseData> SampleFiles
         => Directory.EnumerateFiles(NrcPaths.AnalysesDir, "*.json")

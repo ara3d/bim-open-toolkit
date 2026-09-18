@@ -1,0 +1,44 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "storeys": {
+      "x": 40,
+      "y": 40
+    },
+    "answer": {
+      "x": 420,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "storeys.table",
+        "to": "answer.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "storeys",
+        "kind": "csv.read",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "chart.bar",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "storeys": {
+      "path": "{SAMPLES}/nrc_analytics_storeys.csv"
+    },
+    "answer": {
+      "labelColumn": "Container",
+      "valueColumns": "EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year",
+      "title": "Carbon per storey (synthetic)",
+      "sort": "desc"
+    }
+  }
+}
