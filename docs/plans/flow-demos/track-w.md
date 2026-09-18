@@ -53,7 +53,7 @@ State: W1, W2, W3 done (2026-09-18). No processes left running.
 ## Chunks
 - W1: 83c5670
 - W2: 50dad3b
-- W3: (hash below)
+- W3: ee9d0fe
 
 ## Checks run
 - `npx vitest run --root packages/app test/hostStatus.test.ts`: 12 passed.
