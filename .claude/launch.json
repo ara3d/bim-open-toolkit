@@ -109,6 +109,17 @@
       "env": {
         "BOF_DUCKDB_HOST": "http://127.0.0.1:5219"
       }
+    },
+    {
+      "name": "gratify",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "submodules/gratify",
+        "run",
+        "dev"
+      ],
+      "port": 5199
     }
   ]
 }
