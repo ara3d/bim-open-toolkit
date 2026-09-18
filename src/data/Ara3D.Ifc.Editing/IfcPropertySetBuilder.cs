@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Ara3D.Ifc.Tests;
 
 /// <summary>
@@ -11,53 +9,39 @@ namespace Ara3D.Ifc.Tests;
 public sealed class IfcPropertySetBuilder
 {
     public readonly int OwnerHistoryId;
-    public int NextId;
 
-    private readonly List<string> _lines = new();
-    private readonly List<int> _ids = new();
+    private readonly IfcStepLines _out;
 
     public IfcPropertySetBuilder(int firstNewId, int ownerHistoryId)
     {
-        NextId = firstNewId;
+        _out = new IfcStepLines(firstNewId);
         OwnerHistoryId = ownerHistoryId;
     }
 
+    public int NextId
+    {
+        get => _out.NextId;
+        set => _out.NextId = value;
+    }
+
     public IReadOnlyList<string> Lines
-        => _lines;
+        => _out.Lines;
 
     /// <summary>Every id allocated so far, in emission order.</summary>
     public IReadOnlyList<int> Ids
-        => _ids;
+        => _out.Ids;
 
     public void AddPropertySet(int elementId, string psetName, IReadOnlyList<IfcPropertyValue> props, string guidKey)
     {
         var propIds = new int[props.Count];
         for (var i = 0; i < props.Count; i++)
-        {
-            propIds[i] = Allocate();
-            Emit(propIds[i], "IFCPROPERTYSINGLEVALUE",
+            propIds[i] = _out.Emit("IFCPROPERTYSINGLEVALUE",
                 $"{IfcStepText.String(props[i].Name)},$,{props[i].NominalValue},$");
-        }
 
-        var psetId = Allocate();
-        Emit(psetId, "IFCPROPERTYSET",
-            $"{GuidLiteral(guidKey + ":pset")},#{OwnerHistoryId},{IfcStepText.String(psetName)},$,{IfcStepText.IdList(propIds)}");
+        var psetId = _out.Emit("IFCPROPERTYSET",
+            $"{IfcStepLines.GuidLiteral(guidKey + ":pset")},#{OwnerHistoryId},{IfcStepText.String(psetName)},$,{IfcStepText.IdList(propIds)}");
 
-        var relId = Allocate();
-        Emit(relId, "IFCRELDEFINESBYPROPERTIES",
-            $"{GuidLiteral(guidKey + ":rel")},#{OwnerHistoryId},$,$,(#{elementId}),#{psetId}");
+        _out.Emit("IFCRELDEFINESBYPROPERTIES",
+            $"{IfcStepLines.GuidLiteral(guidKey + ":rel")},#{OwnerHistoryId},$,$,(#{elementId}),#{psetId}");
     }
-
-    private int Allocate()
-    {
-        _ids.Add(NextId);
-        return NextId++;
-    }
-
-    private void Emit(int id, string typeName, string attributes)
-        => _lines.Add(new StringBuilder().Append('#').Append(id).Append('=')
-            .Append(typeName).Append('(').Append(attributes).Append(");").ToString());
-
-    private static string GuidLiteral(string key)
-        => IfcStepText.String(IfcGuid.Deterministic(key).ToIfcGuid());
 }
