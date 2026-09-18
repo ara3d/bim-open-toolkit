@@ -39,6 +39,24 @@ it no longer sits in front of the port.
 | `BimWorkflows.Tests` | 0.8 to 30 s | same |
 | `Host.Tests` | 2 to 8 s | starts a real Kestrel host |
 
+## Browser and first-request timings (track verify, revision 4ae38b7)
+
+| Request | Duration | Note |
+|---|---|---|
+| first `GET .../color-by-category/state`, cold caches | 2.5 s | graph evaluation converts and meshes `duplex.ifc` once |
+| first `GET /__bimflow/models/duplex.ifc` | 1.0 s | cold IFC to BOS conversion |
+| first `GET /api/models` | 53 ms | was 2.3 s before the lazy hash (4ae38b7) |
+| the same graph, warm | 11 to 160 ms | |
+| offline banner after killing the host | about 20 s | the 15 s probe catches an idle death; the SSE error does not fire promptly |
+| banner cleared after restart | 5 to 20 s | |
+
+The one cold cost over budget was the first 3D graph. The host now evaluates
+every stored analysis once in the background after start-up
+(`AnalysisSessions.WarmAll`), after the generated samples land. Measured on a
+fresh store and cache, bim profile, 26 analyses: warm-up done 2.4 s after it
+started, about 7 s after process start; the first `color-by-category` state
+request then took 74 ms and `ifc-to-verdicts-and-chart` 4 ms.
+
 ## Still to measure
 
 - Time from opening `3d.html` to the first rendered frame, and any `/api`
