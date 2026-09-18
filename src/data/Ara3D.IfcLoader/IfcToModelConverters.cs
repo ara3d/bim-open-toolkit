@@ -54,7 +54,13 @@ public static unsafe class IfcToModelConverters
         {
             foreach (var mesh in g.GetMeshes())
             {
+                // web-ifc hands back zero-vertex meshes whose transform carries +Infinity;
+                // an instance of one would poison every consumer of the transform table.
+                if (mesh.NumVertices == 0)
+                    continue;
                 var m = (double*)mesh.Transform;
+                if (!IsFinite(m))
+                    continue;
                 var c = (IfcColor*)mesh.Color;
                 var color = new Color((float)c->R, (float)c->G, (float)c->B, (float)c->A);
                 var mat = new Material(color, 0.1f, 0.5f);
@@ -84,6 +90,15 @@ public static unsafe class IfcToModelConverters
         }
 
         return mb.Build();
+    }
+
+    /// <summary>True when all sixteen components of a column-major 4x4 are finite.</summary>
+    private static bool IsFinite(double* m)
+    {
+        for (var i = 0; i < 16; i++)
+            if (!double.IsFinite(m[i]))
+                return false;
+        return true;
     }
 
     // Copies the data from the C++ layer into arrays.
