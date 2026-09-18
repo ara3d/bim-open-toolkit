@@ -58,6 +58,16 @@ Each folder's README lists its graphs and the numbers they produce.
 | BFAST | `bfast.read` (path), `bfast.buffer` (path, name, type) | the directory of named buffers, then one buffer as a `value` column under an element type you name (the container records none); also the transport the 3D pane receives prepared geometry in |
 | XLSX, SQLite, Parquet, JSON | `xlsx.read`, `sqlite.query`, `duck.read` | tables profile |
 
+## The NRC walkthrough
+
+```bash
+npm run nrc:walkthrough --prefix bimopenflow/web
+```
+
+Builds the host and both MCP servers, runs the paper's demonstration on Duplex and
+then Snowdon, and writes every figure and MCP transcript under
+`artifacts/nrc-walkthrough` with an index. See [nrc-walkthrough.md](nrc-walkthrough.md).
+
 ## Headless checks
 
 ```bash

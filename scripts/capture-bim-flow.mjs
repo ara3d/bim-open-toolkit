@@ -13,6 +13,8 @@
 //   caption   text for the index
 //   fullPage  capture the whole page instead of the viewport (default false)
 //   settleMs  extra wait after the pane is ready (default 1500)
+//   pick      [x, y] as fractions of the 3D canvas: click there to select an element
+//             before capturing (the pane then shows the picked element's properties)
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -32,6 +34,20 @@ async function waitForPane(page, pane, timeout) {
       document.querySelector(".bof-panes-table tbody tr, .bof-panes-chart svg, .bof-panes-chart canvas, .bof-panes-verdict, [class*='bof-panes-'] table tr") !== null,
       {}, { timeout }).catch(() => { /* a pane without one of these classes still gets captured */ });
   }
+}
+
+/** Clicks the 3D canvas at a fraction of its box, then at a few nearby points, until the pane reports a selection. */
+async function pickElement(page, [fx, fy], timeout) {
+  const canvas = page.locator(".bof-panes-view3d canvas.bof-panes-canvas, #viewer canvas").first();
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("pick: no 3D canvas on the page");
+  const picked = () => page.waitForFunction((sel) => /Selected entity/.test(document.querySelector(sel)?.textContent ?? ""),
+    VIEW_STATUS, { timeout: Math.min(timeout, 5000) }).then(() => true, () => false);
+  for (const [dx, dy] of [[0, 0], [0.05, 0.05], [-0.05, -0.05], [0.1, 0], [0, 0.1]]) {
+    await page.mouse.click(box.x + box.width * (fx + dx), box.y + box.height * (fy + dy));
+    if (await picked()) return;
+  }
+  console.warn("pick: nothing selected; capturing without a selection");
 }
 
 /** Opens the analysis on the page, picks the node and pane, and screenshots. Returns the status text. */
@@ -61,6 +77,7 @@ export async function captureOne(page, base, spec, outDir, timeout = 180000) {
   const fit = page.getByRole("button", { name: "Fit graph", exact: true });
   if (await fit.count()) await fit.first().click();
   await waitForPane(page, spec.pane, timeout);
+  if (spec.pick) await pickElement(page, spec.pick, timeout);
   await page.waitForTimeout(spec.settleMs ?? 1500);
   const status = ((await page.locator(VIEW_STATUS).first().textContent({ timeout: 1000 }).catch(() => "")) ?? "").trim();
   await page.screenshot({ path: join(outDir, spec.file), fullPage: spec.fullPage ?? false });

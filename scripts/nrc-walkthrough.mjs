@@ -58,6 +58,8 @@ const DUPLEX_CAPTURES = [
     "Figure 9. The verdict table behind Figure 8: one row per door with the width read and the citation."],
   ["nrc-storey-of-element", "answer", "table", "figure-10-storey-of-element.png",
     "Figure 10. Elements per storey from the StoreyOfEntity view, which walks ContainedIn, PartOf, and MemberOf: Level 1 has 103, the count the hand-driven session missed."],
+  ["nrc-color-operational-carbon", "answer", "view3d", "figure-13-picked-element-properties.png",
+    "Figure 13. A picked wall: the 3D pane lists its property sets, including the Pset_NRC sets the enrichment wrote.", [0.5, 0.55]],
 ];
 
 const SNOWDON_CAPTURES = [
@@ -72,8 +74,8 @@ const DUCKDB_CAPTURES = [
   ["duckdb-room-distribution", null, "table", "snowdon-6-room-distribution.png", "Rooms per storey from the same export."],
 ];
 
-const spec = ([analysis, node, pane, file, caption], page = "3d.html") =>
-  ({ page, analysis, node: node ?? undefined, pane, file, caption });
+const spec = ([analysis, node, pane, file, caption, pick], page = "3d.html") =>
+  ({ page, analysis, node: node ?? undefined, pane, file, caption, pick });
 
 const sections = [];
 const section = (title, lines) => sections.push(`## ${title}`, "", ...lines, "");
