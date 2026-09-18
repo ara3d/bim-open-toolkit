@@ -271,3 +271,19 @@ acknowledge the plan including this section.
    in the host. The host builds `samples/nrc/duplex-enriched.duckdb` on
    demand at seeding time; the supervisor adds that at integration once A's
    build function is verified.
+5. **C fence.** Track C also owns `Relations.DuckDb/DuckDbExecutor.cs`, since
+   `Execute` and `Count` must hand the inline tables to the session. The host
+   reaches the executor only through `RelationRuntime`.
+6. **C5 value names.** `valueType` also accepts `Real` as a synonym for
+   `Number` (the paper's `psets_to_write.csv` uses it), plus `Label` and
+   `Identifier` where `IfcPropertyValue` already offers them. Empty means
+   `Text`; unknown names fail naming the row.
+7. **Commit turn mechanics.** Subagents cannot message the supervisor
+   mid-run, so the turn is a standing grant taken by
+   `mkdir docs/plans/nrc-handoff/.commit-turn` (retry every 15 s, give up
+   after 10 minutes and record a blocker) and released by removing it. The
+   supervisor takes the same lock for its own commits.
+8. **Private build output.** Every track builds and tests with
+   `--artifacts-path C:\Users\cdigg\AppData\Local\Temp\claude\nrc-wave\track-<id>`
+   so concurrent builds do not collide on `bin` and `obj`. Wave gates run
+   from the default output after all writers stop.
