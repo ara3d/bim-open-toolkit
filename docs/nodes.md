@@ -55,7 +55,7 @@ is the content itself, not the path or a timestamp.
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
 | Viz — `BimOpenFlow.Nodes.Viz` | 3 | `chart.bar`, `chart.line`, `view.table` |
-| Relations — `BimOpenFlow.Nodes.Relations` | 11 | `rel.csv`, `rel.table`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
+| Relations — `BimOpenFlow.Nodes.Relations` | 12 | `rel.csv`, `rel.table`, `rel.fromTable`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
 
 ## BOS — `BimOpenFlow.Nodes.Bos`
 
@@ -1212,7 +1212,7 @@ Effect: runs only inside a Run. Writes the table into a DuckDB database file —
 
 ### `sink.writePsets` (v1) — Effect
 
-Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten).
+Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten).
 
 Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`, `paramValue`) are grouped by (entityId, psetName) in first-appearance order; each group becomes one IfcPropertySet attached to the entity, appended to a byte-exact copy of the source file. An entity id not present in the source file is an error. v1 limitation: every value is written as IFCTEXT; typed measures come later.
 
@@ -2514,6 +2514,28 @@ A table in a registered database source. Nothing is read until a node is inspect
 |---|---|---|---|---|
 | `source` | Text | — | — | — |
 | `table` | Text | — | — | — |
+
+### `rel.fromTable` (v1) — Pure
+
+Makes the input table available to rel.* nodes as a relation, keyed by the table's content.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `name` | Text | `t` | — | — |
 
 ### `rel.sql` (v1) — Pure
 
