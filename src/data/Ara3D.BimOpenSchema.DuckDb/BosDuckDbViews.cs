@@ -63,7 +63,35 @@ public static class BosDuckDbViews
             LEFT JOIN Entities eb ON eb.rowid = r.EntityB
             LEFT JOIN Strings bn ON bn.rowid = eb.Name
             """);
+
+        conn.Execute(StoreyOfEntitySql);
     }
+
+    /// <summary>Every entity with the building storey above it, and how many relations away it is.
+    /// Containment relations point from the child (<c>EntityA</c>) to its container
+    /// (<c>EntityB</c>), so the walk follows <c>EntityA -> EntityB</c> upward.
+    /// <para><c>MemberOf</c> is walked alongside <c>PartOf</c> and <c>ContainedIn</c> because the IFC
+    /// aggregation relation arrives as <c>MemberOf</c>: a furnishing element is contained in a space
+    /// that is a member of the storey, and a stair flight is a member of a stair that is contained in
+    /// one. Walking containment alone strands every such element — the per-storey undercount the NRC
+    /// proof-of-concept transcript recorded for its question 2.</para>
+    /// The depth bound stops a malformed model with a containment cycle from looping.</summary>
+    public static readonly string StoreyOfEntitySql = $"""
+        CREATE OR REPLACE VIEW StoreyOfEntity AS
+        WITH RECURSIVE Ancestors(EntityIndex, Ancestor, Depth) AS (
+            SELECT e.rowid, e.rowid, 0 FROM Entities e
+            UNION ALL
+            SELECT a.EntityIndex, r.EntityB, a.Depth + 1
+            FROM Ancestors a
+            JOIN Relations r ON r.EntityA = a.Ancestor
+            WHERE r.RelationType IN ({(int)RelationType.PartOf}, {(int)RelationType.MemberOf}, {(int)RelationType.ContainedIn})
+              AND a.Depth < 16
+        )
+        SELECT a.EntityIndex, a.Ancestor AS StoreyIndex, s.Name AS StoreyName, a.Depth
+        FROM Ancestors a
+        JOIN EntityText s ON s.EntityIndex = a.Ancestor
+        WHERE s.Category = 'IFCBUILDINGSTOREY'
+        """;
 
     private static string EnumCase<T>(string column, IReadOnlyList<T> values) where T : struct, Enum
     {

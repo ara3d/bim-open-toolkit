@@ -1,5 +1,6 @@
 using System.Text;
 using Ara3D.BimOpenSchema;
+using Ara3D.BimOpenSchema.DuckDb;
 using Ara3D.Utils;
 using DuckDB.NET.Data;
 
@@ -74,6 +75,10 @@ public static class IfcDuck
             LEFT JOIN Entities eb ON eb.rowid = r.EntityB
             LEFT JOIN Strings bn ON bn.rowid = eb.Name
             """);
+
+        // Shared verbatim with BosDuckDbViews rather than copied, so the MCP server and the flow
+        // graphs cannot drift into answering the same storey question two ways.
+        Execute(conn, BosDuckDbViews.StoreyOfEntitySql);
     }
 
     private static string EnumCase<T>(string column, IReadOnlyList<T> values) where T : struct, Enum
