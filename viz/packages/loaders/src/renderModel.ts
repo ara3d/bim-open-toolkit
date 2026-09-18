@@ -134,6 +134,17 @@ export function instanceRows (m: RenderModelTables, i: number, out: Float32Array
   return out
 }
 
+/**
+ * Whether the instance's 3x4 transform can be drawn. A converter that emitted a
+ * degenerate placement leaves NaN or Infinity here; such an instance is dropped
+ * rather than treated as a corrupt file, so one bad placement cannot blank a model.
+ */
+export function instanceTransformFinite (m: RenderModelTables, i: number): boolean {
+  const r = i * INSTANCE_FLOAT_STRIDE
+  for (let j = 0; j < 12; j++) if (!Number.isFinite(m.instanceFloats[r + j])) return false
+  return true
+}
+
 export function instanceMatrix (m: RenderModelTables, i: number, out: Float32Array, at = 0): Float32Array {
   const f = m.instanceFloats
   const r = i * INSTANCE_FLOAT_STRIDE

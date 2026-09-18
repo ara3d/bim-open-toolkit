@@ -31,7 +31,7 @@ import { parseBosGeometryFromZip } from './bos-loader.js'
 import { BOS_BUFFER_PREFIX } from './bim-data.js'
 import { parseBfastModel } from './bfast-loader.js'
 import type { BosGeometry } from './bos-geometry.js'
-import { INSTANCE_FLOAT_STRIDE, MESH_SLICE_INTS } from './renderModel.js'
+import { INSTANCE_FLOAT_STRIDE, INSTANCE_HIDDEN_FLAG, MESH_SLICE_INTS } from './renderModel.js'
 import { bytesOf, writeBFast } from './bfast-writer.js'
 
 const VERTEX_SCALE = 1 / 10_000
@@ -82,12 +82,18 @@ function buildMeshBounds (bg: BosGeometry, slices: Int32Array): Float32Array {
   return out
 }
 
-/** 64 byte instance records, plus their world space boxes. */
+/**
+ * 64 byte instance records, plus their world space boxes. An instance whose
+ * source transform composes to a non-finite matrix is written through as-is but
+ * marked hidden and left with an empty box, so that reading the result reports
+ * it as skipped instead of rejecting the file or poisoning the model bounds.
+ */
 function buildInstanceData (bg: BosGeometry, meshBounds: Float32Array) {
   const n = bg.InstanceMeshIndex.length
   const floats = new Float32Array(n * INSTANCE_FLOAT_STRIDE)
   const ints = new Int32Array(floats.buffer)
   const bounds = new Float32Array(n * 6)
+  const skipped = new Set<number>()
 
   const matrix = new THREE.Matrix4()
   const box = new THREE.Box3()
@@ -105,6 +111,8 @@ function buildInstanceData (bg: BosGeometry, meshBounds: Float32Array) {
 
     // The file holds the three rows of a 3x4 matrix; THREE stores columns.
     const e = matrix.elements
+    const bad = !e.every(Number.isFinite)
+    if (bad) skipped.add(i)
     const r = i * INSTANCE_FLOAT_STRIDE
     floats[r + 0] = e[0]; floats[r + 1] = e[4]; floats[r + 2] = e[8]; floats[r + 3] = e[12]
     floats[r + 4] = e[1]; floats[r + 5] = e[5]; floats[r + 6] = e[9]; floats[r + 7] = e[13]
@@ -118,11 +126,11 @@ function buildInstanceData (bg: BosGeometry, meshBounds: Float32Array) {
       ((bg.MaterialBlue[mat] ?? 255) << 16) |
       ((bg.MaterialAlpha[mat] ?? 255) << 24)) | 0
     ints[r + 15] =
-      ((bg.InstanceFlags[i] & 0xff) << 8) |
+      (((bg.InstanceFlags[i] | (bad ? INSTANCE_HIDDEN_FLAG : 0)) & 0xff) << 8) |
       (((bg.MaterialRoughness[mat] ?? 128) & 0xff) << 16) |
       (((bg.MaterialMetallic[mat] ?? 0) & 0xff) << 24)
 
-    if (mesh < 0) continue
+    if (mesh < 0 || bad) continue
     box.min.fromArray(meshBounds, mesh * 6)
     box.max.fromArray(meshBounds, mesh * 6 + 3)
     box.applyMatrix4(matrix)
@@ -130,10 +138,10 @@ function buildInstanceData (bg: BosGeometry, meshBounds: Float32Array) {
     box.max.toArray(bounds, i * 6 + 3)
   }
 
-  return { floats, bounds }
+  return { floats, bounds, skipped }
 }
 
-function buildMeta (bg: BosGeometry, slices: Int32Array, instanceBounds: Float32Array) {
+function buildMeta (bg: BosGeometry, slices: Int32Array, instanceBounds: Float32Array, skipped: ReadonlySet<number>) {
   const meta = new ArrayBuffer(48)
   const v = new DataView(meta)
   const box = new THREE.Box3()
@@ -144,7 +152,7 @@ function buildMeta (bg: BosGeometry, slices: Int32Array, instanceBounds: Float32
     const mesh = bg.InstanceMeshIndex[i]
     // Only instances that will be drawn: a hidden or empty one placed far from
     // the model would otherwise widen the bounds a camera frames.
-    if (mesh < 0) continue
+    if (mesh < 0 || skipped.has(i)) continue
     if (bg.InstanceFlags[i] & 0x1) continue
     if (slices[mesh * MESH_SLICE_INTS + 3] === 0) continue
     box.expandByPoint(new THREE.Vector3().fromArray(instanceBounds, i * 6))
@@ -174,7 +182,7 @@ export async function bosToBfast (input: ArrayBuffer): Promise<ArrayBuffer> {
 
   const meshSlices = buildMeshSlices(bg)
   const meshBounds = buildMeshBounds(bg, meshSlices)
-  const { floats, bounds } = buildInstanceData(bg, meshBounds)
+  const { floats, bounds, skipped } = buildInstanceData(bg, meshBounds)
 
   const bfast = writeBFast([
     { name: 'VertexData', bytes: bytesOf(buildVertices(bg)) },
@@ -183,7 +191,7 @@ export async function bosToBfast (input: ArrayBuffer): Promise<ArrayBuffer> {
     { name: 'InstanceData', bytes: bytesOf(floats) },
     { name: 'MeshBoundsData', bytes: bytesOf(meshBounds) },
     { name: 'InstanceBoundsData', bytes: bytesOf(bounds) },
-    { name: 'Meta', bytes: buildMeta(bg, meshSlices, bounds) },
+    { name: 'Meta', bytes: buildMeta(bg, meshSlices, bounds, skipped) },
     ...tables
   ])
 

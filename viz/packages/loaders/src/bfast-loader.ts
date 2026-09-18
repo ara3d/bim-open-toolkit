@@ -1,13 +1,26 @@
+// Reads a prepared Ara 3D `.bfast` render model and converts it to viewer-core groups.
+//
+// Structural damage (table lengths, mesh slices, index ranges, non-finite vertices)
+// is fatal: nothing sensible can be drawn from it. A non-finite instance transform
+// is not, because one degenerate placement out of a hundred thousand must not blank
+// the whole building. Those instances are dropped and reported instead:
+// `BfastModel.skippedInstances` lists their indices, and the conversion and load
+// results carry `skippedInstances` as a count, for a status line to show.
+
 import { InstancedGroup, type MeshBuffers } from '@ara3d/viewer-core';
 import { readBFast } from './bfast.js';
-import { readRenderModel, instanceCount, meshCount, instanceMeshIndex, instanceEntityIndex, instanceHidden, instanceColor, instanceMatrix, type RenderModel } from './renderModel.js';
+import { readRenderModel, instanceCount, meshCount, instanceMeshIndex, instanceEntityIndex, instanceHidden, instanceColor, instanceMatrix, instanceTransformFinite, type RenderModel } from './renderModel.js';
 import type { BosConvertResult } from './bos-geometry.js';
 import type { GroupCallback } from './groups.js';
 import type { LoadOptions, LoadSource } from './progress.js';
 import { toArrayBuffer } from './fetch-buffer.js';
 import { bfastBimData, bimEntityLocalIds, type BimData } from './bim-data.js';
 
-export type BfastModel = RenderModel & { readonly bimData: BimData };
+export type BfastModel = RenderModel & {
+  readonly bimData: BimData;
+  /** Indices of instances whose transform is not finite; these are never drawn. */
+  readonly skippedInstances: readonly number[];
+};
 
 /** Reads prepared Ara 3D triangle geometry as views on the uncompressed file. */
 export function parseBfastModel(buffer: ArrayBuffer): BfastModel {
@@ -28,21 +41,27 @@ export function parseBfastModel(buffer: ArrayBuffer): BfastModel {
   }
   for (const value of model.vertices)
     if (!Number.isFinite(value)) throw new Error('Invalid BFAST vertex');
+  const skippedInstances: number[] = [];
   for (let i = 0; i < instanceCount(model); i++) {
     const mesh = instanceMeshIndex(model, i);
     if (mesh < -1 || mesh >= meshCount(model) || instanceEntityIndex(model, i) < 0)
       throw new Error(`Invalid BFAST instance ${i}`);
-    for (let j = 0; j < 12; j++)
-      if (!Number.isFinite(model.instanceFloats[i * 16 + j])) throw new Error(`Invalid BFAST transform ${i}`);
+    if (!instanceTransformFinite(model, i)) skippedInstances.push(i);
   }
-  return model;
+  return { ...model, skippedInstances };
 }
 
-/** Keeps entity row identity and shares mesh views across material groups. */
+/**
+ * Keeps entity row identity and shares mesh views across material groups.
+ * Instances with a non-finite transform are dropped and counted in the result's
+ * `skippedInstances`; the same instances that `parseBfastModel` lists.
+ */
 export function bfastToGroups(model: RenderModel, onGroup?: GroupCallback): BosConvertResult {
   const meshes = new Map<number, MeshBuffers>();
   const buckets = new Map<string, { meshIndex: number; packed: number; alpha: number; instances: number[] }>();
+  let skippedInstances = 0;
   for (let i = 0; i < instanceCount(model); i++) {
+    if (!instanceTransformFinite(model, i)) { skippedInstances++; continue; }
     const meshIndex = instanceMeshIndex(model, i);
     if (meshIndex === -1 || instanceHidden(model, i) || model.meshSlices[meshIndex * 4 + 3] === 0) continue;
     // High bytes of the flags word carry BOS roughness and metallic values.
@@ -77,7 +96,7 @@ export function bfastToGroups(model: RenderModel, onGroup?: GroupCallback): BosC
     groups.push(group); groupEntities.push({ group, entities }); count += instances.length;
     onGroup?.(group, groups.length - 1, buckets.size);
   }
-  return { groups, groupEntities, instanceCount: count };
+  return { groups, groupEntities, instanceCount: count, skippedInstances };
 }
 
 export type BfastLoadResult = BosConvertResult & { readonly bimData: BimData; readonly entityLocalIds: Int32Array | null };

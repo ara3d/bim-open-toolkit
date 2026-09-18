@@ -36,7 +36,7 @@ describe('BFAST render models', () => {
     expect(() => parseBfastModel(bytes)).toThrow(/range/);
     expect(() => parseBfastModel(bfastFixture(b => { b.delete('InstanceData'); }))).toThrow(/InstanceData/);
   });
-  it('rejects invalid slices, indices, transforms and unsupported primitives', () => {
+  it('rejects invalid slices, indices and unsupported primitives', () => {
     for (const [name, offset, value] of [
       ['MeshSliceData', 4, 1000], ['IndexData', 0, 99], ['InstanceData', 48, 99], ['Meta', 40, 2],
     ] as const) {
@@ -45,9 +45,19 @@ describe('BFAST render models', () => {
         new DataView(bytes.buffer, bytes.byteOffset).setInt32(offset, value, true);
       }))).toThrow(/BFAST/);
     }
-    expect(() => parseBfastModel(bfastFixture(b => {
-      const bytes = b.get('InstanceData')!;
-      new DataView(bytes.buffer, bytes.byteOffset).setFloat32(0, NaN, true);
-    }))).toThrow(/transform/);
+  });
+  it('hides an instance with a non-finite transform instead of failing the model', () => {
+    // Instance 0 of the fixture is one of the two drawn placements.
+    const bytes = bfastFixture(b => {
+      const data = b.get('InstanceData')!;
+      new DataView(data.buffer, data.byteOffset).setFloat32(0, NaN, true);
+    });
+    const model = parseBfastModel(bytes);
+    expect([...model.skippedInstances]).toEqual([0]);
+    const result = bfastToGroups(model);
+    expect(result.skippedInstances).toBe(1);
+    expect(result.instanceCount).toBe(1);
+    expect(result.groups).toHaveLength(1);
+    expect([...result.groups[0].transforms]).toEqual([1,0,0,0, 0,2,0,0, 0,0,3,0, 11,20,30,1]);
   });
 });

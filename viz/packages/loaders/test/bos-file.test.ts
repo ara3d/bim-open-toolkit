@@ -8,6 +8,7 @@ import * as parquet from 'hyparquet';
 import { ViewerScene } from '@ara3d/viewer-core';
 import { parseBosGeometry, loadBos } from '../src/bos-loader.js';
 import { bosToBfast } from '../src/bos-to-bfast.js';
+import { bosTransformFinite } from '../src/bos-geometry.js';
 import { parseBfastModel, loadBfast } from '../src/bfast-loader.js';
 import { readBimTable } from '../src/bim-data.js';
 import { bfastFixture } from './bfast-fixture.js';
@@ -67,9 +68,24 @@ describe.skipIf(!existsSync(bosPath))('BOS container (duplex.bos)', () => {
     expect(entities.map(row => Number(row.LocalId))).toEqual([...combined.entityLocalIds!]);
   });
 
-  it('rejects a prepared export when source transforms are nonfinite', async () => {
+  it('hides instances with a nonfinite source transform and loads the rest', async () => {
     // This legacy duplex fixture contains Infinity in transform row 484.
-    await expect(bosToBfast(buffer())).rejects.toThrow(/Invalid BFAST transform/);
+    const bos = await parseBosGeometry(buffer());
+    const badRows = new Set([...bos.TransformTX.keys()].filter(ti => !bosTransformFinite(bos, ti)));
+    expect(badRows.size).toBeGreaterThan(0);
+    const expected = [...bos.InstanceTransformIndex].flatMap((ti, i) => badRows.has(ti) ? [i] : []);
+    expect(expected.length).toBeGreaterThan(0);
+
+    const prepared = await bosToBfast(buffer());
+    expect([...parseBfastModel(prepared).skippedInstances]).toEqual(expected);
+    const loaded = await loadBfast(prepared, new ViewerScene());
+    expect(loaded.skippedInstances).toBe(expected.length);
+    expect(loaded.instanceCount).toBeGreaterThan(0);
+
+    // The direct BOS path drops and counts the same instances.
+    const direct = await loadBos(buffer(), new ViewerScene());
+    expect(direct.skippedInstances).toBe(expected.length);
+    expect(direct.instanceCount).toBeGreaterThan(0);
   });
 
   it('decodes the geometry tables', async () => {

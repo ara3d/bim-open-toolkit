@@ -17,12 +17,14 @@ export {
   bosMeshBuffers,
   composeTrs,
   bosTransform,
+  bosTransformFinite,
   bosToGroups,
 } from './bos-geometry.js';
 export { parseBosGeometry, loadBos } from './bos-loader.js';
 export { isBFast } from './bfast.js';
 export { parseBfastModel, bfastToGroups, loadBfast } from './bfast-loader.js';
 export type { RenderModel } from './renderModel.js';
+export { instanceTransformFinite } from './renderModel.js';
 export type { BfastModel, BfastLoadResult } from './bfast-loader.js';
 export { bosToBfast } from './bos-to-bfast.js';
 export { readBimTable, findBimTable, bimEntityLocalIds, type BimData } from './bim-data.js';

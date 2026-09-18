@@ -113,13 +113,24 @@ export function composeTrs(
   ]);
 }
 
+/** The ten floats of one Transforms row, in `composeTrs` argument order. */
+const bosTrs = (bos: BosGeometry, ti: number): Parameters<typeof composeTrs> => [
+  bos.TransformTX[ti], bos.TransformTY[ti], bos.TransformTZ[ti],
+  bos.TransformQX[ti], bos.TransformQY[ti], bos.TransformQZ[ti], bos.TransformQW[ti],
+  bos.TransformSX[ti], bos.TransformSY[ti], bos.TransformSZ[ti],
+];
+
+/**
+ * Whether a Transforms row can be placed. Exports written by older converters
+ * carry NaN or Infinity for degenerate placements; instances using such a row
+ * are hidden rather than failing the whole model.
+ */
+export const bosTransformFinite = (bos: BosGeometry, ti: number): boolean =>
+  bosTrs(bos, ti).every(Number.isFinite);
+
 /** The 4x4 world matrix of one row of the Transforms table. */
 export const bosTransform = (bos: BosGeometry, ti: number): Float32Array =>
-  composeTrs(
-    bos.TransformTX[ti], bos.TransformTY[ti], bos.TransformTZ[ti],
-    bos.TransformQX[ti], bos.TransformQY[ti], bos.TransformQZ[ti], bos.TransformQW[ti],
-    bos.TransformSX[ti], bos.TransformSY[ti], bos.TransformSZ[ti],
-  );
+  composeTrs(...bosTrs(bos, ti));
 
 interface Bucket {
   readonly mesh: MeshBuffers;
@@ -140,12 +151,15 @@ export interface BosGroupEntities {
 
 export interface BosConvertResult extends ConvertResult {
   readonly groupEntities: readonly BosGroupEntities[];
+  /** Instances dropped because their transform is not finite (see `bosTransformFinite`). */
+  readonly skippedInstances: number;
 }
 
 /**
  * Converts decoded BOS geometry tables into InstancedGroups: instances sharing
  * a mesh and material parameters merge into one group, with the material color
- * carried per instance. Hidden instances (flags & 0x1) are skipped.
+ * carried per instance. Hidden instances (flags & 0x1) are skipped, as are
+ * instances placed by a non-finite transform row, which the result counts.
  * Groups are emitted through `onGroup` as each one is finished.
  */
 // TODO: honor per-instance visibility as a group split instead of dropping hidden instances.
@@ -153,9 +167,16 @@ export function bosToGroups(bos: BosGeometry, onGroup?: GroupCallback): BosConve
   const meshCache = new Map<number, MeshBuffers | null>();
   const buckets = new Map<string, Bucket>();
   let instanceCount = 0;
+  let skippedInstances = 0;
 
   const n = bos.InstanceMeshIndex.length;
   for (let i = 0; i < n; i++) {
+    // A row index outside the table belongs to a geometry-free entity, not a bad placement.
+    const transformIndex = bos.InstanceTransformIndex[i];
+    if (transformIndex >= 0 && transformIndex < bos.TransformTX.length && !bosTransformFinite(bos, transformIndex)) {
+      skippedInstances++;
+      continue;
+    }
     const meshIndex = bos.InstanceMeshIndex[i];
     if (meshIndex < 0) continue;
     if (bos.InstanceFlags[i] & HIDDEN_FLAG) continue;
@@ -208,5 +229,5 @@ export function bosToGroups(bos: BosGeometry, onGroup?: GroupCallback): BosConve
     groupEntities.push({ group, entities: b.entities });
     onGroup?.(group, i, flat.length);
   }
-  return { groups, instanceCount, groupEntities };
+  return { groups, instanceCount, groupEntities, skippedInstances };
 }
