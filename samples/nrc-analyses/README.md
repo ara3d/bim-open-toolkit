@@ -13,7 +13,7 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 | `nrc-q3-top-elements` | the five elements with the highest operational carbon | tables, bim |
 | `nrc-q5-by-category` | operational carbon per category | tables, bim |
 | `nrc-q7-absence` | the roof with no embodied-carbon row, as a row | tables, bim |
-| `nrc-storey-of-element` | storey of every element by walking ContainedIn and PartOf | tables, bim |
+| `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced) | tables, bim |
 | `nrc-dc-w1-verdicts` | rule DC-W1 over doors, coloured in 3D | bim only (`check.rule`, `view3d.color`) |
 | `nrc-enrich-run` | `psets_to_write.csv` written back into a copy of the IFC | bim only (`sink.writePsets`) |
 
