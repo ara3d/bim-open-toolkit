@@ -55,6 +55,7 @@ is the content itself, not the path or a timestamp.
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
 | Viz — `BimOpenFlow.Nodes.Viz` | 3 | `chart.bar`, `chart.line`, `view.table` |
+| Spatial — `BimOpenFlow.Nodes.Spatial` | 4 | `spatial.intersects`, `spatial.within`, `spatial.nearest`, `spatial.contains` |
 | Relations — `BimOpenFlow.Nodes.Relations` | 12 | `rel.csv`, `rel.table`, `rel.fromTable`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
 
 ## BOS — `BimOpenFlow.Nodes.Bos`
@@ -2510,6 +2511,128 @@ Titles a table view; comma-separated 'columns' optionally projects (default all,
 |---|---|---|---|---|
 | `title` | Text | — | — | — |
 | `columns` | Text | — | — | columns of input `table` |
+
+## Spatial — `BimOpenFlow.Nodes.Spatial`
+
+GIS-style predicates and measures (intersects, within, nearest, contains, footprints, polygons) over point, box, and WKT polygon columns; every join emits a pairs table. BIM-free and DuckDB-free.
+
+### `spatial.intersects` (v1) — Pure
+
+Emits one row per (a, b) pair whose boxes intersect: A ('aKey' of the a row), B ('bKey' of the b row), and OverlapVolume (zero when the boxes only touch). Each input is read as boxes when it has MinX..MaxZ columns, else as points from the x, y, z columns. With excludeSelf, pairs whose two keys are equal are dropped, so a table joined to itself lists only distinct clash candidates (each unordered pair twice, once per direction). Axis-aligned-box semantics: candidates, not mesh clashes. Rows with missing coordinates never match.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `a` | Table | required |
+| `b` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `aKey` | Text | `Name` | — | columns of input `a` |
+| `bKey` | Text | `Name` | — | columns of input `b` |
+| `x` | Text | `CenterX` | — | columns of input `a` |
+| `y` | Text | `CenterY` | — | columns of input `a` |
+| `z` | Text | `CenterZ` | — | columns of input `a` |
+| `excludeSelf` | Boolean | `true` | — | — |
+
+### `spatial.within` (v1) — Pure
+
+Emits one row per (a, b) pair whose boxes are at most 'distance' apart: A, B, and Distance. With measure = box the distance is between the boxes' surfaces (zero when they intersect); with center it is between their centers. Each input is read as boxes when it has MinX..MaxZ columns, else as points from the x, y, z columns. excludeSelf drops pairs whose keys are equal. Axis-aligned-box semantics: candidates, not clearances. Typical use: rooms within 3 m of a stair.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `a` | Table | required |
+| `b` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `distance` | Number | — | — | — |
+| `measure` | Enum | `box` | `box`, `center` | — |
+| `aKey` | Text | `Name` | — | columns of input `a` |
+| `bKey` | Text | `Name` | — | columns of input `b` |
+| `x` | Text | `CenterX` | — | columns of input `a` |
+| `y` | Text | `CenterY` | — | columns of input `a` |
+| `z` | Text | `CenterZ` | — | columns of input `a` |
+| `excludeSelf` | Boolean | `true` | — | — |
+
+### `spatial.nearest` (v1) — Pure
+
+Emits, for each a row, its 'k' nearest b rows: A, B, Distance, and Rank (1 = closest). With measure = box the distance is between the boxes' surfaces (zero when they intersect); with center it is between their centers. Ties keep b's row order. Each input is read as boxes when it has MinX..MaxZ columns, else as points from the x, y, z columns. excludeSelf drops the b row whose key equals a's. An a row with missing coordinates, or an empty b, produces no rows. Typical use: the three nearest fire extinguishers to each room.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `a` | Table | required |
+| `b` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `k` | Integer | `1` | — | — |
+| `measure` | Enum | `box` | `box`, `center` | — |
+| `aKey` | Text | `Name` | — | columns of input `a` |
+| `bKey` | Text | `Name` | — | columns of input `b` |
+| `x` | Text | `CenterX` | — | columns of input `a` |
+| `y` | Text | `CenterY` | — | columns of input `a` |
+| `z` | Text | `CenterZ` | — | columns of input `a` |
+| `excludeSelf` | Boolean | `true` | — | — |
+
+### `spatial.contains` (v1) — Pure
+
+Emits one row per (a, boxes) pair where the boxes row's box contains a's box or point entirely: A, B, and ContainerVolume. With smallest (the default) only the smallest container of each a row is kept, so the output has at most one row per a row; with ignoreZ containment and smallest are judged in plan (XY) only. a is read as boxes when it has MinX..MaxZ columns, else as points from the x, y, z columns. excludeSelf drops pairs whose keys are equal. Rows in no box produce nothing. Typical use: element centers from bim.bounds against room boxes from bim.rooms.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `a` | Table | required |
+| `boxes` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `aKey` | Text | `Name` | — | columns of input `a` |
+| `bKey` | Text | `Name` | — | columns of input `boxes` |
+| `x` | Text | `CenterX` | — | columns of input `a` |
+| `y` | Text | `CenterY` | — | columns of input `a` |
+| `z` | Text | `CenterZ` | — | columns of input `a` |
+| `smallest` | Boolean | `true` | — | — |
+| `ignoreZ` | Boolean | `false` | — | — |
+| `excludeSelf` | Boolean | `true` | — | — |
 
 ## Relations — `BimOpenFlow.Nodes.Relations`
 
