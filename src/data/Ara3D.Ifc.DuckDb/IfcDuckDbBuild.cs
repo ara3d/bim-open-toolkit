@@ -37,10 +37,11 @@ public static class IfcDuckDbBuild
         }
     }
 
-    /// <summary>Runs the converter directly rather than through <c>IfcToBosConverter.Convert</c>,
-    /// which never disposes the <c>IfcFile</c> it opens; that leaks a pinned whole-file buffer and
-    /// a native web-ifc model for the life of the process.</summary>
-    private static void SaveBos(FilePath ifc, FilePath bos)
+    /// <summary>Converts the IFC to a BOS file (parquet zip) at the given path. Runs the
+    /// converter directly rather than through <c>IfcToBosConverter.Convert</c>, which never
+    /// disposes the <c>IfcFile</c> it opens; that leaks a pinned whole-file buffer and a native
+    /// web-ifc model for the life of the process.</summary>
+    public static void SaveBos(FilePath ifc, FilePath bos)
     {
         var converter = new IfcToBosConverter(ifc);
         try
