@@ -79,4 +79,19 @@ public sealed class CsvGraphTests
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(103L));
         Assert.That(Number(answer, "MeanEui", 0), Is.EqualTo(40.5).Within(Tolerance));
     }
+
+    [Test]
+    public void Q3_TopElements()
+    {
+        var answer = Answer("nrc-q3-top-elements");
+        Assert.That(answer.Rows, Has.Count.EqualTo(5));
+        // expected_answers.json Q3, in the order it lists them.
+        Assert.That(answer.ColumnCells("GlobalId"), Is.EqualTo(new object?[]
+        {
+            "0iEHWY1$XA8eQeeULq4jpl", "0jf0rYHfX3RAB3bSIRjmr1", "0iEHWY1$XA8eQeeULq4ien",
+            "3Y4YRln2r91vflHcHE5IVT", "3Y4YRln2r91vflHcHE5IVS",
+        }));
+        Assert.That(Numbers(answer, "OperationalCarbon_kgCO2e_per_year"),
+            Near(412.0, 410.8, 402.0, 399.7, 398.6));
+    }
 }

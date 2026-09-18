@@ -1,0 +1,74 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "answer": {
+      "x": 1030,
+      "y": 40
+    },
+    "columns": {
+      "x": 370,
+      "y": 40
+    },
+    "elements": {
+      "x": 40,
+      "y": 40
+    },
+    "ranked": {
+      "x": 700,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "elements.relation",
+        "to": "columns.input"
+      },
+      {
+        "from": "columns.relation",
+        "to": "ranked.input"
+      },
+      {
+        "from": "ranked.relation",
+        "to": "answer.input"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "answer",
+        "kind": "rel.limit",
+        "version": 1
+      },
+      {
+        "id": "columns",
+        "kind": "rel.select",
+        "version": 1
+      },
+      {
+        "id": "elements",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "ranked",
+        "kind": "rel.sort",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "answer": {
+      "count": "5"
+    },
+    "columns": {
+      "columns": "GlobalId, Name, Category, OperationalCarbon_kgCO2e_per_year"
+    },
+    "elements": {
+      "path": "nrc_analytics_elements.csv",
+      "source": "nrc"
+    },
+    "ranked": {
+      "by": "OperationalCarbon_kgCO2e_per_year desc, GlobalId"
+    }
+  }
+}
