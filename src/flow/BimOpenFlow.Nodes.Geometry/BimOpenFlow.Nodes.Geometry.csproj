@@ -10,12 +10,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.Abstractions\Ara3D.DataFlowEngine.Abstractions.csproj" />
+    <ProjectReference Include="..\BimOpenFlow.Nodes.Support\BimOpenFlow.Nodes.Support.csproj" />
     <ProjectReference Include="..\..\data\Ara3D.Ifc.Mesher\Ara3D.Ifc.Mesher.csproj" />
     <ProjectReference Include="..\..\data\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
     <PackageReference Include="Ara3D.DataTable" Version="$(Ara3DSdkVersion)" />
     <PackageReference Include="Ara3D.Geometry" Version="$(Ara3DSdkVersion)" />
     <PackageReference Include="Ara3D.Models" Version="$(Ara3DSdkVersion)" />
     <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="BimOpenFlow.Nodes.Support" />
   </ItemGroup>
 
 </Project>

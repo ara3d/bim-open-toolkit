@@ -3,24 +3,15 @@ using Ara3D.DataTable;
 
 namespace BimOpenFlow.Nodes.Geometry;
 
-/// <summary>Small table helpers shared by the view3d nodes: column lookup, canonical cell text, row selection.</summary>
+/// <summary>Small table helpers shared by the view3d nodes: canonical cell text, numeric
+/// cells, and row selection. Column lookup and row counts come from Support's TableColumns.</summary>
 internal static class TableOps
 {
-    public static int ColumnIndex(this IDataTable table, string name)
-    {
-        for (var i = 0; i < table.Columns.Count; i++)
-            if (string.Equals(table.Columns[i].Descriptor.Name, name, StringComparison.OrdinalIgnoreCase))
-                return i;
-        return -1;
-    }
-
+    /// <summary>Support's RequireColumn names the node kind; the view3d nodes name the table instead.</summary>
     public static int RequireColumn(this IDataTable table, string name)
         => table.ColumnIndex(name) is var i && i >= 0
             ? i
             : throw new ArgumentException($"Table '{table.Name}' has no column '{name}'");
-
-    public static int RowCount(this IDataTable table)
-        => table.Columns.Count == 0 ? 0 : table.Columns[0].Count;
 
     /// <summary>The canonical-text key set of an ids table, read from its column named
     /// like the join column, or its first column when absent (the ids-join convention
