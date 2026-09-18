@@ -49,6 +49,7 @@ None.
 | B1 | 1 passed, 0 failed |
 | B2 | 2 passed, 0 failed |
 | B3, B4, B5 | 5 passed, 0 failed |
+| final, at `bc1ce3d` | 5 passed, 0 failed |
 
 ## Blockers
 
@@ -60,9 +61,9 @@ None.
 |---|---|
 | B1 `nrc-q1-building-total` | `e8b9fa6` |
 | B2 `nrc-q8-per-storey` | `cfcb390` |
-| B3 `nrc-q3-top-elements` | pending |
-| B4 `nrc-q5-by-category` | pending |
-| B5 `nrc-q7-absence` | pending |
+| B3 `nrc-q3-top-elements` | `2305872` |
+| B4 `nrc-q5-by-category` | `9319493` |
+| B5 `nrc-q7-absence` | `bc1ce3d` |
 
 ## Findings
 
@@ -89,3 +90,17 @@ None.
   and restored the file byte for byte (checked with a checksum before
   restoring, so a concurrent track-A edit would not be clobbered). No change to
   `Fixture.cs` is committed by this track.
+
+## Verification limits
+
+- The five tests were run with `Fixture.OneTimeSetUp`'s `IfcDuckDbBuild.Build`
+  call temporarily commented out locally, for the `NrcPaths` reason above. The
+  file was restored byte for byte after every run and no change to it is
+  committed. Once `NrcPaths` resolves the root correctly, these tests should
+  run untouched, because they build their own runtime and registry.
+- The working tree carried tracks A, C, and D's uncommitted source changes
+  during every run, so the build was not over a clean revision. The tests only
+  exercise `rel.*` over CSV files and none of those tracks' behavior.
+- `dotnet test` here builds the whole dependency graph, so an unrelated track's
+  broken intermediate state would show up as a build failure, not a wrong
+  number.
