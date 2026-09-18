@@ -327,6 +327,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Ifc.Ask", "src\s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Ifc.Ask.Tests", "tests\studio\BimOpenMcp.Ifc.Ask.Tests\BimOpenMcp.Ifc.Ask.Tests.csproj", "{D8DFE816-A3E4-4CA9-A111-CAB04418357A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Nodes.Spatial", "src\flow\BimOpenFlow.Nodes.Spatial\BimOpenFlow.Nodes.Spatial.csproj", "{33D0624D-A95C-452B-8B3C-3656E4941C5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Nodes.Spatial.Tests", "tests\flow\BimOpenFlow.Nodes.Spatial.Tests\BimOpenFlow.Nodes.Spatial.Tests.csproj", "{E27D8561-702B-4B9D-9E65-49470C439C18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -2005,6 +2009,30 @@ Global
 		{D8DFE816-A3E4-4CA9-A111-CAB04418357A}.Release|x64.Build.0 = Release|Any CPU
 		{D8DFE816-A3E4-4CA9-A111-CAB04418357A}.Release|x86.ActiveCfg = Release|Any CPU
 		{D8DFE816-A3E4-4CA9-A111-CAB04418357A}.Release|x86.Build.0 = Release|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Debug|x64.Build.0 = Debug|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Debug|x86.Build.0 = Debug|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Release|x64.ActiveCfg = Release|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Release|x64.Build.0 = Release|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Release|x86.ActiveCfg = Release|Any CPU
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A}.Release|x86.Build.0 = Release|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Debug|x64.Build.0 = Debug|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Debug|x86.Build.0 = Debug|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Release|x64.ActiveCfg = Release|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Release|x64.Build.0 = Release|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Release|x86.ActiveCfg = Release|Any CPU
+		{E27D8561-702B-4B9D-9E65-49470C439C18}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2162,6 +2190,8 @@ Global
 		{7C85514B-DEFC-4AD7-86C3-9CECFB65D9BD} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{92877914-C70C-4794-8762-63B55C42BD10} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{D8DFE816-A3E4-4CA9-A111-CAB04418357A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{33D0624D-A95C-452B-8B3C-3656E4941C5A} = {F39BE9BB-DBD7-E166-ADE3-F4F1A49BDA3E}
+		{E27D8561-702B-4B9D-9E65-49470C439C18} = {4B5E7AB4-3AED-FBE2-C1A4-8E8AB283672D}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Ara3D.IfcTypes\Ara3D.IfcTypes.projitems*{e0b72fa9-a47a-4b10-bce8-a5fe1e1b6968}*SharedItemsImports = 5
