@@ -30,6 +30,7 @@ local setup, verification and limits.
 | Kind | Inputs | Params | Output |
 |---|---|---|---|
 | `view3d.instances` | — | `path` (FilePath) | instance table |
+| `view3d.measures` | — | `path` (FilePath) | measures table: instance keys + `surfaceArea`, `meshVolume`, `triangleCount` |
 | `view3d.color` | instances, values | `joinColumn`, `valueColumn`, `colorMap` (viridis \| category10 \| redgreen) | instance table + `r g b a` |
 | `view3d.isolate` | instances, ids | `joinColumn` | filtered instance table |
 | `view3d.hide` | instances, ids | `joinColumn` | filtered instance table (inverse of isolate) |

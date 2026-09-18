@@ -46,7 +46,7 @@ is the content itself, not the path or a timestamp.
 |---|---|---|
 | BOS — `BimOpenFlow.Nodes.Bos` | 2 | `bos.load`, `bos.query` |
 | BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 12 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops` |
-| Geometry — `BimOpenFlow.Nodes.Geometry` | 20 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
+| Geometry — `BimOpenFlow.Nodes.Geometry` | 21 | `view3d.instances`, `view3d.measures`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
 | DuckDB — `BimOpenFlow.Nodes.DuckDb` | 9 | `duck.read`, `duck.source`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
@@ -388,6 +388,24 @@ One row per placed mesh, with entity ids and world bounds. The loaded geometry i
 | Name | Type |
 |---|---|
 | `instances` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+
+### `view3d.measures` (v1) — Pure
+
+One row per placed mesh of a model file: instanceIndex, meshId, entityId, globalId, category, surfaceArea, meshVolume, and triangleCount, computed in world space from the mesh triangles. meshVolume is the enclosed volume and is exact only for closed meshes with consistent winding; open shells report the absolute signed sum. Join on entityId or globalId to bring quantities onto any other table. The loaded geometry is cached by file content hash.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `measures` | Table |
 
 **Params**
 

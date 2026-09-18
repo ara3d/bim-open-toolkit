@@ -8,6 +8,7 @@ public static class GeometryNodes
     public static IReadOnlyList<IFlowNode> All { get; } =
     [
         new InstancesNode(),
+        new MeasuresNode(),
         new ColorNode(),
         new IsolateNode(),
         new HideNode(),
