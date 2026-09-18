@@ -1,0 +1,129 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "storeyOf": {
+      "x": 40,
+      "y": 40
+    },
+    "entities": {
+      "x": 40,
+      "y": 240
+    },
+    "withGlobalId": {
+      "x": 370,
+      "y": 40
+    },
+    "elements": {
+      "x": 370,
+      "y": 240
+    },
+    "analysed": {
+      "x": 700,
+      "y": 40
+    },
+    "perStorey": {
+      "x": 1030,
+      "y": 40
+    },
+    "answer": {
+      "x": 1360,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "storeyOf.relation",
+        "to": "withGlobalId.left"
+      },
+      {
+        "from": "entities.relation",
+        "to": "withGlobalId.right"
+      },
+      {
+        "from": "withGlobalId.relation",
+        "to": "analysed.left"
+      },
+      {
+        "from": "elements.relation",
+        "to": "analysed.right"
+      },
+      {
+        "from": "analysed.relation",
+        "to": "perStorey.input"
+      },
+      {
+        "from": "perStorey.relation",
+        "to": "answer.input"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "storeyOf",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "entities",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "withGlobalId",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "elements",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "analysed",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "perStorey",
+        "kind": "rel.aggregate",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.sort",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "storeyOf": {
+      "source": "duplex-enriched",
+      "table": "StoreyOfEntity"
+    },
+    "entities": {
+      "source": "duplex-enriched",
+      "table": "EntityText"
+    },
+    "withGlobalId": {
+      "leftKey": "EntityIndex",
+      "rightKey": "EntityIndex",
+      "kind": "inner"
+    },
+    "elements": {
+      "source": "nrc",
+      "path": "nrc_analytics_elements.csv"
+    },
+    "analysed": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "inner"
+    },
+    "perStorey": {
+      "groupBy": "StoreyName",
+      "aggregates": "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied"
+    },
+    "answer": {
+      "by": "Embodied desc"
+    }
+  }
+}
