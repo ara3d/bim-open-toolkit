@@ -10,7 +10,7 @@ builds under `--artifacts-path artifacts/agent-t`.
 |---|---|---|
 | T1a `tests/BimOpenToolkit.TestSupport` (RepoPaths, MiniIfc), solution entry, layering rule | committed | 4c1f04f |
 | T1b replace the repo-root and mini-IFC copies in twelve test projects | committed | f9823c2 |
-| T2 `bfast.read`, `bfast.buffer`, fixture, demo graph, docs | committed | (T2) |
+| T2 `bfast.read`, `bfast.buffer`, fixture, demo graph, docs | committed | f685b06 |
 
 ## T1a
 
