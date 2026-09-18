@@ -1,0 +1,59 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "psets": {
+      "x": 40,
+      "y": 40
+    },
+    "rows": {
+      "x": 370,
+      "y": 40
+    },
+    "answer": {
+      "x": 700,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "psets.relation",
+        "to": "rows.input"
+      },
+      {
+        "from": "rows.table",
+        "to": "answer.in"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "psets",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "rows",
+        "kind": "rel.materialize",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "sink.writePsets",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "psets": {
+      "source": "nrc",
+      "path": "psets_to_write.csv"
+    },
+    "rows": {
+      "limit": "0"
+    },
+    "answer": {
+      "sourcePath": "{SAMPLES}/duplex-enriched.ifc",
+      "targetPath": "{SAMPLES}/../../artifacts/nrc/duplex-enriched-out.ifc"
+    }
+  }
+}

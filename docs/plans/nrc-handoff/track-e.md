@@ -3,7 +3,7 @@
 **Contract revision: nrc-1, including the "Contract amendments" section of
 `docs/plans/nrc-handoff-wave.md`. Acknowledged before any file was written.**
 
-State: working (E1 verified and committed; E2 and E3 in progress).
+State: **verified** (all three chunks implemented, committed, and checked).
 Started from HEAD `264653f` (>= `af76a33`; tracks A-D verified).
 
 ## Scope
@@ -12,7 +12,7 @@ Started from HEAD `264653f` (>= `af76a33`; tracks A-D verified).
 |---|---|---|
 | E1 | `samples/nrc-analyses/nrc-storey-of-element.json` | `StoreyOfElement_MatchesTheStoreyCsv` |
 | E2 | `samples/nrc-analyses/nrc-dc-w1-verdicts.json` | `DcW1Verdicts_MatchTheDoorVerdictsCsv` |
-| E3 | `samples/nrc-analyses/nrc-enrich-run.json` | pending |
+| E3 | `samples/nrc-analyses/nrc-enrich-run.json` | `EnrichRun_WritesEveryPsetRowIntoACopyOfTheIfc` |
 
 ## Files owned
 
@@ -27,7 +27,8 @@ Started from HEAD `264653f` (>= `af76a33`; tracks A-D verified).
 | Chunk | Hash |
 |---|---|
 | E1 | `165c955` |
-| E2 | pending |
+| E2 | `11e36e4` |
+| E3 | pending |
 
 ## Checks and results
 
@@ -36,6 +37,24 @@ All with `--artifacts-path C:\Users\cdigg\AppData\Local\Temp\claude\nrc-wave\tra
 - `dotnet test tests/flow/BimOpenFlow.NrcWorkflows.Tests --filter ModelGraphTests` after E1:
   1 passed, 0 failed.
 - The same command after E2: 2 passed, 0 failed.
+- The same command after E3: 3 passed, 0 failed.
+- `dotnet test tests/flow/BimOpenFlow.NrcWorkflows.Tests` with no filter, at the end:
+  **8 passed, 0 failed** - track B's five CSV-graph tests plus these three. The
+  `NrcPaths` root fix (`b9fcf0f`) means `Fixture` now builds the database happily
+  under the private artifacts path, so B's workaround is no longer needed.
+
+## Remaining work
+
+None.
+
+## Verification limits
+
+- The graphs were evaluated through `GraphDocument.Evaluate`, not through a running
+  host. The supervisor's integration step opens `nrc-storey-of-element` in the browser.
+- `nrc-enrich-run`'s effect node is executed by the test, not by the engine (see
+  finding 8). Nothing checks the *contents* of the written IFC here; track D's
+  `WritePsetsTypedTests` asserts the emitted `IFCPROPERTYSINGLEVALUE` lines per type.
+- The working tree during these runs carried only this track's files beyond HEAD.
 
 ## Running processes
 
@@ -88,3 +107,26 @@ None.
 7. **`view3d.color` joins by an exactly-named shared column, so the graph renames
    `GlobalId` to `globalId`.** That is the name `view3d.instances` gives its column.
    Instance rows are per placed mesh, so the 14 doors arrive as 44 rows.
+
+8. **The engine has no graph-level Run, so an effect node can never reach Ok in a
+   document evaluation.** `Evaluator.EvaluateNode` returns `EffectPending` for every
+   `NodeCapability.Effect` node and captures its would-be inputs in `EffectInputs`;
+   `EvalContext` is only ever constructed with `isRun: false`, and nothing in
+   `Ara3D.DataFlowEngine.Runs` executes effects either (`RunReplay` has a TODO for it).
+   `ModelGraphTests` therefore asserts that `nrc-enrich-run`'s `answer` node is
+   `EffectPending` and every other node is `Ok`, then calls the node from the registry
+   with the captured inputs and a context whose `IsRun` is true. When the engine grows a
+   Run, that helper should be replaced by it. This is the one place the track could not
+   meet the brief's "assert every node is Ok" literally.
+
+9. **`sink.writePsets` takes file paths, so `nrc-enrich-run` is the one model graph that
+   needs `{SAMPLES}`.** `sourcePath` is `{SAMPLES}/duplex-enriched.ifc` and `targetPath`
+   is `{SAMPLES}/../../artifacts/nrc/duplex-enriched-out.ifc`, which seeding rewrites to
+   the gitignored `artifacts/nrc` folder at the repo root. The test copies the document
+   with `targetPath` pointed at a temp folder instead, so no test writes into the
+   checkout. `nrc-dc-w1-verdicts` uses the placeholder too, for `view3d.instances`.
+
+10. **`psets_to_write.csv` holds 2438 rows over 224 distinct `entityId` values**, which
+    is exactly the `valuesWritten` and `entitiesTouched` the summary row reports. Its
+    `valueType` values are Real (1103), Label (670), Identifier (664), and Text (1) -
+    track D's finding, confirmed end to end: the node accepted every row.
