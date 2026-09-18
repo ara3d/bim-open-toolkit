@@ -1,7 +1,7 @@
 # view3d sample analyses
 
 Ready-made graphs for the 3D visualization nodes (`view3d.*`, see
-`src/BimOpenFlow.Nodes.Geometry/README.md`). Each file is a canonical graph
+`src/flow/BimOpenFlow.Nodes.Geometry/README.md`). Each file is a canonical graph
 document whose file name is the analysis id. The literal placeholder `{DATA}`
 stands for the repo's `data/` directory (they all load `duplex.ifc`).
 
@@ -15,8 +15,10 @@ stands for the repo's `data/` directory (they all load `duplex.ifc`).
 | `decimate-overview` | only the largest quarter of instances, small parts dropped |
 
 Every sample validates against the Bos + Geometry packs and evaluates green
-over `data/duplex.ifc`; `tests/BimOpenFlow.View3dWorkflows.Tests` enforces both.
+over `data/duplex.ifc`; `tests/flow/BimOpenFlow.View3dWorkflows.Tests` enforces both.
 
-These are not yet seeded into the host's analysis store at startup (the tables
-profile seeds `samples/analyses`); seeding for the bim profile is tracked as a
-follow-up alongside `samples/bim-analyses`.
+The bim-profile host seeds them into an empty analysis store at startup
+(`BimSampleSeeding` in `src/flow/BimOpenFlow.Host`, with `{DATA}` rewritten to the
+repo's `data/` directory, which it also registers as a model root). Open one in
+the 3D demo shell with `3d.html?analysis=<id>`, for example
+`3d.html?analysis=color-by-category`.
