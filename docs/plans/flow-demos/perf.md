@@ -47,7 +47,7 @@ it no longer sits in front of the port.
 | first `GET /__bimflow/models/duplex.ifc` | 1.0 s | cold IFC to BOS conversion |
 | first `GET /api/models` | 53 ms | was 2.3 s before the lazy hash (4ae38b7) |
 | the same graph, warm | 11 to 160 ms | |
-| offline banner after killing the host | about 20 s | the 15 s probe catches an idle death; the SSE error does not fire promptly |
+| offline banner after killing the host | about 20 s, 17.5 s after the probe moved to 10 s (18ca19f) | the connected probe catches an idle death; the SSE error does not fire promptly |
 | banner cleared after restart | 5 to 20 s | |
 
 The one cold cost over budget was the first 3D graph. The host now evaluates
