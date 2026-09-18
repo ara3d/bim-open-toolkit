@@ -49,12 +49,13 @@ is the content itself, not the path or a timestamp.
 | Geometry — `BimOpenFlow.Nodes.Geometry` | 20 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
-| DuckDB — `BimOpenFlow.Nodes.DuckDb` | 8 | `duck.read`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
+| DuckDB — `BimOpenFlow.Nodes.DuckDb` | 9 | `duck.read`, `duck.source`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
 | Tables — `BimOpenFlow.Nodes.Tables` | 11 | `xlsx.read`, `xlsx.sheets`, `sqlite.query`, `sqlite.table`, `sqlite.tables`, `table.join`, `table.setOp`, `table.project`, `table.inline`, `table.range`, `table.calendar` |
 | TableOps — `BimOpenFlow.Nodes.TableOps` | 14 | `table.cast`, `table.concat`, `table.distinct`, `table.drop`, `table.limit`, `table.pivot`, `table.profile`, `table.rename`, `table.sample`, `table.schema`, `table.splitColumn`, `table.transpose`, `table.unpivot`, `table.window` |
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
 | Viz — `BimOpenFlow.Nodes.Viz` | 3 | `chart.bar`, `chart.line`, `view.table` |
+| Relations — `BimOpenFlow.Nodes.Relations` | 11 | `rel.csv`, `rel.table`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
 
 ## BOS — `BimOpenFlow.Nodes.Bos`
 
@@ -183,7 +184,7 @@ Runs via DuckDB. Each aggregate is written `func(column) as name` with funcs cou
 
 ### `table.sort` (v1) — Pure
 
-Sorts by comma-separated column names, each optionally suffixed with ' desc'.
+Sorts by columns A, B, then C, each with its own ascending or descending direction.
 
 Runs via DuckDB. Each comma-separated term is a column name with an optional ` desc` (or explicit ` asc`) suffix. Column names containing commas or spaces cannot currently be expressed.
 
@@ -203,7 +204,13 @@ Runs via DuckDB. Each comma-separated term is a column name with an optional ` d
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `by` | Text | — | — | columns of input `table` |
+| `A` | Text | — | — | columns of input `table` |
+| `B` | Text | — | — | columns of input `table` |
+| `C` | Text | — | — | columns of input `table` |
+| `descendingA` | Boolean | `false` | — | — |
+| `descendingB` | Boolean | `false` | — | — |
+| `descendingC` | Boolean | `false` | — | — |
+| `by` | Text | — | — | — |
 
 ## BIM analysis — `BimOpenFlow.Nodes.BimAnalysis`
 
@@ -1278,13 +1285,35 @@ With `format` auto, the reader is inferred from the file extension (.csv, .parqu
 | `path` | FilePath | — | — | — |
 | `format` | Enum | `auto` | `auto`, `csv`, `parquet`, `json` | — |
 
+### `duck.source` (v1) — Pure
+
+Opens one shared read-only DuckDB source for connected query branches.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `source` | Text |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+
 ### `duck.query` (v1) — Pure
 
-Runs one read-only SQL query against a .duckdb database file.
+Runs read-only SQL against a connected shared DuckDB source.
 
 The database file is opened read-only (the node can never mutate it), and the SQL is validated as a single SELECT or WITH statement before it runs.
 
-**Inputs**: none
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `source` | Text | optional |
 
 **Outputs**
 
@@ -2443,3 +2472,251 @@ Titles a table view; comma-separated 'columns' optionally projects (default all,
 |---|---|---|---|---|
 | `title` | Text | — | — | — |
 | `columns` | Text | — | — | columns of input `table` |
+
+## Relations — `BimOpenFlow.Nodes.Relations`
+
+The rel.* pack: wires carry a logical plan plus its schema instead of rows. A chain compiles to one SQL statement and runs only when inspected or materialized. Sources are named through the host's connection registry (each model root folder, and each .duckdb file inside one).
+
+### `rel.csv` (v1) — Pure
+
+A CSV file, named by its registered source folder and relative path. Nothing is read until a node is inspected.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `source` | Text | — | — | — |
+| `path` | Text | — | — | — |
+
+### `rel.table` (v1) — Pure
+
+A table in a registered database source. Nothing is read until a node is inspected.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `source` | Text | — | — | — |
+| `table` | Text | — | — | — |
+
+### `rel.sql` (v1) — Pure
+
+One read-only SELECT over the connected relations, which it sees as t1, t2, and t3.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `t1` | Relation | required |
+| `t2` | Relation | optional |
+| `t3` | Relation | optional |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `sql` | Text | — | — | — |
+
+### `rel.select` (v1) — Pure
+
+Keeps only the comma-separated columns, in that order.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `input` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `columns` | Text | — | — | columns of input `input` |
+
+### `rel.filter` (v1) — Pure
+
+Keeps rows where the Boolean expression is true.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `input` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `expr` | Expression | — | — | — |
+
+### `rel.derive` (v1) — Pure
+
+Appends a column computed from the expression.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `input` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `name` | Text | — | — | — |
+| `expr` | Expression | — | — | — |
+
+### `rel.sort` (v1) — Pure
+
+Sorts by comma-separated terms such as 'height desc, name'.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `input` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `by` | Text | — | — | columns of input `input` |
+
+### `rel.limit` (v1) — Pure
+
+Keeps count rows after skipping offset rows.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `input` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `count` | Integer | `100` | — | — |
+| `offset` | Integer | `0` | — | — |
+
+### `rel.aggregate` (v1) — Pure
+
+Groups by the comma-separated columns (may be empty) and computes 'func(column) as name' aggregates (count/sum/min/max/avg).
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `input` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `groupBy` | Text | — | — | columns of input `input` |
+| `aggregates` | Text | — | — | — |
+
+### `rel.join` (v1) — Pure
+
+Joins left to right on one key each. Right columns that collide with left ones get a _right suffix.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `left` | Relation | required |
+| `right` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `relation` | Relation |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `leftKey` | Text | — | — | columns of input `left` |
+| `rightKey` | Text | — | — | columns of input `right` |
+| `kind` | Enum | `inner` | `inner`, `left`, `right`, `full`, `semi`, `anti` | — |
+
+### `rel.materialize` (v1) — Pure
+
+Runs the relation and outputs its rows as a Table; limit 0 means every row.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `input` | Relation | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `limit` | Integer | `0` | — | — |
