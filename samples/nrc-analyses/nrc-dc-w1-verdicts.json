@@ -29,24 +29,28 @@
       "x": 1360,
       "y": 40
     },
-    "byDoor": {
+    "columns": {
       "x": 1690,
       "y": 40
     },
-    "rows": {
+    "byDoor": {
       "x": 2020,
       "y": 40
     },
-    "answer": {
+    "rows": {
       "x": 2350,
       "y": 40
     },
+    "answer": {
+      "x": 2680,
+      "y": 40
+    },
     "model": {
-      "x": 2350,
+      "x": 2680,
       "y": 240
     },
     "coloured": {
-      "x": 2680,
+      "x": 3010,
       "y": 40
     }
   },
@@ -70,7 +74,7 @@
       },
       {
         "from": "doorWidths.relation",
-        "to": "metres.t1"
+        "to": "metres.input"
       },
       {
         "from": "metres.relation",
@@ -78,6 +82,10 @@
       },
       {
         "from": "millimetres.relation",
+        "to": "columns.input"
+      },
+      {
+        "from": "columns.relation",
         "to": "byDoor.input"
       },
       {
@@ -125,12 +133,17 @@
       },
       {
         "id": "metres",
-        "kind": "rel.sql",
+        "kind": "rel.derive",
         "version": 1
       },
       {
         "id": "millimetres",
         "kind": "rel.derive",
+        "version": 1
+      },
+      {
+        "id": "columns",
+        "kind": "rel.select",
         "version": 1
       },
       {
@@ -181,14 +194,18 @@
       "kind": "inner"
     },
     "metres": {
-      "sql": "SELECT GlobalId AS globalId, Name AS doorName, CAST(Value AS DOUBLE) AS Width_m FROM t1"
+      "name": "Width_m",
+      "expr": "toNumber([Value])"
     },
     "millimetres": {
       "name": "Width_mm",
       "expr": "[Width_m] * 1000"
     },
+    "columns": {
+      "columns": "GlobalId, Name, Width_m, Width_mm"
+    },
     "byDoor": {
-      "by": "globalId"
+      "by": "GlobalId"
     },
     "rows": {
       "limit": "0"

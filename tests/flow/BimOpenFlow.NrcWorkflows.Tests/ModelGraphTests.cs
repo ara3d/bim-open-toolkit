@@ -109,11 +109,13 @@ public sealed class ModelGraphTests
         Assert.That(answer.ColumnCells("verdict").Count(v => Equals(v, "Pass")), Is.EqualTo(8));
         Assert.That(answer.ColumnCells("verdict").Count(v => Equals(v, "Fail")), Is.EqualTo(6));
 
-        // Door by door, against the same file's globalId and verdict columns.
-        Assert.That(answer.ColumnCells("globalId"), Is.EqualTo(expected.Keys.Order(StringComparer.Ordinal)));
+        // Door by door, against the same file's globalId and verdict columns. The graph keeps
+        // the source spelling GlobalId (rel.select cannot rename); lookups downstream are
+        // case-insensitive, so view3d.color still joins on "globalId".
+        Assert.That(answer.ColumnCells("GlobalId"), Is.EqualTo(expected.Keys.Order(StringComparer.Ordinal)));
         for (var row = 0; row < answer.Rows.Count; row++)
         {
-            var globalId = (string)answer.Cell("globalId", row)!;
+            var globalId = (string)answer.Cell("GlobalId", row)!;
             Assert.That(answer.Cell("verdict", row), Is.EqualTo(expected[globalId].Verdict), globalId);
             Assert.That(Number(answer, "Width_mm", row),
                 Is.EqualTo(expected[globalId].WidthMm).Within(Tolerance), globalId);
