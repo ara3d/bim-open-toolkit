@@ -36,15 +36,32 @@ in-process tables, and the `rel.fromTable` node.
 
 | Chunk | Hash | State |
 |-------|------|-------|
-| C1 plan, text, schema, compile | — | working |
-| C2 execute | — | not started |
+| C1 plan, text, schema, compile | `8e60ecc` | committed |
+| C2 execute | — | working |
 | C3 runtime and node | — | not started |
 
 ## Checks and results
 
-Baseline build of `tests/flow/BimOpenFlow.Relations.Tests` with
-`--artifacts-path C:\Users\cdigg\AppData\Local\Temp\claude\nrc-wave\track-c`:
-0 errors, 65 warnings, all pre-existing except the one noted below.
+Every command run with
+`--artifacts-path C:\Users\cdigg\AppData\Local\Temp\claude\nrc-wave\track-c`.
+
+| Check | Result |
+|-------|--------|
+| `dotnet test tests/flow/BimOpenFlow.Relations.Tests` (after C1) | 87 passed, 0 failed |
+| `dotnet test tests/flow/BimOpenFlow.Relations.DuckDb.Tests` (after C2) | 24 passed, 0 failed |
+| `dotnet test tests/flow/BimOpenFlow.Nodes.Relations.Tests` (after C2) | 9 passed, 3 failed — see the verification limit below |
+
+## Verification limit
+
+`SampleGraphTests` in `BimOpenFlow.Nodes.Relations.Tests` finds
+`samples/relations` by walking up from `AppContext.BaseDirectory` for
+`BimOpenToolkit.sln`. With `--artifacts-path` the binaries sit under the temp
+folder, so the walk fails and its three tests
+(`ThereAreSamples`, `ParsesAndValidates`, `EvaluatesAsDocumented`) throw
+`BimOpenToolkit.sln not found`. This is the artifacts flag, not the code: the
+failure is in path discovery before any relation code runs. Those three tests
+cannot be verified from this track; the supervisor's wave gates, run without
+the flag, cover them.
 
 ## Blockers
 
@@ -62,3 +79,15 @@ None.
    the property to `TableHash` in C1. The constructor parameter, the
    `(inline "name" "hash")` text, and the `InlineUse.Hash` field are unchanged,
    so nothing outside the track's fence is affected.
+2. `DuckDbUtils.WriteTable` quotes its table name as one identifier
+   (`CREATE TABLE IF NOT EXISTS "name"`) and hands the same string to
+   `CreateAppender`, so it cannot write into a schema. `DuckDbSession.BindInline`
+   therefore writes each inline table under a private name (`_inline_1`, ...) in
+   the session's main schema and exposes it as a view under `"_inline"."name"`.
+   The session is private and in-memory, so the staging tables are invisible to
+   anything else. A `WriteTable` overload taking a schema would remove the extra
+   view; that file belongs to the data layer, not this track.
+3. Two inline tables with the same name and different rows in one plan are a
+   real conflict, because the SQL names them both `"_inline"."name"`.
+   `BindInline` fails with "Two different inline tables are named 'x'" rather
+   than letting DuckDB report a duplicate view.
