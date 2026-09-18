@@ -46,6 +46,12 @@ public static unsafe class IfcToModelConverters
 
     public static Model3D ToModel3D(this IfcFile file, (double X, double Y, double Z) origin)
     {
+        lock (WebIfcDll.Gate)
+            return BuildModel3D(file, origin);
+    }
+
+    private static Model3D BuildModel3D(IfcFile file, (double X, double Y, double Z) origin)
+    {
         var mb = new Model3DBuilder();
 
         var meshes = new Dictionary<uint, int>();

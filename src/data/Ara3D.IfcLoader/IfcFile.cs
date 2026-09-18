@@ -55,8 +55,11 @@ public class IfcFile : IDisposable
     private void LoadGeometryData(ILogger? logger)
     {
         logger?.Log($"Loading IFC geometry");
-        ApiPtr = WebIfcDll.InitializeApi();
-        Model = new IfcModel(this, ApiPtr, WebIfcDll.LoadModel(ApiPtr, FilePath));
+        lock (WebIfcDll.Gate)
+        {
+            ApiPtr = WebIfcDll.InitializeApi();
+            Model = new IfcModel(this, ApiPtr, WebIfcDll.LoadModel(ApiPtr, FilePath));
+        }
         logger?.Log($"Completed loading IFC geometry");
     }
 

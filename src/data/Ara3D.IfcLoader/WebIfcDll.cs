@@ -4,6 +4,12 @@ namespace Ara3D.IfcLoader;
 
 public static class WebIfcDll
 {
+    /// <summary>Held while web-ifc parses a model or hands back its meshes. The native library
+    /// keeps state that is not safe to touch from two threads, even through separate API
+    /// instances: a host converting one IFC for a browser while a background job converts
+    /// another died with an access violation inside LoadModel.</summary>
+    public static readonly object Gate = new();
+
     // NOTE: make sure the DLL is in the same directory as the built DLLs or Executable. 
     private const string DllName = "web-ifc-library.dll"; 
         
