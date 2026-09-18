@@ -50,7 +50,7 @@ is the content itself, not the path or a timestamp.
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
 | DuckDB — `BimOpenFlow.Nodes.DuckDb` | 9 | `duck.read`, `duck.source`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
-| Tables — `BimOpenFlow.Nodes.Tables` | 11 | `xlsx.read`, `xlsx.sheets`, `sqlite.query`, `sqlite.table`, `sqlite.tables`, `table.join`, `table.setOp`, `table.project`, `table.inline`, `table.range`, `table.calendar` |
+| Tables — `BimOpenFlow.Nodes.Tables` | 13 | `xlsx.read`, `xlsx.sheets`, `sqlite.query`, `sqlite.table`, `sqlite.tables`, `bfast.read`, `bfast.buffer`, `table.join`, `table.setOp`, `table.project`, `table.inline`, `table.range`, `table.calendar` |
 | TableOps — `BimOpenFlow.Nodes.TableOps` | 18 | `table.filter`, `table.derive`, `table.aggregate`, `table.sort`, `table.cast`, `table.concat`, `table.distinct`, `table.drop`, `table.limit`, `table.pivot`, `table.profile`, `table.rename`, `table.sample`, `table.schema`, `table.splitColumn`, `table.transpose`, `table.unpivot`, `table.window` |
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
@@ -1469,6 +1469,44 @@ Lists a database's user tables (`name`, `columnCount`, `rowCount`) in name order
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
 | `path` | FilePath | — | — | — |
+
+### `bfast.read` (v1) — Pure
+
+Lists the buffers in a BFAST file: name, byteLength, index (0-based file order). BFAST records no element types; bfast.buffer reads one buffer under a type you name.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `buffers` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+
+### `bfast.buffer` (v1) — Pure
+
+Reads one buffer of a BFAST file as a table with a single `value` column, interpreting its bytes as the given element type (integers widen to long, floats to double). An unknown buffer name or a byte length that is not a multiple of the element size is an error.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `path` | FilePath | — | — | — |
+| `name` | Text | — | — | — |
+| `type` | Enum | `float32` | `uint8`, `int16`, `int32`, `int64`, `float32`, `float64` | — |
 
 ### `table.join` (v1) — Pure
 

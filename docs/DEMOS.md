@@ -35,7 +35,7 @@ flow picker and an Ask box), `/showcase.html` (button-driven 3D recipes).
 
 | Folder | Input | Profile | You see | Guarded by |
 |---|---|---|---|---|
-| `samples/showcase-analyses` | CSV, BOS, IFC-derived DuckDB, IFC | both / bim | the whole chain: relations into verdicts, a coloured 3D view, a chart, an HTML report | `NrcWorkflows.Tests/ShowcaseGraphTests` |
+| `samples/showcase-analyses` | CSV, BOS, IFC-derived DuckDB, IFC, BFAST | both / bim | the whole chain: relations into verdicts, a coloured 3D view, a chart, an HTML report; the buffer directory of a BFAST file | `NrcWorkflows.Tests/ShowcaseGraphTests`, `BfastGraphTests` |
 | `samples/nrc-analyses` | CSV and the Duplex DuckDB | both (two graphs bim only) | the NRC paper's eight answers, DC-W1 doors coloured in 3D, property sets written back to an IFC | `NrcWorkflows.Tests` |
 | `samples/analyses` | CSV, XLSX, SQLite, DuckDB | tables | table panes over `samples/tables` | `TableWorkflows.Tests/SampleAnalysesTests` |
 | `samples/relations` | CSV, DuckDB | tables | the `rel.*` pack: lazy plans, one SQL statement per chain | `Nodes.Relations.Tests/SampleGraphTests` |
@@ -54,7 +54,7 @@ Each folder's README lists its graphs and the numbers they produce.
 | BOS | `bos.load` (path), `bim.*` | `rel.fromTable` takes any table into the relation pack |
 | CSV | `rel.csv` (named source), `csv.read`, `duck.read` | a model root folder is a source named after the folder |
 | DuckDB | `rel.table` (named source), `duck.query`, `sql.query` | every `.duckdb` file directly inside a root is a source named after the file |
-| BFAST | none as a graph input | BFAST is the transport the 3D pane receives prepared geometry in; a `bfast.*` reader is a gap |
+| BFAST | `bfast.read` (path), `bfast.buffer` (path, name, type) | the directory of named buffers, then one buffer as a `value` column under an element type you name (the container records none); also the transport the 3D pane receives prepared geometry in |
 | XLSX, SQLite, Parquet, JSON | `xlsx.read`, `sqlite.query`, `duck.read` | tables profile |
 
 ## Headless checks

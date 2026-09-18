@@ -1,0 +1,27 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "buffers": { "x": 40, "y": 40 },
+    "directory": { "x": 370, "y": 40 },
+    "prices": { "x": 40, "y": 224 },
+    "values": { "x": 370, "y": 224 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "buffers.buffers", "to": "directory.table" },
+      { "from": "prices.table", "to": "values.table" }
+    ],
+    "nodes": [
+      { "id": "buffers", "kind": "bfast.read", "version": 1 },
+      { "id": "directory", "kind": "view.table", "version": 1 },
+      { "id": "prices", "kind": "bfast.buffer", "version": 1 },
+      { "id": "values", "kind": "view.table", "version": 1 }
+    ]
+  },
+  "values": {
+    "buffers": { "path": "{SAMPLES}/../tables/sample.bfast" },
+    "directory": { "title": "Buffers in sample.bfast" },
+    "prices": { "path": "{SAMPLES}/../tables/sample.bfast", "name": "unitPrices", "type": "float64" },
+    "values": { "title": "unitPrices as float64" }
+  }
+}
