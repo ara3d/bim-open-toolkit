@@ -20,9 +20,9 @@ public sealed class Fixture
 
     public static RelationRuntime Runtime => RelationRuntime.FromRoots(Roots);
 
-    /// <summary>The bim-profile packs plus the rel.* pack, so every sample graph can evaluate.</summary>
+    /// <summary>The bim-profile registry over the given sources, so every sample graph can evaluate.</summary>
     public static NodeRegistry Registry(RelationRuntime runtime)
-        => NodeRegistry.Combine(HostComposition.AllPacks().Nodes, RelationNodes.All(runtime));
+        => HostComposition.AllPacks(runtime);
 
     [OneTimeSetUp]
     public void BuildDatabase()

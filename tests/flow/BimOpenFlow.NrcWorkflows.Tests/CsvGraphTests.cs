@@ -32,7 +32,7 @@ public sealed class CsvGraphTests
         RelationRuntime.FromRoots([SampleSeeding.NrcSamplesDir(Root)]);
 
     private static readonly NodeRegistry Registry =
-        NodeRegistry.Combine(HostComposition.AllPacks().Nodes, RelationNodes.All(Runtime));
+        HostComposition.AllPacks(Runtime);
 
     /// <summary>Loads the graph, asserts it validates and evaluates green, and returns the
     /// rows of its answer relation.</summary>
