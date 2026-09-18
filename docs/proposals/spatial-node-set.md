@@ -190,4 +190,22 @@ Departures from the text above, in the order they were made:
 Samples added: `bim-duct-rooms`, `bim-door-rooms`, `bim-room-footprints`.
 
 Open items: the `bim.*` migration; OBB extents; polygon booleans in the
-SDK; MULTIPOLYGON and holes in `Wkt` if a real source needs them.
+SDK; MULTIPOLYGON in `Wkt` if a real source needs it (hole rings are already
+parsed and kept, unused).
+
+Deferred from the 2026-09-18 review, each with the reason:
+
+- `SpatialIndex` in `Ara3D.BimOpenSchema.DataModel` is now a fourth,
+  unused box index. Remove it, or point it at `BoxIndex`, in the `bim.*`
+  migration; it lives in the data model project, outside this pack's fence.
+- `spatial.polygon` writes `object?[]` columns typed `long` and `bool` with
+  nulls for empty cells. `BimRoomsNode` does the same; the typed-array
+  readers in the Geometry pack and the SDK cannot take nulls. This wants a
+  repo-wide nullable-scalar convention, not a local fix.
+- `spatial.polygonIntersects` shares one `polygon` param for both sides and
+  parses a self-joined table twice. Two params and a same-table shortcut
+  are cheap once a real two-table case appears.
+- `view3d.measures` reads `path` with `GetText` like its sibling
+  `view3d.instances`; change both or neither.
+- Geometry's `TableOps.AddColumns` and Support's `CopyBuilder` both copy
+  columns, with different null handling. Merge in the `bim.*` migration.
