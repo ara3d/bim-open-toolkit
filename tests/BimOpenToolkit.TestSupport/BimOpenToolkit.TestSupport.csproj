@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Shared test support: repository paths and the mini IFC fixture. References no
+       src project and no test framework, so every test group (data, flow, mcp, studio)
+       may reference it under the layering rules in tests/BimOpenToolkit.Layering.Tests. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

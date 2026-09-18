@@ -15,4 +15,8 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
+  </ItemGroup>
+
 </Project>

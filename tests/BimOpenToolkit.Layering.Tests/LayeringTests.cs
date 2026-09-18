@@ -1,12 +1,17 @@
 // Enforces the folder layering: references only point down (mcp -> flow -> data; studio on all;
 // plugins, apps, and tools on data), and the viewer never depends on the flow web editor.
 using System.Text.RegularExpressions;
+using BimOpenToolkit.TestSupport;
 
 namespace BimOpenToolkit.Layering.Tests;
 
 public static class Layering
 {
-    public static readonly DirectoryInfo Root = FindRoot();
+    public static readonly DirectoryInfo Root = new(RepoPaths.Root);
+
+    /// <summary>tests/BimOpenToolkit.TestSupport: paths and fixtures only, no src reference,
+    /// so every test group may reference it (checked by TestSupportReferencesNoSourceProject).</summary>
+    public const string TestSupport = "BimOpenToolkit.TestSupport";
 
     /// <summary>Layers a project in the given group may reference, besides its own group and submodules.</summary>
     public static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>
@@ -19,14 +24,6 @@ public static class Layering
         ["apps"] = ["data"],
         ["tools"] = ["data"],
     };
-
-    static DirectoryInfo FindRoot()
-    {
-        for (var d = new DirectoryInfo(AppContext.BaseDirectory); d != null; d = d.Parent)
-            if (File.Exists(Path.Combine(d.FullName, "BimOpenToolkit.sln")))
-                return d;
-        throw new InvalidOperationException("BimOpenToolkit.sln not found above " + AppContext.BaseDirectory);
-    }
 
     public static IEnumerable<FileInfo> Projects(string top)
         => new DirectoryInfo(Path.Combine(Root.FullName, top)).EnumerateFiles("*.csproj", SearchOption.AllDirectories)
@@ -69,7 +66,7 @@ public static class Layering
                 foreach (var (from, to) in References(project))
                 {
                     var target = GroupOf(to);
-                    if (target == group || target == "submodules" || allowed.Contains(target))
+                    if (target == group || target == "submodules" || target == TestSupport || allowed.Contains(target))
                         continue;
                     yield return $"{Path.GetRelativePath(Root.FullName, from.FullName)} -> {Path.GetRelativePath(Root.FullName, to)} ({group} may not reference {target})";
                 }
@@ -98,6 +95,16 @@ public class LayeringTests
     {
         foreach (var group in new[] { "data", "flow", "mcp", "studio" })
             Assert.That(Layering.Projects("src").Any(p => Layering.GroupOf(p.FullName) == group), $"src/{group} has no projects");
+    }
+
+    [Test]
+    public void TestSupportReferencesNoSourceProject()
+    {
+        var targets = Layering.Projects(Path.Combine("tests", Layering.TestSupport))
+            .SelectMany(Layering.References)
+            .Select(r => Path.GetRelativePath(Layering.Root.FullName, r.To))
+            .ToList();
+        Assert.That(targets, Is.Empty, "TestSupport is referenceable from every group only because it references nothing: " + string.Join("\n", targets));
     }
 
     [Test]
