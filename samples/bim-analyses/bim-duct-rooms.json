@@ -1,0 +1,32 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "bounds": { "x": 40, "y": 224 },
+    "ductsOnly": { "x": 370, "y": 224 },
+    "overlaps": { "x": 700, "y": 40 },
+    "ranked": { "x": 1030, "y": 40 },
+    "rooms": { "x": 40, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "bounds.table", "to": "ductsOnly.table" },
+      { "from": "ductsOnly.table", "to": "overlaps.a" },
+      { "from": "rooms.table", "to": "overlaps.b" },
+      { "from": "overlaps.table", "to": "ranked.table" }
+    ],
+    "nodes": [
+      { "id": "bounds", "kind": "bim.bounds", "version": 1 },
+      { "id": "ductsOnly", "kind": "table.filter", "version": 1 },
+      { "id": "overlaps", "kind": "spatial.intersects", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+    ]
+  },
+  "values": {
+    "bounds": { "path": "{SAMPLES}/sample.bos" },
+    "ductsOnly": { "expr": "Category == 'Ducts'" },
+    "overlaps": { "bKey": "Number" },
+    "ranked": { "by": "OverlapVolume desc" },
+    "rooms": { "path": "{SAMPLES}/sample.bos" }
+  }
+}

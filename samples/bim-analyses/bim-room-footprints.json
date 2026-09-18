@@ -1,0 +1,26 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "footprint": { "x": 370, "y": 40 },
+    "measures": { "x": 700, "y": 40 },
+    "ranked": { "x": 1030, "y": 40 },
+    "rooms": { "x": 40, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "rooms.table", "to": "footprint.boxes" },
+      { "from": "footprint.table", "to": "measures.table" },
+      { "from": "measures.table", "to": "ranked.table" }
+    ],
+    "nodes": [
+      { "id": "footprint", "kind": "spatial.footprint", "version": 1 },
+      { "id": "measures", "kind": "spatial.polygon", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+    ]
+  },
+  "values": {
+    "ranked": { "by": "Perimeter desc" },
+    "rooms": { "path": "{SAMPLES}/sample.bos" }
+  }
+}

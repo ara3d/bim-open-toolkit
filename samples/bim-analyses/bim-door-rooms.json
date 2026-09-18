@@ -1,0 +1,32 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "bounds": { "x": 40, "y": 40 },
+    "doorsOnly": { "x": 370, "y": 40 },
+    "nearest": { "x": 700, "y": 40 },
+    "ranked": { "x": 1030, "y": 40 },
+    "rooms": { "x": 40, "y": 224 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "bounds.table", "to": "doorsOnly.table" },
+      { "from": "doorsOnly.table", "to": "nearest.a" },
+      { "from": "rooms.table", "to": "nearest.b" },
+      { "from": "nearest.table", "to": "ranked.table" }
+    ],
+    "nodes": [
+      { "id": "bounds", "kind": "bim.bounds", "version": 1 },
+      { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
+      { "id": "nearest", "kind": "spatial.nearest", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+    ]
+  },
+  "values": {
+    "bounds": { "path": "{SAMPLES}/sample.bos" },
+    "doorsOnly": { "expr": "Category == 'Doors'" },
+    "nearest": { "k": "2", "measure": "center", "bKey": "Number" },
+    "ranked": { "by": "A, Rank" },
+    "rooms": { "path": "{SAMPLES}/sample.bos" }
+  }
+}

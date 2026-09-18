@@ -17,6 +17,9 @@ committed.
 | `bim-room-containment` | door centers spatially joined into room boxes, counted per room |
 | `bim-param-quality` | `bos.load` parameter table profiled by `bim.paramCoverage` |
 | `bim-nearest-door` | each room's nearest door with its distance, ranked |
+| `bim-duct-rooms` | the rooms each duct passes through, by `spatial.intersects` overlap volume |
+| `bim-door-rooms` | the two rooms each door serves, by `spatial.nearest` (k = 2, center distance) |
+| `bim-room-footprints` | room boxes as WKT footprints with polygon area and perimeter, ranked by perimeter |
 
 Every sample validates against `HostComposition.AllPacks()` and evaluates green
 over a generated `sample.bos`; `tests/BimOpenFlow.BimWorkflows.Tests` enforces
