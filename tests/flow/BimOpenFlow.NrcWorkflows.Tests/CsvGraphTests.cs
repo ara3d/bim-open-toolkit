@@ -94,4 +94,18 @@ public sealed class CsvGraphTests
         Assert.That(Numbers(answer, "OperationalCarbon_kgCO2e_per_year"),
             Near(412.0, 410.8, 402.0, 399.7, 398.6));
     }
+
+    [Test]
+    public void Q5_ByCategory()
+    {
+        var answer = Answer("nrc-q5-by-category");
+        Assert.That(answer.Rows, Has.Count.EqualTo(9));
+        // expected_answers.json Q5, in descending total.
+        Assert.That(answer.ColumnCells("Category"), Is.EqualTo(new object?[]
+        {
+            "Wall", "Floor", "Other", "Stair", "Finish", "Window", "Door", "Roof", "Railing",
+        }));
+        Assert.That(Numbers(answer, "Total"),
+            Near(22854.1, 5593.5, 4313.1, 1144.2, 985.7, 978.9, 687.2, 474.7, 164.8));
+    }
 }
