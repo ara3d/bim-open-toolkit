@@ -130,3 +130,10 @@ None.
     is exactly the `valuesWritten` and `entitiesTouched` the summary row reports. Its
     `valueType` values are Real (1103), Label (670), Identifier (664), and Text (1) -
     track D's finding, confirmed end to end: the node accepted every row.
+
+## Requests to the supervisor
+
+`samples/nrc-analyses/README.md` (supervisor-owned) describes
+`nrc-storey-of-element` as walking "ContainedIn and PartOf". Track A's view also
+walks `MemberOf`, without which 51 of Level 1's 103 elements go unplaced. The
+row is otherwise accurate.
