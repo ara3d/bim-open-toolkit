@@ -155,3 +155,25 @@ Not done, recorded as extension points:
   the probe; a 10 s connected cadence would halve it.
 - **Snowdon folder in the model roots**: seeding adds the whole
   `Documents\BIM Open Schema` folder when the local model exists.
+
+## Follow-through (2026-09-18, revision after the merge to main at ce2b569)
+
+Merged to `main` (fast-forward; the NRC gates were re-run there by the
+hand-off session, all green). Then three more tracks on the same branch:
+
+| Track | Commits | Result |
+|---|---|---|
+| E engine Run, `toNumber` | submodule f123068, e029371 (pushed on `relation-value`); toolkit f2d151f, 643a0f9, 02f0051, a4fc63b | `EvalSession.Run` per spec §6; `POST .../runs` executes effects and records them; `toNumber(Text)` in the grammar and `TRY_CAST` in SQL; both DC-W1 graphs drop `rel.sql` |
+| T test support, BFAST | 4c1f04f, f9823c2, f685b06 | `tests/BimOpenToolkit.TestSupport` (`RepoPaths`, `MiniIfc`) replaces eleven copies; `bfast.read` and `bfast.buffer` in the Tables pack with a 448-byte fixture and a showcase graph |
+| W2 web polish | f201cfd, 44dbdde, d8b7a62, 18ca19f | selection survives reconnect; 3D legend for instance tables; formatted numbers with exact values on hover; 10 s probe |
+| integration | this commit and the two before | publishing theme LF-normalized (CRLF checkout bug), showcase ids and README |
+
+Gates at this revision: every `tests/flow` suite, layering (8), the touched
+data suites, `gates/web-smoke.mjs`, and `gates/host-smoke.mjs` all pass.
+
+Still open: `rel.rename` (the plan operator exists; the graphs keep source
+column spellings for lack of it); `RunReplay` cannot re-derive effect hashes;
+the SDK's stream-based `BFast.Read` mis-seeks absolute ranges (the nodes use
+the memory-mapped reader); a `{TABLES}` placeholder for showcase graphs; the
+3D legend picks its column by name; the engine's `relation-value` branch
+should merge to its own main.
