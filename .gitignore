@@ -7,6 +7,7 @@ data/**
 *.parquet
 *.duckdb
 !samples/tables/*.duckdb
+!samples/nrc/*.ifc
 
 # The patterns above match any path component by name, case-insensitively on
 # Windows, so a project directory such as src/BimOpenFlow.Nodes.Bos or

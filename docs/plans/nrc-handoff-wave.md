@@ -239,3 +239,35 @@ branch.
   guard them; the paper loads them by PUT as it does today.
 - `rel.fromTable` is in scope even though no NRC graph needs it, because
   `bos.load` is the only path from a model to the pack outside DuckDB files.
+
+## Contract amendments (still revision nrc-1, applied before dispatch)
+
+Landed by the supervisor on 2026-09-18 before any track started; tracks
+acknowledge the plan including this section.
+
+1. **C3 location.** `IfcDuckDbBuild` lives in a new data project
+   `src/data/Ara3D.Ifc.DuckDb` (references `Ara3D.Ifc.Bos` and
+   `Ara3D.BimOpenSchema.DuckDb`), not inside `Ara3D.BimOpenSchema.DuckDb`.
+   That package is published and IFC-free by design; `Ara3D.Ifc.Bos` exists
+   to keep the schema projects free of the IFC loader. Track A's fence is
+   `src/data/Ara3D.Ifc.DuckDb/IfcDuckDbBuild.cs` for the build function;
+   the `StoreyOfEntity` view stays in `BosDuckDbViews.cs` and `IfcDuck.cs`.
+2. **C2 both profiles.** `samples/nrc-analyses` is seeded by both
+   `SampleSeeding.SeedIfEmpty` (tables) and `BimSampleSeeding.SeedIfEmpty`
+   (bim), and both `SeededModelRoots` include `samples/nrc`.
+   `nrc-dc-w1-verdicts` and `nrc-enrich-run` use `check.rule`,
+   `view3d.color`, and `sink.writePsets`, which only the bim profile
+   registers; the tests evaluate every graph with the bim-profile registry
+   plus the rel.* pack (`HostComposition.AllPacks` and `RelationNodes.All`).
+3. **C4 rendering and hashing.** Track C's fence also includes
+   `Plan/PlanText.cs` (the `(inline "name" "hash")` render rule). The inline
+   store is keyed by a caller-supplied hash string; `RelationRuntime.Inline`
+   computes it with `ValueHash.Compute(new TableValue(table))`, for which
+   the supervisor added a `Ara3D.DataFlowEngine` reference to
+   `BimOpenFlow.Nodes.Relations.csproj`.
+4. **C6 fixture shape.** The fixture's registry roots are `samples/nrc` (source
+   `nrc`) and a temp folder holding the built `duplex-enriched.duckdb`
+   (source `duplex-enriched`), so graphs name the same sources in tests and
+   in the host. The host builds `samples/nrc/duplex-enriched.duckdb` on
+   demand at seeding time; the supervisor adds that at integration once A's
+   build function is verified.
