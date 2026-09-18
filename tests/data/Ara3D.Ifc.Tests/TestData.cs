@@ -1,9 +1,11 @@
+using BimOpenToolkit.TestSupport;
+
 namespace Ara3D.Ifc.Tests;
 
 public static class TestData
 {
     /// <summary>Repo-root data/ folder, populated by data/get-test-data.ps1 (never committed).</summary>
-    public static string Folder => Path.Combine(RepoRoot, "data");
+    public static string Folder => RepoPaths.Data();
     public static string DuplexIfc => Path.Combine(Folder, "duplex.ifc");
     public static string AnalyticsCsvPath => Path.Combine(Folder, "analytics_dataset_with_levels.csv");
 
@@ -15,21 +17,9 @@ public static class TestData
     {
         get
         {
-            var r = Path.Combine(RepoRoot, "artifacts", "Ara3D.Ifc.Tests");
+            var r = RepoPaths.Artifacts("Ara3D.Ifc.Tests");
             Directory.CreateDirectory(r);
             return r;
-        }
-    }
-
-    private static string RepoRoot
-    {
-        get
-        {
-            // .git is a file, not a directory, when the repo is checked out as a submodule.
-            var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
-            while (dir != null && !Path.Exists(Path.Combine(dir.FullName, ".git")))
-                dir = dir.Parent;
-            return dir?.FullName ?? throw new DirectoryNotFoundException("No repository root above test directory");
         }
     }
 

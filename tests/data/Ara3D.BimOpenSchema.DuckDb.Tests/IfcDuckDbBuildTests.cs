@@ -1,7 +1,7 @@
-using System.Runtime.CompilerServices;
 using Ara3D.BimOpenSchema.IO;
 using Ara3D.Ifc.DuckDb;
 using Ara3D.Utils;
+using BimOpenToolkit.TestSupport;
 
 namespace Ara3D.BimOpenSchema.DuckDb.Tests;
 
@@ -166,13 +166,10 @@ public sealed class IfcDuckDbBuildTests
     private static string ReadCsv(string fileName)
         => $"read_csv_auto('{SamplePath(fileName).Replace('\\', '/')}')";
 
-    /// <summary>The repository's <c>samples/nrc</c> folder. Located from this file's compile-time
-    /// path because a build with <c>--artifacts-path</c> puts the test binaries outside the
-    /// checkout, where walking up from the output folder finds no repository at all.</summary>
-    internal static string SamplePath(string fileName, [CallerFilePath] string sourceFile = "")
+    /// <summary>A file in the repository's <c>samples/nrc</c> folder; ignores the test when absent.</summary>
+    internal static string SamplePath(string fileName)
     {
-        var root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(sourceFile)!, "..", "..", ".."));
-        var path = Path.Combine(root, "samples", "nrc", fileName);
+        var path = RepoPaths.Samples("nrc", fileName);
         if (!File.Exists(path))
             Assert.Ignore($"Sample {fileName} not found at {path}.");
         return path;

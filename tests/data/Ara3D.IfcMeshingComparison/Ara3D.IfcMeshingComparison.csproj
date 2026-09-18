@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
     <PackageReference Include="Ara3D.Geometry" Version="$(Ara3DSdkVersion)" />
     <PackageReference Include="Ara3D.IO.StepParser" Version="$(Ara3DSdkVersion)" />

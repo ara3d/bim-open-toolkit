@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.Ifc.Editing\Ara3D.Ifc.Editing.csproj" />
   </ItemGroup>

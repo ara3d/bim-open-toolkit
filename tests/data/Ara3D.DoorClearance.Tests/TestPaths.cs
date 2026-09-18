@@ -1,9 +1,11 @@
+using BimOpenToolkit.TestSupport;
+
 namespace Ara3D.DoorClearance.Tests;
 
 public static class TestPaths
 {
     /// <summary>Repo-root data/ folder, populated by data/get-test-data.ps1 (never committed).</summary>
-    public static string TestKitFolder => Path.Combine(RepoRoot, "data");
+    public static string TestKitFolder => RepoPaths.Data();
     public static string DuplexIfc => Path.Combine(TestKitFolder, "duplex.ifc");
 
     public static string RulesJson
@@ -17,21 +19,9 @@ public static class TestPaths
     {
         get
         {
-            var r = Path.Combine(RepoRoot, "artifacts", "Ara3D.DoorClearance.Tests");
+            var r = RepoPaths.Artifacts("Ara3D.DoorClearance.Tests");
             Directory.CreateDirectory(r);
             return r;
-        }
-    }
-
-    private static string RepoRoot
-    {
-        get
-        {
-            // .git is a file, not a directory, when the repo is checked out as a submodule.
-            var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
-            while (dir != null && !Path.Exists(Path.Combine(dir.FullName, ".git")))
-                dir = dir.Parent;
-            return dir?.FullName ?? throw new DirectoryNotFoundException("No repository root above test directory");
         }
     }
 

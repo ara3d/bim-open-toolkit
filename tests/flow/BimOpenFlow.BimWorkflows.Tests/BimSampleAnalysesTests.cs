@@ -4,6 +4,7 @@ using Ara3D.NodeGraph;
 using Ara3D.Utils;
 using BimOpenFlow.Host;
 using BimOpenFlow.Nodes.BimAnalysis;
+using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.BimWorkflows.Tests;
 
@@ -19,8 +20,7 @@ public sealed class BimSampleAnalysesTests
     private string _dir = null!;
 
     public static string AnalysesDir
-        => Path.Combine(SampleSeeding.FindRepoRoot(TestContext.CurrentContext.TestDirectory)
-            ?? throw new InvalidOperationException("repo root not found"), "samples", "bim-analyses");
+        => RepoPaths.Samples("bim-analyses");
 
     public static IEnumerable<TestCaseData> SampleFiles
         => Directory.EnumerateFiles(AnalysesDir, "*.json")

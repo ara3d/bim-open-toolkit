@@ -1,5 +1,6 @@
 using BimOpenFlow.Host;
 using BimOpenFlow.Host.Store;
+using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.BimWorkflows.Tests;
 
@@ -30,12 +31,8 @@ public sealed class BimSampleSeedingTests
         }
     }
 
-    private static string Root
-        => SampleSeeding.FindRepoRoot(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("repo root not found");
-
     private static IReadOnlyList<string> ExpectedIds(string analysesDirName)
-        => Directory.EnumerateFiles(Path.Combine(Root, "samples", analysesDirName), "*.json")
+        => Directory.EnumerateFiles(RepoPaths.Samples(analysesDirName), "*.json")
             .Select(Path.GetFileNameWithoutExtension)
             .Order(StringComparer.Ordinal)
             .ToList()!;

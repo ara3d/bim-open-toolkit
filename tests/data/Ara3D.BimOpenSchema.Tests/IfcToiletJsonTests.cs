@@ -2,20 +2,14 @@ using Ara3D.BimOpenSchema.IO;
 using Ara3D.Logging;
 using static Ara3D.BimOpenSchema.Tests.IfcBosJsonTestHelpers;
 using static Ara3D.BimOpenSchema.Tests.IfcToBosConverterDiagnosticsTests;
+using BimOpenToolkit.TestSupport;
 
 namespace Ara3D.BimOpenSchema.Tests;
 
 [TestFixture]
 public static class IfcToiletJsonTests
 {
-    const string ToiletIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('toilet-json-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC4'));
-        ENDSEC;
-        DATA;
+    static readonly string ToiletIfc = MiniIfc.Document("""
         #10=IFCSITE('site-gid',$,'Site',$,$,$,$,$,.ELEMENT.,$,$,0.,$,$);
         #11=IFCBUILDING('bld-gid',$,'Building',$,$,$,$,$,.ELEMENT.,$,$,$);
         #12=IFCRELAGGREGATES('ra1-gid',$,$,$,#10,(#11));
@@ -26,9 +20,7 @@ public static class IfcToiletJsonTests
         #60=IFCSANITARYTERMINAL('toilet-gid',$,'Water Closet 1',$,$,$,$,$,.TOILETPAN.);
         #61=IFCSANITARYTERMINAL('urinal-gid',$,'Urinal 1',$,$,$,$,$,.URINAL.);
         #62=IFCRELCONTAINEDINSPATIALSTRUCTURE('rc2-gid',$,$,$,(#60,#61),#20);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc4, "toilet-json-test.ifc", "ViewDefinition");
 
     public static IfcSample[] Samples => IfcToBosConverterDiagnosticsTests.Samples;
 

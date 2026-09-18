@@ -6,6 +6,7 @@ using Ara3D.NodeGraph;
 using BimOpenFlow.Nodes.Bos;
 using BimOpenFlow.Nodes.TableOps;
 using BimOpenFlow.Nodes.Geometry;
+using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.View3dWorkflows.Tests;
 
@@ -33,7 +34,7 @@ public sealed class View3dSampleTests
     [Test]
     public void SnowdonToolkitGraph_ComposesEveryRecipeWithoutReadingPrivateModelBytes()
     {
-        var path = Path.Combine(RepoRoot, "samples", "snowdon-analyses", "snowdon-toolkit.json");
+        var path = RepoPaths.Samples("snowdon-analyses", "snowdon-toolkit.json");
         var doc = Load(path);
         Assert.That(doc.Validate(Registry), Is.Empty);
         var session = Evaluate(path);
@@ -107,26 +108,15 @@ public sealed class View3dSampleTests
         => table.Columns.Single(c => c.Descriptor.Name == "category").ColumnIndex;
 
     private static string AnalysesDir
-        => Path.Combine(RepoRoot, "samples", "view3d-analyses");
+        => RepoPaths.Samples("view3d-analyses");
 
     private static string Sample(string id)
         => Path.Combine(AnalysesDir, id + ".json");
 
-    private static string RepoRoot { get; } = FindRepoRoot();
-
-    private static string FindRepoRoot()
-    {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
-            if (Directory.Exists(Path.Combine(dir.FullName, "samples", "view3d-analyses")))
-                return dir.FullName;
-        throw new DirectoryNotFoundException(
-            $"No samples/view3d-analyses directory found above '{AppContext.BaseDirectory}'.");
-    }
-
     /// <summary>Loads the document with {DATA} rewritten to the repo data directory.</summary>
     private static GraphDocument Load(string file)
     {
-        var data = Path.Combine(RepoRoot, "data").Replace('\\', '/');
+        var data = RepoPaths.Data().Replace('\\', '/');
         var temp = Path.Combine(Path.GetTempPath(), "bof-view3d-samples",
             Guid.NewGuid().ToString("N") + ".json");
         Directory.CreateDirectory(Path.GetDirectoryName(temp)!);

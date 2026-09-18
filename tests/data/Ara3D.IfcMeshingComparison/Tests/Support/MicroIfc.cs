@@ -3,29 +3,15 @@ using Ara3D.IfcLoader;
 using Ara3D.Ifc.Mesher.Approach1;
 using Ara3D.IO.StepParser;
 using Ara3D.Memory;
+using BimOpenToolkit.TestSupport;
 
 namespace Ara3D.IfcMeshingComparison.Tests.Support;
 
 /// <summary>Helper for hand-written micro IFC snippets in tests.</summary>
 public static class MicroIfc
 {
-    public const string Header = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');
-        FILE_NAME('micro.ifc','2026-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC4'));
-        ENDSEC;
-        DATA;
-        """;
-
-    public const string Footer = """
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
-
     public static string WrapData(string dataLines)
-        => $"{Header}\n{dataLines.Trim()}\n{Footer}";
+        => MiniIfc.Document(dataLines, MiniIfc.Ifc4, "micro.ifc", "ViewDefinition [CoordinationView]");
 
     public static MicroIfcModel Parse(string dataLines, int circleSegments = 32, double? lengthScaleOverride = null)
         => ParseContent(WrapData(dataLines), circleSegments, lengthScaleOverride);

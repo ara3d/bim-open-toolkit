@@ -3,20 +3,14 @@ using Ara3D.BimOpenSchema.IO;
 using Ara3D.IfcLoader;
 using Ara3D.IO.StepParser;
 using Ara3D.Memory;
+using BimOpenToolkit.TestSupport;
 
 namespace Ara3D.BimOpenSchema.Tests;
 
 [TestFixture]
 public static class IfcRelationsTests
 {
-    const string MinimalStructuralIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('structural-relations-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string MinimalStructuralIfc = MiniIfc.Document("""
         #10=IFCSITE('site-gid',$,'Site',$,$,$,$,$,.ELEMENT.,$,$,0.,$,$);
         #11=IFCBUILDING('bld-gid',$,'Building',$,$,$,$,$,.ELEMENT.,$,$,$);
         #12=IFCRELAGGREGATES('ra1-gid',$,$,$,#10,(#11));
@@ -27,53 +21,26 @@ public static class IfcRelationsTests
         #40=IFCELEMENTASSEMBLY('asm-gid',$,'Asm',$,$,$,$,$,$,$);
         #41=IFCMEMBER('mem-gid',$,'Member',$,$,$,$);
         #42=IFCRELNESTS('rn1-gid',$,$,$,#40,(#41));
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "structural-relations-test.ifc", "ViewDefinition");
 
-    const string GroupAndProjectIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('group-project-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string GroupAndProjectIfc = MiniIfc.Document("""
         #10=IFCGROUP('grp-gid',$,'Group',$,$);
         #20=IFCWALL('wall-gid',$,'Wall',$,$,$,$);
         #21=IFCRELASSIGNSTOGROUP('ag1-gid',$,$,$,(#20),$,#10);
         #30=IFCWALL('host-gid',$,'Host',$,$,$,$);
         #31=IFCPROJECTIONELEMENT('proj-gid',$,'Proj',$,$,$,$,$,$);
         #32=IFCRELPROJECTSELEMENT('pe1-gid',$,$,$,#30,#31);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "group-project-test.ifc", "ViewDefinition");
 
-    const string OpeningIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('opening-relations-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string OpeningIfc = MiniIfc.Document("""
         #10=IFCWALL('wall-gid',$,'Wall',$,$,$,$);
         #11=IFCOPENINGELEMENT('open-gid',$,'Opening',$,$,$,$,$);
         #12=IFCRELVOIDSELEMENT('ve1-gid',$,$,$,#10,#11);
         #20=IFCDOOR('door-gid',$,'Door',$,$,$,$,$,$);
         #21=IFCRELFILLSELEMENT('fe1-gid',$,$,$,#11,#20);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "opening-relations-test.ifc", "ViewDefinition");
 
-    const string MaterialLayerSetIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('material-layer-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string MaterialLayerSetIfc = MiniIfc.Document("""
         #10=IFCMATERIAL('Brick',$,$);
         #11=IFCMATERIAL('Insulation',$,$);
         #12=IFCMATERIALLAYER(#10,100.,$);
@@ -82,18 +49,9 @@ public static class IfcRelationsTests
         #15=IFCMATERIALLAYERSETUSAGE(#14,.AXIS2.,.POSITIVE.,0.);
         #20=IFCWALL('wall-gid',$,'Wall',$,$,$,$);
         #21=IFCRELASSOCIATESMATERIAL('am1-gid',$,$,$,(#20),#15);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "material-layer-test.ifc", "ViewDefinition");
 
-    const string MaterialConstituentIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('material-constituent-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC4'));
-        ENDSEC;
-        DATA;
+    static readonly string MaterialConstituentIfc = MiniIfc.Document("""
         #10=IFCMATERIAL('Concrete',$,'Generic');
         #11=IFCMATERIAL('Steel',$,'Metal');
         #12=IFCMATERIALCONSTITUENT('Layer1',$,#10,$,$);
@@ -101,18 +59,9 @@ public static class IfcRelationsTests
         #14=IFCMATERIALCONSTITUENTSET('Set',$,(#12,#13));
         #20=IFCWALL('wall-gid',$,'Wall',$,$,$,$,$,$);
         #21=IFCRELASSOCIATESMATERIAL('am1-gid',$,$,$,(#20),#14);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc4, "material-constituent-test.ifc", "ViewDefinition");
 
-    const string ConnectionIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('connection-relations-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string ConnectionIfc = MiniIfc.Document("""
         #10=IFCWALL('wall1-gid',$,'Wall1',$,$,$,$);
         #11=IFCWALL('wall2-gid',$,'Wall2',$,$,$,$);
         #12=IFCRELCONNECTSELEMENTS('ce1-gid',$,$,$,$,#10,#11);
@@ -123,51 +72,22 @@ public static class IfcRelationsTests
         #30=IFCPORT('portA-gid',$,'PortA',$,$,$,$);
         #31=IFCPORT('portB-gid',$,$,'PortB',$,$,$);
         #32=IFCRELCONNECTSPORTS('cp2-gid',$,$,$,#30,#31);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "connection-relations-test.ifc", "ViewDefinition");
 
-    const string SpaceIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('space-naming-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string SpaceIfc = MiniIfc.Document("""
         #10=IFCSPACE('space-gid',$,'101',$,$,$,$,'Office',.ELEMENT.,.INTERNAL.,$);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "space-naming-test.ifc", "ViewDefinition");
 
-    const string EscapedNameIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('escaped-name-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string EscapedNameIfc = MiniIfc.Document("""
         #10=IFCWALL('wall-gid',$,'Caf\X2\00E9\X0\',$,$,$,$);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "escaped-name-test.ifc", "ViewDefinition");
 
-    const string EscapedPropertyValueIfc = """
-        ISO-10303-21;
-        HEADER;
-        FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-        FILE_NAME('escaped-property-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-        FILE_SCHEMA(('IFC2X3'));
-        ENDSEC;
-        DATA;
+    static readonly string EscapedPropertyValueIfc = MiniIfc.Document("""
         #10=IFCWALL('wall-gid',$,'Wall',$,$,$,$);
         #11=IFCPROPERTYSINGLEVALUE('Comment',$,'Caf\X2\00E9\X0\',$);
         #12=IFCPROPERTYSET('ps-gid',$,'Pset_Test',$,(#11));
         #13=IFCRELDEFINESBYPROPERTIES('rd-gid',$,$,$,(#10),#12);
-        ENDSEC;
-        END-ISO-10303-21;
-        """;
+        """, MiniIfc.Ifc2x3, "escaped-property-test.ifc", "ViewDefinition");
 
     static (StepDocument Doc, IfcEntityResolver Resolver) Parse(string ifc)
     {
@@ -178,18 +98,9 @@ public static class IfcRelationsTests
     [Test]
     public static void ParseDefinitionWithExtraWhitespaceBeforeGroup()
     {
-        const string ifc = """
-            ISO-10303-21;
-            HEADER;
-            FILE_DESCRIPTION(('ViewDefinition'),'2;1');
-            FILE_NAME('whitespace-test.ifc','2024-01-01T00:00:00',(''),(''),'','','');
-            FILE_SCHEMA(('IFC2X3'));
-            ENDSEC;
-            DATA;
+        var ifc = MiniIfc.Document("""
             #1= IFCWALL  ($,$,$,$,$,$);
-            ENDSEC;
-            END-ISO-10303-21;
-            """;
+            """, MiniIfc.Ifc2x3, "whitespace-test.ifc", "ViewDefinition");
 
         using var doc = new StepDocument(Encoding.ASCII.GetBytes(ifc).Fix());
         Assert.That(doc.Definitions, Has.Count.EqualTo(1));

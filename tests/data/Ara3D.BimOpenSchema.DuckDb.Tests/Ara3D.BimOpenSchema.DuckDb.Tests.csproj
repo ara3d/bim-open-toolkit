@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj" />
     <ProjectReference Include="..\..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
