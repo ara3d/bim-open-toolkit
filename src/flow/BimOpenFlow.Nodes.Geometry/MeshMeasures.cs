@@ -18,11 +18,17 @@ public static class MeshMeasures
 
     /// <summary>Surface area, enclosed volume (the absolute divergence-theorem sum, exact
     /// only for closed meshes with consistent winding), and triangle count of a mesh
-    /// under a placement.</summary>
+    /// under a placement. Both sums are translation-invariant, so the placement's
+    /// translation is dropped before the single-precision transform and the points are
+    /// re-based on the first one: at site coordinates the raw terms would otherwise be
+    /// large enough for rounding to swamp a small element.</summary>
     public static Measure Of(TriangleMesh3D mesh, Matrix4x4 transform)
     {
-        var points = mesh.Points.Select(p => p.Vector3.Transform(transform))
-            .Select(v => ((double)v.X, (double)v.Y, (double)v.Z)).ToArray();
+        var sn = (System.Numerics.Matrix4x4)transform;
+        sn.Translation = System.Numerics.Vector3.Zero;
+        var world = mesh.Points.Select(p => p.Vector3.Transform(sn)).ToArray();
+        var (ox, oy, oz) = world.Length == 0 ? (0.0, 0.0, 0.0) : ((double)world[0].X, (double)world[0].Y, (double)world[0].Z);
+        var points = world.Select(v => (v.X - ox, v.Y - oy, v.Z - oz)).ToArray();
         double area = 0, sixVolume = 0;
         foreach (var face in mesh.FaceIndices)
         {

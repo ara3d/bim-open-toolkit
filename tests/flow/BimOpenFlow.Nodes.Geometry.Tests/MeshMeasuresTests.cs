@@ -46,6 +46,15 @@ public sealed class MeshMeasuresTests
     }
 
     [Test]
+    public void Site_Coordinates_Do_Not_Degrade_A_Small_Element()
+    {
+        var far = System.Numerics.Matrix4x4.CreateTranslation(1_000_000, 2_000_000, 500_000);
+        var m = MeshMeasures.Of(UnitCube(), far);
+        Assert.That(m.SurfaceArea, Is.EqualTo(6).Within(1e-6));
+        Assert.That(m.MeshVolume, Is.EqualTo(1).Within(1e-6));
+    }
+
+    [Test]
     public void Open_Shell_Reports_Area_Only()
     {
         var quad = new TriangleMesh3D([new(0, 0, 0), new(2, 0, 0), new(2, 2, 0), new(0, 2, 0)], [(0, 1, 2), (0, 2, 3)]);
