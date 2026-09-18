@@ -39,7 +39,7 @@ in-process tables, and the `rel.fromTable` node.
 |-------|------|-------|
 | C1 plan, text, schema, compile | `8e60ecc` | committed |
 | C2 execute | `95eb0cf` | committed |
-| C3 runtime and node | (this commit) | committed |
+| C3 runtime and node | `f3e005c` | committed |
 
 ## Checks and results
 
@@ -54,6 +54,13 @@ Every command run with
 
 The three failures are the same three in every run, before and after the
 track's changes.
+
+Final run of all three projects against the working tree at `f3e005c`
+(track C's files unmodified since the commit): 87 / 24 / 19 passed, 3 failed,
+the same three. Other tracks were editing the shared checkout during the run,
+including `Ara3D.BimOpenSchema.DuckDb`, which these projects reference; the
+build succeeded, but the inputs outside track C's fence were not stable, so
+this is a per-track result, not an integrated one.
 
 ## Verification limit
 
