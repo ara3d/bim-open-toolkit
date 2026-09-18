@@ -3,8 +3,10 @@
 **Contract revision: nrc-1, including the "Contract amendments" section of
 `docs/plans/nrc-handoff-wave.md`. Acknowledged before any write.**
 
-State: working
+State: verified (all four chunks implemented and checked; integration is the
+supervisor's to assign).
 Started from supervisor commit `8bcf1c9`.
+Remaining work: none. No files are open for further edits.
 
 ## Scope
 
@@ -29,8 +31,8 @@ Started from supervisor commit `8bcf1c9`.
 |---|---|---|
 | A1 samples | `48f7a1f` | committed |
 | A2 build function | `ebdd3a6` | committed |
-| A3 StoreyOfEntity view | pending | implemented, verified |
-| A4 fixture | — | not started |
+| A3 StoreyOfEntity view | `f697ec2` | committed |
+| A4 fixture | pending (checkpoint only) | verified, no code change needed |
 
 ## Checks and results
 
@@ -41,6 +43,13 @@ All with `--artifacts-path C:\Users\cdigg\AppData\Local\Temp\claude\nrc-wave\tra
   `data/`), 0 failed.
 - `dotnet build src/mcp/BimOpenMcp.Ifc` — 0 errors (the `StoreyOfEntity` edit to
   `IfcDuck.cs`).
+- `dotnet build tests/flow/BimOpenFlow.NrcWorkflows.Tests` — 0 errors.
+- A4, through a throwaway NUnit test deleted before the commit: the fixture built
+  `duplex-enriched.duckdb` into
+  `%TEMP%\bimopenflow-nrc-tests\<guid>\duplex-enriched.duckdb` (file present), and
+  `RelationRuntime.FromRoots(Fixture.Roots)` resolved `nrc` to
+  `FileRoot samples\nrc` and `duplex-enriched` to `DuckDbFile <temp>\duplex-enriched.duckdb`.
+  `Fixture.cs` needed no change and is committed as the supervisor wrote it.
 
 ## Running processes
 
@@ -52,14 +61,12 @@ None.
 
 ## Findings
 
-1. **A build with `--artifacts-path` puts test binaries outside the checkout.**
-   `SampleSeeding.FindRepoRoot(AppContext.BaseDirectory)` then finds no
-   `BimOpenToolkit.sln` and returns null, so `NrcPaths.Root` throws. Tracks B and E
-   will hit this the moment they run `BimOpenFlow.NrcWorkflows.Tests` with a private
-   artifacts path. `IfcDuckDbBuildTests` sidesteps it by locating `samples/nrc` from
-   its own `[CallerFilePath]`. Requested of the supervisor: either drop the private
-   artifacts path for that project, or let `NrcPaths` fall back to `[CallerFilePath]`
-   (`NrcPaths.cs` is supervisor-owned).
+1. **A build with `--artifacts-path` puts test binaries outside the checkout**, where
+   walking up from `AppContext.BaseDirectory` finds no `BimOpenToolkit.sln`.
+   `IfcDuckDbBuildTests` locates `samples/nrc` from its own `[CallerFilePath]` for that
+   reason. The supervisor had already fixed `NrcPaths` the same way in `b9fcf0f`, so
+   nothing is outstanding: `NrcPaths.Root` resolved correctly under the private
+   artifacts path when A4 exercised it. No request to the supervisor.
 
 2. **The storey walk needs `MemberOf`, not just `ContainedIn` and `PartOf`.** The
    Duplex conversion produces **zero** `PartOf` relations. The IFC aggregation
@@ -89,3 +96,17 @@ None.
    for the same view in both files; one definition is the stronger form of the same
    guarantee. The three older views stay duplicated — folding them in is a separate
    change and outside this fence.
+
+5. **Every test run of `BimOpenFlow.NrcWorkflows.Tests` pays the IFC conversion.**
+   `Fixture` is a `[SetUpFixture]`, so its `OneTimeSetUp` runs even for a filtered run
+   of CSV-only tests, which costs roughly twenty seconds of whole-file parsing and
+   geometry loading that those tests never use. Left as written to avoid changing a
+   shared fixture while tracks B and E are building on it. Deferred design note: build
+   the database behind a `Lazy<string>` the model-backed tests touch, so a CSV-only
+   run skips it.
+
+6. **`Fixture.Roots` also registers a source named after the temp folder's GUID.**
+   `SourceRegistries.FromRoots` names a `FileRoot` after the folder, so the database
+   directory contributes a meaningless source name beside `duplex-enriched`. Harmless
+   — no graph can name it — and the host has the same shape for `samples/tables`.
+   Recorded rather than worked around.
