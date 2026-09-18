@@ -108,4 +108,17 @@ public sealed class CsvGraphTests
         Assert.That(Numbers(answer, "Total"),
             Near(22854.1, 5593.5, 4313.1, 1144.2, 985.7, 978.9, 687.2, 474.7, 164.8));
     }
+
+    [Test]
+    public void Q7_Absence()
+    {
+        var answer = Answer("nrc-q7-absence");
+        // expected_answers.json Q7: no embodied-carbon row was written for the roof, so the
+        // answer is the roof itself, as a row. nrc_analytics_long.csv holds two metrics for
+        // it, which the graph's aggregate collapses to one row per GlobalId.
+        Assert.That(answer.Rows, Has.Count.EqualTo(1));
+        Assert.That(answer.ColumnNames(), Is.EqualTo(new[] { "GlobalId", "IfcClass" }));
+        Assert.That(answer.Cell("GlobalId", 0), Is.EqualTo("0jf0rYHfX3RAB3bSIRjmxl"));
+        Assert.That(answer.Cell("IfcClass", 0), Is.EqualTo("IFCROOF"));
+    }
 }

@@ -1,0 +1,126 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "answer": {
+      "x": 1690,
+      "y": 40
+    },
+    "distinct": {
+      "x": 1360,
+      "y": 40
+    },
+    "embodied": {
+      "x": 370,
+      "y": 240
+    },
+    "metricsForEmbodied": {
+      "x": 40,
+      "y": 240
+    },
+    "metricsForRoofs": {
+      "x": 40,
+      "y": 40
+    },
+    "missing": {
+      "x": 1030,
+      "y": 40
+    },
+    "roofs": {
+      "x": 370,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "metricsForRoofs.relation",
+        "to": "roofs.input"
+      },
+      {
+        "from": "metricsForEmbodied.relation",
+        "to": "embodied.input"
+      },
+      {
+        "from": "roofs.relation",
+        "to": "missing.left"
+      },
+      {
+        "from": "embodied.relation",
+        "to": "missing.right"
+      },
+      {
+        "from": "missing.relation",
+        "to": "distinct.input"
+      },
+      {
+        "from": "distinct.relation",
+        "to": "answer.input"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "answer",
+        "kind": "rel.select",
+        "version": 1
+      },
+      {
+        "id": "distinct",
+        "kind": "rel.aggregate",
+        "version": 1
+      },
+      {
+        "id": "embodied",
+        "kind": "rel.filter",
+        "version": 1
+      },
+      {
+        "id": "metricsForEmbodied",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "metricsForRoofs",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "missing",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "roofs",
+        "kind": "rel.filter",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "answer": {
+      "columns": "GlobalId, IfcClass"
+    },
+    "distinct": {
+      "aggregates": "count(*) as OtherMetrics",
+      "groupBy": "GlobalId, IfcClass"
+    },
+    "embodied": {
+      "expr": "[MetricId] == 'NRC.EC.A1A3.TOTAL'"
+    },
+    "metricsForEmbodied": {
+      "path": "nrc_analytics_long.csv",
+      "source": "nrc"
+    },
+    "metricsForRoofs": {
+      "path": "nrc_analytics_long.csv",
+      "source": "nrc"
+    },
+    "missing": {
+      "kind": "anti",
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId"
+    },
+    "roofs": {
+      "expr": "[IfcClass] == 'IFCROOF'"
+    }
+  }
+}

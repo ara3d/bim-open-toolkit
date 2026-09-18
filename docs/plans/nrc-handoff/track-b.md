@@ -3,7 +3,7 @@
 **Contract revision: nrc-1, including the "Contract amendments" section of
 `docs/plans/nrc-handoff-wave.md`. Acknowledged before any write.**
 
-State: working.
+State: verified.
 
 Starting point: HEAD `322f0b2`, with track A's CSV copies at `48f7a1f` and the
 test project at `8bcf1c9` already in.
@@ -33,7 +33,7 @@ Five graph documents in `samples/nrc-analyses/` and one test per graph in
 
 ## Remaining work
 
-B3 top elements, B4 by category, B5 absence.
+None. All five graphs and their tests are in.
 
 ## Running processes
 
@@ -48,6 +48,7 @@ None.
 |---|---|
 | B1 | 1 passed, 0 failed |
 | B2 | 2 passed, 0 failed |
+| B3, B4, B5 | 5 passed, 0 failed |
 
 ## Blockers
 
@@ -58,7 +59,10 @@ None.
 | Chunk | Hash |
 |---|---|
 | B1 `nrc-q1-building-total` | `e8b9fa6` |
-| B2 `nrc-q8-per-storey` | pending |
+| B2 `nrc-q8-per-storey` | `cfcb390` |
+| B3 `nrc-q3-top-elements` | pending |
+| B4 `nrc-q5-by-category` | pending |
+| B5 `nrc-q7-absence` | pending |
 
 ## Findings
 
