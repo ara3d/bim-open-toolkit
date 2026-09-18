@@ -12,6 +12,7 @@ const steps = [
   [viewer, ["test", "-w", "@ara3d/viewer-core"]],
   [viewer, ["test", "-w", "@ara3d/viewer-loaders"]],
   [viewer, ["test", "-w", "@ara3d/viewer-controls"]],
+  [web, ["test", "-w", "@bimopenflow/api-client"]],
   [web, ["test", "-w", "@bimopenflow/viz"]],
   [web, ["test", "-w", "@bimopenflow/state"]],
   [web, ["test", "-w", "@bimopenflow/panes"]],
