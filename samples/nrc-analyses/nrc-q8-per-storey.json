@@ -1,0 +1,59 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "answer": {
+      "x": 700,
+      "y": 40
+    },
+    "elements": {
+      "x": 40,
+      "y": 40
+    },
+    "perStorey": {
+      "x": 370,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "elements.relation",
+        "to": "perStorey.input"
+      },
+      {
+        "from": "perStorey.relation",
+        "to": "answer.input"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "answer",
+        "kind": "rel.sort",
+        "version": 1
+      },
+      {
+        "id": "elements",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "perStorey",
+        "kind": "rel.aggregate",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "answer": {
+      "by": "Embodied desc"
+    },
+    "elements": {
+      "path": "nrc_analytics_elements.csv",
+      "source": "nrc"
+    },
+    "perStorey": {
+      "aggregates": "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui",
+      "groupBy": "Storey"
+    }
+  }
+}

@@ -3,6 +3,7 @@ using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
 using BimOpenFlow.Host;
 using BimOpenFlow.Relations;
+using NUnit.Framework.Constraints;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -49,6 +50,12 @@ public sealed class CsvGraphTests
     private static double Number(IDataTable table, string column, int row)
         => Convert.ToDouble(table.Cell(column, row));
 
+    private static IReadOnlyList<double> Numbers(IDataTable table, string column)
+        => table.ColumnCells(column).Select(Convert.ToDouble).ToList();
+
+    private static Constraint Near(params double[] expected)
+        => Is.EqualTo(expected).Within(Tolerance);
+
     [Test]
     public void Q1_BuildingTotal()
     {
@@ -57,5 +64,19 @@ public sealed class CsvGraphTests
         // expected_answers.json Q1: 37196.2 kgCO2e/yr over the 218 rows of nrc_analytics_elements.csv.
         Assert.That(Number(answer, "Total", 0), Is.EqualTo(37196.2).Within(Tolerance));
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(218L));
+    }
+
+    [Test]
+    public void Q8_PerStorey()
+    {
+        var answer = Answer("nrc-q8-per-storey");
+        Assert.That(answer.Rows, Has.Count.EqualTo(4));
+        // expected_answers.json Q8, in descending embodied carbon.
+        Assert.That(answer.ColumnCells("Storey"),
+            Is.EqualTo(new object?[] { "Level 1", "Level 2", "T/FDN", "Roof" }));
+        Assert.That(Numbers(answer, "Embodied"), Near(49451.2, 48696.8, 11761.3, 5821.0));
+        // nrc_analytics_storeys.csv row "Level 1": 103 elements; Q2: mean EUI 40.5.
+        Assert.That(answer.Cell("Elements", 0), Is.EqualTo(103L));
+        Assert.That(Number(answer, "MeanEui", 0), Is.EqualTo(40.5).Within(Tolerance));
     }
 }

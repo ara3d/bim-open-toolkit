@@ -33,7 +33,7 @@ Five graph documents in `samples/nrc-analyses/` and one test per graph in
 
 ## Remaining work
 
-B2 per-storey, B3 top elements, B4 by category, B5 absence.
+B3 top elements, B4 by category, B5 absence.
 
 ## Running processes
 
@@ -47,6 +47,7 @@ None.
 | After | Result |
 |---|---|
 | B1 | 1 passed, 0 failed |
+| B2 | 2 passed, 0 failed |
 
 ## Blockers
 
@@ -56,7 +57,8 @@ None.
 
 | Chunk | Hash |
 |---|---|
-| B1 `nrc-q1-building-total` | pending |
+| B1 `nrc-q1-building-total` | `e8b9fa6` |
+| B2 `nrc-q8-per-storey` | pending |
 
 ## Findings
 
