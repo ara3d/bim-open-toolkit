@@ -28,7 +28,7 @@ Started from HEAD `264653f` (>= `af76a33`; tracks A-D verified).
 |---|---|
 | E1 | `165c955` |
 | E2 | `11e36e4` |
-| E3 | pending |
+| E3 | `63ac685` |
 
 ## Checks and results
 
