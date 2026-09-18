@@ -3,9 +3,10 @@ using BimOpenFlow.Host.Store;
 
 namespace BimOpenFlow.BimWorkflows.Tests;
 
-/// <summary>Bim-profile seeding: an empty store gets both the bim-analyses
-/// samples ({SAMPLES} rewritten) and the view3d-analyses samples ({DATA}
-/// rewritten to the repo data directory); a non-empty store is untouched.</summary>
+/// <summary>Bim-profile seeding: an empty store gets the bim-analyses samples
+/// ({SAMPLES} rewritten), the view3d-analyses samples ({DATA} rewritten to the repo
+/// data directory), the nrc-analyses samples (named sources), and the snowdon-analyses
+/// samples only when the local-only Snowdon model exists; a non-empty store is untouched.</summary>
 [TestFixture]
 public sealed class BimSampleSeedingTests
 {
@@ -39,12 +40,19 @@ public sealed class BimSampleSeedingTests
             .Order(StringComparer.Ordinal)
             .ToList()!;
 
+    /// <summary>Seed order follows the source order in BimSampleSeeding.SeedIfEmpty.</summary>
+    private static IEnumerable<string> ExpectedSeedIds()
+        => ExpectedIds("bim-analyses")
+            .Concat(ExpectedIds("view3d-analyses"))
+            .Concat(ExpectedIds("nrc-analyses"))
+            .Concat(BimSampleSeeding.SnowdonPath() is null ? [] : ExpectedIds("snowdon-analyses"));
+
     [Test]
-    public void EmptyStore_SeedsBimAndView3dSamples()
+    public void EmptyStore_SeedsEverySampleSource()
     {
         var store = new AnalysisStore(_storeDir);
         var seeded = BimSampleSeeding.SeedIfEmpty(store, AppContext.BaseDirectory);
-        Assert.That(seeded, Is.EqualTo(ExpectedIds("bim-analyses").Concat(ExpectedIds("view3d-analyses"))));
+        Assert.That(seeded, Is.EqualTo(ExpectedSeedIds()));
     }
 
     [Test]
