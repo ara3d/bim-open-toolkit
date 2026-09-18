@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema.DuckDb;
 using Ara3D.DataFlowEngine.Abstractions;
 
 namespace BimOpenFlow.Nodes.Bos;

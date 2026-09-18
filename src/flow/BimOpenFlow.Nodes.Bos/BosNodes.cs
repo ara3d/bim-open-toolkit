@@ -10,9 +10,5 @@ public static class BosNodes
     [
         new BosLoadNode(),
         new BosQueryNode(),
-        new TableFilterNode(),
-        new TableDeriveNode(),
-        new TableAggregateNode(),
-        new TableSortNode(),
     ];
 }

@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema.IO;
 using Ara3D.DataTable;
 using Ara3D.Utils;
 using DuckDB.NET.Data;
@@ -15,6 +16,16 @@ public readonly record struct BosQueryPage(long Total, int Skip, IDataTable Tabl
 /// <summary>Read-only SQL over a DuckDB database derived from a BOS dataset.</summary>
 public static class BosDuckDbQueries
 {
+    /// <summary>Loads the table into a private in-memory DuckDB as table "t" and runs one
+    /// read-only query over it (validated by <see cref="ReadOnlyQuery"/>).</summary>
+    public static IDataTable QueryOver(this IDataTable table, string sql, string name)
+    {
+        var validated = ReadOnlyQuery(sql);
+        using var conn = BosDuckDb.OpenInMemory();
+        conn.WriteTable(table, "t");
+        return conn.Query(validated, name);
+    }
+
     /// <summary>Runs any SQL and materializes the full result.</summary>
     // TODO: Ara3D.BimOpenSchema.IO's DuckDbUtils.ReadTable is this function restricted to
     // "SELECT * FROM table"; consolidate there once that project can depend on this one.

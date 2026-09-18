@@ -4,6 +4,7 @@ using BimOpenFlow.Nodes.Bos;
 using BimOpenFlow.Nodes.Compliance;
 using BimOpenFlow.Nodes.Effects;
 using BimOpenFlow.Nodes.Geometry;
+using BimOpenFlow.Nodes.TableOps;
 
 namespace BimOpenFlow.PocParity.Tests;
 
@@ -23,7 +24,7 @@ internal static class ParityCatalog
         (_, _, parameters) => [new TableValue(SampleModel.Table(parameters.GetText("name")))]);
 
     public static readonly INodeRegistry Registry = NodeRegistry.Combine(
-        BosNodes.All, ComplianceNodes.All, EffectNodes.All, GeometryNodes.All, [TableSource]);
+        BosNodes.All, TableOpsNodes.All, ComplianceNodes.All, EffectNodes.All, GeometryNodes.All, [TableSource]);
 
     public static FlowTestSession NewSession()
         => new(Registry);

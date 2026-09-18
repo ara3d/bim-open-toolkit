@@ -4,6 +4,7 @@ using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
 using Ara3D.NodeGraph;
 using BimOpenFlow.Nodes.Bos;
+using BimOpenFlow.Nodes.TableOps;
 using BimOpenFlow.Nodes.Geometry;
 
 namespace BimOpenFlow.View3dWorkflows.Tests;
@@ -18,7 +19,7 @@ namespace BimOpenFlow.View3dWorkflows.Tests;
 [TestFixture]
 public sealed class View3dSampleTests
 {
-    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, GeometryNodes.All);
+    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, GeometryNodes.All);
 
     public static IEnumerable<TestCaseData> SampleFiles
         => Directory.EnumerateFiles(AnalysesDir, "*.json")

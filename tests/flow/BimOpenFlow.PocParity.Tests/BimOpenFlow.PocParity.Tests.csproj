@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Bos\BimOpenFlow.Nodes.Bos.csproj" />
+    <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.TableOps\BimOpenFlow.Nodes.TableOps.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Compliance\BimOpenFlow.Nodes.Compliance.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Effects\BimOpenFlow.Nodes.Effects.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Geometry\BimOpenFlow.Nodes.Geometry.csproj" />

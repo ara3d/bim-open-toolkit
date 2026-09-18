@@ -44,14 +44,14 @@ is the content itself, not the path or a timestamp.
 
 | Pack | Nodes | Kinds |
 |---|---|---|
-| BOS — `BimOpenFlow.Nodes.Bos` | 6 | `bos.load`, `bos.query`, `table.filter`, `table.derive`, `table.aggregate`, `table.sort` |
+| BOS — `BimOpenFlow.Nodes.Bos` | 2 | `bos.load`, `bos.query` |
 | BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 12 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops` |
 | Geometry — `BimOpenFlow.Nodes.Geometry` | 20 | `view3d.instances`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
 | DuckDB — `BimOpenFlow.Nodes.DuckDb` | 9 | `duck.read`, `duck.source`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
 | Tables — `BimOpenFlow.Nodes.Tables` | 11 | `xlsx.read`, `xlsx.sheets`, `sqlite.query`, `sqlite.table`, `sqlite.tables`, `table.join`, `table.setOp`, `table.project`, `table.inline`, `table.range`, `table.calendar` |
-| TableOps — `BimOpenFlow.Nodes.TableOps` | 14 | `table.cast`, `table.concat`, `table.distinct`, `table.drop`, `table.limit`, `table.pivot`, `table.profile`, `table.rename`, `table.sample`, `table.schema`, `table.splitColumn`, `table.transpose`, `table.unpivot`, `table.window` |
+| TableOps — `BimOpenFlow.Nodes.TableOps` | 18 | `table.filter`, `table.derive`, `table.aggregate`, `table.sort`, `table.cast`, `table.concat`, `table.distinct`, `table.drop`, `table.limit`, `table.pivot`, `table.profile`, `table.rename`, `table.sample`, `table.schema`, `table.splitColumn`, `table.transpose`, `table.unpivot`, `table.window` |
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
 | Viz — `BimOpenFlow.Nodes.Viz` | 3 | `chart.bar`, `chart.line`, `view.table` |
@@ -107,110 +107,6 @@ The input table is loaded into an in-memory DuckDB as table `t`. The query must 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
 | `sql` | Text | — | — | — |
-
-### `table.filter` (v1) — Pure
-
-Keeps rows where the Boolean expression is true; null results exclude the row.
-
-The expression must be statically Boolean; a non-Boolean expression is an error. A row is kept only when the expression is true — a null result excludes the row (SQL WHERE semantics).
-
-**Inputs**
-
-| Name | Type | Required |
-|---|---|---|
-| `table` | Table | required |
-
-**Outputs**
-
-| Name | Type |
-|---|---|
-| `table` | Table |
-
-**Params**
-
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `expr` | Expression | — | — | — |
-
-### `table.derive` (v1) — Pure
-
-Outputs the input table plus one computed column.
-
-The new column's type comes from the expression's static type; rows where the expression is null get a null cell. It is an error if the column name already exists, or if the expression is always null (no type can be inferred).
-
-**Inputs**
-
-| Name | Type | Required |
-|---|---|---|
-| `table` | Table | required |
-
-**Outputs**
-
-| Name | Type |
-|---|---|
-| `table` | Table |
-
-**Params**
-
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `name` | Text | — | — | — |
-| `expr` | Expression | — | — | — |
-
-### `table.aggregate` (v1) — Pure
-
-Groups by the comma-separated groupBy columns (may be empty) and computes comma-separated 'func(column) as name' aggregates (count/sum/min/max/avg).
-
-Runs via DuckDB. Each aggregate is written `func(column) as name` with funcs count, sum, min, max, avg; only count accepts `*`. Sums are cast (BIGINT for integer columns, DOUBLE otherwise) so the result type is predictable. `groupBy` may be empty (one summary row); when present, output rows are ordered by the group columns for determinism.
-
-**Inputs**
-
-| Name | Type | Required |
-|---|---|---|
-| `table` | Table | required |
-
-**Outputs**
-
-| Name | Type |
-|---|---|
-| `table` | Table |
-
-**Params**
-
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupBy` | Text | — | — | columns of input `table` |
-| `aggregates` | Text | — | — | — |
-
-### `table.sort` (v1) — Pure
-
-Sorts by columns A, B, then C, each with its own ascending or descending direction.
-
-Runs via DuckDB. Each comma-separated term is a column name with an optional ` desc` (or explicit ` asc`) suffix. Column names containing commas or spaces cannot currently be expressed.
-
-**Inputs**
-
-| Name | Type | Required |
-|---|---|---|
-| `table` | Table | required |
-
-**Outputs**
-
-| Name | Type |
-|---|---|
-| `table` | Table |
-
-**Params**
-
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `A` | Text | — | — | columns of input `table` |
-| `B` | Text | — | — | columns of input `table` |
-| `C` | Text | — | — | columns of input `table` |
-| `descendingA` | Boolean | `false` | — | — |
-| `descendingB` | Boolean | `false` | — | — |
-| `descendingC` | Boolean | `false` | — | — |
-| `by` | Text | — | — | — |
 
 ## BIM analysis — `BimOpenFlow.Nodes.BimAnalysis`
 
@@ -1720,6 +1616,110 @@ One ISO-8601 date column from `start` to `end` inclusive, stepping by day/week/m
 ## TableOps — `BimOpenFlow.Nodes.TableOps`
 
 Rows, columns, reshape, and window transforms — each a typed facade over one generated DuckDB clause.
+
+### `table.filter` (v1) — Pure
+
+Keeps rows where the Boolean expression is true; null results exclude the row.
+
+The expression must be statically Boolean; a non-Boolean expression is an error. A row is kept only when the expression is true — a null result excludes the row (SQL WHERE semantics).
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `expr` | Expression | — | — | — |
+
+### `table.derive` (v1) — Pure
+
+Outputs the input table plus one computed column.
+
+The new column's type comes from the expression's static type; rows where the expression is null get a null cell. It is an error if the column name already exists, or if the expression is always null (no type can be inferred).
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `name` | Text | — | — | — |
+| `expr` | Expression | — | — | — |
+
+### `table.aggregate` (v1) — Pure
+
+Groups by the comma-separated groupBy columns (may be empty) and computes comma-separated 'func(column) as name' aggregates (count/sum/min/max/avg).
+
+Runs via DuckDB. Each aggregate is written `func(column) as name` with funcs count, sum, min, max, avg; only count accepts `*`. Sums are cast (BIGINT for integer columns, DOUBLE otherwise) so the result type is predictable. `groupBy` may be empty (one summary row); when present, output rows are ordered by the group columns for determinism.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `groupBy` | Text | — | — | columns of input `table` |
+| `aggregates` | Text | — | — | — |
+
+### `table.sort` (v1) — Pure
+
+Sorts by columns A, B, then C, each with its own ascending or descending direction.
+
+Runs via DuckDB. Each comma-separated term is a column name with an optional ` desc` (or explicit ` asc`) suffix. Column names containing commas or spaces cannot currently be expressed.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `A` | Text | — | — | columns of input `table` |
+| `B` | Text | — | — | columns of input `table` |
+| `C` | Text | — | — | columns of input `table` |
+| `descendingA` | Boolean | `false` | — | — |
+| `descendingB` | Boolean | `false` | — | — |
+| `descendingC` | Boolean | `false` | — | — |
+| `by` | Text | — | — | — |
 
 ### `table.cast` (v1) — Pure
 
