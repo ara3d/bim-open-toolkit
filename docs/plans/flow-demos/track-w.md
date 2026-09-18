@@ -1,6 +1,6 @@
 # Track W checkpoint: backend availability
 
-State: W1 done, W2 and W3 pending (2026-09-18).
+State: W1 and W2 done, W3 pending (2026-09-18).
 
 ## Design
 
@@ -28,12 +28,21 @@ State: W1 done, W2 and W3 pending (2026-09-18).
 ## Files touched
 - packages/app/src/hostStatus.ts (new), packages/app/test/hostStatus.test.ts
   (new; placed under `test/` like every other app test instead of `src/`)
-- packages/app/src/{topbar.ts, app.ts, main.ts, graphDemo.ts, styles.ts}
+- packages/app/src/{topbar.ts, app.ts, main.ts, graphDemo.ts, duckdbDemo.ts, showcase.ts, styles.ts}
   (styles.ts holds the app's injected CSS; treated as "the app's css files")
 - packages/state/src/sync.ts, packages/state/test/sync.test.ts
 
+- `duckdbDemo.ts`: builds its ApiClient through `watchHost`, mounts the banner,
+  routes the Ask requests through `host.fetch`, passes `host` to `createApp`,
+  and retries `start()` on reconnect while the app has not been created.
+  The demo's own error line is shown only when the host was connected.
+- `showcase.ts`: probe-only status and banner (the page does not call the API).
+- `start()` fires the first probe immediately, so a probe-only page reaches
+  "offline" 5 s after load instead of 10 s.
+
 ## Chunks
-- W1: (hash below)
+- W1: 83c5670
+- W2: (hash below)
 
 ## Checks run
 - `npx vitest run --root packages/app test/hostStatus.test.ts`: 12 passed.
@@ -43,7 +52,8 @@ State: W1 done, W2 and W3 pending (2026-09-18).
 - Browser, Vite on 5313 with `BOF_HOST=http://127.0.0.1:5999` (nothing
   listening): index.html and 3d.html both show the red banner "Host not
   reachable at http://127.0.0.1:5313/api. Start it and it will reconnect."
-  and "offline" in the topbar within about 3 s. Screenshots were taken with
+  and "offline" in the topbar within about 3 s; duckdb.html within 2 s;
+  showcase.html shows "Reconnecting…" at 1 s and the red banner by 6 s. Screenshots were taken with
   the browser pane (not saved to disk).
 
 ## Running processes
