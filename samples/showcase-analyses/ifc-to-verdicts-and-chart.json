@@ -1,0 +1,74 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "parameters": { "x": 40, "y": 240 },
+    "doors": { "x": 370, "y": 40 },
+    "overallWidth": { "x": 370, "y": 240 },
+    "doorWidths": { "x": 700, "y": 40 },
+    "metres": { "x": 1030, "y": 40 },
+    "millimetres": { "x": 1360, "y": 40 },
+    "rows": { "x": 1690, "y": 40 },
+    "answer": { "x": 2020, "y": 40 },
+    "model": { "x": 2020, "y": 240 },
+    "coloured": { "x": 2350, "y": 240 },
+    "perVerdict": { "x": 2350, "y": 40 },
+    "chart": { "x": 2680, "y": 40 },
+    "report": { "x": 2350, "y": 440 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "doors.input" },
+      { "from": "parameters.relation", "to": "overallWidth.input" },
+      { "from": "doors.relation", "to": "doorWidths.left" },
+      { "from": "overallWidth.relation", "to": "doorWidths.right" },
+      { "from": "doorWidths.relation", "to": "metres.t1" },
+      { "from": "metres.relation", "to": "millimetres.input" },
+      { "from": "millimetres.relation", "to": "rows.input" },
+      { "from": "rows.table", "to": "answer.in" },
+      { "from": "model.instances", "to": "coloured.instances" },
+      { "from": "answer.out", "to": "coloured.values" },
+      { "from": "answer.out", "to": "perVerdict.table" },
+      { "from": "perVerdict.table", "to": "chart.table" },
+      { "from": "answer.out", "to": "report.in" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "parameters", "kind": "rel.table", "version": 1 },
+      { "id": "doors", "kind": "rel.filter", "version": 1 },
+      { "id": "overallWidth", "kind": "rel.filter", "version": 1 },
+      { "id": "doorWidths", "kind": "rel.join", "version": 1 },
+      { "id": "metres", "kind": "rel.sql", "version": 1 },
+      { "id": "millimetres", "kind": "rel.derive", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 },
+      { "id": "answer", "kind": "check.rule", "version": 1 },
+      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "coloured", "kind": "view3d.color", "version": 1 },
+      { "id": "perVerdict", "kind": "table.aggregate", "version": 1 },
+      { "id": "chart", "kind": "chart.bar", "version": 1 },
+      { "id": "report", "kind": "sink.report", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "parameters": { "source": "duplex-enriched", "table": "ParameterText" },
+    "doors": { "expr": "[Category] == 'IFCDOOR'" },
+    "overallWidth": { "expr": "[Name] == 'Ifc:OverallWidth'" },
+    "doorWidths": { "leftKey": "EntityIndex", "rightKey": "EntityIndex", "kind": "inner" },
+    "metres": { "sql": "SELECT GlobalId AS globalId, Name AS doorName, CAST(Value AS DOUBLE) AS Width_m FROM t1 ORDER BY GlobalId" },
+    "millimetres": { "name": "Width_mm", "expr": "[Width_m] * 1000" },
+    "rows": { "limit": "0" },
+    "answer": {
+      "checkId": "DC-W1",
+      "title": "Door leaf width at least 850 mm",
+      "citation": "NBC 2020 3.8.3.12 (illustrative, not legal text)",
+      "expr": "[Width_mm] >= 850",
+      "reviewExpr": ""
+    },
+    "model": { "path": "{SAMPLES}/duplex-enriched.ifc" },
+    "coloured": { "joinColumn": "globalId", "valueColumn": "verdict", "colorMap": "category10" },
+    "perVerdict": { "groupBy": "verdict", "aggregates": "count(*) as Doors" },
+    "chart": { "labelColumn": "verdict", "valueColumns": "Doors", "title": "DC-W1 door width verdicts", "sort": "desc" },
+    "report": { "path": "{SAMPLES}/../../artifacts/showcase/dc-w1-verdicts.html", "title": "DC-W1 door width verdicts" }
+  }
+}

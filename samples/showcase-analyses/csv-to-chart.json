@@ -1,0 +1,40 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "elements": { "x": 40, "y": 40 },
+    "byCategory": { "x": 370, "y": 40 },
+    "ranked": { "x": 700, "y": 40 },
+    "rows": { "x": 1030, "y": 40 },
+    "answer": { "x": 1360, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "elements.relation", "to": "byCategory.input" },
+      { "from": "byCategory.relation", "to": "ranked.input" },
+      { "from": "ranked.relation", "to": "rows.input" },
+      { "from": "rows.table", "to": "answer.table" }
+    ],
+    "nodes": [
+      { "id": "elements", "kind": "rel.csv", "version": 1 },
+      { "id": "byCategory", "kind": "rel.aggregate", "version": 1 },
+      { "id": "ranked", "kind": "rel.sort", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 },
+      { "id": "answer", "kind": "chart.bar", "version": 1 }
+    ]
+  },
+  "values": {
+    "elements": { "source": "nrc", "path": "nrc_analytics_elements.csv" },
+    "byCategory": {
+      "groupBy": "Category",
+      "aggregates": "count(*) as Elements, sum(OperationalCarbon_kgCO2e_per_year) as Total"
+    },
+    "ranked": { "by": "Total desc" },
+    "rows": { "limit": "0" },
+    "answer": {
+      "labelColumn": "Category",
+      "valueColumns": "Total",
+      "title": "Operational carbon per year by category (kgCO2e)",
+      "sort": "none"
+    }
+  }
+}

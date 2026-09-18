@@ -45,6 +45,7 @@ public sealed class BimSampleSeedingTests
         => ExpectedIds("bim-analyses")
             .Concat(ExpectedIds("view3d-analyses"))
             .Concat(ExpectedIds("nrc-analyses"))
+            .Concat(ExpectedIds("showcase-analyses"))
             .Concat(BimSampleSeeding.SnowdonPath() is null ? [] : ExpectedIds("snowdon-analyses"));
 
     [Test]

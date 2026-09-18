@@ -1,0 +1,41 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "model": { "x": 40, "y": 40 },
+    "entities": { "x": 370, "y": 40 },
+    "byCategory": { "x": 700, "y": 40 },
+    "ranked": { "x": 1030, "y": 40 },
+    "rows": { "x": 1360, "y": 40 },
+    "answer": { "x": 1690, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "model.entities", "to": "entities.table" },
+      { "from": "entities.relation", "to": "byCategory.input" },
+      { "from": "byCategory.relation", "to": "ranked.input" },
+      { "from": "ranked.relation", "to": "rows.input" },
+      { "from": "rows.table", "to": "answer.table" }
+    ],
+    "nodes": [
+      { "id": "model", "kind": "bos.load", "version": 1 },
+      { "id": "entities", "kind": "rel.fromTable", "version": 1 },
+      { "id": "byCategory", "kind": "rel.aggregate", "version": 1 },
+      { "id": "ranked", "kind": "rel.sort", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 },
+      { "id": "answer", "kind": "chart.bar", "version": 1 }
+    ]
+  },
+  "values": {
+    "model": { "path": "{SAMPLES}/duplex-enriched.bos", "harmonize": "false" },
+    "entities": { "name": "entities" },
+    "byCategory": { "groupBy": "Category", "aggregates": "count(*) as Elements" },
+    "ranked": { "by": "Elements desc, Category" },
+    "rows": { "limit": "0" },
+    "answer": {
+      "labelColumn": "Category",
+      "valueColumns": "Elements",
+      "title": "Duplex entities per IFC category",
+      "sort": "none"
+    }
+  }
+}

@@ -59,7 +59,7 @@ is the content itself, not the path or a timestamp.
 
 ## BOS — `BimOpenFlow.Nodes.Bos`
 
-Loading BIM Open Schema (.bos) files and the core table transforms: filter, derive, aggregate, sort.
+Loading BIM Open Schema (.bos) files and querying them with SQL; the general table transforms live in TableOps.
 
 ### `bos.load` (v1) — Pure
 
