@@ -46,8 +46,8 @@ relational operator and holds its arguments. Inputs are child plans.
 
 ```
 Plan =
-  | ReadCsv(path, options)
-  | ReadTable(connection, schema, table)
+  | ReadCsv(source, relativePath, options)
+  | ReadTable(source, schema, table)
   | RawSql(sql, inputs: Plan[])
   | Select(input, columns)
   | Rename(input, map)
@@ -65,10 +65,30 @@ Plan =
   | Window(input, ...)
 ```
 
-Expressions inside `Derive`, `Filter`, and `Aggregate` are a small expression
-tree of their own: column references, literals, operators, and function calls.
-Not SQL strings. Keeping expressions structured is what lets the Schema layer
-type them and the Compile layer emit them for more than one backend.
+Expressions inside `Derive`, `Filter`, and `Aggregate` are a structured
+expression tree, never SQL strings:
+
+```
+Expr =
+  | Column(name)
+  | Literal(value, type)
+  | Unary(op, expr)
+  | Binary(op, left, right)
+  | Call(function, args)
+  | Case(branches, otherwise)
+```
+
+The function vocabulary is a fixed list the Schema layer can type and the
+Compile layer can emit. A function not in the list is a plan error, not a
+runtime surprise. Keeping expressions structured is what lets the Schema
+layer type them and the Compile layer emit them for more than one backend.
+
+Sources never hold connection strings. `ReadTable` and `ReadCsv` carry a
+**source name** that a connection registry resolves at Schema and Execute
+time. The registry maps a name to a connection string, a file root, or an
+attached DuckDB catalog. A saved graph is portable across machines and safe
+to commit, and the same graph can point at a test database by swapping the
+registry.
 
 What this layer provides:
 
@@ -96,8 +116,9 @@ A `Schema` is an ordered list of `(name, type, nullable)`. The type
 vocabulary is deliberately short: boolean, integer, number, text, date,
 timestamp, binary, and unknown.
 
-`ICatalog` is a one-method interface: given a source description, return its
-schema. The DuckDB implementation reads a CSV header or queries
+`ICatalog` is a one-method interface: given a source name and a table or
+file reference, return its schema. The DuckDB implementation resolves the
+name through the connection registry, then reads a CSV header or queries
 `information_schema`. A fake implementation returns whatever a test says.
 This is the only I/O on the design-time side, and it is cheap.
 
@@ -148,12 +169,13 @@ here, and it keeps the operator set from growing to cover every case.
 ### Layer 4: Execute
 
 ```
-execute(sql: string, connection, limit?: int) -> ITable
+execute(sql: string, registry: IConnectionRegistry, limit?: int) -> ITable
 ```
 
 This is the only layer that touches rows. It owns:
 
-- Connections and attaching external databases as DuckDB catalogs.
+- Resolving source names through the registry and attaching external
+  databases as DuckDB catalogs under those names.
 - Cancellation and timeouts.
 - A materialization cache keyed by plan hash and limit.
 - Validating the returned columns against the inferred schema, and reporting
@@ -217,13 +239,13 @@ A layer is over-coupled if any of these become false: Plan imports a database
 library; Schema needs a connection for anything but source lookup; Compile
 returns rows; Execute receives a `Plan`.
 
+## Decisions taken
+
+- Expressions are a structured tree from day one (2026-09-17).
+- Sources resolve by name through a connection registry (2026-09-17).
+
 ## Open questions
 
-- Whether expressions should be a full tree from day one, or a string that
-  the Compile layer passes through and the Schema layer types as `unknown`.
-  The tree is more work and unblocks typed errors; the string ships sooner.
-- Whether sources should be resolved by name through a connection registry so
-  a saved graph carries no connection strings.
 - Whether the schema layer is allowed to be stale. If a CSV gains a column
   between design and execution, Execute reports the mismatch, but the editor
   needs a way to refresh the catalog.
