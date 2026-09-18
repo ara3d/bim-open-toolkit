@@ -26,21 +26,38 @@ public sealed class ModelGraphTests
         => SampleSeeding.RewritePaths(GraphDocumentIO.Load(NrcPaths.Graph(id)), NrcPaths.SamplesDir);
 
     /// <summary>Validates and evaluates the document, asserting that every node reached Ok. Effect
-    /// nodes never do: the engine has no Run yet, so it captures their inputs and reports
-    /// EffectPending. Naming one here accepts that status for it.</summary>
+    /// nodes never do in a standing pass: the engine captures their inputs and reports
+    /// EffectPending until a Run. Naming one here accepts that status for it.</summary>
     private static EvalSnapshot EvaluateGreen(GraphDocument doc, string id, NodeRegistry registry,
         params string[] effectNodes)
+        => AssertGreen(new EvalSession(registry).SetDocument(Validated(doc, id, registry)), id, effectNodes);
+
+    /// <summary>A standing pass with the effect nodes pending, then the engine Run over the same
+    /// session, asserting that every node, effects included, reached Ok. Returns the run snapshot.</summary>
+    private static EvalSnapshot RunGreen(GraphDocument doc, string id, NodeRegistry registry,
+        params string[] effectNodes)
+    {
+        var session = new EvalSession(registry);
+        AssertGreen(session.SetDocument(Validated(doc, id, registry)), id, effectNodes);
+        return AssertGreen(session.Run(), id);
+    }
+
+    private static GraphDocument Validated(GraphDocument doc, string id, NodeRegistry registry)
     {
         Assert.That(doc.Validate(registry), Is.Empty, id);
-        var snapshot = doc.Evaluate(registry);
+        return doc;
+    }
+
+    private static EvalSnapshot AssertGreen(EvalSnapshot snapshot, string id, params string[] pendingEffects)
+    {
         Assert.That(snapshot.Results
-            .Where(r => r.Value.Status != Expected(effectNodes, r.Key))
+            .Where(r => r.Value.Status != Expected(pendingEffects, r.Key))
             .Select(r => $"{r.Key}: {r.Value.Status} {r.Value.Error}"), Is.Empty, id);
         return snapshot;
     }
 
-    private static NodeStatus Expected(IReadOnlyList<string> effectNodes, string nodeId)
-        => effectNodes.Contains(nodeId) ? NodeStatus.EffectPending : NodeStatus.Ok;
+    private static NodeStatus Expected(IReadOnlyList<string> pendingEffects, string nodeId)
+        => pendingEffects.Contains(nodeId) ? NodeStatus.EffectPending : NodeStatus.Ok;
 
     /// <summary>The rows of the answer node, whether it carries a Relation or an ordinary Table.</summary>
     private static IDataTable AnswerRows(EvalSnapshot snapshot, RelationRuntime runtime)
@@ -127,8 +144,8 @@ public sealed class ModelGraphTests
         var registry = Fixture.Registry(Runtime);
         try
         {
-            var snapshot = EvaluateGreen(doc, "nrc-enrich-run", registry, "answer");
-            var summary = RunEffect(snapshot, doc, registry, "answer");
+            var summary = ((TableValue)RunGreen(doc, "nrc-enrich-run", registry, "answer")
+                .Results["answer"].Outputs[0]).Table;
 
             // samples/nrc/psets_to_write.csv: 2438 data rows over 224 distinct entityId values.
             Assert.That(summary.Rows, Has.Count.EqualTo(1));
@@ -148,19 +165,6 @@ public sealed class ModelGraphTests
         }
     }
 
-    /// <summary>Executes one EffectPending node with the inputs the pass captured for it and a
-    /// context whose IsRun is true, and returns its output table. The engine has no graph-level Run,
-    /// so this is what running the effect means today.</summary>
-    private static IDataTable RunEffect(EvalSnapshot snapshot, GraphDocument doc,
-        NodeRegistry registry, string nodeId)
-    {
-        var pending = snapshot.Results[nodeId];
-        var node = doc.FindNode(nodeId)!;
-        var outputs = registry.Find(node.Kind, node.Version)!
-            .Eval(new RunContext(), pending.EffectInputs, new ParamValues(doc.Values[nodeId]));
-        return ((TableValue)outputs[0]).Table;
-    }
-
     /// <summary>A copy of the document with one parameter of one node replaced.</summary>
     private static GraphDocument WithParam(GraphDocument doc, string nodeId, string name, string value)
         => doc with
@@ -172,13 +176,6 @@ public sealed class ModelGraphTests
                     : (IReadOnlyDictionary<string, string>)node.Value.ToDictionary(
                         p => p.Key, p => p.Key == name ? value : p.Value)),
         };
-
-    private sealed class RunContext : IEvalContext
-    {
-        public bool IsRun => true;
-        public CancellationToken Cancellation => CancellationToken.None;
-        public void Warn(string message) => TestContext.Out.WriteLine(message);
-    }
 
     /// <summary>One DC-W1 row of samples/nrc/door_verdicts.csv:
     /// "globalId","DC-W1",verdict,"IFCDOOR.OverallWidth attribute = 762mm; ...","citation".</summary>
