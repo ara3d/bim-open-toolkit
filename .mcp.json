@@ -20,6 +20,12 @@
         "--models",
         "artifacts/building-model-workflows"
       ]
+    },
+    "bimopen-ifc": {
+      "command": "dotnet",
+      "args": [
+        "artifacts/bim-flow-ifc/mcp/bimopenmcp-ifc.dll"
+      ]
     }
   }
 }

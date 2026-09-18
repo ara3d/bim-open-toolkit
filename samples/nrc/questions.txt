@@ -1,0 +1,9 @@
+# The NRC paper's question list (section 6.2), verbatim, one per line.
+What is the total operational carbon for the building?
+Which storey has the higher mean energy intensity, Level 1 or Level 2?
+Which five elements have the highest operational carbon?
+What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?
+How much operational carbon is in each category?
+Which analysis run produced these values, and when?
+What is the embodied carbon of the roof?
+What is the total embodied carbon (A1-A3) per storey?
