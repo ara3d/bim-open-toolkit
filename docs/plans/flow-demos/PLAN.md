@@ -112,3 +112,46 @@ command, port, profile, inputs, what you see, and the test that guards it.
 Per-track: the test projects each track touches. Wave: the nrc-handoff gate
 list plus `TableWorkflows.Tests`, `BimWorkflows.Tests`, `View3dWorkflows.Tests`,
 `gates/web-smoke.mjs`, and `gates/host-smoke.mjs`.
+
+## Status (2026-09-18, revision 84ddc8d)
+
+Landed, each as its own commit and green under the affected suites:
+
+| Chunk | Commit | Result |
+|---|---|---|
+| baseline test fixes | 75d7adc | the two pre-existing failures were stale expectations |
+| M1 flow layering rules | ff11e2a | four intra-flow rules enforced; all held |
+| M4 rel.* in both profiles | 9a05121 | `HostComposition.Registry(profile, runtime)`; hand-combined sites gone |
+| M3 table nodes to TableOps | 067636a, 84ddc8d | Bos holds `bos.load`/`bos.query` only; tables profile is BOS-free; `QueryOver` in the data layer |
+| M2 MemoryTable to Support | 1326271 | Compliance, Effects, Geometry reference Support |
+| P live registry, "not ready yet" | 5d943c7 | `RootScanRegistry`, `PreparingRegistry` |
+| P background sample build | ff9f2aa | cold start 36 s to 0.5 s; sessions re-evaluate when the database lands |
+| P lazy NRC fixture, timings | ecc1b63 | CSV-only run 1 s; `perf.md` |
+| P lazy model hash | 4ae38b7 | first `/api/models` no longer hashes every model |
+| fix IFC degenerate meshes | 53a69d9 | seeded view3d graphs render on Duplex |
+| seeding filter, Duplex BOS job | 4b225ef | a profile seeds only graphs it can run and logs the rest |
+| S1 showcase graphs, S2 DEMOS.md | 805aa8c | three end-to-end demos with cited numbers |
+| W1-W3 host status, api-client tests | 83c5670, 50dad3b, ee9d0fe | banner on every page; reconnect; 17 client tests in the web gate |
+| D1-D3 sample tests, READMEs | a718a12, 7c9fe19, 6e93085, 613c919 | nine DuckDB workflows tested; NRC folder enumerated; nine READMEs |
+| 3D flows | 58f029e, 151614d, 935cfc1, fd8aaba | 3D pane keyed instances by the wrong id; fixed with tests |
+
+Not done, recorded as extension points:
+
+- **M5 shared test support** (`RepoPaths`, `MiniIfc`): five repo-root helpers
+  and six mini-IFC strings remain. Cheap; next.
+- **IRelationExecutor seam**: `Nodes.Relations` still references
+  `Relations.DuckDb`; the layering rule only forbids `Relations` itself from
+  seeing DuckDB.
+- **Graph-level Run**: effect nodes stay `EffectPending`; tests run them by
+  hand with an `IsRun` context. The report and write-back demos therefore
+  show a pending node until the engine grows a Run.
+- **BFAST as a graph input**: no `bfast.*` reader; BFAST is only the 3D
+  transport.
+- **Numeric cast in the expression grammar**: `nrc-dc-w1-verdicts` and the
+  showcase graph use a `rel.sql` node for `CAST(Value AS DOUBLE)`.
+- **`ModelCatalog.Slug`** yields `.bos` for a non-ASCII file name (track 3D
+  finding); fall back to the hash prefix.
+- **Host status latency**: an idle host death surfaces in about 20 s through
+  the probe; a 10 s connected cadence would halve it.
+- **Snowdon folder in the model roots**: seeding adds the whole
+  `Documents\BIM Open Schema` folder when the local model exists.
