@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
 using BimOpenFlow.Host;
@@ -18,18 +17,8 @@ public sealed class CsvGraphTests
 {
     private const double Tolerance = 0.05;
 
-    /// <summary>The repo root found from this source file, not from the test output folder:
-    /// the wave builds with --artifacts-path, which puts the output outside the checkout.</summary>
-    private static readonly string Root = SampleSeeding.FindRepoRoot(Path.GetDirectoryName(SourceFile())!)
-        ?? throw new InvalidOperationException("BimOpenToolkit.sln not found above " + SourceFile());
-
-    private static string SourceFile([CallerFilePath] string path = "") => path;
-
-    private static string GraphFile(string id)
-        => Path.Combine(SampleSeeding.NrcAnalyses(Root).AnalysesDir, id + ".json");
-
     private static readonly RelationRuntime Runtime =
-        RelationRuntime.FromRoots([SampleSeeding.NrcSamplesDir(Root)]);
+        RelationRuntime.FromRoots([NrcPaths.SamplesDir]);
 
     private static readonly NodeRegistry Registry =
         HostComposition.AllPacks(Runtime);
@@ -38,7 +27,7 @@ public sealed class CsvGraphTests
     /// rows of its answer relation.</summary>
     private static IDataTable Answer(string id)
     {
-        var doc = GraphDocumentIO.Load(GraphFile(id));
+        var doc = GraphDocumentIO.Load(NrcPaths.Graph(id));
         Assert.That(doc.Validate(Registry), Is.Empty, id);
         var snapshot = doc.Evaluate(Registry);
         Assert.That(snapshot.Results.Where(r => r.Value.Status != NodeStatus.Ok)
