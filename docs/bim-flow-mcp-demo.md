@@ -74,7 +74,7 @@ On `gpt-5.4-nano`, a harder set of eight (rooms without doors, singleton door ty
 
 `POST /api/ask` takes `{ "request": "...", "analysisId": "..."? }` and answers with a server-sent event stream. The host runs the MCP tool server in process and gives the model its tool list as functions. The system prompt holds the list of databases (and which one the existing graphs use), the node catalog, the two guides, and the working rules; the per-request message carries only the analysis id and the request, so the long prompt stays the same across requests. With `analysisId`, the request is appended to that graph's conversation, which the host keeps in memory for the last two dozen graphs; after a restart the agent is told to read the graph with `getAnalysis` first.
 
-The loop is in `src/studio/BimOpenFlow.Studio/AskAgent.cs`, the OpenAI call in `OpenAiChat.cs`, and the endpoint, prompts and guides in `AskEndpoint.cs`. The tests in `tests/studio/BimOpenFlow.Studio.Tests` run the loop against the real tool server with a scripted model.
+The loop is in `src/studio/BimOpenFlow.Ask/AskAgent.cs`, the OpenAI call in `OpenAiChat.cs` beside it, and the endpoint, prompts and guides in `src/studio/BimOpenFlow.Studio/AskEndpoint.cs`. The tests in `tests/studio/BimOpenFlow.Studio.Tests` run the loop against the real tool server with a scripted model.
 
 ## The MCP server on its own
 

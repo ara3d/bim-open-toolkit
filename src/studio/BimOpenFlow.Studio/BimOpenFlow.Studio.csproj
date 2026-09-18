@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
     <ProjectReference Include="..\..\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
     <ProjectReference Include="..\..\mcp\BimOpenMcp.Flow\BimOpenMcp.Flow.csproj" />
   </ItemGroup>
