@@ -252,74 +252,14 @@ public static class AskPrompts
             .FirstOrDefault();
     }
 
-    public const string SchemaGuide =
-        "About these databases (BIM Open Schema exports of building models):\n"
-        + "- One table per element category (door, window, wall, space, storey, roof, floor, stair, ...) plus core tables: "
-        + "bim_object (one row per object identity), source_document / source_revision / source_object (where each row came "
-        + "from), evidence (how facts were established), model_snapshot, interpretation_policy, material. A category table "
-        + "with 0 rows means this export has no elements of that kind: say so plainly and offer what is there; never invent data.\n"
-        + "- Element tables share columns: id (a long hash, not for display), element_name (the type or room name), "
-        + "element_mark (the tag or number), element_location_primary_storey (a storey.id; join to storey for its name), "
-        + "element_location_spaces (list of space ids), element_placement_origin_x/y/z (metres), element_geometry.\n"
-        + "- storey: element_name (e.g. 'L1 - Block 35'), number, sort_order, elevation (m), floor_to_floor_height. The same "
-        + "level name can appear once per building block, so count and group by storey id, and show the name.\n"
-        + "- space (rooms): number, element_name, storey (storey.id), use, department, net_floor_area, clear_height, "
-        + "net_volume, design_occupancy, doors (list). door: nominal_width, nominal_height, clear_width, clear_height (metres), "
-        + "leaf_count, operation, fire_resistance, is_accessible, adjacent_spaces (list). roof: storey, net_surface_area, "
-        + "projected_area, representative_slope, edge_length.\n"
-        + "- Every established value x may have companions x_assurance, x_reason, x_explanation, x_evidence. Numeric "
-        + "columns are often NULL because the source never established them; x_reason says why (e.g. NotObserved). Never "
-        + "replace NULL with 0, never infer a size from a name, and when a requested measure is missing, include its reason "
-        + "column and say so in the summary.\n"
-        + "- Lineage: source_object (table, row, local_id, source_role) -> source_revision (document_id, exporter) -> "
-        + "source_document (name, discipline). The evidence behind a fact x is the list x_evidence of evidence.id values: "
-        + "UNNEST the list and join evidence on id (its columns are origin, method, explanation, sources); evidence rows "
-        + "do not mention the fact by name, so never search them by text. List columns are VARCHAR[]: in SQL use len(x) for the count, "
-        + "list_contains(x, v), or UNNEST(x) to expand; there is no list_length. Never select a list column into a "
-        + "duck.query output that feeds table.* nodes (they cannot join, group or sort on lists): count or unnest it in SQL.\n"
-        + "- Units are metres, square metres, cubic metres.";
+    /// <summary>The guides and rules, read from the .claude/skills/bim-flow files embedded
+    /// at build time, so the Claude Code skill and this prompt never drift apart.</summary>
+    public static readonly string SchemaGuide = Guide("schema-guide");
+    public static readonly string NodeGuide = Guide("node-guide");
+    public static readonly string Rules = Guide("working-rules");
 
-    public const string NodeGuide =
-        "About the nodes:\n"
-        + "- table.derive 'expr' and table.filter 'expr' use a small expression language, not SQL: literals true/false, "
-        + "numbers, 'text', null; column names bare or in [brackets]; operators + - * / % & (text concat), comparisons "
-        + "== != < <= > >=, and/or/not, cond ? a : b; builtins abs min max round floor ceil len lower upper contains "
-        + "startswith endswith coalesce. Null propagates through every operator, so there is no null test: "
-        + "'x == null' and 'x != null' are always null and a filter on them drops every row, and 'x IS NULL' does not "
-        + "parse. To flag or keep rows by missing values, do it in SQL (x IS NULL, x IS NOT NULL) in the duck.query or "
-        + "a sql.query node.\n"
-        + "- table.aggregate: 'groupBy' is a comma-separated column list; 'aggregates' is comma-separated "
-        + "'func(column) as name' with func count/sum/min/max/avg (count(*) allowed).\n"
-        + "- table.join: 'aKey' and 'bKey' name the key columns of inputs a and b; 'mode' left/inner/full/semi/anti. "
-        + "table.sort: 'A', 'B', 'C' name the sort columns with 'descendingA' etc. table.project 'columns' keeps and orders "
-        + "columns. A plain table.* node is a fine final 'answer'; view.table only adds a title.\n"
-        + "- sql.query runs one SELECT over connected intermediate tables named t1..t4 (t is t1): use it for CASE, "
-        + "window functions, UNNEST, null tests, or anything the table.* nodes cannot express. duck.query runs SQL "
-        + "directly against the database.";
-
-    public const string Rules =
-        "How to work:\n"
-        + "1. Call describeDatabase for the database (tables, row counts, column names), then describeDatabase with 'table' "
-        + "for each table you will query: it gives each column's type, NULL count, distinct count and sample values. Do not "
-        + "guess column names or values. Before you filter, sort or rank on a measure, look at its NULL count: if every "
-        + "value is NULL, the measure is not available in this export, so do not filter on it; say so, and use another "
-        + "column the request allows (a count, a volume, an occupancy) or ask which to use.\n"
-        + "2. Build the whole graph with one editGraph call: a duck.source node with the id 'database' and its 'path'; a "
-        + "duck.query node per query, each with one read-only SELECT in 'sql' and 'database.source' connected to its 'source' "
-        + "input; then the table.* nodes; then the edges. Use addNode/setParam/connect/removeNode only for small fixes.\n"
-        + "3. Prefer several small nodes over one large SQL statement: queries that select and rename columns, then "
-        + "table.* nodes for joins, filters, derived columns, aggregates, sorts and limits, so the graph shows the steps. "
-        + "When no table.* node can express a step (UNNEST, window functions, CASE, list functions), do that step in SQL. "
-        + "Column names given to table.* parameters must match the upstream output columns exactly.\n"
-        + "4. Give nodes short lowercase ids that say what they hold. The final node must have the id 'answer'. Its columns "
-        + "should be readable: names, marks, numbers and measures, not id hashes, unless ids were asked for.\n"
-        + "5. When the graph is wired, call evaluate. If any node is not Ok, read its error, fix it, and evaluate again. "
-        + "Then call getResult on 'answer' port 'table' with take 10 and check the rows answer the request; fix and "
-        + "re-evaluate if they do not.\n"
-        + "6. If the request is ambiguous in a way that would change the graph, or asks for data this export does not "
-        + "have, ask one short question or say what is missing instead of building; the user can reply.\n"
-        + "7. Finish with two or three plain sentences: what the graph does and what the result shows, including any "
-        + "caveat about missing values. No markdown.";
+    private static string Guide(string name)
+        => EmbeddedText.Read(typeof(AskPrompts).Assembly, $"skills/bim-flow/{name}.md");
 
     public static string User(string request, string analysisId)
         => $"Analysis id: {analysisId}\n\nRequest: {request.Trim()}";

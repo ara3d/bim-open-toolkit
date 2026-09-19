@@ -10,6 +10,11 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- The question runner's system prompt is the same text the Claude Code skill reads. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\.claude\skills\ifc-ask\ifc-guide.md" LogicalName="skills/ifc-ask/ifc-guide.md" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
     <ProjectReference Include="..\..\mcp\BimOpenMcp.Ifc\BimOpenMcp.Ifc.csproj" />

@@ -104,8 +104,10 @@ node scripts/build-mcp.mjs
 ```
 
 Claude Code lists them as `bimopen-ifc` (questions about an IFC file) and
-`bimopenflow-duckdb` (build and edit graphs in the DuckDB demo store); see
-[docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md).
+`bimopenflow-duckdb` (build and edit graphs in the DuckDB demo store). The skills in
+`.claude/skills/` (`ifc-ask`, `bim-flow`) carry the schema notes, node syntax, and working
+rules the Ask box's agent is given, so a chat in Claude Code starts with the same knowledge;
+see [docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md).
 
 The C# tests need fixtures that are not committed. Run `./data/get-test-data.ps1` first,
 which copies them from a sibling clone as described in [data/README.md](data/README.md).

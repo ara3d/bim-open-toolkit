@@ -15,6 +15,13 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- The Ask system prompt is the same text the Claude Code skill reads. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\.claude\skills\bim-flow\schema-guide.md" LogicalName="skills/bim-flow/schema-guide.md" />
+    <EmbeddedResource Include="..\..\..\.claude\skills\bim-flow\node-guide.md" LogicalName="skills/bim-flow/node-guide.md" />
+    <EmbeddedResource Include="..\..\..\.claude\skills\bim-flow\working-rules.md" LogicalName="skills/bim-flow/working-rules.md" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
     <ProjectReference Include="..\..\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
