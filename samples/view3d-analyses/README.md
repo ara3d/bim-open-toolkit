@@ -13,6 +13,8 @@ stands for the repo's `data/` directory (they all load `duplex.ifc`).
 | `massing-boxes` | one union bounding box per category (`view3d.boundingBoxes`) |
 | `voxel-density` | 0.5 m voxelization colored by per-voxel instance count |
 | `decimate-overview` | only the largest quarter of instances, small parts dropped |
+| `clash-candidates` | instances colored by how many other instances their box overlaps (`spatial.intersects` self-join) |
+| `mesh-volume` | instances colored by enclosed mesh volume (`view3d.measures`) |
 
 Every sample validates against the Bos + Geometry packs and evaluates green
 over `data/duplex.ifc`; `tests/flow/BimOpenFlow.View3dWorkflows.Tests` enforces both.
