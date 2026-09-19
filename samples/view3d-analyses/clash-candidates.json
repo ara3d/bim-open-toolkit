@@ -1,0 +1,34 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "colored": { "x": 1360, "y": 40 },
+    "inst": { "x": 40, "y": 40 },
+    "keyed": { "x": 1030, "y": 224 },
+    "overlaps": { "x": 370, "y": 224 },
+    "perElement": { "x": 700, "y": 224 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "overlaps.a" },
+      { "from": "inst.instances", "to": "overlaps.b" },
+      { "from": "overlaps.table", "to": "perElement.table" },
+      { "from": "perElement.table", "to": "keyed.table" },
+      { "from": "inst.instances", "to": "colored.instances" },
+      { "from": "keyed.table", "to": "colored.values" }
+    ],
+    "nodes": [
+      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "keyed", "kind": "table.rename", "version": 1 },
+      { "id": "overlaps", "kind": "spatial.intersects", "version": 1 },
+      { "id": "perElement", "kind": "table.aggregate", "version": 1 }
+    ]
+  },
+  "values": {
+    "colored": { "colorMap": "viridis", "joinColumn": "instanceIndex", "valueColumn": "overlaps" },
+    "inst": { "path": "{DATA}/duplex.ifc" },
+    "keyed": { "renames": "A=instanceIndex" },
+    "overlaps": { "aKey": "instanceIndex", "bKey": "instanceIndex" },
+    "perElement": { "aggregates": "count(*) as overlaps", "groupBy": "A" }
+  }
+}

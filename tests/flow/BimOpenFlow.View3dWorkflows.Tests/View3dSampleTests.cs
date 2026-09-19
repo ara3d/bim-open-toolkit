@@ -6,13 +6,14 @@ using Ara3D.NodeGraph;
 using BimOpenFlow.Nodes.Bos;
 using BimOpenFlow.Nodes.TableOps;
 using BimOpenFlow.Nodes.Geometry;
+using BimOpenFlow.Nodes.Spatial;
 using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.View3dWorkflows.Tests;
 
 /// <summary>
 /// Every committed view3d sample (samples/view3d-analyses/*.json) parses,
-/// validates against the Bos + Geometry packs, and evaluates all-green over
+/// validates against the Bos + TableOps + Geometry + Spatial packs, and evaluates all-green over
 /// data/duplex.ifc ({DATA} rewritten to the repo data directory). One shared
 /// session per fixture: the meshed model is cached process-wide, so the IFC
 /// is meshed once for all samples.
@@ -20,7 +21,7 @@ namespace BimOpenFlow.View3dWorkflows.Tests;
 [TestFixture]
 public sealed class View3dSampleTests
 {
-    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, GeometryNodes.All);
+    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, GeometryNodes.All, SpatialNodes.All);
 
     public static IEnumerable<TestCaseData> SampleFiles
         => Directory.EnumerateFiles(AnalysesDir, "*.json")

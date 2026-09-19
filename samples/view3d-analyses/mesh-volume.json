@@ -1,0 +1,24 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "colored": { "x": 700, "y": 40 },
+    "inst": { "x": 40, "y": 40 },
+    "measures": { "x": 40, "y": 224 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "colored.instances" },
+      { "from": "measures.measures", "to": "colored.values" }
+    ],
+    "nodes": [
+      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "measures", "kind": "view3d.measures", "version": 1 }
+    ]
+  },
+  "values": {
+    "colored": { "colorMap": "viridis", "joinColumn": "instanceIndex", "valueColumn": "meshVolume" },
+    "inst": { "path": "{DATA}/duplex.ifc" },
+    "measures": { "path": "{DATA}/duplex.ifc" }
+  }
+}

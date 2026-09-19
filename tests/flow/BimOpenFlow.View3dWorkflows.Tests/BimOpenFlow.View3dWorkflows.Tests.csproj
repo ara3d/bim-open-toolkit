@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Bos\BimOpenFlow.Nodes.Bos.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.TableOps\BimOpenFlow.Nodes.TableOps.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Geometry\BimOpenFlow.Nodes.Geometry.csproj" />
+    <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Spatial\BimOpenFlow.Nodes.Spatial.csproj" />
   </ItemGroup>
 
   <ItemGroup>
