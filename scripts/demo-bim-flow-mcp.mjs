@@ -9,7 +9,7 @@ import { resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dll = resolve(process.env.BOF_MCP_DLL ?? resolve(root, 'artifacts/bim-flow-duckdb/mcp/bimopenflow-mcp.dll'));
+const dll = resolve(process.env.BOF_MCP_DLL ?? resolve(root, 'artifacts/bim-flow-duckdb/mcp/bimopenmcp-flow.dll'));
 const store = resolve(process.env.BOF_DUCKDB_STORE ?? resolve(root, 'artifacts/bim-flow-duckdb/store'));
 const cache = resolve(root, 'artifacts/bim-flow-duckdb/cache');
 const models = resolve(process.env.BOF_DUCKDB_MODELS ?? resolve(root, 'artifacts/building-model-workflows'));

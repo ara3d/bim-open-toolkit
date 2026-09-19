@@ -95,6 +95,18 @@ npm install --prefix bimopenflow/web
 npm run web --prefix bimopenflow/web
 ```
 
+Build the two MCP servers into the folders that [.mcp.json](.mcp.json) launches, so a
+Claude Code session opened in this directory connects to them. The command also reports
+any server whose dll is missing (`--check` reports without building):
+
+```bash
+node scripts/build-mcp.mjs
+```
+
+Claude Code lists them as `bimopen-ifc` (questions about an IFC file) and
+`bimopenflow-duckdb` (build and edit graphs in the DuckDB demo store); see
+[docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md).
+
 The C# tests need fixtures that are not committed. Run `./data/get-test-data.ps1` first,
 which copies them from a sibling clone as described in [data/README.md](data/README.md).
 The sample analyses in `samples/` run without fixtures.

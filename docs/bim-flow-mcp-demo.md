@@ -78,7 +78,7 @@ The loop is in `src/studio/BimOpenFlow.Ask/AskAgent.cs`, the OpenAI call in `Ope
 
 ## The MCP server on its own
 
-The repository's `.mcp.json` registers the same server as `bimopenflow-duckdb` for Claude Code: the built `bimopenmcp-flow.dll` over stdio with the tables profile, the demo store, and `artifacts/building-model-workflows` as the model root where `listDatabases` looks for `.duckdb` files. Build it with `duckdb:mcp-build`, open Claude Code in the repository root, approve the project server, and ask in chat. Reload the studio to see what it built. Any MCP client can use the same entry; the arguments are those of `bimopenflow-host`, except that `--port` does nothing under stdio (pass `--http [port]` to listen on HTTP instead).
+The repository's `.mcp.json` registers the same server as `bimopenflow-duckdb` for Claude Code: the built `bimopenmcp-flow.dll` over stdio with the tables profile, the demo store, and `artifacts/building-model-workflows` as the model root where `listDatabases` looks for `.duckdb` files. Build it (and the IFC server) with `node scripts/build-mcp.mjs`, which also checks that every dll `.mcp.json` names exists; open Claude Code in the repository root, approve the project server, and ask in chat. Reload the studio to see what it built. Any MCP client can use the same entry; the arguments are those of `bimopenflow-host`, except that `--port` does nothing under stdio (pass `--http [port]` to listen on HTTP instead).
 
 | Tool | What it does |
 |---|---|
