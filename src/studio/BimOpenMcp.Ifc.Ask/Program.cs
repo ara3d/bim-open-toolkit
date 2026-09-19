@@ -7,15 +7,13 @@ try
     var options = IfcAskOptions.Parse(args);
     if (!File.Exists(options.ModelPath))
         throw new FileNotFoundException($"IFC file not found: {options.ModelPath}", options.ModelPath);
-    var apiKey = OpenAiChat.ResolveApiKey()
-        ?? throw new InvalidOperationException(
-            "No OpenAI key: set OPENAI_API_KEY, or OPENAI_API_KEY_FILE to a file whose first line is the key.");
-    var model = OpenAiChat.ResolveModel();
+    var selection = ChatSelection.Resolve();
+    var model = selection.Model;
 
     using var cache = new IfcSessionCache();
     using var tools = IfcAskRunner.CreateServer(cache);
     using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-    var runner = new IfcAskRunner(tools, new OpenAiChat(http, apiKey, model), options.ModelPath, options.MaxTurns)
+    var runner = new IfcAskRunner(tools, selection.Create(http), options.ModelPath, options.MaxTurns)
     {
         Progress = Console.Error.WriteLine,
     };

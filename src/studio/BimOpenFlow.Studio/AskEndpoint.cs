@@ -50,11 +50,12 @@ public static class AskEndpoint
             services);
         var system = new Lazy<string>(() => AskPrompts.System(services));
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
-        var model = OpenAiChat.ResolveModel();
+        var selection = ChatSelection.Resolve();
+        var model = selection.Model;
         var conversations = new ConcurrentDictionary<string, JsonArray>(StringComparer.Ordinal);
         var recent = new ConcurrentQueue<string>();
 
-        app.MapGet(ModelInfoRoute, () => Results.Json(new { model, configured = KeyStatus() is null, problem = KeyStatus() }));
+        app.MapGet(ModelInfoRoute, () => Results.Json(new { model, provider = selection.Provider, configured = selection.Configured, problem = selection.Problem }));
         app.MapPost(Route, async (HttpContext context, AskRequest body, CancellationToken ct) =>
         {
             context.Response.Headers.ContentType = "text/event-stream";
@@ -67,10 +68,10 @@ public static class AskEndpoint
                 await Emit(new { type = "error", message = "Type a request first." });
                 return;
             }
-            string apiKey;
+            IChatModel chat;
             try
             {
-                apiKey = OpenAiChat.ResolveApiKey() ?? throw new InvalidOperationException(MissingKey);
+                chat = selection.Create(http);
             }
             catch (Exception e)
             {
@@ -94,7 +95,7 @@ public static class AskEndpoint
                     ? AskPrompts.FollowUp(body.Request, id, resumed: known is null)
                     : AskPrompts.User(body.Request, id);
                 await Emit(new { type = "start", analysisId = id, model, continuing });
-                var agent = new AskAgent(tools, new OpenAiChat(http, apiKey, model)) { Hidden = HiddenTools };
+                var agent = new AskAgent(tools, chat) { Hidden = HiddenTools };
                 Task Report(AskEvent e)
                     => Emit(new { type = e.Type, name = e.Name, args = e.Args, ok = e.Ok, summary = e.Summary, text = e.Text });
                 var outcome = await agent.RunAsync(messages, user, Report, ct);
@@ -140,9 +141,6 @@ public static class AskEndpoint
         return app;
     }
 
-    private const string MissingKey =
-        "No OpenAI key: set OPENAI_API_KEY, or OPENAI_API_KEY_FILE to a file whose first line is the key, and restart the studio host.";
-
     private static JsonArray Remember(ConcurrentDictionary<string, JsonArray> conversations, ConcurrentQueue<string> recent,
         string id, JsonArray messages)
     {
@@ -151,18 +149,6 @@ public static class AskEndpoint
         while (recent.Count > ConversationsKept && recent.TryDequeue(out var old))
             conversations.TryRemove(old, out _);
         return messages;
-    }
-
-    private static string? KeyStatus()
-    {
-        try
-        {
-            return OpenAiChat.ResolveApiKey() is null ? MissingKey : null;
-        }
-        catch (Exception e)
-        {
-            return e.Message;
-        }
     }
 
     private static async Task WriteEvent(HttpResponse response, object payload, CancellationToken ct)

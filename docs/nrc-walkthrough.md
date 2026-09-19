@@ -60,7 +60,7 @@ npm run ifc:ask-build --prefix bimopenflow/web
 ```
 
 ```bash
-set OPENAI_API_KEY_FILE=C:\path\to\key.txt && dotnet artifacts/bim-flow-ifc/ask/bimopenmcp-ifc-ask.dll --model samples/nrc/duplex-enriched.ifc --questions samples/nrc/questions.txt --out artifacts/nrc-walkthrough/duplex/transcript-unattended.md --results artifacts/nrc-walkthrough/duplex/results-unattended.json
+set ANTHROPIC_API_KEY_FILE=C:\path\to\key.txt && dotnet artifacts/bim-flow-ifc/ask/bimopenmcp-ifc-ask.dll --model samples/nrc/duplex-enriched.ifc --questions samples/nrc/questions.txt --out artifacts/nrc-walkthrough/duplex/transcript-unattended.md --results artifacts/nrc-walkthrough/duplex/results-unattended.json
 ```
 
 `samples/nrc/questions.txt` holds the paper's eight questions verbatim. Each runs

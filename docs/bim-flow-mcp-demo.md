@@ -6,15 +6,15 @@ The server holds no logic of its own. Each tool is one of the operations behind 
 
 ## Setup
 
-From the repository root, with .NET 8 installed and the DuckDB demo prepared (`duckdb:prepare`, see [the studio doc](bim-flow-duckdb.md)). The Ask box needs an OpenAI API key. Put it on its own line in a file, then point the host at that file so the key never appears in a shell history or a process listing:
+From the repository root, with .NET 8 installed and the DuckDB demo prepared (`duckdb:prepare`, see [the studio doc](bim-flow-duckdb.md)). The Ask box needs a model key: Anthropic (Claude) or OpenAI. Put it on its own line in a file, then point the host at that file so the key never appears in a shell history or a process listing:
 
 ```powershell
-$env:OPENAI_API_KEY_FILE = "C:\dev\keys\gpt.txt"
+$env:ANTHROPIC_API_KEY_FILE = "C:\dev\keys\claude.txt"   # or OPENAI_API_KEY_FILE
 npm run duckdb:build --prefix bimopenflow/web
 npm run duckdb:host --prefix bimopenflow/web
 ```
 
-`OPENAI_API_KEY` in the environment works too. The model defaults to `gpt-5`; set `OPENAI_MODEL` to change it (`gpt-5.4-nano` is about five times faster and far cheaper, and with the guides below it builds most graphs; see the measurements). `OPENAI_REASONING_EFFORT` (minimal, low, medium, high) is passed through when set. `duckdb:build` builds `bimopenflow-studio`, which is the whole `bimopenflow-host` API plus `POST /api/ask`, into `artifacts/bim-flow-duckdb/studio`. Start the web page with `duckdb:web` as before and open the studio. If the key is not configured, the transcript strip says so as soon as the page loads.
+The plain `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` variable works too. The host picks the provider from the keys it finds, Anthropic before OpenAI; `ASK_PROVIDER=openai` or `anthropic` forces one. The Claude model defaults to `claude-opus-5` (`ANTHROPIC_MODEL` changes it; `ANTHROPIC_EFFORT` low, medium, high, xhigh or max sets the effort; `ANTHROPIC_BASE_URL` redirects the endpoint). The OpenAI model defaults to `gpt-5`; set `OPENAI_MODEL` to change it (`gpt-5.4-nano` is about five times faster and far cheaper, and with the guides below it builds most graphs; see the measurements). `OPENAI_REASONING_EFFORT` (minimal, low, medium, high) is passed through when set. The measurements in this document were all made with OpenAI models; the Claude backend is tested against a scripted API but has not been measured on the same request set yet. `duckdb:build` builds `bimopenflow-studio`, which is the whole `bimopenflow-host` API plus `POST /api/ask`, into `artifacts/bim-flow-duckdb/studio`. Start the web page with `duckdb:web` as before and open the studio. If the key is not configured, the transcript strip says so as soon as the page loads.
 
 ## Asking
 
@@ -74,7 +74,7 @@ On `gpt-5.4-nano`, a harder set of eight (rooms without doors, singleton door ty
 
 `POST /api/ask` takes `{ "request": "...", "analysisId": "..."? }` and answers with a server-sent event stream. The host runs the MCP tool server in process and gives the model its tool list as functions. The system prompt holds the list of databases (and which one the existing graphs use), the node catalog, the two guides, and the working rules; the per-request message carries only the analysis id and the request, so the long prompt stays the same across requests. With `analysisId`, the request is appended to that graph's conversation, which the host keeps in memory for the last two dozen graphs; after a restart the agent is told to read the graph with `getAnalysis` first.
 
-The loop is in `src/studio/BimOpenFlow.Ask/AskAgent.cs`, the OpenAI call in `OpenAiChat.cs` beside it, and the endpoint and prompt assembly in `src/studio/BimOpenFlow.Studio/AskEndpoint.cs`. The schema guide, node guide and working rules are the files in `.claude/skills/bim-flow/`, embedded into the studio at build time, so the Claude Code skill of the same name and the Ask box read one text. The tests in `tests/studio/BimOpenFlow.Studio.Tests` run the loop against the real tool server with a scripted model.
+The loop is in `src/studio/BimOpenFlow.Ask/AskAgent.cs`, the provider calls in `AnthropicChat.cs` and `OpenAiChat.cs` beside it (both implement `IChatModel`; the loop keeps its conversation in the chat-completions shape and the Claude client translates to the Messages API, replaying thinking blocks and caching the system prompt), the provider choice in `ChatSelection.cs`, and the endpoint and prompt assembly in `src/studio/BimOpenFlow.Studio/AskEndpoint.cs`. The schema guide, node guide and working rules are the files in `.claude/skills/bim-flow/`, embedded into the studio at build time, so the Claude Code skill of the same name and the Ask box read one text. The tests in `tests/studio/BimOpenFlow.Studio.Tests` run the loop against the real tool server with a scripted model.
 
 ## The MCP server on its own
 

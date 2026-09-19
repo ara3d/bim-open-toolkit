@@ -123,7 +123,7 @@ model, and each has its own setup guide:
 - **DuckDB demo.** Nine SQL-backed schedule, join, and aggregation graphs over a typed
   Snowdon database. See [docs/bim-flow-duckdb.md](docs/bim-flow-duckdb.md).
 - **Ask box.** The DuckDB demo's Ask box has an agent build a new graph from a
-  plain-language request through the MCP tools. It needs an OpenAI key. See
+  plain-language request through the MCP tools. It needs an Anthropic or OpenAI key. See
   [docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md).
 
 ## Maturity

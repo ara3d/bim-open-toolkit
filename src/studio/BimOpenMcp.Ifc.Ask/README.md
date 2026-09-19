@@ -8,7 +8,7 @@ transcript shows what the model called, in what order, with what arguments, and 
 JSON is the same run in a shape a script can check.
 
 ```powershell
-$env:OPENAI_API_KEY_FILE = "C:\dev\keys\gpt.txt"
+$env:ANTHROPIC_API_KEY_FILE = "C:\dev\keys\claude.txt"   # or OPENAI_API_KEY_FILE
 dotnet run --project src/studio/BimOpenMcp.Ifc.Ask -- `
   --model data/duplex.ifc `
   --questions docs/nrc/questions.txt `
@@ -25,9 +25,11 @@ dotnet run --project src/studio/BimOpenMcp.Ifc.Ask -- `
 | `--results <results.json>` | The run as JSON: question, answer, turns, token counts, and every tool call. |
 | `--turns <n>` | Turn limit per question. Default 40. |
 
-The OpenAI key comes from `OPENAI_API_KEY`, or the first line of the file named by
-`OPENAI_API_KEY_FILE`; the model from `OPENAI_MODEL` (default `gpt-5`). Progress goes to stderr, so
-the transcript on stdout stays clean.
+The provider is chosen as for the studio's Ask box (`ChatSelection` in `BimOpenFlow.Ask`): the key
+comes from `ANTHROPIC_API_KEY` / `ANTHROPIC_API_KEY_FILE` (model `ANTHROPIC_MODEL`, default
+`claude-opus-5`) or `OPENAI_API_KEY` / `OPENAI_API_KEY_FILE` (model `OPENAI_MODEL`, default `gpt-5`),
+Anthropic first when both exist, `ASK_PROVIDER` to force one. Progress goes to stderr, so the
+transcript on stdout stays clean.
 
 | File | Role |
 |---|---|

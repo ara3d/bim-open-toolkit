@@ -7,7 +7,7 @@ namespace BimOpenMcp.Ifc.Ask;
 /// question runs in a fresh conversation against the same in-process tool server, so an answer
 /// can never lean on what an earlier question found, and a question that fails does not stop
 /// the rest.</summary>
-public sealed class IfcAskRunner(McpServer tools, OpenAiChat chat, string modelPath, int maxTurns = IfcAskRunner.DefaultMaxTurns)
+public sealed class IfcAskRunner(McpServer tools, IChatModel chat, string modelPath, int maxTurns = IfcAskRunner.DefaultMaxTurns)
 {
     public const int DefaultMaxTurns = 40;
 
