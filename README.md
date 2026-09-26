@@ -5,6 +5,8 @@ and AI agents edit with the same operations. It is for developers and analysts w
 to get tables, 3D views, charts, and checks out of building models without writing
 against a vendor's API.
 
+[PROJECT.md](PROJECT.md) is the project brief: purpose, users, workflows, principles, scope, and how success is measured. New work is defined against one of its workflows.
+
 Two things live here:
 
 - **BIM Open Schema (BOS)** and everything that produces or consumes it: the C#

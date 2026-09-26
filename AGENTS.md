@@ -1,0 +1,24 @@
+# BIM Open Toolkit: agent orientation
+
+@PROJECT.md
+
+The brief above says what the project is for. A plan names the workflow it serves and takes its acceptance criteria from that workflow's Done line; a review checks the change against the same workflow. Lines in the brief that end with `(unconfirmed)` are drafts awaiting the owner; do not build on one without saying so.
+
+## Where the state lives
+
+| Question | Where |
+|---|---|
+| How to build, run, and demo | `README.md`, `docs/DEMOS.md`, and `.claude/launch.json` (the named dev servers) |
+| How it is put together | `docs/ARCHITECTURE.md`; `docs/OVERVIEW.md` is the one-page version |
+| Which nodes exist | `docs/nodes.md` (generated) and the packs under `src/flow/BimOpenFlow.Nodes.*` |
+| Ideas gathered, ranked, and tied to workflows | `docs/CANDIDATE-WORK.md` |
+| Open decisions and work items | `tickets/`; `kind: question` marks a decision to make |
+| Earlier proposals and their status | `docs/proposals/` and `docs/plans/`; `docs/platoflow/` is the pre-rewrite design from 2026-08-30, history unless a newer document repeats it |
+| What agents already know | `.claude/skills/bim-flow/`, `.claude/skills/ifc-ask/`; `.mcp.json` names the two MCP servers |
+| Runnable proof | `samples/*/` (each README lists its graphs and numbers), `gates/` (host and web smokes), `tests/` |
+| Private data | The Snowdon model lives outside the repository (`BIMOPENFLOW.md` says where); `data/` is fetched by script and never committed |
+
+## Working here
+
+- Tickets use platonic-coder's `ticket.py`: `python ~/.claude/plugins/marketplaces/platonic/scripts/ticket.py --dir tickets <command>`.
+- The three guide files under `.claude/skills/bim-flow/` are also the Ask box's system prompt, so an edit there changes both.
