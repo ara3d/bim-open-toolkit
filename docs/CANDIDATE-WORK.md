@@ -13,23 +13,24 @@ How it was made: nine readers each took one group of documents (architecture, th
 
 ## The first stretch, in order
 
-The thirteen items below have tickets. The order puts measurement and reproduction first, because every later item is judged against them, then the two aims the owner will feel first (the canvas, and Snowdon charts), then the AI and 3D work that depends on those.
+The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1, TKT-4, and TKT-5 if possible; item 3 waits on it. The order puts the measurement and the one known wrong answer first, because every later item on the AI aim is judged against them, then the clean-clone start and the studio chart pane (the two things the owner will feel first), then the Run that unlocks exports and reports, then the canvas and 3D work.
 
 | # | Ticket | Item | Serves | Why now |
 |---|---|---|---|---|
-| 1 | TKT-8 | Measure the Claude backend on the Ask request set and record the transcript | W2 | The Claude aim rests on a backend that landed on 2026-09-18 and was never measured; every Ask change afterwards needs this baseline. |
-| 2 | TKT-19 | The NRC walkthrough and its eight numbers run as a gate on every push | W6 | Cheapest guard on W4 to W6; the walkthrough already exists and takes 291 s. |
-| 3 | TKT-7 | Snowdon graphs open green from a clean clone plus the private files | W1 | Absolute paths mean only one machine can show the owner's real model; everything over Snowdon waits on this. Needs TKT-2 (which export) answered first. |
-| 4 | TKT-9 | One start page and one supported first run | all | Professional starts at minute one: today a newcomer meets a port trap (host 5210, editor proxy 5214), two terminals, and a private path. |
-| 5 | TKT-10 | Node state badges that name the upstream cause, and a "Run to see results" hint | W2, W3 | The single most repeated UX ask; the autosave and SSE mechanism it needs is built. |
-| 6 | TKT-11 | Peek at any wire: hover a port for its table, row counts on wires | W2, W3 | Every workflow flows tables, so this is the highest-leverage canvas feature and the one that makes the tool fun. |
-| 7 | TKT-12 | Run from the editor: a Run button, the run record, sinks that execute | W3, W5 | Charts export, reports, evidence packages, and write-back all wait on a Run the editor cannot start. |
-| 8 | TKT-13 | Sample graphs with charts across every populated Snowdon table family | W1, W3 | The nine samples touch storeys, spaces, doors, and roofs; the export holds walls, floors, pipes, ducts, and materials nobody has charted. |
-| 9 | TKT-14 | A template gallery keyed to the workflow list | W2 | Turns the 44 enumerated V1 workflows into the entry point, so most people never start from a blank canvas (principle 9). |
-| 10 | TKT-15 | A coarse first frame for Snowdon within about a second | W4 | 5.2 to 5.8 s of blank canvas is the roughness a reviewer feels first. |
-| 11 | TKT-16 | One colour domain with a legend across panes | W4, W3 | The PoC's most common novice trap was a silently clamped manual domain; the legend is what makes a coloured model readable. |
-| 12 | TKT-17 | Agent edits arrive selected, undoable, and as a reviewable diff | W2 | Makes Claude's work inspectable inside the editor instead of appearing after a reload. |
-| 13 | TKT-18 | Fix the double count in the IFC ask (Q8 answered twice the expected carbon) | W6 | The one known wrong answer in the walkthrough; agents must not give confident wrong numbers. |
+| 1 | TKT-8 | Measure the Claude backend on the committed ten-question set and record the transcript | W2 | The host already prefers Claude, but every published number is gpt-5's and the questions exist only as prose; every Ask change afterwards needs this baseline. |
+| 2 | TKT-18 | Fix the double count in the IFC ask (Q8 answered twice the expected carbon) | W2, W6 | Small, and a shipped MCP server giving a confident wrong number breaks principle 4 and the Claude aim directly. |
+| 3 | TKT-7 | Snowdon graphs open green from a clean clone plus the private files | W1 | The seeded store is tied to one machine, so only the owner can show the real model; needs TKT-2 answered first. |
+| 4 | TKT-9 | One start page and one supported first run | W1 | Professional starts at minute one: today a newcomer meets a port trap (host 5210, editor proxy 5214), two terminals, and a private path. |
+| 5 | TKT-20 | A chart pane in the DuckDB studio | W3 | The studio shows tables only; without this the owner's first aim has no surface in the app. |
+| 6 | TKT-13 | Sample graphs with charts across every populated Snowdon table family | W1, W3 | The samples touch storeys, spaces, doors, and roofs; the export holds walls, floors, pipes, ducts, and materials nobody has charted. Waits on TKT-2, TKT-7, TKT-20. |
+| 7 | TKT-12 | Run from the editor: a Run button, the run record, sinks that execute, an evidence package | W3, W5, W6 | Charts export, reports, evidence packages, and write-back all wait on a Run the editor cannot start. |
+| 8 | TKT-19 | The walkthrough's Duplex half and the paper's eight answers run in CI on every push | W6 | Cheap insurance on W2, W4, and W5 while the canvas work below changes the app; the Snowdon half stays on the owner's machine. |
+| 9 | TKT-11 | Peek at any wire: hover a port for its table, row counts on wires | W2, W3 | Every workflow flows tables, so this is the highest-leverage canvas feature and the one that makes the tool fun. |
+| 10 | TKT-10 | Node state badges that name the upstream cause, and a "Run to see results" hint | W2, W3 | The most repeated UX ask; the autosave and SSE mechanism it needs is built. |
+| 11 | TKT-17 | Agent edits arrive selected, undoable, and as a reviewable diff | W2 | Makes Claude's work inspectable inside the editor instead of appearing after a reload. |
+| 12 | TKT-15 | A coarse first frame for Snowdon under 2 s warm | W4 | 5.2 to 5.8 s of blank canvas is the roughness a reviewer feels first. |
+| 13 | TKT-16 | One colour domain with a legend across panes | W4, W3 | The PoC's most common novice trap was a silently clamped manual domain; a shared legend is what makes a coloured model and its chart agree. |
+| 14 | TKT-14 | A template gallery keyed to the workflow list | W1, W2 | Turns the 44 enumerated V1 workflows into the entry point, so most people never start from a blank canvas (principle 9, unconfirmed; waits on TKT-4 and TKT-5). |
 
 ## Everything gathered, by theme
 
@@ -80,7 +81,7 @@ Each line: the item, its status, who or which workflow it serves, and its source
 - Copilot ideas: generate a subgraph from a prompt, explain a graph, fix type errors, suggest the next node; a Classify node mapping messy type names to a taxonomy. Idea. `platoflow-ifc-design.md` 5.1, 5.3.
 - A session copilot with a written mandate and a run record (mandate version, model hash, graph, verdict counts, disposition); agent definition bundles; trust levels T0 to T3. Idea, pre-rewrite. `docs/platoflow/platoflow-agent-concepts.md` §1 to §5.
 - Standing checks: a background auditor re-running approved QA graphs when a model changes; a drift watcher over BOS conversions; a model-diff summariser. Idea; needs a batch runner and a trigger. `docs/OVERVIEW.md` "What it could become"; `platoflow-agent-concepts.md` §1.2.
-- Guard agents against double counting through `StoreyOfEntity`; let `rel.sql` name other views; a graph-level Run so agents can execute effects. Idea. `docs/plans/nrc-handoff/track-e.md` findings 1 and 8. TKT-18, TKT-12.
+- Guard agents against double counting through `StoreyOfEntity`; let `rel.sql` name other views; a graph-level Run so agents can execute effects. Idea. `docs/plans/nrc-handoff/track-e.md` findings 2 and 8. TKT-18, TKT-12.
 - A viewer MCP bridge: one typed command set shared by the UI and MCP; the V2 `mcp` package is an empty export. Partial, stopped 2026-09-08. `docs/plans/visualization/PRODUCT-BRIEF.md` F23.
 - SDK asks: a string enum converter in the MCP JSON, host and MCP sharing one process and session, a transport-free JSON-RPC handler. Idea. `NOTES.md` Track HOSTMCP.
 
@@ -88,12 +89,14 @@ Each line: the item, its status, who or which workflow it serves, and its source
 
 - Sample graphs beyond four Snowdon entity kinds: the export holds walls, windows, floors, pipes, ducts, and materials, and the nine samples query storeys, spaces, doors, and roofs only. Idea. W1, W3. `docs/bim-flow-duckdb.md` "Workflows". TKT-13, after TKT-2.
 - Three finished representative workflows (door schedule with coverage, editable 3D inspection, typed SQL to table), each with provenance, missing values shown, and save and reopen. Partial. `REPOSITORY-HANDOFF.md` P1.
+- A chart pane in the DuckDB studio, which shows tables only today. Idea. W3. `docs/bim-flow-duckdb.md`. TKT-20.
+- Bridge the DuckDB studio and the 3D page so a query result colours the model: the two run on different hosts and data today, so PROJECT.md puts query-driven colouring out of this stretch. Idea. W3, W4.
 - Remaining chart nodes: `view3d.colormap`, legends, pie, scatter. Idea. W3. `core-node-sets.md` Set 4; `progress-notes/wave-view3d-viz.md` non-goals.
 - Node packs for cost, schedule, energy, and embodied carbon; what-if through the expression language; massing nodes. Idea. `docs/OVERVIEW.md`.
 - A batch runner applying one graph to many models; the model as a graph parameter (project versus library analysis); a library graph that reports absence instead of half-working. Idea. `platoflow-graph-semantics.md` §1, §4.
 - Several models in one graph with a model id on values. Abandoned in the PoC. `docs/platoflow/README.md` item 3.
 - The compliance track: a `RuleCheck` node grown from the door-clearance rules, a rule intermediate representation, "open this rule as a graph", golden-corpus approval, a facts plane, a rule-authoring surface. Idea. W5 eventually. `platoflow-compliance-design.md` §2 to §8.
-- The prepared multi-building query platform over 467 BOS files: prepared open in seconds, a data atlas of the corpus, optional spatial backends. Partial. `docs/proposals/bim-query-platform/PLAN.md`.
+- The prepared multi-building query platform over 467 BOS files: prepared open in seconds, a data atlas of the corpus, optional spatial backends. Partial. `docs/proposals/bim-query-platform/PLAN.md`. TKT-21 asks whether it is in this stretch.
 - Expression and table gaps: a numeric cast (`toNumber` landed 2026-09-18), `rel.rename`, variadic `table.concat`, a first-class Date column, multi-column cast and replace, pinned `table.profile` columns. Idea. `track-e.md` finding 5; `data-node-sets.md` open questions.
 
 ### Node vocabulary
@@ -147,7 +150,7 @@ Recorded so nobody proposes them again without a new reason; PROJECT.md's Scope:
 
 - A second scripting API, agent-as-code as the user surface, or a no-code agent builder before the representation settles. `docs/ARCHITECTURE.md` "Agentic workflows"; `platoflow-agent-concepts.md` §3.1.
 - Autonomous agents, an agent that negotiates between disciplines, or one that grades buildings. `platoflow-agent-concepts.md` §1, §4.
-- General node-graph instrument features (semantic zoom, fisheye, subway maps, 3D canvases, workspaces), scalar wires, new wire types, near-duplicate parameter kinds: none of the 56 enumerated workflows needs them, and a wire type costs five mechanisms. `bimopenflow-ux-proposal.md` §1, §6; `param-data-types.md` §2.
+- General node-graph instrument features (semantic zoom, fisheye, subway maps, 3D canvases, workspaces), scalar wires, new wire types, near-duplicate parameter kinds: none of the 56 enumerated workflows needs them, and a new wire type touches the spec, the engine, every surface, and the conformance vectors. `bimopenflow-ux-proposal.md` §1, §6; `param-data-types.md` §2.
 - Growing Gratify's node-editor example into a shared library, Gratify importing BIM code, wrapping `@ara3d/viewer-controls`, porting the 23 alpha demos. `docs/graph-module-layering.md`; `README.md` decisions of 2026-09-08.
 - C# records or SQL DDL as the master schema, one denormalised table, one database per profession. `docs/proposals/bim-query-platform/contract/README.md`.
 - D3 inside `@bimopenflow/viz`, type-aware lint on every package, aliases for command names, performance gates, picking a new port when 5214 is busy. `NOTES.md` chart nodes wave; `BIMOPENFLOW.md`.
@@ -157,12 +160,12 @@ Recorded so nobody proposes them again without a new reason; PROJECT.md's Scope:
 Statements the readers found that a newer document or the code overrides. The brief follows the right-hand side.
 
 - Node and pack counts (98 across 11, 67, "four packs"): `docs/nodes.md` is generated and is the only count worth quoting.
-- The spec at `spec/`, the viewer at `viewer/`: the spec is under `submodules/ara3d-dataflow/spec/`, the viewer workspace is `viz/` with seventeen packages (README).
+- The spec at `spec/`, the viewer at `viewer/`: the spec is under `submodules/ara3d-dataflow/spec/`, the viewer workspace is `viz/` (README).
 - The PlatoFlow PoC as a live component: deleted 2026-09-15; MCP and Ask live in BimOpenFlow.
 - "No Run implementation", "no `bfast.*` reader", "no numeric cast": all landed 2026-09-18 (`track-e.md`, `track-t.md`).
 - The NRC handoff "not built yet": the same day's integration record and `docs/nrc-walkthrough.md` show 13 graphs and the figures delivered.
 - Relations "live on a branch": on main, with `rel.fromTable` added.
-- Ten parameter kinds, sources as absolute paths only: twelve kinds (Fraction, Percent added); `rel.*` nodes carry a schema.
+- Ten parameter kinds, sources as absolute paths only: more kinds since (Fraction and Percent added; `contracts.json` is the list); `rel.*` nodes carry a schema.
 - The verdict pane "not built": `verdictPane.ts` exists; partial.
 - The query platform's caches unbuilt, `DataModel` superseded: `BuildingModel` and `.Source` are built (2026-09-17); `DataModel` is still in use.
 - "The agent sees names and types but not values": `describeDatabase` reports NULL counts, distinct counts, sample values, and ranges.

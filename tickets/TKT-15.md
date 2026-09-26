@@ -1,10 +1,16 @@
 ---
 id: TKT-15
-title: A coarse first frame for Snowdon within about a second
+title: A coarse first frame for Snowdon under 2 s warm
 status: open
 depends_on: []
 owner:
 fence: [viz/packages/**, bimopenflow/web/packages/panes/**, docs/bim-flow-startup.md, docs/bim-flow-3d.md]
 ---
+
+## Acceptance criteria
+
+- [ ] /3d.html?analysis=snowdon-toolkit shows a coarse rendering (bounding boxes or decimated instances) under 2 s warm, as scripts/profile-bim-flow-startup.mjs measures it (navigation to the first model frame), and refines to the full 456,598 instances without a reload
+- [ ] The pane distinguishes coarse readiness from full readiness in its status line
+- [ ] First-frame and full-load times are measured by the walkthrough and logged against the 2 s target in docs/bim-flow-startup.md
 
 Serves W4. docs/bim-flow-startup.md 'Remaining opportunities' and docs/bim-flow-3d.md 'Limits': 5.2 to 5.8 s to first frame with no level of detail; the 43-second silent converter start is a separate item. The blank canvas is the roughness a reviewer feels first.

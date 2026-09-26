@@ -51,7 +51,7 @@ What makes this editable by a program as easily as by a person:
 
 The repo is five layers, each depending only on the ones above it.
 
-### 1. Specification — `spec/`, `contracts/`
+### 1. Specification — `submodules/ara3d-dataflow/spec/`, `contracts/`
 
 The normative definition, in four independently versioned parts: `format` (the graph
 document, canonical JSON, the graph hash), `semantics` (evaluation, memoization, dirty
