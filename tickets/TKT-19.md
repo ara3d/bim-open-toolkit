@@ -1,9 +1,9 @@
 ---
 id: TKT-19
 title: The walkthrough's Duplex half and the paper's eight answers run in CI on every push
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [gates/**, .github/workflows/build.yml, bimopenflow/web/package.json, tests/flow/BimOpenFlow.NrcWorkflows.Tests/**]
 ---
 

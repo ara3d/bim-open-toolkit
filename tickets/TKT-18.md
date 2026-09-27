@@ -1,9 +1,9 @@
 ---
 id: TKT-18
 title: Fix the double count in the IFC ask: Q8 reported twice the expected carbon
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [src/mcp/BimOpenMcp.Ifc/**, .claude/skills/ifc-ask/**, samples/nrc/**]
 ---
 

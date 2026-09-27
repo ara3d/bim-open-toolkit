@@ -1,9 +1,9 @@
 ---
 id: TKT-30
 title: Merge the seven Snowdon IFC files into one BOS with a correspondence table for storeys, grids, and spaces
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: assembly-line-supervisor
 fence: [src/**/BuildingModel*/**, src/**/Bos*/**, tools/building-model-workflows/**, samples/snowdon-analyses/**, samples/duckdb-analyses/**, docs/bim-flow-duckdb.md, BIMOPENFLOW.md, scripts/**]
 ---
 
