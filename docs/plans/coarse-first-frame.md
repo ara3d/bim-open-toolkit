@@ -242,6 +242,7 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| P1 | defb89e | panes 147 tests pass, tsc clean; fence respected (3 files). viewerDeps tracks whether a preview was drawn with a local flag, since loadWithPreview does not report it. |
 | C5 | 309fdc3 | viewer 108 tests pass, tsc and eslint clean, panes typecheck clean; fence respected (4 files). |
 | C4 | e1f2046 | viewer 103 tests pass, tsc and eslint clean, panes typecheck clean; fence respected (6 files). Picking excluded by construction: preview groups never go through binding.addModel. |
 | C3 | e64a7d0 | formats 199 tests pass, tsc and eslint clean; fence respected (4 files). |
