@@ -242,6 +242,7 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C3 | e64a7d0 | formats 199 tests pass, tsc and eslint clean; fence respected (4 files). |
 | C2 | 0bb7cc7 | loaders 34 and formats 195 tests pass, tsc and eslint clean; fence respected (6 files). Finding: on Duplex the default 0.001 volume cap drops 41 of 660 boxes, so the Duplex count test disables the cap; the cap is tested on a synthetic fixture. |
 | C1 | 903d9d8 | 191 formats tests unchanged, tsc and eslint clean; fence respected. |
 | C7 | ff58478 | node --check passes; servers not running so no live run. Finding: the script navigates to /3d.html?profileStartup=1 without analysis=snowdon-toolkit; the plan's 'as today' was wrong; the profiling host serves that analysis by default, so the parameter is redundant. |

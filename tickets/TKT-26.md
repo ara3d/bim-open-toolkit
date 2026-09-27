@@ -4,7 +4,7 @@ title: The agent works in the open graph: MCP and Ask default to the analysis th
 status: claimed
 depends_on: []
 owner: small-job-builder
-fence: [src/mcp/BimOpenMcp.Flow/**, src/**/Host/**, bimopenflow/web/packages/app/**, bimopenflow/web/packages/api-client/**, bimopenflow/web/packages/contracts/**, scripts/demo-bim-flow-mcp.mjs, docs/bim-flow-mcp-demo.md]
+fence: [src/mcp/BimOpenMcp.Flow/**, src/flow/BimOpenFlow.Host.Api/**, src/flow/BimOpenFlow.Host/**, src/flow/BimOpenFlow.Host.Store/AtomicFile.cs, src/studio/BimOpenFlow.Studio/AskEndpoint.cs, contracts/**, bimopenflow/web/packages/app/src/editorSession.ts, bimopenflow/web/packages/app/src/askRequest.ts, bimopenflow/web/packages/app/src/selection.ts, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/app/src/duckdbDemo.ts, bimopenflow/web/packages/app/test/**, bimopenflow/web/packages/api-client/**, bimopenflow/web/packages/contracts/**, tests/flow/BimOpenFlow.Host.Api.Tests/**, tests/flow/BimOpenFlow.Host.Tests/CompositionTests.cs, tests/mcp/BimOpenMcp.Flow.Tests/**, tests/studio/BimOpenFlow.Studio.Tests/**, scripts/demo-bim-flow-mcp.mjs, docs/bim-flow-mcp-demo.md, docs/plans/agent-in-the-open-graph.md]
 ---
 
 ## Acceptance criteria

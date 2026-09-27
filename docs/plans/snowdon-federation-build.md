@@ -25,6 +25,7 @@ Open questions (each has a default; the plan is built on the defaults; the super
    - C2 records the unit on each document's `IFCPROJECT` entity as `Ifc:LengthUnit` ("FOOT") and `Ifc:LengthUnitToMetre` (0.3048).
    - The SQL rules convert elevations to metres with that scale. A document with no unit gets Unmatched storey rows, not guessed metres.
    - The Harmonizer (outside the fence) is not used and stays as it is. Its SI assumption is listed as an extension point.
+   - C1 found that the converter already emits mesh coordinates in metres while parameter values (elevations) stay in feet; the rules read parameters only, so the rule above stands.
 6. **How the studio picks up the views without breaking the nine sample graphs.** **Default:** one studio database, `artifacts/snowdon-federation/snowdon.duckdb`. It is a copy of the existing typed export (`snowdon-cli.duckdb`) plus a DuckDB schema `federation` that holds the materialized union tables, the correspondence table, and the views.
    - The nine graphs keep reading `main` and return the same numbers. That includes "Explore typed columns", which reads only `table_schema = 'main'`.
    - Three new graphs read `federation.*`, and all twelve graphs keep the single `{DUCKDB}` placeholder.
@@ -450,6 +451,7 @@ Baseline gates:
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C1 | 7e40500 | All seven files convert; the 95 MB Architectural file in 14 to 19 s at 1.25 GB peak, so the kill criterion held. Category counts and storey elevations match the proposal exactly. Axis tags do not reach the BOS (as planned). New fact: mesh coordinates come out in metres while parameter values stay in feet; no chunk C2 to C13 reads mesh coordinates, so no plan change, but the union's geometry extension point must convert. |
 
 ## Review findings
 
