@@ -1,0 +1,156 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "enrichedEntities": { "x": 40, "y": 40 },
+    "enrichedParameters": { "x": 40, "y": 240 },
+    "enrichedOcRows": { "x": 370, "y": 40 },
+    "enrichedOcTable": { "x": 700, "y": 40 },
+    "enrichedOcAnswer": { "x": 1030, "y": 40 },
+    "enrichedEcRows": { "x": 370, "y": 240 },
+    "enrichedEcTable": { "x": 700, "y": 240 },
+    "enrichedEcAnswer": { "x": 1030, "y": 240 },
+    "enrichedUnion": { "x": 1360, "y": 140 },
+    "enrichedRollup": { "x": 1690, "y": 140 },
+    "enrichedTagged": { "x": 2020, "y": 140 },
+
+    "baseEntities": { "x": 40, "y": 640 },
+    "baseParameters": { "x": 40, "y": 840 },
+    "baseOcRows": { "x": 370, "y": 640 },
+    "baseOcTable": { "x": 700, "y": 640 },
+    "baseOcAnswer": { "x": 1030, "y": 640 },
+    "baseEcRows": { "x": 370, "y": 840 },
+    "baseEcTable": { "x": 700, "y": 840 },
+    "baseEcAnswer": { "x": 1030, "y": 840 },
+    "baseUnion": { "x": 1360, "y": 740 },
+    "baseRollup": { "x": 1690, "y": 740 },
+    "baseTagged": { "x": 2020, "y": 740 },
+
+    "answer": { "x": 2350, "y": 440 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "enrichedEntities.relation", "to": "enrichedOcRows.t1" },
+      { "from": "enrichedParameters.relation", "to": "enrichedOcRows.t2" },
+      { "from": "enrichedOcRows.relation", "to": "enrichedOcTable.input" },
+      { "from": "enrichedOcTable.table", "to": "enrichedOcAnswer.in" },
+      { "from": "enrichedEntities.relation", "to": "enrichedEcRows.t1" },
+      { "from": "enrichedParameters.relation", "to": "enrichedEcRows.t2" },
+      { "from": "enrichedEcRows.relation", "to": "enrichedEcTable.input" },
+      { "from": "enrichedEcTable.table", "to": "enrichedEcAnswer.in" },
+      { "from": "enrichedOcAnswer.out", "to": "enrichedUnion.a" },
+      { "from": "enrichedEcAnswer.out", "to": "enrichedUnion.b" },
+      { "from": "enrichedUnion.out", "to": "enrichedRollup.in" },
+      { "from": "enrichedRollup.out", "to": "enrichedRel.table" },
+      { "from": "enrichedRel.relation", "to": "enrichedTagged.t1" },
+
+      { "from": "baseEntities.relation", "to": "baseOcRows.t1" },
+      { "from": "baseParameters.relation", "to": "baseOcRows.t2" },
+      { "from": "baseOcRows.relation", "to": "baseOcTable.input" },
+      { "from": "baseOcTable.table", "to": "baseOcAnswer.in" },
+      { "from": "baseEntities.relation", "to": "baseEcRows.t1" },
+      { "from": "baseParameters.relation", "to": "baseEcRows.t2" },
+      { "from": "baseEcRows.relation", "to": "baseEcTable.input" },
+      { "from": "baseEcTable.table", "to": "baseEcAnswer.in" },
+      { "from": "baseOcAnswer.out", "to": "baseUnion.a" },
+      { "from": "baseEcAnswer.out", "to": "baseUnion.b" },
+      { "from": "baseUnion.out", "to": "baseRollup.in" },
+      { "from": "baseRollup.out", "to": "baseRel.table" },
+      { "from": "baseRel.relation", "to": "baseTagged.t1" },
+
+      { "from": "enrichedTagged.relation", "to": "answer.t1" },
+      { "from": "baseTagged.relation", "to": "answer.t2" }
+    ],
+    "nodes": [
+      { "id": "enrichedEntities", "kind": "rel.table", "version": 1 },
+      { "id": "enrichedParameters", "kind": "rel.table", "version": 1 },
+      { "id": "enrichedOcRows", "kind": "rel.sql", "version": 1 },
+      { "id": "enrichedOcTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "enrichedOcAnswer", "kind": "check.required", "version": 1 },
+      { "id": "enrichedEcRows", "kind": "rel.sql", "version": 1 },
+      { "id": "enrichedEcTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "enrichedEcAnswer", "kind": "check.required", "version": 1 },
+      { "id": "enrichedUnion", "kind": "check.union", "version": 1 },
+      { "id": "enrichedRollup", "kind": "check.rollup", "version": 1 },
+      { "id": "enrichedRel", "kind": "rel.fromTable", "version": 1 },
+      { "id": "enrichedTagged", "kind": "rel.sql", "version": 1 },
+
+      { "id": "baseEntities", "kind": "rel.table", "version": 1 },
+      { "id": "baseParameters", "kind": "rel.table", "version": 1 },
+      { "id": "baseOcRows", "kind": "rel.sql", "version": 1 },
+      { "id": "baseOcTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "baseOcAnswer", "kind": "check.required", "version": 1 },
+      { "id": "baseEcRows", "kind": "rel.sql", "version": 1 },
+      { "id": "baseEcTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "baseEcAnswer", "kind": "check.required", "version": 1 },
+      { "id": "baseUnion", "kind": "check.union", "version": 1 },
+      { "id": "baseRollup", "kind": "check.rollup", "version": 1 },
+      { "id": "baseRel", "kind": "rel.fromTable", "version": 1 },
+      { "id": "baseTagged", "kind": "rel.sql", "version": 1 },
+
+      { "id": "answer", "kind": "rel.sql", "version": 1 }
+    ]
+  },
+  "values": {
+    "enrichedEntities": { "source": "duplex-enriched", "table": "EntityText" },
+    "enrichedParameters": { "source": "duplex-enriched", "table": "ParameterText" },
+    "enrichedOcRows": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCOperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+    },
+    "enrichedOcTable": { "limit": "0" },
+    "enrichedOcAnswer": {
+      "checkId": "IDS-OC",
+      "title": "Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
+      "citation": "nrc-analytics.ids specification 1",
+      "columns": "Value"
+    },
+    "enrichedEcRows": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCEmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+    },
+    "enrichedEcTable": { "limit": "0" },
+    "enrichedEcAnswer": {
+      "checkId": "IDS-EC",
+      "title": "Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element",
+      "citation": "nrc-analytics.ids specification 2",
+      "columns": "Value"
+    },
+    "enrichedUnion": {},
+    "enrichedRollup": {},
+    "enrichedRel": { "name": "enrichedRollupRel" },
+    "enrichedTagged": {
+      "sql": "SELECT 'duplex-enriched' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1"
+    },
+
+    "baseEntities": { "source": "duplex-base", "table": "EntityText" },
+    "baseParameters": { "source": "duplex-base", "table": "ParameterText" },
+    "baseOcRows": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCOperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+    },
+    "baseOcTable": { "limit": "0" },
+    "baseOcAnswer": {
+      "checkId": "IDS-OC",
+      "title": "Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
+      "citation": "nrc-analytics.ids specification 1",
+      "columns": "Value"
+    },
+    "baseEcRows": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCEmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+    },
+    "baseEcTable": { "limit": "0" },
+    "baseEcAnswer": {
+      "checkId": "IDS-EC",
+      "title": "Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element",
+      "citation": "nrc-analytics.ids specification 2",
+      "columns": "Value"
+    },
+    "baseUnion": {},
+    "baseRollup": {},
+    "baseRel": { "name": "baseRollupRel" },
+    "baseTagged": {
+      "sql": "SELECT 'duplex-base' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1"
+    },
+
+    "answer": {
+      "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY checkId, model"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ids xmlns="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd">
+	<info>
+		<title>NRC analytics property sets</title>
+		<description>Every analysed element (the fourteen IFC classes carrying a row in nrc_analytics_long.csv) must carry Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year as a real number. Generated from samples/nrc/nrc-metrics.csv.</description>
+		<author>cdiggins@gmail.com</author>
+		<date>2026-09-27</date>
+	</info>
+	<specifications>
+		<specification name="IDS-OC" ifcVersion="IFC4">
+			<applicability minOccurs="1" maxOccurs="unbounded">
+				<entity>
+					<name>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="IFCWALL"/>
+							<xs:enumeration value="IFCWALLSTANDARDCASE"/>
+							<xs:enumeration value="IFCWINDOW"/>
+							<xs:enumeration value="IFCDOOR"/>
+							<xs:enumeration value="IFCROOF"/>
+							<xs:enumeration value="IFCSLAB"/>
+							<xs:enumeration value="IFCBEAM"/>
+							<xs:enumeration value="IFCCOVERING"/>
+							<xs:enumeration value="IFCRAILING"/>
+							<xs:enumeration value="IFCSTAIR"/>
+							<xs:enumeration value="IFCSTAIRFLIGHT"/>
+							<xs:enumeration value="IFCFOOTING"/>
+							<xs:enumeration value="IFCFURNISHINGELEMENT"/>
+							<xs:enumeration value="IFCMEMBER"/>
+						</xs:restriction>
+					</name>
+				</entity>
+			</applicability>
+			<requirements>
+				<property dataType="IFCREAL">
+					<propertySet>
+						<simpleValue>Pset_NRCOperationalCarbon</simpleValue>
+					</propertySet>
+					<baseName>
+						<simpleValue>OperationalCarbon_kgCO2e_per_year</simpleValue>
+					</baseName>
+				</property>
+			</requirements>
+		</specification>
+	</specifications>
+</ids>

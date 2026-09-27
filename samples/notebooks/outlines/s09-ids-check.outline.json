@@ -1,0 +1,105 @@
+{
+  "title": "IDS: say what the file must contain, then check it",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "../graphs/s09-ids-check/nb-s09-ids-check-oc.json",
+    "../graphs/s09-ids-check/nb-s09-ids-check-oc-ec.json",
+    "../graphs/s09-ids-check/nb-s09-ids-check-base-vs-enriched.json"
+  ],
+  "turns": [
+    {
+      "request": "Write an IDS that requires every analysed element to have Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year as a number.",
+      "reply": "The node catalog has no node that evaluates an IDS file: of 130 node kinds, the Compliance pack only has check.required, check.rule, check.rollup, and check.union, none named check.ids or ids.*. I wrote the specification anyway, as a real IDS 1.0 file, samples/notebooks/graphs/s09-ids-check/nrc-analytics.ids: one specification, IDS-OC, applying to the fourteen IFC classes that carry a row in nrc_analytics_long.csv (IFCWALL, IFCWALLSTANDARDCASE, IFCWINDOW, IFCDOOR, IFCROOF, IFCSLAB, IFCBEAM, IFCCOVERING, IFCRAILING, IFCSTAIR, IFCSTAIRFLIGHT, IFCFOOTING, IFCFURNISHINGELEMENT, IFCMEMBER), requiring Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year as an IFCREAL. I have not run it through the IDS 1.0 XSD or ids-lib, so I can't say yet that it validates against the schema. To check a model, I'll express the same requirement with check.required over the enriched model's own property sets, since no node reads the IDS file itself.",
+      "tools": [
+        {
+          "name": "getNodeCatalog",
+          "ok": true,
+          "summary": "130 node kinds; Compliance pack has check.required, check.rule, check.rollup, check.union; no check.ids or ids.* kind"
+        },
+        {
+          "name": "Write",
+          "ok": true,
+          "summary": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: 1890 bytes, one specification (IDS-OC)"
+        }
+      ],
+      "embeds": [
+        {
+          "kind": "file",
+          "path": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids",
+          "mediaType": "application/xml",
+          "caption": "nrc-analytics.ids, first draft: operational carbon only"
+        }
+      ]
+    },
+    {
+      "request": "Check the enriched model against it.",
+      "reply": "218 elements, all Pass. The graph reads duplex-enriched's own EntityText and ParameterText, keeps the fourteen analysed classes, joins each to its Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year value (null when absent), and runs check.required on that column: 218 Pass, 0 Fail, 0 InfoNotAvailable. Every analysed element in the write-back carries the property, so this specification passes outright.",
+      "analysisId": "nb-s09-ids-check-oc",
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "answer",
+          "port": "out",
+          "caption": "IDS-OC verdicts, 218 elements"
+        },
+        {
+          "kind": "chart",
+          "node": "rollup",
+          "port": "out",
+          "caption": "Pass/fail, IDS-OC"
+        }
+      ]
+    },
+    {
+      "request": "Add a requirement for embodied carbon too.",
+      "reply": "Updated the same file with a second specification, IDS-EC, requiring Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e on the same fourteen classes (3,099 bytes now, two specifications). Checking both against duplex-enriched: IDS-OC still 218 Pass, 0 Fail; IDS-EC is 217 Pass, 1 Fail out of 218. The one failure is the roof, \"Basic Roof:Live Roof over Wood Joist Flat Roof:184483\" (GlobalId 0jf0rYHfX3RAB3bSIRjmxl): it has no Pset_NRCEmbodiedCarbon at all, so the column is null for that row and check.required marks it Fail rather than passing or guessing a value.",
+      "analysisId": "nb-s09-ids-check-oc-ec",
+      "embeds": [
+        {
+          "kind": "file",
+          "path": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.ids",
+          "mediaType": "application/xml",
+          "caption": "nrc-analytics.ids, operational and embodied carbon"
+        },
+        {
+          "kind": "table",
+          "node": "answer",
+          "port": "out",
+          "caption": "IDS-OC and IDS-EC verdicts, 436 rows"
+        },
+        {
+          "kind": "chart",
+          "node": "rollup",
+          "port": "out",
+          "caption": "Pass/fail per specification"
+        }
+      ]
+    },
+    {
+      "request": "Is failing the roof right?",
+      "reply": "Yes, by the specification as written. The roof genuinely has no embodied-carbon value in this synthetic dataset (samples/nrc-analyses/nrc-q7-absence names the same element); nothing in the toolkit is allowed to infer one, so the requirement fails it honestly instead of passing on a guess. If the roof should be exempt from IDS-EC, that has to be written into the file: narrow IDS-EC's applicability to exclude IFCROOF, or add an attribute facet that carves out this element. I haven't made that change; the file on disk still requires embodied carbon on every one of the fourteen classes, roof included."
+    },
+    {
+      "request": "Check the base model too.",
+      "reply": "duplex-base fails both specifications outright: 0 Pass, 218 Fail on IDS-OC and 0 Pass, 218 Fail on IDS-EC, because the unenriched file carries no Pset_NRC* property sets at all, so every analysed element's value is null. duplex-enriched keeps its 218/0 on IDS-OC and 217/1 on IDS-EC. The comparison is what the write-back is for: the same check, run over the file before and after nrc-enrich-run.",
+      "analysisId": "nb-s09-ids-check-base-vs-enriched",
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "answer",
+          "port": "relation",
+          "caption": "duplex-base vs duplex-enriched, pass/fail counts per specification"
+        },
+        {
+          "kind": "graph",
+          "analysisId": "nb-s09-ids-check-base-vs-enriched",
+          "focus": ["answer"]
+        }
+      ]
+    }
+  ]
+}

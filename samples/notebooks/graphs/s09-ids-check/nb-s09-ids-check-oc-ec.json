@@ -1,0 +1,68 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "parameters": { "x": 40, "y": 340 },
+    "ocRows": { "x": 370, "y": 40 },
+    "ocTable": { "x": 700, "y": 40 },
+    "ocAnswer": { "x": 1030, "y": 40 },
+    "ecRows": { "x": 370, "y": 340 },
+    "ecTable": { "x": 700, "y": 340 },
+    "ecAnswer": { "x": 1030, "y": 340 },
+    "answer": { "x": 1360, "y": 190 },
+    "rollup": { "x": 1690, "y": 190 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "ocRows.t1" },
+      { "from": "parameters.relation", "to": "ocRows.t2" },
+      { "from": "ocRows.relation", "to": "ocTable.input" },
+      { "from": "ocTable.table", "to": "ocAnswer.in" },
+      { "from": "entities.relation", "to": "ecRows.t1" },
+      { "from": "parameters.relation", "to": "ecRows.t2" },
+      { "from": "ecRows.relation", "to": "ecTable.input" },
+      { "from": "ecTable.table", "to": "ecAnswer.in" },
+      { "from": "ocAnswer.out", "to": "answer.a" },
+      { "from": "ecAnswer.out", "to": "answer.b" },
+      { "from": "answer.out", "to": "rollup.in" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "parameters", "kind": "rel.table", "version": 1 },
+      { "id": "ocRows", "kind": "rel.sql", "version": 1 },
+      { "id": "ocTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "ocAnswer", "kind": "check.required", "version": 1 },
+      { "id": "ecRows", "kind": "rel.sql", "version": 1 },
+      { "id": "ecTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "ecAnswer", "kind": "check.required", "version": 1 },
+      { "id": "answer", "kind": "check.union", "version": 1 },
+      { "id": "rollup", "kind": "check.rollup", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "parameters": { "source": "duplex-enriched", "table": "ParameterText" },
+    "ocRows": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCOperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+    },
+    "ocTable": { "limit": "0" },
+    "ocAnswer": {
+      "checkId": "IDS-OC",
+      "title": "Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
+      "citation": "nrc-analytics.ids specification 1",
+      "columns": "Value"
+    },
+    "ecRows": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCEmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+    },
+    "ecTable": { "limit": "0" },
+    "ecAnswer": {
+      "checkId": "IDS-EC",
+      "title": "Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element",
+      "citation": "nrc-analytics.ids specification 2",
+      "columns": "Value"
+    },
+    "answer": {},
+    "rollup": {}
+  }
+}

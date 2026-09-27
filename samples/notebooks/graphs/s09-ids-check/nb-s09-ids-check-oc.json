@@ -1,0 +1,43 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "parameters": { "x": 40, "y": 240 },
+    "rows": { "x": 370, "y": 140 },
+    "table": { "x": 700, "y": 140 },
+    "answer": { "x": 1030, "y": 140 },
+    "rollup": { "x": 1360, "y": 140 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "rows.t1" },
+      { "from": "parameters.relation", "to": "rows.t2" },
+      { "from": "rows.relation", "to": "table.input" },
+      { "from": "table.table", "to": "answer.in" },
+      { "from": "answer.out", "to": "rollup.in" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "parameters", "kind": "rel.table", "version": 1 },
+      { "id": "rows", "kind": "rel.sql", "version": 1 },
+      { "id": "table", "kind": "rel.materialize", "version": 1 },
+      { "id": "answer", "kind": "check.required", "version": 1 },
+      { "id": "rollup", "kind": "check.rollup", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "parameters": { "source": "duplex-enriched", "table": "ParameterText" },
+    "rows": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS OperationalCarbon_kgCO2e_per_year FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCOperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+    },
+    "table": { "limit": "0" },
+    "answer": {
+      "checkId": "IDS-OC",
+      "title": "Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
+      "citation": "nrc-analytics.ids specification 1",
+      "columns": "OperationalCarbon_kgCO2e_per_year"
+    },
+    "rollup": {}
+  }
+}
