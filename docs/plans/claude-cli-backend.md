@@ -537,6 +537,7 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C7 | f102895 | Studio 75 pass (9 new); fence respected (10 files). A .cmd executable must go through cmd.exe /c (CreateProcess cannot start a .cmd); the empty --tools argument survives the hop. The conversation parses the init line's tools array itself because ClaudeStream does not expose it (debt: add Tools to ClaudeStream). |
 | C9 | 82e5f34 | Studio builds, 66 tests pass; fence respected (2 files). A failed selection becomes a FailedBackend whose Start rethrows, so the error still arrives per request. |
 | C11 | 9591869 | IFC ask 23 pass; fence respected (4 files). Only construction changed. |
 | C6 | 7d9b402 | Studio 66 pass (7 new); fence respected (2 files). Pending tool_use calls keyed by id, joined with their tool_result into one event. |
