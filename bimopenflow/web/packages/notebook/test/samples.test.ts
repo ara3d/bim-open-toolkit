@@ -73,8 +73,21 @@ describe("sample notebooks", () => {
     expect(load(file.replace(/\.notebook\.json$/, "")).host?.note).toMatch(/^Reconstructed session/);
   });
 
+  // A machine-local path, however the JSON escapes its separators: a drive
+  // letter with \Users\ (doubled to \\Users\\ in the JSON source) or /Users/,
+  // or a Unix home directory under /home/ or /Users/.
+  const LOCAL_PATH = /[A-Za-z]:(\\\\|\/)Users(\\\\|\/)|\/home\/|\/Users\//;
+
   it.each(sampleFiles)("%s names no path on the machine that wrote it", (file) => {
-    expect(readFileSync(join(SAMPLES, file), "utf8")).not.toMatch(/[A-Za-z]:[\/]+Users[\/]/);
+    expect(readFileSync(join(SAMPLES, file), "utf8")).not.toMatch(LOCAL_PATH);
+  });
+
+  it("the local-path check catches a JSON-escaped backslash path, a forward-slash one, and a Unix home directory", () => {
+    expect('"C:\\\\Users\\\\me\\\\file.json"').toMatch(LOCAL_PATH);
+    expect('"C:/Users/me/file.json"').toMatch(LOCAL_PATH);
+    expect('"/home/me/file.json"').toMatch(LOCAL_PATH);
+    expect('"/Users/me/file.json"').toMatch(LOCAL_PATH);
+    expect('"samples/notebooks/graphs/x.json"').not.toMatch(LOCAL_PATH);
   });
 });
 
