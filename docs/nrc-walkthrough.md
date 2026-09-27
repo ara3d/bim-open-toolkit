@@ -68,6 +68,12 @@ in a fresh conversation against the in-process IFC MCP server; the transcript
 records the model name, every tool call, the answer, turns, and tokens, and the
 JSON carries the same for a results table.
 
+2026-09-26: after the StoreyOfElement fix for the Q8 double count (TKT-18, commit
+`9b6e85a`), a rerun with `claude-opus-5` got no answers at all — the Anthropic
+account had run out of credit (TKT-41) — so the fix is confirmed only by
+`scripts/demo-ifc-mcp.mjs`'s scripted replay, not yet by a language-model run;
+see `artifacts/nrc-walkthrough/duplex/transcript-unattended-2026-09-26.md`.
+
 ## Part 2: Snowdon
 
 The same host, with `BIMOPENFLOW_SNOWDON` pointing at the BOS file, seeds
