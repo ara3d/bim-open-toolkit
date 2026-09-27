@@ -1,9 +1,9 @@
 ---
 id: TKT-16
 title: One colour domain with a legend across panes
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [src/flow/BimOpenFlow.Nodes.Viz/**, src/flow/BimOpenFlow.Nodes.Geometry/**, bimopenflow/web/packages/panes/**, docs/nodes.md]
 ---
 

@@ -1,9 +1,9 @@
 ---
 id: TKT-15
 title: A coarse first frame for Snowdon under 2 s warm
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [viz/packages/**, bimopenflow/web/packages/panes/**, docs/bim-flow-startup.md, docs/bim-flow-3d.md]
 ---
 
