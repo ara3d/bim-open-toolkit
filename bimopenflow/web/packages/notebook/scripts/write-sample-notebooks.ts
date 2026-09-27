@@ -22,22 +22,27 @@
 // the committed file.
 
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
+import { readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { ApiClient } from "@bimopenflow/api-client";
 import { parseDocument, type GraphDocument } from "@bimopenflow/state";
 import { chartPaneOptions } from "@bimopenflow/app/src/paneChoice";
 import { embedsForAnalysis } from "../src/ask/reply";
-import type { Embed, HostHint, Notebook, NodeRef, ToolCall, Turn } from "../src/document/format";
+import type { Embed, Notebook, NodeRef, ToolCall } from "../src/document/format";
 import { emptyNotebook, parseNotebook, serializeNotebook } from "../src/document/io";
 import { appendTurn } from "../src/document/edits";
 import type { NotebookApi } from "../src/embeds/contract";
 import { describeSnapshot, snapshotOf, SNAPSHOT_ROWS } from "../src/live/compare";
-
-/** The repository root: scripts/ sits five levels below it. */
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../..");
+import {
+  ROOT,
+  expandPlaceholders,
+  hidePlaceholders,
+  outlineErrors,
+  withExtras,
+  type EmbedSpec,
+  type Outline,
+  type OutlineTurn,
+} from "./outline";
 
 /** Lines of a text file kept as a file embed's preview. */
 const PREVIEW_LINES = 6;
@@ -49,71 +54,10 @@ const MAX_PICTURE_BYTES = 400 * 1024;
 const SETTLE_TIMEOUT_MS = 30_000;
 const SETTLE_POLL_MS = 200;
 
-// --- The outline format (samples/notebooks/README.md) ---------------------
-
-interface Outline {
-  readonly title: string;
-  readonly createdUtc: string;
-  readonly host: HostHint;
-  /** Paths, relative to this outline, of graph documents saved to the host before any snapshot. */
-  readonly graphs?: readonly string[];
-  readonly turns: readonly OutlineTurn[];
-}
-
-interface OutlineTurn {
-  readonly request: string;
-  readonly reply: string;
-  /**
-   * The seeded analysis that answers the turn; the reply's analysisId. Absent
-   * means a text-only turn: no embeds and no generated tool calls (an
-   * explicit `tools` list still applies).
-   */
-  readonly analysisId?: string;
-  /** Replaces the automatic embeds; absent means [{ "kind": "auto" }] when analysisId is set, else none. */
-  readonly embeds?: readonly EmbedSpec[];
-  /** Replaces the generated tool-call list. */
-  readonly tools?: readonly ToolCall[];
-  /** An earlier turn was edited and resent after this reply was made. */
-  readonly stale?: boolean;
-  /** The versions this turn had before its request was edited and resent, oldest first. Text only. */
-  readonly earlier?: readonly OutlineEarlier[];
-}
-
-interface OutlineEarlier {
-  readonly request: string;
-  readonly reply: string;
-}
-
-/** One entry of a turn's embed list; `analysisId` defaults to the turn's. */
-type EmbedSpec =
-  | { readonly kind: "auto"; readonly analysisId?: string }
-  | { readonly kind: "graph"; readonly analysisId?: string; readonly focus?: readonly string[] }
-  | NodeSpec<"value", { readonly column?: string; readonly unit?: string }>
-  | NodeSpec<"table">
-  | NodeSpec<"view3d">
-  | NodeSpec<"chart">
-  | {
-      readonly kind: "file";
-      readonly path: string;
-      readonly mediaType?: string;
-      readonly caption?: string;
-    }
-  | {
-      readonly kind: "picture";
-      readonly path: string;
-      readonly alt: string;
-      readonly caption?: string;
-    };
-
-type NodeSpec<K extends string, Extra = object> = {
-  readonly kind: K;
-  readonly analysisId?: string;
-  readonly node: string;
-  readonly port: string;
-  readonly caption?: string;
-} & Extra;
-
 // --- Building the notebook -------------------------------------------------
+// The outline format itself (Outline, OutlineTurn, EmbedSpec, and outlineErrors,
+// expandPlaceholders, hidePlaceholders, withExtras) lives in ./outline, so it
+// can be unit-tested without a running host; this file adds the host calls.
 
 /** An embed before it is numbered within its reply. */
 type Draft<E> = E extends Embed ? Omit<E, "id"> : never;
@@ -272,22 +216,6 @@ async function writeNotebook(outline: Outline, outlineDir: string, api: Notebook
   return notebook;
 }
 
-/** Adds an outline turn's stale mark and earlier-reply history (text only) to the turn appendTurn built. */
-function withExtras(turn: Turn, outlineTurn: OutlineTurn): Turn {
-  return {
-    ...turn,
-    ...(outlineTurn.stale !== undefined ? { stale: outlineTurn.stale } : {}),
-    ...(outlineTurn.earlier !== undefined
-      ? {
-          earlier: outlineTurn.earlier.map((e) => ({
-            request: { text: e.request },
-            reply: { text: e.reply, tools: [], embeds: [] },
-          })),
-        }
-      : {}),
-  };
-}
-
 // --- Seeding an outline's own graphs ---------------------------------------
 
 /**
@@ -306,42 +234,6 @@ async function seedGraphs(outline: Outline, outlineDir: string, api: NotebookApi
     await waitSettled(api, id, doc, summary.graphHash);
   }
 }
-
-/**
- * The private Snowdon model: BIMOPENFLOW_SNOWDON, else the default location.
- * Duplicates BimSampleSeeding.SnowdonPath in the host, which fills the same
- * placeholder only when it seeds an empty store, never on a PUT (plan, Debt).
- */
-function snowdonPath(): string {
-  return (
-    process.env.BIMOPENFLOW_SNOWDON ??
-    join(homedir(), "Documents", "BIM Open Schema", "Snowdon Towers Sample Architectural.bos")
-  );
-}
-
-/** Replaces {SNOWDON} in a graph's text, so no committed graph names a machine-local path. */
-function expandPlaceholders(text: string, graphPath: string): string {
-  if (!text.includes("{SNOWDON}")) return text;
-  const snowdon = snowdonPath();
-  if (!existsSync(snowdon)) {
-    throw new Error(`${graphPath} needs the private Snowdon model, not found at ${snowdon} (set BIMOPENFLOW_SNOWDON).`);
-  }
-  return text.split("{SNOWDON}").join(slashed(snowdon));
-}
-
-/**
- * The reverse, for graph documents the host hands back inside graph embeds:
- * the Snowdon path becomes {SNOWDON} again, and paths inside this checkout
- * (the host's expansion of {SAMPLES} when it seeds) become repository-relative.
- */
-function hidePlaceholders(text: string): string {
-  return text
-    .split(slashed(snowdonPath())).join("{SNOWDON}")
-    .split(`${slashed(ROOT)}/`).join("");
-}
-
-/** Forward slashes need no escaping inside the graph's JSON strings. */
-const slashed = (path: string): string => path.split("\\").join("/");
 
 /**
  * Polls GET /api/analyses/{id}/state until it reports every node of `doc` and
@@ -369,177 +261,6 @@ async function waitSettled(api: NotebookApi, id: string, doc: GraphDocument, gra
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-// --- Validating an outline before use ---------------------------------------
-//
-// Hand-written outlines fail the same way parseNotebook does: every problem
-// is collected, tagged with its JSON path, instead of stopping at the first.
-// This is a smaller, script-local schema (the outline format), so it does not
-// share parseNotebook's private field/checkObject combinators in
-// src/document/io.ts, which are not exported.
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-function push(errors: string[], path: string, message: string): void {
-  errors.push(`${path}: ${message}`);
-}
-
-/** Joins a path and a key, without a leading dot at the root ("" + "title" -> "title"). */
-function childPath(path: string, key: string): string {
-  return path === "" ? key : `${path}.${key}`;
-}
-
-function unknownKeys(value: Record<string, unknown>, allowed: readonly string[], path: string, errors: string[]): void {
-  for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) push(errors, childPath(path, key), "unknown field");
-  }
-}
-
-function requireString(value: Record<string, unknown>, key: string, path: string, errors: string[]): void {
-  const fieldPath = childPath(path, key);
-  if (value[key] === undefined) push(errors, fieldPath, "missing");
-  else if (typeof value[key] !== "string") push(errors, fieldPath, "expected a string");
-}
-
-function optionalString(value: Record<string, unknown>, key: string, path: string, errors: string[]): void {
-  if (value[key] !== undefined && typeof value[key] !== "string") push(errors, childPath(path, key), "expected a string");
-}
-
-function optionalBoolean(value: Record<string, unknown>, key: string, path: string, errors: string[]): void {
-  if (value[key] !== undefined && typeof value[key] !== "boolean") push(errors, childPath(path, key), "expected a boolean");
-}
-
-function optionalStringArray(value: Record<string, unknown>, key: string, path: string, errors: string[]): void {
-  const v = value[key];
-  if (v === undefined) return;
-  if (!Array.isArray(v)) {
-    push(errors, childPath(path, key), "expected an array");
-    return;
-  }
-  v.forEach((item, i) => {
-    if (typeof item !== "string") push(errors, `${childPath(path, key)}[${i}]`, "expected a string");
-  });
-}
-
-const EMBED_SPEC_FIELDS: Record<string, readonly string[]> = {
-  auto: ["kind", "analysisId"],
-  graph: ["kind", "analysisId", "focus"],
-  value: ["kind", "analysisId", "node", "port", "caption", "column", "unit"],
-  table: ["kind", "analysisId", "node", "port", "caption"],
-  view3d: ["kind", "analysisId", "node", "port", "caption"],
-  chart: ["kind", "analysisId", "node", "port", "caption"],
-  file: ["kind", "path", "mediaType", "caption"],
-  picture: ["kind", "path", "alt", "caption"],
-};
-
-function checkEmbedSpec(value: unknown, path: string, errors: string[]): void {
-  if (!isPlainObject(value)) {
-    push(errors, path, "expected an object");
-    return;
-  }
-  const kind = value.kind;
-  if (typeof kind !== "string" || !(kind in EMBED_SPEC_FIELDS)) {
-    push(errors, `${path}.kind`, `expected one of ${Object.keys(EMBED_SPEC_FIELDS).map((k) => `"${k}"`).join(", ")}`);
-    return;
-  }
-  unknownKeys(value, EMBED_SPEC_FIELDS[kind], path, errors);
-  optionalString(value, "analysisId", path, errors);
-  optionalString(value, "caption", path, errors);
-  if (kind === "graph") optionalStringArray(value, "focus", path, errors);
-  if (kind === "value") {
-    optionalString(value, "column", path, errors);
-    optionalString(value, "unit", path, errors);
-  }
-  if (["value", "table", "view3d", "chart"].includes(kind)) {
-    requireString(value, "node", path, errors);
-    requireString(value, "port", path, errors);
-  }
-  if (kind === "file") {
-    requireString(value, "path", path, errors);
-    optionalString(value, "mediaType", path, errors);
-  }
-  if (kind === "picture") {
-    requireString(value, "path", path, errors);
-    requireString(value, "alt", path, errors);
-  }
-}
-
-function checkToolCall(value: unknown, path: string, errors: string[]): void {
-  if (!isPlainObject(value)) {
-    push(errors, path, "expected an object");
-    return;
-  }
-  unknownKeys(value, ["name", "ok", "summary"], path, errors);
-  requireString(value, "name", path, errors);
-  requireString(value, "summary", path, errors);
-  if (value.ok === undefined) push(errors, `${path}.ok`, "missing");
-  else if (typeof value.ok !== "boolean") push(errors, `${path}.ok`, "expected a boolean");
-}
-
-function checkEarlier(value: unknown, path: string, errors: string[]): void {
-  if (!isPlainObject(value)) {
-    push(errors, path, "expected an object");
-    return;
-  }
-  unknownKeys(value, ["request", "reply"], path, errors);
-  requireString(value, "request", path, errors);
-  requireString(value, "reply", path, errors);
-}
-
-function checkTurn(value: unknown, path: string, errors: string[]): void {
-  if (!isPlainObject(value)) {
-    push(errors, path, "expected an object");
-    return;
-  }
-  unknownKeys(value, ["request", "reply", "analysisId", "embeds", "tools", "stale", "earlier"], path, errors);
-  requireString(value, "request", path, errors);
-  requireString(value, "reply", path, errors);
-  optionalString(value, "analysisId", path, errors);
-  optionalBoolean(value, "stale", path, errors);
-  const embeds = value.embeds;
-  if (embeds !== undefined) {
-    if (!Array.isArray(embeds)) push(errors, `${path}.embeds`, "expected an array");
-    else embeds.forEach((e, i) => checkEmbedSpec(e, `${path}.embeds[${i}]`, errors));
-  }
-  const tools = value.tools;
-  if (tools !== undefined) {
-    if (!Array.isArray(tools)) push(errors, `${path}.tools`, "expected an array");
-    else tools.forEach((t, i) => checkToolCall(t, `${path}.tools[${i}]`, errors));
-  }
-  const earlier = value.earlier;
-  if (earlier !== undefined) {
-    if (!Array.isArray(earlier)) push(errors, `${path}.earlier`, "expected an array");
-    else earlier.forEach((e, i) => checkEarlier(e, `${path}.earlier[${i}]`, errors));
-  }
-}
-
-function checkHost(value: unknown, path: string, errors: string[]): void {
-  if (!isPlainObject(value)) {
-    push(errors, path, "expected an object");
-    return;
-  }
-  unknownKeys(value, ["profile", "note"], path, errors);
-  optionalString(value, "profile", path, errors);
-  optionalString(value, "note", path, errors);
-}
-
-/** Every problem with an outline, tagged with its JSON path; empty when it is valid. */
-function outlineErrors(value: unknown): string[] {
-  const errors: string[] = [];
-  if (!isPlainObject(value)) return ["(root): expected an object"];
-  unknownKeys(value, ["title", "createdUtc", "host", "graphs", "turns"], "", errors);
-  requireString(value, "title", "", errors);
-  requireString(value, "createdUtc", "", errors);
-  if (value.host === undefined) push(errors, "host", "missing");
-  else checkHost(value.host, "host", errors);
-  optionalStringArray(value, "graphs", "", errors);
-  const turns = value.turns;
-  if (turns === undefined) push(errors, "turns", "missing");
-  else if (!Array.isArray(turns)) push(errors, "turns", "expected an array");
-  else turns.forEach((t, i) => checkTurn(t, `turns[${i}]`, errors));
-  return errors;
-}
 
 // --- Command line ----------------------------------------------------------
 
