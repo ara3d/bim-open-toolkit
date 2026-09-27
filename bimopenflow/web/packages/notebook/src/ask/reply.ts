@@ -111,8 +111,7 @@ export async function replyFromAsk(events: readonly AskEvent[], api: NotebookApi
     ...(analysisId ? { analysisId } : {}),
     ...agentOf(start, done),
   };
-  if (error !== undefined)
-    return { ...base, text: joinText(said, `Error: ${error}`), embeds: [], error };
+  if (error !== undefined) return { ...base, text: said, embeds: [], error };
   if (!analysisId || !done?.built) return { ...base, text: said, embeds: [] };
   try {
     return { ...base, text: said, embeds: await embedsForAnalysis(analysisId, api, options) };

@@ -240,7 +240,7 @@ describe("replyFromAsk", () => {
     const failed: AskEvent = { type: "error", message: "claude exited with code 1" };
     const reply = await replyFromAsk([start, tool, failed], fakeApi().api);
     expect(reply).toMatchObject({
-      text: "Error: claude exited with code 1",
+      text: "",
       error: "claude exited with code 1",
       analysisId: ANALYSIS,
       agent: { model: "claude-haiku-4-5", effort: "medium" },
@@ -253,7 +253,7 @@ describe("replyFromAsk", () => {
     const problem = "The answer table has no rows.";
     const reply = await replyFromAsk([start, { ...done, verified: false, problem }], fakeApi().api);
     expect(reply.error).toContain(problem);
-    expect(reply.text).toBe(`${done.text}\n\nError: ${reply.error}`);
+    expect(reply.text).toBe(done.text);
     expect(reply.embeds).toEqual([]);
   });
 
