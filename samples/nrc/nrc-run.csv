@@ -1,0 +1,13 @@
+Field,ValueType,Value
+AnalysisRunId,Identifier,run-2026-09-17-01
+ScenarioName,Label,Baseline
+GridEmissionFactor_kgCO2e_per_kWh,Real,0.11
+SourceTool,Label,nrc-ifc-llm/poc/generate_synthetic_analytics.py
+Methodology,Label,"Synthetic, illustrative; not EN 15978"
+ComputedAt,Label,2026-09-17T00:00:00Z
+ComputedBy,Label,Ara 3D
+MetricDictionaryVersion,Label,NRC-metrics-0.2
+MetricDictionaryURI,Text,nrc-metrics.csv
+ResultDatasetURI,Text,nrc_analytics_long.csv
+ResultDatasetFormat,Label,CSV
+JoinKey,Label,GlobalId

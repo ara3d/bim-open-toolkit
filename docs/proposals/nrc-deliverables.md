@@ -77,15 +77,22 @@ The one defect the paper reports in its own recommendation is that storey
 and building aggregates carry the element property names. The fix is not a
 rename in the Python generator; it is to make the aggregates derived.
 
-- `samples/nrc/nrc-metrics.csv`, the metric dictionary, one row per metric:
-  `MetricId, PropertySet, PropertyName, Unit, LifecycleStage, AppliesTo
-  (element|space|zone|storey|building), Rollup (sum|areaMean|none),
-  Description`. It is the single source every later piece reads: the rollup
+- `samples/nrc/nrc-metrics.csv`, the metric dictionary, one row per metric
+  and level: `MetricId, Level (element|space|zone|storey|building),
+  PropertySet, PropertyName, ValueType, Unit, LifecycleStage, Rollup
+  (none|sum|mean|count), Description`. It is the single source every later piece reads: the rollup
   graph, the IDS generator, the agent's skill, and the paper's Appendix A.
 - Aggregate sets get their own names: `Pset_NRCSpaceSummary`,
   `Pset_NRCZoneSummary`, `Pset_NRCStoreySummary`,
   `Pset_NRCBuildingSummary`, each carrying the rolled-up properties and
-  `ElementCount`, `AnalysisRunId`, and `ScenarioName`.
+  `ElementCount`, `AnalysisRunId`, and `ScenarioName`. The rolled-up
+  properties get their own names too (`TotalOperationalCarbon_kgCO2e_per_year`,
+  `MeanEnergyUseIntensity_kWh_per_m2_year`), so a query on the element
+  property name never meets a total.
+- `samples/nrc/nrc-run.csv` holds the run-level facts once: run id,
+  scenario, grid emission factor, and the provenance fields. Every set takes
+  its `AnalysisRunId` and `ScenarioName` from it, and the project's
+  provenance set is written from it.
 - A graph `nrc-rollup` computes them from the element rows and the
   dictionary: element values joined to `StoreyOfElement` (and to the space and
   zone views of P2), grouped, and aggregated by each metric's `Rollup` rule.
@@ -298,18 +305,40 @@ that repository, not this one.
 - **Linux and macOS.** Everything touching IFC targets `net8.0-windows`
   because of the native web-ifc build; see the questions below.
 
-## Questions for the owner
+### P8. Performance as its own target
 
-1. Has NRC sent its IDS framework, a real model, or a real dataset? Any of
-   the three replaces a synthetic stand-in above, and P3 in particular should
-   start from NRC's IDS rather than one written here.
-2. May the zone table for Duplex be synthetic (P2), labelled as such, or
-   should zone level wait for an NRC energy model that defines real thermal
-   zones?
-3. The aggregates move from the paper repository's Python generator into the
-   `nrc-rollup` graph (P1). That makes the toolkit the source of the enriched
-   file and the paper repository a copy. Is that the right direction of
-   ownership?
-4. Will NRC reviewers run the package on Windows? If not, a Linux build of the
-   IFC MCP server becomes part of P7, and its size depends on whether web-ifc
-   is the only Windows-only dependency.
+Added 2026-09-27 at the owner's request. Every piece above adds work to the
+path from IFC file to answer, and a reviewer judges the proof of concept by
+how quickly it responds as much as by what it shows.
+
+- Measure first: cold and warm IFC-to-BOS conversion, DuckDB build, warm
+  evaluation of every `nrc-*` graph, first rendered frame in the 3D pane,
+  and host memory, for `duplex.ifc` and for the test kit's
+  `large_test_model.ifc` (49 MB, IFC2X3). One script writes the numbers to
+  `artifacts/nrc-perf/` and a table in `docs/nrc-performance.md`.
+- Set budgets from the measurements, then fix what misses them. Starting
+  budgets, to be confirmed by the first measurement: every `nrc-*` graph
+  evaluates warm in under 500 ms on Duplex; Duplex opens coloured in the 3D
+  pane in under 2 s warm; the large model converts once and opens warm in
+  under 5 s.
+- A gate that reruns the measurement and fails when a number exceeds its
+  budget by more than 25 %, runnable locally before a demo.
+
+Done when the table exists, every number is inside its budget or has a
+ticket naming the cause, and the gate passes.
+
+## Owner's answers, 2026-09-27
+
+1. NRC has sent nothing: no IDS, no model, no dataset. Every piece uses
+   synthetic data, labelled as such, and P3 writes its own IDS from the
+   metric dictionary.
+2. The Duplex zone table in P2 is synthetic.
+3. Implied by "start with P1": the toolkit becomes the source of the
+   enrichment pipeline. The element values still come from the paper
+   repository's generator (copied into `samples/nrc`); totals and property-set
+   rows are computed by graphs here, and the paper repository copies the
+   enriched file back.
+4. The package runs on Windows only; no Linux build.
+
+P1, P5, and P8 start first. P8 measures after P1 and P5 land so that parallel
+builds do not distort its timings.

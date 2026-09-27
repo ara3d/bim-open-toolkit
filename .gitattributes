@@ -1,3 +1,6 @@
 # Spec conformance vectors and canonical graph documents are byte-sensitive.
 spec/** text eol=lf
 *.dfg.json text eol=lf
+
+# IFC files are byte-exact: the NRC write-back is verified by hash and entity diff.
+samples/nrc/*.ifc -text
