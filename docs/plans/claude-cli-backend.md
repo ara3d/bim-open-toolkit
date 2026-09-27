@@ -537,6 +537,7 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C2 | 91e7691 | Studio 38 pass, IFC ask 23 pass; fence respected (1 file). ReadResult and TurnLimitMessage match the plan's example. |
 
 ## Spike S1 findings
 
