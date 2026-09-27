@@ -34,7 +34,10 @@ public static class IfcAnalyticsTools
                 "Lists the tables and views available to ifc_sql with their row counts and column "
                 + "types, so a query can be written without guessing. Set 'table' to describe just "
                 + "one. Start with the EntityText, ParameterText and RelationText views: the raw "
-                + "tables store interned integer indexes, not names.",
+                + "tables store interned integer indexes, not names. To sum or count a property by "
+                + "storey, join through StoreyOfElement, not StoreyOfEntity: StoreyOfEntity also maps "
+                + "each storey to itself, so a join straight to ParameterText double-counts a storey "
+                + "that carries its own rollup of that property.",
                 IfcToolArgs.Model()
                     .String("table", "Optional single table to describe, e.g. Entities.")
                     .Paged()

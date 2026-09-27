@@ -79,6 +79,19 @@ public static class IfcDuck
         // Shared verbatim with BosDuckDbViews rather than copied, so the MCP server and the flow
         // graphs cannot drift into answering the same storey question two ways.
         Execute(conn, BosDuckDbViews.StoreyOfEntitySql);
+
+        // StoreyOfEntity's recursive walk seeds every entity as its own ancestor at Depth 0, so a
+        // building storey is its own "storey above it" and appears mapped to itself. That row is
+        // correct for the view's stated job (every entity's storey, including a storey's own), but
+        // a query that joins it straight to ParameterText to sum a property by storey double-counts
+        // wherever the storey entity itself also carries that property (a precomputed per-storey
+        // rollup, for example): the storey's own value is added on top of the sum of its elements'
+        // values. StoreyOfElement is StoreyOfEntity with that self-mapped row removed, so summing
+        // through it counts each element once and never the storey it belongs to.
+        Execute(conn, """
+            CREATE OR REPLACE VIEW StoreyOfElement AS
+            SELECT * FROM StoreyOfEntity WHERE EntityIndex != StoreyIndex
+            """);
     }
 
     private static string EnumCase<T>(string column, IReadOnlyList<T> values) where T : struct, Enum

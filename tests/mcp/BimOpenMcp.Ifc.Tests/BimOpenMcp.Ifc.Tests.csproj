@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\mcp\BimOpenMcp.Ifc\BimOpenMcp.Ifc.csproj" />
+    <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
   </ItemGroup>
 
   <ItemGroup>
