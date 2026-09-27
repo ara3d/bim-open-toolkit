@@ -301,6 +301,7 @@ Baseline gates (2026-09-26, HEAD e71e596; `app/**` has uncommitted edits from ot
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C12 | 1470cdf | docs/nodes.md regenerated; diff confined to view3d.color, chart.bar, view.colormap, and the Viz pack count; fence respected (2 files). |
 | C1 | abaec0b | Geometry 108, Layering 8 pass; NrcWorkflows builds; fence respected. |
 | C7 | 8b6c096 | panes 139 tests pass, tsc clean; fence respected (5 files). Gradient labels only at the first and last stop; categorical caption is the literal 'category'. |
 | C4 | 53c5c29 | HostProfileTests 7 pass; the eight spatial.* kinds listed. |
