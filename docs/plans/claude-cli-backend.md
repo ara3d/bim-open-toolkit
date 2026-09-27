@@ -543,6 +543,16 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 
 ## Spike S1 findings
 
+Run 2026-09-27 against Claude Code 2.1.281 (the desktop app's copy, not logged in) and `bimopenmcp-flow.exe --http` over a temp store.
+
+- Every pinned flag is accepted; no usage error. `--system-prompt-file` and `--max-turns` are absent from `--help` but work.
+- With the plan's mcp-config the `init` line reports `mcp_servers: [{"name":"bimopenflow","status":"connected","source":"dynamic"}]` and lists the server's 16 tools minus the 2 disallowed ones, with no built-in tools and `slash_commands: []`. HTTP stays; no stdio fallback.
+- With the server stopped, `init` reports `status: "failed"` and `tools: []`. C7 treats an empty `tools` list as a failure too.
+- Not logged in: `init`, then a synthetic `assistant` line carrying `"error":"authentication_failed"`, then `{"type":"result","subtype":"success","is_error":true,"result":"Not logged in · Please run /login","terminal_reason":"api_error",...}`, exit 1. So `subtype` is `success` on that path: the error mapping keys on `is_error` (and `terminal_reason`), never on `subtype`. The middle dot is UTF-8, so C7 reads stdout as UTF-8.
+- `CLAUDECODE=1` in the environment did not stop `-p` from starting in 2.1.281; dropping it stays as a precaution.
+- `--permission-prompts none` exists (anything that would prompt is denied) and can join the argument list if a prompt ever appears.
+- Not checked: `--max-turns` and `--disallowedTools` at run time, `--resume` with a real session, the success-path `result` shape, whether Ara3D.MCP receives `initialize` before `tools/list` (it logs nothing), and `--tools ""` passed through ProcessStartInfo.ArgumentList rather than cmd.exe.
+
 ## Review findings
 
 ## Debt and extension points
