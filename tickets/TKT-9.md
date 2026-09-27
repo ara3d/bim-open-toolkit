@@ -1,9 +1,9 @@
 ---
 id: TKT-9
 title: One start page and one supported first run
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [README.md, docs/DEMOS.md, docs/bim-flow-startup.md, .claude/launch.json, bimopenflow/web/package.json, src/flow/BimOpenFlow.Host/**]
 ---
 

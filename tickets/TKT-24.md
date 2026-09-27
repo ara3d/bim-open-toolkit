@@ -1,9 +1,9 @@
 ---
 id: TKT-24
 title: Animate the active path: selecting a node lights its upstream wires, and evaluation shows flow
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [bimopenflow/web/packages/app/**]
 ---
 
