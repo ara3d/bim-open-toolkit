@@ -87,6 +87,14 @@ Supervisor-owned: `package.json`, `tsconfig.json`, `vite.config.ts`, `vitest.con
 
 | Id | Commit | Result |
 |---|---|---|
+| N1 | 013a843 | 20 tests; validator reports every problem with its path; `kind` serialized first in each embed |
+| N2 | f675afb | 26 tests; untouched turns stay reference-equal |
+| N3 | 7f898ab | 13 tests; table and verdict panes reused as they are |
+| N4 | dde5ce1 | 6 tests; the chart pane neither emits nor accepts selection (Debt) |
+| N5 | 725e33d | 14 tests; the editor ignores `?analysis=` on its main page (Debt) |
+| N6 | c8b0d3d | 9 tests; six app helpers reused by path; feed order repeated in `planFeed` (Debt) |
+| N7 | a3f551e | 22 tests; `readAskEvents` gained an optional abort signal; embeds only when `done.built`; Q1's graph returns two columns, so N10's outlines can mark a value embed |
+| N8 | 2438782 | 21 tests |
 
 ## Review findings
 
@@ -96,6 +104,11 @@ Duplicates and reach-ins made on purpose, each with what removes it:
 
 - **Deep imports from `@bimopenflow/app`.** `src/embeds/contract.ts` imports `ResultApi` from `app/src/paneContext`, and chunks N3 to N9 import `makePaneContext`, `choosePanes`, `firstTableOutput`, `chartPaneOptions`, `watchHost`, and the 3D feed helpers (`modelRef`, `completeTable`, `liveViewRecipe`) by path. An application's internals are not a library's API. Fix: move these pure modules into a client library package (for example `packages/client`, below `app`), re-export them from `app` so its callers do not change, and switch the notebook's imports. Blocked while `app/src` files are in claimed fences (TKT-11, 12, 26).
 - **The `/api/ask` stream reader.** `src/ask/events.ts` copies `readEvents` and the `AskEvent` shape from `app/src/duckdbDemo.ts`, where they are page-local. Fix: move both into the client library above, generate `AskEvent` from `contracts/contracts.json` beside the other wire types, and have `duckdbDemo.ts` import them. `duckdbDemo.ts` is in TKT-26's fence.
+- **The 3D feed order.** `planFeed` in `src/embeds/view3d.ts` (about 40 lines) repeats how `feedModel` and `feedData` in `app/src/paneArea.ts` choose model, then view, boxes, or instances; those are closures inside `createPaneArea`. Fix: extract the choice as a pure function beside `completeTable` in the client library, used by both. The deep-import list above also includes `app/src/modelCatalog` and `app/src/paneArea` (`hostMessage`).
+- **Charts outside shared selection.** `createChartPane` never emits a selection and ignores a selection input, so the chart embed takes no part in it. Fix: in `panes/src/chartPane.ts`, emit a selection on a bar click and highlight bars from a selection input; `panes/**` is TKT-16's fence.
+- **"Open in editor" cannot open a given graph.** Only `3d.html` reads `?analysis=`; the editor's `main.ts` does not, so the graph embed's link opens the analysis list. Fix: read `analysisFromSearch` in `app/src/main.ts` as `graphDemo.ts` does.
+- **A chart re-read keeps only the snapshot's row count.** `compareWithHost` reads as many rows as the snapshot holds, so a chart whose table grew redraws with the old number of bars (the total is right). Fix: charts snapshot their whole table (they are small by design), or the chart renderer reads `totalRows` rows on "changed".
+- **Restoring a raw sample graph finds no model.** A graph restored with PUT keeps `{SAMPLES}` placeholders that only seeding replaces, so a 3D embed on it matches no catalog model. Fix: the stateless evaluate endpoint, or restoring through the host's seeding path.
 - **Re-evaluation writes to the analysis store.** Restoring a missing analysis uses `PUT /api/analyses/{id}`. Fix: a stateless evaluate endpoint (see Considered and rejected).
 
 ## Outcome
