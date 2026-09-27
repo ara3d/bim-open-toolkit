@@ -94,15 +94,18 @@ export function withExtras(turn: Turn, outlineTurn: OutlineTurn): Turn {
 // --- Placeholders: {SNOWDON} and this checkout's own path -------------------
 
 /**
- * The private Snowdon model: BIMOPENFLOW_SNOWDON, else the default location.
+ * The private Snowdon model: BIMOPENFLOW_SNOWDON when it names an existing
+ * file, else the default location when that exists, else undefined.
  * Duplicates BimSampleSeeding.SnowdonPath in the host, which fills the same
  * placeholder only when it seeds an empty store, never on a PUT (plan, Debt).
  */
-function snowdonPath(): string {
-  return (
-    process.env.BIMOPENFLOW_SNOWDON ??
-    join(homedir(), "Documents", "BIM Open Schema", "Snowdon Towers Sample Architectural.bos")
-  );
+export function snowdonPath(): string | undefined {
+  const fromEnv = process.env.BIMOPENFLOW_SNOWDON;
+  const path =
+    fromEnv && fromEnv.length > 0
+      ? fromEnv
+      : join(homedir(), "Documents", "BIM Open Schema", "Snowdon Towers Sample Architectural.bos");
+  return existsSync(path) ? path : undefined;
 }
 
 /** Forward slashes need no escaping inside the graph's JSON strings. */
@@ -112,21 +115,25 @@ export const slashed = (path: string): string => path.split("\\").join("/");
 export function expandPlaceholders(text: string, graphPath: string): string {
   if (!text.includes("{SNOWDON}")) return text;
   const snowdon = snowdonPath();
-  if (!existsSync(snowdon)) {
-    throw new Error(`${graphPath} needs the private Snowdon model, not found at ${snowdon} (set BIMOPENFLOW_SNOWDON).`);
+  if (snowdon === undefined) {
+    throw new Error(
+      `${graphPath} needs the private Snowdon model, not found (set BIMOPENFLOW_SNOWDON or place it at the default location).`,
+    );
   }
   return text.split("{SNOWDON}").join(slashed(snowdon));
 }
 
 /**
  * The reverse, for graph documents the host hands back inside graph embeds:
- * the Snowdon path becomes {SNOWDON} again, and paths inside this checkout
- * (the host's expansion of {SAMPLES} when it seeds) become repository-relative.
+ * the Snowdon path becomes {SNOWDON} again (skipped when no Snowdon model is
+ * configured), and paths inside this checkout (the host's expansion of
+ * {SAMPLES} when it seeds) become repository-relative.
  */
 export function hidePlaceholders(text: string): string {
-  return text
-    .split(slashed(snowdonPath())).join("{SNOWDON}")
-    .split(`${slashed(ROOT)}/`).join("");
+  const snowdon = snowdonPath();
+  const withoutSnowdon = snowdon ? text.split(slashed(snowdon)).join("{SNOWDON}") : text;
+  const rootPrefix = `${slashed(ROOT)}/`;
+  return rootPrefix.length > 1 ? withoutSnowdon.split(rootPrefix).join("") : withoutSnowdon;
 }
 
 // --- Validating an outline before use ---------------------------------------
