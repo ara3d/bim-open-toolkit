@@ -796,7 +796,7 @@
         "text": "And the file rows that don't line up with anything physical?"
       },
       "reply": {
-        "text": "52 rows. 50 are keyed to the opening behind a door or window (IfcOpeningElement), not the door or window mesh itself; 2 are keyed to a stair that is meshed only through its flights, never as one entity. The file's numbers for these rows still exist — they just have nowhere to land as a colour yet.",
+        "text": "52 rows. 44 are keyed to the opening behind a door or window (IfcOpeningElement), not the door or window mesh itself; 2 are keyed to a stair that is meshed only through its flights, never as one entity; the last 6 are two segments of the roof, two counter tops, and two unnamed rows on the roof level. The file's numbers for these rows still exist — they just have nowhere to land as a colour yet.",
         "tools": [
           {
             "name": "getResult",

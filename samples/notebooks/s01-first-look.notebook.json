@@ -411,7 +411,7 @@
         "text": "Colour it by class."
       },
       "reply": {
-        "text": "Added a view3d.color fed by the same Category column, joined on GlobalId. All 714 placed instances matched and got a colour (0 grey); category10 assigns one colour per IFC class, 78 in the legend. The grey view from turn 1 stays as it was; this is a new embed.",
+        "text": "Added a view3d.color fed by the same Category column, joined on GlobalId. All 714 placed instances matched and got a colour (0 grey); Only 8 IFC classes have geometry, so the model shows 8 colours; the legend lists all 78 classes in the file, with their file-wide counts, including the 70 that draw nothing. The grey view from turn 1 stays as it was; this is a new embed.",
         "tools": [
           {
             "name": "editGraph",

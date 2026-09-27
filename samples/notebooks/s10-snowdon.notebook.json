@@ -406,7 +406,7 @@
         "text": "Rooms per storey, as a chart."
       },
       "reply": {
-        "text": "33 storeys carry at least one room, out of 84 levels total (the rest are reference planes, pits, and roof datums with no rooms). L1 - Block 43 has the most, 26; L4 follows at 20 and 15 on its two passes (the model splits some levels into more than one named block at the same elevation, so a level name can appear twice in the chart).",
+        "text": "33 storeys carry at least one room, out of 84 levels total (the rest are reference planes, pits, and roof datums with no rooms). L1 - Block 43 has the most, 26; L4 follows with 20, and appears four times in all (20, 15, 12, and 8), because the model splits some levels into several named blocks at the same elevation, so a level name can appear more than once in the chart.",
         "tools": [
           {
             "name": "getAnalysis",
