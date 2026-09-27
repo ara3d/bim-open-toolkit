@@ -1,7 +1,5 @@
-using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Ara3D.MCP;
 using BimOpenFlow.Ask;
@@ -28,8 +26,10 @@ public static class AskEndpoint
 {
     public const string Route = "/api/ask";
     public const string ModelInfoRoute = "/api/ask/model";
-    private const int ConversationsKept = 24;
-    private const int CheckRounds = 2;
+
+    /// <summary>The name the model knows the studio's tool server by (Claude Code prefixes
+    /// tools with mcp__{ServerKey}__ on the command-line backend; ChatBackend ignores it).</summary>
+    public const string ServerKey = "bimopenflow";
 
     /// <summary>Not offered to the Ask agent: the prompt already carries the
     /// catalog and the database list, and runs, models and whole-document saves
@@ -52,8 +52,9 @@ public static class AskEndpoint
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         var selection = ChatSelection.Resolve();
         var model = selection.Model;
-        var conversations = new ConcurrentDictionary<string, JsonArray>(StringComparer.Ordinal);
-        var recent = new ConcurrentQueue<string>();
+        var setup = new AskSetup(tools, ServerKey, HiddenTools, AskAgent.DefaultMaxTurns);
+        var backend = BuildBackend(selection, http, setup);
+        var handler = new AskHandler(services, backend, () => system.Value, model);
 
         app.MapGet(ModelInfoRoute, () => Results.Json(new { model, provider = selection.Provider, configured = selection.Configured, problem = selection.Problem }));
         app.MapPost(Route, async (HttpContext context, AskRequest body, CancellationToken ct) =>
@@ -63,75 +64,14 @@ public static class AskEndpoint
             await context.Response.StartAsync(ct);
             Task Emit(object payload) => WriteEvent(context.Response, payload, ct);
 
-            if (string.IsNullOrWhiteSpace(body.Request))
-            {
-                await Emit(new { type = "error", message = "Type a request first." });
-                return;
-            }
-            IChatModel chat;
-            try
-            {
-                chat = selection.Create(http);
-            }
-            catch (Exception e)
-            {
-                await Emit(new { type = "error", message = e.Message });
-                return;
-            }
-
             await Gate.WaitAsync(ct);
             try
             {
-                // A follow-up continues a conversation this host remembers (even one that
-                // only asked a question back) or, after a restart, a graph that exists.
-                var requested = body.AnalysisId?.Trim();
-                var known = requested is { Length: > 0 } && conversations.TryGetValue(requested, out var remembered)
-                    ? remembered
-                    : null;
-                var continuing = known is not null || (requested is { Length: > 0 } && host.Store.Exists(requested));
-                var id = continuing ? requested! : AskIds.For(body.Request, host.Store.Exists);
-                var messages = known ?? Remember(conversations, recent, id, AskAgent.NewConversation(system.Value));
-                var user = continuing
-                    ? AskPrompts.FollowUp(body.Request, id, resumed: known is null)
-                    : AskPrompts.User(body.Request, id);
-                await Emit(new { type = "start", analysisId = id, model, continuing });
-                var agent = new AskAgent(tools, chat) { Hidden = HiddenTools };
-                Task Report(AskEvent e)
-                    => Emit(new { type = e.Type, name = e.Name, args = e.Args, ok = e.Ok, summary = e.Summary, text = e.Text });
-                var outcome = await agent.RunAsync(messages, user, Report, ct);
-
-                // The host's own check: the agent gets up to two more turns to fix or
-                // explain a graph that does not evaluate or answers with no rows.
-                var problem = AskChecks.Verify(services, id);
-                for (var round = 0; problem is not null && round < CheckRounds; round++)
-                {
-                    await Emit(new { type = "check", ok = false, summary = problem });
-                    var retry = await agent.RunAsync(messages, AskPrompts.Check(problem), Report, ct);
-                    outcome = new AskOutcome(retry.Text, outcome.Turns + retry.Turns,
-                        outcome.InputTokens + retry.InputTokens, outcome.OutputTokens + retry.OutputTokens);
-                    problem = AskChecks.Verify(services, id);
-                }
-                await Emit(new
-                {
-                    type = "done",
-                    analysisId = id,
-                    built = host.Store.Exists(id),
-                    verified = host.Store.Exists(id) && problem is null,
-                    problem,
-                    text = outcome.Text,
-                    turns = outcome.Turns,
-                    inputTokens = outcome.InputTokens,
-                    outputTokens = outcome.OutputTokens,
-                    model,
-                });
+                await handler.RunAsync(body, Emit, ct);
             }
             catch (OperationCanceledException)
             {
                 // The browser went away; nothing to tell it.
-            }
-            catch (Exception e)
-            {
-                await Emit(new { type = "error", message = e.Message });
             }
             finally
             {
@@ -141,14 +81,25 @@ public static class AskEndpoint
         return app;
     }
 
-    private static JsonArray Remember(ConcurrentDictionary<string, JsonArray> conversations, ConcurrentQueue<string> recent,
-        string id, JsonArray messages)
+    /// <summary>Selection.Create can throw when no provider is configured; that is reported as
+    /// the 'error' event on the first request (see AskHandler.RunAsync), not at startup, so
+    /// GET /api/ask/model still answers and a later restart with a key fixes it without a
+    /// redeploy.</summary>
+    private static IAskBackend BuildBackend(ChatSelection selection, HttpClient http, AskSetup setup)
     {
-        conversations[id] = messages;
-        recent.Enqueue(id);
-        while (recent.Count > ConversationsKept && recent.TryDequeue(out var old))
-            conversations.TryRemove(old, out _);
-        return messages;
+        try
+        {
+            return new ChatBackend(setup, selection.Create(http));
+        }
+        catch (Exception e)
+        {
+            return new FailedBackend(e.Message);
+        }
+    }
+
+    private sealed class FailedBackend(string message) : IAskBackend
+    {
+        public IAskConversation Start(string system) => throw new InvalidOperationException(message);
     }
 
     private static async Task WriteEvent(HttpResponse response, object payload, CancellationToken ct)
