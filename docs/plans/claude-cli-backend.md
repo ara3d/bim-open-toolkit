@@ -537,6 +537,7 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C13 | bd0d51d | node --check ok, Layering 8 pass; fence respected (3 files). Score table unchanged. |
 | C12 | b5543db | IFC ask 29 pass (6 new); fence respected (7 files). Header line with provider and effort; server on a free port, started only for claude-cli. |
 | C10 | d0a1e21 | Studio builds, 90 tests pass (8 new AskHandlerTests over the fake claude and a real store); fence respected (3 files). Tool server now on LoopbackPorts.Free(); ModelInfoPayload helper. |
 | C8 | 1a0c8f4 | Studio 82 pass (7 new); fence respected (3 files). Order: ASK_PROVIDER, then claude-cli when found, then a key, else NoProvider. Builder lesson: amend in a shared checkout only with --amend --only -- <paths>. |
