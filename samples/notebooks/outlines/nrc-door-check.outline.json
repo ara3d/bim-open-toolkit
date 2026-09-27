@@ -1,0 +1,38 @@
+{
+  "title": "Door compliance: DC-W1",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim"
+  },
+  "turns": [
+    {
+      "request": "Check every door against DC-W1: door leaf width at least 850 mm.",
+      "reply": "14 doors: 8 pass and 6 fail. The six failures are the four 762 mm leaves and the two 813 mm leaves; the passes are six 864 mm leaves and two 1250 mm leaves. The 3D view colours each door by its verdict.",
+      "analysisId": "nrc-dc-w1-verdicts",
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "answer",
+          "port": "out",
+          "caption": "DC-W1 verdicts"
+        },
+        {
+          "kind": "auto"
+        }
+      ]
+    },
+    {
+      "request": "Compare with the verdict file in the NRC repository.",
+      "reply": "The file's 14 DC-W1 rows give the same verdict as the graph for every door. The file also holds rules DC-M1, DC-W2, and DC-Z1, which this graph does not check.",
+      "analysisId": "nrc-dc-w1-verdicts",
+      "embeds": [
+        {
+          "kind": "file",
+          "path": "samples/nrc/door_verdicts.csv",
+          "mediaType": "text/csv",
+          "caption": "door_verdicts.csv"
+        }
+      ]
+    }
+  ]
+}

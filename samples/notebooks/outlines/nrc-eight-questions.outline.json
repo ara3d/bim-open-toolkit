@@ -1,0 +1,67 @@
+{
+  "title": "The NRC paper's eight questions",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "tables"
+  },
+  "turns": [
+    {
+      "request": "What is the total operational carbon for the building?",
+      "reply": "37,196.2 kgCO2e/yr. The graph sums OperationalCarbon_kgCO2e_per_year over all 218 elements of nrc_analytics_elements.csv.",
+      "analysisId": "nrc-q1-building-total",
+      "embeds": [
+        {
+          "kind": "value",
+          "node": "answer",
+          "port": "relation",
+          "column": "Total",
+          "unit": "kgCO2e/yr",
+          "caption": "Total operational carbon"
+        },
+        {
+          "kind": "auto"
+        }
+      ]
+    },
+    {
+      "request": "Which storey has the higher mean energy intensity, Level 1 or Level 2?",
+      "reply": "Level 2, at a mean of 40.56 kWh/m²/yr over 93 elements, against Level 1's 40.50 over 103. The gap, 0.06, is smaller than the one-decimal rounding of the source values, so treat the two as level.",
+      "analysisId": "nrc-q2-storey-eui"
+    },
+    {
+      "request": "Which five elements have the highest operational carbon?",
+      "reply": "All five are in the Wall category. The highest is Basic Wall:Interior - Partition (92mm Stud):190140 at 412.0 kgCO2e/yr, then 410.8, 402.0, 399.7, and 398.6. The third is an upper cabinet that the dataset files under Wall.",
+      "analysisId": "nrc-q3-top-elements"
+    },
+    {
+      "request": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
+      "reply": "That is a type name, not one door: four door instances carry it, at 117.3, 61.8, 54.0, and 146.1 kgCO2e/yr. The table lists all four by GlobalId rather than picking one. The paper's answer, 54.0, is the door it took as first by STEP id, 1hOSvn6df7F8_7GcBWlS8Z. Tell me which door you mean, or ask for the sum.",
+      "analysisId": "nrc-q4-door-instances"
+    },
+    {
+      "request": "How much operational carbon is in each category?",
+      "reply": "Nine categories. Wall carries the most, 22,854.1 kgCO2e/yr, followed by Floor at 5,593.5; Railing carries the least, 164.8.",
+      "analysisId": "nrc-q5-by-category"
+    },
+    {
+      "request": "Which analysis run produced these values, and when?",
+      "reply": "Every one of the 218 elements cites run run-2026-09-17-01, scenario Baseline. The data has no timestamp column: the only date is the one in the run id, 17 September 2026.",
+      "analysisId": "nrc-q6-analysis-run"
+    },
+    {
+      "request": "What is the embodied carbon of the roof?",
+      "reply": "Not available. The roof, 0jf0rYHfX3RAB3bSIRjmxl (IFCROOF), has no embodied-carbon row in the analytics, so the graph returns it as the element missing a value. That absence is the answer; no value is inferred from its neighbours or its name.",
+      "analysisId": "nrc-q7-absence"
+    },
+    {
+      "request": "What is the total embodied carbon (A1-A3) per storey?",
+      "reply": "Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, and Roof 5,821.0 kgCO2e. The table also carries each storey's element count and mean energy intensity.",
+      "analysisId": "nrc-q8-per-storey"
+    },
+    {
+      "request": "Chart embodied and operational carbon per storey.",
+      "reply": "One pair of bars per storey, embodied A1-A3 beside operational, plus the building row: 115,730.3 kgCO2e embodied and 37,196.2 kgCO2e/yr operational. The operational total is turn 1's answer.",
+      "analysisId": "nrc-storey-carbon-chart"
+    }
+  ]
+}

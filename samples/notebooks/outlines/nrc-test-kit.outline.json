@@ -1,0 +1,101 @@
+{
+  "title": "The NRC IFC test kit, steps 1 to 5",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim"
+  },
+  "turns": [
+    {
+      "request": "Load duplex.ifc and connect analytics_dataset_with_levels.csv to it using GlobalId.",
+      "reply": "Joined on GlobalId. Every CSV row names an entity in the model. 21 physical elements (entities with a rendered mesh) have no CSV row, and 52 CSV rows match an entity that has no mesh of its own. The match report counts both instead of dropping them.",
+      "analysisId": "nrc-join-analytics",
+      "embeds": [
+        {
+          "kind": "file",
+          "path": "samples/nrc/test-kit/analytics_dataset_with_levels.csv",
+          "mediaType": "text/csv",
+          "caption": "The test kit's analytics"
+        },
+        {
+          "kind": "table",
+          "node": "answer",
+          "port": "relation",
+          "caption": "Match report"
+        },
+        {
+          "kind": "graph",
+          "focus": [
+            "answer"
+          ]
+        }
+      ]
+    },
+    {
+      "request": "Colour the model by operational carbon.",
+      "reply": "Coloured on a viridis gradient from 14.2 to 412.0 kgCO2e/yr. Instances with no CSV row stay grey.",
+      "analysisId": "nrc-join-analytics",
+      "embeds": [
+        {
+          "kind": "view3d",
+          "node": "coloredCarbon",
+          "port": "instances",
+          "caption": "Operational carbon, viridis"
+        },
+        {
+          "kind": "table",
+          "node": "coloredCarbon",
+          "port": "legend",
+          "caption": "Legend"
+        }
+      ]
+    },
+    {
+      "request": "Now colour it by category instead.",
+      "reply": "Nine categories, one colour each. The legend's counts, Wall 72 down to Roof and Railing at 4 each, add up to the CSV's 268 rows.",
+      "analysisId": "nrc-join-analytics",
+      "embeds": [
+        {
+          "kind": "view3d",
+          "node": "coloredCategory",
+          "port": "instances",
+          "caption": "Category"
+        },
+        {
+          "kind": "table",
+          "node": "coloredCategory",
+          "port": "legend",
+          "caption": "Legend"
+        }
+      ]
+    },
+    {
+      "request": "Total and average by level.",
+      "reply": "Grouped by the storey the model places each element on, not by the CSV's Level column: Level 1 has 103 elements, 17,457.0 kgCO2e/yr in total, and a mean energy intensity of 40.50; Level 2 has 93, 13,970.2, and 40.56; Roof 8, 1,767.3, and 62.04; T/FDN 14, 4,001.7, and 61.76. The second table shows why the CSV's Level is not used: for some rows it holds a door or window mark such as B103 rather than a storey.",
+      "analysisId": "nrc-join-analytics",
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "perStorey",
+          "port": "relation",
+          "caption": "Per storey, from the model's StoreyOfElement"
+        },
+        {
+          "kind": "table",
+          "node": "storeyComparison",
+          "port": "relation",
+          "caption": "CSV Level beside the model's storey"
+        }
+      ]
+    },
+    {
+      "request": "Chart carbon per storey for the enriched model.",
+      "reply": "This chart reads the enriched model's storey rollups, nrc_analytics_storeys.csv, not the test kit's CSV. Its operational totals agree with the previous turn (Level 1 17,457.0, Level 2 13,970.2, T/FDN 4,001.7, Roof 1,767.3), and it adds embodied carbon A1-A3: Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, Roof 5,821.0 kgCO2e. The building row totals 115,730.3 embodied and 37,196.2 operational.",
+      "analysisId": "nrc-storey-carbon-chart"
+    },
+    {
+      "request": "Read back the NRC values that were written into the enriched IFC.",
+      "reply": "2,441 NRC property values read back from duplex-enriched.ifc, ordered by entity, property set, and property. The first entity, #34, carries the project's Pset_NRCAnalyticsProvenance: run run-2026-09-17-01, scenario Baseline.",
+      "analysisId": "nrc-property-values"
+    }
+  ]
+}

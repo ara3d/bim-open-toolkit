@@ -1,0 +1,835 @@
+{
+  "format": "bimopen-notebook/0.1",
+  "title": "The NRC paper's eight questions",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "tables"
+  },
+  "turns": [
+    {
+      "id": "t1",
+      "request": {
+        "text": "What is the total operational carbon for the building?"
+      },
+      "reply": {
+        "text": "37,196.2 kgCO2e/yr. The graph sums OperationalCarbon_kgCO2e_per_year over all 218 elements of nrc_analytics_elements.csv.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q1-building-total: 2 nodes, 1 edge"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "2 of 2 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q1-building-total answer.relation: 1 row × 2 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "value",
+            "id": "e1",
+            "caption": "Total operational carbon",
+            "source": {
+              "analysisId": "nrc-q1-building-total",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "column": "Total",
+            "unit": "kgCO2e/yr",
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Total",
+                  "type": "Number"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  37196.19999999999,
+                  218
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "answer (rel.aggregate)",
+            "source": {
+              "analysisId": "nrc-q1-building-total",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Total",
+                  "type": "Number"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  37196.19999999999,
+                  218
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e3",
+            "analysisId": "nrc-q1-building-total",
+            "graphHash": "06aaf2423703eac2b9788c56140072cd06dc651f156fac33b067c30c74da4e4d",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 370,\n      \"y\": 40\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"elements.relation\",\n        \"to\": \"answer.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"aggregates\": \"sum(OperationalCarbon_kgCO2e_per_year) as Total, count(*) as Elements\",\n      \"groupBy\": \"\"\n    },\n    \"elements\": {\n      \"path\": \"nrc_analytics_elements.csv\",\n      \"source\": \"nrc\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q1-building-total   graph 06aaf2423703\nelements = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_elements.csv\");\n  // Ok  relation 218 rows x 13 cols  sha b4a76a421e6d  plan 7e3cdd5d3029\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", 3797, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Level 1\", 39, \"Wall\", 615.5, 689.4, 372, 83.6, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", 3999, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Level 1\", 39, \"Wall\", 690, 772.8, 332, 79.2, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", 4043, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Level 1\", 39, \"Wall\", 887.5, 994, 310.8, 63.9, \"Baseline\", \"run-2026-09-17-01\"\nanswer = rel.aggregate@1(input: elements.relation, groupBy: \"\", aggregates: \"sum(OperationalCarbon_kgCO2e_per_year) as Total, count(*) as Elements\");\n  // Ok  relation 1 rows x 2 cols  sha 13d484bbeeab  plan 66e6d9ab3e2d\n  //   columns Total:Number, Elements:Integer\n  //   [0] 3.72E+04, 218\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q1-building-total"
+      }
+    },
+    {
+      "id": "t2",
+      "request": {
+        "text": "Which storey has the higher mean energy intensity, Level 1 or Level 2?"
+      },
+      "reply": {
+        "text": "Level 2, at a mean of 40.56 kWh/m²/yr over 93 elements, against Level 1's 40.50 over 103. The gap, 0.06, is smaller than the one-decimal rounding of the source values, so treat the two as level.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q2-storey-eui: 4 nodes, 3 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "4 of 4 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q2-storey-eui answer.relation: 2 rows × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.sort)",
+            "source": {
+              "analysisId": "nrc-q2-storey-eui",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Storey",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                },
+                {
+                  "name": "MeanEui",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "Level 2",
+                  93,
+                  40.556989247311854
+                ],
+                [
+                  "Level 1",
+                  103,
+                  40.4990291262136
+                ]
+              ],
+              "totalRows": 2,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-q2-storey-eui",
+            "graphHash": "7a1d22aa590c6ca9bdc5620c90bf553f2a375b861a8dc58182fa37e84c8fc3d3",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 1030,\n      \"y\": 40\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"levels\": {\n      \"x\": 700,\n      \"y\": 40\n    },\n    \"perStorey\": {\n      \"x\": 370,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"levels.relation\",\n        \"to\": \"answer.input\"\n      },\n      {\n        \"from\": \"perStorey.relation\",\n        \"to\": \"levels.input\"\n      },\n      {\n        \"from\": \"elements.relation\",\n        \"to\": \"perStorey.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sort\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"levels\",\n        \"kind\": \"rel.filter\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"perStorey\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"by\": \"MeanEui desc\"\n    },\n    \"elements\": {\n      \"path\": \"nrc_analytics_elements.csv\",\n      \"source\": \"nrc\"\n    },\n    \"levels\": {\n      \"expr\": \"[Storey] == 'Level 1' or [Storey] == 'Level 2'\"\n    },\n    \"perStorey\": {\n      \"aggregates\": \"count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui\",\n      \"groupBy\": \"Storey\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q2-storey-eui   graph 7a1d22aa590c\nelements = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_elements.csv\");\n  // Ok  relation 218 rows x 13 cols  sha b4a76a421e6d  plan 7e3cdd5d3029\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", 3797, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Level 1\", 39, \"Wall\", 615.5, 689.4, 372, 83.6, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", 3999, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Level 1\", 39, \"Wall\", 690, 772.8, 332, 79.2, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", 4043, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Level 1\", 39, \"Wall\", 887.5, 994, 310.8, 63.9, \"Baseline\", \"run-2026-09-17-01\"\nperStorey = rel.aggregate@1(input: elements.relation, groupBy: \"Storey\", aggregates: \"count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui\");\n  // Ok  relation 4 rows x 3 cols  sha 036cd35d079c  plan f85aa003552f\n  //   columns Storey:Text, Elements:Integer, MeanEui:Number\n  //   [0] \"Level 1\", 103, 40.5\n  //   [1] \"Level 2\", 93, 40.56\n  //   [2] \"Roof\", 8, 62.04\nlevels = rel.filter@1(input: perStorey.relation, expr: \"[Storey] == 'Level 1' or [Storey] == 'Level 2'\");\n  // Ok  relation 2 rows x 3 cols  sha d3932d570494  plan 7ea99122c6d0\n  //   columns Storey:Text, Elements:Integer, MeanEui:Number\n  //   [0] \"Level 1\", 103, 40.5\n  //   [1] \"Level 2\", 93, 40.56\nanswer = rel.sort@1(input: levels.relation, by: \"MeanEui desc\");\n  // Ok  relation 2 rows x 3 cols  sha 058106627e0d  plan 2647f6eac13f\n  //   columns Storey:Text, Elements:Integer, MeanEui:Number\n  //   [0] \"Level 2\", 93, 40.56\n  //   [1] \"Level 1\", 103, 40.5\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q2-storey-eui"
+      }
+    },
+    {
+      "id": "t3",
+      "request": {
+        "text": "Which five elements have the highest operational carbon?"
+      },
+      "reply": {
+        "text": "All five are in the Wall category. The highest is Basic Wall:Interior - Partition (92mm Stud):190140 at 412.0 kgCO2e/yr, then 410.8, 402.0, 399.7, and 398.6. The third is an upper cabinet that the dataset files under Wall.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q3-top-elements: 4 nodes, 3 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "4 of 4 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q3-top-elements answer.relation: 5 rows × 4 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.limit)",
+            "source": {
+              "analysisId": "nrc-q3-top-elements",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "OperationalCarbon_kgCO2e_per_year",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "0iEHWY1$XA8eQeeULq4jpl",
+                  "Basic Wall:Interior - Partition (92mm Stud):190140",
+                  "Wall",
+                  412
+                ],
+                [
+                  "0jf0rYHfX3RAB3bSIRjmr1",
+                  "Basic Wall:Exterior - Brick on Block:185101",
+                  "Wall",
+                  410.8
+                ],
+                [
+                  "0iEHWY1$XA8eQeeULq4ien",
+                  "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610",
+                  "Wall",
+                  402
+                ],
+                [
+                  "3Y4YRln2r91vflHcHE5IVT",
+                  "Basic Wall:Interior - Furring (38 mm Stud):217415",
+                  "Wall",
+                  399.7
+                ],
+                [
+                  "3Y4YRln2r91vflHcHE5IVS",
+                  "Basic Wall:Interior - Furring (38 mm Stud):217414",
+                  "Wall",
+                  398.6
+                ]
+              ],
+              "totalRows": 5,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-q3-top-elements",
+            "graphHash": "00a2976fc379c8a5490dc75d8e39cfa334969281559afa9af0dbd76e7896e4ff",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 1030,\n      \"y\": 40\n    },\n    \"columns\": {\n      \"x\": 370,\n      \"y\": 40\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"ranked\": {\n      \"x\": 700,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"ranked.relation\",\n        \"to\": \"answer.input\"\n      },\n      {\n        \"from\": \"elements.relation\",\n        \"to\": \"columns.input\"\n      },\n      {\n        \"from\": \"columns.relation\",\n        \"to\": \"ranked.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.limit\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"columns\",\n        \"kind\": \"rel.select\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"ranked\",\n        \"kind\": \"rel.sort\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"count\": \"5\"\n    },\n    \"columns\": {\n      \"columns\": \"GlobalId, Name, Category, OperationalCarbon_kgCO2e_per_year\"\n    },\n    \"elements\": {\n      \"path\": \"nrc_analytics_elements.csv\",\n      \"source\": \"nrc\"\n    },\n    \"ranked\": {\n      \"by\": \"OperationalCarbon_kgCO2e_per_year desc, GlobalId\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q3-top-elements   graph 00a2976fc379\nelements = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_elements.csv\");\n  // Ok  relation 218 rows x 13 cols  sha b4a76a421e6d  plan 7e3cdd5d3029\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", 3797, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Level 1\", 39, \"Wall\", 615.5, 689.4, 372, 83.6, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", 3999, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Level 1\", 39, \"Wall\", 690, 772.8, 332, 79.2, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", 4043, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Level 1\", 39, \"Wall\", 887.5, 994, 310.8, 63.9, \"Baseline\", \"run-2026-09-17-01\"\ncolumns = rel.select@1(input: elements.relation, columns: \"GlobalId, Name, Category, OperationalCarbon_kgCO2e_per_year\");\n  // Ok  relation 218 rows x 4 cols  sha e4e1f7f3e78b  plan f72398d0794e\n  //   columns GlobalId:Text, Name:Text, Category:Text, OperationalCarbon_kgCO2e_per_year:Number\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Wall\", 372\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Wall\", 332\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Wall\", 310.8\nranked = rel.sort@1(input: columns.relation, by: \"OperationalCarbon_kgCO2e_per_year desc, GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha b0650c666b09  plan 2c3e5327533e\n  //   columns GlobalId:Text, Name:Text, Category:Text, OperationalCarbon_kgCO2e_per_year:Number\n  //   [0] \"0iEHWY1$XA8eQeeULq4jpl\", \"Basic Wall:Interior - Partition (92mm Stud):1901\"..., \"Wall\", 412\n  //   [1] \"0jf0rYHfX3RAB3bSIRjmr1\", \"Basic Wall:Exterior - Brick on Block:185101\", \"Wall\", 410.8\n  //   [2] \"0iEHWY1$XA8eQeeULq4ien\", \"M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:1\"..., \"Wall\", 402\nanswer = rel.limit@1(input: ranked.relation, count: \"5\");\n  // Ok  relation 5 rows x 4 cols  sha 1ec1e6e1d1a6  plan 0af3a51fdc91\n  //   columns GlobalId:Text, Name:Text, Category:Text, OperationalCarbon_kgCO2e_per_year:Number\n  //   [0] \"0iEHWY1$XA8eQeeULq4jpl\", \"Basic Wall:Interior - Partition (92mm Stud):1901\"..., \"Wall\", 412\n  //   [1] \"0jf0rYHfX3RAB3bSIRjmr1\", \"Basic Wall:Exterior - Brick on Block:185101\", \"Wall\", 410.8\n  //   [2] \"0iEHWY1$XA8eQeeULq4ien\", \"M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:1\"..., \"Wall\", 402\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q3-top-elements"
+      }
+    },
+    {
+      "id": "t4",
+      "request": {
+        "text": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?"
+      },
+      "reply": {
+        "text": "That is a type name, not one door: four door instances carry it, at 117.3, 61.8, 54.0, and 146.1 kgCO2e/yr. The table lists all four by GlobalId rather than picking one. The paper's answer, 54.0, is the door it took as first by STEP id, 1hOSvn6df7F8_7GcBWlS8Z. Tell me which door you mean, or ask for the sum.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q4-door-instances: 4 nodes, 3 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "4 of 4 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q4-door-instances answer.relation: 4 rows × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.sort)",
+            "source": {
+              "analysisId": "nrc-q4-door-instances",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "OperationalCarbon_kgCO2e_per_year",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "1aj$VJZFn2TxepZUBcKp$i",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
+                  117.3
+                ],
+                [
+                  "1aj$VJZFn2TxepZUBcKpac",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
+                  61.8
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlS8Z",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173",
+                  54
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlS9F",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257",
+                  146.1
+                ]
+              ],
+              "totalRows": 4,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-q4-door-instances",
+            "graphHash": "ee112000909e168f8da79dc4c01e02baf098b9b22857e320059c078854964d9f",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 1030,\n      \"y\": 40\n    },\n    \"columns\": {\n      \"x\": 700,\n      \"y\": 40\n    },\n    \"doors\": {\n      \"x\": 370,\n      \"y\": 40\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"columns.relation\",\n        \"to\": \"answer.input\"\n      },\n      {\n        \"from\": \"doors.relation\",\n        \"to\": \"columns.input\"\n      },\n      {\n        \"from\": \"elements.relation\",\n        \"to\": \"doors.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sort\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"columns\",\n        \"kind\": \"rel.select\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"doors\",\n        \"kind\": \"rel.filter\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"by\": \"GlobalId\"\n    },\n    \"columns\": {\n      \"columns\": \"GlobalId, Name, OperationalCarbon_kgCO2e_per_year\"\n    },\n    \"doors\": {\n      \"expr\": \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\"\n    },\n    \"elements\": {\n      \"path\": \"nrc_analytics_elements.csv\",\n      \"source\": \"nrc\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q4-door-instances   graph ee112000909e\nelements = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_elements.csv\");\n  // Ok  relation 218 rows x 13 cols  sha b4a76a421e6d  plan 7e3cdd5d3029\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", 3797, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Level 1\", 39, \"Wall\", 615.5, 689.4, 372, 83.6, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", 3999, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Level 1\", 39, \"Wall\", 690, 772.8, 332, 79.2, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", 4043, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Level 1\", 39, \"Wall\", 887.5, 994, 310.8, 63.9, \"Baseline\", \"run-2026-09-17-01\"\ndoors = rel.filter@1(input: elements.relation, expr: \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\");\n  // Ok  relation 4 rows x 13 cols  sha 9d4ca182501c  plan 6dbc89d82931\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"1hOSvn6df7F8_7GcBWlS8Z\", 8066, \"IFCDOOR\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15017\"..., \"Level 1\", 39, \"Other\", 88.7, 99.3, 54, 21.9, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"1hOSvn6df7F8_7GcBWlS9F\", 8169, \"IFCDOOR\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15025\"..., \"Level 1\", 39, \"Other\", 104.7, 117.3, 146.1, 43.7, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"1aj$VJZFn2TxepZUBcKp$i\", 35318, \"IFCDOOR\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20372\"..., \"Level 2\", 43, \"Other\", 83.4, 93.4, 117.3, 28.5, \"Baseline\", \"run-2026-09-17-01\"\ncolumns = rel.select@1(input: doors.relation, columns: \"GlobalId, Name, OperationalCarbon_kgCO2e_per_year\");\n  // Ok  relation 4 rows x 3 cols  sha efa955605c09  plan 323cd637ec4a\n  //   columns GlobalId:Text, Name:Text, OperationalCarbon_kgCO2e_per_year:Number\n  //   [0] \"1hOSvn6df7F8_7GcBWlS8Z\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15017\"..., 54\n  //   [1] \"1hOSvn6df7F8_7GcBWlS9F\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15025\"..., 146.1\n  //   [2] \"1aj$VJZFn2TxepZUBcKp$i\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20372\"..., 117.3\nanswer = rel.sort@1(input: columns.relation, by: \"GlobalId\");\n  // Ok  relation 4 rows x 3 cols  sha eca939818bb0  plan d60b1b169c29\n  //   columns GlobalId:Text, Name:Text, OperationalCarbon_kgCO2e_per_year:Number\n  //   [0] \"1aj$VJZFn2TxepZUBcKp$i\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20372\"..., 117.3\n  //   [1] \"1aj$VJZFn2TxepZUBcKpac\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20403\"..., 61.8\n  //   [2] \"1hOSvn6df7F8_7GcBWlS8Z\", \"M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15017\"..., 54\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q4-door-instances"
+      }
+    },
+    {
+      "id": "t5",
+      "request": {
+        "text": "How much operational carbon is in each category?"
+      },
+      "reply": {
+        "text": "Nine categories. Wall carries the most, 22,854.1 kgCO2e/yr, followed by Floor at 5,593.5; Railing carries the least, 164.8.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q5-by-category: 3 nodes, 2 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "3 of 3 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q5-by-category answer.relation: 9 rows × 2 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.sort)",
+            "source": {
+              "analysisId": "nrc-q5-by-category",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Total",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "Wall",
+                  22854.1
+                ],
+                [
+                  "Floor",
+                  5593.5
+                ],
+                [
+                  "Other",
+                  4313.099999999999
+                ],
+                [
+                  "Stair",
+                  1144.2
+                ],
+                [
+                  "Finish",
+                  985.6999999999998
+                ],
+                [
+                  "Window",
+                  978.9
+                ],
+                [
+                  "Door",
+                  687.1999999999999
+                ],
+                [
+                  "Roof",
+                  474.70000000000005
+                ],
+                [
+                  "Railing",
+                  164.8
+                ]
+              ],
+              "totalRows": 9,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-q5-by-category",
+            "graphHash": "d5770329b662e51ffd27373077958ab49fcb46ce655d16a85beb16e2f75c25f1",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 700,\n      \"y\": 40\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"perCategory\": {\n      \"x\": 370,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"perCategory.relation\",\n        \"to\": \"answer.input\"\n      },\n      {\n        \"from\": \"elements.relation\",\n        \"to\": \"perCategory.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sort\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"perCategory\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"by\": \"Total desc\"\n    },\n    \"elements\": {\n      \"path\": \"nrc_analytics_elements.csv\",\n      \"source\": \"nrc\"\n    },\n    \"perCategory\": {\n      \"aggregates\": \"sum(OperationalCarbon_kgCO2e_per_year) as Total\",\n      \"groupBy\": \"Category\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q5-by-category   graph d5770329b662\nelements = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_elements.csv\");\n  // Ok  relation 218 rows x 13 cols  sha b4a76a421e6d  plan 7e3cdd5d3029\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", 3797, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Level 1\", 39, \"Wall\", 615.5, 689.4, 372, 83.6, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", 3999, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Level 1\", 39, \"Wall\", 690, 772.8, 332, 79.2, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", 4043, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Level 1\", 39, \"Wall\", 887.5, 994, 310.8, 63.9, \"Baseline\", \"run-2026-09-17-01\"\nperCategory = rel.aggregate@1(input: elements.relation, groupBy: \"Category\", aggregates: \"sum(OperationalCarbon_kgCO2e_per_year) as Total\");\n  // Ok  relation 9 rows x 2 cols  sha 4cfe2e3d67ea  plan 684d4b344e74\n  //   columns Category:Text, Total:Number\n  //   [0] \"Door\", 687.2\n  //   [1] \"Finish\", 985.7\n  //   [2] \"Floor\", 5594\nanswer = rel.sort@1(input: perCategory.relation, by: \"Total desc\");\n  // Ok  relation 9 rows x 2 cols  sha 9a0cf6ff5a2f  plan 85c7b5077aca\n  //   columns Category:Text, Total:Number\n  //   [0] \"Wall\", 2.285E+04\n  //   [1] \"Floor\", 5594\n  //   [2] \"Other\", 4313\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q5-by-category"
+      }
+    },
+    {
+      "id": "t6",
+      "request": {
+        "text": "Which analysis run produced these values, and when?"
+      },
+      "reply": {
+        "text": "Every one of the 218 elements cites run run-2026-09-17-01, scenario Baseline. The data has no timestamp column: the only date is the one in the run id, 17 September 2026.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q6-analysis-run: 2 nodes, 1 edge"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "2 of 2 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q6-analysis-run answer.relation: 1 row × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.aggregate)",
+            "source": {
+              "analysisId": "nrc-q6-analysis-run",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "AnalysisRunId",
+                  "type": "Text"
+                },
+                {
+                  "name": "ScenarioName",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "run-2026-09-17-01",
+                  "Baseline",
+                  218
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-q6-analysis-run",
+            "graphHash": "a7effb06bf32e413783649f9343c256c87e9e66e86f65ac46234b22596be1008",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 370,\n      \"y\": 40\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"elements.relation\",\n        \"to\": \"answer.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"aggregates\": \"count(*) as Elements\",\n      \"groupBy\": \"AnalysisRunId, ScenarioName\"\n    },\n    \"elements\": {\n      \"path\": \"nrc_analytics_elements.csv\",\n      \"source\": \"nrc\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q6-analysis-run   graph a7effb06bf32\nelements = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_elements.csv\");\n  // Ok  relation 218 rows x 13 cols  sha b4a76a421e6d  plan 7e3cdd5d3029\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", 3797, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Level 1\", 39, \"Wall\", 615.5, 689.4, 372, 83.6, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", 3999, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Level 1\", 39, \"Wall\", 690, 772.8, 332, 79.2, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", 4043, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Level 1\", 39, \"Wall\", 887.5, 994, 310.8, 63.9, \"Baseline\", \"run-2026-09-17-01\"\nanswer = rel.aggregate@1(input: elements.relation, groupBy: \"AnalysisRunId, ScenarioName\", aggregates: \"count(*) as Elements\");\n  // Ok  relation 1 rows x 3 cols  sha 38ae292008ae  plan 0d799a67d31e\n  //   columns AnalysisRunId:Text, ScenarioName:Text, Elements:Integer\n  //   [0] \"run-2026-09-17-01\", \"Baseline\", 218\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q6-analysis-run"
+      }
+    },
+    {
+      "id": "t7",
+      "request": {
+        "text": "What is the embodied carbon of the roof?"
+      },
+      "reply": {
+        "text": "Not available. The roof, 0jf0rYHfX3RAB3bSIRjmxl (IFCROOF), has no embodied-carbon row in the analytics, so the graph returns it as the element missing a value. That absence is the answer; no value is inferred from its neighbours or its name.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q7-absence: 7 nodes, 6 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "7 of 7 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q7-absence answer.relation: 1 row × 2 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.select)",
+            "source": {
+              "analysisId": "nrc-q7-absence",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "IfcClass",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  "0jf0rYHfX3RAB3bSIRjmxl",
+                  "IFCROOF"
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-q7-absence",
+            "graphHash": "ab84a087d177943c658a17b605f1cf451d002624cd7058dfd9e7a103b7c13fe5",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 1690,\n      \"y\": 40\n    },\n    \"distinct\": {\n      \"x\": 1360,\n      \"y\": 40\n    },\n    \"embodied\": {\n      \"x\": 370,\n      \"y\": 240\n    },\n    \"metricsForEmbodied\": {\n      \"x\": 40,\n      \"y\": 240\n    },\n    \"metricsForRoofs\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"missing\": {\n      \"x\": 1030,\n      \"y\": 40\n    },\n    \"roofs\": {\n      \"x\": 370,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"distinct.relation\",\n        \"to\": \"answer.input\"\n      },\n      {\n        \"from\": \"missing.relation\",\n        \"to\": \"distinct.input\"\n      },\n      {\n        \"from\": \"metricsForEmbodied.relation\",\n        \"to\": \"embodied.input\"\n      },\n      {\n        \"from\": \"roofs.relation\",\n        \"to\": \"missing.left\"\n      },\n      {\n        \"from\": \"embodied.relation\",\n        \"to\": \"missing.right\"\n      },\n      {\n        \"from\": \"metricsForRoofs.relation\",\n        \"to\": \"roofs.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.select\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"distinct\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"embodied\",\n        \"kind\": \"rel.filter\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"metricsForEmbodied\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"metricsForRoofs\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"missing\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"roofs\",\n        \"kind\": \"rel.filter\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"columns\": \"GlobalId, IfcClass\"\n    },\n    \"distinct\": {\n      \"aggregates\": \"count(*) as OtherMetrics\",\n      \"groupBy\": \"GlobalId, IfcClass\"\n    },\n    \"embodied\": {\n      \"expr\": \"[MetricId] == 'NRC.EC.A1A3.TOTAL'\"\n    },\n    \"metricsForEmbodied\": {\n      \"path\": \"nrc_analytics_long.csv\",\n      \"source\": \"nrc\"\n    },\n    \"metricsForRoofs\": {\n      \"path\": \"nrc_analytics_long.csv\",\n      \"source\": \"nrc\"\n    },\n    \"missing\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"roofs\": {\n      \"expr\": \"[IfcClass] == 'IFCROOF'\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q7-absence   graph ab84a087d177\nmetricsForEmbodied = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_long.csv\");\n  // Ok  relation 870 rows x 12 cols  sha 23514a64d115  plan d8e1967ca45d\n  //   columns AnalysisRunId:Text, GlobalId:Text, IfcClass:Text, MetricId:Text, MetricName:Text, Value:Number, Unit:Text, LifecycleStage:Text, Scenario:Text, Source:Text, Confidence:Number, ComputationMethod:Text\n  //   [0] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNtn\", \"IFCWALLSTANDARDCASE\", \"NRC.EC.A1A3.TOTAL\", \"EmbodiedCarbon_A1A3_kgCO2e\", 615.5, \"kgCO2e\", \"A1-A3\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [1] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNtn\", \"IFCWALLSTANDARDCASE\", \"NRC.EC.A1A5.TOTAL\", \"EmbodiedCarbon_A1A5_kgCO2e\", 689.4, \"kgCO2e\", \"A1-A5\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [2] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNtn\", \"IFCWALLSTANDARDCASE\", \"NRC.OC.ANNUAL\", \"OperationalCarbon_kgCO2e_per_year\", 372, \"kgCO2e/yr\", \"B6\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\nembodied = rel.filter@1(input: metricsForEmbodied.relation, expr: \"[MetricId] == 'NRC.EC.A1A3.TOTAL'\");\n  // Ok  relation 217 rows x 12 cols  sha c6ef7824dfc4  plan b0d1b9c52aae\n  //   columns AnalysisRunId:Text, GlobalId:Text, IfcClass:Text, MetricId:Text, MetricName:Text, Value:Number, Unit:Text, LifecycleStage:Text, Scenario:Text, Source:Text, Confidence:Number, ComputationMethod:Text\n  //   [0] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNtn\", \"IFCWALLSTANDARDCASE\", \"NRC.EC.A1A3.TOTAL\", \"EmbodiedCarbon_A1A3_kgCO2e\", 615.5, \"kgCO2e\", \"A1-A3\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [1] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNqI\", \"IFCWALLSTANDARDCASE\", \"NRC.EC.A1A3.TOTAL\", \"EmbodiedCarbon_A1A3_kgCO2e\", 690, \"kgCO2e\", \"A1-A3\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [2] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNr2\", \"IFCWALLSTANDARDCASE\", \"NRC.EC.A1A3.TOTAL\", \"EmbodiedCarbon_A1A3_kgCO2e\", 887.5, \"kgCO2e\", \"A1-A3\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\nmetricsForRoofs = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_long.csv\");\n  // Ok  relation 870 rows x 12 cols  sha 23514a64d115  plan d8e1967ca45d\n  //   columns AnalysisRunId:Text, GlobalId:Text, IfcClass:Text, MetricId:Text, MetricName:Text, Value:Number, Unit:Text, LifecycleStage:Text, Scenario:Text, Source:Text, Confidence:Number, ComputationMethod:Text\n  //   [0] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNtn\", \"IFCWALLSTANDARDCASE\", \"NRC.EC.A1A3.TOTAL\", \"EmbodiedCarbon_A1A3_kgCO2e\", 615.5, \"kgCO2e\", \"A1-A3\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [1] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNtn\", \"IFCWALLSTANDARDCASE\", \"NRC.EC.A1A5.TOTAL\", \"EmbodiedCarbon_A1A5_kgCO2e\", 689.4, \"kgCO2e\", \"A1-A5\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [2] \"run-2026-09-17-01\", \"2O2Fr$t4X7Zf8NOew3FNtn\", \"IFCWALLSTANDARDCASE\", \"NRC.OC.ANNUAL\", \"OperationalCarbon_kgCO2e_per_year\", 372, \"kgCO2e/yr\", \"B6\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\nroofs = rel.filter@1(input: metricsForRoofs.relation, expr: \"[IfcClass] == 'IFCROOF'\");\n  // Ok  relation 2 rows x 12 cols  sha ad038fcf7212  plan becde61fb55b\n  //   columns AnalysisRunId:Text, GlobalId:Text, IfcClass:Text, MetricId:Text, MetricName:Text, Value:Number, Unit:Text, LifecycleStage:Text, Scenario:Text, Source:Text, Confidence:Number, ComputationMethod:Text\n  //   [0] \"run-2026-09-17-01\", \"0jf0rYHfX3RAB3bSIRjmxl\", \"IFCROOF\", \"NRC.OC.ANNUAL\", \"OperationalCarbon_kgCO2e_per_year\", 251.3, \"kgCO2e/yr\", \"B6\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [1] \"run-2026-09-17-01\", \"0jf0rYHfX3RAB3bSIRjmxl\", \"IFCROOF\", \"NRC.EUI.ANNUAL\", \"EnergyUseIntensity_kWh_per_m2_year\", 73.6, \"kWh/m2/yr\", \"B6\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\nmissing = rel.join@1(left: roofs.relation, right: embodied.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"anti\");\n  // Ok  relation 2 rows x 12 cols  sha ad038fcf7212  plan e4e9253abc74\n  //   columns AnalysisRunId:Text, GlobalId:Text, IfcClass:Text, MetricId:Text, MetricName:Text, Value:Number, Unit:Text, LifecycleStage:Text, Scenario:Text, Source:Text, Confidence:Number, ComputationMethod:Text\n  //   [0] \"run-2026-09-17-01\", \"0jf0rYHfX3RAB3bSIRjmxl\", \"IFCROOF\", \"NRC.OC.ANNUAL\", \"OperationalCarbon_kgCO2e_per_year\", 251.3, \"kgCO2e/yr\", \"B6\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\n  //   [1] \"run-2026-09-17-01\", \"0jf0rYHfX3RAB3bSIRjmxl\", \"IFCROOF\", \"NRC.EUI.ANNUAL\", \"EnergyUseIntensity_kWh_per_m2_year\", 73.6, \"kWh/m2/yr\", \"B6\", \"Baseline\", \"synthetic-generator-v1\", 0.5, \"type-base-x-hash-jitter\"\ndistinct = rel.aggregate@1(input: missing.relation, groupBy: \"GlobalId, IfcClass\", aggregates: \"count(*) as OtherMetrics\");\n  // Ok  relation 1 rows x 3 cols  sha e7bca4c5de63  plan f6e55517ff03\n  //   columns GlobalId:Text, IfcClass:Text, OtherMetrics:Integer\n  //   [0] \"0jf0rYHfX3RAB3bSIRjmxl\", \"IFCROOF\", 2\nanswer = rel.select@1(input: distinct.relation, columns: \"GlobalId, IfcClass\");\n  // Ok  relation 1 rows x 2 cols  sha 3ded27a661a9  plan dc6847dd9b6e\n  //   columns GlobalId:Text, IfcClass:Text\n  //   [0] \"0jf0rYHfX3RAB3bSIRjmxl\", \"IFCROOF\"\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q7-absence"
+      }
+    },
+    {
+      "id": "t8",
+      "request": {
+        "text": "What is the total embodied carbon (A1-A3) per storey?"
+      },
+      "reply": {
+        "text": "Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, and Roof 5,821.0 kgCO2e. The table also carries each storey's element count and mean energy intensity.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q8-per-storey: 3 nodes, 2 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "3 of 3 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q8-per-storey answer.relation: 4 rows × 4 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.sort)",
+            "source": {
+              "analysisId": "nrc-q8-per-storey",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Storey",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                },
+                {
+                  "name": "Embodied",
+                  "type": "Number"
+                },
+                {
+                  "name": "MeanEui",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "Level 1",
+                  103,
+                  49451.19999999999,
+                  40.4990291262136
+                ],
+                [
+                  "Level 2",
+                  93,
+                  48696.80000000001,
+                  40.556989247311854
+                ],
+                [
+                  "T/FDN",
+                  14,
+                  11761.300000000001,
+                  61.75714285714286
+                ],
+                [
+                  "Roof",
+                  8,
+                  5821,
+                  62.037499999999994
+                ]
+              ],
+              "totalRows": 4,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-q8-per-storey",
+            "graphHash": "4784dc275d0ca851b2fa90119ef842866c96e3709d0990c14cf304ec6bb48dd9",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 700,\n      \"y\": 40\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"perStorey\": {\n      \"x\": 370,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"perStorey.relation\",\n        \"to\": \"answer.input\"\n      },\n      {\n        \"from\": \"elements.relation\",\n        \"to\": \"perStorey.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sort\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"perStorey\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"by\": \"Embodied desc\"\n    },\n    \"elements\": {\n      \"path\": \"nrc_analytics_elements.csv\",\n      \"source\": \"nrc\"\n    },\n    \"perStorey\": {\n      \"aggregates\": \"count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui\",\n      \"groupBy\": \"Storey\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-q8-per-storey   graph 4784dc275d0c\nelements = rel.csv@1(source: \"nrc\", path: \"nrc_analytics_elements.csv\");\n  // Ok  relation 218 rows x 13 cols  sha b4a76a421e6d  plan 7e3cdd5d3029\n  //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text\n  //   [0] \"2O2Fr$t4X7Zf8NOew3FNtn\", 3797, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138062\", \"Level 1\", 39, \"Wall\", 615.5, 689.4, 372, 83.6, \"Baseline\", \"run-2026-09-17-01\"\n  //   [1] \"2O2Fr$t4X7Zf8NOew3FNqI\", 3999, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138157\", \"Level 1\", 39, \"Wall\", 690, 772.8, 332, 79.2, \"Baseline\", \"run-2026-09-17-01\"\n  //   [2] \"2O2Fr$t4X7Zf8NOew3FNr2\", 4043, \"IFCWALLSTANDARDCASE\", \"Basic Wall:Exterior - Brick on Block:138237\", \"Level 1\", 39, \"Wall\", 887.5, 994, 310.8, 63.9, \"Baseline\", \"run-2026-09-17-01\"\nperStorey = rel.aggregate@1(input: elements.relation, groupBy: \"Storey\", aggregates: \"count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui\");\n  // Ok  relation 4 rows x 4 cols  sha 3a94cd01cb41  plan 69c0bd9cf267\n  //   columns Storey:Text, Elements:Integer, Embodied:Number, MeanEui:Number\n  //   [0] \"Level 1\", 103, 4.945E+04, 40.5\n  //   [1] \"Level 2\", 93, 4.87E+04, 40.56\n  //   [2] \"Roof\", 8, 5821, 62.04\nanswer = rel.sort@1(input: perStorey.relation, by: \"Embodied desc\");\n  // Ok  relation 4 rows x 4 cols  sha 1c578d0aef54  plan ffe80e089d5f\n  //   columns Storey:Text, Elements:Integer, Embodied:Number, MeanEui:Number\n  //   [0] \"Level 1\", 103, 4.945E+04, 40.5\n  //   [1] \"Level 2\", 93, 4.87E+04, 40.56\n  //   [2] \"T/FDN\", 14, 1.176E+04, 61.76\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-q8-per-storey"
+      }
+    },
+    {
+      "id": "t9",
+      "request": {
+        "text": "Chart embodied and operational carbon per storey."
+      },
+      "reply": {
+        "text": "One pair of bars per storey, embodied A1-A3 beside operational, plus the building row: 115,730.3 kgCO2e embodied and 37,196.2 kgCO2e/yr operational. The operational total is turn 1's answer.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-storey-carbon-chart: 2 nodes, 1 edge"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "2 of 2 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-storey-carbon-chart answer.table: 5 rows × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "chart",
+            "id": "e1",
+            "caption": "answer (chart.bar)",
+            "source": {
+              "analysisId": "nrc-storey-carbon-chart",
+              "nodeId": "answer",
+              "port": "table"
+            },
+            "chart": {
+              "chart": "bar",
+              "categoryColumn": "Container",
+              "seriesColumns": [
+                "EmbodiedCarbon_A1A3_kgCO2e",
+                "OperationalCarbon_kgCO2e_per_year"
+              ],
+              "title": "Carbon per storey (synthetic)"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Container",
+                  "type": "Text"
+                },
+                {
+                  "name": "EmbodiedCarbon_A1A3_kgCO2e",
+                  "type": "Number"
+                },
+                {
+                  "name": "OperationalCarbon_kgCO2e_per_year",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "Building",
+                  115730.3,
+                  37196.2
+                ],
+                [
+                  "Level 1",
+                  49451.2,
+                  17457
+                ],
+                [
+                  "Level 2",
+                  48696.8,
+                  13970.2
+                ],
+                [
+                  "T/FDN",
+                  11761.3,
+                  4001.7
+                ],
+                [
+                  "Roof",
+                  5821,
+                  1767.3
+                ]
+              ],
+              "totalRows": 5,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-storey-carbon-chart",
+            "graphHash": "dc54972dae181ae8a7a7d8637b6036d053c129d140cb8825311337916dc7ddde",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 420,\n      \"y\": 40\n    },\n    \"storeys\": {\n      \"x\": 40,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"storeys.table\",\n        \"to\": \"answer.table\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"chart.bar\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"storeys\",\n        \"kind\": \"csv.read\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"labelColumn\": \"Container\",\n      \"sort\": \"desc\",\n      \"title\": \"Carbon per storey (synthetic)\",\n      \"valueColumns\": \"EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year\"\n    },\n    \"storeys\": {\n      \"path\": \"C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/nrc_analytics_storeys.csv\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-storey-carbon-chart   graph dc54972dae18\nstoreys = csv.read@1(path: \"{MODELS}/nrc_analytics_storeys.csv\");\n  // Ok  table 5 rows x 7 cols  sha f05914b68c7f\n  //   columns Container:Text, EntityId:Integer, Elements:Integer, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, MeanEnergyUseIntensity_kWh_per_m2_year:Number\n  //   [0] \"Level 1\", 39, 103, 4.945E+04, 5.539E+04, 1.746E+04, 40.5\n  //   [1] \"Level 2\", 43, 93, 4.87E+04, 5.454E+04, 1.397E+04, 40.56\n  //   [2] \"Roof\", 51, 8, 5821, 6519, 1767, 62.04\nanswer = chart.bar@1(table: storeys.table, labelColumn: \"Container\", valueColumns: \"EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year\", title: \"Carbon per storey (synthetic)\", sort: \"desc\");\n  // Ok\n  //   table: table 5 rows x 3 cols  sha beac2a1a0802\n  //     columns Container:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number\n  //     chart 5 categories x 2 series: \"EmbodiedCarbon_A1A3_kgCO2e\", \"OperationalCarbon_kgCO2e_per_year\"\n  //     \"Building\": 1.157E+05, 3.72E+04\n  //     \"Level 1\": 4.945E+04, 1.746E+04\n  //     \"Level 2\": 4.87E+04, 1.397E+04\n  //     \"T/FDN\": 1.176E+04, 4002\n  //     \"Roof\": 5821, 1767\n  //   legend: table 0 rows x 9 cols  sha b47d2a37380c\n  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer\n  //     legend empty\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-storey-carbon-chart"
+      }
+    }
+  ]
+}

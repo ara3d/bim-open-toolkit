@@ -1,0 +1,1352 @@
+{
+  "format": "bimopen-notebook/0.1",
+  "title": "The NRC IFC test kit, steps 1 to 5",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim"
+  },
+  "turns": [
+    {
+      "id": "t1",
+      "request": {
+        "text": "Load duplex.ifc and connect analytics_dataset_with_levels.csv to it using GlobalId."
+      },
+      "reply": {
+        "text": "Joined on GlobalId. Every CSV row names an entity in the model. 21 physical elements (entities with a rendered mesh) have no CSV row, and 52 CSV rows match an entity that has no mesh of its own. The match report counts both instead of dropping them.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-join-analytics: 19 nodes, 25 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "19 of 19 nodes Ok"
+          },
+          {
+            "name": "Read",
+            "ok": true,
+            "summary": "samples/nrc/test-kit/analytics_dataset_with_levels.csv: 25889 bytes"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-join-analytics answer.relation: 1 row × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "file",
+            "id": "e1",
+            "caption": "The test kit's analytics",
+            "path": "samples/nrc/test-kit/analytics_dataset_with_levels.csv",
+            "mediaType": "text/csv",
+            "bytes": 25889,
+            "sha256": "0d2c7cf06c0e98f394a8d099f50aa53cf8cfac2fec247417b8751210df8f926b",
+            "preview": "GlobalId,Name,Level,operational_carbon,energy_intensity,category\n2OrWItJ6zAwBNp0OUxK_l8,M_W-Wide Flange:W310X60:W310X60:207325,Level 1,139.5,27.7,Other\n2OrWItJ6zAwBNp0OUxK$8W,M_W-Wide Flange:W410X60:W410X60:208949,Level 1,59.5,25.9,Other\n2OrWItJ6zAwBNp0OUxK$Bq,M_W-Wide Flange:W410X60:W410X60:209121,Level 2,95.1,29.3,Other\n2OrWItJ6zAwBNp0OUxK$CR,M_W-Wide Flange:W410X60:W410X60:209166,Level 2,65.1,36.0,Other\n2OrWItJ6zAwBNp0OUxK$Dv,M_W-Wide Flange:W310X60:W310X60:209260,Level 1,102.8,16.3,Other"
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "Match report",
+            "source": {
+              "analysisId": "nrc-join-analytics",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "CsvRowsWithNoEntity",
+                  "type": "Integer"
+                },
+                {
+                  "name": "PhysicalElementsWithNoCsvRow",
+                  "type": "Integer"
+                },
+                {
+                  "name": "CsvRowsMatchingNonPhysicalEntity",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  0,
+                  21,
+                  52
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e3",
+            "analysisId": "nrc-join-analytics",
+            "graphHash": "f4d1587333b06f495c3a51fb0bda0ead11736b57c5da7594af24fba1f16bae5b",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 1690,\n      \"y\": 40\n    },\n    \"coloredCarbon\": {\n      \"x\": 370,\n      \"y\": 920\n    },\n    \"coloredCategory\": {\n      \"x\": 370,\n      \"y\": 1140\n    },\n    \"csv\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"csvMatchedNonPhysical\": {\n      \"x\": 1360,\n      \"y\": 700\n    },\n    \"csvNoEntity\": {\n      \"x\": 1030,\n      \"y\": 40\n    },\n    \"csvWithStorey\": {\n      \"x\": 1030,\n      \"y\": 920\n    },\n    \"entities\": {\n      \"x\": 40,\n      \"y\": 260\n    },\n    \"entityStorey\": {\n      \"x\": 700,\n      \"y\": 480\n    },\n    \"instances\": {\n      \"x\": 370,\n      \"y\": 700\n    },\n    \"model\": {\n      \"x\": 40,\n      \"y\": 700\n    },\n    \"nonPhysicalEntities\": {\n      \"x\": 1030,\n      \"y\": 700\n    },\n    \"perStorey\": {\n      \"x\": 1360,\n      \"y\": 1140\n    },\n    \"physical\": {\n      \"x\": 700,\n      \"y\": 700\n    },\n    \"physicalEntities\": {\n      \"x\": 1030,\n      \"y\": 480\n    },\n    \"physicalNoCsv\": {\n      \"x\": 1360,\n      \"y\": 480\n    },\n    \"storeyComparison\": {\n      \"x\": 1360,\n      \"y\": 920\n    },\n    \"storeyOf\": {\n      \"x\": 40,\n      \"y\": 480\n    },\n    \"values\": {\n      \"x\": 40,\n      \"y\": 920\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"csvNoEntity.relation\",\n        \"to\": \"answer.t1\"\n      },\n      {\n        \"from\": \"physicalNoCsv.relation\",\n        \"to\": \"answer.t2\"\n      },\n      {\n        \"from\": \"csvMatchedNonPhysical.relation\",\n        \"to\": \"answer.t3\"\n      },\n      {\n        \"from\": \"model.instances\",\n        \"to\": \"coloredCarbon.instances\"\n      },\n      {\n        \"from\": \"values.table\",\n        \"to\": \"coloredCarbon.values\"\n      },\n      {\n        \"from\": \"model.instances\",\n        \"to\": \"coloredCategory.instances\"\n      },\n      {\n        \"from\": \"values.table\",\n        \"to\": \"coloredCategory.values\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"csvMatchedNonPhysical.left\"\n      },\n      {\n        \"from\": \"nonPhysicalEntities.relation\",\n        \"to\": \"csvMatchedNonPhysical.right\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"csvNoEntity.left\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"csvNoEntity.right\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"csvWithStorey.left\"\n      },\n      {\n        \"from\": \"entityStorey.relation\",\n        \"to\": \"csvWithStorey.right\"\n      },\n      {\n        \"from\": \"storeyOf.relation\",\n        \"to\": \"entityStorey.left\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"entityStorey.right\"\n      },\n      {\n        \"from\": \"model.instances\",\n        \"to\": \"instances.table\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"nonPhysicalEntities.left\"\n      },\n      {\n        \"from\": \"physical.relation\",\n        \"to\": \"nonPhysicalEntities.right\"\n      },\n      {\n        \"from\": \"csvWithStorey.relation\",\n        \"to\": \"perStorey.input\"\n      },\n      {\n        \"from\": \"instances.relation\",\n        \"to\": \"physical.input\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"physicalEntities.left\"\n      },\n      {\n        \"from\": \"physical.relation\",\n        \"to\": \"physicalEntities.right\"\n      },\n      {\n        \"from\": \"physicalEntities.relation\",\n        \"to\": \"physicalNoCsv.left\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"physicalNoCsv.right\"\n      },\n      {\n        \"from\": \"csvWithStorey.relation\",\n        \"to\": \"storeyComparison.input\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"coloredCarbon\",\n        \"kind\": \"view3d.color\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"coloredCategory\",\n        \"kind\": \"view3d.color\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"csv\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"csvMatchedNonPhysical\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"csvNoEntity\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"csvWithStorey\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"entities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"entityStorey\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"instances\",\n        \"kind\": \"rel.fromTable\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"model\",\n        \"kind\": \"view3d.instances\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"nonPhysicalEntities\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"perStorey\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"physical\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"physicalEntities\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"physicalNoCsv\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"storeyComparison\",\n        \"kind\": \"rel.select\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"storeyOf\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"values\",\n        \"kind\": \"csv.read\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"sql\": \"SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity\"\n    },\n    \"coloredCarbon\": {\n      \"colorMap\": \"viridis\",\n      \"joinColumn\": \"globalId\",\n      \"valueColumn\": \"operational_carbon\"\n    },\n    \"coloredCategory\": {\n      \"colorMap\": \"category10\",\n      \"joinColumn\": \"globalId\",\n      \"valueColumn\": \"category\"\n    },\n    \"csv\": {\n      \"path\": \"test-kit/analytics_dataset_with_levels.csv\",\n      \"source\": \"nrc\"\n    },\n    \"csvMatchedNonPhysical\": {\n      \"kind\": \"semi\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"csvNoEntity\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"csvWithStorey\": {\n      \"kind\": \"inner\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"entities\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"EntityText\"\n    },\n    \"entityStorey\": {\n      \"kind\": \"inner\",\n      \"leftKey\": \"EntityIndex\",\n      \"rightKey\": \"EntityIndex\"\n    },\n    \"instances\": {\n      \"name\": \"instances\"\n    },\n    \"model\": {\n      \"path\": \"C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/duplex-base.ifc\"\n    },\n    \"nonPhysicalEntities\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"globalId\"\n    },\n    \"perStorey\": {\n      \"aggregates\": \"count(*) as Elements, sum(operational_carbon) as TotalOperationalCarbon, avg(operational_carbon) as MeanOperationalCarbon, avg(energy_intensity) as MeanEnergyIntensity\",\n      \"groupBy\": \"StoreyName\"\n    },\n    \"physical\": {\n      \"aggregates\": \"count(*) as meshCount\",\n      \"groupBy\": \"globalId\"\n    },\n    \"physicalEntities\": {\n      \"kind\": \"semi\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"globalId\"\n    },\n    \"physicalNoCsv\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"storeyComparison\": {\n      \"columns\": \"GlobalId, Level, StoreyName\"\n    },\n    \"storeyOf\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"StoreyOfElement\"\n    },\n    \"values\": {\n      \"path\": \"C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/test-kit/analytics_dataset_with_levels.csv\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-join-analytics   graph f4d1587333b0\ncsv = rel.csv@1(source: \"nrc\", path: \"test-kit/analytics_dataset_with_levels.csv\");\n  // Ok  relation 268 rows x 6 cols  sha 2ed673e1a75a  plan d86be52e53af\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\nentities = rel.table@1(source: \"duplex-base\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan fbac43cf5e83\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\ncsvNoEntity = rel.join@1(left: csv.relation, right: entities.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"anti\");\n  // Ok  relation 0 rows x 6 cols  sha 6bd2a8141d22  plan cf6507388a45\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\nmodel = view3d.instances@1(path: \"{MODELS}/duplex-base.ifc\");\n  // Ok  table 714 rows x 11 cols  sha f912cca851d5\n  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number\n  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //   no colour columns\n  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\ninstances = rel.fromTable@1(table: model.instances, name: \"instances\");\n  // Ok  relation 714 rows x 11 cols  sha f912cca851d5  plan 68e385fef766\n  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number\n  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //   no colour columns\n  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\nphysical = rel.aggregate@1(input: instances.relation, groupBy: \"globalId\", aggregates: \"count(*) as meshCount\");\n  // Ok  relation 237 rows x 2 cols  sha a82986dd9677  plan f772f89fd074\n  //   columns globalId:Text, meshCount:Integer\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", 1\n  //   [1] \"0BTBFw6f90Nfh9rP1dlXr$\", 1\n  //   [2] \"0BTBFw6f90Nfh9rP1dlXr2\", 1\nnonPhysicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: \"GlobalId\", rightKey: \"globalId\", kind: \"anti\");\n  // Ok  relation 4484 rows x 6 cols  sha ce71d876d779  plan fee6227021b1\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\ncsvMatchedNonPhysical = rel.join@1(left: csv.relation, right: nonPhysicalEntities.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"semi\");\n  // Ok  relation 52 rows x 6 cols  sha f1ec4ac60c06  plan b2ede90dd9d9\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"0wkEuT1wr1kOyafLY4v_O1\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"Level 1\", 100.9, 21.3, \"Stair\"\n  //   [1] \"21ldoMpbP4VfsJ0XGY_34d\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"Level 1\", 171.8, 40, \"Stair\"\n  //   [2] \"1xS3BCk291UvhgP2dvNrrP\", \"M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788:1\", \"Level 1\", 18.3, 15.4, \"Window\"\nphysicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: \"GlobalId\", rightKey: \"globalId\", kind: \"semi\");\n  // Ok  relation 237 rows x 6 cols  sha 8ee2afc729f8  plan 52347b7c0711\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 2066, 8283, \"1hOSvn6df7F8_7GcBWlSFK\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [1] 2073, 8386, \"1hOSvn6df7F8_7GcBWlSDm\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [2] 2561, 12574, \"0wkEuT1wr1kOyafLY4vyu$\", \"M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572\"..., \"IFCFURNISHINGELEMENT\", \"800 mm\"\nphysicalNoCsv = rel.join@1(left: physicalEntities.relation, right: csv.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"anti\");\n  // Ok  relation 21 rows x 6 cols  sha e75687c86579  plan 062a7f3282ff\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 3013, 1627, \"0BTBFw6f90Nfh9rP1dl_CZ\", \"Living Room\", \"IFCSPACE\", null\n  //   [1] 3029, 67, \"0BTBFw6f90Nfh9rP1dlXr2\", \"Living Room\", \"IFCSPACE\", null\n  //   [2] 3684, 212, \"0BTBFw6f90Nfh9rP1dlXr$\", \"Kitchen\", \"IFCSPACE\", null\nanswer = rel.sql@1(t1: csvNoEntity.relation, t2: physicalNoCsv.relation, t3: csvMatchedNonPhysical.relation, sql: \"SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity\");\n  // Ok  relation 1 rows x 3 cols  sha fbbe8891c5ce  plan 0779788ee83a\n  //   columns CsvRowsWithNoEntity:Integer, PhysicalElementsWithNoCsvRow:Integer, CsvRowsMatchingNonPhysicalEntity:Integer\n  //   [0] 0, 21, 52\nstoreyOf = rel.table@1(source: \"duplex-base\", table: \"StoreyOfElement\");\n  // Ok  relation 239 rows x 4 cols  sha d6a86ac86ade  plan a8c1aa22dccb\n  //   columns EntityIndex:Integer, StoreyIndex:Integer, StoreyName:Text, Depth:Integer\n  //   [0] 2712, 133, \"Level 1\", 2\n  //   [1] 2561, 134, \"Level 2\", 2\n  //   [2] 3531, 135, \"T/FDN\", 1\nentityStorey = rel.join@1(left: storeyOf.relation, right: entities.relation, leftKey: \"EntityIndex\", rightKey: \"EntityIndex\", kind: \"inner\");\n  // Ok  relation 239 rows x 10 cols  sha 60ec83d0ad7b  plan 255b1f1380d5\n  //   columns EntityIndex:Integer, StoreyIndex:Integer, StoreyName:Text, Depth:Integer, EntityIndex_right:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 2066, 134, \"Level 2\", 1, 2066, 8283, \"1hOSvn6df7F8_7GcBWlSFK\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [1] 2073, 134, \"Level 2\", 1, 2073, 8386, \"1hOSvn6df7F8_7GcBWlSDm\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [2] 2561, 134, \"Level 2\", 2, 2561, 12574, \"0wkEuT1wr1kOyafLY4vyu$\", \"M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572\"..., \"IFCFURNISHINGELEMENT\", \"800 mm\"\ncsvWithStorey = rel.join@1(left: csv.relation, right: entityStorey.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"inner\");\n  // Ok  relation 218 rows x 16 cols  sha c5a65ebe7c0e  plan 11a08027cbcb\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text, EntityIndex:Integer, StoreyIndex:Integer, StoreyName:Text, Depth:Integer, EntityIndex_right:Integer, StepId:Integer, GlobalId_right:Text, Name_right:Text, Category_right:Text, Type:Text\n  //   [0] \"1hOSvn6df7F8_7GcBWlSFK\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037\"..., \"Level 2\", 53.9, 45.8, \"Other\", 2066, 134, \"Level 2\", 1, 2066, 8283, \"1hOSvn6df7F8_7GcBWlSFK\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [1] \"1hOSvn6df7F8_7GcBWlSDm\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047\"..., \"Level 2\", 85.1, 21.2, \"Other\", 2073, 134, \"Level 2\", 1, 2073, 8386, \"1hOSvn6df7F8_7GcBWlSDm\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [2] \"0wkEuT1wr1kOyafLY4vyu$\", \"M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572\"..., \"B202\", 16, 15.9, \"Door\", 2561, 134, \"Level 2\", 2, 2561, 12574, \"0wkEuT1wr1kOyafLY4vyu$\", \"M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572\"..., \"IFCFURNISHINGELEMENT\", \"800 mm\"\nperStorey = rel.aggregate@1(input: csvWithStorey.relation, groupBy: \"StoreyName\", aggregates: \"count(*) as Elements, sum(operational_carbon) as TotalOperationalCarbon, avg(operational_carbon) as MeanOperationalCarbon, avg(energy_intensity) as MeanEnergyIntensity\");\n  // Ok  relation 4 rows x 5 cols  sha 625eee9f1d1d  plan 27a29cbafc8a\n  //   columns StoreyName:Text, Elements:Integer, TotalOperationalCarbon:Number, MeanOperationalCarbon:Number, MeanEnergyIntensity:Number\n  //   [0] \"Level 1\", 103, 1.746E+04, 169.5, 40.5\n  //   [1] \"Level 2\", 93, 1.397E+04, 150.2, 40.56\n  //   [2] \"Roof\", 8, 1767, 220.9, 62.04\nstoreyComparison = rel.select@1(input: csvWithStorey.relation, columns: \"GlobalId, Level, StoreyName\");\n  // Ok  relation 218 rows x 3 cols  sha e9e7d3d8f3b4  plan 1247e5c922c7\n  //   columns GlobalId:Text, Level:Text, StoreyName:Text\n  //   [0] \"0wkEuT1wr1kOyafLY4vyMO\", \"B103\", \"Level 1\"\n  //   [1] \"0wkEuT1wr1kOyafLY4vyu$\", \"B202\", \"Level 2\"\n  //   [2] \"0kF45Qs8L9PAM9kmb1lT2Z\", \"T/FDN\", \"T/FDN\"\nvalues = csv.read@1(path: \"{MODELS}/test-kit/analytics_dataset_with_levels.csv\");\n  // Ok  table 268 rows x 6 cols  sha 2ed673e1a75a\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\ncoloredCarbon = view3d.color@1(instances: model.instances, values: values.table, joinColumn: \"globalId\", valueColumn: \"operational_carbon\", colorMap: \"viridis\");\n  // Ok\n  //   instances: table 714 rows x 15 cols  sha b90205255086\n  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number\n  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //     693 coloured in 197 colours, 21 grey\n  //     legend \"operational_carbon\" auto 14.2 to 412: bins 449 / 124 / 40 / 80\n  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\n  //   legend: table 5 rows x 9 cols  sha 6bf9262fa5ab\n  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer\n  //     legend \"operational_carbon\" auto: 14.2, 113.7, 213.1, 312.6, 412\ncoloredCategory = view3d.color@1(instances: model.instances, values: values.table, joinColumn: \"globalId\", valueColumn: \"category\", colorMap: \"category10\");\n  // Ok\n  //   instances: table 714 rows x 15 cols  sha 34fadff187e3\n  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number\n  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //     693 coloured in 9 colours, 21 grey\n  //     legend \"category\" categorical: \"Door\" 124, \"Finish\" 13, \"Floor\" 20, \"Other\" 140, \"Railing\" 130, \"Roof\" 2, \"Stair\" 66, \"Wall\" 104, \"Window\" 94\n  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\n  //   legend: table 9 rows x 9 cols  sha 8413c16661f4\n  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer\n  //     legend \"category\" categorical: category \"Door\" 37, category \"Finish\" 13, category \"Floor\" 20, category \"Other\" 64, category \"Railing\" 4, category \"Roof\" 4, category \"Stair\" 8, category \"Wall\" 72, category \"Window\" 46\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-join-analytics"
+      }
+    },
+    {
+      "id": "t2",
+      "request": {
+        "text": "Colour the model by operational carbon."
+      },
+      "reply": {
+        "text": "Coloured on a viridis gradient from 14.2 to 412.0 kgCO2e/yr. Instances with no CSV row stay grey.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-join-analytics: 19 nodes, 25 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "19 of 19 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-join-analytics coloredCarbon.legend: 5 rows × 9 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "view3d",
+            "id": "e1",
+            "caption": "Operational carbon, viridis",
+            "source": {
+              "analysisId": "nrc-join-analytics",
+              "nodeId": "coloredCarbon",
+              "port": "instances"
+            }
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "Legend",
+            "source": {
+              "analysisId": "nrc-join-analytics",
+              "nodeId": "coloredCarbon",
+              "port": "legend"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "column",
+                  "type": "Text"
+                },
+                {
+                  "name": "domain",
+                  "type": "Text"
+                },
+                {
+                  "name": "role",
+                  "type": "Text"
+                },
+                {
+                  "name": "label",
+                  "type": "Text"
+                },
+                {
+                  "name": "value",
+                  "type": "Number"
+                },
+                {
+                  "name": "r",
+                  "type": "Number"
+                },
+                {
+                  "name": "g",
+                  "type": "Number"
+                },
+                {
+                  "name": "b",
+                  "type": "Number"
+                },
+                {
+                  "name": "count",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "14.2",
+                  14.2,
+                  0.267004,
+                  0.004874,
+                  0.329415,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "113.7",
+                  113.65,
+                  0.229739,
+                  0.322361,
+                  0.545706,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "213.1",
+                  213.1,
+                  0.127568,
+                  0.566949,
+                  0.550556,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "312.6",
+                  312.55,
+                  0.369214,
+                  0.788888,
+                  0.382914,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "412",
+                  412,
+                  0.993248,
+                  0.906157,
+                  0.143936,
+                  null
+                ]
+              ],
+              "totalRows": 5,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nrc-join-analytics"
+      }
+    },
+    {
+      "id": "t3",
+      "request": {
+        "text": "Now colour it by category instead."
+      },
+      "reply": {
+        "text": "Nine categories, one colour each. The legend's counts, Wall 72 down to Roof and Railing at 4 each, add up to the CSV's 268 rows.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-join-analytics: 19 nodes, 25 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "19 of 19 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-join-analytics coloredCategory.legend: 9 rows × 9 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "view3d",
+            "id": "e1",
+            "caption": "Category",
+            "source": {
+              "analysisId": "nrc-join-analytics",
+              "nodeId": "coloredCategory",
+              "port": "instances"
+            }
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "Legend",
+            "source": {
+              "analysisId": "nrc-join-analytics",
+              "nodeId": "coloredCategory",
+              "port": "legend"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "column",
+                  "type": "Text"
+                },
+                {
+                  "name": "domain",
+                  "type": "Text"
+                },
+                {
+                  "name": "role",
+                  "type": "Text"
+                },
+                {
+                  "name": "label",
+                  "type": "Text"
+                },
+                {
+                  "name": "value",
+                  "type": "Number"
+                },
+                {
+                  "name": "r",
+                  "type": "Number"
+                },
+                {
+                  "name": "g",
+                  "type": "Number"
+                },
+                {
+                  "name": "b",
+                  "type": "Number"
+                },
+                {
+                  "name": "count",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Door",
+                  null,
+                  0.12156862745098039,
+                  0.4666666666666667,
+                  0.7058823529411765,
+                  37
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Finish",
+                  null,
+                  1,
+                  0.4980392156862745,
+                  0.054901960784313725,
+                  13
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Floor",
+                  null,
+                  0.17254901960784313,
+                  0.6274509803921569,
+                  0.17254901960784313,
+                  20
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Other",
+                  null,
+                  0.8392156862745098,
+                  0.15294117647058825,
+                  0.1568627450980392,
+                  64
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Railing",
+                  null,
+                  0.5803921568627451,
+                  0.403921568627451,
+                  0.7411764705882353,
+                  4
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Roof",
+                  null,
+                  0.5490196078431373,
+                  0.33725490196078434,
+                  0.29411764705882354,
+                  4
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Stair",
+                  null,
+                  0.8901960784313725,
+                  0.4666666666666667,
+                  0.7607843137254902,
+                  8
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Wall",
+                  null,
+                  0.4980392156862745,
+                  0.4980392156862745,
+                  0.4980392156862745,
+                  72
+                ],
+                [
+                  "category",
+                  "categorical",
+                  "category",
+                  "Window",
+                  null,
+                  0.7372549019607844,
+                  0.7411764705882353,
+                  0.13333333333333333,
+                  46
+                ]
+              ],
+              "totalRows": 9,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nrc-join-analytics"
+      }
+    },
+    {
+      "id": "t4",
+      "request": {
+        "text": "Total and average by level."
+      },
+      "reply": {
+        "text": "Grouped by the storey the model places each element on, not by the CSV's Level column: Level 1 has 103 elements, 17,457.0 kgCO2e/yr in total, and a mean energy intensity of 40.50; Level 2 has 93, 13,970.2, and 40.56; Roof 8, 1,767.3, and 62.04; T/FDN 14, 4,001.7, and 61.76. The second table shows why the CSV's Level is not used: for some rows it holds a door or window mark such as B103 rather than a storey.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-join-analytics: 19 nodes, 25 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "19 of 19 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-join-analytics perStorey.relation: 4 rows × 5 columns"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-join-analytics storeyComparison.relation: 218 rows × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Per storey, from the model's StoreyOfElement",
+            "source": {
+              "analysisId": "nrc-join-analytics",
+              "nodeId": "perStorey",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "StoreyName",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                },
+                {
+                  "name": "TotalOperationalCarbon",
+                  "type": "Number"
+                },
+                {
+                  "name": "MeanOperationalCarbon",
+                  "type": "Number"
+                },
+                {
+                  "name": "MeanEnergyIntensity",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "Level 1",
+                  103,
+                  17457,
+                  169.48543689320388,
+                  40.4990291262136
+                ],
+                [
+                  "Level 2",
+                  93,
+                  13970.199999999999,
+                  150.21720430107527,
+                  40.55698924731183
+                ],
+                [
+                  "Roof",
+                  8,
+                  1767.3,
+                  220.9125,
+                  62.03750000000001
+                ],
+                [
+                  "T/FDN",
+                  14,
+                  4001.7,
+                  285.8357142857143,
+                  61.75714285714286
+                ]
+              ],
+              "totalRows": 4,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "CSV Level beside the model's storey",
+            "source": {
+              "analysisId": "nrc-join-analytics",
+              "nodeId": "storeyComparison",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Level",
+                  "type": "Text"
+                },
+                {
+                  "name": "StoreyName",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  "0wkEuT1wr1kOyafLY4vyMO",
+                  "B103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vyu$",
+                  "B202",
+                  "Level 2"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT2Z",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "3ThA22djr8AQQ9eQMA5s7I",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvqp",
+                  "A103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vy6l",
+                  "B203",
+                  "Level 2"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT2N",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "1Eo2$BaHX42AEkDvQQDoy2",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vyOn",
+                  "B103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vy4m",
+                  "A202",
+                  "Level 2"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT2B",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "1Eo2$BaHX42AEkDvQQDocD",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvqo",
+                  "A103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vy3H",
+                  "A203",
+                  "Level 2"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5$",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "0jf0rYHfX3RAB3bSIRjmr1",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvGQ",
+                  "B103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vy_8",
+                  "B202",
+                  "Level 2"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5t",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "0jf0rYHfX3RAB3bSIRjmoa",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvqz",
+                  "A103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vy6k",
+                  "B203",
+                  "Level 2"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5l",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "0jf0rYHfX3RAB3bSIRjmpw",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvH8",
+                  "B103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vy4F",
+                  "A202",
+                  "Level 2"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5d",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "0jf0rYHfX3RAB3bSIRjmmy",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvqy",
+                  "A103",
+                  "Level 1"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4vy3G",
+                  "A203",
+                  "Level 2"
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FK1b",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "0jf0rYHfX3RAB3bSIRjmxl",
+                  "Roof",
+                  "Roof"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUv88",
+                  "B103",
+                  "Level 1"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUtHN",
+                  "B202",
+                  "Level 2"
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FK04",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvq$",
+                  "A103",
+                  "Level 1"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUtM4",
+                  "B203",
+                  "Level 2"
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FK3E",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUv3h",
+                  "B103",
+                  "Level 1"
+                ],
+                [
+                  "2gRXFgjRn2HPE$YoDLX0mp",
+                  "B204",
+                  "Level 2"
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FKE5",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvq_",
+                  "A103",
+                  "Level 1"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUtI8",
+                  "A202",
+                  "Level 2"
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FKEr",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvup",
+                  "B103",
+                  "Level 1"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUtEr",
+                  "A203",
+                  "Level 2"
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FK9N",
+                  "T/FDN",
+                  "T/FDN"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvqu",
+                  "A103",
+                  "Level 1"
+                ],
+                [
+                  "2gRXFgjRn2HPE$YoDLX0rb",
+                  "A204",
+                  "Level 2"
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FK80",
+                  "T/FDN",
+                  "T/FDN"
+                ]
+              ],
+              "totalRows": 218,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nrc-join-analytics"
+      }
+    },
+    {
+      "id": "t5",
+      "request": {
+        "text": "Chart carbon per storey for the enriched model."
+      },
+      "reply": {
+        "text": "This chart reads the enriched model's storey rollups, nrc_analytics_storeys.csv, not the test kit's CSV. Its operational totals agree with the previous turn (Level 1 17,457.0, Level 2 13,970.2, T/FDN 4,001.7, Roof 1,767.3), and it adds embodied carbon A1-A3: Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, Roof 5,821.0 kgCO2e. The building row totals 115,730.3 embodied and 37,196.2 operational.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-storey-carbon-chart: 2 nodes, 1 edge"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "2 of 2 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-storey-carbon-chart answer.table: 5 rows × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "chart",
+            "id": "e1",
+            "caption": "answer (chart.bar)",
+            "source": {
+              "analysisId": "nrc-storey-carbon-chart",
+              "nodeId": "answer",
+              "port": "table"
+            },
+            "chart": {
+              "chart": "bar",
+              "categoryColumn": "Container",
+              "seriesColumns": [
+                "EmbodiedCarbon_A1A3_kgCO2e",
+                "OperationalCarbon_kgCO2e_per_year"
+              ],
+              "title": "Carbon per storey (synthetic)"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Container",
+                  "type": "Text"
+                },
+                {
+                  "name": "EmbodiedCarbon_A1A3_kgCO2e",
+                  "type": "Number"
+                },
+                {
+                  "name": "OperationalCarbon_kgCO2e_per_year",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "Building",
+                  115730.3,
+                  37196.2
+                ],
+                [
+                  "Level 1",
+                  49451.2,
+                  17457
+                ],
+                [
+                  "Level 2",
+                  48696.8,
+                  13970.2
+                ],
+                [
+                  "T/FDN",
+                  11761.3,
+                  4001.7
+                ],
+                [
+                  "Roof",
+                  5821,
+                  1767.3
+                ]
+              ],
+              "totalRows": 5,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-storey-carbon-chart",
+            "graphHash": "dc54972dae181ae8a7a7d8637b6036d053c129d140cb8825311337916dc7ddde",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 420,\n      \"y\": 40\n    },\n    \"storeys\": {\n      \"x\": 40,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"storeys.table\",\n        \"to\": \"answer.table\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"chart.bar\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"storeys\",\n        \"kind\": \"csv.read\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"labelColumn\": \"Container\",\n      \"sort\": \"desc\",\n      \"title\": \"Carbon per storey (synthetic)\",\n      \"valueColumns\": \"EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year\"\n    },\n    \"storeys\": {\n      \"path\": \"C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/nrc_analytics_storeys.csv\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-storey-carbon-chart   graph dc54972dae18\nstoreys = csv.read@1(path: \"{MODELS}/nrc_analytics_storeys.csv\");\n  // Ok  table 5 rows x 7 cols  sha f05914b68c7f\n  //   columns Container:Text, EntityId:Integer, Elements:Integer, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, MeanEnergyUseIntensity_kWh_per_m2_year:Number\n  //   [0] \"Level 1\", 39, 103, 4.945E+04, 5.539E+04, 1.746E+04, 40.5\n  //   [1] \"Level 2\", 43, 93, 4.87E+04, 5.454E+04, 1.397E+04, 40.56\n  //   [2] \"Roof\", 51, 8, 5821, 6519, 1767, 62.04\nanswer = chart.bar@1(table: storeys.table, labelColumn: \"Container\", valueColumns: \"EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year\", title: \"Carbon per storey (synthetic)\", sort: \"desc\");\n  // Ok\n  //   table: table 5 rows x 3 cols  sha beac2a1a0802\n  //     columns Container:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number\n  //     chart 5 categories x 2 series: \"EmbodiedCarbon_A1A3_kgCO2e\", \"OperationalCarbon_kgCO2e_per_year\"\n  //     \"Building\": 1.157E+05, 3.72E+04\n  //     \"Level 1\": 4.945E+04, 1.746E+04\n  //     \"Level 2\": 4.87E+04, 1.397E+04\n  //     \"T/FDN\": 1.176E+04, 4002\n  //     \"Roof\": 5821, 1767\n  //   legend: table 0 rows x 9 cols  sha b47d2a37380c\n  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer\n  //     legend empty\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-storey-carbon-chart"
+      }
+    },
+    {
+      "id": "t6",
+      "request": {
+        "text": "Read back the NRC values that were written into the enriched IFC."
+      },
+      "reply": {
+        "text": "2,441 NRC property values read back from duplex-enriched.ifc, ordered by entity, property set, and property. The first entity, #34, carries the project's Pset_NRCAnalyticsProvenance: run run-2026-09-17-01, scenario Baseline.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-property-values: 3 nodes, 2 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "3 of 3 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-property-values answer.relation: 2441 rows × 5 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "answer (rel.sql)",
+            "source": {
+              "analysisId": "nrc-property-values",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "entityId",
+                  "type": "Integer"
+                },
+                {
+                  "name": "psetName",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramName",
+                  "type": "Text"
+                },
+                {
+                  "name": "valueType",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramValue",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ComputedAt",
+                  "String",
+                  "2026-09-17T00:00:00Z"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ComputedBy",
+                  "String",
+                  "Ara 3D"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "GridEmissionFactor_kgCO2e_per_kWh",
+                  "Number",
+                  "0.11"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "JoinKey",
+                  "String",
+                  "GlobalId"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "Methodology",
+                  "String",
+                  "Synthetic, illustrative; not EN 15978"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "MetricDictionaryURI",
+                  "String",
+                  "nrc-metrics.csv"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "MetricDictionaryVersion",
+                  "String",
+                  "NRC-metrics-0.2"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ResultDatasetFormat",
+                  "String",
+                  "CSV"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ResultDatasetURI",
+                  "String",
+                  "nrc_analytics_long.csv"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "SourceTool",
+                  "String",
+                  "nrc-ifc-llm/poc/generate_synthetic_analytics.py"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "ElementCount",
+                  "Number",
+                  "218.0"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "42.68"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "115730.3"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "129618.1"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "37196.2"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "103.0"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "40.5"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "49451.2"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "55385.4"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "17457.0"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "93.0"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "40.56"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "48696.8"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "54540.6"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "13970.2"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "14.0"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "61.76"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "11761.3"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "13172.7"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "4001.7"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "8.0"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "62.04"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "5821.0"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "6519.4"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "1767.3"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "EmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "615.5"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "EmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "689.4"
+                ]
+              ],
+              "totalRows": 2441,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nrc-property-values",
+            "graphHash": "2e33cac69f51e95f94265f133f609a683b6ffa487d7708990a5cfb3fd037434e",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 370,\n      \"y\": 40\n    },\n    \"entities\": {\n      \"x\": 40,\n      \"y\": 240\n    },\n    \"parameters\": {\n      \"x\": 40,\n      \"y\": 40\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"parameters.relation\",\n        \"to\": \"answer.t1\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"answer.t2\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"entities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"parameters\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"sql\": \"SELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\\n       p.ValueType AS valueType, p.Value AS paramValue\\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\\nWHERE p.ParameterGroup LIKE 'Pset_NRC%'\\nORDER BY entityId, psetName, paramName\"\n    },\n    \"entities\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"EntityText\"\n    },\n    \"parameters\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"ParameterText\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nrc-property-values   graph 2e33cac69f51\nentities = rel.table@1(source: \"duplex-enriched\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan 9a8be9f3b5d5\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nparameters = rel.table@1(source: \"duplex-enriched\", table: \"ParameterText\");\n  // Ok  relation 18099 rows x 6 cols  plan 7b315558b5df  (over 10000, not hashed)\n  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text\n  //   [0] 115, \"Ifc:ApplicationIdentifier\", \"IFCAPPLICATION\", \"\", \"String\", \"Revit\"\n  //   [1] 120, \"Ifc:ElectricCurrentExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\n  //   [2] 120, \"Ifc:ThermodynamicTemperatureExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\nanswer = rel.sql@1(t1: parameters.relation, t2: entities.relation, sql: \"\"\"\nSELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\n       p.ValueType AS valueType, p.Value AS paramValue\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\nWHERE p.ParameterGroup LIKE 'Pset_NRC%'\nORDER BY entityId, psetName, paramName\n\"\"\");\n  // Ok  relation 2441 rows x 5 cols  sha 7729c00be267  plan 7fa500a73661\n  //   columns entityId:Integer, psetName:Text, paramName:Text, valueType:Text, paramValue:Text\n  //   [0] 34, \"Pset_NRCAnalyticsProvenance\", \"AnalysisRunId\", \"String\", \"run-2026-09-17-01\"\n  //   [1] 34, \"Pset_NRCAnalyticsProvenance\", \"ComputedAt\", \"String\", \"2026-09-17T00:00:00Z\"\n  //   [2] 34, \"Pset_NRCAnalyticsProvenance\", \"ComputedBy\", \"String\", \"Ara 3D\"\n",
+            "focus": [
+              "answer"
+            ]
+          }
+        ],
+        "analysisId": "nrc-property-values"
+      }
+    }
+  ]
+}
