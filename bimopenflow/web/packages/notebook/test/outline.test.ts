@@ -1,7 +1,7 @@
 // Offline tests for scripts/outline.ts: outline validation and the
 // placeholder transforms, none of which need a running host.
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -10,8 +10,18 @@ import { ROOT, expandPlaceholders, hidePlaceholders, outlineErrors, slashed, sno
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "fixtures");
 const FIXTURE_OUTLINE = JSON.parse(readFileSync(join(FIXTURES, "nb-fixture.outline.json"), "utf8"));
 
+// The fixture's own graph ids ("nb-fixture-carbon", "nb-fixture-chart") were
+// written for the outline name "fixture" (nb-<name>-), unlike its file name
+// (nb-fixture.outline.json, kept as committed): real outlines under
+// samples/notebooks/outlines never carry a leading "nb-" in their own name.
+const FIXTURE_NAME = "fixture";
+
 describe("outlineErrors", () => {
-  it("accepts the fixture outline", () => {
+  it("accepts the fixture outline, named for its own graph-id prefix", () => {
+    expect(outlineErrors(FIXTURE_OUTLINE, FIXTURE_NAME)).toEqual([]);
+  });
+
+  it("accepts the fixture outline when no name is given (the prefix check is skipped)", () => {
     expect(outlineErrors(FIXTURE_OUTLINE)).toEqual([]);
   });
 
@@ -26,6 +36,22 @@ describe("outlineErrors", () => {
     expect(errors).toContain("createdUtc: missing");
     expect(errors).toContain("host.extra: unknown field");
     expect(errors).toContain("turns[0].reply: missing");
+  });
+
+  it("rejects a graph id that does not start with nb-<outline name>-", () => {
+    const withBadGraph = { ...FIXTURE_OUTLINE, graphs: ["graphs/other-thing.json"] };
+    const errors = outlineErrors(withBadGraph, FIXTURE_NAME);
+    expect(errors).toEqual([`graphs[0]: graph id "other-thing" must start with "nb-fixture-"`]);
+  });
+
+  it("passes every committed outline's own graph-id prefix check", () => {
+    const outlinesDir = join(ROOT, "samples", "notebooks", "outlines");
+    for (const file of readdirSync(outlinesDir)) {
+      if (!file.endsWith(".outline.json")) continue;
+      const name = file.replace(/\.outline\.json$/, "");
+      const outline = JSON.parse(readFileSync(join(outlinesDir, file), "utf8"));
+      expect(outlineErrors(outline, name), file).toEqual([]);
+    }
   });
 });
 

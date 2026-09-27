@@ -302,8 +302,9 @@ function requiredOption(name: string): string {
 
 async function main(): Promise<void> {
   const outlinePath = resolve(requiredOption("--outline"));
+  const name = basename(outlinePath).replace(/\.outline\.json$/, "");
   const raw = JSON.parse(readFileSync(outlinePath, "utf8")) as unknown;
-  const errors = outlineErrors(raw);
+  const errors = outlineErrors(raw, name);
   if (errors.length > 0) throw new Error(`${relative(ROOT, outlinePath)} is not a valid outline:\n${errors.join("\n")}`);
   const outline = raw as Outline;
   const api = new ApiClient({ baseUrl: requiredOption("--host") });
@@ -311,7 +312,6 @@ async function main(): Promise<void> {
   const text = hidePlaceholders(serializeNotebook(notebook));
   const parsed = parseNotebook(text);
   if (!parsed.ok) throw new Error(`the written notebook does not parse:\n${parsed.errors.join("\n")}`);
-  const name = basename(outlinePath).replace(/\.outline\.json$/, "");
   const outDir = option("--out") ? resolve(option("--out")!) : dirname(dirname(outlinePath));
   const out = join(outDir, `${name}${NOTEBOOK_SUFFIX}`);
   writeFileSync(out, text);

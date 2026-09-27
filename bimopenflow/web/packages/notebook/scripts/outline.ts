@@ -6,7 +6,7 @@
 
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { HostHint, ToolCall, Turn } from "../src/document/format";
 
@@ -290,8 +290,23 @@ function checkHost(value: unknown, path: string, errors: string[]): void {
   optionalString(value, "note", path, errors);
 }
 
-/** Every problem with an outline, tagged with its JSON path; empty when it is valid. */
-export function outlineErrors(value: unknown): string[] {
+/** The analysis ids named by an outline's own `graphs` list (its file names, without `.json`). */
+function graphIdsOf(outline: Record<string, unknown>): string[] {
+  const graphs = outline.graphs;
+  if (!Array.isArray(graphs)) return [];
+  return graphs
+    .filter((g): g is string => typeof g === "string")
+    .map((path) => basename(path).replace(/\.json$/, ""));
+}
+
+/**
+ * Every problem with an outline, tagged with its JSON path; empty when it is
+ * valid. `outlineName` is the outline's own file name (without
+ * `.outline.json`); when given, an outline's own graph ids must start with
+ * `nb-<outlineName>-` (samples/notebooks/README.md), so two outlines' seeded
+ * graphs never collide on the host.
+ */
+export function outlineErrors(value: unknown, outlineName?: string): string[] {
   const errors: string[] = [];
   if (!isPlainObject(value)) return ["(root): expected an object"];
   unknownKeys(value, ["title", "createdUtc", "host", "graphs", "turns"], "", errors);
@@ -300,6 +315,12 @@ export function outlineErrors(value: unknown): string[] {
   if (value.host === undefined) push(errors, "host", "missing");
   else checkHost(value.host, "host", errors);
   optionalStringArray(value, "graphs", "", errors);
+  if (outlineName !== undefined) {
+    const prefix = `nb-${outlineName}-`;
+    for (const [i, id] of graphIdsOf(value).entries()) {
+      if (!id.startsWith(prefix)) push(errors, `graphs[${i}]`, `graph id "${id}" must start with "${prefix}"`);
+    }
+  }
   const turns = value.turns;
   if (turns === undefined) push(errors, "turns", "missing");
   else if (!Array.isArray(turns)) push(errors, "turns", "expected an array");
