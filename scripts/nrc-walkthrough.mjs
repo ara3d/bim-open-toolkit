@@ -10,11 +10,20 @@
 //                          then the dataflow MCP replay that builds a door schedule.
 //
 //   node scripts/nrc-walkthrough.mjs [--out artifacts/nrc-walkthrough] [--no-build]
-//                                    [--skip-duplex] [--skip-snowdon] [--skip-mcp]
+//                                    [--skip-duplex] [--skip-snowdon] [--skip-mcp] [--skip-ask]
 //
-// Snowdon runs only when the model is present: BIMOPENFLOW_SNOWDON or
+// --skip-snowdon runs the Duplex half alone (what CI does: the private model is
+// never on the runner) and still writes a named "Skipped: --skip-snowdon" section
+// for both Snowdon parts, so the index never looks like Snowdon passed.
+// Snowdon otherwise runs only when the model is present: BIMOPENFLOW_SNOWDON or
 // Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos for the 3D part,
 // artifacts/building-model-workflows/snowdon-cli.duckdb for the DuckDB part.
+//
+// The Duplex half also tries the unattended language-model run over all eight
+// questions (`bimopenmcp-ifc-ask`), naming why it was skipped when --skip-ask is
+// passed, when neither ANTHROPIC_API_KEY nor ANTHROPIC_API_KEY_FILE is set (the
+// case in CI, which carries no such secret and would otherwise spend money), or
+// when the tool has not been built.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
@@ -119,9 +128,48 @@ async function duplex(browser) {
       "For an unattended language-model run of the full question list, see `bimopenmcp-ifc-ask` (src/studio/BimOpenMcp.Ifc.Ask).",
     ]);
   }
+  await askTranscript(dir);
+}
+
+/// The unattended language-model run over the paper's full question list
+/// (`bimopenmcp-ifc-ask`). It costs money and needs a key, so it is named and
+/// skipped, not attempted, whenever `--skip-ask` is passed, the key is absent
+/// (the case in CI, which carries no such secret), or the tool is unbuilt.
+async function askTranscript(dir) {
+  const section2 = (lines) => section("Duplex: Ask transcript", lines);
+  if (flag("--skip-ask")) { section2(["Skipped: --skip-ask."]); return; }
+  const keyFile = process.env.ANTHROPIC_API_KEY_FILE;
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!keyFile && !key) {
+    section2(["Skipped: neither ANTHROPIC_API_KEY nor ANTHROPIC_API_KEY_FILE is set; " +
+      "the unattended run over all eight questions costs money and needs a key."]);
+    return;
+  }
+  const askDll = join(root, "artifacts", "bim-flow-ifc", "ask", "bimopenmcp-ifc-ask.dll");
+  if (!existsSync(askDll)) {
+    section2([`Skipped: ${askDll} not built; run npm run ifc:ask-build --prefix bimopenflow/web first.`]);
+    return;
+  }
+  const transcript = join(dir, "transcript-unattended.md");
+  const results = join(dir, "results-unattended.json");
+  const env = keyFile ? { ANTHROPIC_API_KEY_FILE: keyFile } : { ANTHROPIC_API_KEY: key };
+  const outcome = spawnSync("dotnet", [askDll,
+    "--model", join(root, "samples", "nrc", "duplex-enriched.ifc"),
+    "--questions", join(root, "samples", "nrc", "questions.txt"),
+    "--out", transcript, "--results", results,
+  ], { cwd: root, stdio: "inherit", env: { ...process.env, ...env } });
+  const ok = outcome.status === 0;
+  section2([
+    `The unattended language-model run over all eight questions: ${ok ? "PASS" : "FAIL"}.`,
+    `Transcript: [duplex/transcript-unattended.md](duplex/transcript-unattended.md).`,
+  ]);
 }
 
 async function snowdon3d(browser) {
+  if (flag("--skip-snowdon")) {
+    section("Snowdon: 3D", ["Skipped: --skip-snowdon (this run covers the Duplex half only; the private Snowdon model was not requested)."]);
+    return;
+  }
   if (!existsSync(snowdonBos)) { section("Snowdon: 3D", [`Skipped: ${snowdonBos} not found.`]); return; }
   const dir = join(out, "snowdon");
   const work = mkdtempSync(join(tmpdir(), "nrc-walkthrough-snowdon-"));
@@ -147,6 +195,10 @@ async function snowdon3d(browser) {
 }
 
 async function snowdonDuckDb(browser) {
+  if (flag("--skip-snowdon")) {
+    section("Snowdon: DuckDB", ["Skipped: --skip-snowdon (this run covers the Duplex half only; the private Snowdon model was not requested)."]);
+    return;
+  }
   if (!existsSync(snowdonDatabase)) { section("Snowdon: DuckDB", [`Skipped: ${snowdonDatabase} not found.`]); return; }
   const dir = join(out, "snowdon");
   const work = mkdtempSync(join(tmpdir(), "nrc-walkthrough-duckdb-"));
@@ -196,7 +248,8 @@ const browser = await launchBrowser();
 let failed = false;
 try {
   if (!flag("--skip-duplex")) await duplex(browser);
-  if (!flag("--skip-snowdon")) { await snowdon3d(browser); await snowdonDuckDb(browser); }
+  await snowdon3d(browser);
+  await snowdonDuckDb(browser);
 } catch (error) {
   failed = true;
   section("Failure", [String(error.stack ?? error)]);

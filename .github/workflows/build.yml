@@ -22,3 +22,25 @@ jobs:
       # fixture download source exists (data is not committed to this repo).
       - run: dotnet test BimOpenToolkit.sln -c Release --no-build --filter "TestCategory!=RequiresTestData"
         continue-on-error: true
+      # The NRC paper's eight questions, over the public Duplex model:
+      # CsvGraphTests and ModelGraphTests assert five of them (Q1, Q3, Q5, Q7,
+      # Q8) and the storey walk and DC-W1 verdicts by number; FigureGraphTests
+      # asserts the row and colour counts behind every Duplex figure the
+      # walkthrough captures. A changed answer fails this step; nothing here
+      # is allowed to continue-on-error.
+      #
+      # TKT-19 measured the browser-driven Duplex half of `npm run
+      # nrc:walkthrough` (nrc:walkthrough:duplex, i.e. --skip-snowdon) at
+      # 6m08s locally with a warm npm/dotnet cache, on top of the solution
+      # build above and two more npm workspaces (bimopenflow/web and viz,
+      # for the editor and its Playwright/Edge capture) that this job does
+      # not otherwise install. A cold windows-latest run of that install
+      # plus capture is expected to clear the ten-minute budget, so CI runs
+      # only the deterministic .NET assertions below; `npm run
+      # nrc:walkthrough:duplex --prefix bimopenflow/web` (added by this
+      # change) is the local command for the figures themselves. The Snowdon
+      # half is not attempted here either way: it needs the private Snowdon
+      # Towers model, which no runner has, and running the walkthrough
+      # script names that in its generated index rather than reporting it
+      # as passing.
+      - run: dotnet test tests/flow/BimOpenFlow.NrcWorkflows.Tests -c Release --no-build
