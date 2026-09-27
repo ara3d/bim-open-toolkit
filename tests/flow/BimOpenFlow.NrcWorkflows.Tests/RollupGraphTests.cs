@@ -1,6 +1,8 @@
 using System.Globalization;
 using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
+using Ara3D.Ifc.Tests;
+using Ara3D.Utils;
 using BimOpenFlow.Relations;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
@@ -19,7 +21,7 @@ public sealed class RollupGraphTests
 
     private static readonly RelationRuntime Runtime = Fixture.Runtime;
 
-    private static IReadOnlyList<PsetRow> Answer(string id)
+    internal static IReadOnlyList<PsetRow> Answer(string id)
         => PsetRow.All(ModelGraphTests.AnswerRows(
             ModelGraphTests.EvaluateGreen(ModelGraphTests.Document(id), id, Fixture.Registry(Runtime)), Runtime));
 
@@ -35,16 +37,6 @@ public sealed class RollupGraphTests
         // set (4), the roof deliberately not (Q7): 218 * 7 + 217 * 4 = 2,394.
         Assert.That(actual, Has.Count.EqualTo(2394));
         Assert.That(actual.Select(r => r.Normalized()), Is.EquivalentTo(ExpectedElementRows()));
-    }
-
-    /// <summary>While samples/nrc/psets_to_write.csv is still committed, the element rows equal its
-    /// element rows exactly, text for text.</summary>
-    [Test]
-    public void ElementPsets_EqualTheElementRowsOfPsetsToWrite()
-    {
-        var elements = Csv("nrc_analytics_elements.csv").ColumnCells("EntityId").Select(Convert.ToInt64).ToHashSet();
-        var expected = PsetRow.All(Csv("psets_to_write.csv")).Where(r => elements.Contains(r.EntityId));
-        Assert.That(Answer(ElementGraph), Is.EquivalentTo(expected));
     }
 
     [Test]
@@ -147,6 +139,89 @@ public sealed class RollupGraphTests
             Assert.That(enrich.Edges.Select(e => (e.From, e.To)),
                 Is.SupersetOf(part.Edges.Select(e => (RenamedPort(e.From), RenamedPort(e.To)))));
         });
+    }
+
+    /// <summary>A Run of nrc-enrich-run writes samples/nrc/duplex-enriched.ifc exactly as committed.
+    /// When the rows change on purpose, the failure names the fresh file: copy it over the committed
+    /// one and regenerate duplex-enriched.bos (see samples/nrc/README.md).</summary>
+    [Test]
+    public void EnrichRun_WritesTheCommittedFileByteForByte()
+    {
+        var targetDir = Path.Combine(Path.GetTempPath(), "bof-nrc-enrich", Guid.NewGuid().ToString("N"));
+        var target = Path.Combine(targetDir, "duplex-enriched.ifc");
+        var doc = ModelGraphTests.WithParam(ModelGraphTests.Document(EnrichGraph), "answer", "targetPath", target);
+        var summary = ((TableValue)ModelGraphTests.RunGreen(doc, EnrichGraph, Fixture.Registry(Runtime), "answer")
+            .Results["answer"].Outputs[0]).Table;
+
+        // 2,441 values over 224 entities: the 2,394 element values on 218 elements, 7 on each of the
+        // 4 storeys and the building, and the 12 fields of nrc-run.csv on the project.
+        Assert.Multiple(() =>
+        {
+            Assert.That(summary.Cell("entitiesTouched", 0), Is.EqualTo(224L));
+            Assert.That(summary.Cell("valuesWritten", 0), Is.EqualTo(2441L));
+            Assert.That(summary.Cell("targetPath", 0), Is.EqualTo(target));
+        });
+        Assert.That(File.ReadAllBytes(target), Is.EqualTo(File.ReadAllBytes(NrcPaths.Ifc)),
+            $"the committed enriched IFC differs from a fresh Run's output, left at {target}");
+        Directory.Delete(targetDir, recursive: true);
+    }
+
+    /// <summary>The enrichment only adds: every entity of duplex-base.ifc is unchanged, and each
+    /// written set is one IfcPropertySet, its IfcPropertySingleValues, and one IfcRelDefinesByProperties.</summary>
+    [Test]
+    public void Enriched_DiffersFromTheBaseOnlyByTheAddedSets()
+    {
+        using var before = IfcSourceFile.Load(new FilePath(NrcPaths.BaseIfc));
+        using var after = IfcSourceFile.Load(new FilePath(NrcPaths.Ifc));
+        var diff = IfcDiff.Compare(before, after);
+        var added = diff.Added.Select(id => after.GetSpan(id)!.Value.TypeName.ToUpperInvariant())
+            .GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count());
+
+        // 653 element sets (217 embodied, 218 operational, 218 energy), 4 storey, 1 building, 1 provenance.
+        Assert.Multiple(() =>
+        {
+            Assert.That(diff.Deleted, Is.Empty);
+            Assert.That(diff.Changed, Is.Empty);
+            Assert.That(diff.Added, Has.All.GreaterThan(before.MaxId));
+            Assert.That(added, Is.EquivalentTo(new Dictionary<string, int>
+            {
+                ["IFCPROPERTYSET"] = 659,
+                ["IFCRELDEFINESBYPROPERTIES"] = 659,
+                ["IFCPROPERTYSINGLEVALUE"] = 2441,
+            }));
+        });
+    }
+
+    /// <summary>The storage defect of gap report 2.10 as an assertion on the file: summing the element
+    /// property over every entity that carries it, with no class filter, gives the element total
+    /// (expected_answers.json Q1) and not a multiple of it.</summary>
+    [Test]
+    public void Enriched_SumOfTheElementPropertyOverEveryEntity_IsTheElementTotal()
+    {
+        var total = Runtime.Materialize(Plans.Sql(
+            "SELECT sum(CAST(Value AS DOUBLE)) AS Total, count(*) AS Carriers FROM t1 "
+            + "WHERE Name = 'OperationalCarbon_kgCO2e_per_year'",
+            Plans.Table("duplex-enriched", "ParameterText")));
+
+        Assert.That(Convert.ToDouble(total.Cell("Total", 0)), Is.EqualTo(37196.2).Within(0.05));
+        Assert.That(total.Cell("Carriers", 0), Is.EqualTo(218L));
+    }
+
+    [Test]
+    public void Enriched_NoElementSetSitsOnAStoreyOrTheBuilding()
+    {
+        var sets = Runtime.Materialize(Plans.Sql(
+            "SELECT DISTINCT e.Category, p.ParameterGroup FROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex "
+            + "WHERE p.ParameterGroup LIKE 'Pset_NRC%' AND e.Category IN ('IFCBUILDINGSTOREY', 'IFCBUILDING') "
+            + "ORDER BY 1, 2",
+            Plans.Table("duplex-enriched", "ParameterText"), Plans.Table("duplex-enriched", "EntityText")));
+
+        Assert.That(Enumerable.Range(0, sets.Rows.Count).Select(row => (sets.Cell("Category", row), sets.Cell("ParameterGroup", row))),
+            Is.EqualTo(new (object?, object?)[]
+            {
+                ("IFCBUILDING", "Pset_NRCBuildingSummary"),
+                ("IFCBUILDINGSTOREY", "Pset_NRCStoreySummary"),
+            }));
     }
 
     /// <summary>One element row per metric value and run fact, built from the wide

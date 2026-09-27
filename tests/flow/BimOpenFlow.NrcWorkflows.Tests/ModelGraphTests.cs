@@ -137,37 +137,6 @@ public sealed class ModelGraphTests
             Has.None.EqualTo(ColorNode.Unmatched.R), "door instances should take a verdict colour");
     }
 
-    [Test]
-    public void EnrichRun_WritesEveryPsetRowIntoACopyOfTheIfc()
-    {
-        var targetDir = Path.Combine(Path.GetTempPath(), "bof-nrc-enrich", Guid.NewGuid().ToString("N"));
-        var target = Path.Combine(targetDir, "duplex-enriched-out.ifc");
-        var doc = WithParam(Document("nrc-enrich-run"), "answer", "targetPath", target);
-        var registry = Fixture.Registry(Runtime);
-        try
-        {
-            var summary = ((TableValue)RunGreen(doc, "nrc-enrich-run", registry, "answer")
-                .Results["answer"].Outputs[0]).Table;
-
-            // 2,441 values over 224 entities: 2,394 element values on 218 elements (RollupGraphTests),
-            // 7 on each of the 4 storeys and the building, and the 12 fields of nrc-run.csv on the project.
-            Assert.That(summary.Rows, Has.Count.EqualTo(1));
-            Assert.That(summary.Cell("entitiesTouched", 0), Is.EqualTo(224L));
-            Assert.That(summary.Cell("valuesWritten", 0), Is.EqualTo(2441L));
-            Assert.That(summary.Cell("targetPath", 0), Is.EqualTo(target));
-
-            // The write is byte-exact and additive, so the copy is strictly larger than the source.
-            Assert.That(File.Exists(target), Is.True, target);
-            Assert.That(new FileInfo(target).Length,
-                Is.GreaterThan(new FileInfo(NrcPaths.BaseIfc).Length));
-        }
-        finally
-        {
-            try { Directory.Delete(targetDir, recursive: true); }
-            catch (IOException) { }
-        }
-    }
-
     /// <summary>A copy of the document with one parameter of one node replaced.</summary>
     internal static GraphDocument WithParam(GraphDocument doc, string nodeId, string name, string value)
         => doc with

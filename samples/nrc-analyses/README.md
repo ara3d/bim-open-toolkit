@@ -25,7 +25,7 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 | `nrc-color-embodied-carbon` | the same model coloured by embodied carbon A1-A3; the roof, which has no value, stays grey (Figure 6) | bim only |
 | `nrc-color-category` | one colour per analysis category, nine in all (Figure 7) | bim only |
 | `nrc-storey-carbon-chart` | embodied and operational carbon per storey as a bar chart (Figure 2) | tables, bim |
-| `nrc-property-values` | the 2,438 rows the byte-exact writer turned into property values (Figure 4) | tables, bim |
+| `nrc-property-values` | the 2,441 NRC property values read back from `duplex-enriched.ifc`, one for each row `nrc-enrich-run` handed the byte-exact writer (Figure 4) | tables, bim |
 
 Expected numbers come from `nrc-ifc-llm/poc/results/expected_answers.json` and
 `poc/data/nrc_analytics_storeys.csv`; the tests in

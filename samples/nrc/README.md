@@ -1,19 +1,20 @@
 # samples/nrc
 
-Byte-for-byte copies of the proof-of-concept data from the paper repository
-`nrc-ifc-llm`, folder `poc/data`, taken 2026-09-18. That repository is read-only
-for this toolkit; the copies live here so the toolkit's own tests are
-self-contained and so a host started with `samples/nrc` as a model root exposes
-the source name `nrc`.
+The NRC proof-of-concept data. The element values and CSVs are byte-for-byte
+copies from the paper repository `nrc-ifc-llm`, folder `poc/data`, taken
+2026-09-18; that repository is read-only for this toolkit. Since TKT-48 the
+enriched IFC is made here, by a Run of `samples/nrc-analyses/nrc-enrich-run`,
+and the paper repository copies it back. The files live here so the toolkit's
+own tests are self-contained and so a host started with `samples/nrc` as a
+model root exposes the source name `nrc`.
 
 | File | Rows | What it holds |
 |---|---|---|
 | `nrc_analytics_elements.csv` | 218 | one row per element: GlobalId, IFC type, storey, category, embodied and operational carbon, energy use intensity |
 | `nrc_analytics_long.csv` | 870 | the same numbers in long form: one row per (element, metric) |
-| `nrc_analytics_storeys.csv` | 5 | per-storey rollups plus a `Building` total row |
-| `psets_to_write.csv` | 2438 | property-set writes keyed by STEP entity id, with a `valueType` column |
+| `nrc_analytics_storeys.csv` | 5 | per-storey rollups plus a `Building` total row, as the generator computed them; a reference the tests compare the `nrc-rollup` graph against, not an input |
 | `door_verdicts.csv` | 56 | door rule verdicts with evidence and citation text |
-| `duplex-enriched.ifc` | — | the buildingSMART Duplex sample enriched with the property sets above |
+| `duplex-enriched.ifc` | — | `duplex-base.ifc` plus 659 property sets holding 2,441 values, written by a Run of `nrc-enrich-run`; a test asserts a fresh Run reproduces it byte for byte |
 | `duplex-base.ifc` | — | the unenriched Duplex, byte-identical to `nrc-ifc-llm/IFC-Test-Kit/duplex.ifc` (SHA-256 `b347a2c8…06ed`); the source the enrichment graphs write into |
 | `nrc-metrics.csv` | 15 | the metric dictionary: one row per metric and level, naming the property set, property, value type, unit, stage, rollup rule, and the decimals a rolled-up value is rounded to (TKT-48) |
 | `nrc-run.csv` | 12 | run-level facts written once: run id, scenario, grid emission factor, and the provenance fields |
@@ -26,7 +27,13 @@ so the IFC is committed on purpose.
 
 `duplex-enriched.duckdb` and `duplex-base.duckdb` are **not** committed. Each is generated from its IFC by
 `Ara3D.Ifc.DuckDb.IfcDuckDbBuild.Build` and matches the repository-wide `*.duckdb`
-ignore rule. Build them on demand; never stage one.
+ignore rule. Build them on demand; never stage one. `duplex-enriched.bos` is
+likewise ignored: the host rebuilds it with `IfcDuckDbBuild.SaveBos` whenever the
+IFC is newer (`SamplePreparation.NrcBos`).
+
+To regenerate `duplex-enriched.ifc` after a deliberate change to the rows, run
+`RollupGraphTests.EnrichRun_WritesTheCommittedFileByteForByte`; its failure
+names the fresh file, which replaces the committed one.
 
 ## Where the run facts go
 

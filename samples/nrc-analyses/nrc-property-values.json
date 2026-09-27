@@ -1,41 +1,59 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "psets": {
-      "x": 40,
+    "answer": {
+      "x": 370,
       "y": 40
     },
-    "answer": {
-      "x": 420,
+    "entities": {
+      "x": 40,
+      "y": 240
+    },
+    "parameters": {
+      "x": 40,
       "y": 40
     }
   },
   "structure": {
     "edges": [
       {
-        "from": "psets.table",
-        "to": "answer.table"
+        "from": "parameters.relation",
+        "to": "answer.t1"
+      },
+      {
+        "from": "entities.relation",
+        "to": "answer.t2"
       }
     ],
     "nodes": [
       {
-        "id": "psets",
-        "kind": "csv.read",
+        "id": "answer",
+        "kind": "rel.sql",
         "version": 1
       },
       {
-        "id": "answer",
-        "kind": "view.table",
+        "id": "entities",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "parameters",
+        "kind": "rel.table",
         "version": 1
       }
     ]
   },
   "values": {
-    "psets": {
-      "path": "{SAMPLES}/psets_to_write.csv"
-    },
     "answer": {
-      "title": "NRC property values written into duplex-enriched.ifc"
+      "sql": "SELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\n       p.ValueType AS valueType, p.Value AS paramValue\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\nWHERE p.ParameterGroup LIKE 'Pset_NRC%'\nORDER BY entityId, psetName, paramName"
+    },
+    "entities": {
+      "source": "duplex-enriched",
+      "table": "EntityText"
+    },
+    "parameters": {
+      "source": "duplex-enriched",
+      "table": "ParameterText"
     }
   }
 }

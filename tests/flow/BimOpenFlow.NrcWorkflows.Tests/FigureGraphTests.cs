@@ -8,8 +8,8 @@ namespace BimOpenFlow.NrcWorkflows.Tests;
 /// <summary>The graphs behind the NRC paper's figures: three 3D colourings of duplex-enriched.ifc
 /// from the elements CSV, the per-storey carbon bar chart, and the table of written property
 /// values. Each evaluates green with the bim-profile registry and its answer node carries what
-/// the figure shows. Row counts cite samples/nrc/README.md (218 elements, 5 storey rows, 2438
-/// property writes); the nine categories cite expected_answers.json Q5.</summary>
+/// the figure shows. Row counts cite samples/nrc/README.md (218 elements, 5 storey rows) and
+/// RollupGraphTests (2,441 property writes); the nine categories cite expected_answers.json Q5.</summary>
 [TestFixture]
 public sealed class FigureGraphTests
 {
@@ -84,14 +84,21 @@ public sealed class FigureGraphTests
         });
     }
 
+    /// <summary>Figure 4 reads the values back from duplex-enriched.ifc: one row for each row the
+    /// graphs nrc-element-psets and nrc-rollup handed the writer, on the same entity and set.</summary>
     [Test]
-    public void PropertyValuesTable_ListsEveryWrittenValue()
+    public void PropertyValuesTable_ReadsBackEveryWrittenValue()
     {
-        var values = Answer("nrc-property-values");
+        const string id = "nrc-property-values";
+        var runtime = Fixture.Runtime;
+        var values = RollupGraphTests.PsetRow.All(ModelGraphTests.AnswerRows(
+            ModelGraphTests.EvaluateGreen(ModelGraphTests.Document(id), id, Fixture.Registry(runtime)), runtime));
+        var written = RollupGraphTests.Answer("nrc-element-psets").Concat(RollupGraphTests.Answer("nrc-rollup"));
         Assert.Multiple(() =>
         {
-            Assert.That(values.Rows, Has.Count.EqualTo(2438), "2,438 property values were written");
-            Assert.That(values.ColumnNames(), Is.EqualTo(new[] { "entityId", "psetName", "paramName", "valueType", "paramValue" }));
+            Assert.That(values, Has.Count.EqualTo(2441), "2,441 property values were written");
+            Assert.That(values.Select(r => (r.EntityId, r.PsetName, r.ParamName)),
+                Is.EquivalentTo(written.Select(r => (r.EntityId, r.PsetName, r.ParamName))));
         });
     }
 }

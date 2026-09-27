@@ -10,5 +10,5 @@ or `poc/data/nrc_analytics_storeys.csv`.
 | File | Covers |
 |------|--------|
 | `CsvGraphTests.cs` | the five `nrc-q*` graphs over the CSVs |
-| `ModelGraphTests.cs` | the storey walk, DC-W1, and enrichment graphs over the built database |
-| `RollupGraphTests.cs` | the analytics contract: `nrc-element-psets` and `nrc-rollup` against the generator's element and storey CSVs, and `nrc-enrich-run` as an exact copy of both |
+| `ModelGraphTests.cs` | the storey walk and DC-W1 graphs over the built database |
+| `RollupGraphTests.cs` | the analytics contract: `nrc-element-psets` and `nrc-rollup` against the generator's element and storey CSVs, `nrc-enrich-run` as an exact copy of both, and the committed `duplex-enriched.ifc` as its byte-exact, additions-only output |

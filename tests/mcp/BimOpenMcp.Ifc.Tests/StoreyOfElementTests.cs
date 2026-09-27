@@ -4,10 +4,11 @@ using BimOpenToolkit.TestSupport;
 
 namespace BimOpenMcp.Ifc.Tests;
 
-/// <summary>Reproduces TKT-18: joining ParameterText straight to StoreyOfEntity double-counts a
-/// storey's embodied carbon, because StoreyOfEntity also maps a storey to itself (Depth 0) and the
-/// Duplex sample's storeys each carry a precomputed rollup of that same property. StoreyOfElement
-/// removes the self-mapped row, so the same sum comes out right.</summary>
+/// <summary>TKT-18 and TKT-48: StoreyOfEntity also maps a storey to itself (Depth 0), so joining it
+/// straight to ParameterText double-counted a storey's embodied carbon while the Duplex storeys
+/// carried a rollup under the element property's own name. Since TKT-48 the storeys carry their
+/// totals as Pset_NRCStoreySummary.TotalEmbodiedCarbon_A1A3_kgCO2e, so both views give the element
+/// sum; StoreyOfElement still removes the self-mapped row for models that repeat a property.</summary>
 [TestFixture]
 public sealed class StoreyOfElementTests
 {
@@ -33,23 +34,29 @@ public sealed class StoreyOfElementTests
         _cache.Dispose();
     }
 
-    /// <summary>Documents the bug: the naive join the transcript used reports Level 1's A1-A3 total
-    /// as exactly twice the expected 49,451.2, because it also picks up the storey entity's own
-    /// precomputed rollup of the same property.</summary>
+    /// <summary>The naive join the TKT-18 transcript used gave twice 49,451.2 (98,902.4) while the
+    /// storey carried its own rollup of the element property. With the total stored under its own
+    /// name, the same query gives the element sum (expected_answers.json Q8, Level 1).</summary>
     [Test]
-    public void StoreyOfEntity_JoinedStraightToParameterText_DoublesTheStoreyTotal()
+    public void StoreyOfEntity_JoinedStraightToParameterText_NoLongerDoublesTheStoreyTotal()
     {
-        var total = StoreyTotal("StoreyOfEntity", "Level 1");
-        Assert.That(total, Is.EqualTo(98902.4).Within(0.05));
+        var total = StoreyTotal("StoreyOfEntity", "Level 1", A1A3);
+        Assert.That(total, Is.EqualTo(49451.2).Within(0.05));
     }
 
-    /// <summary>The fix: StoreyOfElement excludes the self-mapped row, so the same query gives the
-    /// expected, undoubled total. This query fails outright before the fix, because StoreyOfElement
-    /// does not exist yet.</summary>
     [Test]
     public void StoreyOfElement_JoinedToParameterText_MatchesTheExpectedStoreyTotal()
     {
-        var total = StoreyTotal("StoreyOfElement", "Level 1");
+        var total = StoreyTotal("StoreyOfElement", "Level 1", A1A3);
+        Assert.That(total, Is.EqualTo(49451.2).Within(0.05));
+    }
+
+    /// <summary>The storey's own summary, read through the Depth 0 row only StoreyOfEntity has,
+    /// equals the sum of its elements.</summary>
+    [Test]
+    public void StoreySummary_EqualsTheSumOfItsElements()
+    {
+        var total = StoreyTotal("StoreyOfEntity", "Level 1", "TotalEmbodiedCarbon_A1A3_kgCO2e", "Pset_NRCStoreySummary");
         Assert.That(total, Is.EqualTo(49451.2).Within(0.05));
     }
 
@@ -65,7 +72,7 @@ public sealed class StoreyOfElementTests
         Assert.That(data["rows"]!.AsArray()[0]!.AsArray()[0]!.GetValue<long>(), Is.EqualTo(0));
     }
 
-    private double StoreyTotal(string storeyView, string storeyName)
+    private double StoreyTotal(string storeyView, string storeyName, string property, string set = "Pset_NRCEmbodiedCarbon")
     {
         var data = CallData("ifc_sql", new JsonObject
         {
@@ -74,8 +81,8 @@ public sealed class StoreyOfElementTests
                 SELECT sum(CAST(pt.Value AS DOUBLE)) AS total
                 FROM ParameterText pt
                 JOIN {storeyView} so ON so.EntityIndex = pt.EntityIndex
-                WHERE pt.ParameterGroup = 'Pset_NRCEmbodiedCarbon'
-                  AND pt.Name = '{A1A3}'
+                WHERE pt.ParameterGroup = '{set}'
+                  AND pt.Name = '{property}'
                   AND so.StoreyName = '{storeyName}'
                 """,
         });
