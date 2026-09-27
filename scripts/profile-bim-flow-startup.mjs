@@ -17,9 +17,22 @@ try {
     const canvas = document.querySelector('.bof-panes-canvas');
     const gl = canvas.getContext('webgl2');
     const debug = gl.getExtension('WEBGL_debug_renderer_info');
+    const targetMs = 2000;
+    const coarseEntry = performance.getEntriesByName('bimflow:coarse-frame-submitted')[0];
+    const coarseFrameSubmittedMs = coarseEntry ? coarseEntry.startTime : null;
+    // fullFrameSubmittedMs was previously reported as firstFrameSubmittedMs; that field is
+    // kept alongside it for one release in case another script or doc still reads it.
+    const fullFrameSubmittedMs = performance.getEntriesByName('bimflow:first-model-frame-submitted')[0].startTime;
+    const status = document.querySelector('.bof-panes-viewstatus');
     return {
       renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
-      firstFrameSubmittedMs: performance.getEntriesByName('bimflow:first-model-frame-submitted')[0].startTime,
+      coarseFrameSubmittedMs,
+      fullFrameSubmittedMs,
+      firstFrameSubmittedMs: fullFrameSubmittedMs,
+      targetMs,
+      coarseUnderTarget: coarseFrameSubmittedMs !== null && coarseFrameSubmittedMs < targetMs,
+      navigations: performance.getEntriesByType('navigation').length,
+      status: status ? status.textContent : null,
       phases: performance.getEntriesByType('measure').filter(entry => entry.name.startsWith('bimflow:')).map(entry => ({ name: entry.name, startMs: entry.startTime, durationMs: entry.duration })),
       network: performance.getEntriesByType('resource').filter(entry => entry.name.includes('/api/') || entry.name.includes('/__bimflow/models/')).map(entry => ({ name: entry.name, startMs: entry.startTime, durationMs: entry.duration })),
     };
