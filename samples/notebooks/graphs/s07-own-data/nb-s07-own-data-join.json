@@ -1,0 +1,101 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "csv": { "x": 40, "y": 40 },
+    "model": { "x": 40, "y": 260 },
+    "instances": { "x": 370, "y": 260 },
+    "physical": { "x": 700, "y": 260 },
+    "entities": { "x": 40, "y": 480 },
+    "physicalEntities": { "x": 700, "y": 480 },
+    "matched": { "x": 1030, "y": 260 },
+    "unmatchedInModel": { "x": 1030, "y": 480 },
+    "unmatchedInFile": { "x": 1030, "y": 40 },
+    "matchReport": { "x": 1360, "y": 260 },
+    "values": { "x": 40, "y": 700 },
+    "coloredCarbon": { "x": 370, "y": 700 }
+  },
+  "structure": {
+    "nodes": [
+      { "id": "csv", "kind": "rel.csv", "version": 1 },
+      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "instances", "kind": "rel.fromTable", "version": 1 },
+      { "id": "physical", "kind": "rel.aggregate", "version": 1 },
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "physicalEntities", "kind": "rel.join", "version": 1 },
+      { "id": "matched", "kind": "rel.join", "version": 1 },
+      { "id": "unmatchedInModel", "kind": "rel.join", "version": 1 },
+      { "id": "unmatchedInFile", "kind": "rel.join", "version": 1 },
+      { "id": "matchReport", "kind": "rel.sql", "version": 1 },
+      { "id": "values", "kind": "csv.read", "version": 1 },
+      { "id": "coloredCarbon", "kind": "view3d.color", "version": 1 }
+    ],
+    "edges": [
+      { "from": "model.instances", "to": "instances.table" },
+      { "from": "model.instances", "to": "coloredCarbon.instances" },
+      { "from": "values.table", "to": "coloredCarbon.values" },
+      { "from": "instances.relation", "to": "physical.input" },
+      { "from": "entities.relation", "to": "physicalEntities.left" },
+      { "from": "physical.relation", "to": "physicalEntities.right" },
+      { "from": "physicalEntities.relation", "to": "matched.left" },
+      { "from": "csv.relation", "to": "matched.right" },
+      { "from": "physicalEntities.relation", "to": "unmatchedInModel.left" },
+      { "from": "csv.relation", "to": "unmatchedInModel.right" },
+      { "from": "csv.relation", "to": "unmatchedInFile.left" },
+      { "from": "physicalEntities.relation", "to": "unmatchedInFile.right" },
+      { "from": "matched.relation", "to": "matchReport.t1" },
+      { "from": "unmatchedInModel.relation", "to": "matchReport.t2" },
+      { "from": "unmatchedInFile.relation", "to": "matchReport.t3" }
+    ]
+  },
+  "values": {
+    "csv": {
+      "source": "nrc",
+      "path": "test-kit/analytics_dataset_with_levels.csv"
+    },
+    "model": {
+      "path": "C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/duplex-base.ifc"
+    },
+    "instances": {
+      "name": "instances"
+    },
+    "physical": {
+      "groupBy": "globalId",
+      "aggregates": "count(*) as meshCount"
+    },
+    "entities": {
+      "source": "duplex-base",
+      "table": "EntityText"
+    },
+    "physicalEntities": {
+      "leftKey": "GlobalId",
+      "rightKey": "globalId",
+      "kind": "semi"
+    },
+    "matched": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "inner"
+    },
+    "unmatchedInModel": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "anti"
+    },
+    "unmatchedInFile": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "anti"
+    },
+    "matchReport": {
+      "sql": "SELECT (SELECT count(*) FROM t1) AS Matched, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoFileRow, (SELECT count(*) FROM t3) AS FileRowsWithNoPhysicalElement"
+    },
+    "values": {
+      "path": "C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/test-kit/analytics_dataset_with_levels.csv"
+    },
+    "coloredCarbon": {
+      "joinColumn": "globalId",
+      "valueColumn": "operational_carbon",
+      "colorMap": "viridis"
+    }
+  }
+}

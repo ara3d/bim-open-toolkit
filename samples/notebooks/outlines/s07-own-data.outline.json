@@ -1,0 +1,126 @@
+{
+  "title": "Bringing your own data",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "../graphs/s07-own-data/nb-s07-own-data-join.json"
+  ],
+  "turns": [
+    {
+      "request": "The mechanical consultant sent over analytics_dataset_with_levels.csv — carbon and energy numbers for the Duplex, keyed by GlobalId. Can you open it and tell me what's in it?",
+      "reply": "268 rows, columns GlobalId, Name, Level, operational_carbon, energy_intensity, category. The key column is GlobalId, the same 22-character id the model itself uses, so nothing needs remapping before a join.",
+      "analysisId": "nb-s07-own-data-join",
+      "tools": [
+        { "name": "Read", "ok": true, "summary": "samples/nrc/test-kit/analytics_dataset_with_levels.csv: 25889 bytes" },
+        { "name": "getResult", "ok": true, "summary": "nb-s07-own-data-join csv.relation: 268 rows × 6 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "file",
+          "path": "samples/nrc/test-kit/analytics_dataset_with_levels.csv",
+          "mediaType": "text/csv",
+          "caption": "The consultant's spreadsheet"
+        },
+        {
+          "kind": "table",
+          "node": "csv",
+          "port": "relation",
+          "caption": "First rows"
+        }
+      ]
+    },
+    {
+      "request": "Join it to the Duplex model on GlobalId, against the physical elements only, and tell me what matched.",
+      "reply": "216 of the model's 237 physical elements (entities with a rendered mesh) match a row in the file. 21 physical elements have no row; 52 file rows match an entity that exists but is not itself physical — mostly the opening behind a door or window rather than the door or window. Both counts are reported, not dropped.",
+      "analysisId": "nb-s07-own-data-join",
+      "tools": [
+        { "name": "getAnalysis", "ok": true, "summary": "nb-s07-own-data-join: 12 nodes, 15 edges" },
+        { "name": "evaluate", "ok": true, "summary": "12 of 12 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s07-own-data-join matchReport.relation: 1 row × 3 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "matchReport",
+          "port": "relation",
+          "caption": "Match report"
+        },
+        {
+          "kind": "graph",
+          "focus": ["matched", "unmatchedInModel", "unmatchedInFile", "matchReport"]
+        }
+      ]
+    },
+    {
+      "request": "Which physical elements did the file miss?",
+      "reply": "All 21 are IfcSpace — Living Room, Kitchen, two Bathrooms, two Bedrooms, Hallway, Foyer, Utility, Stair, Room, Roof — one mesh per room, the space boundary itself. The consultant's file only has rows for building elements, not rooms, so this gap is the file's scope, not a mismatch.",
+      "analysisId": "nb-s07-own-data-join",
+      "tools": [
+        { "name": "getResult", "ok": true, "summary": "nb-s07-own-data-join unmatchedInModel.relation: 21 rows × 6 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "unmatchedInModel",
+          "port": "relation",
+          "caption": "Physical elements with no file row"
+        }
+      ]
+    },
+    {
+      "request": "And the file rows that don't line up with anything physical?",
+      "reply": "52 rows. 50 are keyed to the opening behind a door or window (IfcOpeningElement), not the door or window mesh itself; 2 are keyed to a stair that is meshed only through its flights, never as one entity. The file's numbers for these rows still exist — they just have nowhere to land as a colour yet.",
+      "analysisId": "nb-s07-own-data-join",
+      "tools": [
+        { "name": "getResult", "ok": true, "summary": "nb-s07-own-data-join unmatchedInFile.relation: 52 rows × 6 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "unmatchedInFile",
+          "port": "relation",
+          "caption": "File rows with no physical element"
+        }
+      ]
+    },
+    {
+      "request": "Colour the model by operational carbon from the file, and grey out anything it doesn't reach.",
+      "reply": "Viridis gradient from 14.2 to 412.0 kgCO2e/yr. 693 of the model's 714 mesh instances take a colour; the 21 instances behind the rooms from two turns ago stay grey, exactly the elements the match report already named.",
+      "analysisId": "nb-s07-own-data-join",
+      "tools": [
+        { "name": "getResult", "ok": true, "summary": "nb-s07-own-data-join coloredCarbon.legend: 5 rows × 9 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "view3d",
+          "node": "coloredCarbon",
+          "port": "instances",
+          "caption": "Operational carbon, viridis"
+        },
+        {
+          "kind": "table",
+          "node": "coloredCarbon",
+          "port": "legend",
+          "caption": "Legend"
+        }
+      ]
+    },
+    {
+      "request": "This is going to happen again with the next consultant's file. Can we save it so someone else just points it at their own model and spreadsheet?",
+      "reply": "Saved as a template. Three groups of parameters carry a new model and file without touching the shape of the joins: the file's path on `csv`, plus the join column name repeated on `matched`, `unmatchedInModel`, `unmatchedInFile`, and `coloredCarbon` if the new file spells its key column differently; the model's path on `model`, plus the source name on `entities` if a different model's database is used. Point those at the next consultant's spreadsheet and model, and the match report and the colouring above update the same way.",
+      "analysisId": "nb-s07-own-data-join",
+      "tools": [
+        { "name": "getAnalysis", "ok": true, "summary": "nb-s07-own-data-join: 12 nodes, 15 edges" }
+      ],
+      "embeds": [
+        {
+          "kind": "graph",
+          "focus": ["csv", "model", "entities"]
+        }
+      ]
+    }
+  ]
+}
