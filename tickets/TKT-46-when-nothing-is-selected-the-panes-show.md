@@ -19,4 +19,4 @@ Serves W2 and principle 9 (start from data, not a blank canvas). Today app.ts pa
 
 ## Result (2026-09-27, commit c2bc808)
 
-defaultShownNode in bimopenflow/web/packages/app/src/defaultShown.ts ranks terminal nodes as specified; app.ts falls back to it when nothing is selected and the graph-demo special case became a case of the same function; the pane header reads "Showing <kind> (<id>) · nothing selected". App suite 321 pass, typecheck clean. Kind classes come from output port types and kind-name conventions because the descriptor has no category field: TKT-47.
+defaultShownNode in bimopenflow/web/packages/app/src/defaultShown.ts ranks terminal nodes as specified; app.ts falls back to it when nothing is selected and the graph-demo special case became a case of the same function; the pane header reads "Showing <kind> (<id>) · nothing selected". App suite 321 pass, typecheck clean. Kind classes come from output port types and kind-name conventions because the descriptor has no category field: TKT-47. Browser check 2026-09-27: opening bfast-buffers with nothing selected showed the header "Showing view.table (values) · nothing selected" above a filled Table tab.
