@@ -2,10 +2,10 @@
 // that a fake NotebookApi can drive without a running host.
 
 import { describe, expect, it } from "vitest";
-import { emptyDocument, type GraphDocument } from "@bimopenflow/state";
+import { emptyDocument, serializeDocument, type GraphDocument } from "@bimopenflow/state";
 import type { EvalUpdate } from "@bimopenflow/contracts";
 import type { NotebookApi } from "../src/embeds/contract";
-import { waitSettled } from "../scripts/write-sample-notebooks";
+import { toolCallsFor, waitSettled } from "../scripts/write-sample-notebooks";
 
 /** A NotebookApi whose members throw unless overridden. */
 function fakeApi(overrides: Partial<NotebookApi> = {}): NotebookApi {
@@ -67,5 +67,33 @@ describe("waitSettled", () => {
       getAnalysisState: async () => stateWith("h1", [{ nodeId: "n1", status: "Unavailable", warnings: [] }]),
     });
     await expect(waitSettled(api, "a", docWith("n1"), "h1")).rejects.toThrow(/n1 \(Unavailable\)/);
+  });
+});
+
+describe("toolCallsFor", () => {
+  it("counts an EffectPending node as ok, naming it in the evaluate summary", async () => {
+    const api = fakeApi({
+      getAnalysis: async () => serializeDocument(docWith("answer", "sink")),
+      getAnalysisState: async () =>
+        stateWith("h1", [
+          { nodeId: "answer", status: "Ok", warnings: [] },
+          { nodeId: "sink", status: "EffectPending", warnings: [] },
+        ]),
+    });
+    const calls = await toolCallsFor([], ["nb-x"], api);
+    const evaluate = calls.find((c) => c.name === "evaluate")!;
+    expect(evaluate.ok).toBe(true);
+    expect(evaluate.summary).toBe("1 of 2 nodes Ok, 1 node EffectPending (sink)");
+  });
+
+  it("marks evaluate not ok when a node is left in Error, distinct from EffectPending", async () => {
+    const api = fakeApi({
+      getAnalysis: async () => serializeDocument(docWith("answer")),
+      getAnalysisState: async () => stateWith("h1", [{ nodeId: "answer", status: "Error", warnings: [] }]),
+    });
+    const calls = await toolCallsFor([], ["nb-x"], api);
+    const evaluate = calls.find((c) => c.name === "evaluate")!;
+    expect(evaluate.ok).toBe(false);
+    expect(evaluate.summary).toBe("0 of 1 nodes Ok");
   });
 });

@@ -160,15 +160,30 @@ function pictureEmbed(spec: Extract<EmbedSpec, { kind: "picture" }>): EmbedDraft
  * what the host returned: getAnalysis and evaluate per analysis, Read per
  * file, then getResult per node output that an embed shows a snapshot of.
  */
-async function toolCallsFor(embeds: readonly Embed[], analysisIds: readonly string[], api: NotebookApi): Promise<ToolCall[]> {
+export async function toolCallsFor(
+  embeds: readonly Embed[],
+  analysisIds: readonly string[],
+  api: NotebookApi,
+): Promise<ToolCall[]> {
   const perAnalysis = await Promise.all(
     analysisIds.map(async (id): Promise<ToolCall[]> => {
       const [graph, state] = await Promise.all([api.getAnalysis(id).then(parseDocument), api.getAnalysisState(id)]);
       const ok = state.nodes.filter((n) => n.status === "Ok").length;
+      const pending = state.nodes.filter((n) => n.status === "EffectPending");
+      // EffectPending is not a failure (plan: "nothing writes until Run"): a
+      // writer node stays pending until an explicit Run, by design.
+      const settled = ok + pending.length === state.nodes.length;
       const { nodes, edges } = graph.structure;
       return [
         { name: "getAnalysis", ok: true, summary: `${id}: ${count(nodes.length, "node")}, ${count(edges.length, "edge")}` },
-        { name: "evaluate", ok: ok === state.nodes.length, summary: `${ok} of ${state.nodes.length} nodes Ok` },
+        {
+          name: "evaluate",
+          ok: settled,
+          summary:
+            pending.length > 0
+              ? `${ok} of ${state.nodes.length} nodes Ok, ${count(pending.length, "node")} EffectPending (${pending.map((n) => n.nodeId).join(", ")})`
+              : `${ok} of ${state.nodes.length} nodes Ok`,
+        },
       ];
     }),
   );
