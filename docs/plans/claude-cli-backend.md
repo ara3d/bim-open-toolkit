@@ -537,6 +537,8 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C4 | b65a0c5 | Studio 49 pass (9 new); fence respected (2 files). Never asks the environment for an ANTHROPIC_ name. |
+| C1 | 14fa3ba | Studio 49 pass (3 new); fence respected (4 files). ClaudeCli files use namespace BimOpenFlow.Ask; the HTTP tools/list test uses an empty server. |
 | C2 | 91e7691 | Studio 38 pass, IFC ask 23 pass; fence respected (1 file). ReadResult and TurnLimitMessage match the plan's example. |
 
 ## Spike S1 findings
