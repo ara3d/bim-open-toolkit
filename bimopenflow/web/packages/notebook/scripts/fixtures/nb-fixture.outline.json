@@ -1,0 +1,73 @@
+{
+  "title": "Fixture: every reconstructed-session field",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "graphs/nb-fixture-carbon.json",
+    "graphs/nb-fixture-chart.json"
+  ],
+  "turns": [
+    {
+      "request": "Before we start, what should I ask?",
+      "reply": "Ask for the total operational carbon, or a chart of carbon per storey; both come from the fixture graphs this session saved."
+    },
+    {
+      "request": "What is the total operational carbon?",
+      "reply": "37,196.2 kgCO2e/yr over 218 elements, from the fixture's own copy of the graph.",
+      "analysisId": "nb-fixture-carbon",
+      "embeds": [
+        {
+          "kind": "value",
+          "node": "answer",
+          "port": "relation",
+          "column": "Total",
+          "unit": "kgCO2e/yr",
+          "caption": "Total operational carbon"
+        }
+      ],
+      "tools": [
+        { "name": "describeDatabase", "ok": true, "summary": "nrc_analytics_elements.csv: 218 rows, 12 columns" },
+        { "name": "evaluate", "ok": true, "summary": "2 of 2 nodes Ok" }
+      ]
+    },
+    {
+      "request": "Chart carbon per storey.",
+      "reply": "One pair of bars per storey, embodied A1-A3 beside operational.",
+      "analysisId": "nb-fixture-chart",
+      "embeds": [
+        {
+          "kind": "chart",
+          "node": "answer",
+          "port": "table",
+          "caption": "Carbon per storey (fixture)"
+        }
+      ]
+    },
+    {
+      "request": "Show me a picture.",
+      "reply": "Here is a small fixture picture, inlined so the notebook stays one file.",
+      "embeds": [
+        {
+          "kind": "picture",
+          "path": "bimopenflow/web/packages/notebook/scripts/fixtures/nb-fixture.picture.svg",
+          "alt": "A green square reading 'fixture'",
+          "caption": "Fixture picture"
+        }
+      ]
+    },
+    {
+      "request": "Actually, what is the total operational carbon, rounded to the nearest 100?",
+      "reply": "About 37,200 kgCO2e/yr.",
+      "stale": true,
+      "earlier": [
+        {
+          "request": "Actually, what is the total operational carbon?",
+          "reply": "37,196.2 kgCO2e/yr."
+        }
+      ]
+    }
+  ]
+}
