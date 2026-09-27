@@ -13,7 +13,7 @@ Ticket: TKT-80. Design and imagined sessions: [notebook-sessions.md](../proposal
 
 ## Acceptance criteria
 
-1. `samples/notebooks/nrc-eight-questions.notebook.json` opens in the page with no host. It has eight turns, one per question in `samples/nrc/questions.txt`, and its embeds carry the expected answers in `nrc-ifc-llm/poc/results/expected_answers.json` (Q1 37,196.2 kgCO2e/yr; Q7 not available).
+1. `samples/notebooks/nrc-eight-questions.notebook.json` opens in the page with no host. It has nine turns: one per question in `samples/nrc/questions.txt`, verbatim, then a follow-up asking for a chart. Its embeds carry the expected answers in `nrc-ifc-llm/poc/results/expected_answers.json` (Q1 37,196.2 kgCO2e/yr; Q7 not available).
 2. Against a tables-profile host, "Re-evaluate" marks each embed backed by a node as current, changed (showing was and now), or unavailable.
 3. Against the studio host, a typed request appends a turn built from the `/api/ask` events: the reply text, the tool calls, and embeds for the graph's answer nodes. A follow-up continues the same analysis.
 4. Save downloads a `.notebook.json` that parses back to an equal notebook; Open loads one; the page lists the committed samples.
@@ -113,6 +113,21 @@ Owner's direction, 2026-09-27: the end result is judged as a fixed document, so 
 
 S12 (a Script embed) is left out: the Script embed is not built.
 
+| Id | Commit | Result |
+|---|---|---|
+| W1 | 08a1b2a | the three existing samples regenerate identical; a five-turn fixture outline uses every new field; a broken outline reports each problem with its JSON path |
+| W2 | 623cc35, fabe78e, 4f19e23, aa8843a, 0c92c8e | five fixes, 174 tests |
+| A3 (S6) | ffda157 | 4 turns, seeded graphs only |
+| A9 (S13) | c3a1a2b | 4 turns; the package request says no package builder exists (TKT-12) |
+| A4 (S7) | 98755ba | 6 turns; 216 matched, 21 rooms with no file row, 52 file rows on unmeshed entities |
+| A2 (S5) | 549d7f2 | 5 turns; 2,441 values on 224 entities; no Run called |
+| A8 (S11) | 795861f | 5 turns; an earlier version and three stale turns |
+| A1 (S1) | 4e6aa4a | 5 turns, five graphs |
+| A6 (S9) | da9fc90 | 5 turns; no IDS node exists, so `check.required` stands in; roof fails embodied carbon |
+| A7 (S10) | 68060d2 | 5 turns over the private Snowdon model; 142 doors, 290 rooms and spaces; door width has no clear-width parameter, so 6 of 10 doors are not available |
+| A5 (S8) | 22e8266 | 5 turns; the zone grouping is a table, since there is no editor embed; zone EUI is reported as not available |
+| G | 1c89f7b, 0704d65 | twelve notebooks; `{SNOWDON}` replaces a committed machine-local path; notebooks name repository-relative paths; the S5 graph file renamed to its analysis id; 213 tests |
+
 ## Review findings
 
 ## Debt
@@ -126,6 +141,10 @@ Duplicates and reach-ins made on purpose, each with what removes it:
 - **"Open in editor" cannot open a given graph.** Only `3d.html` reads `?analysis=`; the editor's `main.ts` does not, so the graph embed's link opens the analysis list. Fix: read `analysisFromSearch` in `app/src/main.ts` as `graphDemo.ts` does.
 - **A chart re-read keeps only the snapshot's row count.** `compareWithHost` reads as many rows as the snapshot holds, so a chart whose table grew redraws with the old number of bars (the total is right). Fix: charts snapshot their whole table (they are small by design), or the chart renderer reads `totalRows` rows on "changed".
 - **Restoring a raw sample graph finds no model.** A graph restored with PUT keeps `{SAMPLES}` placeholders that only seeding replaces, so a 3D embed on it matches no catalog model. Fix: the stateless evaluate endpoint, or restoring through the host's seeding path.
+- **The Snowdon default path, twice.** `snowdonPath` in `scripts/write-sample-notebooks.ts` repeats `BimSampleSeeding.SnowdonPath` in the host (environment variable, then Documents), because the host fills `{SNOWDON}` only when it seeds. Fix: the same as the item above; the script then sends placeholders as they are.
+- **The outline checker.** `outlineErrors` in the sample script repeats the path-tagged checking of `src/document/io.ts`, whose combinators are private. Fix: export `field` and `checkObject` from `io.ts` (or a small `document/check.ts`) and build both checkers on them.
+- **Stale and earlier added outside `edits.ts`.** The sample script stitches `stale` and `earlier` onto the turn `appendTurn` returns. Fix: an `appendTurn` option, or build reconstructed turns with `resendTurn`.
+- **Formats the sessions could not express.** No embed kind for a diff (S5), a run record (S5, S8), an editable table (S8), or a graph parameter (S7's template); no chart styling or SVG export (S6's original turn 4); no selection event in an outline (S1's click). Each was written as reply text instead. Fix: the extension points above; each becomes an embed kind when the feature behind it exists.
 - **Re-evaluation writes to the analysis store.** Restoring a missing analysis uses `PUT /api/analyses/{id}`. Fix: a stateless evaluate endpoint (see Considered and rejected).
 
 ## Outcome
