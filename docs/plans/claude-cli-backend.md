@@ -537,6 +537,7 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C6 | 7d9b402 | Studio 66 pass (7 new); fence respected (2 files). Pending tool_use calls keyed by id, joined with their tool_result into one event. |
 | C5 | 8c629ab | Studio 66 pass; fence respected (2 files). McpConfig uses concatenation, not a raw string (CS9007). |
 | C3 | 4a23121 | Studio 66 pass; fence respected (4 files). ScriptedModel moved to ScriptedChat.cs under its old name. |
 | C4 | b65a0c5 | Studio 49 pass (9 new); fence respected (2 files). Never asks the environment for an ANTHROPIC_ name. |
