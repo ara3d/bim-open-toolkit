@@ -1,9 +1,9 @@
 ---
 id: TKT-26
 title: The agent works in the open graph: MCP and Ask default to the analysis the studio has open
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [src/mcp/BimOpenMcp.Flow/**, src/**/Host/**, bimopenflow/web/packages/app/**, bimopenflow/web/packages/api-client/**, bimopenflow/web/packages/contracts/**, scripts/demo-bim-flow-mcp.mjs, docs/bim-flow-mcp-demo.md]
 ---
 

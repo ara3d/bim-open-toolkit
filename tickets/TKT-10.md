@@ -1,9 +1,9 @@
 ---
 id: TKT-10
 title: Node state badges that name the upstream cause, and a Run-to-see-results hint
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [bimopenflow/web/packages/app/**, bimopenflow/web/packages/state/**, bimopenflow/web/packages/panes/**]
 ---
 
