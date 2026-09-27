@@ -1,6 +1,6 @@
 # Remove the properties panel: every parameter is edited on its node
 
-Status: building
+Status: swept; report pending
 Request: TKT-22. Remove the properties panel (`paramsPane.ts`) from the BimOpenFlow web editor so that every node parameter is edited on its node card. The owner decided this in TKT-5 (2026-09-26): "Scalar parameters live in the graph. Always. The properties panel should be thrown out." Json, Expression, ModelRef, and long Text move onto the node, and a long value opens an editor anchored to the node. Every edit goes through `setParam` and reverts in one undo step. TKT-23 follows and will make each parameter kind a richer control on the card, so each parameter row and the way its control is chosen must stay fixed for TKT-23 to build on.
 Open questions (each has a default, so none blocks the build; the supervisor took the defaults on 2026-09-26):
 1. Parameters whose descriptor sets `control.kind: "hidden"` could only be edited in the pane. These are `duck.query.path`, `table.sort.by`, and `table.sort.descendingA/B/C` (the sort-column control already sets the `descending*` values). After this feature, only agents, MCP, and the document itself can change them. Default: they stay hidden, because hiding them was the node author's choice.
@@ -357,6 +357,10 @@ Design notes:
 Checked with no finding: one setParam per commit for fields, picker, toggle, dropdown; re-entrant close; close on node removal; no double mount; hidden parameters; sort-column; Enum open flag; unknown kinds; Retires list fully applied; every commit inside its fence; panes and state unchanged.
 
 ## Debt and extension points
-- Coalesce the slider and range widgets' per-move `setParam` writes into one undo step (`graphWidgets.ts:21-38`). Their drag writes predate this feature and were excluded from criterion 5 by defect 5 below; TKT-23's typed slider is the first control that would need this.
+- Coalesce the slider and range widgets' per-move `setParam` writes into one undo step (`graphWidgets.ts:21-38`). Their drag writes predate this feature and were excluded from criterion 5; TKT-23's typed slider is the first control that would need this.
+- Factory modules register a prune hook instead of `pruneSlots` calling `pruneInlineControls` and `pruneLongValueEditors` by hand; lets TKT-23 add custom prune logic for each control without modifying `slotRegistry.ts`.
+- Retire `PaneContext.requestSuggestions` and `PaneInput["inspect"].nodeId` in `packages/panes/src/pane.ts`, which no pane uses after the properties panel deletion; wire app-level `SuggestionProvider` type in their place.
+- The Inspector tab's read-only Params list in `packages/panes` (open question 2): if the owner counts it as "a second place to look at parameters", removing it becomes its own ticket.
+- Test long-value editor Cancel button and click-outside closing through the store (defect 6); calls through the DOM layer do not reach `dispatchInline`. Runtime-mount gap: a headless test cannot fire the gratify-island `focusout` event in the same way a user would, so `Runtime.syncIslands` cannot be fully exercised without a browser.
 
 ## Report
