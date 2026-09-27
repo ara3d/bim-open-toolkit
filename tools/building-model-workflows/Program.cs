@@ -8,6 +8,8 @@ using Ara3D.BimOpenSchema.BuildingModel.DuckDb;
 using Ara3D.BimOpenSchema.BuildingModel.Source;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows;
 using Ara3D.BimOpenSchema.BuildingModel.Workflows.IO;
+using Ara3D.BimOpenSchema.Federation;
+using Ara3D.Utils;
 using Platonic;
 
 namespace BuildingModel.Workflows.Cli;
@@ -47,6 +49,9 @@ internal static class Program
                     if (args.Length == 5 && args[4] != "--complete-scope") return Usage();
                     Compare(args[1], args[2], args[3], args.Length == 5);
                     return 0;
+                case "federate-union" when args.Length >= 3:
+                    FederateUnion(args[1], args.Skip(2).ToArray());
+                    return 0;
                 default: return Usage();
             }
         }
@@ -59,7 +64,7 @@ internal static class Program
 
     private static int Usage()
     {
-        Console.Error.WriteLine("Commands: prepare <source.bos> <cache.bfast> | run <cache.bfast> <output-directory> [--declared-units|--revit-internal] | reopen <projection.json> <output-directory> | export-duckdb <cache.bfast> <output.duckdb> [--declared-units|--revit-internal] | portfolio <output-directory> <projection.json> [...] | compare <before.json> <after.json> <output-directory> [--complete-scope]");
+        Console.Error.WriteLine("Commands: prepare <source.bos> <cache.bfast> | run <cache.bfast> <output-directory> [--declared-units|--revit-internal] | reopen <projection.json> <output-directory> | export-duckdb <cache.bfast> <output.duckdb> [--declared-units|--revit-internal] | portfolio <output-directory> <projection.json> [...] | compare <before.json> <after.json> <output-directory> [--complete-scope] | federate-union <out-dir> (<file.ifc>... | --example)");
         Console.Error.WriteLine("BFAST preparation is explicit; run/reopen never read or decode the original BOS. --declared-units asserts stored numeric units, not merely display units.");
         return 2;
     }
@@ -119,6 +124,32 @@ internal static class Program
             DateTimeOffset.UtcNow, NumericStorage: storagePolicy));
         new DuckDbProjectionWriter().Write(projection, destination);
         Console.WriteLine($"DuckDB core projection ({Summary(projection)}): {Path.GetFullPath(destination)}");
+    }
+
+    private static readonly JsonSerializerOptions FederationJsonOptions =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true };
+
+    /// <summary>Converts the given IFC files (or, with --example, FederationExample's five
+    /// built-in documents) one at a time and unions them, writing union.bos, union.duckdb, and
+    /// union-summary.json to outDirectory. The summary JSON is also printed to stdout.</summary>
+    private static void FederateUnion(string outDirectory, string[] sources)
+    {
+        Directory.CreateDirectory(outDirectory);
+        var timer = Stopwatch.StartNew();
+        var inputs = sources is ["--example"]
+            ? FederationExample.Documents()
+            : BosUnion.ConvertIfc(sources.Select(s => (FilePath)s).ToArray());
+        var union = BosUnion.Union(inputs);
+        BosUnion.WriteBos(union, Path.Combine(outDirectory, "union.bos"));
+        BosUnion.WriteDuckDb(union, Path.Combine(outDirectory, "union.duckdb"));
+        var documents = BosUnion.Summarize(union);
+        var seconds = timer.Elapsed.TotalSeconds;
+        using var process = Process.GetCurrentProcess();
+        process.Refresh();
+        var summary = new { documents, seconds, peakWorkingSetBytes = process.PeakWorkingSet64 };
+        var json = JsonSerializer.Serialize(summary, FederationJsonOptions);
+        File.WriteAllText(Path.Combine(outDirectory, "union-summary.json"), json);
+        Console.WriteLine(json);
     }
 
     private static readonly HashSet<Type> Bookkeeping =
