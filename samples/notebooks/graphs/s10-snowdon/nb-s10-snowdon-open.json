@@ -26,7 +26,7 @@
     ]
   },
   "values": {
-    "elements": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "elements": { "path": "{SNOWDON}" },
     "byCategory": { "groupBy": "Category", "aggregates": "count(*) as Elements" },
     "ranked": { "by": "Elements desc" },
     "doorsRow": { "expr": "Category == 'Doors'" },

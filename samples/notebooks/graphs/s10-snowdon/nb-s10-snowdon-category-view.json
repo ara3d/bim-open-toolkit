@@ -14,7 +14,7 @@
     ]
   },
   "values": {
-    "snowdon": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "snowdon": { "path": "{SNOWDON}" },
     "categories": { "opacity": "1" }
   }
 }

@@ -20,7 +20,7 @@
     ]
   },
   "values": {
-    "levels": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "levels": { "path": "{SNOWDON}" },
     "withRooms": { "expr": "RoomCount > 0" },
     "ranked": { "by": "RoomCount desc" },
     "chart": { "labelColumn": "Name", "valueColumns": "RoomCount", "title": "Rooms per storey", "sort": "desc" }

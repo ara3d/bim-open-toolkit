@@ -22,7 +22,8 @@
 // the committed file.
 
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ApiClient } from "@bimopenflow/api-client";
@@ -298,13 +299,43 @@ function withExtras(turn: Turn, outlineTurn: OutlineTurn): Turn {
 async function seedGraphs(outline: Outline, outlineDir: string, api: NotebookApi): Promise<void> {
   for (const relPath of outline.graphs ?? []) {
     const path = join(outlineDir, relPath);
-    const text = readFileSync(path, "utf8");
+    const text = expandPlaceholders(readFileSync(path, "utf8"), path);
     const id = basename(relPath).replace(/\.json$/, "");
     const doc = parseDocument(text);
     const summary = await api.putAnalysis(id, text);
     await waitSettled(api, id, doc, summary.graphHash);
   }
 }
+
+/**
+ * The private Snowdon model: BIMOPENFLOW_SNOWDON, else the default location.
+ * Duplicates BimSampleSeeding.SnowdonPath in the host, which fills the same
+ * placeholder only when it seeds an empty store, never on a PUT (plan, Debt).
+ */
+function snowdonPath(): string {
+  return (
+    process.env.BIMOPENFLOW_SNOWDON ??
+    join(homedir(), "Documents", "BIM Open Schema", "Snowdon Towers Sample Architectural.bos")
+  );
+}
+
+/** Replaces {SNOWDON} in a graph's text, so no committed graph names a machine-local path. */
+function expandPlaceholders(text: string, graphPath: string): string {
+  if (!text.includes("{SNOWDON}")) return text;
+  const snowdon = snowdonPath();
+  if (!existsSync(snowdon)) {
+    throw new Error(`${graphPath} needs the private Snowdon model, not found at ${snowdon} (set BIMOPENFLOW_SNOWDON).`);
+  }
+  return text.split("{SNOWDON}").join(snowdonText(snowdon));
+}
+
+/** The reverse, for graph documents the host hands back inside graph embeds. */
+function hidePlaceholders(text: string): string {
+  return text.split(snowdonText(snowdonPath())).join("{SNOWDON}");
+}
+
+/** Forward slashes need no escaping inside the graph's JSON strings. */
+const snowdonText = (path: string): string => path.split("\\").join("/");
 
 /**
  * Polls GET /api/analyses/{id}/state until it reports every node of `doc` and
@@ -525,7 +556,7 @@ async function main(): Promise<void> {
   const outline = raw as Outline;
   const api = new ApiClient({ baseUrl: requiredOption("--host") });
   const notebook = await writeNotebook(outline, dirname(outlinePath), api);
-  const text = serializeNotebook(notebook);
+  const text = hidePlaceholders(serializeNotebook(notebook));
   const parsed = parseNotebook(text);
   if (!parsed.ok) throw new Error(`the written notebook does not parse:\n${parsed.errors.join("\n")}`);
   const name = basename(outlinePath).replace(/\.outline\.json$/, "");

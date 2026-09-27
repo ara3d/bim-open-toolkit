@@ -32,8 +32,8 @@
     ]
   },
   "values": {
-    "bos": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
-    "elements": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "bos": { "path": "{SNOWDON}" },
+    "elements": { "path": "{SNOWDON}" },
     "doorsOnly": { "expr": "Category == 'Doors'" },
     "storeyDoors": { "expr": "Level == 'L1 - Block 43'" },
     "roughWidth": { "expr": "Name == 'Rough Width'" },
