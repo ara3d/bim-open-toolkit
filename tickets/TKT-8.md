@@ -1,9 +1,9 @@
 ---
 id: TKT-8
 title: Measure the Claude backend on the Ask request set and record the transcript
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [scripts/ask-bim-flow.mjs, docs/bim-flow-mcp-demo.md, artifacts/bim-flow-duckdb/**, samples/duckdb-analyses/**]
 ---
 
