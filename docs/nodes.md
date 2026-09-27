@@ -54,7 +54,7 @@ is the content itself, not the path or a timestamp.
 | TableOps — `BimOpenFlow.Nodes.TableOps` | 18 | `table.filter`, `table.derive`, `table.aggregate`, `table.sort`, `table.cast`, `table.concat`, `table.distinct`, `table.drop`, `table.limit`, `table.pivot`, `table.profile`, `table.rename`, `table.sample`, `table.schema`, `table.splitColumn`, `table.transpose`, `table.unpivot`, `table.window` |
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
-| Viz — `BimOpenFlow.Nodes.Viz` | 3 | `chart.bar`, `chart.line`, `view.table` |
+| Viz — `BimOpenFlow.Nodes.Viz` | 4 | `chart.bar`, `chart.line`, `view.table`, `view.colormap` |
 | Spatial — `BimOpenFlow.Nodes.Spatial` | 8 | `spatial.intersects`, `spatial.within`, `spatial.nearest`, `spatial.contains`, `spatial.footprint`, `spatial.polygon`, `spatial.polygonContains`, `spatial.polygonIntersects` |
 | Relations — `BimOpenFlow.Nodes.Relations` | 12 | `rel.csv`, `rel.table`, `rel.fromTable`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
 
@@ -415,9 +415,9 @@ One row per placed mesh of a model file: instanceIndex, meshId, entityId, global
 
 ### `view3d.color` (v1) — Pure
 
-Adds r,g,b,a color columns to an instance table by joining a value table on a shared column.
+Adds r,g,b,a color columns to an instance table by joining a value table on a shared column, and reports the colour scale used on a `legend` output. Without a `scale` input the scale is built from `auto`/`min`/`max`/`colorMap`; with one, that scale colours the cells and passes through unchanged.
 
-Numeric value columns map through a gradient normalized over the column's min..max range; text values map categorically, with palette indices assigned by sorted distinct value so colors are stable under row reordering. A non-numeric value column with a gradient colorMap warns and falls back to category10. Instance rows with no match in the value table get gray; alpha is always 1.
+Numeric value columns map through a gradient normalized over the column's min..max range; text values map categorically, with palette indices assigned by sorted distinct value so colors are stable under row reordering. A non-numeric value column with a gradient colorMap warns and falls back to category10. Instance rows with no match in the value table get gray; alpha is always 1. With `auto` false, the gradient's domain is the manual `min`..`max` instead of the column's own range; values outside it take the end colours and are counted in the `legend` output's below/above rows, with one warning naming the count. `min >= max` warns and falls back to the automatic domain. An optional `scale` input (typically `view.colormap`'s `legend`, so this pane and a chart share one domain) replaces the node's own scale entirely — `auto`/`min`/`max`/`colorMap` are ignored (with a warning when `auto` is false) and the scale's own value column is used, with a warning if `valueColumn` names a different one. Either way, `legend` reports the domain actually used — `auto`, `manual`, or `categorical` — so a clamped manual domain is visible instead of silent.
 
 **Inputs**
 
@@ -425,12 +425,14 @@ Numeric value columns map through a gradient normalized over the column's min..m
 |---|---|---|
 | `instances` | Table | required |
 | `values` | Table | required |
+| `scale` | Table | optional |
 
 **Outputs**
 
 | Name | Type |
 |---|---|
 | `instances` | Table |
+| `legend` | Table |
 
 **Params**
 
@@ -439,6 +441,9 @@ Numeric value columns map through a gradient normalized over the column's min..m
 | `joinColumn` | Text | — | — | — |
 | `valueColumn` | Text | — | — | — |
 | `colorMap` | Enum | `viridis` | `viridis`, `category10`, `redgreen` | — |
+| `auto` | Boolean | `true` | — | — |
+| `min` | Number | `0` | — | — |
+| `max` | Number | `1` | — | — |
 
 ### `view3d.isolate` (v1) — Pure
 
@@ -2460,19 +2465,23 @@ Chart and table-view nodes that validate and project table data for the web pane
 
 ### `chart.bar` (v1) — Pure
 
-Projects 'labelColumn' plus the comma-separated numeric 'valueColumns' for the bar-chart pane; 'sort' orders rows by the first value column.
+Projects 'labelColumn' plus the comma-separated numeric 'valueColumns' for the bar-chart pane; 'sort' orders rows by the first value column. With a 'scale' input, appends 'r g b' colour columns computed from the scale's column (or the first value column) and passes the scale through on 'legend'; without one, 'legend' is the empty legend table.
+
+With a `scale` input, colours each bar by looking up the scale's column (or, if the projection dropped it, the first value column, with a warning) in the source table and appending `r g b` columns; pre-existing `r`, `g`, or `b` columns from the projection are dropped first, with a warning naming them. Bars outside the scale's domain warn once, by count. The scale is passed through unchanged on `legend`, so the chart and its source scale (or a 3D pane sharing it) report the same domain. Without a `scale` input, `legend` is the empty legend table and bars keep their default fill.
 
 **Inputs**
 
 | Name | Type | Required |
 |---|---|---|
 | `table` | Table | required |
+| `scale` | Table | optional |
 
 **Outputs**
 
 | Name | Type |
 |---|---|
 | `table` | Table |
+| `legend` | Table |
 
 **Params**
 
@@ -2529,6 +2538,34 @@ Titles a table view; comma-separated 'columns' optionally projects (default all,
 |---|---|---|---|---|
 | `title` | Text | — | — | — |
 | `columns` | Text | — | — | columns of input `table` |
+
+### `view.colormap` (v1) — Pure
+
+Builds a legend table (the shared colour scale) for 'valueColumn' of 'values'; wire the 'legend' output into view3d.color's or chart.bar's 'scale' input so both panes share one colour scale. An unknown column warns and emits an empty legend.
+
+`ColorScale.Build` exposed as its own node, so a 3D pane and a chart pane over the same column share one colour scale: wire this node's `legend` output into both consumers' `scale` inputs and they colour identically and report the same domain. An unknown `valueColumn` warns and emits the empty legend table rather than failing the graph. `auto`/`min`/`max`/`colorMap` behave exactly as they do on `view3d.color`, including the clamp warning and the fallback to the automatic domain when `min >= max`.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `values` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `legend` | Table |
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `valueColumn` | Text | — | — | columns of input `values` |
+| `colorMap` | Enum | `viridis` | `viridis`, `category10`, `redgreen` | — |
+| `auto` | Boolean | `true` | — | — |
+| `min` | Number | `0` | — | — |
+| `max` | Number | `1` | — | — |
 
 ## Spatial — `BimOpenFlow.Nodes.Spatial`
 
