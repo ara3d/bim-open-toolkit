@@ -1,9 +1,9 @@
 ---
 id: TKT-27
 title: The node catalog is a collapsed tree grouped by pack, opened by search
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [bimopenflow/web/packages/app/src/sidebar.ts, bimopenflow/web/packages/app/src/catalogFilter.ts, bimopenflow/web/packages/app/src/prefs.ts, bimopenflow/web/packages/app/src/styles.ts, bimopenflow/web/packages/app/test/**]
 ---
 

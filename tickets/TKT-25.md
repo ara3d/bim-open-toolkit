@@ -1,9 +1,9 @@
 ---
 id: TKT-25
 title: The Ask panel keeps its size while a reply streams
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [bimopenflow/web/packages/app/src/duckdbDemo.ts, bimopenflow/web/packages/app/src/duckdbDemo.css, bimopenflow/web/packages/app/test/**]
 ---
 
