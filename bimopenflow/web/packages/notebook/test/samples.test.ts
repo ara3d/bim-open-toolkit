@@ -69,7 +69,7 @@ describe("sample notebooks", () => {
     expect(named.filter((id) => !known.has(id))).toEqual([]);
   });
 
-  it.each(sampleFiles.filter((f) => f.startsWith("s")))("%s is labelled as reconstructed", (file) => {
+  it.each(sampleFiles.filter((f) => /^s\d+-/.test(f)))("%s is labelled as reconstructed", (file) => {
     expect(load(file.replace(/\.notebook\.json$/, "")).host?.note).toMatch(/^Reconstructed session/);
   });
 
