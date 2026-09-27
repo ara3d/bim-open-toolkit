@@ -4,7 +4,7 @@ title: Merge the seven Snowdon IFC files into one BOS with a correspondence tabl
 status: claimed
 depends_on: []
 owner: assembly-line-supervisor
-fence: [src/**/BuildingModel*/**, src/**/Bos*/**, tools/building-model-workflows/**, samples/snowdon-analyses/**, samples/duckdb-analyses/**, docs/bim-flow-duckdb.md, BIMOPENFLOW.md, scripts/**]
+fence: [src/data/Ara3D.Ifc.Bos/**, src/data/Ara3D.BimOpenSchema.Federation/**, tests/data/Ara3D.Ifc.Tests/ConverterUnitAndAxisTagTests.cs, tests/data/Ara3D.BimOpenSchema.Federation.Tests/**, tests/flow/BimOpenFlow.TableWorkflows.Tests/**, BimOpenToolkit.sln, tools/building-model-workflows/**, samples/snowdon-analyses/**, samples/duckdb-analyses/**, docs/bim-flow-duckdb.md, BIMOPENFLOW.md, scripts/federate-snowdon.mjs, scripts/prepare-bim-flow-duckdb.mjs, scripts/check-bim-flow-duckdb.mjs, docs/plans/snowdon-federation-build.md]
 ---
 
 ## Acceptance criteria

@@ -242,6 +242,8 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C1 | 903d9d8 | 191 formats tests unchanged, tsc and eslint clean; fence respected. |
+| C7 | ff58478 | node --check passes; servers not running so no live run. Finding: the script navigates to /3d.html?profileStartup=1 without analysis=snowdon-toolkit; the plan's 'as today' was wrong; the profiling host serves that analysis by default, so the parameter is redundant. |
 
 ## Review findings
 
