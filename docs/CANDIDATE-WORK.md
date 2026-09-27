@@ -13,7 +13,7 @@ How it was made: nine readers each took one group of documents (architecture, th
 
 ## The first stretch, in order
 
-The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1 and TKT-4 if possible; item 3 waits on it. TKT-22, removing the properties panel, was decided on 2026-09-26 and runs alongside the list. The order puts the measurement and the one known wrong answer first, because every later item on the AI aim is judged against them, then the clean-clone start and the studio chart pane (the two things the owner will feel first), then the Run that unlocks exports and reports, then the canvas and 3D work.
+The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1 and TKT-4 if possible; item 3 waits on it. TKT-22, removing the properties panel, was decided on 2026-09-26 and runs alongside the list. The same day the owner reported eight findings from using the studio (the section "Owner's findings" below); their tickets, TKT-23 to TKT-29, are rows 15 to 21, and the cheap ones (the Ask panel that holds still, the collapsed catalog) belong in the first week because they are what a visitor meets first. The order puts the measurement and the one known wrong answer first, because every later item on the AI aim is judged against them, then the clean-clone start and the studio chart pane (the two things the owner will feel first), then the Run that unlocks exports and reports, then the canvas and 3D work.
 
 | # | Ticket | Item | Serves | Why now |
 |---|---|---|---|---|
@@ -31,6 +31,13 @@ The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1 and 
 | 12 | TKT-15 | A coarse first frame for Snowdon under 2 s warm | W4 | 5.2 to 5.8 s of blank canvas is the roughness a reviewer feels first. |
 | 13 | TKT-16 | One colour domain with a legend across panes | W4, W3 | The PoC's most common novice trap was a silently clamped manual domain; a shared legend is what makes a coloured model and its chart agree. |
 | 14 | TKT-14 | A template gallery keyed to the workflow list | W1, W2 | Turns the 44 enumerated V1 workflows into the entry point, so most people never start from a blank canvas (principle 9, unconfirmed; waits on TKT-4). |
+| 15 | TKT-25 | The Ask panel keeps its size while a reply streams | W2 | A one-file CSS and layout fix; today every streamed event moves the canvas. |
+| 16 | TKT-27 | The node catalog is a collapsed tree grouped by pack, opened by search | W1, W2 | Small; the flat list is the first thing a visitor sees and the first thing the owner disliked. |
+| 17 | TKT-26 | The agent works in the open graph: MCP and Ask default to the open analysis | W2 | Principle 7; without it every Claude turn starts by asking for an id. Needs a session contract between app, host, and MCP server first. |
+| 18 | TKT-24 | Animate the active path on selection and show flow during evaluation | W2, W3 | The hooks exist (selection pulse, awake window); this is the "fun" the owner asked for. |
+| 19 | TKT-23 | Node cards carry real controls, and a showcase graph exercises every kind | W2, W3 | Follows TKT-22; parameters on the node are only better than a panel if the controls are worth touching. |
+| 20 | TKT-28 | One studio for data and 3D: the view3d pane inside the DuckDB studio on the same graph | W3, W4 | Moves 3D colouring from Out to In per the owner; waits on TKT-7 for a shared store and TKT-16 for the legend. |
+| 21 | TKT-29 | One Claude conversation about the open graph, in the studio and from Claude Code | W2 | The surface that joins TKT-8, TKT-17, TKT-25, and TKT-26; last because it depends on all of them. |
 
 ## Everything gathered, by theme
 
@@ -143,6 +150,19 @@ Each line: the item, its status, who or which workflow it serves, and its source
 - Truthful status and CI: remove `continue-on-error`, add the viz and editor typecheck and the V2 suite to the gates, a headless editor smoke (SQL, write-back, MCP intents, Ask), a publishing gate. Idea. `REPOSITORY-HANDOFF.md` P0; `gates/README.md` TODO. TKT-19 covers the walkthrough.
 - Package and retire deliberately: a dependency-ordered V2 build, an installed-package smoke, sibling dependencies, archive of the PoC. Idea. `REPOSITORY-HANDOFF.md` P2.
 - Test hygiene: hoist the mini IFC fixture (copied six times), `.gitattributes` for `samples/nrc`, remove the `CsvGraphTests` workaround. Partial. `docs/plans/nrc-handoff-wave.md` "Design notes deferred".
+
+## Owner's findings from using the studio, 2026-09-26
+
+Reported after the first brief, in the owner's words, with the ticket each became and what the code says about the cause.
+
+- The nodes were too bland and lacked interesting controls; the graphs demonstrated too few controls. TKT-23 (after TKT-22).
+- No animation on the nodes to show the current flow; selecting a node should light the path that feeds it. `selectionBorder.ts` pulses the selected border only. TKT-24.
+- The Ask panels resized when the agent's feedback arrived. `duckdbDemo.css` lets the log grow to 180 px above a flex editor. TKT-25.
+- Interacting with the MCP seemed unaware of the currently active graph. Every tool in `src/mcp/BimOpenMcp.Flow` takes an explicit `analysisId`, and the host keeps no record of what the editor shows. TKT-26, and principle 7 of the brief.
+- The node catalog on the left was fully expanded and too big; a collapsed or tree view was expected. `sidebar.ts` renders one flat filtered list. TKT-27.
+- Graphs for data and graphs for 3D are different today, and the owner wants both in one place. The brief's Scope moved 3D colouring from Out to In. TKT-28.
+- A better and tighter integration with Claude overall. TKT-29 joins the pieces; TKT-8 measures it.
+- "However we get there doesn't matter": the tickets state the outcome and leave the design to the builder.
 
 ## What the documents argue against
 
