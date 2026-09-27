@@ -1,9 +1,9 @@
 ---
 id: TKT-45
 title: The Ask box and the IFC ask call Claude through the Claude Code command line, Haiku at medium effort, not the Anthropic API
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: assembly-line-supervisor
 fence: [src/studio/BimOpenFlow.Ask/**, src/studio/BimOpenFlow.Studio/**, src/studio/BimOpenMcp.Ifc.Ask/**, tests/studio/**, docs/bim-flow-mcp-demo.md, docs/START.md, scripts/ask-bim-flow.mjs]
 ---
 
