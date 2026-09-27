@@ -63,9 +63,15 @@ describe("renderValue", () => {
     const el = mountEl();
     const handle = renderValue(el, embed(), makeCtx(api));
     expect(api.getResult).not.toHaveBeenCalled();
-    expect(el.textContent).toContain("Total");
     expect(el.textContent).toContain("37,196.2");
     expect(el.textContent).toContain("kgCO2e/yr");
+    handle.destroy();
+  });
+
+  it("shows only the value and unit, not embed.caption (the turn view's frame already shows it)", () => {
+    const el = mountEl();
+    const handle = renderValue(el, embed({ caption: "Total" }), makeCtx(fakeApi()));
+    expect(el.textContent).not.toContain("Total");
     handle.destroy();
   });
 

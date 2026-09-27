@@ -46,8 +46,6 @@ export const renderValue: EmbedRenderer<ValueEmbed> = (el, embed, ctx) => {
   root.className = "bof-notebook-value";
   el.appendChild(root);
 
-  const captionEl = doc.createElement("div");
-  captionEl.className = "bof-notebook-value-caption";
   const numberEl = doc.createElement("span");
   numberEl.className = "bof-notebook-value-number";
   const unitEl = doc.createElement("span");
@@ -55,10 +53,6 @@ export const renderValue: EmbedRenderer<ValueEmbed> = (el, embed, ctx) => {
 
   const draw = (snapshot: TableSnapshot): void => {
     root.textContent = "";
-    if (embed.caption) {
-      captionEl.textContent = embed.caption;
-      root.appendChild(captionEl);
-    }
     const formatted = formatCell(snapshot, embed.column);
     if (formatted === null) {
       numberEl.textContent = NOT_AVAILABLE;
