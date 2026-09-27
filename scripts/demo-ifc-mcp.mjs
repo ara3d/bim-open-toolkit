@@ -30,22 +30,24 @@ function exit(message) {
   process.exit(1);
 }
 
-// The paper's questions this replay answers, with the SQL the recorded session used and the
-// expected values from nrc-ifc-llm/poc/results/expected_answers.json (copied into
-// tests/flow/BimOpenFlow.NrcWorkflows.Tests as cited numbers).
-const ELEMENTS = "e.Category NOT IN ('IFCBUILDING','IFCBUILDINGSTOREY','IFCPROJECT')";
+// The paper's questions this replay answers, with the expected values from
+// nrc-ifc-llm/poc/results/expected_answers.json (copied into
+// tests/flow/BimOpenFlow.NrcWorkflows.Tests as cited numbers). Since TKT-48 the storey and
+// building totals live in Pset_NRCStoreySummary and Pset_NRCBuildingSummary under their own
+// names, so Q1 and Q5 sum the element property with no class filter, and Q8 sums element
+// values per storey through StoreyOfElement instead of reading a storey's copy of the property.
 const OC = "p.ParameterGroup='Pset_NRCOperationalCarbon' AND p.Name='OperationalCarbon_kgCO2e_per_year'";
 const JOIN = "FROM ParameterText p JOIN EntityText e ON e.EntityIndex = p.EntityIndex";
 const QUESTIONS = [
   {
     id: "Q1", question: "What is the total operational carbon for the building?",
-    sql: `SELECT round(sum(CAST(p.Value AS DOUBLE)),1) AS total_kgCO2e_per_year, count(*) AS elements ${JOIN} WHERE ${OC} AND ${ELEMENTS}`,
+    sql: `SELECT round(sum(CAST(p.Value AS DOUBLE)),1) AS total_kgCO2e_per_year, count(*) AS elements ${JOIN} WHERE ${OC}`,
     check: (rows) => near(cell(rows[0], "total_kgCO2e_per_year"), 37196.2) && Number(cell(rows[0], "elements")) === 218,
     expected: "37,196.2 kgCO2e/yr over 218 elements",
   },
   {
     id: "Q5", question: "How much operational carbon is in each category?",
-    sql: `SELECT e.Category, round(sum(CAST(p.Value AS DOUBLE)),1) AS oc, count(*) AS n ${JOIN} WHERE ${OC} AND ${ELEMENTS} GROUP BY e.Category ORDER BY oc DESC`,
+    sql: `SELECT e.Category, round(sum(CAST(p.Value AS DOUBLE)),1) AS oc, count(*) AS n ${JOIN} WHERE ${OC} GROUP BY e.Category ORDER BY oc DESC`,
     check: (rows) => rows.length >= 9 && near(cell(rows[0], "oc"), 17547.4) && cell(rows[0], "Category") === "IFCWALLSTANDARDCASE",
     expected: "walls first at 17,547.4 (IFCWALLSTANDARDCASE), 14 IFC classes",
   },
@@ -57,7 +59,7 @@ const QUESTIONS = [
   },
   {
     id: "Q8", question: "What is the total embodied carbon (A1-A3) per storey?",
-    sql: `SELECT e.Name AS storey, CAST(p.Value AS DOUBLE) AS a1a3 ${JOIN} WHERE e.Category='IFCBUILDINGSTOREY' AND p.ParameterGroup='Pset_NRCEmbodiedCarbon' AND p.Name='EmbodiedCarbon_A1A3_kgCO2e' ORDER BY a1a3 DESC`,
+    sql: "SELECT so.StoreyName AS storey, round(sum(CAST(p.Value AS DOUBLE)),1) AS a1a3 FROM ParameterText p JOIN StoreyOfElement so ON so.EntityIndex = p.EntityIndex WHERE p.ParameterGroup='Pset_NRCEmbodiedCarbon' AND p.Name='EmbodiedCarbon_A1A3_kgCO2e' GROUP BY so.StoreyName ORDER BY a1a3 DESC",
     check: (rows) => rows.length === 4 && cell(rows[0], "storey") === "Level 1" && near(cell(rows[0], "a1a3"), 49451.2) && near(cell(rows[1], "a1a3"), 48696.8),
     expected: "Level 1 49,451.2; Level 2 48,696.8; T/FDN 11,761.3; Roof 5,821.0",
   },
@@ -118,7 +120,7 @@ try {
 
   transcript.push(`# IFC MCP replay over ${model}`, "",
     `Server ${init.serverInfo.name} ${init.serverInfo.version} over stdio, ${tools.length} tools, ${new Date().toISOString()}.`,
-    "Every call and its result are recorded verbatim; the SQL is the recorded session's. No language model is involved.", "");
+    "Every call and its result are recorded verbatim. No language model is involved.", "");
 
   note("### Setup: open the model and list the query views");
   const opened = await call("ifc_open", { path: model });
@@ -126,7 +128,7 @@ try {
   const tables = await call("ifc_table", { path: model, take: 50 });
   const names = (tables.items ?? []).map((t) => t.table);
   console.log(`Views: ${names.filter((n) => /Text|StoreyOf/.test(n)).join(", ")}`);
-  for (const view of ["EntityText", "ParameterText", "RelationText", "StoreyOfEntity"])
+  for (const view of ["EntityText", "ParameterText", "RelationText", "StoreyOfEntity", "StoreyOfElement"])
     if (!names.includes(view)) fail(`view ${view} missing from ifc_table`);
 
   for (const q of QUESTIONS) {

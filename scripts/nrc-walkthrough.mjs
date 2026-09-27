@@ -54,7 +54,7 @@ const DUPLEX_CAPTURES = [
   ["nrc-storey-carbon-chart", "answer", "table", "figure-3-storey-carbon-table.png",
     "Figure 3. The same aggregates in the Table tab."],
   ["nrc-property-values", "answer", "table", "figure-4-property-values-table.png",
-    "Figure 4. The 2,438 rows the byte-exact writer turned into IFCPROPERTYSINGLEVALUE entities."],
+    "Figure 4. The 2,441 property values the byte-exact writer added to the Duplex, read back from duplex-enriched.ifc: element sets, storey and building summaries, and the provenance set."],
   ["nrc-color-operational-carbon", "answer", "view3d", "figure-5-3d-operational-carbon.png",
     "Figure 5. duplex-enriched.ifc coloured by operational carbon (viridis, normalised over the column); instances without a value are grey."],
   ["nrc-color-embodied-carbon", "answer", "view3d", "figure-6-3d-embodied-carbon.png",
