@@ -1,0 +1,90 @@
+{
+  "title": "Editing, saving, and loading the notebook",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "../graphs/s11-editing-history/nb-s11-editing-history-top-elements.json",
+    "../graphs/s11-editing-history/nb-s11-editing-history-door-sum.json"
+  ],
+  "turns": [
+    {
+      "request": "Which ten elements have the highest operational carbon?",
+      "reply": "All ten are in the Wall category. The highest is Basic Wall:Interior - Partition (92mm Stud):190140 at 412.0 kgCO2e/yr, then 410.8, 402.0, 399.7, 398.6, 389.7, 388.6, 377.5, and two tied at 372.0 (an exterior wall and an interior furring wall).",
+      "analysisId": "nb-s11-editing-history-top-elements",
+      "earlier": [
+        {
+          "request": "Which five elements have the highest operational carbon?",
+          "reply": "All five are in the Wall category. The highest is Basic Wall:Interior - Partition (92mm Stud):190140 at 412.0 kgCO2e/yr, then 410.8, 402.0, 399.7, and 398.6. The third is an upper cabinet that the dataset files under Wall."
+        }
+      ],
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "top",
+          "port": "relation",
+          "caption": "Top ten by operational carbon"
+        }
+      ]
+    },
+    {
+      "request": "Show me them in the building.",
+      "reply": "The ten highlighted in the 3D view; the model's other 704 instances are ghosted to 15% opacity so the ten stand out.",
+      "analysisId": "nb-s11-editing-history-top-elements",
+      "embeds": [
+        {
+          "kind": "view3d",
+          "node": "ghosted",
+          "port": "instances",
+          "caption": "Top ten highlighted, rest ghosted"
+        }
+      ]
+    },
+    {
+      "request": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
+      "reply": "That is a type name, not one door: four door instances carry it, at 117.3, 61.8, 54.0, and 146.1 kgCO2e/yr. The table lists all four by GlobalId rather than picking one.",
+      "analysisId": "nrc-q4-door-instances",
+      "stale": true,
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "answer",
+          "port": "relation",
+          "caption": "Door instances sharing that type name"
+        }
+      ]
+    },
+    {
+      "request": "Sum them.",
+      "reply": "379.2 kgCO2e/yr across the four door instances.",
+      "analysisId": "nb-s11-editing-history-door-sum",
+      "stale": true,
+      "embeds": [
+        {
+          "kind": "value",
+          "node": "answer",
+          "port": "relation",
+          "column": "Total",
+          "unit": "kgCO2e/yr",
+          "caption": "Sum of the four door instances"
+        }
+      ]
+    },
+    {
+      "request": "How much operational carbon is in each category?",
+      "reply": "Nine categories. Wall carries the most, 22,854.1 kgCO2e/yr, followed by Floor at 5,593.5; Railing carries the least, 164.8.",
+      "analysisId": "nrc-q5-by-category",
+      "stale": true,
+      "embeds": [
+        {
+          "kind": "chart",
+          "node": "answer",
+          "port": "relation",
+          "caption": "Operational carbon per category"
+        }
+      ]
+    }
+  ]
+}

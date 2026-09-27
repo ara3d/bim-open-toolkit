@@ -1,0 +1,138 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "elements": {
+      "x": 40,
+      "y": 40
+    },
+    "columns": {
+      "x": 370,
+      "y": 40
+    },
+    "ranked": {
+      "x": 700,
+      "y": 40
+    },
+    "top": {
+      "x": 1030,
+      "y": 40
+    },
+    "materialized": {
+      "x": 1030,
+      "y": 220
+    },
+    "renamed": {
+      "x": 1030,
+      "y": 400
+    },
+    "model": {
+      "x": 1360,
+      "y": 220
+    },
+    "ghosted": {
+      "x": 1690,
+      "y": 220
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "elements.relation",
+        "to": "columns.input"
+      },
+      {
+        "from": "columns.relation",
+        "to": "ranked.input"
+      },
+      {
+        "from": "ranked.relation",
+        "to": "top.input"
+      },
+      {
+        "from": "top.relation",
+        "to": "materialized.input"
+      },
+      {
+        "from": "materialized.table",
+        "to": "renamed.table"
+      },
+      {
+        "from": "model.instances",
+        "to": "ghosted.instances"
+      },
+      {
+        "from": "renamed.table",
+        "to": "ghosted.ids"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "elements",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "columns",
+        "kind": "rel.select",
+        "version": 1
+      },
+      {
+        "id": "ranked",
+        "kind": "rel.sort",
+        "version": 1
+      },
+      {
+        "id": "top",
+        "kind": "rel.limit",
+        "version": 1
+      },
+      {
+        "id": "materialized",
+        "kind": "rel.materialize",
+        "version": 1
+      },
+      {
+        "id": "renamed",
+        "kind": "table.rename",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "ghosted",
+        "kind": "view3d.opacity",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "elements": {
+      "path": "nrc_analytics_elements.csv",
+      "source": "nrc"
+    },
+    "columns": {
+      "columns": "GlobalId, Name, Category, OperationalCarbon_kgCO2e_per_year"
+    },
+    "ranked": {
+      "by": "OperationalCarbon_kgCO2e_per_year desc, GlobalId"
+    },
+    "top": {
+      "count": "10"
+    },
+    "materialized": {},
+    "renamed": {
+      "renames": "GlobalId=globalId"
+    },
+    "model": {
+      "path": "samples/nrc/duplex-enriched.ifc"
+    },
+    "ghosted": {
+      "alpha": "0.15",
+      "joinColumn": "globalId",
+      "scope": "others"
+    }
+  }
+}

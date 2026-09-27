@@ -1,0 +1,32 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "elements": { "x": 40, "y": 40 },
+    "doors": { "x": 370, "y": 40 },
+    "answer": { "x": 700, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "elements.relation", "to": "doors.input" },
+      { "from": "doors.relation", "to": "answer.input" }
+    ],
+    "nodes": [
+      { "id": "elements", "kind": "rel.csv", "version": 1 },
+      { "id": "doors", "kind": "rel.filter", "version": 1 },
+      { "id": "answer", "kind": "rel.aggregate", "version": 1 }
+    ]
+  },
+  "values": {
+    "elements": {
+      "path": "nrc_analytics_elements.csv",
+      "source": "nrc"
+    },
+    "doors": {
+      "expr": "startswith([Name], 'M_Single-Flush:0762 x 2032mm')"
+    },
+    "answer": {
+      "groupBy": "",
+      "aggregates": "sum(OperationalCarbon_kgCO2e_per_year) as Total, count(*) as Doors"
+    }
+  }
+}
