@@ -301,6 +301,7 @@ Baseline gates (2026-09-26, HEAD e71e596; `app/**` has uncommitted edits from ot
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C8 | f778b4a | viz 46 tests pass, tsc clean; fence respected (2 files). |
 
 ## Review findings
 
