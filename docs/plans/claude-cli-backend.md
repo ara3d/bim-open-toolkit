@@ -537,6 +537,7 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C9 | 82e5f34 | Studio builds, 66 tests pass; fence respected (2 files). A failed selection becomes a FailedBackend whose Start rethrows, so the error still arrives per request. |
 | C11 | 9591869 | IFC ask 23 pass; fence respected (4 files). Only construction changed. |
 | C6 | 7d9b402 | Studio 66 pass (7 new); fence respected (2 files). Pending tool_use calls keyed by id, joined with their tool_result into one event. |
 | C5 | 8c629ab | Studio 66 pass; fence respected (2 files). McpConfig uses concatenation, not a raw string (CS9007). |
