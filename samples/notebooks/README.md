@@ -87,3 +87,21 @@ agent would have made to reach the same embeds, with what the host returned:
 `getAnalysis` and `evaluate` for each analysis the embeds read, `Read` for
 each file, and `getResult` once for each node output with a snapshot. No
 agent took part, so replies carry no `agent` information.
+
+## Outline extensions for reconstructed sessions
+
+Added for the second wave of samples (`docs/plans/notebook.md`, wave 2), in
+which subagents play the agent for the sessions in
+`docs/proposals/notebook-sessions.md`. The script supports these fields once
+chunk W1 lands; until then outlines may use them but cannot be generated.
+
+| Where | Field | Meaning |
+|---|---|---|
+| top level | `graphs` | Paths, relative to the outline, of graph documents in the same format as `samples/nrc-analyses/*.json`. Before any snapshot is taken, the script saves each one to the host under its file name without `.json` as the analysis id (`PUT /api/analyses/{id}`) and waits until its nodes are no longer evaluating. Ids start with `nb-<outline name>-` so outlines never collide. |
+| top level | `host.note` | Shown to the reader. Every reconstructed sample says: "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named." |
+| turn | `analysisId` | Optional. A turn without one is text only (a clarifying question, an answer that needs no new result). |
+| turn | `tools` | Optional list of `{ "name", "ok", "summary" }`, the tool calls the agent made (tool names of the `bimopenflow` MCP server: `describeDatabase`, `editGraph`, `evaluate`, `getResult`, ...). Replaces the generated list; each summary must be true of what the host returned. |
+| turn | `stale` | Optional `true`: an earlier turn was edited after this one was made. |
+| turn | `earlier` | Optional list of `{ "request", "reply" }`, oldest first: the versions this turn had before its request was edited and resent. Text only. |
+| embed | `picture` | `path` (from the repository root, PNG or SVG, at most 400 KB), `alt`, `caption`?. Inlined as a `data:` URL, so the notebook stays one file. |
+| embed | `chart` | `node`, `port`, `caption`?, `analysisId`?: that output as a chart, with the chart options `chartPaneOptions` gives for the node's kind and parameters. |

@@ -95,6 +95,23 @@ Supervisor-owned: `package.json`, `tsconfig.json`, `vite.config.ts`, `vitest.con
 | N6 | c8b0d3d | 9 tests; six app helpers reused by path; feed order repeated in `planFeed` (Debt) |
 | N7 | a3f551e | 22 tests; `readAskEvents` gained an optional abort signal; embeds only when `done.built`; Q1's graph returns two columns, so N10's outlines can mark a value embed |
 | N8 | 2438782 | 21 tests |
+| N9 | f4b2dcb | 17 tests; page bundles; turn controls updated by class name because `TurnHandle` has no `setCanAsk` (Debt) |
+| N10 | 8066b34 | 15 tests; three samples generated from outlines, every number matches `expected_answers.json`; DC-W1 8 Pass, 6 Fail |
+
+Verified in the browser pane (2026-09-27, `notebook-web` on 5350 against `notebook-studio` on 5366, tables profile): the eight-questions sample opens and renders nine turns; Re-evaluate all reports 19 current, 0 changed, 0 unavailable; the door-check sample shows the verdict pane (Pass 8, Fail 6) and a 3D placeholder; a live request reached the Claude Code command line and came back as a turn carrying its error ("Not logged in"), and Undo removed it.
+
+## Wave 2: reconstructed sessions
+
+Owner's direction, 2026-09-27: the end result is judged as a fixed document, so subagents play the agent and write the replies, while every embed is still computed by the host. The outline format gains the fields in `samples/notebooks/README.md`, "Outline extensions for reconstructed sessions" (the contract for this wave). One shared host: `notebook-studio` in `.claude/launch.json`, bim profile, port 5366, store `artifacts/notebook/bim-store` (seeds the NRC graphs, the Duplex model, and Snowdon).
+
+| Id | One-sentence commit | Fence (writes only) | Depends on | Test |
+|---|---|---|---|---|
+| W1 | The sample script saves an outline's own graphs and takes tools, stale, earlier, pictures, and charts | `bimopenflow/web/packages/notebook/scripts/**` | - | regenerate the three existing samples byte-identical; a fixture outline using every new field |
+| W2 | Fixes from the first look in the browser | `src/embeds/value.ts`, `src/embeds/graph.ts`, `src/ask/reply.ts`, `src/page/shellStyles.ts`, their tests | - | the package's tests |
+| A1 to A9 | One reconstructed session each: S1, S5, S6, S7, S8, S9, S10, S11, S13 | `samples/notebooks/outlines/<name>.outline.json`, `samples/notebooks/graphs/<name>/**` | - (generation waits on W1) | every graph Ok on the shared host; every number in a reply read from the host |
+| G | Generate every outline and check each reply's numbers against its snapshots | `samples/notebooks/*.notebook.json`, `bimopenflow/web/packages/notebook/test/samples.test.ts` | W1, A1 to A9 | `test/samples.test.ts` |
+
+S12 (a Script embed) is left out: the Script embed is not built.
 
 ## Review findings
 
