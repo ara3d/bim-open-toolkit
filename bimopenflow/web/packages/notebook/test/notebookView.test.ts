@@ -148,6 +148,14 @@ describe("mountNotebook", () => {
     expect(view!.notebook().title).toBe("Untitled notebook");
     expect(turnIds()).toEqual([]);
     expect(q<HTMLElement>(".nb-empty").hidden).toBe(false);
+    expect(q<HTMLElement>(".nb-note").hidden).toBe(true);
+  });
+
+  it("shows the notebook's host note above the turns, such as a reconstructed session's label", () => {
+    mount({ initial: { ...sample(), host: { profile: "bim", note: "Reconstructed session: replies written by an agent." } } });
+    const note = q<HTMLElement>(".nb-note");
+    expect(note.hidden).toBe(false);
+    expect(note.textContent).toBe("Reconstructed session: replies written by an agent.");
   });
 
   it("lists the samples and loads one", async () => {

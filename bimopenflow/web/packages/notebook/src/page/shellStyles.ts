@@ -29,6 +29,7 @@ export const shellCss = `
 .nb-problems-heading { font-weight: 600; color: var(--nb-red); }
 .nb-problems ul { margin: 6px 0; padding-left: 18px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
 .nb-empty { color: var(--nb-dim); text-align: center; padding: 32px 0; }
+.nb-note { color: var(--nb-dim); font-style: italic; margin: 0 0 12px; border-left: 3px solid var(--nb-border); padding-left: 10px; }
 .nb-live {
   border: 1px dashed var(--nb-accent); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;
   background: var(--nb-surface);

@@ -108,12 +108,14 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
   const toolbar = buildToolbar();
   const problemsSlot = el(doc, "div");
   const column = el(doc, "main", "nb-column");
+  // The notebook's host note, such as the label on a reconstructed session.
+  const note = el(doc, "p", "nb-note");
   const empty = el(doc, "div", "nb-empty", "No turns yet. Ask something below, or open a sample.");
   const turnsEl = el(doc, "div", "nb-turns");
   const live = el(doc, "div", "nb-live");
   live.hidden = true;
   const box = buildRequestBox();
-  column.append(empty, turnsEl, live, box.form);
+  column.append(note, empty, turnsEl, live, box.form);
   shell.append(toolbar.el, problemsSlot, column);
   root.append(shell);
 
@@ -155,6 +157,8 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
     }
     empty.hidden = notebook.turns.length > 0 || running !== undefined;
     if (doc.activeElement !== toolbar.title) toolbar.title.value = notebook.title;
+    note.textContent = notebook.host?.note ?? "";
+    note.hidden = !notebook.host?.note;
     syncControls();
   }
 
