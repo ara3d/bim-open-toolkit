@@ -2,7 +2,7 @@
 id: TKT-14
 title: A template gallery keyed to the workflow list
 status: open
-depends_on: [TKT-4, TKT-5]
+depends_on: [TKT-4]
 owner:
 fence: [bimopenflow/web/packages/app/**, samples/**, docs/proposals/bimopenflow-ux-proposal.md]
 ---

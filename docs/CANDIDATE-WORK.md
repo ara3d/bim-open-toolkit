@@ -13,7 +13,7 @@ How it was made: nine readers each took one group of documents (architecture, th
 
 ## The first stretch, in order
 
-The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1, TKT-4, and TKT-5 if possible; item 3 waits on it. The order puts the measurement and the one known wrong answer first, because every later item on the AI aim is judged against them, then the clean-clone start and the studio chart pane (the two things the owner will feel first), then the Run that unlocks exports and reports, then the canvas and 3D work.
+The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1 and TKT-4 if possible; item 3 waits on it. TKT-22, removing the properties panel, was decided on 2026-09-26 and runs alongside the list. The order puts the measurement and the one known wrong answer first, because every later item on the AI aim is judged against them, then the clean-clone start and the studio chart pane (the two things the owner will feel first), then the Run that unlocks exports and reports, then the canvas and 3D work.
 
 | # | Ticket | Item | Serves | Why now |
 |---|---|---|---|---|
@@ -30,7 +30,7 @@ The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1, TKT
 | 11 | TKT-17 | Agent edits arrive selected, undoable, and as a reviewable diff | W2 | Makes Claude's work inspectable inside the editor instead of appearing after a reload. |
 | 12 | TKT-15 | A coarse first frame for Snowdon under 2 s warm | W4 | 5.2 to 5.8 s of blank canvas is the roughness a reviewer feels first. |
 | 13 | TKT-16 | One colour domain with a legend across panes | W4, W3 | The PoC's most common novice trap was a silently clamped manual domain; a shared legend is what makes a coloured model and its chart agree. |
-| 14 | TKT-14 | A template gallery keyed to the workflow list | W1, W2 | Turns the 44 enumerated V1 workflows into the entry point, so most people never start from a blank canvas (principle 9, unconfirmed; waits on TKT-4 and TKT-5). |
+| 14 | TKT-14 | A template gallery keyed to the workflow list | W1, W2 | Turns the 44 enumerated V1 workflows into the entry point, so most people never start from a blank canvas (principle 9, unconfirmed; waits on TKT-4). |
 
 ## Everything gathered, by theme
 
@@ -48,7 +48,7 @@ Each line: the item, its status, who or which workflow it serves, and its source
 - Provenance cards answering "where did this number come from". Idea. W5. `bimopenflow-ux-proposal.md` §4 item 7.
 - Shared colour-map legend across panes; `view3d.color` v2 with a manual domain and a legend table that reports the domain in use. Idea. W4. `bimopenflow-ux-proposal.md` §5 P1; `docs/proposals/core-node-sets.md` Set 4. TKT-16.
 - Sinks that visibly say "will write on Run"; run history; a read-only run view; run-versus-run diff. Idea. W3, W5. `bimopenflow-ux-proposal.md` §4 item 8. TKT-12 covers the first.
-- Promote a node parameter to a graph parameter in one gesture; a control strip on templates; date bounds as the report's date-range control. Idea. `bimopenflow-ux-proposal.md` §4 item 10; `docs/proposals/data-node-sets.md` `date.filter`. Waits on TKT-5.
+- Promote a node parameter to a graph parameter in one gesture; a control strip on templates; date bounds as the report's date-range control. Idea. `bimopenflow-ux-proposal.md` §4 item 10; `docs/proposals/data-node-sets.md` `date.filter`. TKT-5 decided that parameters live on the node and the properties panel goes (TKT-22); the promotion gesture stays an idea.
 - Groups and subgraphs with promoted ports, canvas annotations, a minimap. Idea; the PoC had `graph.sub` and the rewrite dropped it. `bimopenflow-ux-proposal.md` §4 item 12.
 - A checklist selection node with live check boxes and counts on the card (`bos.selectType` rendered as a checklist), the PoC's most valued missing feature. Idea. `docs/platoflow/README.md` item 1; `core-node-sets.md`.
 - Harvest from the deleted PoC editor: node-as-inspector layout, floating popover, per-instance resize, multi-select copy, paste, duplicate, and align, a range slider on the colour-map node. Abandoned in the rewrite; deliberate harvesting only. `docs/platoflow/README.md` item 5.
