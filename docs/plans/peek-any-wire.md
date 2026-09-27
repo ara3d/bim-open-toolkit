@@ -345,6 +345,7 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C6 | 09fbf01 | 8 tests pass, typecheck clean; fence respected (2 files). |
 | C5 | e38d06e | viewModel tests 19 pass, typecheck clean; fence respected (2 files). |
 | C2 | bae33a7 | 6 tests pass, typecheck clean; fence respected (2 files). |
 | C1 | 44ee832 | 14 tests pass, typecheck clean; fence respected (2 files). Count-read rejections leave the count not current, with no error surface. |
