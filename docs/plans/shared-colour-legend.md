@@ -266,7 +266,7 @@ App contract (C13, outside the fence): see question 7.
 | C7 | Panes parse a legend table and draw every legend through one strip renderer | `bimopenflow/web/packages/panes/src/scaleLegend.ts`, `.../panes/src/pane.ts`, `.../panes/src/index.ts`, `.../panes/src/styles.ts`, `.../panes/test/scaleLegend.test.ts` | - | `npm test -w @bimopenflow/panes` (from `bimopenflow/web`) | none |
 | C8 | BarChart accepts one CSS fill per row | `bimopenflow/web/packages/viz/src/barChart.ts`, `bimopenflow/web/packages/viz/test/barChart.test.ts` | - | `npm test -w @bimopenflow/viz` | none |
 | C9 | The chart pane fills bars from r/g/b columns and shows the legend input | `bimopenflow/web/packages/panes/src/chartPane.ts`, `bimopenflow/web/packages/panes/test/chartPane.test.ts` | C7, C8 | `npm test -w @bimopenflow/panes` (the legend DOM equals `renderLegendView` output for the same slice) | none |
-| C10 | The 3D pane draws every legend through the shared strip, with a legend input ahead of the table-derived one | `bimopenflow/web/packages/panes/src/viewPane3D.ts`, `bimopenflow/web/packages/panes/test/viewPane3D.test.ts` | C7; after TKT-15's viewPane3D.ts commit | `npm test -w @bimopenflow/panes` (the legend DOM equals `renderLegendView` output for the same slice; existing legend tests unchanged) | none |
+| C10 | The 3D pane draws every legend through the shared strip, with a legend input ahead of the table-derived one | `bimopenflow/web/packages/panes/src/viewPane3D.ts`, `bimopenflow/web/packages/panes/test/viewPane3D.test.ts` | C7 (supervisor's decision: C10 goes first, and TKT-15's one-line status change, P1, follows it) | `npm test -w @bimopenflow/panes` (the legend DOM equals `renderLegendView` output for the same slice; existing legend tests unchanged) | none |
 | C11 | Sample graph shared-color-legend: one view.colormap with a clamping manual domain feeding view3d.color and chart.bar over Duplex | `samples/view3d-analyses/shared-color-legend.json`, `samples/view3d-analyses/README.md`, `tests/flow/BimOpenFlow.View3dWorkflows.Tests/View3dSampleTests.cs` (add `VizNodes.All` to the registry and `SharedColorLegend_OneScaleAcrossConsumers`), `tests/flow/BimOpenFlow.View3dWorkflows.Tests/BimOpenFlow.View3dWorkflows.Tests.csproj` (reference Nodes.Viz) | C3, C5, C6 | `dotnet test tests/flow/BimOpenFlow.View3dWorkflows.Tests` | `data/duplex.ifc` |
 | C12 | Node notes for view3d.color, view.colormap, and chart.bar, and regenerated docs/nodes.md | `src/flow/BimOpenFlow.NodeDocs/NodeNotes.cs`, `docs/nodes.md` | C3, C5, C6 | `dotnet run --project src/flow/BimOpenFlow.NodeDocs`, then `git diff --stat -- docs/nodes.md` (Geometry and Viz sections only; the Viz count goes from 3 to 4) | none |
 | C13 | The pane area fetches a shown node's legend port and pushes it to the 3D and chart panes (blocked: app fence) | `bimopenflow/web/packages/app/src/paneArea.ts`, `bimopenflow/web/packages/app/test/paneArea.test.ts` | C7, C9, C10; TKT-22 and TKT-24 released | `npm test -w @bimopenflow/app` | none |
@@ -301,6 +301,8 @@ Baseline gates (2026-09-26, HEAD e71e596; `app/**` has uncommitted edits from ot
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C1 | abaec0b | Geometry 108, Layering 8 pass; NrcWorkflows builds; fence respected. |
+| C7 | 8b6c096 | panes 139 tests pass, tsc clean; fence respected (5 files). Gradient labels only at the first and last stop; categorical caption is the literal 'category'. |
 | C8 | f778b4a | viz 46 tests pass, tsc clean; fence respected (2 files). |
 
 ## Review findings
