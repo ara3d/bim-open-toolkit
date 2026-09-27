@@ -4,7 +4,7 @@ title: Run from the editor: a Run button, the run record, and sinks that execute
 status: claimed
 depends_on: []
 owner: assembly-line-supervisor
-fence: [bimopenflow/web/packages/app/**, bimopenflow/web/packages/state/**, bimopenflow/web/packages/api-client/**, src/flow/BimOpenFlow.Host.Api/**, src/flow/BimOpenFlow.Nodes.Effects/**, src/flow/BimOpenFlow.Evidence/**, docs/DEMOS.md]
+fence: [bimopenflow/web/packages/app/src/nodeBadge.ts, bimopenflow/web/packages/app/src/viewModel.ts, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/app/src/topbar.ts, bimopenflow/web/packages/app/src/runMessage.ts, bimopenflow/web/packages/app/test/**, bimopenflow/web/packages/state/**, bimopenflow/web/packages/api-client/**, bimopenflow/web/packages/contracts/**, contracts/**, src/flow/BimOpenFlow.Host.Api/**, src/flow/BimOpenFlow.Host/RelationHostResults.cs, src/flow/BimOpenFlow.Host.Store/AnalysisStoreRuns.cs, src/flow/BimOpenFlow.Reports/ReportGenerator.cs, src/flow/BimOpenFlow.Nodes.Effects/README.md, src/flow/BimOpenFlow.Evidence/README.md, src/mcp/BimOpenMcp.Flow/FlowEvalTools.cs, tests/flow/BimOpenFlow.Reports.Tests/**, tests/flow/BimOpenFlow.Host.Api.Tests/**, tests/flow/BimOpenFlow.Host.Tests/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/RunFromHostTests.cs, tests/mcp/BimOpenMcp.Flow.Tests/CreateRunToolTests.cs, docs/DEMOS.md, docs/plans/run-from-the-editor.md]
 ---
 
 ## Acceptance criteria

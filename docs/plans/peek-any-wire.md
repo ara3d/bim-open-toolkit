@@ -345,6 +345,8 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C1 | 44ee832 | 14 tests pass, typecheck clean; fence respected (2 files). Count-read rejections leave the count not current, with no error surface. |
+| C3 | e689177 | 8 tests pass, typecheck clean; fence respected (2 files). Tests dispatch MouseEvent for pointer events, as nodeContextMenu's do. |
 
 ## Review findings
 
