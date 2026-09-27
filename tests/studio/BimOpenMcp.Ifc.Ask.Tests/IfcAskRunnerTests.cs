@@ -37,7 +37,7 @@ public sealed class IfcAskRunnerTests
     }
 
     private IfcAskRunner Runner(ScriptedModel model, int maxTurns = IfcAskRunner.DefaultMaxTurns)
-        => new(_tools, new OpenAiChat(new HttpClient(model), "sk-test", "gpt-test"), _ifc, maxTurns);
+        => new(new ChatBackend(IfcAskRunner.Setup(_tools, maxTurns), new OpenAiChat(new HttpClient(model), "sk-test", "gpt-test")), _ifc);
 
     private string Open()
         => ScriptedModel.ToolCall("c1", "ifc_open", $$"""{"path":{{System.Text.Json.JsonSerializer.Serialize(_ifc)}}}""");
@@ -134,7 +134,8 @@ public sealed class IfcAskRunnerTests
     {
         var lines = new List<string>();
         var model = new ScriptedModel(Open(), ScriptedModel.Text("done"));
-        var runner = new IfcAskRunner(_tools, new OpenAiChat(new HttpClient(model), "sk-test", "gpt-test"), _ifc)
+        var runner = new IfcAskRunner(
+            new ChatBackend(IfcAskRunner.Setup(_tools), new OpenAiChat(new HttpClient(model), "sk-test", "gpt-test")), _ifc)
         {
             Progress = lines.Add,
         };

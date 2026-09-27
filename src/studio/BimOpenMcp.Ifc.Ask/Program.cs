@@ -13,7 +13,8 @@ try
     using var cache = new IfcSessionCache();
     using var tools = IfcAskRunner.CreateServer(cache);
     using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-    var runner = new IfcAskRunner(tools, selection.Create(http), options.ModelPath, options.MaxTurns)
+    var backend = new ChatBackend(IfcAskRunner.Setup(tools, options.MaxTurns), selection.Create(http));
+    var runner = new IfcAskRunner(backend, options.ModelPath)
     {
         Progress = Console.Error.WriteLine,
     };

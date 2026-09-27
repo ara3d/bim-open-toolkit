@@ -4,12 +4,12 @@ using BimOpenFlow.Ask;
 namespace BimOpenMcp.Ifc.Ask;
 
 /// <summary>Asks a language model a list of questions about one IFC model, unattended. Each
-/// question runs in a fresh conversation against the same in-process tool server, so an answer
-/// can never lean on what an earlier question found, and a question that fails does not stop
-/// the rest.</summary>
-public sealed class IfcAskRunner(McpServer tools, IChatModel chat, string modelPath, int maxTurns = IfcAskRunner.DefaultMaxTurns)
+/// question runs in a fresh conversation against the same tool server, so an answer can never
+/// lean on what an earlier question found, and a question that fails does not stop the rest.</summary>
+public sealed class IfcAskRunner(IAskBackend backend, string modelPath)
 {
     public const int DefaultMaxTurns = 40;
+    public const string ServerKey = "bimopen-ifc";
 
     /// <summary>Tools the model is not offered. Exports write files nobody reads here, and the
     /// session tools only matter to a client holding several models open; each one the model
@@ -18,6 +18,11 @@ public sealed class IfcAskRunner(McpServer tools, IChatModel chat, string modelP
     {
         "ifc_export_glb", "ifc_sql_export", "ifc_close", "ifc_models",
     };
+
+    /// <summary>The setup a backend drives: the IFC tool server under ServerKey, HiddenTools left
+    /// out, and the given turn limit per message.</summary>
+    public static AskSetup Setup(McpServer tools, int maxTurns = DefaultMaxTurns)
+        => new(tools, ServerKey, HiddenTools, maxTurns);
 
     /// <summary>The tool server the runner drives: registered but never started, because the agent
     /// posts to its JSON-RPC handler in process. The caller owns the cache and the server.</summary>
@@ -52,7 +57,6 @@ public sealed class IfcAskRunner(McpServer tools, IChatModel chat, string modelP
     public async Task<IfcAskAnswer> AskAsync(string question, CancellationToken ct)
     {
         var events = new List<AskEvent>();
-        var agent = new AskAgent(tools, chat, maxTurns) { Hidden = HiddenTools };
         Task Record(AskEvent e)
         {
             events.Add(e);
@@ -62,7 +66,8 @@ public sealed class IfcAskRunner(McpServer tools, IChatModel chat, string modelP
         }
         try
         {
-            var outcome = await agent.RunAsync(System, IfcAskPrompts.User(question), Record, ct);
+            var conversation = backend.Start(System);
+            var outcome = await conversation.SendAsync(IfcAskPrompts.User(question), Record, ct);
             return new IfcAskAnswer(question, outcome.Text, outcome.Turns, outcome.InputTokens, outcome.OutputTokens, events);
         }
         catch (Exception e) when (e is not OperationCanceledException)

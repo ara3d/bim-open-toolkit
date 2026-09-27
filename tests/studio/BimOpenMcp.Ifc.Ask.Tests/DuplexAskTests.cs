@@ -29,8 +29,9 @@ public sealed class DuplexAskTests
 
         using var cache = new IfcSessionCache();
         using var tools = IfcAskRunner.CreateServer(cache);
-        var runner = new IfcAskRunner(tools, new OpenAiChat(new HttpClient(scripted), "sk-test", "gpt-test"),
-            options.ModelPath, options.MaxTurns);
+        var runner = new IfcAskRunner(
+            new ChatBackend(IfcAskRunner.Setup(tools, options.MaxTurns), new OpenAiChat(new HttpClient(scripted), "sk-test", "gpt-test")),
+            options.ModelPath);
         var answers = await runner.RunAsync(options.Questions, CancellationToken.None);
 
         Assert.That(answers, Has.Count.EqualTo(1));
