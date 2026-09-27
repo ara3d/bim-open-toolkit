@@ -19,6 +19,8 @@ public class IfcToBosConverter
 {
     public const EntityIndex InvalidEntityIndex = (EntityIndex)(-1);
 
+    public const string AxisTagParameter = "Ifc:AxisTag";          // String, on each IFCGRIDAXIS entity, group "IFCGRIDAXIS"
+
     public IfcFile IfcFile;
     public IfcPropData PropData;
     public Model3D Model3D;
@@ -208,6 +210,15 @@ public class IfcToBosConverter
                 if (!string.IsNullOrEmpty(roomNumber))
                     BimDataBuilder.AddParameter(ei, roomNumber, "Ifc:Room:Number", "", e.GetEntityName());
             }
+            else if (e.GetEntityName() == "IFCGRIDAXIS")
+            {
+                // IFCGRIDAXIS is not an IfcRoot, so attribute 0 is AxisTag rather than GlobalId.
+                // ProcessAttributeAsProp below starts at index 3 and never sees it, so it is
+                // recorded here instead.
+                var axisTag = e.GetStringOrEmpty(0).DecodeIfc();
+                if (!string.IsNullOrEmpty(axisTag))
+                    BimDataBuilder.AddParameter(ei, axisTag, AxisTagParameter, "", e.GetEntityName());
+            }
 
             // Additional attributes are added as properties. 
             for (var i=3; i < attributes.Length; i++)
@@ -217,6 +228,19 @@ public class IfcToBosConverter
                 ProcessAttributeAsProp(e, attributes[i], i, ei);
             }
 
+        }
+
+        logger?.Log("Recording project length unit");
+        var lengthUnit = IfcLengthUnit.Read(IfcFile);
+        if (lengthUnit != null)
+        {
+            var projectEntity = IfcFile.EntityResolver.GetEntities().FirstOrDefault(e => e.GetEntityName() == "IFCPROJECT");
+            var projectEi = projectEntity != null ? GetBosEntityIndexFromIfc(projectEntity.Id) : InvalidEntityIndex;
+            if (projectEi != InvalidEntityIndex)
+            {
+                BimDataBuilder.AddParameter(projectEi, lengthUnit.Value.Name, IfcLengthUnit.NameParameter, "", "IFCPROJECT");
+                BimDataBuilder.AddParameter(projectEi, lengthUnit.Value.ToMetre, IfcLengthUnit.ScaleParameter, "", "IFCPROJECT");
+            }
         }
 
         logger?.Log("Creating relations");

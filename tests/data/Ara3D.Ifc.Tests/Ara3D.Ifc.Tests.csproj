@@ -23,6 +23,9 @@
     <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.Ifc.Editing\Ara3D.Ifc.Editing.csproj" />
+    <!-- Added for TKT-30 C2's ConverterUnitAndAxisTagTests.cs: IfcToBosConverter and
+         IfcLengthUnit live in Ara3D.Ifc.Bos, which this project did not previously reference. -->
+    <ProjectReference Include="..\..\..\src\data\Ara3D.Ifc.Bos\Ara3D.Ifc.Bos.csproj" />
   </ItemGroup>
 
   <ItemGroup>
