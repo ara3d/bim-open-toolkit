@@ -10,6 +10,9 @@
 > viewer integration. The `bim-open-schema` repo remains the spec/standard; this repo
 > is the reference implementation and CI-tests against it. It will be referenced from
 > the repo handed to the NRC.
+>
+> Status: Phases 0 to 4 and 6 done. The CI conversion job (Phase 3), the nrc-ifc-llm link
+> (Phase 5), and removing the moved projects from their homes (Phase 7) are TKT-69.
 
 ## Revision — 2026-08-30 (evening): the SDK boundary
 

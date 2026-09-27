@@ -38,7 +38,7 @@ Still missing, in rough order of value:
    card, one per Type or Level actually present in the model, with counts. The stored
    parameter is the *excluded* set so new upstream values default to ticked. Each toggle is
    one undo step. Matching is exact against the model's category text; a comma in a value
-   cannot round-trip. See "Wave 11" in NOTES.md.
+   cannot round-trip. See "Wave 11" in NOTES.md. Tracked as TKT-68.
 2. **Subgraphs with promoted ports** (`graph.sub`). Shipped in the prototype (W3 T16 in
    NOTES.md); deferred past V1 in the UX proposal. Neither the graph spec nor the state
    package mentions subgraphs today.
@@ -61,7 +61,7 @@ Still missing, in rough order of value:
 7. **End-to-end headless smoke.** `tools/intgate-smoke.mjs` drove a private headless Chrome
    through SQL, write-back, MCP intents, and Ask AI in one run of about 13 assertions. The
    `gates/` folder has host and web smokes but nothing that exercises the host-touching
-   features end to end.
+   features end to end. Tracked as TKT-67.
 
 Smaller items: per-instance node resize with a widget registry, a range slider embedded on
 the colormap node, multi-select with copy, paste, duplicate, and align, and the measured

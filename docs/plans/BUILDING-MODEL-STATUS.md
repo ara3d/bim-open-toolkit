@@ -22,6 +22,8 @@ The mapper drives changes to the records (new fields, evidence kinds, diagnostic
 
 ## Open decision: library or second specification
 
+Tracked as TKT-71.
+
 Not yet decided: whether the records are an intermediate for this toolkit's schedules and takeoffs (then they stay here permanently) or a contract other tools produce and consume (then they become a second specification beside the table schema).
 
 Promote when both hold:

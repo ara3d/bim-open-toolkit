@@ -360,11 +360,11 @@ fourteen new kinds, two extensions, no removals of shipped behavior
    required. Three designs above want optional inputs: `sql.query` over
    several flowing tables, `view3d.color` consuming a colormap wire, and
    `check.union` beyond two inputs. This is a spec + engine decision, not a
-   pack decision — the sets above are shaped to not need it in V1.
+   pack decision — the sets above are shaped to not need it in V1. Variadic ports are TKT-77.
 2. **Where generic DuckDB code lives.** `Ara3D.BimOpenSchema.DuckDb` carries
    the generic `Query`/`WriteTable`/`ReadOnlyQuery` helpers under a BOS name.
    Should a BIM-free `Ara3D.DuckDb` graduate out of it, per the structure
-   doc's BIM-free engine-group rule?
+   doc's BIM-free engine-group rule? Tracked as TKT-79.
 3. **Effects pack dependency grants.** `sink.exportParquet` needs a Parquet
    writer in Nodes.Effects — the same inconsistency the Effects README
    already flags for GLB/BOS export. Grant the dependency, or relax
@@ -378,4 +378,4 @@ fourteen new kinds, two extensions, no removals of shipped behavior
    `min`/`max` sufficient for comparable views, or does the legend table
    eventually need to feed coloring nodes (returns to question 1)?
 7. **`bos.query` retirement.** Delete outright when `sql.query` lands (no
-   shipped graphs exist), or keep a deprecated alias for one release?
+   shipped graphs exist), or keep a deprecated alias for one release? Tracked as TKT-78.

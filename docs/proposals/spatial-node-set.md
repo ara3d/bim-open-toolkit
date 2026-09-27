@@ -209,3 +209,7 @@ Deferred from the 2026-09-18 review, each with the reason:
   `view3d.instances`; change both or neither.
 - Geometry's `TableOps.AddColumns` and Support's `CopyBuilder` both copy
   columns, with different null handling. Merge in the `bim.*` migration.
+
+Tracked as TKT-62 (the `bim.*` migration, `SpatialIndex`, the column
+copiers) and TKT-72 (the nullable-scalar rule). OBB extents, MULTIPOLYGON,
+and the two-table `polygonIntersects` stay here until a source needs them.

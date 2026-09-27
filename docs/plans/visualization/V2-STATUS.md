@@ -134,6 +134,8 @@ Git incident (F, chunk 3): a `git commit --amend` without a pathspec re-committe
 
 ### Shutdown 2026-09-08 (user ran out of tokens)
 
+Whether to finish, freeze, or delete the stopped gallery is TKT-75.
+
 Stopped by the supervisor: V (already verified), M5 (already verified), X and C (in progress, see rows). Nothing of this session's is uncommitted; the tree still carries other sessions' in-progress files (gallery session under `demos`, the DuckDB and bimopenflow work). Combined gate at shutdown: typecheck fails on `packages/demos/src/demos/_workflows/widgets.ts` (gallery session, in progress); every package this session owns passes its own tsc and tests. The two peer sessions were not stopped from here.
 
 Resume list, in order:

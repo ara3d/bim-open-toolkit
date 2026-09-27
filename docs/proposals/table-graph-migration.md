@@ -191,3 +191,6 @@ Two test failures on the branch predate it and touch no file it changed:
   record the registry entry and its version.
 - Whether the client should show the inferred schema on the node before
   clicking. The API needs one new endpoint or a field on the node status.
+
+Tracked as TKT-63 (cache bound), TKT-73 (freeze rule), and TKT-74 (schema
+on the node).

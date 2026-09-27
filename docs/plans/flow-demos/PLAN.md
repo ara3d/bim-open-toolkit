@@ -177,3 +177,5 @@ the SDK's stream-based `BFast.Read` mis-seeks absolute ranges (the nodes use
 the memory-mapped reader); a `{TABLES}` placeholder for showcase graphs; the
 3D legend picks its column by name; the engine's `relation-value` branch
 should merge to its own main.
+Tracked as TKT-59 (`rel.rename`, `RunReplay`, `{TABLES}`), TKT-60 (the
+`relation-value` merge), TKT-61 (`BFast.Read`), and TKT-16 (the legend).

@@ -261,4 +261,4 @@ returns rows; Execute receives a `Plan`.
 
 - Whether the schema layer is allowed to be stale. If a CSV gains a column
   between design and execution, Execute reports the mismatch, but the editor
-  needs a way to refresh the catalog.
+  needs a way to refresh the catalog. Tracked as TKT-74.

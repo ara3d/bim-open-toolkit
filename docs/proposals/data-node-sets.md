@@ -769,7 +769,7 @@ engine machinery beyond the DateTime parameter kind.
 1. **Variadic `table.concat`.** Stacking twelve monthly exports through
    eleven chained concats is tolerable but ugly. Same engine question as
    `check.union` (core proposal, open question 1); the glob path on
-   `csv.read` removes the most common case.
+   `csv.read` removes the most common case. Tracked as TKT-77.
 2. **`duck.read` vs the dedicated readers.** Keep both (auto front door +
    typed control), or retire `duck.read` once `csv.read`/`parquet.read`/
    `json.read` land? Leaning keep: zero-config reading is a real workflow.

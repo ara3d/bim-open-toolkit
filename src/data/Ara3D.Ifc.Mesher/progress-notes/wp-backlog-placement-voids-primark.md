@@ -91,3 +91,5 @@ Schependomlaan paired instances: **578** placement-matrix (21%), **509** shape-i
 2. PRIMARK 232: still null meshes on composite/trimmed profiles (CurveEvaluator / profile sanitize).
 3. example SHS vol similarity vs oracle remains 0 while candidate is watertight (oracle open shell).
 4. steelplates clipped beams: open-boundary / volume disagreement — boolean path TBD.
+
+Tracked as TKT-65, with the DigitalHub, W12, and scorecard items from the later notes.

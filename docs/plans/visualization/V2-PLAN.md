@@ -229,7 +229,7 @@ F22 maps, F24 tracing and F25 mesh-derived voxels stay postponed. The `city` gen
 
 ## Unresolved decisions
 
-1. Gratify consumption for publication: pinned submodule build artifacts or an upstream release. Decide before wave 3.
+1. Gratify consumption for publication: pinned submodule build artifacts or an upstream release. Decide before wave 3. Tracked as TKT-76.
 2. MCP transport: a WebSocket bridge from a Node process to the browser session is the default; confirm the client used for the walkthrough.
 3. Whether `interact` replaces `@ara3d/viewer-controls` or wraps it. Decided 2026-09-08: replaces (README.md decision record; `viewer/packages/interact/docs/DECISION-controls.md`).
 4. Package count: thirteen is deliberate for ownership; merge later only if a boundary proves to have no independent consumer.
