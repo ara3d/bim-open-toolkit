@@ -4,7 +4,7 @@ title: A coarse first frame for Snowdon under 2 s warm
 status: claimed
 depends_on: []
 owner: small-job-builder
-fence: [viz/packages/**, bimopenflow/web/packages/panes/**, docs/bim-flow-startup.md, docs/bim-flow-3d.md]
+fence: [viz/packages/**, bimopenflow/web/packages/panes/src/viewerDeps.ts, bimopenflow/web/packages/panes/src/viewPane3D.ts, bimopenflow/web/packages/panes/test/viewPane3D.test.ts, scripts/profile-bim-flow-startup.mjs, docs/bim-flow-startup.md, docs/bim-flow-3d.md, docs/plans/coarse-first-frame.md]
 ---
 
 ## Acceptance criteria
