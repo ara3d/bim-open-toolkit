@@ -37,10 +37,31 @@ cd bimopenflow/web/packages/app && npx vite --port 5300
 The editor proxies `/api` to the host named by `BOF_HOST` (default
 `http://127.0.0.1:5214`). An empty store is seeded with every sample graph the
 profile can run; graphs the profile lacks nodes for are skipped and named in the
-host log. Pages: `/` (editor with table, chart, 3D, and verdict panes),
+host log. `start-bim-flow.mjs` runs `bimopenflow-studio` (BimOpenFlow.Host plus
+`POST /api/ask`), so both pages below get the Ask box from one binary; there is
+no separate ask-only host to start. Pages: `/` (editor with table, chart, 3D,
+and verdict panes, and the Ask panel described below),
 `/3d.html?analysis=<id>` (3D-first layout, where picking an element lists its
 property sets under the status line), `/duckdb.html` (DuckDB demo with a
 flow picker and an Ask box), `/showcase.html` (button-driven 3D recipes).
+
+### Ask: edit the open flow by typing a request (TKT-84)
+
+A collapsible strip at the bottom of `/` lets you type a request ("add a note
+node" or "filter doors under 850mm wide") and have an agent edit the flow you
+have open, through the same MCP edit tools `/duckdb.html`'s Ask box uses; its
+transcript shows each tool call, and a successful edit reloads the flow so it
+appears on the canvas at once. The panel only appears when the host answers
+`GET /api/ask/model`; against a plain `BimOpenFlow.Host` (started by hand
+without the studio project) it shows nothing.
+
+It needs a model: either the Claude Code CLI, installed and logged in
+(`npm install -g @anthropic-ai/claude-code`, then `claude` and `/login`), or
+`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` in the environment before the host
+starts. `ASK_PROVIDER` picks one explicitly (`claude-cli`, `anthropic`, or
+`openai`); see `ChatSelection` in `src/studio/BimOpenFlow.Ask/ChatSelection.cs`.
+With no model configured, a request still answers cleanly with the reason
+in the transcript instead of failing.
 
 ## Sample graphs by input
 

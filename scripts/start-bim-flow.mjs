@@ -24,9 +24,14 @@ const PROFILES = {
   tables: { hostPort: 5224, webPort: 5310, models: [join(root, "samples", "tables")] },
 };
 
-const HOST_PROJECT = "src/flow/BimOpenFlow.Host";
+// BimOpenFlow.Studio is BimOpenFlow.Host plus POST /api/ask (see
+// src/studio/BimOpenFlow.Studio/Program.cs): same CLI options, same routes,
+// one more endpoint. Starting it here instead of the plain host is what makes
+// "one start command" also satisfy TKT-84 (an Ask box in the main editor)
+// without a second copy of the ask-endpoint wiring in BimOpenFlow.Host itself.
+const HOST_PROJECT = "src/studio/BimOpenFlow.Studio";
 const HOST_BUILD = join(root, "artifacts", "bim-flow", "host");
-const HOST_DLL = join(HOST_BUILD, "bimopenflow-host.dll");
+const HOST_DLL = join(HOST_BUILD, "bimopenflow-studio.dll");
 const APP_DIR = join(root, "bimopenflow", "web", "packages", "app");
 
 const flag = (name) => process.argv.includes(name);
