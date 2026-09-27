@@ -262,13 +262,20 @@ Two smaller pieces that the handover needs.
   many are shown at once. The first figure: each storey's total operational
   carbon written over its slab, from the `nrc-rollup` output. Done when the
   figure is in the walkthrough.
-- **The package (D2).** `npm run nrc:package --prefix bimopenflow/web` writes
-  `artifacts/nrc-package/`: the enriched IFC, Parquet, dictionary, IDS files,
-  graphs, figures, transcripts, score table, large-model timings, the last
-  evidence zip, and a README for an NRC reviewer that gives the one command
-  to start the host and page on Windows. Done when a fresh clone on a second
-  Windows machine runs the package's command and opens the enriched Duplex
-  coloured by operational carbon.
+- **The package (D2).** Source and a runnable bundle, both from one tagged
+  toolkit commit (owner's decision, 2026-09-27). The toolkit joins
+  `nrc-ifc-llm` as a git submodule at `toolkit/`, pinned to the tag; a
+  subtree would not carry the toolkit's own five submodules, and would mean
+  merging the toolkit into the paper repository on every update. `npm run
+  nrc:package --prefix bimopenflow/web` builds the bundle from the tag: the
+  host and both MCP servers published self-contained, the built page, the
+  IFC files, Parquet, dictionary, IDS, graphs, figures, transcripts, score
+  table, timings, evidence zip, a reviewer's README, and `start.cmd`. The zip
+  is a release asset on the toolkit, and `nrc-ifc-llm/poc/README.md` gives its
+  URL and SHA-256. Done when a Windows machine with only a browser runs
+  `start.cmd` from the unzipped bundle and sees the enriched Duplex coloured by
+  operational carbon, and a recursive clone of `nrc-ifc-llm` rebuilds the same
+  bundle.
 
 ## Order and dependencies
 
