@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Compliance\BimOpenFlow.Nodes.Compliance.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Effects\BimOpenFlow.Nodes.Effects.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Geometry\BimOpenFlow.Nodes.Geometry.csproj" />
+    <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Viz\BimOpenFlow.Nodes.Viz.csproj" />
     <ProjectReference Include="..\..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
     <ProjectReference Include="..\..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
   </ItemGroup>
