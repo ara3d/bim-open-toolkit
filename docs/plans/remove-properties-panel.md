@@ -334,6 +334,8 @@ Baseline gates (2026-09-26, before any change):
 
 Wave 1 integrated (C1 to C4): `npm run typecheck -w @bimopenflow/app` clean, `npm test -w @bimopenflow/app` 33 files, 208 tests pass; pushed. Wave 2 (C5, C6): typecheck clean, 34 files, 214 tests pass; pushed. C7 and C8 integrated with TKT-25 and TKT-27 in the same checkout: `node gates/web-smoke.mjs` PASS; pushed.
 
+Follow-up outside the feature: TKT-25's test imported the studio page's whole module graph inside a 10 s hook; commit 52c0c2d makes the page load the editor lazily, and the test runs in 750 ms.
+
 ## Review findings
 
 Reviewer, 2026-09-26, over the eight feature commits 86c23e4..ebc91d6. Verdict before fixes: not met; defects 1, 2, and 5 break commit and discard and the one-undo criterion.

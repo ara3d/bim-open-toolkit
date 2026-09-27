@@ -306,6 +306,7 @@ Baseline gates (2026-09-26, HEAD e71e596; `app/**` has uncommitted edits from ot
 | C4 | 53c5c29 | HostProfileTests 7 pass; the eight spatial.* kinds listed. |
 | C9 | 667cf77 | panes tests pass (chartPane 21 cases); fence respected (2 files). |
 | C10 | e053355 | panes 146 tests pass, tsc clean; fence respected (2 files). Precedence recipe > legend input > table-derived; the reference-equality short-circuit was dropped. |
+| C2 | c218f5e | Viz tests 34 pass, Layering 8 pass; fence respected (3 files). ColorOf interpolates between the stop rows, reproducing ColorMaps.Gradient exactly. |
 | C8 | f778b4a | viz 46 tests pass, tsc clean; fence respected (2 files). |
 
 ## Review findings
