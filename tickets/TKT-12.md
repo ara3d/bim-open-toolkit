@@ -1,9 +1,9 @@
 ---
 id: TKT-12
 title: Run from the editor: a Run button, the run record, and sinks that execute
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: assembly-line-supervisor
 fence: [bimopenflow/web/packages/app/**, bimopenflow/web/packages/state/**, bimopenflow/web/packages/api-client/**, src/flow/BimOpenFlow.Host.Api/**, src/flow/BimOpenFlow.Nodes.Effects/**, src/flow/BimOpenFlow.Evidence/**, docs/DEMOS.md]
 ---
 

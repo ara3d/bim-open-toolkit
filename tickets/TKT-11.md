@@ -1,9 +1,9 @@
 ---
 id: TKT-11
 title: Peek at any wire: hover a port for its table, row counts on wires
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: assembly-line-supervisor
 fence: [bimopenflow/web/packages/app/**, bimopenflow/web/packages/panes/**, bimopenflow/web/packages/api-client/**, src/flow/BimOpenFlow.Host.Api/**]
 ---
 
