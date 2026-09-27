@@ -329,6 +329,7 @@ Baseline gates (2026-09-26, before any change):
 | C6 | 5c1791c | 214 tests pass, typecheck clean; fence respected (5 files). IslandSlotProps carries an explicit layout so layoutOf could go. |
 | C7 | 51b3e3e | 221 tests pass, typecheck clean; fence respected (5 files). Builder stalled after finishing; supervisor verified and committed. |
 | C8 | ebc91d6 | Pane deleted; all workspaces pass (api-client 18, app 220, panes 130, state 51, viz 43); smoke gate PASS before and after. One stale mention left in nodeParams.test.ts, folded into C9. |
+| C9 | 6e98baf | Dated notes in NOTES.md and both proposals; no paramsPane mention left under bimopenflow/web. Three pre-existing narrative lines in the proposals still name the pane as history; accepted, since the notes above them say it is gone. |
 | C4 | 86c23e4 | 11 tests pass, typecheck clean; fence respected (2 new files). Reentrancy guard added so a focusout during onClose cannot double-commit. |
 
 Wave 1 integrated (C1 to C4): `npm run typecheck -w @bimopenflow/app` clean, `npm test -w @bimopenflow/app` 33 files, 208 tests pass; pushed. Wave 2 (C5, C6): typecheck clean, 34 files, 214 tests pass; pushed. C7 and C8 integrated with TKT-25 and TKT-27 in the same checkout: `node gates/web-smoke.mjs` PASS; pushed.
