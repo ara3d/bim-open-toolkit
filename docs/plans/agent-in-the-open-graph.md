@@ -391,6 +391,7 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C1 | 7fd584c | Host.Api 35, api-client 21, state 51 pass; app typecheck clean; fence respected (8 files). |
 
 ## Review findings
 
