@@ -345,6 +345,8 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C7 | 4572741 | App suite 312 pass, typecheck clean; fence respected (2 files). Dim-when-dirty stays in viewModel (C5), not duplicated. |
+| C4 | a4f9c58 | Committed, not run: BimOpenFlow.Host did not compile while TKT-12 C2's RelationHostResults.cs edit was in progress. Supervisor reruns the filter after that commit. |
 | C6 | 09fbf01 | 8 tests pass, typecheck clean; fence respected (2 files). |
 | C5 | e38d06e | viewModel tests 19 pass, typecheck clean; fence respected (2 files). |
 | C2 | bae33a7 | 6 tests pass, typecheck clean; fence respected (2 files). |

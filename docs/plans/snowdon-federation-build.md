@@ -451,6 +451,7 @@ Baseline gates:
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C4 | b22d141 | Example: 5 documents; Duplex: METRE, 1.0; Layering 8 pass; fence respected (3 files). The CLI now targets net8.0-windows because the Federation library does. One build took 19 minutes under lock contention. |
 | C3 | 6624c15 | Federation tests 10 pass, Layering 8 pass; fence respected (8 files). Example GlobalIds are document-prefixed where the table gave none; Elec spaces sit on Elec L1 and P1 on P-L1. |
 | C2 | 7cd598e | Ifc.Tests 20 pass, Snowdon Structural case ran (FOOT, 0.3048); five files, one outside the fence: the test csproj needed a ProjectReference to Ara3D.Ifc.Bos, accepted. |
 | C1 | 7e40500 | All seven files convert; the 95 MB Architectural file in 14 to 19 s at 1.25 GB peak, so the kill criterion held. Category counts and storey elevations match the proposal exactly. Axis tags do not reach the BOS (as planned). New fact: mesh coordinates come out in metres while parameter values stay in feet; no chunk C2 to C13 reads mesh coordinates, so no plan change, but the union's geometry extension point must convert. |
