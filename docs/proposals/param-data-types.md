@@ -53,6 +53,14 @@ landing more than about three new kinds, split it into a registry —
 (scalars, dates, colors, vectors). That keeps two agents adding two kinds from
 colliding, and it is a mechanical change with the existing tests as cover.
 
+> **Note (2026-09-26, TKT-22):** `paramsPane.ts` and `editorFor` are gone.
+> The registry above was built keyed by control instead of by kind: `KIND_CONTROL`
+> and `SLOT_FACTORIES` in `bimopenflow/web/packages/app/src/canvasSlots.ts` and
+> `slotRegistry.ts`. The control a parameter shows depends on kind, descriptor,
+> and value together (a slider on Fraction, a column picker on Text, long Text
+> on line count), so keying by control rather than by kind alone keeps those
+> rules out of each factory.
+
 ## 2. Review of the proposed list
 
 ### Build

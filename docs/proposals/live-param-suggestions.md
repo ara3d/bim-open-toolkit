@@ -12,6 +12,11 @@
 > annotations across the node packs; `docs/nodes.md` renders the sources.
 > Section 6's combobox differs in one detail: the shipped control is a native
 > datalist on the existing island inputs, not an EnumSlot variant.
+>
+> **Note (2026-09-26, TKT-22):** the params pane named above no longer exists.
+> `paramsPane.ts` is deleted, and the datalist combobox now lives only on the
+> canvas islands, wired through `KIND_CONTROL` and `SLOT_FACTORIES` in
+> `bimopenflow/web/packages/app/src/canvasSlots.ts` and `slotRegistry.ts`.
 
 ## 1. The one-sentence version
 
