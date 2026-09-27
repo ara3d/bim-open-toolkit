@@ -132,7 +132,7 @@ S12 (a Script embed) is left out: the Script embed is not built.
 
 ## Debt
 
-Duplicates and reach-ins made on purpose, each with what removes it:
+Duplicates and reach-ins made on purpose, each with what removes it. Filed as tickets on 2026-09-27: TKT-86 (client library: deep imports, ask reader, 3D feed order), TKT-87 (stateless evaluate: restores, placeholders, the Snowdon path, store writes), TKT-88 (chart selection and re-reads), TKT-89 (editor `?analysis=`), TKT-90 (one checker and turn builder), TKT-91 (new embed kinds, an idea).
 
 - **Deep imports from `@bimopenflow/app`.** `src/embeds/contract.ts` imports `ResultApi` from `app/src/paneContext`, and chunks N3 to N9 import `makePaneContext`, `choosePanes`, `firstTableOutput`, `chartPaneOptions`, `watchHost`, and the 3D feed helpers (`modelRef`, `completeTable`, `liveViewRecipe`) by path. An application's internals are not a library's API. Fix: move these pure modules into a client library package (for example `packages/client`, below `app`), re-export them from `app` so its callers do not change, and switch the notebook's imports. Blocked while `app/src` files are in claimed fences (TKT-11, 12, 26).
 - **The `/api/ask` stream reader.** `src/ask/events.ts` copies `readEvents` and the `AskEvent` shape from `app/src/duckdbDemo.ts`, where they are page-local. Fix: move both into the client library above, generate `AskEvent` from `contracts/contracts.json` beside the other wire types, and have `duckdbDemo.ts` import them. `duckdbDemo.ts` is in TKT-26's fence.
@@ -148,3 +148,12 @@ Duplicates and reach-ins made on purpose, each with what removes it:
 - **Re-evaluation writes to the analysis store.** Restoring a missing analysis uses `PUT /api/analyses/{id}`. Fix: a stateless evaluate endpoint (see Considered and rejected).
 
 ## Outcome
+
+2026-09-27. Twelve sample notebooks under `samples/notebooks`: the three NRC notebooks from wave 1, and nine reconstructed sessions (S1, S5 to S11, S13), each labelled as reconstructed on the page. The replies were written by agents playing each session; every embed was computed by the `notebook-studio` host (bim profile) from committed graphs, 20 of them new under `samples/notebooks/graphs`.
+
+- Re-evaluate all in the page, against the host that wrote them: every embed backed by a graph is current (56 across the nine sessions), none changed, none unavailable.
+- A read-only checker compared every number in every reply with its snapshots, the host, and the files on disk. It found six wrong claims in five sessions; all were corrected in the outlines (87c44f3) and regenerated (6d76e92). The embeds had no errors.
+- The review of wave 2 found five defects and seven design notes; all were fixed, one commit each (62aa3f3, f91d944, 77431eb, 99800c9, 985106f, 3ca8f33, 9a53124, fd566b8, aabbbde, 816631f, ed3bc31).
+- The package has 241 tests and a clean type check.
+
+Not met: acceptance criterion 3 (a live request answered by Claude) was shown only as far as the request reaching the Claude Code command line, which was not logged in. The owner chose reconstructed transcripts for evaluation instead. S12 (a Script embed) is not built.
