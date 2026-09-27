@@ -1,7 +1,7 @@
 ---
 id: TKT-34
 title: No Anthropic key reaches the builder session for TKT-8/TKT-18 Claude runs
-status: open
+status: done
 depends_on: []
 owner:
 fence: [tickets/**]
@@ -43,3 +43,8 @@ User-scope value — that remains true and unexplained. The measurement itself
 (see TKT-8's and TKT-18's transcripts) was still cut short by a separate,
 unrelated cause: the Anthropic account ran out of credit partway through the
 DuckDB Ask run and had none left for the IFC ask run (TKT-36 through TKT-41).
+
+
+## Closed, 2026-09-27
+
+Moot: the owner decided that the Anthropic API account is not to be used and that Claude is called through the Claude Code command line instead (TKT-45), which needs no API key in any process. The one lesson kept: the User-scope key that a builder read once should still be revoked, since its value appeared in a transcript.

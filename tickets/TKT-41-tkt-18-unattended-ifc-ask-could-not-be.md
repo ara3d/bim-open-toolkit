@@ -1,8 +1,8 @@
 ---
 id: TKT-41
-title: Rerun both Claude measurements with a funded Anthropic account: the five unanswered Ask requests and the eight IFC questions
+title: Rerun both Claude measurements through the Claude Code command line with Haiku at medium effort: the five unanswered Ask requests and the eight IFC questions
 status: open
-depends_on: []
+depends_on: [TKT-45]
 owner:
 fence: [artifacts/bim-flow-duckdb/**, docs/bim-flow-mcp-demo.md, artifacts/nrc-walkthrough/duplex/**]
 ---
@@ -17,3 +17,8 @@ Measured 2026-09-26 at commit 946748b, after TKT-18's StoreyOfElement fix (9b6e8
 
 TKT-36 to TKT-40 each recorded one Ask request that failed for the same reason (credit exhausted): "which source documents contributed elements", "which table is largest", "how many walls", "how many windows", "how many tables are populated". They are closed and this ticket covers the rerun of all five plus the eight IFC questions, one pass each, with the score table in docs/bim-flow-mcp-demo.md updated and Q8 stated plainly.
 
+
+
+## Owner's decision, 2026-09-27
+
+The Anthropic API account is not to be used. Claude is called from the command line (the Claude Code CLI signed in on the owner's machine), with Haiku models at medium effort. TKT-45 builds that backend; this rerun uses it, so no funded account is needed. Both passes record the model (claude-haiku-4-5-20251001) and effort (medium) in the transcript header and in the score table of docs/bim-flow-mcp-demo.md.

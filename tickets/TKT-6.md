@@ -15,3 +15,8 @@ Default: Claude default, the ten questions in docs/bim-flow-mcp-demo.md as the s
 ## Decision (2026-09-26, from the repository)
 
 The default is already Claude: `docs/bim-flow-mcp-demo.md` says the host picks the Anthropic key before the OpenAI key when both are set and defaults to `claude-opus-5`. What is missing is the measurement, which TKT-8 supplies: the ten questions and their expected answers become a committed request file, `scripts/ask-bim-flow.mjs --file` runs it against Claude, and the transcript is committed and rerun before each demo. PROJECT.md workflow 2 and its success line say so.
+
+
+## Amended, 2026-09-27
+
+Claude stays the default, but through the Claude Code command line with Haiku at medium effort rather than the Anthropic API (owner's decision; TKT-45). The yardstick is unchanged: the ten questions in samples/ask/requests.txt.

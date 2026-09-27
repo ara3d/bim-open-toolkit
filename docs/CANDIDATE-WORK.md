@@ -165,6 +165,11 @@ Reported after the first brief, in the owner's words, with the ticket each becam
 - A better and tighter integration with Claude overall. TKT-29 joins the pieces; TKT-8 measures it.
 - "However we get there doesn't matter": the tickets state the outcome and leave the design to the builder.
 
+### Owner's decisions, 2026-09-27
+
+- The Anthropic API account is not to be used. Claude is called from the command line, through the Claude Code CLI signed in on the owner's machine, and that work uses Haiku models at medium effort. TKT-45 builds the backend; TKT-8 and TKT-41 rerun the measurements through it; TKT-34 (key did not reach the builder) is closed as moot. The opus-5 API run of 2026-09-26 stays in the score table as history.
+- Work was paused the same day to reassess priorities: the six plans in build (TKT-11, 12, 15, 16, 26, 30) keep their committed chunks and Build logs; nothing new is dispatched until the owner orders the list.
+
 ## What the documents argue against
 
 Recorded so nobody proposes them again without a new reason; PROJECT.md's Scope: Out carries the short form.

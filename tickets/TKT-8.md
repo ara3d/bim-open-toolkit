@@ -2,7 +2,7 @@
 id: TKT-8
 title: Measure the Claude backend on the Ask request set and record the transcript
 status: claimed
-depends_on: []
+depends_on: [TKT-45]
 owner: small-job-builder
 fence: [scripts/ask-bim-flow.mjs, docs/bim-flow-mcp-demo.md, artifacts/bim-flow-duckdb/**, samples/duckdb-analyses/**]
 ---
@@ -20,3 +20,8 @@ Serves W2. The Claude backend landed in commit d0aa10c (2026-09-18) and 'has not
 
 samples/ask/requests.txt holds the ten questions with expected answers; one pass with claude-opus-5 scored 4 correct, 0 honest, 1 wrong (TKT-35: rooms per storey grouped by storey id, not name), and 5 failed because the Anthropic account ran out of credit mid-run. The transcript and the score table are committed. Stays open until TKT-41 reruns the five with a funded account.
 
+
+
+## Owner's decision, 2026-09-27
+
+The Anthropic API account is not to be used. Claude is called from the command line (the Claude Code CLI signed in on the owner's machine), with Haiku models at medium effort. TKT-45 builds that backend; the rerun this ticket waits for (TKT-41) runs through it. The opus-5 row in the score table stays as history; the next row is Haiku over the command line. Depends on TKT-45 now.

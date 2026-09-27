@@ -13,3 +13,8 @@ fence: [src/mcp/BimOpenMcp.Ifc/**, .claude/skills/ifc-ask/**, samples/nrc/**]
 - [ ] A test reproduces the double count and fails before the fix
 
 Serves W6 and principle 4 (a reported number comes from a tool result and is right). artifacts/nrc-walkthrough/duplex/transcript-unattended.md line 454: Q8 answered 98902.4 on 2026-09-18 through a ParameterText-to-StoreyOfEntity join on EntityIndex, against the expected 49451.2 recorded in docs/plans/nrc-handoff-wave.md line 169. The cause is undiagnosed. docs/plans/nrc-handoff/track-e.md finding 2 describes the StoreyOfEntity walk joined through GlobalId that counts no element twice, which is the join the agent should be steered to.
+
+
+## Note, 2026-09-27
+
+The code fix landed (9b6e85a, StoreyOfElement view). End-to-end confirmation by a model waits for TKT-41, which now runs through the Claude Code command line with Haiku (TKT-45), not a funded API account.
