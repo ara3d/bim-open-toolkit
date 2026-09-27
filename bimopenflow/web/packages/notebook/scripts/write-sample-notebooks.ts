@@ -239,16 +239,26 @@ async function seedGraphs(outline: Outline, outlineDir: string, api: NotebookApi
  * Polls GET /api/analyses/{id}/state until it reports every node of `doc` and
  * has caught up to `graphHash` (the host evaluates a PUT synchronously, so
  * this usually settles on the first read; a node still missing after the
- * timeout is named in the error).
+ * timeout is named in the error). Once settled, throws naming each node left
+ * in Error or Unavailable, since a seeded graph is meant to be green: a
+ * writer node still EffectPending is fine and stays allowed (plan: "nothing
+ * writes until Run").
  */
-async function waitSettled(api: NotebookApi, id: string, doc: GraphDocument, graphHash: string): Promise<void> {
+export async function waitSettled(api: NotebookApi, id: string, doc: GraphDocument, graphHash: string): Promise<void> {
   const nodeIds = doc.structure.nodes.map((n) => n.id);
   const deadline = Date.now() + SETTLE_TIMEOUT_MS;
   for (;;) {
     const state = await api.getAnalysisState(id);
     const seen = new Set(state.nodes.map((n) => n.nodeId));
     const missing = nodeIds.filter((n) => !seen.has(n));
-    if (state.graphHash === graphHash && missing.length === 0) return;
+    if (state.graphHash === graphHash && missing.length === 0) {
+      const failed = state.nodes.filter((n) => n.status === "Error" || n.status === "Unavailable");
+      if (failed.length > 0) {
+        const named = failed.map((n) => `${n.nodeId} (${n.status}${n.error ? `: ${n.error}` : ""})`).join(", ");
+        throw new Error(`${id} settled with failing nodes: ${named}`);
+      }
+      return;
+    }
     if (Date.now() > deadline) {
       const cause =
         missing.length > 0
@@ -295,7 +305,12 @@ async function main(): Promise<void> {
 
 const NOTEBOOK_SUFFIX = ".notebook.json";
 
-main().catch((e) => {
-  console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+// Runs only as the CLI entry point (vite-node scripts/write-sample-notebooks.ts),
+// not when a test imports this module for its host-calling helpers (waitSettled):
+// vitest sets VITEST=true for every test process (its own documented contract).
+if (!process.env.VITEST) {
+  main().catch((e) => {
+    console.error(e instanceof Error ? e.message : e);
+    process.exit(1);
+  });
+}
