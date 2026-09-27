@@ -1,0 +1,36 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "elements": { "x": 40, "y": 40 },
+    "byCategory": { "x": 360, "y": 40 },
+    "ranked": { "x": 680, "y": 40 },
+    "doorsRow": { "x": 360, "y": 260 },
+    "roomsRow": { "x": 360, "y": 400 },
+    "spacesRow": { "x": 360, "y": 540 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "elements.table", "to": "byCategory.table" },
+      { "from": "byCategory.table", "to": "ranked.table" },
+      { "from": "byCategory.table", "to": "doorsRow.table" },
+      { "from": "byCategory.table", "to": "roomsRow.table" },
+      { "from": "byCategory.table", "to": "spacesRow.table" }
+    ],
+    "nodes": [
+      { "id": "elements", "kind": "bim.elements", "version": 1 },
+      { "id": "byCategory", "kind": "table.aggregate", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "doorsRow", "kind": "table.filter", "version": 1 },
+      { "id": "roomsRow", "kind": "table.filter", "version": 1 },
+      { "id": "spacesRow", "kind": "table.filter", "version": 1 }
+    ]
+  },
+  "values": {
+    "elements": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "byCategory": { "groupBy": "Category", "aggregates": "count(*) as Elements" },
+    "ranked": { "by": "Elements desc" },
+    "doorsRow": { "expr": "Category == 'Doors'" },
+    "roomsRow": { "expr": "Category == 'Rooms'" },
+    "spacesRow": { "expr": "Category == 'Spaces'" }
+  }
+}

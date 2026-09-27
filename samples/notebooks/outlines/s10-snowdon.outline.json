@@ -1,0 +1,112 @@
+{
+  "title": "Snowdon at scale",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "../graphs/s10-snowdon/nb-s10-snowdon-open.json",
+    "../graphs/s10-snowdon/nb-s10-snowdon-rooms-per-storey.json",
+    "../graphs/s10-snowdon/nb-s10-snowdon-storey-doors.json",
+    "../graphs/s10-snowdon/nb-s10-snowdon-category-view.json"
+  ],
+  "turns": [
+    {
+      "request": "Open the Snowdon model. What does it hold?",
+      "reply": "Only the architectural discipline is registered on this host (Snowdon Towers Sample Architectural.bos, 30,760 elements); the seven-discipline federation TKT-30 describes isn't wired in here, so this session works from that one file. 96 Revit categories. The largest are Pipes (3,051), Analytical Surfaces (3,041), and Supports (2,779) — mechanical and analytical content dominates the count, not the architecture. Doors: 142. Rooms: 54. Spaces: 236.",
+      "analysisId": "nb-s10-snowdon-open",
+      "tools": [
+        { "name": "getAnalysis", "ok": true, "summary": "nb-s10-snowdon-open: 6 nodes, 5 edges" },
+        { "name": "evaluate", "ok": true, "summary": "6 of 6 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s10-snowdon-open ranked.table: 96 rows × 2 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "ranked",
+          "port": "table",
+          "caption": "Elements per category, largest first"
+        },
+        {
+          "kind": "graph",
+          "focus": ["elements", "byCategory", "ranked"]
+        }
+      ]
+    },
+    {
+      "request": "How many doors and how many spaces?",
+      "reply": "142 doors. Rooms and Spaces are separate Revit categories here — 54 Rooms and 236 Spaces, 290 together, both meaning occupiable area rather than a building element.",
+      "analysisId": "nb-s10-snowdon-open",
+      "tools": [
+        { "name": "getResult", "ok": true, "summary": "nb-s10-snowdon-open doorsRow.table: 1 row × 2 columns" },
+        { "name": "getResult", "ok": true, "summary": "nb-s10-snowdon-open roomsRow.table: 1 row × 2 columns" },
+        { "name": "getResult", "ok": true, "summary": "nb-s10-snowdon-open spacesRow.table: 1 row × 2 columns" }
+      ],
+      "embeds": [
+        { "kind": "value", "node": "doorsRow", "port": "table", "column": "Elements", "unit": "doors", "caption": "Doors" },
+        { "kind": "value", "node": "roomsRow", "port": "table", "column": "Elements", "unit": "rooms", "caption": "Rooms" },
+        { "kind": "value", "node": "spacesRow", "port": "table", "column": "Elements", "unit": "spaces", "caption": "Spaces" }
+      ]
+    },
+    {
+      "request": "Rooms per storey, as a chart.",
+      "reply": "33 storeys carry at least one room, out of 84 levels total (the rest are reference planes, pits, and roof datums with no rooms). L1 - Block 43 has the most, 26; L4 follows at 20 and 15 on its two passes (the model splits some levels into more than one named block at the same elevation, so a level name can appear twice in the chart).",
+      "analysisId": "nb-s10-snowdon-rooms-per-storey",
+      "tools": [
+        { "name": "getAnalysis", "ok": true, "summary": "nb-s10-snowdon-rooms-per-storey: 4 nodes, 3 edges" },
+        { "name": "evaluate", "ok": true, "summary": "4 of 4 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s10-snowdon-rooms-per-storey ranked.table: 33 rows × 5 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "chart",
+          "node": "chart",
+          "port": "table",
+          "caption": "Rooms per storey"
+        },
+        {
+          "kind": "table",
+          "node": "ranked",
+          "port": "table",
+          "caption": "Storeys with at least one room, most rooms first"
+        }
+      ]
+    },
+    {
+      "request": "Doors narrower than 850 mm on L1 - Block 43, the tallest bar on that chart.",
+      "reply": "Clicking that bar selects L1 - Block 43, its 26 rooms and 10 doors. No door on this storey carries a leaf clear-width parameter (this model has no OverallWidth-equivalent), so DC-W1 as written can't run here. The closest available measure is Rough Width, the framed opening rather than the leaf: 4 of the 10 doors carry it (1,016 mm, 1,016 mm, 978 mm, 978 mm — all at or above 850 mm), and the other 6, all curtain-wall storefront doors plus one 60\" x 84\" pair, carry no width parameter at all and come back InfoNotAvailable rather than a guessed Pass or Fail. Nothing on this storey measures narrower than 850 mm by the one width this model has.",
+      "analysisId": "nb-s10-snowdon-storey-doors",
+      "tools": [
+        { "name": "getAnalysis", "ok": true, "summary": "nb-s10-snowdon-storey-doors: 8 nodes, 7 edges" },
+        { "name": "evaluate", "ok": true, "summary": "8 of 8 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s10-snowdon-storey-doors verdicts.out: 10 rows × 24 columns" }
+      ],
+      "embeds": [
+        {
+          "kind": "table",
+          "node": "verdicts",
+          "port": "out",
+          "caption": "L1 - Block 43 doors, Rough Width against 850 mm (a proxy for DC-W1's missing leaf-width measure)"
+        }
+      ]
+    },
+    {
+      "request": "Show the whole model coloured by category.",
+      "reply": "Same view3d.scene and categoryStyle chain the snowdon-toolkit demo uses, pointed at this session's own graph. Revit's classic category palette, full opacity; doors, rooms, and spaces from the last few turns are visible as their own colours alongside the mechanical and structural categories that dominate the count.",
+      "analysisId": "nb-s10-snowdon-category-view",
+      "tools": [
+        { "name": "getAnalysis", "ok": true, "summary": "nb-s10-snowdon-category-view: 2 nodes, 1 edge" },
+        { "name": "evaluate", "ok": true, "summary": "2 of 2 nodes Ok" }
+      ],
+      "embeds": [
+        {
+          "kind": "view3d",
+          "node": "categories",
+          "port": "view",
+          "caption": "Snowdon, coloured by category"
+        }
+      ]
+    }
+  ]
+}

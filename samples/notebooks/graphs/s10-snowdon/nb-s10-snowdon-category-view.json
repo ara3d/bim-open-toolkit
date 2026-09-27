@@ -1,0 +1,20 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "snowdon": { "x": 40, "y": 40 },
+    "categories": { "x": 360, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "snowdon.view", "to": "categories.view" }
+    ],
+    "nodes": [
+      { "id": "snowdon", "kind": "view3d.scene", "version": 1 },
+      { "id": "categories", "kind": "view3d.categoryStyle", "version": 1 }
+    ]
+  },
+  "values": {
+    "snowdon": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "categories": { "opacity": "1" }
+  }
+}

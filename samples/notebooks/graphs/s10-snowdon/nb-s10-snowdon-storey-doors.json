@@ -1,0 +1,44 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "bos": { "x": 40, "y": 40 },
+    "elements": { "x": 40, "y": 260 },
+    "doorsOnly": { "x": 240, "y": 260 },
+    "storeyDoors": { "x": 360, "y": 260 },
+    "roughWidth": { "x": 40, "y": 480 },
+    "joined": { "x": 680, "y": 260 },
+    "withMm": { "x": 1000, "y": 260 },
+    "verdicts": { "x": 1320, "y": 260 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "elements.table", "to": "doorsOnly.table" },
+      { "from": "doorsOnly.table", "to": "storeyDoors.table" },
+      { "from": "bos.parameters", "to": "roughWidth.table" },
+      { "from": "storeyDoors.table", "to": "joined.a" },
+      { "from": "roughWidth.table", "to": "joined.b" },
+      { "from": "joined.table", "to": "withMm.table" },
+      { "from": "withMm.table", "to": "verdicts.in" }
+    ],
+    "nodes": [
+      { "id": "bos", "kind": "bos.load", "version": 1 },
+      { "id": "elements", "kind": "bim.elements", "version": 1 },
+      { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
+      { "id": "storeyDoors", "kind": "table.filter", "version": 1 },
+      { "id": "roughWidth", "kind": "table.filter", "version": 1 },
+      { "id": "joined", "kind": "table.join", "version": 1 },
+      { "id": "withMm", "kind": "table.derive", "version": 1 },
+      { "id": "verdicts", "kind": "check.rule", "version": 1 }
+    ]
+  },
+  "values": {
+    "bos": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "elements": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "doorsOnly": { "expr": "Category == 'Doors'" },
+    "storeyDoors": { "expr": "Level == 'L1 - Block 43'" },
+    "roughWidth": { "expr": "Name == 'Rough Width'" },
+    "joined": { "aKey": "EntityIndex", "bKey": "EntityIndex", "mode": "left" },
+    "withMm": { "name": "RoughOpening_mm", "expr": "toNumber([Value]) * 304.8" },
+    "verdicts": { "checkId": "RoughOpening-850", "title": "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)", "citation": "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires", "expr": "[RoughOpening_mm] >= 850", "reviewExpr": "" }
+  }
+}

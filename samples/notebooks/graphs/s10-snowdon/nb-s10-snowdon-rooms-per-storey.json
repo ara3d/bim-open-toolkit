@@ -1,0 +1,28 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "levels": { "x": 40, "y": 40 },
+    "withRooms": { "x": 360, "y": 40 },
+    "ranked": { "x": 680, "y": 40 },
+    "chart": { "x": 1000, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "levels.table", "to": "withRooms.table" },
+      { "from": "withRooms.table", "to": "ranked.table" },
+      { "from": "ranked.table", "to": "chart.table" }
+    ],
+    "nodes": [
+      { "id": "levels", "kind": "bim.levels", "version": 1 },
+      { "id": "withRooms", "kind": "table.filter", "version": 1 },
+      { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "chart", "kind": "chart.bar", "version": 1 }
+    ]
+  },
+  "values": {
+    "levels": { "path": "C:/Users/cdigg/Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos" },
+    "withRooms": { "expr": "RoomCount > 0" },
+    "ranked": { "by": "RoomCount desc" },
+    "chart": { "labelColumn": "Name", "valueColumns": "RoomCount", "title": "Rooms per storey", "sort": "desc" }
+  }
+}
