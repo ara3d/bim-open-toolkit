@@ -15,3 +15,8 @@ fence: [bimopenflow/web/packages/app/**, docs/DEMOS.md, samples/**]
 - [ ] The app tests cover one control per kind, and gates/web-smoke.mjs passes
 
 Owner's finding of 2026-09-26: the nodes were too bland and lacked interesting controls, and the sample graphs demonstrated too few of them. TKT-22 moves every parameter onto the node; this ticket makes those parameters controls worth touching. Serves W2 and W3. Start from bimopenflow/web/packages/app/src/canvasControls.ts (BoolSlot is the model) and numericParam.ts.
+
+## Notes from TKT-22 (2026-09-26)
+
+The registry is ready: a control is a `SlotControl` member, a `CONTROL_HEIGHT` row, a factory in `SLOT_FACTORIES`, and, for descriptor-driven controls, a `DESCRIPTOR_CONTROL` row. Two debts land here: coalesce the slider and range widgets' per-move setParam writes into one undo step (graphWidgets.ts; the typed slider is the first control that needs it), and let factory modules register a prune hook instead of pruneSlots naming every store.
+

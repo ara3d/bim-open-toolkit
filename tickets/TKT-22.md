@@ -1,7 +1,7 @@
 ---
 id: TKT-22
 title: Remove the properties panel: every parameter is edited on its node
-status: claimed
+status: done
 depends_on: []
 owner: assembly-line-supervisor
 fence: [bimopenflow/web/packages/app/**, bimopenflow/web/packages/state/**, docs/DEMOS.md, docs/plans/remove-properties-panel.md, NOTES.md, docs/proposals/param-data-types.md, docs/proposals/live-param-suggestions.md]

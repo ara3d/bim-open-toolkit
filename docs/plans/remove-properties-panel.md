@@ -1,6 +1,6 @@
 # Remove the properties panel: every parameter is edited on its node
 
-Status: swept; report pending
+Status: done
 Request: TKT-22. Remove the properties panel (`paramsPane.ts`) from the BimOpenFlow web editor so that every node parameter is edited on its node card. The owner decided this in TKT-5 (2026-09-26): "Scalar parameters live in the graph. Always. The properties panel should be thrown out." Json, Expression, ModelRef, and long Text move onto the node, and a long value opens an editor anchored to the node. Every edit goes through `setParam` and reverts in one undo step. TKT-23 follows and will make each parameter kind a richer control on the card, so each parameter row and the way its control is chosen must stay fixed for TKT-23 to build on.
 Open questions (each has a default, so none blocks the build; the supervisor took the defaults on 2026-09-26):
 1. Parameters whose descriptor sets `control.kind: "hidden"` could only be edited in the pane. These are `duck.query.path`, `table.sort.by`, and `table.sort.descendingA/B/C` (the sort-column control already sets the `descending*` values). After this feature, only agents, MCP, and the document itself can change them. Default: they stay hidden, because hiding them was the node author's choice.
@@ -366,3 +366,12 @@ Checked with no finding: one setParam per commit for fields, picker, toggle, dro
 - Test long-value editor Cancel button and click-outside closing through the store (defect 6); calls through the DOM layer do not reach `dispatchInline`. Runtime-mount gap: a headless test cannot fire the gratify-island `focusout` event in the same way a user would, so `Runtime.syncIslands` cannot be fully exercised without a browser.
 
 ## Report
+
+Done 2026-09-26. Nine chunks plus seven fix commits and three sweep commits, all by path in the shared checkout while five other tickets built beside them.
+
+Gates on the final tree: `npm test --workspaces --if-present` passes every package (app 261 in 38 files after the follow-ups, panes 146, state 51, viz 46, api-client 18); `npm run typecheck -w @bimopenflow/app` clean; `node gates/web-smoke.mjs` ends with `WEB SMOKE: PASS`.
+
+Used once as a user would, in the built-in browser against the bim-profile host on the temp store: the pane strip offers Table, Chart, and Inspector and no Params tab; adding a `check.rule` node shows Check Id, Title, Citation, Expr, and Review Expr rows on the card with the TKT-10 "Needs setup" badge; clicking Expr opens the editor anchored under the row with focus already in the textarea; typing `area > 10 AND level = 'L1'` and pressing Ctrl+Enter closes the editor and the row previews the value; one Ctrl+Z on the canvas restores the empty value. The editor keeps a dark wrapper on a light canvas (its textarea is themed; the wrapper is not): cosmetic, left as is.
+
+Debt filed: TKT-42 (retire the two unused pane contract members), TKT-43 (question: the Inspector's read-only parameter list), TKT-44 (a browser test for Cancel and click-outside); the drag-coalescing and prune-hook items are notes on TKT-23. Review findings: all five defects fixed, design notes 1 to 4 and 7 applied, 5 and 6 recorded as debt.
+
