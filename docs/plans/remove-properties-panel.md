@@ -325,9 +325,11 @@ Baseline gates (2026-09-26, before any change):
 | C1 | aa84655 | 193 tests pass (C3 and C4 had landed), typecheck clean; fence respected (4 files). styleIsland widened to textarea per contract. |
 | C2 | 154b95a | 22 tests pass, typecheck clean; fence respected (2 files). slotHeight(Json) now FIELD_SLOT_H, not 0, as the plan intends. |
 | C3 | 31df786 | 20 tests pass; fence respected (4 files). Fixture uses a Text param because INLINE still gates the card until C7. |
+| C5 | 0e12b6c | 6 tests pass; fence respected (2 new files). Kill criterion not hit: the island facet places the editor under the row like the inline islands. Editor keeps C4's fixed palette; theme styling deferred to debt. |
+| C6 | 5c1791c | 214 tests pass, typecheck clean; fence respected (5 files). IslandSlotProps carries an explicit layout so layoutOf could go. |
 | C4 | 86c23e4 | 11 tests pass, typecheck clean; fence respected (2 new files). Reentrancy guard added so a focusout during onClose cannot double-commit. |
 
-Wave 1 integrated (C1 to C4): `npm run typecheck -w @bimopenflow/app` clean, `npm test -w @bimopenflow/app` 33 files, 208 tests pass; pushed.
+Wave 1 integrated (C1 to C4): `npm run typecheck -w @bimopenflow/app` clean, `npm test -w @bimopenflow/app` 33 files, 208 tests pass; pushed. Wave 2 (C5, C6): typecheck clean, 34 files, 214 tests pass; pushed.
 
 ## Review findings
 
