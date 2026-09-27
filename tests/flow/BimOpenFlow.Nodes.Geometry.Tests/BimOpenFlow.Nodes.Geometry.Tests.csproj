@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Using Include="BimOpenFlow.Nodes.Support" />
   </ItemGroup>
 
 </Project>
