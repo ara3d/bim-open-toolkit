@@ -22,7 +22,7 @@ skipped
   - Json and Expression: a long-text row.
   - Text with a line break or more than 60 characters, no suggestion source, and no control descriptor: a long-text row.
 - A long-text row shows a one-line preview. Pressing it opens a multi-line editor anchored under the row. The editor follows pan, zoom, and node moves. Apply, Ctrl+Enter or Cmd+Enter, or clicking outside the editor commits. Escape or Cancel discards. Only one editor is open at a time.
-- Every commit from any on-node control is exactly one `setParam` through the canvas `setParam` intent. One undo restores the previous value. Committing unchanged text dispatches nothing.
+- Every commit from any on-node control is exactly one `setParam` through the canvas `setParam` intent, except the slider and range drag widgets, whose per-move writes predate this feature. One undo restores the previous value. Committing unchanged text dispatches nothing.
 - Nodes show every non-hidden parameter as its own row, as they do today.
 - `npm test --workspaces --if-present` (from `bimopenflow/web`) and `node gates/web-smoke.mjs` (from the repository root) pass. `test/nodeParams.test.ts` replaces the pane's test and covers Json, Expression, ModelRef, Text with ColumnsOf suggestions, and the range control.
 - `bimopenflow/web/packages/panes/**` is unchanged, including `inspectorPane.ts`, `entityProperties.ts`, and `viewPane3D.ts`. `sidebar.ts` and `duckdbDemo.css` are unchanged.
@@ -339,23 +339,24 @@ Wave 1 integrated (C1 to C4): `npm run typecheck -w @bimopenflow/app` clean, `np
 Reviewer, 2026-09-26, over the eight feature commits 86c23e4..ebc91d6. Verdict before fixes: not met; defects 1, 2, and 5 break commit and discard and the one-undo criterion.
 
 Defects:
-1. `longValueEditor.ts:130` focuses the textarea inside the island function, before gratify adds the element to the page (`runtime.ts:552-571`), so the editor opens unfocused and Ctrl+Enter, Escape, and click-outside do nothing until the user clicks in. Fix: focus at once if `el.isConnected`, else in a microtask; test with a detached editor.
-2. `longValueEditor.ts:103-107` treats a missing `relatedTarget` as outside, so clicking the label, padding, or (on Safari and Firefox on macOS) Cancel commits the draft. Fix: `mousedown` on the wrapper calls `preventDefault()` unless the target is the textarea; test that Cancel calls only `onClose`.
-3. `slotRegistry.ts:54-56` `disposeSlots` never disposes the long editors. Fix: `disposeSlots = () => pruneSlots(new Set())`; drop the workaround in `test/nodeParams.test.ts:23-27`.
-4. `canvasLongSlot.ts:26,76` cuts the preview at 48 characters, about 100 px past the node edge. Fix: gratify's exported `fitText` against the box width.
-5. `graphWidgets.ts:21-38` slider and range send `set` on every pointer move and the reducer records one undo step per `setParam`; the pane's typed range entry was the only one-step path. Decision: narrow criterion 5 to exclude drag widgets and record coalescing as debt for TKT-23's typed slider.
+1. `longValueEditor.ts:130` focuses the textarea inside the island function, before gratify adds the element to the page (`runtime.ts:552-571`), so the editor opens unfocused and Ctrl+Enter, Escape, and click-outside do nothing until the user clicks in. Fix: focus at once if `el.isConnected`, else in a microtask; test with a detached editor. **Fixed, 9d2dda8.**
+2. `longValueEditor.ts:103-107` treats a missing `relatedTarget` as outside, so clicking the label, padding, or (on Safari and Firefox on macOS) Cancel commits the draft. Fix: `mousedown` on the wrapper calls `preventDefault()` unless the target is the textarea; test that Cancel calls only `onClose`. **Fixed, 2926217.**
+3. `slotRegistry.ts:54-56` `disposeSlots` never disposes the long editors. Fix: `disposeSlots = () => pruneSlots(new Set())`; drop the workaround in `test/nodeParams.test.ts:23-27`. **Fixed, 30f478e.**
+4. `canvasLongSlot.ts:26,76` cuts the preview at 48 characters, about 100 px past the node edge. Fix: gratify's exported `fitText` against the box width. **Fixed, 09db7ad.**
+5. `graphWidgets.ts:21-38` slider and range send `set` on every pointer move and the reducer records one undo step per `setParam`; the pane's typed range entry was the only one-step path. Decision: narrow criterion 5 to exclude drag widgets and record coalescing as debt for TKT-23's typed slider. **No code change: criterion 5 above narrowed and the debt recorded under "Debt and extension points."**
 
 Design notes:
-1. `canvasIntents.ts:83-89` `sync` keeps an open editor when the row stops being long text; also require `slotControl(p) === "longText"`.
-2. `longValueEditor.ts:103-107` a window switch (`focusout` with no `relatedTarget`) commits a half-typed value; return early when `!doc.hasFocus()`.
-3. The editor's palette is hard-coded dark and `styleIsland`'s textarea widening is unused; style through `styleIsland` or record as debt.
-4. `canvasSlots.ts:61-64` descriptor rules are an if-chain; a `DESCRIPTOR_CONTROL` table would make TKT-23's swatch and column picker rows too. Update the `slotRegistry.ts` header.
-5. Four per-row stores are pruned by hand; let factory modules register a prune hook.
-6. `test/nodeParams.test.ts` never mounts through the runtime (so defect 1 could not show), lacks Cancel and click-outside through the store, and its `SLOT_FACTORIES` test repeats the typecheck; replace it with an unknown-kind field test.
-7. Comments in `canvasControls.ts:1-16,252`, `canvasSlots.ts:1-8`, and `slotShared.ts:2` describe the old per-kind design.
+1. `canvasIntents.ts:83-89` `sync` keeps an open editor when the row stops being long text; also require `slotControl(p) === "longText"`. **Fixed, e333f13.**
+2. `longValueEditor.ts:103-107` a window switch (`focusout` with no `relatedTarget`) commits a half-typed value; return early when `!doc.hasFocus()`. **Fixed, 6398cce.**
+3. The editor's palette is hard-coded dark and `styleIsland`'s textarea widening is unused; style through `styleIsland` or record as debt. **Fixed, c001748: `editorFor` calls `styleIsland` on theme-version change, then reapplies the flex sizing and monospace font it clobbers.**
+4. `canvasSlots.ts:61-64` descriptor rules are an if-chain; a `DESCRIPTOR_CONTROL` table would make TKT-23's swatch and column picker rows too. Update the `slotRegistry.ts` header. **Deferred to the sweeper.**
+5. Four per-row stores are pruned by hand; let factory modules register a prune hook. **Deferred to the sweeper.**
+6. `test/nodeParams.test.ts` never mounts through the runtime (so defect 1 could not show), lacks Cancel and click-outside through the store, and its `SLOT_FACTORIES` test repeats the typecheck; replace it with an unknown-kind field test. **Deferred to the sweeper.**
+7. Comments in `canvasControls.ts:1-16,252`, `canvasSlots.ts:1-8`, and `slotShared.ts:2` describe the old per-kind design. **Deferred to the sweeper.**
 
 Checked with no finding: one setParam per commit for fields, picker, toggle, dropdown; re-entrant close; close on node removal; no double mount; hidden parameters; sort-column; Enum open flag; unknown kinds; Retires list fully applied; every commit inside its fence; panes and state unchanged.
 
 ## Debt and extension points
+- Coalesce the slider and range widgets' per-move `setParam` writes into one undo step (`graphWidgets.ts:21-38`). Their drag writes predate this feature and were excluded from criterion 5 by defect 5 below; TKT-23's typed slider is the first control that would need this.
 
 ## Report
