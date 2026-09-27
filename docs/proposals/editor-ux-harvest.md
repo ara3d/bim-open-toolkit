@@ -93,7 +93,7 @@ Grouped by the workflow they help. "Have" means BimOpenFlow already does it (fro
 
 | Idea | Where it was built | Notes |
 |---|---|---|
-| **Drop a wire on empty canvas → palette filtered to compatible kinds**, picked node added and connected as one undo step | Studio Graph `wires.ts:308-368`, [palette.ts:40-155](../../../studio/ara3d-sdk/wip/platoflow-poc/web/src/editor/palette.ts) | P0 in the earlier proposal, not ticketed. The one-undo-step part also fixes the TODO at `app.ts:331` (adding a node takes three undo steps). |
+| **Drop a wire on empty canvas → palette filtered to compatible kinds**, picked node added and connected as one undo step | Studio Graph `wires.ts:308-368`, [palette.ts:40-155](../../../studio/ara3d-sdk/wip/platoflow-poc/web/src/editor/palette.ts) | P0 in the earlier proposal, not ticketed. The one-undo-step part also fixes the TODO at `app.ts:343` (adding a node takes three undo steps). |
 | **Right-click canvas → palette at the cursor** | Studio Graph `index.ts:596-600` | Today the only way to add a node is the sidebar, and it lands "at a free spot". |
 | **Drop a node on a wire to splice it in** (one disconnect, two connects) | Studio Graph `wires.ts:75-80, 386-447` | Maps directly onto principle 1's operations. |
 | **Shift-drag to slice wires** | Gratify [node-editor/slice.ts:70-108](../../submodules/gratify/examples/node-editor/slice.ts) | Blender's knife; already in the library BimOpenFlow uses. |
@@ -201,7 +201,7 @@ Each item names what it builds from. The first five need no engine or format cha
 
 1. **Connect wire peeking** (TKT-11): pass results into `buildCanvasModel`, call `installPortHover`, copy Studio Graph's hiding rules from `wires.ts:82-135`.
 2. **Help expando on every node**: port Studio Graph's `helpLines` and layout; content from the catalog and `nodeBadge.ts`. One new ticket.
-3. **Wire-drop palette, canvas palette, splice on wire, one undo step per add**: port Studio Graph `palette.ts`, `wires.ts:308-447`. One ticket; it also closes the TODO at `app.ts:331`.
+3. **Wire-drop palette, canvas palette, splice on wire, one undo step per add**: port Studio Graph `palette.ts`, `wires.ts:308-447`. One ticket; it also closes the TODO at `app.ts:343`.
 4. **Marquee, copy and paste, tidy and fit outside demo mode**: Gratify `shared/marquee.ts`, Studio Graph `doc.ts:275-336`, the existing `autoLayout.ts`.
 5. **Frames and notes as layout metadata** (grouping option 1).
 6. **Per-node timing and an error list**: needs the host to report evaluation time.
