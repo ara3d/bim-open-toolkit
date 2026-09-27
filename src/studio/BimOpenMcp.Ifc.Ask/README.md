@@ -25,11 +25,18 @@ dotnet run --project src/studio/BimOpenMcp.Ifc.Ask -- `
 | `--results <results.json>` | The run as JSON: question, answer, turns, token counts, and every tool call. |
 | `--turns <n>` | Turn limit per question. Default 40. |
 
-The provider is chosen as for the studio's Ask box (`ChatSelection` in `BimOpenFlow.Ask`): the key
-comes from `ANTHROPIC_API_KEY` / `ANTHROPIC_API_KEY_FILE` (model `ANTHROPIC_MODEL`, default
-`claude-opus-5`) or `OPENAI_API_KEY` / `OPENAI_API_KEY_FILE` (model `OPENAI_MODEL`, default `gpt-5`),
-Anthropic first when both exist, `ASK_PROVIDER` to force one. Progress goes to stderr, so the
-transcript on stdout stays clean.
+The provider is chosen as for the studio's Ask box (`ChatSelection` in `BimOpenFlow.Ask`):
+`claude-cli` first when a `claude` executable is found (install Claude Code with
+`npm install -g @anthropic-ai/claude-code`, run `claude` once, and `/login`; or set
+`ASK_CLAUDE_CLI` to its path); otherwise the key comes from `ANTHROPIC_API_KEY` /
+`ANTHROPIC_API_KEY_FILE` (model `ANTHROPIC_MODEL`, default `claude-opus-5`) or `OPENAI_API_KEY` /
+`OPENAI_API_KEY_FILE` (model `OPENAI_MODEL`, default `gpt-5`), Anthropic first when both exist.
+`ASK_PROVIDER` forces one of `claude-cli`, `anthropic`, or `openai`. `ASK_CLAUDE_MODEL` and
+`ASK_CLAUDE_EFFORT` override the `claude-cli` defaults (`claude-haiku-4-5-20251001`, `medium`).
+With `claude-cli`, no `ANTHROPIC_*` variable is read or passed to the spawned process, and the IFC
+tool server (under the name `bimopen-ifc`) is started on a free loopback port so the Claude Code
+command line can reach it; the API providers still post to it in process, unstarted, as before.
+Progress goes to stderr, so the transcript on stdout stays clean.
 
 | File | Role |
 |---|---|
@@ -46,9 +53,11 @@ transcript on stdout stays clean.
 once and the DuckDB conversion is built once) but never a conversation. An answer that leaned on
 what an earlier question turned up would not be evidence that the question can be answered.
 
-**The server is never started.** `IfcAskRunner.CreateServer` registers the tools on an `McpServer`
-configured for HTTP and leaves it that way; the agent posts JSON-RPC to `HandlePost` directly, so
-nothing listens on a port and nothing else can reach it.
+**The server listens only for claude-cli.** `IfcAskRunner.CreateServer` registers the tools on an
+`McpServer` built on a free loopback port, configured for HTTP, and leaves it unstarted. `ChatBackend`
+posts JSON-RPC to `HandlePost` in process, so nothing listens on a port for the API providers.
+`ClaudeCliBackend` starts the listener, because the Claude Code command line reaches it over HTTP;
+`ChatSelection.CreateBackend` decides which backend, and so which of the two, a run gets.
 
 **Four tools are hidden.** `ifc_export_glb` and `ifc_sql_export` write files nobody reads here;
 `ifc_close` and `ifc_models` only matter to a client juggling several models. Each one a model tries

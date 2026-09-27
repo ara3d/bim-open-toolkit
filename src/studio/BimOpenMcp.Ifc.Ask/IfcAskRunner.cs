@@ -24,11 +24,13 @@ public sealed class IfcAskRunner(IAskBackend backend, string modelPath)
     public static AskSetup Setup(McpServer tools, int maxTurns = DefaultMaxTurns)
         => new(tools, ServerKey, HiddenTools, maxTurns);
 
-    /// <summary>The tool server the runner drives: registered but never started, because the agent
-    /// posts to its JSON-RPC handler in process. The caller owns the cache and the server.</summary>
+    /// <summary>The tool server the runner drives, on a free loopback port: registered but not
+    /// started here. ChatBackend posts to its JSON-RPC handler in process without starting it;
+    /// ClaudeCliBackend starts it so the Claude Code command line can reach it over HTTP. The
+    /// caller owns the cache and the server.</summary>
     public static McpServer CreateServer(IfcSessionCache cache)
         => IfcMcpServer.RegisterTools(
-            new McpServer(McpServer.DefaultPort, IfcMcpServer.ServerName, IfcMcpServer.ServerVersion, transport: McpTransport.Http),
+            new McpServer(LoopbackPorts.Free(), IfcMcpServer.ServerName, IfcMcpServer.ServerVersion, transport: McpTransport.Http),
             cache);
 
     public string System { get; init; } = IfcAskPrompts.System(modelPath);

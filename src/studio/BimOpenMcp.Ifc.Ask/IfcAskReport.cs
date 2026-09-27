@@ -12,15 +12,23 @@ namespace BimOpenMcp.Ifc.Ask;
 public static class IfcAskReport
 {
     /// <summary>What the run was: when, which language model, which IFC file, and which commit of
-    /// this toolkit produced it. The commit is omitted when git cannot say.</summary>
-    public sealed record Header(DateTimeOffset Date, string Model, string IfcPath, string? Commit);
+    /// this toolkit produced it. The commit is omitted when git cannot say. Provider and Effort
+    /// name which backend answered (claude-cli, anthropic, or openai); when Provider is null the
+    /// line names the model alone, as it did before the Claude Code backend existed.</summary>
+    public sealed record Header(DateTimeOffset Date, string Model, string IfcPath, string? Commit)
+    {
+        public string? Provider { get; init; }
+        public string? Effort { get; init; }
+    }
 
     public static string Markdown(Header header, IReadOnlyList<IfcAskAnswer> answers)
     {
         var text = new StringBuilder();
         text.AppendLine("# IFC questions answered through the MCP tools").AppendLine();
         text.AppendLine($"- Date: {header.Date:yyyy-MM-dd HH:mm:ss zzz}");
-        text.AppendLine($"- Language model: {header.Model}");
+        text.AppendLine(header.Provider is { Length: > 0 }
+            ? $"- Language model: {header.Model} ({header.Provider}, effort {header.Effort ?? "default"})"
+            : $"- Language model: {header.Model}");
         text.AppendLine($"- IFC model: `{header.IfcPath}`");
         if (header.Commit is { Length: > 0 })
             text.AppendLine($"- Toolkit commit: `{header.Commit}`");

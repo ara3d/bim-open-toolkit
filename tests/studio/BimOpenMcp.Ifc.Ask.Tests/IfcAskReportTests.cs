@@ -37,6 +37,22 @@ public sealed class IfcAskReportTests
             Does.Not.Contain("Toolkit commit"));
 
     [Test]
+    public void WithAProviderTheModelLineNamesItAndTheEffort()
+    {
+        var markdown = IfcAskReport.Markdown(
+            Head with { Model = "claude-haiku-4-5-20251001", Provider = "claude-cli", Effort = "medium" }, [Answer]);
+        Assert.That(markdown, Does.Contain("- Language model: claude-haiku-4-5-20251001 (claude-cli, effort medium)"));
+    }
+
+    [Test]
+    public void WithoutAProviderTheModelLineIsUnchanged()
+    {
+        var markdown = IfcAskReport.Markdown(Head, [Answer]);
+        Assert.That(markdown, Does.Contain("- Language model: gpt-test"));
+        Assert.That(markdown, Does.Not.Contain("gpt-test ("));
+    }
+
+    [Test]
     public void EachQuestionIsAHeadingWithItsCallsTextAnswerAndCost()
     {
         var markdown = IfcAskReport.Markdown(Head, [Answer]);

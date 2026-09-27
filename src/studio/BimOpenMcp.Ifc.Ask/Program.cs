@@ -13,7 +13,7 @@ try
     using var cache = new IfcSessionCache();
     using var tools = IfcAskRunner.CreateServer(cache);
     using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-    var backend = new ChatBackend(IfcAskRunner.Setup(tools, options.MaxTurns), selection.Create(http));
+    var backend = selection.CreateBackend(IfcAskRunner.Setup(tools, options.MaxTurns), http);
     var runner = new IfcAskRunner(backend, options.ModelPath)
     {
         Progress = Console.Error.WriteLine,
@@ -23,7 +23,11 @@ try
     var answers = await runner.RunAsync(options.Questions, CancellationToken.None);
 
     var header = new IfcAskReport.Header(DateTimeOffset.Now, model, options.ModelPath,
-        IfcAskReport.GitCommit(AppContext.BaseDirectory));
+        IfcAskReport.GitCommit(AppContext.BaseDirectory))
+    {
+        Provider = selection.Provider,
+        Effort = selection.Effort,
+    };
     Write(options.TranscriptPath, IfcAskReport.Markdown(header, answers));
     Write(options.ResultsPath, IfcAskReport.Json(answers));
     if (options.TranscriptPath is null && options.ResultsPath is null)
