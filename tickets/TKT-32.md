@@ -1,9 +1,9 @@
 ---
 id: TKT-32
 title: Deterministic graphs and tests for the paper's Q2, Q4, and Q6 so CI asserts all eight answers
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: small-job-builder
 fence: [samples/nrc-analyses/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/**]
 ---
 
