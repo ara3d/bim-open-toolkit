@@ -14,7 +14,7 @@
   "turns": [
     {
       "request": "List the spaces in the Duplex model with their storey.",
-      "reply": "21 IfcSpace rows, each with its storey. Ten are on Level 1, ten on Level 2, and one, named Roof, sits under a storey also named Roof rather than under a unit level. Every room name except Room and Stair appears twice, which matches the two mirrored units this duplex is built from.",
+      "reply": "21 IfcSpace rows, each with its storey. Ten are on Level 1, ten on Level 2, and one, named Roof, sits under a storey also named Roof rather than under a unit level. Every room name except Room, Stair, and Roof appears twice, which matches the two mirrored units this duplex is built from.",
       "analysisId": "nb-s08-thermal-zones-spaces",
       "tools": [
         { "name": "editGraph", "ok": true, "summary": "nb-s08-thermal-zones-spaces: 7 nodes, 6 edges" },
@@ -54,7 +54,7 @@
     },
     {
       "request": "Which zone has the highest energy use intensity?",
-      "reply": "Not available at zone level. Of the 218 elements in the synthetic NRC analytics set, only 69 carry any direct containment relation to an IfcSpace in this model — most walls and doors are contained straight in their storey, never in a room. And those 69 elements are attributed to 13 different spaces a combined 122 times over, because the model's RelationText view resolves relations by entity name, and several entities share a name (repeated furniture items, mostly), so the join can't always tell which physical element it's looking at. Rolling that up into a per-zone energy use intensity would be inventing precision the data doesn't have, so I'm not producing one. This is the space-and-zone gap docs/proposals/nrc-deliverables.md's P2 names: no SpaceOfElement view exists yet, and what containment does exist here is too sparse and ambiguous to aggregate.",
+      "reply": "Not available at zone level. Of the 218 elements in the synthetic NRC analytics set, only 69 carry any direct containment relation to an IfcSpace in this model — most walls and doors are contained straight in their storey, never in a room. And those 69 elements are attributed to 13 different spaces a combined 130 times over, because the model's RelationText view resolves relations by entity name, and several entities share a name (repeated furniture items, mostly), so the join can't always tell which physical element it's looking at. Rolling that up into a per-zone energy use intensity would be inventing precision the data doesn't have, so I'm not producing one. This is the space-and-zone gap docs/proposals/nrc-deliverables.md's P2 names: no SpaceOfElement view exists yet, and what containment does exist here is too sparse and ambiguous to aggregate.",
       "analysisId": "nb-s08-thermal-zones-eui",
       "tools": [
         { "name": "editGraph", "ok": true, "summary": "nb-s08-thermal-zones-eui: 14 nodes, 13 edges" },
