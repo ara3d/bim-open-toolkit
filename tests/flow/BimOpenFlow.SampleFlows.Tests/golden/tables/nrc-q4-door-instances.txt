@@ -1,0 +1,14 @@
+dfg 0.1.0;
+// nrc-q4-door-instances   graph ee112000909e
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+doors = rel.filter@1(input: elements.relation, expr: "startswith([Name], 'M_Single-Flush:0762 x 2032mm')");
+  // Ok  relation plan 6dbc89d82931
+  //   "(filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\")"
+columns = rel.select@1(input: doors.relation, columns: "GlobalId, Name, OperationalCarbon_kgCO2e_per_year");
+  // Ok  relation plan 323cd637ec4a
+  //   "(select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"GlobalId\" \"Name\" \"OperationalCarbon_kgCO2e_per_year\"])"
+answer = rel.sort@1(input: columns.relation, by: "GlobalId");
+  // Ok  relation plan d60b1b169c29
+  //   "(sort (select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"GlobalId\" \"Name\" \"OperationalCarbon_kgCO2e_per_year\"]) [\"GlobalId\" asc])"

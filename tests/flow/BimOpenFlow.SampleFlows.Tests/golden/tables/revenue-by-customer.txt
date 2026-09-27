@@ -1,0 +1,26 @@
+dfg 0.1.0;
+// revenue-by-customer   graph 1dfe1147f2ec
+customers = rel.csv@1(source: "tables", path: "customers.csv");
+  // Ok  relation plan 289e9ababda7
+  //   "(csv \"tables\" \"customers.csv\")"
+orders = rel.csv@1(source: "tables", path: "orders.csv");
+  // Ok  relation plan efb1fa517b20
+  //   "(csv \"tables\" \"orders.csv\")"
+products = rel.csv@1(source: "tables", path: "products.csv");
+  // Ok  relation plan 0fb05c220011
+  //   "(csv \"tables\" \"products.csv\")"
+priced = rel.join@1(left: orders.relation, right: products.relation, leftKey: "ProductId", rightKey: "ProductId");
+  // Ok  relation plan 0e187bf454ff
+  //   "(join Inner (csv \"tables\" \"orders.csv\") (csv \"tables\" \"products.csv\") [\"ProductId\"=\"ProductId\"])"
+revenue = rel.derive@1(input: priced.relation, name: "Revenue", expr: "[Quantity] * [UnitPrice]");
+  // Ok  relation plan 40e0755dc596
+  //   "(derive (join Inner (csv \"tables\" \"orders.csv\") (csv \"tables\" \"products.csv\") [\"ProductId\"=\"ProductId\"]) \"Revenue\" \"([Quantity] * [UnitPrice])\")"
+named = rel.join@1(left: revenue.relation, right: customers.relation, leftKey: "CustomerId", rightKey: "CustomerId", kind: "left");
+  // Ok  relation plan 1cf666fbf559
+  //   "(join Left (derive (join Inner (csv \"tables\" \"orders.csv\") (csv \"tables\" \"products.csv\") [\"ProductId\"=\"ProductId\"]) \"Revenue\" \"([Quantity] * [UnitPrice])\") (csv \"tables\" \"customers.csv\") [\"CustomerId\""...
+totals = rel.aggregate@1(input: named.relation, groupBy: "Name, City", aggregates: "count(*) as Orders, sum(Revenue) as Revenue");
+  // Ok  relation plan 983c331a5bf1
+  //   "(aggregate (join Left (derive (join Inner (csv \"tables\" \"orders.csv\") (csv \"tables\" \"products.csv\") [\"ProductId\"=\"ProductId\"]) \"Revenue\" \"([Quantity] * [UnitPrice])\") (csv \"tables\" \"customers.csv\") [\""...
+answer = rel.sort@1(input: totals.relation, by: "Revenue desc");
+  // Ok  relation plan de242e89f3f9
+  //   "(sort (aggregate (join Left (derive (join Inner (csv \"tables\" \"orders.csv\") (csv \"tables\" \"products.csv\") [\"ProductId\"=\"ProductId\"]) \"Revenue\" \"([Quantity] * [UnitPrice])\") (csv \"tables\" \"customers.cs"...

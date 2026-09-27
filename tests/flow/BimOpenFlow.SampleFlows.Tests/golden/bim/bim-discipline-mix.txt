@@ -1,0 +1,26 @@
+dfg 0.1.0;
+// bim-discipline-mix   graph 3f6360c6f5f6
+elements = bim.elements@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 20 rows x 14 cols  sha 5f10f12d635b
+  //   columns EntityIndex:Integer, LocalId:Integer, GlobalId:Text, Name:Text, Category:Text, CategoryType:Text, Type:Text, ClassName:Text, Level:Text, Elevation:Number, Room:Text, Document:Text, Workset:Integer, Group:Text
+  //   [0] 10, 1011, "GUID-1011", "Level 1", "Levels", "Model", null, null, null, null, null, "Sample Tower", null, null
+  //   [1] 11, 1012, "GUID-1012", "Level 2", "Levels", "Model", null, null, null, null, null, "Sample Tower", null, null
+  //   [2] 12, 1013, "GUID-1013", "Office", "Rooms", "Model", null, null, "Level 1", 0, null, "Sample Tower", null, null
+disciplines = bim.discipline@1(table: elements.table);
+  // Ok  table 20 rows x 15 cols  sha 100c9d086e0f
+  //   columns EntityIndex:Integer, LocalId:Integer, GlobalId:Text, Name:Text, Category:Text, CategoryType:Text, Type:Text, ClassName:Text, Level:Text, Elevation:Number, Room:Text, Document:Text, Workset:Integer, Group:Text, Discipline:Text
+  //   [0] 10, 1011, "GUID-1011", "Level 1", "Levels", "Model", null, null, null, null, null, "Sample Tower", null, null, "General"
+  //   [1] 11, 1012, "GUID-1012", "Level 2", "Levels", "Model", null, null, null, null, null, "Sample Tower", null, null, "General"
+  //   [2] 12, 1013, "GUID-1013", "Office", "Rooms", "Model", null, null, "Level 1", 0, null, "Sample Tower", null, null, "Architecture"
+byDiscipline = table.aggregate@1(table: disciplines.table, groupBy: "Discipline", aggregates: "count(*) as Elements");
+  // Ok  table 5 rows x 2 cols  sha 73996d975aa2
+  //   columns Discipline:Text, Elements:Integer
+  //   [0] "Architecture", 15
+  //   [1] "Electrical", 1
+  //   [2] "General", 2
+ranked = table.sort@1(table: byDiscipline.table, by: "Elements desc");
+  // Ok  table 5 rows x 2 cols  sha 7fc7f1250be9
+  //   columns Discipline:Text, Elements:Integer
+  //   [0] "Architecture", 15
+  //   [1] "General", 2
+  //   [2] "Electrical", 1

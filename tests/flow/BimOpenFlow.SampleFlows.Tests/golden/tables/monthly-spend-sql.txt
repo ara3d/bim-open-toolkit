@@ -1,0 +1,11 @@
+dfg 0.1.0;
+// monthly-spend-sql   graph d56edeb4938a
+feb = rel.csv@1(source: "tables", path: "monthly-2024-02.csv");
+  // Ok  relation plan 15665031c494
+  //   "(csv \"tables\" \"monthly-2024-02.csv\")"
+jan = rel.csv@1(source: "tables", path: "monthly-2024-01.csv");
+  // Ok  relation plan 6a999f4dc991
+  //   "(csv \"tables\" \"monthly-2024-01.csv\")"
+answer = rel.sql@1(t1: jan.relation, t2: feb.relation, sql: "SELECT Item, round(sum(Amount), 2) AS Total, count(*) AS Months FROM (SELECT * FROM t1 UNION ALL SELECT * FROM t2) GROUP BY Item ORDER BY Total DESC");
+  // Ok  relation plan 81a02602baff
+  //   "(sql \"SELECT Item, round(sum(Amount), 2) AS Total, count(*) AS Months FROM (SELECT * FROM t1 UNION ALL SELECT * FROM t2) GROUP BY Item ORDER BY Total DESC\" [(csv \"tables\" \"monthly-2024-01.csv\") (csv \""...

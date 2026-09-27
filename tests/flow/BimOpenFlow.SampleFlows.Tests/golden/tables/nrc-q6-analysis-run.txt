@@ -1,0 +1,8 @@
+dfg 0.1.0;
+// nrc-q6-analysis-run   graph a7effb06bf32
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+answer = rel.aggregate@1(input: elements.relation, groupBy: "AnalysisRunId, ScenarioName", aggregates: "count(*) as Elements");
+  // Ok  relation plan 0d799a67d31e
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"AnalysisRunId\" \"ScenarioName\"] [Count(*)>\"Elements\"])"

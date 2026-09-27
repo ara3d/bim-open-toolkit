@@ -1,0 +1,23 @@
+dfg 0.1.0;
+// nrc-storey-of-element   graph 3075fb61ec2e
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
+  // Ok  relation plan 9a8be9f3b5d5
+  //   "(table \"duplex-enriched\" \"EntityText\")"
+storeyOf = rel.table@1(source: "duplex-enriched", table: "StoreyOfEntity");
+  // Ok  relation plan e9acf473fc16
+  //   "(table \"duplex-enriched\" \"StoreyOfEntity\")"
+withGlobalId = rel.join@1(left: storeyOf.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
+  // Ok  relation plan d8ea9f8a7f58
+  //   "(join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"])"
+analysed = rel.join@1(left: withGlobalId.relation, right: elements.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan ef648c204eb6
+  //   "(join Inner (join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\"=\"GlobalId\""...
+perStorey = rel.aggregate@1(input: analysed.relation, groupBy: "StoreyName", aggregates: "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied");
+  // Ok  relation plan 2d9af5e2bafe
+  //   "(aggregate (join Inner (join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\""...
+answer = rel.sort@1(input: perStorey.relation, by: "Embodied desc");
+  // Ok  relation plan e220fd5e70fb
+  //   "(sort (aggregate (join Inner (join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Glo"...

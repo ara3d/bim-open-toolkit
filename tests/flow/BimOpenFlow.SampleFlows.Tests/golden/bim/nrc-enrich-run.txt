@@ -1,0 +1,96 @@
+dfg 0.1.0;
+// nrc-enrich-run   graph f286a40b1f4f
+entities = rel.table@1(source: "duplex-base", table: "EntityText");
+  // Ok  relation plan fbac43cf5e83
+  //   "(table \"duplex-base\" \"EntityText\")"
+metrics = rel.csv@1(source: "nrc", path: "nrc-metrics.csv");
+  // Ok  relation plan b487d23d2158
+  //   "(csv \"nrc\" \"nrc-metrics.csv\")"
+run = rel.csv@1(source: "nrc", path: "nrc-run.csv");
+  // Ok  relation plan 4542dd4754c4
+  //   "(csv \"nrc\" \"nrc-run.csv\")"
+provenance = rel.sql@1(t1: entities.relation, t2: run.relation, sql: """
+SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,
+       r.ValueType AS valueType, r.Value AS paramValue
+FROM t1 e CROSS JOIN t2 r
+WHERE e.Category = 'IFCPROJECT'
+ORDER BY paramName
+""");
+  // Ok  relation plan 765e86a152cc
+  //   "(sql \"SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = "...
+storeys = rel.table@1(source: "duplex-base", table: "StoreyOfElement");
+  // Ok  relation plan a8c1aa22dccb
+  //   "(table \"duplex-base\" \"StoreyOfElement\")"
+containers = rel.sql@1(t1: storeys.relation, t2: entities.relation, sql: """
+SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId
+FROM t1 so
+JOIN t2 e ON e.EntityIndex = so.EntityIndex
+JOIN t2 s ON s.EntityIndex = so.StoreyIndex
+WHERE e.GlobalId IS NOT NULL
+QUALIFY row_number() OVER (PARTITION BY so.EntityIndex ORDER BY so.Depth, so.StoreyIndex) = 1
+UNION ALL
+SELECT e.GlobalId, 'building', b.StepId
+FROM t2 e JOIN t2 b ON b.Category = 'IFCBUILDING'
+WHERE e.GlobalId IS NOT NULL
+""");
+  // Ok  relation plan 4fa0cfef38b6
+  //   "(sql \"SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so.StoreyIndex\nWHERE e.GlobalId IS NOT NULL\nQUALIFY"...
+values = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
+  // Ok  relation plan d8e1967ca45d
+  //   "(csv \"nrc\" \"nrc_analytics_long.csv\")"
+inContainers = rel.join@1(left: values.relation, right: containers.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan b3f5297b94fd
+  //   "(join Inner (csv \"nrc\" \"nrc_analytics_long.csv\") (sql \"SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so"...
+summaries = rel.sql@1(t1: inContainers.relation, t2: metrics.relation, t3: run.relation, sql: """
+SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,
+       CASE m.Rollup
+           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+           WHEN 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+           WHEN 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)
+       END AS paramValue
+FROM t1 p
+JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none' AND (m.Rollup = 'count' OR m.MetricId = p.MetricId)
+GROUP BY p.entityId, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals
+UNION
+SELECT p.entityId, m.PropertySet, r.Field, r.ValueType, r.Value
+FROM t1 p
+JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'
+JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
+ORDER BY entityId, psetName, paramName
+""");
+  // Ok  relation plan d3f20da571ca
+  //   "(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE m.Rollup\n           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS I"...
+rollupRows = rel.sql@1(t1: summaries.relation, t2: provenance.relation, sql: "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName");
+  // Ok  relation plan 195664acd18c
+  //   "(sql \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n  "...
+withStepId = rel.join@1(left: values.relation, right: entities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan be5c641177e6
+  //   "(join Inner (csv \"nrc\" \"nrc_analytics_long.csv\") (table \"duplex-base\" \"EntityText\") [\"GlobalId\"=\"GlobalId\"])"
+elementRows = rel.sql@1(t1: withStepId.relation, t2: metrics.relation, t3: run.relation, sql: """
+SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,
+       m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue
+FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
+UNION
+SELECT p.StepId, s.PropertySet, s.PropertyName, s.ValueType, r.Value
+FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
+JOIN t2 s ON s.Level = 'element' AND s.PropertySet = m.PropertySet
+JOIN t3 r ON r.Field = s.PropertyName
+UNION
+SELECT p.StepId, m.PropertySet, r.Field, r.ValueType, r.Value
+FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
+JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
+ORDER BY entityId, psetName, paramName
+""");
+  // Ok  relation plan 496f6585c50c
+  //   "(sql \"SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,\n       m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue\nFROM t1 p JOIN t2 m ON m.Level = 'ele"...
+rows = rel.sql@1(t1: elementRows.relation, t2: rollupRows.relation, sql: "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName");
+  // Ok  relation plan fa33df05acdd
+  //   "(sql \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,\n       m.ValueType"...
+table = rel.materialize@1(input: rows.relation, limit: "0");
+  // Ok  table 2441 rows x 5 cols  sha c1c911fea1f4
+  //   columns entityId:Integer, psetName:Text, paramName:Text, valueType:Text, paramValue:Text
+  //   [0] 34, "Pset_NRCAnalyticsProvenance", "AnalysisRunId", "Identifier", "run-2026-09-17-01"
+  //   [1] 34, "Pset_NRCAnalyticsProvenance", "ComputedAt", "Label", "2026-09-17T00:00:00Z"
+  //   [2] 34, "Pset_NRCAnalyticsProvenance", "ComputedBy", "Label", "Ara 3D"
+answer = sink.writePsets@1(in: table.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{SAMPLES}/../../artifacts/nrc/duplex-enriched-out.ifc");
+  // EffectPending  not executed outside a Run

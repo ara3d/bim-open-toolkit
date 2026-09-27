@@ -1,0 +1,81 @@
+dfg 0.1.0;
+// nrc-join-analytics   graph 6f439cbb1116
+csv = rel.csv@1(source: "nrc", path: "test-kit/analytics_dataset_with_levels.csv");
+  // Ok  relation plan d86be52e53af
+  //   "(csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\")"
+entities = rel.table@1(source: "duplex-base", table: "EntityText");
+  // Ok  relation plan fbac43cf5e83
+  //   "(table \"duplex-base\" \"EntityText\")"
+csvNoEntity = rel.join@1(left: csv.relation, right: entities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
+  // Ok  relation plan cf6507388a45
+  //   "(join Anti (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (table \"duplex-base\" \"EntityText\") [\"GlobalId\"=\"GlobalId\"])"
+model = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+instances = rel.fromTable@1(table: model.instances, name: "instances");
+  // Ok  relation plan 68e385fef766
+  //   "(inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\")"
+physical = rel.aggregate@1(input: instances.relation, groupBy: "globalId", aggregates: "count(*) as meshCount");
+  // Ok  relation plan f772f89fd074
+  //   "(aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"])"
+nonPhysicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: "GlobalId", rightKey: "globalId", kind: "anti");
+  // Ok  relation plan fee6227021b1
+  //   "(join Anti (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"GlobalId\"=\"globa"...
+csvMatchedNonPhysical = rel.join@1(left: csv.relation, right: nonPhysicalEntities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "semi");
+  // Ok  relation plan b2ede90dd9d9
+  //   "(join Semi (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Anti (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b0"...
+physicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: "GlobalId", rightKey: "globalId", kind: "semi");
+  // Ok  relation plan 52347b7c0711
+  //   "(join Semi (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"GlobalId\"=\"globa"...
+physicalNoCsv = rel.join@1(left: physicalEntities.relation, right: csv.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
+  // Ok  relation plan 062a7f3282ff
+  //   "(join Anti (join Semi (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"Globa"...
+answer = rel.sql@1(t1: csvNoEntity.relation, t2: physicalNoCsv.relation, t3: csvMatchedNonPhysical.relation, sql: "SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity");
+  // Ok  relation plan 0779788ee83a
+  //   "(sql \"SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity\" [(join Anti (cs"...
+storeyOf = rel.table@1(source: "duplex-base", table: "StoreyOfElement");
+  // Ok  relation plan a8c1aa22dccb
+  //   "(table \"duplex-base\" \"StoreyOfElement\")"
+entityStorey = rel.join@1(left: storeyOf.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
+  // Ok  relation plan 255b1f1380d5
+  //   "(join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"])"
+csvWithStorey = rel.join@1(left: csv.relation, right: entityStorey.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan 11a08027cbcb
+  //   "(join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"GlobalId\"=\""...
+perStorey = rel.aggregate@1(input: csvWithStorey.relation, groupBy: "StoreyName", aggregates: "count(*) as Elements, sum(operational_carbon) as TotalOperationalCarbon, avg(operational_carbon) as MeanOperationalCarbon, avg(energy_intensity) as MeanEnergyIntensity");
+  // Ok  relation plan 27a29cbafc8a
+  //   "(aggregate (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\""...
+storeyComparison = rel.select@1(input: csvWithStorey.relation, columns: "GlobalId, Level, StoreyName");
+  // Ok  relation plan 1247e5c922c7
+  //   "(select (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"Glo"...
+values = csv.read@1(path: "{SAMPLES}/test-kit/analytics_dataset_with_levels.csv");
+  // Ok  table 268 rows x 6 cols  sha 2ed673e1a75a
+  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text
+  //   [0] "2OrWItJ6zAwBNp0OUxK_l8", "M_W-Wide Flange:W310X60:W310X60:207325", "Level 1", 139.5, 27.7, "Other"
+  //   [1] "2OrWItJ6zAwBNp0OUxK$8W", "M_W-Wide Flange:W410X60:W410X60:208949", "Level 1", 59.5, 25.9, "Other"
+  //   [2] "2OrWItJ6zAwBNp0OUxK$Bq", "M_W-Wide Flange:W410X60:W410X60:209121", "Level 2", 95.1, 29.3, "Other"
+coloredCarbon = view3d.color@1(instances: model.instances, values: values.table, joinColumn: "globalId", valueColumn: "operational_carbon", colorMap: "viridis");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha b90205255086
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     693 coloured in 197 colours, 21 grey
+  //     legend "operational_carbon" auto 14.2 to 412: bins 449 / 124 / 40 / 80
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 5 rows x 9 cols  sha 6bf9262fa5ab
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "operational_carbon" auto: 14.2, 113.7, 213.1, 312.6, 412
+coloredCategory = view3d.color@1(instances: model.instances, values: values.table, joinColumn: "globalId", valueColumn: "category", colorMap: "category10");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha 34fadff187e3
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     693 coloured in 9 colours, 21 grey
+  //     legend "category" categorical: "Door" 124, "Finish" 13, "Floor" 20, "Other" 140, "Railing" 130, "Roof" 2, "Stair" 66, "Wall" 104, "Window" 94
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 9 rows x 9 cols  sha 8413c16661f4
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "category" categorical: category "Door" 37, category "Finish" 13, category "Floor" 20, category "Other" 64, category "Railing" 4, category "Roof" 4, category "Stair" 8, category "Wall" 72, category "Window" 46

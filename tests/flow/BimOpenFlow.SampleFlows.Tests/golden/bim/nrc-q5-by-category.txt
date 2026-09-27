@@ -1,0 +1,11 @@
+dfg 0.1.0;
+// nrc-q5-by-category   graph d5770329b662
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+perCategory = rel.aggregate@1(input: elements.relation, groupBy: "Category", aggregates: "sum(OperationalCarbon_kgCO2e_per_year) as Total");
+  // Ok  relation plan 684d4b344e74
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Category\"] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"Total\"])"
+answer = rel.sort@1(input: perCategory.relation, by: "Total desc");
+  // Ok  relation plan 85c7b5077aca
+  //   "(sort (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Category\"] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"Total\"]) [\"Total\" desc])"

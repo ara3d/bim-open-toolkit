@@ -1,0 +1,83 @@
+dfg 0.1.0;
+// bos-to-relations   graph 04aa7dd7bca8
+model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+  // Ok
+  //   entities: table 4721 rows x 6 cols  sha 628e4cf30091
+  //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
+  //     [0] 0, -1, "", "IFCORGANIZATION", null, null
+  //     [1] 1, -1, "", "IFCAPPLICATION", null, null
+  //     [2] 2, -1, "", "IFCSIUNIT", null, null
+  //   parameters: table 18099 rows x 6 cols  sha 1e6d8fa8fc81
+  //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
+  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", "", "String", "Revit"
+  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", "", "Number", "0.0"
+  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", "", "Number", "0.0"
+  //   relations: table 949 rows x 5 cols  sha 7aff4c27a88c
+  //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
+  //     [0] 133, "Level 1", 4705, "#36", "MemberOf"
+  //     [1] 134, "Level 2", 4705, "#36", "MemberOf"
+  //     [2] 135, "T/FDN", 4705, "#36", "MemberOf"
+entities = rel.fromTable@1(table: model.entities, name: "entities");
+  // Ok  relation plan 1868fca4da77
+  //   "(inline \"entities\" \"5f0022d8a963213ce1db258f42317baa52af4f9242ec8f6943e772acb4c48eb6\")"
+byCategory = rel.aggregate@1(input: entities.relation, groupBy: "Category", aggregates: "count(*) as Elements");
+  // Ok  relation plan d68827c0490e
+  //   "(aggregate (inline \"entities\" \"5f0022d8a963213ce1db258f42317baa52af4f9242ec8f6943e772acb4c48eb6\") [\"Category\"] [Count(*)>\"Elements\"])"
+ranked = rel.sort@1(input: byCategory.relation, by: "Elements desc, Category");
+  // Ok  relation plan 3d297a6238df
+  //   "(sort (aggregate (inline \"entities\" \"5f0022d8a963213ce1db258f42317baa52af4f9242ec8f6943e772acb4c48eb6\") [\"Category\"] [Count(*)>\"Elements\"]) [\"Elements\" desc \"Category\" asc])"
+rows = rel.materialize@1(input: ranked.relation, limit: "0");
+  // Ok  table 78 rows x 2 cols  sha 2c743d305340
+  //   columns Category:Text, Elements:Integer
+  //   [0] "IFCPOLYLINE", 864
+  //   [1] "IFCAXIS2PLACEMENT2D", 397
+  //   [2] "IFCCOMPOSITECURVESEGMENT", 322
+answer = chart.bar@1(table: rows.table, labelColumn: "Category", valueColumns: "Elements", title: "Duplex entities per IFC category", sort: "none");
+  // Ok
+  //   table: table 78 rows x 2 cols  sha 2c743d305340
+  //     columns Category:Text, Elements:Integer
+  //     chart 78 categories x 1 series: "Elements"
+  //     "IFCPOLYLINE": 864
+  //     "IFCAXIS2PLACEMENT2D": 397
+  //     "IFCCOMPOSITECURVESEGMENT": 322
+  //     "IFCRECTANGLEPROFILEDEF": 293
+  //     "IFCPRESENTATIONSTYLEASSIGNMENT": 267
+  //     "IFCCONNECTIONSURFACEGEOMETRY": 265
+  //     "IFCCONNECTEDFACESET": 235
+  //     "IFCARBITRARYOPENPROFILEDEF": 184
+  //     "IFCSURFACEOFLINEAREXTRUSION": 184
+  //     "IFCCARTESIANTRANSFORMATIONOPERATOR3D": 167
+  //     "IFCCIRCLE": 96
+  //     "IFCTRIMMEDCURVE": 96
+  //     "IFCMATERIALLAYERSETUSAGE": 91
+  //     "IFCPLANE": 88
+  //     "IFCCURVEBOUNDEDPLANE": 81
+  //     null: 77
+  //     "IFCFURNISHINGELEMENT": 61
+  //     "IFCFACEBOUND": 60
+  //     "IFCREPRESENTATIONMAP": 60
+  //     "IFCCURVESTYLEFONTPATTERN": 57
+  //     "IFCWALLSTANDARDCASE": 56
+  //     "IFCOPENINGELEMENT": 50
+  //     "IFCCOMPOSITECURVE": 44
+  //     "IFCCOLOURRGB": 43
+  //     "IFCMATERIALLAYER": 41
+  //     "IFCFACEBASEDSURFACEMODEL": 40
+  //     "IFCSURFACESTYLE": 33
+  //     "IFCSURFACESTYLERENDERING": 33
+  //     "IFCCURVESTYLE": 31
+  //     "IFCFILLAREASTYLEHATCHING": 31
+  //     "IFCFURNITURETYPE": 25
+  //     "IFCGEOMETRICSET": 25
+  //     "IFCWINDOW": 24
+  //     "IFCSLAB": 21
+  //     "IFCSPACE": 21
+  //     "IFCCURVESTYLEFONT": 19
+  //     "IFCARBITRARYPROFILEDEFWITHVOIDS": 18
+  //     "IFCMATERIAL": 18
+  //     "IFCMATERIALDEFINITIONREPRESENTATION": 18
+  //     "IFCSTYLEDREPRESENTATION": 18
+  //     (+38 more categories)
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

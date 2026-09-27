@@ -1,0 +1,37 @@
+dfg 0.1.0;
+// clash-candidates   graph bd2f295e3013
+inst = view3d.instances@1(path: "{DATA}/duplex.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+overlaps = spatial.intersects@1(a: inst.instances, b: inst.instances, aKey: "instanceIndex", bKey: "instanceIndex");
+  // Ok  table 6240 rows x 3 cols  sha 268705106116
+  //   columns A:Integer, B:Integer, OverlapVolume:Number
+  //   [0] 0, 7, 9.818
+  //   [1] 0, 11, 0
+  //   [2] 0, 14, 0.008321
+perElement = table.aggregate@1(table: overlaps.table, groupBy: "A", aggregates: "count(*) as overlaps");
+  // Ok  table 714 rows x 2 cols  sha 8a3beae4ac3f
+  //   columns A:Integer, overlaps:Integer
+  //   [0] 0, 88
+  //   [1] 1, 68
+  //   [2] 2, 13
+keyed = table.rename@1(table: perElement.table, renames: "A=instanceIndex");
+  // Ok  table 714 rows x 2 cols  sha bb433e6b45c5
+  //   columns instanceIndex:Integer, overlaps:Integer
+  //   [0] 0, 88
+  //   [1] 1, 68
+  //   [2] 2, 13
+colored = view3d.color@1(instances: inst.instances, values: keyed.table, joinColumn: "instanceIndex", valueColumn: "overlaps", colorMap: "viridis");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha 1baf1c2143b3
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     714 coloured in 59 colours, 0 grey
+  //     legend "overlaps" auto 2 to 99: bins 668 / 23 / 11 / 12
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 5 rows x 9 cols  sha 8efa1f8bf84c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "overlaps" auto: 2, 26.25, 50.5, 74.75, 99

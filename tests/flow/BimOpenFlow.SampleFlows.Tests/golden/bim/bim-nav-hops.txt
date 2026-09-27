@@ -1,0 +1,20 @@
+dfg 0.1.0;
+// bim-nav-hops   graph 10cdf6a33b1b
+nav = bim.navGraph@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 5 rows x 5 cols  sha b4b42b558a87
+  //   columns Door:Integer, DoorName:Text, Level:Text, FromRoom:Text, ToRoom:Text
+  //   [0] 21, "D1", "Level 1", "Office 101", "Corridor 102"
+  //   [1] 22, "D2", "Level 1", "Corridor 102", "Kitchen 103"
+  //   [2] 23, "D3", "Level 1", "Corridor 102", "WC 104"
+hops = bim.hops@1(edges: nav.table, start: "Corridor 102");
+  // Ok  table 7 rows x 2 cols  sha 7fcaf3a522a5
+  //   columns Room:Text, Hops:Integer
+  //   [0] "Corridor 102", 0
+  //   [1] "Kitchen 103", 1
+  //   [2] "Office 101", 1
+ranked = table.sort@1(table: hops.table, by: "Hops");
+  // Ok  table 7 rows x 2 cols  sha 7fcaf3a522a5
+  //   columns Room:Text, Hops:Integer
+  //   [0] "Corridor 102", 0
+  //   [1] "Kitchen 103", 1
+  //   [2] "Office 101", 1

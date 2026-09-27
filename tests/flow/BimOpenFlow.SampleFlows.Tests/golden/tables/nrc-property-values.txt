@@ -1,0 +1,17 @@
+dfg 0.1.0;
+// nrc-property-values   graph 2e33cac69f51
+entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
+  // Ok  relation plan 9a8be9f3b5d5
+  //   "(table \"duplex-enriched\" \"EntityText\")"
+parameters = rel.table@1(source: "duplex-enriched", table: "ParameterText");
+  // Ok  relation plan 7b315558b5df
+  //   "(table \"duplex-enriched\" \"ParameterText\")"
+answer = rel.sql@1(t1: parameters.relation, t2: entities.relation, sql: """
+SELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,
+       p.ValueType AS valueType, p.Value AS paramValue
+FROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex
+WHERE p.ParameterGroup LIKE 'Pset_NRC%'
+ORDER BY entityId, psetName, paramName
+""");
+  // Ok  relation plan 7fa500a73661
+  //   "(sql \"SELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\n       p.ValueType AS valueType, p.Value AS paramValue\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\nWHERE "...

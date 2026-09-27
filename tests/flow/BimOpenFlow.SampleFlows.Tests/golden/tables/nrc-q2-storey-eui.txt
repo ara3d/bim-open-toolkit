@@ -1,0 +1,14 @@
+dfg 0.1.0;
+// nrc-q2-storey-eui   graph 7a1d22aa590c
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+perStorey = rel.aggregate@1(input: elements.relation, groupBy: "Storey", aggregates: "count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui");
+  // Ok  relation plan f85aa003552f
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"])"
+levels = rel.filter@1(input: perStorey.relation, expr: "[Storey] == 'Level 1' or [Storey] == 'Level 2'");
+  // Ok  relation plan 7ea99122c6d0
+  //   "(filter (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"]) \"(([Storey] == 'Level 1') or ([Storey] == 'Level 2'))\""...
+answer = rel.sort@1(input: levels.relation, by: "MeanEui desc");
+  // Ok  relation plan 2647f6eac13f
+  //   "(sort (filter (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"]) \"(([Storey] == 'Level 1') or ([Storey] == 'Level"...

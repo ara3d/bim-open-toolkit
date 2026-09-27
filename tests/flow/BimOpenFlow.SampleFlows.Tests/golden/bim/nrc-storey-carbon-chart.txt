@@ -1,0 +1,21 @@
+dfg 0.1.0;
+// nrc-storey-carbon-chart   graph 2f0cb0ff1ced
+storeys = csv.read@1(path: "{SAMPLES}/nrc_analytics_storeys.csv");
+  // Ok  table 5 rows x 7 cols  sha f05914b68c7f
+  //   columns Container:Text, EntityId:Integer, Elements:Integer, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, MeanEnergyUseIntensity_kWh_per_m2_year:Number
+  //   [0] "Level 1", 39, 103, 4.945E+04, 5.539E+04, 1.746E+04, 40.5
+  //   [1] "Level 2", 43, 93, 4.87E+04, 5.454E+04, 1.397E+04, 40.56
+  //   [2] "Roof", 51, 8, 5821, 6519, 1767, 62.04
+answer = chart.bar@1(table: storeys.table, labelColumn: "Container", valueColumns: "EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year", title: "Carbon per storey (synthetic)", sort: "desc");
+  // Ok
+  //   table: table 5 rows x 3 cols  sha beac2a1a0802
+  //     columns Container:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number
+  //     chart 5 categories x 2 series: "EmbodiedCarbon_A1A3_kgCO2e", "OperationalCarbon_kgCO2e_per_year"
+  //     "Building": 1.157E+05, 3.72E+04
+  //     "Level 1": 4.945E+04, 1.746E+04
+  //     "Level 2": 4.87E+04, 1.397E+04
+  //     "T/FDN": 1.176E+04, 4002
+  //     "Roof": 5821, 1767
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

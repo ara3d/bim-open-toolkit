@@ -1,0 +1,8 @@
+dfg 0.1.0;
+// nrc-q1-building-total   graph 06aaf2423703
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+answer = rel.aggregate@1(input: elements.relation, groupBy: "", aggregates: "sum(OperationalCarbon_kgCO2e_per_year) as Total, count(*) as Elements");
+  // Ok  relation plan 66e6d9ab3e2d
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"Total\" Count(*)>\"Elements\"])"

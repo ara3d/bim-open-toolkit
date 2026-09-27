@@ -1,0 +1,32 @@
+dfg 0.1.0;
+// xlsx-enrichment   graph 374f933be473
+orders = duck.read@1(path: "{SAMPLES}/orders.csv");
+  // Ok  table 8 rows x 5 cols  sha 8c29a3917fc1
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03"
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14"
+products = xlsx.read@1(path: "{SAMPLES}/sample.xlsx", sheet: "Products");
+  // Ok  table 4 rows x 4 cols  sha aaabaa3212d1
+  //   columns ProductId:Text, ProductName:Text, UnitPrice:Number, Category:Text
+  //   [0] "P-10", "Stud 2x4", 3.85, "Lumber"
+  //   [1] "P-11", "Drywall Sheet", 12.5, "Interior"
+  //   [2] "P-12", "Steel Beam", 240, "Structural"
+enriched = table.join@1(a: orders.table, b: products.table, aKey: "ProductId", mode: "inner");
+  // Ok  table 8 rows x 8 cols  sha 2076379efe25
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text, ProductName:Text, UnitPrice:Number, Category:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15", "Stud 2x4", 3.85, "Lumber"
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03", "Drywall Sheet", 12.5, "Interior"
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14", "Stud 2x4", 3.85, "Lumber"
+revenue = table.derive@1(table: enriched.table, name: "Revenue", expr: "Quantity * UnitPrice");
+  // Ok  table 8 rows x 9 cols  sha 4bcfe50f6f42
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text, ProductName:Text, UnitPrice:Number, Category:Text, Revenue:Number
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15", "Stud 2x4", 3.85, "Lumber", 462
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03", "Drywall Sheet", 12.5, "Interior", 500
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14", "Stud 2x4", 3.85, "Lumber", 1155
+big = table.filter@1(table: revenue.table, expr: "Revenue > 500");
+  // Ok  table 5 rows x 9 cols  sha 8ab552aaf97f
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text, ProductName:Text, UnitPrice:Number, Category:Text, Revenue:Number
+  //   [0] "O-1003", "C002", "P-10", 300, "2026-02-14", "Stud 2x4", 3.85, "Lumber", 1155
+  //   [1] "O-1004", "C003", "P-12", 15, "2026-03-01", "Steel Beam", 240, "Structural", 3600
+  //   [2] "O-1005", "C002", "P-13", 75, "2026-03-22", "Insulation Roll", 45.75, "Interior", 3431

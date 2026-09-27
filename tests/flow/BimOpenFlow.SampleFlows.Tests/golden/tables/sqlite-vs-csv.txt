@@ -1,0 +1,20 @@
+dfg 0.1.0;
+// sqlite-vs-csv   graph fe5dbe7e3855
+csvOrders = duck.read@1(path: "{SAMPLES}/orders.csv");
+  // Ok  table 8 rows x 5 cols  sha 8c29a3917fc1
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03"
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14"
+dbOrders = sqlite.query@1(path: "{SAMPLES}/sample.sqlite", sql: "SELECT OrderId, CustomerId, ProductId, Quantity FROM Orders");
+  // Ok  table 8 rows x 4 cols  sha 6e7adea87c56
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer
+  //   [0] "O-1001", "C001", "P-10", 120
+  //   [1] "O-1002", "C001", "P-11", 40
+  //   [2] "O-1003", "C002", "P-10", 300
+common = table.setOp@1(a: csvOrders.table, b: dbOrders.table, op: "intersect", key: "OrderId");
+  // Ok  table 8 rows x 5 cols  sha 8c29a3917fc1
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03"
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14"

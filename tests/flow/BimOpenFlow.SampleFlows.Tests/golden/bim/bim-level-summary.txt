@@ -1,0 +1,19 @@
+dfg 0.1.0;
+// bim-level-summary   graph 1e9225c85c28
+elements = bim.elements@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 20 rows x 14 cols  sha 5f10f12d635b
+  //   columns EntityIndex:Integer, LocalId:Integer, GlobalId:Text, Name:Text, Category:Text, CategoryType:Text, Type:Text, ClassName:Text, Level:Text, Elevation:Number, Room:Text, Document:Text, Workset:Integer, Group:Text
+  //   [0] 10, 1011, "GUID-1011", "Level 1", "Levels", "Model", null, null, null, null, null, "Sample Tower", null, null
+  //   [1] 11, 1012, "GUID-1012", "Level 2", "Levels", "Model", null, null, null, null, null, "Sample Tower", null, null
+  //   [2] 12, 1013, "GUID-1013", "Office", "Rooms", "Model", null, null, "Level 1", 0, null, "Sample Tower", null, null
+byLevel = table.aggregate@1(table: elements.table, groupBy: "Level", aggregates: "count(*) as Elements");
+  // Ok  table 3 rows x 2 cols  sha 2cc555ee425f
+  //   columns Level:Text, Elements:Integer
+  //   [0] "Level 1", 12
+  //   [1] "Level 2", 6
+  //   [2] null, 2
+levels = bim.levels@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 2 rows x 5 cols  sha f81f9e52d41e
+  //   columns EntityIndex:Integer, Name:Text, Elevation:Number, ElementCount:Integer, RoomCount:Integer
+  //   [0] 10, "Level 1", 0, 12, 4
+  //   [1] 11, "Level 2", 3, 6, 2

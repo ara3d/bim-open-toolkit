@@ -1,0 +1,26 @@
+dfg 0.1.0;
+// bim-dimensions   graph cc929c829946
+bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
+  //   scene 18 boxes: 18 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.1, -0.1, 0) to (9, 8.1, 6)
+aspect = table.derive@1(table: bounds.table, name: "Aspect", expr: "SizeX / SizeY");
+  // Ok  table 18 rows x 20 cols  sha 73a1d68e5c01
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+4 more)
+  //   scene 18 boxes: 18 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.1, -0.1, 0) to (9, 8.1, 6)
+tall = table.filter@1(table: aspect.table, expr: "SizeZ > 2.5");
+  // Ok  table 10 rows x 20 cols  sha fc3249c4f7f9
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+4 more)
+  //   scene 10 boxes (of 18 upstream): 10 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.1, -0.1, 0) to (9, 8, 6)
+ranked = table.sort@1(table: tall.table, by: "Volume desc");
+  // Ok  table 10 rows x 20 cols  sha ec5b48b86280
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+4 more)
+  //   scene 10 boxes: 10 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.1, -0.1, 0) to (9, 8, 6)

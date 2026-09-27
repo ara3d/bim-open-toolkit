@@ -1,0 +1,34 @@
+dfg 0.1.0;
+// nrc-element-psets   graph c786275c23ad
+entities = rel.table@1(source: "duplex-base", table: "EntityText");
+  // Ok  relation plan fbac43cf5e83
+  //   "(table \"duplex-base\" \"EntityText\")"
+metrics = rel.csv@1(source: "nrc", path: "nrc-metrics.csv");
+  // Ok  relation plan b487d23d2158
+  //   "(csv \"nrc\" \"nrc-metrics.csv\")"
+run = rel.csv@1(source: "nrc", path: "nrc-run.csv");
+  // Ok  relation plan 4542dd4754c4
+  //   "(csv \"nrc\" \"nrc-run.csv\")"
+values = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
+  // Ok  relation plan d8e1967ca45d
+  //   "(csv \"nrc\" \"nrc_analytics_long.csv\")"
+withStepId = rel.join@1(left: values.relation, right: entities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan be5c641177e6
+  //   "(join Inner (csv \"nrc\" \"nrc_analytics_long.csv\") (table \"duplex-base\" \"EntityText\") [\"GlobalId\"=\"GlobalId\"])"
+answer = rel.sql@1(t1: withStepId.relation, t2: metrics.relation, t3: run.relation, sql: """
+SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,
+       m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue
+FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
+UNION
+SELECT p.StepId, s.PropertySet, s.PropertyName, s.ValueType, r.Value
+FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
+JOIN t2 s ON s.Level = 'element' AND s.PropertySet = m.PropertySet
+JOIN t3 r ON r.Field = s.PropertyName
+UNION
+SELECT p.StepId, m.PropertySet, r.Field, r.ValueType, r.Value
+FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
+JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
+ORDER BY entityId, psetName, paramName
+""");
+  // Ok  relation plan 496f6585c50c
+  //   "(sql \"SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,\n       m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue\nFROM t1 p JOIN t2 m ON m.Level = 'ele"...

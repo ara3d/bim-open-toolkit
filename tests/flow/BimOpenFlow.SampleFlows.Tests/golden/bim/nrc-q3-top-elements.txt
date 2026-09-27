@@ -1,0 +1,14 @@
+dfg 0.1.0;
+// nrc-q3-top-elements   graph 00a2976fc379
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+columns = rel.select@1(input: elements.relation, columns: "GlobalId, Name, Category, OperationalCarbon_kgCO2e_per_year");
+  // Ok  relation plan f72398d0794e
+  //   "(select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\" \"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\"])"
+ranked = rel.sort@1(input: columns.relation, by: "OperationalCarbon_kgCO2e_per_year desc, GlobalId");
+  // Ok  relation plan 2c3e5327533e
+  //   "(sort (select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\" \"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc \"GlobalId\" asc])"
+answer = rel.limit@1(input: ranked.relation, count: "5");
+  // Ok  relation plan 0af3a51fdc91
+  //   "(limit (sort (select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\" \"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc \"GlobalId\" asc]) 5 0)"

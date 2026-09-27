@@ -1,0 +1,32 @@
+dfg 0.1.0;
+// bim-nearest-door   graph a8ec8ef5421a
+bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
+  //   scene 18 boxes: 18 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.1, -0.1, 0) to (9, 8.1, 6)
+doorsOnly = table.filter@1(table: bounds.table, expr: "Category == 'Doors'");
+  // Ok  table 5 rows x 19 cols  sha 9f3ac2f53a9b
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
+  //   scene 5 boxes (of 18 upstream): 5 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (4.5, 1.4, 0) to (7.5, 8.1, 5.1)
+rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 6 rows x 21 cols  sha 1a25261d271b
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+nearest = bim.nearest@1(a: rooms.table, b: doorsOnly.table);
+  // Ok  table 6 rows x 23 cols  sha cbc3f2bbb610
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+7 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+ranked = table.sort@1(table: nearest.table, by: "Distance desc");
+  // Ok  table 6 rows x 23 cols  sha 846ca6654302
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+7 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)

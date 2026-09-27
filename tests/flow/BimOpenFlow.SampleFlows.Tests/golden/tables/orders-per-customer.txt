@@ -1,0 +1,17 @@
+dfg 0.1.0;
+// orders-per-customer   graph 630d3e0c5b7f
+customers = rel.csv@1(source: "tables", path: "customers.csv");
+  // Ok  relation plan 289e9ababda7
+  //   "(csv \"tables\" \"customers.csv\")"
+orders = rel.table@1(source: "sample", table: "orders");
+  // Ok  relation plan bbce78fb5f72
+  //   "(table \"sample\" \"orders\")"
+joined = rel.join@1(left: customers.relation, right: orders.relation, leftKey: "CustomerId", rightKey: "CustomerId", kind: "left");
+  // Ok  relation plan 4cadb4565ad3
+  //   "(join Left (csv \"tables\" \"customers.csv\") (table \"sample\" \"orders\") [\"CustomerId\"=\"CustomerId\"])"
+counts = rel.aggregate@1(input: joined.relation, groupBy: "Name, Segment", aggregates: "count(OrderId) as Orders, sum(Quantity) as Units");
+  // Ok  relation plan 1ef6fca1d51d
+  //   "(aggregate (join Left (csv \"tables\" \"customers.csv\") (table \"sample\" \"orders\") [\"CustomerId\"=\"CustomerId\"]) [\"Name\" \"Segment\"] [Count(\"OrderId\")>\"Orders\" Sum(\"Quantity\")>\"Units\"])"
+answer = rel.sort@1(input: counts.relation, by: "Units desc");
+  // Ok  relation plan 29540d1f67a8
+  //   "(sort (aggregate (join Left (csv \"tables\" \"customers.csv\") (table \"sample\" \"orders\") [\"CustomerId\"=\"CustomerId\"]) [\"Name\" \"Segment\"] [Count(\"OrderId\")>\"Orders\" Sum(\"Quantity\")>\"Units\"]) [\"Units\" desc]"...

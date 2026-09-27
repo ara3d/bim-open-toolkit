@@ -1,0 +1,11 @@
+dfg 0.1.0;
+// nrc-q8-per-storey   graph 4784dc275d0c
+elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
+  // Ok  relation plan 7e3cdd5d3029
+  //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
+perStorey = rel.aggregate@1(input: elements.relation, groupBy: "Storey", aggregates: "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui");
+  // Ok  relation plan 69c0bd9cf267
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Sum(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"Embodied\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"])"
+answer = rel.sort@1(input: perStorey.relation, by: "Embodied desc");
+  // Ok  relation plan ffe80e089d5f
+  //   "(sort (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Sum(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"Embodied\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"]) [\"Embodied\""...

@@ -1,0 +1,31 @@
+dfg 0.1.0;
+// order-size-split   graph 283f9aaf9abe
+orders = duck.read@1(path: "{SAMPLES}/orders.csv");
+  // Ok  table 8 rows x 5 cols  sha 8c29a3917fc1
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03"
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14"
+large = table.filter@1(table: orders.table, expr: "Quantity > 100");
+  // Ok  table 2 rows x 5 cols  sha 5af95a8554d9
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
+  //   [1] "O-1003", "C002", "P-10", 300, "2026-02-14"
+small = table.filter@1(table: orders.table, expr: "Quantity <= 100");
+  // Ok  table 6 rows x 5 cols  sha 8a07374382cc
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1002", "C001", "P-11", 40, "2026-02-03"
+  //   [1] "O-1004", "C003", "P-12", 15, "2026-03-01"
+  //   [2] "O-1005", "C002", "P-13", 75, "2026-03-22"
+all = table.setOp@1(a: large.table, b: small.table, op: "union", key: "OrderId");
+  // Ok  table 8 rows x 5 cols  sha 28e67b0b74f0
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
+  //   [1] "O-1003", "C002", "P-10", 300, "2026-02-14"
+  //   [2] "O-1002", "C001", "P-11", 40, "2026-02-03"
+tidy = table.project@1(table: all.table, columns: "OrderId, ProductId, Quantity");
+  // Ok  table 8 rows x 3 cols  sha 170d45ece657
+  //   columns OrderId:Text, ProductId:Text, Quantity:Integer
+  //   [0] "O-1001", "P-10", 120
+  //   [1] "O-1003", "P-10", 300
+  //   [2] "O-1002", "P-11", 40

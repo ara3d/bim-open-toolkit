@@ -1,0 +1,71 @@
+dfg 0.1.0;
+// shared-color-legend   graph 63a237e355b0
+inst = view3d.instances@1(path: "{DATA}/duplex.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+measures = view3d.measures@1(path: "{DATA}/duplex.ifc");
+  // Ok  table 714 rows x 8 cols  sha 34dd2ed93996
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, surfaceArea:Number, meshVolume:Number, triangleCount:Integer
+  //   [0] 0, 0, 514, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", 90.5, 40.24, 60
+  //   [1] 1, 1, 819, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", 46.77, 0.04883, 47
+  //   [2] 2, 2, 1928, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", 25.09, 8.177, 12
+largest = table.sort@1(table: measures.measures, A: "meshVolume", descendingA: "true");
+  // Ok  table 714 rows x 8 cols  sha c40e3bb7ae9e
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, surfaceArea:Number, meshVolume:Number, triangleCount:Integer
+  //   [0] 9, 9, 3707, "0pNy6pOyf7JPmXRLgxs3sW", "IFCSPACE", 419.9, 405.5, 12
+  //   [1] 372, 242, 67, "0BTBFw6f90Nfh9rP1dlXr2", "IFCSPACE", 109.9, 71.39, 12
+  //   [2] 350, 236, 1627, "0BTBFw6f90Nfh9rP1dl_CZ", "IFCSPACE", 109.9, 71.39, 12
+scale = view.colormap@1(values: measures.measures, valueColumn: "meshVolume", colorMap: "viridis", auto: "false", min: "0", max: "1");
+  // Ok  table 6 rows x 9 cols  sha f2a2da6dafe9
+  //   warn view.colormap: 77 of 714 values in 'meshVolume' lie outside the manual domain 0..1 and take its end colours (0 below, 77 above)
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "meshVolume" manual: 0, 0.25, 0.5, 0.75, 1, above "> 1" 77
+colored = view3d.color@1(instances: inst.instances, values: measures.measures, scale: scale.legend, joinColumn: "instanceIndex");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha 8218d0f7801a
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     714 coloured in 141 colours, 0 grey
+  //     legend "meshVolume" manual 0 to 1: bins 547 / 38 / 21 / 108
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 6 rows x 9 cols  sha f2a2da6dafe9
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "meshVolume" manual: 0, 0.25, 0.5, 0.75, 1, above "> 1" 77
+top = table.limit@1(table: largest.table, count: "20");
+  // Ok  table 20 rows x 8 cols  sha 61dd8662906f
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, surfaceArea:Number, meshVolume:Number, triangleCount:Integer
+  //   [0] 9, 9, 3707, "0pNy6pOyf7JPmXRLgxs3sW", "IFCSPACE", 419.9, 405.5, 12
+  //   [1] 372, 242, 67, "0BTBFw6f90Nfh9rP1dlXr2", "IFCSPACE", 109.9, 71.39, 12
+  //   [2] 350, 236, 1627, "0BTBFw6f90Nfh9rP1dl_CZ", "IFCSPACE", 109.9, 71.39, 12
+chart = chart.bar@1(table: top.table, scale: scale.legend, labelColumn: "category", valueColumns: "meshVolume");
+  // Ok
+  //   warn chart.bar: 20 of 20 bars in 'meshVolume' lie outside the domain and take its end colours (0 below, 20 above)
+  //   table: table 20 rows x 5 cols  sha b27fdce9b916
+  //     columns category:Text, meshVolume:Number, r:Number, g:Number, b:Number
+  //     chart 20 categories x 1 series: "meshVolume"
+  //     "IFCSPACE": 405.5
+  //     "IFCSPACE": 71.39
+  //     "IFCSPACE": 71.39
+  //     "IFCROOF": 60.75
+  //     "IFCSLAB": 60.41
+  //     "IFCSPACE": 56.89
+  //     "IFCSPACE": 56.89
+  //     "IFCSPACE": 56.89
+  //     "IFCSPACE": 56.89
+  //     "IFCSPACE": 40.24
+  //     "IFCSPACE": 40.24
+  //     "IFCSPACE": 33.51
+  //     "IFCSPACE": 33.51
+  //     "IFCWALL": 27.09
+  //     "IFCSPACE": 20.8
+  //     "IFCSPACE": 20.8
+  //     "IFCWALLSTANDARDCASE": 20.16
+  //     "IFCWALLSTANDARDCASE": 19.62
+  //     "IFCSLAB": 18.1
+  //     "IFCSLAB": 18.06
+  //   legend: table 6 rows x 9 cols  sha f2a2da6dafe9
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "meshVolume" manual: 0, 0.25, 0.5, 0.75, 1, above "> 1" 77

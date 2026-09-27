@@ -1,0 +1,7 @@
+dfg 0.1.0;
+// schema-error   graph df85d61e4bf2
+orders = rel.csv@1(source: "tables", path: "orders.csv");
+  // Ok  relation plan efb1fa517b20
+  //   "(csv \"tables\" \"orders.csv\")"
+answer = rel.filter@1(input: orders.relation, expr: "[Quantiy] >= 100");
+  // Error  ArgumentException: rel.filter: In predicate: Unknown identifier 'Quantiy' (at 0)

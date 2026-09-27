@@ -1,0 +1,28 @@
+dfg 0.1.0;
+// bim-param-quality   graph 7b637c12e1c6
+load = bos.load@1(path: "{SAMPLES}/sample.bos");
+  // Ok
+  //   entities: table 30 rows x 6 cols  sha 8412288c76d7
+  //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
+  //     [0] 0, 1001, "GUID-1001", "Levels", null, null
+  //     [1] 1, 1002, "GUID-1002", "Rooms", null, null
+  //     [2] 2, 1003, "GUID-1003", "Walls", null, null
+  //   parameters: table 123 rows x 6 cols  sha 36d8e8adebfb
+  //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
+  //     [0] 0, "Rvt:Category:CategoryType", "Category", "", "String", "Model"
+  //     [1] 1, "Rvt:Category:CategoryType", "Category", "", "String", "Model"
+  //     [2] 2, "Rvt:Category:CategoryType", "Category", "", "String", "Model"
+  //   relations: table 0 rows x 5 cols  sha a3606a2fbc71
+  //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
+coverage = bim.paramCoverage@1(parameters: load.parameters);
+  // Ok  table 16 rows x 6 cols  sha 20d7b9eedcbb
+  //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Count:Integer, Distinct:Integer, FillRate:Number
+  //   [0] "Rvt:Element:Bounds.Max", "Geometry", "Point", 18, 18, 0.6429
+  //   [1] "Rvt:Element:Bounds.Min", "Geometry", "Point", 18, 18, 0.6429
+  //   [2] "Rvt:Element:Level", "Constraints", "Entity", 18, 2, 0.6429
+top = table.sort@1(table: coverage.table, by: "Count desc");
+  // Ok  table 16 rows x 6 cols  sha 20d7b9eedcbb
+  //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Count:Integer, Distinct:Integer, FillRate:Number
+  //   [0] "Rvt:Element:Bounds.Max", "Geometry", "Point", 18, 18, 0.6429
+  //   [1] "Rvt:Element:Bounds.Min", "Geometry", "Point", 18, 18, 0.6429
+  //   [2] "Rvt:Element:Level", "Constraints", "Entity", 18, 2, 0.6429

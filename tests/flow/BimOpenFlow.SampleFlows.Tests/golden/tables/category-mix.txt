@@ -1,0 +1,32 @@
+dfg 0.1.0;
+// category-mix   graph 3dcd181c2ec4
+orders = duck.read@1(path: "{SAMPLES}/orders.csv");
+  // Ok  table 8 rows x 5 cols  sha 8c29a3917fc1
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03"
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14"
+products = duck.read@1(path: "{SAMPLES}/products.csv");
+  // Ok  table 4 rows x 4 cols  sha aaabaa3212d1
+  //   columns ProductId:Text, ProductName:Text, UnitPrice:Number, Category:Text
+  //   [0] "P-10", "Stud 2x4", 3.85, "Lumber"
+  //   [1] "P-11", "Drywall Sheet", 12.5, "Interior"
+  //   [2] "P-12", "Steel Beam", 240, "Structural"
+mix = sql.query@1(t1: orders.table, t2: products.table, sql: "SELECT p.Category AS Category, o.Quantity * p.UnitPrice AS Revenue FROM t1 o JOIN t2 p ON o.ProductId = p.ProductId");
+  // Ok  table 8 rows x 2 cols  sha ad2e47b74ece
+  //   columns Category:Text, Revenue:Number
+  //   [0] "Lumber", 462
+  //   [1] "Interior", 500
+  //   [2] "Lumber", 1155
+byCategory = table.aggregate@1(table: mix.table, groupBy: "Category", aggregates: "sum(Revenue) as TotalRevenue, count(Revenue) as Orders");
+  // Ok  table 3 rows x 3 cols  sha 2a81e220b033
+  //   columns Category:Text, TotalRevenue:Number, Orders:Integer
+  //   [0] "Interior", 4681, 3
+  //   [1] "Lumber", 1964, 3
+  //   [2] "Structural", 8880, 2
+ranked = table.sort@1(table: byCategory.table, by: "TotalRevenue desc");
+  // Ok  table 3 rows x 3 cols  sha 4be12883360a
+  //   columns Category:Text, TotalRevenue:Number, Orders:Integer
+  //   [0] "Structural", 8880, 2
+  //   [1] "Interior", 4681, 3
+  //   [2] "Lumber", 1964, 3

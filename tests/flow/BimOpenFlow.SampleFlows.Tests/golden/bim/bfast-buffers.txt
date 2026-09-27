@@ -1,0 +1,26 @@
+dfg 0.1.0;
+// bfast-buffers   graph 71cb4e8d51ef
+buffers = bfast.read@1(path: "{SAMPLES}/../tables/sample.bfast");
+  // Ok  table 4 rows x 3 cols  sha 1022114e9325
+  //   columns name:Text, byteLength:Integer, index:Integer
+  //   [0] "orderIds", 32, 0
+  //   [1] "quantities", 32, 1
+  //   [2] "unitPrices", 64, 2
+directory = view.table@1(table: buffers.buffers, title: "Buffers in sample.bfast");
+  // Ok  table 4 rows x 3 cols  sha 1022114e9325
+  //   columns name:Text, byteLength:Integer, index:Integer
+  //   [0] "orderIds", 32, 0
+  //   [1] "quantities", 32, 1
+  //   [2] "unitPrices", 64, 2
+prices = bfast.buffer@1(path: "{SAMPLES}/../tables/sample.bfast", name: "unitPrices", type: "float64");
+  // Ok  table 8 rows x 1 cols  sha 20c080941370
+  //   columns value:Number
+  //   [0] 12.5
+  //   [1] 30
+  //   [2] 4.25
+values = view.table@1(table: prices.table, title: "unitPrices as float64");
+  // Ok  table 8 rows x 1 cols  sha 20c080941370
+  //   columns value:Number
+  //   [0] 12.5
+  //   [1] 30
+  //   [2] 4.25

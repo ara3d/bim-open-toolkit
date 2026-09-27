@@ -1,0 +1,17 @@
+dfg 0.1.0;
+// large-orders   graph 6af229394b7d
+orders = rel.csv@1(source: "tables", path: "orders.csv");
+  // Ok  relation plan efb1fa517b20
+  //   "(csv \"tables\" \"orders.csv\")"
+big = rel.filter@1(input: orders.relation, expr: "[Quantity] >= 100");
+  // Ok  relation plan 815b7657e788
+  //   "(filter (csv \"tables\" \"orders.csv\") \"([Quantity] >= 100)\")"
+sorted = rel.sort@1(input: big.relation, by: "Quantity desc, OrderId");
+  // Ok  relation plan e7397c5f4baf
+  //   "(sort (filter (csv \"tables\" \"orders.csv\") \"([Quantity] >= 100)\") [\"Quantity\" desc \"OrderId\" asc])"
+cols = rel.select@1(input: sorted.relation, columns: "OrderId, CustomerId, Quantity");
+  // Ok  relation plan b82bbe372144
+  //   "(select (sort (filter (csv \"tables\" \"orders.csv\") \"([Quantity] >= 100)\") [\"Quantity\" desc \"OrderId\" asc]) [\"OrderId\" \"CustomerId\" \"Quantity\"])"
+answer = rel.limit@1(input: cols.relation, count: "3");
+  // Ok  relation plan 3d0b608d3d26
+  //   "(limit (select (sort (filter (csv \"tables\" \"orders.csv\") \"([Quantity] >= 100)\") [\"Quantity\" desc \"OrderId\" asc]) [\"OrderId\" \"CustomerId\" \"Quantity\"]) 3 0)"

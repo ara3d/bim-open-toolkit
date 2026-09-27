@@ -1,0 +1,26 @@
+dfg 0.1.0;
+// bim-room-classes   graph 37820ebf8cfa
+rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 6 rows x 21 cols  sha 1a25261d271b
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+classes = bim.classifyRooms@1(table: rooms.table);
+  // Ok  table 6 rows x 22 cols  sha 7795de847083
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+6 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+byClass = table.aggregate@1(table: classes.table, groupBy: "RoomClass", aggregates: "count(*) as Rooms, sum(Volume) as TotalVolume");
+  // Ok  table 5 rows x 3 cols  sha a6f39aeda5d7
+  //   columns RoomClass:Text, Rooms:Integer, TotalVolume:Number
+  //   [0] "Circulation", 2, 96
+  //   [1] "Kitchen", 1, 60
+  //   [2] "Meeting", 1, 120
+ranked = table.sort@1(table: byClass.table, by: "Rooms desc");
+  // Ok  table 5 rows x 3 cols  sha a6f39aeda5d7
+  //   columns RoomClass:Text, Rooms:Integer, TotalVolume:Number
+  //   [0] "Circulation", 2, 96
+  //   [1] "Kitchen", 1, 60
+  //   [2] "Meeting", 1, 120

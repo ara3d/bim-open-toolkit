@@ -1,0 +1,30 @@
+dfg 0.1.0;
+// bim-duct-rooms   graph f4b14971e79a
+bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
+  //   scene 18 boxes: 18 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.1, -0.1, 0) to (9, 8.1, 6)
+ductsOnly = table.filter@1(table: bounds.table, expr: "Category == 'Ducts'");
+  // Ok  table 1 rows x 19 cols  sha a10991fae899
+  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
+  //   scene 1 boxes (of 18 upstream): 1 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 3.9, 5.5) to (9, 4.1, 5.7)
+rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 6 rows x 21 cols  sha 1a25261d271b
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+overlaps = spatial.intersects@1(a: ductsOnly.table, b: rooms.table, bKey: "Number");
+  // Ok  table 2 rows x 3 cols  sha a17bff222b7d
+  //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "DU1", "201", 0.2
+  //   [1] "DU1", "202", 0.08
+ranked = table.sort@1(table: overlaps.table, by: "OverlapVolume desc");
+  // Ok  table 2 rows x 3 cols  sha a17bff222b7d
+  //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "DU1", "201", 0.2
+  //   [1] "DU1", "202", 0.08

@@ -1,5 +1,10 @@
 // The full pre-release gate: solution build + all C# tests, then web and host smokes.
 // Usage: node gates/all.mjs   (from the repo root)
+//
+// The "dotnet test" step below already runs tests/flow/BimOpenFlow.SampleFlows.Tests
+// (TKT-85: every sample flow, in both host profiles, evaluated, lint-checked, and
+// compared with a golden file), because it is part of BimOpenToolkit.sln; see
+// docs/sample-flows-test.md for what it checks and how to re-approve its golden files.
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";

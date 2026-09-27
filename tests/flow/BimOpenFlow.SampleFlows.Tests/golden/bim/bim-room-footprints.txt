@@ -1,0 +1,26 @@
+dfg 0.1.0;
+// bim-room-footprints   graph 3f4dcf7f41bf
+rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
+  // Ok  table 6 rows x 21 cols  sha 1a25261d271b
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+footprint = spatial.footprint@1(boxes: rooms.table);
+  // Ok  table 6 rows x 22 cols  sha cef26784c4eb
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+6 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+measures = spatial.polygon@1(table: footprint.table);
+  // Ok  table 6 rows x 28 cols  sha f0acfaceb25b
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+12 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)
+ranked = table.sort@1(table: measures.table, by: "Perimeter desc");
+  // Ok  table 6 rows x 28 cols  sha cbe3a723373a
+  //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+12 more)
+  //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, 0, 0) to (9, 8, 6)

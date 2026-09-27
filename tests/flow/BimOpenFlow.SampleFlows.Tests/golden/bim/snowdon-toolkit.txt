@@ -1,0 +1,64 @@
+dfg 0.1.0;
+// snowdon-toolkit   graph b03df6fc41b5
+snowdon = view3d.scene@1(path: "{SNOWDON}");
+  // Ok  table 1 rows x 2 cols  sha 2955637107a0
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+categories = view3d.categoryStyle@1(view: snowdon.view, opacity: "1");
+  // Ok  table 2 rows x 2 cols  sha 19b8d036a941
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":1}
+band = view3d.sectionRange@1(view: categories.view, axis: "z", range: "[0.3,0.7]");
+  // Ok  table 3 rows x 2 cols  sha 7732a4026407
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":1}
+  //   view sectionRange {"axis":"z","range":[0.3,0.7]}
+cutaway = view3d.section@1(view: categories.view, axis: "z", fraction: "0.5");
+  // Ok  table 3 rows x 2 cols  sha 02377cd6080f
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":1}
+  //   view section {"axis":"z","fraction":0.5}
+exploded = view3d.explode@1(view: categories.view, strength: "0.5");
+  // Ok  table 3 rows x 2 cols  sha 10de39e44d3c
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":1}
+  //   view explode {"by":"category","strength":0.5}
+ghost = view3d.categoryStyle@1(view: snowdon.view, opacity: "0.22");
+  // Ok  table 2 rows x 2 cols  sha a56285ad1ae1
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":0.22}
+interior = view3d.sectionBox@1(view: categories.view, fraction: "0.5");
+  // Ok  table 3 rows x 2 cols  sha c080273772af
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":1}
+  //   view sectionBox {"fraction":0.5}
+night = view3d.environment@1(view: ghost.view, theme: "dark", grid: "true");
+  // Ok  table 3 rows x 2 cols  sha e835fcad01e3
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":0.22}
+  //   view environment {"theme":"dark","grid":true}
+orthographic = view3d.projection@1(view: categories.view, mode: "orthographic");
+  // Ok  table 3 rows x 2 cols  sha 3459956e413a
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":1}
+  //   view projection {"mode":"orthographic"}
+plan = view3d.projection@1(view: cutaway.view, mode: "plan");
+  // Ok  table 4 rows x 2 cols  sha 176df9b99457
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view categoryStyle {"palette":"classic","opacity":1}
+  //   view section {"axis":"z","fraction":0.5}
+  //   view projection {"mode":"plan"}
+tint = view3d.tint@1(view: snowdon.view, color: "#2b8bd6", opacityPercent: "100");
+  // Ok  table 2 rows x 2 cols  sha 024663514f17
+  //   columns operation:Text, input:Text
+  //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
+  //   view tint {"color":"#2b8bd6","opacity":1}

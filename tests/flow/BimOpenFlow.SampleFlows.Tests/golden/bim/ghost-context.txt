@@ -1,0 +1,20 @@
+dfg 0.1.0;
+// ghost-context   graph 6eb34eaad49a
+inst = view3d.instances@1(path: "{DATA}/duplex.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+walls = table.filter@1(table: inst.instances, expr: "category == \"IFCWALLSTANDARDCASE\"");
+  // Ok  table 56 rows x 11 cols  sha b0967770ef1e
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 56 instances (of 714 upstream): 56 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0, -17.8, -1.25) to (8.8, 0, 6.609)
+ghosted = view3d.opacity@1(instances: inst.instances, ids: walls.table, alpha: "0.15", joinColumn: "entityId", scope: "others");
+  // Ok  table 714 rows x 12 cols  sha ca84b366eb1a
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, a:Number
+  //   scene 714 instances: 56 opaque, 658 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
