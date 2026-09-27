@@ -1,9 +1,9 @@
 ---
 id: TKT-52
 title: NRC test kit as a graph: bring any IFC and CSV, get a match report, colours, and storey totals
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: parallel-wave-builder-p5
 fence: [samples/nrc-analyses/nrc-join-analytics.json, samples/nrc/test-kit/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/JoinAnalyticsTests.cs]
 ---
 

@@ -1,9 +1,9 @@
 ---
 id: TKT-48
 title: NRC analytics contract: a metric dictionary, summary sets under their own names, and totals computed by a graph
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: parallel-wave-builder-p1
 fence: [samples/nrc/*, samples/nrc-analyses/nrc-rollup.json, samples/nrc-analyses/nrc-element-psets.json, samples/nrc-analyses/nrc-enrich-run.json, samples/nrc-analyses/nrc-property-values.json, samples/nrc-analyses/README.md, src/data/Ara3D.BimOpenSchema.DuckDb/BosDuckDbViews.cs, src/mcp/BimOpenMcp.Ifc/**, .claude/skills/ifc-ask/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/RollupGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/FigureGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/ModelGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/CsvGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/Fixture.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/NrcPaths.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/README.md, tests/mcp/BimOpenMcp.Ifc.Tests/**, scripts/demo-ifc-mcp.mjs, docs/nrc-walkthrough.md]
 ---
 
