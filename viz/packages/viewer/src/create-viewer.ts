@@ -44,11 +44,12 @@ import {
 } from '@bim-open-toolkit/model';
 import {
   loadModel,
+  type BoxPreview,
   type LoadOptions as FormatOptions,
   type LoadedModel,
   type ModelSource,
 } from '@bim-open-toolkit/formats';
-import { ViewerScene } from '@ara3d/viewer-core';
+import { ViewerScene, type InstancedGroup } from '@ara3d/viewer-core';
 import {
   DurationLog,
   SceneBinding,
@@ -77,6 +78,7 @@ import { appearanceSlice, defaultFeatures, modelsSlice, viewSlice } from './core
 import { loadScene, saveScene, type LoadOptions, type SceneLoad } from './document.js';
 import { featureHost, type FeatureHost } from './features.js';
 import { viewSet, type ViewSet } from './multi-view.js';
+import { applyCoordinateConvention, previewGroups, type PreviewOptions } from './preview.js';
 import type { ViewRenderer } from './renderer.js';
 import { createSession, type ViewerSession } from './session.js';
 import { createView, type View } from './view.js';
@@ -141,6 +143,9 @@ export type Viewer = {
   readonly open: (source: ModelSource, options?: FormatOptions) => Promise<Result<OpenedModel>>;
   // Binds a model already in memory, which is what a synthetic fixture needs.
   readonly show: (loaded: LoadedModel) => Result<OpenedModel>;
+  // Draws a box preview until the next `show` replaces it in the same call, or until disposed.
+  // Replaces any earlier preview. Submits a frame in every view before returning. Never picked.
+  readonly preview: (boxes: BoxPreview, options?: PreviewOptions) => Disposable;
   readonly close: (modelId: string) => boolean;
   readonly models: () => readonly ModelRef[];
 
@@ -212,6 +217,16 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
   let environment: EnvironmentSettings | null = options.environment ?? defaultEnvironment;
   let section: ClipRegion = noClipping;
 
+  // The box preview drawn while no model, or an earlier model, is bound. Never bound into `binding`,
+  // so `binding.groupIndex()` never carries it and a pick over it finds nothing.
+  let activePreview: { readonly boxes: BoxPreview; readonly groups: readonly InstancedGroup[] } | undefined;
+
+  // What a command that reads "the model's bounds" should see: the bound models' own bounds, or,
+  // while none is bound, the preview's, so the camera and the environment grid have something to
+  // frame before the first `show`.
+  const currentBounds = (): Bounds =>
+    opened.length === 0 && activePreview !== undefined ? activePreview.boxes.bounds : binding.bounds();
+
   const raycasts = new WeakMap<View, (ray: Ray) => readonly ModelRaycastHit[]>();
 
   const restyle = (): void => {
@@ -253,7 +268,7 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
   };
 
   const applyEnvironmentToViews = (): void => {
-    const bounds = binding.bounds();
+    const bounds = currentBounds();
     for (const view of views.all()) view.setEnvironment(environment ?? undefined, bounds);
   };
 
@@ -261,7 +276,7 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
     binding,
     keys: () => keys,
     base: () => base,
-    bounds: () => binding.bounds(),
+    bounds: currentBounds,
     boundsOf: boundsOfSet,
     restyle,
   };
@@ -390,7 +405,8 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
       return added;
     }
     for (const model of binding.models) view.addGroups(model.table.groups);
-    view.setEnvironment(environment ?? undefined, binding.bounds());
+    if (activePreview !== undefined) view.addGroups(activePreview.groups);
+    view.setEnvironment(environment ?? undefined, currentBounds());
     view.setClipping(section);
     if (options.selectOnClick !== false && canvas !== undefined) held.push(attachSelection(view, canvas));
     return added;
@@ -403,6 +419,36 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
     });
     if (!first.ok) observed.push(...first.diagnostics);
   }
+
+  // Takes the preview out of every view. Idempotent: a second call with nothing active does nothing.
+  const removePreview = (): void => {
+    if (activePreview === undefined) return;
+    views.removeGroups(activePreview.groups);
+    activePreview = undefined;
+    applyEnvironmentToViews();
+  };
+
+  const preview = (boxes: BoxPreview, previewOptions: PreviewOptions = {}): Disposable => {
+    removePreview();
+    const groups = previewGroups(boxes);
+    const held = { boxes, groups };
+    activePreview = held;
+    views.addGroups(groups);
+    applyEnvironmentToViews();
+    const fit = previewOptions.fit ?? options.fitOnOpen !== false;
+    if (fit) {
+      for (const view of views.all()) applyCoordinateConvention(view, boxes.coordinates);
+      for (const view of views.all()) session.dispatch('view.fit', { view: view.id });
+    }
+    // Submitted now, synchronously, so the caller's next await is what lets the browser present it.
+    for (const view of views.all()) view.renderNow();
+    return {
+      dispose: () => {
+        if (activePreview !== held) return;
+        removePreview();
+      },
+    };
+  };
 
   const show = (loaded: LoadedModel): Result<OpenedModel> => {
     if (closed) return failure([diagnostic('viewer/disposed', 'The viewer is disposed.', ['model'])]);
@@ -421,6 +467,9 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
     opened.push({ ref, keys: modelKeys });
     session.write(modelsSlice, { open: opened.map((one) => one.ref) });
 
+    // Same call as adding the model's groups, with nothing drawn between them: the preview and the
+    // model never share a frame, and no frame is drawn with neither.
+    removePreview();
     views.addGroups(bound.value.groups);
     applyEnvironmentToViews();
     for (const view of views.all()) view.setClipping(section);
@@ -474,6 +523,7 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
       return shown.ok ? success(shown.value, [...loaded.diagnostics, ...shown.diagnostics]) : shown;
     },
     show,
+    preview,
     close,
     models: () => opened.map((one) => one.ref),
 
@@ -488,7 +538,7 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
       return view === undefined ? undefined : viewsAccess.pick(view.id, x, y);
     },
 
-    bounds: () => binding.bounds(),
+    bounds: currentBounds,
     statistics: () => binding.statistics(),
     hud: (viewId) => {
       const view = firstView(viewId);
@@ -534,6 +584,7 @@ export const createViewer = (input?: HTMLCanvasElement | ViewerOptions): Viewer 
     dispose: () => {
       if (closed) return;
       closed = true;
+      removePreview();
       for (const one of [...held].reverse()) one.dispose();
       held.length = 0;
       views.dispose();

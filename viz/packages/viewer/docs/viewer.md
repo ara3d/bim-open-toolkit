@@ -121,6 +121,30 @@ Linking is in `multi-view.ts` rather than in a view, because a view cannot know 
 neighbours. The copy is guarded by a flag so two linked views do not chase each other around the
 loop, which the tests assert directly.
 
+## The box preview
+
+`src/preview.ts` builds `Viewer.preview`'s scene content: `unitCube`, one axis-aligned cube built
+once at module load, and `previewGroups`, which turns a `BoxPreview` from
+`@bim-open-toolkit/formats` into one opaque and one translucent `InstancedGroup` of that cube, each
+scaled and translated to a box and omitted when there are none. A box axis is never scaled below
+0.1% of the preview bounds' diagonal, so a flat box (a slab, a panel edge-on to the camera) still
+gets a normal matrix that means something.
+
+`Viewer.preview(boxes, options)` in `create-viewer.ts` puts those groups directly into every view's
+scene, the same way `show` puts a model's groups in, but never through `SceneBinding`: nothing
+outside `binding.models` is ever picked, so a preview box has no object identity by construction, not
+by a check. While no model is bound, `bounds()`, `view.fit` and the environment grid read the
+preview's own bounds, so a camera framed on it before the first `show` is not framing an empty scene.
+`applyCoordinateConvention` puts a view in the preview's up-axis and unit convention, the same
+transform the pane used to write inline for BOS's z-up models; a later chunk can retire that copy in
+favour of this one.
+
+Replacing a preview, and replacing it with a model, both go through one path: remove the old groups
+from every view, add the new ones, and never yield the thread in between. `show` calls this removal
+in the same synchronous call that adds the model's groups, which is what keeps a frame from ever
+drawing neither — the property `loadWithPreview` (a later chunk) depends on to swap coarse for full
+detail without a flash.
+
 ## What needs a browser, and is therefore not tested in Node
 
 - That a WebGL context can be made at all, and that the picture is not black.

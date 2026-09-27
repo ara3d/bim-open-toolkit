@@ -56,6 +56,9 @@ export {
 // One canvas: a camera, input, a frame loop, a size, and disposal.
 export { createView, noSection, type View, type ViewOptions, type ViewSize } from './view.js';
 
+// A box preview drawn as instanced unit cubes, and the up-axis convention it frames a view with.
+export { applyCoordinateConvention, previewGroups, unitCube, type PreviewOptions } from './preview.js';
+
 // Several canvases over one session, with independent or linked cameras.
 export { viewSet, type ViewSet } from './multi-view.js';
 

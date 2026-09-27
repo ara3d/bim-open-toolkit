@@ -29,6 +29,18 @@ const scene = viewer.save();          // Result<SceneDocument>: every installed 
 viewer.load(document);                // refused if it was saved against a different model
 ```
 
+A host that already has a cheap box preview of the file — `readBoxPreview` in
+`@bim-open-toolkit/formats`, for a prepared BFAST — can draw it before the full model is parsed:
+
+```ts
+const handle = viewer.preview(boxPreview);   // one frame submitted before this call returns
+// ... parse and load the full model, then:
+viewer.show(loadedModel);                    // replaces the preview in the same call
+```
+
+`handle.dispose()` takes the preview away on a failed or cancelled load. Nothing about it is picked,
+and no frame is ever drawn with neither the preview nor the model.
+
 ## What it composes
 
 | Part | What it is |
@@ -40,6 +52,7 @@ viewer.load(document);                // refused if it was saved against a diffe
 | `src/adapters` | The render package's six interfaces over `@ara3d/viewer-core` and three. The only place here that imports three |
 | `createView` | One canvas: a camera, the interact DOM adapter, the frame loop, the size, disposal |
 | `viewSet` | Several canvases over one session, sharing one set of instanced groups, with independent or linked cameras |
+| `viewer.preview` / `src/preview.ts` | A coarse box preview drawn as instanced cubes, until the next `show` replaces it in the same call |
 
 Three features come with it, because line three needs a command to run and a saved scene needs
 something to restore: `viewer.models` (what is open), `viewer.view` (where each view looks, the
@@ -107,7 +120,7 @@ npx eslint --config eslint.typed.config.js packages/viewer
 npm test -w @bim-open-toolkit/viewer
 ```
 
-The suite is 95 tests. Ninety-four run in Node against a renderer that counts what it was asked to
+The suite is 103 tests. All but one run in Node against a renderer that counts what it was asked to
 do; one opens a real browser through `@bim-open-toolkit/testing`, runs the three lines on a real
 canvas and asserts a drawn frame and an empty console. It skips, printing the reason, where no
 chromium channel can be launched.
