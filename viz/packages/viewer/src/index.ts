@@ -59,6 +59,9 @@ export { createView, noSection, type View, type ViewOptions, type ViewSize } fro
 // A box preview drawn as instanced unit cubes, and the up-axis convention it frames a view with.
 export { applyCoordinateConvention, previewGroups, unitCube, type PreviewOptions } from './preview.js';
 
+// `loadModel`, with the source's box preview drawn and presented before the parse holds the thread.
+export { loadWithPreview, type LoadWithPreviewOptions } from './load-with-preview.js';
+
 // Several canvases over one session, with independent or linked cameras.
 export { viewSet, type ViewSet } from './multi-view.js';
 

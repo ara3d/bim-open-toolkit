@@ -142,8 +142,21 @@ favour of this one.
 Replacing a preview, and replacing it with a model, both go through one path: remove the old groups
 from every view, add the new ones, and never yield the thread in between. `show` calls this removal
 in the same synchronous call that adds the model's groups, which is what keeps a frame from ever
-drawing neither — the property `loadWithPreview` (a later chunk) depends on to swap coarse for full
-detail without a flash.
+drawing neither — the property `loadWithPreview` depends on to swap coarse for full detail without a
+flash.
+
+`src/load-with-preview.ts`'s `loadWithPreview(viewer, source, options)` is what a host calls instead of
+`loadModel` to get that swap. It passes `loadModel` an `onPreview` of its own that, in order: draws the
+box preview with `viewer.preview`, so the frame is submitted before anything else runs; calls the
+host's own `onPreview`, if it gave one, so a host can mark the moment (a performance mark, a status
+line); then awaits `nextFrame` — one `requestAnimationFrame` and then one task by default — so the
+browser actually paints that frame before `loadModel`'s parse holds the thread again. It resolves with
+whatever `loadModel` resolves with; it never calls `show` itself, so the preview stays exactly where
+`viewer.preview` left it until the caller decides the full model is ready to show. A failed or
+cancelled load — both are `Result` failures, never a thrown exception, because `loadModel` itself never
+throws — disposes the preview here, since no `show` is coming to remove it. A source with no stored
+box preview (BOS bytes, GLB, OBJ, STL) never has `onPreview` called at all, so it loads exactly as
+`loadModel` alone would.
 
 ## What needs a browser, and is therefore not tested in Node
 
