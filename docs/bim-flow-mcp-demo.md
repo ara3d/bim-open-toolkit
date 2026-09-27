@@ -6,7 +6,18 @@ The server holds no logic of its own. Each tool is one of the operations behind 
 
 ## Setup
 
-From the repository root, with .NET 8 installed and the DuckDB demo prepared (`duckdb:prepare`, see [the studio doc](bim-flow-duckdb.md)). The Ask box needs a model key: Anthropic (Claude) or OpenAI. Put it on its own line in a file, then point the host at that file so the key never appears in a shell history or a process listing:
+From the repository root, with .NET 8 installed and the DuckDB demo prepared (`duckdb:prepare`, see [the studio doc](bim-flow-duckdb.md)). The Ask box needs a way to reach a language model: the Claude Code command line, or an Anthropic or OpenAI key.
+
+By default the host looks for a `claude` executable and uses it when found: `ASK_CLAUDE_CLI` names one directly, otherwise the host checks `PATH`, then the desktop app's bundled copy. Install it with `npm install -g @anthropic-ai/claude-code`, run `claude` once, and `/login` (the desktop app's own copy is found automatically but is not signed in for command-line use until you log in this way). No key is needed, and once an executable is found it is used even if an `ANTHROPIC_*` key is also set:
+
+```powershell
+npm run duckdb:build --prefix bimopenflow/web
+npm run duckdb:host --prefix bimopenflow/web
+```
+
+`ASK_CLAUDE_MODEL` and `ASK_CLAUDE_EFFORT` override the defaults, `claude-haiku-4-5-20251001` and `medium`.
+
+`ASK_PROVIDER` chooses a backend explicitly: `claude-cli`, `anthropic`, or `openai`. The two API providers still work, behind `ASK_PROVIDER` or when no `claude` executable is found: put the key on its own line in a file, then point the host at that file so the key never appears in a shell history or a process listing:
 
 ```powershell
 $env:ANTHROPIC_API_KEY_FILE = "C:\dev\keys\claude.txt"   # or OPENAI_API_KEY_FILE
@@ -14,7 +25,7 @@ npm run duckdb:build --prefix bimopenflow/web
 npm run duckdb:host --prefix bimopenflow/web
 ```
 
-The plain `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` variable works too. The host picks the provider from the keys it finds, Anthropic before OpenAI; `ASK_PROVIDER=openai` or `anthropic` forces one. The Claude model defaults to `claude-opus-5` (`ANTHROPIC_MODEL` changes it; `ANTHROPIC_EFFORT` low, medium, high, xhigh or max sets the effort; `ANTHROPIC_BASE_URL` redirects the endpoint). The OpenAI model defaults to `gpt-5`; set `OPENAI_MODEL` to change it (`gpt-5.4-nano` is about five times faster and far cheaper, and with the guides below it builds most graphs; see the measurements). `OPENAI_REASONING_EFFORT` (minimal, low, medium, high) is passed through when set. The measurements in this document were all made with OpenAI models; the Claude backend is tested against a scripted API but has not been measured on the same request set yet. `duckdb:build` builds `bimopenflow-studio`, which is the whole `bimopenflow-host` API plus `POST /api/ask`, into `artifacts/bim-flow-duckdb/studio`. Start the web page with `duckdb:web` as before and open the studio. If the key is not configured, the transcript strip says so as soon as the page loads.
+The plain `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` variable works too. Between the two, the host picks Anthropic before OpenAI. The Claude model defaults to `claude-opus-5` (`ANTHROPIC_MODEL` changes it; `ANTHROPIC_EFFORT` low, medium, high, xhigh or max sets the effort; `ANTHROPIC_BASE_URL` redirects the endpoint). The OpenAI model defaults to `gpt-5`; set `OPENAI_MODEL` to change it (`gpt-5.4-nano` is about five times faster and far cheaper, and with the guides below it builds most graphs; see the measurements). `OPENAI_REASONING_EFFORT` (minimal, low, medium, high) is passed through when set. The measurements in this document were all made with OpenAI models; the Claude Code and Anthropic API backends are tested against scripted output but had not been measured on the same request set as of this writing. `duckdb:build` builds `bimopenflow-studio`, which is the whole `bimopenflow-host` API plus `POST /api/ask`, into `artifacts/bim-flow-duckdb/studio`. Start the web page with `duckdb:web` as before and open the studio. If nothing is configured, the transcript strip says so as soon as the page loads.
 
 ## Asking
 
@@ -64,7 +75,9 @@ node scripts/ask-bim-flow.mjs --file requests.txt
 node scripts/ask-bim-flow.mjs --continue ask-doors-fire-rated-rating "Only doors rated 60 minutes or more"
 ```
 
-It streams the tool calls, prints the first rows of the answer table, and ends with one line per request: `OK` (a graph with rows), `ANSWERED` (a reply without a graph, such as a question back or "no walls in this export"), or `FAIL`, with the turns, tool calls, and tokens. `BOF_STUDIO_URL` selects the host; `BOF_ASK_ROWS` the rows to print.
+It streams the tool calls, prints the first rows of the answer table, and ends with one line per request: `OK` (a graph with rows), `ANSWERED` (a reply without a graph, such as a question back or "no walls in this export"), or `FAIL`, with the turns, tool calls, and tokens. `BOF_STUDIO_URL` selects the host; `BOF_ASK_ROWS` the rows to print. Its first line names the studio, model, provider and effort in use, for the score table row that run produces.
+
+TKT-8 (this script's ten requests) and TKT-41 (the IFC ask's eight questions) run against the Claude Code command line: set `ASK_PROVIDER=claude-cli` before starting the host or `bimopenmcp-ifc-ask`, and record the model, provider, and effort from that first line (or the IFC transcript header) alongside the correct, honest, wrong, and failed counts.
 
 On `gpt-5`, ten requests over rooms, roofs, storeys, doors, lineage and table sizes, plus walls and windows that the export lacks: eight built correct graphs, two answered honestly, none failed. Where a hand-built sample graph exists for the same question, the counts match (290 rooms, 26 roofs, 33 storeys with rooms). The supplied Snowdon export now holds walls and windows (1,277 walls, 174 windows — see [the studio doc](bim-flow-duckdb.md)), so "the export lacks" no longer applies to those two of the ten; `samples/ask/requests.txt` carries their current expected counts.
 
@@ -81,9 +94,13 @@ On `gpt-5.4-nano`, a harder set of eight (rooms without doors, singleton door ty
 
 ## How it works
 
-`POST /api/ask` takes `{ "request": "...", "analysisId": "..."? }` and answers with a server-sent event stream. The host runs the MCP tool server in process and gives the model its tool list as functions. The system prompt holds the list of databases (and which one the existing graphs use), the node catalog, the two guides, and the working rules; the per-request message carries only the analysis id and the request, so the long prompt stays the same across requests. With `analysisId`, the request is appended to that graph's conversation, which the host keeps in memory for the last two dozen graphs; after a restart the agent is told to read the graph with `getAnalysis` first.
+`POST /api/ask` takes `{ "request": "...", "analysisId": "..."? }` and answers with a server-sent event stream. The host gives the model its tools through `IAskBackend`, which has two implementations. The system prompt holds the list of databases (and which one the existing graphs use), the node catalog, the two guides, and the working rules; the per-request message carries only the analysis id and the request, so the long prompt stays the same across requests. With `analysisId`, the request is appended to that graph's conversation; after a restart the agent is told to read the graph with `getAnalysis` first.
 
-The loop is in `src/studio/BimOpenFlow.Ask/AskAgent.cs`, the provider calls in `AnthropicChat.cs` and `OpenAiChat.cs` beside it (both implement `IChatModel`; the loop keeps its conversation in the chat-completions shape and the Claude client translates to the Messages API, replaying thinking blocks and caching the system prompt), the provider choice in `ChatSelection.cs`, and the endpoint and prompt assembly in `src/studio/BimOpenFlow.Studio/AskEndpoint.cs`. The schema guide, node guide and working rules are the files in `.claude/skills/bim-flow/`, embedded into the studio at build time, so the Claude Code skill of the same name and the Ask box read one text. The tests in `tests/studio/BimOpenFlow.Studio.Tests` run the loop against the real tool server with a scripted model.
+`ChatBackend` runs the MCP tool server in process and drives `AskAgent`'s tool loop over an `IChatModel` (`AnthropicChat.cs` or `OpenAiChat.cs`; the loop keeps its conversation in the chat-completions shape and the Claude client translates to the Messages API, replaying thinking blocks and caching the system prompt). It keeps the conversation in memory for the last two dozen graphs.
+
+`ClaudeCliBackend` hands the whole tool loop to the Claude Code command line (`claude -p`) instead: it starts the studio's own MCP tool server over HTTP on a free loopback port, so `claude` reaches it the same way any MCP client would, and points the CLI at it with `--mcp-config`. One process still owns the store either way, so `FlowServices` and the editor see every edit without a reload. A follow-up or a host check round resumes the same Claude Code session with `--resume <session_id>`; after a host restart, a follow-up starts a new session with the "read the graph first" prompt, as `ChatBackend` conversations do today.
+
+The loop is in `src/studio/BimOpenFlow.Ask/AskAgent.cs`, the two backends in `ChatBackend.cs` and `ClaudeCli/ClaudeCliBackend.cs`, the provider choice in `ChatSelection.cs`, and the endpoint and prompt assembly in `src/studio/BimOpenFlow.Studio/AskEndpoint.cs` and `AskHandler.cs`. The schema guide, node guide and working rules are the files in `.claude/skills/bim-flow/`, embedded into the studio at build time, so the Claude Code skill of the same name and the Ask box read one text. The tests in `tests/studio/BimOpenFlow.Studio.Tests` run the loop against the real tool server, with a scripted model for `ChatBackend` and a fake `claude` executable for `ClaudeCliBackend`.
 
 ## The MCP server on its own
 
@@ -113,4 +130,6 @@ It prints the request, each tool call, the first five rows, and `OK` when the gr
 
 ## Limits
 
-There is no tool for naming a graph, so the picker shows the generated id. `duck.query` accepts one read-only `SELECT` or `WITH` statement; anything else is rejected at evaluation, not at `setParam`. The agent sees column names and types but not values, so a request that depends on the vocabulary of a column (which reason codes exist, which storeys are referenced) costs it an extra query and a `getResult` before the final graph is right. Conversations live in the host's memory and are lost on restart. The Ask endpoint is a local demo surface: no authentication, one request at a time, and the key is read from the host's environment.
+There is no tool for naming a graph, so the picker shows the generated id. `duck.query` accepts one read-only `SELECT` or `WITH` statement; anything else is rejected at evaluation, not at `setParam`. The agent sees column names and types but not values, so a request that depends on the vocabulary of a column (which reason codes exist, which storeys are referenced) costs it an extra query and a `getResult` before the final graph is right. Conversations live in the host's memory and are lost on restart. The Ask endpoint is a local demo surface: no authentication, one request at a time, and the key or executable is read from the host's environment.
+
+With `claude-cli`, the studio's MCP tool server listens on a loopback port with no authentication for as long as the host runs; that matches the Ask endpoint itself, whose Origin check already keeps out browsers from other origins. Claude Code also truncates large MCP tool results (`MAX_MCP_OUTPUT_TOKENS`), so a big `getResult` may reach the model shortened on this path, where the in-process `ChatBackend` sees the result whole.

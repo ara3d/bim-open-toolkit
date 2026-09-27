@@ -63,6 +63,10 @@ your own building model in its place.
 - **Ask box** (an agent builds a DuckDB graph from a plain-language request; needs
   an Anthropic or OpenAI key in addition to the Snowdon database). Setup:
   [bim-flow-mcp-demo.md](bim-flow-mcp-demo.md).
+  - Optional: instead of a key, `npm install -g @anthropic-ai/claude-code`, then
+    run `claude` once and `/login`. The Ask box finds the desktop app's bundled
+    copy of `claude` automatically, but that copy is not signed in for
+    command-line use until you log in this way.
 
 `npm run demo` (from `viz/`) opens the older visualization alpha gallery, a
 separate reference application predating this graph editor. It is not part of the

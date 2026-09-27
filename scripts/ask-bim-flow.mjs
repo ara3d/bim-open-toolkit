@@ -30,7 +30,7 @@ if (requests.length === 0) {
 
 const info = await fetch(`${base}/api/ask/model`).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status} from ${base}/api/ask/model; is the studio host running?`)));
 if (!info.configured) { console.error(`FAIL: ${info.problem}`); process.exit(1); }
-console.log(`Studio at ${base}, model ${info.model}\n`);
+console.log(`Studio at ${base}, model ${info.model} (${info.provider}, effort ${info.effort ?? 'default'})\n`);
 
 function shortArgs(args) {
   if (!args) return '';
