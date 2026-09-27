@@ -70,6 +70,50 @@ public sealed class CsvGraphTests
     }
 
     [Test]
+    public void Q2_StoreyEui()
+    {
+        var answer = Answer("nrc-q2-storey-eui");
+        Assert.That(answer.Rows, Has.Count.EqualTo(2));
+        // nrc_analytics_storeys.csv: Level 1 mean EUI 40.5, Level 2 mean EUI 40.56;
+        // Level 2 is higher, so the higher-first sort puts it first.
+        Assert.That(answer.ColumnCells("Storey"), Is.EqualTo(new object?[] { "Level 2", "Level 1" }));
+        Assert.That(Numbers(answer, "MeanEui"), Near(40.56, 40.5));
+        Assert.That(answer.ColumnCells("Elements"), Is.EqualTo(new object?[] { 93L, 103L }));
+    }
+
+    [Test]
+    public void Q4_DoorInstances()
+    {
+        var answer = Answer("nrc-q4-door-instances");
+        // Q4 asks for "the door named M_Single-Flush:0762 x 2032mm", but that name is a
+        // family:type name shared by four IFCDOOR instances (see door_verdicts.csv's DC-M1
+        // evidence), not one instance; there is no single deterministic scalar to assert. The
+        // graph instead lists all four, sorted by GlobalId, with each one's own operational
+        // carbon from nrc_analytics_elements.csv.
+        Assert.That(answer.Rows, Has.Count.EqualTo(4));
+        Assert.That(answer.ColumnCells("GlobalId"), Is.EqualTo(new object?[]
+        {
+            "1aj$VJZFn2TxepZUBcKp$i", "1aj$VJZFn2TxepZUBcKpac",
+            "1hOSvn6df7F8_7GcBWlS8Z", "1hOSvn6df7F8_7GcBWlS9F",
+        }));
+        var operationalCarbon = Numbers(answer, "OperationalCarbon_kgCO2e_per_year");
+        Assert.That(operationalCarbon, Near(117.3, 61.8, 54.0, 146.1));
+        Assert.That(operationalCarbon.Sum(), Is.EqualTo(379.2).Within(Tolerance));
+    }
+
+    [Test]
+    public void Q6_AnalysisRun()
+    {
+        var answer = Answer("nrc-q6-analysis-run");
+        // Every one of the 218 rows in nrc_analytics_elements.csv cites the same run; "when" is
+        // only the date embedded in the run id's text, not a separate timestamp column.
+        Assert.That(answer.Rows, Has.Count.EqualTo(1));
+        Assert.That(answer.Cell("AnalysisRunId", 0), Is.EqualTo("run-2026-09-17-01"));
+        Assert.That(answer.Cell("ScenarioName", 0), Is.EqualTo("Baseline"));
+        Assert.That(answer.Cell("Elements", 0), Is.EqualTo(218L));
+    }
+
+    [Test]
     public void Q3_TopElements()
     {
         var answer = Answer("nrc-q3-top-elements");

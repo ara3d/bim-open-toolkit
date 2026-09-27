@@ -9,10 +9,13 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 | Graph | Answers | Runs in profile |
 |-------|---------|-----------------|
 | `nrc-q1-building-total` | total operational carbon and element count | tables, bim |
-| `nrc-q8-per-storey` | per-storey count, embodied carbon A1-A3, and mean energy intensity | tables, bim |
+| `nrc-q2-storey-eui` | Level 1 and Level 2 mean energy use intensity, sorted so the higher storey is first | tables, bim |
 | `nrc-q3-top-elements` | the five elements with the highest operational carbon | tables, bim |
+| `nrc-q4-door-instances` | the operational carbon of every M_Single-Flush:0762 x 2032mm door instance (the name matches four doors, not one; see below) | tables, bim |
 | `nrc-q5-by-category` | operational carbon per category | tables, bim |
+| `nrc-q6-analysis-run` | the analysis run id and scenario every element cites, with its element count | tables, bim |
 | `nrc-q7-absence` | the roof with no embodied-carbon row, as a row | tables, bim |
+| `nrc-q8-per-storey` | per-storey count, embodied carbon A1-A3, and mean energy intensity | tables, bim |
 | `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced) | tables, bim |
 | `nrc-dc-w1-verdicts` | rule DC-W1 over doors, coloured in 3D | bim only (`check.rule`, `view3d.color`) |
 | `nrc-enrich-run` | `psets_to_write.csv` written back into a copy of the IFC | bim only (`sink.writePsets`) |
@@ -28,3 +31,17 @@ Expected numbers come from `nrc-ifc-llm/poc/results/expected_answers.json` and
 what `scripts/nrc-walkthrough.mjs` captures for the paper; `FigureGraphTests`
 guards them (216 of the 218 analysed elements have a mesh, so that is the
 coloured count).
+
+`nrc-q4-door-instances` has no single deterministic scalar: the paper's Q4 asks
+for "the door named M_Single-Flush:0762 x 2032mm", but that name is a Revit
+family:type name, not an instance name, and `nrc_analytics_elements.csv` (and
+`door_verdicts.csv`'s DC-M1 evidence) show four IFCDOOR instances share it,
+each with a different operational carbon value. `scripts/demo-ifc-mcp.mjs`
+does not replay Q4 at all, so there is no cited expected value to reconcile;
+the graph instead lists all four instances by GlobalId, which is the
+deterministic data the paper's answer would have to pick from or sum.
+
+`nrc-q6-analysis-run` answers "which run" (`AnalysisRunId`, `ScenarioName`)
+deterministically: every one of the 218 elements cites the same run. The
+"when" half of Q6 has no separate timestamp column in the data; it is only
+the date embedded in the run id's text, `run-2026-09-17-01`.

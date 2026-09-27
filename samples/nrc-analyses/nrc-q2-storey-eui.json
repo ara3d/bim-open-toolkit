@@ -1,0 +1,75 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "answer": {
+      "x": 1030,
+      "y": 40
+    },
+    "elements": {
+      "x": 40,
+      "y": 40
+    },
+    "levels": {
+      "x": 700,
+      "y": 40
+    },
+    "perStorey": {
+      "x": 370,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "elements.relation",
+        "to": "perStorey.input"
+      },
+      {
+        "from": "perStorey.relation",
+        "to": "levels.input"
+      },
+      {
+        "from": "levels.relation",
+        "to": "answer.input"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "answer",
+        "kind": "rel.sort",
+        "version": 1
+      },
+      {
+        "id": "elements",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "levels",
+        "kind": "rel.filter",
+        "version": 1
+      },
+      {
+        "id": "perStorey",
+        "kind": "rel.aggregate",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "answer": {
+      "by": "MeanEui desc"
+    },
+    "elements": {
+      "path": "nrc_analytics_elements.csv",
+      "source": "nrc"
+    },
+    "levels": {
+      "expr": "[Storey] == 'Level 1' or [Storey] == 'Level 2'"
+    },
+    "perStorey": {
+      "aggregates": "count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui",
+      "groupBy": "Storey"
+    }
+  }
+}
