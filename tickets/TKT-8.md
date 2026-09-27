@@ -15,3 +15,8 @@ fence: [scripts/ask-bim-flow.mjs, docs/bim-flow-mcp-demo.md, artifacts/bim-flow-
 - [ ] Each wrong or failed request becomes a ticket naming the cause
 
 Serves W2. The Claude backend landed in commit d0aa10c (2026-09-18) and 'has not been measured on the same request set yet'; the only published numbers are gpt-5's 8 correct, 2 honest, 0 wrong of 10. Nothing about the Ask box should change before this baseline exists. TKT-6 is closed: the host already prefers the Anthropic key; this ticket supplies the measurement and the committed set the brief's success line names.
+
+## Result so far (2026-09-26, commits 70fdc55, d3a9d7a)
+
+samples/ask/requests.txt holds the ten questions with expected answers; one pass with claude-opus-5 scored 4 correct, 0 honest, 1 wrong (TKT-35: rooms per storey grouped by storey id, not name), and 5 failed because the Anthropic account ran out of credit mid-run. The transcript and the score table are committed. Stays open until TKT-41 reruns the five with a funded account.
+
