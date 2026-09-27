@@ -1,0 +1,43 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "zoneGuess": { "x": 40, "y": 40 },
+    "zoneGuessSorted": { "x": 370, "y": 40 },
+    "zoneFinal": { "x": 40, "y": 240 },
+    "zoneFinalSorted": { "x": 370, "y": 240 },
+    "zoneCountLabelled": { "x": 700, "y": 240 },
+    "zoneCounts": { "x": 1030, "y": 240 },
+    "zoneCountsSorted": { "x": 1360, "y": 240 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "zoneGuess.table", "to": "zoneGuessSorted.table" },
+      { "from": "zoneFinal.table", "to": "zoneFinalSorted.table" },
+      { "from": "zoneFinal.table", "to": "zoneCountLabelled.table" },
+      { "from": "zoneCountLabelled.table", "to": "zoneCounts.table" },
+      { "from": "zoneCounts.table", "to": "zoneCountsSorted.table" }
+    ],
+    "nodes": [
+      { "id": "zoneGuess", "kind": "table.inline", "version": 1 },
+      { "id": "zoneGuessSorted", "kind": "table.sort", "version": 1 },
+      { "id": "zoneFinal", "kind": "table.inline", "version": 1 },
+      { "id": "zoneFinalSorted", "kind": "table.sort", "version": 1 },
+      { "id": "zoneCountLabelled", "kind": "table.filter", "version": 1 },
+      { "id": "zoneCounts", "kind": "table.aggregate", "version": 1 },
+      { "id": "zoneCountsSorted", "kind": "table.sort", "version": 1 }
+    ]
+  },
+  "values": {
+    "zoneGuess": {
+      "rows": "[{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXr2\",\"SpaceName\":\"Living Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXr$\",\"SpaceName\":\"Kitchen\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrr\",\"SpaceName\":\"Foyer\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3P\",\"SpaceName\":\"Bathroom 1\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"10mjSDZJj9gPS2PrQaxa3z\",\"SpaceName\":\"Stair\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_CZ\",\"SpaceName\":\"Living Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3S\",\"SpaceName\":\"Kitchen\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3Q\",\"SpaceName\":\"Foyer\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXru\",\"SpaceName\":\"Bathroom 1\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"10mjSDZJj9gPS2PrQaxa4o\",\"SpaceName\":\"Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3A\",\"SpaceName\":\"Bedroom 1\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrb\",\"SpaceName\":\"Bedroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXre\",\"SpaceName\":\"Bathroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"2gRXFgjRn2HPE$YoDLX3FV\",\"SpaceName\":\"Utility\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXri\",\"SpaceName\":\"Hallway\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrc\",\"SpaceName\":\"Bedroom 1\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_39\",\"SpaceName\":\"Bedroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3C\",\"SpaceName\":\"Bathroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"2gRXFgjRn2HPE$YoDLX3FC\",\"SpaceName\":\"Utility\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3G\",\"SpaceName\":\"Hallway\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0pNy6pOyf7JPmXRLgxs3sW\",\"SpaceName\":\"Roof\",\"StoreyName\":\"Roof\",\"ZoneName\":\"\"}]"
+    },
+    "zoneGuessSorted": { "A": "StoreyName", "B": "ZoneName", "C": "SpaceName" },
+    "zoneFinal": {
+      "rows": "[{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXr2\",\"SpaceName\":\"Living Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXr$\",\"SpaceName\":\"Kitchen\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrr\",\"SpaceName\":\"Foyer\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXru\",\"SpaceName\":\"Bathroom 1\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"10mjSDZJj9gPS2PrQaxa3z\",\"SpaceName\":\"Stair\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_CZ\",\"SpaceName\":\"Living Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3S\",\"SpaceName\":\"Kitchen\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3Q\",\"SpaceName\":\"Foyer\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3P\",\"SpaceName\":\"Bathroom 1\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"10mjSDZJj9gPS2PrQaxa4o\",\"SpaceName\":\"Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3A\",\"SpaceName\":\"Bedroom 1\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrb\",\"SpaceName\":\"Bedroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXre\",\"SpaceName\":\"Bathroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"2gRXFgjRn2HPE$YoDLX3FV\",\"SpaceName\":\"Utility\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXri\",\"SpaceName\":\"Hallway\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrc\",\"SpaceName\":\"Bedroom 1\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_39\",\"SpaceName\":\"Bedroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3C\",\"SpaceName\":\"Bathroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"2gRXFgjRn2HPE$YoDLX3FC\",\"SpaceName\":\"Utility\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3G\",\"SpaceName\":\"Hallway\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0pNy6pOyf7JPmXRLgxs3sW\",\"SpaceName\":\"Roof\",\"StoreyName\":\"Roof\",\"ZoneName\":\"\"}]"
+    },
+    "zoneFinalSorted": { "A": "StoreyName", "B": "ZoneName", "C": "SpaceName" },
+    "zoneCountLabelled": { "expr": "[ZoneName] != ''" },
+    "zoneCounts": { "groupBy": "ZoneName", "aggregates": "count(*) as Spaces" },
+    "zoneCountsSorted": { "A": "ZoneName" }
+  }
+}

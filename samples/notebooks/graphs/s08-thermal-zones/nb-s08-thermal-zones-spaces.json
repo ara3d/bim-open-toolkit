@@ -1,0 +1,40 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "storeyOf": { "x": 40, "y": 240 },
+    "spaces": { "x": 370, "y": 40 },
+    "withStorey": { "x": 700, "y": 40 },
+    "columns": { "x": 1030, "y": 40 },
+    "sorted": { "x": 1360, "y": 40 },
+    "rows": { "x": 1690, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "spaces.input" },
+      { "from": "spaces.relation", "to": "withStorey.left" },
+      { "from": "storeyOf.relation", "to": "withStorey.right" },
+      { "from": "withStorey.relation", "to": "columns.input" },
+      { "from": "columns.relation", "to": "sorted.input" },
+      { "from": "sorted.relation", "to": "rows.input" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "storeyOf", "kind": "rel.table", "version": 1 },
+      { "id": "spaces", "kind": "rel.filter", "version": 1 },
+      { "id": "withStorey", "kind": "rel.join", "version": 1 },
+      { "id": "columns", "kind": "rel.select", "version": 1 },
+      { "id": "sorted", "kind": "rel.sort", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "storeyOf": { "source": "duplex-enriched", "table": "StoreyOfEntity" },
+    "spaces": { "expr": "[Category] == 'IFCSPACE'" },
+    "withStorey": { "leftKey": "EntityIndex", "rightKey": "EntityIndex", "kind": "inner" },
+    "columns": { "columns": "GlobalId, Name, StoreyName" },
+    "sorted": { "by": "StoreyName, Name" },
+    "rows": { "limit": "0" }
+  }
+}

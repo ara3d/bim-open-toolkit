@@ -1,0 +1,76 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "rel": { "x": 40, "y": 40 },
+    "ent": { "x": 40, "y": 200 },
+    "elements": { "x": 40, "y": 360 },
+    "totalElements": { "x": 370, "y": 360 },
+    "totalElementsTable": { "x": 700, "y": 360 },
+    "containment": { "x": 370, "y": 40 },
+    "matchedTotal": { "x": 700, "y": 40 },
+    "matchedTotalTable": { "x": 1030, "y": 40 },
+    "perSpace": { "x": 700, "y": 200 },
+    "perSpaceTable": { "x": 1030, "y": 200 },
+    "zoneFinal": { "x": 40, "y": 520 },
+    "joined": { "x": 1360, "y": 200 },
+    "joinedSelect": { "x": 1690, "y": 200 },
+    "joinedSort": { "x": 2020, "y": 200 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "rel.relation", "to": "containment.t1" },
+      { "from": "ent.relation", "to": "containment.t2" },
+      { "from": "elements.relation", "to": "containment.t3" },
+      { "from": "elements.relation", "to": "totalElements.input" },
+      { "from": "totalElements.relation", "to": "totalElementsTable.input" },
+      { "from": "containment.relation", "to": "matchedTotal.t1" },
+      { "from": "matchedTotal.relation", "to": "matchedTotalTable.input" },
+      { "from": "containment.relation", "to": "perSpace.t1" },
+      { "from": "perSpace.relation", "to": "perSpaceTable.input" },
+      { "from": "perSpaceTable.table", "to": "joined.a" },
+      { "from": "zoneFinal.table", "to": "joined.b" },
+      { "from": "joined.table", "to": "joinedSelect.table" },
+      { "from": "joinedSelect.table", "to": "joinedSort.table" }
+    ],
+    "nodes": [
+      { "id": "rel", "kind": "rel.table", "version": 1 },
+      { "id": "ent", "kind": "rel.table", "version": 1 },
+      { "id": "elements", "kind": "rel.csv", "version": 1 },
+      { "id": "totalElements", "kind": "rel.aggregate", "version": 1 },
+      { "id": "totalElementsTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "containment", "kind": "rel.sql", "version": 1 },
+      { "id": "matchedTotal", "kind": "rel.sql", "version": 1 },
+      { "id": "matchedTotalTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "perSpace", "kind": "rel.sql", "version": 1 },
+      { "id": "perSpaceTable", "kind": "rel.materialize", "version": 1 },
+      { "id": "zoneFinal", "kind": "table.inline", "version": 1 },
+      { "id": "joined", "kind": "table.join", "version": 1 },
+      { "id": "joinedSelect", "kind": "table.project", "version": 1 },
+      { "id": "joinedSort", "kind": "table.sort", "version": 1 }
+    ]
+  },
+  "values": {
+    "rel": { "source": "duplex-enriched", "table": "RelationText" },
+    "ent": { "source": "duplex-enriched", "table": "EntityText" },
+    "elements": { "source": "nrc", "path": "nrc_analytics_elements.csv" },
+    "totalElements": { "groupBy": "", "aggregates": "count(*) as TotalAnalysed" },
+    "totalElementsTable": { "limit": "0" },
+    "containment": {
+      "sql": "SELECT csp.GlobalId AS SpaceGlobalId, csp.Name AS SpaceName, cc.GlobalId AS ElementGlobalId, cc.Category AS ElementCategory, e.Storey FROM t1 r JOIN t2 cc ON cc.Name = r.NameA JOIN t2 csp ON csp.Name = r.NameB JOIN t3 e ON e.GlobalId = cc.GlobalId WHERE csp.Category = 'IFCSPACE' AND r.RelationType = 'ContainedIn'"
+    },
+    "matchedTotal": {
+      "sql": "SELECT count(DISTINCT ElementGlobalId) AS MatchedElements, count(DISTINCT SpaceGlobalId) AS SpacesMatched FROM t1"
+    },
+    "matchedTotalTable": { "limit": "0" },
+    "perSpace": {
+      "sql": "SELECT SpaceGlobalId, SpaceName, count(DISTINCT ElementGlobalId) AS ElementCount FROM t1 GROUP BY SpaceGlobalId, SpaceName"
+    },
+    "perSpaceTable": { "limit": "0" },
+    "zoneFinal": {
+      "rows": "[{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXr2\",\"SpaceName\":\"Living Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXr$\",\"SpaceName\":\"Kitchen\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrr\",\"SpaceName\":\"Foyer\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXru\",\"SpaceName\":\"Bathroom 1\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"10mjSDZJj9gPS2PrQaxa3z\",\"SpaceName\":\"Stair\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-A-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_CZ\",\"SpaceName\":\"Living Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3S\",\"SpaceName\":\"Kitchen\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3Q\",\"SpaceName\":\"Foyer\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3P\",\"SpaceName\":\"Bathroom 1\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"10mjSDZJj9gPS2PrQaxa4o\",\"SpaceName\":\"Room\",\"StoreyName\":\"Level 1\",\"ZoneName\":\"Zone-B-L1\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3A\",\"SpaceName\":\"Bedroom 1\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrb\",\"SpaceName\":\"Bedroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXre\",\"SpaceName\":\"Bathroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"2gRXFgjRn2HPE$YoDLX3FV\",\"SpaceName\":\"Utility\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXri\",\"SpaceName\":\"Hallway\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-A-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dlXrc\",\"SpaceName\":\"Bedroom 1\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_39\",\"SpaceName\":\"Bedroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3C\",\"SpaceName\":\"Bathroom 2\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"2gRXFgjRn2HPE$YoDLX3FC\",\"SpaceName\":\"Utility\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0BTBFw6f90Nfh9rP1dl_3G\",\"SpaceName\":\"Hallway\",\"StoreyName\":\"Level 2\",\"ZoneName\":\"Zone-B-L2\"},{\"SpaceGlobalId\":\"0pNy6pOyf7JPmXRLgxs3sW\",\"SpaceName\":\"Roof\",\"StoreyName\":\"Roof\",\"ZoneName\":\"\"}]"
+    },
+    "joined": { "aKey": "SpaceGlobalId", "bKey": "SpaceGlobalId", "mode": "left" },
+    "joinedSelect": { "columns": "SpaceGlobalId, SpaceName, StoreyName, ZoneName, ElementCount" },
+    "joinedSort": { "A": "ElementCount", "descendingA": "true" }
+  }
+}

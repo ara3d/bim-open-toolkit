@@ -1,0 +1,84 @@
+{
+  "title": "Thermal zones (proposal P2)",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "../graphs/s08-thermal-zones/nb-s08-thermal-zones-spaces.json",
+    "../graphs/s08-thermal-zones/nb-s08-thermal-zones-grouping.json",
+    "../graphs/s08-thermal-zones/nb-s08-thermal-zones-eui.json",
+    "../graphs/s08-thermal-zones/nb-s08-thermal-zones-3d.json"
+  ],
+  "turns": [
+    {
+      "request": "List the spaces in the Duplex model with their storey.",
+      "reply": "21 IfcSpace rows, each with its storey. Ten are on Level 1, ten on Level 2, and one, named Roof, sits under a storey also named Roof rather than under a unit level. Every room name except Room and Stair appears twice, which matches the two mirrored units this duplex is built from.",
+      "analysisId": "nb-s08-thermal-zones-spaces",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s08-thermal-zones-spaces: 7 nodes, 6 edges" },
+        { "name": "evaluate", "ok": true, "summary": "7 of 7 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s08-thermal-zones-spaces rows.table: 21 rows x 4 columns" }
+      ],
+      "embeds": [
+        { "kind": "table", "node": "rows", "port": "table", "caption": "IfcSpace by storey" }
+      ]
+    },
+    {
+      "request": "The Duplex has no IfcZone, but operational energy is modelled per thermal zone, not per room. Group the 21 spaces into one zone per unit and storey.",
+      "reply": "There's no IfcZone in this model, so there's nothing to read here — this has to be a proposal. I grouped the ten spaces on each storey into two zones, one per unit (Zone-A-L1/Zone-B-L1 on Level 1, Zone-A-L2/Zone-B-L2 on Level 2), by matching each repeated room name to a zone in the order the spaces are listed, and defaulting the two Level-1 rooms that have no duplicate (Room, Stair) to the same zone. The Roof space belongs to neither unit and is left unzoned. This notebook has no Editor embed yet, so I recorded the grouping as a table the graph computes, not a file — check it against the floor plan before using it; it's a guess, not a fact.",
+      "analysisId": "nb-s08-thermal-zones-grouping",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s08-thermal-zones-grouping: 7 nodes, 5 edges" },
+        { "name": "evaluate", "ok": true, "summary": "7 of 7 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s08-thermal-zones-grouping zoneGuessSorted.table: 21 rows x 4 columns" }
+      ],
+      "embeds": [
+        { "kind": "table", "node": "zoneGuessSorted", "port": "table", "caption": "proposed zone grouping (first guess)" }
+      ]
+    },
+    {
+      "request": "Looking at the floor plan, the two Bathroom 1 rows are the wrong way round: 0BTBFw6f90Nfh9rP1dlXru sits next to the Zone-A-L1 stair and foyer, not Zone-B-L1. Swap those two rows and show me the spaces per zone.",
+      "reply": "Fixed: swapped the ZoneName on those two Bathroom 1 rows, the only two that were wrong. Four zones of five spaces each, plus the Roof left unzoned — 21 spaces in all.",
+      "analysisId": "nb-s08-thermal-zones-grouping",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s08-thermal-zones-grouping: zoneFinal table edited, 2 of 21 rows changed from the first guess" },
+        { "name": "evaluate", "ok": true, "summary": "7 of 7 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s08-thermal-zones-grouping zoneFinalSorted.table: 21 rows x 4 columns; zoneCountsSorted.table: 4 rows x 2 columns" }
+      ],
+      "embeds": [
+        { "kind": "table", "node": "zoneFinalSorted", "port": "table", "caption": "spaces by zone (corrected)" },
+        { "kind": "chart", "node": "zoneCountsSorted", "port": "table", "caption": "spaces per zone" }
+      ]
+    },
+    {
+      "request": "Which zone has the highest energy use intensity?",
+      "reply": "Not available at zone level. Of the 218 elements in the synthetic NRC analytics set, only 69 carry any direct containment relation to an IfcSpace in this model — most walls and doors are contained straight in their storey, never in a room. And those 69 elements are attributed to 13 different spaces a combined 122 times over, because the model's RelationText view resolves relations by entity name, and several entities share a name (repeated furniture items, mostly), so the join can't always tell which physical element it's looking at. Rolling that up into a per-zone energy use intensity would be inventing precision the data doesn't have, so I'm not producing one. This is the space-and-zone gap docs/proposals/nrc-deliverables.md's P2 names: no SpaceOfElement view exists yet, and what containment does exist here is too sparse and ambiguous to aggregate.",
+      "analysisId": "nb-s08-thermal-zones-eui",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s08-thermal-zones-eui: 14 nodes, 13 edges" },
+        { "name": "evaluate", "ok": true, "summary": "14 of 14 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "totalElementsTable.table: TotalAnalysed 218; matchedTotalTable.table: MatchedElements 69, SpacesMatched 13; joinedSort.table: 13 rows x 5 columns" }
+      ],
+      "embeds": [
+        { "kind": "value", "node": "totalElementsTable", "port": "table", "column": "TotalAnalysed", "unit": "elements", "caption": "analysed elements (nrc_analytics_elements.csv)" },
+        { "kind": "value", "node": "matchedTotalTable", "port": "table", "column": "MatchedElements", "unit": "elements", "caption": "matched to any IfcSpace" },
+        { "kind": "table", "node": "joinedSort", "port": "table", "caption": "elements matched per space, by zone" }
+      ]
+    },
+    {
+      "request": "Colour the spaces by zone in 3D anyway, and could we write the zones into the enriched IFC too?",
+      "reply": "The 3D view colours all 21 IfcSpace instances by zone: four colours for the four zones, plus a fifth for the unzoned Roof space; everything else in the model stays grey. Writing IfcZone and IfcRelAssignsToGroup entities into duplex-enriched.ifc is a write, so it needs a Run — and this notebook prototype has no Run or Diff embed yet (docs/plans/notebook.md lists both as extension points, not built). The zone table from the last two turns stays a proposal on screen until that lands; nothing has been written to the IFC file.",
+      "analysisId": "nb-s08-thermal-zones-3d",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s08-thermal-zones-3d: 4 nodes, 3 edges" },
+        { "name": "evaluate", "ok": true, "summary": "4 of 4 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nb-s08-thermal-zones-3d coloured.instances: 714 rows x 15 columns; 21 coloured in 5 colours, 693 grey" }
+      ],
+      "embeds": [
+        { "kind": "view3d", "node": "coloured", "port": "instances", "caption": "spaces coloured by zone (Roof unzoned)" }
+      ]
+    }
+  ]
+}
