@@ -16,7 +16,7 @@ public sealed class IfcDuckDbBuildTests
         ["Descriptors", "Diagnostics", "Documents", "Entities", "Numbers", "Parameters", "Points", "Relations", "Strings"];
 
     private static readonly string[] ExpectedViews =
-        ["EntityText", "ParameterText", "RelationText", "StoreyOfEntity"];
+        ["EntityText", "ParameterText", "RelationText", "StoreyOfEntity", "StoreyOfElement"];
 
     private string _folder = "";
     private FilePath _database;

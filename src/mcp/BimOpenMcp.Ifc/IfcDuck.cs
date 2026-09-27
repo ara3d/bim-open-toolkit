@@ -1,5 +1,3 @@
-using System.Text;
-using Ara3D.BimOpenSchema;
 using Ara3D.BimOpenSchema.DuckDb;
 using Ara3D.Utils;
 using DuckDB.NET.Data;
@@ -22,91 +20,11 @@ public readonly record struct IfcQueryResult(
 /// <summary>Read-only SQL over the DuckDB database derived from a model's BOS conversion.</summary>
 public static class IfcDuck
 {
-    /// <summary>Adds the views that make the database answerable. BIM Open Schema interns every
-    /// string and every enum, so the raw tables are almost entirely integer indexes: a query
-    /// against <c>Entities</c> alone can see no names at all. Each view resolves those indexes by
-    /// joining on <c>rowid</c>, which is the row order the Parquet tables were written in.</summary>
+    /// <summary>Adds the text views (EntityText, ParameterText, RelationText, StoreyOfEntity,
+    /// StoreyOfElement). They are defined once, in <see cref="BosDuckDbViews"/>, so the MCP server
+    /// and the flow graphs cannot drift into answering the same question two ways.</summary>
     public static void CreateViews(FilePath database)
-    {
-        using var conn = Connect(database);
-
-        Execute(conn, """
-            CREATE OR REPLACE VIEW EntityText AS
-            SELECT e.rowid AS EntityIndex, e.LocalId AS StepId, sg.Strings AS GlobalId,
-                   sn.Strings AS Name, sc.Strings AS Category, st.Strings AS Type
-            FROM Entities e
-            LEFT JOIN Strings sg ON sg.rowid = e.GlobalId
-            LEFT JOIN Strings sn ON sn.rowid = e.Name
-            LEFT JOIN Entities ec ON ec.rowid = e.Category
-            LEFT JOIN Strings sc ON sc.rowid = ec.Name
-            LEFT JOIN Entities et ON et.rowid = e.Type
-            LEFT JOIN Strings st ON st.rowid = et.Name
-            """);
-
-        Execute(conn, $"""
-            CREATE OR REPLACE VIEW ParameterText AS
-            SELECT p.Entity AS EntityIndex, dn.Strings AS Name, dg.Strings AS ParameterGroup,
-                   du.Strings AS Units, {EnumCase("d.Type", Enum.GetValues<ParameterType>())} AS ValueType,
-                   CASE d.Type
-                       WHEN {(int)ParameterType.String} THEN sv.Strings
-                       WHEN {(int)ParameterType.Number} THEN CAST(nv.Numbers AS VARCHAR)
-                       WHEN {(int)ParameterType.Entity} THEN ev.Strings
-                       ELSE CAST(p.Value AS VARCHAR)
-                   END AS Value
-            FROM Parameters p
-            JOIN Descriptors d ON d.rowid = p.Descriptor
-            LEFT JOIN Strings dn ON dn.rowid = d.Name
-            LEFT JOIN Strings dg ON dg.rowid = d."Group"
-            LEFT JOIN Strings du ON du.rowid = d.Units
-            LEFT JOIN Strings sv ON sv.rowid = p.Value
-            LEFT JOIN Numbers nv ON nv.rowid = p.Value
-            LEFT JOIN Entities ee ON ee.rowid = p.Value
-            LEFT JOIN Strings ev ON ev.rowid = ee.Name
-            """);
-
-        Execute(conn, $"""
-            CREATE OR REPLACE VIEW RelationText AS
-            SELECT r.EntityA AS EntityIndexA, an.Strings AS NameA,
-                   r.EntityB AS EntityIndexB, bn.Strings AS NameB,
-                   {EnumCase("r.RelationType", Enum.GetValues<RelationType>())} AS RelationType
-            FROM Relations r
-            LEFT JOIN Entities ea ON ea.rowid = r.EntityA
-            LEFT JOIN Strings an ON an.rowid = ea.Name
-            LEFT JOIN Entities eb ON eb.rowid = r.EntityB
-            LEFT JOIN Strings bn ON bn.rowid = eb.Name
-            """);
-
-        // Shared verbatim with BosDuckDbViews rather than copied, so the MCP server and the flow
-        // graphs cannot drift into answering the same storey question two ways.
-        Execute(conn, BosDuckDbViews.StoreyOfEntitySql);
-
-        // StoreyOfEntity's recursive walk seeds every entity as its own ancestor at Depth 0, so a
-        // building storey is its own "storey above it" and appears mapped to itself. That row is
-        // correct for the view's stated job (every entity's storey, including a storey's own), but
-        // a query that joins it straight to ParameterText to sum a property by storey double-counts
-        // wherever the storey entity itself also carries that property (a precomputed per-storey
-        // rollup, for example): the storey's own value is added on top of the sum of its elements'
-        // values. StoreyOfElement is StoreyOfEntity with that self-mapped row removed, so summing
-        // through it counts each element once and never the storey it belongs to.
-        Execute(conn, """
-            CREATE OR REPLACE VIEW StoreyOfElement AS
-            SELECT * FROM StoreyOfEntity WHERE EntityIndex != StoreyIndex
-            """);
-    }
-
-    private static string EnumCase<T>(string column, IReadOnlyList<T> values) where T : struct, Enum
-    {
-        var sb = new StringBuilder("CASE ").Append(column);
-        var seen = new HashSet<int>();
-        foreach (var value in values)
-        {
-            var number = System.Convert.ToInt32(value);
-            if (seen.Add(number))
-                sb.Append($" WHEN {number} THEN '{value}'");
-        }
-
-        return sb.Append(" END").ToString();
-    }
+        => BosDuckDbViews.CreateViews(database);
 
     public static IfcQueryResult Query(FilePath database, string sql, int skip, int take)
     {

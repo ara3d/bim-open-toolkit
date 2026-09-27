@@ -4,7 +4,7 @@ title: NRC analytics contract: a metric dictionary, summary sets under their own
 status: claimed
 depends_on: []
 owner: parallel-wave-builder-p1
-fence: [samples/nrc/*, samples/nrc-analyses/nrc-rollup.json, samples/nrc-analyses/nrc-element-psets.json, samples/nrc-analyses/nrc-enrich-run.json, samples/nrc-analyses/nrc-property-values.json, samples/nrc-analyses/README.md, src/data/Ara3D.BimOpenSchema.DuckDb/BosDuckDbViews.cs, src/mcp/BimOpenMcp.Ifc/**, .claude/skills/ifc-ask/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/RollupGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/FigureGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/ModelGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/CsvGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/Fixture.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/NrcPaths.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/README.md, tests/mcp/BimOpenMcp.Ifc.Tests/**, scripts/demo-ifc-mcp.mjs, docs/nrc-walkthrough.md]
+fence: [samples/nrc/*, samples/nrc-analyses/nrc-rollup.json, samples/nrc-analyses/nrc-element-psets.json, samples/nrc-analyses/nrc-enrich-run.json, samples/nrc-analyses/nrc-property-values.json, samples/nrc-analyses/README.md, src/data/Ara3D.BimOpenSchema.DuckDb/BosDuckDbViews.cs, src/mcp/BimOpenMcp.Ifc/**, .claude/skills/ifc-ask/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/RollupGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/FigureGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/ModelGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/CsvGraphTests.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/Fixture.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/NrcPaths.cs, tests/flow/BimOpenFlow.NrcWorkflows.Tests/README.md, tests/mcp/BimOpenMcp.Ifc.Tests/**, scripts/demo-ifc-mcp.mjs, docs/nrc-walkthrough.md, tests/data/Ara3D.BimOpenSchema.DuckDb.Tests/IfcDuckDbBuildTests.cs, src/flow/BimOpenFlow.Host/SamplePreparation.cs, src/flow/BimOpenFlow.Host/SampleSeeding.cs, scripts/nrc-walkthrough.mjs, tests/flow/BimOpenFlow.Host.Tests/NrcSeedingTests.cs]
 ---
 
 ## Acceptance criteria
@@ -15,3 +15,8 @@ fence: [samples/nrc/*, samples/nrc-analyses/nrc-rollup.json, samples/nrc-analyse
 - [ ] The IFC MCP server exposes the dictionary as a MetricCatalog view and the ifc-ask skill resolves metrics through it; StoreyOfElement is defined once, in BosDuckDbViews
 
 P1 of Proposal: docs/proposals/nrc-deliverables.md. Serves W6 and W2. Fixes the storage defect in nrc-ifc-llm paper/poc-gap-report.md 2.10 (three of four unattended misses). Synthetic data only; NRC has sent nothing.
+
+
+## Fence widened, 2026-09-27
+
+The builder found five paths the work needs outside the first fence: the DuckDb view-list test, the host's NRC sample preparation and seeding (so the studio builds a `duplex-base` database), the walkthrough's Figure 4 caption, and the NRC seeding test. `SamplePreparation.cs` and `SampleSeeding.cs` sit inside TKT-26's `src/flow/BimOpenFlow.Host/**` glob, but TKT-26's plan names neither and neither has changed in nine days, so this ticket takes the two files by name.

@@ -65,6 +65,7 @@ public static class BosDuckDbViews
             """);
 
         conn.Execute(StoreyOfEntitySql);
+        conn.Execute(StoreyOfElementSql);
     }
 
     /// <summary>Every entity with the building storey above it, and how many relations away it is.
@@ -91,6 +92,16 @@ public static class BosDuckDbViews
         FROM Ancestors a
         JOIN EntityText s ON s.EntityIndex = a.Ancestor
         WHERE s.Category = 'IFCBUILDINGSTOREY'
+        """;
+
+    /// <summary><see cref="StoreyOfEntitySql"/> without the Depth 0 row that maps a storey to
+    /// itself. That row is right for StoreyOfEntity's job (every entity's storey, a storey's own
+    /// included), but a sum of a property by storey joined through it adds the storey's own value
+    /// on top of its elements' values wherever the storey carries the same property. Summing
+    /// through StoreyOfElement counts each element once and never the storey it belongs to.</summary>
+    public static readonly string StoreyOfElementSql = """
+        CREATE OR REPLACE VIEW StoreyOfElement AS
+        SELECT * FROM StoreyOfEntity WHERE EntityIndex != StoreyIndex
         """;
 
     private static string EnumCase<T>(string column, IReadOnlyList<T> values) where T : struct, Enum
