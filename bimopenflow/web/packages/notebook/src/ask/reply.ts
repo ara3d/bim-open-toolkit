@@ -5,7 +5,7 @@ import type { NodeDescriptor } from "@bimopenflow/contracts";
 import { parseDocument, parsePortRef, type GraphDocument, type GraphNode } from "@bimopenflow/state";
 // By path: see the plan's Debt section (deep imports from @bimopenflow/app).
 import { chartPaneOptions, choosePanes, firstTableOutput } from "@bimopenflow/app/src/paneChoice";
-import type { AgentInfo, Embed, NodeRef, Reply, ToolCall } from "../document/format";
+import type { AgentInfo, Embed, NodeRef, Reply, TableSnapshot, ToolCall } from "../document/format";
 import type { NotebookApi } from "../embeds/contract";
 import { SNAPSHOT_ROWS, snapshotOf } from "../live/compare";
 import type { AskEvent } from "./events";
@@ -35,20 +35,66 @@ export async function embedsForAnalysis(analysisId: string, api: NotebookApi, op
   const nodeEmbeds = await Promise.all(
     answers.map((node) => embedForNode(analysisId, node, graph, describe(catalog.nodes, node), api, maxRows)),
   );
-  const graphEmbed: EmbedDraft = {
+  const graphEmbed = graphEmbedDraftOf(
+    analysisId,
+    document,
+    state,
+    text,
+    answers.filter((_, i) => nodeEmbeds[i]).map((node) => node.id),
+  );
+  return [...nodeEmbeds.filter((e) => e !== undefined), graphEmbed].map((e, i) => ({ ...e, id: `e${i + 1}` }) as Embed);
+}
+
+/** An embed before it is numbered within its reply. */
+export type Draft<E> = E extends Embed ? Omit<E, "id"> : never;
+export type EmbedDraft = Draft<Embed>;
+
+/** The graph embed's draft, given the analysis's document, state, and text print (no extra host call). */
+function graphEmbedDraftOf(
+  analysisId: string,
+  document: string,
+  state: { graphHash?: string },
+  text: string,
+  focus: readonly string[],
+): Extract<EmbedDraft, { kind: "graph" }> {
+  return {
     kind: "graph",
     analysisId,
     ...(state.graphHash ? { graphHash: state.graphHash } : {}),
     document,
     text,
-    focus: answers.filter((_, i) => nodeEmbeds[i]).map((node) => node.id),
+    focus,
   };
-  return [...nodeEmbeds.filter((e) => e !== undefined), graphEmbed].map((e, i) => ({ ...e, id: `e${i + 1}` }) as Embed);
 }
 
-/** An embed before it is numbered within its reply. */
-type Draft<E> = E extends Embed ? Omit<E, "id"> : never;
-type EmbedDraft = Draft<Embed>;
+/**
+ * The graph embed alone, for a caller that only wants that (a `{ "kind":
+ * "graph" }` outline spec): fetches just the document, state, and text print,
+ * not the node catalog or any node's result, unlike embedsForAnalysis.
+ */
+export async function graphEmbedDraft(
+  analysisId: string,
+  api: NotebookApi,
+  focus?: readonly string[],
+): Promise<Extract<EmbedDraft, { kind: "graph" }>> {
+  const [document, state, text] = await Promise.all([
+    api.getAnalysis(analysisId),
+    api.getAnalysisState(analysisId),
+    api.getAnalysisText(analysisId),
+  ]);
+  return graphEmbedDraftOf(analysisId, document, state, text, focus ?? answerNodes(parseDocument(document)).map((n) => n.id));
+}
+
+/** A chart embed's draft: the node's chart options from its parameter values, and its result snapshot. */
+export function chartEmbedDraft(
+  source: NodeRef,
+  caption: string,
+  nodeKind: string | undefined,
+  values: Readonly<Record<string, string>>,
+  snapshot: TableSnapshot,
+): Extract<EmbedDraft, { kind: "chart" }> {
+  return { kind: "chart", source, caption, chart: chartPaneOptions(nodeKind, values), snapshot };
+}
 
 /** Nodes no edge reads from, in document order. */
 function answerNodes(graph: GraphDocument): GraphNode[] {
@@ -79,13 +125,7 @@ async function embedForNode(
   const panes = choosePanes(desc);
   const read = async () => snapshotOf(await api.getResult(analysisId, node.id, port.name, 0, maxRows), maxRows);
   if (node.kind.startsWith("chart."))
-    return {
-      kind: "chart",
-      source,
-      caption,
-      chart: chartPaneOptions(node.kind, graph.values[node.id] ?? {}),
-      snapshot: await read(),
-    };
+    return chartEmbedDraft(source, caption, node.kind, graph.values[node.id] ?? {}, await read());
   if (panes.includes("view3d")) return { kind: "view3d", source, caption };
   const snapshot = await read();
   const scalar = snapshot.totalRows === 1 && snapshot.columns.length === 1;

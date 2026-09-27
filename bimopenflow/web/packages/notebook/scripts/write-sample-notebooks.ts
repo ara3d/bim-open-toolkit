@@ -26,8 +26,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { ApiClient } from "@bimopenflow/api-client";
 import { parseDocument, type GraphDocument } from "@bimopenflow/state";
-import { chartPaneOptions } from "@bimopenflow/app/src/paneChoice";
-import { embedsForAnalysis } from "../src/ask/reply";
+import { chartEmbedDraft, embedsForAnalysis, graphEmbedDraft, type EmbedDraft } from "../src/ask/reply";
 import type { Embed, Notebook, NodeRef, ToolCall } from "../src/document/format";
 import { emptyNotebook, parseNotebook, serializeNotebook } from "../src/document/io";
 import { appendTurn } from "../src/document/edits";
@@ -58,10 +57,8 @@ const SETTLE_POLL_MS = 200;
 // The outline format itself (Outline, OutlineTurn, EmbedSpec, and outlineErrors,
 // expandPlaceholders, hidePlaceholders, withExtras) lives in ./outline, so it
 // can be unit-tested without a running host; this file adds the host calls.
-
-/** An embed before it is numbered within its reply. */
-type Draft<E> = E extends Embed ? Omit<E, "id"> : never;
-type EmbedDraft = Draft<Embed>;
+// Draft/EmbedDraft, the graph embed's draft, and the chart embed's draft are
+// ../src/ask/reply's, reused here instead of duplicated (plan, Debt).
 
 /** The analysisId a node-based or auto/graph spec resolves to; undefined for file and picture specs. */
 function analysisIdOf(spec: EmbedSpec, turn: OutlineTurn): string | undefined {
@@ -80,8 +77,7 @@ async function draftsFor(spec: EmbedSpec, turn: OutlineTurn, api: NotebookApi): 
   if (spec.kind === "auto") return embedsForAnalysis(requireAnalysisId(spec, turn, "an auto embed"), api);
   if (spec.kind === "graph") {
     const analysisId = requireAnalysisId(spec, turn, "a graph embed");
-    const auto = await embedsForAnalysis(analysisId, api);
-    return auto.filter((e) => e.kind === "graph").map((e) => (spec.focus ? { ...e, focus: spec.focus } : e));
+    return [await graphEmbedDraft(analysisId, api, spec.focus)];
   }
   if (spec.kind === "file") return [fileEmbed(spec)];
   if (spec.kind === "picture") return [pictureEmbed(spec)];
@@ -95,15 +91,7 @@ async function draftsFor(spec: EmbedSpec, turn: OutlineTurn, api: NotebookApi): 
   if (spec.kind === "chart") {
     const graph = parseDocument(await api.getAnalysis(analysisId));
     const node = graph.structure.nodes.find((n) => n.id === spec.node);
-    return [
-      {
-        kind: "chart",
-        source,
-        caption,
-        chart: chartPaneOptions(node?.kind, graph.values[spec.node] ?? {}),
-        snapshot,
-      },
-    ];
+    return [chartEmbedDraft(source, caption, node?.kind, graph.values[spec.node] ?? {}, snapshot)];
   }
   return [
     {

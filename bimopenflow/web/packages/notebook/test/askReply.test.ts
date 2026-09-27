@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EvalUpdate, NodeCatalog, NodeDescriptor, NodeStatus, TableSlice } from "@bimopenflow/contracts";
 import type { AskEvent } from "../src/ask/events";
-import { embedsForAnalysis, replyFromAsk } from "../src/ask/reply";
+import { chartEmbedDraft, embedsForAnalysis, graphEmbedDraft, replyFromAsk } from "../src/ask/reply";
 import type { NotebookApi } from "../src/embeds/contract";
 
 // Shaped like samples/nrc-analyses/nrc-q1-building-total.json (a value answer)
@@ -168,6 +168,44 @@ describe("embedsForAnalysis", () => {
     expect(embeds.map((e) => `${e.id}:${e.kind}`)).toEqual(["e1:value", "e2:graph"]);
     expect(embeds[1]).toMatchObject({ focus: ["total"] });
     expect(reads.some((r) => r.includes("chart"))).toBe(false);
+  });
+});
+
+// graphEmbedDraft and chartEmbedDraft are the pieces of embedsForAnalysis a
+// script or another caller can reuse without duplicating the graph or chart
+// embed shape (plan, Debt: scripts/write-sample-notebooks.ts uses both).
+describe("graphEmbedDraft", () => {
+  it("builds the same draft embedsForAnalysis would, given an explicit focus, with only 3 host calls", async () => {
+    const { api, reads } = fakeApi();
+    const draft = await graphEmbedDraft(ANALYSIS, api, ["total", "chart"]);
+    expect(draft).toEqual({
+      kind: "graph",
+      analysisId: ANALYSIS,
+      graphHash: "sha256:9f2c",
+      document,
+      text: graphText,
+      focus: ["total", "chart"],
+    });
+    expect(reads).toEqual([]); // no getResult, and no getNodeCatalog: unlike embedsForAnalysis
+  });
+
+  it("defaults focus to every answer node when none is given", async () => {
+    const draft = await graphEmbedDraft(ANALYSIS, fakeApi().api);
+    expect(draft.focus).toEqual(["total", "chart"]);
+  });
+});
+
+describe("chartEmbedDraft", () => {
+  it("builds a chart embed from a node's kind and parameter values", () => {
+    const source = { analysisId: ANALYSIS, nodeId: "chart", port: "table" };
+    const values = { labelColumn: "Container", valueColumns: "EmbodiedCarbon_A1A3_kgCO2e", title: "Carbon" };
+    expect(chartEmbedDraft(source, "Carbon chart", "chart.bar", values, storeySlice)).toEqual({
+      kind: "chart",
+      source,
+      caption: "Carbon chart",
+      chart: { chart: "bar", categoryColumn: "Container", seriesColumns: ["EmbodiedCarbon_A1A3_kgCO2e"], title: "Carbon" },
+      snapshot: storeySlice,
+    });
   });
 });
 
