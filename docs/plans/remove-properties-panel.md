@@ -322,6 +322,12 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C1 | aa84655 | 193 tests pass (C3 and C4 had landed), typecheck clean; fence respected (4 files). styleIsland widened to textarea per contract. |
+| C2 | 154b95a | 22 tests pass, typecheck clean; fence respected (2 files). slotHeight(Json) now FIELD_SLOT_H, not 0, as the plan intends. |
+| C3 | 31df786 | 20 tests pass; fence respected (4 files). Fixture uses a Text param because INLINE still gates the card until C7. |
+| C4 | 86c23e4 | 11 tests pass, typecheck clean; fence respected (2 new files). Reentrancy guard added so a focusout during onClose cannot double-commit. |
+
+Wave 1 integrated (C1 to C4): `npm run typecheck -w @bimopenflow/app` clean, `npm test -w @bimopenflow/app` 33 files, 208 tests pass; pushed.
 
 ## Review findings
 
