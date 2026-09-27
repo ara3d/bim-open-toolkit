@@ -6,7 +6,7 @@
     "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
   },
   "graphs": [
-    "../graphs/s05-write-back/storey-psets.json"
+    "../graphs/s05-write-back/nb-s05-write-back-storey-psets.json"
   ],
   "turns": [
     {

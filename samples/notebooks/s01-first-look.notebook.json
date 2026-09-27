@@ -1,0 +1,1017 @@
+{
+  "format": "bimopen-notebook/0.1",
+  "title": "First look at an unfamiliar model",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "turns": [
+    {
+      "id": "t1",
+      "request": {
+        "text": "Open samples/nrc/duplex-enriched.ifc."
+      },
+      "reply": {
+        "text": "42,657 STEP entities, schema IFC2X3. Converted to BOS tables in memory; nothing written. The 3D view below is the whole model, ungrouped and grey.",
+        "tools": [
+          {
+            "name": "Read",
+            "ok": true,
+            "summary": "Read samples/nrc/duplex-enriched.ifc: 2,707,239 bytes, 42,657 lines starting with '#' (STEP entities), header schema IFC2X3."
+          },
+          {
+            "name": "editGraph",
+            "ok": true,
+            "summary": "addNode view3d.instances(path: samples/nrc/duplex-enriched.ifc), named model."
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "nb-s01-first-look-open: node model Ok, 714 renderable instances."
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "file",
+            "id": "e1",
+            "caption": "duplex-enriched.ifc",
+            "path": "samples/nrc/duplex-enriched.ifc",
+            "mediaType": "application/x-step",
+            "bytes": 2707239,
+            "sha256": "f0d2a05a9f46e4c5804743e85b9157f7057b77e95d02affea152e97b20a7bf08",
+            "preview": "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');\nFILE_NAME('0001','2011-09-07T12:28:29',(''),(''),'Autodesk Revit Architecture 2011 - 1.0','20100326_1700','');\nFILE_SCHEMA(('IFC2X3'));\nENDSEC;"
+          },
+          {
+            "kind": "view3d",
+            "id": "e2",
+            "caption": "Duplex, grey",
+            "source": {
+              "analysisId": "nb-s01-first-look-open",
+              "nodeId": "model",
+              "port": "instances"
+            }
+          }
+        ],
+        "analysisId": "nb-s01-first-look-open"
+      }
+    },
+    {
+      "id": "t2",
+      "request": {
+        "text": "What's in it?"
+      },
+      "reply": {
+        "text": "4,721 named entities across 78 IFC classes. Most of the count is geometry helpers, not building elements: IFCPOLYLINE (864), IFCAXIS2PLACEMENT2D (397), IFCCOMPOSITECURVESEGMENT (322), IFCRECTANGLEPROFILEDEF (293). Among building elements: 56 IFCWALLSTANDARDCASE plus 1 IFCWALL, 24 IFCWINDOW, 21 IFCSPACE, 21 IFCSLAB, 14 IFCDOOR. Table below has all 78 classes; the chart is the top 15.",
+        "tools": [
+          {
+            "name": "editGraph",
+            "ok": true,
+            "summary": "rel.table(EntityText) -> rel.aggregate(groupBy Category) -> rel.sort(Count desc) -> rel.materialize (full) and a second rel.materialize(limit 15) -> chart.bar."
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "nb-s01-first-look-overview: every node Ok; rows 78 rows x 2 cols; chart 15 categories."
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "rows.table: 78 rows, top row IFCPOLYLINE 864."
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Entities per IFC class (78 classes, 4,721 rows)",
+            "source": {
+              "analysisId": "nb-s01-first-look-overview",
+              "nodeId": "rows",
+              "port": "table"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Count",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "IFCPOLYLINE",
+                  864
+                ],
+                [
+                  "IFCAXIS2PLACEMENT2D",
+                  397
+                ],
+                [
+                  "IFCCOMPOSITECURVESEGMENT",
+                  322
+                ],
+                [
+                  "IFCRECTANGLEPROFILEDEF",
+                  293
+                ],
+                [
+                  "IFCPRESENTATIONSTYLEASSIGNMENT",
+                  267
+                ],
+                [
+                  "IFCCONNECTIONSURFACEGEOMETRY",
+                  265
+                ],
+                [
+                  "IFCCONNECTEDFACESET",
+                  235
+                ],
+                [
+                  "IFCSURFACEOFLINEAREXTRUSION",
+                  184
+                ],
+                [
+                  "IFCARBITRARYOPENPROFILEDEF",
+                  184
+                ],
+                [
+                  "IFCCARTESIANTRANSFORMATIONOPERATOR3D",
+                  167
+                ],
+                [
+                  "IFCTRIMMEDCURVE",
+                  96
+                ],
+                [
+                  "IFCCIRCLE",
+                  96
+                ],
+                [
+                  "IFCMATERIALLAYERSETUSAGE",
+                  91
+                ],
+                [
+                  "IFCPLANE",
+                  88
+                ],
+                [
+                  "IFCCURVEBOUNDEDPLANE",
+                  81
+                ],
+                [
+                  null,
+                  77
+                ],
+                [
+                  "IFCFURNISHINGELEMENT",
+                  61
+                ],
+                [
+                  "IFCREPRESENTATIONMAP",
+                  60
+                ],
+                [
+                  "IFCFACEBOUND",
+                  60
+                ],
+                [
+                  "IFCCURVESTYLEFONTPATTERN",
+                  57
+                ],
+                [
+                  "IFCWALLSTANDARDCASE",
+                  56
+                ],
+                [
+                  "IFCOPENINGELEMENT",
+                  50
+                ],
+                [
+                  "IFCCOMPOSITECURVE",
+                  44
+                ],
+                [
+                  "IFCCOLOURRGB",
+                  43
+                ],
+                [
+                  "IFCMATERIALLAYER",
+                  41
+                ],
+                [
+                  "IFCFACEBASEDSURFACEMODEL",
+                  40
+                ],
+                [
+                  "IFCSURFACESTYLE",
+                  33
+                ],
+                [
+                  "IFCSURFACESTYLERENDERING",
+                  33
+                ],
+                [
+                  "IFCCURVESTYLE",
+                  31
+                ],
+                [
+                  "IFCFILLAREASTYLEHATCHING",
+                  31
+                ],
+                [
+                  "IFCFURNITURETYPE",
+                  25
+                ],
+                [
+                  "IFCGEOMETRICSET",
+                  25
+                ],
+                [
+                  "IFCWINDOW",
+                  24
+                ],
+                [
+                  "IFCSLAB",
+                  21
+                ],
+                [
+                  "IFCSPACE",
+                  21
+                ],
+                [
+                  "IFCCURVESTYLEFONT",
+                  19
+                ],
+                [
+                  "IFCMATERIAL",
+                  18
+                ],
+                [
+                  "IFCSTYLEDREPRESENTATION",
+                  18
+                ],
+                [
+                  "IFCMATERIALDEFINITIONREPRESENTATION",
+                  18
+                ],
+                [
+                  "IFCARBITRARYPROFILEDEFWITHVOIDS",
+                  18
+                ],
+                [
+                  "IFCMATERIALLAYERSET",
+                  15
+                ],
+                [
+                  "IFCDOOR",
+                  14
+                ],
+                [
+                  "IFCCOVERING",
+                  13
+                ],
+                [
+                  "IFCPRESENTATIONLAYERASSIGNMENT",
+                  13
+                ],
+                [
+                  "IFCFILLAREASTYLE",
+                  10
+                ],
+                [
+                  "IFCBEAM",
+                  8
+                ],
+                [
+                  "IFCCIRCLEPROFILEDEF",
+                  8
+                ],
+                [
+                  "IFCFOOTING",
+                  7
+                ],
+                [
+                  "IFCBOOLEANCLIPPINGRESULT",
+                  7
+                ],
+                [
+                  "IFCPOLYGONALBOUNDEDHALFSPACE",
+                  7
+                ]
+              ],
+              "totalRows": 78,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "chart",
+            "id": "e2",
+            "caption": "Entities per IFC class, top 15",
+            "source": {
+              "analysisId": "nb-s01-first-look-overview",
+              "nodeId": "answer",
+              "port": "table"
+            },
+            "chart": {
+              "chart": "bar",
+              "categoryColumn": "Category",
+              "seriesColumns": [
+                "Count"
+              ],
+              "title": "Entities per IFC class, top 15"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Count",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "IFCPOLYLINE",
+                  864
+                ],
+                [
+                  "IFCAXIS2PLACEMENT2D",
+                  397
+                ],
+                [
+                  "IFCCOMPOSITECURVESEGMENT",
+                  322
+                ],
+                [
+                  "IFCRECTANGLEPROFILEDEF",
+                  293
+                ],
+                [
+                  "IFCPRESENTATIONSTYLEASSIGNMENT",
+                  267
+                ],
+                [
+                  "IFCCONNECTIONSURFACEGEOMETRY",
+                  265
+                ],
+                [
+                  "IFCCONNECTEDFACESET",
+                  235
+                ],
+                [
+                  "IFCARBITRARYOPENPROFILEDEF",
+                  184
+                ],
+                [
+                  "IFCSURFACEOFLINEAREXTRUSION",
+                  184
+                ],
+                [
+                  "IFCCARTESIANTRANSFORMATIONOPERATOR3D",
+                  167
+                ],
+                [
+                  "IFCCIRCLE",
+                  96
+                ],
+                [
+                  "IFCTRIMMEDCURVE",
+                  96
+                ],
+                [
+                  "IFCMATERIALLAYERSETUSAGE",
+                  91
+                ],
+                [
+                  "IFCPLANE",
+                  88
+                ],
+                [
+                  "IFCCURVEBOUNDEDPLANE",
+                  81
+                ]
+              ],
+              "totalRows": 15,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s01-first-look-overview"
+      }
+    },
+    {
+      "id": "t3",
+      "request": {
+        "text": "Colour it by class."
+      },
+      "reply": {
+        "text": "Added a view3d.color fed by the same Category column, joined on GlobalId. All 714 placed instances matched and got a colour (0 grey); category10 assigns one colour per IFC class, 78 in the legend. The grey view from turn 1 stays as it was; this is a new embed.",
+        "tools": [
+          {
+            "name": "editGraph",
+            "ok": true,
+            "summary": "addNode view3d.color(joinColumn: globalId, valueColumn: Category, colorMap: category10), wired to the model's instances and to a GlobalId+Category table from EntityText."
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "nb-s01-first-look-color: answer Ok, 714 coloured (0 grey), legend 78 categories."
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "view3d",
+            "id": "e1",
+            "caption": "Duplex, coloured by IFC class",
+            "source": {
+              "analysisId": "nb-s01-first-look-color",
+              "nodeId": "answer",
+              "port": "instances"
+            }
+          }
+        ],
+        "analysisId": "nb-s01-first-look-color"
+      }
+    },
+    {
+      "id": "t4",
+      "request": {
+        "text": "Just the doors."
+      },
+      "reply": {
+        "text": "14 IfcDoor: 6 on Level 1, 8 on Level 2. Widths: four 762 mm, two 813 mm, six 864 mm, two 1250 mm. 3D isolates the 44 meshes that belong to these 14 doors (a door leaf, frame, and hardware are separate meshes); the rest of the model is hidden, not just faded.",
+        "tools": [
+          {
+            "name": "editGraph",
+            "ok": true,
+            "summary": "Filter EntityText to Category = IFCDOOR, join ParameterText's Ifc:OverallWidth by EntityIndex, join StoreyOfEntity for the storey name, convert width to millimetres, sort ascending."
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "nb-s01-first-look-doors: every node Ok; rows 14 rows x 4 cols; isolated 44 of 714 instances."
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "rows.table: 14 doors, widths 762 (x4), 813 (x2), 864 (x6), 1250 (x2) mm."
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Doors: name, storey, width",
+            "source": {
+              "analysisId": "nb-s01-first-look-doors",
+              "nodeId": "rows",
+              "port": "table"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "StoreyName",
+                  "type": "Text"
+                },
+                {
+                  "name": "Width_mm",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "1hOSvn6df7F8_7GcBWlS9F",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257",
+                  "Level 1",
+                  762
+                ],
+                [
+                  "1aj$VJZFn2TxepZUBcKpac",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
+                  "Level 2",
+                  762
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlS8Z",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173",
+                  "Level 1",
+                  762
+                ],
+                [
+                  "1aj$VJZFn2TxepZUBcKp$i",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
+                  "Level 2",
+                  762
+                ],
+                [
+                  "1s1jVhK8z0pgKYcr9jt7AB",
+                  "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171975",
+                  "Level 1",
+                  813
+                ],
+                [
+                  "1s1jVhK8z0pgKYcr9jt781",
+                  "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171853",
+                  "Level 1",
+                  813
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvPL",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160208",
+                  "Level 2",
+                  864
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvVV",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159834",
+                  "Level 2",
+                  864
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvR4",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160065",
+                  "Level 2",
+                  864
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUuXp",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159734",
+                  "Level 2",
+                  864
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlSDm",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150478",
+                  "Level 2",
+                  864
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlSFK",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150378",
+                  "Level 2",
+                  864
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlRH8",
+                  "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146678",
+                  "Level 1",
+                  1250
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlRGQ",
+                  "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146596",
+                  "Level 1",
+                  1250
+                ]
+              ],
+              "totalRows": 14,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "view3d",
+            "id": "e2",
+            "caption": "Duplex, doors isolated",
+            "source": {
+              "analysisId": "nb-s01-first-look-doors",
+              "nodeId": "isolated",
+              "port": "instances"
+            }
+          }
+        ],
+        "analysisId": "nb-s01-first-look-doors"
+      }
+    },
+    {
+      "id": "t5",
+      "request": {
+        "text": "What's on this one?"
+      },
+      "reply": {
+        "text": "Reading the selection from the table above (first row after the width sort): M_Single-Flush:0762 x 2032mm, mark B104, Level 1, GlobalId 1hOSvn6df7F8_7GcBWlS9F. 78 property values across 14 property sets, including OverallWidth 0.762 m, OverallHeight 2.032 m, Pset_DoorCommon.FireRating \"Fire Rating\", and three NRC sets: EmbodiedCarbon_A1A3 104.7 kgCO2e, EmbodiedCarbon_A1A5 117.3 kgCO2e, OperationalCarbon 146.1 kgCO2e/yr, EnergyUseIntensity 43.7 kWh/m2/yr.",
+        "tools": [
+          {
+            "name": "editGraph",
+            "ok": true,
+            "summary": "Filter EntityText to the selected GlobalId, join all of ParameterText by EntityIndex, keep ParameterGroup/Name/ValueType/Value/Units, sort by group then name."
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "nb-s01-first-look-door-psets: every node Ok; rows 78 rows x 5 cols."
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "rows.table: 78 rows across 14 distinct ParameterGroup values."
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Door 1hOSvn6df7F8_7GcBWlS9F: property sets",
+            "source": {
+              "analysisId": "nb-s01-first-look-door-psets",
+              "nodeId": "rows",
+              "port": "table"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "ParameterGroup",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name_right",
+                  "type": "Text"
+                },
+                {
+                  "name": "ValueType",
+                  "type": "Text"
+                },
+                {
+                  "name": "Value",
+                  "type": "Text"
+                },
+                {
+                  "name": "Units",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  "IFCDOOR",
+                  "Ifc:ObjectType",
+                  "String",
+                  "0762 x 2032mm",
+                  ""
+                ],
+                [
+                  "IFCDOOR",
+                  "Ifc:OverallHeight",
+                  "Number",
+                  "2.032",
+                  ""
+                ],
+                [
+                  "IFCDOOR",
+                  "Ifc:OverallWidth",
+                  "Number",
+                  "0.762",
+                  ""
+                ],
+                [
+                  "IFCDOOR",
+                  "Ifc:Tag",
+                  "String",
+                  "150257",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Constraints",
+                  "Level",
+                  "String",
+                  "Level 1",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Constraints",
+                  "Sill Height",
+                  "Number",
+                  "0.0",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Identity Data",
+                  "Mark",
+                  "String",
+                  "B104",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Other",
+                  "AssetIdentifier",
+                  "String",
+                  "AssetIdentifier",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Other",
+                  "BarCode",
+                  "String",
+                  "BarCode",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Other",
+                  "Head Height",
+                  "Number",
+                  "2.032",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Other",
+                  "InstallationDate",
+                  "String",
+                  "InstallationDate",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Other",
+                  "SerialNumber",
+                  "String",
+                  "SerialNumber",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Other",
+                  "TagNumber",
+                  "String",
+                  "TagNumber",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Other",
+                  "WarrantyStartDate",
+                  "String",
+                  "WarrantyStartDate",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Phasing",
+                  "Phase Created",
+                  "String",
+                  "New Construction",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Construction",
+                  "Construction Type",
+                  "String",
+                  "Construction Type",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Construction",
+                  "Function",
+                  "Number",
+                  "0.0",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Construction",
+                  "Wall Closure",
+                  "Number",
+                  "0.0",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Dimensions",
+                  "Height",
+                  "Number",
+                  "2.032",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Dimensions",
+                  "Thickness",
+                  "Number",
+                  "0.051",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Dimensions",
+                  "Trim Projection Ext",
+                  "Number",
+                  "0.025",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Dimensions",
+                  "Trim Projection Int",
+                  "Number",
+                  "0.025",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Dimensions",
+                  "Trim Width",
+                  "Number",
+                  "0.076",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Dimensions",
+                  "Width",
+                  "Number",
+                  "0.762",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Identity Data",
+                  "Assembly Code",
+                  "String",
+                  "",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Identity Data",
+                  "Assembly Description",
+                  "String",
+                  "",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Identity Data",
+                  "Fire Rating",
+                  "String",
+                  "Fire Rating",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Identity Data",
+                  "Manufacturer",
+                  "String",
+                  "Manufacturer",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Identity Data",
+                  "OmniClass Number",
+                  "String",
+                  "23.30.10.00",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Identity Data",
+                  "OmniClass Title",
+                  "String",
+                  "Doors",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Identity Data",
+                  "Type Mark",
+                  "String",
+                  "28",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Materials and Finishes",
+                  "Door Material",
+                  "String",
+                  "Door - Panel",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Materials and Finishes",
+                  "Frame Material",
+                  "String",
+                  "Door - Frame",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "AccessibilityPerformance",
+                  "String",
+                  "AccessibilityPerformance",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "Area",
+                  "String",
+                  "Area",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "AssetAccountingType",
+                  "String",
+                  "FIXED",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "CodePerformance",
+                  "String",
+                  "CodePerformance",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "Color",
+                  "String",
+                  "Color",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "Constituents",
+                  "String",
+                  "Constituents",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "ConstructionType",
+                  "String",
+                  "ConstructionType",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "ExpectedLife",
+                  "String",
+                  "ExpectedLife",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "Features",
+                  "String",
+                  "Features",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "Finish",
+                  "String",
+                  "Finish",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "GlazingAreaFraction",
+                  "String",
+                  "GlazingAreaFraction",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "Grade",
+                  "String",
+                  "Grade",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "IsFireExit",
+                  "String",
+                  "IsFireExit",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "Material",
+                  "String",
+                  "Material",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "ModelLabel",
+                  "String",
+                  "ModelLabel",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "ModelReference",
+                  "String",
+                  "ModelReference",
+                  ""
+                ],
+                [
+                  "PSet_Revit_Type_Other",
+                  "NominalHeight",
+                  "String",
+                  "NominalHeight",
+                  ""
+                ]
+              ],
+              "totalRows": 78,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s01-first-look-door-psets"
+      }
+    }
+  ]
+}

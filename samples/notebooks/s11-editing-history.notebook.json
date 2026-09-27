@@ -1,0 +1,417 @@
+{
+  "format": "bimopen-notebook/0.1",
+  "title": "Editing, saving, and loading the notebook",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "turns": [
+    {
+      "id": "t1",
+      "request": {
+        "text": "Which ten elements have the highest operational carbon?"
+      },
+      "reply": {
+        "text": "All ten are in the Wall category. The highest is Basic Wall:Interior - Partition (92mm Stud):190140 at 412.0 kgCO2e/yr, then 410.8, 402.0, 399.7, 398.6, 389.7, 388.6, 377.5, and two tied at 372.0 (an exterior wall and an interior furring wall).",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s11-editing-history-top-elements: 8 nodes, 7 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "8 of 8 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s11-editing-history-top-elements top.relation: 10 rows × 4 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Top ten by operational carbon",
+            "source": {
+              "analysisId": "nb-s11-editing-history-top-elements",
+              "nodeId": "top",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "OperationalCarbon_kgCO2e_per_year",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "0iEHWY1$XA8eQeeULq4jpl",
+                  "Basic Wall:Interior - Partition (92mm Stud):190140",
+                  "Wall",
+                  412
+                ],
+                [
+                  "0jf0rYHfX3RAB3bSIRjmr1",
+                  "Basic Wall:Exterior - Brick on Block:185101",
+                  "Wall",
+                  410.8
+                ],
+                [
+                  "0iEHWY1$XA8eQeeULq4ien",
+                  "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610",
+                  "Wall",
+                  402
+                ],
+                [
+                  "3Y4YRln2r91vflHcHE5IVT",
+                  "Basic Wall:Interior - Furring (38 mm Stud):217415",
+                  "Wall",
+                  399.7
+                ],
+                [
+                  "3Y4YRln2r91vflHcHE5IVS",
+                  "Basic Wall:Interior - Furring (38 mm Stud):217414",
+                  "Wall",
+                  398.6
+                ],
+                [
+                  "3Y4YRln2r91vflHcHE5IVJ",
+                  "Basic Wall:Interior - Furring (38 mm Stud):217417",
+                  "Wall",
+                  389.7
+                ],
+                [
+                  "3Y4YRln2r91vflHcHE5IVI",
+                  "Basic Wall:Interior - Furring (38 mm Stud):217416",
+                  "Wall",
+                  388.6
+                ],
+                [
+                  "0iEHWY1$XA8eQeeULq4jMl",
+                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508",
+                  "Wall",
+                  377.5
+                ],
+                [
+                  "0iEHWY1$XA8eQeeULq4j_U",
+                  "Basic Wall:Interior - Furring (152 mm Stud):189901",
+                  "Wall",
+                  372
+                ],
+                [
+                  "2O2Fr$t4X7Zf8NOew3FNtn",
+                  "Basic Wall:Exterior - Brick on Block:138062",
+                  "Wall",
+                  372
+                ]
+              ],
+              "totalRows": 10,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s11-editing-history-top-elements"
+      },
+      "earlier": [
+        {
+          "request": {
+            "text": "Which five elements have the highest operational carbon?"
+          },
+          "reply": {
+            "text": "All five are in the Wall category. The highest is Basic Wall:Interior - Partition (92mm Stud):190140 at 412.0 kgCO2e/yr, then 410.8, 402.0, 399.7, and 398.6. The third is an upper cabinet that the dataset files under Wall.",
+            "tools": [],
+            "embeds": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "t2",
+      "request": {
+        "text": "Show me them in the building."
+      },
+      "reply": {
+        "text": "The ten highlighted in the 3D view; the model's other 704 instances are ghosted to 15% opacity so the ten stand out.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s11-editing-history-top-elements: 8 nodes, 7 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "8 of 8 nodes Ok"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "view3d",
+            "id": "e1",
+            "caption": "Top ten highlighted, rest ghosted",
+            "source": {
+              "analysisId": "nb-s11-editing-history-top-elements",
+              "nodeId": "ghosted",
+              "port": "instances"
+            }
+          }
+        ],
+        "analysisId": "nb-s11-editing-history-top-elements"
+      }
+    },
+    {
+      "id": "t3",
+      "request": {
+        "text": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?"
+      },
+      "reply": {
+        "text": "That is a type name, not one door: four door instances carry it, at 117.3, 61.8, 54.0, and 146.1 kgCO2e/yr. The table lists all four by GlobalId rather than picking one.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q4-door-instances: 4 nodes, 3 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "4 of 4 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q4-door-instances answer.relation: 4 rows × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Door instances sharing that type name",
+            "source": {
+              "analysisId": "nrc-q4-door-instances",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "OperationalCarbon_kgCO2e_per_year",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "1aj$VJZFn2TxepZUBcKp$i",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
+                  117.3
+                ],
+                [
+                  "1aj$VJZFn2TxepZUBcKpac",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
+                  61.8
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlS8Z",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173",
+                  54
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlS9F",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257",
+                  146.1
+                ]
+              ],
+              "totalRows": 4,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nrc-q4-door-instances"
+      },
+      "stale": true
+    },
+    {
+      "id": "t4",
+      "request": {
+        "text": "Sum them."
+      },
+      "reply": {
+        "text": "379.2 kgCO2e/yr across the four door instances.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s11-editing-history-door-sum: 3 nodes, 2 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "3 of 3 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s11-editing-history-door-sum answer.relation: 1 row × 2 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "value",
+            "id": "e1",
+            "caption": "Sum of the four door instances",
+            "source": {
+              "analysisId": "nb-s11-editing-history-door-sum",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "column": "Total",
+            "unit": "kgCO2e/yr",
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Total",
+                  "type": "Number"
+                },
+                {
+                  "name": "Doors",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  379.2,
+                  4
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s11-editing-history-door-sum"
+      },
+      "stale": true
+    },
+    {
+      "id": "t5",
+      "request": {
+        "text": "How much operational carbon is in each category?"
+      },
+      "reply": {
+        "text": "Nine categories. Wall carries the most, 22,854.1 kgCO2e/yr, followed by Floor at 5,593.5; Railing carries the least, 164.8.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-q5-by-category: 3 nodes, 2 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "3 of 3 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-q5-by-category answer.relation: 9 rows × 2 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "chart",
+            "id": "e1",
+            "caption": "Operational carbon per category",
+            "source": {
+              "analysisId": "nrc-q5-by-category",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "chart": {
+              "chart": "bar"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Total",
+                  "type": "Number"
+                }
+              ],
+              "rows": [
+                [
+                  "Wall",
+                  22854.1
+                ],
+                [
+                  "Floor",
+                  5593.5
+                ],
+                [
+                  "Other",
+                  4313.099999999999
+                ],
+                [
+                  "Stair",
+                  1144.2
+                ],
+                [
+                  "Finish",
+                  985.6999999999998
+                ],
+                [
+                  "Window",
+                  978.9
+                ],
+                [
+                  "Door",
+                  687.1999999999999
+                ],
+                [
+                  "Roof",
+                  474.70000000000005
+                ],
+                [
+                  "Railing",
+                  164.8
+                ]
+              ],
+              "totalRows": 9,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nrc-q5-by-category"
+      },
+      "stale": true
+    }
+  ]
+}

@@ -1,0 +1,1169 @@
+{
+  "format": "bimopen-notebook/0.1",
+  "title": "Writing the analytics back into the IFC",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "turns": [
+    {
+      "id": "t1",
+      "request": {
+        "text": "Put the analytics values into a copy of duplex-base.ifc as property sets."
+      },
+      "reply": {
+        "text": "2,441 values on 224 entities, grouped by property set: 872 Pset_NRCOperationalCarbon, 868 Pset_NRCEmbodiedCarbon, 654 Pset_NRCEnergyPerformance, 28 Pset_NRCStoreySummary, 12 Pset_NRCAnalyticsProvenance, 7 Pset_NRCBuildingSummary. The `answer` node (`sink.writePsets`, target `duplex-enriched.ifc`) stays EffectPending: nothing is written until Run.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-enrich-run: 15 nodes, 20 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "14 of 15 nodes Ok, 1 EffectPending (answer, sink.writePsets)"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-enrich-run table.table: 2441 rows x 5 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "rows to write, by property set",
+            "source": {
+              "analysisId": "nrc-enrich-run",
+              "nodeId": "table",
+              "port": "table"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "entityId",
+                  "type": "Integer"
+                },
+                {
+                  "name": "psetName",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramName",
+                  "type": "Text"
+                },
+                {
+                  "name": "valueType",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramValue",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ComputedAt",
+                  "Label",
+                  "2026-09-17T00:00:00Z"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ComputedBy",
+                  "Label",
+                  "Ara 3D"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "GridEmissionFactor_kgCO2e_per_kWh",
+                  "Real",
+                  "0.11"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "JoinKey",
+                  "Label",
+                  "GlobalId"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "Methodology",
+                  "Label",
+                  "Synthetic, illustrative; not EN 15978"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "MetricDictionaryURI",
+                  "Text",
+                  "nrc-metrics.csv"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "MetricDictionaryVersion",
+                  "Label",
+                  "NRC-metrics-0.2"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ResultDatasetFormat",
+                  "Label",
+                  "CSV"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ResultDatasetURI",
+                  "Text",
+                  "nrc_analytics_long.csv"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "SourceTool",
+                  "Label",
+                  "nrc-ifc-llm/poc/generate_synthetic_analytics.py"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "ElementCount",
+                  "Integer",
+                  "218"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "42.68"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "115730.3"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "129618.1"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "37196.2"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "103"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "40.5"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "49451.2"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "55385.4"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "17457.0"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "93"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "40.56"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "48696.8"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "54540.6"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "13970.2"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "14"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "61.76"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "11761.3"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "13172.7"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "4001.7"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "8"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "62.04"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "5821.0"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "6519.4"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "1767.3"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "EmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "615.5"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "EmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "689.4"
+                ]
+              ],
+              "totalRows": 2441,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nrc-enrich-run"
+      }
+    },
+    {
+      "id": "t2",
+      "request": {
+        "text": "Which sets go on the storeys?"
+      },
+      "reply": {
+        "text": "28 rows on the building's 4 storeys. Level 1 (entity 39): 103 elements, 49,451.2 kgCO2e embodied carbon A1-A3, 17,457.0 kgCO2e/yr operational carbon, mean energy use intensity 40.5. Level 2 (43): 93 elements, 48,696.8 embodied, 13,970.2 operational, mean EUI 40.56. T/FDN (47): 14 elements, 11,761.3 embodied, 4,001.7 operational, mean EUI 61.76. Roof (51): 8 elements, 5,821.0 embodied, 1,767.3 operational, mean EUI 62.04. Computed by nrc-rollup's aggregation from the element rows above; nothing in the source CSV is a total.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s05-write-back-storey-psets: 11 nodes, 12 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "11 of 11 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s05-write-back-storey-psets answer.relation: 28 rows x 5 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Pset_NRCStoreySummary rows",
+            "source": {
+              "analysisId": "nb-s05-write-back-storey-psets",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "entityId",
+                  "type": "Integer"
+                },
+                {
+                  "name": "psetName",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramName",
+                  "type": "Text"
+                },
+                {
+                  "name": "valueType",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramValue",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "103"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "40.5"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "49451.2"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "55385.4"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "17457.0"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "93"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "40.56"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "48696.8"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "54540.6"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "13970.2"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "14"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "61.76"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "11761.3"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "13172.7"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "4001.7"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "Identifier",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Integer",
+                  "8"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Real",
+                  "62.04"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "Label",
+                  "Baseline"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Real",
+                  "5821.0"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Real",
+                  "6519.4"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Real",
+                  "1767.3"
+                ]
+              ],
+              "totalRows": 28,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s05-write-back-storey-psets"
+      }
+    },
+    {
+      "id": "t3",
+      "request": {
+        "text": "Run it."
+      },
+      "reply": {
+        "text": "I did not call Run in this session; this notebook must not write files, and the `answer` node still shows EffectPending above. `samples/nrc/duplex-enriched.ifc`, already committed to the repository, is the output of an earlier Run of this same graph (workflow 6's write-back). Here it is beside the base file: duplex-base.ifc is 2,380,763 bytes (sha256 b347a2c8…606ed), duplex-enriched.ifc is 2,707,239 bytes (sha256 f0d2a05a…a7bf08), 326,476 bytes larger.",
+        "tools": [
+          {
+            "name": "Read",
+            "ok": true,
+            "summary": "samples/nrc/duplex-base.ifc: 2380763 bytes"
+          },
+          {
+            "name": "Read",
+            "ok": true,
+            "summary": "samples/nrc/duplex-enriched.ifc: 2707239 bytes"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "file",
+            "id": "e1",
+            "caption": "duplex-base.ifc",
+            "path": "samples/nrc/duplex-base.ifc",
+            "mediaType": "application/x-step",
+            "bytes": 2380763,
+            "sha256": "b347a2c8aa8fff6db896a4417a9c50c22ac0ccd7c5cfc22b99b8d29336c606ed",
+            "preview": "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');\nFILE_NAME('0001','2011-09-07T12:28:29',(''),(''),'Autodesk Revit Architecture 2011 - 1.0','20100326_1700','');\nFILE_SCHEMA(('IFC2X3'));\nENDSEC;"
+          },
+          {
+            "kind": "file",
+            "id": "e2",
+            "caption": "duplex-enriched.ifc",
+            "path": "samples/nrc/duplex-enriched.ifc",
+            "mediaType": "application/x-step",
+            "bytes": 2707239,
+            "sha256": "f0d2a05a9f46e4c5804743e85b9157f7057b77e95d02affea152e97b20a7bf08",
+            "preview": "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');\nFILE_NAME('0001','2011-09-07T12:28:29',(''),(''),'Autodesk Revit Architecture 2011 - 1.0','20100326_1700','');\nFILE_SCHEMA(('IFC2X3'));\nENDSEC;"
+          }
+        ],
+        "analysisId": "nrc-enrich-run"
+      }
+    },
+    {
+      "id": "t4",
+      "request": {
+        "text": "Prove nothing else changed."
+      },
+      "reply": {
+        "text": "Not from this session's tools: that needs an entity-level IFC diff, which no graph in this notebook computes. `tests/flow/BimOpenFlow.NrcWorkflows.Tests/RollupGraphTests.cs` runs one: `Enriched_DiffersFromTheBaseOnlyByTheAddedSets` asserts zero deleted and zero changed entities between the two files, and exactly 659 new IFCPROPERTYSET, 659 new IFCRELDEFINESBYPROPERTIES, and 2,441 new IFCPROPERTYSINGLEVALUE entities — the same 2,441 as the rows above. `EnrichRun_WritesTheCommittedFileByteForByte` runs a fresh Run and asserts its output matches the committed file byte for byte. I hashed both files myself instead of repeating that test (previous turn); a plain byte-prefix comparison would not prove it, because the appended entities land before the STEP file's closing lines, not after its last byte.",
+        "tools": [
+          {
+            "name": "Read",
+            "ok": true,
+            "summary": "RollupGraphTests.cs: EnrichRun_WritesTheCommittedFileByteForByte and Enriched_DiffersFromTheBaseOnlyByTheAddedSets assert the byte-exact write and the 659/659/2441 added entities"
+          }
+        ],
+        "embeds": []
+      }
+    },
+    {
+      "id": "t5",
+      "request": {
+        "text": "Read the values back from the new file."
+      },
+      "reply": {
+        "text": "2,441 rows, one for each row the table above would write: 2,394 on the 218 elements, 28 on the 4 storeys, 7 on the building, and 12 on the project. Read from duplex-enriched.ifc's parameter table, filtered to the Pset_NRC* groups — this is the paper's Figure 4.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nrc-property-values: 3 nodes, 2 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "3 of 3 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nrc-property-values answer.relation: 2441 rows x 5 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "2,441 values read back from duplex-enriched.ifc",
+            "source": {
+              "analysisId": "nrc-property-values",
+              "nodeId": "answer",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "entityId",
+                  "type": "Integer"
+                },
+                {
+                  "name": "psetName",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramName",
+                  "type": "Text"
+                },
+                {
+                  "name": "valueType",
+                  "type": "Text"
+                },
+                {
+                  "name": "paramValue",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ComputedAt",
+                  "String",
+                  "2026-09-17T00:00:00Z"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ComputedBy",
+                  "String",
+                  "Ara 3D"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "GridEmissionFactor_kgCO2e_per_kWh",
+                  "Number",
+                  "0.11"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "JoinKey",
+                  "String",
+                  "GlobalId"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "Methodology",
+                  "String",
+                  "Synthetic, illustrative; not EN 15978"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "MetricDictionaryURI",
+                  "String",
+                  "nrc-metrics.csv"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "MetricDictionaryVersion",
+                  "String",
+                  "NRC-metrics-0.2"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ResultDatasetFormat",
+                  "String",
+                  "CSV"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ResultDatasetURI",
+                  "String",
+                  "nrc_analytics_long.csv"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  34,
+                  "Pset_NRCAnalyticsProvenance",
+                  "SourceTool",
+                  "String",
+                  "nrc-ifc-llm/poc/generate_synthetic_analytics.py"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "ElementCount",
+                  "Number",
+                  "218.0"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "42.68"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "115730.3"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "129618.1"
+                ],
+                [
+                  36,
+                  "Pset_NRCBuildingSummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "37196.2"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "103.0"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "40.5"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "49451.2"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "55385.4"
+                ],
+                [
+                  39,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "17457.0"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "93.0"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "40.56"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "48696.8"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "54540.6"
+                ],
+                [
+                  43,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "13970.2"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "14.0"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "61.76"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "11761.3"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "13172.7"
+                ],
+                [
+                  47,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "4001.7"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ElementCount",
+                  "Number",
+                  "8.0"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "MeanEnergyUseIntensity_kWh_per_m2_year",
+                  "Number",
+                  "62.04"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "ScenarioName",
+                  "String",
+                  "Baseline"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "5821.0"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalEmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "6519.4"
+                ],
+                [
+                  51,
+                  "Pset_NRCStoreySummary",
+                  "TotalOperationalCarbon_kgCO2e_per_year",
+                  "Number",
+                  "1767.3"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "AnalysisRunId",
+                  "String",
+                  "run-2026-09-17-01"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "EmbodiedCarbon_A1A3_kgCO2e",
+                  "Number",
+                  "615.5"
+                ],
+                [
+                  3797,
+                  "Pset_NRCEmbodiedCarbon",
+                  "EmbodiedCarbon_A1A5_kgCO2e",
+                  "Number",
+                  "689.4"
+                ]
+              ],
+              "totalRows": 2441,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nrc-property-values"
+      }
+    }
+  ]
+}

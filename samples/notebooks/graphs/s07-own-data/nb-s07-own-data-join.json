@@ -53,7 +53,7 @@
       "path": "test-kit/analytics_dataset_with_levels.csv"
     },
     "model": {
-      "path": "C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/duplex-base.ifc"
+      "path": "samples/nrc/duplex-base.ifc"
     },
     "instances": {
       "name": "instances"
@@ -90,7 +90,7 @@
       "sql": "SELECT (SELECT count(*) FROM t1) AS Matched, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoFileRow, (SELECT count(*) FROM t3) AS FileRowsWithNoPhysicalElement"
     },
     "values": {
-      "path": "C:/Users/cdigg/git/bim-open-toolkit/samples/nrc/test-kit/analytics_dataset_with_levels.csv"
+      "path": "samples/nrc/test-kit/analytics_dataset_with_levels.csv"
     },
     "coloredCarbon": {
       "joinColumn": "globalId",

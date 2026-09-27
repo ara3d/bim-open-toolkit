@@ -1,0 +1,1305 @@
+{
+  "format": "bimopen-notebook/0.1",
+  "title": "Snowdon at scale",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "turns": [
+    {
+      "id": "t1",
+      "request": {
+        "text": "Open the Snowdon model. What does it hold?"
+      },
+      "reply": {
+        "text": "Only the architectural discipline is registered on this host (Snowdon Towers Sample Architectural.bos, 30,760 elements); the seven-discipline federation TKT-30 describes isn't wired in here, so this session works from that one file. 96 Revit categories. The largest are Pipes (3,051), Analytical Surfaces (3,041), and Supports (2,779) — mechanical and analytical content dominates the count, not the architecture. Doors: 142. Rooms: 54. Spaces: 236.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s10-snowdon-open: 6 nodes, 5 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "6 of 6 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s10-snowdon-open ranked.table: 96 rows × 2 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Elements per category, largest first",
+            "source": {
+              "analysisId": "nb-s10-snowdon-open",
+              "nodeId": "ranked",
+              "port": "table"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "Pipes",
+                  3051
+                ],
+                [
+                  "Analytical Surfaces",
+                  3041
+                ],
+                [
+                  "Supports",
+                  2779
+                ],
+                [
+                  "Pipe Fittings",
+                  2651
+                ],
+                [
+                  "Curtain Wall Mullions",
+                  1425
+                ],
+                [
+                  "Walls",
+                  1277
+                ],
+                [
+                  "Ducts",
+                  1234
+                ],
+                [
+                  "Duct Fittings",
+                  1147
+                ],
+                [
+                  "Lighting Fixtures",
+                  1035
+                ],
+                [
+                  "Structural Framing",
+                  942
+                ],
+                [
+                  "Views",
+                  802
+                ],
+                [
+                  "Materials",
+                  753
+                ],
+                [
+                  "Curtain Panels",
+                  681
+                ],
+                [
+                  "Generic Models",
+                  565
+                ],
+                [
+                  "Air Terminals",
+                  540
+                ],
+                [
+                  "Electrical Fixtures",
+                  538
+                ],
+                [
+                  "Conduits",
+                  530
+                ],
+                [
+                  "Work Plane Grid",
+                  466
+                ],
+                [
+                  "Electrical Circuits",
+                  447
+                ],
+                [
+                  "Wires",
+                  436
+                ],
+                [
+                  "Wall Sweeps",
+                  369
+                ],
+                [
+                  "Plumbing Fixtures",
+                  328
+                ],
+                [
+                  "Conduit Fittings",
+                  322
+                ],
+                [
+                  "Specialty Equipment",
+                  288
+                ],
+                [
+                  "Detail Items",
+                  245
+                ],
+                [
+                  "Balusters",
+                  241
+                ],
+                [
+                  "Spaces",
+                  236
+                ],
+                [
+                  "Floors",
+                  228
+                ],
+                [
+                  "Electrical Equipment",
+                  200
+                ],
+                [
+                  "Lighting Devices",
+                  196
+                ],
+                [
+                  "Duct Systems",
+                  179
+                ],
+                [
+                  "Casework",
+                  177
+                ],
+                [
+                  "Windows",
+                  174
+                ],
+                [
+                  "Furniture",
+                  168
+                ],
+                [
+                  "Doors",
+                  142
+                ],
+                [
+                  "Sheets",
+                  142
+                ],
+                [
+                  "Columns",
+                  137
+                ],
+                [
+                  "Railings",
+                  133
+                ],
+                [
+                  "Pipe Accessories",
+                  126
+                ],
+                [
+                  "Handrails",
+                  121
+                ],
+                [
+                  "Planting",
+                  117
+                ],
+                [
+                  "Model Groups",
+                  115
+                ],
+                [
+                  "Areas",
+                  108
+                ],
+                [
+                  "Raster Images",
+                  104
+                ],
+                [
+                  "Pipe Segments",
+                  99
+                ],
+                [
+                  "Detail Groups",
+                  98
+                ],
+                [
+                  "Grids",
+                  98
+                ],
+                [
+                  "Top Rails",
+                  93
+                ],
+                [
+                  "Structural Foundations",
+                  90
+                ],
+                [
+                  "Site",
+                  87
+                ]
+              ],
+              "totalRows": 96,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nb-s10-snowdon-open",
+            "graphHash": "0c4f69a179f46dbfc296e804176f9e2ae56a5a9b104716a5bd0383236e824464",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"byCategory\": {\n      \"x\": 360,\n      \"y\": 40\n    },\n    \"doorsRow\": {\n      \"x\": 360,\n      \"y\": 260\n    },\n    \"elements\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"ranked\": {\n      \"x\": 680,\n      \"y\": 40\n    },\n    \"roomsRow\": {\n      \"x\": 360,\n      \"y\": 400\n    },\n    \"spacesRow\": {\n      \"x\": 360,\n      \"y\": 540\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"elements.table\",\n        \"to\": \"byCategory.table\"\n      },\n      {\n        \"from\": \"byCategory.table\",\n        \"to\": \"doorsRow.table\"\n      },\n      {\n        \"from\": \"byCategory.table\",\n        \"to\": \"ranked.table\"\n      },\n      {\n        \"from\": \"byCategory.table\",\n        \"to\": \"roomsRow.table\"\n      },\n      {\n        \"from\": \"byCategory.table\",\n        \"to\": \"spacesRow.table\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"byCategory\",\n        \"kind\": \"table.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"doorsRow\",\n        \"kind\": \"table.filter\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"elements\",\n        \"kind\": \"bim.elements\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"ranked\",\n        \"kind\": \"table.sort\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"roomsRow\",\n        \"kind\": \"table.filter\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"spacesRow\",\n        \"kind\": \"table.filter\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"byCategory\": {\n      \"aggregates\": \"count(*) as Elements\",\n      \"groupBy\": \"Category\"\n    },\n    \"doorsRow\": {\n      \"expr\": \"Category == 'Doors'\"\n    },\n    \"elements\": {\n      \"path\": \"{SNOWDON}\"\n    },\n    \"ranked\": {\n      \"by\": \"Elements desc\"\n    },\n    \"roomsRow\": {\n      \"expr\": \"Category == 'Rooms'\"\n    },\n    \"spacesRow\": {\n      \"expr\": \"Category == 'Spaces'\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nb-s10-snowdon-open   graph 0c4f69a179f4\nelements = bim.elements@1(path: \"{MODELS}/Snowdon Towers Sample Architectural.bos\");\n  // Ok  table 30760 rows x 14 cols  sha 9e9326a90b56\n  //   columns EntityIndex:Integer, LocalId:Integer, GlobalId:Text, Name:Text, Category:Text, CategoryType:Text, Type:Text, ClassName:Text, Level:Text, Elevation:Number, Room:Text, Document:Text, Workset:Integer, Group:Text\n  //   [0] 45, 18435, \"b0b76196-1902-482f-b464-0488e33408cc-00004803\", \"Default\", \"Materials\", \"Model\", null, \"Material\", null, null, null, \"Snowdon Towers Sample Architectural\", null, null\n  //   [1] 46, 18436, \"b0b76196-1902-482f-b464-0488e33408cc-00004804\", \"Default Floor\", \"Materials\", \"Model\", null, \"Material\", null, null, null, \"Snowdon Towers Sample Architectural\", null, null\n  //   [2] 47, 18437, \"b0b76196-1902-482f-b464-0488e33408cc-00004805\", \"Default Roof\", \"Materials\", \"Model\", null, \"Material\", null, null, null, \"Snowdon Towers Sample Architectural\", null, null\nbyCategory = table.aggregate@1(table: elements.table, groupBy: \"Category\", aggregates: \"count(*) as Elements\");\n  // Ok  table 96 rows x 2 cols  sha 518f27208fa5\n  //   columns Category:Text, Elements:Integer\n  //   [0] \"Air Terminals\", 540\n  //   [1] \"Analytical Spaces\", 46\n  //   [2] \"Analytical Surfaces\", 3041\ndoorsRow = table.filter@1(table: byCategory.table, expr: \"Category == 'Doors'\");\n  // Ok  table 1 rows x 2 cols  sha 1840168b6034\n  //   columns Category:Text, Elements:Integer\n  //   [0] \"Doors\", 142\nranked = table.sort@1(table: byCategory.table, by: \"Elements desc\");\n  // Ok  table 96 rows x 2 cols  sha fe8d2b8f0e85\n  //   columns Category:Text, Elements:Integer\n  //   [0] \"Pipes\", 3051\n  //   [1] \"Analytical Surfaces\", 3041\n  //   [2] \"Supports\", 2779\nroomsRow = table.filter@1(table: byCategory.table, expr: \"Category == 'Rooms'\");\n  // Ok  table 1 rows x 2 cols  sha 95fed1bb4a56\n  //   columns Category:Text, Elements:Integer\n  //   [0] \"Rooms\", 54\nspacesRow = table.filter@1(table: byCategory.table, expr: \"Category == 'Spaces'\");\n  // Ok  table 1 rows x 2 cols  sha 24f550f16709\n  //   columns Category:Text, Elements:Integer\n  //   [0] \"Spaces\", 236\n",
+            "focus": [
+              "elements",
+              "byCategory",
+              "ranked"
+            ]
+          }
+        ],
+        "analysisId": "nb-s10-snowdon-open"
+      }
+    },
+    {
+      "id": "t2",
+      "request": {
+        "text": "How many doors and how many spaces?"
+      },
+      "reply": {
+        "text": "142 doors. Rooms and Spaces are separate Revit categories here — 54 Rooms and 236 Spaces, 290 together, both meaning occupiable area rather than a building element.",
+        "tools": [
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s10-snowdon-open doorsRow.table: 1 row × 2 columns"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s10-snowdon-open roomsRow.table: 1 row × 2 columns"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s10-snowdon-open spacesRow.table: 1 row × 2 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "value",
+            "id": "e1",
+            "caption": "Doors",
+            "source": {
+              "analysisId": "nb-s10-snowdon-open",
+              "nodeId": "doorsRow",
+              "port": "table"
+            },
+            "column": "Elements",
+            "unit": "doors",
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "Doors",
+                  142
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "value",
+            "id": "e2",
+            "caption": "Rooms",
+            "source": {
+              "analysisId": "nb-s10-snowdon-open",
+              "nodeId": "roomsRow",
+              "port": "table"
+            },
+            "column": "Elements",
+            "unit": "rooms",
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "Rooms",
+                  54
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "value",
+            "id": "e3",
+            "caption": "Spaces",
+            "source": {
+              "analysisId": "nb-s10-snowdon-open",
+              "nodeId": "spacesRow",
+              "port": "table"
+            },
+            "column": "Elements",
+            "unit": "spaces",
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elements",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "Spaces",
+                  236
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s10-snowdon-open"
+      }
+    },
+    {
+      "id": "t3",
+      "request": {
+        "text": "Rooms per storey, as a chart."
+      },
+      "reply": {
+        "text": "33 storeys carry at least one room, out of 84 levels total (the rest are reference planes, pits, and roof datums with no rooms). L1 - Block 43 has the most, 26; L4 follows at 20 and 15 on its two passes (the model splits some levels into more than one named block at the same elevation, so a level name can appear twice in the chart).",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s10-snowdon-rooms-per-storey: 4 nodes, 3 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "4 of 4 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s10-snowdon-rooms-per-storey ranked.table: 33 rows × 5 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "chart",
+            "id": "e1",
+            "caption": "Rooms per storey",
+            "source": {
+              "analysisId": "nb-s10-snowdon-rooms-per-storey",
+              "nodeId": "chart",
+              "port": "table"
+            },
+            "chart": {
+              "chart": "bar",
+              "categoryColumn": "Name",
+              "seriesColumns": [
+                "RoomCount"
+              ],
+              "title": "Rooms per storey"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "RoomCount",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "L1 - Block 43",
+                  26
+                ],
+                [
+                  "L4",
+                  20
+                ],
+                [
+                  "L3",
+                  16
+                ],
+                [
+                  "L4",
+                  15
+                ],
+                [
+                  "L2",
+                  13
+                ],
+                [
+                  "L5",
+                  13
+                ],
+                [
+                  "Parking",
+                  12
+                ],
+                [
+                  "L3",
+                  12
+                ],
+                [
+                  "L4",
+                  12
+                ],
+                [
+                  "L1 - Block 37",
+                  11
+                ],
+                [
+                  "L5",
+                  11
+                ],
+                [
+                  "L1 - Block 37",
+                  10
+                ],
+                [
+                  "L2",
+                  10
+                ],
+                [
+                  "L3",
+                  10
+                ],
+                [
+                  "L1 - Block 37",
+                  9
+                ],
+                [
+                  "L1 - Block 35",
+                  8
+                ],
+                [
+                  "L4",
+                  8
+                ],
+                [
+                  "Parking",
+                  7
+                ],
+                [
+                  "L2",
+                  7
+                ],
+                [
+                  "L3",
+                  7
+                ],
+                [
+                  "L5",
+                  7
+                ],
+                [
+                  "Parking",
+                  6
+                ],
+                [
+                  "Parking",
+                  6
+                ],
+                [
+                  "L1 - Block 35",
+                  6
+                ],
+                [
+                  "L1 - Block 35",
+                  5
+                ],
+                [
+                  "L1 - Block 43",
+                  4
+                ],
+                [
+                  "L1 - Block 43",
+                  4
+                ],
+                [
+                  "L1 - Block 43",
+                  4
+                ],
+                [
+                  "R2",
+                  4
+                ],
+                [
+                  "Green Roof Hardscape",
+                  4
+                ],
+                [
+                  "M1",
+                  1
+                ],
+                [
+                  "M1",
+                  1
+                ],
+                [
+                  "L2",
+                  1
+                ]
+              ],
+              "totalRows": 33,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "Storeys with at least one room, most rooms first",
+            "source": {
+              "analysisId": "nb-s10-snowdon-rooms-per-storey",
+              "nodeId": "ranked",
+              "port": "table"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "EntityIndex",
+                  "type": "Integer"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elevation",
+                  "type": "Number"
+                },
+                {
+                  "name": "ElementCount",
+                  "type": "Integer"
+                },
+                {
+                  "name": "RoomCount",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  43437,
+                  "L1 - Block 43",
+                  0,
+                  41,
+                  26
+                ],
+                [
+                  1059,
+                  "L4",
+                  32.16666793823242,
+                  739,
+                  20
+                ],
+                [
+                  1050,
+                  "L3",
+                  18.83333396911621,
+                  1232,
+                  16
+                ],
+                [
+                  44557,
+                  "L4",
+                  32.16666793823242,
+                  251,
+                  15
+                ],
+                [
+                  1058,
+                  "L2",
+                  8.083333015441895,
+                  593,
+                  13
+                ],
+                [
+                  1060,
+                  "L5",
+                  45.5,
+                  760,
+                  13
+                ],
+                [
+                  1153,
+                  "Parking",
+                  -16.91666603088379,
+                  160,
+                  12
+                ],
+                [
+                  44556,
+                  "L3",
+                  18.83333396911621,
+                  291,
+                  12
+                ],
+                [
+                  37866,
+                  "L4",
+                  32.16666793823242,
+                  656,
+                  12
+                ],
+                [
+                  37869,
+                  "L1 - Block 37",
+                  -3.4583332538604736,
+                  194,
+                  11
+                ],
+                [
+                  44558,
+                  "L5",
+                  45.5,
+                  120,
+                  11
+                ],
+                [
+                  1540,
+                  "L1 - Block 37",
+                  -3.4583332538604736,
+                  344,
+                  10
+                ],
+                [
+                  43461,
+                  "L2",
+                  8.083333015441895,
+                  199,
+                  10
+                ],
+                [
+                  37865,
+                  "L3",
+                  18.83333396911621,
+                  782,
+                  10
+                ],
+                [
+                  29398,
+                  "L1 - Block 37",
+                  -3.4583332538604736,
+                  330,
+                  9
+                ],
+                [
+                  1057,
+                  "L1 - Block 35",
+                  -5.916666507720947,
+                  467,
+                  8
+                ],
+                [
+                  29400,
+                  "L4",
+                  32.16666793823242,
+                  1586,
+                  8
+                ],
+                [
+                  29399,
+                  "Parking",
+                  -16.91666603088379,
+                  1075,
+                  7
+                ],
+                [
+                  37166,
+                  "L2",
+                  8.083333015441895,
+                  423,
+                  7
+                ],
+                [
+                  29397,
+                  "L3",
+                  18.83333396911621,
+                  1228,
+                  7
+                ],
+                [
+                  37867,
+                  "L5",
+                  45.5,
+                  444,
+                  7
+                ],
+                [
+                  37863,
+                  "Parking",
+                  -16.91666603088379,
+                  6,
+                  6
+                ],
+                [
+                  44561,
+                  "Parking",
+                  -16.91666603088379,
+                  430,
+                  6
+                ],
+                [
+                  29396,
+                  "L1 - Block 35",
+                  -5.916666507720947,
+                  252,
+                  6
+                ],
+                [
+                  37862,
+                  "L1 - Block 35",
+                  -5.916666507720947,
+                  46,
+                  5
+                ],
+                [
+                  1048,
+                  "L1 - Block 43",
+                  0,
+                  617,
+                  4
+                ],
+                [
+                  27987,
+                  "L1 - Block 43",
+                  0,
+                  152,
+                  4
+                ],
+                [
+                  37138,
+                  "L1 - Block 43",
+                  0,
+                  16,
+                  4
+                ],
+                [
+                  37870,
+                  "R2",
+                  58.83333206176758,
+                  4,
+                  4
+                ],
+                [
+                  11628,
+                  "Green Roof Hardscape",
+                  59.91666793823242,
+                  206,
+                  4
+                ],
+                [
+                  29414,
+                  "M1",
+                  5.5,
+                  5,
+                  1
+                ],
+                [
+                  37864,
+                  "M1",
+                  5.5,
+                  16,
+                  1
+                ],
+                [
+                  28012,
+                  "L2",
+                  8.083333015441895,
+                  820,
+                  1
+                ]
+              ],
+              "totalRows": 33,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s10-snowdon-rooms-per-storey"
+      }
+    },
+    {
+      "id": "t4",
+      "request": {
+        "text": "Doors narrower than 850 mm on L1 - Block 43, the tallest bar on that chart."
+      },
+      "reply": {
+        "text": "Clicking that bar selects L1 - Block 43, its 26 rooms and 10 doors. No door on this storey carries a leaf clear-width parameter (this model has no OverallWidth-equivalent), so DC-W1 as written can't run here. The closest available measure is Rough Width, the framed opening rather than the leaf: 4 of the 10 doors carry it (1,016 mm, 1,016 mm, 978 mm, 978 mm — all at or above 850 mm), and the other 6, all curtain-wall storefront doors plus one 60\" x 84\" pair, carry no width parameter at all and come back InfoNotAvailable rather than a guessed Pass or Fail. Nothing on this storey measures narrower than 850 mm by the one width this model has.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s10-snowdon-storey-doors: 8 nodes, 7 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "8 of 8 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s10-snowdon-storey-doors verdicts.out: 10 rows × 24 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "L1 - Block 43 doors, Rough Width against 850 mm (a proxy for DC-W1's missing leaf-width measure)",
+            "source": {
+              "analysisId": "nb-s10-snowdon-storey-doors",
+              "nodeId": "verdicts",
+              "port": "out"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "EntityIndex",
+                  "type": "Integer"
+                },
+                {
+                  "name": "LocalId",
+                  "type": "Integer"
+                },
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "CategoryType",
+                  "type": "Text"
+                },
+                {
+                  "name": "Type",
+                  "type": "Text"
+                },
+                {
+                  "name": "ClassName",
+                  "type": "Text"
+                },
+                {
+                  "name": "Level",
+                  "type": "Text"
+                },
+                {
+                  "name": "Elevation",
+                  "type": "Number"
+                },
+                {
+                  "name": "Room",
+                  "type": "Text"
+                },
+                {
+                  "name": "Document",
+                  "type": "Text"
+                },
+                {
+                  "name": "Workset",
+                  "type": "Integer"
+                },
+                {
+                  "name": "Group",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name_b",
+                  "type": "Text"
+                },
+                {
+                  "name": "ParameterGroup",
+                  "type": "Text"
+                },
+                {
+                  "name": "Units",
+                  "type": "Text"
+                },
+                {
+                  "name": "ValueType",
+                  "type": "Text"
+                },
+                {
+                  "name": "Value",
+                  "type": "Text"
+                },
+                {
+                  "name": "RoughOpening_mm",
+                  "type": "Number"
+                },
+                {
+                  "name": "verdict",
+                  "type": "Text"
+                },
+                {
+                  "name": "checkId",
+                  "type": "Text"
+                },
+                {
+                  "name": "checkTitle",
+                  "type": "Text"
+                },
+                {
+                  "name": "citation",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  1619,
+                  678093,
+                  "717ca888-caa1-4d79-a802-1815f215117a-000a58cd",
+                  "36\" x 84\" (Exterior)",
+                  "Doors",
+                  "Model",
+                  "36\" x 84\" (Exterior)",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  "Rough Width",
+                  "Dimensions",
+                  "FEET_AND_FRACTIONAL_INCHES",
+                  "Number",
+                  "3.3333333",
+                  1015.99998984,
+                  "Pass",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  4589,
+                  1048452,
+                  "c40d2a77-58c6-4479-8315-653c702baee6-000fff84",
+                  "Door-Curtain-Wall-Single-Storefront",
+                  "Doors",
+                  "Model",
+                  "Door-Curtain-Wall-Single-Storefront",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  "InfoNotAvailable",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  7427,
+                  1390771,
+                  "30bd67ff-88d2-4644-a770-c24587575e58-001538b3",
+                  "36\" x 84\"",
+                  "Doors",
+                  "Model",
+                  "36\" x 84\"",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  "Rough Width",
+                  "Dimensions",
+                  "FEET_AND_FRACTIONAL_INCHES",
+                  "Number",
+                  "3.2083333",
+                  977.8999898400001,
+                  "Pass",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  7428,
+                  1390772,
+                  "30bd67ff-88d2-4644-a770-c24587575e58-001538b4",
+                  "36\" x 84\"",
+                  "Doors",
+                  "Model",
+                  "36\" x 84\"",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  "Rough Width",
+                  "Dimensions",
+                  "FEET_AND_FRACTIONAL_INCHES",
+                  "Number",
+                  "3.2083333",
+                  977.8999898400001,
+                  "Pass",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  8799,
+                  1593725,
+                  "8dc2fb7a-2384-4c54-b8da-6b82510ec19f-0018517d",
+                  "Door-Curtain-Wall-Double-Storefront",
+                  "Doors",
+                  "Model",
+                  "Door-Curtain-Wall-Double-Storefront",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  "InfoNotAvailable",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  8929,
+                  1594273,
+                  "8dc2fb7a-2384-4c54-b8da-6b82510ec19f-001853a1",
+                  "Door-Curtain-Wall-Double-Storefront",
+                  "Doors",
+                  "Model",
+                  "Door-Curtain-Wall-Double-Storefront",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  "InfoNotAvailable",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  9000,
+                  1594362,
+                  "8dc2fb7a-2384-4c54-b8da-6b82510ec19f-001853fa",
+                  "Door-Curtain-Wall-Double-Storefront",
+                  "Doors",
+                  "Model",
+                  "Door-Curtain-Wall-Double-Storefront",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  "InfoNotAvailable",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  10504,
+                  1647567,
+                  "29948af7-066b-44c9-b460-4e3a3567113b-001923cf",
+                  "Door-Curtain-Wall-Single-Storefront",
+                  "Doors",
+                  "Model",
+                  "Door-Curtain-Wall-Single-Storefront",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  "InfoNotAvailable",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  10730,
+                  1694190,
+                  "5378609a-761a-4d09-b798-7d24d0ccfac0-0019d9ee",
+                  "36\" x 84\"",
+                  "Doors",
+                  "Model",
+                  "36\" x 84\"",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  "Rough Width",
+                  "Dimensions",
+                  "FEET_AND_FRACTIONAL_INCHES",
+                  "Number",
+                  "3.3333333",
+                  1015.99998984,
+                  "Pass",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ],
+                [
+                  11584,
+                  1921709,
+                  "35cfa5b9-de5f-4420-a6de-5f4d25808246-001d52ad",
+                  "60\" x 84\"",
+                  "Doors",
+                  "Model",
+                  "60\" x 84\"",
+                  "FamilyInstance",
+                  "L1 - Block 43",
+                  0,
+                  null,
+                  "Snowdon Towers Sample Architectural",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  "InfoNotAvailable",
+                  "RoughOpening-850",
+                  "Door rough opening width at least 850 mm (proxy; not the DC-W1 leaf width measure)",
+                  "Illustrative threshold only; Rough Width is the framed opening, not the leaf clear width DC-W1 requires"
+                ]
+              ],
+              "totalRows": 10,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s10-snowdon-storey-doors"
+      }
+    },
+    {
+      "id": "t5",
+      "request": {
+        "text": "Show the whole model coloured by category."
+      },
+      "reply": {
+        "text": "Same view3d.scene and categoryStyle chain the snowdon-toolkit demo uses, pointed at this session's own graph. Revit's classic category palette, full opacity; doors, rooms, and spaces from the last few turns are visible as their own colours alongside the mechanical and structural categories that dominate the count.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s10-snowdon-category-view: 2 nodes, 1 edge"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "2 of 2 nodes Ok"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "view3d",
+            "id": "e1",
+            "caption": "Snowdon, coloured by category",
+            "source": {
+              "analysisId": "nb-s10-snowdon-category-view",
+              "nodeId": "categories",
+              "port": "view"
+            }
+          }
+        ],
+        "analysisId": "nb-s10-snowdon-category-view"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1425 @@
+{
+  "format": "bimopen-notebook/0.1",
+  "title": "Bringing your own data",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "turns": [
+    {
+      "id": "t1",
+      "request": {
+        "text": "The mechanical consultant sent over analytics_dataset_with_levels.csv — carbon and energy numbers for the Duplex, keyed by GlobalId. Can you open it and tell me what's in it?"
+      },
+      "reply": {
+        "text": "268 rows, columns GlobalId, Name, Level, operational_carbon, energy_intensity, category. The key column is GlobalId, the same 22-character id the model itself uses, so nothing needs remapping before a join.",
+        "tools": [
+          {
+            "name": "Read",
+            "ok": true,
+            "summary": "samples/nrc/test-kit/analytics_dataset_with_levels.csv: 25889 bytes"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s07-own-data-join csv.relation: 268 rows × 6 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "file",
+            "id": "e1",
+            "caption": "The consultant's spreadsheet",
+            "path": "samples/nrc/test-kit/analytics_dataset_with_levels.csv",
+            "mediaType": "text/csv",
+            "bytes": 25889,
+            "sha256": "0d2c7cf06c0e98f394a8d099f50aa53cf8cfac2fec247417b8751210df8f926b",
+            "preview": "GlobalId,Name,Level,operational_carbon,energy_intensity,category\n2OrWItJ6zAwBNp0OUxK_l8,M_W-Wide Flange:W310X60:W310X60:207325,Level 1,139.5,27.7,Other\n2OrWItJ6zAwBNp0OUxK$8W,M_W-Wide Flange:W410X60:W410X60:208949,Level 1,59.5,25.9,Other\n2OrWItJ6zAwBNp0OUxK$Bq,M_W-Wide Flange:W410X60:W410X60:209121,Level 2,95.1,29.3,Other\n2OrWItJ6zAwBNp0OUxK$CR,M_W-Wide Flange:W410X60:W410X60:209166,Level 2,65.1,36.0,Other\n2OrWItJ6zAwBNp0OUxK$Dv,M_W-Wide Flange:W310X60:W310X60:209260,Level 1,102.8,16.3,Other"
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "First rows",
+            "source": {
+              "analysisId": "nb-s07-own-data-join",
+              "nodeId": "csv",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "Level",
+                  "type": "Text"
+                },
+                {
+                  "name": "operational_carbon",
+                  "type": "Number"
+                },
+                {
+                  "name": "energy_intensity",
+                  "type": "Number"
+                },
+                {
+                  "name": "category",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  "2OrWItJ6zAwBNp0OUxK_l8",
+                  "M_W-Wide Flange:W310X60:W310X60:207325",
+                  "Level 1",
+                  139.5,
+                  27.7,
+                  "Other"
+                ],
+                [
+                  "2OrWItJ6zAwBNp0OUxK$8W",
+                  "M_W-Wide Flange:W410X60:W410X60:208949",
+                  "Level 1",
+                  59.5,
+                  25.9,
+                  "Other"
+                ],
+                [
+                  "2OrWItJ6zAwBNp0OUxK$Bq",
+                  "M_W-Wide Flange:W410X60:W410X60:209121",
+                  "Level 2",
+                  95.1,
+                  29.3,
+                  "Other"
+                ],
+                [
+                  "2OrWItJ6zAwBNp0OUxK$CR",
+                  "M_W-Wide Flange:W410X60:W410X60:209166",
+                  "Level 2",
+                  65.1,
+                  36,
+                  "Other"
+                ],
+                [
+                  "2OrWItJ6zAwBNp0OUxK$Dv",
+                  "M_W-Wide Flange:W310X60:W310X60:209260",
+                  "Level 1",
+                  102.8,
+                  16.3,
+                  "Other"
+                ],
+                [
+                  "2OrWItJ6zAwBNp0OUxK$Du",
+                  "M_W-Wide Flange:W410X60:W410X60:209261",
+                  "Level 1",
+                  101.7,
+                  40.3,
+                  "Other"
+                ],
+                [
+                  "2OrWItJ6zAwBNp0OUxK$Dx",
+                  "M_W-Wide Flange:W410X60:W410X60:209262",
+                  "Level 2",
+                  104,
+                  30.4,
+                  "Other"
+                ],
+                [
+                  "2OrWItJ6zAwBNp0OUxK$Dw",
+                  "M_W-Wide Flange:W410X60:W410X60:209263",
+                  "Level 2",
+                  103.9,
+                  23.3,
+                  "Other"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc5T8",
+                  "Compound Ceiling:Gypsum Board:187149",
+                  "Level 1",
+                  30.1,
+                  28.1,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc503",
+                  "Compound Ceiling:Gypsum Board:187462",
+                  "Level 1",
+                  80,
+                  27.7,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc50B",
+                  "Compound Ceiling:Gypsum Board:187470",
+                  "Level 1",
+                  95.5,
+                  28.8,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc50U",
+                  "Compound Ceiling:Gypsum Board:187483",
+                  "Level 1",
+                  114.4,
+                  31,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc50n",
+                  "Compound Ceiling:Gypsum Board:187508",
+                  "Level 1",
+                  48.9,
+                  24.2,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc52o",
+                  "Compound Ceiling:Gypsum Board:187639",
+                  "Level 2",
+                  51.2,
+                  19.3,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc554",
+                  "Compound Ceiling:Gypsum Board:187649",
+                  "Level 2",
+                  86.6,
+                  17.7,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc55E",
+                  "Compound Ceiling:Gypsum Board:187659",
+                  "Level 2",
+                  103.3,
+                  32.9,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc55M",
+                  "Compound Ceiling:Gypsum Board:187667",
+                  "Level 2",
+                  111.1,
+                  36,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc55U",
+                  "Compound Ceiling:Gypsum Board:187675",
+                  "Level 2",
+                  119.9,
+                  40,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc55c",
+                  "Compound Ceiling:Gypsum Board:187683",
+                  "Level 2",
+                  42.3,
+                  34.2,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc55k",
+                  "Compound Ceiling:Gypsum Board:187691",
+                  "Level 2",
+                  50.1,
+                  38.3,
+                  "Finish"
+                ],
+                [
+                  "3bXiCStxP6Fgxdej$yc55m",
+                  "Compound Ceiling:Gypsum Board:187701",
+                  "Level 2",
+                  52.3,
+                  26.3,
+                  "Finish"
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlRGQ",
+                  "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146596",
+                  "Level 1",
+                  59.5,
+                  25.9,
+                  "Other"
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlRH8",
+                  "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146678",
+                  "Level 1",
+                  146.1,
+                  43.7,
+                  "Other"
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlS8Z",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173",
+                  "Level 1",
+                  54,
+                  21.9,
+                  "Other"
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlS9F",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257",
+                  "Level 1",
+                  146.1,
+                  43.7,
+                  "Other"
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlSFK",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150378",
+                  "Level 2",
+                  53.9,
+                  45.8,
+                  "Other"
+                ],
+                [
+                  "1hOSvn6df7F8_7GcBWlSDm",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150478",
+                  "Level 2",
+                  85.1,
+                  21.2,
+                  "Other"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUuXp",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159734",
+                  "Level 2",
+                  41.9,
+                  27.9,
+                  "Other"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvVV",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159834",
+                  "Level 2",
+                  125.2,
+                  24.7,
+                  "Other"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvR4",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160065",
+                  "Level 2",
+                  87.4,
+                  37.3,
+                  "Other"
+                ],
+                [
+                  "2OBrcmyk58NupXoVOHUvPL",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160208",
+                  "Level 2",
+                  109.6,
+                  36.5,
+                  "Other"
+                ],
+                [
+                  "1s1jVhK8z0pgKYcr9jt781",
+                  "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171853",
+                  "Level 1",
+                  105.1,
+                  37.4,
+                  "Other"
+                ],
+                [
+                  "1s1jVhK8z0pgKYcr9jt7AB",
+                  "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171975",
+                  "Level 1",
+                  131.7,
+                  33.6,
+                  "Other"
+                ],
+                [
+                  "1aj$VJZFn2TxepZUBcKp$i",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
+                  "Level 2",
+                  117.3,
+                  28.5,
+                  "Other"
+                ],
+                [
+                  "1aj$VJZFn2TxepZUBcKpac",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
+                  "Level 2",
+                  61.8,
+                  41,
+                  "Other"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5d",
+                  "Wall Foundation:Bearing Footing - 900 x 300:186596",
+                  "T/FDN",
+                  314.2,
+                  45,
+                  "Wall"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5l",
+                  "Wall Foundation:Bearing Footing - 900 x 300:186604",
+                  "T/FDN",
+                  322,
+                  55.1,
+                  "Wall"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5t",
+                  "Wall Foundation:Bearing Footing - 900 x 300:186612",
+                  "T/FDN",
+                  330.8,
+                  65.1,
+                  "Wall"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT5$",
+                  "Wall Foundation:Bearing Footing - 900 x 300:186620",
+                  "T/FDN",
+                  250.8,
+                  57.3,
+                  "Wall"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT2B",
+                  "Wall Foundation:Bearing Footing - 900 x 300:186632",
+                  "T/FDN",
+                  277.5,
+                  62.6,
+                  "Wall"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT2N",
+                  "Wall Foundation:Bearing Footing - 900 x 300:186644",
+                  "T/FDN",
+                  289.7,
+                  54.7,
+                  "Wall"
+                ],
+                [
+                  "0kF45Qs8L9PAM9kmb1lT2Z",
+                  "Wall Foundation:Bearing Footing - 900 x 300:186656",
+                  "T/FDN",
+                  301.9,
+                  46.8,
+                  "Wall"
+                ],
+                [
+                  "1gtrSK5QnDuxDwygd0EDGO",
+                  "Stair:Residential - 200mm Max Riser 250mm Tread:151086:1",
+                  "Level 1",
+                  96.5,
+                  45.3,
+                  "Stair"
+                ],
+                [
+                  "34qUFGjJzFKwVWpXe2dTPt",
+                  "Stair:Residential - 200mm Max Riser 250mm Tread:151086:2",
+                  "Level 1",
+                  174.2,
+                  40.1,
+                  "Stair"
+                ],
+                [
+                  "01KzA4SPn5IOODwLEb5RNY",
+                  "Stair:Residential - 200mm Max Riser 250mm Tread:198878:1",
+                  "Level 1",
+                  164,
+                  38,
+                  "Stair"
+                ],
+                [
+                  "37Fy90kSD2PvviizyM7EKl",
+                  "Stair:Residential - 200mm Max Riser 250mm Tread:198878:2",
+                  "Level 1",
+                  125.3,
+                  35.6,
+                  "Stair"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4v_PL",
+                  "Railing:900mm Handrail Only:151162",
+                  "Level 1",
+                  49.7,
+                  22.6,
+                  "Railing"
+                ],
+                [
+                  "0wkEuT1wr1kOyafLY4v_PH",
+                  "Railing:1100mm Guard Rail:151166",
+                  "Level 1",
+                  45.3,
+                  9.6,
+                  "Railing"
+                ],
+                [
+                  "21ldoMpbP4VfsJ0XGY_34P",
+                  "Railing:900mm Handrail Only:198880",
+                  "Level 1",
+                  23.8,
+                  14.8,
+                  "Railing"
+                ],
+                [
+                  "21ldoMpbP4VfsJ0XGY_335",
+                  "Railing:1100mm Guard Rail:198972",
+                  "Level 1",
+                  46,
+                  13.6,
+                  "Railing"
+                ]
+              ],
+              "totalRows": 268,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s07-own-data-join"
+      }
+    },
+    {
+      "id": "t2",
+      "request": {
+        "text": "Join it to the Duplex model on GlobalId, against the physical elements only, and tell me what matched."
+      },
+      "reply": {
+        "text": "216 of the model's 237 physical elements (entities with a rendered mesh) match a row in the file. 21 physical elements have no row; 52 file rows match an entity that exists but is not itself physical — mostly the opening behind a door or window rather than the door or window. Both counts are reported, not dropped.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s07-own-data-join: 12 nodes, 15 edges"
+          },
+          {
+            "name": "evaluate",
+            "ok": true,
+            "summary": "12 of 12 nodes Ok"
+          },
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s07-own-data-join matchReport.relation: 1 row × 3 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Match report",
+            "source": {
+              "analysisId": "nb-s07-own-data-join",
+              "nodeId": "matchReport",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "Matched",
+                  "type": "Integer"
+                },
+                {
+                  "name": "PhysicalElementsWithNoFileRow",
+                  "type": "Integer"
+                },
+                {
+                  "name": "FileRowsWithNoPhysicalElement",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  216,
+                  21,
+                  52
+                ]
+              ],
+              "totalRows": 1,
+              "skip": 0
+            }
+          },
+          {
+            "kind": "graph",
+            "id": "e2",
+            "analysisId": "nb-s07-own-data-join",
+            "graphHash": "07e1c1f6b5c2f31f99eb9dd9a71b4386d750b1845565d212cb0f8cef0c47bd92",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"coloredCarbon\": {\n      \"x\": 370,\n      \"y\": 700\n    },\n    \"csv\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"entities\": {\n      \"x\": 40,\n      \"y\": 480\n    },\n    \"instances\": {\n      \"x\": 370,\n      \"y\": 260\n    },\n    \"matchReport\": {\n      \"x\": 1360,\n      \"y\": 260\n    },\n    \"matched\": {\n      \"x\": 1030,\n      \"y\": 260\n    },\n    \"model\": {\n      \"x\": 40,\n      \"y\": 260\n    },\n    \"physical\": {\n      \"x\": 700,\n      \"y\": 260\n    },\n    \"physicalEntities\": {\n      \"x\": 700,\n      \"y\": 480\n    },\n    \"unmatchedInFile\": {\n      \"x\": 1030,\n      \"y\": 40\n    },\n    \"unmatchedInModel\": {\n      \"x\": 1030,\n      \"y\": 480\n    },\n    \"values\": {\n      \"x\": 40,\n      \"y\": 700\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"model.instances\",\n        \"to\": \"coloredCarbon.instances\"\n      },\n      {\n        \"from\": \"values.table\",\n        \"to\": \"coloredCarbon.values\"\n      },\n      {\n        \"from\": \"model.instances\",\n        \"to\": \"instances.table\"\n      },\n      {\n        \"from\": \"matched.relation\",\n        \"to\": \"matchReport.t1\"\n      },\n      {\n        \"from\": \"unmatchedInModel.relation\",\n        \"to\": \"matchReport.t2\"\n      },\n      {\n        \"from\": \"unmatchedInFile.relation\",\n        \"to\": \"matchReport.t3\"\n      },\n      {\n        \"from\": \"physicalEntities.relation\",\n        \"to\": \"matched.left\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"matched.right\"\n      },\n      {\n        \"from\": \"instances.relation\",\n        \"to\": \"physical.input\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"physicalEntities.left\"\n      },\n      {\n        \"from\": \"physical.relation\",\n        \"to\": \"physicalEntities.right\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"unmatchedInFile.left\"\n      },\n      {\n        \"from\": \"physicalEntities.relation\",\n        \"to\": \"unmatchedInFile.right\"\n      },\n      {\n        \"from\": \"physicalEntities.relation\",\n        \"to\": \"unmatchedInModel.left\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"unmatchedInModel.right\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"coloredCarbon\",\n        \"kind\": \"view3d.color\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"csv\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"entities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"instances\",\n        \"kind\": \"rel.fromTable\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"matchReport\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"matched\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"model\",\n        \"kind\": \"view3d.instances\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"physical\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"physicalEntities\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"unmatchedInFile\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"unmatchedInModel\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"values\",\n        \"kind\": \"csv.read\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"coloredCarbon\": {\n      \"colorMap\": \"viridis\",\n      \"joinColumn\": \"globalId\",\n      \"valueColumn\": \"operational_carbon\"\n    },\n    \"csv\": {\n      \"path\": \"test-kit/analytics_dataset_with_levels.csv\",\n      \"source\": \"nrc\"\n    },\n    \"entities\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"EntityText\"\n    },\n    \"instances\": {\n      \"name\": \"instances\"\n    },\n    \"matchReport\": {\n      \"sql\": \"SELECT (SELECT count(*) FROM t1) AS Matched, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoFileRow, (SELECT count(*) FROM t3) AS FileRowsWithNoPhysicalElement\"\n    },\n    \"matched\": {\n      \"kind\": \"inner\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"model\": {\n      \"path\": \"samples/nrc/duplex-base.ifc\"\n    },\n    \"physical\": {\n      \"aggregates\": \"count(*) as meshCount\",\n      \"groupBy\": \"globalId\"\n    },\n    \"physicalEntities\": {\n      \"kind\": \"semi\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"globalId\"\n    },\n    \"unmatchedInFile\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"unmatchedInModel\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"values\": {\n      \"path\": \"samples/nrc/test-kit/analytics_dataset_with_levels.csv\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nb-s07-own-data-join   graph 07e1c1f6b5c2\ncsv = rel.csv@1(source: \"nrc\", path: \"test-kit/analytics_dataset_with_levels.csv\");\n  // Ok  relation 268 rows x 6 cols  sha 2ed673e1a75a  plan d86be52e53af\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\nentities = rel.table@1(source: \"duplex-base\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan fbac43cf5e83\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nmodel = view3d.instances@1(path: \"samples/nrc/duplex-base.ifc\");\n  // Ok  table 714 rows x 11 cols  sha f912cca851d5\n  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number\n  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //   no colour columns\n  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\ninstances = rel.fromTable@1(table: model.instances, name: \"instances\");\n  // Ok  relation 714 rows x 11 cols  sha f912cca851d5  plan 68e385fef766\n  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number\n  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //   no colour columns\n  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\nphysical = rel.aggregate@1(input: instances.relation, groupBy: \"globalId\", aggregates: \"count(*) as meshCount\");\n  // Ok  relation 237 rows x 2 cols  sha a82986dd9677  plan f772f89fd074\n  //   columns globalId:Text, meshCount:Integer\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", 1\n  //   [1] \"0BTBFw6f90Nfh9rP1dlXr$\", 1\n  //   [2] \"0BTBFw6f90Nfh9rP1dlXr2\", 1\nphysicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: \"GlobalId\", rightKey: \"globalId\", kind: \"semi\");\n  // Ok  relation 237 rows x 6 cols  sha 8ee2afc729f8  plan 52347b7c0711\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 2066, 8283, \"1hOSvn6df7F8_7GcBWlSFK\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [1] 2073, 8386, \"1hOSvn6df7F8_7GcBWlSDm\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [2] 2561, 12574, \"0wkEuT1wr1kOyafLY4vyu$\", \"M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572\"..., \"IFCFURNISHINGELEMENT\", \"800 mm\"\nmatched = rel.join@1(left: physicalEntities.relation, right: csv.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"inner\");\n  // Ok  relation 216 rows x 12 cols  sha 63eb99afdacf  plan d7665e62139e\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text, GlobalId_right:Text, Name_right:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category_right:Text\n  //   [0] 4323, 36686, \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"IFCBEAM\", null, \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] 4377, 36892, \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"IFCBEAM\", null, \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] 4421, 37065, \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"IFCBEAM\", null, \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\nunmatchedInFile = rel.join@1(left: csv.relation, right: physicalEntities.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"anti\");\n  // Ok  relation 52 rows x 6 cols  sha f1ec4ac60c06  plan 1ac3bda719b9\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"0wkEuT1wr1kOyafLY4v_O1\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"Level 1\", 100.9, 21.3, \"Stair\"\n  //   [1] \"21ldoMpbP4VfsJ0XGY_34d\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"Level 1\", 171.8, 40, \"Stair\"\n  //   [2] \"1xS3BCk291UvhgP2dvNrrP\", \"M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788:1\", \"Level 1\", 18.3, 15.4, \"Window\"\nunmatchedInModel = rel.join@1(left: physicalEntities.relation, right: csv.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"anti\");\n  // Ok  relation 21 rows x 6 cols  sha e75687c86579  plan 062a7f3282ff\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 3013, 1627, \"0BTBFw6f90Nfh9rP1dl_CZ\", \"Living Room\", \"IFCSPACE\", null\n  //   [1] 3029, 67, \"0BTBFw6f90Nfh9rP1dlXr2\", \"Living Room\", \"IFCSPACE\", null\n  //   [2] 3684, 212, \"0BTBFw6f90Nfh9rP1dlXr$\", \"Kitchen\", \"IFCSPACE\", null\nmatchReport = rel.sql@1(t1: matched.relation, t2: unmatchedInModel.relation, t3: unmatchedInFile.relation, sql: \"SELECT (SELECT count(*) FROM t1) AS Matched, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoFileRow, (SELECT count(*) FROM t3) AS FileRowsWithNoPhysicalElement\");\n  // Ok  relation 1 rows x 3 cols  sha cffc31b8fda1  plan b64c8fcaa7a7\n  //   columns Matched:Integer, PhysicalElementsWithNoFileRow:Integer, FileRowsWithNoPhysicalElement:Integer\n  //   [0] 216, 21, 52\nvalues = csv.read@1(path: \"samples/nrc/test-kit/analytics_dataset_with_levels.csv\");\n  // Ok  table 268 rows x 6 cols  sha 2ed673e1a75a\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\ncoloredCarbon = view3d.color@1(instances: model.instances, values: values.table, joinColumn: \"globalId\", valueColumn: \"operational_carbon\", colorMap: \"viridis\");\n  // Ok\n  //   instances: table 714 rows x 15 cols  sha b90205255086\n  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number\n  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //     693 coloured in 197 colours, 21 grey\n  //     legend \"operational_carbon\" auto 14.2 to 412: bins 449 / 124 / 40 / 80\n  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\n  //   legend: table 5 rows x 9 cols  sha 6bf9262fa5ab\n  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer\n  //     legend \"operational_carbon\" auto: 14.2, 113.7, 213.1, 312.6, 412\n",
+            "focus": [
+              "matched",
+              "unmatchedInModel",
+              "unmatchedInFile",
+              "matchReport"
+            ]
+          }
+        ],
+        "analysisId": "nb-s07-own-data-join"
+      }
+    },
+    {
+      "id": "t3",
+      "request": {
+        "text": "Which physical elements did the file miss?"
+      },
+      "reply": {
+        "text": "All 21 are IfcSpace — Living Room, Kitchen, two Bathrooms, two Bedrooms, Hallway, Foyer, Utility, Stair, Room, Roof — one mesh per room, the space boundary itself. The consultant's file only has rows for building elements, not rooms, so this gap is the file's scope, not a mismatch.",
+        "tools": [
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s07-own-data-join unmatchedInModel.relation: 21 rows × 6 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "Physical elements with no file row",
+            "source": {
+              "analysisId": "nb-s07-own-data-join",
+              "nodeId": "unmatchedInModel",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "EntityIndex",
+                  "type": "Integer"
+                },
+                {
+                  "name": "StepId",
+                  "type": "Integer"
+                },
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "Category",
+                  "type": "Text"
+                },
+                {
+                  "name": "Type",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  3013,
+                  1627,
+                  "0BTBFw6f90Nfh9rP1dl_CZ",
+                  "Living Room",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  3029,
+                  67,
+                  "0BTBFw6f90Nfh9rP1dlXr2",
+                  "Living Room",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  3684,
+                  212,
+                  "0BTBFw6f90Nfh9rP1dlXr$",
+                  "Kitchen",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  3697,
+                  1782,
+                  "0BTBFw6f90Nfh9rP1dl_3S",
+                  "Kitchen",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  275,
+                  514,
+                  "0BTBFw6f90Nfh9rP1dlXrr",
+                  "Foyer",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  351,
+                  819,
+                  "0BTBFw6f90Nfh9rP1dlXri",
+                  "Hallway",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  717,
+                  1928,
+                  "0BTBFw6f90Nfh9rP1dl_3P",
+                  "Bathroom 1",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  768,
+                  2108,
+                  "0BTBFw6f90Nfh9rP1dl_3Q",
+                  "Foyer",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  844,
+                  2412,
+                  "0BTBFw6f90Nfh9rP1dl_3G",
+                  "Hallway",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  1104,
+                  3197,
+                  "2gRXFgjRn2HPE$YoDLX3FV",
+                  "Utility",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  1144,
+                  3325,
+                  "2gRXFgjRn2HPE$YoDLX3FC",
+                  "Utility",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  1179,
+                  3456,
+                  "10mjSDZJj9gPS2PrQaxa3z",
+                  "Stair",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  1214,
+                  3586,
+                  "10mjSDZJj9gPS2PrQaxa4o",
+                  "Room",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  1250,
+                  3707,
+                  "0pNy6pOyf7JPmXRLgxs3sW",
+                  "Roof",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  4239,
+                  2637,
+                  "0BTBFw6f90Nfh9rP1dl_3C",
+                  "Bathroom 2",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  4250,
+                  1059,
+                  "0BTBFw6f90Nfh9rP1dlXre",
+                  "Bathroom 2",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  4259,
+                  355,
+                  "0BTBFw6f90Nfh9rP1dlXru",
+                  "Bathroom 1",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  4263,
+                  2789,
+                  "0BTBFw6f90Nfh9rP1dl_39",
+                  "Bedroom 2",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  4267,
+                  1442,
+                  "0BTBFw6f90Nfh9rP1dlXrc",
+                  "Bedroom 1",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  4271,
+                  3013,
+                  "0BTBFw6f90Nfh9rP1dl_3A",
+                  "Bedroom 1",
+                  "IFCSPACE",
+                  null
+                ],
+                [
+                  4275,
+                  1218,
+                  "0BTBFw6f90Nfh9rP1dlXrb",
+                  "Bedroom 2",
+                  "IFCSPACE",
+                  null
+                ]
+              ],
+              "totalRows": 21,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s07-own-data-join"
+      }
+    },
+    {
+      "id": "t4",
+      "request": {
+        "text": "And the file rows that don't line up with anything physical?"
+      },
+      "reply": {
+        "text": "52 rows. 50 are keyed to the opening behind a door or window (IfcOpeningElement), not the door or window mesh itself; 2 are keyed to a stair that is meshed only through its flights, never as one entity. The file's numbers for these rows still exist — they just have nowhere to land as a colour yet.",
+        "tools": [
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s07-own-data-join unmatchedInFile.relation: 52 rows × 6 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "table",
+            "id": "e1",
+            "caption": "File rows with no physical element",
+            "source": {
+              "analysisId": "nb-s07-own-data-join",
+              "nodeId": "unmatchedInFile",
+              "port": "relation"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "GlobalId",
+                  "type": "Text"
+                },
+                {
+                  "name": "Name",
+                  "type": "Text"
+                },
+                {
+                  "name": "Level",
+                  "type": "Text"
+                },
+                {
+                  "name": "operational_carbon",
+                  "type": "Number"
+                },
+                {
+                  "name": "energy_intensity",
+                  "type": "Number"
+                },
+                {
+                  "name": "category",
+                  "type": "Text"
+                }
+              ],
+              "rows": [
+                [
+                  "0wkEuT1wr1kOyafLY4v_O1",
+                  "Stair:Residential - 200mm Max Riser 250mm Tread:151086",
+                  "Level 1",
+                  100.9,
+                  21.3,
+                  "Stair"
+                ],
+                [
+                  "21ldoMpbP4VfsJ0XGY_34d",
+                  "Stair:Residential - 200mm Max Riser 250mm Tread:198878",
+                  "Level 1",
+                  171.8,
+                  40,
+                  "Stair"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNrrP",
+                  "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788:1",
+                  "Level 1",
+                  18.3,
+                  15.4,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNrv5",
+                  "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016:1",
+                  "Level 1",
+                  41,
+                  10.2,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNrY1",
+                  "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146596:1",
+                  "Level 1",
+                  51.7,
+                  31.8,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNrZJ",
+                  "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146678:1",
+                  "Level 1",
+                  77.3,
+                  27.1,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNrdW",
+                  "M_Fixed:750mm x 2200mm:750mm x 2200mm:146885:1",
+                  "Level 1",
+                  57.6,
+                  18.3,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNrfE",
+                  "M_Fixed:750mm x 2200mm:750mm x 2200mm:147051:1",
+                  "Level 1",
+                  41,
+                  10.2,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNoJ3",
+                  "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:147686:1",
+                  "Level 2",
+                  38.1,
+                  31.7,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNoO$",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:147994:1",
+                  "Level 2",
+                  28.1,
+                  13.6,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNo1Q",
+                  "M_Casement:819mm x 759mm:819mm x 759mm:148607:1",
+                  "Level 2",
+                  43.6,
+                  14.7,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNo3N",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:148722:1",
+                  "Level 2",
+                  42.5,
+                  33.7,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNoCx",
+                  "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:149278:1",
+                  "Level 2",
+                  54.3,
+                  23.3,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNom4",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:149537:1",
+                  "Level 2",
+                  28.7,
+                  23,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNopD",
+                  "M_Casement:819mm x 759mm:819mm x 759mm:149736:1",
+                  "Level 2",
+                  47.6,
+                  26.2,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNos1",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:149924:1",
+                  "Level 2",
+                  31,
+                  18.1,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNowu",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173:1",
+                  "Level 1",
+                  146.2,
+                  45.8,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNoxK",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257:1",
+                  "Level 1",
+                  105.1,
+                  37.4,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNozF",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150378:1",
+                  "Level 1",
+                  102.8,
+                  16.3,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNo$h",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:150478:1",
+                  "Level 1",
+                  50.6,
+                  24.8,
+                  "Other"
+                ],
+                [
+                  "1JMZUwOon6WAV1rBBORAVn",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200:1",
+                  "B202",
+                  15.3,
+                  18,
+                  "Door"
+                ],
+                [
+                  "0st2Ty2kP2i9GWVYN22HBn",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607:1",
+                  "B202",
+                  16.2,
+                  7.4,
+                  "Door"
+                ],
+                [
+                  "1ur9wqEhD1fgF0XSBVdztK",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950:1",
+                  "A203",
+                  37.8,
+                  7.1,
+                  "Door"
+                ],
+                [
+                  "2fQjX2SrTFrxFKC2cOmyZz",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951:1",
+                  "A203",
+                  32.4,
+                  13.4,
+                  "Door"
+                ],
+                [
+                  "3yrt06HiHCHQOnRKTWhuME",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983:1",
+                  "A202",
+                  38.7,
+                  12.5,
+                  "Door"
+                ],
+                [
+                  "1dqkh_grrAr8eEicMrPggp",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984:1",
+                  "A202",
+                  30.7,
+                  12.9,
+                  "Door"
+                ],
+                [
+                  "24EFH82h1DgeJVWlc35MMP",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080:1",
+                  "B203",
+                  34.6,
+                  17.3,
+                  "Door"
+                ],
+                [
+                  "2YwZmYlr9AiPDZRZmucxc5",
+                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081:1",
+                  "B203",
+                  28.2,
+                  19,
+                  "Door"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNmlJ",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159734:1",
+                  "Level 2",
+                  90.6,
+                  25.2,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNnH$",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:159834:1",
+                  "Level 2",
+                  128.3,
+                  41.5,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNnLa",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160065:1",
+                  "Level 2",
+                  82.8,
+                  31.1,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNnNr",
+                  "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:160208:1",
+                  "Level 2",
+                  101.7,
+                  40.3,
+                  "Other"
+                ],
+                [
+                  "1_czKmicP9SRkaew1L5q7Z",
+                  "M_Counter Top w Sink Hole:600mm Depth:600mm Depth:161165:1",
+                  "B103",
+                  68.5,
+                  28.1,
+                  "Other"
+                ],
+                [
+                  "3obae0iBn5i9Cv4Ub3eEXf",
+                  "M_Counter Top w Sink Hole:600mm Depth:600mm Depth:162490:1",
+                  "A103",
+                  97.3,
+                  43.3,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvN$je",
+                  "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171853:1",
+                  "Level 1",
+                  42.8,
+                  30.7,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvN$lY",
+                  "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171975:1",
+                  "Level 1",
+                  143.8,
+                  22.6,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNwHx",
+                  "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:180318:1",
+                  "Level 2",
+                  21.6,
+                  10.4,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNwMI",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:180663:1",
+                  "Level 2",
+                  25.4,
+                  28,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNwQb",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:180864:1",
+                  "Level 2",
+                  54.3,
+                  23.3,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNwSd",
+                  "M_Casement:819mm x 759mm:819mm x 759mm:180994:1",
+                  "Level 2",
+                  58.7,
+                  25.3,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNwTD",
+                  "M_Fixed:2800mm x 2410mm:2800mm x 2410mm:181096:1",
+                  "Level 2",
+                  27.6,
+                  16,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNw00",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:181285:1",
+                  "Level 2",
+                  17,
+                  14.5,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNw49",
+                  "M_Casement:819mm x 759mm:819mm x 759mm:181548:1",
+                  "Level 2",
+                  30.3,
+                  27.6,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNw5g",
+                  "M_Fixed:819mm x 759mm:819mm x 759mm:181583:1",
+                  "Level 2",
+                  31,
+                  18.1,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNwAF",
+                  "M_Fixed:750mm x 2200mm:750mm x 2200mm:181930:1",
+                  "Level 2",
+                  56.9,
+                  27.8,
+                  "Window"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNwDm",
+                  "M_Fixed:750mm x 2200mm:750mm x 2200mm:182101:1",
+                  "Level 2",
+                  52.1,
+                  35.3,
+                  "Window"
+                ],
+                [
+                  "3v9a8BKHj2mvcndWrD6JMo",
+                  "Basic Roof:Live Roof over Wood Joist Flat Roof:184483:2",
+                  "Roof",
+                  257.9,
+                  69.6,
+                  "Roof"
+                ],
+                [
+                  "0c3kWfbRLERxKStRVifSpJ",
+                  "Basic Roof:Live Roof over Wood Joist Flat Roof:184483:3",
+                  "Roof",
+                  327.9,
+                  53.3,
+                  "Roof"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNxVS",
+                  null,
+                  "Roof",
+                  88.4,
+                  42.2,
+                  "Other"
+                ],
+                [
+                  "1xS3BCk291UvhgP2dvNx5J",
+                  null,
+                  "Roof",
+                  46.2,
+                  27.8,
+                  "Other"
+                ]
+              ],
+              "totalRows": 52,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s07-own-data-join"
+      }
+    },
+    {
+      "id": "t5",
+      "request": {
+        "text": "Colour the model by operational carbon from the file, and grey out anything it doesn't reach."
+      },
+      "reply": {
+        "text": "Viridis gradient from 14.2 to 412.0 kgCO2e/yr. 693 of the model's 714 mesh instances take a colour; the 21 instances behind the rooms from two turns ago stay grey, exactly the elements the match report already named.",
+        "tools": [
+          {
+            "name": "getResult",
+            "ok": true,
+            "summary": "nb-s07-own-data-join coloredCarbon.legend: 5 rows × 9 columns"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "view3d",
+            "id": "e1",
+            "caption": "Operational carbon, viridis",
+            "source": {
+              "analysisId": "nb-s07-own-data-join",
+              "nodeId": "coloredCarbon",
+              "port": "instances"
+            }
+          },
+          {
+            "kind": "table",
+            "id": "e2",
+            "caption": "Legend",
+            "source": {
+              "analysisId": "nb-s07-own-data-join",
+              "nodeId": "coloredCarbon",
+              "port": "legend"
+            },
+            "snapshot": {
+              "columns": [
+                {
+                  "name": "column",
+                  "type": "Text"
+                },
+                {
+                  "name": "domain",
+                  "type": "Text"
+                },
+                {
+                  "name": "role",
+                  "type": "Text"
+                },
+                {
+                  "name": "label",
+                  "type": "Text"
+                },
+                {
+                  "name": "value",
+                  "type": "Number"
+                },
+                {
+                  "name": "r",
+                  "type": "Number"
+                },
+                {
+                  "name": "g",
+                  "type": "Number"
+                },
+                {
+                  "name": "b",
+                  "type": "Number"
+                },
+                {
+                  "name": "count",
+                  "type": "Integer"
+                }
+              ],
+              "rows": [
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "14.2",
+                  14.2,
+                  0.267004,
+                  0.004874,
+                  0.329415,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "113.7",
+                  113.65,
+                  0.229739,
+                  0.322361,
+                  0.545706,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "213.1",
+                  213.1,
+                  0.127568,
+                  0.566949,
+                  0.550556,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "312.6",
+                  312.55,
+                  0.369214,
+                  0.788888,
+                  0.382914,
+                  null
+                ],
+                [
+                  "operational_carbon",
+                  "auto",
+                  "stop",
+                  "412",
+                  412,
+                  0.993248,
+                  0.906157,
+                  0.143936,
+                  null
+                ]
+              ],
+              "totalRows": 5,
+              "skip": 0
+            }
+          }
+        ],
+        "analysisId": "nb-s07-own-data-join"
+      }
+    },
+    {
+      "id": "t6",
+      "request": {
+        "text": "This is going to happen again with the next consultant's file. Can we save it so someone else just points it at their own model and spreadsheet?"
+      },
+      "reply": {
+        "text": "Saved as a template. Three groups of parameters carry a new model and file without touching the shape of the joins: the file's path on `csv`, plus the join column name repeated on `matched`, `unmatchedInModel`, `unmatchedInFile`, and `coloredCarbon` if the new file spells its key column differently; the model's path on `model`, plus the source name on `entities` if a different model's database is used. Point those at the next consultant's spreadsheet and model, and the match report and the colouring above update the same way.",
+        "tools": [
+          {
+            "name": "getAnalysis",
+            "ok": true,
+            "summary": "nb-s07-own-data-join: 12 nodes, 15 edges"
+          }
+        ],
+        "embeds": [
+          {
+            "kind": "graph",
+            "id": "e1",
+            "analysisId": "nb-s07-own-data-join",
+            "graphHash": "07e1c1f6b5c2f31f99eb9dd9a71b4386d750b1845565d212cb0f8cef0c47bd92",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"coloredCarbon\": {\n      \"x\": 370,\n      \"y\": 700\n    },\n    \"csv\": {\n      \"x\": 40,\n      \"y\": 40\n    },\n    \"entities\": {\n      \"x\": 40,\n      \"y\": 480\n    },\n    \"instances\": {\n      \"x\": 370,\n      \"y\": 260\n    },\n    \"matchReport\": {\n      \"x\": 1360,\n      \"y\": 260\n    },\n    \"matched\": {\n      \"x\": 1030,\n      \"y\": 260\n    },\n    \"model\": {\n      \"x\": 40,\n      \"y\": 260\n    },\n    \"physical\": {\n      \"x\": 700,\n      \"y\": 260\n    },\n    \"physicalEntities\": {\n      \"x\": 700,\n      \"y\": 480\n    },\n    \"unmatchedInFile\": {\n      \"x\": 1030,\n      \"y\": 40\n    },\n    \"unmatchedInModel\": {\n      \"x\": 1030,\n      \"y\": 480\n    },\n    \"values\": {\n      \"x\": 40,\n      \"y\": 700\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"model.instances\",\n        \"to\": \"coloredCarbon.instances\"\n      },\n      {\n        \"from\": \"values.table\",\n        \"to\": \"coloredCarbon.values\"\n      },\n      {\n        \"from\": \"model.instances\",\n        \"to\": \"instances.table\"\n      },\n      {\n        \"from\": \"matched.relation\",\n        \"to\": \"matchReport.t1\"\n      },\n      {\n        \"from\": \"unmatchedInModel.relation\",\n        \"to\": \"matchReport.t2\"\n      },\n      {\n        \"from\": \"unmatchedInFile.relation\",\n        \"to\": \"matchReport.t3\"\n      },\n      {\n        \"from\": \"physicalEntities.relation\",\n        \"to\": \"matched.left\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"matched.right\"\n      },\n      {\n        \"from\": \"instances.relation\",\n        \"to\": \"physical.input\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"physicalEntities.left\"\n      },\n      {\n        \"from\": \"physical.relation\",\n        \"to\": \"physicalEntities.right\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"unmatchedInFile.left\"\n      },\n      {\n        \"from\": \"physicalEntities.relation\",\n        \"to\": \"unmatchedInFile.right\"\n      },\n      {\n        \"from\": \"physicalEntities.relation\",\n        \"to\": \"unmatchedInModel.left\"\n      },\n      {\n        \"from\": \"csv.relation\",\n        \"to\": \"unmatchedInModel.right\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"coloredCarbon\",\n        \"kind\": \"view3d.color\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"csv\",\n        \"kind\": \"rel.csv\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"entities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"instances\",\n        \"kind\": \"rel.fromTable\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"matchReport\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"matched\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"model\",\n        \"kind\": \"view3d.instances\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"physical\",\n        \"kind\": \"rel.aggregate\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"physicalEntities\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"unmatchedInFile\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"unmatchedInModel\",\n        \"kind\": \"rel.join\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"values\",\n        \"kind\": \"csv.read\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"coloredCarbon\": {\n      \"colorMap\": \"viridis\",\n      \"joinColumn\": \"globalId\",\n      \"valueColumn\": \"operational_carbon\"\n    },\n    \"csv\": {\n      \"path\": \"test-kit/analytics_dataset_with_levels.csv\",\n      \"source\": \"nrc\"\n    },\n    \"entities\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"EntityText\"\n    },\n    \"instances\": {\n      \"name\": \"instances\"\n    },\n    \"matchReport\": {\n      \"sql\": \"SELECT (SELECT count(*) FROM t1) AS Matched, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoFileRow, (SELECT count(*) FROM t3) AS FileRowsWithNoPhysicalElement\"\n    },\n    \"matched\": {\n      \"kind\": \"inner\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"model\": {\n      \"path\": \"samples/nrc/duplex-base.ifc\"\n    },\n    \"physical\": {\n      \"aggregates\": \"count(*) as meshCount\",\n      \"groupBy\": \"globalId\"\n    },\n    \"physicalEntities\": {\n      \"kind\": \"semi\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"globalId\"\n    },\n    \"unmatchedInFile\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"unmatchedInModel\": {\n      \"kind\": \"anti\",\n      \"leftKey\": \"GlobalId\",\n      \"rightKey\": \"GlobalId\"\n    },\n    \"values\": {\n      \"path\": \"samples/nrc/test-kit/analytics_dataset_with_levels.csv\"\n    }\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nb-s07-own-data-join   graph 07e1c1f6b5c2\ncsv = rel.csv@1(source: \"nrc\", path: \"test-kit/analytics_dataset_with_levels.csv\");\n  // Ok  relation 268 rows x 6 cols  sha 2ed673e1a75a  plan d86be52e53af\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\nentities = rel.table@1(source: \"duplex-base\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan fbac43cf5e83\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nmodel = view3d.instances@1(path: \"samples/nrc/duplex-base.ifc\");\n  // Ok  table 714 rows x 11 cols  sha f912cca851d5\n  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number\n  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //   no colour columns\n  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\ninstances = rel.fromTable@1(table: model.instances, name: \"instances\");\n  // Ok  relation 714 rows x 11 cols  sha f912cca851d5  plan 68e385fef766\n  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number\n  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //   no colour columns\n  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\nphysical = rel.aggregate@1(input: instances.relation, groupBy: \"globalId\", aggregates: \"count(*) as meshCount\");\n  // Ok  relation 237 rows x 2 cols  sha a82986dd9677  plan f772f89fd074\n  //   columns globalId:Text, meshCount:Integer\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", 1\n  //   [1] \"0BTBFw6f90Nfh9rP1dlXr$\", 1\n  //   [2] \"0BTBFw6f90Nfh9rP1dlXr2\", 1\nphysicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: \"GlobalId\", rightKey: \"globalId\", kind: \"semi\");\n  // Ok  relation 237 rows x 6 cols  sha 8ee2afc729f8  plan 52347b7c0711\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 2066, 8283, \"1hOSvn6df7F8_7GcBWlSFK\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [1] 2073, 8386, \"1hOSvn6df7F8_7GcBWlSDm\", \"M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047\"..., \"IFCDOOR\", \"0864 x 2032mm\"\n  //   [2] 2561, 12574, \"0wkEuT1wr1kOyafLY4vyu$\", \"M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572\"..., \"IFCFURNISHINGELEMENT\", \"800 mm\"\nmatched = rel.join@1(left: physicalEntities.relation, right: csv.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"inner\");\n  // Ok  relation 216 rows x 12 cols  sha 63eb99afdacf  plan d7665e62139e\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text, GlobalId_right:Text, Name_right:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category_right:Text\n  //   [0] 4323, 36686, \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"IFCBEAM\", null, \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] 4377, 36892, \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"IFCBEAM\", null, \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] 4421, 37065, \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"IFCBEAM\", null, \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\nunmatchedInFile = rel.join@1(left: csv.relation, right: physicalEntities.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"anti\");\n  // Ok  relation 52 rows x 6 cols  sha f1ec4ac60c06  plan 1ac3bda719b9\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"0wkEuT1wr1kOyafLY4v_O1\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"Level 1\", 100.9, 21.3, \"Stair\"\n  //   [1] \"21ldoMpbP4VfsJ0XGY_34d\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"Level 1\", 171.8, 40, \"Stair\"\n  //   [2] \"1xS3BCk291UvhgP2dvNrrP\", \"M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788:1\", \"Level 1\", 18.3, 15.4, \"Window\"\nunmatchedInModel = rel.join@1(left: physicalEntities.relation, right: csv.relation, leftKey: \"GlobalId\", rightKey: \"GlobalId\", kind: \"anti\");\n  // Ok  relation 21 rows x 6 cols  sha e75687c86579  plan 062a7f3282ff\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 3013, 1627, \"0BTBFw6f90Nfh9rP1dl_CZ\", \"Living Room\", \"IFCSPACE\", null\n  //   [1] 3029, 67, \"0BTBFw6f90Nfh9rP1dlXr2\", \"Living Room\", \"IFCSPACE\", null\n  //   [2] 3684, 212, \"0BTBFw6f90Nfh9rP1dlXr$\", \"Kitchen\", \"IFCSPACE\", null\nmatchReport = rel.sql@1(t1: matched.relation, t2: unmatchedInModel.relation, t3: unmatchedInFile.relation, sql: \"SELECT (SELECT count(*) FROM t1) AS Matched, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoFileRow, (SELECT count(*) FROM t3) AS FileRowsWithNoPhysicalElement\");\n  // Ok  relation 1 rows x 3 cols  sha cffc31b8fda1  plan b64c8fcaa7a7\n  //   columns Matched:Integer, PhysicalElementsWithNoFileRow:Integer, FileRowsWithNoPhysicalElement:Integer\n  //   [0] 216, 21, 52\nvalues = csv.read@1(path: \"samples/nrc/test-kit/analytics_dataset_with_levels.csv\");\n  // Ok  table 268 rows x 6 cols  sha 2ed673e1a75a\n  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text\n  //   [0] \"2OrWItJ6zAwBNp0OUxK_l8\", \"M_W-Wide Flange:W310X60:W310X60:207325\", \"Level 1\", 139.5, 27.7, \"Other\"\n  //   [1] \"2OrWItJ6zAwBNp0OUxK$8W\", \"M_W-Wide Flange:W410X60:W410X60:208949\", \"Level 1\", 59.5, 25.9, \"Other\"\n  //   [2] \"2OrWItJ6zAwBNp0OUxK$Bq\", \"M_W-Wide Flange:W410X60:W410X60:209121\", \"Level 2\", 95.1, 29.3, \"Other\"\ncoloredCarbon = view3d.color@1(instances: model.instances, values: values.table, joinColumn: \"globalId\", valueColumn: \"operational_carbon\", colorMap: \"viridis\");\n  // Ok\n  //   instances: table 714 rows x 15 cols  sha b90205255086\n  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number\n  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden\n  //     693 coloured in 197 colours, 21 grey\n  //     legend \"operational_carbon\" auto 14.2 to 412: bins 449 / 124 / 40 / 80\n  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)\n  //   legend: table 5 rows x 9 cols  sha 6bf9262fa5ab\n  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer\n  //     legend \"operational_carbon\" auto: 14.2, 113.7, 213.1, 312.6, 412\n",
+            "focus": [
+              "csv",
+              "model",
+              "entities"
+            ]
+          }
+        ],
+        "analysisId": "nb-s07-own-data-join"
+      }
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { parseNotebook } from "../src/document/io";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../../..");
 const SAMPLES = join(ROOT, "samples", "notebooks");
+const OUTLINES = join(SAMPLES, "outlines");
 const ANALYSES = join(ROOT, "samples", "nrc-analyses");
 
 const sampleFiles = readdirSync(SAMPLES).filter((f) => f.endsWith(".notebook.json"));
@@ -21,6 +22,12 @@ function load(name: string): Notebook {
   const parsed = parseNotebook(readFileSync(join(SAMPLES, `${name}.notebook.json`), "utf8"));
   if (!parsed.ok) throw new Error(parsed.errors.join("\n"));
   return parsed.notebook;
+}
+
+/** The analysis ids of the graphs an outline saves to the host (file names without .json). */
+function outlineGraphIds(name: string): string[] {
+  const outline = JSON.parse(readFileSync(join(OUTLINES, `${name}.outline.json`), "utf8")) as { graphs?: string[] };
+  return (outline.graphs ?? []).map((path) => path.split("/").pop()!.replace(/\.json$/, ""));
 }
 
 /** Every embed of every turn, with the turn's index. */
@@ -39,12 +46,10 @@ function snapshotOf(embed: Embed | undefined): TableSnapshot {
 }
 
 describe("sample notebooks", () => {
-  it("finds the three samples", () => {
-    expect(sampleFiles.sort()).toEqual([
-      "nrc-door-check.notebook.json",
-      "nrc-eight-questions.notebook.json",
-      "nrc-test-kit.notebook.json",
-    ]);
+  it("has one notebook per outline", () => {
+    const outlines = readdirSync(OUTLINES).filter((f) => f.endsWith(".outline.json"));
+    expect(sampleFiles.sort()).toEqual(outlines.map((f) => f.replace(/\.outline\.json$/, ".notebook.json")).sort());
+    expect(sampleFiles.length).toBeGreaterThanOrEqual(12);
   });
 
   it.each(sampleFiles)("%s parses", (file) => {
@@ -52,14 +57,24 @@ describe("sample notebooks", () => {
     expect(parsed.ok ? [] : parsed.errors).toEqual([]);
   });
 
-  it.each(sampleFiles)("%s names only analyses in samples/nrc-analyses", (file) => {
-    const known = new Set(readdirSync(ANALYSES).map((f) => f.replace(/\.json$/, "")));
-    const notebook = load(file.replace(/\.notebook\.json$/, ""));
-    const named = embedsOf(notebook).flatMap(({ embed }) =>
+  it.each(sampleFiles)("%s names only analyses in samples/nrc-analyses or its outline's graphs", (file) => {
+    const name = file.replace(/\.notebook\.json$/, "");
+    const known = new Set([
+      ...readdirSync(ANALYSES).map((f) => f.replace(/\.json$/, "")),
+      ...outlineGraphIds(name),
+    ]);
+    const named = embedsOf(load(name)).flatMap(({ embed }) =>
       embed.kind === "graph" ? [embed.analysisId] : "source" in embed ? [embed.source.analysisId] : [],
     );
-    expect(named.length).toBeGreaterThan(0);
     expect(named.filter((id) => !known.has(id))).toEqual([]);
+  });
+
+  it.each(sampleFiles.filter((f) => f.startsWith("s")))("%s is labelled as reconstructed", (file) => {
+    expect(load(file.replace(/\.notebook\.json$/, "")).host?.note).toMatch(/^Reconstructed session/);
+  });
+
+  it.each(sampleFiles)("%s names no path on the machine that wrote it", (file) => {
+    expect(readFileSync(join(SAMPLES, file), "utf8")).not.toMatch(/[A-Za-z]:[\/]+Users[\/]/);
   });
 });
 

@@ -326,16 +326,22 @@ function expandPlaceholders(text: string, graphPath: string): string {
   if (!existsSync(snowdon)) {
     throw new Error(`${graphPath} needs the private Snowdon model, not found at ${snowdon} (set BIMOPENFLOW_SNOWDON).`);
   }
-  return text.split("{SNOWDON}").join(snowdonText(snowdon));
+  return text.split("{SNOWDON}").join(slashed(snowdon));
 }
 
-/** The reverse, for graph documents the host hands back inside graph embeds. */
+/**
+ * The reverse, for graph documents the host hands back inside graph embeds:
+ * the Snowdon path becomes {SNOWDON} again, and paths inside this checkout
+ * (the host's expansion of {SAMPLES} when it seeds) become repository-relative.
+ */
 function hidePlaceholders(text: string): string {
-  return text.split(snowdonText(snowdonPath())).join("{SNOWDON}");
+  return text
+    .split(slashed(snowdonPath())).join("{SNOWDON}")
+    .split(`${slashed(ROOT)}/`).join("");
 }
 
 /** Forward slashes need no escaping inside the graph's JSON strings. */
-const snowdonText = (path: string): string => path.split("\\").join("/");
+const slashed = (path: string): string => path.split("\\").join("/");
 
 /**
  * Polls GET /api/analyses/{id}/state until it reports every node of `doc` and
