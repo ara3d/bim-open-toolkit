@@ -31,7 +31,7 @@ local setup, verification and limits.
 |---|---|---|---|
 | `view3d.instances` | — | `path` (FilePath) | instance table |
 | `view3d.measures` | — | `path` (FilePath) | measures table: instance keys + `surfaceArea`, `meshVolume`, `triangleCount` |
-| `view3d.color` | instances, values | `joinColumn`, `valueColumn`, `colorMap` (viridis \| category10 \| redgreen) | instance table + `r g b a` |
+| `view3d.color` | instances, values, scale (optional) | `joinColumn`, `valueColumn`, `colorMap` (viridis \| category10 \| redgreen), `auto`, `min`, `max` | instance table + `r g b a`, `legend` |
 | `view3d.isolate` | instances, ids | `joinColumn` | filtered instance table |
 | `view3d.hide` | instances, ids | `joinColumn` | filtered instance table (inverse of isolate) |
 | `view3d.opacity` | instances, ids (optional) | `alpha`, `joinColumn`, `scope` (matched \| others) | instance table + `a` |
@@ -53,11 +53,22 @@ local setup, verification and limits.
 | `category` | Text | IFC entity name, e.g. `IFCWALLSTANDARDCASE` |
 | `minX minY minZ maxX maxY maxZ` | Number | World-space bounding box |
 
-`view3d.color` appends `r`, `g`, `b`, `a` (Number, 0..1 floats). Numeric value
-columns map through the chosen gradient normalized over the column's min..max;
-text value columns (or `category10`) map categorically, with palette indices
-assigned by sorted distinct value so colors are stable under row reordering.
-Unmatched rows get gray (0.5, 0.5, 0.5, 1).
+`view3d.color` appends `r`, `g`, `b`, `a` (Number, 0..1 floats) and a `legend`
+table (Support's `ColorScale`, columns `column`, `domain`, `role`, `label`,
+`value`, `r`, `g`, `b`, `count`; see `BimOpenFlow.Nodes.Support/README.md`).
+With no `scale` input the node builds its own scale from `values`: `auto=true`
+(the default) normalizes numeric columns over their own min..max, exactly as
+before; `auto=false` uses the manual `min`..`max` domain instead, clamping
+values outside it to the end colours and warning once about how many values
+clamped. Text value columns (or `colorMap=category10`) map categorically, with
+palette indices assigned by sorted distinct value so colors are stable under
+row reordering. With a `scale` input (typically `view.colormap`'s `legend`
+output, or another `view3d.color`'s), the node colours through that scale
+instead and passes it through unchanged on `legend`, so two consumers over the
+same channel show the same legend; an empty `valueColumn` then means the
+scale's column, a non-empty one that disagrees is ignored with a warning, and
+`min`/`max` are ignored with a warning when `auto=false`. Unmatched rows get
+gray (0.5, 0.5, 0.5, 1).
 
 Joins compare canonical invariant text of cells (integers plain, doubles
 round-trip "R", booleans `true`/`false`), so an Integer `entityId` joins a Text
