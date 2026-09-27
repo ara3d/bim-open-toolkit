@@ -1,0 +1,6 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": { "model": { "x": 40, "y": 40 } },
+  "structure": { "nodes": [ { "id": "model", "kind": "view3d.instances", "version": 1 } ], "edges": [] },
+  "values": { "model": { "path": "samples/nrc/duplex-enriched.ifc" } }
+}

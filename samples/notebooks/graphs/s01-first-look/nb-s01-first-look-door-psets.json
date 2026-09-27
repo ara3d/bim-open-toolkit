@@ -1,0 +1,40 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "door": { "x": 370, "y": 40 },
+    "parameters": { "x": 40, "y": 240 },
+    "psets": { "x": 700, "y": 140 },
+    "columns": { "x": 1030, "y": 140 },
+    "sorted": { "x": 1360, "y": 140 },
+    "rows": { "x": 1690, "y": 140 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "door.input" },
+      { "from": "door.relation", "to": "psets.left" },
+      { "from": "parameters.relation", "to": "psets.right" },
+      { "from": "psets.relation", "to": "columns.input" },
+      { "from": "columns.relation", "to": "sorted.input" },
+      { "from": "sorted.relation", "to": "rows.input" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "door", "kind": "rel.filter", "version": 1 },
+      { "id": "parameters", "kind": "rel.table", "version": 1 },
+      { "id": "psets", "kind": "rel.join", "version": 1 },
+      { "id": "columns", "kind": "rel.select", "version": 1 },
+      { "id": "sorted", "kind": "rel.sort", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "door": { "expr": "[GlobalId] == '1hOSvn6df7F8_7GcBWlS9F'" },
+    "parameters": { "source": "duplex-enriched", "table": "ParameterText" },
+    "psets": { "kind": "inner", "leftKey": "EntityIndex", "rightKey": "EntityIndex" },
+    "columns": { "columns": "ParameterGroup, Name_right, ValueType, Value, Units" },
+    "sorted": { "by": "ParameterGroup asc, Name_right asc" },
+    "rows": {}
+  }
+}

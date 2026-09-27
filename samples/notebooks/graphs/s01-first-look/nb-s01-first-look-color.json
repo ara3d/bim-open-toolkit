@@ -1,0 +1,32 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "cols": { "x": 370, "y": 40 },
+    "rows": { "x": 700, "y": 40 },
+    "model": { "x": 700, "y": 240 },
+    "answer": { "x": 1030, "y": 140 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "cols.input" },
+      { "from": "cols.relation", "to": "rows.input" },
+      { "from": "rows.table", "to": "answer.values" },
+      { "from": "model.instances", "to": "answer.instances" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "cols", "kind": "rel.select", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 },
+      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "answer", "kind": "view3d.color", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "cols": { "columns": "GlobalId, Category" },
+    "rows": {},
+    "model": { "path": "samples/nrc/duplex-enriched.ifc" },
+    "answer": { "joinColumn": "globalId", "valueColumn": "Category", "colorMap": "category10" }
+  }
+}

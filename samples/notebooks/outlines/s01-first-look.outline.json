@@ -1,0 +1,84 @@
+{
+  "title": "First look at an unfamiliar model",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "../graphs/s01-first-look/nb-s01-first-look-open.json",
+    "../graphs/s01-first-look/nb-s01-first-look-overview.json",
+    "../graphs/s01-first-look/nb-s01-first-look-color.json",
+    "../graphs/s01-first-look/nb-s01-first-look-doors.json",
+    "../graphs/s01-first-look/nb-s01-first-look-door-psets.json"
+  ],
+  "turns": [
+    {
+      "request": "Open samples/nrc/duplex-enriched.ifc.",
+      "reply": "42,657 STEP entities, schema IFC2X3. Converted to BOS tables in memory; nothing written. The 3D view below is the whole model, ungrouped and grey.",
+      "analysisId": "nb-s01-first-look-open",
+      "embeds": [
+        { "kind": "file", "path": "samples/nrc/duplex-enriched.ifc", "mediaType": "application/x-step", "caption": "duplex-enriched.ifc" },
+        { "kind": "view3d", "node": "model", "port": "instances", "caption": "Duplex, grey" }
+      ],
+      "tools": [
+        { "name": "Read", "ok": true, "summary": "Read samples/nrc/duplex-enriched.ifc: 2,707,239 bytes, 42,657 lines starting with '#' (STEP entities), header schema IFC2X3." },
+        { "name": "editGraph", "ok": true, "summary": "addNode view3d.instances(path: samples/nrc/duplex-enriched.ifc), named model." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s01-first-look-open: node model Ok, 714 renderable instances." }
+      ]
+    },
+    {
+      "request": "What's in it?",
+      "reply": "4,721 named entities across 78 IFC classes. Most of the count is geometry helpers, not building elements: IFCPOLYLINE (864), IFCAXIS2PLACEMENT2D (397), IFCCOMPOSITECURVESEGMENT (322), IFCRECTANGLEPROFILEDEF (293). Among building elements: 56 IFCWALLSTANDARDCASE plus 1 IFCWALL, 24 IFCWINDOW, 21 IFCSPACE, 21 IFCSLAB, 14 IFCDOOR. Table below has all 78 classes; the chart is the top 15.",
+      "analysisId": "nb-s01-first-look-overview",
+      "embeds": [
+        { "kind": "table", "node": "rows", "port": "table", "caption": "Entities per IFC class (78 classes, 4,721 rows)" },
+        { "kind": "chart", "node": "answer", "port": "table", "caption": "Entities per IFC class, top 15" }
+      ],
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "rel.table(EntityText) -> rel.aggregate(groupBy Category) -> rel.sort(Count desc) -> rel.materialize (full) and a second rel.materialize(limit 15) -> chart.bar." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s01-first-look-overview: every node Ok; rows 78 rows x 2 cols; chart 15 categories." },
+        { "name": "getResult", "ok": true, "summary": "rows.table: 78 rows, top row IFCPOLYLINE 864." }
+      ]
+    },
+    {
+      "request": "Colour it by class.",
+      "reply": "Added a view3d.color fed by the same Category column, joined on GlobalId. All 714 placed instances matched and got a colour (0 grey); category10 assigns one colour per IFC class, 78 in the legend. The grey view from turn 1 stays as it was; this is a new embed.",
+      "analysisId": "nb-s01-first-look-color",
+      "embeds": [
+        { "kind": "view3d", "node": "answer", "port": "instances", "caption": "Duplex, coloured by IFC class" }
+      ],
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "addNode view3d.color(joinColumn: globalId, valueColumn: Category, colorMap: category10), wired to the model's instances and to a GlobalId+Category table from EntityText." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s01-first-look-color: answer Ok, 714 coloured (0 grey), legend 78 categories." }
+      ]
+    },
+    {
+      "request": "Just the doors.",
+      "reply": "14 IfcDoor: 6 on Level 1, 8 on Level 2. Widths: four 762 mm, two 813 mm, six 864 mm, two 1250 mm. 3D isolates the 44 meshes that belong to these 14 doors (a door leaf, frame, and hardware are separate meshes); the rest of the model is hidden, not just faded.",
+      "analysisId": "nb-s01-first-look-doors",
+      "embeds": [
+        { "kind": "table", "node": "rows", "port": "table", "caption": "Doors: name, storey, width" },
+        { "kind": "view3d", "node": "isolated", "port": "instances", "caption": "Duplex, doors isolated" }
+      ],
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "Filter EntityText to Category = IFCDOOR, join ParameterText's Ifc:OverallWidth by EntityIndex, join StoreyOfEntity for the storey name, convert width to millimetres, sort ascending." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s01-first-look-doors: every node Ok; rows 14 rows x 4 cols; isolated 44 of 714 instances." },
+        { "name": "getResult", "ok": true, "summary": "rows.table: 14 doors, widths 762 (x4), 813 (x2), 864 (x6), 1250 (x2) mm." }
+      ]
+    },
+    {
+      "request": "What's on this one?",
+      "reply": "Reading the selection from the table above (first row after the width sort): M_Single-Flush:0762 x 2032mm, mark B104, Level 1, GlobalId 1hOSvn6df7F8_7GcBWlS9F. 78 property values across 14 property sets, including OverallWidth 0.762 m, OverallHeight 2.032 m, Pset_DoorCommon.FireRating \"Fire Rating\", and three NRC sets: EmbodiedCarbon_A1A3 104.7 kgCO2e, EmbodiedCarbon_A1A5 117.3 kgCO2e, OperationalCarbon 146.1 kgCO2e/yr, EnergyUseIntensity 43.7 kWh/m2/yr.",
+      "analysisId": "nb-s01-first-look-door-psets",
+      "embeds": [
+        { "kind": "table", "node": "rows", "port": "table", "caption": "Door 1hOSvn6df7F8_7GcBWlS9F: property sets" }
+      ],
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "Filter EntityText to the selected GlobalId, join all of ParameterText by EntityIndex, keep ParameterGroup/Name/ValueType/Value/Units, sort by group then name." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s01-first-look-door-psets: every node Ok; rows 78 rows x 5 cols." },
+        { "name": "getResult", "ok": true, "summary": "rows.table: 78 rows across 14 distinct ParameterGroup values." }
+      ]
+    }
+  ]
+}

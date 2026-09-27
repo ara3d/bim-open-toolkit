@@ -1,0 +1,68 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "doors": { "x": 370, "y": 40 },
+    "parameters": { "x": 40, "y": 240 },
+    "overallWidth": { "x": 370, "y": 240 },
+    "doorWidths": { "x": 700, "y": 140 },
+    "storeyOf": { "x": 700, "y": 340 },
+    "withStorey": { "x": 1030, "y": 240 },
+    "metres": { "x": 1360, "y": 240 },
+    "millimetres": { "x": 1690, "y": 240 },
+    "columns": { "x": 2020, "y": 240 },
+    "sorted": { "x": 2350, "y": 240 },
+    "rows": { "x": 2680, "y": 240 },
+    "model": { "x": 2020, "y": 440 },
+    "isolated": { "x": 2680, "y": 440 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "doors.input" },
+      { "from": "parameters.relation", "to": "overallWidth.input" },
+      { "from": "doors.relation", "to": "doorWidths.left" },
+      { "from": "overallWidth.relation", "to": "doorWidths.right" },
+      { "from": "doorWidths.relation", "to": "withStorey.left" },
+      { "from": "storeyOf.relation", "to": "withStorey.right" },
+      { "from": "withStorey.relation", "to": "metres.input" },
+      { "from": "metres.relation", "to": "millimetres.input" },
+      { "from": "millimetres.relation", "to": "columns.input" },
+      { "from": "columns.relation", "to": "sorted.input" },
+      { "from": "sorted.relation", "to": "rows.input" },
+      { "from": "rows.table", "to": "isolated.ids" },
+      { "from": "model.instances", "to": "isolated.instances" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "doors", "kind": "rel.filter", "version": 1 },
+      { "id": "parameters", "kind": "rel.table", "version": 1 },
+      { "id": "overallWidth", "kind": "rel.filter", "version": 1 },
+      { "id": "doorWidths", "kind": "rel.join", "version": 1 },
+      { "id": "storeyOf", "kind": "rel.table", "version": 1 },
+      { "id": "withStorey", "kind": "rel.join", "version": 1 },
+      { "id": "metres", "kind": "rel.derive", "version": 1 },
+      { "id": "millimetres", "kind": "rel.derive", "version": 1 },
+      { "id": "columns", "kind": "rel.select", "version": 1 },
+      { "id": "sorted", "kind": "rel.sort", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 },
+      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "isolated", "kind": "view3d.isolate", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "doors": { "expr": "[Category] == 'IFCDOOR'" },
+    "parameters": { "source": "duplex-enriched", "table": "ParameterText" },
+    "overallWidth": { "expr": "[Name] == 'Ifc:OverallWidth'" },
+    "doorWidths": { "kind": "inner", "leftKey": "EntityIndex", "rightKey": "EntityIndex" },
+    "storeyOf": { "source": "duplex-enriched", "table": "StoreyOfEntity" },
+    "withStorey": { "kind": "left", "leftKey": "EntityIndex", "rightKey": "EntityIndex" },
+    "metres": { "expr": "toNumber([Value])", "name": "Width_m" },
+    "millimetres": { "expr": "[Width_m] * 1000", "name": "Width_mm" },
+    "columns": { "columns": "GlobalId, Name, StoreyName, Width_mm" },
+    "sorted": { "by": "Width_mm asc" },
+    "rows": {},
+    "model": { "path": "samples/nrc/duplex-enriched.ifc" },
+    "isolated": { "joinColumn": "globalId" }
+  }
+}

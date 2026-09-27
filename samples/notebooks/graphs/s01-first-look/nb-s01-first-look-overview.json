@@ -1,0 +1,36 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "entities": { "x": 40, "y": 40 },
+    "byClass": { "x": 370, "y": 40 },
+    "sorted": { "x": 700, "y": 40 },
+    "rows": { "x": 1030, "y": 40 },
+    "chartRows": { "x": 1030, "y": 200 },
+    "answer": { "x": 1360, "y": 200 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "byClass.input" },
+      { "from": "byClass.relation", "to": "sorted.input" },
+      { "from": "sorted.relation", "to": "rows.input" },
+      { "from": "sorted.relation", "to": "chartRows.input" },
+      { "from": "chartRows.table", "to": "answer.table" }
+    ],
+    "nodes": [
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "byClass", "kind": "rel.aggregate", "version": 1 },
+      { "id": "sorted", "kind": "rel.sort", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 },
+      { "id": "chartRows", "kind": "rel.materialize", "version": 1 },
+      { "id": "answer", "kind": "chart.bar", "version": 1 }
+    ]
+  },
+  "values": {
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "byClass": { "groupBy": "Category", "aggregates": "count(*) as Count" },
+    "sorted": { "by": "Count desc" },
+    "rows": { "limit": "0" },
+    "chartRows": { "limit": "15" },
+    "answer": { "labelColumn": "Category", "valueColumns": "Count", "title": "Entities per IFC class, top 15", "sort": "desc" }
+  }
+}
