@@ -1,0 +1,364 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "csv": {
+      "x": 40,
+      "y": 40
+    },
+    "entities": {
+      "x": 40,
+      "y": 260
+    },
+    "storeyOf": {
+      "x": 40,
+      "y": 480
+    },
+    "model": {
+      "x": 40,
+      "y": 700
+    },
+    "values": {
+      "x": 40,
+      "y": 920
+    },
+    "instances": {
+      "x": 370,
+      "y": 700
+    },
+    "coloredCarbon": {
+      "x": 370,
+      "y": 920
+    },
+    "coloredCategory": {
+      "x": 370,
+      "y": 1140
+    },
+    "physical": {
+      "x": 700,
+      "y": 700
+    },
+    "entityStorey": {
+      "x": 700,
+      "y": 480
+    },
+    "csvNoEntity": {
+      "x": 1030,
+      "y": 40
+    },
+    "physicalEntities": {
+      "x": 1030,
+      "y": 480
+    },
+    "nonPhysicalEntities": {
+      "x": 1030,
+      "y": 700
+    },
+    "csvWithStorey": {
+      "x": 1030,
+      "y": 920
+    },
+    "physicalNoCsv": {
+      "x": 1360,
+      "y": 480
+    },
+    "csvMatchedNonPhysical": {
+      "x": 1360,
+      "y": 700
+    },
+    "storeyComparison": {
+      "x": 1360,
+      "y": 920
+    },
+    "perStorey": {
+      "x": 1360,
+      "y": 1140
+    },
+    "answer": {
+      "x": 1690,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "model.instances",
+        "to": "instances.table"
+      },
+      {
+        "from": "model.instances",
+        "to": "coloredCarbon.instances"
+      },
+      {
+        "from": "values.table",
+        "to": "coloredCarbon.values"
+      },
+      {
+        "from": "model.instances",
+        "to": "coloredCategory.instances"
+      },
+      {
+        "from": "values.table",
+        "to": "coloredCategory.values"
+      },
+      {
+        "from": "instances.relation",
+        "to": "physical.input"
+      },
+      {
+        "from": "storeyOf.relation",
+        "to": "entityStorey.left"
+      },
+      {
+        "from": "entities.relation",
+        "to": "entityStorey.right"
+      },
+      {
+        "from": "csv.relation",
+        "to": "csvNoEntity.left"
+      },
+      {
+        "from": "entities.relation",
+        "to": "csvNoEntity.right"
+      },
+      {
+        "from": "entities.relation",
+        "to": "physicalEntities.left"
+      },
+      {
+        "from": "physical.relation",
+        "to": "physicalEntities.right"
+      },
+      {
+        "from": "entities.relation",
+        "to": "nonPhysicalEntities.left"
+      },
+      {
+        "from": "physical.relation",
+        "to": "nonPhysicalEntities.right"
+      },
+      {
+        "from": "physicalEntities.relation",
+        "to": "physicalNoCsv.left"
+      },
+      {
+        "from": "csv.relation",
+        "to": "physicalNoCsv.right"
+      },
+      {
+        "from": "csv.relation",
+        "to": "csvMatchedNonPhysical.left"
+      },
+      {
+        "from": "nonPhysicalEntities.relation",
+        "to": "csvMatchedNonPhysical.right"
+      },
+      {
+        "from": "csv.relation",
+        "to": "csvWithStorey.left"
+      },
+      {
+        "from": "entityStorey.relation",
+        "to": "csvWithStorey.right"
+      },
+      {
+        "from": "csvWithStorey.relation",
+        "to": "storeyComparison.input"
+      },
+      {
+        "from": "csvWithStorey.relation",
+        "to": "perStorey.input"
+      },
+      {
+        "from": "csvNoEntity.relation",
+        "to": "answer.t1"
+      },
+      {
+        "from": "physicalNoCsv.relation",
+        "to": "answer.t2"
+      },
+      {
+        "from": "csvMatchedNonPhysical.relation",
+        "to": "answer.t3"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "csv",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "entities",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "storeyOf",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "values",
+        "kind": "csv.read",
+        "version": 1
+      },
+      {
+        "id": "instances",
+        "kind": "rel.fromTable",
+        "version": 1
+      },
+      {
+        "id": "coloredCarbon",
+        "kind": "view3d.color",
+        "version": 1
+      },
+      {
+        "id": "coloredCategory",
+        "kind": "view3d.color",
+        "version": 1
+      },
+      {
+        "id": "physical",
+        "kind": "rel.aggregate",
+        "version": 1
+      },
+      {
+        "id": "entityStorey",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "csvNoEntity",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "physicalEntities",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "nonPhysicalEntities",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "physicalNoCsv",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "csvMatchedNonPhysical",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "csvWithStorey",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "storeyComparison",
+        "kind": "rel.select",
+        "version": 1
+      },
+      {
+        "id": "perStorey",
+        "kind": "rel.aggregate",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.sql",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "csv": {
+      "source": "nrc",
+      "path": "test-kit/analytics_dataset_with_levels.csv"
+    },
+    "entities": {
+      "source": "duplex-base",
+      "table": "EntityText"
+    },
+    "storeyOf": {
+      "source": "duplex-base",
+      "table": "StoreyOfElement"
+    },
+    "model": {
+      "path": "{SAMPLES}/duplex-base.ifc"
+    },
+    "values": {
+      "path": "{SAMPLES}/test-kit/analytics_dataset_with_levels.csv"
+    },
+    "instances": {
+      "name": "instances"
+    },
+    "coloredCarbon": {
+      "joinColumn": "globalId",
+      "valueColumn": "operational_carbon",
+      "colorMap": "viridis"
+    },
+    "coloredCategory": {
+      "joinColumn": "globalId",
+      "valueColumn": "category",
+      "colorMap": "category10"
+    },
+    "physical": {
+      "groupBy": "globalId",
+      "aggregates": "count(*) as meshCount"
+    },
+    "entityStorey": {
+      "leftKey": "EntityIndex",
+      "rightKey": "EntityIndex",
+      "kind": "inner"
+    },
+    "csvNoEntity": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "anti"
+    },
+    "physicalEntities": {
+      "leftKey": "GlobalId",
+      "rightKey": "globalId",
+      "kind": "semi"
+    },
+    "nonPhysicalEntities": {
+      "leftKey": "GlobalId",
+      "rightKey": "globalId",
+      "kind": "anti"
+    },
+    "physicalNoCsv": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "anti"
+    },
+    "csvMatchedNonPhysical": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "semi"
+    },
+    "csvWithStorey": {
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId",
+      "kind": "inner"
+    },
+    "storeyComparison": {
+      "columns": "GlobalId, Level, StoreyName"
+    },
+    "perStorey": {
+      "groupBy": "StoreyName",
+      "aggregates": "count(*) as Elements, sum(operational_carbon) as TotalOperationalCarbon, avg(operational_carbon) as MeanOperationalCarbon, avg(energy_intensity) as MeanEnergyIntensity"
+    },
+    "answer": {
+      "sql": "SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity"
+    }
+  }
+}
