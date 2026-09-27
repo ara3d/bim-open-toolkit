@@ -13,16 +13,17 @@ How it was made: nine readers each took one group of documents (architecture, th
 
 ## The first stretch, in order
 
-The items below have tickets. Decide TKT-2 first, in one sitting with TKT-1 and TKT-4 if possible; item 3 waits on it. TKT-22, removing the properties panel, was decided on 2026-09-26 and runs alongside the list. The same day the owner reported eight findings from using the studio (the section "Owner's findings" below); their tickets, TKT-23 to TKT-29, are rows 15 to 21, and the cheap ones (the Ask panel that holds still, the collapsed catalog) belong in the first week because they are what a visitor meets first. The order puts the measurement and the one known wrong answer first, because every later item on the AI aim is judged against them, then the clean-clone start and the studio chart pane (the two things the owner will feel first), then the Run that unlocks exports and reports, then the canvas and 3D work.
+The items below have tickets. TKT-2 was decided on 2026-09-26 by the federation investigation (`docs/proposals/snowdon-federation.md`): the merge is TKT-30, row 0, and item 3 waits on it. Decide TKT-1 and TKT-4 in one sitting if possible. TKT-22, removing the properties panel, was decided on 2026-09-26 and runs alongside the list. The same day the owner reported eight findings from using the studio (the section "Owner's findings" below); their tickets, TKT-23 to TKT-29, are rows 15 to 21, and the cheap ones (the Ask panel that holds still, the collapsed catalog) belong in the first week because they are what a visitor meets first. The order puts the measurement and the one known wrong answer first, because every later item on the AI aim is judged against them, then the clean-clone start and the studio chart pane (the two things the owner will feel first), then the Run that unlocks exports and reports, then the canvas and 3D work.
 
 | # | Ticket | Item | Serves | Why now |
 |---|---|---|---|---|
+| 0 | TKT-30 | Merge the seven Snowdon IFC files into one BOS with a correspondence table | W1, W3 | Every Snowdon chart, sample, and 3D view downstream reads this model; the identity rules are known and measured (26 storey groups, 40 and 47 room claims), so the work is building, not research. TKT-31 is the typed reader, later. |
 | 1 | TKT-8 | Measure the Claude backend on the committed ten-question set and record the transcript | W2 | The host already prefers Claude, but every published number is gpt-5's and the questions exist only as prose; every Ask change afterwards needs this baseline. |
 | 2 | TKT-18 | Fix the double count in the IFC ask (Q8 answered twice the expected carbon) | W2, W6 | Small, and a shipped MCP server giving a confident wrong number breaks principle 4 and the Claude aim directly. |
-| 3 | TKT-7 | Snowdon graphs open green from a clean clone plus the private files | W1 | The seeded store is tied to one machine, so only the owner can show the real model; needs TKT-2 answered first. |
+| 3 | TKT-7 | Snowdon graphs open green from a clean clone plus the private files | W1 | The seeded store is tied to one machine, so only the owner can show the real model; waits on TKT-30. |
 | 4 | TKT-9 | One start page and one supported first run | W1 | Professional starts at minute one: today a newcomer meets a port trap (host 5210, editor proxy 5214), two terminals, and a private path. |
 | 5 | TKT-20 | A chart pane in the DuckDB studio | W3 | The studio shows tables only; without this the owner's first aim has no surface in the app. |
-| 6 | TKT-13 | Sample graphs with charts across every populated Snowdon table family | W1, W3 | The samples touch storeys, spaces, doors, and roofs; the export holds walls, floors, pipes, ducts, and materials nobody has charted. Waits on TKT-2, TKT-7, TKT-20. |
+| 6 | TKT-13 | Sample graphs with charts across every populated Snowdon table family | W1, W3 | The samples touch storeys, spaces, doors, and roofs; the export holds walls, floors, pipes, ducts, and materials nobody has charted. Waits on TKT-30, TKT-7, TKT-20. |
 | 7 | TKT-12 | Run from the editor: a Run button, the run record, sinks that execute, an evidence package | W3, W5, W6 | Charts export, reports, evidence packages, and write-back all wait on a Run the editor cannot start. |
 | 8 | TKT-19 | The walkthrough's Duplex half and the paper's eight answers run in CI on every push | W6 | Cheap insurance on W2, W4, and W5 while the canvas work below changes the app; the Snowdon half stays on the owner's machine. |
 | 9 | TKT-11 | Peek at any wire: hover a port for its table, row counts on wires | W2, W3 | Every workflow flows tables, so this is the highest-leverage canvas feature and the one that makes the tool fun. |
@@ -94,7 +95,7 @@ Each line: the item, its status, who or which workflow it serves, and its source
 
 ### Analysis and charts over Snowdon and other models
 
-- Sample graphs beyond four Snowdon entity kinds: the export holds walls, windows, floors, pipes, ducts, and materials, and the nine samples query storeys, spaces, doors, and roofs only. Idea. W1, W3. `docs/bim-flow-duckdb.md` "Workflows". TKT-13, after TKT-2.
+- Sample graphs beyond four Snowdon entity kinds: the export holds walls, windows, floors, pipes, ducts, and materials, and the nine samples query storeys, spaces, doors, and roofs only. Idea. W1, W3. `docs/bim-flow-duckdb.md` "Workflows". TKT-13, after TKT-30.
 - Three finished representative workflows (door schedule with coverage, editable 3D inspection, typed SQL to table), each with provenance, missing values shown, and save and reopen. Partial. `REPOSITORY-HANDOFF.md` P1.
 - A chart pane in the DuckDB studio, which shows tables only today. Idea. W3. `docs/bim-flow-duckdb.md`. TKT-20.
 - Bridge the DuckDB studio and the 3D page so a query result colours the model: the two run on different hosts and data today, so PROJECT.md puts query-driven colouring out of this stretch. Idea. W3, W4.
@@ -189,7 +190,7 @@ Statements the readers found that a newer document or the code overrides. The br
 - The verdict pane "not built": `verdictPane.ts` exists; partial.
 - The query platform's caches unbuilt, `DataModel` superseded: `BuildingModel` and `.Source` are built (2026-09-17); `DataModel` is still in use.
 - "The agent sees names and types but not values": `describeDatabase` reports NULL counts, distinct counts, sample values, and ranges.
-- The Snowdon export's table count: two documents dated 2026-09-18 disagree (48 of 83 with walls and windows; 11 without). TKT-2.
+- The Snowdon export's table count: two documents dated 2026-09-18 disagree (48 of 83 with walls and windows; 11 without). Moot: TKT-2 decided that the canonical data is the merged seven-file model (TKT-30).
 - Claude as the measured backend: measurements used gpt-5; the Claude backend is unmeasured. TKT-8.
 - Tooling "ready to lift" (patch-gate hook, ratchet, impacted-test tool): belongs to sibling prototype repositories, not to this one; several exist now as platonic-coder skills.
 
