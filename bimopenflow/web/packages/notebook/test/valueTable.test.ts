@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { formatValue } from "@bimopenflow/viz";
 import type { AnalysisSummary, EvalUpdate, ModelSummary, NodeCatalog, TableSlice } from "@bimopenflow/contracts";
 import { createSelectionBus } from "../src/embeds/selection";
 import { renderValue, formatNumber } from "../src/embeds/value";
@@ -85,6 +86,16 @@ describe("renderValue", () => {
   it("rounds away floating-point noise from a sum, keeping the value's real precision", () => {
     expect(formatNumber(37196.19999999999)).toBe("37,196.2");
     expect(formatNumber(40.557)).toBe("40.557");
+  });
+
+  it("keeps a large integer exact, only grouping its digits", () => {
+    expect(formatNumber(123456789012345)).toBe("123,456,789,012,345");
+  });
+
+  it("agrees with the table embed's number formatting, digit for digit before grouping", () => {
+    for (const n of [37196.19999999999, 40.557, 123456789012345, 0.0000001, 142]) {
+      expect(formatNumber(n).replace(/,/g, "")).toBe(formatValue(n, "Number"));
+    }
   });
 
   it("shows Not available for an empty snapshot, not an error", () => {

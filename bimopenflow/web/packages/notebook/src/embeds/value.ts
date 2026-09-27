@@ -2,23 +2,21 @@
 // node's output. Draws the snapshot at once, with no host; refresh() compares
 // with the host's current result and redraws when it changed.
 
+import { formatNumber as formatNumberText } from "@bimopenflow/viz";
 import { compareWithHost } from "../live/compare";
 import type { TableSnapshot, ValueEmbed } from "../document/format";
 import type { EmbedRenderer, Freshness } from "./contract";
 
 const NOT_AVAILABLE = "Not available";
 
-/** Significant digits kept before trimming; enough to drop binary noise but keep real precision. */
-const SIGNIFICANT_DIGITS = 12;
-
 /**
- * Adds thousands separators to a number's integer part, after rounding away
- * floating-point noise: a sum such as 37196.19999999999 keeps its real value,
- * 37196.2, instead of showing every bit of the binary representation.
+ * Adds thousands separators to `@bimopenflow/viz`'s `formatNumber` text, so
+ * the value embed reads the same digits as the table embed (integers exact,
+ * fractions to six digits, floating-point noise such as 37196.19999999999
+ * rounded away to 37196.2) with grouping added for a standalone number.
  */
 export function formatNumber(value: number): string {
-  const rounded = Number.isFinite(value) ? Number(value.toPrecision(SIGNIFICANT_DIGITS)) : value;
-  const text = String(rounded);
+  const text = formatNumberText(value);
   const negative = text.startsWith("-");
   const unsigned = negative ? text.slice(1) : text;
   const [whole, fraction] = unsigned.split(".");
