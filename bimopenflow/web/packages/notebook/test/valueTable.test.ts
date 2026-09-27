@@ -76,6 +76,11 @@ describe("renderValue", () => {
     expect(formatNumber(1000000.125)).toBe("1,000,000.125");
   });
 
+  it("rounds away floating-point noise from a sum, keeping the value's real precision", () => {
+    expect(formatNumber(37196.19999999999)).toBe("37,196.2");
+    expect(formatNumber(40.557)).toBe("40.557");
+  });
+
   it("shows Not available for an empty snapshot, not an error", () => {
     const el = mountEl();
     const handle = renderValue(

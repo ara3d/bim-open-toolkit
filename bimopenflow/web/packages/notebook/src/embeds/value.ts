@@ -8,12 +8,17 @@ import type { EmbedRenderer, Freshness } from "./contract";
 
 const NOT_AVAILABLE = "Not available";
 
+/** Significant digits kept before trimming; enough to drop binary noise but keep real precision. */
+const SIGNIFICANT_DIGITS = 12;
+
 /**
- * Adds thousands separators to a number's integer part while keeping every
- * digit it already has (no rounding, no added or dropped decimals).
+ * Adds thousands separators to a number's integer part, after rounding away
+ * floating-point noise: a sum such as 37196.19999999999 keeps its real value,
+ * 37196.2, instead of showing every bit of the binary representation.
  */
 export function formatNumber(value: number): string {
-  const text = String(value);
+  const rounded = Number.isFinite(value) ? Number(value.toPrecision(SIGNIFICANT_DIGITS)) : value;
+  const text = String(rounded);
   const negative = text.startsWith("-");
   const unsigned = negative ? text.slice(1) : text;
   const [whole, fraction] = unsigned.split(".");
