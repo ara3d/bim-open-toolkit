@@ -551,6 +551,10 @@ Final gate after C13: all three commands plus `dotnet build src/studio/BimOpenFl
 | C1 | 14fa3ba | Studio 49 pass (3 new); fence respected (4 files). ClaudeCli files use namespace BimOpenFlow.Ask; the HTTP tools/list test uses an empty server. |
 | C2 | 91e7691 | Studio 38 pass, IFC ask 23 pass; fence respected (1 file). ReadResult and TurnLimitMessage match the plan's example. |
 
+## Integration gate
+
+Run 2026-09-27 after C13 (bd0d51d): Studio tests 90 pass, IFC ask tests 29 pass, Layering 8 pass, `dotnet build src/studio/BimOpenFlow.Studio` and `dotnet build src/studio/BimOpenMcp.Ifc.Ask` succeed. One run of the IFC ask tests failed to compile on another session's untracked `src/mcp/BimOpenMcp.Ifc/IfcMetricCatalog.cs`; the rerun passed.
+
 ## Spike S1 findings
 
 Run 2026-09-27 against Claude Code 2.1.281 (the desktop app's copy, not logged in) and `bimopenmcp-flow.exe --http` over a temp store.
