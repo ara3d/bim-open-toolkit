@@ -17,9 +17,10 @@ export async function listSamples(fetchFn: typeof fetch = globalThis.fetch): Pro
   return names;
 }
 
-/** One sample notebook's text, unparsed. */
+/** One sample notebook's text, unparsed; `name` may leave out the `.notebook.json` extension. */
 export async function fetchSample(name: string, fetchFn: typeof fetch = globalThis.fetch): Promise<string> {
-  const url = `${SAMPLES_ROUTE}${encodeURIComponent(name)}`;
+  const file = name.endsWith(NOTEBOOK_EXTENSION) ? name : `${name}${NOTEBOOK_EXTENSION}`;
+  const url = `${SAMPLES_ROUTE}${encodeURIComponent(file)}`;
   const response = await fetchFn(url);
   if (!response.ok) throw new Error(`GET ${url} -> ${response.status}`);
   return response.text();

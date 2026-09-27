@@ -35,7 +35,7 @@ export const notebookCss = `
   }
 }
 body { background: var(--nb-bg); color: var(--nb-text); font: 14px var(--nb-font); }
-.nb-column { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
+.nb-column { max-width: 760px; box-sizing: border-box; margin: 0 auto; padding: 24px 16px; }
 .nb-turn { margin-bottom: 24px; border-bottom: 1px solid var(--nb-border); padding-bottom: 16px; }
 .nb-request { background: var(--nb-request-bg); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; }
 .nb-request-text { white-space: pre-wrap; }
@@ -64,7 +64,7 @@ body { background: var(--nb-bg); color: var(--nb-text); font: 14px var(--nb-font
 }
 .nb-embed-caption { font-weight: 600; }
 .nb-embed-kind { font-size: 11px; text-transform: uppercase; color: var(--nb-dim); }
-.nb-embed-body { padding: 10px; }
+.nb-embed-body { padding: 10px; overflow-x: auto; }
 .nb-badge { margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
 .nb-badge-snapshot { background: var(--nb-border); color: var(--nb-dim); }
 .nb-badge-current { background: var(--nb-green); color: #fff; }
