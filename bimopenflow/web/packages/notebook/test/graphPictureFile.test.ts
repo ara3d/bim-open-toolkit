@@ -5,6 +5,7 @@ import type { FileEmbed, GraphEmbed, PictureEmbed } from "../src/document/format
 import { renderFile, readableSize } from "../src/embeds/file";
 import { renderGraph } from "../src/embeds/graph";
 import { renderPicture } from "../src/embeds/picture";
+import { notebookCss } from "../src/page/styles";
 
 /** A NotebookApi whose members throw unless overridden, so a test only wires what it uses. */
 function fakeApi(overrides: Partial<NotebookApi> = {}): NotebookApi {
@@ -68,7 +69,7 @@ describe("renderGraph", () => {
     renderGraph(el, graphEmbed(), ctxWith(api));
 
     const summary = el.querySelector("summary")!;
-    expect(summary.textContent).toContain("Graph nrc-q1 · 2 nodes");
+    expect(summary.querySelector("span")!.textContent).toBe("Graph nrc-q1 · 2 nodes");
     const pre = el.querySelector("pre.notebook-graph-text")!;
     expect(pre.textContent).toBe(GRAPH_TEXT_V1);
     const mark = pre.querySelector("mark.notebook-graph-focus")!;
@@ -76,6 +77,10 @@ describe("renderGraph", () => {
     const link = el.querySelector("a.notebook-graph-open") as HTMLAnchorElement;
     expect(link.textContent).toBe("Open in editor");
     expect(link.href).toBe("http://127.0.0.1:5310/?analysis=nrc-q1");
+  });
+
+  it("gives the Open in editor link a left margin, so it never runs into the summary text", () => {
+    expect(notebookCss).toMatch(/\.notebook-graph-open\s*\{[^}]*margin-left:\s*\d/);
   });
 
   it("starts folded, with the summary line and Open in editor link visible", () => {

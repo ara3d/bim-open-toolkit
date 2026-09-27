@@ -75,6 +75,7 @@ body { background: var(--nb-bg); color: var(--nb-text); font: 14px var(--nb-font
 .nb-earlier-entry { color: var(--nb-dim); margin-top: 6px; }
 .nb-earlier-entry summary { cursor: pointer; }
 .nb-earlier-request, .nb-earlier-reply { white-space: pre-wrap; margin: 4px 0; }
+.notebook-graph-open { margin-left: 12px; }
 `;
 
 const STYLE_ID = "nb-styles";
