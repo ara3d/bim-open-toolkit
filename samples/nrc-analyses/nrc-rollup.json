@@ -2,16 +2,12 @@
   "formatVersion": "0.1.0",
   "layout": {
     "answer": {
-      "x": 2350,
-      "y": 40
+      "x": 1360,
+      "y": 240
     },
     "containers": {
       "x": 370,
       "y": 240
-    },
-    "elementRows": {
-      "x": 1030,
-      "y": 40
     },
     "entities": {
       "x": 40,
@@ -29,14 +25,6 @@
       "x": 1030,
       "y": 640
     },
-    "rollupRows": {
-      "x": 1360,
-      "y": 240
-    },
-    "rows": {
-      "x": 1690,
-      "y": 40
-    },
     "run": {
       "x": 40,
       "y": 840
@@ -49,41 +37,13 @@
       "x": 1030,
       "y": 240
     },
-    "table": {
-      "x": 2020,
-      "y": 40
-    },
     "values": {
       "x": 40,
-      "y": 40
-    },
-    "withStepId": {
-      "x": 370,
       "y": 40
     }
   },
   "structure": {
     "edges": [
-      {
-        "from": "values.relation",
-        "to": "withStepId.left"
-      },
-      {
-        "from": "entities.relation",
-        "to": "withStepId.right"
-      },
-      {
-        "from": "withStepId.relation",
-        "to": "elementRows.t1"
-      },
-      {
-        "from": "metrics.relation",
-        "to": "elementRows.t2"
-      },
-      {
-        "from": "run.relation",
-        "to": "elementRows.t3"
-      },
       {
         "from": "storeys.relation",
         "to": "containers.t1"
@@ -122,42 +82,21 @@
       },
       {
         "from": "summaries.relation",
-        "to": "rollupRows.t1"
+        "to": "answer.t1"
       },
       {
         "from": "provenance.relation",
-        "to": "rollupRows.t2"
-      },
-      {
-        "from": "elementRows.relation",
-        "to": "rows.t1"
-      },
-      {
-        "from": "rollupRows.relation",
-        "to": "rows.t2"
-      },
-      {
-        "from": "rows.relation",
-        "to": "table.input"
-      },
-      {
-        "from": "table.table",
-        "to": "answer.in"
+        "to": "answer.t2"
       }
     ],
     "nodes": [
       {
         "id": "answer",
-        "kind": "sink.writePsets",
-        "version": 1
-      },
-      {
-        "id": "containers",
         "kind": "rel.sql",
         "version": 1
       },
       {
-        "id": "elementRows",
+        "id": "containers",
         "kind": "rel.sql",
         "version": 1
       },
@@ -182,16 +121,6 @@
         "version": 1
       },
       {
-        "id": "rollupRows",
-        "kind": "rel.sql",
-        "version": 1
-      },
-      {
-        "id": "rows",
-        "kind": "rel.sql",
-        "version": 1
-      },
-      {
         "id": "run",
         "kind": "rel.csv",
         "version": 1
@@ -207,32 +136,18 @@
         "version": 1
       },
       {
-        "id": "table",
-        "kind": "rel.materialize",
-        "version": 1
-      },
-      {
         "id": "values",
         "kind": "rel.csv",
-        "version": 1
-      },
-      {
-        "id": "withStepId",
-        "kind": "rel.join",
         "version": 1
       }
     ]
   },
   "values": {
     "answer": {
-      "sourcePath": "{SAMPLES}/duplex-base.ifc",
-      "targetPath": "{SAMPLES}/../../artifacts/nrc/duplex-enriched-out.ifc"
+      "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"
     },
     "containers": {
       "sql": "SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so.StoreyIndex\nWHERE e.GlobalId IS NOT NULL\nQUALIFY row_number() OVER (PARTITION BY so.EntityIndex ORDER BY so.Depth, so.StoreyIndex) = 1\nUNION ALL\nSELECT e.GlobalId, 'building', b.StepId\nFROM t2 e JOIN t2 b ON b.Category = 'IFCBUILDING'\nWHERE e.GlobalId IS NOT NULL"
-    },
-    "elementRows": {
-      "sql": "SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,\n       m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue\nFROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId\nUNION\nSELECT p.StepId, s.PropertySet, s.PropertyName, s.ValueType, r.Value\nFROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId\nJOIN t2 s ON s.Level = 'element' AND s.PropertySet = m.PropertySet\nJOIN t3 r ON r.Field = s.PropertyName\nUNION\nSELECT p.StepId, m.PropertySet, r.Field, r.ValueType, r.Value\nFROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId\nJOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\nORDER BY entityId, psetName, paramName"
     },
     "entities": {
       "source": "duplex-base",
@@ -250,12 +165,6 @@
     "provenance": {
       "sql": "SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFCPROJECT'\nORDER BY paramName"
     },
-    "rollupRows": {
-      "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"
-    },
-    "rows": {
-      "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"
-    },
     "run": {
       "path": "nrc-run.csv",
       "source": "nrc"
@@ -267,17 +176,9 @@
     "summaries": {
       "sql": "SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE m.Rollup\n           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n           WHEN 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n           WHEN 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)\n       END AS paramValue\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none' AND (m.Rollup = 'count' OR m.MetricId = p.MetricId)\nGROUP BY p.entityId, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals\nUNION\nSELECT p.entityId, m.PropertySet, r.Field, r.ValueType, r.Value\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'\nJOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\nORDER BY entityId, psetName, paramName"
     },
-    "table": {
-      "limit": "0"
-    },
     "values": {
       "path": "nrc_analytics_long.csv",
       "source": "nrc"
-    },
-    "withStepId": {
-      "kind": "inner",
-      "leftKey": "GlobalId",
-      "rightKey": "GlobalId"
     }
   }
 }

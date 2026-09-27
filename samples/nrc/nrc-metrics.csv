@@ -1,15 +1,16 @@
-MetricId,Level,PropertySet,PropertyName,ValueType,Unit,LifecycleStage,Rollup,Description
-NRC.EC.A1A3.TOTAL,element,Pset_NRCEmbodiedCarbon,EmbodiedCarbon_A1A3_kgCO2e,Real,kgCO2e,A1-A3,none,Embodied carbon of the element's production stage (synthetic)
-NRC.EC.A1A5.TOTAL,element,Pset_NRCEmbodiedCarbon,EmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,none,Embodied carbon up to construction (synthetic)
-NRC.OC.ANNUAL,element,Pset_NRCOperationalCarbon,OperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,none,Annual operational carbon attributed to the element (synthetic)
-NRC.EUI.ANNUAL,element,Pset_NRCEnergyPerformance,EnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,none,Annual energy use intensity attributed to the element (synthetic)
-NRC.COUNT.ELEMENTS,storey,Pset_NRCStoreySummary,ElementCount,Integer,count,,count,Analysed elements on the storey
-NRC.EC.A1A3.TOTAL,storey,Pset_NRCStoreySummary,TotalEmbodiedCarbon_A1A3_kgCO2e,Real,kgCO2e,A1-A3,sum,Sum of element A1-A3 embodied carbon on the storey
-NRC.EC.A1A5.TOTAL,storey,Pset_NRCStoreySummary,TotalEmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,sum,Sum of element A1-A5 embodied carbon on the storey
-NRC.OC.ANNUAL,storey,Pset_NRCStoreySummary,TotalOperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,sum,Sum of element operational carbon on the storey
-NRC.EUI.ANNUAL,storey,Pset_NRCStoreySummary,MeanEnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,mean,Mean of element energy use intensity on the storey (element-count mean; synthetic data has no areas)
-NRC.COUNT.ELEMENTS,building,Pset_NRCBuildingSummary,ElementCount,Integer,count,,count,Analysed elements in the building
-NRC.EC.A1A3.TOTAL,building,Pset_NRCBuildingSummary,TotalEmbodiedCarbon_A1A3_kgCO2e,Real,kgCO2e,A1-A3,sum,Sum of element A1-A3 embodied carbon in the building
-NRC.EC.A1A5.TOTAL,building,Pset_NRCBuildingSummary,TotalEmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,sum,Sum of element A1-A5 embodied carbon in the building
-NRC.OC.ANNUAL,building,Pset_NRCBuildingSummary,TotalOperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,sum,Sum of element operational carbon in the building
-NRC.EUI.ANNUAL,building,Pset_NRCBuildingSummary,MeanEnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,mean,Mean of element energy use intensity in the building (element-count mean)
+MetricId,Level,PropertySet,PropertyName,ValueType,Unit,LifecycleStage,Rollup,Description,Decimals
+NRC.EC.A1A3.TOTAL,element,Pset_NRCEmbodiedCarbon,EmbodiedCarbon_A1A3_kgCO2e,Real,kgCO2e,A1-A3,none,Embodied carbon of the element's production stage (synthetic),
+NRC.EC.A1A5.TOTAL,element,Pset_NRCEmbodiedCarbon,EmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,none,Embodied carbon up to construction (synthetic),
+NRC.OC.ANNUAL,element,Pset_NRCOperationalCarbon,OperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,none,Annual operational carbon attributed to the element (synthetic),
+NRC.GRID.FACTOR,element,Pset_NRCOperationalCarbon,GridEmissionFactor_kgCO2e_per_kWh,Real,kgCO2e/kWh,B6,none,"Grid emission factor the operational carbon was computed with; one value per run, taken from nrc-run.csv (synthetic)",
+NRC.EUI.ANNUAL,element,Pset_NRCEnergyPerformance,EnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,none,Annual energy use intensity attributed to the element (synthetic),
+NRC.COUNT.ELEMENTS,storey,Pset_NRCStoreySummary,ElementCount,Integer,count,,count,Analysed elements on the storey,0
+NRC.EC.A1A3.TOTAL,storey,Pset_NRCStoreySummary,TotalEmbodiedCarbon_A1A3_kgCO2e,Real,kgCO2e,A1-A3,sum,Sum of element A1-A3 embodied carbon on the storey,1
+NRC.EC.A1A5.TOTAL,storey,Pset_NRCStoreySummary,TotalEmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,sum,Sum of element A1-A5 embodied carbon on the storey,1
+NRC.OC.ANNUAL,storey,Pset_NRCStoreySummary,TotalOperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,sum,Sum of element operational carbon on the storey,1
+NRC.EUI.ANNUAL,storey,Pset_NRCStoreySummary,MeanEnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,mean,Mean of element energy use intensity on the storey (element-count mean; synthetic data has no areas),2
+NRC.COUNT.ELEMENTS,building,Pset_NRCBuildingSummary,ElementCount,Integer,count,,count,Analysed elements in the building,0
+NRC.EC.A1A3.TOTAL,building,Pset_NRCBuildingSummary,TotalEmbodiedCarbon_A1A3_kgCO2e,Real,kgCO2e,A1-A3,sum,Sum of element A1-A3 embodied carbon in the building,1
+NRC.EC.A1A5.TOTAL,building,Pset_NRCBuildingSummary,TotalEmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,sum,Sum of element A1-A5 embodied carbon in the building,1
+NRC.OC.ANNUAL,building,Pset_NRCBuildingSummary,TotalOperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,sum,Sum of element operational carbon in the building,1
+NRC.EUI.ANNUAL,building,Pset_NRCBuildingSummary,MeanEnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,mean,Mean of element energy use intensity in the building (element-count mean),2

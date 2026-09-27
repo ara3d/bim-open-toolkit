@@ -1,0 +1,111 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "answer": {
+      "x": 1030,
+      "y": 40
+    },
+    "entities": {
+      "x": 40,
+      "y": 440
+    },
+    "metrics": {
+      "x": 40,
+      "y": 640
+    },
+    "run": {
+      "x": 40,
+      "y": 840
+    },
+    "values": {
+      "x": 40,
+      "y": 40
+    },
+    "withStepId": {
+      "x": 370,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "values.relation",
+        "to": "withStepId.left"
+      },
+      {
+        "from": "entities.relation",
+        "to": "withStepId.right"
+      },
+      {
+        "from": "withStepId.relation",
+        "to": "answer.t1"
+      },
+      {
+        "from": "metrics.relation",
+        "to": "answer.t2"
+      },
+      {
+        "from": "run.relation",
+        "to": "answer.t3"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "answer",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "entities",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "metrics",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "run",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "values",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "withStepId",
+        "kind": "rel.join",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "answer": {
+      "sql": "SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,\n       m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue\nFROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId\nUNION\nSELECT p.StepId, s.PropertySet, s.PropertyName, s.ValueType, r.Value\nFROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId\nJOIN t2 s ON s.Level = 'element' AND s.PropertySet = m.PropertySet\nJOIN t3 r ON r.Field = s.PropertyName\nUNION\nSELECT p.StepId, m.PropertySet, r.Field, r.ValueType, r.Value\nFROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId\nJOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\nORDER BY entityId, psetName, paramName"
+    },
+    "entities": {
+      "source": "duplex-base",
+      "table": "EntityText"
+    },
+    "metrics": {
+      "path": "nrc-metrics.csv",
+      "source": "nrc"
+    },
+    "run": {
+      "path": "nrc-run.csv",
+      "source": "nrc"
+    },
+    "values": {
+      "path": "nrc_analytics_long.csv",
+      "source": "nrc"
+    },
+    "withStepId": {
+      "kind": "inner",
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId"
+    }
+  }
+}

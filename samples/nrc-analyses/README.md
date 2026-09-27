@@ -2,8 +2,8 @@
 
 Graph documents that answer the NRC paper's proof-of-concept questions over the
 data in `samples/nrc`. Every graph ends in a node named `answer`, and every
-source is named (`nrc` for the CSV folder, `duplex-enriched` for the DuckDB
-built from the IFC), so the graphs are portable. Both host profiles seed them
+source is named (`nrc` for the CSV folder, `duplex-enriched` and `duplex-base`
+for the DuckDB databases built from the two IFC files), so the graphs are portable. Both host profiles seed them
 into an empty analysis store and add `samples/nrc` to their model roots.
 
 | Graph | Answers | Runs in profile |
@@ -18,7 +18,9 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 | `nrc-q8-per-storey` | per-storey count, embodied carbon A1-A3, and mean energy intensity | tables, bim |
 | `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced) | tables, bim |
 | `nrc-dc-w1-verdicts` | rule DC-W1 over doors, coloured in 3D | bim only (`check.rule`, `view3d.color`) |
-| `nrc-enrich-run` | `psets_to_write.csv` written back into a copy of the IFC | bim only (`sink.writePsets`) |
+| `nrc-element-psets` | the element property-set rows: each value of `nrc_analytics_long.csv` placed by `nrc-metrics.csv`, keyed by the STEP id of `duplex-base`, with the run facts of `nrc-run.csv` (2,394 rows) | tables, bim |
+| `nrc-rollup` | the storey and building summary rows (`Pset_NRCStoreySummary`, `Pset_NRCBuildingSummary`), each element placed by `StoreyOfElement` and aggregated by its metric's `Rollup`, plus the project's `Pset_NRCAnalyticsProvenance` from `nrc-run.csv` (47 rows) | tables, bim |
+| `nrc-enrich-run` | the rows of `nrc-element-psets` and `nrc-rollup` written into a copy of `duplex-base.ifc` (2,441 values on 224 entities); it carries copies of both graphs because a graph cannot reference another | bim only (`sink.writePsets`) |
 | `nrc-color-operational-carbon` | the Duplex model coloured by operational carbon, viridis gradient, unmatched instances grey (paper Figure 5) | bim only (`view3d.instances`, `view3d.color`) |
 | `nrc-color-embodied-carbon` | the same model coloured by embodied carbon A1-A3; the roof, which has no value, stays grey (Figure 6) | bim only |
 | `nrc-color-category` | one colour per analysis category, nine in all (Figure 7) | bim only |
@@ -45,3 +47,25 @@ deterministic data the paper's answer would have to pick from or sum.
 deterministically: every one of the 218 elements cites the same run. The
 "when" half of Q6 has no separate timestamp column in the data; it is only
 the date embedded in the run id's text, `run-2026-09-17-01`.
+
+## How the enrichment rows are derived
+
+`nrc-element-psets` and `nrc-rollup` compute every row `nrc-enrich-run` writes;
+nothing in `samples/nrc` supplies a total. Both read the model as source
+`duplex-base`, the unenriched file, so neither reads the output of its own last
+Run. The rules, all driven by `samples/nrc/nrc-metrics.csv`:
+
+- An element gets one set per dictionary `PropertySet` in which it has at least
+  one value in `nrc_analytics_long.csv`; the roof has no embodied value, so it
+  has no `Pset_NRCEmbodiedCarbon`.
+- A dictionary property with no value in the long table takes the run fact of
+  the same name from `nrc-run.csv` (today only `GridEmissionFactor_kgCO2e_per_kWh`).
+- Each element is placed on one storey: its `StoreyOfElement` row with the
+  smallest `Depth`. Every element with a GlobalId is placed in the model's
+  `IFCBUILDING`.
+- Storey and building rows aggregate by the metric's `Rollup` (`sum`, `mean`,
+  or `count` of distinct elements) and round to its `Decimals`.
+- Every set carries `AnalysisRunId` and `ScenarioName`; the project's
+  `Pset_NRCAnalyticsProvenance` carries every field of `nrc-run.csv`.
+- Rows are ordered by (entityId, psetName, paramName), which is unique, so a
+  Run writes the same bytes every time.

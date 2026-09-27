@@ -13,7 +13,7 @@ namespace BimOpenFlow.NrcWorkflows.Tests;
 /// numbers the NRC paper published. Every asserted number cites
 /// nrc-ifc-llm/poc/results/expected_answers.json, poc/data/nrc_analytics_storeys.csv, or the
 /// committed copies of those files under samples/nrc.
-/// The database comes from <see cref="Fixture"/>, built from samples/nrc/duplex-enriched.ifc.</summary>
+/// The databases come from <see cref="Fixture"/>, built from samples/nrc/duplex-enriched.ifc and duplex-base.ifc.</summary>
 [TestFixture]
 public sealed class ModelGraphTests
 {
@@ -22,19 +22,19 @@ public sealed class ModelGraphTests
     private static RelationRuntime Runtime => Fixture.Runtime;
 
     /// <summary>The document as the host seeds it: {SAMPLES} rewritten to samples/nrc.</summary>
-    private static GraphDocument Document(string id)
+    internal static GraphDocument Document(string id)
         => SampleSeeding.RewritePaths(GraphDocumentIO.Load(NrcPaths.Graph(id)), NrcPaths.SamplesDir);
 
     /// <summary>Validates and evaluates the document, asserting that every node reached Ok. Effect
     /// nodes never do in a standing pass: the engine captures their inputs and reports
     /// EffectPending until a Run. Naming one here accepts that status for it.</summary>
-    private static EvalSnapshot EvaluateGreen(GraphDocument doc, string id, NodeRegistry registry,
+    internal static EvalSnapshot EvaluateGreen(GraphDocument doc, string id, NodeRegistry registry,
         params string[] effectNodes)
         => AssertGreen(new EvalSession(registry).SetDocument(Validated(doc, id, registry)), id, effectNodes);
 
     /// <summary>A standing pass with the effect nodes pending, then the engine Run over the same
     /// session, asserting that every node, effects included, reached Ok. Returns the run snapshot.</summary>
-    private static EvalSnapshot RunGreen(GraphDocument doc, string id, NodeRegistry registry,
+    internal static EvalSnapshot RunGreen(GraphDocument doc, string id, NodeRegistry registry,
         params string[] effectNodes)
     {
         var session = new EvalSession(registry);
@@ -60,7 +60,7 @@ public sealed class ModelGraphTests
         => pendingEffects.Contains(nodeId) ? NodeStatus.EffectPending : NodeStatus.Ok;
 
     /// <summary>The rows of the answer node, whether it carries a Relation or an ordinary Table.</summary>
-    private static IDataTable AnswerRows(EvalSnapshot snapshot, RelationRuntime runtime)
+    internal static IDataTable AnswerRows(EvalSnapshot snapshot, RelationRuntime runtime)
         => snapshot.Results["answer"].Outputs[0] switch
         {
             RelationValue relation => runtime.Materialize((Plan)relation.Payload!),
@@ -149,16 +149,17 @@ public sealed class ModelGraphTests
             var summary = ((TableValue)RunGreen(doc, "nrc-enrich-run", registry, "answer")
                 .Results["answer"].Outputs[0]).Table;
 
-            // samples/nrc/psets_to_write.csv: 2438 data rows over 224 distinct entityId values.
+            // 2,441 values over 224 entities: 2,394 element values on 218 elements (RollupGraphTests),
+            // 7 on each of the 4 storeys and the building, and the 12 fields of nrc-run.csv on the project.
             Assert.That(summary.Rows, Has.Count.EqualTo(1));
             Assert.That(summary.Cell("entitiesTouched", 0), Is.EqualTo(224L));
-            Assert.That(summary.Cell("valuesWritten", 0), Is.EqualTo(2438L));
+            Assert.That(summary.Cell("valuesWritten", 0), Is.EqualTo(2441L));
             Assert.That(summary.Cell("targetPath", 0), Is.EqualTo(target));
 
             // The write is byte-exact and additive, so the copy is strictly larger than the source.
             Assert.That(File.Exists(target), Is.True, target);
             Assert.That(new FileInfo(target).Length,
-                Is.GreaterThan(new FileInfo(NrcPaths.Ifc).Length));
+                Is.GreaterThan(new FileInfo(NrcPaths.BaseIfc).Length));
         }
         finally
         {
@@ -168,7 +169,7 @@ public sealed class ModelGraphTests
     }
 
     /// <summary>A copy of the document with one parameter of one node replaced.</summary>
-    private static GraphDocument WithParam(GraphDocument doc, string nodeId, string name, string value)
+    internal static GraphDocument WithParam(GraphDocument doc, string nodeId, string name, string value)
         => doc with
         {
             Values = doc.Values.ToDictionary(
