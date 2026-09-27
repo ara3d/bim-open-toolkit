@@ -114,7 +114,7 @@ export function bfastModel(spec: BfastModelSpec): Uint8Array {
     instanceWords[row * 16 + 14] = (red | (green << 8) | (blue << 16) | (alpha << 24)) | 0;
     const material = ((instance.roughness ?? 255) | ((instance.metallic ?? 0) << 8)) << 16;
     instanceWords[row * 16 + 15] = material | ((instance.hidden === true ? 1 : 0) << 8);
-    instanceBounds.push(0, 0, 0, 1, 1, 1);
+    instanceBounds.push(...worldBoxOf(meshBounds, instance.mesh, rows));
   });
 
   const meta = new ArrayBuffer(48);
@@ -152,6 +152,29 @@ function boundsOf(positions: readonly number[]): number[] {
   return [...min, ...max];
 }
 
+// The world box of one placement, exactly as the converter's `RecomputeInstanceBounds` computes it:
+// the mesh's local box transformed by the instance's 3x4 matrix, corner by corner, or an empty box
+// (min at +Infinity, max at -Infinity, so it unions away to nothing) for a placement with no mesh.
+function worldBoxOf(meshBounds: readonly number[], mesh: number, rows: readonly number[]): number[] {
+  if (mesh < 0) return [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+  const at = mesh * 6;
+  const localMin = meshBounds.slice(at, at + 3);
+  const localMax = meshBounds.slice(at + 3, at + 6);
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  for (let corner = 0; corner < 8; corner += 1) {
+    const x = (corner & 1) === 0 ? localMin[0] : localMax[0];
+    const y = (corner & 2) === 0 ? localMin[1] : localMax[1];
+    const z = (corner & 4) === 0 ? localMin[2] : localMax[2];
+    for (let row = 0; row < 3; row += 1) {
+      const value = (rows[row * 4] ?? 0) * (x ?? 0) + (rows[row * 4 + 1] ?? 0) * (y ?? 0) + (rows[row * 4 + 2] ?? 0) * (z ?? 0) + (rows[row * 4 + 3] ?? 0);
+      min[row] = Math.min(min[row] ?? value, value);
+      max[row] = Math.max(max[row] ?? value, value);
+    }
+  }
+  return [...min, ...max];
+}
+
 // A model with two meshes and three placements, one of them geometry-free. Used by several tests.
 export const sampleBfast = (): Uint8Array =>
   bfastModel({
@@ -160,6 +183,21 @@ export const sampleBfast = (): Uint8Array =>
       { mesh: 0, entity: 0 },
       { mesh: 1, entity: 1, rows: translationRows(5, 0, 0), color: [255, 0, 0, 128] },
       { mesh: -1, entity: 2 },
+    ],
+  });
+
+// The box-preview worked example: A is drawn opaque white at the origin, B is drawn translucent red
+// moved to (5,0,0), C has no mesh, D is hidden, and E is bound but drawn with alpha 0. `readBoxPreview`
+// draws only A and B, and its `bounds` covers A, B and E but not the geometry-free C or the hidden D.
+export const previewSample = (): Uint8Array =>
+  bfastModel({
+    meshes: [triangleMesh(), squareMesh()],
+    instances: [
+      { mesh: 0, entity: 0 },
+      { mesh: 1, entity: 1, rows: translationRows(5, 0, 0), color: [255, 0, 0, 128] },
+      { mesh: -1, entity: 2 },
+      { mesh: 0, entity: 3, rows: translationRows(100, 0, 0), hidden: true },
+      { mesh: 0, entity: 4, rows: translationRows(-3, 0, 0), color: [255, 255, 255, 0] },
     ],
   });
 

@@ -109,6 +109,33 @@ half of the load: on the reference model it is about twice the cost of everythin
   convention. Reported as `formats/dropped-vertex-colors`.
 - **Assumed: coordinates.** Z up, unknown units.
 
+## Box preview
+
+`readBoxPreview` reads a prepared BFAST's small tables — the instance records, the mesh slices, and
+`InstanceBoundsData`, the world-space box the converter already computed for every placement — and
+builds a coarse stand-in for the model without touching a vertex or an index. It is one pass over the
+instance records, cheap enough to run before the full parse.
+
+A record is *bound* when it has a mesh with vertices, is not hidden, and carries a finite transform.
+`BoxPreview.bounds` is the union of every bound record's stored box, alpha-0 records included, so a
+camera framed on the preview stays put once the full model, whose binding is the same set, is framed
+too. `BoxPreview.boxes` and `.colors` keep only the bound records with alpha above 0: one box in the
+placement's source colour per drawn instance. A drawn box whose own volume is more than
+`maxVolumeFraction` (default 0.1%) of the bounds' volume is left out and counted in `.oversized`
+instead, so one oversized placement cannot hide the rest behind its box; the cap is skipped when the
+bounds have zero volume, which a flat or two-dimensional model always does.
+
+Raises `formats/invalid-bfast` when the bytes are not a readable BFAST render model, or when its
+instance table and its `InstanceBoundsData` table disagree in how many records they hold.
+
+<!-- prettier-ignore -->
+```ts
+const preview = readBoxPreview(bytes);
+// preview.boxes:  previewBoxStride (6) floats per box, world coordinates, min xyz then max xyz
+// preview.colors: 4 floats per box, RGBA 0 to 1
+// preview.bounds: the full binding's bounds, for framing a camera before the full model is parsed
+```
+
 ## Detection
 
 `detectFormat` reads the byte signature first, because a name can be wrong, and falls back to the
