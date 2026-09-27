@@ -18,6 +18,17 @@ import {
   type ModelRef,
   type ObjectRecord,
 } from '@bim-open-toolkit/model';
+import {
+  colorWord,
+  entityWord,
+  flagsWord,
+  hiddenFlag,
+  instanceWords,
+  meshSliceInts,
+  meshWord,
+  metallicShift,
+  roughnessShift,
+} from './bfast-layout.js';
 import { fail, formatCode, formatNote, formatWarning } from './diagnostics.js';
 import { loadedModel, type LoadedModel } from './loaded-model.js';
 import { cancellationCheckInterval, reportProgress, throwIfCancelled, type LoadContext } from './progress.js';
@@ -29,23 +40,6 @@ import {
   type ModelDocuments,
   type ModelProperties,
 } from './properties.js';
-
-// 32-bit words in one BFAST instance record, and the word each field sits at.
-const instanceWords = 16;
-const meshWord = 12;
-const entityWord = 13;
-const colorWord = 14;
-const flagsWord = 15;
-
-// Integers per mesh slice: base vertex, vertex count, first index, index count.
-const meshSliceInts = 4;
-
-// Byte 1 of the flags word holds the instance flags; bit 0 of those means the instance is not drawn.
-const hiddenFlag = 0x1;
-
-// Bytes 2 and 3 of the flags word hold the placement's surface factors, 0 to 255 over 0 to 1.
-const roughnessShift = 16;
-const metallicShift = 24;
 
 // How much of the embedded BOS tables to decode. Names and categories cost one Parquet read each.
 export type MetadataLevel = 'none' | 'identity' | 'full';
