@@ -304,6 +304,8 @@ Baseline gates (2026-09-26, HEAD e71e596; `app/**` has uncommitted edits from ot
 | C1 | abaec0b | Geometry 108, Layering 8 pass; NrcWorkflows builds; fence respected. |
 | C7 | 8b6c096 | panes 139 tests pass, tsc clean; fence respected (5 files). Gradient labels only at the first and last stop; categorical caption is the literal 'category'. |
 | C4 | 53c5c29 | HostProfileTests 7 pass; the eight spatial.* kinds listed. |
+| C9 | 667cf77 | panes tests pass (chartPane 21 cases); fence respected (2 files). |
+| C10 | e053355 | panes 146 tests pass, tsc clean; fence respected (2 files). Precedence recipe > legend input > table-derived; the reference-equality short-circuit was dropped. |
 | C8 | f778b4a | viz 46 tests pass, tsc clean; fence respected (2 files). |
 
 ## Review findings
