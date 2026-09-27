@@ -54,7 +54,7 @@ is the content itself, not the path or a timestamp.
 | TableOps — `BimOpenFlow.Nodes.TableOps` | 18 | `table.filter`, `table.derive`, `table.aggregate`, `table.sort`, `table.cast`, `table.concat`, `table.distinct`, `table.drop`, `table.limit`, `table.pivot`, `table.profile`, `table.rename`, `table.sample`, `table.schema`, `table.splitColumn`, `table.transpose`, `table.unpivot`, `table.window` |
 | Cleaning — `BimOpenFlow.Nodes.Cleaning` | 6 | `table.fillNulls`, `table.dropNulls`, `table.dedupe`, `table.replace`, `text.transform`, `text.extract` |
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
-| Viz — `BimOpenFlow.Nodes.Viz` | 4 | `chart.bar`, `chart.line`, `view.table`, `view.colormap` |
+| Viz — `BimOpenFlow.Nodes.Viz` | 5 | `chart.bar`, `chart.line`, `view.table`, `view.colormap`, `view.note` |
 | Spatial — `BimOpenFlow.Nodes.Spatial` | 8 | `spatial.intersects`, `spatial.within`, `spatial.nearest`, `spatial.contains`, `spatial.footprint`, `spatial.polygon`, `spatial.polygonContains`, `spatial.polygonIntersects` |
 | Relations — `BimOpenFlow.Nodes.Relations` | 12 | `rel.csv`, `rel.table`, `rel.fromTable`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
 
@@ -2566,6 +2566,20 @@ Builds a legend table (the shared colour scale) for 'valueColumn' of 'values'; w
 | `auto` | Boolean | `true` | — | — |
 | `min` | Number | `0` | — | — |
 | `max` | Number | `1` | — | — |
+
+### `view.note` (v1) — Pure
+
+A comment on the canvas; computes nothing and has no ports.
+
+**Inputs**: none
+
+**Outputs**: none
+
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `text` | Text | — | — | — |
 
 ## Spatial — `BimOpenFlow.Nodes.Spatial`
 
