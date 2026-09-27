@@ -27,6 +27,7 @@ export const formatCode = {
   missingDocumentTable: 'formats/missing-document-table',
   droppedProperties: 'formats/dropped-properties',
   noGeometry: 'formats/no-geometry',
+  noPreview: 'formats/no-preview',
   assumedCoordinates: 'formats/assumed-coordinates',
 } as const;
 

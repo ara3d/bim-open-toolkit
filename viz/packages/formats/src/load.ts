@@ -2,13 +2,14 @@ import { success, type CoordinateContext, type Diagnostic, type ModelRef, type R
 import { defaultModelRef, readBfastModel, type MetadataLevel } from './bfast.js';
 import { readBosModel, type BosConverter } from './bos.js';
 import { detectFormat } from './detect.js';
-import { diagnosticOf, formatCode } from './diagnostics.js';
+import { diagnosticOf, formatCode, formatWarning, FormatError } from './diagnostics.js';
 import { readGltfModel } from './gltf.js';
 import { validateLoadedModel, type LoadedModel, type ModelFormat } from './loaded-model.js';
 import { readObjModel } from './obj.js';
+import { readBoxPreview, type BoxPreview } from './preview.js';
 import { resolveSource, wholeBuffer, type ModelSource, type Resolver } from './resolver.js';
 import { readStlModel } from './stl.js';
-import type { LoadContext } from './progress.js';
+import { throwIfCancelled, type LoadContext } from './progress.js';
 
 /** Everything `loadModel` accepts. Every field has a working default; only the source is required. */
 export type LoadOptions = LoadContext & {
@@ -32,6 +33,12 @@ export type LoadOptions = LoadContext & {
   readonly validate?: boolean;
   /** How a BOS archive is prepared as BFAST. Defaults to the loaders' own conversion. */
   readonly convert?: BosConverter;
+  /**
+   * Called once, after the bytes are in hand and before parsing, with a box preview when the format
+   * carries one (a prepared BFAST). Awaited, so a host can draw it and let the browser present a frame.
+   * A preview that cannot be read becomes a `formats/no-preview` warning; the load goes on.
+   */
+  readonly onPreview?: (preview: BoxPreview) => void | Promise<void>;
 };
 
 /**
@@ -46,17 +53,47 @@ export async function loadModel(source: ModelSource, options: LoadOptions = {}):
     const resolved = await resolveSource(source, options);
     const detected = options.format === undefined ? detectFormat(resolved.bytes, resolved.name) : success(options.format);
     if (!detected.ok) return detected;
+    const previewDiagnostics = await runPreview(detected.value, resolved.bytes, options);
     const model = await readModel(detected.value, resolved.bytes, {
       ...options,
       ref: options.ref ?? defaultModelRef(resolved.name),
     });
     const problems = options.validate === true ? validateLoadedModel(model) : [];
-    const diagnostics: readonly Diagnostic[] = [...detected.diagnostics, ...model.diagnostics, ...problems];
+    const diagnostics: readonly Diagnostic[] = [
+      ...detected.diagnostics,
+      ...previewDiagnostics,
+      ...model.diagnostics,
+      ...problems,
+    ];
     return problems.some((each) => each.severity === 'error')
       ? { ok: false, diagnostics }
       : success(model, diagnostics);
   } catch (error) {
     return { ok: false, diagnostics: [diagnosticOf(error, formatCode.failed)] };
+  }
+}
+
+/**
+ * Offers `options.onPreview` a box preview of a BFAST before the full parse, once the bytes are in
+ * hand. Every other format is left alone: only a BFAST carries the stored instance boxes a preview
+ * reads. A preview that cannot be read, or a host callback that throws, becomes a `formats/no-preview`
+ * warning and the load goes on; a cancellation raised while it runs propagates, so the load ends up
+ * reporting `formats/cancelled` like every other cancellation.
+ */
+async function runPreview(
+  format: ModelFormat,
+  bytes: Uint8Array,
+  options: LoadOptions,
+): Promise<readonly Diagnostic[]> {
+  if (format !== 'bfast' || options.onPreview === undefined) return [];
+  try {
+    const preview = readBoxPreview(bytes);
+    await options.onPreview(preview);
+    throwIfCancelled(options);
+    return [];
+  } catch (error) {
+    if (error instanceof FormatError && error.code === formatCode.cancelled) throw error;
+    return [formatWarning(formatCode.noPreview, error instanceof Error ? error.message : String(error))];
   }
 }
 

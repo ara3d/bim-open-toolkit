@@ -58,6 +58,26 @@ await loadModel(gltfBytes, { resolver: mapResolver([['scene.bin', binBytes]]) })
 loader knows one. `signal` stops the load: a cancelled load publishes no further progress and comes
 back as a `formats/cancelled` diagnostic, not as an exception.
 
+## Box preview
+
+`onPreview` is called once, after the bytes are in hand and detected as a prepared BFAST, and before
+the full parse. It is awaited, so a host can draw the preview and let the browser present a frame
+before the parse holds the thread:
+
+```ts
+import { loadModel, readBoxPreview } from '@bim-open-toolkit/formats';
+
+await loadModel(bfastBytes, {
+  onPreview: (preview) => drawBoxes(preview.boxes, preview.colors, preview.count),
+});
+```
+
+No other format calls it: only a prepared BFAST carries the stored per-instance boxes `readBoxPreview`
+reads. When the preview cannot be read, or the callback itself throws, the load reports a
+`formats/no-preview` warning and goes on to the full parse rather than failing. A cancellation raised
+while `onPreview` runs ends the load the same way any other cancellation does, as a `formats/cancelled`
+diagnostic.
+
 ## Checking a model
 
 `validateLoadedModel` walks every index and every float and reports what does not hold: an instance

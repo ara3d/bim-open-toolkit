@@ -95,6 +95,55 @@ describe('loadModel', () => {
     expect(seen.map((each) => each.phase)).toContain('parse');
     expect(seen[seen.length - 1]?.phase).toBe('convert');
   });
+
+  it('offers a BFAST box preview once, before the first parse event, and awaits it', async () => {
+    const seen: string[] = [];
+    const previews: unknown[] = [];
+    const result = await loadModel(sampleBfast(), {
+      onProgress: (progress) => seen.push(`progress:${progress.phase}`),
+      onPreview: async (preview) => {
+        previews.push(preview);
+        // A macrotask delay: if the load did not await this promise, `readModel` would already have
+        // reported its first `parse` progress by the time this continuation runs.
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        seen.push('preview-resolved');
+      },
+    });
+    expect(result.ok).toBe(true);
+    expect(previews).toHaveLength(1);
+    expect((previews[0] as { count: number }).count).toBe(2);
+    expect(seen[0]).toBe('preview-resolved');
+    expect(seen.slice(1)).toContain('progress:parse');
+  });
+
+  it('never offers a preview for a format with no stored boxes', async () => {
+    const onPreview = vi.fn();
+    const result = await loadModel(utf8(objText), { onPreview });
+    expect(result.ok).toBe(true);
+    expect(onPreview).not.toHaveBeenCalled();
+  });
+
+  it('turns a preview that throws into a warning and still loads the model', async () => {
+    const result = await loadModel(sampleBfast(), {
+      onPreview: () => {
+        throw new Error('preview drawing failed');
+      },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.diagnostics.map((each) => each.code)).toContain(formatCode.noPreview);
+  });
+
+  it('reports a cancellation raised during onPreview as formats/cancelled', async () => {
+    const controller = new AbortController();
+    const result = await loadModel(sampleBfast(), {
+      signal: controller.signal,
+      onPreview: () => {
+        controller.abort();
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics[0]?.code).toBe(formatCode.cancelled);
+  });
 });
 
 describe('loadModel when it cannot', () => {
