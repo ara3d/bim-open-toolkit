@@ -27,7 +27,7 @@ public sealed class PocCoverageTests
         ["group.by"] = ["table.aggregate"],
         ["check.rule"] = ["check.rule"],
         ["viz.colorBy"] = ["view3d.color"],
-        ["viz.colormap"] = ["view3d.color"],
+        ["viz.colormap"] = ["view.colormap"],
         ["sink.exportCsv"] = ["sink.exportCsv"],
         ["sink.writePset"] = ["sink.writePsets"],
     };
