@@ -68,7 +68,7 @@ describe("renderGraph", () => {
     renderGraph(el, graphEmbed(), ctxWith(api));
 
     const summary = el.querySelector("summary")!;
-    expect(summary.textContent).toBe("Graph nrc-q1 · 2 nodes");
+    expect(summary.textContent).toContain("Graph nrc-q1 · 2 nodes");
     const pre = el.querySelector("pre.notebook-graph-text")!;
     expect(pre.textContent).toBe(GRAPH_TEXT_V1);
     const mark = pre.querySelector("mark.notebook-graph-focus")!;
@@ -76,6 +76,16 @@ describe("renderGraph", () => {
     const link = el.querySelector("a.notebook-graph-open") as HTMLAnchorElement;
     expect(link.textContent).toBe("Open in editor");
     expect(link.href).toBe("http://127.0.0.1:5310/?analysis=nrc-q1");
+  });
+
+  it("starts folded, with the summary line and Open in editor link visible", () => {
+    const el = document.createElement("div");
+    renderGraph(el, graphEmbed(), ctxWith(fakeApi()));
+
+    const details = el.querySelector("details.notebook-embed-graph") as HTMLDetailsElement;
+    expect(details.open).toBe(false);
+    const summary = el.querySelector("summary")!;
+    expect(summary.querySelector("a.notebook-graph-open")).not.toBeNull();
   });
 
   it("reports current when the host's text equals the embed's", async () => {

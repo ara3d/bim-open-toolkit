@@ -41,10 +41,22 @@ function messageOf(e: unknown): string {
 export const renderGraph: EmbedRenderer<GraphEmbed> = (el, embed, ctx: EmbedContext) => {
   const details = document.createElement("details");
   details.className = "notebook-embed notebook-embed-graph";
-  details.open = true;
+  details.open = false;
 
   const summary = document.createElement("summary");
   details.appendChild(summary);
+
+  // Inside summary, not details, so it stays visible while the graph is folded
+  // (a <details> element hides everything but its <summary> when closed).
+  const summaryText = document.createElement("span");
+  summary.appendChild(summaryText);
+
+  const link = document.createElement("a");
+  link.className = "notebook-graph-open";
+  link.textContent = "Open in editor";
+  link.target = "_blank";
+  link.rel = "noopener";
+  summary.appendChild(link);
 
   const pre = document.createElement("pre");
   pre.className = "notebook-graph-text";
@@ -54,20 +66,13 @@ export const renderGraph: EmbedRenderer<GraphEmbed> = (el, embed, ctx: EmbedCont
   status.className = "notebook-graph-status";
   details.appendChild(status);
 
-  const link = document.createElement("a");
-  link.className = "notebook-graph-open";
-  link.textContent = "Open in editor";
-  link.target = "_blank";
-  link.rel = "noopener";
-  details.appendChild(link);
-
   el.appendChild(details);
 
   let shownText = embed.text ?? "";
 
   const draw = (text: string, focus: readonly string[] | undefined) => {
     const count = nodeIdsOf(text).length;
-    summary.textContent = count > 0 ? `Graph ${embed.analysisId} · ${count} nodes` : `Graph ${embed.analysisId}`;
+    summaryText.textContent = count > 0 ? `Graph ${embed.analysisId} · ${count} nodes` : `Graph ${embed.analysisId}`;
     link.href = editorUrl(embed.analysisId);
 
     pre.textContent = "";
