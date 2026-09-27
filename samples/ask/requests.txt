@@ -1,0 +1,17 @@
+# Requests for scripts/ask-bim-flow.mjs --file, one per line, tab-separated
+# from the request text and its expected answer: `request<TAB>expected`.
+# Blank lines and lines starting with # are ignored. Expected answers were
+# computed on 2026-09-26 by querying artifacts/building-model-workflows/snowdon-cli.duckdb
+# directly with the DuckDB CLI (see docs/bim-flow-mcp-demo.md "Measuring it").
+# "honest" expected values (no `->`) mean the correct behaviour is an answer
+# without a graph, not a specific number.
+How many rooms are on each storey? Sort by count, largest first.	290 rooms total across 33 storeys with rooms; L4 has the most, 55
+A room schedule: room number, name, storey and floor area, sorted by storey then room number.	290 rooms
+Which rooms have the most doors? Show room number, name, storey and door count, top 15.	Corridor 402 on L4 has the most doors, 11
+Which doors are fire rated, and what is their rating? Include the storey.	65 of 142 doors have a fire rating
+List every roof with its name, storey and area, and flag which ones have no area.	26 roofs; all 26 are missing an area value
+Which source documents contributed elements, and how many elements came from each?	7 source documents
+Which table in this export has the most rows, and how many?	evidence, 146669 rows
+How many walls are in this export?	1277 walls
+How many windows are in this export?	174 windows
+How many of the tables in this export have at least one row?	48 tables

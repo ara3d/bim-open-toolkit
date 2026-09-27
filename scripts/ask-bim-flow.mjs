@@ -5,6 +5,13 @@
 // Streams each tool call as the agent makes it, then prints the first rows of
 // the answer table and a one-line verdict per request. BOF_STUDIO_URL selects
 // the host (default http://127.0.0.1:5218); BOF_ASK_ROWS the rows to show.
+//
+// A --file line may carry an expected answer after a tab: `request<TAB>expected`
+// (see samples/ask/requests.txt). When present, it is printed next to the
+// answer rows and in the summary line, so a person can judge correct, honest
+// or wrong by eye; the script does not score the match itself, because the
+// expected text is usually a sentence ("290 rooms total"), not a value the
+// answer table would contain verbatim.
 import { readFile } from 'node:fs/promises';
 
 const base = (process.env.BOF_STUDIO_URL ?? 'http://127.0.0.1:5218').replace(/\/$/, '');
@@ -14,7 +21,8 @@ let continueId = null;
 if (args[0] === '--continue') { continueId = args[1]; args.splice(0, 2); }
 const requests = args[0] === '--file'
   ? (await readFile(args[1], 'utf8')).split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'))
-  : args;
+    .map(l => { const [request, expected] = l.split('\t'); return { request: request.trim(), expected: expected?.trim() || null }; })
+  : args.map(request => ({ request, expected: null }));
 if (requests.length === 0) {
   console.error('Usage: node scripts/ask-bim-flow.mjs [--continue <analysisId>] "request" ["request" ...] | --file requests.txt');
   process.exit(2);
@@ -56,10 +64,11 @@ async function answerRows(id) {
 }
 
 const verdicts = [];
-for (const request of requests) {
+for (const { request, expected } of requests) {
   console.log(`━━ ${request}`);
+  if (expected) console.log(`   expected: ${expected}`);
   const started = Date.now();
-  const verdict = { request, ok: false, id: null, turns: 0, tools: 0, failedTools: 0, seconds: 0, rows: null, text: '' };
+  const verdict = { request, expected, ok: false, id: null, turns: 0, tools: 0, failedTools: 0, seconds: 0, rows: null, text: '' };
   try {
     const response = await fetch(`${base}/api/ask`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -112,5 +121,5 @@ for (const request of requests) {
 const verdictOf = v => (v.ok && v.rows && v.verified !== false ? 'OK      ' : !v.ok && v.turns > 0 && !v.text.startsWith('ERROR') ? 'ANSWERED' : 'FAIL    ');
 console.log('━━ Summary');
 for (const v of verdicts)
-  console.log(`${verdictOf(v)} ${v.seconds}s ${v.turns} turns ${v.tools} tools (${v.failedTools} failed) ${v.rows ?? '-'} rows ${v.tokens ?? ''} · ${v.id ?? ''} · ${v.request}`);
+  console.log(`${verdictOf(v)} ${v.seconds}s ${v.turns} turns ${v.tools} tools (${v.failedTools} failed) ${v.rows ?? '-'} rows ${v.tokens ?? ''} · ${v.id ?? ''} · ${v.request}${v.expected ? ` · expected: ${v.expected}` : ''}`);
 process.exit(verdicts.every(v => verdictOf(v) !== 'FAIL    ') ? 0 : 1);
