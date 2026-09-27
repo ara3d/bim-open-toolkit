@@ -92,7 +92,15 @@ with temporary directories, serves the node catalog, evaluates a graph, and reco
 node gates/host-smoke.mjs
 ```
 
-Run the headless host by hand, pointing it at a directory of models:
+Start the host and the web editor together with one command, which builds the host,
+launches both as detached processes, and prints http://127.0.0.1:5300 once they answer
+(`--profile tables` uses the committed sample tables instead of `data/`):
+
+```bash
+node scripts/start-bim-flow.mjs
+```
+
+Or run the headless host by hand, pointing it at a directory of models:
 
 ```bash
 dotnet run --project src/flow/BimOpenFlow.Host -- --port 5214 --models ./data

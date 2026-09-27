@@ -17,6 +17,13 @@ shows a banner whenever the host is unreachable.
 | `bim` | `bof-host` (port 5214, models `data/`) | `bof-web` (port 5300) | Bos, TableOps, BimAnalysis, Geometry, Compliance, Effects, Viz, Relations |
 | `tables` | `bof-rel-host` (port 5224, models `samples/tables`) | `bof-rel-web` (port 5310) | DuckDb, Tables, TableOps, Cleaning, Dates, Viz, table sinks, Relations |
 
+One command starts either pair as detached processes and waits until both answer
+(`bof` and `bof-tables` in `.claude/launch.json` run the same script):
+
+```bash
+node scripts/start-bim-flow.mjs --profile bim
+```
+
 By hand:
 
 ```bash

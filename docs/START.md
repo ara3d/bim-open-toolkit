@@ -24,31 +24,31 @@ npm ci --prefix bimopenflow/web
 
 ## 3. Start the tables demo
 
-Two terminals, from the repository root.
-
-Terminal A — the host, over the committed sample tables:
+One command, from the repository root:
 
 ```bash
-dotnet run --project src/flow/BimOpenFlow.Host -- --profile tables --models samples/tables --store artifacts/start-demo/store --cache artifacts/start-demo/cache
+node scripts/start-bim-flow.mjs --profile tables
 ```
 
-Terminal B — the editor:
+It builds the host into `artifacts/bim-flow/host`, starts the host on port 5224
+over the committed sample tables and the editor on port 5310, waits until both
+answer, and prints the editor URL. Both run as detached processes, so they keep
+running after the terminal or agent session that started them closes. Running
+the command again reuses whatever is already listening.
 
-```bash
-npm run web --prefix bimopenflow/web
-```
-
-Open [http://127.0.0.1:5300/](http://127.0.0.1:5300/) and choose a seeded sample
+Open [http://127.0.0.1:5310/](http://127.0.0.1:5310/) and choose a seeded sample
 analysis. You should see a graph on the left and its result table on the right.
+
+The same script serves the `bim` profile over `data/` (host 5214, editor 5300),
+which is the default when `--profile` is omitted. `--status` reports what is
+listening and where the logs are, `--stop` ends the profile's two processes, and
+`--restart` stops, rebuilds, and starts. Logs, store, and cache live under
+`artifacts/bim-flow/<profile>/`.
 
 The host's default port (5214) and the editor's default proxy target
 (`bimopenflow/web/packages/app/vite.config.ts`, also 5214) are the same number, so
-neither command above needs a `--port` flag or a `BOF_HOST` override. Pass `--port`
-to the host and `BOF_HOST=http://127.0.0.1:<port>` to the editor together if you
-need a different port — for example, to run a second host at the same time.
-
-I ran the two commands above against a clean `artifacts/start-demo` store and saw
-the editor load with the table pane populated from `samples/tables`.
+the two can also be run by hand with no `--port` flag or `BOF_HOST` override; see
+[DEMOS.md](DEMOS.md) for the commands.
 
 ## Supported demos beyond this page
 
