@@ -392,6 +392,7 @@ Baseline gates (2026-09-26, before any change):
 | Id | Commit | Result |
 |---|---|---|
 | C1 | 7fd584c | Host.Api 35, api-client 21, state 51 pass; app typecheck clean; fence respected (8 files). |
+| C2 | d1d474a | Host.Api.Tests 42 pass, Host.Tests 30 pass, Studio builds; fence respected (9 files). UpdatedUtc reuses RunTimestamp.Format; ApiServer defaults a null editor store. |
 | C6 | 7616295 | editorSession and selection tests pass; app typecheck clean outside TKT-11's in-progress portHover.ts; fence respected (5 files). |
 
 ## Review findings

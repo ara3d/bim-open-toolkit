@@ -428,6 +428,7 @@ Baseline gates (2026-09-26, before any change):
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| C2 | 70d4faf | Host.Api.Tests 42 pass, Host.Tests 30 pass (counts include other builders' new tests); fence respected (5 files). Document overload of RunInputs.Derive stays until C7. |
 | C1 | 2a0348d | Reports tests 12 pass (11 before); fence respected (3 files). EvidenceHtml already labelled by ValueKind, so only ScalarText changed. |
 
 ## Review findings
