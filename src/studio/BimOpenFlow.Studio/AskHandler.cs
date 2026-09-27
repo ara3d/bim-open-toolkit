@@ -8,7 +8,7 @@ namespace BimOpenFlow.Studio;
 /// conversation for the analysis id, reports the agent's events, then runs the host's own
 /// check rounds before the 'done' event. Kept out of the endpoint lambda so it can be tested
 /// without Kestrel. The caller starts the SSE response and holds the one-at-a-time gate.</summary>
-public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<string> system, string model)
+public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<string> system, string model, string? effort = null)
 {
     /// <summary>How many conversations (by analysis id) this handler remembers before the
     /// oldest is dropped; a follow-up on a dropped id still works if the graph itself exists,
@@ -44,7 +44,7 @@ public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<
             var user = continuing
                 ? AskPrompts.FollowUp(body.Request, id, resumed: known is null)
                 : AskPrompts.User(body.Request, id);
-            await emit(new { type = "start", analysisId = id, model, continuing });
+            await emit(new { type = "start", analysisId = id, model, effort, continuing });
 
             Task Report(AskEvent e)
                 => emit(new { type = e.Type, name = e.Name, args = e.Args, ok = e.Ok, summary = e.Summary, text = e.Text });
@@ -73,6 +73,7 @@ public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<
                 inputTokens = outcome.InputTokens,
                 outputTokens = outcome.OutputTokens,
                 model,
+                effort,
             });
         }
         catch (OperationCanceledException)

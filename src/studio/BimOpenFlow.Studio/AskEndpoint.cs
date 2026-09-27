@@ -46,7 +46,7 @@ public static class AskEndpoint
     {
         var services = new FlowServices(host, new AnalysisSessions(host.Store, host.Registry));
         var tools = FlowMcpServer.RegisterTools(
-            new McpServer(McpServer.DefaultPort, FlowMcpServer.ServerName, FlowMcpServer.ServerVersion, transport: McpTransport.Http),
+            new McpServer(LoopbackPorts.Free(), FlowMcpServer.ServerName, FlowMcpServer.ServerVersion, transport: McpTransport.Http),
             services);
         var system = new Lazy<string>(() => AskPrompts.System(services));
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
@@ -54,9 +54,9 @@ public static class AskEndpoint
         var model = selection.Model;
         var setup = new AskSetup(tools, ServerKey, HiddenTools, AskAgent.DefaultMaxTurns);
         var backend = BuildBackend(selection, http, setup);
-        var handler = new AskHandler(services, backend, () => system.Value, model);
+        var handler = new AskHandler(services, backend, () => system.Value, model, selection.Effort);
 
-        app.MapGet(ModelInfoRoute, () => Results.Json(new { model, provider = selection.Provider, configured = selection.Configured, problem = selection.Problem }));
+        app.MapGet(ModelInfoRoute, () => Results.Json(ModelInfoPayload(selection)));
         app.MapPost(Route, async (HttpContext context, AskRequest body, CancellationToken ct) =>
         {
             context.Response.Headers.ContentType = "text/event-stream";
@@ -81,21 +81,35 @@ public static class AskEndpoint
         return app;
     }
 
-    /// <summary>Selection.Create can throw when no provider is configured; that is reported as
-    /// the 'error' event on the first request (see AskHandler.RunAsync), not at startup, so
-    /// GET /api/ask/model still answers and a later restart with a key fixes it without a
-    /// redeploy.</summary>
+    /// <summary>Selection.CreateBackend can throw when no provider is configured; that is
+    /// reported as the 'error' event on the first request (see AskHandler.RunAsync), not at
+    /// startup, so GET /api/ask/model still answers and a later restart with a key or a login
+    /// fixes it without a redeploy.</summary>
     private static IAskBackend BuildBackend(ChatSelection selection, HttpClient http, AskSetup setup)
     {
         try
         {
-            return new ChatBackend(setup, selection.Create(http));
+            return selection.CreateBackend(setup, http);
         }
         catch (Exception e)
         {
             return new FailedBackend(e.Message);
         }
     }
+
+    /// <summary>The GET /api/ask/model payload: provider, model, effort, the claude-cli
+    /// executable (null for the API providers), whether a backend is usable, and the one
+    /// sentence to show when it is not.</summary>
+    public static object ModelInfoPayload(ChatSelection selection)
+        => new
+        {
+            model = selection.Model,
+            provider = selection.Provider,
+            effort = selection.Effort,
+            executable = selection.Executable,
+            configured = selection.Configured,
+            problem = selection.Problem,
+        };
 
     private sealed class FailedBackend(string message) : IAskBackend
     {
