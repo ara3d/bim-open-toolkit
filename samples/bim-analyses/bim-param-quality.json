@@ -18,6 +18,6 @@
   },
   "values": {
     "load": { "path": "{SAMPLES}/sample.bos" },
-    "top": { "by": "Count desc" }
+    "top": { "A": "Count", "descendingA": "true" }
   }
 }

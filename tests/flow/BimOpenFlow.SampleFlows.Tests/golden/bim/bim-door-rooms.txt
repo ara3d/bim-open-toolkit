@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// bim-door-rooms   graph 9a38380fcbe8
+// bim-door-rooms   graph d92e55f11d2c
 bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
   //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
@@ -19,12 +19,6 @@ rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
   //   no colour columns
   //   bounds (0, 0, 0) to (9, 8, 6)
 nearest = spatial.nearest@1(a: doorsOnly.table, b: rooms.table, k: "2", measure: "center", bKey: "Number");
-  // Ok  table 10 rows x 4 cols  sha d1a62a6a18e1
-  //   columns A:Text, B:Text, Distance:Number, Rank:Integer
-  //   [0] "D1", "102", 2.281, 1
-  //   [1] "D1", "101", 2.54, 2
-  //   [2] "D2", "102", 2.281, 1
-ranked = table.sort@1(table: nearest.table, by: "A, Rank");
   // Ok  table 10 rows x 4 cols  sha d1a62a6a18e1
   //   columns A:Text, B:Text, Distance:Number, Rank:Integer
   //   [0] "D1", "102", 2.281, 1

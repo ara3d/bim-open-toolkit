@@ -36,7 +36,7 @@ public sealed class SampleFlowsTests
     public void NoDisconnectedNodes(string profile, string id)
     {
         var doc = SampleFlowsFixture.Snapshot(profile, id).Document;
-        var flagged = Lint.DisconnectedNodes(doc)
+        var flagged = Lint.DisconnectedNodes(doc, SampleFlowsFixture.Profile(profile).Registry)
             .Where(nodeId => !AllowLists.Allows(AllowLists.DisconnectedNodes, profile, id, nodeId))
             .ToList();
         Assert.That(flagged, Is.Empty, $"{profile}/{id}: node(s) with no edge in a multi-node graph");

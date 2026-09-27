@@ -25,9 +25,18 @@ public static class AllowLists
     /// is exactly this lint's job to catch: see the report for TKT-85, not an allow-list entry.</summary>
     public static readonly IReadOnlyList<Entry> DisconnectedNodes = [];
 
-    /// <summary>No entries: every sort/filter/limit in the samples is meant to change its
-    /// input. A no-op here is a real product bug this lint exists to surface.</summary>
-    public static readonly IReadOnlyList<Entry> NoOpTransforms = [];
+    /// <summary>A ranking whose small sample input already arrives in rank order. The sort
+    /// states the flow's intent and changes the order on any larger model, so it stays; a sort
+    /// that repeats an order its input node guarantees is removed instead.</summary>
+    public static readonly IReadOnlyList<Entry> NoOpTransforms =
+    [
+        new(SampleFlowsFixture.BimProfile, "bim-duct-rooms", "ranked",
+            "ranks duct-room overlaps by volume; the sample's few overlaps already arrive largest first"),
+        new(SampleFlowsFixture.BimProfile, "bim-param-quality", "top",
+            "ranks parameters by count; bim.paramCoverage promises no order, the sample's happens to match"),
+        new(SampleFlowsFixture.BimProfile, "bim-room-classes", "ranked",
+            "ranks room classes by room count; table.aggregate orders by class name, which matches only on this sample"),
+    ];
 
     /// <summary>No entries: an empty final table is either a genuinely absent answer (which a
     /// graph should represent with InfoNotAvailable per PROJECT.md principle 3, not a silently

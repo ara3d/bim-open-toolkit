@@ -26,7 +26,7 @@
     "bounds": { "path": "{SAMPLES}/sample.bos" },
     "ductsOnly": { "expr": "Category == 'Ducts'" },
     "overlaps": { "bKey": "Number" },
-    "ranked": { "by": "OverlapVolume desc" },
+    "ranked": { "A": "OverlapVolume", "descendingA": "true" },
     "rooms": { "path": "{SAMPLES}/sample.bos" }
   }
 }

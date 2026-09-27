@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// bim-param-quality   graph 7b637c12e1c6
+// bim-param-quality   graph 5b03061828da
 load = bos.load@1(path: "{SAMPLES}/sample.bos");
   // Ok
   //   entities: table 30 rows x 6 cols  sha 8412288c76d7
@@ -20,7 +20,7 @@ coverage = bim.paramCoverage@1(parameters: load.parameters);
   //   [0] "Rvt:Element:Bounds.Max", "Geometry", "Point", 18, 18, 0.6429
   //   [1] "Rvt:Element:Bounds.Min", "Geometry", "Point", 18, 18, 0.6429
   //   [2] "Rvt:Element:Level", "Constraints", "Entity", 18, 2, 0.6429
-top = table.sort@1(table: coverage.table, by: "Count desc");
+top = table.sort@1(table: coverage.table, A: "Count", descendingA: "true");
   // Ok  table 16 rows x 6 cols  sha 20d7b9eedcbb
   //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Count:Integer, Distinct:Integer, FillRate:Number
   //   [0] "Rvt:Element:Bounds.Max", "Geometry", "Point", 18, 18, 0.6429

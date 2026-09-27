@@ -10,7 +10,7 @@ committed.
 | Id | Shows |
 |---|---|
 | `bim-discipline-mix` | elements classified into disciplines, counted, ranked |
-| `bim-level-summary` | per-level element counts next to the `bim.levels` table |
+| `bim-level-summary` | elements and rooms per level from `bim.levels`, as a bar chart |
 | `bim-room-classes` | rooms classified by name, counted with total volume per class |
 | `bim-dimensions` | bounding boxes with a derived aspect ratio, filtered tall, ranked by volume |
 | `bim-nav-hops` | door navigation graph, hop distances from Corridor 102 |

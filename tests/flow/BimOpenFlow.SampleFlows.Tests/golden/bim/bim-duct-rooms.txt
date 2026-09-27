@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// bim-duct-rooms   graph f4b14971e79a
+// bim-duct-rooms   graph 8b90a3be177f
 bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
   //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
@@ -23,7 +23,7 @@ overlaps = spatial.intersects@1(a: ductsOnly.table, b: rooms.table, bKey: "Numbe
   //   columns A:Text, B:Text, OverlapVolume:Number
   //   [0] "DU1", "201", 0.2
   //   [1] "DU1", "202", 0.08
-ranked = table.sort@1(table: overlaps.table, by: "OverlapVolume desc");
+ranked = table.sort@1(table: overlaps.table, A: "OverlapVolume", descendingA: "true");
   // Ok  table 2 rows x 3 cols  sha a17bff222b7d
   //   columns A:Text, B:Text, OverlapVolume:Number
   //   [0] "DU1", "201", 0.2

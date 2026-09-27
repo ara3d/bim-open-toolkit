@@ -19,13 +19,17 @@ public static class Lint
 
     /// <summary>A node with no edge at all (neither an input nor an output is wired), in a
     /// graph of more than one node: almost always a leftover from editing, since a graph with
-    /// exactly one node has nothing to wire.</summary>
-    public static IReadOnlyList<string> DisconnectedNodes(GraphDocument doc)
+    /// exactly one node has nothing to wire. A node with no ports (a view.note) cannot be wired
+    /// and is skipped.</summary>
+    public static IReadOnlyList<string> DisconnectedNodes(GraphDocument doc, INodeRegistry registry)
     {
-        if (doc.Nodes.Count <= 1)
+        var wirable = doc.Nodes
+            .Where(n => registry.Find(n.Kind, n.Version)?.Spec is not { Inputs.Count: 0, Outputs.Count: 0 })
+            .ToList();
+        if (wirable.Count <= 1)
             return [];
         var wired = doc.Edges.SelectMany(e => new[] { e.FromRef.NodeId, e.ToRef.NodeId }).ToHashSet();
-        return doc.Nodes.Select(n => n.Id).Where(id => !wired.Contains(id)).ToList();
+        return wirable.Select(n => n.Id).Where(id => !wired.Contains(id)).ToList();
     }
 
     /// <summary>A table.sort/filter/limit or rel.sort/filter/limit node whose single output

@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// bim-room-classes   graph 37820ebf8cfa
+// bim-room-classes   graph bb7543d2b9af
 rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
   // Ok  table 6 rows x 21 cols  sha 1a25261d271b
   //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
@@ -18,7 +18,7 @@ byClass = table.aggregate@1(table: classes.table, groupBy: "RoomClass", aggregat
   //   [0] "Circulation", 2, 96
   //   [1] "Kitchen", 1, 60
   //   [2] "Meeting", 1, 120
-ranked = table.sort@1(table: byClass.table, by: "Rooms desc");
+ranked = table.sort@1(table: byClass.table, A: "Rooms", descendingA: "true");
   // Ok  table 5 rows x 3 cols  sha a6f39aeda5d7
   //   columns RoomClass:Text, Rooms:Integer, TotalVolume:Number
   //   [0] "Circulation", 2, 96

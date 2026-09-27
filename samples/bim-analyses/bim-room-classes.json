@@ -21,7 +21,7 @@
   },
   "values": {
     "byClass": { "aggregates": "count(*) as Rooms, sum(Volume) as TotalVolume", "groupBy": "RoomClass" },
-    "ranked": { "by": "Rooms desc" },
+    "ranked": { "A": "Rooms", "descendingA": "true" },
     "rooms": { "path": "{SAMPLES}/sample.bos" }
   }
 }
