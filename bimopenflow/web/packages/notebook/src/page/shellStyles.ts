@@ -39,8 +39,11 @@ export const shellCss = `
 .nb-live-failed { color: var(--nb-red); }
 .nb-live-note { color: var(--nb-dim); }
 .nb-ask {
-  position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-direction: column; gap: 6px;
   padding: 10px 0 16px; background: var(--nb-bg);
+}
+@media (min-height: 600px) {
+  .nb-ask { position: sticky; bottom: 0; }
 }
 .nb-ask textarea {
   width: 100%; box-sizing: border-box; min-height: 64px; resize: vertical; font: inherit; padding: 8px;
