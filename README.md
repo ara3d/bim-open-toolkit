@@ -61,8 +61,19 @@ the design in detail. [docs/OVERVIEW.md](docs/OVERVIEW.md) is the one-page versi
   stack, the Revit add-ins, and the Browser target Windows, so the full toolkit builds
   and runs on Windows only. The engine group and the schema libraries target plain
   `net8.0`. Building the Revit add-ins needs no Revit install; the API comes from NuGet.
-- **Node.js 18 or newer** with npm, for the web editor, the 3D viewer, and the gates.
+- **Node.js**, the version the installed Vite requires (`^20.19.0 || >=22.12.0`; older
+  "Node 18+" advice is insufficient for the current viewer workspace), with npm, for
+  the web editor, the 3D viewer, and the gates.
 - **Git with submodules.** The editor canvas comes from the Gratify submodule.
+
+Run `node scripts/preflight.mjs` to check these, plus a .NET SDK and the private
+Snowdon model the 3D and DuckDB demos need, before following the steps below.
+
+## Start here
+
+[docs/START.md](docs/START.md) is the one-page first run: a preflight check and
+one command per service to a table graph over committed sample data, with no
+private model required. The rest of this section is the same path in more detail.
 
 ## Build and run
 
@@ -117,8 +128,9 @@ The sample analyses in `samples/` run without fixtures.
 
 ## Demos
 
-Two local demos show complete graphs end to end. Both need the private Snowdon sample
-model, and each has its own setup guide:
+The tables-profile demo in [docs/START.md](docs/START.md) needs no private model. The
+two demos below show complete graphs end to end against a real building; both need the
+private Snowdon sample model, and each has its own setup guide:
 
 - **3D demo.** Colors, sections, and explodes a building model from an editable graph.
   Setup and troubleshooting are in [BIMOPENFLOW.md](BIMOPENFLOW.md).

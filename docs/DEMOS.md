@@ -1,5 +1,8 @@
 # Demos
 
+New here? [START.md](START.md) is the one-page first run: a preflight check and
+two commands to a table graph, no private model required.
+
 Every runnable demo of BimOpenFlow, what it needs, what you see, and the test
 that guards it. Ports and commands come from `.claude/launch.json`; the host
 opens its port in well under a second and prepares slow generated samples
