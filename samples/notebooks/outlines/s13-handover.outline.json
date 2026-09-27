@@ -1,0 +1,54 @@
+{
+  "title": "Handover to an NRC reviewer",
+  "createdUtc": "2026-09-27T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "turns": [
+    {
+      "request": "Show me how the total operational carbon was computed.",
+      "reply": "The graph behind that answer is two nodes. `elements` reads `nrc_analytics_elements.csv` from the `nrc` source, 218 rows. `answer` aggregates it with no grouping: `sum(OperationalCarbon_kgCO2e_per_year) as Total, count(*) as Elements`. The result is Total 37,196.2, Elements 218 — the number the paper's Q1 quotes. Open it in the editor to check the aggregate expression yourself; there is no filter step, every one of the 218 rows is summed.",
+      "analysisId": "nrc-q1-building-total",
+      "embeds": [
+        { "kind": "value", "node": "answer", "port": "relation", "column": "Total", "unit": "kgCO2e/yr", "caption": "Total operational carbon" },
+        { "kind": "graph", "focus": ["elements", "answer"] }
+      ],
+      "tools": [
+        { "name": "getAnalysis", "ok": true, "summary": "nrc-q1-building-total: 2 nodes, 1 edge" },
+        { "name": "evaluate", "ok": true, "summary": "2 of 2 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nrc-q1-building-total answer.relation: 1 row × 2 columns" }
+      ]
+    },
+    {
+      "request": "Which files would the reviewer need?",
+      "reply": "Six committed files cover the model and its analytics, plus the sample notebooks already in `samples/notebooks/`. The two IFC models: `duplex-base.ifc` (2,380,763 bytes), the model before enrichment, and `duplex-enriched.ifc` (2,707,239 bytes), the copy the property sets were written into. Three CSVs: `nrc_analytics_elements.csv` (35,069 bytes), the 218 element rows behind the total above; `nrc-metrics.csv` (2,554 bytes), the metric dictionary; and `door_verdicts.csv` (10,403 bytes), the DC-W1 evidence. And the three notebooks already saved: `nrc-eight-questions.notebook.json` (58,464 bytes), `nrc-test-kit.notebook.json` (66,355 bytes), and `nrc-door-check.notebook.json` (24,270 bytes) — this one joins them once it is saved. Each file embed below carries its own byte size and SHA-256, read from the file on disk, not asserted.",
+      "embeds": [
+        { "kind": "file", "path": "samples/nrc/duplex-base.ifc", "caption": "duplex-base.ifc" },
+        { "kind": "file", "path": "samples/nrc/duplex-enriched.ifc", "caption": "duplex-enriched.ifc" },
+        { "kind": "file", "path": "samples/nrc/nrc_analytics_elements.csv", "mediaType": "text/csv", "caption": "nrc_analytics_elements.csv" },
+        { "kind": "file", "path": "samples/nrc/nrc-metrics.csv", "mediaType": "text/csv", "caption": "nrc-metrics.csv" },
+        { "kind": "file", "path": "samples/nrc/door_verdicts.csv", "mediaType": "text/csv", "caption": "door_verdicts.csv" },
+        { "kind": "file", "path": "samples/notebooks/nrc-eight-questions.notebook.json", "mediaType": "application/json", "caption": "nrc-eight-questions.notebook.json" },
+        { "kind": "file", "path": "samples/notebooks/nrc-test-kit.notebook.json", "mediaType": "application/json", "caption": "nrc-test-kit.notebook.json" },
+        { "kind": "file", "path": "samples/notebooks/nrc-door-check.notebook.json", "mediaType": "application/json", "caption": "nrc-door-check.notebook.json" }
+      ],
+      "tools": [
+        { "name": "Read", "ok": true, "summary": "stat and sha256 over the eight files listed in the reply" }
+      ]
+    },
+    {
+      "request": "Package everything in this notebook for someone without the toolkit.",
+      "reply": "There is no package or zip builder in the toolkit yet. The Run button and the evidence package are TKT-12, which workflow 5 in PROJECT.md still waits on; nothing here writes a zip today. What a handover package would contain, once that exists: this notebook file; the two IFC models and the three CSVs named above, each by its SHA-256; a static HTML export of the transcript with every snapshot inlined, so no install is needed to read it (also not built, an Extension point in docs/plans/notebook.md's wave 2); and a manifest listing every member with its hash, produced by a Run. Until then, the files in the previous turn are what a reviewer copies by hand.",
+      "tools": []
+    },
+    {
+      "request": "What would they need to rerun it?",
+      "reply": "The toolkit at commit 4f19e2341cea350df35b65133e53908c83a5f250 (`git log -1`), this notebook file, and the two IFC files, `duplex-base.ifc` and `duplex-enriched.ifc`, each named by the SHA-256 in the file embeds above — no private data, everything here comes from the committed Duplex sample. To regenerate a notebook like this one, `samples/notebooks/README.md` gives the two commands: start the bim host with `node scripts/start-bim-flow.mjs` (from `bimopenflow/web/packages/notebook`), wait until `GET /api/analyses/nrc-dc-w1-verdicts/state` shows every node `Ok`, then run `npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/s13-handover.outline.json`.",
+      "tools": [
+        { "name": "Read", "ok": true, "summary": "samples/notebooks/README.md: 6,726 bytes" },
+        { "name": "Bash", "ok": true, "summary": "git log -1: 4f19e2341cea350df35b65133e53908c83a5f250, 2026-09-27 15:18:08 -0400" }
+      ]
+    }
+  ]
+}
