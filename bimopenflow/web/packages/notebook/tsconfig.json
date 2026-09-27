@@ -1,0 +1,22 @@
+{
+  "extends": "../../toolkit.tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    // Same source aliases as packages/app: modules this package imports from
+    // @bimopenflow/app may reach gratify and the viewer packages.
+    "paths": {
+      "gratify": ["../../../../submodules/gratify/src/gratify/index.ts"],
+      "@bim-open-toolkit/*": ["../../../../viz/packages/*/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", "scripts"]
+}

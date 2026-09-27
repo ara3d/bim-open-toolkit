@@ -1,0 +1,29 @@
+{
+  "name": "@bimopenflow/notebook",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Analysis notebook: the transcript of a session with the agent, with live embeds (value, table, chart, graph, 3D, picture, file) rendered by the existing panes and re-evaluated against the host.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bimopenflow/api-client": "0.1.0",
+    "@bimopenflow/app": "0.1.0",
+    "@bimopenflow/contracts": "0.1.0",
+    "@bimopenflow/panes": "0.1.0",
+    "three": "^0.185.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^7.3.6",
+    "vitest": "^3.0.0"
+  }
+}
