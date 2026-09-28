@@ -316,6 +316,8 @@ Supervisor-owned across every chunk: this plan file, `bimopenflow/web/package-lo
 |---|---|---|
 | G1 | 3e4a699 | Skeleton; layering test 1 pass, typecheck clean; `gates/web-smoke.mjs` gained the step; lock file updated by `npm install`. |
 | G2 | (see git log) | 28 modules and 29 test files copied from `3e4a699`; gratify's example `widgets.ts` and `range-math.ts` copied as `gratifyWidgets.ts` and `gratifyRangeMath.ts` (Planned debt); 202 tests pass, typecheck clean, layering test passes. The UX wave's chunk F (`nodeRender.ts` and friends) was uncommitted at copy time and arrives with G4. |
+| G5 | 1947620 | CanvasInstance holds the former module-level state; canvasView(model, instance); createGraphEditor(canvas, options) replaces the positional createCanvasEditor; test/instance.test.ts mounts two headless runtimes over two stores with the same node id. 205 tests, typecheck clean. |
+| G4 | (see git log) | Re-sync of the UX wave's chunk F (2f88912): nodeRender.ts, nodeStyle.ts and their tests copied in; canvasParts.ts's node drawing replaced by renderNodeCard; nodeStyleChoice.ts stays in the app (it uses the app's prefs.ts, like themeChoice.ts) and its persistence cases are dropped from the package's nodeStyle test. Range applied: 3e4a699..2f88912 for the canvas files. 228 tests, typecheck clean. Still to re-sync: the wave's chunk G (canvasEditor.ts, in progress in the app). |
 
 ## Review findings
 
