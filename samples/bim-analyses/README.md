@@ -14,11 +14,11 @@ committed.
 | `bim-room-classes` | rooms classified by name, counted with total volume per class |
 | `bim-dimensions` | bounding boxes with a derived aspect ratio, filtered tall, ranked by volume |
 | `bim-nav-hops` | door navigation graph, hop distances from Corridor 102 |
-| `bim-room-containment` | door centers spatially joined into room boxes, counted per room |
-| `bim-param-quality` | `bos.load` parameter table profiled by `bim.paramCoverage` |
+| `bim-room-containment` | doors touching each room, by `spatial.intersects` overlap, keyed and grouped by room entity id |
+| `bim-param-quality` | `bos.load` parameter table profiled by `bim.paramCoverage`, FillRate measured within each parameter's category |
 | `bim-nearest-door` | each room's nearest door with its distance, ranked |
 | `bim-duct-rooms` | the rooms each duct passes through, by `spatial.intersects` overlap volume |
-| `bim-door-rooms` | the two rooms each door serves, by `spatial.nearest` (k = 2, center distance) |
+| `bim-door-rooms` | the room(s) each door's box overlaps, by `spatial.intersects` filtered to a real overlap |
 | `bim-room-footprints` | room boxes as WKT footprints with polygon area and perimeter, ranked by perimeter |
 
 Every sample validates against `HostComposition.AllPacks()` and evaluates green

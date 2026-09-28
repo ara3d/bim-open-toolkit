@@ -1,28 +1,35 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "about": { "x": 700, "y": 224 },
     "bounds": { "x": 40, "y": 40 },
     "doorsOnly": { "x": 370, "y": 40 },
-    "nearest": { "x": 700, "y": 40 },
-    "rooms": { "x": 40, "y": 224 }
+    "overlap": { "x": 700, "y": 40 },
+    "rooms": { "x": 40, "y": 224 },
+    "touching": { "x": 1030, "y": 40 }
   },
   "structure": {
     "edges": [
       { "from": "bounds.table", "to": "doorsOnly.table" },
-      { "from": "doorsOnly.table", "to": "nearest.a" },
-      { "from": "rooms.table", "to": "nearest.b" }
+      { "from": "doorsOnly.table", "to": "overlap.a" },
+      { "from": "rooms.table", "to": "overlap.b" },
+      { "from": "overlap.table", "to": "touching.table" }
     ],
     "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
-      { "id": "nearest", "kind": "spatial.nearest", "version": 1 },
-      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+      { "id": "overlap", "kind": "spatial.intersects", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 },
+      { "id": "touching", "kind": "table.filter", "version": 1 }
     ]
   },
   "values": {
+    "about": { "text": "The rooms each door's box actually overlaps (spatial.intersects, filtered to OverlapVolume > 0). An exterior door such as D4 lists one room; a door in an interior wall lists both. The sample doors also carry from/to-room parameters (see bim-nav-hops); use this only when those are missing." },
     "bounds": { "path": "{SAMPLES}/sample.bos" },
     "doorsOnly": { "expr": "Category == 'Doors'" },
-    "nearest": { "bKey": "Number", "k": "2", "measure": "center" },
-    "rooms": { "path": "{SAMPLES}/sample.bos" }
+    "overlap": { "bKey": "Number" },
+    "rooms": { "path": "{SAMPLES}/sample.bos" },
+    "touching": { "expr": "OverlapVolume > 0" }
   }
 }

@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// bim-param-quality   graph 5b03061828da
+// bim-param-quality   graph 363193ce16bd
+about = view.note@1(text: "FillRate is measured within each parameter's Category (joined in from bos.load's entities table), not against every entity in the file. A parameter that only applies to one category, such as a room's Number, now reads as fully filled instead of a small fraction of all 28 entities; a parameter that spans several categories, such as Bounds.Max, gets one row per category.");
+  // Ok
 load = bos.load@1(path: "{SAMPLES}/sample.bos");
   // Ok
   //   entities: table 30 rows x 6 cols  sha 8412288c76d7
@@ -14,15 +16,21 @@ load = bos.load@1(path: "{SAMPLES}/sample.bos");
   //     [2] 2, "Rvt:Category:CategoryType", "Category", "", "String", "Model"
   //   relations: table 0 rows x 5 cols  sha a3606a2fbc71
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-coverage = bim.paramCoverage@1(parameters: load.parameters);
-  // Ok  table 16 rows x 6 cols  sha 20d7b9eedcbb
-  //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Count:Integer, Distinct:Integer, FillRate:Number
-  //   [0] "Rvt:Element:Bounds.Max", "Geometry", "Point", 18, 18, 0.6429
-  //   [1] "Rvt:Element:Bounds.Min", "Geometry", "Point", 18, 18, 0.6429
-  //   [2] "Rvt:Element:Level", "Constraints", "Entity", 18, 2, 0.6429
+joinCategory = table.join@1(a: load.parameters, b: load.entities, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
+  // Ok  table 123 rows x 11 cols  sha acaec478887f
+  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text
+  //   [0] 0, "Rvt:Category:CategoryType", "Category", "", "String", "Model", 1001, "GUID-1001", "Levels", null, null
+  //   [1] 1, "Rvt:Category:CategoryType", "Category", "", "String", "Model", 1002, "GUID-1002", "Rooms", null, null
+  //   [2] 2, "Rvt:Category:CategoryType", "Category", "", "String", "Model", 1003, "GUID-1003", "Walls", null, null
+coverage = bim.paramCoverage@1(parameters: joinCategory.table, groupBy: "Category");
+  // Ok  table 44 rows x 7 cols  sha 8613f5d24712
+  //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Category:Text, Count:Integer, Distinct:Integer, FillRate:Number
+  //   [0] "Rvt:Category:CategoryType", "Category", "String", null, 8, 1, 1
+  //   [1] "Rvt:Element:Bounds.Max", "Geometry", "Point", "Rooms", 6, 6, 1
+  //   [2] "Rvt:Element:Bounds.Min", "Geometry", "Point", "Rooms", 6, 6, 1
 top = table.sort@1(table: coverage.table, A: "Count", descendingA: "true");
-  // Ok  table 16 rows x 6 cols  sha 20d7b9eedcbb
-  //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Count:Integer, Distinct:Integer, FillRate:Number
-  //   [0] "Rvt:Element:Bounds.Max", "Geometry", "Point", 18, 18, 0.6429
-  //   [1] "Rvt:Element:Bounds.Min", "Geometry", "Point", 18, 18, 0.6429
-  //   [2] "Rvt:Element:Level", "Constraints", "Entity", 18, 2, 0.6429
+  // Ok  table 44 rows x 7 cols  sha 8613f5d24712
+  //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Category:Text, Count:Integer, Distinct:Integer, FillRate:Number
+  //   [0] "Rvt:Category:CategoryType", "Category", "String", null, 8, 1, 1
+  //   [1] "Rvt:Element:Bounds.Max", "Geometry", "Point", "Rooms", 6, 6, 1
+  //   [2] "Rvt:Element:Bounds.Min", "Geometry", "Point", "Rooms", 6, 6, 1

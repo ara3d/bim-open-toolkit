@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// bim-door-rooms   graph d92e55f11d2c
+// bim-door-rooms   graph fd99c43e9c2b
+about = view.note@1(text: "The rooms each door's box actually overlaps (spatial.intersects, filtered to OverlapVolume > 0). An exterior door such as D4 lists one room; a door in an interior wall lists both. The sample doors also carry from/to-room parameters (see bim-nav-hops); use this only when those are missing.");
+  // Ok
 bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
   //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
@@ -18,9 +20,15 @@ rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (0, 0, 0) to (9, 8, 6)
-nearest = spatial.nearest@1(a: doorsOnly.table, b: rooms.table, k: "2", measure: "center", bKey: "Number");
-  // Ok  table 10 rows x 4 cols  sha d1a62a6a18e1
-  //   columns A:Text, B:Text, Distance:Number, Rank:Integer
-  //   [0] "D1", "102", 2.281, 1
-  //   [1] "D1", "101", 2.54, 2
-  //   [2] "D2", "102", 2.281, 1
+overlap = spatial.intersects@1(a: doorsOnly.table, b: rooms.table, bKey: "Number");
+  // Ok  table 12 rows x 3 cols  sha b85498af71dd
+  //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "D1", "101", 0.21
+  //   [1] "D1", "102", 0.21
+  //   [2] "D2", "102", 0.21
+touching = table.filter@1(table: overlap.table, expr: "OverlapVolume > 0");
+  // Ok  table 9 rows x 3 cols  sha 1121da7bff0c
+  //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "D1", "101", 0.21
+  //   [1] "D1", "102", 0.21
+  //   [2] "D2", "102", 0.21

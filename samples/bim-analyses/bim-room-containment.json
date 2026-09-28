@@ -1,31 +1,56 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "about": { "x": 1690, "y": 224 },
     "bounds": { "x": 40, "y": 40 },
     "byRoom": { "x": 1030, "y": 40 },
     "doorsOnly": { "x": 370, "y": 40 },
-    "place": { "x": 700, "y": 40 },
-    "rooms": { "x": 40, "y": 224 }
+    "final": { "x": 1690, "y": 40 },
+    "labeled": { "x": 1360, "y": 40 },
+    "overlap": { "x": 700, "y": 40 },
+    "roomLabels": { "x": 700, "y": 224 },
+    "rooms": { "x": 40, "y": 224 },
+    "sorted": { "x": 2020, "y": 40 },
+    "touching": { "x": 1030, "y": 224 }
   },
   "structure": {
     "edges": [
       { "from": "bounds.table", "to": "doorsOnly.table" },
-      { "from": "place.table", "to": "byRoom.table" },
-      { "from": "rooms.table", "to": "place.boxes" },
-      { "from": "doorsOnly.table", "to": "place.points" }
+      { "from": "rooms.table", "to": "overlap.b" },
+      { "from": "doorsOnly.table", "to": "overlap.a" },
+      { "from": "overlap.table", "to": "touching.table" },
+      { "from": "touching.table", "to": "byRoom.table" },
+      { "from": "rooms.table", "to": "roomLabels.table" },
+      { "from": "byRoom.table", "to": "labeled.a" },
+      { "from": "roomLabels.table", "to": "labeled.b" },
+      { "from": "labeled.table", "to": "final.table" },
+      { "from": "final.table", "to": "sorted.table" }
     ],
     "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "byRoom", "kind": "table.aggregate", "version": 1 },
       { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
-      { "id": "place", "kind": "bim.containment", "version": 1 },
-      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+      { "id": "final", "kind": "table.project", "version": 1 },
+      { "id": "labeled", "kind": "table.join", "version": 1 },
+      { "id": "overlap", "kind": "spatial.intersects", "version": 1 },
+      { "id": "roomLabels", "kind": "table.project", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 },
+      { "id": "sorted", "kind": "table.sort", "version": 1 },
+      { "id": "touching", "kind": "table.filter", "version": 1 }
     ]
   },
   "values": {
+    "about": { "text": "Doors touching each room (spatial.intersects between doors and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches). Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display." },
     "bounds": { "path": "{SAMPLES}/sample.bos" },
-    "byRoom": { "aggregates": "count(*) as Doors", "groupBy": "ContainedIn" },
+    "byRoom": { "aggregates": "count(*) as Doors", "groupBy": "B" },
     "doorsOnly": { "expr": "Category == 'Doors'" },
-    "rooms": { "path": "{SAMPLES}/sample.bos" }
+    "final": { "columns": "Name, Number, Doors" },
+    "labeled": { "aKey": "B", "bKey": "EntityIndex", "mode": "left" },
+    "overlap": { "bKey": "EntityIndex" },
+    "roomLabels": { "columns": "EntityIndex, Name, Number" },
+    "rooms": { "path": "{SAMPLES}/sample.bos" },
+    "sorted": { "A": "Name", "B": "Number" },
+    "touching": { "expr": "OverlapVolume > 0" }
   }
 }

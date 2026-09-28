@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// bim-room-containment   graph f36c0ecad7db
+// bim-room-containment   graph f18b28a5bb71
+about = view.note@1(text: "Doors touching each room (spatial.intersects between doors and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches). Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display.");
+  // Ok
 bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
   //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
@@ -18,15 +20,45 @@ rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (0, 0, 0) to (9, 8, 6)
-place = bim.containment@1(points: doorsOnly.table, boxes: rooms.table);
-  // Ok  table 5 rows x 20 cols  sha 6dce6c6c1ec2
-  //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+4 more)
-  //   scene 5 boxes (of 6 upstream): 5 opaque, 0 faded, 0 hidden
-  //   no colour columns
-  //   bounds (4.5, 1.4, 0) to (7.5, 8.1, 5.1)
-byRoom = table.aggregate@1(table: place.table, groupBy: "ContainedIn", aggregates: "count(*) as Doors");
-  // Ok  table 3 rows x 2 cols  sha 5a61eb9fc73a
-  //   columns ContainedIn:Text, Doors:Integer
-  //   [0] "Corridor", 3
-  //   [1] "WC", 1
-  //   [2] null, 1
+overlap = spatial.intersects@1(a: doorsOnly.table, b: rooms.table, bKey: "EntityIndex");
+  // Ok  table 12 rows x 3 cols  sha 200d0e08ae01
+  //   columns A:Text, B:Integer, OverlapVolume:Number
+  //   [0] "D1", 12, 0.21
+  //   [1] "D1", 13, 0.21
+  //   [2] "D2", 13, 0.21
+roomLabels = table.project@1(table: rooms.table, columns: "EntityIndex, Name, Number");
+  // Ok  table 6 rows x 3 cols  sha 59c35d52f35c
+  //   columns EntityIndex:Integer, Name:Text, Number:Text
+  //   [0] 12, "Office", "101"
+  //   [1] 13, "Corridor", "102"
+  //   [2] 14, "Kitchen", "103"
+touching = table.filter@1(table: overlap.table, expr: "OverlapVolume > 0");
+  // Ok  table 9 rows x 3 cols  sha 35bdbd33eef7
+  //   columns A:Text, B:Integer, OverlapVolume:Number
+  //   [0] "D1", 12, 0.21
+  //   [1] "D1", 13, 0.21
+  //   [2] "D2", 13, 0.21
+byRoom = table.aggregate@1(table: touching.table, groupBy: "B", aggregates: "count(*) as Doors");
+  // Ok  table 6 rows x 2 cols  sha 4eb4dcc53fcc
+  //   columns B:Integer, Doors:Integer
+  //   [0] 12, 1
+  //   [1] 13, 4
+  //   [2] 14, 1
+labeled = table.join@1(a: byRoom.table, b: roomLabels.table, aKey: "B", bKey: "EntityIndex", mode: "left");
+  // Ok  table 6 rows x 4 cols  sha 4fa9eba69426
+  //   columns B:Integer, Doors:Integer, Name:Text, Number:Text
+  //   [0] 12, 1, "Office", "101"
+  //   [1] 13, 4, "Corridor", "102"
+  //   [2] 14, 1, "Kitchen", "103"
+final = table.project@1(table: labeled.table, columns: "Name, Number, Doors");
+  // Ok  table 6 rows x 3 cols  sha 3b2e9f1303f8
+  //   columns Name:Text, Number:Text, Doors:Integer
+  //   [0] "Office", "101", 1
+  //   [1] "Corridor", "102", 4
+  //   [2] "Kitchen", "103", 1
+sorted = table.sort@1(table: final.table, A: "Name", B: "Number");
+  // Ok  table 6 rows x 3 cols  sha 449096a68094
+  //   columns Name:Text, Number:Text, Doors:Integer
+  //   [0] "Corridor", "102", 4
+  //   [1] "Corridor", "202", 1
+  //   [2] "Kitchen", "103", 1
