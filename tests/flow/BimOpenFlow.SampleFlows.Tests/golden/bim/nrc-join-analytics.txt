@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// nrc-join-analytics   graph 6f439cbb1116
+// nrc-join-analytics   graph b2e10b4f563a
+about = view.note@1(text: "Template: point the CSV and the model at your own files. An element that reaches more than one storey through ContainedIn/PartOf/MemberOf (StoreyOfElement can hold several rows per element, one per ancestor storey) is assigned to the storey with the smallest Depth, the same rule nrc-enrich-run uses, so perStorey and storeyComparison count each element once.");
+  // Ok
 csv = rel.csv@1(source: "nrc", path: "test-kit/analytics_dataset_with_levels.csv");
   // Ok  relation plan d86be52e53af
   //   "(csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\")"
@@ -39,18 +41,21 @@ answer = rel.sql@1(t1: csvNoEntity.relation, t2: physicalNoCsv.relation, t3: csv
 storeyOf = rel.table@1(source: "duplex-base", table: "StoreyOfElement");
   // Ok  relation plan a8c1aa22dccb
   //   "(table \"duplex-base\" \"StoreyOfElement\")"
-entityStorey = rel.join@1(left: storeyOf.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
-  // Ok  relation plan 255b1f1380d5
-  //   "(join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"])"
+storeyOfMin = rel.sql@1(t1: storeyOf.relation, sql: "SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1");
+  // Ok  relation plan a4ff5775ba64
+  //   "(sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \"StoreyOfElement\")])"
+entityStorey = rel.join@1(left: storeyOfMin.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
+  // Ok  relation plan a4d65f9aa8f6
+  //   "(join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \"StoreyOfElement\")]) (table \"duplex-base\" \"EntityText\") [\"EntityIndex\""...
 csvWithStorey = rel.join@1(left: csv.relation, right: entityStorey.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
-  // Ok  relation plan 11a08027cbcb
-  //   "(join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"GlobalId\"=\""...
+  // Ok  relation plan c4071f7dac91
+  //   "(join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \""...
 perStorey = rel.aggregate@1(input: csvWithStorey.relation, groupBy: "StoreyName", aggregates: "count(*) as Elements, sum(operational_carbon) as TotalOperationalCarbon, avg(operational_carbon) as MeanOperationalCarbon, avg(energy_intensity) as MeanEnergyIntensity");
-  // Ok  relation plan 27a29cbafc8a
-  //   "(aggregate (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\""...
+  // Ok  relation plan ba957e509ea9
+  //   "(aggregate (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"dup"...
 storeyComparison = rel.select@1(input: csvWithStorey.relation, columns: "GlobalId, Level, StoreyName");
-  // Ok  relation plan 1247e5c922c7
-  //   "(select (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (table \"duplex-base\" \"StoreyOfElement\") (table \"duplex-base\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"Glo"...
+  // Ok  relation plan a9e5c5f5b90f
+  //   "(select (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex"...
 values = csv.read@1(path: "{SAMPLES}/test-kit/analytics_dataset_with_levels.csv");
   // Ok  table 268 rows x 6 cols  sha 2ed673e1a75a
   //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text
