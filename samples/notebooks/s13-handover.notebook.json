@@ -193,7 +193,7 @@
         "text": "What would they need to rerun it?"
       },
       "reply": {
-        "text": "The toolkit at commit 4f19e2341cea350df35b65133e53908c83a5f250 (`git log -1`), this notebook file, and the two IFC files, `duplex-base.ifc` and `duplex-enriched.ifc`, each named by the SHA-256 in the file embeds above — no private data, everything here comes from the committed Duplex sample. To regenerate a notebook like this one, `samples/notebooks/README.md` gives the two commands: start the bim host with `node scripts/start-bim-flow.mjs` (from `bimopenflow/web/packages/notebook`), wait until `GET /api/analyses/nrc-dc-w1-verdicts/state` shows every node `Ok`, then run `npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/s13-handover.outline.json`.",
+        "text": "The toolkit at commit 4f19e2341cea350df35b65133e53908c83a5f250 (`git log -1`), this notebook file, and the two IFC files, `duplex-base.ifc` and `duplex-enriched.ifc`, each named by the SHA-256 in the file embeds above — no private data, everything here comes from the committed Duplex sample. To regenerate a notebook like this one, `samples/notebooks/README.md` gives the two commands: start the bim host with `node scripts/start-bim-flow.mjs` (from `bimopenflow/web/packages/bim-open-notebook`), wait until `GET /api/analyses/nrc-dc-w1-verdicts/state` shows every node `Ok`, then run `npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/s13-handover.outline.json`.",
         "tools": [
           {
             "name": "Read",
