@@ -65,7 +65,7 @@
         { "name": "Read", "ok": true, "summary": "samples/nrc/nrc_analytics_storeys.csv: 5 rows, Building plus 4 storeys, same totals" }
       ],
       "embeds": [
-        { "kind": "table", "node": "answer", "port": "relation", "caption": "Per storey, from the enriched IFC (nrc-q8-per-storey)" },
+        { "kind": "table", "node": "answer", "port": "relation", "caption": "Per storey, from the element rows (nrc-q8-per-storey)" },
         { "kind": "table", "node": "answer", "port": "table", "caption": "Per storey, from the chart's source CSV (nrc-storey-carbon-chart)", "analysisId": "nrc-storey-carbon-chart" },
         { "kind": "file", "path": "samples/nrc/nrc_analytics_storeys.csv", "mediaType": "text/csv", "caption": "The chart's source file" }
       ]

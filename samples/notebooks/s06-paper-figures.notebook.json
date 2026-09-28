@@ -506,7 +506,7 @@
           {
             "kind": "table",
             "id": "e1",
-            "caption": "Per storey, from the enriched IFC (nrc-q8-per-storey)",
+            "caption": "Per storey, from the element rows (nrc-q8-per-storey)",
             "source": {
               "analysisId": "nrc-q8-per-storey",
               "nodeId": "answer",
