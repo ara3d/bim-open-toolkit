@@ -34,17 +34,23 @@ conversion and meshing, which the host does once and caches.
 
 The bim-profile host starts over `samples/nrc`, seeds every graph in
 `samples/nrc-analyses`, and prepares the Duplex DuckDB and BOS in the background.
-The walkthrough waits until `nrc-dc-w1-verdicts` and `nrc-color-category` report
-every node Ok, then captures, from the editor's `3d.html?analysis=<id>` page:
+The walkthrough waits until `nrc-dc-w1-verdicts` and `nrc-color-operational-carbon`
+report every node Ok, then captures, from the editor's `3d.html?analysis=<id>` page.
+Figures 5-7 all open `nrc-color-operational-carbon`: TKT-93 merged
+`nrc-color-category` and `nrc-color-embodied-carbon` into it (the three graphs
+differed only in `answer`'s `valueColumn`/`colorMap`), so the walkthrough sets
+those two parameters through the host's analysis API before each capture, the
+way a person would from the param panel, instead of opening a separate copy of
+the graph per figure:
 
 | Figure | Graph, node, pane | What it shows |
 |---|---|---|
 | 2 | `nrc-storey-carbon-chart`, answer, Chart | embodied and operational carbon per storey |
 | 3 | same, Table | the same rows as a table |
 | 4 | `nrc-property-values`, answer, Table | the 2,441 property values, read back from the enriched file |
-| 5 | `nrc-color-operational-carbon`, answer, 3D | viridis gradient, unmatched grey |
-| 6 | `nrc-color-embodied-carbon`, answer, 3D | the roof has no value and stays grey |
-| 7 | `nrc-color-category`, answer, 3D | nine categories, one colour each |
+| 5 | `nrc-color-operational-carbon`, answer, 3D (`valueColumn: OperationalCarbon_kgCO2e_per_year`, `colorMap: viridis`) | viridis gradient, unmatched grey |
+| 6 | same graph, answer, 3D (`valueColumn: EmbodiedCarbon_A1A3_kgCO2e`, `colorMap: viridis`) | the roof has no value and stays grey |
+| 7 | same graph, answer, 3D (`valueColumn: Category`, `colorMap: category10`) | nine categories, one colour each |
 | 8 | `nrc-dc-w1-verdicts`, coloured, 3D | door verdicts on the doors |
 | 9 | same, answer, Verdicts | the verdict rows with evidence |
 | 10 | `nrc-storey-of-element`, answer, Table | 103 elements on Level 1 |

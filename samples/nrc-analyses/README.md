@@ -13,19 +13,20 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 | `nrc-q3-top-elements` | the five elements with the highest operational carbon | tables, bim |
 | `nrc-q4-door-instances` | the operational carbon of every M_Single-Flush:0762 x 2032mm door instance (the name matches four doors, not one; see below) | tables, bim |
 | `nrc-q5-by-category` | operational carbon per category | tables, bim |
-| `nrc-q6-analysis-run` | the analysis run id and scenario every element cites, with its element count | tables, bim |
+| `nrc-q6-analysis-run` | the analysis run id, scenario, computed time, and source tool every element cites, with its element count | tables, bim |
 | `nrc-q7-absence` | the roof with no embodied-carbon row, as a row | tables, bim |
-| `nrc-q8-per-storey` | per-storey count, embodied carbon A1-A3, and mean energy intensity | tables, bim |
+| `nrc-q8-per-storey` | per-storey element count (and how many have an embodied-carbon value), embodied carbon A1-A3, and mean energy intensity | tables, bim |
 | `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced) | tables, bim |
 | `nrc-dc-w1-verdicts` | rule DC-W1 over doors, coloured in 3D | bim only (`check.rule`, `view3d.color`) |
 | `nrc-element-psets` | the element property-set rows: each value of `nrc_analytics_long.csv` placed by `nrc-metrics.csv`, keyed by the STEP id of `duplex-base`, with the run facts of `nrc-run.csv` (2,394 rows) | tables, bim |
 | `nrc-rollup` | the storey and building summary rows (`Pset_NRCStoreySummary`, `Pset_NRCBuildingSummary`), each element placed by `StoreyOfElement` and aggregated by its metric's `Rollup`, plus the project's `Pset_NRCAnalyticsProvenance` from `nrc-run.csv` (47 rows) | tables, bim |
 | `nrc-enrich-run` | the rows of `nrc-element-psets` and `nrc-rollup` written into a copy of `duplex-base.ifc` (2,441 values on 224 entities); it carries copies of both graphs because a graph cannot reference another | bim only (`sink.writePsets`) |
-| `nrc-color-operational-carbon` | the Duplex model coloured by operational carbon, viridis gradient, unmatched instances grey (paper Figure 5) | bim only (`view3d.instances`, `view3d.color`) |
-| `nrc-color-embodied-carbon` | the same model coloured by embodied carbon A1-A3; the roof, which has no value, stays grey (Figure 6) | bim only |
-| `nrc-color-category` | one colour per analysis category, nine in all (Figure 7) | bim only |
-| `nrc-storey-carbon-chart` | embodied and operational carbon per storey as a bar chart (Figure 2) | tables, bim |
+| `nrc-color-operational-carbon` | the Duplex model coloured by operational carbon, viridis gradient, unmatched instances grey (paper Figure 5); one "colour by an analytics column" flow, its `answer` node's `valueColumn`/`colorMap` set per figure (see `scripts/nrc-walkthrough.mjs`) | bim only (`view3d.instances`, `view3d.color`) |
+| `nrc-color-embodied-carbon` | the same graph as `nrc-color-operational-carbon` with `valueColumn: EmbodiedCarbon_A1A3_kgCO2e` (Figure 6); TKT-93 folds this into `nrc-color-operational-carbon`'s parameter, but the file and id stay committed because `samples/notebooks/s06-paper-figures.notebook.json` opens this id directly — remove only after that notebook is updated | bim only |
+| `nrc-color-category` | the same graph with `valueColumn: Category`, `colorMap: category10`, nine categories (Figure 7); same TKT-93 hold as `nrc-color-embodied-carbon` | bim only |
+| `nrc-storey-carbon-chart` | embodied and operational carbon per storey as a bar chart, storeys only (Figure 2) | tables, bim |
 | `nrc-property-values` | the 2,441 NRC property values read back from `duplex-enriched.ifc`, one for each row `nrc-enrich-run` handed the byte-exact writer (Figure 4) | tables, bim |
+| `nrc-join-analytics` | a TKT-52 template joining `test-kit/analytics_dataset_with_levels.csv` to `duplex-base.ifc` by GlobalId: rows with no entity, physical elements with no row, rows matching a non-physical entity, and per-storey totals | tables, bim |
 
 Expected numbers come from `nrc-ifc-llm/poc/results/expected_answers.json` and
 `poc/data/nrc_analytics_storeys.csv`; the tests in
@@ -40,13 +41,15 @@ family:type name, not an instance name, and `nrc_analytics_elements.csv` (and
 `door_verdicts.csv`'s DC-M1 evidence) show four IFCDOOR instances share it,
 each with a different operational carbon value. `scripts/demo-ifc-mcp.mjs`
 does not replay Q4 at all, so there is no cited expected value to reconcile;
-the graph instead lists all four instances by GlobalId, which is the
-deterministic data the paper's answer would have to pick from or sum.
+the graph instead lists all four instances by their STEP id (`EntityId`),
+which is the deterministic data the paper's answer would have to pick from
+or sum; row 1, EntityId 8066, is the paper's own pick.
 
-`nrc-q6-analysis-run` answers "which run" (`AnalysisRunId`, `ScenarioName`)
-deterministically: every one of the 218 elements cites the same run. The
-"when" half of Q6 has no separate timestamp column in the data; it is only
-the date embedded in the run id's text, `run-2026-09-17-01`.
+`nrc-q6-analysis-run` answers both halves of Q6 deterministically: "which
+run" (`AnalysisRunId`, `ScenarioName`) is the same for every one of the 218
+elements; "when" (`ComputedAt`) and the tool that computed it (`SourceTool`)
+come from `samples/nrc/nrc-run.csv`, a run-level fact file the elements
+themselves do not carry.
 
 ## How the enrichment rows are derived
 

@@ -15,6 +15,10 @@
 //   settleMs  extra wait after the pane is ready (default 1500)
 //   pick      [x, y] as fractions of the 3D canvas: click there to select an element
 //             before capturing (the pane then shows the picked element's properties)
+//   setValues { nodeId: { paramName: value, ... }, ... } applied to the open analysis
+//             before the pane is read, through the same PUT the editor uses (GET the
+//             document, patch the named nodes' values, PUT it back), so one flow can be
+//             reused for several figures by column instead of copied per figure (TKT-93)
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -50,8 +54,25 @@ async function pickElement(page, [fx, fy], timeout) {
   console.warn("pick: nothing selected; capturing without a selection");
 }
 
+/** Applies spec.setValues to the named nodes' parameters via a GET then PUT of the analysis
+ * document (the same whole-document write the editor issues after an edit), so a shared flow's
+ * column can be set per figure without copying the graph. */
+async function applyValues(base, analysisId, setValues) {
+  const url = `${base}/api/analyses/${encodeURIComponent(analysisId)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`setValues: GET ${url} -> ${res.status}`);
+  const doc = await res.json();
+  for (const [nodeId, values] of Object.entries(setValues)) {
+    if (!doc.values[nodeId]) throw new Error(`setValues: analysis '${analysisId}' has no node '${nodeId}'`);
+    Object.assign(doc.values[nodeId], values);
+  }
+  const put = await fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(doc) });
+  if (!put.ok) throw new Error(`setValues: PUT ${url} -> ${put.status} ${await put.text()}`);
+}
+
 /** Opens the analysis on the page, picks the node and pane, and screenshots. Returns the status text. */
 export async function captureOne(page, base, spec, outDir, timeout = 180000) {
+  if (spec.setValues) await applyValues(base, spec.analysis, spec.setValues);
   const pageName = spec.page ?? "3d.html";
   const url = pageName === "3d.html" ? `${base}/3d.html?analysis=${encodeURIComponent(spec.analysis)}` : `${base}/${pageName}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });

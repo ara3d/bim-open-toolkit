@@ -55,12 +55,18 @@ const DUPLEX_CAPTURES = [
     "Figure 3. The same aggregates in the Table tab."],
   ["nrc-property-values", "answer", "table", "figure-4-property-values-table.png",
     "Figure 4. The 2,441 property values the byte-exact writer added to the Duplex, read back from duplex-enriched.ifc: element sets, storey and building summaries, and the provenance set."],
+  // TKT-93 merged nrc-color-category and nrc-color-embodied-carbon into nrc-color-operational-
+  // carbon (one "colour by an analytics column" flow); each figure sets answer's valueColumn
+  // and colorMap through the host API before capture, as a user would from the param panel.
   ["nrc-color-operational-carbon", "answer", "view3d", "figure-5-3d-operational-carbon.png",
-    "Figure 5. duplex-enriched.ifc coloured by operational carbon (viridis, normalised over the column); instances without a value are grey."],
-  ["nrc-color-embodied-carbon", "answer", "view3d", "figure-6-3d-embodied-carbon.png",
-    "Figure 6. The same model coloured by embodied carbon A1-A3; the roof has no value and stays grey."],
-  ["nrc-color-category", "answer", "view3d", "figure-7-3d-category.png",
-    "Figure 7. One colour per analysis category (category10 palette, nine categories)."],
+    "Figure 5. duplex-enriched.ifc coloured by operational carbon (viridis, normalised over the column); instances without a value are grey.",
+    undefined, { answer: { valueColumn: "OperationalCarbon_kgCO2e_per_year", colorMap: "viridis" } }],
+  ["nrc-color-operational-carbon", "answer", "view3d", "figure-6-3d-embodied-carbon.png",
+    "Figure 6. The same model coloured by embodied carbon A1-A3; the roof has no value and stays grey.",
+    undefined, { answer: { valueColumn: "EmbodiedCarbon_A1A3_kgCO2e", colorMap: "viridis" } }],
+  ["nrc-color-operational-carbon", "answer", "view3d", "figure-7-3d-category.png",
+    "Figure 7. One colour per analysis category (category10 palette, nine categories).",
+    undefined, { answer: { valueColumn: "Category", colorMap: "category10" } }],
   ["nrc-dc-w1-verdicts", "coloured", "view3d", "figure-8-3d-dc-w1-verdicts.png",
     "Figure 8. Rule DC-W1 (door leaf width at least 850 mm) evaluated by check.rule over the model's own OverallWidth, 8 pass and 6 fail, coloured on the doors."],
   ["nrc-dc-w1-verdicts", "answer", "verdict", "figure-9-dc-w1-verdict-table.png",
@@ -68,7 +74,8 @@ const DUPLEX_CAPTURES = [
   ["nrc-storey-of-element", "answer", "table", "figure-10-storey-of-element.png",
     "Figure 10. Elements per storey from the StoreyOfEntity view, which walks ContainedIn, PartOf, and MemberOf: Level 1 has 103, the count the hand-driven session missed."],
   ["nrc-color-operational-carbon", "answer", "view3d", "figure-13-picked-element-properties.png",
-    "Figure 13. A picked wall: the 3D pane lists its property sets, including the Pset_NRC sets the enrichment wrote.", [0.5, 0.55]],
+    "Figure 13. A picked wall: the 3D pane lists its property sets, including the Pset_NRC sets the enrichment wrote.", [0.5, 0.55],
+    { answer: { valueColumn: "OperationalCarbon_kgCO2e_per_year", colorMap: "viridis" } }],
 ];
 
 const SNOWDON_CAPTURES = [
@@ -83,8 +90,8 @@ const DUCKDB_CAPTURES = [
   ["duckdb-room-distribution", null, "table", "snowdon-6-room-distribution.png", "Rooms per storey from the same export."],
 ];
 
-const spec = ([analysis, node, pane, file, caption, pick], page = "3d.html") =>
-  ({ page, analysis, node: node ?? undefined, pane, file, caption, pick });
+const spec = ([analysis, node, pane, file, caption, pick, setValues], page = "3d.html") =>
+  ({ page, analysis, node: node ?? undefined, pane, file, caption, pick, setValues });
 
 const sections = [];
 const section = (title, lines) => sections.push(`## ${title}`, "", ...lines, "");
@@ -105,7 +112,7 @@ async function duplex(browser) {
     await waitForUrl(`${hostUrl}/api/models`, host, { label: "bim host" });
     console.log("Waiting for the Duplex database and BOS to be prepared...");
     await waitForAnalysisOk(hostUrl, "nrc-dc-w1-verdicts");
-    await waitForAnalysisOk(hostUrl, "nrc-color-category");
+    await waitForAnalysisOk(hostUrl, "nrc-color-operational-carbon");
     web = startWeb(webPort, hostUrl, { prefix: "bim-web" });
     await waitForUrl(`${webUrl}/3d.html`, web, { label: "editor" });
     const { results, errors } = await captureAll(browser, webUrl, DUPLEX_CAPTURES.map((c) => spec(c)), dir,
