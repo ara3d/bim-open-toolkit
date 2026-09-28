@@ -355,11 +355,14 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
     running = controller;
     const progress = startProgress(text, turnId);
     render();
+    scrollToEnd();
     const events: AskEvent[] = [];
     try {
       await ask.ask(text, continuationOf(history.present, turnId), (event) => {
+        const following = nearEnd();
         events.push(event);
         progress.event(event);
+        if (following) scrollToEnd();
       }, controller.signal);
     } catch (e) {
       events.push({ type: "error", message: controller.signal.aborted ? message(controller.signal.reason) : message(e) });
@@ -368,10 +371,27 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
     const reply = await replyOrError(events);
     if (running === controller) running = undefined;
     if (destroyed || loads !== loadsAtStart) return;
+    const following = nearEnd();
     live.hidden = true;
     const notebook = history.present;
     const target = turnId !== undefined && notebook.turns.some((t) => t.id === turnId);
     edit(target ? resendTurn(notebook, turnId!, request, reply) : appendTurn(notebook, request, reply));
+    if (following && !target) scrollToEnd();
+  }
+
+  // The request box is the column's last element and sticks to the bottom of
+  // the window, so the page's end is the one position where nothing is under it.
+
+  /** True when the reader is at (or within a line of) the end of the page. */
+  function nearEnd(): boolean {
+    const page = doc.scrollingElement;
+    return !page || page.scrollHeight - page.scrollTop - page.clientHeight < 80;
+  }
+
+  /** Scrolls to the end of the page, so the latest turn ends just above the request box. */
+  function scrollToEnd(): void {
+    const page = doc.scrollingElement;
+    if (page) page.scrollTop = page.scrollHeight;
   }
 
   async function replyOrError(events: readonly AskEvent[]): Promise<Reply> {

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import type { AskEvent, AskTransport } from "../src/ask/events";
 import type { Embed, Notebook, Reply, Turn } from "../src/document/format";
 import { parseNotebook, serializeNotebook } from "../src/document/io";
@@ -134,6 +134,14 @@ async function ask(text: string) {
 
 // --- Tests -----------------------------------------------------------------
 
+/** jsdom has no document.scrollingElement; stands one in for a test, removed afterwards. */
+function fakeScrollingElement(page: { scrollTop: number; scrollHeight: number; clientHeight: number }): void {
+  Object.defineProperty(document, "scrollingElement", { configurable: true, get: () => page });
+  onTestFinished(() => {
+    delete (document as { scrollingElement?: unknown }).scrollingElement;
+  });
+}
+
 describe("mountNotebook", () => {
   it("loads a notebook and renders every turn in a column, with one selection bus for all embeds", () => {
     const { fake } = mount({ initial: sample() });
@@ -193,6 +201,35 @@ describe("mountNotebook", () => {
     expect(added.reply.tools).toEqual([{ name: "editGraph", ok: true, summary: "3 nodes" }]);
     expect(q<HTMLElement>(".nb-live").hidden).toBe(true);
     expect(q<HTMLButtonElement>(".nb-send").disabled).toBe(false);
+  });
+
+  it("scrolls to the end on send and after the reply, so the request box covers nothing new", async () => {
+    // jsdom does no layout: fake a page 2000 px tall in a 600 px window.
+    const page = { scrollTop: 0, scrollHeight: 2000, clientHeight: 600 };
+    fakeScrollingElement(page);
+    const asker = fakeAsk((r) => answered(r));
+    mount({ initial: sample(), ask: asker.transport });
+    asker.hold();
+    await ask("How many doors?");
+    await vi.waitFor(() => expect(page.scrollTop).toBe(2000));
+    page.scrollHeight = 2600;
+    asker.release();
+    await vi.waitFor(() => expect(turnIds()).toHaveLength(4));
+    expect(page.scrollTop).toBe(2600);
+  });
+
+  it("leaves the scroll alone after the reply when the reader scrolled up meanwhile", async () => {
+    const page = { scrollTop: 0, scrollHeight: 2000, clientHeight: 600 };
+    fakeScrollingElement(page);
+    const asker = fakeAsk((r) => answered(r));
+    mount({ initial: sample(), ask: asker.transport });
+    asker.hold();
+    await ask("How many doors?");
+    await vi.waitFor(() => expect(page.scrollTop).toBe(2000));
+    page.scrollTop = 300;
+    asker.release();
+    await vi.waitFor(() => expect(turnIds()).toHaveLength(4));
+    expect(page.scrollTop).toBe(300);
   });
 
   it("records a stopped request as a turn whose reply carries the error", async () => {
