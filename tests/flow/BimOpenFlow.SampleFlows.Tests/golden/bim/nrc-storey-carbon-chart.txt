@@ -1,17 +1,24 @@
 dfg 0.1.0;
-// nrc-storey-carbon-chart   graph 2f0cb0ff1ced
+// nrc-storey-carbon-chart   graph 4821fa4df0c9
+about = view.note@1(text: "Figure 2: embodied (A1-A3, kgCO2e, blue) and operational (kgCO2e/yr, orange) carbon per storey, synthetic values from nrc_analytics_storeys.csv. The Building row is excluded (it is the sum of the four storeys, not a fifth one) and its total is in the title instead.");
+  // Ok
 storeys = csv.read@1(path: "{SAMPLES}/nrc_analytics_storeys.csv");
   // Ok  table 5 rows x 7 cols  sha f05914b68c7f
   //   columns Container:Text, EntityId:Integer, Elements:Integer, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, MeanEnergyUseIntensity_kWh_per_m2_year:Number
   //   [0] "Level 1", 39, 103, 4.945E+04, 5.539E+04, 1.746E+04, 40.5
   //   [1] "Level 2", 43, 93, 4.87E+04, 5.454E+04, 1.397E+04, 40.56
   //   [2] "Roof", 51, 8, 5821, 6519, 1767, 62.04
-answer = chart.bar@1(table: storeys.table, labelColumn: "Container", valueColumns: "EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year", title: "Carbon per storey (synthetic)", sort: "desc");
+storeysOnly = table.filter@1(table: storeys.table, expr: "Container != 'Building'");
+  // Ok  table 4 rows x 7 cols  sha efa068825c90
+  //   columns Container:Text, EntityId:Integer, Elements:Integer, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, MeanEnergyUseIntensity_kWh_per_m2_year:Number
+  //   [0] "Level 1", 39, 103, 4.945E+04, 5.539E+04, 1.746E+04, 40.5
+  //   [1] "Level 2", 43, 93, 4.87E+04, 5.454E+04, 1.397E+04, 40.56
+  //   [2] "Roof", 51, 8, 5821, 6519, 1767, 62.04
+answer = chart.bar@1(table: storeysOnly.table, labelColumn: "Container", valueColumns: "EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year", title: "Carbon per storey (synthetic); building total 115,730.3 kgCO2e embodied, 37,196.2 kgCO2e/yr operational", sort: "desc");
   // Ok
-  //   table: table 5 rows x 3 cols  sha beac2a1a0802
+  //   table: table 4 rows x 3 cols  sha 50366caba060
   //     columns Container:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number
-  //     chart 5 categories x 2 series: "EmbodiedCarbon_A1A3_kgCO2e", "OperationalCarbon_kgCO2e_per_year"
-  //     "Building": 1.157E+05, 3.72E+04
+  //     chart 4 categories x 2 series: "EmbodiedCarbon_A1A3_kgCO2e", "OperationalCarbon_kgCO2e_per_year"
   //     "Level 1": 4.945E+04, 1.746E+04
   //     "Level 2": 4.87E+04, 1.397E+04
   //     "T/FDN": 1.176E+04, 4002

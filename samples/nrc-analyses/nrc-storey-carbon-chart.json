@@ -1,44 +1,27 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "storeys": {
-      "x": 40,
-      "y": 40
-    },
-    "answer": {
-      "x": 420,
-      "y": 40
-    }
+    "storeys": { "x": 40, "y": 40 },
+    "storeysOnly": { "x": 230, "y": 40 },
+    "answer": { "x": 420, "y": 40 },
+    "about": { "x": 40, "y": 220 }
   },
   "structure": {
     "edges": [
-      {
-        "from": "storeys.table",
-        "to": "answer.table"
-      }
+      { "from": "storeys.table", "to": "storeysOnly.table" },
+      { "from": "storeysOnly.table", "to": "answer.table" }
     ],
     "nodes": [
-      {
-        "id": "storeys",
-        "kind": "csv.read",
-        "version": 1
-      },
-      {
-        "id": "answer",
-        "kind": "chart.bar",
-        "version": 1
-      }
+      { "id": "storeys", "kind": "csv.read", "version": 1 },
+      { "id": "storeysOnly", "kind": "table.filter", "version": 1 },
+      { "id": "answer", "kind": "chart.bar", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 }
     ]
   },
   "values": {
-    "storeys": {
-      "path": "{SAMPLES}/nrc_analytics_storeys.csv"
-    },
-    "answer": {
-      "labelColumn": "Container",
-      "valueColumns": "EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year",
-      "title": "Carbon per storey (synthetic)",
-      "sort": "desc"
-    }
+    "storeys": { "path": "{SAMPLES}/nrc_analytics_storeys.csv" },
+    "storeysOnly": { "expr": "Container != 'Building'" },
+    "answer": { "labelColumn": "Container", "valueColumns": "EmbodiedCarbon_A1A3_kgCO2e,OperationalCarbon_kgCO2e_per_year", "title": "Carbon per storey (synthetic); building total 115,730.3 kgCO2e embodied, 37,196.2 kgCO2e/yr operational", "sort": "desc" },
+    "about": { "text": "Figure 2: embodied (A1-A3, kgCO2e, blue) and operational (kgCO2e/yr, orange) carbon per storey, synthetic values from nrc_analytics_storeys.csv. The Building row is excluded (it is the sum of the four storeys, not a fifth one) and its total is in the title instead." }
   }
 }
