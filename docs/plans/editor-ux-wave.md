@@ -1,6 +1,6 @@
 # Editor UX wave: peek, templates, steps, palette, problems, node styles
 
-Status: building
+Status: done (wave record below)
 Request: the owner, 2026-09-28, from the ranked list in the session that wrote [editor-ux-harvest.md](../proposals/editor-ux-harvest.md): build items 1, 3, 4, 5, and 6 (wire peeking connected, a start page from the sample graphs, a step list, adding nodes from the canvas, an error list), skip item 2 (docs on hover; another session has it), and add a switch between node card styles so the owner can compare how a node shows its title, description, and status. Nodes should carry text describing them. The 4 px status dot is in question.
 Tickets: TKT-11 (peek), TKT-14 (templates), TKT-95 (step list), TKT-96 (palette), TKT-97 (problems list), TKT-98 (node styles).
 Serves: workflow 2 (ask and get a graph you can inspect) and workflow 1 (a start page lists the supported demos). Acceptance criteria per chunk are derived from those Done lines and the tickets' criteria.
@@ -135,7 +135,7 @@ export function createStepList(host: HTMLElement, deps: StepListDeps): StepList;
 
 `sidebar.ts` gains a `stepsEl: HTMLElement` section titled "Steps" between the flows and the catalog; the supervisor calls `createStepList(sidebar.stepsEl, ...)` and re-renders on store changes and peek-count changes. The summary uses `fileName()` from `paramText.ts` for FilePath values and truncates long values to 40 characters with an ellipsis. `feeders` names steps only when a step has more than one feeder or its feeder is not the previous step ("from 2, 3").
 
-Worked example: `doors (duck.query) -> answer (table.sort)` with `storeys (duck.query) -> join (table.join) <- doors`, `join -> answer`. Order: `doors, storeys, join, answer` (doors and storeys share depth 0 and sort by y). Steps: 1 doors, 2 storeys, 3 join `from: [1, 2]`, 4 answer `from: []` (its only feeder is step 3, the previous step).
+Worked example: `doors (duck.query) -> join (table.join) <- storeys (duck.query)`, `join -> answer (table.sort)`. Order: `doors, storeys, join, answer` (doors and storeys share depth 0 and sort by y). Steps: 1 doors, 2 storeys, 3 join `from: [1, 2]`, 4 answer `from: []` (its only feeder is step 3, the previous step).
 
 ### D. Palette on the canvas (TKT-96)
 
@@ -273,5 +273,18 @@ All of A to F start at once; G is the supervisor's.
 ## Build log
 | Id | Commit | Result |
 |---|---|---|
+| G | 40228a7 | Integration: app suite 464 pass in 63 files, typecheck clean, vite build ok, browser check on the tables profile (see the commit message). Adds freshCopyId and ids.test.ts. |
+| F | 2f88912 | 33 tests pass (full suite 461), typecheck clean; fence respected (9 files). Description goes in a hanging 18 px footer for classic and bar, in the header for banner and chip; nodeCardLayout takes a Measure; the topbar's style select is opt-in. |
+| C | c873235 | 25 tests pass (full suite 432), typecheck clean; fence respected (6 files). Plan's worked example had a stray doors -> answer edge; the builder built it without, matching the "from only on the join" criterion. Steps section capped at 30% of the sidebar. |
+| D | 480b8f8 | 33 tests pass, typecheck clean; fence respected (8 files). The listbox sits inside a positioned container (an input inside a listbox is invalid ARIA). addNodeActions places by socket y; no nodeHeight needed. |
+| B | 5e1e511 | 12 tests pass, --check up to date (56 templates), typecheck clean; fence respected (6 files). federation-match and shared-color-legend (another session's uncommitted files) are included; --check fails if they move. DuckDB cards show the README's short shape text rather than workflows.json's description: revisit in G. |
+| E | 532d1cd | 12 tests pass, typecheck clean; fence respected (4 files). Strip is position:absolute; the canvas host is already position:relative. |
+| A | 8544984 | 3 tests pass, typecheck clean; fence respected (3 files). createCanvasEditor takes a trailing optional readPort; app.ts passes boundCtx.requestTable in G. |
 
 ## Wave record
+
+Outcome: success for TKT-11, TKT-95, TKT-96, TKT-97, TKT-98 (closed). TKT-14 stays open: its first cut (a start page generated from the sample folders, Open and Copy) is done; "needs-setup badges for a template whose inputs the model lacks" and grouping by persona rather than folder are not.
+Gates: `npm test -w @bimopenflow/app` 464 pass in 63 files (baseline 363 in 49); `npm test -w @bimopenflow/state` 56 pass; `npm run typecheck -w @bimopenflow/app` clean; `npm run build -w @bimopenflow/app` ok; `node scripts/build-flow-templates.mjs --check` up to date. `node gates/web-smoke.mjs` FAIL on one pre-existing test, `@bimopenflow/api-client` "covers every fetch-backed endpoint" (the client lacks one endpoint the contract lists; neither file changed in this wave, last commit 130c910). Every other step of the gate passed, including the new `@bimopenflow/graph` package's 228 tests. Browser check on the tables profile (`bof-review-tables-host` and `-web`): start page, steps with row counts, right-click palette, one-step undo, wire-drop palette, chip style, peek card, problems strip.
+Commits: contracts 30cb244, plan f7ae075, A 8544984, E 532d1cd, B 5e1e511, D 480b8f8, C c873235, F 2f88912, G 40228a7, tickets 7bc5370.
+Findings: the plan's step-list example had a stray edge (fixed in the plan). The `bof-tables` launch entry cannot build while another session's host holds `artifacts/bim-flow/host`; `bof-rel-web` passes `5310` to Vite as a root directory, not a port (a launch.json fix for a separate commit; the file has another session's uncommitted edit). B includes two graph files another session has not committed (`federation-match.json`, `shared-color-legend.json`); `--check` will fail if they move. DuckDB cards show the README's short shape text rather than `workflows.json`'s description. The TKT-94 session (graph package) asked for no module-level state in canvas files; G complies, but `nodeStyle.ts` (F) keeps the current style at module scope, which that session will make per instance.
+Timing: about 75 minutes from contracts to G; builders ran 1 to 10 minutes each in parallel (F longest at 10); a sequential build would have been about 35 minutes of builder time plus the same integration, so the wave saved roughly 25 minutes; no builder was blocked.
