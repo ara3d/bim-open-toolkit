@@ -35,7 +35,7 @@
 // between rows instead of letting it cut a straight line across the columns
 // it skips.
 
-import { nodeTitle } from "@bimopenflow/app/src/graphPreview";
+import { nodeTitle } from "@bimopenflow/graph";
 import type { GraphDocument } from "@bimopenflow/state";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
