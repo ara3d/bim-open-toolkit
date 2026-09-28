@@ -127,6 +127,7 @@ S12 (a Script embed) is left out: the Script embed is not built.
 | A7 (S10) | 68060d2 | 5 turns over the private Snowdon model; 142 doors, 290 rooms and spaces; door width has no clear-width parameter, so 6 of 10 doors are not available |
 | A5 (S8) | 22e8266 | 5 turns; the zone grouping is a table, since there is no editor embed; zone EUI is reported as not available |
 | G | 1c89f7b, 0704d65 | twelve notebooks; `{SNOWDON}` replaces a committed machine-local path; notebooks name repository-relative paths; the S5 graph file renamed to its analysis id; 213 tests |
+| (owner request, TKT-80) | b231280 | 3D embeds mount by default: an IntersectionObserver (rootMargin 800px 0px) shows the pane once the embed scrolls near the viewport, and mounts immediately where IntersectionObserver is missing (jsdom in tests); a shown pane is never auto-disposed on scroll-away, since a notebook's few embeds stay well under the browser's ~16 live-context cap, so Hide/Show remains the only way to close and reopen one. 12 tests in `test/view3d.test.ts` (3 new), 244 total, clean type check |
 
 ## Review findings
 
