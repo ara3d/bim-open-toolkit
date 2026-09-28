@@ -62,35 +62,56 @@ function graphEmbed(overrides: Partial<GraphEmbed> = {}): GraphEmbed {
   };
 }
 
+const GRAPH_DOCUMENT_V1 = JSON.stringify({
+  formatVersion: "0.1.0",
+  structure: {
+    nodes: [
+      { id: "source", kind: "ifc.source", version: 1 },
+      { id: "answer", kind: "math.sum", version: 1 },
+    ],
+    edges: [{ from: "source.out", to: "answer.in" }],
+  },
+  values: {},
+  layout: { source: { x: 0, y: 0 }, answer: { x: 200, y: 0 } },
+});
+
 describe("renderGraph", () => {
-  it("draws the fold, node count, and focus mark from embed.text with no host call", () => {
+  it("draws the header, node count, and Open in editor link", () => {
     const api = fakeApi();
     const el = document.createElement("div");
     renderGraph(el, graphEmbed(), ctxWith(api));
 
-    const summary = el.querySelector("summary")!;
-    expect(summary.querySelector("span")!.textContent).toBe("Graph nrc-q1 · 2 nodes");
-    const pre = el.querySelector("pre.notebook-graph-text")!;
-    expect(pre.textContent).toBe(GRAPH_TEXT_V1);
-    const mark = pre.querySelector("mark.notebook-graph-focus")!;
-    expect(mark.textContent).toBe('answer = math.sum@1(in: source.out);');
-    const link = el.querySelector("a.notebook-graph-open") as HTMLAnchorElement;
+    const header = el.querySelector(".notebook-graph-header")!;
+    expect(header.querySelector("span")!.textContent).toBe("Graph nrc-q1 · 2 nodes");
+    const link = header.querySelector("a.notebook-graph-open") as HTMLAnchorElement;
     expect(link.textContent).toBe("Open in editor");
     expect(link.href).toBe("http://127.0.0.1:5310/?analysis=nrc-q1");
   });
 
-  it("gives the Open in editor link a left margin, so it never runs into the summary text", () => {
+  it("gives the Open in editor link a left margin, so it never runs into the header text", () => {
     expect(notebookCss).toMatch(/\.notebook-graph-open\s*\{[^}]*margin-left:\s*\d/);
   });
 
-  it("starts folded, with the summary line and Open in editor link visible", () => {
+  it("draws the diagram open by default and folds the text print under 'Show text'", () => {
     const el = document.createElement("div");
-    renderGraph(el, graphEmbed(), ctxWith(fakeApi()));
+    renderGraph(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(fakeApi()));
 
-    const details = el.querySelector("details.notebook-embed-graph") as HTMLDetailsElement;
-    expect(details.open).toBe(false);
-    const summary = el.querySelector("summary")!;
-    expect(summary.querySelector("a.notebook-graph-open")).not.toBeNull();
+    expect(el.querySelector(".notebook-graph-diagram svg")).not.toBeNull();
+    const fold = el.querySelector("details.notebook-graph-text-fold") as HTMLDetailsElement;
+    expect(fold.open).toBe(false);
+    expect(fold.querySelector("summary")!.textContent).toBe("Show text");
+    expect(fold.querySelector("pre.notebook-graph-text")!.textContent).toBe(GRAPH_TEXT_V1);
+    const mark = fold.querySelector("mark.notebook-graph-focus")!;
+    expect(mark.textContent).toBe('answer = math.sum@1(in: source.out);');
+  });
+
+  it("falls back to the text print shown open when there is no document to draw", () => {
+    const el = document.createElement("div");
+    renderGraph(el, graphEmbed({ document: undefined }), ctxWith(fakeApi()));
+
+    expect(el.querySelector(".notebook-graph-diagram svg")).toBeNull();
+    const fold = el.querySelector("details.notebook-graph-text-fold") as HTMLDetailsElement;
+    expect(fold.open).toBe(true);
   });
 
   it("reports current when the host's text equals the embed's", async () => {

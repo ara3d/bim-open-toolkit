@@ -1,10 +1,14 @@
-// Renders a graph embed: the host's GraphText print of the analysis (GraphText.cs,
-// docs/graph-text.md), folded under a heading, with a link to open the graph in the
-// editor. The canvas editor cannot be mounted twice on a page (docs/plans/notebook.md,
-// "Considered and rejected"), so this renders the text print, not the canvas.
+// Renders a graph embed: a static SVG diagram of the graph document (drawn by
+// graphDiagram.ts, open by default), the host's GraphText print folded under
+// it ("Show text"), and a link to open the graph in the editor. The canvas
+// editor cannot be mounted twice on a page (docs/plans/notebook.md,
+// "Considered and rejected"), so this draws its own read-only diagram rather
+// than embedding the canvas.
 
+import { parseDocument, type GraphDocument } from "@bimopenflow/state";
 import type { GraphEmbed } from "../document/format";
 import type { EmbedContext, EmbedRenderer, Freshness } from "./contract";
+import { buildGraphDiagram } from "./graphDiagram";
 
 /** Base URL of the editor page; the tables profile of scripts/start-bim-flow.mjs by default. */
 const EDITOR_BASE =
@@ -38,42 +42,60 @@ function messageOf(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
+function tryParseDocument(json: string | undefined): GraphDocument | undefined {
+  if (json === undefined) return undefined;
+  try {
+    return parseDocument(json);
+  } catch {
+    return undefined;
+  }
+}
+
 export const renderGraph: EmbedRenderer<GraphEmbed> = (el, embed, ctx: EmbedContext) => {
-  const details = document.createElement("details");
-  details.className = "notebook-embed notebook-embed-graph";
-  details.open = false;
+  const container = document.createElement("div");
+  container.className = "notebook-embed notebook-embed-graph";
 
-  const summary = document.createElement("summary");
-  details.appendChild(summary);
+  const header = document.createElement("div");
+  header.className = "notebook-graph-header";
+  container.appendChild(header);
 
-  // Inside summary, not details, so it stays visible while the graph is folded
-  // (a <details> element hides everything but its <summary> when closed).
-  const summaryText = document.createElement("span");
-  summary.appendChild(summaryText);
+  const headerText = document.createElement("span");
+  header.appendChild(headerText);
 
   const link = document.createElement("a");
   link.className = "notebook-graph-open";
   link.textContent = "Open in editor";
   link.target = "_blank";
   link.rel = "noopener";
-  summary.appendChild(link);
+  link.href = editorUrl(embed.analysisId);
+  header.appendChild(link);
 
+  const diagramSlot = document.createElement("div");
+  diagramSlot.className = "notebook-graph-diagram";
+  container.appendChild(diagramSlot);
+
+  const textFold = document.createElement("details");
+  textFold.className = "notebook-graph-text-fold";
+  const textSummary = document.createElement("summary");
+  textSummary.textContent = "Show text";
+  textFold.appendChild(textSummary);
   const pre = document.createElement("pre");
   pre.className = "notebook-graph-text";
-  details.appendChild(pre);
+  textFold.appendChild(pre);
+  container.appendChild(textFold);
 
   const status = document.createElement("div");
   status.className = "notebook-graph-status";
-  details.appendChild(status);
+  container.appendChild(status);
 
-  el.appendChild(details);
+  el.appendChild(container);
 
   let shownText = embed.text ?? "";
+  let shownDocument = tryParseDocument(embed.document);
 
-  const draw = (text: string, focus: readonly string[] | undefined) => {
+  const drawText = (text: string, focus: readonly string[] | undefined) => {
     const count = nodeIdsOf(text).length;
-    summaryText.textContent = count > 0 ? `Graph ${embed.analysisId} · ${count} nodes` : `Graph ${embed.analysisId}`;
-    link.href = editorUrl(embed.analysisId);
+    headerText.textContent = count > 0 ? `Graph ${embed.analysisId} · ${count} nodes` : `Graph ${embed.analysisId}`;
 
     pre.textContent = "";
     const focusSet = new Set(focus ?? []);
@@ -92,7 +114,19 @@ export const renderGraph: EmbedRenderer<GraphEmbed> = (el, embed, ctx: EmbedCont
     });
   };
 
-  draw(shownText, embed.focus);
+  const drawDiagram = (doc: GraphDocument | undefined, focus: readonly string[] | undefined) => {
+    diagramSlot.textContent = "";
+    if (doc === undefined) {
+      // Nothing to draw from: fall back to the text print, shown open.
+      textFold.open = true;
+      return;
+    }
+    diagramSlot.appendChild(buildGraphDiagram(doc, { analysisId: embed.analysisId, focus }));
+    textFold.open = false;
+  };
+
+  drawText(shownText, embed.focus);
+  drawDiagram(shownDocument, embed.focus);
 
   return {
     async refresh(): Promise<Freshness> {
@@ -124,12 +158,22 @@ export const renderGraph: EmbedRenderer<GraphEmbed> = (el, embed, ctx: EmbedCont
       const was = graphHashOf(shownText) ?? "graph changed";
       const now = graphHashOf(text) ?? "graph changed";
       shownText = text;
-      draw(text, embed.focus);
+      drawText(text, embed.focus);
+
+      try {
+        const json = await ctx.api.getAnalysis(embed.analysisId);
+        const doc = tryParseDocument(json);
+        if (doc !== undefined) shownDocument = doc;
+      } catch {
+        // Keep the last diagram; the text above already reports the change.
+      }
+      drawDiagram(shownDocument, embed.focus);
+
       status.textContent = `changed: was ${was}, now ${now}`;
       return { state: "changed", was, now };
     },
     destroy(): void {
-      details.remove();
+      container.remove();
     },
   };
 };
