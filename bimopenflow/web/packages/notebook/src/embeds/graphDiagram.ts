@@ -20,6 +20,20 @@
 // and scrolls horizontally inside the embed body, which already allows it
 // (`page/styles.ts`, `.nb-embed-body { overflow-x: auto }`), rather than
 // shrinking below legible.
+//
+// Edge routing (TKT-80): every row index lands at the same y in every column
+// (row i is always at y = i*(NODE_H+V_GAP), regardless of how many rows a
+// given column has), so the horizontal band between two row slots is empty
+// space in every column, not just the one an edge starts or ends in. An edge
+// to an adjacent column draws as a simple S-curve between the two column
+// gaps, which never enters a box (its x stays within the gap between the
+// columns). An edge that skips one or more columns instead leaves its source
+// box, turns into the row-gap immediately below the source's row (a lane
+// that is guaranteed clear all the way across), travels that lane past every
+// intermediate column, then turns down into the target's row and box. This
+// is the standard layered-graph fix of routing a long edge through the gaps
+// between rows instead of letting it cut a straight line across the columns
+// it skips.
 
 import { nodeTitle } from "@bimopenflow/app/src/graphPreview";
 import type { GraphDocument } from "@bimopenflow/state";
@@ -31,6 +45,9 @@ const NODE_H = 46;
 const H_GAP = 56;
 const V_GAP = 26;
 const PAD = 20;
+
+/** Corner radius for a routed (multi-segment) edge; clamped per-corner to half the shorter adjacent leg. */
+const CORNER_RADIUS = 8;
 
 /** Font sizes in SVG user units; at the render rule below, both stay at or above their size. */
 export const ID_FONT_SIZE = 12;
@@ -63,6 +80,27 @@ interface Box {
   readonly h: number;
 }
 
+export interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+
+/** One edge's drawn route, in the same final (shifted, padded) coordinate space as the boxes returned alongside it. */
+export interface EdgeRoute {
+  readonly from: string;
+  readonly to: string;
+  /** Waypoints in order from the source box's edge to the target box's edge; always at least two. */
+  readonly points: readonly Point[];
+}
+
+/** The full pure layout: every node's box and every edge's route, already shifted into the diagram's own coordinates. */
+export interface DiagramLayout {
+  readonly boxes: ReadonlyMap<string, Box>;
+  readonly edges: readonly EdgeRoute[];
+  readonly width: number;
+  readonly height: number;
+}
+
 function nodeId(portRef: string): string {
   return portRef.slice(0, portRef.lastIndexOf("."));
 }
@@ -70,6 +108,13 @@ function nodeId(portRef: string): string {
 /** The saved layout `y` for `id`, or +Infinity when the document has none (sorts after every node that has one). */
 function savedYOf(doc: GraphDocument, id: string): number {
   return doc.layout[id]?.y ?? Number.POSITIVE_INFINITY;
+}
+
+interface NodePlacement {
+  readonly col: number;
+  readonly row: number;
+  readonly x: number;
+  readonly y: number;
 }
 
 /**
@@ -80,7 +125,7 @@ function savedYOf(doc: GraphDocument, id: string): number {
  * keeps the author's vertical order without inheriting their x, which was
  * laid out for a pannable canvas, not a fixed-width column.
  */
-function layeredLayout(doc: GraphDocument): Map<string, { x: number; y: number }> {
+function layeredLayout(doc: GraphDocument): Map<string, NodePlacement> {
   const ids = doc.structure.nodes.map((n) => n.id);
   const parents = new Map<string, string[]>(ids.map((id) => [id, []]));
   for (const edge of doc.structure.edges) {
@@ -113,23 +158,76 @@ function layeredLayout(doc: GraphDocument): Map<string, { x: number; y: number }
     if (!columns.has(d)) columns.set(d, []);
     columns.get(d)!.push(id);
   }
-  const result = new Map<string, { x: number; y: number }>();
+  const result = new Map<string, NodePlacement>();
   for (const [d, column] of columns)
     column.forEach((id, i) => {
-      result.set(id, { x: d * (NODE_W + H_GAP), y: i * (NODE_H + V_GAP) });
+      result.set(id, { col: d, row: i, x: d * (NODE_W + H_GAP), y: i * (NODE_H + V_GAP) });
     });
   return result;
 }
 
 /** One position and size per node, from the layered layout; every box shares the same size. */
-function placeNodes(doc: GraphDocument): Map<string, Box> {
+function placeNodes(doc: GraphDocument): Map<string, NodePlacement & Box> {
   const positions = layeredLayout(doc);
-  const boxes = new Map<string, Box>();
+  const boxes = new Map<string, NodePlacement & Box>();
   for (const n of doc.structure.nodes) {
     const p = positions.get(n.id)!;
-    boxes.set(n.id, { x: p.x, y: p.y, w: NODE_W, h: NODE_H });
+    boxes.set(n.id, { ...p, w: NODE_W, h: NODE_H });
   }
   return boxes;
+}
+
+/**
+ * Waypoints for one edge, in the same unshifted layout coordinates as the boxes. An edge to the very
+ * next column draws straight between the two column gaps (it can never cross a box: its x never leaves
+ * the empty gap between the two columns). An edge that skips one or more columns instead turns into the
+ * row-gap right below the source's row, which is empty space in every column at that y (row i always
+ * sits at y = i*(NODE_H+V_GAP) in every column, however many rows that column has), travels that lane
+ * across every column it skips, and turns down into the target.
+ */
+function routeEdge(from: NodePlacement & Box, to: NodePlacement & Box): Point[] {
+  const x1 = from.x + from.w;
+  const y1 = from.y + from.h / 2;
+  const x2 = to.x;
+  const y2 = to.y + to.h / 2;
+  if (to.col <= from.col + 1) return [{ x: x1, y: y1 }, { x: x2, y: y2 }];
+
+  const gapAfterSourceX = from.x + from.w + H_GAP / 2;
+  const gapBeforeTargetX = to.x - H_GAP / 2;
+  const laneY = from.row * (NODE_H + V_GAP) + NODE_H + V_GAP / 2;
+  return [
+    { x: x1, y: y1 },
+    { x: gapAfterSourceX, y: y1 },
+    { x: gapAfterSourceX, y: laneY },
+    { x: gapBeforeTargetX, y: laneY },
+    { x: gapBeforeTargetX, y: y2 },
+    { x: x2, y: y2 },
+  ];
+}
+
+/** The full pure layout for `doc`: every node's box and every edge's route, in one shared, shifted coordinate space. */
+export function layoutGraphDiagram(doc: GraphDocument): DiagramLayout {
+  const placements = placeNodes(doc);
+  const minX = Math.min(0, ...[...placements.values()].map((b) => b.x));
+  const minY = Math.min(0, ...[...placements.values()].map((b) => b.y));
+  const maxX = Math.max(0, ...[...placements.values()].map((b) => b.x + b.w));
+  const maxY = Math.max(0, ...[...placements.values()].map((b) => b.y + b.h));
+  const shiftX = (v: number) => v - minX + PAD;
+  const shiftY = (v: number) => v - minY + PAD;
+  const shiftPoint = (p: Point): Point => ({ x: shiftX(p.x), y: shiftY(p.y) });
+
+  const boxes = new Map<string, Box>();
+  for (const [id, p] of placements) boxes.set(id, { x: shiftX(p.x), y: shiftY(p.y), w: p.w, h: p.h });
+
+  const edges: EdgeRoute[] = [];
+  for (const edge of doc.structure.edges) {
+    const from = placements.get(nodeId(edge.from));
+    const to = placements.get(nodeId(edge.to));
+    if (from === undefined || to === undefined) continue; // an edge to a node outside this document
+    edges.push({ from: edge.from, to: edge.to, points: routeEdge(from, to).map(shiftPoint) });
+  }
+
+  return { boxes, edges, width: maxX - minX + PAD * 2, height: maxY - minY + PAD * 2 };
 }
 
 /** Trims `text` to fit `maxWidthPx` at `fontSizePx`, by an average-glyph-width estimate, with an ellipsis. */
@@ -137,6 +235,32 @@ function truncate(text: string, maxWidthPx: number, fontSizePx: number): string 
   const maxChars = Math.max(1, Math.floor(maxWidthPx / (fontSizePx * AVG_CHAR_WIDTH_FACTOR)));
   if (text.length <= maxChars) return text;
   return `${text.slice(0, Math.max(1, maxChars - 1))}…`;
+}
+
+/** The `d` attribute for an edge's route: a smooth S-curve for a two-point (adjacent-column) route, or a rounded elbow path for a routed one. */
+function edgePathD(points: readonly Point[]): string {
+  if (points.length === 2) {
+    const [p0, p1] = points;
+    const midX = (p0.x + p1.x) / 2;
+    return `M${p0.x},${p0.y} C${midX},${p0.y} ${midX},${p1.y} ${p1.x},${p1.y}`;
+  }
+  let d = `M${points[0].x},${points[0].y}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const next = points[i + 1];
+    const legIn = Math.hypot(curr.x - prev.x, curr.y - prev.y);
+    const legOut = Math.hypot(next.x - curr.x, next.y - curr.y);
+    const r = Math.max(0, Math.min(CORNER_RADIUS, legIn / 2, legOut / 2));
+    const towardPrev = legIn === 0 ? { x: 0, y: 0 } : { x: ((prev.x - curr.x) / legIn) * r, y: ((prev.y - curr.y) / legIn) * r };
+    const towardNext = legOut === 0 ? { x: 0, y: 0 } : { x: ((next.x - curr.x) / legOut) * r, y: ((next.y - curr.y) / legOut) * r };
+    const cornerStart = { x: curr.x + towardPrev.x, y: curr.y + towardPrev.y };
+    const cornerEnd = { x: curr.x + towardNext.x, y: curr.y + towardNext.y };
+    d += ` L${cornerStart.x},${cornerStart.y} Q${curr.x},${curr.y} ${cornerEnd.x},${cornerEnd.y}`;
+  }
+  const last = points[points.length - 1];
+  d += ` L${last.x},${last.y}`;
+  return d;
 }
 
 let instanceCounter = 0;
@@ -171,17 +295,10 @@ export function buildGraphDiagram(doc: GraphDocument, options: GraphDiagramOptio
   const ownerDocument = globalThis.document;
   ensureDiagramStyles(ownerDocument);
 
-  const boxes = placeNodes(doc);
+  const layout = layoutGraphDiagram(doc);
+  const { boxes, width, height } = layout;
   const focusSet = new Set(options.focus ?? []);
   const instanceId = `nb-graph-arrow-${++instanceCounter}`;
-
-  const minX = Math.min(0, ...[...boxes.values()].map((b) => b.x));
-  const minY = Math.min(0, ...[...boxes.values()].map((b) => b.y));
-  const maxX = Math.max(0, ...[...boxes.values()].map((b) => b.x + b.w));
-  const maxY = Math.max(0, ...[...boxes.values()].map((b) => b.y + b.h));
-  const width = maxX - minX + PAD * 2;
-  const height = maxY - minY + PAD * 2;
-  const shift = (v: number, min: number) => v - min + PAD;
 
   const svg = ownerDocument.createElementNS(SVG_NS, "svg") as SVGSVGElement;
   svg.setAttribute("viewBox", `0 0 ${Math.max(1, width)} ${Math.max(1, height)}`);
@@ -221,18 +338,10 @@ export function buildGraphDiagram(doc: GraphDocument, options: GraphDiagramOptio
 
   const edgeGroup = ownerDocument.createElementNS(SVG_NS, "g");
   edgeGroup.setAttribute("class", "nb-graph-edges");
-  for (const edge of doc.structure.edges) {
-    const from = boxes.get(nodeId(edge.from));
-    const to = boxes.get(nodeId(edge.to));
-    if (from === undefined || to === undefined) continue; // an edge to a node outside this document
-    const x1 = shift(from.x, minX) + from.w;
-    const y1 = shift(from.y, minY) + from.h / 2;
-    const x2 = shift(to.x, minX);
-    const y2 = shift(to.y, minY) + to.h / 2;
-    const midX = (x1 + x2) / 2;
+  for (const edge of layout.edges) {
     const path = ownerDocument.createElementNS(SVG_NS, "path");
     path.setAttribute("class", "nb-graph-edge");
-    path.setAttribute("d", `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`);
+    path.setAttribute("d", edgePathD(edge.points));
     path.setAttribute("marker-end", `url(#${instanceId})`);
     const edgeTitle = ownerDocument.createElementNS(SVG_NS, "title");
     edgeTitle.textContent = `${edge.from} -> ${edge.to}`;
@@ -246,8 +355,8 @@ export function buildGraphDiagram(doc: GraphDocument, options: GraphDiagramOptio
   nodeGroup.setAttribute("class", "nb-graph-nodes");
   for (const node of doc.structure.nodes) {
     const box = boxes.get(node.id)!;
-    const x = shift(box.x, minX);
-    const y = shift(box.y, minY);
+    const x = box.x;
+    const y = box.y;
     const g = ownerDocument.createElementNS(SVG_NS, "g");
     g.setAttribute("class", focusSet.has(node.id) ? "nb-graph-node nb-graph-node-focus" : "nb-graph-node");
     g.setAttribute("data-node-id", node.id);

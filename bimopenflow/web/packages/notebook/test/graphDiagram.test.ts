@@ -5,9 +5,11 @@ import { describe, expect, it } from "vitest";
 import { parseDocument, type GraphDocument } from "@bimopenflow/state";
 import {
   buildGraphDiagram,
+  layoutGraphDiagram,
   DRAWING_WIDTH_PX,
   ID_FONT_SIZE,
   KIND_FONT_SIZE,
+  type Point,
 } from "../src/embeds/graphDiagram";
 
 function doc(overrides: Partial<GraphDocument> = {}): GraphDocument {
@@ -245,5 +247,90 @@ describe("buildGraphDiagram over the committed sample notebooks (TKT-80)", () =>
     // Not a hard requirement, just a sanity check that the scan above saw a real multi-column graph.
     expect(widestColumns).toBeGreaterThan(1);
     expect(widestId).not.toBe("");
+  });
+});
+
+// TKT-80 (routing): a long edge must never cut through a node box it does not start or end at. Rather than parse
+// the SVG path's `d` string, this samples the same waypoints layoutGraphDiagram hands to the renderer, which is
+// the polyline the drawn path (a smooth curve for two points, a rounded elbow for more) always stays within.
+function portNodeId(portRef: string): string {
+  return portRef.slice(0, portRef.lastIndexOf("."));
+}
+
+/** `box` shrunk by 1px on every side, so a point exactly on a box's boundary (an edge's own endpoint) does not count as inside it. */
+function insideShrunkBox(p: Point, box: { x: number; y: number; w: number; h: number }): boolean {
+  return (
+    p.x > box.x + 1 &&
+    p.x < box.x + box.w - 1 &&
+    p.y > box.y + 1 &&
+    p.y < box.y + box.h - 1
+  );
+}
+
+const SAMPLES_PER_SEGMENT = 25;
+
+function assertRouteAvoidsOtherBoxes(doc: GraphDocument, label: string): void {
+  const layout = layoutGraphDiagram(doc);
+  for (const edge of layout.edges) {
+    const ownIds = new Set([portNodeId(edge.from), portNodeId(edge.to)]);
+    for (let i = 0; i < edge.points.length - 1; i++) {
+      const a = edge.points[i];
+      const b = edge.points[i + 1];
+      for (let s = 0; s <= SAMPLES_PER_SEGMENT; s++) {
+        const t = s / SAMPLES_PER_SEGMENT;
+        const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        for (const [nodeId, box] of layout.boxes) {
+          if (ownIds.has(nodeId)) continue;
+          expect(
+            insideShrunkBox(p, box),
+            `${label}: edge ${edge.from} -> ${edge.to} passes through node "${nodeId}" at (${p.x},${p.y})`,
+          ).toBe(false);
+        }
+      }
+    }
+  }
+}
+
+describe("buildGraphDiagram edge routing avoids node interiors (TKT-80)", () => {
+  it("routes an edge that skips a column around the boxes in between, not through them", () => {
+    // Reproduces the reported defect shape (S7's "csv.relation -> unmatchedInFile.left"): csv sits at column 0,
+    // physical and physicalEntities form a chain through columns 1 and 2, and unmatchedInFile joins csv with
+    // physicalEntities, landing at column 3 - so the csv -> unmatchedInFile edge skips the two boxes in between,
+    // all saved to the same row.
+    const skipping = doc({
+      structure: {
+        nodes: [
+          { id: "csv", kind: "k", version: 1 },
+          { id: "instances", kind: "k", version: 1 },
+          { id: "physical", kind: "k", version: 1 },
+          { id: "physicalEntities", kind: "k", version: 1 },
+          { id: "unmatchedInFile", kind: "k", version: 1 },
+        ],
+        edges: [
+          { from: "instances.out", to: "physical.in" },
+          { from: "physical.out", to: "physicalEntities.in" },
+          { from: "csv.out", to: "unmatchedInFile.in" },
+          { from: "physicalEntities.out", to: "unmatchedInFile.in" },
+        ],
+      },
+      layout: {
+        csv: { x: 0, y: 0 },
+        instances: { x: 100, y: 0 },
+        physical: { x: 200, y: 0 },
+        physicalEntities: { x: 300, y: 0 },
+        unmatchedInFile: { x: 400, y: 0 },
+      },
+    });
+    assertRouteAvoidsOtherBoxes(skipping, "synthetic skip-column graph");
+  });
+
+  it("keeps every edge in every committed sample notebook's graph embeds clear of every other node", () => {
+    let checked = 0;
+    for (const file of notebookFiles)
+      for (const graphDoc of graphDocumentsIn(file)) {
+        assertRouteAvoidsOtherBoxes(graphDoc, file);
+        checked++;
+      }
+    expect(checked).toBeGreaterThan(0);
   });
 });
