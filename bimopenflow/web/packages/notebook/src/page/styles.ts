@@ -49,6 +49,16 @@ body { background: var(--nb-bg); color: var(--nb-text); font: 14px var(--nb-font
 .nb-reply { background: var(--nb-reply-bg); border-radius: 8px; padding: 10px 14px; }
 .nb-reply p { line-height: 1.5; margin: 0 0 10px; }
 .nb-reply p:last-child { margin-bottom: 0; }
+.nb-reply code { font: 12px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; background: var(--nb-bg); border-radius: 3px; padding: 0 4px; }
+.nb-reply pre { background: var(--nb-bg); border: 1px solid var(--nb-border); border-radius: 6px; padding: 8px 10px; overflow-x: auto; margin: 0 0 10px; }
+.nb-reply pre code { background: none; padding: 0; }
+.nb-reply ul, .nb-reply ol { margin: 0 0 10px; padding-left: 22px; }
+.nb-reply li { line-height: 1.5; margin-bottom: 4px; }
+.nb-reply a { color: var(--nb-accent); }
+.nb-md-heading { font-weight: 600; margin: 10px 0 6px; }
+h1.nb-md-heading { font-size: 15px; }
+h2.nb-md-heading { font-size: 14px; }
+h3.nb-md-heading { font-size: 13px; }
 .nb-error { color: var(--nb-red); font-weight: 600; margin-bottom: 8px; }
 .nb-tools { margin-bottom: 8px; }
 .nb-tools summary { cursor: pointer; color: var(--nb-dim); }

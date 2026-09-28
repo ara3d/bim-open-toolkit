@@ -4,6 +4,7 @@
 import type { Embed, Reply, Turn } from "../document/format";
 import type { EmbedContext, EmbedRegistry, Freshness } from "../embeds/contract";
 import { renderEmbed } from "../embeds/registry";
+import { renderMarkdown } from "./markdown";
 import { ensureNotebookStyles } from "./styles";
 
 /** What a turn's controls ask the notebook to do; the notebook decides. */
@@ -27,14 +28,6 @@ export interface TurnHandle {
   /** Refreshes every embed of the turn and updates their badges. */
   refresh(): Promise<void>;
   destroy(): void;
-}
-
-/** Splits reply text into paragraphs on blank lines; no markdown is parsed. */
-function splitParagraphs(text: string): string[] {
-  return text
-    .split(/\n\s*\n/)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
 }
 
 function agentSummary(reply: Reply): string | undefined {
@@ -100,11 +93,7 @@ export function renderTurn(el: HTMLElement, turn: Turn, ctx: TurnContext): TurnH
     replySection.appendChild(error);
   }
 
-  for (const paragraph of splitParagraphs(turn.reply.text)) {
-    const p = doc.createElement("p");
-    p.textContent = paragraph;
-    replySection.appendChild(p);
-  }
+  renderMarkdown(doc, replySection, turn.reply.text);
 
   if (turn.reply.tools.length > 0) {
     const details = doc.createElement("details");
@@ -270,7 +259,7 @@ function renderEarlier(doc: Document, turn: Turn): HTMLElement {
 
     const reply = doc.createElement("div");
     reply.className = "nb-earlier-reply";
-    reply.textContent = entry.reply.text;
+    renderMarkdown(doc, reply, entry.reply.text);
     details.appendChild(reply);
 
     wrap.appendChild(details);
