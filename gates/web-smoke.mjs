@@ -16,6 +16,7 @@ const steps = [
   [web, ["test", "-w", "@bimopenflow/viz"]],
   [web, ["test", "-w", "@bimopenflow/state"]],
   [web, ["test", "-w", "@bimopenflow/panes"]],
+  [web, ["test", "-w", "@bimopenflow/graph"]],
   [web, ["test", "-w", "@bimopenflow/app"]],
   [web, ["run", "build", "-w", "@bimopenflow/app"]],
 ];
