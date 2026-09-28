@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Analysis notebook: the transcript of a session with the agent, with live embeds (value, table, chart, graph, 3D, picture, file) rendered by the existing panes and re-evaluated against the host.",
+  "description": "BIM Open Notebook: the transcript of a session with the agent, with live embeds (value, table, chart, graph, 3D, picture, file) rendered by the existing panes and re-evaluated against the host.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {

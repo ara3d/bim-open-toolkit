@@ -5,6 +5,17 @@
 
 export const shellCss = `
 .nb-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.nb-brand {
+  display: flex; align-items: center; gap: 6px; flex: none;
+  padding: 4px 16px; min-height: 20px; background: var(--nb-bg); border-bottom: 1px solid var(--nb-border);
+  font-size: 11px; line-height: 1.4; color: var(--nb-dim); overflow: hidden; white-space: nowrap;
+}
+.nb-brand-mark { flex: none; fill: var(--nb-accent); }
+.nb-brand-name {
+  font-weight: 700; letter-spacing: 0.02em; color: var(--nb-text); overflow: hidden; text-overflow: ellipsis;
+}
+.nb-brand-link { flex: none; margin-left: auto; color: var(--nb-dim); text-decoration: none; }
+.nb-brand-link:hover, .nb-brand-link:focus { color: var(--nb-accent); text-decoration: underline; }
 .nb-toolbar {
   position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
   padding: 8px 16px; background: var(--nb-surface); border-bottom: 1px solid var(--nb-border);

@@ -4,7 +4,16 @@ import type { Embed, Notebook, Reply, Turn } from "../src/document/format";
 import { parseNotebook, serializeNotebook } from "../src/document/io";
 import type { EmbedContext, EmbedRegistry, EmbedRenderer, Freshness, NotebookApi } from "../src/embeds/contract";
 import { readFileText } from "../src/page/files";
-import { mountNotebook, NO_ASK_NOTE, type NotebookView, type NotebookViewOptions } from "../src/page/notebookView";
+import {
+  BRAND_NAME,
+  BRAND_TAGLINE,
+  mountNotebook,
+  NO_ASK_NOTE,
+  TOOLKIT_URL,
+  UNTITLED,
+  type NotebookView,
+  type NotebookViewOptions,
+} from "../src/page/notebookView";
 
 // --- Fakes -----------------------------------------------------------------
 
@@ -157,6 +166,29 @@ describe("mountNotebook", () => {
     expect(turnIds()).toEqual([]);
     expect(q<HTMLElement>(".nb-empty").hidden).toBe(false);
     expect(q<HTMLElement>(".nb-note").hidden).toBe(true);
+    expect(document.title).toBe(BRAND_NAME);
+  });
+
+  it("shows a brand bar naming BIM Open Notebook, linked to the toolkit repository", () => {
+    mount({ initial: sample() });
+    const brand = q<HTMLElement>(".nb-brand");
+    expect(brand.querySelector(".nb-brand-name")!.textContent).toBe(BRAND_NAME);
+    const link = brand.querySelector<HTMLAnchorElement>(".nb-brand-link")!;
+    expect(link.textContent).toBe(BRAND_TAGLINE);
+    expect(link.href).toBe(TOOLKIT_URL);
+    expect(link.target).toBe("_blank");
+    expect(link.rel).toBe("noopener");
+  });
+
+  it("sets the document title from the notebook title, and back to the brand alone when untitled", () => {
+    mount({ initial: sample() });
+    expect(document.title).toBe(`Door check · ${BRAND_NAME}`);
+    view!.load({ ...sample(), title: UNTITLED });
+    expect(document.title).toBe(BRAND_NAME);
+    const title = q<HTMLInputElement>(".nb-title");
+    title.value = "Renamed";
+    title.dispatchEvent(new Event("change"));
+    expect(document.title).toBe(`Renamed · ${BRAND_NAME}`);
   });
 
   it("shows the notebook's host note above the turns, such as a reconstructed session's label", () => {

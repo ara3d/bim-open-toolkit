@@ -49,6 +49,18 @@ export interface NotebookView {
 /** The title a notebook gets when none is given. */
 export const UNTITLED = "Untitled notebook";
 
+/** The product name shown in the brand bar and the document title. */
+export const BRAND_NAME = "BIM Open Notebook";
+
+/** The brand bar's link text and target: the toolkit repository. */
+export const BRAND_TAGLINE = "part of BIM Open Toolkit";
+export const TOOLKIT_URL = "https://github.com/ara3d/bim-open-toolkit";
+
+/** The document <title>: just the brand until a notebook with its own title is loaded. */
+function documentTitle(notebookTitle: string): string {
+  return notebookTitle && notebookTitle !== UNTITLED ? `${notebookTitle} · ${BRAND_NAME}` : BRAND_NAME;
+}
+
 export const NO_ASK_NOTE =
   "Asking needs the studio host, which serves /api/ask with a configured model. This page can still read, re-evaluate, edit, and save notebooks.";
 
@@ -105,6 +117,7 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
 
   root.replaceChildren();
   const shell = el(doc, "div", "nb-shell");
+  const brand = buildBrandBar();
   const toolbar = buildToolbar();
   const problemsSlot = el(doc, "div");
   const column = el(doc, "main", "nb-column");
@@ -116,7 +129,7 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
   live.hidden = true;
   const box = buildRequestBox();
   column.append(note, empty, turnsEl, live, box.form);
-  shell.append(toolbar.el, problemsSlot, column);
+  shell.append(brand, toolbar.el, problemsSlot, column);
   root.append(shell);
 
   /** Each drawn turn by object identity, with the element that holds it. */
@@ -157,6 +170,7 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
     }
     empty.hidden = notebook.turns.length > 0 || running !== undefined;
     if (doc.activeElement !== toolbar.title) toolbar.title.value = notebook.title;
+    doc.title = documentTitle(notebook.title);
     note.textContent = notebook.host?.note ?? "";
     note.hidden = !notebook.host?.note;
     syncControls();
@@ -205,6 +219,31 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
 
   function setStatus(text: string): void {
     toolbar.status.textContent = text;
+  }
+
+  // --- Brand bar -------------------------------------------------------------
+
+  /**
+   * A slim bar above the toolbar: the product name and a link to the
+   * toolkit repository, so a screenshot or an embedded page reads as BIM
+   * Open Notebook without depending on the document title alone.
+   */
+  function buildBrandBar(): HTMLElement {
+    const bar = el(doc, "div", "nb-brand");
+    bar.innerHTML =
+      '<svg class="nb-brand-mark" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
+      '<rect x="1" y="1" width="6" height="6" rx="1"></rect>' +
+      '<rect x="9" y="1" width="6" height="6" rx="1"></rect>' +
+      '<rect x="1" y="9" width="6" height="6" rx="1"></rect>' +
+      '<rect x="9" y="9" width="6" height="6" rx="1"></rect>' +
+      "</svg>";
+    bar.append(el(doc, "span", "nb-brand-name", BRAND_NAME));
+    const link = el(doc, "a", "nb-brand-link", BRAND_TAGLINE);
+    link.href = TOOLKIT_URL;
+    link.target = "_blank";
+    link.rel = "noopener";
+    bar.append(link);
+    return bar;
   }
 
   // --- Toolbar -------------------------------------------------------------
