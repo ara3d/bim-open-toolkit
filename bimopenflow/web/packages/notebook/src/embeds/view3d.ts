@@ -1,7 +1,13 @@
 // Renders a view3d embed: a still or a placeholder at once, and the editor's
-// 3D pane over the node's model when the user asks for it. A page may hold
-// many 3D embeds and browsers cap live WebGL contexts at about 16, so no
-// WebGL view exists until "Show 3D" and "Hide" disposes it.
+// 3D pane over the node's model once the embed is near the viewport. A page
+// may hold many 3D embeds and browsers cap live WebGL contexts at about 16
+// (Chrome), so the pane mounts lazily: an IntersectionObserver with a
+// generous rootMargin fires "Show" as the reader scrolls close, instead of
+// every embed mounting at once on load. Where IntersectionObserver is
+// missing (jsdom in tests), the pane mounts immediately. A notebook's few
+// embeds stay well under the browser's cap once shown, so nothing disposes a
+// pane just because it scrolled out of view; "Hide" (still on the toggle)
+// is the reader's way to free the GPU, and "Show 3D" brings it back.
 //
 // Feeding the pane follows the editor's pane area (app/src/paneArea.ts,
 // feedModel and feedData): the model first as "model:<id>" in BOS, then the
@@ -122,6 +128,7 @@ export function createView3dRenderer(makePane: View3dPaneFactory = defaultPane):
     let token = 0;
     let destroyed = false;
     let unsubscribe: (() => void) | null = null;
+    let observer: IntersectionObserver | null = null;
 
     const say = (message: string, alert = false) => {
       status.textContent = message;
@@ -183,6 +190,22 @@ export function createView3dRenderer(makePane: View3dPaneFactory = defaultPane):
       else void show();
     });
 
+    const IO = doc.defaultView?.IntersectionObserver;
+    if (IO) {
+      observer = new IO(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          observer?.disconnect();
+          observer = null;
+          if (!pane) void show();
+        },
+        { rootMargin: "800px 0px" },
+      );
+      observer.observe(root);
+    } else {
+      void show();
+    }
+
     return {
       async refresh(): Promise<Freshness> {
         try {
@@ -198,6 +221,8 @@ export function createView3dRenderer(makePane: View3dPaneFactory = defaultPane):
       destroy() {
         if (destroyed) return;
         destroyed = true;
+        observer?.disconnect();
+        observer = null;
         hide();
         root.remove();
       },

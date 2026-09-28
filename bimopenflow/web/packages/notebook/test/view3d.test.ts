@@ -90,23 +90,61 @@ const recordingPane = () => {
   return { pane, log, inputs, emit: (e: PaneEvent) => handlers.forEach((h) => h(e)), ctx: () => ctx! };
 };
 
-const mount = (api: NotebookApi, e: View3dEmbed = embed, pane = recordingPane()) => {
+/**
+ * Stands in for the browser's IntersectionObserver, which jsdom has none of.
+ * Installed on `window` only for the span of one `mount()` call, since the
+ * renderer reads `IntersectionObserver` once, synchronously, at construction.
+ */
+class FakeIntersectionObserver {
+  callback: IntersectionObserverCallback = () => {};
+  readonly observed: Element[] = [];
+  disconnected = false;
+
+  /** The constructor function the renderer sees as `window.IntersectionObserver`. */
+  ctor(): typeof IntersectionObserver {
+    const self = this;
+    return function (this: unknown, callback: IntersectionObserverCallback) {
+      self.callback = callback;
+      return self; // a constructor returning an object makes `new` use it as `this`
+    } as unknown as typeof IntersectionObserver;
+  }
+
+  observe(el: Element): void {
+    this.observed.push(el);
+  }
+
+  unobserve(): void {}
+
+  disconnect(): void {
+    this.disconnected = true;
+  }
+
+  fire(isIntersecting: boolean): void {
+    this.callback([{ isIntersecting } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+  }
+}
+
+const mount = (
+  api: NotebookApi,
+  e: View3dEmbed = embed,
+  pane = recordingPane(),
+  observer?: FakeIntersectionObserver,
+) => {
   const el = document.createElement("div");
   const ctx: EmbedContext = { api, selection: createSelectionBus() };
+  if (observer) (window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = observer.ctor();
   const handle = createView3dRenderer(() => pane.pane)(el, e, ctx);
+  if (observer) delete (window as { IntersectionObserver?: unknown }).IntersectionObserver;
   const button = () => el.querySelector("button")!;
   return { el, ctx, handle, pane, button };
 };
 
 describe("view3d embed", () => {
-  it("draws a placeholder naming the analysis and node, with no host calls and no pane", () => {
-    const api = fakeApi();
-    const { el, pane, button } = mount(api);
+  it("draws the placeholder text and caption under the pane, hidden once shown", async () => {
+    const { el } = mount(fakeApi());
     expect(el.textContent).toContain("answer");
     expect(el.textContent).toContain("nrc-color-category");
-    expect(button().textContent).toBe("Show 3D");
-    expect(pane.log).toEqual([]);
-    for (const fn of Object.values(api)) expect(fn).not.toHaveBeenCalled();
+    await settle();
   });
 
   it("draws the still as an image when there is one", () => {
@@ -114,13 +152,40 @@ describe("view3d embed", () => {
     expect(el.querySelector("img")!.getAttribute("src")).toBe("data:image/png;base64,AA");
   });
 
-  it("on Show loads the catalog model as BOS, then the node's instances", async () => {
+  it("mounts the pane by default, with no click needed (no IntersectionObserver in jsdom)", async () => {
     const { pane, button } = mount(fakeApi());
-    button().click();
+    expect(pane.log).toContain("mount");
+    expect(button().textContent).toBe("Hide");
     await settle();
     expect(pane.log).toEqual(["mount", "model", "instances"]);
     expect(pane.inputs[0]).toEqual({ kind: "model", url: "model:duplex-enriched.ifc", format: "bos" });
     expect(pane.inputs[1]).toEqual({ kind: "instances", data: instances });
+  });
+
+  it("only mounts once the embed comes near the viewport, when IntersectionObserver exists", async () => {
+    const observer = new FakeIntersectionObserver();
+    const { pane, button } = mount(fakeApi(), embed, recordingPane(), observer);
+    expect(observer.observed).toHaveLength(1);
+    expect(pane.log).toEqual([]);
+    expect(button().textContent).toBe("Show 3D");
+    observer.fire(false);
+    expect(pane.log).toEqual([]);
+    observer.fire(true);
+    await settle();
+    expect(pane.log).toEqual(["mount", "model", "instances"]);
+    expect(button().textContent).toBe("Hide");
+    expect(observer.disconnected).toBe(true);
+  });
+
+  it("the Hide/Show toggle still works once auto-mounted", async () => {
+    const { pane, button } = mount(fakeApi());
+    await settle();
+    button().click();
+    expect(pane.log.at(-1)).toBe("destroy");
+    expect(button().textContent).toBe("Show 3D");
+    button().click();
+    await settle();
+    expect(pane.log.at(-1)).toBe("instances");
     expect(button().textContent).toBe("Hide");
   });
 
@@ -134,16 +199,14 @@ describe("view3d embed", () => {
       getAnalysis: vi.fn(async () => scene),
       getNodeCatalog: vi.fn(async () => ({ nodes: [descriptor("view3d.scene", "view")] })),
     });
-    const { pane, button } = mount(api, { ...embed, source: { ...embed.source, nodeId: "scene", port: "view" } });
-    button().click();
+    const { pane } = mount(api, { ...embed, source: { ...embed.source, nodeId: "scene", port: "view" } });
     await settle();
     expect(pane.log).toEqual(["mount", "model", "view"]);
     expect(api.getResult).not.toHaveBeenCalled();
   });
 
   it("says why when the node has no result, after loading the model", async () => {
-    const { el, pane, button } = mount(fakeApi({ getAnalysisState: vi.fn(async () => okState("Error", "csv not found")) }));
-    button().click();
+    const { el, pane } = mount(fakeApi({ getAnalysisState: vi.fn(async () => okState("Error", "csv not found")) }));
     await settle();
     expect(pane.log).toEqual(["mount", "model"]);
     expect(el.querySelector("[role=alert]")!.textContent).toContain("csv not found");
@@ -151,7 +214,6 @@ describe("view3d embed", () => {
 
   it("Hide and destroy dispose the pane; destroy is idempotent", async () => {
     const { el, handle, pane, button } = mount(fakeApi());
-    button().click();
     await settle();
     button().click();
     expect(pane.log.at(-1)).toBe("destroy");
@@ -164,11 +226,18 @@ describe("view3d embed", () => {
     expect(el.children).toHaveLength(0);
   });
 
+  it("destroy before the embed ever intersects disconnects the observer without mounting", () => {
+    const observer = new FakeIntersectionObserver();
+    const { handle, pane } = mount(fakeApi(), embed, recordingPane(), observer);
+    handle.destroy();
+    expect(pane.log).toEqual([]);
+    expect(observer.disconnected).toBe(true);
+  });
+
   it("publishes a pick with the embed id as origin and mirrors others' selections", async () => {
-    const { ctx, pane, button } = mount(fakeApi());
+    const { ctx, pane } = mount(fakeApi());
     const heard: string[] = [];
     ctx.selection.subscribe((ids, origin) => heard.push(`${origin}:${ids.join(",")}`));
-    button().click();
     await settle();
     pane.emit({ kind: "selection", event: { source: "view3d", ids: ["5"] } });
     expect(heard).toEqual(["e3d:5"]);
@@ -211,7 +280,6 @@ describe("view3d embed on the real pane (fake viewer rig)", () => {
     const heard: string[] = [];
     ctx.selection.subscribe((ids, origin) => heard.push(`${origin}:${ids.join(",")}`));
     const handle = createView3dRenderer(() => createViewPane3D({ deps }))(el, embed, ctx);
-    el.querySelector("button")!.click();
     await settle();
     expect(loads).toEqual(["/api/models/duplex-enriched.ifc/bos"]);
     pick(5);
