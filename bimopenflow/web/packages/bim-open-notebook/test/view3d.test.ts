@@ -8,7 +8,7 @@ import { createView3dRenderer } from "../src/embeds/view3d";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-// The shape of samples/nrc-analyses/nrc-color-category.json as the host holds
+// The shape of the category colouring (samples/nrc-analyses/nrc-color-operational-carbon.json with valueColumn Category) as the host holds
 // it after seeding: {SAMPLES} replaced by an absolute path.
 const colorGraph = JSON.stringify({
   formatVersion: "0.1.0",
