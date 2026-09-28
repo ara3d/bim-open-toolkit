@@ -14,3 +14,7 @@ fence: [src/flow/BimOpenFlow.Nodes.Viz/**, src/flow/BimOpenFlow.Nodes.Geometry/*
 - [ ] A sample graph demonstrates it over Snowdon
 
 Serves W4 and W3. docs/proposals/core-node-sets.md Set 4 (view3d.colormap, view3d.color v2, unshipped) and docs/proposals/bimopenflow-ux-proposal.md section 5 P1; the PoC's most common novice trap was a silently clamped manual domain.
+
+## Notes
+
+- 2026-09-28 (TKT-80): another session changed `bimopenflow/web/packages/panes/src/viewPane3D.ts`'s status line from "N instances" to "N rendered instances" to stop it disagreeing with the notebook's 714-instance count from `view3d.instances` (commit 4972d92). No uncommitted work under `panes/` was found and the last commit to that file predated this by more than 2 hours, so the fence rule allowed the edit.
