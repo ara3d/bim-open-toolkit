@@ -145,7 +145,9 @@ private Snowdon sample model, and each has its own setup guide:
 - **DuckDB demo.** Nine SQL-backed schedule, join, and aggregation graphs over a typed
   Snowdon database. See [docs/bim-flow-duckdb.md](docs/bim-flow-duckdb.md).
 - **Ask box.** The DuckDB demo's Ask box has an agent build a new graph from a
-  plain-language request through the MCP tools. It needs an Anthropic or OpenAI key. See
+  plain-language request through the MCP tools. It needs an Anthropic or OpenAI key, or
+  the Claude Code command line signed in (`node scripts/claude-login.mjs`; see
+  [docs/claude-cli-login.md](docs/claude-cli-login.md)). See
   [docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md).
 
 ## Maturity
