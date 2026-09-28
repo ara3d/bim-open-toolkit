@@ -83,6 +83,16 @@ Every exception lives in `AllowLists.cs`, one list per check, each entry naming 
 profile, the analysis id, the node id, and a reason. Add an entry only when the flagged
 behaviour is intended; otherwise fix the graph or the node.
 
+## Renaming, deleting, or changing a sample flow
+
+Other work captures sample flows by id and by answer: the notebooks under
+`samples/notebooks/` (and their outlines, tested by the notebook package's
+`samples.test.ts`) and the paper walkthrough (`scripts/nrc-walkthrough.mjs`).
+Before deleting or renaming a flow, grep both for its id. If one names it, commit
+the replacement first, keep the old file, tell the notebook's owner the new id,
+node ids and parameter values, and delete only once they have moved. When a
+flow's answer changes, tell them too, so the captured notebooks are regenerated.
+
 ## Known findings from the first run
 
 These are real product bugs this test found, left failing (not allow-listed) so they
