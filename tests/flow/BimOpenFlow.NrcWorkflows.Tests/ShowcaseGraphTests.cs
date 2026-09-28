@@ -11,12 +11,13 @@ namespace BimOpenFlow.NrcWorkflows.Tests;
 
 /// <summary>The end-to-end demos in samples/showcase-analyses, each over samples/nrc: CSV into a
 /// chart (both profiles), a BOS file into the relation pack and a chart, and the IFC-derived
-/// DuckDB into verdicts, a coloured 3D view, a chart, and an HTML report. Numbers cite
+/// DuckDB into verdicts, a coloured 3D view, a chart, and an HTML report (nrc-dc-w1-verdicts, which
+/// absorbed ifc-to-verdicts-and-chart in TKT-93). Numbers cite
 /// nrc-ifc-llm/poc/results/expected_answers.json (Q5) and samples/nrc/door_verdicts.csv.</summary>
 [TestFixture]
 public sealed class ShowcaseGraphTests
 {
-    private static readonly string[] Ids = ["csv-to-chart", "bos-to-relations", "ifc-to-verdicts-and-chart", "bfast-buffers"];
+    private static readonly string[] Ids = ["csv-to-chart", "bos-to-relations", "bfast-buffers"];
 
     private static string ShowcaseDir
         => Path.Combine(NrcPaths.Root, "samples", "showcase-analyses");
@@ -108,13 +109,13 @@ public sealed class ShowcaseGraphTests
     }
 
     [Test]
-    public void IfcToVerdictsAndChart_ColoursDoors_CountsVerdicts_AndWritesTheReport()
+    public void DcW1Verdicts_ColoursDoors_CountsVerdicts_AndWritesTheReport()
     {
         var reportDir = Path.Combine(Path.GetTempPath(), "bof-showcase-report", Guid.NewGuid().ToString("N"));
         var reportPath = Path.Combine(reportDir, "dc-w1-verdicts.html");
-        var doc = WithParam(Document("ifc-to-verdicts-and-chart"), "report", "path", reportPath.Replace('\\', '/'));
+        var doc = WithParam(SampleSeeding.RewritePaths(GraphDocumentIO.Load(NrcPaths.Graph("nrc-dc-w1-verdicts")), NrcPaths.SamplesDir), "report", "path", reportPath.Replace('\\', '/'));
         var registry = Fixture.Registry(Fixture.Runtime);
-        var snapshot = RunGreen(doc, "ifc-to-verdicts-and-chart", registry, "report");
+        var snapshot = RunGreen(doc, "nrc-dc-w1-verdicts", registry, "report");
         var verdicts = Table(snapshot, "answer");
         var chart = Table(snapshot, "chart");
         var coloured = Table(snapshot, "coloured");

@@ -17,7 +17,7 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 | `nrc-q7-absence` | the roof with no embodied-carbon row, as a row | tables, bim |
 | `nrc-q8-per-storey` | per-storey element count (and how many have an embodied-carbon value), embodied carbon A1-A3, and mean energy intensity | tables, bim |
 | `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced) | tables, bim |
-| `nrc-dc-w1-verdicts` | rule DC-W1 over doors, coloured in 3D | bim only (`check.rule`, `view3d.color`) |
+| `nrc-dc-w1-verdicts` | rule DC-W1 over doors (8 Pass, 6 Fail), coloured in 3D, a verdict count chart, and an HTML report written on Run into `artifacts/nrc` | bim only (`check.rule`, `view3d.color`) |
 | `nrc-element-psets` | the element property-set rows: each value of `nrc_analytics_long.csv` placed by `nrc-metrics.csv`, keyed by the STEP id of `duplex-base`, with the run facts of `nrc-run.csv` (2,394 rows) | tables, bim |
 | `nrc-rollup` | the storey and building summary rows (`Pset_NRCStoreySummary`, `Pset_NRCBuildingSummary`), each element placed by `StoreyOfElement` and aggregated by its metric's `Rollup`, plus the project's `Pset_NRCAnalyticsProvenance` from `nrc-run.csv` (47 rows) | tables, bim |
 | `nrc-enrich-run` | the rows of `nrc-element-psets` and `nrc-rollup` written into a copy of `duplex-base.ifc` (2,441 values on 224 entities); it carries copies of both graphs because a graph cannot reference another | bim only (`sink.writePsets`) |

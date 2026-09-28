@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-dc-w1-verdicts   graph 76c3c81a964c
+// nrc-dc-w1-verdicts   graph b6c1df012235
 entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
   // Ok  relation plan 9a8be9f3b5d5
   //   "(table \"duplex-enriched\" \"EntityText\")"
@@ -54,3 +54,20 @@ coloured = view3d.color@1(instances: model.instances, values: answer.out, joinCo
   //   legend: table 2 rows x 9 cols  sha 5dcc09be55c3
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "verdict" categorical: category "Fail" 6, category "Pass" 8
+perVerdict = table.aggregate@1(table: answer.out, groupBy: "verdict", aggregates: "count(*) as Doors");
+  // Ok  table 2 rows x 2 cols  sha 9e32fc56f60d
+  //   columns verdict:Text, Doors:Integer
+  //   [0] "Fail", 6
+  //   [1] "Pass", 8
+chart = chart.bar@1(table: perVerdict.table, labelColumn: "verdict", valueColumns: "Doors", title: "DC-W1 door width verdicts", sort: "desc");
+  // Ok
+  //   table: table 2 rows x 2 cols  sha 9033941d17d6
+  //     columns verdict:Text, Doors:Integer
+  //     chart 2 categories x 1 series: "Doors"
+  //     "Pass": 8
+  //     "Fail": 6
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty
+report = sink.report@1(in: answer.out, path: "{SAMPLES}/../../artifacts/nrc/dc-w1-verdicts.html", title: "DC-W1 door width verdicts");
+  // EffectPending  not executed outside a Run

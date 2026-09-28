@@ -98,7 +98,7 @@ public sealed class ModelGraphTests
     {
         var runtime = Runtime;
         var snapshot = EvaluateGreen(Document("nrc-dc-w1-verdicts"), "nrc-dc-w1-verdicts",
-            Fixture.Registry(runtime));
+            Fixture.Registry(runtime), "report");
         var answer = AnswerRows(snapshot, runtime);
 
         // samples/nrc/door_verdicts.csv holds 14 DC-W1 rows, one per IFCDOOR, 8 pass and 6 fail;

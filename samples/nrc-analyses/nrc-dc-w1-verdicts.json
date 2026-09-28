@@ -52,6 +52,18 @@
     "coloured": {
       "x": 3010,
       "y": 40
+    },
+    "perVerdict": {
+      "x": 3340,
+      "y": 40
+    },
+    "chart": {
+      "x": 3670,
+      "y": 40
+    },
+    "report": {
+      "x": 3340,
+      "y": 440
     }
   },
   "structure": {
@@ -103,6 +115,18 @@
       {
         "from": "answer.out",
         "to": "coloured.values"
+      },
+      {
+        "from": "answer.out",
+        "to": "perVerdict.table"
+      },
+      {
+        "from": "perVerdict.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "answer.out",
+        "to": "report.in"
       }
     ],
     "nodes": [
@@ -170,6 +194,21 @@
         "id": "coloured",
         "kind": "view3d.color",
         "version": 1
+      },
+      {
+        "id": "perVerdict",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "report",
+        "kind": "sink.report",
+        "version": 1
       }
     ]
   },
@@ -224,6 +263,20 @@
       "joinColumn": "globalId",
       "valueColumn": "verdict",
       "colorMap": "category10"
+    },
+    "perVerdict": {
+      "groupBy": "verdict",
+      "aggregates": "count(*) as Doors"
+    },
+    "chart": {
+      "labelColumn": "verdict",
+      "valueColumns": "Doors",
+      "title": "DC-W1 door width verdicts",
+      "sort": "desc"
+    },
+    "report": {
+      "path": "{SAMPLES}/../../artifacts/nrc/dc-w1-verdicts.html",
+      "title": "DC-W1 door width verdicts"
     }
   }
 }
