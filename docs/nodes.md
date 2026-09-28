@@ -207,7 +207,7 @@ Loads a .bos file into one row per element with EntityIndex, Name, Category plus
 
 ### `bim.paramCoverage` (v1) — Pure
 
-Profiles a long parameter table (the bos.load parameters output: EntityIndex, Name, ParameterGroup, Units, ValueType, Value) into one row per parameter name: Name, ParameterGroup, ValueType, Count, Distinct, FillRate (share of the input's distinct entities that carry the parameter), ordered by Count descending.
+Profiles a long parameter table (the bos.load parameters output: EntityIndex, Name, ParameterGroup, Units, ValueType, Value) into one row per parameter name: Name, ParameterGroup, ValueType, Count, Distinct, FillRate, ordered by Count descending. With 'groupBy' empty (the default), FillRate is the share of every distinct entity in the input that carries the parameter, which understates fill for a parameter that only applies to one kind of entity. With 'groupBy' naming a column present on the input (for example a Category column joined in from bos.load's entities table), the output gets one row per parameter per group value, and FillRate is the share of that group's entities that carry the parameter.
 
 **Inputs**
 
@@ -221,7 +221,11 @@ Profiles a long parameter table (the bos.load parameters output: EntityIndex, Na
 |---|---|
 | `table` | Table |
 
-**Params**: none
+**Params**
+
+| Name | Kind | Default | Allowed values | Suggestions |
+|---|---|---|---|---|
+| `groupBy` | Text | — | — | columns of input `parameters` |
 
 ### `bim.discipline` (v1) — Pure
 
