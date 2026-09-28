@@ -46,7 +46,20 @@ A "?" chip on the node header toggles a help section between the header and the 
 4. warnings from live suggestions (an unknown column, a parse error with the parser's message);
 5. a link to the kind's entry in `docs/nodes.md`, and, once samples are indexed by kind, "used in: `snowdon-door-schedule`, `nrc-dc-w1-verdicts`".
 
-Item 5 borrows from TouchDesigner's and Max's per-operator example patches: the best documentation for a node is a working graph that uses it. Keeping open or closed out of the saved graph, as Studio Graph did, is right: it is view state and must not change the graph hash that runs pin (principle 4).
+Item 5 borrows from TouchDesigner's and Max's per-operator example patches: the best documentation for a node is a working graph that uses it.
+
+**Hover shows the docs; a click pins them.** The owner's direction (2026-09-27) is that hovering over a node shows its documentation, with no click needed. Proposed behaviour:
+
+- **Hovering over a node** for about 400 ms opens a docs card beside the node with the content above. The card floats; it does not grow the node. Growing the node on hover, as Studio Graph's expando does on click, would push sockets and parameter rows out from under the cursor, and the next hover or drag would land on the wrong target.
+- **Hovering over a socket** narrows the card to that port: its name, value kind, description, and, once TKT-11 is connected, its row count. One card, two levels of detail, like Studio Graph's `name · type — doc` socket tooltip ([help.ts:38-177](../../../studio/ara3d-sdk/wip/platoflow-poc/web/src/editor/help.ts)).
+- **Hovering over a parameter row** shows that parameter's description and its allowed values from the catalog's enums.
+- **The card closes** 200 ms after the pointer leaves both the node and the card, so the pointer can move onto the card to follow its link. It never opens during a drag, a wire draw, or a pan.
+- **Clicking "?", or pressing F1 with a node selected** (Alteryx's tool help key), pins the docs inside the node, which is Studio Graph's expando. Pinning is for reading a graph end to end and for screenshots; Help ▸ Show all pins every node.
+- **Under reduced motion** the card appears without its fade.
+
+The card is drawn on the canvas, so it pans and zooms with the node and needs no DOM tooltip. `peekCard.ts:114` already draws a floating card for wire peeks, and Gratify's adornments sample ([examples/adornments/main.ts](../../submodules/gratify/examples/adornments/main.ts)) attaches a tooltip to any element without changing it; one of the two is the starting point. The wire peek and the docs card are two faces of one hover system: hovering a wire shows what flows, hovering a node shows what it does.
+
+Hover and pin state stay out of the saved graph, as in Studio Graph: they are view state and must not change the graph hash that runs pin (principle 4).
 
 ### Grouping and merging nodes (Kea, then Studio Graph)
 
@@ -200,7 +213,7 @@ These are real features that `PROJECT.md` puts out of scope or that break a prin
 Each item names what it builds from. The first five need no engine or format change.
 
 1. **Connect wire peeking** (TKT-11): pass results into `buildCanvasModel`, call `installPortHover`, copy Studio Graph's hiding rules from `wires.ts:82-135`.
-2. **Help expando on every node**: port Studio Graph's `helpLines` and layout; content from the catalog and `nodeBadge.ts`. One new ticket.
+2. **Docs on hover for every node, socket and parameter row, with click or F1 to pin**: content from the catalog and `nodeBadge.ts`; port Studio Graph's `helpLines` for the content and its expando layout for the pinned form; draw the card with `peekCard.ts` so it shares the wire-peek hover code from item 1. One new ticket.
 3. **Wire-drop palette, canvas palette, splice on wire, one undo step per add**: port Studio Graph `palette.ts`, `wires.ts:308-447`. One ticket; it also closes the TODO at `app.ts:343`.
 4. **Marquee, copy and paste, tidy and fit outside demo mode**: Gratify `shared/marquee.ts`, Studio Graph `doc.ts:275-336`, the existing `autoLayout.ts`.
 5. **Frames and notes as layout metadata** (grouping option 1).
