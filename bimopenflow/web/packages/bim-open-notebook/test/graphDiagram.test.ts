@@ -200,7 +200,7 @@ const SAMPLES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../.
 const MIN_ID_TEXT_PX = 11;
 const MIN_KIND_TEXT_PX = 9;
 
-function graphDocumentsIn(notebookFile: string): GraphDocument[] {
+function parseGraphDocumentsIn(notebookFile: string): GraphDocument[] {
   const notebook = JSON.parse(readFileSync(join(SAMPLES_DIR, notebookFile), "utf8")) as {
     turns: { reply: { embeds: { kind: string; document?: string }[] } }[];
   };
@@ -212,6 +212,9 @@ function graphDocumentsIn(notebookFile: string): GraphDocument[] {
 }
 
 const notebookFiles = readdirSync(SAMPLES_DIR).filter((f) => f.endsWith(".notebook.json"));
+// Parsed once here: several tests below walk every embed, and parsing the large notebooks each time adds up.
+const documentsByFile = new Map(notebookFiles.map((f) => [f, parseGraphDocumentsIn(f)]));
+const graphDocumentsIn = (notebookFile: string): GraphDocument[] => documentsByFile.get(notebookFile)!;
 
 describe("buildGraphDiagram over the committed sample notebooks (TKT-80)", () => {
   it("has at least one notebook with a graph embed to check", () => {
@@ -251,47 +254,66 @@ describe("buildGraphDiagram over the committed sample notebooks (TKT-80)", () =>
 });
 
 // TKT-80 (routing): a long edge must never cut through a node box it does not start or end at. Rather than parse
-// the SVG path's `d` string, this samples the same waypoints layoutGraphDiagram hands to the renderer, which is
+// the SVG path's `d` string, this checks the same waypoints layoutGraphDiagram hands to the renderer, which is
 // the polyline the drawn path (a smooth curve for two points, a rounded elbow for more) always stays within.
+// Each segment is tested exactly against each box, so no stretch between sample points can slip through.
 function portNodeId(portRef: string): string {
   return portRef.slice(0, portRef.lastIndexOf("."));
 }
 
-/** `box` shrunk by 1px on every side, so a point exactly on a box's boundary (an edge's own endpoint) does not count as inside it. */
-function insideShrunkBox(p: Point, box: { x: number; y: number; w: number; h: number }): boolean {
-  return (
-    p.x > box.x + 1 &&
-    p.x < box.x + box.w - 1 &&
-    p.y > box.y + 1 &&
-    p.y < box.y + box.h - 1
-  );
+type Box = { x: number; y: number; w: number; h: number };
+
+/** The open interval of t in which `from + t * delta` lies strictly between `lo` and `hi`; empty when lo >= hi. */
+function openSpan(from: number, delta: number, lo: number, hi: number): [number, number] {
+  if (delta === 0) return from > lo && from < hi ? [-Infinity, Infinity] : [1, 0];
+  const t0 = (lo - from) / delta;
+  const t1 = (hi - from) / delta;
+  return t0 < t1 ? [t0, t1] : [t1, t0];
 }
 
-const SAMPLES_PER_SEGMENT = 25;
+/**
+ * A point of segment a-b strictly inside `box` shrunk by 1px on every side (so an edge's own endpoint on a box's
+ * boundary does not count), or undefined when the segment stays outside. Clips the segment's parameter range
+ * against the open x and y slabs (Liang-Barsky); a non-empty overlap is exactly the part inside the box.
+ */
+function segmentPointInsideShrunkBox(a: Point, b: Point, box: Box): Point | undefined {
+  const [xLo, xHi] = openSpan(a.x, b.x - a.x, box.x + 1, box.x + box.w - 1);
+  const [yLo, yHi] = openSpan(a.y, b.y - a.y, box.y + 1, box.y + box.h - 1);
+  const lo = Math.max(0, xLo, yLo);
+  const hi = Math.min(1, xHi, yHi);
+  if (lo >= hi) return undefined;
+  const t = (lo + hi) / 2;
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
 
 function assertRouteAvoidsOtherBoxes(doc: GraphDocument, label: string): void {
   const layout = layoutGraphDiagram(doc);
+  const crossings: string[] = [];
   for (const edge of layout.edges) {
     const ownIds = new Set([portNodeId(edge.from), portNodeId(edge.to)]);
-    for (let i = 0; i < edge.points.length - 1; i++) {
-      const a = edge.points[i];
-      const b = edge.points[i + 1];
-      for (let s = 0; s <= SAMPLES_PER_SEGMENT; s++) {
-        const t = s / SAMPLES_PER_SEGMENT;
-        const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-        for (const [nodeId, box] of layout.boxes) {
-          if (ownIds.has(nodeId)) continue;
-          expect(
-            insideShrunkBox(p, box),
-            `${label}: edge ${edge.from} -> ${edge.to} passes through node "${nodeId}" at (${p.x},${p.y})`,
-          ).toBe(false);
-        }
+    for (let i = 0; i < edge.points.length - 1; i++)
+      for (const [nodeId, box] of layout.boxes) {
+        if (ownIds.has(nodeId)) continue;
+        const p = segmentPointInsideShrunkBox(edge.points[i], edge.points[i + 1], box);
+        if (p !== undefined)
+          crossings.push(`${label}: edge ${edge.from} -> ${edge.to} passes through node "${nodeId}" at (${p.x},${p.y})`);
       }
-    }
   }
+  expect(crossings).toEqual([]);
 }
 
 describe("buildGraphDiagram edge routing avoids node interiors (TKT-80)", () => {
+  it("detects a segment crossing a box, including a clip too short for sampling, and ignores one on the boundary", () => {
+    const box = { x: 100, y: 100, w: 168, h: 56 };
+    expect(segmentPointInsideShrunkBox({ x: 0, y: 128 }, { x: 400, y: 128 }, box)).toBeDefined();
+    expect(segmentPointInsideShrunkBox({ x: 184, y: 0 }, { x: 184, y: 300 }, box)).toBeDefined();
+    // Clips the box's corner for under 3px of a 1400px diagonal: 25 samples would step right over it.
+    expect(segmentPointInsideShrunkBox({ x: -400, y: 604 }, { x: 600, y: -396 }, box)).toBeDefined();
+    // An edge ending on the box's left side, and one running along its top, stay outside.
+    expect(segmentPointInsideShrunkBox({ x: 0, y: 128 }, { x: 100, y: 128 }, box)).toBeUndefined();
+    expect(segmentPointInsideShrunkBox({ x: 0, y: 100 }, { x: 400, y: 100 }, box)).toBeUndefined();
+  });
+
   it("routes an edge that skips a column around the boxes in between, not through them", () => {
     // Reproduces the reported defect shape (S7's "csv.relation -> unmatchedInFile.left"): csv sits at column 0,
     // physical and physicalEntities form a chain through columns 1 and 2, and unmatchedInFile joins csv with
