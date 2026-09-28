@@ -1,7 +1,7 @@
 ---
 id: TKT-97
 title: One list of every warning and error in the open flow, upstream first, where a click selects the node
-status: open
+status: done
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/app/src/graphProblems.ts, bimopenflow/web/packages/app/src/problemsPanel.ts, bimopenflow/web/packages/app/test/graphProblems.test.ts, bimopenflow/web/packages/app/test/problemsPanel.test.ts, bimopenflow/web/packages/app/src/app.ts]

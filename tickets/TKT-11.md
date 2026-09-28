@@ -1,7 +1,7 @@
 ---
 id: TKT-11
 title: Peek at any wire: hover a port for its table, row counts on wires
-status: claimed
+status: done
 depends_on: []
 owner: assembly-line-supervisor
 fence: [bimopenflow/web/packages/app/src/portResults.ts, bimopenflow/web/packages/app/src/portGeometry.ts, bimopenflow/web/packages/app/src/portHover.ts, bimopenflow/web/packages/app/src/peekCard.ts, bimopenflow/web/packages/app/src/viewModel.ts, bimopenflow/web/packages/app/src/canvasParts.ts, bimopenflow/web/packages/app/src/canvasEditor.ts, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/app/README.md, bimopenflow/web/packages/app/test/**, tests/flow/BimOpenFlow.Host.Tests/PeekHostTests.cs, docs/plans/peek-any-wire.md]

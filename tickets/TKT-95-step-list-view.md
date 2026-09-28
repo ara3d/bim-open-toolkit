@@ -1,7 +1,7 @@
 ---
 id: TKT-95
 title: A step list beside the canvas: the graph read as numbered steps, each with its parameters, status, and row count
-status: open
+status: done
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/app/src/graphOrder.ts, bimopenflow/web/packages/app/src/stepList.ts, bimopenflow/web/packages/app/src/sidebar.ts, bimopenflow/web/packages/app/test/graphOrder.test.ts, bimopenflow/web/packages/app/test/stepList.test.ts, bimopenflow/web/packages/app/test/sidebar.test.ts, bimopenflow/web/packages/app/src/app.ts]

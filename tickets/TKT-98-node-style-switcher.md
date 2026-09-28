@@ -1,7 +1,7 @@
 ---
 id: TKT-98
 title: Switchable node card styles, so the owner can compare how a node shows its title, description, and status
-status: open
+status: done
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/app/src/nodeStyle.ts, bimopenflow/web/packages/app/src/nodeRender.ts, bimopenflow/web/packages/app/src/nodeStyleChoice.ts, bimopenflow/web/packages/app/src/canvasParts.ts, bimopenflow/web/packages/app/src/topbar.ts, bimopenflow/web/packages/app/src/viewModel.ts, bimopenflow/web/packages/app/test/nodeStyle.test.ts, bimopenflow/web/packages/app/test/nodeRender.test.ts, bimopenflow/web/packages/app/test/canvasParts.test.ts, bimopenflow/web/packages/app/test/topbar.test.ts, bimopenflow/web/packages/app/src/app.ts]
