@@ -127,6 +127,7 @@ S12 (a Script embed) is left out: the Script embed is not built.
 | A7 (S10) | 68060d2 | 5 turns over the private Snowdon model; 142 doors, 290 rooms and spaces; door width has no clear-width parameter, so 6 of 10 doors are not available |
 | A5 (S8) | 22e8266 | 5 turns; the zone grouping is a table, since there is no editor embed; zone EUI is reported as not available |
 | G | 1c89f7b, 0704d65 | twelve notebooks; `{SNOWDON}` replaces a committed machine-local path; notebooks name repository-relative paths; the S5 graph file renamed to its analysis id; 213 tests |
+| GD | a0d511a | owner's request, 2026-09-27: graph embeds draw a read-only SVG diagram open by default (`graphDiagram.ts`); the GraphText print folds under "Show text"; a second, small layered layout stands in for the editor's `autoLayout.ts`, which needs a full `CanvasModel` (Debt); 253 tests |
 | (owner request, TKT-80) | b231280 | 3D embeds mount by default: an IntersectionObserver (rootMargin 800px 0px) shows the pane once the embed scrolls near the viewport, and mounts immediately where IntersectionObserver is missing (jsdom in tests); a shown pane is never auto-disposed on scroll-away, since a notebook's few embeds stay well under the browser's ~16 live-context cap, so Hide/Show remains the only way to close and reopen one. 12 tests in `test/view3d.test.ts` (3 new), 244 total, clean type check |
 
 ## Review findings
@@ -147,6 +148,7 @@ Duplicates and reach-ins made on purpose, each with what removes it. Filed as ti
 - **Stale and earlier added outside `edits.ts`.** The sample script stitches `stale` and `earlier` onto the turn `appendTurn` returns. Fix: an `appendTurn` option, or build reconstructed turns with `resendTurn`.
 - **Formats the sessions could not express.** No embed kind for a diff (S5), a run record (S5, S8), an editable table (S8), or a graph parameter (S7's template); no chart styling or SVG export (S6's original turn 4); no selection event in an outline (S1's click). Each was written as reply text instead. Fix: the extension points above; each becomes an embed kind when the feature behind it exists.
 - **Re-evaluation writes to the analysis store.** Restoring a missing analysis uses `PUT /api/analyses/{id}`. Fix: a stateless evaluate endpoint (see Considered and rejected).
+- **Two node layouts.** `graphDiagram.ts`'s fallback layout (depth by longest path from a source) repeats the shape of `app/src/autoLayout.ts`'s layered layout for nodes with no saved position, because `autoLayout` takes a full `CanvasModel` (node sizes, params, selection) that only the editor's state layer builds. Fix: once the editor's node layout is separated from its other view-model concerns (see the client-library fix above), have both call one pure layered-layout function.
 
 ## Outcome
 
