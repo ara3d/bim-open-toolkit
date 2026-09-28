@@ -67,6 +67,11 @@ public sealed class CsvGraphTests
         // nrc_analytics_storeys.csv row "Level 1": 103 elements; Q2: mean EUI 40.5.
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(103L));
         Assert.That(Number(answer, "MeanEui", 0), Is.EqualTo(40.5).Within(Tolerance));
+        // Honest absence (Q7): Roof has 8 elements, but only 7 carry an embodied-carbon row;
+        // the sum in "Embodied" covers only those 7, and ElementsWithValue says so.
+        Assert.That(answer.Cell("Elements", 3), Is.EqualTo(8L));
+        Assert.That(answer.Cell("ElementsWithValue", 3), Is.EqualTo(7L));
+        Assert.That(answer.Cell("ElementsWithValue", 0), Is.EqualTo(103L));
     }
 
     [Test]

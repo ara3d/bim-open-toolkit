@@ -1,11 +1,13 @@
 dfg 0.1.0;
-// nrc-q8-per-storey   graph 4784dc275d0c
+// nrc-q8-per-storey   graph 65bcad642f6a
+about = view.note@1(text: "Q8: embodied carbon A1-A3 summed per storey. Elements is every element on the storey; ElementsWithValue is how many of them have an embodied-carbon row (Q7). On Roof, 7 of 8 elements have a value; the roof itself has none, so its sum (Embodied) covers only those 7.");
+  // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
-perStorey = rel.aggregate@1(input: elements.relation, groupBy: "Storey", aggregates: "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui");
-  // Ok  relation plan 69c0bd9cf267
-  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Sum(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"Embodied\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"])"
+perStorey = rel.aggregate@1(input: elements.relation, groupBy: "Storey", aggregates: "count(*) as Elements, count(EmbodiedCarbon_A1A3_kgCO2e) as ElementsWithValue, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui");
+  // Ok  relation plan 81055db56876
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Count(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"ElementsWithValue\" Sum(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"Embodied\" Avg(\"EnergyUseI"...
 answer = rel.sort@1(input: perStorey.relation, by: "Embodied desc");
-  // Ok  relation plan ffe80e089d5f
-  //   "(sort (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Sum(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"Embodied\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"]) [\"Embodied\""...
+  // Ok  relation plan 64fbb1590c2e
+  //   "(sort (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Count(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"ElementsWithValue\" Sum(\"EmbodiedCarbon_A1A3_kgCO2e\")>\"Embodied\" Avg(\"Ener"...
