@@ -89,7 +89,7 @@
     },
     {
       "request": "Chart carbon per storey for the enriched model.",
-      "reply": "This chart reads the enriched model's storey rollups, nrc_analytics_storeys.csv, not the test kit's CSV. Its operational totals agree with the previous turn (Level 1 17,457.0, Level 2 13,970.2, T/FDN 4,001.7, Roof 1,767.3), and it adds embodied carbon A1-A3: Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, Roof 5,821.0 kgCO2e. The building row totals 115,730.3 embodied and 37,196.2 operational.",
+      "reply": "This chart reads the enriched model's storey rollups, nrc_analytics_storeys.csv, not the test kit's CSV. Its operational totals agree with the previous turn (Level 1 17,457.0, Level 2 13,970.2, T/FDN 4,001.7, Roof 1,767.3), and it adds embodied carbon A1-A3: Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, Roof 5,821.0 kgCO2e. The building totals, 115,730.3 embodied and 37,196.2 operational, are in the chart title rather than a fifth pair of bars.",
       "analysisId": "nrc-storey-carbon-chart"
     },
     {

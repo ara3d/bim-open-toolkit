@@ -149,8 +149,8 @@
             "caption": "nrc-eight-questions.notebook.json",
             "path": "samples/notebooks/nrc-eight-questions.notebook.json",
             "mediaType": "application/json",
-            "bytes": 58428,
-            "sha256": "4da60cde8cdef887225413b65a1cb16c981b1082f5aee5da5fa6b92df5c23fdf",
+            "bytes": 65516,
+            "sha256": "3c363c999268438ecd6d0ea2dd3c2471e5619df6262af675f0ad8175e94c92a1",
             "preview": "{\n  \"format\": \"bimopen-notebook/0.1\",\n  \"title\": \"The NRC paper's eight questions\",\n  \"createdUtc\": \"2026-09-27T00:00:00Z\",\n  \"host\": {\n    \"profile\": \"tables\""
           },
           {
@@ -159,8 +159,8 @@
             "caption": "nrc-test-kit.notebook.json",
             "path": "samples/notebooks/nrc-test-kit.notebook.json",
             "mediaType": "application/json",
-            "bytes": 66247,
-            "sha256": "bd271bf6de923215935f957d58156c5fd0ecbc13d4baea01255fccd18bb40d2b",
+            "bytes": 69982,
+            "sha256": "6555a95f11f864973bf6ef3c93c04669784382d191f7cbffe38f45baf85b6b4a",
             "preview": "{\n  \"format\": \"bimopen-notebook/0.1\",\n  \"title\": \"The NRC IFC test kit, steps 1 to 5\",\n  \"createdUtc\": \"2026-09-27T00:00:00Z\",\n  \"host\": {\n    \"profile\": \"bim\""
           },
           {

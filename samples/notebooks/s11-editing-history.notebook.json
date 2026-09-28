@@ -182,22 +182,22 @@
         "text": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?"
       },
       "reply": {
-        "text": "That is a type name, not one door: four door instances carry it, at 117.3, 61.8, 54.0, and 146.1 kgCO2e/yr. The table lists all four by GlobalId rather than picking one.",
+        "text": "That is a type name, not one door: four door instances carry it, at 54.0, 146.1, 117.3, and 61.8 kgCO2e/yr. The table lists all four in STEP id order rather than picking one.",
         "tools": [
           {
             "name": "getAnalysis",
             "ok": true,
-            "summary": "nrc-q4-door-instances: 4 nodes, 3 edges"
+            "summary": "nrc-q4-door-instances: 5 nodes, 3 edges"
           },
           {
             "name": "evaluate",
             "ok": true,
-            "summary": "4 of 4 nodes Ok"
+            "summary": "5 of 5 nodes Ok"
           },
           {
             "name": "getResult",
             "ok": true,
-            "summary": "nrc-q4-door-instances answer.relation: 4 rows × 3 columns"
+            "summary": "nrc-q4-door-instances answer.relation: 4 rows × 4 columns"
           }
         ],
         "embeds": [
@@ -213,6 +213,10 @@
             "snapshot": {
               "columns": [
                 {
+                  "name": "EntityId",
+                  "type": "Integer"
+                },
+                {
                   "name": "GlobalId",
                   "type": "Text"
                 },
@@ -227,24 +231,28 @@
               ],
               "rows": [
                 [
-                  "1aj$VJZFn2TxepZUBcKp$i",
-                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
-                  117.3
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKpac",
-                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
-                  61.8
-                ],
-                [
+                  8066,
                   "1hOSvn6df7F8_7GcBWlS8Z",
                   "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173",
                   54
                 ],
                 [
+                  8169,
                   "1hOSvn6df7F8_7GcBWlS9F",
                   "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150257",
                   146.1
+                ],
+                [
+                  35318,
+                  "1aj$VJZFn2TxepZUBcKp$i",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
+                  117.3
+                ],
+                [
+                  35413,
+                  "1aj$VJZFn2TxepZUBcKpac",
+                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
+                  61.8
                 ]
               ],
               "totalRows": 4,

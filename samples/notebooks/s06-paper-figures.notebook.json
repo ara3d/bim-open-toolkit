@@ -334,22 +334,22 @@
         "text": "Now Figure 2, the storey chart."
       },
       "reply": {
-        "text": "Embodied carbon A1-A3 and operational carbon per storey, from nrc_analytics_storeys.csv: Level 1 49,451.2 / 17,457.0, Level 2 48,696.8 / 13,970.2, T/FDN 11,761.3 / 4,001.7, Roof 5,821.0 / 1,767.3 kgCO2e, and the Building row 115,730.3 / 37,196.2.",
+        "text": "Embodied carbon A1-A3 and operational carbon per storey, from nrc_analytics_storeys.csv: Level 1 49,451.2 / 17,457.0, Level 2 48,696.8 / 13,970.2, T/FDN 11,761.3 / 4,001.7, Roof 5,821.0 / 1,767.3 kgCO2e. The building totals, 115,730.3 / 37,196.2, are in the chart title rather than a fifth pair of bars.",
         "tools": [
           {
             "name": "getAnalysis",
             "ok": true,
-            "summary": "nrc-storey-carbon-chart: csv.read over nrc_analytics_storeys.csv into chart.bar"
+            "summary": "nrc-storey-carbon-chart: csv.read over nrc_analytics_storeys.csv, table.filter dropping the Building row, into chart.bar"
           },
           {
             "name": "evaluate",
             "ok": true,
-            "summary": "both nodes Ok"
+            "summary": "all four nodes Ok"
           },
           {
             "name": "getResult",
             "ok": true,
-            "summary": "answer/table: 5 rows, Building plus four storeys"
+            "summary": "answer/table: 4 rows, one per storey"
           }
         ],
         "embeds": [
@@ -369,7 +369,7 @@
                 "EmbodiedCarbon_A1A3_kgCO2e",
                 "OperationalCarbon_kgCO2e_per_year"
               ],
-              "title": "Carbon per storey (synthetic)"
+              "title": "Carbon per storey (synthetic); building total 115,730.3 kgCO2e embodied, 37,196.2 kgCO2e/yr operational"
             },
             "snapshot": {
               "columns": [
@@ -387,11 +387,6 @@
                 }
               ],
               "rows": [
-                [
-                  "Building",
-                  115730.3,
-                  37196.2
-                ],
                 [
                   "Level 1",
                   49451.2,
@@ -413,7 +408,7 @@
                   1767.3
                 ]
               ],
-              "totalRows": 5,
+              "totalRows": 4,
               "skip": 0
             }
           },
@@ -443,11 +438,6 @@
               ],
               "rows": [
                 [
-                  "Building",
-                  115730.3,
-                  37196.2
-                ],
-                [
                   "Level 1",
                   49451.2,
                   17457
@@ -468,7 +458,7 @@
                   1767.3
                 ]
               ],
-              "totalRows": 5,
+              "totalRows": 4,
               "skip": 0
             }
           },
@@ -489,22 +479,22 @@
         "text": "Do those figures match the paper's table?"
       },
       "reply": {
-        "text": "Yes, on both counts I can check. nrc-q8-per-storey (built from the enriched IFC, not the CSV) gives Level 1 49,451.2 kgCO2e embodied and mean EUI 40.50, Level 2 48,696.8 and 40.56, T/FDN 11,761.3 and 61.76, Roof 5,821.0 and 62.04 - the same embodied totals as Figure 2, computed the other way. nrc_analytics_storeys.csv (Figure 2's source) carries the same four storey rows and a Building row of 115,730.3 embodied, 37,196.2 operational, matching the chart's total row exactly.",
+        "text": "Yes, on both counts I can check. nrc-q8-per-storey (summed from the 218 element rows, not the storey file) gives Level 1 49,451.2 kgCO2e embodied and mean EUI 40.50, Level 2 48,696.8 and 40.56, T/FDN 11,761.3 and 61.76, Roof 5,821.0 and 62.04, where only 7 of Roof's 8 elements have a value - the same embodied totals as Figure 2, computed the other way. nrc_analytics_storeys.csv (Figure 2's source) carries the same four storey rows and a Building row of 115,730.3 embodied, 37,196.2 operational, matching the totals in the chart's title exactly.",
         "tools": [
           {
             "name": "getAnalysis",
             "ok": true,
-            "summary": "nrc-q8-per-storey: per-storey count, embodied carbon A1-A3, and mean energy intensity, walked from StoreyOfElement over duplex-base"
+            "summary": "nrc-q8-per-storey: per-storey count, embodied carbon A1-A3, and mean energy intensity, summed from nrc_analytics_elements.csv"
           },
           {
             "name": "evaluate",
             "ok": true,
-            "summary": "all three nodes Ok"
+            "summary": "all four nodes Ok"
           },
           {
             "name": "getResult",
             "ok": true,
-            "summary": "answer/relation: 4 rows, Storey/Elements/Embodied/MeanEui"
+            "summary": "answer/relation: 4 rows, Storey/Elements/ElementsWithValue/Embodied/MeanEui"
           },
           {
             "name": "Read",
@@ -533,6 +523,10 @@
                   "type": "Integer"
                 },
                 {
+                  "name": "ElementsWithValue",
+                  "type": "Integer"
+                },
+                {
                   "name": "Embodied",
                   "type": "Number"
                 },
@@ -545,11 +539,13 @@
                 [
                   "Level 1",
                   103,
+                  103,
                   49451.19999999999,
                   40.4990291262136
                 ],
                 [
                   "Level 2",
+                  93,
                   93,
                   48696.80000000001,
                   40.556989247311854
@@ -557,12 +553,14 @@
                 [
                   "T/FDN",
                   14,
+                  14,
                   11761.300000000001,
                   61.75714285714286
                 ],
                 [
                   "Roof",
                   8,
+                  7,
                   5821,
                   62.037499999999994
                 ]
@@ -597,11 +595,6 @@
               ],
               "rows": [
                 [
-                  "Building",
-                  115730.3,
-                  37196.2
-                ],
-                [
                   "Level 1",
                   49451.2,
                   17457
@@ -622,7 +615,7 @@
                   1767.3
                 ]
               ],
-              "totalRows": 5,
+              "totalRows": 4,
               "skip": 0
             }
           },

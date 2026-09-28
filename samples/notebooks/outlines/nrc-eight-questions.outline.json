@@ -35,7 +35,7 @@
     },
     {
       "request": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
-      "reply": "That is a type name, not one door: four door instances carry it, at 117.3, 61.8, 54.0, and 146.1 kgCO2e/yr. The table lists all four by GlobalId rather than picking one. The paper's answer, 54.0, is the door it took as first by STEP id, 1hOSvn6df7F8_7GcBWlS8Z. Tell me which door you mean, or ask for the sum.",
+      "reply": "That is a type name, not one door: four door instances carry it, at 54.0, 146.1, 117.3, and 61.8 kgCO2e/yr. The table lists all four in STEP id order rather than picking one. The paper's answer, 54.0, is row 1: the door with the lowest STEP id, EntityId 8066 (1hOSvn6df7F8_7GcBWlS8Z). Tell me which door you mean, or ask for the sum.",
       "analysisId": "nrc-q4-door-instances"
     },
     {
@@ -45,7 +45,7 @@
     },
     {
       "request": "Which analysis run produced these values, and when?",
-      "reply": "Every one of the 218 elements cites run run-2026-09-17-01, scenario Baseline. The data has no timestamp column: the only date is the one in the run id, 17 September 2026.",
+      "reply": "Every one of the 218 elements cites run run-2026-09-17-01, scenario Baseline. The run file, nrc-run.csv, says when and how: ComputedAt 2026-09-17T00:00:00Z, by the script generate_synthetic_analytics.py.",
       "analysisId": "nrc-q6-analysis-run"
     },
     {
@@ -55,12 +55,12 @@
     },
     {
       "request": "What is the total embodied carbon (A1-A3) per storey?",
-      "reply": "Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, and Roof 5,821.0 kgCO2e. The table also carries each storey's element count and mean energy intensity.",
+      "reply": "Level 1 49,451.2, Level 2 48,696.8, T/FDN 11,761.3, and Roof 5,821.0 kgCO2e. The table also carries each storey's element count, how many of those elements have a value, and the mean energy intensity. On Roof only 7 of 8 do: the roof itself has none (Q7), so Roof's total covers seven elements.",
       "analysisId": "nrc-q8-per-storey"
     },
     {
       "request": "Chart embodied and operational carbon per storey.",
-      "reply": "One pair of bars per storey, embodied A1-A3 beside operational, plus the building row: 115,730.3 kgCO2e embodied and 37,196.2 kgCO2e/yr operational. The operational total is turn 1's answer.",
+      "reply": "One pair of bars for each of the four storeys, embodied A1-A3 beside operational. The building totals are in the chart title, not a fifth pair of bars: 115,730.3 kgCO2e embodied and 37,196.2 kgCO2e/yr operational. The operational total is turn 1's answer.",
       "analysisId": "nrc-storey-carbon-chart"
     }
   ]

@@ -44,7 +44,7 @@
     },
     {
       "request": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
-      "reply": "That is a type name, not one door: four door instances carry it, at 117.3, 61.8, 54.0, and 146.1 kgCO2e/yr. The table lists all four by GlobalId rather than picking one.",
+      "reply": "That is a type name, not one door: four door instances carry it, at 54.0, 146.1, 117.3, and 61.8 kgCO2e/yr. The table lists all four in STEP id order rather than picking one.",
       "analysisId": "nrc-q4-door-instances",
       "stale": true,
       "embeds": [
