@@ -4,7 +4,7 @@ title: One document checker and one turn builder for notebooks and outlines
 status: open
 depends_on: [TKT-80]
 owner:
-fence: [bimopenflow/web/packages/notebook/**]
+fence: [bimopenflow/web/packages/bim-open-notebook/**]
 ---
 
 ## Acceptance criteria

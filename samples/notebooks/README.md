@@ -1,7 +1,7 @@
 # Sample notebooks
 
 Notebook files (`bimopen-notebook/0.1`, the format in
-`bimopenflow/web/packages/notebook/src/document/format.ts`) that realise three
+`bimopenflow/web/packages/bim-open-notebook/src/document/format.ts`) that realise three
 of the sessions in `docs/proposals/notebook-sessions.md`:
 
 | Notebook | Session | Host profile | Turns |
@@ -11,7 +11,7 @@ of the sessions in `docs/proposals/notebook-sessions.md`:
 | `nrc-door-check.notebook.json` | S4, door compliance | bim | DC-W1 verdicts in a table and in 3D, then `samples/nrc/door_verdicts.csv` as a file |
 
 These files are generated; do not edit them by hand. Each is written by
-`bimopenflow/web/packages/notebook/scripts/write-sample-notebooks.ts` from an
+`bimopenflow/web/packages/bim-open-notebook/scripts/write-sample-notebooks.ts` from an
 outline in `outlines/` and a running host, so every snapshot, embed, and tool
 call comes from a graph in `samples/nrc-analyses`. The reply texts are the
 outline's, written after reading the snapshots. `test/samples.test.ts` in the
@@ -21,7 +21,7 @@ notebook package checks the expected answers.
 
 Start a host of the outline's profile with a fresh store, so the NRC graphs
 are seeded (seeding happens only into an empty store), then run the script
-from `bimopenflow/web/packages/notebook`:
+from `bimopenflow/web/packages/bim-open-notebook`:
 
 ```
 node scripts/start-bim-flow.mjs --profile tables     # host on 5224

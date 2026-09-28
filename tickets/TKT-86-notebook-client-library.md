@@ -4,12 +4,12 @@ title: Move the app helpers the notebook deep-imports into a client library
 status: open
 depends_on: [TKT-80]
 owner:
-fence: [bimopenflow/web/packages/client/**, bimopenflow/web/packages/app/src/**, bimopenflow/web/packages/notebook/src/**]
+fence: [bimopenflow/web/packages/client/**, bimopenflow/web/packages/app/src/**, bimopenflow/web/packages/bim-open-notebook/src/**]
 ---
 
 ## Acceptance criteria
 
-- [ ] No file under packages/notebook imports from @bimopenflow/app/src
+- [ ] No file under packages/bim-open-notebook imports from @bimopenflow/app/src
 - [ ] The /api/ask event reader and AskEvent exist once, used by duckdbDemo.ts and the notebook
 - [ ] The 3D feed choice (planFeed in notebook, feedModel/feedData in paneArea.ts) exists once
 

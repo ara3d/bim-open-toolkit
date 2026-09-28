@@ -4,7 +4,7 @@ title: A stateless evaluate endpoint, so notebook restores stop writing to the s
 status: open
 depends_on: [TKT-80]
 owner:
-fence: [src/flow/BimOpenFlow.Host.Api/**, bimopenflow/web/packages/notebook/**]
+fence: [src/flow/BimOpenFlow.Host.Api/**, bimopenflow/web/packages/bim-open-notebook/**]
 ---
 
 ## Acceptance criteria

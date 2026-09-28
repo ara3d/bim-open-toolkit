@@ -4,7 +4,7 @@ title: Analysis notebook prototype: a session transcript with live embeds, over 
 status: claimed
 depends_on: []
 owner: notebook-supervisor
-fence: [bimopenflow/web/packages/notebook/**, samples/notebooks/**, docs/plans/notebook.md, docs/proposals/notebook-sessions.md, bimopenflow/web/package-lock.json]
+fence: [bimopenflow/web/packages/bim-open-notebook/**, samples/notebooks/**, docs/plans/notebook.md, docs/proposals/notebook-sessions.md, bimopenflow/web/package-lock.json, apps/README.md, README.md, docs/ARCHITECTURE.md, docs/OVERVIEW.md, docs/claude-cli-login.md, gates/web-smoke.mjs, bimopenflow/web/package.json]
 ---
 
 ## Acceptance criteria

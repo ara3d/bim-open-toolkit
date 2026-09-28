@@ -19,13 +19,13 @@ Ticket: TKT-80. Design and imagined sessions: [notebook-sessions.md](../proposal
 4. Save downloads a `.notebook.json` that parses back to an equal notebook; Open loads one; the page lists the committed samples.
 5. Editing and resending a request keeps the old reply as an earlier version and marks later turns stale. Delete and undo work.
 6. Embeds of kind value, table (verdict tables as verdicts), chart, graph, view3d, picture, and file render from their snapshots.
-7. `npm run typecheck -w @bimopenflow/notebook` and `npm test -w @bimopenflow/notebook` pass, and `node gates/web-smoke.mjs` still passes.
+7. `npm run typecheck -w @bimopenflow/bim-open-notebook` and `npm test -w @bimopenflow/bim-open-notebook` pass, and `node gates/web-smoke.mjs` still passes.
 
 Kill criteria: none; this is a prototype whose purpose is to be looked at.
 
 ## Design
 
-A new workspace package, `bimopenflow/web/packages/notebook` (`@bimopenflow/notebook`), with its own page (`notebook.html`) and Vite config, so no file of `packages/app` changes. Many of those files are in claimed tickets' fences (TKT-11, 12, 26).
+A new workspace package, `bimopenflow/web/packages/bim-open-notebook` (`@bimopenflow/bim-open-notebook`), with its own page (`notebook.html`) and Vite config, so no file of `packages/app` changes. Many of those files are in claimed tickets' fences (TKT-11, 12, 26). Renamed from `packages/notebook` in TKT-80's move; `apps/` stays reserved for runnable desktop (.NET) applications, so the package stays a member of the `bimopenflow/web` npm workspace rather than moving under `apps/`.
 
 - **Document** (`src/document/`): the format types, parse and serialize, and pure edits with an undo history. A notebook is a list of turns, each a request and a reply; a reply is text, tool calls, and embeds; every embed has a snapshot. Snapshots use the host's own `TableSlice` type.
 - **Embeds** (`src/embeds/`): one renderer per kind behind one contract (`contract.ts`). Each draws its snapshot at once and compares with the host on `refresh()`. They mount the existing panes: `createTablePane`, `createVerdictPane`, `createChartPane`, `createViewPane3D`. The graph embed shows the host's GraphText print (`GET /api/analyses/{id}/text`) and links to the editor; the canvas editor cannot be mounted twice on a page.
@@ -66,7 +66,7 @@ Committed before any builder starts; builders treat them as read-only.
 
 Contracts: this plan's first commit. Baseline gates: notebook typecheck clean, 8 tests pass.
 
-Test command for every chunk, from `bimopenflow/web/packages/notebook`: `npx vitest run <its test files>` and `npx tsc --noEmit -p .` (errors in other chunks' files are theirs).
+Test command for every chunk, from `bimopenflow/web/packages/bim-open-notebook`: `npx vitest run <its test files>` and `npx tsc --noEmit -p .` (errors in other chunks' files are theirs).
 
 | Id | One-sentence commit | Fence (writes only) | Depends on | Test | Resources |
 |---|---|---|---|---|---|

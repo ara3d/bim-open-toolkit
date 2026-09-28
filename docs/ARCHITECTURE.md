@@ -174,7 +174,9 @@ One headless core; every UI is a client of it.
   chart, 3D, inspector, verdict), `viz` (SVG charts), `state`, and generated
   `contracts` / `api-client` packages. The canvas is built on the Gratify submodule's
   primitives; graph-specific behaviour stays here, deliberately, rather than upstream
-  (see [graph-module-layering.md](graph-module-layering.md)).
+  (see [graph-module-layering.md](graph-module-layering.md)). `bim-open-notebook` is a
+  separate page and package in the same workspace: a session transcript with live
+  embeds, reusing `app` and `panes` rather than the canvas.
 - **`viz/`** — the standalone 3D viewer workspace of seventeen packages, described in
   [OVERVIEW.md](OVERVIEW.md#the-3d-viewer).
 - **`Publishing` / `Reports` / `Dashboards` / `Evidence`** — turning a run into an
