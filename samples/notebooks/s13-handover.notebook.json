@@ -169,8 +169,8 @@
             "caption": "nrc-door-check.notebook.json",
             "path": "samples/notebooks/nrc-door-check.notebook.json",
             "mediaType": "application/json",
-            "bytes": 24234,
-            "sha256": "7173a5e5e1ed8436fa8e27485b2338c052c9f49c5f78c77bb9f4b3a66743f854",
+            "bytes": 27741,
+            "sha256": "30a812ac10384049a2542f465dab1288717038eed0970a9a89cdeec56341a24a",
             "preview": "{\n  \"format\": \"bimopen-notebook/0.1\",\n  \"title\": \"Door compliance: DC-W1\",\n  \"createdUtc\": \"2026-09-27T00:00:00Z\",\n  \"host\": {\n    \"profile\": \"bim\""
           }
         ]
