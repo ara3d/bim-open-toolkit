@@ -105,12 +105,16 @@ public sealed class CsvGraphTests
     public void Q6_AnalysisRun()
     {
         var answer = Answer("nrc-q6-analysis-run");
-        // Every one of the 218 rows in nrc_analytics_elements.csv cites the same run; "when" is
-        // only the date embedded in the run id's text, not a separate timestamp column.
+        // Every one of the 218 rows in nrc_analytics_elements.csv cites the same run.
+        // "when" and the source tool come from samples/nrc/nrc-run.csv, a run-level fact file
+        // (expected_answers.json Q6: ComputedAt 2026-09-17T00:00:00Z, SourceTool
+        // nrc-ifc-llm/poc/generate_synthetic_analytics.py).
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
         Assert.That(answer.Cell("AnalysisRunId", 0), Is.EqualTo("run-2026-09-17-01"));
         Assert.That(answer.Cell("ScenarioName", 0), Is.EqualTo("Baseline"));
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(218L));
+        Assert.That(answer.Cell("ComputedAt", 0), Is.EqualTo("2026-09-17T00:00:00Z"));
+        Assert.That(answer.Cell("SourceTool", 0), Is.EqualTo("nrc-ifc-llm/poc/generate_synthetic_analytics.py"));
     }
 
     [Test]

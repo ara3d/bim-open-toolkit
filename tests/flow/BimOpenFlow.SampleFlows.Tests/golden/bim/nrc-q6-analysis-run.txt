@@ -1,8 +1,17 @@
 dfg 0.1.0;
-// nrc-q6-analysis-run   graph a7effb06bf32
+// nrc-q6-analysis-run   graph c1712ac43ece
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
-answer = rel.aggregate@1(input: elements.relation, groupBy: "AnalysisRunId, ScenarioName", aggregates: "count(*) as Elements");
+counts = rel.aggregate@1(input: elements.relation, groupBy: "AnalysisRunId, ScenarioName", aggregates: "count(*) as Elements");
   // Ok  relation plan 0d799a67d31e
   //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"AnalysisRunId\" \"ScenarioName\"] [Count(*)>\"Elements\"])"
+run = rel.csv@1(source: "nrc", path: "nrc-run.csv");
+  // Ok  relation plan 4542dd4754c4
+  //   "(csv \"nrc\" \"nrc-run.csv\")"
+when = rel.sql@1(t1: run.relation, sql: "SELECT (SELECT Value FROM t1 WHERE Field = 'ComputedAt') AS ComputedAt, (SELECT Value FROM t1 WHERE Field = 'SourceTool') AS SourceTool");
+  // Ok  relation plan af807fff6e97
+  //   "(sql \"SELECT (SELECT Value FROM t1 WHERE Field = 'ComputedAt') AS ComputedAt, (SELECT Value FROM t1 WHERE Field = 'SourceTool') AS SourceTool\" [(csv \"nrc\" \"nrc-run.csv\")])"
+answer = rel.sql@1(t1: counts.relation, t2: when.relation, sql: "SELECT t1.*, t2.ComputedAt, t2.SourceTool FROM t1 CROSS JOIN t2");
+  // Ok  relation plan 1dbdb0bba913
+  //   "(sql \"SELECT t1.*, t2.ComputedAt, t2.SourceTool FROM t1 CROSS JOIN t2\" [(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"AnalysisRunId\" \"ScenarioName\"] [Count(*)>\"Elements\"]) (sql \"SELECT (SELECT"...

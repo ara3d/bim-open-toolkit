@@ -1,43 +1,32 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 370,
-      "y": 40
-    },
-    "elements": {
-      "x": 40,
-      "y": 40
-    }
+    "counts": { "x": 370, "y": 40 },
+    "elements": { "x": 40, "y": 40 },
+    "run": { "x": 40, "y": 220 },
+    "when": { "x": 370, "y": 220 },
+    "answer": { "x": 700, "y": 40 }
   },
   "structure": {
     "edges": [
-      {
-        "from": "elements.relation",
-        "to": "answer.input"
-      }
+      { "from": "elements.relation", "to": "counts.input" },
+      { "from": "run.relation", "to": "when.t1" },
+      { "from": "counts.relation", "to": "answer.t1" },
+      { "from": "when.relation", "to": "answer.t2" }
     ],
     "nodes": [
-      {
-        "id": "answer",
-        "kind": "rel.aggregate",
-        "version": 1
-      },
-      {
-        "id": "elements",
-        "kind": "rel.csv",
-        "version": 1
-      }
+      { "id": "counts", "kind": "rel.aggregate", "version": 1 },
+      { "id": "elements", "kind": "rel.csv", "version": 1 },
+      { "id": "run", "kind": "rel.csv", "version": 1 },
+      { "id": "when", "kind": "rel.sql", "version": 1 },
+      { "id": "answer", "kind": "rel.sql", "version": 1 }
     ]
   },
   "values": {
-    "answer": {
-      "aggregates": "count(*) as Elements",
-      "groupBy": "AnalysisRunId, ScenarioName"
-    },
-    "elements": {
-      "path": "nrc_analytics_elements.csv",
-      "source": "nrc"
-    }
+    "counts": { "aggregates": "count(*) as Elements", "groupBy": "AnalysisRunId, ScenarioName" },
+    "elements": { "path": "nrc_analytics_elements.csv", "source": "nrc" },
+    "run": { "path": "nrc-run.csv", "source": "nrc" },
+    "when": { "sql": "SELECT (SELECT Value FROM t1 WHERE Field = 'ComputedAt') AS ComputedAt, (SELECT Value FROM t1 WHERE Field = 'SourceTool') AS SourceTool" },
+    "answer": { "sql": "SELECT t1.*, t2.ComputedAt, t2.SourceTool FROM t1 CROSS JOIN t2" }
   }
 }
