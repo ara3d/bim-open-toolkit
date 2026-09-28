@@ -14,7 +14,7 @@ stands for the repo's `data/` directory (they all load `duplex.ifc`).
 | `voxel-density` | 0.5 m voxelization colored by per-voxel instance count |
 | `decimate-overview` | only the largest quarter of instances, small parts dropped |
 | `clash-candidates` | instances colored by how many other instances their box overlaps (`spatial.intersects` self-join) |
-| `mesh-volume` | instances colored by enclosed mesh volume (`view3d.measures`) |
+| `shared-color-legend` | instances and a top-20 bar chart colored by enclosed mesh volume (`view3d.measures`) from one shared `view.colormap` scale; absorbed `mesh-volume`, its first half (TKT-93) |
 
 Every sample validates against the Bos + Geometry packs and evaluates green
 over `data/duplex.ifc`; `tests/flow/BimOpenFlow.View3dWorkflows.Tests` enforces both.

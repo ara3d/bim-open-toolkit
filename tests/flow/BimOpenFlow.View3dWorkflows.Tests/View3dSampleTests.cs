@@ -7,6 +7,7 @@ using BimOpenFlow.Nodes.Bos;
 using BimOpenFlow.Nodes.TableOps;
 using BimOpenFlow.Nodes.Geometry;
 using BimOpenFlow.Nodes.Spatial;
+using BimOpenFlow.Nodes.Viz;
 using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.View3dWorkflows.Tests;
@@ -21,7 +22,7 @@ namespace BimOpenFlow.View3dWorkflows.Tests;
 [TestFixture]
 public sealed class View3dSampleTests
 {
-    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, GeometryNodes.All, SpatialNodes.All);
+    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, GeometryNodes.All, SpatialNodes.All, VizNodes.All);
 
     public static IEnumerable<TestCaseData> SampleFiles
         => Directory.EnumerateFiles(AnalysesDir, "*.json")
@@ -103,6 +104,22 @@ public sealed class View3dSampleTests
         var kept = OutputTable(session,"big", "instances").Rows.Count;
         Assert.That(kept, Is.GreaterThan(0));
         Assert.That(kept, Is.LessThan(all));
+    }
+
+    [Test]
+    public void Debug_MeshVolumeStats()
+    {
+        // mesh-volume merged into shared-color-legend (TKT-93): same view3d.measures node "measures".
+        var table = OutputTable(Evaluate(Sample("shared-color-legend")), "measures", "measures");
+        var col = table.Columns.Single(c => c.Descriptor.Name == "meshVolume").ColumnIndex;
+        var values = Enumerable.Range(0, table.Rows.Count)
+            .Select(r => table[col, r] as double?)
+            .Where(v => v.HasValue).Select(v => v!.Value).OrderBy(v => v).ToList();
+        Console.WriteLine("count=" + values.Count);
+        Console.WriteLine("min=" + values.First() + " max=" + values.Last());
+        foreach (var max in new[] { 1.0, 2.0, 5.0, 10.0 })
+            Console.WriteLine($"max={max}: above={values.Count(v => v > max)}");
+        Assert.Pass();
     }
 
     private static int CategoryColumn(IDataTable table)
