@@ -88,17 +88,20 @@ public sealed class CsvGraphTests
         // Q4 asks for "the door named M_Single-Flush:0762 x 2032mm", but that name is a
         // family:type name shared by four IFCDOOR instances (see door_verdicts.csv's DC-M1
         // evidence), not one instance; there is no single deterministic scalar to assert. The
-        // graph instead lists all four, sorted by GlobalId, with each one's own operational
-        // carbon from nrc_analytics_elements.csv.
+        // graph instead lists all four, sorted by EntityId (STEP id), with each one's own
+        // operational carbon from nrc_analytics_elements.csv. expected_answers.json Q4 picks
+        // "the first by STEP id" (EntityId 8066, 54.0), which is row 0 with this sort.
         Assert.That(answer.Rows, Has.Count.EqualTo(4));
+        Assert.That(answer.ColumnCells("EntityId"), Is.EqualTo(new object?[] { 8066L, 8169L, 35318L, 35413L }));
         Assert.That(answer.ColumnCells("GlobalId"), Is.EqualTo(new object?[]
         {
-            "1aj$VJZFn2TxepZUBcKp$i", "1aj$VJZFn2TxepZUBcKpac",
             "1hOSvn6df7F8_7GcBWlS8Z", "1hOSvn6df7F8_7GcBWlS9F",
+            "1aj$VJZFn2TxepZUBcKp$i", "1aj$VJZFn2TxepZUBcKpac",
         }));
         var operationalCarbon = Numbers(answer, "OperationalCarbon_kgCO2e_per_year");
-        Assert.That(operationalCarbon, Near(117.3, 61.8, 54.0, 146.1));
+        Assert.That(operationalCarbon, Near(54.0, 146.1, 117.3, 61.8));
         Assert.That(operationalCarbon.Sum(), Is.EqualTo(379.2).Within(Tolerance));
+        Assert.That(Number(answer, "OperationalCarbon_kgCO2e_per_year", 0), Is.EqualTo(54.0).Within(Tolerance));
     }
 
     [Test]

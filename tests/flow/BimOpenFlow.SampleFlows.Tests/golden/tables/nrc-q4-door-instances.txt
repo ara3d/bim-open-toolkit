@@ -1,14 +1,16 @@
 dfg 0.1.0;
-// nrc-q4-door-instances   graph ee112000909e
+// nrc-q4-door-instances   graph 545bea5bd6c3
+about = view.note@1(text: "Q4: four door instances share the type name M_Single-Flush:0762 x 2032mm (Name carries a family:type prefix plus an instance-specific suffix, so startswith matches all four), each with its own operational carbon. Row 1, the lowest STEP id (EntityId 8066), is the one the paper's expected answer uses: 54.0 kgCO2e/yr.");
+  // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
 doors = rel.filter@1(input: elements.relation, expr: "startswith([Name], 'M_Single-Flush:0762 x 2032mm')");
   // Ok  relation plan 6dbc89d82931
   //   "(filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\")"
-columns = rel.select@1(input: doors.relation, columns: "GlobalId, Name, OperationalCarbon_kgCO2e_per_year");
-  // Ok  relation plan 323cd637ec4a
-  //   "(select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"GlobalId\" \"Name\" \"OperationalCarbon_kgCO2e_per_year\"])"
-answer = rel.sort@1(input: columns.relation, by: "GlobalId");
-  // Ok  relation plan d60b1b169c29
-  //   "(sort (select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"GlobalId\" \"Name\" \"OperationalCarbon_kgCO2e_per_year\"]) [\"GlobalId\" asc])"
+columns = rel.select@1(input: doors.relation, columns: "EntityId, GlobalId, Name, OperationalCarbon_kgCO2e_per_year");
+  // Ok  relation plan 1fd92f979363
+  //   "(select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"EntityId\" \"GlobalId\" \"Name\" \"OperationalCarbon_kgCO2e_per_year\"])"
+answer = rel.sort@1(input: columns.relation, by: "EntityId");
+  // Ok  relation plan 8dc160fd56d5
+  //   "(sort (select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"EntityId\" \"GlobalId\" \"Name\" \"OperationalCarbon_kgCO2e_per_year\"]) [\"EntityId\" asc"...

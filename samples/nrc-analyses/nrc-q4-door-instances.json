@@ -1,74 +1,31 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 1030,
-      "y": 40
-    },
-    "columns": {
-      "x": 700,
-      "y": 40
-    },
-    "doors": {
-      "x": 370,
-      "y": 40
-    },
-    "elements": {
-      "x": 40,
-      "y": 40
-    }
+    "answer": { "x": 1030, "y": 40 },
+    "columns": { "x": 700, "y": 40 },
+    "doors": { "x": 370, "y": 40 },
+    "elements": { "x": 40, "y": 40 },
+    "about": { "x": 40, "y": 220 }
   },
   "structure": {
     "edges": [
-      {
-        "from": "elements.relation",
-        "to": "doors.input"
-      },
-      {
-        "from": "doors.relation",
-        "to": "columns.input"
-      },
-      {
-        "from": "columns.relation",
-        "to": "answer.input"
-      }
+      { "from": "elements.relation", "to": "doors.input" },
+      { "from": "doors.relation", "to": "columns.input" },
+      { "from": "columns.relation", "to": "answer.input" }
     ],
     "nodes": [
-      {
-        "id": "answer",
-        "kind": "rel.sort",
-        "version": 1
-      },
-      {
-        "id": "columns",
-        "kind": "rel.select",
-        "version": 1
-      },
-      {
-        "id": "doors",
-        "kind": "rel.filter",
-        "version": 1
-      },
-      {
-        "id": "elements",
-        "kind": "rel.csv",
-        "version": 1
-      }
+      { "id": "answer", "kind": "rel.sort", "version": 1 },
+      { "id": "columns", "kind": "rel.select", "version": 1 },
+      { "id": "doors", "kind": "rel.filter", "version": 1 },
+      { "id": "elements", "kind": "rel.csv", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 }
     ]
   },
   "values": {
-    "answer": {
-      "by": "GlobalId"
-    },
-    "columns": {
-      "columns": "GlobalId, Name, OperationalCarbon_kgCO2e_per_year"
-    },
-    "doors": {
-      "expr": "startswith([Name], 'M_Single-Flush:0762 x 2032mm')"
-    },
-    "elements": {
-      "path": "nrc_analytics_elements.csv",
-      "source": "nrc"
-    }
+    "answer": { "by": "EntityId" },
+    "columns": { "columns": "EntityId, GlobalId, Name, OperationalCarbon_kgCO2e_per_year" },
+    "doors": { "expr": "startswith([Name], 'M_Single-Flush:0762 x 2032mm')" },
+    "elements": { "path": "nrc_analytics_elements.csv", "source": "nrc" },
+    "about": { "text": "Q4: four door instances share the type name M_Single-Flush:0762 x 2032mm (Name carries a family:type prefix plus an instance-specific suffix, so startswith matches all four), each with its own operational carbon. Row 1, the lowest STEP id (EntityId 8066), is the one the paper's expected answer uses: 54.0 kgCO2e/yr." }
   }
 }
