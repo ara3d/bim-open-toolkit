@@ -173,7 +173,7 @@
           {
             "name": "getAnalysis",
             "ok": true,
-            "summary": "nrc-color-embodied-carbon: same shape as the operational graph, valueColumn EmbodiedCarbon_A1A3_kgCO2e"
+            "summary": "nb-s06-paper-figures-embodied-carbon: nrc-color-operational-carbon with valueColumn EmbodiedCarbon_A1A3_kgCO2e, colorMap viridis"
           },
           {
             "name": "evaluate",
@@ -192,7 +192,7 @@
             "id": "e1",
             "caption": "Embodied carbon A1-A3, viridis",
             "source": {
-              "analysisId": "nrc-color-embodied-carbon",
+              "analysisId": "nb-s06-paper-figures-embodied-carbon",
               "nodeId": "answer",
               "port": "instances"
             }
@@ -202,7 +202,7 @@
             "id": "e2",
             "caption": "Legend, including the missing row",
             "source": {
-              "analysisId": "nrc-color-embodied-carbon",
+              "analysisId": "nb-s06-paper-figures-embodied-carbon",
               "nodeId": "answer",
               "port": "legend"
             },
@@ -325,7 +325,7 @@
             "alt": "Duplex model coloured by embodied carbon, one grey instance for the roof"
           }
         ],
-        "analysisId": "nrc-color-embodied-carbon"
+        "analysisId": "nb-s06-paper-figures-embodied-carbon"
       }
     },
     {

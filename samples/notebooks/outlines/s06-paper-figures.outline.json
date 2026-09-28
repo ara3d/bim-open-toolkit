@@ -5,6 +5,9 @@
     "profile": "bim",
     "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
   },
+  "graphs": [
+    "../graphs/s06-paper-figures/nb-s06-paper-figures-embodied-carbon.json"
+  ],
   "turns": [
     {
       "request": "Make Figure 5: the Duplex coloured by operational carbon.",
@@ -24,9 +27,9 @@
     {
       "request": "Same for embodied carbon, and point out the grey roof.",
       "reply": "Viridis gradient over EmbodiedCarbon_A1A3_kgCO2e, five stops from 31.5 to 3,069.5 kgCO2e. One instance has no value and stays grey: the roof, which carries no Pset_NRCEmbodiedCarbon row in the source data. Not inferred from a nearby value.",
-      "analysisId": "nrc-color-embodied-carbon",
+      "analysisId": "nb-s06-paper-figures-embodied-carbon",
       "tools": [
-        { "name": "getAnalysis", "ok": true, "summary": "nrc-color-embodied-carbon: same shape as the operational graph, valueColumn EmbodiedCarbon_A1A3_kgCO2e" },
+        { "name": "getAnalysis", "ok": true, "summary": "nb-s06-paper-figures-embodied-carbon: nrc-color-operational-carbon with valueColumn EmbodiedCarbon_A1A3_kgCO2e, colorMap viridis" },
         { "name": "evaluate", "ok": true, "summary": "all three nodes Ok" },
         { "name": "getResult", "ok": true, "summary": "answer/legend: 5 stops plus one 'missing' row, count 1" }
       ],
