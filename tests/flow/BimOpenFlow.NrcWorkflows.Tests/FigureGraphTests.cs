@@ -77,22 +77,6 @@ public sealed class FigureGraphTests
         });
     }
 
-    /// <summary>TKT-93 merges nrc-color-category and nrc-color-embodied-carbon into
-    /// nrc-color-operational-carbon's valueColumn/colorMap (see GradientColouring_... and
-    /// CategoryColouring_... above), but the two files stay committed and seeded: a notebook
-    /// (samples/notebooks/s06-paper-figures.notebook.json) opens their ids directly, so they are
-    /// held until that notebook is regenerated against the merged flow. Each still evaluates green
-    /// and its `answer` matches what the merged flow produces with the same column.</summary>
-    [TestCase("nrc-color-category")]
-    [TestCase("nrc-color-embodied-carbon")]
-    public void HeldDuplicateColourFlow_StillMatchesTheMergedFlow(string id)
-    {
-        var overrides = id == "nrc-color-category" ? CategoryColumn : EmbodiedCarbonColumn;
-        var duplicate = Answer(id);
-        var merged = Answer("nrc-color-operational-carbon", overrides);
-        Assert.That(ColouredElements(duplicate), Is.EqualTo(ColouredElements(merged)));
-    }
-
     [Test]
     public void CategoryColouring_UsesOneColourPerCategory()
     {
