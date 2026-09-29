@@ -1,9 +1,9 @@
 ---
 id: TKT-20
 title: A chart pane in the DuckDB studio
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: claude-tkt20
 fence: [bimopenflow/web/packages/app/**, bimopenflow/web/packages/panes/**, samples/duckdb-analyses/**]
 ---
 
