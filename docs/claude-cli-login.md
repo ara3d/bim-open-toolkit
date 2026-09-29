@@ -23,8 +23,9 @@ Set this for the host: ASK_CLAUDE_CLI=C:/Users/you/AppData/Local/Packages/Claude
 ```
 
 If it is not signed in, it opens the browser sign-in for you (`auth login`) and checks
-again once you finish. The last line is the value to set for `ASK_CLAUDE_CLI` before
-starting the host, with forward slashes so it can go straight into `.claude/launch.json`
+again once you finish. The last line names the executable it found. The host runs the
+same search (`ClaudeCliLocator`), so setting `ASK_CLAUDE_CLI` is optional: use it only
+to force a particular copy, with forward slashes so it can go into `.claude/launch.json`
 or a shell variable.
 
 Flags:
@@ -77,17 +78,16 @@ folder is the virtualized one described above, so these launchers can fail there
 though they work from a terminal the desktop app itself opens (which is why they seemed
 fine when first added). If you use one of these launchers directly and it reports
 nothing found, run `node scripts/claude-login.mjs` instead — it also checks the
-packaged location these launchers do not, and reports the exact `ASK_CLAUDE_CLI` value
-you can hard-code as a workaround. The fix belongs in the launchers themselves (adding
+packaged location these launchers do not; the host does too, and falls back to it when
+a launcher fails its `--version` check. The fix belongs in the launchers themselves (adding
 the same `%LOCALAPPDATA%\Packages\Claude_*\...` fallback), not in this repository, since
 they live under your home directory, not the checkout.
 
 **A stale `ASK_CLAUDE_CLI` in `.claude/launch.json`.** That file hard-codes a version
 path, which breaks on the next Claude desktop app update (a new version folder appears
-and the old one may be removed). Re-run `node scripts/claude-login.mjs` after an update
-and paste its last line's value back in. The host's own `ClaudeCliLocator` does not yet
-fall back to the packaged location the way this script does; TKT-92 tracks teaching it
-the same search, so `launch.json` would no longer need a literal path at all.
+and the old one may be removed). Since TKT-92 the host's `ClaudeCliLocator` runs the same
+search as this script, so the fix is to delete the `ASK_CLAUDE_CLI` line and let the host
+find the newest copy.
 
 ## Confirming it worked
 
@@ -98,4 +98,4 @@ back. From a neutral directory this reliably answers `ok`; from a directory carr
 in character instead of literally — that is the model being helpful with the extra
 context, not a broken login, so the script only checks that something came back within
 60 seconds, not the exact word. Either way, once you see the `ASK_CLAUDE_CLI=` line,
-the studio's Ask box and the IFC ask are ready to use the same executable.
+the studio's Ask box and the IFC ask will find and use the same executable.

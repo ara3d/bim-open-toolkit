@@ -61,9 +61,9 @@ your own building model in its place.
 - **DuckDB workflow studio** (nine SQL-backed schedule/join/aggregation graphs over
   a typed Snowdon database). Setup: [bim-flow-duckdb.md](bim-flow-duckdb.md).
 - **Ask box** (an agent builds a DuckDB graph from a plain-language request; needs
-  an Anthropic or OpenAI key in addition to the Snowdon database). Setup:
-  [bim-flow-mcp-demo.md](bim-flow-mcp-demo.md).
-  - Optional: instead of a key, use the Claude Code command line. The Ask box
+  the Claude Code command line, or an Anthropic or OpenAI key, in addition to the
+  Snowdon database). Setup: [bim-flow-mcp-demo.md](bim-flow-mcp-demo.md).
+  - The Claude Code command line needs no key. The Ask box
     finds it on `PATH` or in the Claude desktop app's own folders, newest
     version first, with no path to set. Run `node scripts/claude-login.mjs`
     once to find it and sign it in ([claude-cli-login.md](claude-cli-login.md));

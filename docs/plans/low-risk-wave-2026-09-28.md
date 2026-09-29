@@ -16,4 +16,9 @@ Baseline gates: not run as a whole; other sessions are writing to the checkout. 
 
 ## Build log
 
+- W3 `8ba3fee`: fence only; both corrections verified against ColorNode.cs and group-object.ts. The colormap node is `view.colormap`; CANDIDATE-WORK line 121 marked Partial, not Done.
+- W5 `49d5639`: fence only; no regeneration needed, since 6cd915b already synced embed positions and `samples.test.ts` guards them. Changed the s10-snowdon storey sentence in the outline and the notebook. Notebook tests 288 pass.
+- W1 `3d7c912`, `883149a`: fence only. Cause: `.nb-column` (auto margins in a flex column) sized to its widest child, 949 px; `width: 100%` fixes it. The viewport meta already existed. Headless Chrome: scrollWidth 805 at 820, 375 at 375. Notebook tests 289 pass, typecheck clean.
+- W4 `e76d02c`: fence only. Locator order: ASK_CLAUDE_CLI, first PATH hit that passes `--version`, newest `claude.exe` across the packaged and %APPDATA% roots. Studio tests 99 pass. Found `~/.local/bin/claude.cmd` on this machine. The supervisor updated `docs/claude-cli-login.md` and the START.md Ask line, which W4 reported as outside its fence. The `ASK_CLAUDE_CLI` line in `.claude/launch.json` (pointing at 2.1.281; 2.1.284 is installed) can go, but another session has uncommitted edits in that file.
+
 ## Wave record
