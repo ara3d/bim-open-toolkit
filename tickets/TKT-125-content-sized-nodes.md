@@ -1,9 +1,9 @@
 ---
 id: TKT-125
 title: Cards size themselves to their content, text never overflows, and the layout algorithms use real card sizes
-status: open
+status: claimed
 depends_on: [TKT-124]
-owner:
+owner: claude-tkt125
 fence: [bimopenflow/web/packages/graph/src/viewModel.ts, bimopenflow/web/packages/graph/src/nodeSize.ts, bimopenflow/web/packages/graph/src/canvasResize.ts, bimopenflow/web/packages/graph/src/canvasParts.ts, bimopenflow/web/packages/graph/src/canvasIntents.ts, bimopenflow/web/packages/graph/src/autoLayout.ts, bimopenflow/web/packages/graph/src/nodeRender.ts, bimopenflow/web/packages/graph/src/canvasSlots.ts, bimopenflow/web/packages/graph/src/index.ts, bimopenflow/web/packages/graph/test/**, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/app/src/addNodePlan.ts, docs/nodes.catalog.json]
 ---
 
