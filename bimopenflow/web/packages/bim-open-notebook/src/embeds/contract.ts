@@ -8,6 +8,7 @@ import type {
   EvalUpdate,
   ModelSummary,
   NodeCatalog,
+  NodeDescriptor,
 } from "@bimopenflow/contracts";
 import type { ResultApi } from "@bimopenflow/app/src/paneContext";
 import type { Embed, EmbedKind } from "../document/format";
@@ -42,6 +43,9 @@ export type Freshness =
 export interface EmbedContext {
   readonly api: NotebookApi;
   readonly selection: SelectionBus;
+  /** The host's node catalog by kind, fetched once per page and shared by every graph cell;
+   *  a cell draws portless nodes until it resolves, and without one at all. */
+  readonly catalog?: () => Promise<ReadonlyMap<string, NodeDescriptor>>;
 }
 
 /** A mounted embed. */

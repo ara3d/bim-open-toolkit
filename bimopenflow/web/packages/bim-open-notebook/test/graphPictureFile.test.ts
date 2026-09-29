@@ -3,7 +3,9 @@ import { createSelectionBus } from "../src/embeds/selection";
 import type { EmbedContext, NotebookApi } from "../src/embeds/contract";
 import type { FileEmbed, GraphEmbed, PictureEmbed } from "../src/document/format";
 import { renderFile, readableSize } from "../src/embeds/file";
-import { renderGraph } from "../src/embeds/graph";
+import { createGraphRenderer, renderGraph, type GraphEditorMount } from "../src/embeds/graph";
+import type { GraphEditor, GraphEditorOptions } from "@bimopenflow/graph";
+import type { NodeDescriptor } from "@bimopenflow/contracts";
 import { renderPicture } from "../src/embeds/picture";
 import { notebookCss } from "../src/page/styles";
 
@@ -29,9 +31,25 @@ function fakeApi(overrides: Partial<NotebookApi> = {}): NotebookApi {
   };
 }
 
-function ctxWith(api: NotebookApi): EmbedContext {
-  return { api, selection: createSelectionBus() };
+function ctxWith(api: NotebookApi, catalog?: ReadonlyMap<string, NodeDescriptor>): EmbedContext {
+  return { api, selection: createSelectionBus(), ...(catalog ? { catalog: async () => catalog } : {}) };
 }
+
+/** A mount that records what the cell asked for and returns a spy editor; jsdom has no 2D canvas. */
+function fakeMount() {
+  const mounts: { canvas: HTMLCanvasElement; options: GraphEditorOptions }[] = [];
+  const editor: GraphEditor = {
+    refresh: vi.fn(), results: () => ({ counts: new Map(), peek: null }), fit: vi.fn(), focus: vi.fn(),
+    refreshSuggestions: vi.fn(), setTheme: vi.fn(), dispose: vi.fn(),
+  };
+  const mount: GraphEditorMount = (canvas, options) => { mounts.push({ canvas, options }); return editor; };
+  return { mount, mounts, editor, render: createGraphRenderer(mount) };
+}
+
+const sourceDescriptor: NodeDescriptor = {
+  kind: "ifc.source", version: 1, capability: "Pure", inputs: [],
+  outputs: [{ name: "out", type: "Table", optional: false }], params: [], description: "Reads an IFC file.",
+};
 
 const GRAPH_TEXT_V1 = [
   "dfg 1;",
@@ -75,6 +93,21 @@ const GRAPH_DOCUMENT_V1 = JSON.stringify({
   layout: { source: { x: 0, y: 0 }, answer: { x: 200, y: 0 } },
 });
 
+/** V1 plus a filter between source and answer: what the host holds after an edit. */
+const GRAPH_DOCUMENT_V2 = JSON.stringify({
+  formatVersion: "0.1.0",
+  structure: {
+    nodes: [
+      { id: "source", kind: "ifc.source", version: 1 },
+      { id: "walls", kind: "table.filter", version: 1 },
+      { id: "answer", kind: "math.sum", version: 1 },
+    ],
+    edges: [{ from: "source.out", to: "walls.in" }, { from: "walls.out", to: "answer.in" }],
+  },
+  values: {},
+  layout: { source: { x: 0, y: 0 }, walls: { x: 200, y: 0 }, answer: { x: 400, y: 0 } },
+});
+
 describe("renderGraph", () => {
   it("draws the header, node count, and Open in editor link", () => {
     const api = fakeApi();
@@ -92,11 +125,22 @@ describe("renderGraph", () => {
     expect(notebookCss).toMatch(/\.notebook-graph-open\s*\{[^}]*margin-left:\s*\d/);
   });
 
-  it("draws the diagram open by default and folds the text print under 'Show text'", () => {
+  it("mounts a read-only canvas over the embed's document with the focus selected, and folds the text", async () => {
+    const { render, mounts, editor } = fakeMount();
     const el = document.createElement("div");
-    renderGraph(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(fakeApi()));
+    const catalog = new Map([["ifc.source", sourceDescriptor]]);
+    render(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(fakeApi(), catalog));
 
-    expect(el.querySelector(".notebook-graph-diagram svg")).not.toBeNull();
+    expect(mounts).toHaveLength(1);
+    const { canvas, options } = mounts[0]!;
+    expect(canvas).toBe(el.querySelector("canvas.notebook-graph-cell"));
+    expect(options.readOnly).toBe(true);
+    expect(options.store.getState().document.structure.nodes.map((n) => n.id)).toEqual(["source", "answer"]);
+    expect(options.store.getState().selection).toEqual(["answer"]);
+    await Promise.resolve();
+    expect(options.catalog().get("ifc.source")).toBe(sourceDescriptor);
+    expect(editor.refresh).toHaveBeenCalled();
+
     const fold = el.querySelector("details.notebook-graph-text-fold") as HTMLDetailsElement;
     expect(fold.open).toBe(false);
     expect(fold.querySelector("summary")!.textContent).toBe("Show text");
@@ -105,13 +149,67 @@ describe("renderGraph", () => {
     expect(mark.textContent).toBe('answer = math.sum@1(in: source.out);');
   });
 
-  it("falls back to the text print shown open when there is no document to draw", () => {
+  it("selects only the focus nodes the document has", () => {
+    const { render, mounts } = fakeMount();
     const el = document.createElement("div");
-    renderGraph(el, graphEmbed({ document: undefined }), ctxWith(fakeApi()));
+    render(el, graphEmbed({ document: GRAPH_DOCUMENT_V1, focus: ["answer", "gone"] }), ctxWith(fakeApi()));
+    expect(mounts[0]!.options.store.getState().selection).toEqual(["answer"]);
+  });
 
-    expect(el.querySelector(".notebook-graph-diagram svg")).toBeNull();
+  it("falls back to the text print shown open when there is no document to draw", () => {
+    const { render, mounts } = fakeMount();
+    const el = document.createElement("div");
+    render(el, graphEmbed({ document: undefined }), ctxWith(fakeApi()));
+
+    expect(mounts).toHaveLength(0);
+    expect((el.querySelector(".notebook-graph-canvas") as HTMLElement).hidden).toBe(true);
     const fold = el.querySelector("details.notebook-graph-text-fold") as HTMLDetailsElement;
     expect(fold.open).toBe(true);
+  });
+
+  it("shows the print, open, when the browser has no 2D canvas", () => {
+    const el = document.createElement("div");
+    renderGraph(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(fakeApi()));
+    const fold = el.querySelector("details.notebook-graph-text-fold") as HTMLDetailsElement;
+    expect(fold.open).toBe(true);
+    expect(el.querySelector(".notebook-graph-status")!.textContent).toMatch(/^Canvas unavailable/);
+  });
+
+  it("a changed graph replaces the cell's document, re-selects the focus, and takes the host's statuses", async () => {
+    const { render, mounts } = fakeMount();
+    const api = fakeApi({
+      getAnalysisText: async () => GRAPH_TEXT_V2,
+      getAnalysis: async () => GRAPH_DOCUMENT_V2,
+      getAnalysisState: async () => ({ analysisId: "nrc-q1", nodes: [{ nodeId: "answer", status: "Ok", warnings: [] }] }),
+    });
+    const el = document.createElement("div");
+    const handle = render(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(api));
+    await expect(handle.refresh()).resolves.toEqual({ state: "changed", was: "a1b2c3d4e5f6", now: "9f8e7d6c5b4a" });
+    const state = mounts[0]!.options.store.getState();
+    expect(state.document.structure.nodes.map((n) => n.id)).toEqual(["source", "walls", "answer"]);
+    expect(state.selection).toEqual(["answer"]);
+    expect(state.evalState["answer"]?.status).toBe("Ok");
+  });
+
+  it("a current graph still takes the host's statuses", async () => {
+    const { render, mounts } = fakeMount();
+    const api = fakeApi({
+      getAnalysisText: async () => GRAPH_TEXT_V1,
+      getAnalysisState: async () => ({ analysisId: "nrc-q1", nodes: [{ nodeId: "source", status: "Ok", warnings: [] }] }),
+    });
+    const el = document.createElement("div");
+    const handle = render(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(api));
+    await expect(handle.refresh()).resolves.toEqual({ state: "current" });
+    expect(mounts[0]!.options.store.getState().evalState["source"]?.status).toBe("Ok");
+  });
+
+  it("destroy disposes the editor", () => {
+    const { render, editor } = fakeMount();
+    const el = document.createElement("div");
+    const handle = render(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(fakeApi()));
+    handle.destroy();
+    expect(editor.dispose).toHaveBeenCalledTimes(1);
+    expect(el.children.length).toBe(0);
   });
 
   it("reports current when the host's text equals the embed's", async () => {

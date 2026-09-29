@@ -1,14 +1,29 @@
-// Renders a graph embed: a static SVG diagram of the graph document (drawn by
-// graphDiagram.ts, open by default), the host's GraphText print folded under
-// it ("Show text"), and a link to open the graph in the editor. The canvas
-// editor cannot be mounted twice on a page (docs/plans/notebook.md,
-// "Considered and rejected"), so this draws its own read-only diagram rather
-// than embedding the canvas.
+// Renders a graph embed as a live, read-only canvas: the graph editor from
+// @bimopenflow/graph mounted over a store built from the embed's stored
+// document, with the reply's focus nodes selected (which also lights the
+// wires that feed them, as in the studio). The host's GraphText print folds
+// under "Show text", and "Open in editor" stays a separate link: editing
+// happens in the studio, not in a transcript. With no stored document the
+// print shows open instead. A refresh keeps the freshness contract by graph
+// hash and, when the host answers, pushes the current document and the node
+// statuses into the cell.
+//
+// Each cell has its own store, because a transcript's turns can embed
+// different versions of one analysis. The canvas mounts when the cell scrolls
+// near the viewport (the same rule as the 3D embed), so a long notebook does
+// not start a runtime per graph on load.
 
-import { parseDocument, type GraphDocument } from "@bimopenflow/state";
+import type { NodeDescriptor } from "@bimopenflow/contracts";
+import { createGraphEditor, type GraphEditor, type GraphEditorOptions } from "@bimopenflow/graph";
+import { createStore, initialState, parseDocument, type GraphDocument, type Store } from "@bimopenflow/state";
 import type { GraphEmbed } from "../document/format";
 import type { EmbedContext, EmbedRenderer, Freshness } from "./contract";
-import { buildGraphDiagram } from "./graphDiagram";
+
+/** How a cell mounts its editor; tests pass a fake, since jsdom has no 2D canvas. */
+export type GraphEditorMount = (canvas: HTMLCanvasElement, options: GraphEditorOptions) => GraphEditor;
+
+/** Height of the canvas block in the notebook column, in CSS pixels. */
+export const GRAPH_CELL_HEIGHT = 320;
 
 /** Base URL of the editor page; the tables profile of scripts/start-bim-flow.mjs by default. */
 const EDITOR_BASE =
@@ -51,129 +66,246 @@ function tryParseDocument(json: string | undefined): GraphDocument | undefined {
   }
 }
 
-export const renderGraph: EmbedRenderer<GraphEmbed> = (el, embed, ctx: EmbedContext) => {
-  const container = document.createElement("div");
-  container.className = "notebook-embed notebook-embed-graph";
+/** The focus ids that exist in `document`; the reducer rejects a selection of unknown nodes. */
+function presentFocus(focus: readonly string[] | undefined, document: GraphDocument): string[] {
+  const ids = new Set(document.structure.nodes.map((n) => n.id));
+  return (focus ?? []).filter((id) => ids.has(id));
+}
 
-  const header = document.createElement("div");
-  header.className = "notebook-graph-header";
-  container.appendChild(header);
+/** A graph renderer that mounts its canvas with `mount`. */
+export function createGraphRenderer(mount: GraphEditorMount = createGraphEditor): EmbedRenderer<GraphEmbed> {
+  return (el, embed, ctx: EmbedContext) => {
+    const doc = el.ownerDocument;
+    const container = doc.createElement("div");
+    container.className = "notebook-embed notebook-embed-graph";
 
-  const headerText = document.createElement("span");
-  header.appendChild(headerText);
+    const header = doc.createElement("div");
+    header.className = "notebook-graph-header";
+    container.appendChild(header);
 
-  const link = document.createElement("a");
-  link.className = "notebook-graph-open";
-  link.textContent = "Open in editor";
-  link.target = "_blank";
-  link.rel = "noopener";
-  link.href = editorUrl(embed.analysisId);
-  header.appendChild(link);
+    const headerText = doc.createElement("span");
+    header.appendChild(headerText);
 
-  const diagramSlot = document.createElement("div");
-  diagramSlot.className = "notebook-graph-diagram";
-  container.appendChild(diagramSlot);
+    const link = doc.createElement("a");
+    link.className = "notebook-graph-open";
+    link.textContent = "Open in editor";
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.href = editorUrl(embed.analysisId);
+    header.appendChild(link);
 
-  const textFold = document.createElement("details");
-  textFold.className = "notebook-graph-text-fold";
-  const textSummary = document.createElement("summary");
-  textSummary.textContent = "Show text";
-  textFold.appendChild(textSummary);
-  const pre = document.createElement("pre");
-  pre.className = "notebook-graph-text";
-  textFold.appendChild(pre);
-  container.appendChild(textFold);
+    const cell = doc.createElement("div");
+    cell.className = "notebook-graph-canvas";
+    cell.style.height = `${GRAPH_CELL_HEIGHT}px`;
+    const canvas = doc.createElement("canvas");
+    canvas.className = "notebook-graph-cell";
+    canvas.setAttribute("aria-label", `Graph ${embed.analysisId}`);
+    cell.appendChild(canvas);
+    container.appendChild(cell);
 
-  const status = document.createElement("div");
-  status.className = "notebook-graph-status";
-  container.appendChild(status);
+    const textFold = doc.createElement("details");
+    textFold.className = "notebook-graph-text-fold";
+    const textSummary = doc.createElement("summary");
+    textSummary.textContent = "Show text";
+    textFold.appendChild(textSummary);
+    const pre = doc.createElement("pre");
+    pre.className = "notebook-graph-text";
+    textFold.appendChild(pre);
+    container.appendChild(textFold);
 
-  el.appendChild(container);
+    const status = doc.createElement("div");
+    status.className = "notebook-graph-status";
+    container.appendChild(status);
 
-  let shownText = embed.text ?? "";
-  let shownDocument = tryParseDocument(embed.document);
+    el.appendChild(container);
 
-  const drawText = (text: string, focus: readonly string[] | undefined) => {
-    const count = nodeIdsOf(text).length;
-    headerText.textContent = count > 0 ? `Graph ${embed.analysisId} · ${count} nodes` : `Graph ${embed.analysisId}`;
+    let shownText = embed.text ?? "";
+    let shownDocument = tryParseDocument(embed.document);
+    const catalog = new Map<string, NodeDescriptor>();
+    let store: Store | null = null;
+    let editor: GraphEditor | null = null;
+    let destroyed = false;
+    let observer: IntersectionObserver | null = null;
+    let resizer: ResizeObserver | null = null;
 
-    pre.textContent = "";
-    const focusSet = new Set(focus ?? []);
-    const lines = text.split("\n");
-    lines.forEach((line, i) => {
-      if (i > 0) pre.appendChild(document.createTextNode("\n"));
-      const id = /^(\S+) = \S+@\d+\(/.exec(line)?.[1];
-      if (id !== undefined && focusSet.has(id)) {
-        const mark = document.createElement("mark");
-        mark.className = "notebook-graph-focus";
-        mark.textContent = line;
-        pre.appendChild(mark);
-      } else {
-        pre.appendChild(document.createTextNode(line));
+    // Without a catalog the editor draws portless nodes; it fills in once the
+    // page's shared catalog resolves.
+    void ctx.catalog?.()
+      .then((map) => {
+        if (destroyed) return;
+        for (const [kind, descriptor] of map) catalog.set(kind, descriptor);
+        editor?.refresh();
+      })
+      .catch(() => {});
+
+    const drawText = (text: string, focus: readonly string[] | undefined) => {
+      const count = nodeIdsOf(text).length;
+      headerText.textContent = count > 0 ? `Graph ${embed.analysisId} · ${count} nodes` : `Graph ${embed.analysisId}`;
+
+      pre.textContent = "";
+      const focusSet = new Set(focus ?? []);
+      const lines = text.split("\n");
+      lines.forEach((line, i) => {
+        if (i > 0) pre.appendChild(doc.createTextNode("\n"));
+        const id = /^(\S+) = \S+@\d+\(/.exec(line)?.[1];
+        if (id !== undefined && focusSet.has(id)) {
+          const mark = doc.createElement("mark");
+          mark.className = "notebook-graph-focus";
+          mark.textContent = line;
+          pre.appendChild(mark);
+        } else {
+          pre.appendChild(doc.createTextNode(line));
+        }
+      });
+    };
+
+    // fit() needs the canvas's size, which a cell that is hidden or not yet
+    // laid out does not have; the first non-zero size frames the graph at
+    // zoom 1 or less, anchored top-left when it is wider than the column.
+    const fitWhenSized = () => {
+      if (!editor) return;
+      if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+        editor.fit({ minZoom: 1 });
+        return;
       }
-    });
-  };
+      const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
+      if (!RO) return;
+      resizer = new RO(() => {
+        if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+          resizer?.disconnect();
+          resizer = null;
+          editor?.fit({ minZoom: 1 });
+        }
+      });
+      resizer.observe(canvas);
+    };
 
-  const drawDiagram = (doc: GraphDocument | undefined, focus: readonly string[] | undefined) => {
-    diagramSlot.textContent = "";
-    if (doc === undefined) {
-      // Nothing to draw from: fall back to the text print, shown open.
-      textFold.open = true;
-      return;
-    }
-    diagramSlot.appendChild(buildGraphDiagram(doc, { analysisId: embed.analysisId, focus }));
-    textFold.open = false;
-  };
-
-  drawText(shownText, embed.focus);
-  drawDiagram(shownDocument, embed.focus);
-
-  return {
-    async refresh(): Promise<Freshness> {
-      let text: string;
+    const mountEditor = () => {
+      if (editor || destroyed || !shownDocument) return;
+      store = createStore({ ...initialState, document: shownDocument, selection: presentFocus(embed.focus, shownDocument) });
       try {
-        text = await ctx.api.getAnalysisText(embed.analysisId);
+        editor = mount(canvas, {
+          store,
+          catalog: () => catalog,
+          readOnly: true,
+          onError: (message) => { status.textContent = message; },
+        });
       } catch (e) {
-        if (isNotFound(e) && embed.document !== undefined) {
-          try {
-            await ctx.api.putAnalysis(embed.analysisId, embed.document);
-            text = await ctx.api.getAnalysisText(embed.analysisId);
-          } catch (restoreError) {
-            const reason = messageOf(restoreError);
+        // No 2D canvas (an unusual browser): the print stands in.
+        cell.hidden = true;
+        textFold.open = true;
+        status.textContent = `Canvas unavailable: ${messageOf(e)}`;
+        return;
+      }
+      fitWhenSized();
+    };
+
+    const scheduleMount = () => {
+      if (editor || observer) return;
+      const IO = (globalThis as { IntersectionObserver?: typeof IntersectionObserver }).IntersectionObserver;
+      if (!IO) {
+        mountEditor();
+        return;
+      }
+      observer = new IO((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer?.disconnect();
+          observer = null;
+          mountEditor();
+        }
+      }, { rootMargin: "800px 0px" });
+      observer.observe(cell);
+    };
+
+    /** Shows the cell when there is a document to draw, else the print, open. */
+    const showCell = () => {
+      cell.hidden = shownDocument === undefined;
+      textFold.open = shownDocument === undefined;
+      if (shownDocument !== undefined) scheduleMount();
+    };
+
+    /** Pushes the host's current statuses into the cell; silent when the host cannot say. */
+    const applyHostState = async () => {
+      if (!store) return;
+      try {
+        const update = await ctx.api.getAnalysisState(embed.analysisId);
+        if (!destroyed && store) store.dispatch({ type: "applyServerState", update });
+      } catch {
+        // Statuses stay as they were; the freshness result already says what the host answered.
+      }
+    };
+
+    /** Replaces the cell's document with the host's current one, keeping the focus selected. */
+    const replaceDocument = (json: string) => {
+      const next = tryParseDocument(json);
+      if (next === undefined) return;
+      shownDocument = next;
+      if (store) {
+        store.dispatch({ type: "setDocument", json });
+        store.dispatch({ type: "select", ids: presentFocus(embed.focus, next) });
+      } else {
+        showCell();
+      }
+    };
+
+    drawText(shownText, embed.focus);
+    showCell();
+
+    return {
+      async refresh(): Promise<Freshness> {
+        let text: string;
+        try {
+          text = await ctx.api.getAnalysisText(embed.analysisId);
+        } catch (e) {
+          if (isNotFound(e) && embed.document !== undefined) {
+            try {
+              await ctx.api.putAnalysis(embed.analysisId, embed.document);
+              text = await ctx.api.getAnalysisText(embed.analysisId);
+            } catch (restoreError) {
+              const reason = messageOf(restoreError);
+              status.textContent = `unavailable: ${reason}`;
+              return { state: "unavailable", reason };
+            }
+          } else {
+            const reason = messageOf(e);
             status.textContent = `unavailable: ${reason}`;
             return { state: "unavailable", reason };
           }
-        } else {
-          const reason = messageOf(e);
-          status.textContent = `unavailable: ${reason}`;
-          return { state: "unavailable", reason };
         }
-      }
 
-      if (text === shownText) {
-        status.textContent = "";
-        return { state: "current" };
-      }
+        if (text === shownText) {
+          status.textContent = "";
+          await applyHostState();
+          return { state: "current" };
+        }
 
-      const was = graphHashOf(shownText) ?? "graph changed";
-      const now = graphHashOf(text) ?? "graph changed";
-      shownText = text;
-      drawText(text, embed.focus);
+        const was = graphHashOf(shownText) ?? "graph changed";
+        const now = graphHashOf(text) ?? "graph changed";
+        shownText = text;
+        drawText(text, embed.focus);
 
-      try {
-        const json = await ctx.api.getAnalysis(embed.analysisId);
-        const doc = tryParseDocument(json);
-        if (doc !== undefined) shownDocument = doc;
-      } catch {
-        // Keep the last diagram; the text above already reports the change.
-      }
-      drawDiagram(shownDocument, embed.focus);
+        try {
+          replaceDocument(await ctx.api.getAnalysis(embed.analysisId));
+        } catch {
+          // Keep the last canvas; the text above already reports the change.
+        }
+        await applyHostState();
 
-      status.textContent = `changed: was ${was}, now ${now}`;
-      return { state: "changed", was, now };
-    },
-    destroy(): void {
-      container.remove();
-    },
+        status.textContent = `changed: was ${was}, now ${now}`;
+        return { state: "changed", was, now };
+      },
+      destroy(): void {
+        destroyed = true;
+        observer?.disconnect();
+        observer = null;
+        resizer?.disconnect();
+        resizer = null;
+        editor?.dispose();
+        editor = null;
+        container.remove();
+      },
+    };
   };
-};
+}
+
+export const renderGraph: EmbedRenderer<GraphEmbed> = createGraphRenderer();

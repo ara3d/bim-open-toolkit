@@ -42,6 +42,7 @@ another host; the request box needs the studio host, which serves `/api/ask`.
 
 ## Depends on
 
+`@bimopenflow/graph` (the graph editor, mounted read-only in every graph embed),
 `@bimopenflow/panes` (table, chart, verdict, and 3D panes), `@bimopenflow/api-client`
 and `@bimopenflow/contracts` (the host API), and a few pure modules of
 `@bimopenflow/app` imported by path (`src/paneContext`, `src/paneChoice`,

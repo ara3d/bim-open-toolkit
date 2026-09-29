@@ -21,6 +21,7 @@ import {
 } from "../document/edits";
 import { replyFromAsk } from "../ask/reply";
 import type { AskEvent, AskTransport } from "../ask/events";
+import type { NodeDescriptor } from "@bimopenflow/contracts";
 import type { EmbedContext, EmbedRegistry, EmbedRenderer, Freshness, NotebookApi } from "../embeds/contract";
 import { defaultRenderers } from "../embeds/registry";
 import { createSelectionBus } from "../embeds/selection";
@@ -92,7 +93,13 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
   /** Freshness results collected while "Re-evaluate all" runs. */
   let tally: Freshness["state"][] | undefined;
 
-  const embeds: EmbedContext = { api: options.api, selection: createSelectionBus() };
+  // One catalog request per page, started by the first graph cell that asks.
+  let catalog: Promise<ReadonlyMap<string, NodeDescriptor>> | undefined;
+  const embeds: EmbedContext = {
+    api: options.api,
+    selection: createSelectionBus(),
+    catalog: () => (catalog ??= options.api.getNodeCatalog().then((c) => new Map(c.nodes.map((n) => [n.kind, n])))),
+  };
   const turnContext: TurnContext = {
     embeds,
     renderers: tallying(options.renderers ?? defaultRenderers, (f) => tally?.push(f.state)),

@@ -86,6 +86,10 @@ h3.nb-md-heading { font-size: 13px; }
 .nb-earlier-entry summary { cursor: pointer; }
 .nb-earlier-request, .nb-earlier-reply { white-space: pre-wrap; margin: 4px 0; }
 .notebook-graph-open { margin-left: 12px; }
+.notebook-graph-canvas { position: relative; border: 1px solid var(--nb-border); border-radius: 6px; overflow: hidden; }
+.notebook-graph-canvas[hidden] { display: none; }
+.notebook-graph-cell { display: block; width: 100%; height: 100%; }
+.notebook-graph-text-fold { margin-top: 8px; }
 `;
 
 const STYLE_ID = "nb-styles";
