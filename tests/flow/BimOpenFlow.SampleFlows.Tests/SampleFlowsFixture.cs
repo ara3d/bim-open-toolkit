@@ -48,7 +48,7 @@ public static class SampleFlowsFixture
     public static EvalSnapshot Snapshot(string profile, string id)
         => Snapshots.Value[(profile, id)];
 
-    /// <summary>Every (profile, id) pair a profile actually seeded, in the order SeedIfEmpty
+    /// <summary>Every (profile, id) pair a profile actually seeded, in the order Seed
     /// returned it, for TestCaseSource properties.</summary>
     public static IEnumerable<(string Profile, string Id)> Cases
         => Data.Value.Values.SelectMany(d => d.SeededIds.Select(id => (d.Profile, id)));
@@ -65,8 +65,8 @@ public static class SampleFlowsFixture
         var store = new AnalysisStore(storeDir);
         var log = new StringWriter();
         var seeded = profile == TablesProfile
-            ? SampleSeeding.SeedIfEmpty(store, Root, registry, log)
-            : BimSampleSeeding.SeedIfEmpty(store, Root, registry, log);
+            ? SampleSeeding.Seed(store, Root, registry, log)
+            : BimSampleSeeding.Seed(store, Root, registry, log);
         return new(profile, registry, runtime, store, seeded, log.ToString(), storeDir);
     }
 

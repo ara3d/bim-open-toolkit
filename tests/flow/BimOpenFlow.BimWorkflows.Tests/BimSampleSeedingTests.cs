@@ -37,7 +37,7 @@ public sealed class BimSampleSeedingTests
             .Order(StringComparer.Ordinal)
             .ToList()!;
 
-    /// <summary>Seed order follows the source order in BimSampleSeeding.SeedIfEmpty.</summary>
+    /// <summary>Seed order follows the source order in BimSampleSeeding.Seed.</summary>
     private static IEnumerable<string> ExpectedSeedIds()
         => ExpectedIds("bim-analyses")
             .Concat(ExpectedIds("view3d-analyses"))
@@ -49,7 +49,7 @@ public sealed class BimSampleSeedingTests
     public void EmptyStore_SeedsEverySampleSource()
     {
         var store = new AnalysisStore(_storeDir);
-        var seeded = BimSampleSeeding.SeedIfEmpty(store, AppContext.BaseDirectory);
+        var seeded = BimSampleSeeding.Seed(store, AppContext.BaseDirectory);
         Assert.That(seeded, Is.EqualTo(ExpectedSeedIds()));
     }
 
@@ -57,7 +57,7 @@ public sealed class BimSampleSeedingTests
     public void Seeding_RewritesBothPlaceholders()
     {
         var store = new AnalysisStore(_storeDir);
-        foreach (var id in BimSampleSeeding.SeedIfEmpty(store, AppContext.BaseDirectory))
+        foreach (var id in BimSampleSeeding.Seed(store, AppContext.BaseDirectory))
         {
             var values = store.Load(id).Values.SelectMany(n => n.Value.Values).ToList();
             Assert.That(values, Has.None.Contains(SampleSeeding.PathPlaceholder));
@@ -66,11 +66,11 @@ public sealed class BimSampleSeedingTests
     }
 
     [Test]
-    public void NonEmptyStore_IsUntouched()
+    public void StoreHoldingNoneOfTheSamples_IsUntouched()
     {
         var store = new AnalysisStore(_storeDir);
         store.Create("existing");
-        Assert.That(BimSampleSeeding.SeedIfEmpty(store, AppContext.BaseDirectory), Is.Empty);
+        Assert.That(BimSampleSeeding.Seed(store, AppContext.BaseDirectory), Is.Empty);
         Assert.That(store.List().Select(e => e.Id), Is.EqualTo(new[] { "existing" }));
     }
 }
