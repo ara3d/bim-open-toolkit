@@ -72,7 +72,7 @@ try {
     const chart = chartNode(workflow);
     await page.waitForFunction(id => document.querySelector('select[aria-label="Preview node"]')?.value === id, chart ?? workflow.result);
     await page.locator(chart ? '.bof-app-panearea rect.bof-viz-bar' : '#duck-editor tbody tr').first().waitFor();
-    assert.deepEqual(await page.locator('.bof-app-tab').allTextContents(), chart ? ['Chart', 'Table'] : []);
+    assert.deepEqual(await page.locator('.bof-app-panearea .bof-app-tab').allTextContents(), chart ? ['Chart', 'Table'] : []);
     const document = await json(`/api/analyses/${workflow.id}`);
     const sources = document.structure.nodes.filter(node => node.kind === 'duck.source');
     assert.equal(sources.length, 1);
@@ -85,11 +85,11 @@ try {
   await page.getByLabel('Open flow', { exact: true }).selectOption({ label: 'Rooms by storey' });
   await page.waitForFunction(() => document.querySelector('select[aria-label="Preview node"]')?.value === 'chart');
   await page.waitForFunction(() => document.querySelectorAll('.bof-app-panearea rect.bof-viz-bar').length === 33);
-  assert.equal(await page.locator('.bof-app-tab-active').textContent(), 'Chart');
+  assert.equal(await page.locator('.bof-app-panearea .bof-app-tab-active').textContent(), 'Chart');
   assert.equal(await page.locator('.bof-app-panearea .bof-viz-title').textContent(), 'Rooms per storey');
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'rooms-per-storey-chart.png'), fullPage: true });
-  await page.locator('.bof-app-tab', { hasText: 'Table' }).click();
+  await page.locator('.bof-app-panearea .bof-app-tab', { hasText: 'Table' }).click();
   await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 33);
   assert.equal(await page.locator('.bof-app-panearea svg.bof-viz-bar-chart').count(), 0);
   scenarios.push('Rooms by storey opens on a Chart tab with 33 storey bars, beside a Table tab with the same 33 rows');
@@ -135,12 +135,18 @@ try {
   await page.getByRole('button', { name: 'Fit graph', exact: true }).click();
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'compact-layout.png'), fullPage: true });
+  // A host that answers 5xx counts as down: the host banner names the API url and stays until it reconnects.
   const offline = await browser.newPage();
-  await offline.route('**/api/analyses', route => route.fulfill({ status: 503, body: 'Unavailable' }));
+  await offline.route('**/api/**', route => route.fulfill({ status: 503, body: 'Unavailable' }));
   await offline.goto(base + '/duckdb.html');
-  await offline.getByRole('alert').waitFor();
-  assert.match(await offline.getByRole('alert').textContent(), /Could not open the DuckDB demo/);
-  scenarios.push('Unavailable host displays a visible startup error');
+  await offline.getByRole('alert').filter({ hasText: `Host not reachable at ${base}/api` }).waitFor();
+  // A host that answers without the sample flows is reachable, so the page's own error says the demo could not open.
+  const unprepared = await browser.newPage();
+  await unprepared.route('**/api/analyses', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await unprepared.goto(base + '/duckdb.html');
+  await unprepared.getByRole('alert').filter({ hasText: 'Could not open the DuckDB demo' }).waitFor();
+  assert.match(await unprepared.getByRole('alert').textContent(), /Demo workflows are missing/);
+  scenarios.push('Unavailable host displays a visible startup error', 'A host without the sample flows displays a visible startup error');
   assert.deepEqual(errors, []);
   assert.equal(await hash(), before, 'The database is unchanged after querying and editing graphs');
   await writeFile(resolve(output, 'evidence.json'), JSON.stringify({ databaseSha256: before, browser: browser.version(), workflows: [...rows].map(([id, table]) => ({ id, rows: table.totalRows })), scenarios }, null, 2));
