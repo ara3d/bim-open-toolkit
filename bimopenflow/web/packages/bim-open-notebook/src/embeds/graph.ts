@@ -14,7 +14,7 @@
 // not start a runtime per graph on load.
 
 import type { NodeDescriptor } from "@bimopenflow/contracts";
-import { createGraphEditor, type GraphEditor, type GraphEditorOptions } from "@bimopenflow/graph";
+import { createGraphEditor, type FitOptions, type GraphEditor, type GraphEditorOptions } from "@bimopenflow/graph";
 import { createStore, initialState, parseDocument, type GraphDocument, type Store } from "@bimopenflow/state";
 import type { GraphEmbed } from "../document/format";
 import type { EmbedContext, EmbedRenderer, Freshness } from "./contract";
@@ -22,8 +22,30 @@ import type { EmbedContext, EmbedRenderer, Freshness } from "./contract";
 /** How a cell mounts its editor; tests pass a fake, since jsdom has no 2D canvas. */
 export type GraphEditorMount = (canvas: HTMLCanvasElement, options: GraphEditorOptions) => GraphEditor;
 
-/** Height of the canvas block in the notebook column, in CSS pixels. */
+/** Height of the canvas block before its graph is laid out, in CSS pixels. */
 export const GRAPH_CELL_HEIGHT = 320;
+
+/** Bounds on the cell's height: a one-node graph still gets a readable box, and a deep graph
+ *  stops at about two thirds of a laptop screen rather than pushing the transcript away. */
+export const GRAPH_CELL_MIN_HEIGHT = 160;
+export const GRAPH_CELL_MAX_HEIGHT = 560;
+
+/** The smallest zoom a cell draws at. Node cards draw their titles at 15 to 17 px and port names
+ *  at 13 px; at 0.6 those are 9 to 10 px and about 8 px, the least that stays legible on a 1x
+ *  screen. A graph that needs less overflows its cell, centred, and is reached by panning. */
+export const GRAPH_MIN_ZOOM = 0.6;
+
+/** How every cell frames its graph. */
+export const GRAPH_FIT: FitOptions = { minZoom: GRAPH_MIN_ZOOM, margin: 16, overflow: "center" };
+
+/** The cell height that shows a graph of `content` world units at the zoom the cell's width allows
+ *  (at most 1, at least GRAPH_MIN_ZOOM), within GRAPH_CELL_MIN_HEIGHT and GRAPH_CELL_MAX_HEIGHT. */
+export function graphCellHeight(content: { readonly width: number; readonly height: number }, cellWidth: number): number {
+  const margin = GRAPH_FIT.margin ?? 0;
+  const zoom = Math.max(GRAPH_MIN_ZOOM, Math.min(1, (cellWidth - 2 * margin) / content.width));
+  const height = Math.ceil(content.height * zoom + 2 * margin);
+  return Math.min(GRAPH_CELL_MAX_HEIGHT, Math.max(GRAPH_CELL_MIN_HEIGHT, height));
+}
 
 /** Base URL of the editor page; the tables profile of scripts/start-bim-flow.mjs by default. */
 const EDITOR_BASE =
@@ -135,6 +157,7 @@ export function createGraphRenderer(mount: GraphEditorMount = createGraphEditor)
         if (destroyed) return;
         for (const [kind, descriptor] of map) catalog.set(kind, descriptor);
         editor?.refresh();
+        fitCell();
       })
       .catch(() => {});
 
@@ -159,25 +182,28 @@ export function createGraphRenderer(mount: GraphEditorMount = createGraphEditor)
       });
     };
 
-    // fit() needs the canvas's size, which a cell that is hidden or not yet
-    // laid out does not have; the first non-zero size frames the graph at
-    // zoom 1 or less, anchored top-left when it is wider than the column.
-    const fitWhenSized = () => {
-      if (!editor) return;
-      if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
-        editor.fit({ minZoom: 1 });
-        return;
-      }
+    // The cell's height follows the graph's aspect ratio at the zoom its width allows, and the graph
+    // is refitted whenever the width changes (column or window resize) or the nodes change size
+    // (the catalog adds ports, the host sends a new document). A cell that is hidden or not yet
+    // laid out has no width; the resize observer frames it once it does.
+    let fittedWidth = 0;
+    const fitCell = () => {
+      const bounds = editor?.bounds();
+      const width = cell.clientWidth;
+      if (!editor || !bounds || width <= 0) return;
+      fittedWidth = width;
+      cell.style.height = `${graphCellHeight(bounds, width)}px`;
+      editor.fit(GRAPH_FIT);
+    };
+
+    const watchWidth = () => {
       const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
-      if (!RO) return;
+      if (!RO || resizer) return;
+      // Only a width change refits: the height is ours, and setting it must not loop.
       resizer = new RO(() => {
-        if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
-          resizer?.disconnect();
-          resizer = null;
-          editor?.fit({ minZoom: 1 });
-        }
+        if (cell.clientWidth !== fittedWidth) fitCell();
       });
-      resizer.observe(canvas);
+      resizer.observe(cell);
     };
 
     const mountEditor = () => {
@@ -197,7 +223,8 @@ export function createGraphRenderer(mount: GraphEditorMount = createGraphEditor)
         status.textContent = `Canvas unavailable: ${messageOf(e)}`;
         return;
       }
-      fitWhenSized();
+      fitCell();
+      watchWidth();
     };
 
     const scheduleMount = () => {
@@ -243,6 +270,7 @@ export function createGraphRenderer(mount: GraphEditorMount = createGraphEditor)
       if (store) {
         store.dispatch({ type: "setDocument", json });
         store.dispatch({ type: "select", ids: presentFocus(embed.focus, next) });
+        fitCell();
       } else {
         showCell();
       }

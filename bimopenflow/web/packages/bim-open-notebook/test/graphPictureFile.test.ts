@@ -3,7 +3,10 @@ import { createSelectionBus } from "../src/embeds/selection";
 import type { EmbedContext, NotebookApi } from "../src/embeds/contract";
 import type { FileEmbed, GraphEmbed, PictureEmbed } from "../src/document/format";
 import { renderFile, readableSize } from "../src/embeds/file";
-import { createGraphRenderer, renderGraph, type GraphEditorMount } from "../src/embeds/graph";
+import {
+  createGraphRenderer, GRAPH_CELL_MAX_HEIGHT, GRAPH_CELL_MIN_HEIGHT, GRAPH_FIT, GRAPH_MIN_ZOOM, graphCellHeight,
+  renderGraph, type GraphEditorMount,
+} from "../src/embeds/graph";
 import type { GraphEditor, GraphEditorOptions } from "@bimopenflow/graph";
 import type { NodeDescriptor } from "@bimopenflow/contracts";
 import { renderPicture } from "../src/embeds/picture";
@@ -35,12 +38,13 @@ function ctxWith(api: NotebookApi, catalog?: ReadonlyMap<string, NodeDescriptor>
   return { api, selection: createSelectionBus(), ...(catalog ? { catalog: async () => catalog } : {}) };
 }
 
-/** A mount that records what the cell asked for and returns a spy editor; jsdom has no 2D canvas. */
-function fakeMount() {
+/** A mount that records what the cell asked for and returns a spy editor whose graph covers
+ *  `bounds`; jsdom has no 2D canvas. */
+function fakeMount(bounds = { x: 0, y: 0, width: 400, height: 100 }) {
   const mounts: { canvas: HTMLCanvasElement; options: GraphEditorOptions }[] = [];
   const editor: GraphEditor = {
     refresh: vi.fn(), results: () => ({ counts: new Map(), peek: null }), fit: vi.fn(), focus: vi.fn(),
-    refreshSuggestions: vi.fn(), setTheme: vi.fn(), dispose: vi.fn(),
+    bounds: () => bounds, refreshSuggestions: vi.fn(), setTheme: vi.fn(), dispose: vi.fn(),
   };
   const mount: GraphEditorMount = (canvas, options) => { mounts.push({ canvas, options }); return editor; };
   return { mount, mounts, editor, render: createGraphRenderer(mount) };
@@ -108,6 +112,31 @@ const GRAPH_DOCUMENT_V2 = JSON.stringify({
   layout: { source: { x: 0, y: 0 }, walls: { x: 200, y: 0 }, answer: { x: 400, y: 0 } },
 });
 
+describe("graphCellHeight", () => {
+  const margins = 2 * (GRAPH_FIT.margin ?? 0);
+
+  it("gives a wide shallow graph a short cell at the zoom the width allows", () => {
+    // 1400 x 200 world units in a 728 px column: zoom (728 - 32) / 1400 = 0.497, floored at 0.6.
+    expect(graphCellHeight({ width: 1400, height: 200 }, 728)).toBe(GRAPH_CELL_MIN_HEIGHT);
+    // 1000 x 400: zoom 0.696, so 400 * 0.696 + 32 = 311 px.
+    expect(graphCellHeight({ width: 1000, height: 400 }, 728)).toBe(Math.ceil(400 * (696 / 1000) + margins));
+  });
+
+  it("caps a deep graph at the maximum height", () => {
+    expect(graphCellHeight({ width: 300, height: 2000 }, 728)).toBe(GRAPH_CELL_MAX_HEIGHT);
+  });
+
+  it("never zooms a one-node graph past 1 and keeps the minimum height", () => {
+    expect(graphCellHeight({ width: 184, height: 94 }, 728)).toBe(GRAPH_CELL_MIN_HEIGHT);
+    // A taller single node sits at zoom 1: its own height plus the margins.
+    expect(graphCellHeight({ width: 260, height: 240 }, 728)).toBe(240 + margins);
+  });
+
+  it("draws no smaller than the zoom floor however narrow the column", () => {
+    expect(graphCellHeight({ width: 2000, height: 500 }, 320)).toBe(Math.ceil(500 * GRAPH_MIN_ZOOM + margins));
+  });
+});
+
 describe("renderGraph", () => {
   it("draws the header, node count, and Open in editor link", () => {
     const api = fakeApi();
@@ -147,6 +176,37 @@ describe("renderGraph", () => {
     expect(fold.querySelector("pre.notebook-graph-text")!.textContent).toBe(GRAPH_TEXT_V1);
     const mark = fold.querySelector("mark.notebook-graph-focus")!;
     expect(mark.textContent).toBe('answer = math.sum@1(in: source.out);');
+  });
+
+  it("sizes the cell to the graph and fits it, and refits when the width changes", () => {
+    const observers: { callback: () => void }[] = [];
+    vi.stubGlobal("ResizeObserver", class {
+      constructor(readonly callback: () => void) { observers.push(this); }
+      observe() {}
+      disconnect() {}
+    });
+    let width = 728;
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(() => width);
+    try {
+      const { render, editor } = fakeMount({ x: 0, y: 0, width: 1000, height: 400 });
+      const el = document.createElement("div");
+      render(el, graphEmbed({ document: GRAPH_DOCUMENT_V1 }), ctxWith(fakeApi()));
+      const cell = el.querySelector(".notebook-graph-canvas") as HTMLElement;
+      expect(cell.style.height).toBe(`${graphCellHeight({ width: 1000, height: 400 }, 728)}px`);
+      expect(editor.fit).toHaveBeenLastCalledWith(GRAPH_FIT);
+
+      // Setting the height re-triggers the observer; the same width must not refit.
+      observers[0]!.callback();
+      expect(editor.fit).toHaveBeenCalledTimes(1);
+
+      width = 400;
+      observers[0]!.callback();
+      expect(cell.style.height).toBe(`${graphCellHeight({ width: 1000, height: 400 }, 400)}px`);
+      expect(editor.fit).toHaveBeenCalledTimes(2);
+    } finally {
+      widthSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("selects only the focus nodes the document has", () => {
