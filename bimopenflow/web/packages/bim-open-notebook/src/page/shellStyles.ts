@@ -34,7 +34,7 @@ export const shellCss = `
 .nb-status { flex-basis: 100%; font-size: 12px; color: var(--nb-dim); min-height: 1em; }
 .nb-status:empty { display: none; }
 .nb-problems {
-  margin: 12px auto 0; max-width: 760px; padding: 10px 14px; border: 1px solid var(--nb-red);
+  margin: 12px auto 0; max-width: var(--nb-column-width); padding: 10px 14px; border: 1px solid var(--nb-red);
   border-radius: 8px; color: var(--nb-text); background: var(--nb-surface);
 }
 .nb-problems-heading { font-weight: 600; color: var(--nb-red); }

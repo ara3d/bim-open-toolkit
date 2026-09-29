@@ -18,6 +18,7 @@ export const notebookCss = `
   --nb-request-bg: #eef3fa;
   --nb-reply-bg: #ffffff;
   --nb-font: Inter, "Segoe UI", system-ui, sans-serif;
+  --nb-column-width: 1140px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -35,7 +36,7 @@ export const notebookCss = `
   }
 }
 body { background: var(--nb-bg); color: var(--nb-text); font: 14px var(--nb-font); }
-.nb-column { max-width: 760px; box-sizing: border-box; margin: 0 auto; padding: 24px 16px; }
+.nb-column { max-width: var(--nb-column-width); box-sizing: border-box; margin: 0 auto; padding: 24px 16px; }
 .nb-turn { margin-bottom: 24px; border-bottom: 1px solid var(--nb-border); padding-bottom: 16px; }
 .nb-request { background: var(--nb-request-bg); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; }
 .nb-request-text { white-space: pre-wrap; }
