@@ -1,7 +1,7 @@
 ---
 id: TKT-94
 title: The graph editor as a reusable package: per-instance state, a read-only mode, and live graph cells in the notebook
-status: open
+status: done
 depends_on: [TKT-11, TKT-12]
 owner:
 fence: [bimopenflow/web/packages/graph/**, bimopenflow/web/packages/app/src/{autoLayout, canvasControls, canvasEditor, canvasIntents, canvasLongSlot, canvasParts, canvasSlots, canvasTheme, columnSelect, graphPreview, graphWidgets, longValueEditor, nodeBadge, nodeContextMenu, numericParam, paramText, peekCard, portGeometry, portHover, portResults, selectionBorder, slotRegistry, slotShared, suggestInput, suggestText, upstreamEdges, viewModel}.ts, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/app/README.md, bimopenflow/web/packages/app/test/**, bimopenflow/web/packages/bim-open-notebook/src/embeds/{graph, graphDiagram, contract}.ts, bimopenflow/web/packages/bim-open-notebook/src/page/{main, notebookView, styles}.ts, bimopenflow/web/packages/bim-open-notebook/test/**, bimopenflow/web/packages/bim-open-notebook/package.json, bimopenflow/web/packages/bim-open-notebook/README.md, bimopenflow/web/package-lock.json, gates/web-smoke.mjs, docs/ARCHITECTURE.md, docs/graph-module-layering.md, docs/plans/graph-editor-package.md, docs/plans/notebook.md]
