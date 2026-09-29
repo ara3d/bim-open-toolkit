@@ -57,3 +57,61 @@ C9). Its exact contents — every storey's name, elevation, and GlobalId; every
 space's category and Identity Data; every axis tag; every element's storey —
 are documented in the plan's "FederationExample contents" table and must not
 drift from it without updating every caller.
+
+## `FederationStore` and `FederationViews`
+
+`FederationStore.Build` writes the studio database: a copy of a typed export
+(or an empty database, when none is given) plus a DuckDB schema `federation`
+holding the facts a federated query needs and the views that read them.
+Nothing outside that schema changes, so the nine typed studio graphs keep
+reading `main` untouched while three new graphs read `federation.*` (plan
+Design item 6).
+
+Build attaches the union database read-only as `u` and copies out of it:
+
+- `federation.source_entity` — every real union entity (its STEP id is not
+  negative, which excludes only the type/category placeholder entities
+  `BimDataBuilder` adds for `Entities.Category` — those never carry a
+  GlobalId and are not BIM objects), its document title, its GlobalId (empty
+  for entities that carry none, such as grid axes), and its `Other`/`Category`
+  parameter (`revit_category`) when it has one. Filtering on the STEP id
+  rather than requiring a non-empty GlobalId keeps elements that convert with
+  no GlobalId (`FederationExample`'s door, beam, and light fixture) visible
+  to `FederatedStoreyOfEntity`, matching the plan's worked example.
+- `federation.source_storey_of_entity` — one row per entity, the nearest
+  `IFCBUILDINGSTOREY` ancestor from `u.StoreyOfEntity`, keeping the row with
+  the minimum depth, then the minimum storey index.
+- `federation.correspondence` — the correspondence Parquet, copied in as is.
+- `federation.provenance` — the caller-supplied `(key, value)` pairs (build
+  inputs' hashes, timestamps, and similar facts C9's `federate-duckdb` needs
+  to record).
+
+Some DuckDB builds cannot resolve `u.StoreyOfEntity`'s recursive CTE through
+an attached alias. When that query fails, `FederationStore` detaches `u`,
+opens a second, direct connection to the union database, runs the same
+query there, and writes the rows in — the fallback the plan names for C8.
+
+`FederationViews` holds the three views' SQL as strings, so the merge rule
+has one location:
+
+- `StoreyMembership` decides which source storeys merge into a federated
+  group: a row merges when its status is Confirmed, or Candidate with no
+  conflicts. A merged row keeps its group's `canonical_key` and
+  `canonical_name`; any other row becomes its own row, keyed
+  `canonical_key || '#' || source_document`, with `row_status` `Conflict`
+  when its status is Candidate, otherwise the status itself.
+- `FederatedStorey` groups `StoreyMembership` by federated key: a merged
+  group's status is Confirmed only when every member is Confirmed, otherwise
+  Candidate; a standalone row keeps its own status. `elevation_m` is the
+  group's median.
+- `FederatedStoreyOfEntity` joins `source_entity`, `source_storey_of_entity`,
+  and `StoreyMembership` to give every entity's federated storey — neither
+  view recomputes the merge rule.
+
+Both `FederatedStorey` and `StoreyMembership` are exercised in
+`FederationStoreTests` against a correspondence Parquet built by hand from
+the plan's storey-rule worked example (12 rows over `FederationExample`):
+9 `FederatedStorey` rows, 8 once Struct's `L1_Low` is Confirmed (at which
+point the `L1` row gains a second document), the Arch `IFCDOOR` mapping to
+`storey/0mm`, and the Elec `IFCLIGHTFIXTURE` mapping to `storey/0mm#Elec`
+with status `Conflict`.
