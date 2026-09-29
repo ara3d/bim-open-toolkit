@@ -235,6 +235,26 @@ describe("mountNotebook", () => {
     expect(q<HTMLButtonElement>(".nb-send").disabled).toBe(false);
   });
 
+  // TKT-127: a question about the toolkit is answered in text from its documents, with no graph.
+  it("shows a text-only answer about the toolkit as a reply with no embeds", async () => {
+    const text = "Run `npm run nrc:walkthrough` (from README.md).";
+    const asker = fakeAsk(() => [
+      { type: "start", analysisId: "ask-run-nrc-walkthrough", model: "haiku" },
+      { type: "tool", name: "searchDocs", ok: true, summary: "3 files" },
+      { type: "tool", name: "readDoc", ok: true, summary: "README.md" },
+      { type: "done", analysisId: "ask-run-nrc-walkthrough", text, built: false, verified: false },
+    ]);
+    mount({ ask: asker.transport });
+    await ask("How do I run the NRC walkthrough?");
+    await vi.waitFor(() => expect(turnSlots()).toHaveLength(1));
+    const added = view!.notebook().turns[0];
+    expect(added.reply).toMatchObject({ text, embeds: [] });
+    expect(added.reply.error).toBeUndefined();
+    expect(added.reply.tools.map((t) => t.name)).toEqual(["searchDocs", "readDoc"]);
+    expect(turnSlots()[0].querySelector(".nb-reply")!.textContent).toContain("from README.md");
+    expect(turnSlots()[0].querySelector(".fake-embed")).toBeNull();
+  });
+
   it("scrolls to the end on send and after the reply, so the request box covers nothing new", async () => {
     // jsdom does no layout: fake a page 2000 px tall in a 600 px window.
     const page = { scrollTop: 0, scrollHeight: 2000, clientHeight: 600 };
