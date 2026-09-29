@@ -5,6 +5,7 @@ import { toolkitAlias } from "../../toolkit.config";
 
 const gratify = resolve(__dirname, "../../../../submodules/gratify/src/gratify");
 const samples = resolve(__dirname, "../../../../samples/notebooks");
+const nrcGraphsReadme = resolve(__dirname, "../../../../samples/nrc-analyses/README.md");
 
 // The notebook talks to one host through /api. The default is the tables
 // profile of scripts/start-bim-flow.mjs; point BOF_HOST at the studio host
@@ -45,9 +46,34 @@ function sampleNotebooks(): Plugin {
   };
 }
 
+/**
+ * Serves the README of samples/nrc-analyses at GET /__nrc/graphs.md, the
+ * source of the graph list on nrc.html (src/page/nrcCatalog.ts parses its table).
+ */
+function nrcGraphs(): Plugin {
+  return {
+    name: "nrc-graphs",
+    configureServer(server) {
+      server.middlewares.use("/__nrc/graphs.md", (_req, res) => {
+        res.setHeader("content-type", "text/markdown; charset=utf-8");
+        if (!existsSync(nrcGraphsReadme)) {
+          res.statusCode = 404;
+          res.end("No samples/nrc-analyses/README.md");
+          return;
+        }
+        res.end(readFileSync(nrcGraphsReadme, "utf8"));
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [sampleNotebooks()],
-  build: { rollupOptions: { input: { notebook: resolve(__dirname, "notebook.html") } } },
+  plugins: [sampleNotebooks(), nrcGraphs()],
+  build: {
+    rollupOptions: {
+      input: { notebook: resolve(__dirname, "notebook.html"), nrc: resolve(__dirname, "nrc.html") },
+    },
+  },
   resolve: { alias: [toolkitAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
   server: {
     // IPv4 loopback explicitly, for the reason given in packages/app/vite.config.ts.

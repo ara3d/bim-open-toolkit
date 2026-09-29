@@ -28,6 +28,14 @@ Open `http://127.0.0.1:5350/notebook.html`. `BOF_HOST` points the page at
 another host; the request box needs the studio host, which serves `/api/ask`.
 `NOTEBOOK_PORT` changes the page's port.
 
+`http://127.0.0.1:5350/nrc.html` is the landing page of the NRC work: every
+sample notebook in `samples/notebooks` as a card that opens it here, and every
+graph in `samples/nrc-analyses` (its row of that folder's README, served at
+`/__nrc/graphs.md`) linked to the editor, and to the 3D page for the graphs
+that colour the model. Editor links use `VITE_BOF_EDITOR` (default
+`http://127.0.0.1:5310/`, the tables profile); a green dot marks a graph the
+connected host holds.
+
 ## Layout
 
 | Folder | Holds |
@@ -36,7 +44,7 @@ another host; the request box needs the studio host, which serves `/api/ask`.
 | `src/embeds/` | The renderer contract (`contract.ts`), the shared selection (`selection.ts`), one renderer per embed kind, and the registry that maps kinds to renderers |
 | `src/live/` | Comparing a snapshot with the host's current result |
 | `src/ask/` | The `/api/ask` event stream, and turning a finished request into a reply with embeds |
-| `src/page/` | The page: one turn's view, the notebook view with toolbar and request box, and the entry point |
+| `src/page/` | The notebook page: one turn's view, the notebook view with toolbar and request box, and the entry point; and the NRC landing page (`nrc.html`: `nrcCatalog.ts`, `nrcView.ts`, `nrc.ts`) |
 | `scripts/` | Tools that write sample notebooks from a running host |
 | `test/` | Vitest tests, one file per module |
 

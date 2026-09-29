@@ -18,6 +18,7 @@ import { createGraphEditor, type FitOptions, type GraphEditor, type GraphEditorO
 import { createStore, initialState, parseDocument, type GraphDocument, type Store } from "@bimopenflow/state";
 import type { GraphEmbed } from "../document/format";
 import type { EmbedContext, EmbedRenderer, Freshness } from "./contract";
+import { editorUrl } from "../page/editorLinks";
 
 /** How a cell mounts its editor; tests pass a fake, since jsdom has no 2D canvas. */
 export type GraphEditorMount = (canvas: HTMLCanvasElement, options: GraphEditorOptions) => GraphEditor;
@@ -48,10 +49,6 @@ export function graphCellHeight(content: { readonly width: number; readonly heig
   return Math.min(GRAPH_CELL_MAX_HEIGHT, Math.max(GRAPH_CELL_MIN_HEIGHT, height));
 }
 
-/** Base URL of the editor page; the tables profile of scripts/start-bim-flow.mjs by default. */
-const EDITOR_BASE =
-  (import.meta.env.VITE_BOF_EDITOR as string | undefined) ?? "http://127.0.0.1:5310/";
-
 /** The graph hash on the print's second line ("// <analysisId>   graph <hash>"), GraphText.Header. */
 function graphHashOf(text: string): string | undefined {
   const header = text.split("\n")[1] ?? "";
@@ -64,11 +61,6 @@ function nodeIdsOf(text: string): string[] {
     .split("\n")
     .map((line) => /^(\S+) = \S+@\d+\(/.exec(line)?.[1])
     .filter((id): id is string => id !== undefined);
-}
-
-function editorUrl(analysisId: string): string {
-  const base = EDITOR_BASE.endsWith("/") ? EDITOR_BASE : `${EDITOR_BASE}/`;
-  return `${base}?analysis=${encodeURIComponent(analysisId)}`;
 }
 
 /** True for the api-client's "GET ... -> 404: ..." shape (ApiClient.request). */
