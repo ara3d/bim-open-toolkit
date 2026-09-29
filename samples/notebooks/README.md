@@ -37,6 +37,12 @@ background (about 30 s each); wait until `GET /api/analyses/nrc-dc-w1-verdicts/s
 shows every node `Ok`. A graph change shows up as a diff in the regenerated
 file; reread the snapshots and update the outline's reply texts to match.
 
+A graph embed keeps its own copy of the graph, card positions included. After
+the sample graphs are relaid out (`npm run relayout-samples` in
+`bimopenflow/web/packages/graph`), run `npx vite-node scripts/sync-embed-layouts.ts`
+to copy the new positions into the notebooks; no host is needed, and
+`test/samples.test.ts` fails until the copies match.
+
 ## Outline format
 
 `outlines/<name>.outline.json` gives `<name>.notebook.json` in this folder.

@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { Embed, Notebook, TableSnapshot } from "../src/document/format";
 import { parseNotebook } from "../src/document/io";
+import { sampleGraphFiles, staleLayouts, syncLayouts } from "../scripts/embedLayouts";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../../..");
 const SAMPLES = join(ROOT, "samples", "notebooks");
@@ -67,6 +68,26 @@ describe("sample notebooks", () => {
       embed.kind === "graph" ? [embed.analysisId] : "source" in embed ? [embed.source.analysisId] : [],
     );
     expect(named.filter((id) => !known.has(id))).toEqual([]);
+  });
+
+  // The graph files are relaid out so no two cards overlap (TKT-110); a stale copy in a notebook
+  // draws them on top of each other. Fix with scripts/sync-embed-layouts.ts.
+  it.each(sampleFiles)("%s places every graph card where its graph file does", (file) => {
+    const name = file.replace(/\.notebook\.json$/, "");
+    const stale = staleLayouts(readFileSync(join(SAMPLES, file), "utf8"), sampleGraphFiles(name));
+    expect(stale.map((s) => `${s.analysisId}.${s.node}`)).toEqual([]);
+  });
+
+  it("the layout check reports a card moved in the graph file but not in the notebook", () => {
+    const text = readFileSync(join(SAMPLES, "nrc-eight-questions.notebook.json"), "utf8");
+    const graphs = sampleGraphFiles("nrc-eight-questions");
+    const embed = load("nrc-eight-questions").turns[8].reply.embeds.find((e) => e.kind === "graph");
+    const embedded = embed?.kind === "graph" ? embed.document! : "";
+    const document = JSON.parse(embedded) as { layout: object };
+    const moved = JSON.stringify({ ...document, layout: { ...document.layout, answer: { x: 1, y: 2 } } }, null, 2);
+    const staleText = text.split(JSON.stringify(embedded)).join(JSON.stringify(moved));
+    expect(staleLayouts(staleText, graphs).map((s) => `${s.analysisId}.${s.node}`)).toEqual(["nrc-storey-carbon-chart.answer"]);
+    expect(staleLayouts(syncLayouts(staleText, graphs), graphs)).toEqual([]);
   });
 
   it.each(sampleFiles.filter((f) => /^s\d+-/.test(f)))("%s is labelled as reconstructed", (file) => {
