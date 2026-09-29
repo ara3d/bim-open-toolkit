@@ -1,9 +1,9 @@
 ---
 id: TKT-122
 title: Node catalog pack headers show a disclosure triangle
-status: open
+status: done
 depends_on: []
-owner:
+owner: claude
 fence: [bimopenflow/web/packages/app/src/sidebar.ts, bimopenflow/web/packages/app/test/sidebar.test.ts]
 ---
 
