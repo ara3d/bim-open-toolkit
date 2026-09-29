@@ -116,10 +116,11 @@ describe("graphCellHeight", () => {
   const margins = 2 * (GRAPH_FIT.margin ?? 0);
 
   it("gives a wide shallow graph a short cell at the zoom the width allows", () => {
-    // 1400 x 200 world units in a 728 px column: zoom (728 - 32) / 1400 = 0.497, floored at 0.6.
-    expect(graphCellHeight({ width: 1400, height: 200 }, 728)).toBe(GRAPH_CELL_MIN_HEIGHT);
-    // 1000 x 400: zoom 0.696, so 400 * 0.696 + 32 = 311 px.
-    expect(graphCellHeight({ width: 1000, height: 400 }, 728)).toBe(Math.ceil(400 * (696 / 1000) + margins));
+    // 1400 x 150 world units in a 728 px column: zoom (728 - 48) / 1400 = 0.486, floored at 0.6;
+    // 150 * 0.6 + 48 = 138 px, raised to the minimum.
+    expect(graphCellHeight({ width: 1400, height: 150 }, 728)).toBe(GRAPH_CELL_MIN_HEIGHT);
+    // 1000 x 400: zoom 0.68, so 400 * 0.68 + 48 = 320 px.
+    expect(graphCellHeight({ width: 1000, height: 400 }, 728)).toBe(320);
   });
 
   it("caps a deep graph at the maximum height", () => {
@@ -133,7 +134,7 @@ describe("graphCellHeight", () => {
   });
 
   it("draws no smaller than the zoom floor however narrow the column", () => {
-    expect(graphCellHeight({ width: 2000, height: 500 }, 320)).toBe(Math.ceil(500 * GRAPH_MIN_ZOOM + margins));
+    expect(graphCellHeight({ width: 2000, height: 500 }, 320)).toBe(Math.round(500 * GRAPH_MIN_ZOOM + margins));
   });
 });
 

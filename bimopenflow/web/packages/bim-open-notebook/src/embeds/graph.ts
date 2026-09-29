@@ -35,15 +35,16 @@ export const GRAPH_CELL_MAX_HEIGHT = 560;
  *  screen. A graph that needs less overflows its cell, centred, and is reached by panning. */
 export const GRAPH_MIN_ZOOM = 0.6;
 
-/** How every cell frames its graph. */
-export const GRAPH_FIT: FitOptions = { minZoom: GRAPH_MIN_ZOOM, margin: 16, overflow: "center" };
+/** How every cell frames its graph. The 24 px margin also clears the description line a card
+ *  draws under itself, which lies outside the node's bounds. */
+export const GRAPH_FIT: FitOptions = { minZoom: GRAPH_MIN_ZOOM, margin: 24, overflow: "center" };
 
 /** The cell height that shows a graph of `content` world units at the zoom the cell's width allows
  *  (at most 1, at least GRAPH_MIN_ZOOM), within GRAPH_CELL_MIN_HEIGHT and GRAPH_CELL_MAX_HEIGHT. */
 export function graphCellHeight(content: { readonly width: number; readonly height: number }, cellWidth: number): number {
   const margin = GRAPH_FIT.margin ?? 0;
   const zoom = Math.max(GRAPH_MIN_ZOOM, Math.min(1, (cellWidth - 2 * margin) / content.width));
-  const height = Math.ceil(content.height * zoom + 2 * margin);
+  const height = Math.round(content.height * zoom + 2 * margin);
   return Math.min(GRAPH_CELL_MAX_HEIGHT, Math.max(GRAPH_CELL_MIN_HEIGHT, height));
 }
 
