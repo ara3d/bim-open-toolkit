@@ -10,8 +10,6 @@ namespace Ara3D.IfcMeshingComparison.Tests.PureCSharp;
 [TestFixture]
 public sealed class WpW12Tests
 {
-    static FilePath DigitalHubIfc => new(@"c:\Users\cdigg\git\studio\data\FM_ARC_DigitalHub.ifc");
-
     [Test]
     public void CylindricalAdvancedFace_DensifiesLongArcChords()
     {
@@ -43,13 +41,7 @@ public sealed class WpW12Tests
     [Category("Slow")]
     public void DigitalHub_MergedTri_AtLeast075()
     {
-        TestFiles.RequireExists(DigitalHubIfc);
-
-        var bfastPath = WebIfcBfastOracle.OraclePath(DigitalHubIfc);
-        if (!bfastPath.Exists() || WebIfcBfastOracle.NeedsRegeneration(DigitalHubIfc, bfastPath))
-            WebIfcBfastOracle.Generate(DigitalHubIfc, TestContext.WriteLine);
-
-        var result = ModelComparer.CompareFile(DigitalHubIfc);
+        var result = DigitalHubComparison.Result;
         TestContext.WriteLine(ModelComparer.FormatResult(result));
         var triRatio = result.MergedMesh.CandidateTriangleCount
             / (double)Math.Max(1, result.MergedMesh.OracleTriangleCount);

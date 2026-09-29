@@ -11,7 +11,7 @@ namespace Ara3D.IfcMeshingComparison.Tests.PureCSharp;
 [TestFixture]
 public sealed class WpW11Tests
 {
-    static FilePath DigitalHubIfc => new(@"c:\Users\cdigg\git\studio\data\FM_ARC_DigitalHub.ifc");
+    static FilePath DigitalHubIfc => DigitalHubComparison.Ifc;
 
     [Test]
     [Explicit("WP-W11 diagnosis: DigitalHub mesh count vs bbox frontier")]
@@ -40,13 +40,7 @@ public sealed class WpW11Tests
     [Category("Slow")]
     public void DigitalHub_MeshBbox_AtLeast055()
     {
-        TestFiles.RequireExists(DigitalHubIfc);
-
-        var bfastPath = WebIfcBfastOracle.OraclePath(DigitalHubIfc);
-        if (!bfastPath.Exists() || WebIfcBfastOracle.NeedsRegeneration(DigitalHubIfc, bfastPath))
-            WebIfcBfastOracle.Generate(DigitalHubIfc, TestContext.WriteLine);
-
-        var result = ModelComparer.CompareFile(DigitalHubIfc);
+        var result = DigitalHubComparison.Result;
         TestContext.WriteLine(ModelComparer.FormatResult(result));
 
         Assert.That(result.MeshBoundingBox.Score, Is.GreaterThanOrEqualTo(0.55),
