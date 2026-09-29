@@ -1,9 +1,9 @@
 ---
 id: TKT-127
 title: Let the studio Ask agent answer questions about the toolkit, the repository, and its capabilities
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: ask-toolkit-questions
 fence: [.claude/skills/bim-flow/working-rules.md, src/mcp/BimOpenMcp.Flow/**, src/studio/BimOpenFlow.Studio/**, tests/mcp/**, tests/studio/**, bimopenflow/web/packages/bim-open-notebook/**, bimopenflow/web/packages/app/src/ask*, bimopenflow/web/packages/app/test/ask*, samples/ask/**]
 ---
 
