@@ -63,7 +63,7 @@ public sealed class StoreyOfElementTests
     [Test]
     public void StoreyOfElement_NeverMapsAnEntityToItself()
     {
-        var data = CallData("ifc_sql", new JsonObject
+        var data = _mcp.CallData("ifc_sql", new JsonObject
         {
             ["path"] = _path,
             ["sql"] = "SELECT count(*) AS n FROM StoreyOfElement WHERE EntityIndex = StoreyIndex",
@@ -74,7 +74,7 @@ public sealed class StoreyOfElementTests
 
     private double StoreyTotal(string storeyView, string storeyName, string property, string set = "Pset_NRCEmbodiedCarbon")
     {
-        var data = CallData("ifc_sql", new JsonObject
+        var data = _mcp.CallData("ifc_sql", new JsonObject
         {
             ["path"] = _path,
             ["sql"] = $"""
@@ -88,29 +88,5 @@ public sealed class StoreyOfElementTests
         });
 
         return data["rows"]!.AsArray()[0]!.AsArray()[0]!.GetValue<double>();
-    }
-
-    private JsonNode CallData(string tool, JsonObject arguments)
-    {
-        var payload = Call(tool, arguments);
-        Assert.That(payload["ok"]!.GetValue<bool>(), Is.True, payload["error"]?.GetValue<string>());
-        return payload["data"]!;
-    }
-
-    private JsonObject Call(string tool, JsonObject arguments)
-    {
-        var request = new JsonObject
-        {
-            ["jsonrpc"] = "2.0",
-            ["id"] = 1,
-            ["method"] = "tools/call",
-            ["params"] = new JsonObject { ["name"] = tool, ["arguments"] = arguments },
-        };
-
-        var result = _mcp.HandlePost(request.ToJsonString());
-        var response = JsonNode.Parse(result.JsonBody!)!;
-        Assert.That(response["error"], Is.Null, response["error"]?.ToJsonString());
-        var text = response["result"]!["content"]![0]!["text"]!.GetValue<string>();
-        return (JsonObject)JsonNode.Parse(text)!;
     }
 }

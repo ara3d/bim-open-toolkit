@@ -25,6 +25,7 @@ public sealed class IfcBosArtifacts : IDisposable
         Build(source, BosPath);
         BosPath.BosToDuckDB(DatabasePath);
         IfcDuck.CreateViews(DatabasePath);
+        MetricDictionary = IfcMetricCatalog.Create(DatabasePath, source);
         BuiltUtc = DateTime.UtcNow;
     }
 
@@ -35,6 +36,9 @@ public sealed class IfcBosArtifacts : IDisposable
     public FilePath DatabasePath { get; }
 
     public DateTime BuiltUtc { get; }
+
+    /// <summary>The metric dictionary MetricCatalog was read from, or null when it is empty.</summary>
+    public FilePath? MetricDictionary { get; }
 
     public long BosBytes
         => new FileInfo(BosPath.FullPath).Length;

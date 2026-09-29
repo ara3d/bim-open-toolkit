@@ -37,7 +37,13 @@ public static class IfcAnalyticsTools
                 + "tables store interned integer indexes, not names. To sum or count a property by "
                 + "storey, join through StoreyOfElement, not StoreyOfEntity: StoreyOfEntity also maps "
                 + "each storey to itself, so a join straight to ParameterText double-counts a storey "
-                + "that carries its own rollup of that property.",
+                + "that carries its own rollup of that property. MetricCatalog lists the analytics "
+                + "metrics, one row per metric and level (element, storey, building) with its "
+                + "PropertySet, PropertyName, Unit, and Rollup (none, sum, mean, count); it is read "
+                + "from the CSV the model's Pset_NRCAnalyticsProvenance.MetricDictionaryURI names, "
+                + "beside the IFC file, and is empty when the model names none or the file is "
+                + "missing. Aggregate the element-level properties only; storey and building totals "
+                + "already sit in their own summary sets.",
                 IfcToolArgs.Model()
                     .String("table", "Optional single table to describe, e.g. Entities.")
                     .Paged()
@@ -87,6 +93,7 @@ public static class IfcAnalyticsTools
             databasePath = bos.DatabasePath.FullPath,
             bosBytes = bos.BosBytes,
             builtUtc = bos.BuiltUtc,
+            metricDictionary = bos.MetricDictionary?.FullPath,
             savedTo = saved,
         };
     }

@@ -95,7 +95,15 @@ happens once per session rather than once per query.
 index into `Strings`, `Entities.Category` is an index into `Entities`, and `Parameters.Value` is a
 tagged index whose meaning depends on its descriptor's type. A query against the raw tables can see
 no text at all, so `IfcDuck.CreateViews` adds `EntityText`, `ParameterText`, and `RelationText`,
-which resolve those indexes by joining on `rowid`.
+which resolve those indexes by joining on `rowid`. The views are defined once, in
+`BosDuckDbViews`, together with `StoreyOfEntity` and `StoreyOfElement`.
+
+**MetricCatalog.** `IfcMetricCatalog` adds one table beside the views: the analytics metric
+dictionary the model names in `Pset_NRCAnalyticsProvenance.MetricDictionaryURI`, read from that
+CSV (resolved against the IFC file's folder) when the database is built. An agent resolves a metric
+through it to the property set, property name, unit, and rollup rule at each level, instead of
+guessing from names. A model without the provenance set, or whose dictionary file is missing, gets
+the table with its columns and no rows.
 
 **Spatial containers survive the conversion.** `IfcToBosConverter.HiddenIfcNames` reads like an
 entity filter but is only a geometry-instance visibility flag, so site, building, and storey are all
