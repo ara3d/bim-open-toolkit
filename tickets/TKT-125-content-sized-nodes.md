@@ -34,4 +34,4 @@ Browser check on 2026-09-29: Playwright drove Edge against the page on 5300, bfa
 
 Outside the fence, and stated in each commit: samples/ (28 graphs relaid out by `npm run relayout-samples`, x and y only), canvasControls.ts, canvasLongSlot.ts, graphWidgets.ts, portGeometry.ts, peekWiring.ts.
 
-Left open: notebooks that embed the relaid-out sample graphs need bim-open-notebook's `scripts/sync-embed-layouts.ts`.
+The notebooks that embed the relaid-out sample graphs were synced by another session in a3b519e. Until then, bim-open-notebook's samples.test.ts failed, because this ticket's builder did not run that package's tests.
