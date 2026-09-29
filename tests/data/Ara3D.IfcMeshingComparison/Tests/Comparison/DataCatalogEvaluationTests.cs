@@ -11,6 +11,7 @@ public sealed class DataCatalogEvaluationTests
     static FilePath MarkdownReportPath => TestFiles.ReportsDir.RelativeFile("studio_catalog_evaluation.md");
 
     [Test]
+    [Explicit("Meshes the whole studio data catalog (about 90 s) and regenerates its evaluation reports")]
     [Category("IfcMesherCatalog")]
     [Category("Slow")]
     public void EvaluateStudioDataCatalog()
@@ -38,13 +39,6 @@ public sealed class DataCatalogEvaluationTests
         var successful = document.Files.Count(f => !f.ComparisonFailed);
         Assert.That(successful, Is.GreaterThan(0), "At least one file should compare successfully");
     }
-
-    [Test]
-    [Explicit("Regenerates studio data catalog evaluation and markdown report")]
-    [Category("IfcMesherCatalog")]
-    [Category("Slow")]
-    public void EvaluateStudioDataCatalog_Explicit()
-        => EvaluateStudioDataCatalog();
 
     static void PrintSummary(CatalogEvaluationDocument document)
     {
