@@ -1,0 +1,12 @@
+# Questions about the toolkit itself (TKT-127), for scripts/ask-bim-flow.mjs --file.
+# Same format as requests.txt: `request<TAB>expected`. Kept apart from requests.txt
+# because that file is PROJECT.md's ten-question set over the Snowdon export, and
+# these need no database: the right behaviour is a text answer from searchDocs and
+# readDoc that names the files read, with no graph built (the script's ANSWERED
+# verdict; OK would mean a graph was built, which is wrong here). Expected answers
+# were read from the documents named on 2026-09-29.
+What is BIM Open Schema (BOS)?	A building model stored as plain columnar tables (entities, parameters as entity-attribute-value, relations, geometry), one Parquet file per table, loaded straight into DuckDB; cites README.md or docs/OVERVIEW.md
+How do I run the NRC paper walkthrough?	npm run nrc:walkthrough --prefix bimopenflow/web; it rebuilds the host and both MCP servers and regenerates the figures with transcripts; cites docs/DEMOS.md or docs/nrc-walkthrough.md
+How do I start the host and the editor for the bim profile, and on which ports?	node scripts/start-bim-flow.mjs --profile bim; host on port 5214, editor on port 5300; cites docs/DEMOS.md
+Which node kinds read from a DuckDB database?	duck.source, duck.query, duck.table and duck.tables, in the BimOpenFlow.Nodes.DuckDb pack (duck.read loads CSV, Parquet or JSON files, not a .duckdb database); from docs/nodes.md or the node catalog
+What model and backend does TKT-45 say the Ask box should use?	Claude through the Claude Code command line (not the Anthropic API), Haiku (claude-haiku-4-5) at medium effort; cites tickets/TKT-45
