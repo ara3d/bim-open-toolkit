@@ -8,7 +8,7 @@ The server holds no logic of its own. Each tool is one of the operations behind 
 
 From the repository root, with .NET 8 installed and the DuckDB demo prepared (`duckdb:prepare`, see [the studio doc](bim-flow-duckdb.md)). The Ask box needs a way to reach a language model: the Claude Code command line, or an Anthropic or OpenAI key.
 
-By default the host looks for a `claude` executable and uses it when found: `ASK_CLAUDE_CLI` names one directly, otherwise the host checks `PATH`, then the desktop app's bundled copy. Install it with `npm install -g @anthropic-ai/claude-code`, run `claude` once, and `/login` (the desktop app's own copy is found automatically but is not signed in for command-line use until you log in this way). No key is needed, and once an executable is found it is used even if an `ANTHROPIC_*` key is also set:
+By default the host looks for a `claude` executable and uses it when found: `ASK_CLAUDE_CLI` names one directly; otherwise the host takes the first `claude.exe` or `claude.cmd` on `PATH` if it answers `--version`, and failing that the newest copy the Claude desktop app bundles, under `%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\claude-code` (the packaged app's real folder) or `%APPDATA%\Claude\claude-code`. No version path needs to be set by hand, so a desktop app update does not break the host. Run `node scripts/claude-login.mjs` once: it finds the same executable, signs it in if needed, and sends one test request ([claude-cli-login.md](claude-cli-login.md)). Without the desktop app, `npm install -g @anthropic-ai/claude-code` puts one on `PATH`. No key is needed, and once an executable is found it is used even if an `ANTHROPIC_*` key is also set:
 
 ```powershell
 npm run duckdb:build --prefix bimopenflow/web
