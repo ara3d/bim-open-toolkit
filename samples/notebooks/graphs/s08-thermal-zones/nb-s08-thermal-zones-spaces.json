@@ -2,7 +2,7 @@
   "formatVersion": "0.1.0",
   "layout": {
     "entities": { "x": 40, "y": 40 },
-    "storeyOf": { "x": 40, "y": 240 },
+    "storeyOf": { "x": 40, "y": 280 },
     "spaces": { "x": 370, "y": 40 },
     "withStorey": { "x": 700, "y": 40 },
     "columns": { "x": 1030, "y": 40 },

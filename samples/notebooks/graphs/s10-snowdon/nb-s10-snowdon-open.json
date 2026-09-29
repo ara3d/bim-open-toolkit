@@ -4,9 +4,9 @@
     "elements": { "x": 40, "y": 40 },
     "byCategory": { "x": 360, "y": 40 },
     "ranked": { "x": 680, "y": 40 },
-    "doorsRow": { "x": 360, "y": 260 },
-    "roomsRow": { "x": 360, "y": 400 },
-    "spacesRow": { "x": 360, "y": 540 }
+    "doorsRow": { "x": 360, "y": 280 },
+    "roomsRow": { "x": 360, "y": 540 },
+    "spacesRow": { "x": 360, "y": 800 }
   },
   "structure": {
     "edges": [

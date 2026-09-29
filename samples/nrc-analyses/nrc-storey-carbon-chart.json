@@ -2,9 +2,9 @@
   "formatVersion": "0.1.0",
   "layout": {
     "storeys": { "x": 40, "y": 40 },
-    "storeysOnly": { "x": 230, "y": 40 },
-    "answer": { "x": 420, "y": 40 },
-    "about": { "x": 40, "y": 220 }
+    "storeysOnly": { "x": 390, "y": 40 },
+    "answer": { "x": 700, "y": 40 },
+    "about": { "x": 40, "y": 530 }
   },
   "structure": {
     "edges": [

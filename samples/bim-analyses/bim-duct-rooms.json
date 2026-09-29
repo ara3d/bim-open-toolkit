@@ -1,7 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "bounds": { "x": 40, "y": 224 },
+    "bounds": { "x": 40, "y": 280 },
     "ductsOnly": { "x": 370, "y": 224 },
     "overlaps": { "x": 700, "y": 40 },
     "ranked": { "x": 1030, "y": 40 },

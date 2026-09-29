@@ -1,12 +1,12 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "about": { "x": 700, "y": 224 },
+    "about": { "x": 700, "y": 500 },
     "bounds": { "x": 40, "y": 40 },
     "doorsOnly": { "x": 370, "y": 40 },
     "overlap": { "x": 700, "y": 40 },
     "rooms": { "x": 40, "y": 224 },
-    "touching": { "x": 1030, "y": 40 }
+    "touching": { "x": 1050, "y": 40 }
   },
   "structure": {
     "edges": [

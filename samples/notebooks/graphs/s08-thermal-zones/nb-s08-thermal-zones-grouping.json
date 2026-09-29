@@ -3,8 +3,8 @@
   "layout": {
     "zoneGuess": { "x": 40, "y": 40 },
     "zoneGuessSorted": { "x": 370, "y": 40 },
-    "zoneFinal": { "x": 40, "y": 240 },
-    "zoneFinalSorted": { "x": 370, "y": 240 },
+    "zoneFinal": { "x": 40, "y": 300 },
+    "zoneFinalSorted": { "x": 370, "y": 280 },
     "zoneCountLabelled": { "x": 700, "y": 240 },
     "zoneCounts": { "x": 1030, "y": 240 },
     "zoneCountsSorted": { "x": 1360, "y": 240 }

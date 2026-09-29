@@ -3,8 +3,8 @@
   "layout": {
     "answer": { "x": 700, "y": 40 },
     "elements": { "x": 40, "y": 40 },
-    "perStorey": { "x": 370, "y": 40 },
-    "about": { "x": 40, "y": 220 }
+    "perStorey": { "x": 390, "y": 40 },
+    "about": { "x": 40, "y": 280 }
   },
   "structure": {
     "edges": [

@@ -4,7 +4,7 @@
     "buffers": { "x": 40, "y": 40 },
     "directory": { "x": 370, "y": 40 },
     "prices": { "x": 40, "y": 224 },
-    "values": { "x": 370, "y": 224 }
+    "values": { "x": 370, "y": 280 }
   },
   "structure": {
     "edges": [

@@ -8,10 +8,10 @@
     "final": { "x": 1690, "y": 40 },
     "labeled": { "x": 1360, "y": 40 },
     "overlap": { "x": 700, "y": 40 },
-    "roomLabels": { "x": 700, "y": 224 },
+    "roomLabels": { "x": 700, "y": 500 },
     "rooms": { "x": 40, "y": 224 },
-    "sorted": { "x": 2020, "y": 40 },
-    "touching": { "x": 1030, "y": 224 }
+    "sorted": { "x": 2040, "y": 40 },
+    "touching": { "x": 1030, "y": 280 }
   },
   "structure": {
     "edges": [

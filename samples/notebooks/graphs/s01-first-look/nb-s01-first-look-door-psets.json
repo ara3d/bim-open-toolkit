@@ -3,7 +3,7 @@
   "layout": {
     "entities": { "x": 40, "y": 40 },
     "door": { "x": 370, "y": 40 },
-    "parameters": { "x": 40, "y": 240 },
+    "parameters": { "x": 40, "y": 280 },
     "psets": { "x": 700, "y": 140 },
     "columns": { "x": 1030, "y": 140 },
     "sorted": { "x": 1360, "y": 140 },

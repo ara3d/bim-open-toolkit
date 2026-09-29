@@ -1,9 +1,9 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "about": { "x": 40, "y": 224 },
+    "about": { "x": 40, "y": 310 },
     "coverage": { "x": 700, "y": 40 },
-    "joinCategory": { "x": 370, "y": 40 },
+    "joinCategory": { "x": 390, "y": 40 },
     "load": { "x": 40, "y": 40 },
     "top": { "x": 1030, "y": 40 }
   },

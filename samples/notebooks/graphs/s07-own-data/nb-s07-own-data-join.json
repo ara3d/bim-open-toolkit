@@ -2,16 +2,16 @@
   "formatVersion": "0.1.0",
   "layout": {
     "csv": { "x": 40, "y": 40 },
-    "model": { "x": 40, "y": 260 },
+    "model": { "x": 40, "y": 280 },
     "instances": { "x": 370, "y": 260 },
     "physical": { "x": 700, "y": 260 },
     "entities": { "x": 40, "y": 480 },
-    "physicalEntities": { "x": 700, "y": 480 },
-    "matched": { "x": 1030, "y": 260 },
-    "unmatchedInModel": { "x": 1030, "y": 480 },
+    "physicalEntities": { "x": 700, "y": 500 },
+    "matched": { "x": 1030, "y": 340 },
+    "unmatchedInModel": { "x": 1030, "y": 640 },
     "unmatchedInFile": { "x": 1030, "y": 40 },
     "matchReport": { "x": 1360, "y": 260 },
-    "values": { "x": 40, "y": 700 },
+    "values": { "x": 40, "y": 720 },
     "coloredCarbon": { "x": 370, "y": 700 }
   },
   "structure": {

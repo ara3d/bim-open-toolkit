@@ -2,7 +2,7 @@
   "formatVersion": "0.1.0",
   "layout": {
     "entities": { "x": 40, "y": 40 },
-    "parameters": { "x": 40, "y": 240 },
+    "parameters": { "x": 40, "y": 280 },
     "rows": { "x": 370, "y": 140 },
     "table": { "x": 700, "y": 140 },
     "answer": { "x": 1030, "y": 140 },

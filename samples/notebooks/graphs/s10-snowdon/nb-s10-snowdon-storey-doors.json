@@ -2,13 +2,13 @@
   "formatVersion": "0.1.0",
   "layout": {
     "bos": { "x": 40, "y": 40 },
-    "elements": { "x": 40, "y": 260 },
-    "doorsOnly": { "x": 240, "y": 260 },
-    "storeyDoors": { "x": 360, "y": 260 },
-    "roughWidth": { "x": 40, "y": 480 },
-    "joined": { "x": 680, "y": 260 },
-    "withMm": { "x": 1000, "y": 260 },
-    "verdicts": { "x": 1320, "y": 260 }
+    "elements": { "x": 40, "y": 310 },
+    "doorsOnly": { "x": 350, "y": 260 },
+    "storeyDoors": { "x": 660, "y": 260 },
+    "roughWidth": { "x": 40, "y": 500 },
+    "joined": { "x": 970, "y": 260 },
+    "withMm": { "x": 1280, "y": 260 },
+    "verdicts": { "x": 1590, "y": 260 }
   },
   "structure": {
     "edges": [

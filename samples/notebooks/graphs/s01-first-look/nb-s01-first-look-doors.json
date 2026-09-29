@@ -3,10 +3,10 @@
   "layout": {
     "entities": { "x": 40, "y": 40 },
     "doors": { "x": 370, "y": 40 },
-    "parameters": { "x": 40, "y": 240 },
-    "overallWidth": { "x": 370, "y": 240 },
+    "parameters": { "x": 40, "y": 280 },
+    "overallWidth": { "x": 370, "y": 300 },
     "doorWidths": { "x": 700, "y": 140 },
-    "storeyOf": { "x": 700, "y": 340 },
+    "storeyOf": { "x": 700, "y": 440 },
     "withStorey": { "x": 1030, "y": 240 },
     "metres": { "x": 1360, "y": 240 },
     "millimetres": { "x": 1690, "y": 240 },
