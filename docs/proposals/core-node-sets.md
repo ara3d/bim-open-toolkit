@@ -265,8 +265,10 @@ scalar-wire exclusion. Replaces `viz.colorBy` and the sharing role of
 Emits the legend/domain table the panes render (shared legend, UX P1); with
 `auto` it reports the domain actually in use — the PoC's #1 novice trap was
 a silently clamped manual domain, so the truth is always on the wire.
-Coloring nodes do not consume this table in V1 (no optional ports — open
-questions 1 and 6); they share domains via graph parameters as above.
+`view3d.color` consumes this table through its optional `scale` input and
+colours through it unchanged, so one scale can drive several coloring nodes
+(as built, the node is `view.colormap` in the Viz pack and its output port is
+`legend`); graph parameters remain the other way to share a domain, as above.
 
 ### `chart.bar` — new, Pure (Viz pack)
 

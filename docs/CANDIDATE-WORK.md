@@ -118,7 +118,7 @@ Each line: the item, its status, who or which workflow it serves, and its source
 
 - A coarse preview for Snowdon ahead of the full load, render preparation ahead of time, worker decoding, interruptible loading. Idea. W4. `docs/bim-flow-startup.md` "Remaining opportunities"; `docs/bim-flow-3d.md` "Limits". TKT-15.
 - One canonical viewer composition through `createViewer` across the gallery, feature pages, slice and occlusion labs, and the BIM pane. Idea, P1. `REPOSITORY-HANDOFF.md` P1.
-- Per-instance colour buffers before about 20,000 instances (2 s per recolour at 300,000), ranged `markColorsChanged`, per-instance visibility and picking data, picking that respects hidden instances, draw-order popping. Idea. `NOTES.md`; `progress-notes/wave-view3d-viz.md` Track E.
+- Per-instance colour buffers (done: `viz/packages/core/src/group-object.ts` allocates `instanceColor` per instance; the 2 s per recolour at 300,000 figure predates it and is unmeasured since), ranged `markColorsChanged`, per-instance visibility and picking data, picking that respects hidden instances, draw-order popping. Partial. `NOTES.md`; `progress-notes/wave-view3d-viz.md` Track E.
 - Capped sections, geometry-derived storeys, triangle-level decimation, voxel occupancy, opening cuts for doors, a light rig for z-up. Idea. `docs/bim-flow-3d.md`; `wave-view3d-viz.md`.
 - Push a model into the 3D pane from the app; an editor-to-pane channel so Bounds3D can be captured; showcase reset and reapply from graph preview. Idea. `wave-view3d-viz.md`; `param-data-types.md` §5.
 - The V2 viewer work that stopped mid-chunk on 2026-09-08: the 21-demo gallery, feature demos, React bindings, benchmark reports, occlusion-lab bug, missing overlays. Partial. `docs/plans/visualization/V2-STATUS.md`.
