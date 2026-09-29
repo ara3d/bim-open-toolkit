@@ -334,7 +334,7 @@
     "id": "duckdb-room-distribution",
     "title": "Rooms by storey",
     "tag": "BRANCH + AGGREGATE",
-    "description": "Count rooms by their typed storey reference and join the counts to readable level names. This counts mapped records; it does not certify spatial completeness.",
+    "description": "Count rooms by their typed storey reference and join the counts to readable level names; the chart node plots the 33 storeys that have rooms, numbering storeys that share a name. This counts mapped records; it does not certify spatial completeness.",
     "result": "answer",
     "graph": {
       "formatVersion": "0.1.0",
@@ -369,6 +369,16 @@
             "id": "database",
             "kind": "duck.source",
             "version": 1
+          },
+          {
+            "id": "chart-rows",
+            "kind": "sql.query",
+            "version": 1
+          },
+          {
+            "id": "chart",
+            "kind": "chart.bar",
+            "version": 1
           }
         ],
         "edges": [
@@ -395,6 +405,14 @@
           {
             "from": "database.source",
             "to": "levels.source"
+          },
+          {
+            "from": "attach-level.table",
+            "to": "chart-rows.t1"
+          },
+          {
+            "from": "chart-rows.table",
+            "to": "chart.table"
           }
         ]
       },
@@ -419,6 +437,15 @@
         },
         "database": {
           "path": "{DUCKDB}"
+        },
+        "chart-rows": {
+          "sql": "SELECT CASE WHEN count(*) OVER (PARTITION BY Storey) > 1 THEN Storey || ' · ' || row_number() OVER (PARTITION BY Storey ORDER BY StoreyKey) ELSE Storey END AS Level, Rooms FROM t WHERE StoreyKey IS NOT NULL ORDER BY Level"
+        },
+        "chart": {
+          "labelColumn": "Level",
+          "valueColumns": "Rooms",
+          "title": "Rooms per storey",
+          "sort": "none"
         }
       },
       "layout": {
@@ -441,6 +468,14 @@
         "answer": {
           "x": 330,
           "y": 480
+        },
+        "chart-rows": {
+          "x": 640,
+          "y": 480
+        },
+        "chart": {
+          "x": 640,
+          "y": 700
         }
       }
     }

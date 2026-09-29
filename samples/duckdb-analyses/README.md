@@ -23,7 +23,7 @@ export, private, never committed). Eight graphs SELECT from its `door`,
 | `duckdb-door-schedule` | two queries, left join, project, sort |
 | `duckdb-door-types` | query, aggregate, sort, limit |
 | `duckdb-room-schedule` | two queries, left join, project, sort |
-| `duckdb-room-distribution` | two queries, aggregate, join, `sql.query` |
+| `duckdb-room-distribution` | two queries, aggregate, join, `sql.query`; a `sql.query` and `chart.bar` branch plot rooms per storey |
 | `duckdb-missing-widths` | query, filter, project |
 | `duckdb-roof-coverage` | query, aggregate, sort |
 | `duckdb-evidence-trace` | UNNEST query and evidence query, join, project, sort |
