@@ -5,7 +5,7 @@
 # directly with the DuckDB CLI (see docs/bim-flow-mcp-demo.md "Measuring it").
 # "honest" expected values (no `->`) mean the correct behaviour is an answer
 # without a graph, not a specific number.
-How many rooms are on each storey? Sort by count, largest first.	290 rooms total across 33 storeys with rooms; L4 has the most, 55
+How many rooms are on each storey? Sort by count, largest first.	290 rooms total across 33 storeys (storey ids) with rooms; L1 - Block 43 has the most, 26; repeated names such as L4 are separate rows, not summed
 A room schedule: room number, name, storey and floor area, sorted by storey then room number.	290 rooms
 Which rooms have the most doors? Show room number, name, storey and door count, top 15.	Corridor 402 on L4 has the most doors, 11
 Which doors are fire rated, and what is their rating? Include the storey.	65 of 142 doors have a fire rating
