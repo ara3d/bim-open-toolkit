@@ -1,6 +1,6 @@
 # The graph editor as a reusable package
 
-Status: planned, 2026-09-28. Wave A can start now; wave B waits on three chunks of TKT-11 and TKT-12 (see Coordination).
+Status: done, 2026-09-28 (built the same evening it was planned, by building apart and paying the copy off once the Editor UX wave finished; see Outcome).
 
 Ticket: TKT-94. Request (owner, 2026-09-28): move the canvas out of `packages/app` into its own package with per-instance state and a read-only mode, so that every graph cell in a notebook is a live editor: no fake diagram, shared selection, no iframe. It is a multi-chunk refactor of code that TKT-11, TKT-12, and TKT-26 have claimed, so it is planned around them.
 
@@ -325,9 +325,23 @@ Supervisor-owned across every chunk: this plan file, `bimopenflow/web/package-lo
 | G8 | (see git log) | Every graph embed mounts a read-only editor from @bimopenflow/graph over its own store (document from the embed, focus selected), lazily as the cell nears the viewport; EmbedContext gains an optional page-level catalog; refresh keeps the freshness contract and pushes the host's document and statuses into the cell; no 2D canvas falls back to the open print. createGraphRenderer(mount) lets tests pass a fake mount (jsdom has no 2D canvas). GraphEditor.fit takes minZoom so a cell never draws below zoom 1 and anchors top-left instead. Notebook 300 tests, typecheck clean. |
 | G8 check | 6993443 | Browser pane, notebook-web (5350) against notebook-studio (5366, bim profile): `s07-own-data` shows two live cells (12 nodes, four focus nodes selected and their wires lit, zoom 1 anchored top-left, the second cell mounting only once scrolled near); Re-evaluate all: 8 current, 0 changed, 0 unavailable, every node Ok in the cells. `nrc-eight-questions`: 19 current, all nine graph cells current. No console errors. A viewer's HUD hint replaced the editing hint (next commit). |
 | G9 | (see git log) | `graphDiagram.ts` (397 lines) and `test/graphDiagram.test.ts` (358 lines) deleted; `docs/plans/notebook.md` updated where it named the diagram (Design, Considered and rejected, Debt "Two node layouts") plus a dated note. |
+| G10 | (see git log) | docs/ARCHITECTURE.md's web bullet names the package; docs/graph-module-layering.md records it as built with the two gratify core gaps; the package README documents read-only mode and the page-wide state that remains; TKT-17, TKT-23, TKT-86 carry the new fence and notes; TKT-104 to TKT-107 file the extension points and the tidy-up. `node gates/web-smoke.mjs`: graph 238, app 240, state 56, panes 147, viz 46, viewer packages green, app build 19 s; the one failure is api-client's contract coverage test (one endpoint short since 130c910, not this plan's). |
 
 ## Review findings
 
 ## Debt and extension points
 
 See Extension points and Planned debt above; G10 files them.
+
+## Outcome
+
+2026-09-28. `@bimopenflow/graph` holds the canvas; the studio mounts it through `createGraphEditor` and the notebook mounts it read-only in every graph cell. Against the acceptance criteria:
+
+1. The package exists with 238 tests and a README; `test/layering.test.ts` enforces the boundary; `gates/web-smoke.mjs` runs it (the gate's one failure is `@bimopenflow/api-client`'s contract coverage test, one endpoint short since 130c910, unrelated to this plan).
+2. `test/instance.test.ts`: two headless runtimes over two stores with the same node id keep separate islands, dispatch, and pruning.
+3. `test/readOnly.test.ts`: a header click selects; a node drag, a socket-to-socket drag, Delete with a selection, a toggle press, and every mutating intent leave the document reference-equal; islands and column selectors are disabled.
+4. The studio in the browser pane (G7 check row): node drag, wire cut and re-wire, parameter edit with undo, theme and node-style switches, peek card. Two older defects found and fixed on the way (14504e2, 1fe86da).
+5. The notebook in the browser pane (G8 check row): `s07-own-data` 8 current with both cells Ok on every node, `nrc-eight-questions` 19 current with nine graph cells current; `graphDiagram.ts` deleted; `test/samples.test.ts` covers all twelve sample files.
+6. `app/src` holds no canvas module; `app.ts` imports from the package index; the notebook's only graph import is `@bimopenflow/graph`.
+
+Filed: TKT-104 (an editable cell, idea), TKT-105 (peeks and cross-cell selection in cells, idea), TKT-106 (gratify per-runtime theme and focus-scoped keys, idea), TKT-107 (graph document helpers down to `state`, package subfolders); the `gratifyWidgets.ts` copy is recorded on TKT-23, and TKT-17, TKT-23, and TKT-86 carry the new fence and notes. The Editor UX wave (TKT-95 to TKT-98) and the notebook owner (TKT-80) were told at each step through cross-session messages; the UX wave's chunks F and G were re-applied to the package (87f2323, 9197a19) and it confirmed no further canvas edits before the payoff.

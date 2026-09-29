@@ -14,3 +14,5 @@ fence: [bimopenflow/web/packages/client/**, bimopenflow/web/packages/app/src/**,
 - [ ] The 3D feed choice (planFeed in notebook, feedModel/feedData in paneArea.ts) exists once
 
 From docs/plans/notebook.md, Debt: deep imports from @bimopenflow/app, the /api/ask stream reader, the 3D feed order. Blocked while app/src files are in claimed fences (TKT-11, 12, 26).
+
+Note (TKT-94, 2026-09-28): the graph helpers are no longer deep-imported; the notebook takes `nodeTitle` and the editor from `@bimopenflow/graph`. What remains here: the pane helpers (`paneContext`, `paneChoice`, `hostStatus`, `topbar`'s host banner, the 3D feed helpers) and the `/api/ask` reader. The `app/src` files those live in are no longer in TKT-11, 12, or 26's pending chunks, so this is unblocked.

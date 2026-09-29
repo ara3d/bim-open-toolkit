@@ -74,7 +74,13 @@ code in Gratify.
 - The graph module is a package in the web workspace
   (`bimopenflow/web/packages/graph/`, `@bimopenflow/graph`), consumed by
   `@bimopenflow/app`. It is versioned with the app; it is not a library with an
-  external API-stability commitment.
+  external API-stability commitment. Built 2026-09-28 under TKT-94
+  (`docs/plans/graph-editor-package.md`): the canvas cluster moved out of `app`,
+  each mount owns its state (`CanvasInstance`), a read-only mode exists, and the
+  notebook mounts it in every graph cell. Two core gaps that work surfaced and
+  that belong in Gratify, not here: a per-runtime token set (the theme is
+  process-wide, so two canvases on a page cannot differ) and focus-scoped keys
+  (every runtime listens to `keydown` on `window`).
 - the deleted `platoflow/web/src/editor/` (~6,500 lines on Gratify, git history before 2026-09-15) is reference material
   for the module, not an upstream. It is the best available evidence of what a
   mature version needs — wires, widgets, cards, subgraphs, layout, picker,

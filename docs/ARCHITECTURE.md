@@ -170,13 +170,18 @@ One headless core; every UI is a client of it.
 - **`Mcp`** — thirteen MCP tools over *the same* services: `listModels`, `listAnalyses`,
   `getAnalysis`, `saveAnalysis`, `getNodeCatalog`, `addNode`, `connect`, `setParam`,
   `removeNode`, `evaluate`, `getResult`, `listRuns`, `createRun`.
-- **`bimopenflow/web`** — the editor: `app` (canvas, sidebar, shell), `panes` (table,
-  chart, 3D, inspector, verdict), `viz` (SVG charts), `state`, and generated
-  `contracts` / `api-client` packages. The canvas is built on the Gratify submodule's
-  primitives; graph-specific behaviour stays here, deliberately, rather than upstream
-  (see [graph-module-layering.md](graph-module-layering.md)). `bim-open-notebook` is a
+- **`bimopenflow/web`** — the editor: `graph` (the canvas as a component: nodes,
+  wires, inline controls, peeks, node styles, theme; mountable several times on a
+  page, each mount with its own state, and read-only on request), `app` (the studio
+  shell around it: sidebar, topbar, panes area, palette, step list, problems strip,
+  start page), `panes` (table, chart, 3D, inspector, verdict), `viz` (SVG charts),
+  `state`, and generated `contracts` / `api-client` packages. The canvas is built on
+  the Gratify submodule's primitives; graph-specific behaviour stays here,
+  deliberately, rather than upstream (see
+  [graph-module-layering.md](graph-module-layering.md)). `bim-open-notebook` is a
   separate page and package in the same workspace: a session transcript with live
-  embeds, reusing `app` and `panes` rather than the canvas.
+  embeds, mounting `graph` read-only in every graph cell and reusing `panes` for
+  the rest.
 - **`viz/`** — the standalone 3D viewer workspace of seventeen packages, described in
   [OVERVIEW.md](OVERVIEW.md#the-3d-viewer).
 - **`Publishing` / `Reports` / `Dashboards` / `Evidence`** — turning a run into an

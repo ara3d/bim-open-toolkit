@@ -4,7 +4,7 @@ title: Node cards carry real controls: slider, dropdown, toggle, swatch, column 
 status: open
 depends_on: [TKT-22]
 owner:
-fence: [bimopenflow/web/packages/app/**, docs/DEMOS.md, samples/**]
+fence: [bimopenflow/web/packages/graph/**, bimopenflow/web/packages/app/**, docs/DEMOS.md, samples/**]
 ---
 
 ## Acceptance criteria
@@ -20,3 +20,5 @@ Owner's finding of 2026-09-26: the nodes were too bland and lacked interesting c
 
 The registry is ready: a control is a `SlotControl` member, a `CONTROL_HEIGHT` row, a factory in `SLOT_FACTORIES`, and, for descriptor-driven controls, a `DESCRIPTOR_CONTROL` row. Two debts land here: coalesce the slider and range widgets' per-move setParam writes into one undo step (graphWidgets.ts; the typed slider is the first control that needs it), and let factory modules register a prune hook instead of pruneSlots naming every store.
 
+## Notes from TKT-94 (2026-09-28)
+The controls live in `bimopenflow/web/packages/graph` now: `canvasControls.ts`, `canvasSlots.ts`, `slotRegistry.ts`, `graphWidgets.ts`. Every control reaches its row's `CanvasInstance` through `SlotContext.instance` (dispatch, islands, dropdown flags) and must honour `instance.readOnly`. Planned debt to pay here: `gratifyWidgets.ts` and `gratifyRangeMath.ts` are copies of gratify's example slider and range (the package must not import gratify's examples); the typed slider this ticket builds replaces them, and the copies are deleted.
