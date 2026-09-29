@@ -164,7 +164,7 @@ time is the remaining work of chunk 6.
 
 | Chunk | Where | Tests |
 |-------|-------|-------|
-| 1. Relation wire kind | `ara3d-dataflow` branch `relation-value` (`a7dccd5`): `RelationValue`, `PortType.Relation`, hash tag `0x06`, run-record JSON | 5 in the engine |
+| 1. Relation wire kind | `ara3d-dataflow` main (`a7dccd5`, first on branch `relation-value`): `RelationValue`, `PortType.Relation`, hash tag `0x06`, run-record JSON | 5 in the engine |
 | 2. Expression tree in the plan | `BimOpenFlow.Relations/Plan`: reuses the engine's parsed AST, renders it back canonically | 19 |
 | 3. Schema layer | `BimOpenFlow.Relations/Schema`: one rule per operator, `ICatalog`, `SchemaCache` | 27 |
 | 4. Compile layer | `BimOpenFlow.Relations/Compile`: one CTE per node, symbolic sources | 29 |

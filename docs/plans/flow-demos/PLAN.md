@@ -163,7 +163,7 @@ hand-off session, all green). Then three more tracks on the same branch:
 
 | Track | Commits | Result |
 |---|---|---|
-| E engine Run, `toNumber` | submodule f123068, e029371 (pushed on `relation-value`); toolkit f2d151f, 643a0f9, 02f0051, a4fc63b | `EvalSession.Run` per spec §6; `POST .../runs` executes effects and records them; `toNumber(Text)` in the grammar and `TRY_CAST` in SQL; both DC-W1 graphs drop `rel.sql` |
+| E engine Run, `toNumber` | submodule f123068, e029371 (on `ara3d-dataflow` main since TKT-60); toolkit f2d151f, 643a0f9, 02f0051, a4fc63b | `EvalSession.Run` per spec §6; `POST .../runs` executes effects and records them; `toNumber(Text)` in the grammar and `TRY_CAST` in SQL; both DC-W1 graphs drop `rel.sql` |
 | T test support, BFAST | 4c1f04f, f9823c2, f685b06 | `tests/BimOpenToolkit.TestSupport` (`RepoPaths`, `MiniIfc`) replaces eleven copies; `bfast.read` and `bfast.buffer` in the Tables pack with a 448-byte fixture and a showcase graph |
 | W2 web polish | f201cfd, 44dbdde, d8b7a62, 18ca19f | selection survives reconnect; 3D legend for instance tables; formatted numbers with exact values on hover; 10 s probe |
 | integration | this commit and the two before | publishing theme LF-normalized (CRLF checkout bug), showcase ids and README |
@@ -175,7 +175,7 @@ Still open: `rel.rename` (the plan operator exists; the graphs keep source
 column spellings for lack of it); `RunReplay` cannot re-derive effect hashes;
 the SDK's stream-based `BFast.Read` mis-seeks absolute ranges (the nodes use
 the memory-mapped reader); a `{TABLES}` placeholder for showcase graphs; the
-3D legend picks its column by name; the engine's `relation-value` branch
-should merge to its own main.
+3D legend picks its column by name. (The engine's `relation-value` branch
+was fast-forwarded onto `ara3d-dataflow` main by TKT-60.)
 Tracked as TKT-59 (`rel.rename`, `RunReplay`, `{TABLES}`), TKT-60 (the
 `relation-value` merge), TKT-61 (`BFast.Read`), and TKT-16 (the legend).
