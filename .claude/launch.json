@@ -2,6 +2,26 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "bof",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/start-bim-flow.mjs",
+        "--keep"
+      ],
+      "port": 5300
+    },
+    {
+      "name": "bof-tables",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/start-bim-flow.mjs",
+        "--profile",
+        "tables",
+        "--keep"
+      ],
+      "port": 5310
+    },
+    {
       "name": "bof-host",
       "runtimeExecutable": "dotnet",
       "runtimeArgs": [
@@ -151,6 +171,215 @@
         "$env:BOF_HOST='http://127.0.0.1:5224'; npm --prefix bimopenflow/web run dev --workspace packages/app -- --port 5310"
       ],
       "port": 5310
+    },
+    {
+      "name": "gratify-alt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "submodules/gratify",
+        "run",
+        "dev"
+      ],
+      "port": 5199,
+      "autoPort": true
+    },
+    {
+      "name": "bof-3d-host",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "--no-build",
+        "--",
+        "--port",
+        "5226",
+        "--profile",
+        "bim",
+        "--models",
+        "C:/Users/cdigg/git/bim-open-toolkit/data",
+        "--store",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-3d/store",
+        "--cache",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-3d/cache"
+      ],
+      "port": 5226
+    },
+    {
+      "name": "bof-3d-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:BOF_HOST='http://127.0.0.1:5226'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5312"
+      ],
+      "port": 5312
+    },
+    {
+      "name": "bof-spatial-host",
+      "runtimeExecutable": "C:/Users/cdigg/git/bim-open-toolkit/artifacts/spatial-agent/bin/BimOpenFlow.Host/debug/bimopenflow-host.exe",
+      "runtimeArgs": [
+        "--port",
+        "5228",
+        "--profile",
+        "bim",
+        "--models",
+        "C:/Users/cdigg/git/bim-open-toolkit/data",
+        "--store",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-spatial/store",
+        "--cache",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-spatial/cache"
+      ],
+      "port": 5228
+    },
+    {
+      "name": "bof-spatial-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:BOF_HOST='http://127.0.0.1:5228'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5316"
+      ],
+      "port": 5316
+    },
+    {
+      "name": "bof-nrc-host",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "--no-build",
+        "--",
+        "--port",
+        "5232",
+        "--profile",
+        "bim",
+        "--models",
+        "C:/Users/cdigg/git/bim-open-toolkit/data",
+        "--store",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-nrc/store",
+        "--cache",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-nrc/cache"
+      ],
+      "port": 5232
+    },
+    {
+      "name": "bof-nrc-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:BOF_HOST='http://127.0.0.1:5232'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5332"
+      ],
+      "port": 5332
+    },
+    {
+      "name": "bof-review-bim-host",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "--no-build",
+        "--",
+        "--port",
+        "5240",
+        "--profile",
+        "bim",
+        "--models",
+        "C:/Users/cdigg/git/bim-open-toolkit/data",
+        "--store",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-review-bim/store",
+        "--cache",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-review-bim/cache"
+      ],
+      "port": 5240
+    },
+    {
+      "name": "bof-review-bim-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:BOF_HOST='http://127.0.0.1:5240'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5340"
+      ],
+      "port": 5340
+    },
+    {
+      "name": "bof-review-tables-host",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "--no-build",
+        "--",
+        "--port",
+        "5242",
+        "--profile",
+        "tables",
+        "--models",
+        "C:/Users/cdigg/git/bim-open-toolkit/samples/tables",
+        "--store",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-review-tables/store",
+        "--cache",
+        "C:/Users/cdigg/AppData/Local/Temp/claude/bof-review-tables/cache"
+      ],
+      "port": 5242
+    },
+    {
+      "name": "bof-review-tables-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:BOF_HOST='http://127.0.0.1:5242'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5342"
+      ],
+      "port": 5342
+    },
+    {
+      "name": "notebook-studio",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "C:/Users/cdigg/git/bim-open-toolkit/artifacts/notebook/studio/bimopenflow-studio.dll",
+        "--profile",
+        "bim",
+        "--port",
+        "5366",
+        "--models",
+        "C:/Users/cdigg/git/bim-open-toolkit/data",
+        "--store",
+        "C:/Users/cdigg/git/bim-open-toolkit/artifacts/notebook/bim-store",
+        "--cache",
+        "C:/Users/cdigg/git/bim-open-toolkit/artifacts/notebook/bim-cache"
+      ],
+      "port": 5366,
+      "env": {
+        "ASK_PROVIDER": "claude-cli",
+        "ASK_CLAUDE_CLI": "C:/Users/cdigg/AppData/Roaming/Claude/claude-code/2.1.281/claude.exe"
+      }
+    },
+    {
+      "name": "notebook-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:VITE_BOF_EDITOR='http://localhost:5351/'; $env:BOF_HOST='http://127.0.0.1:5366'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/bim-open-notebook'; npx vite --port 5350"
+      ],
+      "port": 5350
+    },
+    {
+      "name": "notebook-editor",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:BOF_HOST='http://127.0.0.1:5366'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5351"
+      ],
+      "port": 5351
     }
   ]
 }
