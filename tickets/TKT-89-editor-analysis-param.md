@@ -1,7 +1,7 @@
 ---
 id: TKT-89
 title: The editor opens the graph named by ?analysis=
-status: open
+status: done
 depends_on: [TKT-80]
 owner:
 fence: [bimopenflow/web/packages/app/src/main.ts]
