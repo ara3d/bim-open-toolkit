@@ -1,7 +1,7 @@
 ---
 id: TKT-121
 title: The api-client test covers getAnalysisText, so web-smoke passes again
-status: open
+status: done
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/api-client/test/apiClient.test.ts]
