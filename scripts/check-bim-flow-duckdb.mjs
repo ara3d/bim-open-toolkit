@@ -17,6 +17,9 @@ async function json(path) {
   return response.json();
 }
 const result = workflow => json(`/api/analyses/${workflow.id}/results/${workflow.result}/table`);
+// The studio opens a flow on its deepest node (TKT-46): the chart where a flow has one, with Chart and Table tabs (TKT-20).
+const chartNode = workflow => workflow.graph.structure.nodes.find(node => node.kind.startsWith('chart.'))?.id;
+const nodeCount = workflows.reduce((total, workflow) => total + workflow.graph.structure.nodes.length, 0);
 const rows = new Map();
 const scenarios = [];
 for (const workflow of workflows) {
@@ -35,13 +38,16 @@ const widthColumn = doors.columns.findIndex(column => column.name === 'Width_m')
 assert.ok(doors.rows.every(row => row[widthColumn] === null));
 assert.equal(rows.get('duckdb-missing-widths').totalRows, doors.totalRows);
 assert.equal(rows.get('duckdb-room-distribution').rows.reduce((total, row) => total + row[1], 0), rooms.totalRows);
+const storeyChart = await json('/api/analyses/duckdb-room-distribution/results/chart/table');
+assert.equal(storeyChart.totalRows, 33, 'The rooms-per-storey chart plots the 33 storeys that have rooms');
+assert.equal(storeyChart.rows.reduce((total, row) => total + row[1], 0), rooms.totalRows - 4, 'Four rooms carry no storey reference');
 const roofs = rows.get('duckdb-roof-coverage');
 assert.equal(roofs.rows[0][roofs.columns.findIndex(column => column.name === 'Roofs')], 26);
 assert.equal(roofs.rows[0][roofs.columns.findIndex(column => column.name === 'KnownArea_m2')], null);
 // The wave R5 export records a type row as well as an occurrence row for each of the seven Snowdon documents.
 assert.equal(rows.get('duckdb-source-lineage').totalRows, 14);
 assert.equal(rows.get('duckdb-evidence-trace').totalRows, 156);
-scenarios.push('All 48 nodes across nine source-backed graphs evaluate successfully', 'Schedule counts, room grouping totals and missing quantity semantics verified');
+scenarios.push(`All ${nodeCount} nodes across ${workflows.length} source-backed graphs evaluate successfully`, 'Schedule counts, room grouping totals and missing quantity semantics verified');
 
 const endpoint = '/api/analyses/duckdb-door-types';
 const original = await (await fetch(base + endpoint)).text();
@@ -57,15 +63,16 @@ try {
   assert.ok(graph.x < table.x && graph.width > 500 && table.width > 500);
   assert.ok(graph.height > 450 && graph.height < 1100, `Graph must stay inside the viewport: ${graph.height}`);
   assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 2), 'The workspace must scroll its table, not stretch the whole page');
-  assert.equal(await page.getByLabel('Preview node').inputValue(), workflows[0].result);
+  assert.equal(await page.getByLabel('Preview node', { exact: true }).inputValue(), workflows[0].result);
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'door-schedule.png'), fullPage: true });
   for (const workflow of workflows) {
-    await page.getByLabel('Open flow').selectOption({ label: workflow.title });
+    await page.getByLabel('Open flow', { exact: true }).selectOption({ label: workflow.title });
     await page.waitForFunction(id => document.querySelector('select[aria-label="Open flow"]')?.value === id, workflow.id);
-    await page.waitForFunction(id => document.querySelector('select[aria-label="Preview node"]')?.value === id, workflow.result);
-    await page.locator('#duck-editor tbody tr').first().waitFor();
-    assert.equal(await page.locator('.bof-app-tab').count(), 0);
+    const chart = chartNode(workflow);
+    await page.waitForFunction(id => document.querySelector('select[aria-label="Preview node"]')?.value === id, chart ?? workflow.result);
+    await page.locator(chart ? '.bof-app-panearea rect.bof-viz-bar' : '#duck-editor tbody tr').first().waitFor();
+    assert.deepEqual(await page.locator('.bof-app-tab').allTextContents(), chart ? ['Chart', 'Table'] : []);
     const document = await json(`/api/analyses/${workflow.id}`);
     const sources = document.structure.nodes.filter(node => node.kind === 'duck.source');
     assert.equal(sources.length, 1);
@@ -74,8 +81,19 @@ try {
       assert.ok(document.structure.edges.some(edge => edge.from === sources[0].id + '.source' && edge.to === query.id + '.source'));
     }
   }
-  scenarios.push('The flow picker opens all nine editable graphs with a result table on the right');
-  await page.getByLabel('Open flow').selectOption({ label: 'Most-used door types' });
+  scenarios.push(`The flow picker opens all ${workflows.length} editable graphs with a result table or chart on the right`);
+  await page.getByLabel('Open flow', { exact: true }).selectOption({ label: 'Rooms by storey' });
+  await page.waitForFunction(() => document.querySelector('select[aria-label="Preview node"]')?.value === 'chart');
+  await page.waitForFunction(() => document.querySelectorAll('.bof-app-panearea rect.bof-viz-bar').length === 33);
+  assert.equal(await page.locator('.bof-app-tab-active').textContent(), 'Chart');
+  assert.equal(await page.locator('.bof-app-panearea .bof-viz-title').textContent(), 'Rooms per storey');
+  await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
+  await page.screenshot({ path: resolve(output, 'rooms-per-storey-chart.png'), fullPage: true });
+  await page.locator('.bof-app-tab', { hasText: 'Table' }).click();
+  await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 33);
+  assert.equal(await page.locator('.bof-app-panearea svg.bof-viz-bar-chart').count(), 0);
+  scenarios.push('Rooms by storey opens on a Chart tab with 33 storey bars, beside a Table tab with the same 33 rows');
+  await page.getByLabel('Open flow', { exact: true }).selectOption({ label: 'Most-used door types' });
   await page.getByLabel('answer count', { exact: true }).fill('3');
   const saved = page.waitForResponse(response => response.url() === base + endpoint && response.request().method() === 'PUT' && response.ok());
   await page.getByLabel('answer count', { exact: true }).press('Enter');
@@ -85,7 +103,7 @@ try {
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'edited-top-three.png'), fullPage: true });
   scenarios.push('Editing the limit on the graph autosaves and recomputes the table to three rows');
-  await page.getByLabel('Preview node').selectOption('doors');
+  await page.getByLabel('Preview node', { exact: true }).selectOption('doors');
   await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 142);
   scenarios.push('Selecting an upstream node shows its 142 input records');
   const sort = page.getByLabel('rank-types A', { exact: true });
@@ -105,7 +123,7 @@ try {
     return graph.values['rank-types'].A === 'Occurrences' && graph.values['rank-types'].descendingA === 'false';
   }, endpoint);
   scenarios.push('A/B/C sort dropdowns refresh after an upstream schema change; column and direction edits save');
-  await page.getByLabel('Open flow').selectOption({ label: 'Trace a width to evidence' });
+  await page.getByLabel('Open flow', { exact: true }).selectOption({ label: 'Trace a width to evidence' });
   await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 156);
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'evidence-trace.png'), fullPage: true });
