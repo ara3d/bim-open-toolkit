@@ -5,7 +5,7 @@
     "elements": { "x": 40, "y": 40 },
     "run": { "x": 40, "y": 280 },
     "when": { "x": 370, "y": 280 },
-    "answer": { "x": 700, "y": 40 }
+    "answer": { "x": 940, "y": 40 }
   },
   "structure": {
     "edges": [

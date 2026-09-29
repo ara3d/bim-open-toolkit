@@ -1,7 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": { "x": 700, "y": 40 },
+    "answer": { "x": 960, "y": 40 },
     "elements": { "x": 40, "y": 40 },
     "perStorey": { "x": 390, "y": 40 },
     "about": { "x": 40, "y": 280 }

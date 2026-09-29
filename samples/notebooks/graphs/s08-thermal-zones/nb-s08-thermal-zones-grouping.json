@@ -2,12 +2,12 @@
   "formatVersion": "0.1.0",
   "layout": {
     "zoneGuess": { "x": 40, "y": 40 },
-    "zoneGuessSorted": { "x": 370, "y": 40 },
+    "zoneGuessSorted": { "x": 610, "y": 40 },
     "zoneFinal": { "x": 40, "y": 300 },
-    "zoneFinalSorted": { "x": 370, "y": 280 },
-    "zoneCountLabelled": { "x": 700, "y": 240 },
-    "zoneCounts": { "x": 1030, "y": 240 },
-    "zoneCountsSorted": { "x": 1360, "y": 240 }
+    "zoneFinalSorted": { "x": 610, "y": 280 },
+    "zoneCountLabelled": { "x": 920, "y": 240 },
+    "zoneCounts": { "x": 1230, "y": 240 },
+    "zoneCountsSorted": { "x": 1540, "y": 240 }
   },
   "structure": {
     "edges": [

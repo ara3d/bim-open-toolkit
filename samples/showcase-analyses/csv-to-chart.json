@@ -3,9 +3,9 @@
   "layout": {
     "elements": { "x": 40, "y": 40 },
     "byCategory": { "x": 370, "y": 40 },
-    "ranked": { "x": 700, "y": 40 },
-    "rows": { "x": 1030, "y": 40 },
-    "answer": { "x": 1360, "y": 40 }
+    "ranked": { "x": 940, "y": 40 },
+    "rows": { "x": 1250, "y": 40 },
+    "answer": { "x": 1560, "y": 40 }
   },
   "structure": {
     "edges": [

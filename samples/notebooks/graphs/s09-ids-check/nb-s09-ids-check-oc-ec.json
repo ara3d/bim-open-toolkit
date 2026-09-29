@@ -4,13 +4,13 @@
     "entities": { "x": 40, "y": 40 },
     "parameters": { "x": 40, "y": 340 },
     "ocRows": { "x": 370, "y": 40 },
-    "ocTable": { "x": 700, "y": 40 },
-    "ocAnswer": { "x": 1030, "y": 40 },
+    "ocTable": { "x": 940, "y": 40 },
+    "ocAnswer": { "x": 1250, "y": 40 },
     "ecRows": { "x": 370, "y": 350 },
-    "ecTable": { "x": 700, "y": 340 },
-    "ecAnswer": { "x": 1030, "y": 470 },
-    "answer": { "x": 1360, "y": 190 },
-    "rollup": { "x": 1690, "y": 190 }
+    "ecTable": { "x": 940, "y": 340 },
+    "ecAnswer": { "x": 1250, "y": 470 },
+    "answer": { "x": 1820, "y": 190 },
+    "rollup": { "x": 2060, "y": 190 }
   },
   "structure": {
     "edges": [

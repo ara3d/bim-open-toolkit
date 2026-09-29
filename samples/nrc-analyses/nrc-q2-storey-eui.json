@@ -2,7 +2,7 @@
   "formatVersion": "0.1.0",
   "layout": {
     "answer": {
-      "x": 1030,
+      "x": 1380,
       "y": 40
     },
     "elements": {
@@ -10,7 +10,7 @@
       "y": 40
     },
     "levels": {
-      "x": 700,
+      "x": 940,
       "y": 40
     },
     "perStorey": {

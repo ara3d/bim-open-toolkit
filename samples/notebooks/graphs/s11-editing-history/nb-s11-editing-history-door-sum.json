@@ -3,7 +3,7 @@
   "layout": {
     "elements": { "x": 40, "y": 40 },
     "doors": { "x": 370, "y": 40 },
-    "answer": { "x": 700, "y": 40 }
+    "answer": { "x": 840, "y": 40 }
   },
   "structure": {
     "edges": [

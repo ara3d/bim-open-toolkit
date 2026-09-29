@@ -3,7 +3,7 @@
   "layout": {
     "byClass": { "x": 700, "y": 40 },
     "classes": { "x": 370, "y": 40 },
-    "ranked": { "x": 1030, "y": 40 },
+    "ranked": { "x": 1140, "y": 40 },
     "rooms": { "x": 40, "y": 40 }
   },
   "structure": {

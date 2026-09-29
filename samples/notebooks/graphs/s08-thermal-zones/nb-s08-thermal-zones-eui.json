@@ -4,17 +4,17 @@
     "rel": { "x": 40, "y": 40 },
     "ent": { "x": 40, "y": 280 },
     "elements": { "x": 40, "y": 520 },
-    "totalElements": { "x": 370, "y": 360 },
-    "totalElementsTable": { "x": 700, "y": 660 },
-    "containment": { "x": 370, "y": 40 },
-    "matchedTotal": { "x": 700, "y": 40 },
-    "matchedTotalTable": { "x": 1030, "y": 40 },
-    "perSpace": { "x": 700, "y": 350 },
-    "perSpaceTable": { "x": 1030, "y": 210 },
+    "totalElements": { "x": 610, "y": 360 },
+    "totalElementsTable": { "x": 1180, "y": 660 },
+    "containment": { "x": 610, "y": 40 },
+    "matchedTotal": { "x": 1180, "y": 40 },
+    "matchedTotalTable": { "x": 1750, "y": 40 },
+    "perSpace": { "x": 1180, "y": 350 },
+    "perSpaceTable": { "x": 1750, "y": 210 },
     "zoneFinal": { "x": 40, "y": 760 },
-    "joined": { "x": 1360, "y": 200 },
-    "joinedSelect": { "x": 1690, "y": 200 },
-    "joinedSort": { "x": 2020, "y": 200 }
+    "joined": { "x": 2060, "y": 200 },
+    "joinedSelect": { "x": 2370, "y": 200 },
+    "joinedSort": { "x": 2920, "y": 200 }
   },
   "structure": {
     "edges": [

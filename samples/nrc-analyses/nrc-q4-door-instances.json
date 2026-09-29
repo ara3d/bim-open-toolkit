@@ -1,8 +1,8 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": { "x": 1030, "y": 40 },
-    "columns": { "x": 700, "y": 40 },
+    "answer": { "x": 1400, "y": 40 },
+    "columns": { "x": 860, "y": 40 },
     "doors": { "x": 390, "y": 40 },
     "elements": { "x": 40, "y": 40 },
     "about": { "x": 40, "y": 280 }

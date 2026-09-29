@@ -4,9 +4,9 @@
     "entities": { "x": 40, "y": 40 },
     "parameters": { "x": 40, "y": 280 },
     "rows": { "x": 370, "y": 140 },
-    "table": { "x": 700, "y": 140 },
-    "answer": { "x": 1030, "y": 140 },
-    "rollup": { "x": 1360, "y": 140 }
+    "table": { "x": 940, "y": 140 },
+    "answer": { "x": 1250, "y": 140 },
+    "rollup": { "x": 1820, "y": 140 }
   },
   "structure": {
     "edges": [
