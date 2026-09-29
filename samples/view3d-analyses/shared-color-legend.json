@@ -1,0 +1,42 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "inst": { "x": 40, "y": 40 },
+    "measures": { "x": 40, "y": 224 },
+    "scale": { "x": 360, "y": 224 },
+    "colored": { "x": 700, "y": 40 },
+    "largest": { "x": 360, "y": 408 },
+    "top": { "x": 700, "y": 408 },
+    "chart": { "x": 1000, "y": 408 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "inst.instances", "to": "colored.instances" },
+      { "from": "measures.measures", "to": "colored.values" },
+      { "from": "measures.measures", "to": "scale.values" },
+      { "from": "scale.legend", "to": "colored.scale" },
+      { "from": "measures.measures", "to": "largest.table" },
+      { "from": "largest.table", "to": "top.table" },
+      { "from": "top.table", "to": "chart.table" },
+      { "from": "scale.legend", "to": "chart.scale" }
+    ],
+    "nodes": [
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "measures", "kind": "view3d.measures", "version": 1 },
+      { "id": "scale", "kind": "view.colormap", "version": 1 },
+      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "largest", "kind": "table.sort", "version": 1 },
+      { "id": "top", "kind": "table.limit", "version": 1 },
+      { "id": "chart", "kind": "chart.bar", "version": 1 }
+    ]
+  },
+  "values": {
+    "inst": { "path": "{DATA}/duplex.ifc" },
+    "measures": { "path": "{DATA}/duplex.ifc" },
+    "scale": { "valueColumn": "meshVolume", "colorMap": "viridis", "auto": "false", "min": "0", "max": "1" },
+    "colored": { "joinColumn": "instanceIndex" },
+    "largest": { "A": "meshVolume", "descendingA": "true" },
+    "top": { "count": "20" },
+    "chart": { "labelColumn": "category", "valueColumns": "meshVolume" }
+  }
+}
