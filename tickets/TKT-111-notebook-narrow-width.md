@@ -14,4 +14,4 @@ fence: [bimopenflow/web/packages/bim-open-notebook/notebook.html, bimopenflow/we
 
 Found 2026-09-28 by the TKT-108 browser check: in an 820 px window the notebook column measured 949 px wide and the page scrolled sideways, and phone-width emulation laid out at about 949 px because the page has no viewport meta. TKT-109 (column widened to 1140 px) could not confirm its 375 px check for the same reason.
 
-Viewport meta was already present (added earlier in ea347ff). Cause of the overflow: `.nb-column` is an auto-margined item in the flex-column `.nb-shell`, so it sized to its content (949 px). Fixed with `width: 100
+Viewport meta was already present (added earlier in ea347ff). Cause of the overflow: `.nb-column` is an auto-margined item in the flex-column `.nb-shell`, so it sized to its content (949 px). Fixed with `width: 100%` on the column. Measured with headless Chrome over CDP: scrollWidth equals the window width at 1280, 820 and 375 px (less the scrollbar where one shows); wide tables and the graph canvas scroll or clip inside their own containers.
