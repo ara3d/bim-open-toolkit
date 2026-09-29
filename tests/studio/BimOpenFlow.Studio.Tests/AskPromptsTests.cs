@@ -15,4 +15,17 @@ public sealed class AskPromptsTests
     [Test]
     public void RulesAreEmbedded()
         => Assert.That(AskPrompts.Rules, Does.Contain("editGraph"));
+
+    // TKT-127: questions about the toolkit are answered from its documents, with no graph.
+    [Test]
+    public void RulesSayAToolkitQuestionIsAnsweredInTextFromTheDocuments()
+        => Assert.That(AskPrompts.Rules, Does.Contain("searchDocs").And.Contain("Build no graph"));
+
+    [Test]
+    public void ThePrimerFitsItsLimitAndNamesTheDocsTools()
+        => Assert.Multiple(() =>
+        {
+            Assert.That(System.Text.Encoding.UTF8.GetByteCount(AskPrompts.Primer), Is.LessThanOrEqualTo(AskPrompts.PrimerLimit));
+            Assert.That(AskPrompts.Primer, Does.Contain("searchDocs").And.Contain("readDoc"));
+        });
 }

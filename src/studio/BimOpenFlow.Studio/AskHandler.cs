@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Ara3D.NodeGraph;
 using BimOpenFlow.Ask;
 using BimOpenMcp.Flow;
 
@@ -44,6 +45,7 @@ public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<
             var user = continuing
                 ? AskPrompts.FollowUp(body.Request, id, resumed: known is null)
                 : AskPrompts.User(body.Request, id);
+            var before = GraphHash(id);
             await emit(new { type = "start", analysisId = id, model, effort, continuing });
 
             Task Report(AskEvent e)
@@ -51,8 +53,11 @@ public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<
             var outcome = await conversation.SendAsync(user, Report, ct);
 
             // The host's own check: the agent gets up to two more turns to fix or
-            // explain a graph that does not evaluate or answers with no rows.
-            var problem = AskChecks.Verify(services, id);
+            // explain a graph that does not evaluate or answers with no rows. A reply
+            // that left the graph as it was (a question about the toolkit, a question
+            // back) is not checked: there is no new graph to check, and none is made.
+            var changed = GraphHash(id) is { } after && after != before;
+            var problem = changed ? AskChecks.Verify(services, id) : null;
             for (var round = 0; problem is not null && round < CheckRounds; round++)
             {
                 await emit(new { type = "check", ok = false, summary = problem });
@@ -65,8 +70,8 @@ public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<
             {
                 type = "done",
                 analysisId = id,
-                built = services.Host.Store.Exists(id),
-                verified = services.Host.Store.Exists(id) && problem is null,
+                built = changed,
+                verified = changed && problem is null,
                 problem,
                 text = outcome.Text,
                 turns = outcome.Turns,
@@ -85,6 +90,9 @@ public sealed class AskHandler(FlowServices services, IAskBackend backend, Func<
             await emit(new { type = "error", message = e.Message });
         }
     }
+
+    private string? GraphHash(string id)
+        => services.Host.Store.Exists(id) ? services.Host.Store.Load(id).ComputeGraphHash() : null;
 
     private IAskConversation Remember(string id, IAskConversation conversation)
     {

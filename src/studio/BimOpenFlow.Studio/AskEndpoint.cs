@@ -18,9 +18,10 @@ public sealed record AskRequest(string Request, string? AnalysisId = null);
 
 /// <summary>POST /api/ask: a plain-language request in, a server-sent event
 /// stream out (one JSON object per 'data:' line): 'start', then 'tool' and
-/// 'text' events as the agent works, then 'done' with the analysis id, or
-/// 'error'. With 'analysisId' the request continues that graph's conversation,
-/// so a follow-up ("now sort by name") sees everything the agent did before.
+/// 'text' events as the agent works, then 'done' with the analysis id ('built'
+/// is true only when this request created or changed that graph; a text-only
+/// answer leaves no analysis behind), or 'error'. With 'analysisId' the
+/// request continues that graph's conversation, so a follow-up ("now sort by name") sees everything the agent did before.
 /// Requests run one at a time; the store is last-writer-wins.</summary>
 public static class AskEndpoint
 {
@@ -169,9 +170,11 @@ public static class AskPrompts
         var catalog = McpJson.Serialize(FlowDocumentTools.GetNodeCatalog(services));
         var preferred = DefaultDatabase(services);
         return
-            "You build BimOpenFlow dataflow graphs for a DuckDB workflow studio, using only the tools provided. "
+            "You build BimOpenFlow dataflow graphs for a DuckDB workflow studio, using only the tools provided, "
+            + "and answer questions about the toolkit itself from its documents. "
             + "A graph is a set of nodes joined by edges from an output port ('nodeId.port') to an input port. "
             + "Every graph tool takes the analysis id given in the request; pass it as 'id' on every call.\n\n"
+            + Primer + "\n\n"
             + "Databases available (give the path to the duck.source node's 'path' parameter):\n" + databases + "\n"
             + (preferred is null
                 ? ""
@@ -183,6 +186,28 @@ public static class AskPrompts
             + NodeGuide + "\n\n"
             + Rules;
     }
+
+    /// <summary>What the toolkit is, drawn from docs/OVERVIEW.md, and where to read more; at most
+    /// PrimerLimit bytes, because the node catalog and the guides already fill the prompt.</summary>
+    public const int PrimerLimit = 2048;
+
+    public const string Primer =
+        "About the toolkit (BIM Open Toolkit, this repository):\n"
+        + "- BIM Open Schema (BOS) stores a building model as plain columnar tables (entities, parameters stored "
+        + "entity-attribute-value, relations such as PartOf, ContainedIn, HostedBy, BoundedBy, and geometry), one "
+        + "Parquet file per table, loaded straight into DuckDB. The C# reference implementation also loads IFC, "
+        + "meshes it, and edits IFC property sets byte-exactly.\n"
+        + "- BimOpenFlow is a node graph over those tables. Nodes are small pure functions; tables travel on the "
+        + "edges; effect nodes (file exports, IFC write-back) run only inside an explicit Run. addNode, connect, "
+        + "setParam and removeNode are the one edit path behind the editor, the HTTP API and the MCP tools. "
+        + "Evaluating gives each node a status: Ok, Unready, EffectPending, Unavailable or Error.\n"
+        + "- Surfaces: the headless host, two MCP servers (bimopenflow-duckdb for graphs, bimopen-ifc for IFC "
+        + "files), the web graph editor and this studio's Ask box, BIM Open Notebook, and a three.js 3D viewer.\n"
+        + "- Documents: README.md (build and run), PROJECT.md (purpose, users, workflows), docs/OVERVIEW.md, "
+        + "docs/ARCHITECTURE.md, docs/DEMOS.md (supported demos), docs/nodes.md (every node kind), "
+        + "samples/*/README.md (sample graphs), tickets/ (open work and decisions).\n"
+        + "For a question about the toolkit rather than the model, call searchDocs and readDoc, answer in text "
+        + "naming the files you read, and build no graph.";
 
     /// <summary>The database the existing graphs use most (their duck.source
     /// paths), so the agent builds against the same export the studio shows;

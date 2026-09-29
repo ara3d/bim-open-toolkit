@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Ara3D.MCP;
+using Ara3D.NodeGraph;
 using BimOpenFlow.Ask;
 using BimOpenFlow.Host;
 using BimOpenMcp.Flow;
@@ -110,6 +111,59 @@ public sealed class AskHandlerTests
         Assert.That(done["built"]!.GetValue<bool>(), Is.True);
         Assert.That(done["verified"]!.GetValue<bool>(), Is.False);
         Assert.That(done["effort"]!.GetValue<string>(), Is.EqualTo("medium"));
+    }
+
+    // TKT-127: a question about the toolkit is read from its documents and answered in text.
+    [Test]
+    public async Task AToolkitQuestionAnsweredInTextLeavesNoAnalysisAndRunsNoCheck()
+    {
+        WriteScript("""
+            {"runs":[
+                {"steps":[
+                    {"call":"searchDocs","args":{"query":"nrc:walkthrough"}},
+                    {"call":"readDoc","args":{"path":"README.md","maxChars":200}},
+                    {"result":"Run npm run nrc:walkthrough (from README.md)."}
+                ]}
+            ]}
+            """);
+        var handler = Handler();
+
+        var events = await RunAsync(handler, new AskRequest("How do I run the NRC walkthrough?"));
+
+        var id = events[0]["analysisId"]!.GetValue<string>();
+        var tools = events.Where(e => e["type"]!.GetValue<string>() == "tool").ToList();
+        var done = events.Last();
+        Assert.Multiple(() =>
+        {
+            Assert.That(tools.Select(e => e["name"]!.GetValue<string>()), Is.EqualTo(new[] { "searchDocs", "readDoc" }));
+            Assert.That(tools.Select(e => e["ok"]!.GetValue<bool>()), Has.All.True);
+            Assert.That(events.Where(e => e["type"]!.GetValue<string>() == "check"), Is.Empty);
+            Assert.That(done["type"]!.GetValue<string>(), Is.EqualTo("done"));
+            Assert.That(done["built"]!.GetValue<bool>(), Is.False);
+            Assert.That(done["text"]!.GetValue<string>(), Does.Contain("README.md"));
+            Assert.That(_services.Host.Store.Exists(id), Is.False);
+        });
+    }
+
+    [Test]
+    public async Task ATextOnlyFollowUpOnAnOpenGraphLeavesItUncheckedAndUnchanged()
+    {
+        FlowEditTools.AddNode(_services, "open-graph", "database", "duck.source", version: null);
+        var before = _services.Host.Store.Load("open-graph").ComputeGraphHash();
+        WriteScript("""{"runs":[{"steps":[{"result":"BOS is BIM Open Schema (from docs/OVERVIEW.md)."}]}]}""");
+        var handler = Handler();
+
+        var events = await RunAsync(handler, new AskRequest("What is BOS?", "open-graph"));
+
+        var done = events.Last();
+        Assert.Multiple(() =>
+        {
+            Assert.That(events.Where(e => e["type"]!.GetValue<string>() == "check"), Is.Empty,
+                "the open graph has no 'answer' node, but the agent did not touch it");
+            Assert.That(done["built"]!.GetValue<bool>(), Is.False);
+            Assert.That(done["verified"]!.GetValue<bool>(), Is.False);
+            Assert.That(_services.Host.Store.Load("open-graph").ComputeGraphHash(), Is.EqualTo(before));
+        });
     }
 
     [Test]
