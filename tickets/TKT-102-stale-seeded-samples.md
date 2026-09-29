@@ -1,10 +1,10 @@
 ---
 id: TKT-102
 title: The studio store picks up changed sample flows instead of keeping a stale copy
-status: open
+status: claimed
 depends_on: []
-owner:
-fence: []
+owner: claude-tkt102
+fence: [src/flow/BimOpenFlow.Host/SampleSeeding.cs, src/flow/BimOpenFlow.Host/SampleSeedRecord.cs, src/flow/BimOpenFlow.Host/BimSampleSeeding.cs, src/flow/BimOpenFlow.Host/HostRunner.cs, tests/flow/BimOpenFlow.Host.Tests/SampleSeedingRefreshTests.cs, tests/flow/BimOpenFlow.Host.Tests/SampleSeedingPlaceholderTests.cs, tests/flow/BimOpenFlow.Host.Tests/NrcSeedingTests.cs, tests/flow/BimOpenFlow.BimWorkflows.Tests/BimSampleSeedingTests.cs, tests/flow/BimOpenFlow.TableWorkflows.Tests/SampleSeedingTests.cs, tests/flow/BimOpenFlow.SampleFlows.Tests/SampleFlowsFixture.cs, scripts/seed-store.mjs, scripts/seed-store.test.mjs, scripts/prepare-bim-flow-duckdb.mjs, docs/bim-flow-duckdb.md, tickets/TKT-102-stale-seeded-samples.md]
 ---
 
 ## Acceptance criteria
