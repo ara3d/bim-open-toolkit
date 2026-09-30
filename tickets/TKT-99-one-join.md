@@ -18,3 +18,8 @@ Decisions needed:
 4. **Build it now,** or after the editor UX wave (TKT-94 to TKT-98), which touches the same editor files for the shared-column pre-fill.
 
 Answering 1 to 3 as recommended lets the six chunks in the proposal start.
+
+## Also in scope (node review, 2026-09-29)
+
+- **Several key columns.** Joins with two or four conditions go to SQL today: the federation confirmations join (four keys) and the Parameters joins on EntityIndex plus a property name. Accept a comma-separated key list in both packs.
+- **A `cross` kind**, to attach a one-row table such as run metadata (`nrc-q6-analysis-run`).
