@@ -82,9 +82,11 @@ No shared servers this wave. Tests are per-project; supervisor runs the full gat
   concat, converts scalars to canonical text); comparisons; `and`; `or`;
   `cond ? a : b` (right-assoc, lowest). `/` always yields Number; `%` Integer
   only; `+ - *` Integer if both Integer else Number; Integer widens to Number.
-  Null propagates through every operator; `coalesce` returns first non-null.
-  Builtins: abs, min, max, round, floor, ceil, len, lower, upper, contains,
-  startswith, endswith, coalesce.
+  Null propagates through every operator; `coalesce` returns first non-null
+  and `isnull` tests for null. `x in (...)` / `x not in (...)` take non-null
+  literal items. Builtins: abs, min, max, round, floor, ceil, len, lower,
+  upper, contains, startswith, endswith, coalesce, toNumber, isnull. The
+  normative text is `submodules/ara3d-dataflow/spec/dataflow-graph/expressions/expressions.md`.
 - **Contracts codegen**: edit `contracts/contracts.json`, run
   `node contracts/generate.mjs`, commit outputs. TS lands in
   `@bimopenflow/contracts` (viz/api-client import it; never hand-copy types).

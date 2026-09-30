@@ -10,7 +10,7 @@ The `bimopenflow-duckdb` server (registered in `.mcp.json`; build it with `node 
 Read, in this folder, before the first tool call:
 
 - [schema-guide.md](schema-guide.md): what the element tables share, how storeys link, why measures are NULL, how lineage chains, how list columns behave.
-- [node-guide.md](node-guide.md): the expression language of `table.derive` and `table.filter` (no null test), aggregate syntax, join modes, when to reach for `sql.query`.
+- [node-guide.md](node-guide.md): the expression language of `table.derive` and `table.filter` (`isnull` for missing values, `in` for lists), aggregate syntax, join modes, when to reach for `sql.query`.
 - [working-rules.md](working-rules.md): the order of calls that builds a correct graph in one `editGraph` plus a fix-up, and when to answer instead of build.
 
 The same three files are embedded in the studio's Ask endpoint as its system prompt, so an edit here changes both.
