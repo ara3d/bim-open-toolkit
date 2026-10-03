@@ -20,6 +20,8 @@
   --viewer-soft: #e2f3f1;
   --data: #b8326e;
   --data-soft: #f9e6ef;
+  --schema: #4f5d78;
+  --schema-soft: #e9ecf2;
   --green: #16a34a;
   --amber: #d97706;
   --mark-plate: transparent;
@@ -38,6 +40,7 @@
     --notebook-soft: #252040;
     --viewer-soft: #15302d;
     --data-soft: #3a1c2a;
+    --schema-soft: #262b36;
     /* The marks are one-colour files in the light accents; a light plate keeps them legible. */
     --mark-plate: #eef0f3;
   }

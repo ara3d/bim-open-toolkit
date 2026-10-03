@@ -10,17 +10,17 @@ build with the same four edits, so an answer arrives with the steps that produce
 This repository is the hub of the BIM Open family and the analyst application: the
 studio, the node packs that know about buildings, the samples over real models, the
 headless checks, and the NRC (National Research Council Canada) research work. Since
-2026-10-03 the products are being split into repositories of their own; until a product's
-phase lands, its code still lives here at the path given below.
-[docs/plans/repository-split.md](docs/plans/repository-split.md) has the phases.
+2026-10-03 the products are being split into repositories of their own;
+[docs/plans/repository-split.md](docs/plans/repository-split.md) has the phases and says
+which code still lives here.
 
-| Repository | What it is | Status on 2026-10-03 |
+| | Repository | What it is |
 |---|---|---|
-| [bim-open-viewer](https://github.com/ara3d/bim-open-viewer) | WebGL viewer for building models, 17 npm packages | Split out; used here as `deps/bim-open-viewer` |
-| [bim-open-notebook](https://github.com/ara3d/bim-open-notebook) | A session with an agent kept as a document of results that can be evaluated again | Moving in phase 6; code in `bimopenflow/web/packages/bim-open-notebook` |
-| [bim-open-flow](https://github.com/ara3d/bim-open-flow) | Graphs over tables: node packs, headless host, web editor, MCP server | Moving in phase 5; code in `src/flow` and `bimopenflow/web` |
-| [bim-open-data](https://github.com/ara3d/bim-open-data) | BOS and IFC in .NET: read, write, mesh, convert to DuckDB, edit property sets byte-exactly | Moving in phase 4, under way |
-| [bim-open-schema](https://github.com/ara3d/bim-open-schema) | The BOS specification | Separate from the start |
+| <img src="docs/brand/schema-mark.svg" width="22" height="22" alt=""> | [bim-open-schema](https://github.com/ara3d/bim-open-schema) | The BOS specification |
+| <img src="docs/brand/data-mark.svg" width="22" height="22" alt=""> | [bim-open-data](https://github.com/ara3d/bim-open-data) | BOS and IFC in .NET: read, write, mesh, convert to DuckDB, edit property sets byte-exactly |
+| <img src="docs/brand/mark.svg" width="22" height="22" alt=""> | [bim-open-flow](https://github.com/ara3d/bim-open-flow) | Graphs over tables: node packs, headless host, web editor, MCP server |
+| <img src="docs/brand/viewer-mark.svg" width="22" height="22" alt=""> | [bim-open-viewer](https://github.com/ara3d/bim-open-viewer) | WebGL viewer for building models, 17 npm packages |
+| <img src="docs/brand/notebook-mark.svg" width="22" height="22" alt=""> | [bim-open-notebook](https://github.com/ara3d/bim-open-notebook) | A session with an agent kept as a document of results that can be evaluated again |
 
 [![The family page: purpose, the two in-browser demos, and the repositories](docs/images/family-page.png)](https://ara3d.github.io/bim-open-toolkit/)
 

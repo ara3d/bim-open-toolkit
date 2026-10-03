@@ -18,7 +18,7 @@
   <div class="topbar-inner">
     <a class="home" href="./" aria-label="BIM Open Toolkit, top of page">
       <span class="marks" aria-hidden="true">
-        <img src="assets/data-mark.svg" alt=""><img src="assets/flow-mark.svg" alt=""><img src="assets/viewer-mark.svg" alt=""><img src="assets/notebook-mark.svg" alt="">
+        <img src="assets/schema-mark.svg" alt=""><img src="assets/data-mark.svg" alt=""><img src="assets/flow-mark.svg" alt=""><img src="assets/viewer-mark.svg" alt=""><img src="assets/notebook-mark.svg" alt="">
       </span>
       <span class="wordmark"><span class="family">BIM Open</span><span class="product">Toolkit</span></span>
     </a>
@@ -122,10 +122,10 @@
       <p class="links"><a href="https://github.com/ara3d/bim-open-toolkit">Repository</a><a href="https://github.com/ara3d/bim-open-toolkit/blob/main/docs/plans/repository-split.md">Split plan</a></p>
     </article>
 
-    <article class="card">
+    <article class="card" style="--accent: var(--schema)">
       <div class="card-head">
-        <span class="no-mark" aria-hidden="true"></span>
-        <div><h3 class="wordmark"><span class="product">BIM Open Schema</span></h3><span class="repo">ara3d/bim-open-schema</span></div>
+        <img src="assets/schema-mark.svg" alt="">
+        <div><h3 class="wordmark"><span class="family">BIM Open</span><span class="product">Schema</span></h3><span class="repo">ara3d/bim-open-schema</span></div>
       </div>
       <p>The specification: five dependency-free C# files that define the BOS tables (entities, parameters, relations, geometry) stored as Parquet. No reader, writer, or converter.</p>
       <p class="status done"><strong>Separate</strong> from the start.</p>
@@ -193,7 +193,7 @@
     <li class="tier tier-4">
       <div class="node lib"><span class="node-name">ara3d-dataflow</span><span class="node-role">specified graph engine</span></div>
       <div class="node lib"><span class="node-name">gratify</span><span class="node-role">canvas UI library</span></div>
-      <div class="node lib"><span class="node-name">bim-open-schema</span><span class="node-role">the BOS specification</span></div>
+      <div class="node lib" style="--accent: var(--schema)"><span class="node-name">bim-open-schema</span><span class="node-role">the BOS specification</span></div>
       <div class="node lib"><span class="node-name">ara3d-sdk</span><span class="node-role">.NET utilities</span></div>
     </li>
   </ol>
