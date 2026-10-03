@@ -5,7 +5,7 @@
   },
   "bim-open-viewer": {
     "url": "https://github.com/ara3d/bim-open-viewer",
-    "commit": "5a992e41385ae277f4e8ec0eb37b46a2da07f040"
+    "commit": "b0ec646087b83d954585e3b8d022d98b4dddb464"
   },
   "bim-open-schema": {
     "url": "https://github.com/ara3d/bim-open-schema",
