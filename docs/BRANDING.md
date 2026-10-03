@@ -3,9 +3,11 @@
 Decided 2026-10-03 by Christopher Diggins from proposals drafted with Claude
 Fable 5.1 (the explorations are kept under `docs/brand/explorations/`). This
 is the reference for the marks, the wordmarks, the fonts, and the colours of
-every BIM Open page. Two products carry it today: **BIM Open Flow** (the
-graph editor and studio) and **BIM Open Notebook** (the session record,
-which the repository-layout proposal gives its own repository). The studio
+every BIM Open page. Four products carry it: **BIM Open Flow** (the
+graph editor and studio), **BIM Open Notebook** (the session record),
+**BIM Open Viewer** (the 3D viewer), and **BIM Open Data** (the .NET
+implementation of BIM Open Schema and the IFC stack); the
+repository-layout proposal gives each its own repository. The studio
 look (`docs/proposals/studio-look.md`) is the first page to carry it; the
 classic page keeps its current look until the two are reconciled.
 
@@ -13,22 +15,27 @@ classic page keeps its current look until the two are reconciled.
 
 The products share everything except a mark and an accent:
 
-| | BIM Open Flow | BIM Open Notebook |
-|---|---|---|
-| Mark | Rows to Flow, `docs/brand/mark.svg` | Flow to Page, `docs/brand/notebook-mark.svg` |
-| Accent | Flow blue `#2f66ce`, soft `#e8eefb` | Ink violet `#5a47c7`, soft `#ece8fb` |
-| Lockup | `docs/brand/lockup.svg` | `docs/brand/notebook-lockup.svg` |
-| Repository | `bim-open-flow` | `bim-open-notebook` |
+| | Mark | Accent, soft | Lockup | Repository |
+|---|---|---|---|---|
+| **BIM Open Flow** | Rows to Flow, `docs/brand/mark.svg` | Flow blue `#2f66ce`, `#e8eefb` | `docs/brand/lockup.svg` | `ara3d/bim-open-flow` |
+| **BIM Open Notebook** | Flow to Page, `docs/brand/notebook-mark.svg` | Ink violet `#5a47c7`, `#ece8fb` | `docs/brand/notebook-lockup.svg` | `ara3d/bim-open-notebook` |
+| **BIM Open Viewer** | `docs/brand/viewer-mark.svg` | Teal `#0f8a80`, `#e2f3f1` | `docs/brand/viewer-lockup.svg` | `ara3d/bim-open-viewer` |
+| **BIM Open Data** | Model to Rows, `docs/brand/data-mark.svg` | Rose `#b8326e`, `#f9e6ef` | `docs/brand/data-lockup.svg` | `ara3d/bim-open-data` |
+
+The toolkit itself (`ara3d/bim-open-toolkit`) is the family hub and has no
+accent of its own: its pages, such as the family landing page under
+`site/`, use the text colour `#171a1f` where a product would use its
+accent, and show each product in that product's accent.
 
 Fonts, neutrals, status colours, the type scale, and the mark rules below
-are the same for both. A third product takes a mark drawn from the same
-parts (the rows, the wire, the node disc) and an accent that no other
-product or status colour uses.
+are the same for every product. A new product takes a mark drawn from
+the same parts (the rows, the wire, the node disc) and an accent that no
+other product or status colour uses.
 
 ## The names
 
 The product names are three words: **BIM Open Flow**, **BIM Open
-Notebook**. The one-word form "BimOpenFlow" was the wordmark until
+Notebook**, **BIM Open Viewer**, **BIM Open Data**. The one-word form "BimOpenFlow" was the wordmark until
 2026-10-03 and remains in code identifiers, package names, and the
 `bimopenflow/` directory, where it is a name for machines. Where a person
 reads it, in a command bar, a page title, a paper, or a README heading,
@@ -41,7 +48,7 @@ product second, and the two bars agree.
 
 ## The marks
 
-![Rows to Flow](brand/mark.svg) ![Flow to Page](brand/notebook-mark.svg)
+![Rows to Flow](brand/mark.svg) ![Flow to Page](brand/notebook-mark.svg) ![Model to Rows](brand/data-mark.svg)
 
 **Rows to Flow** (BIM Open Flow). Three table rows on the left; their wires
 curve and gather into one solid node on the right. It says what the
@@ -54,6 +61,12 @@ embed the agent answered with, then the next request. Read together, the
 two marks say that the notebook is a client of the flow host and that an
 answer becomes part of a document.
 
+**Model to Rows** (BIM Open Data). Rows to Flow reversed: the node disc
+on the left stands for a model, and three wires fan out of it to three
+table rows on the right, each split into a key cell and a value cell. It
+says what the library does: a building model, read from IFC or Revit,
+becomes rows of plain tables.
+
 Each file is a 24 by 24 viewBox, one path, one fill, so the path can be
 pasted into code (the studio's command bar draws it as an inline SVG from
 a path string) and scaled without edits.
@@ -64,9 +77,10 @@ Rules:
   accent or on a dark surface. No gradients, no outline, no shadow.
 - Sizes: 16 px (favicon and browser tab), 22 px (command bar, beside the
   wordmark), 48 px (start page), 96 px and up (papers, slides).
-- Below 16 px, Rows to Flow uses the node alone (the circle) and Flow to
-  Page uses the page alone (the spine and its rows), so the two favicons
-  differ even when the node is lost.
+- Below 16 px, Rows to Flow uses the node alone (the circle), Flow to
+  Page uses the page alone (the spine and its rows), and Model to Rows
+  uses the rows alone (the six cells), so the favicons differ even when
+  the node is lost.
 - Clear space of half the mark's width on every side.
 - Do not rotate, skew, add rows, or recolour parts of a mark separately.
 
@@ -124,6 +138,10 @@ interface scale, so a table looks the same in a notebook and in the studio.
 | Accent soft (Flow) | `#e8eefb` | Selected row, hover on cards, in the studio |
 | Accent (Notebook) | `#5a47c7` | The notebook mark, the notebook's primary button, selection, the turn rail |
 | Accent soft (Notebook) | `#ece8fb` | Selected row, embed kind badge, in the notebook |
+| Accent (Viewer) | `#0f8a80` | The viewer mark and the viewer's pages |
+| Accent soft (Viewer) | `#e2f3f1` | Selected row and hover, in the viewer |
+| Accent (Data) | `#b8326e` | The data mark and the data repository's pages |
+| Accent soft (Data) | `#f9e6ef` | Selected row and hover, on the data pages |
 | Text | `#171a1f` | Headings, body |
 | Dim | `#5a606c` | Secondary text, ids, meta, the "BIM Open" half of the wordmark |
 | Surface | `#ffffff` | Panels, cards, the command bar |
