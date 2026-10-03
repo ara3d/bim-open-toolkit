@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIM Open family</title>
+<meta name="description" content="The BIM Open repositories: what each one is, where its code lives on 2026-10-03, and how they depend on each other.">
+<link rel="icon" href="assets/flow-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&family=Public+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+
+<header>
+  <div class="marks">
+    <img src="assets/flow-mark.svg" alt="BIM Open Flow mark">
+    <img src="assets/notebook-mark.svg" alt="BIM Open Notebook mark">
+    <img src="assets/viewer-mark.svg" alt="BIM Open Viewer mark">
+    <img src="assets/data-mark.svg" alt="BIM Open Data mark">
+  </div>
+  <h1><span class="wordmark" style="font-size:inherit"><span class="family">BIM Open</span><span class="product">Toolkit</span></span></h1>
+  <p class="lede">Open tools for getting tables, charts, checks, and 3D views out of building models without a vendor's API. A model is stored as plain tables (BIM Open Schema, or BOS), and questions about those tables become small graphs that people and AI agents build with the same four operations.</p>
+  <p class="meta">This page lists the repositories of the BIM Open family and their state on 2026-10-03, partway through splitting one repository, <code>bim-open-toolkit</code>, into several. The plan is <a href="https://github.com/ara3d/bim-open-toolkit/blob/main/docs/plans/repository-split.md">docs/plans/repository-split.md</a>.</p>
+</header>
+
+<h2>The repositories</h2>
+<p>"Split out" means the code lives in that repository and the toolkit takes it through its <code>deps/</code> folder. "Moving" means the repository exists but the code is still inside the toolkit, at the path given, until the phase named. None of the Pages sites below is published yet; each repository's owner switches Pages on in its settings.</p>
+
+<div class="cards">
+
+  <article class="card">
+    <div class="head">
+      <span class="no-mark" aria-hidden="true"></span>
+      <div>
+        <h3><span class="wordmark"><span class="family">BIM Open</span><span class="product">Toolkit</span></span></h3>
+        <div class="repo">ara3d/bim-open-toolkit</div>
+      </div>
+    </div>
+    <p>The working repository and the analyst application: the studio host and its pages, the BIM node packs, the samples, the headless gates, and the NRC research work.</p>
+    <div class="status"><strong>Hub.</strong> Still holds everything not yet split out. Phase 7 makes it the entry point a downstream project adds as one submodule, pinned to a tested tag.</div>
+    <div class="links">
+      <a href="https://github.com/ara3d/bim-open-toolkit">Repository</a>
+      <a href="https://ara3d.github.io/bim-open-toolkit/">Pages site</a>
+    </div>
+  </article>
+
+  <article class="card" style="--accent: var(--flow)">
+    <div class="head">
+      <img src="assets/flow-mark.svg" alt="">
+      <div>
+        <h3><span class="wordmark"><span class="family">BIM Open</span><span class="product">Flow</span></span></h3>
+        <div class="repo">ara3d/bim-open-flow</div>
+      </div>
+    </div>
+    <p>The graph system: node packs over tables, a headless host that evaluates graphs and records runs, the web editor, and an MCP server so an agent edits the same graph a person does.</p>
+    <div class="status moving"><strong>Moving, phase 5.</strong> The code is in the toolkit's <code>src/flow</code> and <code>bimopenflow/web</code>; the repository holds a README.</div>
+    <div class="links">
+      <a href="https://github.com/ara3d/bim-open-flow">Repository</a>
+      <a href="https://ara3d.github.io/bim-open-flow/">Pages site</a>
+    </div>
+  </article>
+
+  <article class="card" style="--accent: var(--notebook)">
+    <div class="head">
+      <img src="assets/notebook-mark.svg" alt="">
+      <div>
+        <h3><span class="wordmark"><span class="family">BIM Open</span><span class="product">Notebook</span></span></h3>
+        <div class="repo">ara3d/bim-open-notebook</div>
+      </div>
+    </div>
+    <p>A record of a session with an agent as a document: each turn is a request in plain language and a reply whose tables, charts, and 3D views keep a snapshot and can be evaluated again.</p>
+    <div class="status moving"><strong>Moving, phase 6.</strong> The code is in the toolkit's <code>bimopenflow/web/packages/bim-open-notebook</code>; the repository holds its first commit. It moves after TKT-86 cuts its imports from the editor's app package.</div>
+    <div class="links">
+      <a href="https://github.com/ara3d/bim-open-notebook">Repository</a>
+      <a href="https://ara3d.github.io/bim-open-notebook/">Pages site</a>
+    </div>
+  </article>
+
+  <article class="card" style="--accent: var(--viewer)">
+    <div class="head">
+      <img src="assets/viewer-mark.svg" alt="">
+      <div>
+        <h3><span class="wordmark"><span class="family">BIM Open</span><span class="product">Viewer</span></span></h3>
+        <div class="repo">ara3d/bim-open-viewer</div>
+      </div>
+    </div>
+    <p>A WebGL viewer built on three.js, in 17 npm packages, that knows no file format: instanced drawing, per-instance colour, picking, section planes, and a model layer that tests run without a browser.</p>
+    <div class="status split"><strong>Split out, phase 2.</strong> <code>main</code> is at <code>35ce03b</code>; the toolkit takes it as <code>deps/bim-open-viewer</code>, and both share one Gratify checkout.</div>
+    <div class="links">
+      <a href="https://github.com/ara3d/bim-open-viewer">Repository</a>
+      <a href="https://ara3d.github.io/bim-open-viewer/">Pages site</a>
+    </div>
+  </article>
+
+  <article class="card" style="--accent: var(--data)">
+    <div class="head">
+      <img src="assets/data-mark.svg" alt="">
+      <div>
+        <h3><span class="wordmark"><span class="family">BIM Open</span><span class="product">Data</span></span></h3>
+        <div class="repo">ara3d/bim-open-data</div>
+      </div>
+    </div>
+    <p>The .NET implementation of BIM Open Schema and the IFC stack: reading and writing BOS files, IFC loading and meshing, byte-exact property-set editing, IFC to BOS and DuckDB, the IFC MCP server, and the BOS Browser.</p>
+    <div class="status moving"><strong>Moving, phase 4.</strong> The code is in the toolkit's <code>src/data</code>, <code>src/mcp/BimOpenMcp.Ifc</code>, and <code>apps/</code>; the repository holds a README.</div>
+    <div class="links">
+      <a href="https://github.com/ara3d/bim-open-data">Repository</a>
+      <a href="https://ara3d.github.io/bim-open-data/">Pages site</a>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="head">
+      <span class="no-mark" style="border-style:dashed" aria-hidden="true"></span>
+      <div>
+        <h3>BIM Open Schema</h3>
+        <div class="repo">ara3d/bim-open-schema</div>
+      </div>
+    </div>
+    <p>The specification: five dependency-free C# files that define the BOS tables (entities, parameters, relations, geometry) stored as Parquet. It contains no reader, writer, or converter.</p>
+    <div class="status split"><strong>Separate from the start.</strong> The toolkit takes it as the submodule <code>submodules/bim-open-schema</code>; BIM Open Data will take it through <code>deps/</code>.</div>
+    <div class="links">
+      <a href="https://github.com/ara3d/bim-open-schema">Repository</a>
+      <a href="https://ara3d.github.io/bim-open-schema/">Pages site</a>
+    </div>
+  </article>
+
+</div>
+
+<h2>How they depend on each other</h2>
+<p>The picture is the layout the split is heading for. An arrow points from a repository to one it builds on. The lower row holds general libraries that know nothing about buildings, except the schema.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 960 400" role="img" aria-labelledby="dep-title" xmlns="http://www.w3.org/2000/svg">
+  <title id="dep-title">Dependencies between the BIM Open repositories</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#5a606c"/>
+    </marker>
+  </defs>
+  <style>
+    .box { fill: #ffffff; stroke-width: 2; }
+    .name { font: 500 14px "Fira Code", Consolas, monospace; fill: #171a1f; }
+    .role { font: 400 12px "Public Sans", system-ui, sans-serif; fill: #5a606c; }
+    .edge { stroke: #5a606c; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+  </style>
+
+  <!-- edges -->
+  <path class="edge" d="M160 66V218"/>
+  <path class="edge" d="M360 66V118"/>
+  <path class="edge" d="M540 66V218"/>
+  <path class="edge" d="M820 66V218"/>
+  <path class="edge" d="M310 166L215 218"/>
+  <path class="edge" d="M410 166L495 218"/>
+  <path class="edge" d="M110 266L100 328"/>
+  <path class="edge" d="M220 266L300 328"/>
+  <path class="edge" d="M500 266L380 328"/>
+  <path class="edge" d="M780 266L725 328"/>
+  <path class="edge" d="M860 266L878 328"/>
+
+  <!-- toolkit -->
+  <rect class="box" x="40" y="20" width="880" height="46" rx="6" stroke="#171a1f"/>
+  <text class="name" x="56" y="40">bim-open-toolkit</text>
+  <text class="role" x="56" y="57">analyst application and entry point: studio host, BIM node packs, samples, gates; takes every product through deps/</text>
+
+  <!-- notebook -->
+  <rect class="box" x="270" y="120" width="180" height="46" rx="6" stroke="#5a47c7"/>
+  <text class="name" x="284" y="140">bim-open-notebook</text>
+  <text class="role" x="284" y="157">session record, live embeds</text>
+
+  <!-- products -->
+  <rect class="box" x="70" y="220" width="180" height="46" rx="6" stroke="#2f66ce"/>
+  <text class="name" x="84" y="240">bim-open-flow</text>
+  <text class="role" x="84" y="257">graphs, host, editor, MCP</text>
+
+  <rect class="box" x="450" y="220" width="180" height="46" rx="6" stroke="#0f8a80"/>
+  <text class="name" x="464" y="240">bim-open-viewer</text>
+  <text class="role" x="464" y="257">WebGL viewer, 17 packages</text>
+
+  <rect class="box" x="730" y="220" width="190" height="46" rx="6" stroke="#b8326e"/>
+  <text class="name" x="744" y="240">bim-open-data</text>
+  <text class="role" x="744" y="257">BOS and IFC in .NET</text>
+
+  <!-- libraries -->
+  <rect class="box" x="20" y="330" width="170" height="46" rx="6" stroke="#cfd4db"/>
+  <text class="name" x="34" y="350">ara3d-dataflow</text>
+  <text class="role" x="34" y="367">specified graph engine</text>
+
+  <rect class="box" x="260" y="330" width="170" height="46" rx="6" stroke="#cfd4db"/>
+  <text class="name" x="274" y="350">gratify</text>
+  <text class="role" x="274" y="367">canvas UI library</text>
+
+  <rect class="box" x="630" y="330" width="170" height="46" rx="6" stroke="#cfd4db"/>
+  <text class="name" x="644" y="350">bim-open-schema</text>
+  <text class="role" x="644" y="367">the BOS specification</text>
+
+  <rect class="box" x="815" y="330" width="125" height="46" rx="6" stroke="#cfd4db"/>
+  <text class="name" x="829" y="350">ara3d-sdk</text>
+  <text class="role" x="829" y="367">.NET utilities</text>
+</svg>
+</div>
+
+<h2>How the pieces fit</h2>
+<p>A building model enters as an IFC file or as a BOS file exported from Revit. <strong>BIM Open Data</strong> reads it, converts IFC to BOS, and loads BOS into DuckDB, where every entity, parameter, and relation is a row. It also writes property-set changes back into the IFC file without touching any other byte.</p>
+<p><strong>BIM Open Flow</strong> turns a question about those tables into a graph of small nodes, each a pure function from tables to a table, a chart, or a 3D colouring. Nodes that write files wait for an explicit Run, and each run records the graph and its inputs by content hash so its numbers can be replayed. <strong>BIM Open Viewer</strong> draws the model in the browser, and a graph's output colours it. <strong>BIM Open Notebook</strong> keeps a conversation with an agent as a document whose answers are those graphs, tables, and views.</p>
+<p>The <strong>toolkit</strong> joins them into the analyst application, with the node packs that know about buildings and the samples over real models. Each repository lists what it needs in <code>deps.json</code> and reads it only from its own <code>deps/</code> folder, which <code>node deps.mjs</code> fills with a link to a sibling checkout or a clone at the pinned commit, so one checkout never holds two copies of a repository.</p>
+
+<h2>Where things stand, 2026-10-03</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Phase</th><th>Step</th><th>State</th></tr></thead>
+  <tbody>
+    <tr><td>0</td><td>Clear stale ticket claims and stray files</td><td>Done</td></tr>
+    <tr><td>1</td><td>Take Gratify through <code>deps/</code> instead of a submodule</td><td>Done</td></tr>
+    <tr><td>2</td><td>Split out the viewer to <code>bim-open-viewer</code></td><td>Done</td></tr>
+    <tr><td>3</td><td>Seams in the toolkit: the host and editor take node packs and panes from whoever composes them</td><td>Not started</td></tr>
+    <tr><td>4</td><td>Move <code>src/data</code> to <code>bim-open-data</code></td><td>Not started</td></tr>
+    <tr><td>5</td><td>Move the generic graph system to <code>bim-open-flow</code></td><td>Not started</td></tr>
+    <tr><td>6</td><td>Move the notebook to <code>bim-open-notebook</code></td><td>Not started</td></tr>
+    <tr><td>7</td><td>Make the toolkit the entry point; tag the first combination that passes every check</td><td>Not started</td></tr>
+  </tbody>
+</table>
+</div>
+
+<footer>
+  <p>MIT licensed. Source of this page: <a href="https://github.com/ara3d/bim-open-toolkit/tree/main/site">site/</a> in <code>bim-open-toolkit</code>. Marks and colours: <a href="https://github.com/ara3d/bim-open-toolkit/blob/main/docs/BRANDING.md">docs/BRANDING.md</a>.</p>
+</footer>
+
+</main>
+</body>
+</html>

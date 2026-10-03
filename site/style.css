@@ -1,0 +1,86 @@
+/* BIM Open family landing page. Tokens from docs/BRANDING.md. */
+:root {
+  --font-brand: "Instrument Sans", "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Fira Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --text: #171a1f;
+  --dim: #5a606c;
+  --surface: #ffffff;
+  --bg: #f4f5f7;
+  --border: #e3e6ea;
+  --edge: #cfd4db;
+  --flow: #2f66ce;
+  --notebook: #5a47c7;
+  --viewer: #0f8a80;
+  --data: #b8326e;
+  --green: #16a34a;
+  --amber: #d97706;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 15px/1.55 var(--font-ui);
+}
+
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+
+h1, h2, h3 { font-family: var(--font-brand); line-height: 1.2; }
+h1 { font-size: 30px; margin: 0 0 8px; }
+h2 { font-size: 20px; margin: 48px 0 12px; }
+h3 { font-size: 16px; margin: 0; }
+p { margin: 0 0 12px; max-width: 72ch; }
+a { color: var(--text); text-decoration-color: var(--edge); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--text); }
+code { font: 400 13px var(--font-mono); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+
+.wordmark { font-family: var(--font-brand); font-size: 15px; letter-spacing: -0.01em; }
+.wordmark .family { font-weight: 600; color: var(--dim); margin-right: 4px; }
+.wordmark .product { font-weight: 700; color: var(--text); }
+
+header .marks { display: flex; gap: 10px; margin-bottom: 20px; }
+header .marks img { width: 32px; height: 32px; }
+.lede { font-size: 17px; color: var(--text); }
+.meta { color: var(--dim); font-size: 13px; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent, var(--text));
+  border-radius: 8px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card .head { display: flex; align-items: center; gap: 10px; min-height: 32px; }
+.card .head img { width: 32px; height: 32px; flex: none; }
+.card .repo { font: 400 12px var(--font-mono); color: var(--dim); }
+.card p { font-size: 14px; margin: 0; }
+.status { font-size: 13px; border-left: 3px solid var(--edge); padding-left: 10px; color: var(--dim); }
+.status strong { color: var(--text); font-weight: 600; }
+.status.split { border-left-color: var(--green); }
+.status.moving { border-left-color: var(--amber); }
+.links { margin-top: auto; display: flex; gap: 16px; font-size: 13px; flex-wrap: wrap; }
+.no-mark {
+  width: 32px; height: 32px; flex: none; border-radius: 6px;
+  border: 2px solid var(--accent, var(--text));
+}
+
+.diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 640px; height: auto; }
+
+table { border-collapse: collapse; background: var(--surface); font-size: 14px; width: 100%; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-weight: 600; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+
+footer { margin-top: 48px; color: var(--dim); font-size: 13px; }
