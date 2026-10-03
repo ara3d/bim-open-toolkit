@@ -1,6 +1,7 @@
 using Ara3D.Ifc.DuckDb;
 using Ara3D.Utils;
 using BimOpenFlow.Host;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -18,10 +19,10 @@ public sealed class Fixture
     private static readonly Lazy<string> Built = new(() =>
     {
         Directory.CreateDirectory(Dir);
-        var database = Path.Combine(Dir, SampleSeeding.NrcDatabaseFileName);
+        var database = Path.Combine(Dir, NrcSamples.DatabaseFileName);
         IfcDuckDbBuild.Build(new FilePath(NrcPaths.Ifc), new FilePath(database));
         IfcDuckDbBuild.Build(new FilePath(NrcPaths.BaseIfc),
-            new FilePath(Path.Combine(Dir, SampleSeeding.NrcBaseDatabaseFileName)));
+            new FilePath(Path.Combine(Dir, NrcSamples.BaseDatabaseFileName)));
         return database;
     });
 
@@ -38,7 +39,7 @@ public sealed class Fixture
 
     /// <summary>The bim-profile registry over the given sources, so every sample graph can evaluate.</summary>
     public static NodeRegistry Registry(RelationRuntime runtime)
-        => HostComposition.AllPacks(runtime);
+        => StudioComposition.BimPacks(runtime);
 
     [OneTimeTearDown]
     public void DeleteDatabase()

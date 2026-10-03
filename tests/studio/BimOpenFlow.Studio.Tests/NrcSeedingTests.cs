@@ -1,9 +1,10 @@
+using BimOpenFlow.Host;
 using BimOpenFlow.Host.Store;
 using BimOpenToolkit.TestSupport;
 
-namespace BimOpenFlow.Host.Tests;
+namespace BimOpenFlow.Studio.Tests;
 
-/// <summary>Both host profiles seed the NRC sample graphs their registry can run into an
+/// <summary>Both studio profiles seed the NRC sample graphs their registry can run into an
 /// empty store and register samples/nrc as a model root; its database and BOS file are
 /// background preparation jobs, never built inside start-up.</summary>
 public sealed class NrcSeedingTests
@@ -29,8 +30,8 @@ public sealed class NrcSeedingTests
     public void TablesProfile_SeedsTheNrcGraphsItCanRun_AndReportsTheOthers()
     {
         var log = new StringWriter();
-        var seeded = SampleSeeding.Seed(new AnalysisStore(NewStoreDir()), AppContext.BaseDirectory,
-            HostComposition.TablePacks(), log);
+        var tables = StudioComposition.Tables;
+        var seeded = tables.Seed(new AnalysisStore(NewStoreDir()), AppContext.BaseDirectory, tables.Registry(), log);
         Assert.Multiple(() =>
         {
             Assert.That(seeded, Is.SupersetOf(SharedIds));
@@ -44,8 +45,8 @@ public sealed class NrcSeedingTests
     public void BimProfile_SeedsEveryNrcGraph()
     {
         var log = new StringWriter();
-        var seeded = BimSampleSeeding.Seed(new AnalysisStore(NewStoreDir()), AppContext.BaseDirectory,
-            HostComposition.AllPacks(), log);
+        var bim = StudioComposition.Bim;
+        var seeded = bim.Seed(new AnalysisStore(NewStoreDir()), AppContext.BaseDirectory, bim.Registry(), log);
         Assert.Multiple(() =>
         {
             Assert.That(seeded, Is.SupersetOf(SharedIds.Concat(BimOnlyIds)));
@@ -61,24 +62,48 @@ public sealed class NrcSeedingTests
 
     [Test]
     public void WithoutARegistry_EverythingIsSeeded()
-        => Assert.That(SampleSeeding.Seed(new AnalysisStore(NewStoreDir()), AppContext.BaseDirectory),
+        => Assert.That(StudioComposition.Tables.Seed(new AnalysisStore(NewStoreDir()), AppContext.BaseDirectory, null, null),
             Is.SupersetOf(SharedIds.Concat(BimOnlyIds)));
 
     [Test]
     public void SeededRoots_IncludeSamplesNrc_AndItsDatabaseIsAPreparationJob()
     {
         var root = RepoPaths.Root;
-        var nrc = SampleSeeding.NrcSamplesDir(root);
+        var nrc = NrcSamples.Dir(root);
         Assert.Multiple(() =>
         {
-            Assert.That(SampleSeeding.SeededModelRoots(AppContext.BaseDirectory), Does.Contain(nrc));
-            Assert.That(BimSampleSeeding.SeededModelRoots(AppContext.BaseDirectory), Does.Contain(nrc));
-            Assert.That(SamplePreparation.Jobs(AppContext.BaseDirectory).Select(j => j.Output),
+            Assert.That(StudioComposition.Tables.SeededModelRoots(AppContext.BaseDirectory), Does.Contain(nrc));
+            Assert.That(StudioComposition.Bim.SeededModelRoots(AppContext.BaseDirectory), Does.Contain(nrc));
+            Assert.That(StudioComposition.Tables.Preparation(AppContext.BaseDirectory).Select(j => j.Output),
                 Is.SupersetOf(new[]
                 {
-                    Path.Combine(nrc, SampleSeeding.NrcDatabaseFileName),
-                    Path.Combine(nrc, SampleSeeding.NrcBosFileName),
+                    Path.Combine(nrc, NrcSamples.DatabaseFileName),
+                    Path.Combine(nrc, NrcSamples.BosFileName),
                 }));
+        });
+    }
+
+    [Test]
+    public void TheGenericTablesProfile_SeedsNoNrcGraph_AndPreparesNothing()
+        => Assert.Multiple(() =>
+        {
+            Assert.That(HostComposition.Tables.Seed(new AnalysisStore(NewStoreDir()), AppContext.BaseDirectory, null, null),
+                Has.None.AnyOf(SharedIds.Concat(BimOnlyIds)));
+            Assert.That(HostComposition.Tables.Preparation(AppContext.BaseDirectory), Is.Empty);
+        });
+
+    [Test]
+    public void NrcDatabaseJob_NamesTheSourceTheGraphsUse()
+    {
+        var root = RepoPaths.Root;
+        var job = NrcPreparation.Database(root);
+        Assert.That(job, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(job!.Source, Is.EqualTo("duplex-enriched"));
+            Assert.That(Path.GetFileName(job.Input), Is.EqualTo(NrcSamples.IfcFileName));
+            Assert.That(Path.GetFileName(job.Output), Is.EqualTo(NrcSamples.DatabaseFileName));
+            Assert.That(Path.GetDirectoryName(job.Output), Is.EqualTo(NrcSamples.Dir(root)));
         });
     }
 }

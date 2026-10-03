@@ -2,6 +2,7 @@ using Ara3D.DataTable;
 using Ara3D.DataFlowEngine.TestKit;
 using BimOpenFlow.Host;
 using BimOpenFlow.Relations;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -27,7 +28,7 @@ public sealed class BfastGraphTests
     {
         var doc = Document();
         var runtime = RelationRuntime.FromRoots([NrcPaths.SamplesDir]);
-        foreach (var registry in new[] { HostComposition.TablePacks(runtime), HostComposition.AllPacks(runtime) })
+        foreach (var registry in new[] { HostComposition.TablePacks(runtime), StudioComposition.BimPacks(runtime) })
         {
             Assert.That(doc.Validate(registry), Is.Empty, Id);
             var snapshot = doc.Evaluate(registry);

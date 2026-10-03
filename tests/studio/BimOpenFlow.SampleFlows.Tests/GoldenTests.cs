@@ -2,6 +2,7 @@ using BimOpenFlow.GraphText;
 using BimOpenFlow.Host;
 using BimOpenToolkit.TestSupport;
 using GraphTextPrinter = BimOpenFlow.GraphText.GraphText;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.SampleFlows.Tests;
 
@@ -61,10 +62,8 @@ public sealed class GoldenTests
     }
 
     private static string GoldenPath(string profile, string id)
-        => Path.Combine(RepoPaths.Root, "tests", "flow", "BimOpenFlow.SampleFlows.Tests", "golden", profile, id + ".txt");
+        => Path.Combine(RepoPaths.Root, "tests", "studio", "BimOpenFlow.SampleFlows.Tests", "golden", profile, id + ".txt");
 
     private static IReadOnlyList<string> ModelRoots(string profile)
-        => profile == SampleFlowsFixture.TablesProfile
-            ? SampleSeeding.SeededModelRoots(RepoPaths.Root)
-            : BimSampleSeeding.SeededModelRoots(RepoPaths.Root);
+        => StudioComposition.Profiles[profile].SeededModelRoots(RepoPaths.Root);
 }

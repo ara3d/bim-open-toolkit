@@ -45,4 +45,4 @@ jobs:
       # Towers model, which no runner has, and running the walkthrough
       # script names that in its generated index rather than reporting it
       # as passing.
-      - run: dotnet test tests/flow/BimOpenFlow.NrcWorkflows.Tests -c Release --no-build
+      - run: dotnet test tests/studio/BimOpenFlow.NrcWorkflows.Tests -c Release --no-build

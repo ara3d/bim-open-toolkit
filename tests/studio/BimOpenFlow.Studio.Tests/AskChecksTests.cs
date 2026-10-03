@@ -16,7 +16,7 @@ public sealed class AskChecksTests
         Directory.CreateDirectory(Path.Combine(_root, "models"));
         _services = FlowServices.Create(new HostConfig(
             [Path.Combine(_root, "models")], Path.Combine(_root, "cache"), Path.Combine(_root, "analyses"),
-            Port: 0, Profile: HostConfig.TablesProfile));
+            Port: 0, Profile: HostConfig.TablesProfile), HostComposition.Tables);
     }
 
     [TearDown]

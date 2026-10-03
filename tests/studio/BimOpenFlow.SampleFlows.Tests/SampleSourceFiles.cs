@@ -1,4 +1,5 @@
 using BimOpenToolkit.TestSupport;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.SampleFlows.Tests;
 

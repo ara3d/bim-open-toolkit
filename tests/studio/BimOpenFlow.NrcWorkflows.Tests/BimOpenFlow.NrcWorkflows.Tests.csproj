@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="$(Ara3DCoverletCollectorVersion)" />
-    <PackageReference Include="DuckDB.NET.Data.Full" Version="$(Ara3DDuckDbNetDataFullVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(Ara3DMicrosoftNetTestSdkVersion)" />
     <PackageReference Include="NUnit" Version="$(Ara3DNUnitVersion)" />
     <PackageReference Include="NUnit.Analyzers" Version="$(Ara3DNUnitAnalyzersVersion)" />
@@ -20,13 +19,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.Ifc.DuckDb\Ara3D.Ifc.DuckDb.csproj" />
+    <ProjectReference Include="..\..\..\src\studio\BimOpenFlow.Studio\BimOpenFlow.Studio.csproj" />
+    <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine\Ara3D.DataFlowEngine.csproj" />
     <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj" />
-    <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
-    <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.NodeGraph\Ara3D.NodeGraph.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Using Include="Ara3D.DataFlowEngine" />
+    <Using Include="Ara3D.DataFlowEngine.Abstractions" />
+    <Using Include="Ara3D.NodeGraph" />
+    <Using Include="BimOpenFlow.Nodes.Relations" />
   </ItemGroup>
 
 </Project>

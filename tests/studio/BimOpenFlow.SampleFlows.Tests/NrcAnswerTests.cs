@@ -7,7 +7,7 @@ namespace BimOpenFlow.SampleFlows.Tests;
 
 /// <summary>
 /// The CSV-backed nrc-q* flows' answers, checked against the same numbers
-/// tests/flow/BimOpenFlow.NrcWorkflows.Tests/CsvGraphTests.cs asserts (both cite
+/// tests/studio/BimOpenFlow.NrcWorkflows.Tests/CsvGraphTests.cs asserts (both cite
 /// nrc-ifc-llm/poc/results/expected_answers.json). This project cannot reference that test
 /// project's private literals directly, so the numbers are repeated here; a change to either
 /// copy without the other is exactly the drift this duplication risks; it is a NUnit

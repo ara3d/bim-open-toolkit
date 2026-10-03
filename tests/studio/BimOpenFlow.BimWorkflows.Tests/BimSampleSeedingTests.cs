@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using BimOpenFlow.Host;
 using BimOpenFlow.Host.Store;
 using BimOpenToolkit.TestSupport;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.BimWorkflows.Tests;
 

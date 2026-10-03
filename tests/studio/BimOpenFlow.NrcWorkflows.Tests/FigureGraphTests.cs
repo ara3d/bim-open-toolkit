@@ -2,6 +2,7 @@ using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
 using BimOpenFlow.Host;
 using BimOpenFlow.Nodes.Geometry;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -16,7 +17,7 @@ namespace BimOpenFlow.NrcWorkflows.Tests;
 [TestFixture]
 public sealed class FigureGraphTests
 {
-    private static readonly NodeRegistry Registry = HostComposition.AllPacks();
+    private static readonly NodeRegistry Registry = StudioComposition.BimPacks();
 
     /// <summary>nrc-color-operational-carbon is the one "colour by an analytics column" flow (the
     /// review's merge of nrc-color-category and nrc-color-embodied-carbon into it); a figure for

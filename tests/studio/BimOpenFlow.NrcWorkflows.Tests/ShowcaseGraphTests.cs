@@ -6,6 +6,7 @@ using Ara3D.NodeGraph;
 using Ara3D.Utils;
 using BimOpenFlow.Host;
 using BimOpenFlow.Relations;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -28,7 +29,7 @@ public sealed class ShowcaseGraphTests
     /// <summary>The Duplex BOS file the bim host prepares in the background; built here once.</summary>
     private static readonly Lazy<string> DuplexBos = new(() =>
     {
-        var bos = Path.Combine(Fixture.DatabaseDir, SampleSeeding.NrcBosFileName);
+        var bos = Path.Combine(Fixture.DatabaseDir, NrcSamples.BosFileName);
         Ara3D.Ifc.DuckDb.IfcDuckDbBuild.SaveBos(new FilePath(NrcPaths.Ifc), new FilePath(bos));
         return bos;
     });
@@ -81,7 +82,7 @@ public sealed class ShowcaseGraphTests
     {
         var doc = Document("csv-to-chart");
         var runtime = RelationRuntime.FromRoots([NrcPaths.SamplesDir]);
-        foreach (var registry in new[] { HostComposition.TablePacks(runtime), HostComposition.AllPacks(runtime) })
+        foreach (var registry in new[] { HostComposition.TablePacks(runtime), StudioComposition.BimPacks(runtime) })
         {
             var chart = Table(EvaluateGreen(doc, "csv-to-chart", registry), "answer");
             Assert.Multiple(() =>

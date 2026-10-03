@@ -1,9 +1,10 @@
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.Utils;
+using BimOpenFlow.Host;
 using BimOpenFlow.Host.Store;
 using BimOpenFlow.Nodes.BimAnalysis;
 
-namespace BimOpenFlow.Host;
+namespace BimOpenFlow.Studio;
 
 /// <summary>
 /// Seeds an analysis store with the committed BIM sample analyses:
@@ -30,8 +31,8 @@ public static class BimSampleSeeding
         {
             (Path.Combine(root, "samples", "bim-analyses"), SampleSeeding.PathPlaceholder, samplesDir),
             (Path.Combine(root, "samples", "view3d-analyses"), DataPlaceholder, Path.Combine(root, "data")),
-            SampleSeeding.NrcAnalyses(root),
-            SampleSeeding.ShowcaseAnalyses(root),
+            NrcSamples.Analyses(root),
+            NrcSamples.Showcase(root),
         };
         if (SnowdonPath() is { } snowdon)
             sources.Add((Path.Combine(root, "samples", "snowdon-analyses"), "{SNOWDON}", snowdon));
@@ -44,7 +45,7 @@ public static class BimSampleSeeding
     /// /api/models/{id}/bos. Empty outside a repo checkout.</summary>
     public static IReadOnlyList<string> SeededModelRoots(string startDir)
         => SampleSeeding.FindRepoRoot(startDir) is { } root
-            ? new[] { Path.Combine(root, "samples", "bim"), Path.Combine(root, "data"), SampleSeeding.NrcSamplesDir(root) }
+            ? new[] { Path.Combine(root, "samples", "bim"), Path.Combine(root, "data"), NrcSamples.Dir(root) }
                 .Concat(SnowdonPath() is { } snowdon ? [Path.GetDirectoryName(snowdon)!] : Array.Empty<string>()).ToArray()
             : [];
 

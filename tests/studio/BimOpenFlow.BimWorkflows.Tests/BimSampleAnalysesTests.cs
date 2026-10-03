@@ -5,6 +5,7 @@ using Ara3D.Utils;
 using BimOpenFlow.Host;
 using BimOpenFlow.Nodes.BimAnalysis;
 using BimOpenToolkit.TestSupport;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.BimWorkflows.Tests;
 
@@ -63,14 +64,14 @@ public sealed class BimSampleAnalysesTests
     {
         var doc = GraphDocumentIO.Load(file);
         Assert.That(doc.Nodes, Is.Not.Empty);
-        Assert.That(doc.Validate(HostComposition.AllPacks()), Is.Empty);
+        Assert.That(doc.Validate(StudioComposition.BimPacks()), Is.Empty);
     }
 
     [TestCaseSource(nameof(SampleFiles))]
     public void Evaluates_EveryNodeOk(string file)
     {
         var doc = SampleSeeding.RewritePaths(GraphDocumentIO.Load(file), _dir);
-        var session = new FlowTestSession(HostComposition.AllPacks());
+        var session = new FlowTestSession(StudioComposition.BimPacks());
         var snapshot = session.Evaluate(doc);
         var failed = snapshot.Results
             .Where(r => r.Value.Status != NodeStatus.Ok)

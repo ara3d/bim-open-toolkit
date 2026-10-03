@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using BimOpenFlow.Host;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -35,7 +36,7 @@ public sealed class SampleEnumerationTests
         var doc = GraphDocumentIO.Load(file);
         Assert.That(doc.Nodes, Is.Not.Empty);
         Assert.That(doc.FindNode("answer"), Is.Not.Null, "every NRC graph ends in a node named answer");
-        Assert.That(doc.Validate(HostComposition.AllPacks()), Is.Empty);
+        Assert.That(doc.Validate(StudioComposition.BimPacks()), Is.Empty);
     }
 
     [TestCaseSource(nameof(SampleFiles))]

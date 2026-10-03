@@ -1,5 +1,6 @@
 using BimOpenFlow.Host;
 using BimOpenFlow.Nodes.BimAnalysis;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.BimWorkflows.Tests;
 
@@ -10,7 +11,7 @@ public sealed class BimRegistryTests
     [Test]
     public void AllPacks_ContainsEveryBimAnalysisKind()
         => Assert.That(
-            HostComposition.AllPacks().Nodes.Select(n => n.Spec.Kind).ToList(),
+            StudioComposition.BimPacks().Nodes.Select(n => n.Spec.Kind).ToList(),
             Is.SupersetOf(BimAnalysisNodes.All.Select(n => n.Spec.Kind)));
 
     [Test]

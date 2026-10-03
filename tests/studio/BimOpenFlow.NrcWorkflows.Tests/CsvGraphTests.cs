@@ -3,6 +3,7 @@ using Ara3D.DataTable;
 using BimOpenFlow.Host;
 using BimOpenFlow.Relations;
 using NUnit.Framework.Constraints;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -21,7 +22,7 @@ public sealed class CsvGraphTests
         RelationRuntime.FromRoots([NrcPaths.SamplesDir]);
 
     private static readonly NodeRegistry Registry =
-        HostComposition.AllPacks(Runtime);
+        StudioComposition.BimPacks(Runtime);
 
     /// <summary>Loads the graph, asserts it validates and evaluates green, and returns the
     /// rows of its answer relation.</summary>

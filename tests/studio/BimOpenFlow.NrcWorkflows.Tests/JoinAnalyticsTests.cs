@@ -6,6 +6,7 @@ using Ara3D.Utils;
 using BimOpenFlow.Host;
 using BimOpenFlow.Nodes.Geometry;
 using BimOpenFlow.Relations;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -49,7 +50,7 @@ public sealed class JoinAnalyticsTests
     private static (EvalSnapshot Snapshot, RelationRuntime Runtime) Evaluate()
     {
         var runtime = Runtime;
-        var registry = HostComposition.AllPacks(runtime);
+        var registry = StudioComposition.BimPacks(runtime);
         var doc = SampleSeeding.RewritePaths(GraphDocumentIO.Load(NrcPaths.Graph(GraphId)), NrcPaths.SamplesDir);
         Assert.That(doc.Validate(registry), Is.Empty, GraphId);
         var snapshot = doc.Evaluate(registry);

@@ -3,13 +3,14 @@ using BimOpenFlow.Host;
 using BimOpenFlow.Host.Store;
 using BimOpenFlow.Nodes.Relations;
 using BimOpenToolkit.TestSupport;
+using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.SampleFlows.Tests;
 
 /// <summary>
 /// One place that seeds and evaluates every committed sample analysis into both host
-/// profiles, through the same HostComposition registries and SampleSeeding /
-/// BimSampleSeeding helpers HostRunner calls at start-up (TKT-85): a graph a profile
+/// studio profiles, through the same StudioComposition profiles (registry, model roots,
+/// seeding) HostRunner uses at start-up (TKT-85): a graph a profile
 /// cannot validate is skipped here exactly as it would be by the host, never reported
 /// as a failure.
 ///
@@ -21,7 +22,7 @@ namespace BimOpenFlow.SampleFlows.Tests;
 public static class SampleFlowsFixture
 {
     public const string TablesProfile = HostConfig.TablesProfile;
-    public const string BimProfile = HostConfig.BimProfile;
+    public const string BimProfile = StudioComposition.BimProfile;
 
     public static readonly IReadOnlyList<string> Profiles = [TablesProfile, BimProfile];
 
@@ -55,18 +56,14 @@ public static class SampleFlowsFixture
 
     private static ProfileData Seed(string profile)
     {
-        var roots = profile == TablesProfile
-            ? SampleSeeding.SeededModelRoots(Root)
-            : BimSampleSeeding.SeededModelRoots(Root);
-        var runtime = RelationRuntime.FromRoots(roots);
-        var registry = HostComposition.Registry(profile, runtime);
+        var host = StudioComposition.Profiles[profile];
+        var runtime = RelationRuntime.FromRoots(host.SeededModelRoots(Root));
+        var registry = host.Packs(runtime);
         var storeDir = Path.Combine(Path.GetTempPath(), "bof-sample-flows-tests", profile,
             Guid.NewGuid().ToString("N"));
         var store = new AnalysisStore(storeDir);
         var log = new StringWriter();
-        var seeded = profile == TablesProfile
-            ? SampleSeeding.Seed(store, Root, registry, log)
-            : BimSampleSeeding.Seed(store, Root, registry, log);
+        var seeded = host.Seed(store, Root, registry, log);
         return new(profile, registry, runtime, store, seeded, log.ToString(), storeDir);
     }
 
