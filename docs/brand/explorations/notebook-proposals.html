@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIM Open Notebook brand proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&family=Public+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f4f5f7; --surface:#fff; --text:#171a1f; --dim:#5a606c; --line:#e3e6ea; --edge:#cfd4db;
+  --flow:#2f66ce; --flow-soft:#e8eefb;
+  --accent:#5a47c7; --accent-soft:#ece8fb;
+  --green:#16a34a; --amber:#d97706; --red:#dc2626;
+  --font-brand:"Instrument Sans","Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-ui:"Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-mono:"Fira Code","Cascadia Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui);padding:32px 16px 64px}
+main{max-width:1040px;margin:0 auto}
+h1{font:700 24px/1.2 var(--font-brand);margin:0 0 4px}
+h2{font:600 18px/1.3 var(--font-brand);margin:40px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font:600 15px/1.3 var(--font-brand);margin:0 0 6px}
+p{margin:0 0 10px;max-width:72ch}
+.sub{color:var(--dim);margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:0 0 16px}
+.rec{border-left:4px solid var(--accent)}
+.rec ul{margin:8px 0 0 18px;padding:0}
+.rec li{margin:2px 0}
+.file{font:12px/1.4 var(--font-mono);color:var(--dim)}
+.notes{color:var(--dim);font-size:13px}
+.sizes{display:flex;gap:28px;align-items:flex-end;padding:18px 20px;border-radius:6px;margin-top:12px;flex-wrap:wrap}
+.sizes.light{background:#fff;border:1px solid var(--line);color:var(--accent)}
+.sizes.dark{background:var(--accent);color:#fff}
+.sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.sizes figcaption{font:11px/1 var(--font-mono);opacity:.75}
+.sizes svg{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.row2{grid-template-columns:1fr}}
+.bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:12px}
+.bar .wm{font:700 15px/1 var(--font-brand);color:var(--text);letter-spacing:-0.01em}
+.bar .wm .fam{font-weight:600;color:var(--dim);margin-right:4px}
+.bar .sep{flex:1}
+.bar .btn{font:600 13px/1 var(--font-ui);color:#fff;background:var(--accent);border-radius:5px;padding:7px 10px}
+.bar .ghost{font:500 13px/1 var(--font-ui);color:var(--dim);padding:7px 10px}
+.bar svg{color:var(--accent)}
+.favrow{display:flex;gap:10px;align-items:center;margin-top:10px;font-size:12px;color:var(--dim);flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;gap:6px;background:#e8eaef;border-radius:6px 6px 0 0;padding:6px 12px;font:12px/1 var(--font-ui);color:var(--text)}
+.tab svg{color:var(--accent)}
+.tab.flow svg{color:var(--flow)}
+.tab.grey svg{color:#8a919c}
+.lockup{margin-top:12px;padding:16px;background:#fff;border:1px dashed var(--line);border-radius:6px;display:inline-block}
+.lockup svg{display:block}
+.pal{display:flex;gap:6px;margin-top:8px}
+.pal span{width:22px;height:22px;border-radius:4px;display:block}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+@media (max-width:900px){.grid3,.grid4{grid-template-columns:1fr 1fr}}
+.mini{background:#fff;border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.mini svg{vertical-align:-4px;margin-right:6px}
+.mini .btn{display:inline-block;font:600 13px/1 var(--font-ui);color:#fff;border-radius:5px;padding:7px 10px;margin-top:8px}
+.mini .sel{display:block;font:400 13px/1.4 var(--font-ui);padding:4px 8px;border-radius:4px;margin-top:8px}
+.pairrow{display:flex;gap:4px;align-items:center;margin-top:8px}
+.pairrow svg{display:block}
+.specs{font:12px/1.6 var(--font-mono);color:var(--dim);margin-top:8px}
+
+/* notebook page sample */
+.nb{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.nb .bar{margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0}
+.nb .page{padding:20px 24px 24px;max-width:720px}
+.nb .title{font:600 20px/1.25 var(--font-brand);margin:0 0 2px}
+.nb .meta{font:400 12px/1.5 var(--font-mono);color:var(--dim);margin-bottom:18px}
+.turn{border-left:3px solid var(--accent-soft);padding-left:14px;margin:0 0 18px}
+.turn .req{font:500 15px/1.5 var(--font-ui);color:var(--text);margin:0 0 8px}
+.turn .req::before{content:"You";font:600 11px/1 var(--font-ui);color:var(--accent);letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:4px}
+.turn .rep{font:400 14.5px/1.55 var(--font-ui);color:var(--text);margin:0 0 8px;max-width:68ch}
+.turn .tools{font:400 11.5px/1.6 var(--font-mono);color:var(--dim);background:var(--bg);border-radius:4px;padding:6px 10px;margin:0 0 10px;display:inline-block}
+.turn .tools b{font-weight:500;color:var(--text)}
+.embed{border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0 0 10px;max-width:520px}
+.embed .eh{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font:500 12px/1 var(--font-ui);color:var(--dim)}
+.embed .eh .kind{font:500 11px/1 var(--font-mono);color:var(--accent);background:var(--accent-soft);border-radius:3px;padding:3px 5px}
+.embed .eh .st{margin-left:auto;display:inline-flex;align-items:center;gap:5px}
+.embed .eh .st i{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+.embed .eh .st.changed i{background:var(--amber)}
+.value{padding:12px 14px;font:500 22px/1.2 var(--font-mono);color:var(--text)}
+.value small{font:400 12px/1.4 var(--font-ui);color:var(--dim);display:block;margin-top:4px}
+table{border-collapse:collapse;width:100%;font:400 12.5px/1.4 var(--font-ui)}
+th{font-weight:600;text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);color:var(--dim);background:var(--bg)}
+td{padding:5px 10px;border-bottom:1px solid var(--line)}
+td.n{font-family:var(--font-mono);font-size:12px;text-align:right}
+tr.sel td{background:var(--accent-soft)}
+.btns{display:flex;gap:8px;margin-top:4px;align-items:center}
+.btns .btn{font:600 13px/1 var(--font-ui);color:#fff;background:var(--accent);border-radius:5px;padding:8px 12px}
+.btns .btn2{font:600 13px/1 var(--font-ui);color:var(--accent);background:#fff;border:1px solid var(--accent);border-radius:5px;padding:7px 12px}
+.btns .id{font:400 12px/1 var(--font-mono);color:var(--dim);margin-left:auto}
+code{font:12px var(--font-mono)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mf" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></symbol>
+  <symbol id="n1" viewBox="0 0 24 24"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></symbol>
+  <symbol id="n1p" viewBox="0 0 24 24"><path fill="currentColor" d="M7 2h2v20H7ZM10.5 3h4.5v2.2h-4.5ZM10.5 7h6.5v4h-6.5ZM10.5 13h4.5v2.2h-4.5ZM10.5 17h6.5v4h-6.5Z"/></symbol>
+  <symbol id="n2" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M5 2h14v20H5ZM13.5 2v7.5l2.25-2.1L18 9.5V2ZM8 11.5h8v1.6H8ZM7.3 16.3a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0ZM11.7 15.5H16v1.6h-4.3Z"/></symbol>
+  <symbol id="n3" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3h3.6v18H3ZM17.4 3h3.6v14.5h-3.6ZM6.6 3L17.4 16.2V21L6.6 7.8ZM16.6 18.8a2.6 2.6 0 1 1 5.2 0a2.6 2.6 0 1 1-5.2 0Z"/></symbol>
+</svg>
+<main>
+<h1>BIM Open Notebook brand proposals</h1>
+<p class="sub">Three marks, four accent candidates, and the family lockup for the notebook, the product the repository-layout proposal (section 5.1) gives its own repository. Everything else is inherited from <code>docs/BRANDING.md</code>: Instrument Sans, Public Sans and Fira Code; the neutrals; the status colours; a 24 × 24 single-path mark. Each mark is shown beside the flow mark, Rows to Flow, because the two will sit together in tab strips, start pages and papers.</p>
+
+<section class="card rec">
+  <h3>Recommendation</h3>
+  <p>Take mark N1, <b>Flow to Page</b>, in <b>ink violet</b> (#5a47c7), with the three-word family lockup <b>BIM Open Notebook</b>. Flow to Page is the flow mark read onward: the solid node that ends Rows to Flow is where this mark begins, and its wire lands in a page of alternating request lines and embed blocks. The two marks share the same disc, the same bar weight and the same left-to-right reading, so side by side they explain the relationship the proposal states: the notebook is a client of the flow host, and an answer becomes part of a document. Ink violet keeps the pair apart in a favicon row, which is the one place the guide records a weakness for the flow mark, and stays clear of the status triple and the canvas stripe hues.</p>
+  <ul class="notes">
+    <li>Mark N2, Ribbon Page, is the most literal "notebook" and the best at 48 px and above, but its cut-outs close up at 16 px, the same failing the flow proposals found in Block Flow.</li>
+    <li>Mark N3, the N monogram, is the most distinct in a tab strip and the least informative; it says "N" before it says "notebook", and it borrows nothing from the flow mark except the disc.</li>
+    <li>Below 16 px, N1 uses the page alone (the spine and its rows) so that the notebook and flow favicons differ even when the node is lost.</li>
+    <li>The three-word lockup raises a decision for the flow brand: "BimOpenFlow" should become "BIM Open Flow" in the same step, or the notebook should be written "BimOpenNotebook". Section 4 shows both.</li>
+  </ul>
+</section>
+
+<h2>1. Marks</h2>
+
+<section class="card">
+  <h3>Reference: the flow mark, Rows to Flow</h3>
+  <div class="sizes light" style="color:var(--flow)">
+    <figure><svg width="16" height="16"><use href="#mf"/></svg><figcaption>16</figcaption></figure>
+    <figure><svg width="22" height="22"><use href="#mf"/></svg><figcaption>22</figcaption></figure>
+    <figure><svg width="48" height="48"><use href="#mf"/></svg><figcaption>48</figcaption></figure>
+  </div>
+  <p class="notes" style="margin-top:8px">Decided 2026-10-03: three rows on the left, wires gathering into one solid node on the right, accent blue #2f66ce. The notebook mark has to live next to this one.</p>
+</section>
+
+<!-- N1 -->
+<section class="card">
+  <h3>Mark N1: Flow to Page</h3>
+  <p class="file">mark-n1-flow-to-page.svg, lockup-n1-flow-to-page.svg (single fill, nonzero)</p>
+  <p>The flow mark continued. The disc on the left is the flow mark's node, same radius; one wire leaves it and joins the spine of a page on the right. Down the page hang two short lines and two wide blocks in turn: a request in plain language, then the embed the agent answered with, then the next request. The rhythm is the notebook's structure, turn after turn. The spine does the work at small sizes: at 16 px the lines thin to a hairline but the spine and the two blocks hold a page-like silhouette, and the disc keeps the family likeness. Below 16 px drop the node and the wire and use the page alone.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#n1"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#n1"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#n1"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#n1"/></svg><figcaption>96</figcaption></figure>
+      <figure><svg width="12" height="12"><use href="#n1p"/></svg><figcaption>12 page only</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#n1"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#n1"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#n1"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#n1"/></svg><figcaption>96</figcaption></figure>
+      <figure><svg width="12" height="12"><use href="#n1p"/></svg><figcaption>12 page only</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#n1"/></svg><span class="wm"><span class="fam">BIM Open</span>Notebook</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Samples</span><span class="btn">Send</span></div>
+  <div class="favrow"><span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Snowdon doors · BIM Open Flow</span><span class="tab"><svg width="16" height="16"><use href="#n1"/></svg>Door widths · BIM Open Notebook</span><span class="tab grey"><svg width="16" height="16"><use href="#mf" style="color:#8a919c"/></svg>some other tab</span> tab strip at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 200 32" width="400" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#n1" width="24" height="24"/></g><text x="36" y="21.5" style="font-family:var(--font-brand);font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Notebook</tspan></text></svg></div>
+  <div class="pairrow"><svg width="48" height="48" style="color:var(--flow)"><use href="#mf"/></svg><svg width="48" height="48" style="color:var(--accent)"><use href="#n1"/></svg><span class="notes" style="margin-left:12px">Side by side at 48 px: rows become a node; the node becomes a page.</span></div>
+</section>
+
+<!-- N2 -->
+<section class="card">
+  <h3>Mark N2: Ribbon Page</h3>
+  <p class="file">mark-n2-ribbon-page.svg, lockup-n2-ribbon-page.svg (single fill, evenodd)</p>
+  <p>A solid page with a bookmark ribbon notched out of its top right corner, and cut into the page a request line above a node with its wire: the answer, pinned inside the record. It is the only one of the three that a stranger would name "notebook" without a caption, and the solid field makes it the strongest at 48 and 96 px, on a start page or the first slide of a talk. The weakness is the one the flow proposals already met: the node, the wire and the line are negative space, and at 16 px they merge into a grey smudge inside a rectangle. It also shares no geometry with the flow mark beyond the disc, so the pair reads as two products rather than one family.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#n2"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#n2"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#n2"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#n2"/></svg><figcaption>96</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#n2"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#n2"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#n2"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#n2"/></svg><figcaption>96</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#n2"/></svg><span class="wm"><span class="fam">BIM Open</span>Notebook</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Samples</span><span class="btn">Send</span></div>
+  <div class="favrow"><span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Snowdon doors · BIM Open Flow</span><span class="tab"><svg width="16" height="16"><use href="#n2"/></svg>Door widths · BIM Open Notebook</span> tab strip at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 200 32" width="400" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#n2" width="24" height="24"/></g><text x="36" y="21.5" style="font-family:var(--font-brand);font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Notebook</tspan></text></svg></div>
+  <div class="pairrow"><svg width="48" height="48" style="color:var(--flow)"><use href="#mf"/></svg><svg width="48" height="48" style="color:var(--accent)"><use href="#n2"/></svg></div>
+</section>
+
+<!-- N3 -->
+<section class="card">
+  <h3>Mark N3: N monogram</h3>
+  <p class="file">mark-n3-n-monogram.svg, lockup-n3-n-monogram.svg (single fill, nonzero)</p>
+  <p>A capital N built from the flow mark's parts: two stems the weight of the table rows, a diagonal the weight of a wire, and the right stem ending in the node disc, so the letter is itself a small graph that terminates in an answer. The flow proposals ranked the monogram direction best for favicon legibility, and the same holds here: at 16 px it is the most distinct of the three, and it cannot be mistaken for the flow mark. What it lacks is meaning; it says the product's initial, not what the product is, and a reader who has not seen the flow mark gets nothing from the disc. It would suit a family in which every product has a monogram, which the flow decision did not choose.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#n3"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#n3"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#n3"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#n3"/></svg><figcaption>96</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#n3"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#n3"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#n3"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#n3"/></svg><figcaption>96</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#n3"/></svg><span class="wm"><span class="fam">BIM Open</span>Notebook</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Samples</span><span class="btn">Send</span></div>
+  <div class="favrow"><span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Snowdon doors · BIM Open Flow</span><span class="tab"><svg width="16" height="16"><use href="#n3"/></svg>Door widths · BIM Open Notebook</span> tab strip at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 200 32" width="400" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#n3" width="24" height="24"/></g><text x="36" y="21.5" style="font-family:var(--font-brand);font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Notebook</tspan></text></svg></div>
+  <div class="pairrow"><svg width="48" height="48" style="color:var(--flow)"><use href="#mf"/></svg><svg width="48" height="48" style="color:var(--accent)"><use href="#n3"/></svg></div>
+</section>
+
+<h2>2. Accent</h2>
+<p class="notes">The flow accent is #2f66ce. The notebook needs a hue that is clearly not that one in a 16 px favicon, is not green, amber or red (the status colours, which the notebook uses for "result matches the snapshot" and "result changed"), and stays away from the canvas stripes (teal, purple, orange) as far as a single hue can. Each tile shows the N1 mark, the flow mark beside it, a primary button, and a selected table row in the soft tint.</p>
+<section class="card">
+  <div class="grid4">
+    <div class="mini"><svg width="22" height="22" style="color:#5a47c7"><use href="#n1"/></svg><svg width="22" height="22" style="color:var(--flow)"><use href="#mf"/></svg><div><b>Ink violet</b> #5a47c7 <span class="notes">(recommended)</span></div><div class="notes">Reads as written record; far enough from the flow blue to tell apart at 16 px, close enough to feel like the same family. Soft tint #ece8fb.</div><span class="btn" style="background:#5a47c7">Send</span><span class="sel" style="background:#ece8fb">Selected row</span><div class="pal"><span style="background:#5a47c7"></span><span style="background:#ece8fb"></span><span style="background:#2f66ce"></span><span style="background:#171a1f"></span></div></div>
+    <div class="mini"><svg width="22" height="22" style="color:#a3337a"><use href="#n1"/></svg><svg width="22" height="22" style="color:var(--flow)"><use href="#mf"/></svg><div><b>Plum</b> #a3337a</div><div class="notes">The most separate from blue and from every stripe hue. Warmer than the rest of the palette; a notebook page in plum chrome looks like a different company's product. Soft tint #f8e7f1.</div><span class="btn" style="background:#a3337a">Send</span><span class="sel" style="background:#f8e7f1">Selected row</span><div class="pal"><span style="background:#a3337a"></span><span style="background:#f8e7f1"></span><span style="background:#2f66ce"></span><span style="background:#171a1f"></span></div></div>
+    <div class="mini"><svg width="22" height="22" style="color:#171a1f"><use href="#n1"/></svg><svg width="22" height="22" style="color:var(--flow)"><use href="#mf"/></svg><div><b>Ink</b> #171a1f</div><div class="notes">The text colour as accent: a notebook is a document, and documents are ink on paper. Distinct from blue by having no hue at all. Buttons in near-black are heavy, and selection needs a tint borrowed from elsewhere. Soft tint #e8eaef.</div><span class="btn" style="background:#171a1f">Send</span><span class="sel" style="background:#e8eaef">Selected row</span><div class="pal"><span style="background:#171a1f"></span><span style="background:#e8eaef"></span><span style="background:#2f66ce"></span><span style="background:#5a606c"></span></div></div>
+    <div class="mini"><svg width="22" height="22" style="color:#2f66ce"><use href="#n1"/></svg><svg width="22" height="22" style="color:var(--flow)"><use href="#mf"/></svg><div><b>Flow blue kept</b> #2f66ce</div><div class="notes">One accent for the whole family; the mark alone tells the products apart. Simplest to maintain, and the pair at 16 px is the test: two blue glyphs of similar weight in a tab strip. Soft tint #e8eefb.</div><span class="btn" style="background:#2f66ce">Send</span><span class="sel" style="background:#e8eefb">Selected row</span><div class="pal"><span style="background:#2f66ce"></span><span style="background:#e8eefb"></span><span style="background:#171a1f"></span><span style="background:#5a606c"></span></div></div>
+  </div>
+  <div class="favrow" style="margin-top:16px">The four, each beside the flow tab at 16 px:
+    <span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab"><svg width="16" height="16" style="color:#5a47c7"><use href="#n1"/></svg>violet</span>
+    <span class="tab"><svg width="16" height="16" style="color:#a3337a"><use href="#n1"/></svg>plum</span>
+    <span class="tab"><svg width="16" height="16" style="color:#171a1f"><use href="#n1"/></svg>ink</span>
+    <span class="tab"><svg width="16" height="16" style="color:#2f66ce"><use href="#n1"/></svg>blue</span>
+  </div>
+</section>
+
+<h2>3. A notebook page in the family type</h2>
+<p class="notes">Same three faces as the studio. What changes is the scale: a notebook is read, not operated, so the request is 15 px medium, the reply 14.5 px regular on a 1.55 line height and a 68-character measure, the folded tool calls 11.5 px Fira Code, and the title 20 px Instrument Sans. Embeds keep the studio's 12 to 13 px table type, so a table looks the same in both products. The amber dot is the existing status colour, used for an embed whose re-evaluated result differs from its snapshot.</p>
+<section class="card" style="padding:0;border:0;background:none">
+  <div class="nb">
+    <div class="bar"><svg width="22" height="22"><use href="#n1"/></svg><span class="wm"><span class="fam">BIM Open</span>Notebook</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Samples</span><span class="ghost">Re-evaluate all</span><span class="btn">Send</span></div>
+    <div class="page">
+      <div class="title">Door leaf widths, Duplex</div>
+      <div class="meta">duplex-door-widths.bimnb · 3 turns · host localhost:5219 · model 7c1e…a90f</div>
+      <div class="turn">
+        <p class="req">How many doors are narrower than 850 mm?</p>
+        <p class="rep">Six of the fourteen doors have a leaf width under 850 mm. The width comes from the <code>Width</code> quantity on each door's type; two doors have no width at all and are listed separately rather than counted as failing.</p>
+        <div class="tools"><b>describeDatabase</b> · <b>editGraph</b> 3 nodes · <b>evaluate</b> 0.4 s · <b>getResult</b> n_door_w (14 rows)</div>
+        <div class="embed">
+          <div class="eh"><span class="kind">value</span>doors under 850 mm<span class="st"><i></i>matches snapshot</span></div>
+          <div class="value">6 <small>of 14 doors with a width · from n_narrow, row count</small></div>
+        </div>
+        <div class="embed">
+          <div class="eh"><span class="kind">table</span>n_narrow · 6 rows<span class="st changed"><i></i>changed since snapshot</span></div>
+          <table>
+            <tr><th>GlobalId</th><th>Type</th><th>Storey</th><th style="text-align:right">Width mm</th></tr>
+            <tr><td class="n">1hOSvn6df7F8_7GcBWlRGQ</td><td>Single-Flush 36x84</td><td>Level 1</td><td class="n">762</td></tr>
+            <tr class="sel"><td class="n">1hOSvn6df7F8_7GcBWlRQe</td><td>Single-Flush 30x84</td><td>Level 1</td><td class="n">762</td></tr>
+            <tr><td class="n">1hOSvn6df7F8_7GcBWlRkX</td><td>Single-Flush 30x84</td><td>Level 2</td><td class="n">813</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="turn">
+        <p class="req">Show them in the model.</p>
+        <p class="rep">The six doors are coloured red and the rest grey. The view is saved with the camera and the colouring; reopen it to orbit.</p>
+        <div class="tools"><b>editGraph</b> 2 nodes · <b>evaluate</b> 1.8 s</div>
+        <div class="embed" style="max-width:520px"><div class="eh"><span class="kind">3d</span>Duplex, narrow doors<span class="st"><i></i>matches snapshot</span></div><div style="height:96px;background:linear-gradient(135deg,#eceef2,#f7f8fa);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px">still image of the view</div></div>
+      </div>
+      <div class="btns"><span class="btn">Send</span><span class="btn2">Open graph in editor</span><span class="id">turn 2 of 3 · snapshot 2026-10-03 14:02</span></div>
+    </div>
+  </div>
+</section>
+
+<h2>4. Wordmark forms</h2>
+<section class="card">
+  <p>Three ways to write the name beside the mark, each at 15 px as the command bar sets it. The guide writes the flow product as one word; the repositories are <code>bim-open-flow</code> and <code>bim-open-notebook</code>. Whichever form the notebook takes, the flow lockup should take the same one, or the two bars will disagree.</p>
+  <div class="grid3">
+    <div class="mini"><span style="font:600 15px var(--font-brand);color:var(--dim)">BIM Open</span> <span style="font:700 15px var(--font-brand)">Notebook</span><div class="notes">Family first, product second, two weights. Recommended. The flow bar would read <span style="font:600 13px var(--font-brand);color:var(--dim)">BIM Open</span> <span style="font:700 13px var(--font-brand)">Flow</span>.</div></div>
+    <div class="mini"><span style="font:700 15px var(--font-brand);letter-spacing:-0.01em">BimOpenNotebook</span><div class="notes">Matches today's "BimOpenFlow" exactly. Fifteen letters in one word; at 15 px it is a long run with no break, and "Notebook" is harder to find in it than "Flow" is.</div></div>
+    <div class="mini"><span style="font:700 15px var(--font-brand);letter-spacing:-0.01em">Bim</span><span style="font:700 15px var(--font-brand);color:var(--dim)">Open</span><span style="font:700 15px var(--font-brand)">Notebook</span><div class="notes">One word with the middle dimmed, the variant the flow proposals showed as "a dim Bim prefix". Keeps the single word and gives the eye a seam; still long.</div></div>
+  </div>
+</section>
+
+<h2>5. Files</h2>
+<section class="card">
+  <p class="file">notebook-proposals.html (this page)<br>mark-n1-flow-to-page.svg · lockup-n1-flow-to-page.svg<br>mark-n2-ribbon-page.svg · lockup-n2-ribbon-page.svg<br>mark-n3-n-monogram.svg · lockup-n3-n-monogram.svg</p>
+  <p class="notes">Every mark is one <code>&lt;path&gt;</code> in a 24 × 24 viewBox with a single fill in ink violet, so its <code>d</code> attribute drops into a command bar the way the flow mark's does. The lockups are 200 × 32 with the two-weight family wordmark in Instrument Sans via a Google Fonts import inside the SVG. If a mark is chosen, it moves to <code>docs/brand/notebook-mark.svg</code> until the notebook repository exists, and then goes with it.</p>
+</section>
+</main>
+</body>
+</html>

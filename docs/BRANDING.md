@@ -112,3 +112,11 @@ monogram ranked best for favicon legibility and distinctiveness together;
 Each page loads its fonts from Google Fonts and needs no build step. If
 the mark is revisited, start from the monogram (`mark-2e-monogram.svg`) or
 the Swiss grid (`mark-2a-swiss.svg`), which were the strongest at 16 px.
+
+`notebook-proposals.html` (2026-10-03, undecided) proposes the sibling
+brand for BIM Open Notebook: three marks drawn with the same parts as Rows
+to Flow (Flow to Page, Ribbon Page, an N monogram), four accent
+candidates beside the flow blue, the family lockup "BIM Open Notebook",
+and a notebook page set in the three faces above. Fonts, neutrals, status
+colours, and the mark rules are shared with this guide; only the mark and
+the accent are the notebook's own.
