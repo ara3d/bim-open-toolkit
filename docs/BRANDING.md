@@ -183,8 +183,10 @@ data vocabulary, not brand colours, and do not appear in the chrome.
   move with the code.
 - Schema pages: the hollow-rows mark and the slate accent, the two-weight
   wordmark "BIM Open Schema", body text at the notebook reading scale and
-  field tables at the interface scale. A copy of the mark and lockup goes
-  to the `bim-open-schema` repository, where the specification lives.
+  field tables at the interface scale. The specification's repository
+  holds its copy at `bim-open-schema/brand/` (`mark.svg`, `lockup.svg`,
+  and a short `BRANDING.md` that defers to this guide); its README opens
+  with the lockup. Change the mark here first, then copy.
 - Favicons: `docs/brand/mark.svg` served as `favicon.svg` from the app
   package; `docs/brand/notebook-mark.svg` from the notebook's page;
   `docs/brand/schema-mark.svg` from the specification's pages.
