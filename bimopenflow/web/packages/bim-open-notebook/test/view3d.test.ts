@@ -129,9 +129,10 @@ const mount = (
   e: View3dEmbed = embed,
   pane = recordingPane(),
   observer?: FakeIntersectionObserver,
+  hostless?: boolean,
 ) => {
   const el = document.createElement("div");
-  const ctx: EmbedContext = { api, selection: createSelectionBus() };
+  const ctx: EmbedContext = { api, selection: createSelectionBus(), hostless };
   if (observer) (window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = observer.ctor();
   const handle = createView3dRenderer(() => pane.pane)(el, e, ctx);
   if (observer) delete (window as { IntersectionObserver?: unknown }).IntersectionObserver;
@@ -145,6 +146,17 @@ describe("view3d embed", () => {
     expect(el.textContent).toContain("answer");
     expect(el.textContent).toContain("nrc-color-category");
     await settle();
+  });
+
+  it("on a hostless page keeps the placeholder, disables Show 3D, and calls nothing", async () => {
+    const api = fakeApi({ listModels: vi.fn(), getAnalysis: vi.fn(), getAnalysisState: vi.fn() });
+    const { el, pane, button } = mount(api, embed, recordingPane(), undefined, true);
+    await settle();
+    expect(pane.log).toEqual([]);
+    expect(button().disabled).toBe(true);
+    expect(el.textContent).toContain("running host");
+    expect(api.listModels).not.toHaveBeenCalled();
+    expect(api.getAnalysis).not.toHaveBeenCalled();
   });
 
   it("draws the still as an image when there is one", () => {

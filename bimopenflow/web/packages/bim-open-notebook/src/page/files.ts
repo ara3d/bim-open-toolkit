@@ -1,19 +1,25 @@
-// Browser-file helpers for the notebook page: the committed samples served by
-// the dev server (vite.config.ts, /__notebooks/), reading a picked file, and
+// Browser-file helpers for the notebook page: the committed samples, served by
+// the dev server (vite.config.ts, /__notebooks/) or held as files by the static
+// site (vite.pages.config.ts, notebooks/), reading a picked file, and
 // downloading text. Each is a small function a test can drive with fakes.
 
 import { NOTEBOOK_EXTENSION } from "../document/format";
+import { HOSTLESS } from "./site";
+import { STATIC_INDEX, STATIC_SAMPLES } from "./sitePaths";
 
-/** Where the dev server lists and serves the committed sample notebooks. */
-export const SAMPLES_ROUTE = "/__notebooks/";
+/** Where the committed sample notebooks are: the dev server's route, or the static site's folder. */
+export const SAMPLES_ROUTE = HOSTLESS ? STATIC_SAMPLES : "/__notebooks/";
+
+/** The URL that lists the samples' file names: the route itself in dev, an index file when static. */
+const SAMPLES_LIST = HOSTLESS ? `${STATIC_SAMPLES}${STATIC_INDEX}` : SAMPLES_ROUTE;
 
 /** The sample notebooks' file names, sorted as the server sends them. */
 export async function listSamples(fetchFn: typeof fetch = globalThis.fetch): Promise<string[]> {
-  const response = await fetchFn(SAMPLES_ROUTE);
-  if (!response.ok) throw new Error(`GET ${SAMPLES_ROUTE} -> ${response.status}`);
+  const response = await fetchFn(SAMPLES_LIST);
+  if (!response.ok) throw new Error(`GET ${SAMPLES_LIST} -> ${response.status}`);
   const names: unknown = await response.json();
   if (!Array.isArray(names) || !names.every((n) => typeof n === "string"))
-    throw new Error(`GET ${SAMPLES_ROUTE} did not answer a list of names`);
+    throw new Error(`GET ${SAMPLES_LIST} did not answer a list of names`);
   return names;
 }
 

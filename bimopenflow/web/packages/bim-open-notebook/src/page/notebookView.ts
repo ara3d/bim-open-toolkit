@@ -34,6 +34,12 @@ export interface NotebookViewOptions {
   readonly api: NotebookApi;
   /** Absent when the host has no /api/ask; the request box is then disabled with a note. */
   readonly ask?: AskTransport;
+  /**
+   * Set when no host stands behind the page (the static site): the text shown
+   * in place of the request box's note. Re-evaluate is then hidden and the
+   * embeds draw their snapshots only.
+   */
+  readonly hostless?: string;
   readonly renderers?: EmbedRegistry;
   readonly initial?: Notebook;
   /** The clock, for request timestamps; injectable for tests. */
@@ -95,10 +101,14 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
 
   // One catalog request per page, started by the first graph cell that asks.
   let catalog: Promise<ReadonlyMap<string, NodeDescriptor>> | undefined;
+  const hostless = options.hostless !== undefined;
   const embeds: EmbedContext = {
     api: options.api,
     selection: createSelectionBus(),
-    catalog: () => (catalog ??= options.api.getNodeCatalog().then((c) => new Map(c.nodes.map((n) => [n.kind, n])))),
+    catalog: hostless
+      ? undefined
+      : () => (catalog ??= options.api.getNodeCatalog().then((c) => new Map(c.nodes.map((n) => [n.kind, n])))),
+    hostless,
   };
   const turnContext: TurnContext = {
     embeds,
@@ -293,7 +303,8 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
     const status = el(doc, "div", "nb-status");
     status.setAttribute("aria-live", "polite");
     const sep = () => el(doc, "span", "nb-toolbar-sep");
-    bar.append(title, samples, open, fileInput, save, fresh, sep(), refresh, sep(), undoButton, redoButton, status);
+    // A hostless page has nothing to re-evaluate against, so it leaves the button out.
+    bar.append(title, samples, open, fileInput, save, fresh, sep(), ...(hostless ? [] : [refresh, sep()]), undoButton, redoButton, status);
     return { el: bar, title, samples, open, fresh, refresh, undo: undoButton, redo: redoButton, status };
   }
 
@@ -335,7 +346,7 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
   }
 
   async function refreshAll(): Promise<void> {
-    if (refreshing || destroyed) return;
+    if (refreshing || destroyed || hostless) return;
     refreshing = true;
     tally = [];
     syncControls();
@@ -375,7 +386,7 @@ export function mountNotebook(root: HTMLElement, options: NotebookViewOptions): 
     sendButton.type = "submit";
     const stop = button(doc, "nb-stop", "Stop", () => running?.abort(new Error("Stopped by the user.")));
     const row = el(doc, "div", "nb-ask-row");
-    if (!ask) row.append(el(doc, "span", "nb-ask-note", NO_ASK_NOTE));
+    if (!ask) row.append(el(doc, "span", "nb-ask-note", options.hostless ?? NO_ASK_NOTE));
     row.append(stop, sendButton);
     form.append(input, row);
     form.addEventListener("submit", (event) => {

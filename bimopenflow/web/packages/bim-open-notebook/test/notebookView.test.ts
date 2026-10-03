@@ -437,6 +437,15 @@ describe("mountNotebook", () => {
     expect(q<HTMLButtonElement>(".nb-edit").disabled).toBe(true);
   });
 
+  it("a hostless page leaves out Re-evaluate, says why in the request box, and tells the embeds", () => {
+    const note = "No host behind this copy.";
+    const { fake } = mount({ initial: sample(), hostless: note });
+    expect(root.querySelector(".nb-refresh")).toBeNull();
+    expect(q<HTMLElement>(".nb-ask-note").textContent).toBe(note);
+    expect(q<HTMLTextAreaElement>(".nb-ask-input").disabled).toBe(true);
+    expect(fake.contexts.every((c) => c.hostless === true && c.catalog === undefined)).toBe(true);
+  });
+
   it("destroy removes the page and every embed", () => {
     const { fake } = mount({ initial: sample() });
     view!.destroy();

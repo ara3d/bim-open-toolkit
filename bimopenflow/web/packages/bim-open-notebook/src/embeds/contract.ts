@@ -46,6 +46,9 @@ export interface EmbedContext {
   /** The host's node catalog by kind, fetched once per page and shared by every graph cell;
    *  a cell draws portless nodes until it resolves, and without one at all. */
   readonly catalog?: () => Promise<ReadonlyMap<string, NodeDescriptor>>;
+  /** True when no host stands behind the page (the static site): renderers draw
+   *  their snapshots and start nothing that would need one, such as a 3D load. */
+  readonly hostless?: boolean;
 }
 
 /** A mounted embed. */

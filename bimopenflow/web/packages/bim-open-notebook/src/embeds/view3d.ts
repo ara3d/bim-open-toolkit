@@ -191,7 +191,11 @@ export function createView3dRenderer(makePane: View3dPaneFactory = defaultPane):
     });
 
     const IO = doc.defaultView?.IntersectionObserver;
-    if (IO) {
+    if (ctx.hostless) {
+      // The model comes from a host; with none, keep the placeholder and say why.
+      toggle.disabled = true;
+      say("The 3D view loads the model from a running host, so this copy shows only its description.");
+    } else if (IO) {
       observer = new IO(
         (entries) => {
           if (!entries.some((e) => e.isIntersecting)) return;

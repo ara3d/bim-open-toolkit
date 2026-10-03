@@ -1,6 +1,7 @@
 // Entry point of notebook.html: connects to the host, decides whether the
 // request box can ask, loads ?notebook=<sample> or starts an empty notebook,
-// and mounts the page on #notebook.
+// and mounts the page on #notebook. The static site (site.ts, HOSTLESS) has no
+// host: it skips the connection and its banner and says so in the page.
 
 import { ApiClient } from "@bimopenflow/api-client";
 // By path: see the plan's Debt section (deep imports from @bimopenflow/app).
@@ -11,6 +12,15 @@ import type { Notebook } from "../document/format";
 import { parseNotebook } from "../document/io";
 import { fetchSample } from "./files";
 import { mountNotebook, renderProblems } from "./notebookView";
+import { HOSTLESS, HOSTLESS_NOTE } from "./site";
+
+/** The API of a page with no host: every call fails at once with a plain reason, and nothing is fetched. */
+function hostlessApi(): ApiClient {
+  const fetchFn = (async () => {
+    throw new Error("This copy has no host.");
+  }) as typeof fetch;
+  return new ApiClient({ baseUrl: "", fetch: fetchFn });
+}
 
 /** GET /api/ask/model's answer, the part this page reads. */
 interface AskModelInfo {
@@ -47,19 +57,26 @@ async function startingNotebook(name: string): Promise<Opened> {
   }
 }
 
-async function start(): Promise<void> {
+/** Watches the host behind /api, with the banner that says when it is down. */
+function connect(): { readonly api: ApiClient; readonly fetch: typeof fetch } {
   // Same-origin API: the dev server proxies /api to the host (vite.config.ts).
   const { api, host } = watchHost((fetchFn) => new ApiClient({ baseUrl: "", fetch: fetchFn }));
   mountHostBanner(document, host);
+  return { api, fetch: host.fetch };
+}
+
+async function start(): Promise<void> {
   const sample = new URLSearchParams(location.search).get("notebook");
+  const connected = HOSTLESS ? undefined : connect();
   const [ask, opened] = await Promise.all([
-    askIfConfigured(host.fetch),
+    connected ? askIfConfigured(connected.fetch) : Promise.resolve(undefined),
     sample ? startingNotebook(sample) : Promise.resolve<Opened>({}),
   ]);
   const root = document.getElementById("notebook")!;
   mountNotebook(root, {
-    api,
+    api: connected?.api ?? hostlessApi(),
     ask,
+    hostless: HOSTLESS ? HOSTLESS_NOTE : undefined,
     initial: opened.notebook,
   });
   if (opened.errors) root.prepend(renderProblems(document, `Could not open the sample ${sample}`, opened.errors));

@@ -4,7 +4,8 @@ import { resolve, basename } from "node:path";
 import { viewerAlias } from "../../viewer.config";
 
 const gratify = resolve(__dirname, "../../../../deps/gratify/src/gratify");
-const samples = resolve(__dirname, "../../../../samples/notebooks");
+/** The committed sample notebooks, served in dev and copied into the static site (vite.pages.config.ts). */
+export const samples = resolve(__dirname, "../../../../samples/notebooks");
 const nrcGraphsReadme = resolve(__dirname, "../../../../samples/nrc-analyses/README.md");
 
 // The notebook talks to one host through /api. The default is the tables
@@ -13,7 +14,7 @@ const nrcGraphsReadme = resolve(__dirname, "../../../../samples/nrc-analyses/REA
 const host = process.env.BOF_HOST ?? "http://127.0.0.1:5224";
 const port = Number(process.env.NOTEBOOK_PORT ?? 5350);
 
-const NOTEBOOK_SUFFIX = ".notebook.json";
+export const NOTEBOOK_SUFFIX = ".notebook.json";
 
 /**
  * Serves the committed sample notebooks in dev: GET /__notebooks/ lists their

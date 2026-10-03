@@ -36,6 +36,21 @@ that colour the model. Editor links use `VITE_BOF_EDITOR` (default
 `http://127.0.0.1:5310/`, the tables profile); a green dot marks a graph the
 connected host holds.
 
+## Static site
+
+```bash
+npm run build:pages -w @bimopenflow/bim-open-notebook --prefix bimopenflow/web -- --outDir <folder> --emptyOutDir
+```
+
+builds `notebook.html` with every sample notebook copied into `notebooks/`,
+plus `notebooks/index.json` (the file names) and `notebooks/catalog.json` (title,
+turn count, and first request of each, for a landing page). The base is
+relative and no host stands behind it (`vite.pages.config.ts`, `src/page/site.ts`):
+the page shows every answer as recorded, leaves out Re-evaluate, and says in
+the request box that asking needs a host. Without `--outDir` it writes
+`dist/pages`. The public copy is the `site/app` folder of
+[ara3d/bim-open-notebook](https://github.com/ara3d/bim-open-notebook).
+
 ## Layout
 
 | Folder | Holds |

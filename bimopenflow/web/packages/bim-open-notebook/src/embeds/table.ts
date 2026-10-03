@@ -49,7 +49,8 @@ export const renderTable: EmbedRenderer<TableEmbed> = (el, embed, ctx) => {
 
   const updateInfo = (): void => {
     infoEl.textContent = rowsInfo(held.rows.length, held.totalRows);
-    moreButton.style.display = held.rows.length >= held.totalRows ? "none" : "";
+    // More rows come from the host; a hostless page keeps the snapshot's rows.
+    moreButton.style.display = ctx.hostless || held.rows.length >= held.totalRows ? "none" : "";
   };
 
   const draw = (snapshot: TableSnapshot): void => {
