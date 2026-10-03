@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIM Open Schema brand proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&family=Public+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f4f5f7; --surface:#fff; --text:#171a1f; --dim:#5a606c; --line:#e3e6ea; --edge:#cfd4db;
+  --flow:#2f66ce; --notebook:#5a47c7; --viewer:#0f8a80; --data:#b8326e;
+  --accent:#4f5d78; --accent-soft:#e9ecf2;
+  --ochre:#8f6214; --ochre-soft:#f5ecdc;
+  --green:#16a34a; --amber:#d97706; --red:#dc2626;
+  --font-brand:"Instrument Sans","Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-ui:"Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-mono:"Fira Code","Cascadia Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui);padding:32px 16px 64px}
+main{max-width:1040px;margin:0 auto}
+h1{font:700 24px/1.2 var(--font-brand);margin:0 0 4px}
+h2{font:600 18px/1.3 var(--font-brand);margin:40px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font:600 15px/1.3 var(--font-brand);margin:0 0 6px}
+p{margin:0 0 10px;max-width:72ch}
+.sub{color:var(--dim);margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:0 0 16px}
+.rec{border-left:4px solid var(--accent)}
+.rec ul{margin:8px 0 0 18px;padding:0}
+.rec li{margin:2px 0}
+.file{font:12px/1.4 var(--font-mono);color:var(--dim)}
+.notes{color:var(--dim);font-size:13px}
+.sizes{display:flex;gap:28px;align-items:flex-end;padding:18px 20px;border-radius:6px;margin-top:12px;flex-wrap:wrap}
+.sizes.light{background:#fff;border:1px solid var(--line);color:var(--accent)}
+.sizes.dark{background:var(--accent);color:#fff}
+.sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.sizes figcaption{font:11px/1 var(--font-mono);opacity:.75}
+.sizes svg{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.row2{grid-template-columns:1fr}}
+.bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:12px}
+.bar .wm{font:700 15px/1 var(--font-brand);color:var(--text);letter-spacing:-0.01em}
+.bar .wm .fam{font-weight:600;color:var(--dim);margin-right:4px}
+.bar .sep{flex:1}
+.bar .btn{font:600 13px/1 var(--font-ui);color:#fff;background:var(--accent);border-radius:5px;padding:7px 10px}
+.bar .ghost{font:500 13px/1 var(--font-ui);color:var(--dim);padding:7px 10px}
+.bar svg{color:var(--accent)}
+.favrow{display:flex;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:var(--dim);flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;gap:6px;background:#e8eaef;border-radius:6px 6px 0 0;padding:6px 10px;font:12px/1 var(--font-ui);color:var(--text)}
+.tab svg{color:var(--accent)}
+.tab.flow svg{color:var(--flow)} .tab.nb svg{color:var(--notebook)} .tab.vw svg{color:var(--viewer)} .tab.dt svg{color:var(--data)}
+.lockup{margin-top:12px;padding:16px;background:#fff;border:1px dashed var(--line);border-radius:6px;display:inline-block}
+.lockup svg{display:block}
+.pal{display:flex;gap:6px;margin-top:8px}
+.pal span{width:22px;height:22px;border-radius:4px;display:block}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+@media (max-width:900px){.grid3{grid-template-columns:1fr}}
+.mini{background:#fff;border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.mini svg{vertical-align:-4px;margin-right:6px}
+.mini .btn{display:inline-block;font:600 13px/1 var(--font-ui);color:#fff;border-radius:5px;padding:7px 10px;margin-top:8px}
+.mini .sel{display:block;font:400 13px/1.4 var(--font-ui);padding:4px 8px;border-radius:4px;margin-top:8px}
+.family{display:flex;gap:18px;align-items:center;padding:16px 20px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:12px;flex-wrap:wrap}
+.family figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px;font:11px/1 var(--font-mono);color:var(--dim)}
+/* spec page sample */
+.spec{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.spec .bar{margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0}
+.spec .page{padding:20px 24px 24px;max-width:760px}
+.spec .title{font:600 20px/1.25 var(--font-brand);margin:0 0 2px}
+.spec .meta{font:400 12px/1.5 var(--font-mono);color:var(--dim);margin-bottom:14px}
+.spec p.t{font:400 14.5px/1.55 var(--font-ui);max-width:68ch;margin:0 0 14px}
+table{border-collapse:collapse;width:100%;font:400 12.5px/1.4 var(--font-ui)}
+th{font-weight:600;text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);color:var(--dim);background:var(--bg)}
+td{padding:5px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.m{font-family:var(--font-mono);font-size:12px}
+tr.sel td{background:var(--accent-soft)}
+.badge{font:500 11px/1 var(--font-mono);color:var(--accent);background:var(--accent-soft);border-radius:3px;padding:3px 5px}
+code{font:12px var(--font-mono)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mf" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></symbol>
+  <symbol id="mn" viewBox="0 0 24 24"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></symbol>
+  <symbol id="mv" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></symbol>
+  <symbol id="md" viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></symbol>
+  <symbol id="s1" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h20v3.2H2ZM2 7.5h6v3.4H2ZM9.5 7.5h12.5v3.4H9.5ZM2 12.5h6v3.4H2ZM9.5 12.5h12.5v3.4H9.5ZM2 17.5h6v3.4H2ZM9.5 17.5h12.5v3.4H9.5Z"/></symbol>
+  <symbol id="s1p" viewBox="0 0 24 24"><path fill="currentColor" d="M2 5h20v4.5H2ZM2 12.5h6v4H2ZM9.5 12.5h12.5v4H9.5Z"/></symbol>
+  <symbol id="s2" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M2 2h20v6H2ZM3.5 3.5h4.5v3H3.5ZM9.5 3.5h11v3h-11ZM2 9h20v6H2ZM3.5 10.5h4.5v3H3.5ZM9.5 10.5h11v3h-11ZM2 16h20v6H2ZM3.5 17.5h4.5v3H3.5ZM9.5 17.5h11v3h-11Z"/></symbol>
+  <symbol id="s3" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM6.5 3h4.5v4H6.5ZM12.5 3h9.5v4h-9.5ZM6.5 10h4.5v4H6.5ZM12.5 10h9.5v4h-9.5ZM6.5 17h4.5v4H6.5ZM12.5 17h9.5v4h-9.5Z"/></symbol>
+</svg>
+<main>
+<h1>BIM Open Schema brand proposals</h1>
+<p class="sub">Three marks and two accents for the fifth product, the specification the other four implement or consume. Everything else comes from <code>docs/BRANDING.md</code>: the fonts, the neutrals, the status colours, the two-weight wordmark, and a 24 × 24 single-path mark. Each mark is shown in a five-tab strip with the four decided marks, because the schema will most often appear beside them.</p>
+
+<section class="card rec">
+  <h3>Recommendation</h3>
+  <p>Take mark S1, <b>Table Shape</b>, in <b>slate</b> (#4f5d78), with the lockup <b>BIM Open Schema</b>. The four decided marks are verbs: rows become a flow, a flow becomes a page, a node becomes slabs, a model becomes rows. The schema is the noun they share, so its mark is the rows with nothing flowing in or out: three rows split into a key cell and a value cell, as the data mark draws them, under a solid header bar that gives them the shape of a table. In isolation it is a table icon. In the family it is the root glyph that Flow and Data are drawn from, and that is the point. Slate is the one saturated-enough hue left that is not a product accent, a status colour, or the hub's text black, and a muted accent suits a product whose pages are tables of fields rather than buttons.</p>
+  <ul class="notes">
+    <li>Mark S2, Hollow Rows, says "shape with no data" most clearly, and loses it at 16 px, where the cut-outs close; the same finding as Block Flow and Ribbon Page.</li>
+    <li>Mark S3, Rows with Brace, reads as a declaration, but the left spine already means "page" in the notebook mark, and one family should not give one stroke two meanings.</li>
+    <li>Below 16 px, S1 uses a header and one split row.</li>
+    <li>Ochre is the other open region. It sits beside the amber status colour, and a spec page that marks fields "pending" would blur the two.</li>
+  </ul>
+</section>
+
+<h2>1. The family so far</h2>
+<section class="card">
+  <div class="family">
+    <figure><svg width="48" height="48" style="color:var(--flow)"><use href="#mf"/></svg>Flow</figure>
+    <figure><svg width="48" height="48" style="color:var(--notebook)"><use href="#mn"/></svg>Notebook</figure>
+    <figure><svg width="48" height="48" style="color:var(--viewer)"><use href="#mv"/></svg>Viewer</figure>
+    <figure><svg width="48" height="48" style="color:var(--data)"><use href="#md"/></svg>Data</figure>
+    <figure><svg width="48" height="48" style="color:var(--accent)"><use href="#s1"/></svg>Schema S1</figure>
+  </div>
+  <p class="notes" style="margin-top:8px">Decided 2026-10-03: four marks built from the rows, the wire and the node disc; accents blue, violet, teal, rose. Status colours green, amber, red. The toolkit hub uses the text colour. A schema accent has to be none of those.</p>
+</section>
+
+<h2>2. Marks</h2>
+
+<!-- S1 -->
+<section class="card">
+  <h3>Mark S1: Table Shape</h3>
+  <p class="file">mark-s1-table-shape.svg, lockup-s1-table-shape.svg (single fill, nonzero)</p>
+  <p>A solid header bar over three split rows: a short key cell and a long value cell each, in the data mark's proportions. No wire, no node, no motion, because the schema is the thing that is defined, not the thing that happens to it. The header is what carries the mark at small sizes: at 16 px the row gaps thin to hairlines but the heavy bar and the two-column rhythm still read as a table, where three rows alone would be a dotted grid. The weakness is familiarity; on its own it could be any product's table icon. The family answers that: beside the flow mark, which starts from these rows, and the data mark, which ends in them, it reads as the origin.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#s1"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#s1"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#s1"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#s1"/></svg><figcaption>96</figcaption></figure>
+      <figure><svg width="12" height="12"><use href="#s1p"/></svg><figcaption>12 reduced</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#s1"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#s1"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#s1"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#s1"/></svg><figcaption>96</figcaption></figure>
+      <figure><svg width="12" height="12"><use href="#s1p"/></svg><figcaption>12 reduced</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#s1"/></svg><span class="wm"><span class="fam">BIM Open</span>Schema</span><span class="sep"></span><span class="ghost">Tables</span><span class="ghost">Changes</span><span class="btn">Download</span></div>
+  <div class="favrow"><span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab nb"><svg width="16" height="16"><use href="#mn"/></svg>Notebook</span><span class="tab vw"><svg width="16" height="16"><use href="#mv"/></svg>Viewer</span><span class="tab dt"><svg width="16" height="16"><use href="#md"/></svg>Data</span><span class="tab"><svg width="16" height="16"><use href="#s1"/></svg>Schema</span> tab strip at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 184 32" width="368" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#s1" width="24" height="24"/></g><text x="36" y="21.5" style="font-family:var(--font-brand);font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Schema</tspan></text></svg></div>
+</section>
+
+<!-- S2 -->
+<section class="card">
+  <h3>Mark S2: Hollow Rows</h3>
+  <p class="file">mark-s2-hollow-rows.svg, lockup-s2-hollow-rows.svg (single fill, evenodd)</p>
+  <p>Three rows drawn as frames, each with a key cell and a value cell cut out of it: the shape of the data with no data inside. It is the most literal picture of a schema and the most different from the four decided marks, which are all solid. At 48 and 96 px it is handsome and reads at once. At 16 px the frames are a one-pixel wall around a one-pixel hole, and the mark becomes a grey block with texture, the failing the flow and notebook proposals both recorded for negative-space marks. It also drops the heavy single shapes the rest of the family relies on, so it looks lighter than its neighbours in a tab strip.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#s2"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#s2"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#s2"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#s2"/></svg><figcaption>96</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#s2"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#s2"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#s2"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#s2"/></svg><figcaption>96</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#s2"/></svg><span class="wm"><span class="fam">BIM Open</span>Schema</span><span class="sep"></span><span class="ghost">Tables</span><span class="ghost">Changes</span><span class="btn">Download</span></div>
+  <div class="favrow"><span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab nb"><svg width="16" height="16"><use href="#mn"/></svg>Notebook</span><span class="tab vw"><svg width="16" height="16"><use href="#mv"/></svg>Viewer</span><span class="tab dt"><svg width="16" height="16"><use href="#md"/></svg>Data</span><span class="tab"><svg width="16" height="16"><use href="#s2"/></svg>Schema</span> tab strip at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 184 32" width="368" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#s2" width="24" height="24"/></g><text x="36" y="21.5" style="font-family:var(--font-brand);font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Schema</tspan></text></svg></div>
+</section>
+
+<!-- S3 -->
+<section class="card">
+  <h3>Mark S3: Rows with Brace</h3>
+  <p class="file">mark-s3-rows-with-brace.svg, lockup-s3-rows-with-brace.svg (single fill, nonzero)</p>
+  <p>The flow mark's three rows, split into key and value, with a vertical bar at the left margin, the way a type declaration or a struct is set in a listing. It says "definition" without needing the family for context, and it holds at 16 px because every element is solid and the bar anchors the silhouette. The problem is the bar itself: in the notebook mark a left spine means a page, and one stroke should not stand for two things in one family. Side by side, Schema and Notebook would look like variants of each other rather than like different products.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#s3"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#s3"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#s3"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#s3"/></svg><figcaption>96</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#s3"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#s3"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#s3"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#s3"/></svg><figcaption>96</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#s3"/></svg><span class="wm"><span class="fam">BIM Open</span>Schema</span><span class="sep"></span><span class="ghost">Tables</span><span class="ghost">Changes</span><span class="btn">Download</span></div>
+  <div class="favrow"><span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab nb"><svg width="16" height="16"><use href="#mn"/></svg>Notebook</span><span class="tab vw"><svg width="16" height="16"><use href="#mv"/></svg>Viewer</span><span class="tab dt"><svg width="16" height="16"><use href="#md"/></svg>Data</span><span class="tab"><svg width="16" height="16"><use href="#s3"/></svg>Schema</span> tab strip at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 184 32" width="368" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#s3" width="24" height="24"/></g><text x="36" y="21.5" style="font-family:var(--font-brand);font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Schema</tspan></text></svg></div>
+</section>
+
+<h2>3. Accent</h2>
+<p class="notes">Taken: flow blue, ink violet, viewer teal, data rose, the status green, amber and red, and the hub's text black. Each tile shows the S1 mark in the candidate beside the four decided marks, a primary button, and a selected row in the soft tint.</p>
+<section class="card">
+  <div class="grid3">
+    <div class="mini"><svg width="22" height="22" style="color:#4f5d78"><use href="#s1"/></svg><svg width="18" height="18" style="color:var(--flow)"><use href="#mf"/></svg><svg width="18" height="18" style="color:var(--notebook)"><use href="#mn"/></svg><svg width="18" height="18" style="color:var(--viewer)"><use href="#mv"/></svg><svg width="18" height="18" style="color:var(--data)"><use href="#md"/></svg><div><b>Slate</b> #4f5d78 <span class="notes">(recommended)</span></div><div class="notes">A blue-grey with enough hue to be a colour and not the dim text. The quiet member of the family, for the product that is a document. Sits beside flow blue without competing. Soft tint #e9ecf2.</div><span class="btn" style="background:#4f5d78">Download</span><span class="sel" style="background:#e9ecf2">Selected row</span><div class="pal"><span style="background:#4f5d78"></span><span style="background:#e9ecf2"></span><span style="background:#2f66ce"></span><span style="background:#171a1f"></span></div></div>
+    <div class="mini"><svg width="22" height="22" style="color:#8f6214"><use href="#s1"/></svg><svg width="18" height="18" style="color:var(--flow)"><use href="#mf"/></svg><svg width="18" height="18" style="color:var(--notebook)"><use href="#mn"/></svg><svg width="18" height="18" style="color:var(--viewer)"><use href="#mv"/></svg><svg width="18" height="18" style="color:var(--data)"><use href="#md"/></svg><div><b>Ochre</b> #8f6214</div><div class="notes">The one warm region still open, and the most separate from the four cool accents. Its neighbour is the amber status colour #d97706; a spec page that marks fields as pending in amber would have two browns. Soft tint #f5ecdc.</div><span class="btn" style="background:#8f6214">Download</span><span class="sel" style="background:#f5ecdc">Selected row</span><div class="pal"><span style="background:#8f6214"></span><span style="background:#f5ecdc"></span><span style="background:#d97706"></span><span style="background:#171a1f"></span></div></div>
+    <div class="mini"><svg width="22" height="22" style="color:#171a1f"><use href="#s1"/></svg><svg width="18" height="18" style="color:var(--flow)"><use href="#mf"/></svg><svg width="18" height="18" style="color:var(--notebook)"><use href="#mn"/></svg><svg width="18" height="18" style="color:var(--viewer)"><use href="#mv"/></svg><svg width="18" height="18" style="color:var(--data)"><use href="#md"/></svg><div><b>Text black</b> #171a1f <span class="notes">(for comparison)</span></div><div class="notes">What the schema would get if it were treated as part of the hub rather than a product. It is a product with its own repository, and the hub already uses this, so it is shown only to rule it out.</div><span class="btn" style="background:#171a1f">Download</span><span class="sel" style="background:#e8eaef">Selected row</span><div class="pal"><span style="background:#171a1f"></span><span style="background:#e8eaef"></span><span style="background:#5a606c"></span><span style="background:#2f66ce"></span></div></div>
+  </div>
+  <div class="favrow" style="margin-top:16px">Five tabs with each candidate:
+    <span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab nb"><svg width="16" height="16"><use href="#mn"/></svg>Notebook</span><span class="tab vw"><svg width="16" height="16"><use href="#mv"/></svg>Viewer</span><span class="tab dt"><svg width="16" height="16"><use href="#md"/></svg>Data</span>
+    <span class="tab"><svg width="16" height="16" style="color:#4f5d78"><use href="#s1"/></svg>slate</span>
+    <span class="tab"><svg width="16" height="16" style="color:#8f6214"><use href="#s1"/></svg>ochre</span>
+    <span class="tab"><svg width="16" height="16" style="color:#171a1f"><use href="#s1"/></svg>black</span>
+  </div>
+</section>
+
+<h2>4. A specification page in the family type</h2>
+<p class="notes">The schema's pages are tables of fields. Body text uses the notebook's reading scale (14.5 px on a 1.55 line height); the field table uses the interface scale, so a table of columns looks like a table of rows in the studio. Field and type names are Fira Code. The badge is the soft tint.</p>
+<section class="card" style="padding:0;border:0;background:none">
+  <div class="spec">
+    <div class="bar"><svg width="22" height="22"><use href="#s1"/></svg><span class="wm"><span class="fam">BIM Open</span>Schema</span><span class="sep"></span><span class="ghost">Tables</span><span class="ghost">Changes</span><span class="ghost">Parquet</span><span class="btn">Download</span></div>
+    <div class="page">
+      <div class="title">Doors</div>
+      <div class="meta">table 7 of 14 · bim-open-schema 0.4 · 9 columns · key EntityId</div>
+      <p class="t">One row per door instance. The width and height are the leaf's quantities as the authoring tool reported them; a door with no quantity keeps a null, never a value read from the type name.</p>
+      <table>
+        <tr><th>Column</th><th>Type</th><th>Null</th><th>Meaning</th></tr>
+        <tr><td class="m">EntityId</td><td class="m">int64</td><td>no</td><td>Row id in <code>Entities</code> <span class="badge">key</span></td></tr>
+        <tr><td class="m">GlobalId</td><td class="m">string</td><td>no</td><td>The IFC GlobalId, 22 characters</td></tr>
+        <tr class="sel"><td class="m">LeafWidthMm</td><td class="m">double</td><td>yes</td><td>Leaf width in millimetres; null when the model has no quantity</td></tr>
+        <tr><td class="m">StoreyId</td><td class="m">int64</td><td>yes</td><td>Row id in <code>Storeys</code>; null for a door not contained in a storey</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<h2>5. Files</h2>
+<section class="card">
+  <p class="file">schema-proposals.html (this page)<br>mark-s1-table-shape.svg · lockup-s1-table-shape.svg<br>mark-s2-hollow-rows.svg · lockup-s2-hollow-rows.svg<br>mark-s3-rows-with-brace.svg · lockup-s3-rows-with-brace.svg</p>
+  <p class="notes">Every mark is one <code>&lt;path&gt;</code> in a 24 × 24 viewBox with a single fill in slate. The lockups are 184 × 32 with the two-weight wordmark in Instrument Sans. If a mark is chosen it becomes <code>docs/brand/schema-mark.svg</code> and <code>schema-lockup.svg</code> here, and a copy goes to the <code>bim-open-schema</code> repository, which is where the specification lives.</p>
+</section>
+</main>
+</body>
+</html>

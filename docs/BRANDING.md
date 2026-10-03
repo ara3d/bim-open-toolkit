@@ -187,6 +187,11 @@ monogram ranked best for favicon legibility and distinctiveness together;
 Ribbon Page, an N monogram), four accents beside the flow blue (ink
 violet, plum, ink, blue kept), three wordmark forms, and a notebook page
 in the family type; its decision, made the same day, is the one above.
+`schema-proposals.html` (2026-10-03, undecided) proposes the fifth
+product's mark and accent for BIM Open Schema: Table Shape (split rows
+under a header bar), Hollow Rows, and Rows with Brace, in slate
+`#4f5d78` or ochre, each shown in a five-tab strip beside the four
+decided marks, with a specification page in the family type.
 Each page loads its fonts from Google Fonts and needs no build step. If a
 mark is revisited, start from the monogram (`mark-2e-monogram.svg`) or
 the Swiss grid (`mark-2a-swiss.svg`), which were the strongest at 16 px.
