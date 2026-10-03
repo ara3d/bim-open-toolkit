@@ -116,7 +116,7 @@ node scripts/start-bim-flow.mjs
 Or run the headless host by hand, pointing it at a directory of models:
 
 ```bash
-dotnet run --project src/flow/BimOpenFlow.Host -- --port 5214 --models ./data
+dotnet run --project src/studio/BimOpenFlow.Studio -- --port 5214 --profile bim --models ./data
 ```
 
 Run the web editor against it in a second terminal, then open http://127.0.0.1:5300:

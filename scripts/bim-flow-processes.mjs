@@ -28,7 +28,7 @@ export function startDotnet(dll, args, { prefix = "host", cwd = root, env = {} }
   return child;
 }
 
-/** A bim- or tables-profile host on `port` over fresh store and cache folders under `work`. */
+/** A bim- or tables-profile host (the studio dll; the generic host has no bim profile and seeds no NRC graphs) on `port` over fresh store and cache folders under `work`. */
 export function startHost(dll, { port, profile, models, work, prefix = profile, env = {} }) {
   for (const dir of ["store", "cache"]) mkdirSync(join(work, dir), { recursive: true });
   return startDotnet(dll, [

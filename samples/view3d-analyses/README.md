@@ -20,7 +20,7 @@ Every sample validates against the Bos + Geometry packs and evaluates green
 over `data/duplex.ifc`; `tests/flow/BimOpenFlow.View3dWorkflows.Tests` enforces both.
 
 The bim-profile host seeds them into an empty analysis store at startup
-(`BimSampleSeeding` in `src/flow/BimOpenFlow.Host`, with `{DATA}` rewritten to the
+(`BimSampleSeeding` in `src/studio/BimOpenFlow.Studio`, with `{DATA}` rewritten to the
 repo's `data/` directory, which it also registers as a model root). Open one in
 the 3D demo shell with `3d.html?analysis=<id>`, for example
 `3d.html?analysis=color-by-category`.

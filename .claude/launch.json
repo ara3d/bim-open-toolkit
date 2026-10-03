@@ -27,7 +27,7 @@
       "runtimeArgs": [
         "run",
         "--project",
-        "src/flow/BimOpenFlow.Host",
+        "src/studio/BimOpenFlow.Studio",
         "--no-build",
         "--",
         "--port",
@@ -203,7 +203,7 @@
       "runtimeArgs": [
         "run",
         "--project",
-        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "C:/Users/cdigg/git/bim-open-toolkit/src/studio/BimOpenFlow.Studio",
         "--no-build",
         "--",
         "--port",
@@ -231,7 +231,7 @@
     },
     {
       "name": "bof-spatial-host",
-      "runtimeExecutable": "C:/Users/cdigg/git/bim-open-toolkit/artifacts/spatial-agent/bin/BimOpenFlow.Host/debug/bimopenflow-host.exe",
+      "runtimeExecutable": "C:/Users/cdigg/git/bim-open-toolkit/artifacts/spatial-agent/bin/BimOpenFlow.Studio/debug/bimopenflow-studio.exe",
       "runtimeArgs": [
         "--port",
         "5228",
@@ -262,7 +262,7 @@
       "runtimeArgs": [
         "run",
         "--project",
-        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "C:/Users/cdigg/git/bim-open-toolkit/src/studio/BimOpenFlow.Studio",
         "--no-build",
         "--",
         "--port",
@@ -294,7 +294,7 @@
       "runtimeArgs": [
         "run",
         "--project",
-        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "C:/Users/cdigg/git/bim-open-toolkit/src/studio/BimOpenFlow.Studio",
         "--no-build",
         "--",
         "--port",

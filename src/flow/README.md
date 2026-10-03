@@ -9,7 +9,7 @@ nothing in `src/data` references it.
 | Contracts | `BimOpenFlow.Contracts` | Wire types shared with the web client, compiled from `contracts/generated` |
 | Node packs | `BimOpenFlow.Nodes.Support`, `.Tables`, `.TableOps`, `.Cleaning`, `.Dates`, `.DuckDb`, `.Bos`, `.BimAnalysis`, `.Geometry`, `.Compliance`, `.Effects`, `.Viz` | One pack per node vocabulary; `Support` holds the helpers they share, `Effects` is the only pack that writes to disk |
 | Docs | `BimOpenFlow.NodeDocs` | Node catalog to markdown (`docs/nodes.md`) |
-| Host | `BimOpenFlow.Host.Catalog`, `.Host.Store`, `.Host.Api`, `BimOpenFlow.Host` | Model discovery, graphs and runs on disk, the four graph operations over HTTP, and the composition root |
+| Host (the generic host offers only the `tables` profile; the studio in `src/studio` adds `bim` and the NRC graphs) | `BimOpenFlow.Host.Catalog`, `.Host.Store`, `.Host.Api`, `BimOpenFlow.Host` | Model discovery, graphs and runs on disk, the four graph operations over HTTP, and the composition root |
 | Outputs | `BimOpenFlow.Publishing`, `.Reports`, `.Dashboards`, `.Evidence` | What a run produces for people |
 
 The web editor is `bimopenflow/web`. Tests are under `tests/flow`. The MCP

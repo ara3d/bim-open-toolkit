@@ -278,7 +278,7 @@ Use a separate store and set the source path before starting the BIM host:
 
 ```powershell
 $env:BIMOPENFLOW_SNOWDON = 'C:/path/Snowdon Towers Sample Architectural.bos'
-dotnet run --project src/flow/BimOpenFlow.Host -- --profile bim --port 5214 --models ./data --cache ./artifacts/handoff/bim-cache --store ./artifacts/handoff/bim-store
+dotnet run --project src/studio/BimOpenFlow.Studio -- --profile bim --port 5214 --models ./data --cache ./artifacts/handoff/bim-cache --store ./artifacts/handoff/bim-store
 ```
 
 Start the same editor command, then open [3d.html](http://127.0.0.1:5300/3d.html). Stop the tables host first if it owns 5214. The source path also becomes a catalog root. No matching source means no Snowdon sample seeding; an existing store is not automatically reseeded. See [integration guide](bim-flow-3d.md) for importing into an existing store.

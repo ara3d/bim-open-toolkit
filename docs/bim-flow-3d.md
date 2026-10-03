@@ -67,7 +67,7 @@ viewer-core, controls and loaders with `npm run build` in `viewer`.
 BIM Flow's Vite and TypeScript configuration resolves the V2 packages to source,
 so it does not depend on stale V2 `dist` files.
 
-For the graph editor, start `src/flow/BimOpenFlow.Host` with `--profile bim`.
+For the graph editor, start `src/studio/BimOpenFlow.Studio` with `--profile bim` (the generic `src/flow/BimOpenFlow.Host` offers only the tables profile).
 On an empty store, Snowdon is seeded when either `BIMOPENFLOW_SNOWDON` points to
 an existing BOS file, or the file exists at
 `Documents/BIM Open Schema/Snowdon Towers Sample Architectural.bos`.

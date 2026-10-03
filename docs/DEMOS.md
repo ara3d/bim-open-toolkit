@@ -27,7 +27,7 @@ node scripts/start-bim-flow.mjs --profile bim
 By hand:
 
 ```bash
-dotnet run --project src/flow/BimOpenFlow.Host -- --port 5214 --profile bim --models data --store %TEMP%/bof/store --cache %TEMP%/bof/cache
+dotnet run --project src/studio/BimOpenFlow.Studio -- --port 5214 --profile bim --models data --store %TEMP%/bof/store --cache %TEMP%/bof/cache
 ```
 
 ```bash

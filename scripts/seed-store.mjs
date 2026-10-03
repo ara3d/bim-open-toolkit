@@ -1,5 +1,5 @@
 // Seeds sample graphs into a BimOpenFlow analysis store by the rules of the host's
-// SampleSeeding.Seed (src/flow/BimOpenFlow.Host/SampleSeeding.cs), for the DuckDB
+// SampleSeeding.Seed (src/flow/BimOpenFlow.Host/SampleSeeding.cs, used by the studio's BimSampleSeeding), for the DuckDB
 // studio's workflows, which scripts/prepare-bim-flow-duckdb.mjs seeds before any host runs:
 //
 //   - a flow the store lacks is written, unless the user deleted it and the sample is unchanged;

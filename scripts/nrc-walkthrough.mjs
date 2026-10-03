@@ -1,4 +1,4 @@
-// The NRC walkthrough: builds the host and the IFC MCP server, then runs the paper's
+// The NRC walkthrough: builds the studio (BimOpenFlow.Studio, which seeds the NRC graphs) and the IFC MCP server, then runs the paper's
 // demonstration end to end on two models and writes every figure and transcript
 // under one output folder with a Markdown index.
 //
@@ -6,7 +6,7 @@
 //                          table, property values, three 3D colourings, DC-W1 verdicts,
 //                          storey walk), then the IFC MCP replay of four questions.
 //   Snowdon (private, BOS): the view3d recipe graph captured as figures, then the
-//                          DuckDB workflows over the Snowdon export on a tables host,
+//                          DuckDB workflows over the Snowdon export on the studio's tables profile,
 //                          then the dataflow MCP replay that builds a door schedule.
 //
 //   node scripts/nrc-walkthrough.mjs [--out artifacts/nrc-walkthrough] [--no-build]
@@ -40,7 +40,7 @@ const arg = (name, fallback) => {
 
 const out = resolve(root, arg("--out", "artifacts/nrc-walkthrough"));
 const build = join(out, "build");
-const hostDll = join(build, "host", "bimopenflow-host.dll");
+const hostDll = join(build, "host", "bimopenflow-studio.dll");
 const ifcMcpDll = join(build, "ifc-mcp", "bimopenmcp-ifc.dll");
 const flowMcpDll = join(build, "flow-mcp", "bimopenmcp-flow.dll");
 const snowdonBos = process.env.BIMOPENFLOW_SNOWDON
@@ -243,7 +243,7 @@ async function snowdonDuckDb(browser) {
 
 await mkdir(out, { recursive: true });
 if (!flag("--no-build")) {
-  buildProject("src/flow/BimOpenFlow.Host", join(build, "host"));
+  buildProject("src/studio/BimOpenFlow.Studio", join(build, "host"));
   if (!flag("--skip-mcp")) {
     buildProject("deps/bim-open-data/src/mcp/BimOpenMcp.Ifc", join(build, "ifc-mcp"));
     if (!flag("--skip-snowdon")) buildProject("src/mcp/BimOpenMcp.Flow", join(build, "flow-mcp"));
