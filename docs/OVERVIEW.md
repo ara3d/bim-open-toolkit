@@ -58,7 +58,7 @@ Five layers, each depending only on the ones above it.
 2. **Engine** (`Ara3D.DataFlowEngine*`, `Ara3D.NodeGraph*`) — document model, evaluator,
    expression language, run records, test kit. Contains no BIM whatsoever, and is a
    candidate to graduate to its own repo.
-3. **BIM data** (`Ara3D.BimOpenSchema*`, `Ara3D.Ifc*`) — the schema and its converters, plus
+3. **BIM data** (`Ara3D.BimOpenSchema*`, `Ara3D.Ifc*`, in bim-open-data at `deps/bim-open-data`) — the schema and its converters, plus
    IFC parsing, meshing, and byte-exact property-set editing: entities located by byte range,
    so everything you did not edit comes out identical, byte for byte. That is what makes
    write-back to a client's file defensible.
@@ -114,8 +114,9 @@ Because the model layer is pure and the three.js object-graph logic is kept sepa
 
 | Project | Relationship |
 |---|---|
-| [bim-open-schema](https://github.com/ara3d/bim-open-schema) | The schema's spec repo: five dependency-free C# files. This is its reference implementation. |
-| [ara3d-sdk](https://github.com/ara3d/ara3d-sdk) | General-purpose utilities, geometry, data tables, file formats, glTF, the Bowerbird host, MCP protocol — built from source through the submodule. Everything specific to Revit, IFC, or BOS lives in this repo. |
+| [bim-open-schema](https://github.com/ara3d/bim-open-schema) | The schema's spec repo: five dependency-free C# files; `deps/bim-open-schema`. |
+| [bim-open-data](https://github.com/ara3d/bim-open-data) | The schema's reference implementation: BOS reading and writing, IFC loading, meshing, byte-exact property-set editing, the IFC MCP server, the BOS Browser; `deps/bim-open-data`. |
+| [ara3d-sdk](https://github.com/ara3d/ara3d-sdk) | General-purpose utilities, geometry, data tables, file formats, glTF, the Bowerbird host, MCP protocol — built from source through `deps/ara3d-sdk`. Everything specific to Revit, IFC, or BOS lives in bim-open-data or this repo. |
 | `deps/gratify` | The canvas UI library the web editor's graph surface is built on; fetched by `node deps.mjs`. |
 | web-ifc, DuckDB | The IFC parser underneath the loader, and the analytical engine on the far end. |
 

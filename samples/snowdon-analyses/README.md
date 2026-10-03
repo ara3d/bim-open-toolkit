@@ -30,7 +30,7 @@ path, so the graph evaluates without reading it.
 
 ## Converter facts (2026-09-26)
 
-TKT-30 chunk C1. What `IfcToBosConverter` (`src/data/Ara3D.Ifc.Bos`) does with
+TKT-30 chunk C1. What `IfcToBosConverter` (bim-open-data's `src/data/Ara3D.Ifc.Bos`, at `deps/bim-open-data`) does with
 each of the seven private Snowdon discipline IFC files at
 `BIM_OPEN_SNOWDON_IFC` (default
 `C:/Users/cdigg/git/3d-format-shootout/data/misc/Snowdon-IFC`), measured with a

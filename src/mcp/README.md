@@ -5,8 +5,11 @@ and nothing below references this folder.
 
 | Project | Exposes | Sits on |
 |---|---|---|
-| `BimOpenMcp.Ifc` | Direct IFC and BOS queries: entities, properties, SQL over DuckDB, geometry, conversion | `src/data` only |
 | `BimOpenMcp.Flow` | The graph operations, evaluation, and runs of a BimOpenFlow host | `src/flow` |
 
+The second server, `BimOpenMcp.Ifc` (direct IFC and BOS queries), lives in
+bim-open-data with the libraries it sits on: `deps/bim-open-data/src/mcp/BimOpenMcp.Ifc`.
+`node scripts/build-mcp.mjs` builds both into the folders `.mcp.json` names.
+
 Both run over stdio by default, or HTTP with `--http <port>`. The protocol
-helpers (`Ara3D.MCP`) come from the SDK submodule. Tests are under `tests/mcp`.
+helpers (`Ara3D.MCP`) come from `deps/ara3d-sdk`. Tests are under `tests/mcp`.

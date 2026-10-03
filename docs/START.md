@@ -10,8 +10,8 @@ data — no private model required.
 node scripts/preflight.mjs
 ```
 
-This names what is missing — Node version, .NET SDK, uninitialized submodules, the
-private Snowdon model — before you run anything else. A missing submodule or SDK
+This names what is missing — Node version, .NET SDK, the uninitialized submodule or a dependency `node deps.mjs` has not fetched, the
+private Snowdon model — before you run anything else. A missing submodule, dependency, or SDK
 fails the check; a missing private model does not, because the first demo below
 does not need one.
 

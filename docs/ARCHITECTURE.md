@@ -85,7 +85,9 @@ Contains no BIM whatsoever, and is a candidate to graduate to its own repo.
 Six value kinds travel on edges: Boolean, Integer, Number, Text, **Table**, and **Relation**
 (a lazy query the `rel.*` nodes build and DuckDB runs). Tables are the currency; almost everything useful is an immutable table flowing between nodes.
 
-### 3. BIM data — `src/data/`, `plugins/`, `apps/`
+### 3. BIM data — `deps/bim-open-data/`, `plugins/`
+
+The libraries in this section live in their own repository, [bim-open-data](https://github.com/ara3d/bim-open-data), with their tests, the IFC MCP server, the BOS Browser, and the IFC type generator. The toolkit pins it in `deps.json`; `node deps.mjs` puts it at `deps/bim-open-data`, and the toolkit's projects reference `$(DepsRoot)bim-open-data/src/...`. Only the Revit add-ins under `plugins/` stay here.
 
 **BIM Open Schema** is the model. The problem it solves: BIM data is locked behind
 per-tool APIs, and the exchange formats that exist are shaped for geometry interchange,
@@ -113,14 +115,14 @@ BOS is the other shape. Its design principles:
 - **Federated by construction.** A `Document` index on every entity; multiple source
   files in one dataset.
 
-The specification is the `bim-open-schema` submodule: five C# files with no package
-references. Around it, in `src/`: `BimOpenSchema.ObjectModel` (builders, accessors, and
+The specification is the `bim-open-schema` repository (`deps/bim-open-schema`): five C# files with no package
+references. Around it, in bim-open-data's `src/data/`: `BimOpenSchema.ObjectModel` (builders, accessors, and
 a navigable object graph), `BimOpenSchema.IO` (Parquet, BFAST, Excel, DuckDB),
 `Ara3D.Ifc.Bos` (the IFC→BOS converter), `BimOpenSchema.DuckDb` (the view/query layer,
 isolating the native DuckDB dependency), and `BimOpenSchema.Harmonizer` (unit conversion
 and category/parameter mapping — appending SI canonical columns so numbers from different
 sources are comparable). Producers and viewers sit beside them: the Revit 2025 exporter
-add-in under `plugins/` and the BOS Browser under `apps/`.
+add-in under `plugins/` and the BOS Browser under bim-open-data's `apps/`.
 
 **IFC workflows** are handled by four projects that stay deliberately separate:
 
@@ -225,13 +227,14 @@ A worked example of an agent building a graph from a plain-language request is i
 
 ## Boundary and provenance
 
-Three repositories, three roles. [bim-open-schema](https://github.com/ara3d/bim-open-schema)
+[bim-open-schema](https://github.com/ara3d/bim-open-schema)
 is the specification as code and nothing else. [ara3d-sdk](https://github.com/ara3d/ara3d-sdk)
 is the general-purpose layer — utilities, geometry, data tables, file formats, glTF
 export, the Bowerbird plug-in host, the MCP protocol — built here from source through
-the submodule and `Directory.Build.targets`. This repository holds everything specific
-to BIM authoring tools: the BOS reference implementation, IFC, the Revit add-ins, the
-BOS Browser, and the Studio BIM tools. The engine group (now the `ara3d-dataflow`
+`deps/ara3d-sdk` and `Directory.Build.targets`. [bim-open-data](https://github.com/ara3d/bim-open-data)
+holds the BOS reference implementation, IFC, the IFC MCP server, and the BOS Browser.
+This repository holds the graphs over them, the Revit add-ins, and the Studio BIM tools.
+All three come through `deps.json`. The engine group (now the `ara3d-dataflow`
 submodule) and the viewer take only SDK dependencies.
 
 The original project-structure proposal from 2026-08-30, with the dependency sketch and
