@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using BimOpenFlow.Host;
 using BimOpenFlow.Host.Store;
 using BimOpenToolkit.TestSupport;
@@ -43,7 +44,12 @@ public sealed class BimSampleSeedingTests
             .Concat(ExpectedIds("view3d-analyses"))
             .Concat(ExpectedIds("nrc-analyses"))
             .Concat(ExpectedIds("showcase-analyses"))
-            .Concat(BimSampleSeeding.SnowdonPath() is null ? [] : ExpectedIds("snowdon-analyses"));
+            .Concat(BimSampleSeeding.SnowdonPath() is null ? [] : ExpectedIds("snowdon-analyses").Where(id => !HoldsOtherPlaceholder("snowdon-analyses", id, "{SNOWDON}")));
+
+    /// <summary>True when a sample still holds a placeholder its source does not fill, such as
+    /// federation-match's {FEDERATION_*} parameters; seeding skips and logs such a sample (TKT-83).</summary>
+    private static bool HoldsOtherPlaceholder(string analysesDirName, string id, string filled)
+        => Regex.IsMatch(File.ReadAllText(RepoPaths.Samples(analysesDirName, id + ".json")).Replace(filled, ""), @"\{[A-Z_]+\}");
 
     [Test]
     public void EmptyStore_SeedsEverySampleSource()
