@@ -4,7 +4,7 @@ title: Node descriptors carry a category, so pane choice and the default shown n
 status: open
 depends_on: []
 owner:
-fence: [contracts/**, bimopenflow/web/packages/contracts/**, bimopenflow/web/packages/app/src/paneChoice.ts, bimopenflow/web/packages/app/src/defaultShown.ts, src/flow/BimOpenFlow.Nodes.*/**]
+fence: [contracts/**, bimopenflow/web/packages/contracts/**, bimopenflow/web/packages/client/src/paneChoice.ts, bimopenflow/web/packages/app/src/defaultShown.ts, src/flow/BimOpenFlow.Nodes.*/**]
 ---
 
 ## Acceptance criteria
