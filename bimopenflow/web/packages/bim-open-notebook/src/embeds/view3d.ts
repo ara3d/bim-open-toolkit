@@ -49,6 +49,8 @@ const resolverFor = (api: NotebookApi) => {
 interface Feed {
   readonly modelUrl?: string;
   readonly data: () => Promise<{ kind: "view" | "boxes" | "instances"; data: TableSlice } | undefined>;
+  /** The node's own `legend` output, when it declares one; the pane would otherwise guess a legend from the instances. */
+  readonly legend?: () => Promise<TableSlice | undefined>;
 }
 
 /** Works out the feed the editor's pane area would use for this node, or throws a sentence. */
@@ -74,8 +76,11 @@ async function planFeed(
   const live = buildLiveViewRecipe(document, nodeId, catalog);
   if (live.kind === "invalid") throw new Error(live.message);
   if (live.kind === "ready") return { modelUrl, data: async () => ({ kind: "view", data: live.data }) };
+  const hasLegend = catalog.get(document.structure.nodes.find((n) => n.id === nodeId)?.kind ?? "")
+    ?.outputs.some((o) => o.name === "legend");
   return {
     modelUrl,
+    legend: hasLegend && port !== "view" ? () => completeTable(paneCtx, nodeId, "legend", isCurrent) : undefined,
     data: async () => {
       const state = (await api.getAnalysisState(analysisId)).nodes.find((n) => n.nodeId === nodeId);
       if (state?.status !== "Ok")
@@ -179,6 +184,9 @@ export function createView3dRenderer(makePane: View3dPaneFactory = defaultPane):
         const input = await feed.data();
         if (!current() || !input) return;
         shown.update(input);
+        const legend = await feed.legend?.().catch(() => undefined);
+        if (!current()) return;
+        if (legend) shown.update({ kind: "legend", data: legend });
         say("");
       } catch (e) {
         if (current()) say(hostMessage(e), true);

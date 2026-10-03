@@ -217,6 +217,33 @@ describe("view3d embed", () => {
     expect(api.getResult).not.toHaveBeenCalled();
   });
 
+  it("sends the colouring node's legend output to the pane after the instances", async () => {
+    const legend: TableSlice = {
+      columns: [{ name: "label", type: "Text" }, { name: "count", type: "Integer" }],
+      rows: [["Pass", 8], ["Fail", 6]],
+      totalRows: 2,
+      skip: 0,
+    };
+    const colour = {
+      ...descriptor("view3d.color", "instances"),
+      outputs: [{ name: "instances", type: "Table" }, { name: "legend", type: "Table" }],
+    } as unknown as NodeDescriptor;
+    const api = fakeApi({
+      getNodeCatalog: vi.fn(async () => ({ nodes: [descriptor("view3d.instances", "instances"), descriptor("csv.read", "table"), colour] })),
+      getResult: vi.fn(async (_id: string, _node: string, port: string) => (port === "legend" ? legend : instances)),
+    });
+    const { pane } = mount(api);
+    await settle();
+    expect(pane.log).toEqual(["mount", "model", "instances", "legend"]);
+    expect(pane.inputs.at(-1)).toEqual({ kind: "legend", data: legend });
+  });
+
+  it("sends no legend when the node declares none", async () => {
+    const { pane } = mount(fakeApi());
+    await settle();
+    expect(pane.log).toEqual(["mount", "model", "instances"]);
+  });
+
   it("says why when the node has no result, after loading the model", async () => {
     const { el, pane } = mount(fakeApi({ getAnalysisState: vi.fn(async () => okState("Error", "csv not found")) }));
     await settle();
