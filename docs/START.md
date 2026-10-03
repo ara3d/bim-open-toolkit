@@ -19,6 +19,7 @@ does not need one.
 
 ```bash
 git submodule update --init --recursive
+node deps.mjs
 npm ci --prefix bimopenflow/web
 ```
 

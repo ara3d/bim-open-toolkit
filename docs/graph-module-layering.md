@@ -33,8 +33,8 @@ BimOpenFlow specialize it — fails on three counts.
    promotion, templates. A shared node library would own the cheap part while
    the expensive part lives here anyway.
 
-2. **Gratify is a git submodule.** Every change to it is a two-repo commit and
-   a submodule bump. That cost is fine for primitives, which change rarely and
+2. **Gratify is a separate repository (pinned in `deps.json`, fetched into `deps/gratify`).** Every change to it is a two-repo commit and
+   a pin bump in `deps.json`. That cost is fine for primitives, which change rarely and
    serve every consumer. It is the wrong cost to pay on the critical path of
    ordinary graph-editor features, which is exactly what a graph layer in
    Gratify would put there.
@@ -89,4 +89,4 @@ code in Gratify.
 - Gratify's demo may be updated to track core API changes. It never grows to
   serve BimOpenFlow.
 - Gratify changes stay small, general, and infrequent, which keeps the
-  submodule bump cheap.
+  pin bump cheap.

@@ -17,6 +17,7 @@ The brief above says what the project is for. A plan names the workflow it serve
 | Earlier proposals and their status | `docs/proposals/` and `docs/plans/`; `docs/platoflow/` is the pre-rewrite design from 2026-08-30, history unless a newer document repeats it |
 | What agents already know | `.claude/skills/bim-flow/`, `.claude/skills/ifc-ask/`; `.mcp.json` names the two MCP servers |
 | Runnable proof | `samples/*/` (each README lists its graphs and numbers), `gates/` (host and web smokes), `tests/` |
+| Where the dependencies come from | `deps.json` lists them, pinned by commit; `node deps.mjs` fills the git-ignored `deps/`. The 3D viewer's code is in `deps/bim-open-viewer`, a separate repository (`ara3d/bim-open-viewer`), and Gratify is in `deps/gratify`: change them in their own repositories, then update the pin |
 | Private data | The Snowdon model lives outside the repository (`BIMOPENFLOW.md` says where); `data/` is fetched by script and never committed |
 
 ## Working here

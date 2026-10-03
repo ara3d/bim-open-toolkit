@@ -64,7 +64,7 @@ the design in detail. [docs/OVERVIEW.md](docs/OVERVIEW.md) is the one-page versi
 - **Node.js**, the version the installed Vite requires (`^20.19.0 || >=22.12.0`; older
   "Node 18+" advice is insufficient for the current viewer workspace), with npm, for
   the web editor, the 3D viewer, and the gates.
-- **Git with submodules.** The editor canvas comes from the Gratify submodule.
+- **Git.** The editor canvas comes from Gratify and the 3D viewer from `bim-open-viewer`; `node deps.mjs` fetches both into `deps/`.
 
 Run `node scripts/preflight.mjs` to check these, plus a .NET SDK and the private
 Snowdon model the 3D and DuckDB demos need, before following the steps below.

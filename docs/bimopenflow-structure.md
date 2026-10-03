@@ -263,7 +263,7 @@ and cross-probing, and the mapping from canvas gestures to store operations.
 Built on gratify's core primitives; gratify's `examples/node-editor` is a demo,
 not an upstream. Gaps in gratify are fixed at the core level, never by growing
 a graph layer there — see `docs/graph-module-layering.md`.
-**Depends on:** gratify (submodule); @bimopenflow/state, contracts (generated
+**Depends on:** gratify (`deps/gratify`); @bimopenflow/state, contracts (generated
 TS).
 
 ### @bimopenflow/state

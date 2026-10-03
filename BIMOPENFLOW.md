@@ -7,8 +7,8 @@ One-time setup:
 ```powershell
 git submodule update --init --recursive
 node deps.mjs
-npm install --prefix viewer
-npm run build --prefix viewer
+npm install --prefix deps/bim-open-viewer
+npm run build --prefix deps/bim-open-viewer
 npm install --prefix bimopenflow/web
 ```
 

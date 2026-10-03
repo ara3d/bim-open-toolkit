@@ -177,7 +177,7 @@ One headless core; every UI is a client of it.
   shell around it: sidebar, topbar, panes area, palette, step list, problems strip,
   start page), `panes` (table, chart, 3D, inspector, verdict), `viz` (SVG charts),
   `state`, and generated `contracts` / `api-client` packages. The canvas is built on
-  the Gratify submodule's primitives; graph-specific behaviour stays here,
+  the primitives of Gratify (`deps/gratify`); graph-specific behaviour stays here,
   deliberately, rather than upstream (see
   [graph-module-layering.md](graph-module-layering.md)). `bim-open-notebook` is a
   separate page and package in the same workspace: a session transcript with live
