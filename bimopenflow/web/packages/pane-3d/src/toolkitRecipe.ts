@@ -3,11 +3,12 @@ import { clippingFeature, clippingSlice, environmentFeature, environmentSlice, l
 import { defaultEnvironment, dirtySets, publishDirty, noClipping, type InstanceTable } from "@bim-open-viewer/render";
 import { setProjectionKind } from "@bim-open-viewer/interact";
 import type { Viewer } from "@bim-open-viewer/viewer";
+import type { LegendEntry } from "@bimopenflow/panes";
 import { sectionElevation, type ViewStep } from "./viewRecipe";
 import { categoryPalettes, type CategoryPaletteName } from "./categoryPalette";
 
 export const recipeFeatures = [clippingFeature, environmentFeature, layoutsFeature];
-export type LegendEntry = { name: string; color: Vec3; count: number };
+export type { LegendEntry };
 
 export function requireResult<T>(result: Result<T>): T {
   if (!result.ok) throw new Error(result.diagnostics.map(d => d.message).join("; "));

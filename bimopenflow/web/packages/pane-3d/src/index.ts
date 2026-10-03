@@ -8,4 +8,3 @@ export { defaultView3DDeps, type View3DDeps, type ViewerRig } from "./viewerDeps
 export { buildLiveViewRecipe } from "./liveViewRecipe";
 export { parseViewRecipe, type ViewStep } from "./viewRecipe";
 export { UNIT_CUBE } from "./unitCube";
-export type { LegendEntry } from "./toolkitRecipe";
