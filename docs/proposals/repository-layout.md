@@ -220,7 +220,7 @@ Each step is its own commit, or set of commits by path, and is verified before t
    - It builds and typechecks. It passes 2,161 of 2,162 V2 tests and every per-package suite except one test, which expects the repository folder to be named `viewer`. That test fails in the toolkit today for the same reason.
    - One lint error (`prefer-const` in `ui-gratify/src/inspector/host.ts`) also predates the move.
    - It still carries a nested Gratify submodule, which B replaces with `deps/gratify`.
-   - Nothing is pushed. The toolkit is unchanged. The work sits in a temporary session folder, `%LOCALAPPDATA%\Temp\claude\C--Users-cdigg-git-bim-open-toolkit\5b8f2e5c-d661-401c-9de6-c79f2d67b22f\scratchpad\extract`, which is not durable. As the review in section 11.3 says, it should be pushed to a branch before any other step.
+   - The work is pushed to the `extraction` branch of `ara3d/bim-open-viewer` (commit `3959792`); `main` there still holds only the first commit. The toolkit is unchanged.
 
    Remaining work: switch Gratify to `deps/`, push, replace the toolkit's `viz/` with `deps/bim-open-viewer`, and update the toolkit's consumers:
    - the editor's `panes` package file, `toolkit.config.ts`, `toolkit.tsconfig.json`, and three `tsconfig.json` files;
