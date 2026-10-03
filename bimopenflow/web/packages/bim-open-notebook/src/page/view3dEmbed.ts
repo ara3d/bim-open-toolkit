@@ -35,7 +35,7 @@ import {
 } from "@bimopenflow/client";
 import { hostMessage } from "@bimopenflow/client/host";
 import type { View3dEmbed } from "../document/format";
-import type { EmbedRenderer, Freshness, NotebookApi } from "./contract";
+import type { EmbedRenderer, Freshness, NotebookApi } from "../embeds/contract";
 
 /** Makes the 3D pane; tests pass one built on fake View3DDeps (no WebGL in jsdom). */
 export type View3dPaneFactory = () => Pane;

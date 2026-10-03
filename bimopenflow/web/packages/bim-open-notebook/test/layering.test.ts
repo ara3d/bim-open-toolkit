@@ -41,4 +41,17 @@ describe("layering", () => {
     }
     expect(offences).toEqual([]);
   });
+
+  it("keeps the 3D pane and the viewer out of src/embeds; a page registers them", () => {
+    const offences: string[] = [];
+    for (const file of sourceFiles(join(src, "embeds"))) {
+      const source = readFileSync(file, "utf8");
+      for (const spec of specifiers(source)) {
+        if (spec.startsWith("@bim-open-viewer/") || spec.startsWith("@bimopenflow/pane-3d") || /view3dEmbed/.test(spec))
+          offences.push(`${relative(src, file)} -> ${spec}`);
+      }
+      if (/(?:createViewPane3D|viewPane3D)/.test(source)) offences.push(`${relative(src, file)} names the 3D pane`);
+    }
+    expect(offences).toEqual([]);
+  });
 });

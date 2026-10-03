@@ -131,3 +131,4 @@ Waves run in this order. Agents within a wave have disjoint fences; a wave start
 - **Wave C**: phase 5, `bim-open-flow` (with `ara3d-dataflow` moved to `deps/`, kept as its own repository).
 - **Wave D**: TKT-86, then phase 6, the notebook's code into `bim-open-notebook`.
 - **Wave E**: phase 7: the workspace repository, a tag, and `nrc-ifc-llm` moved to the tag.
+- 2026-10-03, chunk 3d: the notebook's embed renderers are a registry its page fills. `defaultRenderers` has no `view3d`; `withRenderers` adds it; `src/page/view3dEmbed.ts` is the one file importing the 3D pane, and `page/main.ts` registers it. A kind with no renderer shows its caption. Notebook: 302 tests, typecheck clean; the rebuilt static site opens s06-paper-figures with both 3D embeds. `page/nrc.ts` mounts no notebook, so it needs no registration.

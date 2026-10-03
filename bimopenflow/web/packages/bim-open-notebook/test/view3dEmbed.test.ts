@@ -4,7 +4,7 @@ import { createViewPane3D, type Pane, type PaneContext, type PaneEvent, type Pan
 import type { View3dEmbed } from "../src/document/format";
 import type { EmbedContext, NotebookApi } from "../src/embeds/contract";
 import { createSelectionBus } from "../src/embeds/selection";
-import { createView3dRenderer } from "../src/embeds/view3d";
+import { createView3dRenderer } from "../src/page/view3dEmbed";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 

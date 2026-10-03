@@ -160,6 +160,14 @@ describe("mountNotebook", () => {
     expect(new Set(fake.contexts.map((c) => c.selection)).size).toBe(1);
   });
 
+  it("shows a view3d embed's caption on a page that registered no 3D renderer", async () => {
+    const view3d: Embed = { kind: "view3d", id: "v1", source: { analysisId: "a", nodeId: "n", port: "view" }, caption: "Doors in 3D" };
+    const initial = sample([turn("t1", { reply: reply("answer", { embeds: [view3d] }) })]);
+    const { view3d: _drawn, ...withoutView3d } = fakeRegistry().registry;
+    view = mountNotebook(root, { api, renderers: withoutView3d as EmbedRegistry, initial, now: () => "2026-09-27T12:00:00Z" });
+    expect(root.querySelector(".nb-turn figcaption")?.textContent).toBe("Doors in 3D");
+  });
+
   it("starts empty and untitled without an initial notebook", () => {
     mount();
     expect(view!.notebook().title).toBe("Untitled notebook");

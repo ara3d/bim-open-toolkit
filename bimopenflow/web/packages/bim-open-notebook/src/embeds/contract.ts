@@ -66,7 +66,10 @@ export type EmbedRenderer<E extends Embed> = (
   ctx: EmbedContext,
 ) => EmbedHandle;
 
-/** One renderer per embed kind. */
+/**
+ * The renderer for each embed kind a page plugs in. A kind with no renderer
+ * (the 3D embed on a page that loaded no viewer) is drawn as its caption.
+ */
 export type EmbedRegistry = {
-  readonly [K in EmbedKind]: EmbedRenderer<Extract<Embed, { kind: K }>>;
+  readonly [K in EmbedKind]?: EmbedRenderer<Extract<Embed, { kind: K }>>;
 };

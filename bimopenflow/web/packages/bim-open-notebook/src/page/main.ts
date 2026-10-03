@@ -8,8 +8,10 @@ import { createAskTransport, mountHostBanner, watchHost, type AskTransport } fro
 import type { Notebook } from "../document/format";
 import { parseNotebook } from "../document/io";
 import { fetchSample } from "./files";
+import { defaultRenderers, withRenderers } from "../embeds/registry";
 import { mountNotebook, renderProblems } from "./notebookView";
 import { HOSTLESS, HOSTLESS_NOTE } from "./site";
+import { renderView3d } from "./view3dEmbed";
 
 /** The API of a page with no host: every call fails at once with a plain reason, and nothing is fetched. */
 function hostlessApi(): ApiClient {
@@ -75,6 +77,7 @@ async function start(): Promise<void> {
     ask,
     hostless: HOSTLESS ? HOSTLESS_NOTE : undefined,
     initial: opened.notebook,
+    renderers: withRenderers(defaultRenderers, { view3d: renderView3d }),
   });
   if (opened.errors) root.prepend(renderProblems(document, `Could not open the sample ${sample}`, opened.errors));
 }

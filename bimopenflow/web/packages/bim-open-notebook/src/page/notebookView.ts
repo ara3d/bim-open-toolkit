@@ -543,8 +543,9 @@ function tallying(base: EmbedRegistry, record: (freshness: Freshness) => void): 
     };
   };
   // Each kind keeps its own renderer; the pairing is asserted once, as in registry.ts.
+  // A kind the page did not register stays absent, so renderEmbed draws its caption.
   return Object.fromEntries(
-    EMBED_KINDS.map((kind) => [kind, wrap(base[kind] as EmbedRenderer<Embed>)]),
+    EMBED_KINDS.flatMap((kind) => (base[kind] ? [[kind, wrap(base[kind] as EmbedRenderer<Embed>)]] : [])),
   ) as unknown as EmbedRegistry;
 }
 
