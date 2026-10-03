@@ -3,7 +3,7 @@
 An open, verifiable data layer for building information — and a node graph on top of it
 that people and AI agents edit with the same four operations.
 
-`98 nodes` · `11 node packs` · `46 C# projects` · `41 test projects` · MIT
+`124 nodes` · `11 node packs` · `46 C# projects` · `41 test projects` · MIT
 
 ## What it is
 
@@ -16,8 +16,8 @@ a closed vocabulary — `PartOf`, `ContainedIn`, `HostedBy`, `BoundedBy` — cho
 both the Revit API and IFC, so a federated model from mixed sources speaks one language.
 
 **BimOpenFlow** is a node graph over that data. Nodes are small pure functions over tables,
-and tables are the currency: of the five value kinds that travel on an edge, the one that
-matters is `Table`. One vocabulary covers ETL, 3D views, charts and reports, SQL, and code
+and tables are the currency: of the six value kinds that travel on an edge, the one that
+matters is `Table` (with `Relation`, its lazy SQL form). One vocabulary covers ETL, 3D views, charts and reports, SQL, and code
 compliance — so they compose. A rule check can feed a chart. A SQL query can color a 3D
 model. There is no boundary to cross, because there is only one kind of pipeline.
 

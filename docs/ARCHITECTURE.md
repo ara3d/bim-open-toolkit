@@ -82,8 +82,8 @@ Contains no BIM whatsoever, and is a candidate to graduate to its own repo.
 | `NodeGraph.Migrations` | Version-to-version document upgrades, kept out of the document model. |
 | `DataFlowEngine.TestKit` | Fluent graph builders, probe nodes, evaluation assertions — shipped as a real package, not test internals. |
 
-Five value kinds travel on edges: Boolean, Integer, Number, Text, and **Table**. Tables
-are the currency; almost everything useful is an immutable table flowing between nodes.
+Six value kinds travel on edges: Boolean, Integer, Number, Text, **Table**, and **Relation**
+(a lazy query the `rel.*` nodes build and DuckDB runs). Tables are the currency; almost everything useful is an immutable table flowing between nodes.
 
 ### 3. BIM data — `src/data/`, `plugins/`, `apps/`
 
