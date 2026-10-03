@@ -3,9 +3,11 @@
 Decided 2026-10-03 by Christopher Diggins from proposals drafted with Claude
 Fable 5.1 (the explorations are kept under `docs/brand/explorations/`). This
 is the reference for the mark, the wordmark, the fonts, and the colours of
-every BimOpenFlow page. The studio look (`docs/proposals/studio-look.md`)
-is the first page to carry it; the classic page keeps its current look
-until the two are reconciled.
+every BimOpenFlow page. Both looks carry it: the studio page
+(`docs/proposals/studio-look.md`) and the classic pages (`/`, `/3d.html`,
+`/duckdb.html`, `/showcase.html`), which share the mark through
+`bimopenflow/web/packages/app/src/brand.ts` and the faces through their
+stylesheets.
 
 ## The mark: Rows to Flow
 
@@ -89,12 +91,12 @@ data vocabulary, not brand colours, and do not appear in the chrome.
 
 ## Applying it
 
-- Studio page: the mark replaces the cube path in
-  `bimopenflow/web/packages/app/src/studio/studioChrome.ts`; the font link
-  goes in `studio.html`; the three stacks replace `--s-font` and `--s-mono`
-  in `studio/studio.css`.
-- Favicon: `docs/brand/mark.svg` served as `favicon.svg` from the app
-  package.
+- Done in the app package: `brand.ts` holds the mark path and draws it
+  for both chromes; every page head loads the three faces and the favicon;
+  `styles.ts` (classic) and `studio/studio.css` (studio) name the stacks as
+  `--bof-app-font`, `--bof-app-font-brand`, `--bof-app-mono` and
+  `--s-font`, `--s-font-brand`, `--s-mono`; `public/favicon.svg` is the mark.
+- A new page: copy the head links from `index.html` and use the tokens.
 - Papers and slides: the lockup at 96 px or larger; body text in the
   document's own face, headings may use Instrument Sans.
 
