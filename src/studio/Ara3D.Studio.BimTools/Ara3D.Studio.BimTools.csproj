@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\submodules\ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj" />
-    <ProjectReference Include="..\..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="$(DepsRoot)ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
     <ProjectReference Include="..\..\data\Ara3D.BimOpenSchema.ObjectModel\Ara3D.BimOpenSchema.ObjectModel.csproj" />
     <ProjectReference Include="..\..\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
   </ItemGroup>

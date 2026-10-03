@@ -34,7 +34,7 @@ File.WriteAllBytes(outputPath, IfcPatcher.Append(file, builder.Lines));
 
 The two schemas order these attributes differently, so the constructor takes an
 `IfcSchema`. Attribute lists were taken from
-`submodules/parakeet/input/exp/IFC2X3.exp` and `IFC4.exp`. Two attributes of
+`deps/parakeet/input/exp/IFC2X3.exp` and `IFC4.exp`. Two attributes of
 `IfcDocumentInfo` only reach the file in IFC4: `CreationTime` (an
 `IfcDateAndTime` entity reference in IFC2X3) and `Format` (an
 `IfcDocumentElectronicFormat` entity reference in IFC2X3). Both builders share

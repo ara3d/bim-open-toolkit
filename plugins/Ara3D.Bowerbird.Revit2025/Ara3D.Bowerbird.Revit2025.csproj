@@ -46,12 +46,12 @@
 		<PackageReference Include="System.Runtime.Loader" Version="$(Ara3DSystemRuntimeLoaderVersion)" />
 	</ItemGroup>	
 	<ItemGroup>
-	  <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+	  <ProjectReference Include="$(DepsRoot)bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
 	  <PackageReference Include="Ara3D.IO.PLY" Version="$(Ara3DSdkVersion)" />
 	  <ProjectReference Include="..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
-	  <ProjectReference Include="..\..\submodules\ara3d-sdk\plugins\Ara3D.Bowerbird.Demo\Ara3D.Bowerbird.Demo.csproj" />
-	  <ProjectReference Include="..\..\submodules\ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj" />
-	  <ProjectReference Include="..\..\submodules\ara3d-sdk\plugins\Ara3D.Bowerbird\Ara3D.Bowerbird.csproj" />
+	  <ProjectReference Include="$(DepsRoot)ara3d-sdk\plugins\Ara3D.Bowerbird.Demo\Ara3D.Bowerbird.Demo.csproj" />
+	  <ProjectReference Include="$(DepsRoot)ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj" />
+	  <ProjectReference Include="$(DepsRoot)ara3d-sdk\plugins\Ara3D.Bowerbird\Ara3D.Bowerbird.csproj" />
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 	  <Exec Command="call &quot;$(MSBuildProjectDirectory)\post-build.bat&quot; $(OutDir)" IgnoreExitCode="true" />

@@ -16,9 +16,9 @@
 
   <ItemGroup>
     <PackageReference Include="Ara3D.Utils" Version="$(Ara3DSdkVersion)" />
-    <ProjectReference Include="..\..\submodules\parakeet\Parakeet\Ara3D.Parakeet.csproj" />
-    <ProjectReference Include="..\..\submodules\parakeet\Parakeet.Grammars\Ara3D.Parakeet.Grammars.csproj" />
-    <ProjectReference Include="..\..\submodules\parakeet\Parakeet.Tests\Ara3D.Parakeet.Tests.csproj" />
+    <ProjectReference Include="$(DepsRoot)parakeet\Parakeet\Ara3D.Parakeet.csproj" />
+    <ProjectReference Include="$(DepsRoot)parakeet\Parakeet.Grammars\Ara3D.Parakeet.Grammars.csproj" />
+    <ProjectReference Include="$(DepsRoot)parakeet\Parakeet.Tests\Ara3D.Parakeet.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>

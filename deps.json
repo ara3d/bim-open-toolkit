@@ -6,5 +6,17 @@
   "bim-open-viewer": {
     "url": "https://github.com/ara3d/bim-open-viewer",
     "commit": "5141ec7069fd61be81d95e84d124a6215d0ec11f"
+  },
+  "bim-open-schema": {
+    "url": "https://github.com/ara3d/bim-open-schema",
+    "commit": "d12e63585b082e0191c956005abe9b6cb0d53212"
+  },
+  "ara3d-sdk": {
+    "url": "https://github.com/ara3d/ara3d-sdk",
+    "commit": "d41dfa7404ae363a9b825677b432738f77554479"
+  },
+  "parakeet": {
+    "url": "https://github.com/ara3d/parakeet",
+    "commit": "5116089e4589c6c287ece4f58a9f065306943a50"
   }
 }

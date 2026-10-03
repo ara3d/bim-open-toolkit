@@ -4,7 +4,7 @@ Generates the entity, interface, enum, alias, and schema source files in
 `src/Ara3D.IfcTypes` from the buildingSMART EXPRESS schema files, using the
 Parakeet EXPRESS grammar.
 
-Parakeet comes from the `submodules/parakeet` submodule (`ara3d/parakeet`),
+Parakeet comes from `deps/parakeet` (`ara3d/parakeet`, pinned in `deps.json`),
 which also carries the schema files under `input/exp` (`IFC2X3.exp`,
 `IFC4.exp`, `IFC4X3.exp`) and the test helpers that locate them. The generator
 is an explicit NUnit test, so it runs on demand and never in a normal test pass:

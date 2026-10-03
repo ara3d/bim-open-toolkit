@@ -11,7 +11,7 @@ public static class TestFiles
         .GetParent()
         .GetParent();
 
-    /// <summary>Corpus root: the studio monorepo (AGENTS.md + ara3d-sdk + data) or this toolkit (submodules/ara3d-sdk + data), whichever ancestor is found first.</summary>
+    /// <summary>Corpus root: the studio monorepo (AGENTS.md + ara3d-sdk + data) or a repository that takes the SDK through deps.json (deps/ara3d-sdk + data), whichever ancestor is found first.</summary>
     public static readonly DirectoryPath StudioRoot = FindStudioRoot();
 
     public static readonly DirectoryPath LocalIfcDir = ProjectRoot.RelativeFolder("data", "ifc");
@@ -124,7 +124,7 @@ public static class TestFiles
             if (!Directory.Exists(Path.Combine(dir, "data")))
                 continue;
             var isStudio = File.Exists(Path.Combine(dir, "AGENTS.md")) && Directory.Exists(Path.Combine(dir, "ara3d-sdk"));
-            var isToolkit = Directory.Exists(Path.Combine(dir, "submodules", "ara3d-sdk"));
+            var isToolkit = Directory.Exists(Path.Combine(dir, "deps", "ara3d-sdk"));
             if (isStudio || isToolkit)
                 return dir;
         }

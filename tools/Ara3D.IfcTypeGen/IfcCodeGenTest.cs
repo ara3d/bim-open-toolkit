@@ -18,7 +18,7 @@ public record IfcSchema(IReadOnlyList<IfcEntity> Entities, IReadOnlyList<IIfcTyp
 
 /// <summary>
 /// Generates the Ara3D.IfcTypes source from the buildingSMART EXPRESS schema files
-/// that ship with the Parakeet submodule (submodules/parakeet/input/exp).
+/// that ship with Parakeet (deps/parakeet/input/exp, from deps.json).
 /// </summary>
 public static class IfcCodeGenTest
 {

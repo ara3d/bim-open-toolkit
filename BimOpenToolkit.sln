@@ -5,7 +5,7 @@ VisualStudioVersion = 18.9.12120.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema", "submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj", "{2BFA32ED-D019-4F7E-B282-09932C67CEE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema", "deps\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj", "{2BFA32ED-D019-4F7E-B282-09932C67CEE7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
@@ -37,25 +37,25 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Migrations"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.NodeGraph.Migrations.Tests", "submodules\ara3d-dataflow\tests\Ara3D.NodeGraph.Migrations.Tests\Ara3D.NodeGraph.Migrations.Tests.csproj", "{A9D99397-4246-49C3-984A-46DA5E501EE9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Collections", "submodules\ara3d-sdk\src\Ara3D.Collections\Ara3D.Collections.csproj", "{B8082C20-291A-4849-8C9E-DFDBB82ED776}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Collections", "deps\ara3d-sdk\src\Ara3D.Collections\Ara3D.Collections.csproj", "{B8082C20-291A-4849-8C9E-DFDBB82ED776}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataTable", "submodules\ara3d-sdk\src\Ara3D.DataTable\Ara3D.DataTable.csproj", "{58E6BB75-DF39-4E9F-9EB5-A84CC65839C8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.DataTable", "deps\ara3d-sdk\src\Ara3D.DataTable\Ara3D.DataTable.csproj", "{58E6BB75-DF39-4E9F-9EB5-A84CC65839C8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.PropKit", "submodules\ara3d-sdk\src\Ara3D.PropKit\Ara3D.PropKit.csproj", "{9DE8BA31-8CE3-4654-82E2-CA9FA63B5595}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.PropKit", "deps\ara3d-sdk\src\Ara3D.PropKit\Ara3D.PropKit.csproj", "{9DE8BA31-8CE3-4654-82E2-CA9FA63B5595}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Geometry", "submodules\ara3d-sdk\src\Ara3D.Geometry\Ara3D.Geometry.csproj", "{9A416CAF-7DB4-4B7E-8697-E98CAF030CE3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Geometry", "deps\ara3d-sdk\src\Ara3D.Geometry\Ara3D.Geometry.csproj", "{9A416CAF-7DB4-4B7E-8697-E98CAF030CE3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Memory", "submodules\ara3d-sdk\src\Ara3D.Memory\Ara3D.Memory.csproj", "{F004FC29-74BA-4BBD-B2CE-505737BAB7D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Memory", "deps\ara3d-sdk\src\Ara3D.Memory\Ara3D.Memory.csproj", "{F004FC29-74BA-4BBD-B2CE-505737BAB7D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Utils", "submodules\ara3d-sdk\src\Ara3D.Utils\Ara3D.Utils.csproj", "{A6D5BB84-B9B1-4F86-A1E9-BDB81BC3BF69}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Utils", "deps\ara3d-sdk\src\Ara3D.Utils\Ara3D.Utils.csproj", "{A6D5BB84-B9B1-4F86-A1E9-BDB81BC3BF69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Models", "submodules\ara3d-sdk\src\Ara3D.Models\Ara3D.Models.csproj", "{57AE52CE-890C-4EEF-9DA0-FDA2E0AE3029}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Models", "deps\ara3d-sdk\src\Ara3D.Models\Ara3D.Models.csproj", "{57AE52CE-890C-4EEF-9DA0-FDA2E0AE3029}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.F8", "submodules\ara3d-sdk\src\Ara3D.F8\Ara3D.F8.csproj", "{EE8BDB93-E567-42DB-9DF5-1D1EFB1D687E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.F8", "deps\ara3d-sdk\src\Ara3D.F8\Ara3D.F8.csproj", "{EE8BDB93-E567-42DB-9DF5-1D1EFB1D687E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.BFAST", "submodules\ara3d-sdk\src\Ara3D.IO.BFAST\Ara3D.IO.BFAST.csproj", "{C6C59AC0-0A38-40B0-9078-7DAD370579A1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.BFAST", "deps\ara3d-sdk\src\Ara3D.IO.BFAST\Ara3D.IO.BFAST.csproj", "{C6C59AC0-0A38-40B0-9078-7DAD370579A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Logging", "submodules\ara3d-sdk\src\Ara3D.Logging\Ara3D.Logging.csproj", "{6252DA34-1573-4CCC-940E-2EE8B16B610B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Logging", "deps\ara3d-sdk\src\Ara3D.Logging\Ara3D.Logging.csproj", "{6252DA34-1573-4CCC-940E-2EE8B16B610B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{07D57EEB-2F50-60C4-C011-FE4FA775C9A8}"
 EndProject
@@ -63,15 +63,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BIMOpenSchema.Revit20
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Bowerbird.Revit2025", "plugins\Ara3D.Bowerbird.Revit2025\Ara3D.Bowerbird.Revit2025.csproj", "{0A3629F2-B650-4723-9FFD-36930FF07315}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Bowerbird.Demo", "submodules\ara3d-sdk\plugins\Ara3D.Bowerbird.Demo\Ara3D.Bowerbird.Demo.csproj", "{CA76F146-EDA7-41F8-8C47-E99A0C26EEA6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Bowerbird.Demo", "deps\ara3d-sdk\plugins\Ara3D.Bowerbird.Demo\Ara3D.Bowerbird.Demo.csproj", "{CA76F146-EDA7-41F8-8C47-E99A0C26EEA6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Bowerbird", "submodules\ara3d-sdk\plugins\Ara3D.Bowerbird\Ara3D.Bowerbird.csproj", "{FB5A7BF0-3D94-4C79-ADB4-00D2C347E142}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Bowerbird", "deps\ara3d-sdk\plugins\Ara3D.Bowerbird\Ara3D.Bowerbird.csproj", "{FB5A7BF0-3D94-4C79-ADB4-00D2C347E142}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Events", "submodules\ara3d-sdk\src\Ara3D.Events\Ara3D.Events.csproj", "{4CC7997A-9FA3-48AF-8412-F04C0DE97D53}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Events", "deps\ara3d-sdk\src\Ara3D.Events\Ara3D.Events.csproj", "{4CC7997A-9FA3-48AF-8412-F04C0DE97D53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Utils.Roslyn", "submodules\ara3d-sdk\src\Ara3D.Utils.Roslyn\Ara3D.Utils.Roslyn.csproj", "{1014A972-3544-47E6-BDF8-D758FC48D430}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Utils.Roslyn", "deps\ara3d-sdk\src\Ara3D.Utils.Roslyn\Ara3D.Utils.Roslyn.csproj", "{1014A972-3544-47E6-BDF8-D758FC48D430}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.PLY", "submodules\ara3d-sdk\src\Ara3D.IO.PLY\Ara3D.IO.PLY.csproj", "{0122A39F-A895-4EDE-A397-16177C3FFC18}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.PLY", "deps\ara3d-sdk\src\Ara3D.IO.PLY\Ara3D.IO.PLY.csproj", "{0122A39F-A895-4EDE-A397-16177C3FFC18}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Bowerbird.RevitSamples", "plugins\Ara3D.Bowerbird.RevitSamples\Ara3D.Bowerbird.RevitSamples.csproj", "{FC9EF975-5290-413B-AB36-A98F6D93A76A}"
 EndProject
@@ -81,25 +81,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{1787FE1D-0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.Browser", "apps\Ara3D.BimOpenSchema.Browser\Ara3D.BimOpenSchema.Browser.csproj", "{C21D7515-AF1F-48C1-B540-885780718400}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.GltfExporter", "submodules\ara3d-sdk\src\Ara3D.IO.GltfExporter\Ara3D.IO.GltfExporter.csproj", "{5CE2A948-6B75-47C6-B0D0-403F647E1069}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.GltfExporter", "deps\ara3d-sdk\src\Ara3D.IO.GltfExporter\Ara3D.IO.GltfExporter.csproj", "{5CE2A948-6B75-47C6-B0D0-403F647E1069}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Studio.API", "submodules\ara3d-sdk\src\Ara3D.Studio.API\Ara3D.Studio.API.csproj", "{7A1DD80F-2794-4C51-9042-8CAE2DFACFB8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Studio.API", "deps\ara3d-sdk\src\Ara3D.Studio.API\Ara3D.Studio.API.csproj", "{7A1DD80F-2794-4C51-9042-8CAE2DFACFB8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Flow", "submodules\ara3d-sdk\src\Ara3D.Flow\Ara3D.Flow.csproj", "{7DE1BC6D-F41F-463E-B7D4-FA37BB1F3268}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Flow", "deps\ara3d-sdk\src\Ara3D.Flow\Ara3D.Flow.csproj", "{7DE1BC6D-F41F-463E-B7D4-FA37BB1F3268}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.StepParser", "submodules\ara3d-sdk\src\Ara3D.IO.StepParser\Ara3D.IO.StepParser.csproj", "{6B161C28-FCF9-4F1F-94DB-A93F260F6CEF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.StepParser", "deps\ara3d-sdk\src\Ara3D.IO.StepParser\Ara3D.IO.StepParser.csproj", "{6B161C28-FCF9-4F1F-94DB-A93F260F6CEF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{07C2787E-EAC7-C090-1BA3-A61EC2A24D84}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IfcTypeGen", "tools\Ara3D.IfcTypeGen\Ara3D.IfcTypeGen.csproj", "{A4DEE079-05D4-4ACA-A9A8-4F7EC9BA54D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Parakeet", "submodules\parakeet\Parakeet\Ara3D.Parakeet.csproj", "{F66CD264-CD52-4797-94C4-A8306BFCACE4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Parakeet", "deps\parakeet\Parakeet\Ara3D.Parakeet.csproj", "{F66CD264-CD52-4797-94C4-A8306BFCACE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Parakeet.Grammars", "submodules\parakeet\Parakeet.Grammars\Ara3D.Parakeet.Grammars.csproj", "{7DB4EF0F-A207-4BF3-ABF3-53EEDA62915D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Parakeet.Tests", "submodules\parakeet\Parakeet.Tests\Ara3D.Parakeet.Tests.csproj", "{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Parakeet.ConsoleApp", "submodules\parakeet\Parakeet.Console\Ara3D.Parakeet.ConsoleApp.csproj", "{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Parakeet.Grammars", "deps\parakeet\Parakeet.Grammars\Ara3D.Parakeet.Grammars.csproj", "{7DB4EF0F-A207-4BF3-ABF3-53EEDA62915D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "data", "data", "{015FE221-96B2-289B-A0E8-6E7354784A75}"
 EndProject
@@ -139,7 +135,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{93E5E8D7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.Tests", "tests\data\Ara3D.BimOpenSchema.Tests\Ara3D.BimOpenSchema.Tests.csproj", "{01DEB75B-D1E6-46F0-A743-5C98A6B95FBA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.SharpGLTF", "submodules\ara3d-sdk\src\Ara3D.IO.SharpGLTF\Ara3D.IO.SharpGLTF.csproj", "{5B77C479-F4F9-41C3-B42C-483876F04976}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.SharpGLTF", "deps\ara3d-sdk\src\Ara3D.IO.SharpGLTF\Ara3D.IO.SharpGLTF.csproj", "{5B77C479-F4F9-41C3-B42C-483876F04976}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.DuckDb.Tests", "tests\data\Ara3D.BimOpenSchema.DuckDb.Tests\Ara3D.BimOpenSchema.DuckDb.Tests.csproj", "{7284DA36-696B-4E5B-9813-868E86721542}"
 EndProject
@@ -259,7 +255,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9FED3C2F-EF6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Ifc", "src\mcp\BimOpenMcp.Ifc\BimOpenMcp.Ifc.csproj", "{31C9C094-074C-4117-8842-B5CE8FF1C0CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.MCP", "submodules\ara3d-sdk\wip\Ara3D.MCP\Ara3D.MCP.csproj", "{8EF5E2FF-603E-4B1C-A180-EC19F22C80C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.MCP", "deps\ara3d-sdk\wip\Ara3D.MCP\Ara3D.MCP.csproj", "{8EF5E2FF-603E-4B1C-A180-EC19F22C80C4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenMcp.Flow", "src\mcp\BimOpenMcp.Flow\BimOpenMcp.Flow.csproj", "{613B8411-4E90-4B1F-A57C-4B3B2959CA3C}"
 EndProject
@@ -275,9 +271,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{5CD3AC2F-0D7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Studio.BimTools", "src\studio\Ara3D.Studio.BimTools\Ara3D.Studio.BimTools.csproj", "{1FE173AE-E6BA-471E-9F47-AE81092FE522}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Studio.Samples", "submodules\ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj", "{83766DF8-7238-4030-B827-2E735EBADB7F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.Studio.Samples", "deps\ara3d-sdk\examples\Ara3D.Studio.Examples\Ara3D.Studio.Samples.csproj", "{83766DF8-7238-4030-B827-2E735EBADB7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.GeoJson", "submodules\ara3d-sdk\src\Ara3D.IO.GeoJson\Ara3D.IO.GeoJson.csproj", "{D49B5C9A-47DA-4211-A84A-2A27CB999BA3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.IO.GeoJson", "deps\ara3d-sdk\src\Ara3D.IO.GeoJson\Ara3D.IO.GeoJson.csproj", "{D49B5C9A-47DA-4211-A84A-2A27CB999BA3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Studio", "src\studio\BimOpenFlow.Studio\BimOpenFlow.Studio.csproj", "{3BEE42A9-B7F1-4926-8BA4-93ECECF04A07}"
 EndProject
@@ -296,12 +292,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "flow", "flow", "{2BE95243-1D14-C8AC-F946-8EA4CA4328BF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Relations", "src\flow\BimOpenFlow.Relations\BimOpenFlow.Relations.csproj", "{0B29CBB5-C53E-4A9B-B570-01CF20544242}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "submodules", "submodules", "{B3415621-5EBA-1A55-0B57-0078FEC59DC7}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ara3d-dataflow", "ara3d-dataflow", "{FEF0037F-88AF-D4F0-5EE9-0E95A69B1B29}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{37838F5E-C3BF-C86A-8FE2-4F8F3B3A5CF2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "flow", "flow", "{921A8F32-7110-D511-62F7-897E2B692530}"
 EndProject
@@ -332,10 +322,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.Nodes.Spatial.Tests", "tests\flow\BimOpenFlow.Nodes.Spatial.Tests\BimOpenFlow.Nodes.Spatial.Tests.csproj", "{E27D8561-702B-4B9D-9E65-49470C439C18}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ara3D.BimOpenSchema.Federation", "src\data\Ara3D.BimOpenSchema.Federation\Ara3D.BimOpenSchema.Federation.csproj", "{5EDE4745-815D-48F7-A637-C36936E9A7A9}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bim-open-schema", "bim-open-schema", "{9BDDD23F-9A85-2402-ECAD-F342DBC6C6C4}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{AB6C0E64-2B17-36AD-5A86-C2BCE30A07BE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "data", "data", "{1051BD71-A06F-1F81-0610-AC9897EA1EE8}"
 EndProject
@@ -861,30 +847,6 @@ Global
 		{7DB4EF0F-A207-4BF3-ABF3-53EEDA62915D}.Release|x64.Build.0 = Release|x64
 		{7DB4EF0F-A207-4BF3-ABF3-53EEDA62915D}.Release|x86.ActiveCfg = Release|Any CPU
 		{7DB4EF0F-A207-4BF3-ABF3-53EEDA62915D}.Release|x86.Build.0 = Release|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Debug|x64.ActiveCfg = Debug|x64
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Debug|x64.Build.0 = Debug|x64
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Debug|x86.Build.0 = Debug|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Release|x64.ActiveCfg = Release|x64
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Release|x64.Build.0 = Release|x64
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Release|x86.ActiveCfg = Release|Any CPU
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63}.Release|x86.Build.0 = Release|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Debug|x64.ActiveCfg = Debug|x64
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Debug|x64.Build.0 = Debug|x64
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Debug|x86.Build.0 = Debug|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Release|x64.ActiveCfg = Release|x64
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Release|x64.Build.0 = Release|x64
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Release|x86.ActiveCfg = Release|Any CPU
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466}.Release|x86.Build.0 = Release|Any CPU
 		{05613147-C48F-4EB9-B3B2-6A05CF3B6468}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{05613147-C48F-4EB9-B3B2-6A05CF3B6468}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05613147-C48F-4EB9-B3B2-6A05CF3B6468}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -2156,8 +2118,6 @@ Global
 		{A4DEE079-05D4-4ACA-A9A8-4F7EC9BA54D1} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 		{F66CD264-CD52-4797-94C4-A8306BFCACE4} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 		{7DB4EF0F-A207-4BF3-ABF3-53EEDA62915D} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
-		{CA36A8D3-C51D-413D-ACBB-FC78920C8D63} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
-		{AFDB3DC6-EC92-4CA5-9C81-7FE286E1D466} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 		{C46823FC-942A-1FCC-CF24-8E351A967A5B} = {015FE221-96B2-289B-A0E8-6E7354784A75}
 		{05613147-C48F-4EB9-B3B2-6A05CF3B6468} = {C46823FC-942A-1FCC-CF24-8E351A967A5B}
 		{91D14237-C3E5-474D-B5DE-CD27A123831C} = {C46823FC-942A-1FCC-CF24-8E351A967A5B}
@@ -2252,8 +2212,6 @@ Global
 		{8E7F774E-B755-4915-931E-C6CF1510A666} = {C46823FC-942A-1FCC-CF24-8E351A967A5B}
 		{2BE95243-1D14-C8AC-F946-8EA4CA4328BF} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{0B29CBB5-C53E-4A9B-B570-01CF20544242} = {2BE95243-1D14-C8AC-F946-8EA4CA4328BF}
-		{FEF0037F-88AF-D4F0-5EE9-0E95A69B1B29} = {B3415621-5EBA-1A55-0B57-0078FEC59DC7}
-		{37838F5E-C3BF-C86A-8FE2-4F8F3B3A5CF2} = {FEF0037F-88AF-D4F0-5EE9-0E95A69B1B29}
 		{921A8F32-7110-D511-62F7-897E2B692530} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{42C5ECCC-8C27-4DA6-BD29-0E3B9A9A56AE} = {921A8F32-7110-D511-62F7-897E2B692530}
 		{613E232A-A08A-413F-AC43-DFA408F67EE7} = {2BE95243-1D14-C8AC-F946-8EA4CA4328BF}
@@ -2269,8 +2227,6 @@ Global
 		{33D0624D-A95C-452B-8B3C-3656E4941C5A} = {F39BE9BB-DBD7-E166-ADE3-F4F1A49BDA3E}
 		{E27D8561-702B-4B9D-9E65-49470C439C18} = {4B5E7AB4-3AED-FBE2-C1A4-8E8AB283672D}
 		{5EDE4745-815D-48F7-A637-C36936E9A7A9} = {58A5B24B-8FB4-5A6E-5EF4-1E3E19F29B1B}
-		{9BDDD23F-9A85-2402-ECAD-F342DBC6C6C4} = {B3415621-5EBA-1A55-0B57-0078FEC59DC7}
-		{AB6C0E64-2B17-36AD-5A86-C2BCE30A07BE} = {9BDDD23F-9A85-2402-ECAD-F342DBC6C6C4}
 		{1051BD71-A06F-1F81-0610-AC9897EA1EE8} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{4556F8CA-127C-40B6-AD04-56846BC7E7D9} = {1051BD71-A06F-1F81-0610-AC9897EA1EE8}
 		{0DA81746-19B5-414B-AF42-8557A5CE6FBB} = {F39BE9BB-DBD7-E166-ADE3-F4F1A49BDA3E}

@@ -16,6 +16,19 @@
     <PublishRepositoryUrl Condition="'$(PublishRepositoryUrl)' == ''">true</PublishRepositoryUrl>
   </PropertyGroup>
 
+  <!--
+    Where deps.mjs puts this repository's dependencies (deps.json): beside the
+    repository when its parent folder is a deps root (holds a .deps-root marker),
+    otherwise in deps/. This is deps.mjs's own rule, and bim-open-data's
+    Directory.Build.props states it the same way, so a project that two
+    repositories both reference (bim-open-schema, the ara3d-sdk projects) is
+    reached by one path and MSBuild builds it once.
+  -->
+  <PropertyGroup>
+    <DepsRoot Condition="'$(DepsRoot)' == '' And Exists('$(MSBuildThisFileDirectory)../.deps-root')">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../'))</DepsRoot>
+    <DepsRoot Condition="'$(DepsRoot)' == ''">$(MSBuildThisFileDirectory)deps\</DepsRoot>
+  </PropertyGroup>
+
   <PropertyGroup Label="Central NuGet dependency versions">
     <Ara3DSdkVersion>1.6.1</Ara3DSdkVersion>
     <Ara3DClosedXmlVersion>0.105.0</Ara3DClosedXmlVersion>

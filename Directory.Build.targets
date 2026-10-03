@@ -1,13 +1,15 @@
 <Project>
   <!--
-    The Ara3D SDK is a submodule. Every PackageReference whose id matches a
+    The Ara3D SDK comes from deps/ (deps.json; DepsRoot is set in
+    Directory.Build.props). Every PackageReference whose id matches a
     project under the SDK's src/, ext/, or wip/ becomes a ProjectReference into it, so
-    the SDK is built from source at the pinned submodule commit and no packed
+    the SDK is built from source at the pinned commit and no packed
     copy has to travel with the repo. Projects keep writing PackageReferences:
-    standalone checkouts of the engine and schema submodules restore the same
-    names from nuget.org.
+    standalone checkouts of the engine and schema repositories restore the same
+    names from nuget.org. bim-open-data's Directory.Build.targets does the same
+    for its own projects, through the same DepsRoot, so both reach one SDK copy.
 
-    Applies to this repo's projects and to submodules without their own
+    Applies to this repo's projects and to dependencies without their own
     Directory.Build.targets. The SDK's own projects reference each other by
     project, so the rewrite is a no-op for them.
 
@@ -15,7 +17,7 @@
     is computed with Include/Exclude identity matching instead.
   -->
   <PropertyGroup>
-    <Ara3DSdkRoot Condition="'$(Ara3DSdkRoot)' == ''">$(MSBuildThisFileDirectory)submodules/ara3d-sdk</Ara3DSdkRoot>
+    <Ara3DSdkRoot Condition="'$(Ara3DSdkRoot)' == ''">$(DepsRoot)ara3d-sdk</Ara3DSdkRoot>
   </PropertyGroup>
 
   <ItemGroup Condition="Exists('$(Ara3DSdkRoot)/src')">

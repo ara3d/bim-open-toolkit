@@ -28,7 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
-    <ProjectReference Include="..\..\submodules\bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-schema\src\Ara3D.BimOpenSchema\Ara3D.BimOpenSchema.csproj" />
     <ProjectReference Include="..\Ara3D.Bowerbird.Revit2025\Ara3D.Bowerbird.Revit2025.csproj" />
     <ProjectReference Include="..\Ara3D.Bowerbird.RevitSamples\Ara3D.Bowerbird.RevitSamples.csproj" />
   </ItemGroup>
