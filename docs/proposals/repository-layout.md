@@ -57,8 +57,9 @@ The word names two different things in this repository, and the first version of
    - `src/studio/BimOpenFlow.Studio`: the server program `bimopenflow-studio`, which runs the graph host with the BIM node packs and the flow MCP server, and serves the Ask box;
    - `src/studio/BimOpenFlow.Ask`: the Ask box's agent loop, over any in-process MCP server;
    - `src/studio/BimOpenMcp.Ifc.Ask`: a command-line runner that answers a list of questions about one IFC file;
-   - the pages in `bimopenflow/web/packages/app` (`studio.html`, `duckdb.html`, `3d.html`) and the 3D pane;
-   - the notebook (section 5.1).
+   - the pages in `bimopenflow/web/packages/app` (`studio.html`, `duckdb.html`, `3d.html`) and the 3D pane.
+
+   The notebook (section 5.1) is not part of the web studio. It is a separate product with its own repository.
 2. **Ara 3D Studio.** This is the owner's separate desktop application, in its own `studio` repository, with a plug-in API. One project here exists for it: `src/studio/Ara3D.Studio.BimTools`, 26 files of Studio scripts (filters, room and level tools, door clearance, a room navigator). `BimOpenFlow.Studio` can also run inside Ara 3D Studio as well as on its own.
 
 In the rest of this proposal, "the analyst application" means the first. A future repository for it should not be called `bim-open-studio`, because readers would take it for Ara 3D Studio.
@@ -117,41 +118,55 @@ C deserves a fair hearing. It is the fastest for the owner and for parallel agen
 |---|---|---|
 | Products | `bim-open-viewer` | `viz/` (in progress) |
 | | `bim-open-flow` | The generic part of `src/flow` (23 projects), the graph editor without the 3D pane, the flow MCP server, the `bim-flow` skill, non-BIM samples. Possibly `ara3d-dataflow` folded in (Q6). |
+| | `bim-open-notebook` | The notebook: a new way to work with a building model through an agent, and a product (section 5.1) |
 | | `gratify`, `ara3d-dataflow`, `bim-open-schema`, `parakeet`, `ara3d-sdk` | Unchanged |
 | Utilities | One new repository, name in section 6.3 | `src/data`: the BOS reference implementation and the IFC stack, the IFC MCP server, the BOS Browser app, the IFC type generator |
 | | Optionally `bim-open-revit` | `plugins/` (Revit 2025 add-ins; a different platform and build) |
-| Analyst application | Stays in the toolkit at first; later its own repository (section 6.2) | The web studio (`BimOpenFlow.Studio`, its pages, the 3D pane), the BIM node packs (`Nodes.Bos`, `Nodes.BimAnalysis`), the IFC question runner, the notebook's BIM parts (section 5.1), Snowdon and NRC samples and tests, gates, the paper's walkthrough |
+| Analyst application | Stays in the toolkit at first; later its own repository (section 6.2) | The web studio (`BimOpenFlow.Studio`, its pages, the 3D pane), the BIM node packs (`Nodes.Bos`, `Nodes.BimAnalysis`), the IFC question runner, the NRC landing page and NRC sample notebooks, Snowdon and NRC samples and tests, gates, the paper's walkthrough |
 | Plug-ins for other products | Ara 3D Studio's `studio` repository, or a plug-ins repository beside `bim-open-revit` | `Ara3D.Studio.BimTools`. It is a plug-in for another application and needs that application's API, so it does not belong with the web studio. |
 | Working repository | New, names in section 6.1 | Flat submodules of everything above; workspace scripts; cross-repository agent configuration |
 | Entry point | Names in section 6.2 | What `nrc-ifc-llm` adds and Studio 2.5 forks |
 
-### 5.1 Where the notebook fits
+### 5.1 The notebook is its own product: `bim-open-notebook`
 
-`bim-open-notebook` (the package `@bimopenflow/bim-open-notebook`, 63 files in `bimopenflow/web/packages`) records a session with the agent as a document:
+The first version of this proposal treated the notebook as part of the analyst application. The owner has decided otherwise: the notebook is a new way of working with a building model, and a potential product. It gets its own repository, which people read to understand that way of working, and which later holds the product.
+
+**The idea.** A notebook records a session with an agent as a document, like a Jupyter notebook in which each code cell is replaced by a request in plain language and the kernel by the agent:
 - each turn is a request and a reply;
 - a reply is text, the tool calls the agent made, and embeds: a value, table, chart, graph, 3D view, picture, or file;
 - every embed keeps a snapshot, so a notebook opens with no host;
-- an embed backed by a node can be evaluated again, and says whether its result changed.
+- an embed backed by a graph can be evaluated again, and says whether its result changed.
 
-Its design is in `docs/proposals/notebook-sessions.md` and its plan in `docs/plans/notebook.md`. Thirteen sample notebooks are in `samples/notebooks`.
+It turns an agent's answer into evidence that can be reread, rechecked, and handed over. That is the principle "runs are the evidence" in `PROJECT.md`, applied to a conversation.
 
-What it depends on:
-- the editor's packages (`graph`, `state`, `panes`, `app`, `api-client`, `contracts`), and through `panes` the 3D viewer;
-- the analyst application's host, for `/api/ask`, the Ask box backend.
+**What exists today, all in the toolkit:**
+- the code: the package `@bimopenflow/bim-open-notebook`, 63 files in `bimopenflow/web/packages`;
+- the design: `docs/proposals/notebook-sessions.md` (397 lines of imagined sessions and the comparison with Jupyter);
+- the plan: `docs/plans/notebook.md`;
+- 13 sample notebooks and their outlines in `samples/notebooks`;
+- the tickets: TKT-80, the prototype, is claimed by another session (`notebook-supervisor`). TKT-86, 87, 88, 90, 91, 104, and 105 are open behind it.
 
-It also holds `nrc.html`, the NRC project's landing page, which lists the NRC sample notebooks and graphs.
+**What the repository holds, and what stays out:**
 
-The notebook is a second face of the analyst application rather than a product of its own. It uses the same host, the same agent, and the same kinds of output as the editor and the studio pages. Split by the rule used everywhere else in this proposal, it has three parts:
-
-| Part | Building-specific? | Goes to |
+| Part | Goes to | Why |
 |---|---|---|
-| The file format, the embed contract and registry, the live comparison, and the embeds for value, table, chart, graph, picture, and file | No | `bim-open-flow`, when that repository is extracted. A notebook of graphs and tables explains the graph system to newcomers better than any README. The embed registry already maps kinds to renderers, so it is the same seam as node packs and panes. |
-| The 3D embed, and the Ask backend configured with the BIM node packs | Yes | The analyst application, which registers the 3D embed the same way it registers the 3D pane |
-| `nrc.html` and the NRC sample notebooks | Specific to one project | The toolkit's `samples/` for now; `nrc-ifc-llm` may want to own them later |
+| The interaction model: a README that explains the idea, the imagined sessions, the Jupyter comparison, screenshots | `bim-open-notebook` | The reason the repository exists |
+| The file format (`bimopen-notebook/0.1`), the embed contract and registry, the live comparison, the page, and every embed renderer, including 3D | `bim-open-notebook` | The product. Its name already says BIM, so the 3D embed belongs in it rather than being plugged in from outside. |
+| Sample notebooks over public data | `bim-open-notebook` | A notebook opens from its snapshots with no host, so a static build can show them on a web page. A reader sees the idea without installing anything. |
+| `nrc.html` and the NRC sample notebooks | The toolkit's `samples/`, or later `nrc-ifc-llm` | They belong to one project and need its data |
+| `BimOpenFlow.Ask`, the agent loop behind `/api/ask` | `bim-open-flow` | The editor's Ask box uses it too, and it knows nothing about buildings |
+| The BIM node packs and the studio host | The analyst application | The notebook needs a host that knows buildings, but only over HTTP |
 
-`BimOpenFlow.Ask`, the agent loop behind `/api/ask`, works over any in-process MCP server and knows nothing about buildings. It would move to `bim-open-flow` with the notebook core, so a notebook works there against the generic host. Its system prompt is the `bim-flow` skill's guide files, which section 5 already places in `bim-open-flow`.
+**How it depends on the rest.** The notebook is a client of a graph host. It speaks HTTP to whichever host it is pointed at, and never compiles against node packs. That keeps the direction of dependency one way:
+- it builds on the editor's web packages (`graph`, `state`, `panes`, `api-client`, `contracts`) and on the viewer for the 3D embed, both through `deps/`;
+- it runs against the generic host in `bim-open-flow`, with the public building planned for that repository, or against the toolkit's studio host for Snowdon and NRC work;
+- nothing depends on the notebook, except that the toolkit's NRC page links to it.
 
-**Short term:** the notebook stays where it is. **Long term:** if the notebook rather than the editor becomes what an analyst opens first, the analyst application's repository could be named for it (section 6.2).
+One coupling has to be cut before the code can move. The notebook imports helpers from inside the editor's `app` package, which is what TKT-86 already plans to move into a client library.
+
+**In two phases:**
+1. **Now: the idea.** Create `bim-open-notebook` with the README, the interaction model taken from `docs/proposals/notebook-sessions.md`, and screenshots of the sample notebooks. No code moves, so the session working on TKT-80 is not disturbed. The toolkit's copy of the design document is replaced by a link.
+2. **Later: the product.** Move the code with its history once three things hold: TKT-80 is closed or handed over, TKT-86 has cut the deep imports into `app`, and the editor's web packages have a home they can be consumed from (`bim-open-flow`, or the toolkit through `deps/` until then). Then add a static build of the sample notebooks to the README.
 
 ## 6. Names and locations
 
@@ -178,7 +193,7 @@ Those are different audiences on different schedules.
 
 | Option | What it is | For `nrc-ifc-llm` | For a Studio 2.5 fork |
 |---|---|---|---|
-| **E1. `bim-open-toolkit` as the analyst application and entry point** | The toolkit keeps the analyst application (web studio, notebook BIM parts, BIM packs, 3D pane, samples, NRC tests) and takes the products through `deps/` | No URL change. Paths under `samples/` and `src/data` move once, as the utilities leave. | Fork one repository, then fork only the products they change and point `deps.json` at them |
+| **E1. `bim-open-toolkit` as the analyst application and entry point** | The toolkit keeps the analyst application (web studio, BIM packs, 3D pane, samples, NRC tests) and takes the products through `deps/` | No URL change. Paths under `samples/` and `src/data` move once, as the utilities leave. | Fork one repository, then fork only the products they change and point `deps.json` at them |
 | **E2. `bim-open-toolkit` as a pure umbrella** | Only flat submodules pinned to tested combinations, a README, and one start command. The analyst application moves to its own repository (names below). | `git submodule add` plus `--recursive` yields everything. Paths change to `bim-open-toolkit/<repo>/...`. | Lightest fork: edit `.gitmodules` to point at their forks |
 | **E3. The working repository is the entry point** | `main` follows the owner's work; release tags mark tested combinations | Pin a tag, never `main` | Forking brings the owner's working clutter |
 | **E4. A new name for the entry point** (`bim-open`, `bim-open-suite`) | Like E2, under a new name; the toolkit is retired or becomes integration | URL changes | As E2 |
@@ -192,12 +207,11 @@ Names for the analyst application's repository under E2:
 
 | Name | Fits when | Against |
 |---|---|---|
-| `bim-open-app` | The repository holds several faces (studio pages, notebook, 3D) | Generic |
+| `bim-open-app` | The repository holds several faces (studio pages, 3D) | Generic |
 | `bim-open-analyst` | It is named for its user, the BIM analyst in `PROJECT.md` | Leaves out the agent, the application's other user |
-| `bim-open-notebook` | The notebook becomes what an analyst opens first, and the editor and 3D view are reached from it (section 5.1) | Wrong if the editor stays the main face |
 | `bim-open-studio` | Not recommended | Confused with Ara 3D Studio |
 
-**Recommendation: `bim-open-app`**, renamed to `bim-open-notebook` if the notebook becomes the front door.
+**Recommendation: `bim-open-app`.** `bim-open-notebook` is taken by the notebook's own repository (section 5.1).
 
 ### 6.3 Utilities repository
 
@@ -231,16 +245,16 @@ Each step is its own commit, or set of commits by path, and is verified before t
 3. **Create `bim-open-workspace`** with flat submodules: toolkit, viewer, Gratify, engine, schema, Parakeet. Add the workspace commit-and-pin command and a `GIT.md` section on committing inside workspace submodules.
 4. **Move the toolkit's own submodules to `deps/`**, so the workspace holds the only copies. This changes what `nrc-ifc-llm` must run after cloning (one script instead of `--recursive`); update its README in the same step. Drop the unused `ara3d-sdk` submodule unless Q8 finds a reason to keep it.
 5. **Tag the toolkit** at the first combination that passes CI, and move `nrc-ifc-llm` to that tag.
+6. **Create `bim-open-notebook`, phase 1** (section 5.1): the README and the interaction model, with screenshots of the sample notebooks. No code moves. This step depends on none of the others and can happen first.
 
 ## 8. Long-term plan
 
 1. **Extract `bim-open-flow`.** First, inside the toolkit:
    - the host takes node packs from whoever composes it, rather than naming `Nodes.Bos`;
    - the editor takes panes the same way, so the toolkit plugs in the 3D pane;
-   - the notebook takes embeds the same way, so the toolkit plugs in the 3D embed;
    - the BIM composition moves into the web studio's host, `BimOpenFlow.Studio`.
 
-   The notebook core and `BimOpenFlow.Ask` go with the extraction (section 5.1).
+   `BimOpenFlow.Ask` goes with the extraction (section 5.1). Once the editor's web packages are in `bim-open-flow`, move the notebook's code to `bim-open-notebook` (phase 2 of section 5.1).
 
    Then extract with history. Ship a small public building as DuckDB tables so the repository demonstrates BIM questions with no toolkit code.
 2. **Extract `bim-open-data`** from `src/data`, with its tests and the IFC MCP server.
@@ -262,8 +276,8 @@ Each step is its own commit, or set of commits by path, and is verified before t
 | Q7 | Does a downstream project like `nrc-ifc-llm` really want one submodule for everything, or one submodule per product it uses? |
 | Q8 | Is anything lost by dropping the `ara3d-sdk` submodule, given all 24 references are NuGet packages? |
 | Q9 | Are there failure modes of links (junctions or symlinks) under Vite, MSBuild, npm, or on macOS and Linux that make B worse than it looks? |
-| Q10 | (Added after the review in section 11.) Should the notebook core and the Ask agent loop go to `bim-open-flow`, or stay with the analyst application until the notebook's design settles? |
-| Q11 | (Added after the review.) Which name for the analyst application's repository under E2: `bim-open-app`, `bim-open-analyst`, or `bim-open-notebook`? |
+| Q10 | (Added after the review in section 11.) Is a repository that starts as an explanation of an interaction model, with the code following later, a sound way to launch the notebook as a product? Or should the code move at once, depending on the toolkit's web packages through `deps/` until `bim-open-flow` exists? |
+| Q11 | (Added after the review.) Which name for the analyst application's repository under E2: `bim-open-app` or `bim-open-analyst`? |
 
 ## 10. What the reviewer should check against
 
