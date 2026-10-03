@@ -1,7 +1,7 @@
 import type { NodeDescriptor, TableSlice } from "@bimopenflow/contracts";
 import { parsePortRef, type GraphDocument } from "@bimopenflow/state";
-import { parseViewRecipe } from "../../panes/src/viewRecipe";
-import type { LiveViewRecipe } from "./shownNode";
+import type { LiveViewRecipe } from "@bimopenflow/client";
+import { parseViewRecipe } from "./viewRecipe";
 
 const operations = new Set(["scene", "section", "sectionBox", "explode", "projection", "environment", "categoryStyle", "tint", "sectionRange"]);
 

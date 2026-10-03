@@ -1,14 +1,10 @@
 {
-  "name": "@bimopenflow/panes",
+  "name": "@bimopenflow/pane-3d",
   "version": "0.1.0",
   "type": "module",
-  "description": "Pane implementations for the BimOpenFlow editor: table, chart, 3D view, inspector, verdict list. Each pane is an isolated module behind the single pane contract (data in, events out).",
+  "description": "The BimOpenFlow editor's 3D pane over the BIM Open viewer: the pane, its viewer wiring, the view recipe, and its registration (view3dPane) for an editor that takes panes.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts",
-    "./testing": "./test/testing.ts"
-  },
   "files": [
     "src"
   ],
@@ -26,8 +22,10 @@
     "@bim-open-viewer/controls": "file:../../../../deps/bim-open-viewer/packages/controls",
     "@bim-open-viewer/core": "file:../../../../deps/bim-open-viewer/packages/core",
     "@bim-open-viewer/loaders": "file:../../../../deps/bim-open-viewer/packages/loaders",
+    "@bimopenflow/client": "0.1.0",
     "@bimopenflow/contracts": "0.1.0",
-    "@bimopenflow/viz": "0.1.0"
+    "@bimopenflow/panes": "0.1.0",
+    "@bimopenflow/state": "0.1.0"
   },
   "peerDependencies": {
     "three": ">=0.180.0"
