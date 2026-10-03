@@ -20,7 +20,7 @@ import {
   type History,
 } from "../document/edits";
 import { replyFromAsk } from "../ask/reply";
-import type { AskEvent, AskTransport } from "../ask/events";
+import type { AskEvent, AskTransport } from "@bimopenflow/client/host";
 import type { NodeDescriptor } from "@bimopenflow/contracts";
 import type { EmbedContext, EmbedRegistry, EmbedRenderer, Freshness, NotebookApi } from "../embeds/contract";
 import { defaultRenderers } from "../embeds/registry";

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import type { AskEvent, AskTransport } from "../src/ask/events";
+import type { AskEvent, AskTransport } from "@bimopenflow/client/host";
 import type { Embed, Notebook, Reply, Turn } from "../src/document/format";
 import { parseNotebook, serializeNotebook } from "../src/document/io";
 import type { EmbedContext, EmbedRegistry, EmbedRenderer, Freshness, NotebookApi } from "../src/embeds/contract";

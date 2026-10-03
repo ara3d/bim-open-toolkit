@@ -4,7 +4,7 @@
 // through the host, and refresh() compares with the host's current result.
 
 import { createTablePane, createVerdictPane, type Pane } from "@bimopenflow/panes";
-import { makePaneContext } from "@bimopenflow/app/src/paneContext";
+import { makePaneContext } from "@bimopenflow/client";
 import { compareWithHost, SNAPSHOT_ROWS } from "../live/compare";
 import type { TableSnapshot, TableEmbed } from "../document/format";
 import type { EmbedRenderer, Freshness } from "./contract";

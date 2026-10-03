@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EvalUpdate, NodeCatalog, NodeDescriptor, NodeStatus, TableSlice } from "@bimopenflow/contracts";
-import type { AskEvent } from "../src/ask/events";
+import type { AskEvent } from "@bimopenflow/client/host";
 import { chartEmbedDraft, embedsForAnalysis, graphEmbedDraft, replyFromAsk } from "../src/ask/reply";
 import type { NotebookApi } from "../src/embeds/contract";
 

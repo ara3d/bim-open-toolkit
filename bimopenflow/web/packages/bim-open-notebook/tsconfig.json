@@ -11,8 +11,8 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["vite/client"],
     "baseUrl": ".",
-    // Same source aliases as packages/app: modules this package imports from
-    // @bimopenflow/app may reach gratify and the viewer packages.
+    // Same source aliases as packages/app: the graph and panes packages this
+    // one imports reach gratify and the viewer packages.
     "paths": {
       "gratify": ["../../../../deps/gratify/src/gratify/index.ts"],
       "@bim-open-viewer/*": ["../../../../deps/bim-open-viewer/packages/*/src/index.ts"]

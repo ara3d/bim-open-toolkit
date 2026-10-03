@@ -10,7 +10,7 @@ import type {
   NodeCatalog,
   NodeDescriptor,
 } from "@bimopenflow/contracts";
-import type { ResultApi } from "@bimopenflow/app/src/paneContext";
+import type { ResultApi } from "@bimopenflow/client";
 import type { Embed, EmbedKind } from "../document/format";
 import type { SelectionBus } from "./selection";
 

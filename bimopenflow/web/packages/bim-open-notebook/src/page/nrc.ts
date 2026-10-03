@@ -5,9 +5,7 @@
 // its store holds.
 
 import { ApiClient } from "@bimopenflow/api-client";
-// By path: see the plan's Debt section (deep imports from @bimopenflow/app).
-import { watchHost } from "@bimopenflow/app/src/hostStatus";
-import { mountHostBanner } from "@bimopenflow/app/src/topbar";
+import { mountHostBanner, watchHost } from "@bimopenflow/client/host";
 import { editorUrl, viewer3dUrl } from "./editorLinks";
 import { fetchSample, listSamples } from "./files";
 import { notebookEntry, orderNotebooks, parseGraphTable, type GraphEntry, type NotebookEntry } from "./nrcCatalog";

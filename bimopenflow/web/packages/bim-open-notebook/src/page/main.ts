@@ -4,10 +4,7 @@
 // host: it skips the connection and its banner and says so in the page.
 
 import { ApiClient } from "@bimopenflow/api-client";
-// By path: see the plan's Debt section (deep imports from @bimopenflow/app).
-import { watchHost } from "@bimopenflow/app/src/hostStatus";
-import { mountHostBanner } from "@bimopenflow/app/src/topbar";
-import { createAskTransport, type AskTransport } from "../ask/events";
+import { createAskTransport, mountHostBanner, watchHost, type AskTransport } from "@bimopenflow/client/host";
 import type { Notebook } from "../document/format";
 import { parseNotebook } from "../document/io";
 import { fetchSample } from "./files";

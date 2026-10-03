@@ -3,12 +3,11 @@
 
 import type { NodeDescriptor } from "@bimopenflow/contracts";
 import { parseDocument, parsePortRef, type GraphDocument, type GraphNode } from "@bimopenflow/state";
-// By path: see the plan's Debt section (deep imports from @bimopenflow/app).
-import { chartPaneOptions, choosePanes, firstTableOutput } from "@bimopenflow/app/src/paneChoice";
+import { chartPaneOptions, choosePanes, firstTableOutput } from "@bimopenflow/client";
+import type { AskEvent } from "@bimopenflow/client/host";
 import type { AgentInfo, Embed, NodeRef, Reply, TableSnapshot, ToolCall } from "../document/format";
 import type { NotebookApi } from "../embeds/contract";
 import { SNAPSHOT_ROWS, snapshotOf } from "../live/compare";
-import type { AskEvent } from "./events";
 
 export interface EmbedOptions {
   /** Rows each table snapshot keeps; SNAPSHOT_ROWS when absent. */
@@ -178,7 +177,7 @@ function errorOf(events: readonly AskEvent[], done: AskEvent | undefined): strin
 function agentOf(start: AskEvent | undefined, done: AskEvent | undefined): { agent?: AgentInfo } {
   const agent: AgentInfo = {
     ...defined("model", done?.model ?? start?.model),
-    ...defined("effort", done?.effort ?? start?.effort),
+    ...defined("effort", done?.effort ?? start?.effort ?? undefined),
     ...defined("turns", done?.turns),
     ...defined("inputTokens", done?.inputTokens),
     ...defined("outputTokens", done?.outputTokens),

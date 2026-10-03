@@ -9,26 +9,31 @@
 // pane just because it scrolled out of view; "Hide" (still on the toggle)
 // is the reader's way to free the GPU, and "Show 3D" brings it back.
 //
-// Feeding the pane follows the editor's pane area (app/src/paneArea.ts,
-// feedModel and feedData): the model first as "model:<id>" in BOS, then the
-// node's view recipe when the chain is one buildLiveViewRecipe can read, else
-// its complete result table as view, boxes, or instances.
+// Feeding the pane follows the editor's pane area through the shared helpers
+// in @bimopenflow/client (modelUrlFor, view3dDataKind): the model first as
+// "model:<id>" in BOS, then the node's view recipe when the chain is one
+// buildLiveViewRecipe can read, else its complete result table as view,
+// boxes, or instances.
 
 import type { NodeDescriptor, TableSlice } from "@bimopenflow/contracts";
 import {
   createViewPane3D,
   ensurePaneStyles,
-  isBoxTable,
   type Pane,
   type PaneContext,
 } from "@bimopenflow/panes";
 import { parseDocument } from "@bimopenflow/state";
-import { completeTable } from "@bimopenflow/app/src/completeTable";
-import { buildLiveViewRecipe } from "@bimopenflow/app/src/liveViewRecipe";
-import { modelCatalog } from "@bimopenflow/app/src/modelCatalog";
-import { modelPathFor } from "@bimopenflow/app/src/modelRef";
-import { hostMessage } from "@bimopenflow/app/src/paneArea";
-import { makePaneContext } from "@bimopenflow/app/src/paneContext";
+import {
+  buildLiveViewRecipe,
+  completeTable,
+  makePaneContext,
+  modelCatalog,
+  modelPathFor,
+  modelUrlFor,
+  view3dDataKind,
+  type View3dDataKind,
+} from "@bimopenflow/client";
+import { hostMessage } from "@bimopenflow/client/host";
 import type { View3dEmbed } from "../document/format";
 import type { EmbedRenderer, Freshness, NotebookApi } from "./contract";
 
@@ -48,7 +53,7 @@ const resolverFor = (api: NotebookApi) => {
 /** What the pane gets for one node: the model url and the data to push after it. */
 interface Feed {
   readonly modelUrl?: string;
-  readonly data: () => Promise<{ kind: "view" | "boxes" | "instances"; data: TableSlice } | undefined>;
+  readonly data: () => Promise<{ kind: View3dDataKind; data: TableSlice } | undefined>;
   /** The node's own `legend` output, when it declares one; the pane would otherwise guess a legend from the instances. */
   readonly legend?: () => Promise<TableSlice | undefined>;
 }
@@ -65,12 +70,7 @@ async function planFeed(
   const document = parseDocument(text);
   const catalog = new Map<string, NodeDescriptor>(nodeCatalog.nodes.map((n) => [n.kind, n]));
   const path = modelPathFor(document, nodeId);
-  let modelUrl: string | undefined;
-  if (path) {
-    const id = await resolverFor(api)(path);
-    if (!id) throw new Error(`Model is not in the host catalog: ${path}. Add its directory to ModelRoots.`);
-    modelUrl = `model:${id}`;
-  }
+  const modelUrl = path ? modelUrlFor(path, await resolverFor(api)(path)) : undefined;
   // A bounded view3d chain is built here from the document, as the editor
   // previews it; anything else is the node's evaluated result on the host.
   const live = buildLiveViewRecipe(document, nodeId, catalog);
@@ -87,8 +87,7 @@ async function planFeed(
         throw new Error(`No result for ${nodeId}: ${state ? state.error ?? state.status : "not in the analysis"}.`);
       const data = await completeTable(paneCtx, nodeId, port, isCurrent);
       if (!data) return undefined;
-      const kind = port === "view" ? "view" : port === "boxes" || isBoxTable(data.columns) ? "boxes" : "instances";
-      return { kind, data };
+      return { kind: view3dDataKind(port, data), data };
     },
   };
 }

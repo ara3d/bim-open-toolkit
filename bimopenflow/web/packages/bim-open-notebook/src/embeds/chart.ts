@@ -8,7 +8,7 @@
 // wire the shared selection bus to it; see the report for TKT-80/N4.
 
 import { createChartPane } from "@bimopenflow/panes";
-import { makePaneContext } from "@bimopenflow/app/src/paneContext";
+import { makePaneContext } from "@bimopenflow/client";
 import type { ChartEmbed } from "../document/format";
 import type { EmbedHandle, EmbedRenderer } from "./contract";
 import { compareWithHost } from "../live/compare";
