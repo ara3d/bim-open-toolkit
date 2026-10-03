@@ -16,15 +16,10 @@
 // boxes, or instances.
 
 import type { NodeDescriptor, TableSlice } from "@bimopenflow/contracts";
-import {
-  createViewPane3D,
-  ensurePaneStyles,
-  type Pane,
-  type PaneContext,
-} from "@bimopenflow/panes";
+import { buildLiveViewRecipe, createViewPane3D } from "@bimopenflow/pane-3d";
+import { ensurePaneStyles, type Pane, type PaneContext } from "@bimopenflow/panes";
 import { parseDocument } from "@bimopenflow/state";
 import {
-  buildLiveViewRecipe,
   completeTable,
   makePaneContext,
   modelCatalog,

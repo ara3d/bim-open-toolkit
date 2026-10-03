@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { EvalUpdate, NodeDescriptor, TableSlice } from "@bimopenflow/contracts";
-import { createViewPane3D, type Pane, type PaneContext, type PaneEvent, type PaneInput, type View3DDeps } from "@bimopenflow/panes";
+import { createViewPane3D, type View3DDeps } from "@bimopenflow/pane-3d";
+import type { Pane, PaneContext, PaneEvent, PaneInput } from "@bimopenflow/panes";
 import type { View3dEmbed } from "../src/document/format";
 import type { EmbedContext, NotebookApi } from "../src/embeds/contract";
 import { createSelectionBus } from "../src/embeds/selection";
