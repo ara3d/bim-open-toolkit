@@ -109,7 +109,12 @@ What remains, as of 2026-10-03. Each item says why it is in this place.
 | Repository | Demo | State |
 |---|---|---|
 | `bim-open-viewer` | The gallery as a static page over synthetic buildings | Built by a subagent on 2026-10-03 (see its README) |
-| `bim-open-notebook` | The sample notebooks, opened from their snapshots, no server | Built on 2026-10-03 from the toolkit's package |
+| `bim-open-notebook` | The 12 sample notebooks, opened from their snapshots, no server | Built on 2026-10-03 from the toolkit's package |
 | `bim-open-flow` | Graphs over a public building in DuckDB, in the browser | Needs phase 5 and a way to run the host's evaluation in the browser or a hosted host; until then the page describes and shows screenshots |
 | `bim-open-data` | IFC to BOS in the browser (web-ifc) and the BOS Browser | Needs phase 4; until then the page describes |
 | `bim-open-toolkit` | The family page linking every live demo | Built on 2026-10-03 at `site/` |
+- 2026-10-03, public faces (subagents, checked headless in Edge, none live until Pages is switched on, TKT-142):
+  - `bim-open-viewer`: `npm run pages` builds the gallery as a static site over generated buildings; `npm run pages:smoke` loads the landing page and all five demos and fails on any that does not draw (passed). Viewer mark and lockup in teal. Viewer `main` `5141ec7`, pinned in the toolkit.
+  - `bim-open-notebook`: README (the interaction model, honest status) and `site/`, which opens the 12 sample notebooks from their snapshots with no server; built by the toolkit's new `build:pages` script in the notebook package (tests 303 of 303).
+  - `bim-open-data`, `bim-open-flow`: READMEs that say what moves there and when, landing pages, Data mark in rose.
+  - Toolkit `site/`: the family page, one card per repository with its status; `docs/BRANDING.md` lists four products.
