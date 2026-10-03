@@ -221,6 +221,8 @@ Names for the analyst application's repository under E2:
 | `bim-open-ifc` plus `bim-open-data` | Split the IFC stack from the BOS implementation. Cleaner names, but one more repository and one more pin. |
 | `bim-open-utils` / `ara3d-bim-utils` | Honest about "miscellaneous", but says nothing about contents. Utility repositories named this way tend to collect anything. |
 
+**Decided 2026-10-03:** the owner created `ara3d/bim-open-data`. The reviewer's point about confusion with `bim-open-schema` (section 11.4, Q5) stands; the repository's README should say on its first line how it differs from the specification.
+
 **Recommendation: `bim-open-data`** for all of `src/data`, its MCP server, the BOS Browser, and the type generator. Split out IFC later only if someone wants the IFC tools without BOS. Revit add-ins go to `bim-open-revit` only when their build gets in the way; `PROJECT.md` says they are not being extended in this stretch.
 
 ## 7. Short-term plan (the next few working sessions)
