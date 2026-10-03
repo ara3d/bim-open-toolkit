@@ -1,4 +1,10 @@
 {
-  "gratify": { "url": "https://github.com/ara3d/gratify", "commit": "a2d1723be6039836bf72cd7865b2fad147083092" },
-  "bim-open-viewer": { "url": "https://github.com/ara3d/bim-open-viewer", "commit": "35ce03bb487c098375f931ca6cde7127ea919409" }
+  "gratify": {
+    "url": "https://github.com/ara3d/gratify",
+    "commit": "a2d1723be6039836bf72cd7865b2fad147083092"
+  },
+  "bim-open-viewer": {
+    "url": "https://github.com/ara3d/bim-open-viewer",
+    "commit": "5141ec7069fd61be81d95e84d124a6215d0ec11f"
+  }
 }
