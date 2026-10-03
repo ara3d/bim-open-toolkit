@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
-    <ProjectReference Include="..\..\..\src\data\Ara3D.Ifc.DuckDb\Ara3D.Ifc.DuckDb.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.Ifc.DuckDb\Ara3D.Ifc.DuckDb.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
     <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine\Ara3D.DataFlowEngine.csproj" />
     <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj" />

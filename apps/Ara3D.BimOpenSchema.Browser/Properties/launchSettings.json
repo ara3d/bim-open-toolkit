@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Ara3D.BimOpenSchema.Browser": {
-      "commandName": "Project",
-      "commandLineArgs": "\"..\\..\\..\\data\\rac_basic_sample_project-2025.bos\""
-    }
-  }
-}

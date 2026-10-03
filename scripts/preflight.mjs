@@ -1,10 +1,11 @@
 // Names what a clean checkout is missing before the first demo starts: the Node
-// and .NET versions the web editor and host need, initialized git submodules, and
+// and .NET versions the web editor and host need, the initialized git submodule, the
+// dependencies deps.mjs fills from deps.json, and
 // the private Snowdon model the BIM-profile demos read. Run it before following
 // docs/START.md.
 //
 //   node scripts/preflight.mjs
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +18,10 @@ const MIN_NODE_MAJOR = 20;
 const MIN_NODE_20_MINOR = 19;
 const MIN_NODE_22_MINOR = 12;
 
-const SUBMODULES = ["gratify", "ara3d-dataflow", "bim-open-schema", "ara3d-sdk", "parakeet"];
+const SUBMODULES = ["ara3d-dataflow"];
+
+/** The repositories deps.json pins; node deps.mjs puts each at deps/<name>. */
+const DEPS = Object.keys(JSON.parse(readFileSync(resolve(root, "deps.json"), "utf8")));
 
 const SNOWDON_ENV_VARS = ["BIMOPENFLOW_SNOWDON", "SNOWDON_BOS_PATH"];
 const SNOWDON_DEFAULT_PATH = () =>
@@ -65,6 +69,23 @@ function checkSubmodules() {
   };
 }
 
+/** {pass, detail} for every deps.json entry being present under deps/ (cloned or linked by deps.mjs). */
+function checkDeps() {
+  const missing = DEPS.filter((name) => {
+    try {
+      return readdirSync(resolve(root, "deps", name)).length === 0;
+    } catch {
+      return true;
+    }
+  });
+  return {
+    pass: missing.length === 0,
+    detail: missing.length === 0
+      ? `all ${DEPS.length} present (${DEPS.join(", ")})`
+      : `missing under deps/: ${missing.join(", ")}; run: node deps.mjs`,
+  };
+}
+
 /** {pass, detail, optional} for the private Snowdon BOS model an env var or the documented default path names. */
 function checkSnowdonModel() {
   const namedByEnv = SNOWDON_ENV_VARS.map((name) => process.env[name]).find(Boolean);
@@ -83,6 +104,7 @@ const checks = [
   { name: "Node.js version", ...checkNode() },
   { name: ".NET SDK", ...checkDotnetSdk() },
   { name: "git submodules", ...checkSubmodules() },
+  { name: "deps.json dependencies", ...checkDeps() },
   { name: "private Snowdon model", ...checkSnowdonModel() },
 ];
 

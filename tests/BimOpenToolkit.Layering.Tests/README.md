@@ -1,10 +1,11 @@
 # BimOpenToolkit.Layering.Tests
 
 Checks that the folder groups stay layered. It parses every `.csproj` under
-`src`, `tests`, `plugins`, `apps`, and `tools` and fails on a project
-reference that points up: `data` may reference only itself and submodules,
-`flow` adds `data`, `mcp` adds `flow`, `studio` may reference all three, and
-`plugins`, `apps`, and `tools` sit on `data`. It also fails if any package
+`src`, `tests`, `plugins`, and `tools` and fails on a project reference that
+points up: `flow` may reference `data`, `mcp` adds `flow`, `studio` may
+reference all three, and `plugins` and `tools` sit on `data`. The `data`
+layer is bim-open-data, reached as `$(DepsRoot)bim-open-data/src/data/...`;
+every other dependency (`deps/`, `submodules/`) is external and allowed. It also fails if any package
 under `viewer/` depends on an `@bimopenflow/*` package.
 
 The rules live in the `Allowed` table in `LayeringTests.cs`. Extending the

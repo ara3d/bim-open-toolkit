@@ -22,7 +22,7 @@
     <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
     <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
-    <ProjectReference Include="..\..\..\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
   </ItemGroup>
 
   <ItemGroup>

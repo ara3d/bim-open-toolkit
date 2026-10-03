@@ -245,7 +245,7 @@ await mkdir(out, { recursive: true });
 if (!flag("--no-build")) {
   buildProject("src/flow/BimOpenFlow.Host", join(build, "host"));
   if (!flag("--skip-mcp")) {
-    buildProject("src/mcp/BimOpenMcp.Ifc", join(build, "ifc-mcp"));
+    buildProject("deps/bim-open-data/src/mcp/BimOpenMcp.Ifc", join(build, "ifc-mcp"));
     if (!flag("--skip-snowdon")) buildProject("src/mcp/BimOpenMcp.Flow", join(build, "flow-mcp"));
   }
 }

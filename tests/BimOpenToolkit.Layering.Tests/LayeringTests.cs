@@ -1,5 +1,6 @@
 // Enforces the folder layering: references only point down (mcp -> flow -> data; studio on all;
-// plugins, apps, and tools on data), and the viewer never depends on the flow web editor.
+// plugins and tools on data), and the viewer never depends on the flow web editor. The data
+// layer is the bim-open-data repository, reached through deps/ ($(DepsRoot)bim-open-data/...).
 using System.Text.RegularExpressions;
 using BimOpenToolkit.TestSupport;
 
@@ -13,29 +14,37 @@ public static class Layering
     /// so every test group may reference it (checked by TestSupportReferencesNoSourceProject).</summary>
     public const string TestSupport = "BimOpenToolkit.TestSupport";
 
-    /// <summary>Layers a project in the given group may reference, besides its own group and submodules.</summary>
+    /// <summary>Layers a project in the given group may reference, besides its own group and
+    /// external dependencies (submodules, and deps/ other than bim-open-data).</summary>
     public static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>
     {
-        ["data"] = [],
         ["flow"] = ["data"],
         ["mcp"] = ["data", "flow"],
         ["studio"] = ["data", "flow", "mcp"],
         ["plugins"] = ["data"],
-        ["apps"] = ["data"],
         ["tools"] = ["data"],
     };
+
+    /// <summary>The group of anything outside this repository's own layers.</summary>
+    public const string External = "external";
+
+    /// <summary>The MSBuild property every reference into deps/ starts with (Directory.Build.props).</summary>
+    public const string DepsRootProperty = "$(DepsRoot)";
 
     public static IEnumerable<FileInfo> Projects(string top)
         => new DirectoryInfo(Path.Combine(Root.FullName, top)).EnumerateFiles("*.csproj", SearchOption.AllDirectories)
             .Where(f => !f.FullName.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"));
 
-    /// <summary>The group a repository-relative path belongs to: data, flow, mcp, studio, plugins, apps, tools, submodules.</summary>
+    /// <summary>The group a repository-relative path belongs to: data (bim-open-data's src/data, through
+    /// deps/), flow, mcp, studio, plugins, tools, or external.</summary>
     public static string GroupOf(string fullPath)
     {
         var rel = Path.GetRelativePath(Root.FullName, fullPath).Replace('\\', '/');
         var parts = rel.Split('/');
         return parts[0] switch
         {
+            "deps" when parts.Length > 3 && parts[1] == "bim-open-data" && parts[2] == "src" => parts[3],
+            "deps" or "submodules" => External,
             "src" or "tests" => parts[1],
             _ => parts[0],
         };
@@ -48,9 +57,11 @@ public static class Layering
         var text = File.ReadAllText(project.FullName);
         foreach (Match m in ProjectRef.Matches(text))
         {
-            var raw = m.Groups[1].Value;
-            if (raw.StartsWith("$(")) continue;
-            yield return (project, Path.GetFullPath(Path.Combine(project.DirectoryName!, raw.Replace('\\', Path.DirectorySeparatorChar))));
+            var raw = m.Groups[1].Value.Replace('\\', Path.DirectorySeparatorChar);
+            if (raw.StartsWith(DepsRootProperty))
+                yield return (project, Path.GetFullPath(Path.Combine(Root.FullName, "deps", raw[DepsRootProperty.Length..])));
+            else if (!raw.StartsWith("$("))
+                yield return (project, Path.GetFullPath(Path.Combine(project.DirectoryName!, raw)));
         }
     }
 
@@ -58,7 +69,7 @@ public static class Layering
     {
         foreach (var (group, allowed) in Allowed)
         {
-            var top = group is "data" or "flow" or "mcp" or "studio" ? null : group;
+            var top = group is "flow" or "mcp" or "studio" ? null : group;
             var projects = top != null
                 ? Projects(top)
                 : Projects("src").Concat(Projects("tests")).Where(p => GroupOf(p.FullName) == group);
@@ -66,7 +77,7 @@ public static class Layering
                 foreach (var (from, to) in References(project))
                 {
                     var target = GroupOf(to);
-                    if (target == group || target == "submodules" || target == TestSupport || allowed.Contains(target))
+                    if (target == group || target == External || target == TestSupport || allowed.Contains(target))
                         continue;
                     yield return $"{Path.GetRelativePath(Root.FullName, from.FullName)} -> {Path.GetRelativePath(Root.FullName, to)} ({group} may not reference {target})";
                 }
@@ -93,7 +104,7 @@ public class LayeringTests
     [Test]
     public void EveryGroupHasProjects()
     {
-        foreach (var group in new[] { "data", "flow", "mcp", "studio" })
+        foreach (var group in new[] { "flow", "mcp", "studio" })
             Assert.That(Layering.Projects("src").Any(p => Layering.GroupOf(p.FullName) == group), $"src/{group} has no projects");
     }
 

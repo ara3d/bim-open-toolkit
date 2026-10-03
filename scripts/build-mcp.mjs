@@ -9,7 +9,7 @@ import { root, buildProject } from "./bim-flow-processes.mjs";
 
 const SERVERS = [
   { project: "src/mcp/BimOpenMcp.Flow", output: "artifacts/bim-flow-duckdb/mcp" },
-  { project: "src/mcp/BimOpenMcp.Ifc", output: "artifacts/bim-flow-ifc/mcp" },
+  { project: "deps/bim-open-data/src/mcp/BimOpenMcp.Ifc", output: "artifacts/bim-flow-ifc/mcp" },
 ];
 
 /** The dll each `dotnet <dll>` server entry in an .mcp.json launches, keyed by server name. */

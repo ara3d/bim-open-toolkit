@@ -6,7 +6,7 @@
 //
 //   node scripts/demo-ifc-mcp.mjs [--model samples/nrc/duplex-enriched.ifc] [--dll <bimopenmcp-ifc.dll>] [--out <transcript.md>]
 //
-// Build the server first: dotnet build src/mcp/BimOpenMcp.Ifc -o artifacts/bim-flow-ifc/mcp
+// Build the server first: dotnet build deps/bim-open-data/src/mcp/BimOpenMcp.Ifc -o artifacts/bim-flow-ifc/mcp
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { existsSync } from "node:fs";
@@ -22,7 +22,7 @@ const dll = resolve(root, arg("--dll", process.env.BOF_IFC_MCP_DLL ?? "artifacts
 const model = resolve(root, arg("--model", "samples/nrc/duplex-enriched.ifc")).replaceAll("\\", "/");
 const out = resolve(root, arg("--out", "artifacts/bim-flow-ifc/transcript-replay.md"));
 
-if (!existsSync(dll)) exit(`IFC MCP server not built: ${dll}. Run: dotnet build src/mcp/BimOpenMcp.Ifc -o artifacts/bim-flow-ifc/mcp`);
+if (!existsSync(dll)) exit(`IFC MCP server not built: ${dll}. Run: dotnet build deps/bim-open-data/src/mcp/BimOpenMcp.Ifc -o artifacts/bim-flow-ifc/mcp`);
 if (!existsSync(model)) exit(`Model not found: ${model}`);
 
 function exit(message) {
