@@ -15,7 +15,7 @@ public static class Layering
     public const string TestSupport = "BimOpenToolkit.TestSupport";
 
     /// <summary>Layers a project in the given group may reference, besides its own group and
-    /// external dependencies (submodules, and deps/ other than bim-open-data).</summary>
+    /// external dependencies (deps/ other than bim-open-data).</summary>
     public static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>
     {
         ["flow"] = ["data"],
@@ -44,7 +44,7 @@ public static class Layering
         return parts[0] switch
         {
             "deps" when parts.Length > 3 && parts[1] == "bim-open-data" && parts[2] == "src" => parts[3],
-            "deps" or "submodules" => External,
+            "deps" => External,
             "src" or "tests" => parts[1],
             _ => parts[0],
         };

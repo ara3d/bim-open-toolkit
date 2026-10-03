@@ -10,9 +10,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      # Dependencies that are not submodules (deps.json), cloned into deps/.
+      # Every dependency, the engine (ara3d-dataflow) included, comes from
+      # deps.json and is cloned into deps/.
       - run: node deps.mjs
       - uses: actions/setup-dotnet@v4
         with:

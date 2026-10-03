@@ -5,7 +5,7 @@ Checks that the folder groups stay layered. It parses every `.csproj` under
 points up: `flow` may reference `data`, `mcp` adds `flow`, `studio` may
 reference all three, and `plugins` and `tools` sit on `data`. The `data`
 layer is bim-open-data, reached as `$(DepsRoot)bim-open-data/src/data/...`;
-every other dependency (`deps/`, `submodules/`) is external and allowed. It also fails if any package
+every other dependency under `deps/` (the engine among them) is external and allowed. It also fails if any package
 under `deps/bim-open-viewer/packages` depends on an `@bimopenflow/*` package.
 
 - `LayeringTests.cs`: the folder rules, in the `Allowed` table. Extending the

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\submodules\ara3d-dataflow\src\Ara3D.DataFlowEngine.Abstractions\Ara3D.DataFlowEngine.Abstractions.csproj" />
+    <ProjectReference Include="$(DepsRoot)ara3d-dataflow\src\Ara3D.DataFlowEngine.Abstractions\Ara3D.DataFlowEngine.Abstractions.csproj" />
     <ProjectReference Include="..\BimOpenFlow.Nodes.Support\BimOpenFlow.Nodes.Support.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.Ifc.Mesher\Ara3D.Ifc.Mesher.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.IfcLoader\Ara3D.IfcLoader.csproj" />

@@ -1,6 +1,6 @@
 // Names what a clean checkout is missing before the first demo starts: the Node
-// and .NET versions the web editor and host need, the initialized git submodule, the
-// dependencies deps.mjs fills from deps.json, and
+// and .NET versions the web editor and host need, the dependencies deps.mjs fills
+// from deps.json (the engine among them), and
 // the private Snowdon model the BIM-profile demos read. Run it before following
 // docs/START.md.
 //
@@ -17,8 +17,6 @@ const shell = process.platform === "win32";
 const MIN_NODE_MAJOR = 20;
 const MIN_NODE_20_MINOR = 19;
 const MIN_NODE_22_MINOR = 12;
-
-const SUBMODULES = ["ara3d-dataflow"];
 
 /** The repositories deps.json pins; node deps.mjs puts each at deps/<name>. */
 const DEPS = Object.keys(JSON.parse(readFileSync(resolve(root, "deps.json"), "utf8")));
@@ -48,24 +46,6 @@ function checkDotnetSdk() {
     detail: hasEight
       ? `found ${versions.join(", ")}`
       : `found ${versions.join(", ") || "no SDKs"}; the host targets net8.0-windows and needs the .NET 8 SDK or newer`,
-  };
-}
-
-/** {pass, detail} for every submodule directory being populated (not left empty by a non-recursive clone). */
-function checkSubmodules() {
-  const missing = SUBMODULES.filter((name) => {
-    const dir = resolve(root, "submodules", name);
-    try {
-      return readdirSync(dir).length === 0;
-    } catch {
-      return true;
-    }
-  });
-  return {
-    pass: missing.length === 0,
-    detail: missing.length === 0
-      ? `all ${SUBMODULES.length} present`
-      : `empty or missing: ${missing.join(", ")}; run: git submodule update --init --recursive`,
   };
 }
 
@@ -103,7 +83,6 @@ function checkSnowdonModel() {
 const checks = [
   { name: "Node.js version", ...checkNode() },
   { name: ".NET SDK", ...checkDotnetSdk() },
-  { name: "git submodules", ...checkSubmodules() },
   { name: "deps.json dependencies", ...checkDeps() },
   { name: "private Snowdon model", ...checkSnowdonModel() },
 ];
