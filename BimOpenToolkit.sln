@@ -299,6 +299,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.GraphText.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.SampleFlows.Tests", "tests\studio\BimOpenFlow.SampleFlows.Tests\BimOpenFlow.SampleFlows.Tests.csproj", "{A1869DE1-72E9-40F1-8954-96022A85F96D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimOpenFlow.TestSupport", "tests\BimOpenFlow.TestSupport\BimOpenFlow.TestSupport.csproj", "{ED837666-BFC4-4909-84D5-8DF3E29FC91A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1857,6 +1859,18 @@ Global
 		{A1869DE1-72E9-40F1-8954-96022A85F96D}.Release|x64.Build.0 = Release|Any CPU
 		{A1869DE1-72E9-40F1-8954-96022A85F96D}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1869DE1-72E9-40F1-8954-96022A85F96D}.Release|x86.Build.0 = Release|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Debug|x64.Build.0 = Debug|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Debug|x86.Build.0 = Debug|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Release|x64.ActiveCfg = Release|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Release|x64.Build.0 = Release|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Release|x86.ActiveCfg = Release|Any CPU
+		{ED837666-BFC4-4909-84D5-8DF3E29FC91A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

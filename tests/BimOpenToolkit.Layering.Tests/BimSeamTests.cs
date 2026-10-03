@@ -20,15 +20,18 @@ public static class BimSeam
         "BimOpenFlow.PocParity.Tests", "BimOpenFlow.View3dWorkflows.Tests", "BimOpenFlow.TableWorkflows.Tests",
     ];
 
+    /// <summary>The toolkit's test support; the projects that move use their copy, BimOpenFlow.TestSupport.</summary>
+    public const string ToolkitTestSupport = "BimOpenToolkit.TestSupport";
+
     /// <summary>Projects under src/studio that move with flow.</summary>
     public static readonly string[] MovesFromStudio = ["BimOpenFlow.Ask"];
 
-    static readonly string[] Folders = ["src/flow", "src/mcp", "tests/flow", "tests/mcp"];
+    static readonly string[] Folders = ["src/flow", "src/mcp", "tests/flow", "tests/mcp", "tests/BimOpenFlow.TestSupport"];
 
     static IEnumerable<FileInfo> ProjectsIn(string folder)
         => Layering.Projects(folder.Replace('/', Path.DirectorySeparatorChar));
 
-    /// <summary>Every project under the four folders, and the studio projects that move.</summary>
+    /// <summary>Every project under those folders, and the studio projects that move.</summary>
     public static IEnumerable<FileInfo> Candidates()
         => Folders.SelectMany(ProjectsIn)
             .Concat(ProjectsIn("src/studio").Where(p => MovesFromStudio.Contains(FlowLayering.NameOf(p.FullName))));
@@ -42,8 +45,8 @@ public static class BimSeam
            from edge in Layering.References(project)
            let to = FlowLayering.NameOf(edge.To)
            let rel = Path.GetRelativePath(Layering.Root.FullName, edge.To).Replace('\\', '/')
-           where BimOnly.Contains(to) || rel.StartsWith("src/studio/") || rel.StartsWith("tests/studio/")
-           select $"{Path.GetRelativePath(Layering.Root.FullName, project.FullName)} -> {rel} (a project moving to bim-open-flow may reference no BIM pack, no Ifc.Mesher, and nothing in studio)";
+           where BimOnly.Contains(to) || to == ToolkitTestSupport || rel.StartsWith("src/studio/") || rel.StartsWith("tests/studio/")
+           select $"{Path.GetRelativePath(Layering.Root.FullName, project.FullName)} -> {rel} (a project moving to bim-open-flow may reference no BIM pack, no Ifc.Mesher, nothing in studio, and BimOpenFlow.TestSupport rather than {ToolkitTestSupport})";
 }
 
 public class BimSeamTests

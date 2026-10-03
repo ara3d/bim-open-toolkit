@@ -10,9 +10,10 @@ public static class Layering
 {
     public static readonly DirectoryInfo Root = new(RepoPaths.Root);
 
-    /// <summary>tests/BimOpenToolkit.TestSupport: paths and fixtures only, no src reference,
-    /// so every test group may reference it (checked by TestSupportReferencesNoSourceProject).</summary>
-    public const string TestSupport = "BimOpenToolkit.TestSupport";
+    /// <summary>tests/BimOpenToolkit.TestSupport and its copy for the projects that move to
+    /// bim-open-flow, tests/BimOpenFlow.TestSupport: paths and fixtures only, no src reference,
+    /// so every test group may reference them (checked by TestSupportReferencesNoSourceProject).</summary>
+    public static readonly string[] TestSupport = ["BimOpenToolkit.TestSupport", "BimOpenFlow.TestSupport"];
 
     /// <summary>Layers a project in the given group may reference, besides its own group and
     /// external dependencies (deps/ other than bim-open-data).</summary>
@@ -77,7 +78,7 @@ public static class Layering
                 foreach (var (from, to) in References(project))
                 {
                     var target = GroupOf(to);
-                    if (target == group || target == External || target == TestSupport || allowed.Contains(target))
+                    if (target == group || target == External || TestSupport.Contains(target) || allowed.Contains(target))
                         continue;
                     yield return $"{Path.GetRelativePath(Root.FullName, from.FullName)} -> {Path.GetRelativePath(Root.FullName, to)} ({group} may not reference {target})";
                 }
@@ -111,7 +112,7 @@ public class LayeringTests
     [Test]
     public void TestSupportReferencesNoSourceProject()
     {
-        var targets = Layering.Projects(Path.Combine("tests", Layering.TestSupport))
+        var targets = Layering.TestSupport.SelectMany(t => Layering.Projects(Path.Combine("tests", t)))
             .SelectMany(Layering.References)
             .Select(r => Path.GetRelativePath(Layering.Root.FullName, r.To))
             .ToList();
