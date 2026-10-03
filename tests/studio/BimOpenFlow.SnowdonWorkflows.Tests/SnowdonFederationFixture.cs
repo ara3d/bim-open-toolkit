@@ -2,7 +2,7 @@ using Ara3D.BimOpenSchema.Federation;
 using Ara3D.NodeGraph;
 using BimOpenToolkit.TestSupport;
 
-namespace BimOpenFlow.TableWorkflows.Tests;
+namespace BimOpenFlow.SnowdonWorkflows.Tests;
 
 /// <summary>
 /// Builds the pieces the SnowdonFederationGraph tests need: the five-document

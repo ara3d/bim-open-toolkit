@@ -77,7 +77,7 @@ in the transcript instead of failing.
 | `samples/nrc-analyses` | CSV and the Duplex DuckDB | both (two graphs bim only) | the NRC paper's eight answers, DC-W1 doors coloured in 3D, property sets written back to an IFC | `NrcWorkflows.Tests` |
 | `samples/analyses` | CSV, XLSX, SQLite, DuckDB | tables | table panes over `samples/tables` | `TableWorkflows.Tests/SampleAnalysesTests` |
 | `samples/relations` | CSV, DuckDB | tables | the `rel.*` pack: lazy plans, one SQL statement per chain | `Nodes.Relations.Tests/SampleGraphTests` |
-| `samples/duckdb-analyses` | DuckDB (Snowdon, prepared by `npm run duckdb:prepare`) | tables, `/duckdb.html` | nine query workflows over a building database | `TableWorkflows.Tests/DuckDbWorkflowCatalogTests` |
+| `samples/duckdb-analyses` | DuckDB (Snowdon, prepared by `npm run duckdb:prepare`) | tables, `/duckdb.html` | nine query workflows over a building database | `SnowdonWorkflows.Tests/DuckDbWorkflowCatalogTests` |
 | `samples/bim-analyses` | BOS (`samples/bim/sample.bos`, generated) | bim | the `bim.*` analyses: disciplines, levels, rooms, containment, nearest door | `BimWorkflows.Tests` |
 | `samples/view3d-analyses` | IFC (`data/duplex.ifc`, fetched by `data/get-test-data.ps1`) | bim, `/3d.html` | colour by category, ghost context, exploded categories, massing boxes, voxels, decimation | `View3dWorkflows.Tests` |
 | `samples/snowdon-analyses` | BOS (local Snowdon model, never committed) | bim, when present | the 3D recipe nodes over a real building | `View3dWorkflows.Tests` |

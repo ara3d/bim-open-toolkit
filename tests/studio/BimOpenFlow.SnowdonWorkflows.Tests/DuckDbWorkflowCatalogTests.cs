@@ -2,8 +2,10 @@ using System.Text.Json;
 using Ara3D.DataFlowEngine;
 using Ara3D.NodeGraph;
 using BimOpenFlow.Host;
+using BimOpenFlow.TableWorkflows.Tests;
+using BimOpenToolkit.TestSupport;
 
-namespace BimOpenFlow.TableWorkflows.Tests;
+namespace BimOpenFlow.SnowdonWorkflows.Tests;
 
 /// <summary>
 /// Every graph embedded in samples/duckdb-analyses/workflows.json (the catalog the
@@ -22,7 +24,7 @@ public sealed class DuckDbWorkflowCatalogTests
     public sealed record CatalogGraph(string Id, string ResultNode, GraphDocument Graph);
 
     public static string CatalogFile
-        => Path.Combine(Path.GetDirectoryName(SamplePaths.TablesDir)!, "duckdb-analyses", "workflows.json");
+        => RepoPaths.Samples("duckdb-analyses", "workflows.json");
 
     /// <summary>Graph ids whose SQL names Snowdon tables that sample.duckdb does not hold.</summary>
     private static readonly IReadOnlySet<string> SnowdonOnly = new HashSet<string>

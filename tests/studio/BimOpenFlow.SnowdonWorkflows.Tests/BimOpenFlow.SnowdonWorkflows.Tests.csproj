@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- The toolkit's table workflows: the Snowdon DuckDB catalog (samples/duckdb-analyses) and
+       the Snowdon federation match graph (samples/snowdon-analyses, Ara3D.BimOpenSchema.Federation).
+       The generic table workflows and their helpers (SampleFixtures, SamplePaths, TableReads)
+       are BimOpenFlow.TableWorkflows.Tests, which moves to bim-open-flow. -->
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -10,10 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="$(Ara3DClosedXmlVersion)" />
     <PackageReference Include="coverlet.collector" Version="$(Ara3DCoverletCollectorVersion)" />
-    <PackageReference Include="DuckDB.NET.Data.Full" Version="$(Ara3DDuckDbNetDataFullVersion)" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="$(Ara3DMicrosoftDataSqliteVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(Ara3DMicrosoftNetTestSdkVersion)" />
     <PackageReference Include="NUnit" Version="$(Ara3DNUnitVersion)" />
     <PackageReference Include="NUnit.Analyzers" Version="$(Ara3DNUnitAnalyzersVersion)" />
@@ -21,9 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\BimOpenFlow.TestSupport\BimOpenFlow.TestSupport.csproj" />
+    <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
+    <ProjectReference Include="..\..\flow\BimOpenFlow.TableWorkflows.Tests\BimOpenFlow.TableWorkflows.Tests.csproj" />
     <ProjectReference Include="$(DepsRoot)ara3d-dataflow\src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.BimOpenSchema.Federation\Ara3D.BimOpenSchema.Federation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
