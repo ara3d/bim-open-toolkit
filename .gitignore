@@ -40,3 +40,6 @@ src/BimOpenFlow.Host/models/
 
 # Local reference data for the meshing comparison (generated BFAST oracles and reports; see its README)
 tests/data/Ara3D.IfcMeshingComparison/data/
+
+# Dependencies filled by deps.mjs from deps.json (docs/plans/repository-split.md)
+deps/

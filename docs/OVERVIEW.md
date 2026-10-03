@@ -116,7 +116,7 @@ Because the model layer is pure and the three.js object-graph logic is kept sepa
 |---|---|
 | [bim-open-schema](https://github.com/ara3d/bim-open-schema) | The schema's spec repo: five dependency-free C# files. This is its reference implementation. |
 | [ara3d-sdk](https://github.com/ara3d/ara3d-sdk) | General-purpose utilities, geometry, data tables, file formats, glTF, the Bowerbird host, MCP protocol — built from source through the submodule. Everything specific to Revit, IFC, or BOS lives in this repo. |
-| `submodules/gratify` | The canvas UI library the web editor's graph surface is built on. |
+| `deps/gratify` | The canvas UI library the web editor's graph surface is built on; fetched by `node deps.mjs`. |
 | web-ifc, DuckDB | The IFC parser underneath the loader, and the analytical engine on the far end. |
 
 ## What it could become

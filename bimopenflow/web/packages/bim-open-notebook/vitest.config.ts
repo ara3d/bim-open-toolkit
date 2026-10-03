@@ -4,7 +4,7 @@ import { toolkitAlias } from "../../toolkit.config";
 
 // The same gratify source alias as packages/app/vitest.config.ts.
 const gratify = fileURLToPath(
-  new URL("../../../../submodules/gratify/src/gratify", import.meta.url),
+  new URL("../../../../deps/gratify/src/gratify", import.meta.url),
 );
 
 export default defineConfig({

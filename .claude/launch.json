@@ -135,7 +135,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "submodules/gratify",
+        "deps/gratify",
         "run",
         "dev"
       ],
@@ -177,7 +177,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "submodules/gratify",
+        "deps/gratify",
         "run",
         "dev"
       ],

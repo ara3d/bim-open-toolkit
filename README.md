@@ -79,7 +79,11 @@ private model required. The rest of this section is the same path in more detail
 
 ```bash
 git clone --recursive https://github.com/ara3d/bim-open-toolkit
+cd bim-open-toolkit
+node deps.mjs
 ```
+
+`--recursive` fetches the git submodules. `node deps.mjs` clones the other dependencies listed in `deps.json` into `deps/`, at the commits pinned there; `node deps.mjs --check` shows what it found.
 
 ```bash
 dotnet build BimOpenToolkit.sln
@@ -191,7 +195,7 @@ assessment from 2026-09-08.
 | `docs/` | Architecture, design decisions, demo guides, and the generated [node reference](docs/nodes.md) |
 | `submodules/bim-open-schema` | The BIM Open Schema specification: five dependency-free C# files and the sample `.bos` archives |
 | `submodules/ara3d-sdk` | The Ara3D SDK, built from source; `Directory.Build.targets` turns every `Ara3D.*` package reference into a project reference into it |
-| `submodules/gratify` | The Gratify canvas UI library (git submodule) |
+| `deps/` | Dependencies listed in `deps.json` and filled by `node deps.mjs`, not committed; today the Gratify canvas UI library |
 | `data/` | Test fixtures, not committed; populate with `./data/get-test-data.ps1` |
 
 ## Related projects

@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { resolve, basename } from "node:path";
 import { toolkitAlias } from "../../toolkit.config";
 
-const gratify = resolve(__dirname, "../../../../submodules/gratify/src/gratify");
+const gratify = resolve(__dirname, "../../../../deps/gratify/src/gratify");
 const samples = resolve(__dirname, "../../../../samples/notebooks");
 const nrcGraphsReadme = resolve(__dirname, "../../../../samples/nrc-analyses/README.md");
 

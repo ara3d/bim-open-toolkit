@@ -74,3 +74,11 @@ Each phase is its own commit or commits. Each ends with the checks below and lis
 ## Build log
 
 - 2026-10-03: phase 0 done.
+- 2026-10-03, baseline before phase 1:
+  - `node gates/web-smoke.mjs` fails in `@bimopenflow/graph` only: `sampleOverlap.test.ts` and four `textOverflow.test.ts` cases. These are sample graph cards overlapping, and text overflowing its card. They are unrelated to the split and filed as TKT-141.
+  - Every other step passes: the notebook package (300 tests), the notebook typecheck, and the `viz` typecheck.
+- 2026-10-03, phase 1:
+  - `deps.mjs` was tested on scratch repositories. Standalone, it clones flat into `deps/`, and nested dependencies link to the shared copy. In a marked workspace, it links everything. A second run changes nothing.
+  - The toolkit's web checks give exactly the baseline result in two setups: `deps/gratify` cloned, and `deps/gratify` linked (a Windows junction) to a checkout outside the repository.
+  - With the link, the editor's Vite dev server (port 5351) served all 33 Gratify source files from the outside path with `200 OK`, and the page logged no errors. Vite allows files reached through imports even when their real path is outside `server.fs.allow`; only direct requests for other outside files would be refused.
+  - Found: `viz` reads Gratify's built output (`dist/`), so a fresh clone needs `npm run build:gratify --prefix viz` (part of `npm run build --prefix viz`) before the `viz` typecheck. The old submodule hid this, because its `dist/` had been built once by hand.

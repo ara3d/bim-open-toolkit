@@ -12,6 +12,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      # Dependencies that are not submodules (deps.json), cloned into deps/.
+      - run: node deps.mjs
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |

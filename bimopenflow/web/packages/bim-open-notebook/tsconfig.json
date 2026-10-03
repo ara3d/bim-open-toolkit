@@ -14,7 +14,7 @@
     // Same source aliases as packages/app: modules this package imports from
     // @bimopenflow/app may reach gratify and the viewer packages.
     "paths": {
-      "gratify": ["../../../../submodules/gratify/src/gratify/index.ts"],
+      "gratify": ["../../../../deps/gratify/src/gratify/index.ts"],
       "@bim-open-toolkit/*": ["../../../../viz/packages/*/src/index.ts"]
     }
   },

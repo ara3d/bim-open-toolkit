@@ -363,7 +363,7 @@ PoC READMEs still show `ara3d-sdk/wip/...` paths. Current C# project references 
 | Dependency | Current relationship | Handoff consequence |
 |---|---|---|
 | [Ara3D SDK submodule](../submodules/ara3d-sdk/) | Built from source at the pinned commit; [Directory.Build.targets](../Directory.Build.targets) maps `Ara3D.*` package references to project references | nuget.org 1.6.1 is older than the pinned commit, so standalone submodule builds that fall back to it may miss newer APIs |
-| [Gratify submodule](../submodules/gratify/) | Shared canvas UI; consumed through source aliases and build output | Clone recursively and document upstream revision. It is used by old and new surfaces |
+| Gratify (`deps/gratify`, pinned in `deps.json`) | Shared canvas UI; consumed through source aliases and build output | Run `node deps.mjs`; the pin records the upstream revision. It is used by old and new surfaces |
 | Three.js | Current viz/editor use 0.185-range declarations; PoC uses 0.169 with `@ara3d/ara3d-webgl` | Another reason to isolate the PoC. Source aliases/hoisting are not proof that published packages have complete dependency declarations |
 | `Platonic.CSharp` sibling | Supplies Core/Analyzers packages for newer data/model work | `PlatonicRoot` override or a pinned feed is required on another machine; analyzers are intentionally mandatory |
 | `platonic-ts` sibling | Tool wrappers and fixture-server TypeScript launcher | Move runtime/tool dependencies into a reproducible local setup or document a pinned external prerequisite |
