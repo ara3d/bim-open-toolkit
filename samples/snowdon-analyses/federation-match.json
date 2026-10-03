@@ -37,8 +37,8 @@
     "union": { "x": 20, "y": 20 },
     "storey-rule": { "x": 330, "y": 20 },
     "confirmations": { "x": 330, "y": 300 },
-    "correspondence": { "x": 640, "y": 160 },
-    "write": { "x": 940, "y": 160 }
+    "correspondence": { "x": 900, "y": 160 },
+    "write": { "x": 1470, "y": 160 }
   },
   "session": {
     "description": "Snowdon federation correspondence table (TKT-30). Only the storey-by-elevation rule (C5) is wired so far. C6 adds grid-rule and space-rule as two more duck.query nodes over `union`, wired into `correspondence` as t2 and t3 alongside this chunk's t1 (storey-rule) and t4 (confirmations); their SQL follows the grid-axis-by-tag and space-in-room-by-room-number semantics in docs/plans/snowdon-federation-build.md. Deviation from the plan's Correspondence table contract: `conflicts` and `warnings` are comma-joined VARCHAR, not VARCHAR[], because every sink and every multi-input node (sink.exportParquet's DuckWriting.CopyTable, sql.query's per-input WriteTable) round-trips its input table through Ara3D.BimOpenSchema.IO.DuckDbUtils.WriteTable, whose Append() has no branch for array-typed values and silently stringifies them (`v.ToString()`) instead of writing a LIST column. An empty string means no conflicts/warnings."
