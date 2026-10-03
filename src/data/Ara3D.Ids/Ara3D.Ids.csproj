@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>Ara3D.Ids</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <Description>Evaluates buildingSMART IDS 1.0 specifications over BIM Open Schema tables in DuckDB, as a verdict table.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- CDDL-1.0; parses IDS into an object model and carries the IDS value rules. No xbim IFC
+         dependency. The reuse check is docs/proposals/ids-reuse.md. -->
+    <PackageReference Include="Xbim.InformationSpecifications" Version="1.0.24" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj" />
+    <ProjectReference Include="..\Ara3D.Ifc.Bos\Ara3D.Ifc.Bos.csproj" />
+  </ItemGroup>
+
+</Project>

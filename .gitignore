@@ -37,3 +37,6 @@ dist/
 src/BimOpenFlow.Host/analyses/
 src/BimOpenFlow.Host/cache/
 src/BimOpenFlow.Host/models/
+
+# Local reference data for the meshing comparison (generated BFAST oracles and reports; see its README)
+tests/data/Ara3D.IfcMeshingComparison/data/
