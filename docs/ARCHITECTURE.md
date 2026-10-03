@@ -169,7 +169,14 @@ One headless core; every UI is a client of it.
 - **`Host.Store`** — the analysis library on disk: versioned graph documents, run archival.
 - **`Host.Api`** — the HTTP surface, generated from `contracts/`, holding no business
   logic. Fourteen endpoints including a server-sent-event stream of evaluation updates.
-- **`Host`** — the composition root and the deployable process.
+- **`Host`** — the generic host process (`bimopenflow-host`). It names no BIM pack: a
+  front end composes it with `HostProfile`s (node packs, seeded samples, background jobs),
+  and on its own it offers only the `tables` profile.
+- **`src/studio/BimOpenFlow.Studio`** — the BIM composition root (`bimopenflow-studio`).
+  It composes the `bim` profile (the Bos, BimAnalysis, and Geometry packs over the generic
+  ones), adds the NRC samples and their preparation jobs to `tables`, serves `/api/ask`,
+  and has two more verbs: `mcp` (the flow MCP server over the studio's profiles) and
+  `nodedocs` (writes [nodes.md](nodes.md) and [nodes.catalog.json](nodes.catalog.json)).
 - **`Mcp`** — thirteen MCP tools over *the same* services: `listModels`, `listAnalyses`,
   `getAnalysis`, `saveAnalysis`, `getNodeCatalog`, `addNode`, `connect`, `setParam`,
   `removeNode`, `evaluate`, `getResult`, `listRuns`, `createRun`.
@@ -190,6 +197,29 @@ One headless core; every UI is a client of it.
 - **`Publishing` / `Reports` / `Dashboards` / `Evidence`** — turning a run into an
   artifact: self-contained HTML with inlined data, verdict tables, dashboards, and
   evidence packages whose manifest is canonical JSON with a SHA-256 per member file.
+
+### Enforced boundaries
+
+`tests/BimOpenToolkit.Layering.Tests` turns the layering into failing tests:
+
+- **Folders point down.** `flow` may reference `data`; `mcp` adds `flow`; `studio` may
+  reference all three; `plugins` and `tools` sit on `data`. So nothing in `src/flow`,
+  `src/mcp`, `tests/flow`, or `tests/mcp` references `src/studio` (`LayeringTests`).
+- **Packs stay independent.** A node pack references no pack but `Nodes.Support`, never the
+  host or the run outputs; only `Nodes.Effects` sees run records; `Relations` never sees
+  DuckDB (`FlowLayeringTests`).
+- **The generic tool has no BIM in it.** Every project that moves to `bim-open-flow` (all of
+  `src/flow`, `src/mcp`, `tests/flow`, `tests/mcp`, and `src/studio/BimOpenFlow.Ask`, less
+  the `Stays` list in `BimSeamTests.cs`) references none of `Nodes.Bos`, `Nodes.BimAnalysis`,
+  `Nodes.Geometry`, or `Ara3D.Ifc.Mesher`, and nothing in `studio`. The hand-written node
+  notes in `NodeDocs` cover only kinds the generic packs register; the BIM packs' notes are
+  `BimNodeNotes` in the studio (`BimSeamTests`).
+- **The web packages follow the same seam**, checked by vitest beside the code:
+  `client/test/genericPackages.test.ts` fails if `contracts`, `api-client`, `state`, `graph`,
+  `viz`, `client`, `panes`, or `app` depends on or imports `@bim-open-viewer/*` or
+  `@bimopenflow/pane-3d`; the notebook's `test/layering.test.ts` keeps both out of
+  `src/embeds`, where a page registers the 3D embed instead. `BimSeamTests` fails if either
+  file disappears. The viewer never depends on `@bimopenflow/*` (`LayeringTests`).
 
 ## Agentic workflows
 
