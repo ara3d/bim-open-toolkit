@@ -10,6 +10,7 @@ The brief above says what the project is for. A plan names the workflow it serve
 |---|---|
 | How to build, run, and demo | `README.md`, `docs/DEMOS.md`, and `.claude/launch.json` (the named dev servers) |
 | How it is put together | `docs/ARCHITECTURE.md`; `docs/OVERVIEW.md` is the one-page version |
+| How it should look: mark, fonts, colours | `docs/BRANDING.md`; assets under `docs/brand/` |
 | Which nodes exist | `docs/nodes.md` and `docs/nodes.catalog.json` (both generated) and the packs under `src/flow/BimOpenFlow.Nodes.*` |
 | Ideas gathered, ranked, and tied to workflows | `docs/CANDIDATE-WORK.md` |
 | Open decisions and work items | `tickets/`; `kind: question` marks a decision to make |

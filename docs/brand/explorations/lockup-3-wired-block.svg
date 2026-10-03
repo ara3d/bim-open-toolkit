@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 32" width="336" height="64">
+<style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&amp;display=swap');text{font-family:'Space Grotesk',Inter,system-ui,sans-serif;font-weight:700;font-size:15px;fill:#171a1f;letter-spacing:-0.01em}</style>
+<g transform="translate(4 4)"><path fill="#2f66ce" d="M12 3.4L19.79 7.9V16.9L12 21.4L4.21 16.9V7.9ZM12 5.4L5.94 8.9V15.9L12 19.4L18.06 15.9V8.9ZM11 12.4h2v9h-2ZM12.5 13.27L11.5 11.53L19.29 7.03L20.29 8.77ZM12.5 11.53L11.5 13.27L3.71 8.77L4.71 7.03ZM9.8 3.4a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM17.59 7.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM17.59 16.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM9.8 21.4a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM2.01 16.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM2.01 7.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM9.8 12.4a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0Z"/></g>
+<text x="36" y="21.5">BimOpenFlow</text>
+</svg>

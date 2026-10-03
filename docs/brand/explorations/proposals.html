@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BimOpenFlow brand proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+:root{
+  --bg:#f4f5f7; --surface:#fff; --text:#171a1f; --dim:#5a606c; --accent:#2f66ce; --line:#e2e5ea;
+  --teal:#0d9488; --purple:#7c3aed; --orange:#ea7918; --red:#dc2626; --green:#16a34a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,sans-serif;padding:32px 16px 64px}
+main{max-width:1040px;margin:0 auto}
+h1{font:600 24px/1.2 Inter,system-ui,sans-serif;margin:0 0 4px}
+h2{font:600 18px/1.3 Inter,system-ui,sans-serif;margin:40px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font:600 15px/1.3 Inter,system-ui,sans-serif;margin:0 0 6px}
+p{margin:0 0 10px;max-width:72ch}
+.sub{color:var(--dim);margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:0 0 16px}
+.rec{border-left:4px solid var(--accent)}
+.rec ul{margin:8px 0 0 18px;padding:0}
+.rec li{margin:2px 0}
+.file{font:12px/1.4 "JetBrains Mono",Consolas,monospace;color:var(--dim)}
+.idea{color:var(--text)}
+.sizes{display:flex;gap:28px;align-items:flex-end;padding:18px 20px;border-radius:6px;margin-top:12px;flex-wrap:wrap}
+.sizes.light{background:#fff;border:1px solid var(--line);color:var(--accent)}
+.sizes.dark{background:var(--accent);color:#fff}
+.sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.sizes figcaption{font:11px/1 "JetBrains Mono",Consolas,monospace;opacity:.75}
+.sizes svg{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.row2{grid-template-columns:1fr}}
+.bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:12px}
+.bar .wm{font:700 15px/1 Inter,system-ui,sans-serif;color:var(--text);letter-spacing:-0.01em}
+.bar .sep{flex:1}
+.bar .btn{font:600 13px/1 Inter,system-ui,sans-serif;color:#fff;background:var(--accent);border-radius:5px;padding:7px 10px}
+.bar .ghost{font:500 13px/1 Inter,system-ui,sans-serif;color:var(--dim);padding:7px 10px}
+.bar svg{color:var(--accent)}
+.favrow{display:flex;gap:14px;align-items:center;margin-top:10px;font-size:12px;color:var(--dim)}
+.tab{display:inline-flex;align-items:center;gap:6px;background:#e8eaef;border-radius:6px 6px 0 0;padding:6px 12px;font:12px/1 Inter,system-ui,sans-serif;color:var(--text)}
+.tab svg{color:var(--accent)}
+.lockup{margin-top:12px;padding:16px;background:#fff;border:1px dashed var(--line);border-radius:6px;display:inline-block}
+.lockup svg{display:block}
+.pal{display:flex;gap:6px;margin-top:8px}
+.pal span{width:22px;height:22px;border-radius:4px;display:block}
+.notes{color:var(--dim);font-size:13px}
+
+/* font pairings */
+.pair{--wm:Inter; --ui:Inter; --mono:Consolas; font-family:var(--ui),system-ui,sans-serif}
+.pair.A{--wm:"Space Grotesk"; --ui:Inter; --mono:"JetBrains Mono"}
+.pair.B{--wm:"Instrument Sans"; --ui:"IBM Plex Sans"; --mono:"IBM Plex Mono"}
+.sample{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.sample .bar{margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0}
+.pair .bar .wm{font-family:var(--wm),system-ui,sans-serif;font-weight:700;font-size:15px}
+.pair .bar .btn,.pair .bar .ghost{font-family:var(--ui),system-ui,sans-serif}
+.body{padding:16px 18px}
+.pair .h{font:600 18px/1.25 var(--ui),system-ui,sans-serif;margin:0 0 6px}
+.pair .h.wm{font-family:var(--wm),system-ui,sans-serif}
+.pair .t{font:400 13px/1.5 var(--ui),system-ui,sans-serif;color:var(--text);margin:0 0 12px;max-width:64ch}
+.steps{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.step{display:grid;grid-template-columns:4px 1fr auto;gap:0 12px;border-bottom:1px solid var(--line);background:#fff}
+.step:last-child{border-bottom:0}
+.step .stripe{background:var(--teal)}
+.step.q .stripe{background:var(--purple)}
+.step.s .stripe{background:var(--orange)}
+.step .in{padding:8px 0 8px 2px}
+.step .st{font:500 13px/1.35 var(--ui),system-ui,sans-serif;color:var(--text)}
+.step .sd{font:400 12px/1.4 var(--ui),system-ui,sans-serif;color:var(--dim)}
+.step .sp{font:400 11px/1.5 var(--mono),Consolas,monospace;color:var(--dim);margin-top:2px}
+.step .sp b{font-weight:500;color:var(--text)}
+.step .dot{align-self:center;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:12px}
+.btns{display:flex;gap:8px;margin-top:14px;align-items:center}
+.btns .btn{font:600 13px/1 var(--ui),system-ui,sans-serif;color:#fff;background:var(--accent);border-radius:5px;padding:8px 12px}
+.btns .btn2{font:600 13px/1 var(--ui),system-ui,sans-serif;color:var(--accent);background:#fff;border:1px solid var(--accent);border-radius:5px;padding:7px 12px}
+.btns .id{font:400 12px/1 var(--mono),Consolas,monospace;color:var(--dim);margin-left:auto}
+.specs{font:12px/1.6 "JetBrains Mono",Consolas,monospace;color:var(--dim);margin-top:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+@media (max-width:900px){.grid3{grid-template-columns:1fr}}
+.mini{background:#fff;border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.mini svg{color:var(--accent);vertical-align:-4px;margin-right:6px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="m1" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M2 22V9h6.5V3h7v9H22v10ZM8.35 15.5h1.8a2.1 2.1 0 0 1 3.7 0h1.8a2.1 2.1 0 1 1 0 2h-1.8a2.1 2.1 0 0 1-3.7 0h-1.8a2.1 2.1 0 1 1 0-2Z"/></symbol>
+  <symbol id="m2" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></symbol>
+  <symbol id="m3" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3.4L19.79 7.9V16.9L12 21.4L4.21 16.9V7.9ZM12 5.4L5.94 8.9V15.9L12 19.4L18.06 15.9V8.9ZM11 12.4h2v9h-2ZM12.5 13.27L11.5 11.53L19.29 7.03L20.29 8.77ZM12.5 11.53L11.5 13.27L3.71 8.77L4.71 7.03ZM9.8 3.4a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM17.59 7.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM17.59 16.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM9.8 21.4a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM2.01 16.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM2.01 7.9a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0ZM9.8 12.4a2.2 2.2 0 1 1 4.4 0a2.2 2.2 0 1 1-4.4 0Z"/></symbol>
+  <symbol id="m0" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 21 7v10l-9 5-9-5V7Zm0 2.3L5.4 8 12 11.7 18.6 8Zm-7 5.4v6.1l6 3.3v-6.1Zm14 0-6 3.3v6.1l6-3.3Z"/></symbol>
+</svg>
+<main>
+<h1>BimOpenFlow brand proposals</h1>
+<p class="sub">Three marks and two font pairings for the studio's command bar (22 px mark, 15 px wordmark), favicon (16 px) and start page (48 px). Palette as in the studio: accent #2f66ce, text #171a1f, dim #5a606c. The current isometric cube is shown for reference.</p>
+
+<section class="card rec">
+  <h3>Recommendation</h3>
+  <p>Take mark 3, <b>Wired Block</b>, with pairing A, <b>Space Grotesk + Inter + JetBrains Mono</b>. The Wired Block keeps the isometric cube people already see in the command bar, but draws it the way the product works: vertices are nodes, edges are wires, and the open frame says the tables are not locked away; it is the only one of the three whose 16 px favicon still reads as a distinct shape rather than a blob with holes. Pairing A changes one font only: Inter stays for every button and table cell, so nothing in the studio moves, while Space Grotesk gives the wordmark a squarer, more engineered outline that the geometric mark sits well beside. If the wordmark should stay quieter, pairing B (Instrument Sans with IBM Plex) is the calmer fallback at the cost of swapping the UI face.</p>
+  <ul class="notes">
+    <li>Mark 1, Block Flow, is the strongest at 48 px and above and the weakest at 16 px, where its three cut-out nodes close up.</li>
+    <li>Mark 2, Rows to Flow, explains the product best on a start page but looks like a generic merge icon in a tab strip.</li>
+  </ul>
+</section>
+
+<h2>1. Logo concepts</h2>
+
+<section class="card">
+  <h3>Reference: the current mark</h3>
+  <div class="sizes light">
+    <figure><svg width="16" height="16"><use href="#m0"/></svg><figcaption>16</figcaption></figure>
+    <figure><svg width="22" height="22"><use href="#m0"/></svg><figcaption>22</figcaption></figure>
+    <figure><svg width="48" height="48"><use href="#m0"/></svg><figcaption>48</figcaption></figure>
+  </div>
+  <p class="notes" style="margin-top:8px">A plain isometric cube: a building block, nothing about tables or flow. Any of the three proposals below drops into the same slot as a single path in accent blue.</p>
+</section>
+
+<!-- Concept 1 -->
+<section class="card">
+  <h3>Mark 1: Block Flow</h3>
+  <p class="file">mark-1-block-flow.svg, lockup-1-block-flow.svg (single fill, fill-rule evenodd)</p>
+  <p class="idea">A stepped block silhouette, three volumes of different heights standing for a building, with a wire cut straight through it: three nodes joined in a row. The building is the data, the wire is the question passing through it. The nodes are negative space, so the mark is one path in one colour and works reversed on the accent. Below 22 px the cut-outs narrow to a dotted line, which is honest about how it will look as a favicon.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#m1"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#m1"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#m1"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#m1"/></svg><figcaption>96</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#m1"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#m1"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#m1"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#m1"/></svg><figcaption>96</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#m1"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#m1"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#m1" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+</section>
+
+<!-- Concept 2 -->
+<section class="card">
+  <h3>Mark 2: Rows to Flow</h3>
+  <p class="file">mark-2-rows-to-flow.svg, lockup-2-rows-to-flow.svg (single fill, nonzero)</p>
+  <p class="idea">The abstract concept: three table rows on the left, their wires bending into one node on the right. It draws the product's claim, tables are the currency and a graph turns them into an answer, without a building at all, which suits the toolkit's non-architectural users (developers, the MCP agent). The curves are the only non-orthogonal geometry in the set and give the mark movement; the node is a full disc so it stays solid at 16 px. Its weakness is familiarity: as a tab icon it can pass for a generic "merge" or "git" glyph.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#m2"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#m2"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#m2"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#m2"/></svg><figcaption>96</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#m2"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#m2"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#m2"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#m2"/></svg><figcaption>96</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#m2"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#m2"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#m2" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+</section>
+
+<!-- Concept 3 -->
+<section class="card">
+  <h3>Mark 3: Wired Block</h3>
+  <p class="file">mark-3-wired-block.svg, lockup-3-wired-block.svg (single fill, nonzero; all subpaths wound clockwise so overlaps stay solid)</p>
+  <p class="idea">The existing isometric cube redrawn as a graph: its seven visible vertices become nodes and its nine edges become wires, so the block is hollow and open, an outline you can see through to the data inside. It keeps continuity with what people already see in the command bar and in the 3D pane, and it is the mark that survives 16 px best, because the outer hexagon holds the shape even when the nodes shrink to bumps. At 48 px and up the nodes read clearly and the mark could take a second colour on the centre node (a pack hue, or green for "every node green") without a second path.</p>
+  <div class="row2">
+    <div class="sizes light">
+      <figure><svg width="16" height="16"><use href="#m3"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#m3"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#m3"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#m3"/></svg><figcaption>96</figcaption></figure>
+    </div>
+    <div class="sizes dark">
+      <figure><svg width="16" height="16"><use href="#m3"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22"><use href="#m3"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48"><use href="#m3"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96"><use href="#m3"/></svg><figcaption>96</figcaption></figure>
+    </div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#m3"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#m3"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)" style="color:var(--accent)"><use href="#m3" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+  <div class="grid3">
+    <div class="mini"><svg width="22" height="22"><use href="#m3"/></svg>Accent kept: #2f66ce<div class="pal"><span style="background:#2f66ce"></span><span style="background:#171a1f"></span><span style="background:#5a606c"></span><span style="background:#f4f5f7;border:1px solid #e2e5ea"></span></div></div>
+    <div class="mini" style="color:#0d9488"><svg width="22" height="22"><use href="#m3" style="color:#0d9488"/></svg><span style="color:var(--text)">Teal variant (pack hue) if the accent is replaced</span><div class="pal"><span style="background:#0d9488"></span><span style="background:#171a1f"></span><span style="background:#5a606c"></span><span style="background:#f4f5f7;border:1px solid #e2e5ea"></span></div></div>
+    <div class="mini"><svg width="22" height="22"><use href="#m3" style="color:#171a1f"/></svg>Ink variant for print and monochrome<div class="pal"><span style="background:#171a1f"></span><span style="background:#5a606c"></span><span style="background:#e2e5ea"></span><span style="background:#fff;border:1px solid #e2e5ea"></span></div></div>
+  </div>
+</section>
+
+<h2>2. Font pairings</h2>
+<p class="notes">Each block shows the wordmark at 15 px bold beside the mark, a page heading at 18 px, body text at 13 px, a step row (title 13 px, description 12 px, parameter line 11 px monospace) and button labels at 13 px 600. Fonts come from fonts.googleapis.com; Consolas is the system fallback that the current studio uses.</p>
+
+<!-- Baseline -->
+<section class="card pair">
+  <h3>Baseline (current): Inter for everything, Consolas for monospace</h3>
+  <p>What the studio ships today. Inter is a fine UI face and disappears at 13 px, which is the point; the wordmark in Inter Bold is the weakness, since it is the same face as every button label and has no identity of its own. Consolas is Windows-only, so the monospace lines look different on a Mac or in CI screenshots.</p>
+  <div class="specs">wordmark Inter 700 · ui Inter · mono Consolas</div>
+  <div class="sample">
+    <div class="bar"><svg width="22" height="22"><use href="#m3"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+    <div class="body">
+      <div class="h">Doors per storey, Snowdon</div>
+      <p class="t">Each step reads a table, joins or filters it, and hands the rows on. Select a step to see its rows and the wire that feeds it; nothing is written to disk until you press Run.</p>
+      <div class="steps">
+        <div class="step"><div class="stripe"></div><div class="in"><div class="st">Read the Doors table</div><div class="sd">All 142 door instances with their storey and type</div><div class="sp">duck.query · <b>table</b>=Doors · <b>limit</b>=null</div></div><div class="dot"></div></div>
+        <div class="step q"><div class="stripe"></div><div class="in"><div class="st">Count doors on each storey</div><div class="sd">Groups by storey name, keeps the count and the storey elevation</div><div class="sp">sql.query · <b>sql</b>="select storey, count(*) as doors from t group by 1"</div></div><div class="dot"></div></div>
+        <div class="step s"><div class="stripe"></div><div class="in"><div class="st">Chart doors by storey</div><div class="sd">A bar per storey, sorted by elevation</div><div class="sp">chart.bar · <b>x</b>=storey · <b>y</b>=doors · <b>node</b>=n_7f3a</div></div><div class="dot"></div></div>
+      </div>
+      <div class="btns"><span class="btn">Run</span><span class="btn2">Add a chart</span><span class="id">analysis snowdon-doors-per-storey · 3 steps</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Pairing A -->
+<section class="card pair A">
+  <h3>Pairing A: Space Grotesk (wordmark and page headings) + Inter (UI) + JetBrains Mono</h3>
+  <p>Space Grotesk has squared bowls and a flat-sided "O" and "p" that match the isometric geometry of the marks; at 15 px bold "BimOpenFlow" reads as a name rather than a label. It is used only for the wordmark and the page heading, so Inter keeps every table cell, button and step title exactly as they are today, and the change costs one font file. JetBrains Mono replaces Consolas: it is the same on every platform, its zero is slashed, and at 11 px its letterforms stay open, which matters on the parameter line where <span style="font:11px 'JetBrains Mono',monospace">limit=null</span> and <span style="font:11px 'JetBrains Mono',monospace">n_7f3a</span> must be read exactly.</p>
+  <div class="specs">wordmark Space Grotesk 700 · headings Space Grotesk 500/700 or Inter 600 · ui Inter · mono JetBrains Mono</div>
+  <div class="sample">
+    <div class="bar"><svg width="22" height="22"><use href="#m3"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+    <div class="body">
+      <div class="h wm">Doors per storey, Snowdon</div>
+      <p class="t">Each step reads a table, joins or filters it, and hands the rows on. Select a step to see its rows and the wire that feeds it; nothing is written to disk until you press Run.</p>
+      <div class="steps">
+        <div class="step"><div class="stripe"></div><div class="in"><div class="st">Read the Doors table</div><div class="sd">All 142 door instances with their storey and type</div><div class="sp">duck.query · <b>table</b>=Doors · <b>limit</b>=null</div></div><div class="dot"></div></div>
+        <div class="step q"><div class="stripe"></div><div class="in"><div class="st">Count doors on each storey</div><div class="sd">Groups by storey name, keeps the count and the storey elevation</div><div class="sp">sql.query · <b>sql</b>="select storey, count(*) as doors from t group by 1"</div></div><div class="dot"></div></div>
+        <div class="step s"><div class="stripe"></div><div class="in"><div class="st">Chart doors by storey</div><div class="sd">A bar per storey, sorted by elevation</div><div class="sp">chart.bar · <b>x</b>=storey · <b>y</b>=doors · <b>node</b>=n_7f3a</div></div><div class="dot"></div></div>
+      </div>
+      <div class="btns"><span class="btn">Run</span><span class="btn2">Add a chart</span><span class="id">analysis snowdon-doors-per-storey · 3 steps</span></div>
+    </div>
+  </div>
+  <div class="row2" style="margin-top:12px">
+    <div class="mini"><span style="font:700 15px 'Space Grotesk'">BimOpenFlow</span> &nbsp; <span style="font:700 15px 'Space Grotesk';color:var(--dim)">Bim</span><span style="font:700 15px 'Space Grotesk'">OpenFlow</span> &nbsp; <span style="font:500 15px 'Space Grotesk'">BIM Open Flow</span><div class="notes">Wordmark variants: one weight, a dim "Bim" prefix, or the spaced form.</div></div>
+    <div class="mini"><span style="font:400 12px 'JetBrains Mono'">0O 1lI n_7f3a {DUCKDB} sql.query limit=null 0.850</span><div class="notes">JetBrains Mono at 12 px: distinct zero, one and lower-case L.</div></div>
+  </div>
+</section>
+
+<!-- Pairing B -->
+<section class="card pair B">
+  <h3>Pairing B: Instrument Sans (wordmark) + IBM Plex Sans (UI) + IBM Plex Mono</h3>
+  <p>The calmer option. Instrument Sans is a grotesque with slightly narrow, even letters; at 15 px bold it is quieter than Space Grotesk and closer to an engineering title block than to a start-up header. IBM Plex Sans replaces Inter throughout: it has a little more contrast and a more open "a" and "g", which makes 12 px descriptions on the dim colour easier to read, and it ships with a sibling monospace, so parameter lines and body text share x-height and weight and a step row looks like one typeface in two cuts. The cost is that every UI string changes width by a few percent, so the studio's layouts would need one pass for wrapping.</p>
+  <div class="specs">wordmark Instrument Sans 700 · headings IBM Plex Sans 600 · ui IBM Plex Sans · mono IBM Plex Mono</div>
+  <div class="sample">
+    <div class="bar"><svg width="22" height="22"><use href="#m3"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+    <div class="body">
+      <div class="h">Doors per storey, Snowdon</div>
+      <p class="t">Each step reads a table, joins or filters it, and hands the rows on. Select a step to see its rows and the wire that feeds it; nothing is written to disk until you press Run.</p>
+      <div class="steps">
+        <div class="step"><div class="stripe"></div><div class="in"><div class="st">Read the Doors table</div><div class="sd">All 142 door instances with their storey and type</div><div class="sp">duck.query · <b>table</b>=Doors · <b>limit</b>=null</div></div><div class="dot"></div></div>
+        <div class="step q"><div class="stripe"></div><div class="in"><div class="st">Count doors on each storey</div><div class="sd">Groups by storey name, keeps the count and the storey elevation</div><div class="sp">sql.query · <b>sql</b>="select storey, count(*) as doors from t group by 1"</div></div><div class="dot"></div></div>
+        <div class="step s"><div class="stripe"></div><div class="in"><div class="st">Chart doors by storey</div><div class="sd">A bar per storey, sorted by elevation</div><div class="sp">chart.bar · <b>x</b>=storey · <b>y</b>=doors · <b>node</b>=n_7f3a</div></div><div class="dot"></div></div>
+      </div>
+      <div class="btns"><span class="btn">Run</span><span class="btn2">Add a chart</span><span class="id">analysis snowdon-doors-per-storey · 3 steps</span></div>
+    </div>
+  </div>
+  <div class="row2" style="margin-top:12px">
+    <div class="mini"><span style="font:700 15px 'Instrument Sans'">BimOpenFlow</span> &nbsp; <span style="font:700 15px 'Instrument Sans';color:var(--dim)">Bim</span><span style="font:700 15px 'Instrument Sans'">OpenFlow</span> &nbsp; <span style="font:600 15px 'Instrument Sans'">BIM Open Flow</span><div class="notes">Wordmark variants in Instrument Sans.</div></div>
+    <div class="mini"><span style="font:400 12px 'IBM Plex Mono'">0O 1lI n_7f3a {DUCKDB} sql.query limit=null 0.850</span><div class="notes">IBM Plex Mono at 12 px: dotted zero, serifed one and L.</div></div>
+  </div>
+</section>
+
+<h2>3. Files</h2>
+<section class="card">
+  <p class="file">proposals.html (this page)<br>mark-1-block-flow.svg · lockup-1-block-flow.svg<br>mark-2-rows-to-flow.svg · lockup-2-rows-to-flow.svg<br>mark-3-wired-block.svg · lockup-3-wired-block.svg</p>
+  <p class="notes">Every mark is one <code>&lt;path&gt;</code> in a 24 × 24 viewBox with a single fill, so its <code>d</code> attribute can replace the cube's path in the command-bar code as is. The lockups are 168 × 32 with the wordmark set in Space Grotesk via a Google Fonts import inside the SVG; the text falls back to Inter and then the system sans if the import is blocked.</p>
+</section>
+</main>
+</body>
+</html>

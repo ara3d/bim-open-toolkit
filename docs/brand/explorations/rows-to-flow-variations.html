@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rows to Flow: six variations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+:root{--bg:#f4f5f7;--surface:#fff;--text:#171a1f;--dim:#5a606c;--accent:#2f66ce;--line:#e2e5ea;--iso2:#1d479a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,sans-serif;padding:32px 16px 64px}
+main{max-width:1040px;margin:0 auto}
+h1{font:600 24px/1.2 Inter,system-ui,sans-serif;margin:0 0 4px}
+h2{font:600 18px/1.3 Inter,system-ui,sans-serif;margin:40px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font:600 15px/1.3 Inter,system-ui,sans-serif;margin:0 0 2px}
+h3 small{font-weight:500;color:var(--dim);margin-left:6px}
+p{margin:0 0 10px;max-width:76ch}
+.sub{color:var(--dim);margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:0 0 16px}
+.file{font:12px/1.4 "JetBrains Mono",Consolas,monospace;color:var(--dim);margin-bottom:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.row2{grid-template-columns:1fr}}
+.sizes{display:flex;gap:28px;align-items:flex-end;padding:18px 20px;border-radius:6px;margin-top:8px;flex-wrap:wrap}
+.sizes.light{background:#fff;border:1px solid var(--line);color:var(--accent);--iso2:#1d479a}
+.sizes.dark{background:var(--accent);color:#fff;--iso2:#b9cdf5}
+.sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.sizes figcaption{font:11px/1 "JetBrains Mono",Consolas,monospace;opacity:.75}
+.sizes svg{display:block}
+.bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:12px;color:var(--accent)}
+.bar .wm{font:700 15px/1 "Space Grotesk",Inter,system-ui,sans-serif;color:var(--text);letter-spacing:-0.01em}
+.bar .sep{flex:1}
+.bar .btn{font:600 13px/1 Inter,system-ui,sans-serif;color:#fff;background:var(--accent);border-radius:5px;padding:7px 10px}
+.bar .ghost{font:500 13px/1 Inter,system-ui,sans-serif;color:var(--dim);padding:7px 10px}
+.favrow{display:flex;gap:14px;align-items:center;margin-top:10px;font-size:12px;color:var(--dim)}
+.tab{display:inline-flex;align-items:center;gap:6px;background:#e8eaef;border-radius:6px 6px 0 0;padding:6px 12px;font:12px/1 Inter,system-ui,sans-serif;color:var(--text)}
+.tab svg{color:var(--accent)}
+.lockup{margin-top:12px;padding:16px;background:#fff;border:1px dashed var(--line);border-radius:6px;display:inline-block;color:var(--accent)}
+.lockup svg{display:block}
+.weak{margin-top:12px;padding:8px 12px;background:#fff7ed;border-left:3px solid #ea7918;font-size:13px;color:var(--text);max-width:none}
+.weak b{color:#9a4a0a}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--dim);font-size:12px}
+td svg{color:var(--accent);vertical-align:-5px;margin-right:6px}
+td.n{font:12px "JetBrains Mono",Consolas,monospace;color:var(--dim)}
+.pick{border-left:4px solid var(--accent)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="a" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h13v3H2ZM2 10.5h13v3H2ZM2 19h13v3H2ZM12 2h3v20h-3ZM15 12a3.5 3.5 0 1 1 7 0a3.5 3.5 0 1 1-7 0Z"/></symbol>
+  <symbol id="b" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3.8h7v2.4H3ZM10.85 4.15L17.85 11.15L16.15 12.85L9.15 5.85ZM3 10.8h15v2.4H3ZM3 17.8h7v2.4H3ZM9.15 18.15L16.15 11.15L17.85 12.85L10.85 19.85ZM8.8 5a1.2 1.2 0 1 1 2.4 0a1.2 1.2 0 1 1-2.4 0ZM8.8 19a1.2 1.2 0 1 1 2.4 0a1.2 1.2 0 1 1-2.4 0ZM1 5a2 2 0 1 1 4 0a2 2 0 1 1-4 0ZM1 12a2 2 0 1 1 4 0a2 2 0 1 1-4 0ZM1 19a2 2 0 1 1 4 0a2 2 0 1 1-4 0ZM16 12a3 3 0 1 1 6 0a3 3 0 1 1-6 0Z"/></symbol>
+  <symbol id="c" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h1.4v17H2ZM2 4.3h7v1.4H2ZM2 11.3h7v1.4H2ZM2 18.3h7v1.4H2ZM9.59 4.62L14.09 11.62L12.91 12.38L8.41 5.38ZM8.41 18.62L12.91 11.62L14.09 12.38L9.59 19.38ZM9 11.3h5v1.4H9ZM14 3h1.4v18H14ZM20.6 3h1.4v18h-1.4ZM14 3h8v1.4h-8ZM14 7.8h8v1.4h-8ZM14 12.3h8v1.4h-8ZM14 16.8h8v1.4h-8ZM12 21h11v2H12Z"/></symbol>
+  <symbol id="d" viewBox="0 0 24 24"><path fill="currentColor" d="M1 3h10v2H1ZM11 5h2v2h-2ZM13 7h2v2h-2ZM15 9h2v2h-2ZM1 11h16v2H1ZM1 19h10v2H1ZM11 17h2v2h-2ZM13 15h2v2h-2ZM15 13h2v2h-2ZM17 9h6v6h-6Z"/></symbol>
+  <symbol id="e" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3.7h6v2.6H2ZM2 10.7h11.3v2.6H2ZM2 17.7h6v2.6H2ZM8.92 4.08L14.5 9.66L12.66 11.5L7.08 5.92ZM7.08 18.08L12.66 12.5L14.5 14.34L8.92 19.92ZM6.7 5a1.3 1.3 0 1 1 2.6 0a1.3 1.3 0 1 1-2.6 0ZM6.7 19a1.3 1.3 0 1 1 2.6 0a1.3 1.3 0 1 1-2.6 0ZM12 12a5 5 0 1 1 10 0a5 5 0 1 1-10 0ZM14.6 12a2.4 2.4 0 1 0 4.8 0a2.4 2.4 0 1 0-4.8 0Z"/></symbol>
+  <symbol id="f" viewBox="0 0 24 24"><path fill="currentColor" d="M2 8L8.93 4L11.1 5.25L4.17 9.25ZM2 13L8.93 9L11.1 10.25L4.17 14.25ZM2 18L8.93 14L11.1 15.25L4.17 19.25ZM18 8L22.33 10.5L18 13L13.67 10.5Z"/><path fill="var(--iso2)" d="M2 8L4.17 9.25L4.17 10.45L2 9.2ZM4.17 9.25L11.1 5.25L11.1 6.45L4.17 10.45ZM2 13L4.17 14.25L4.17 15.45L2 14.2ZM4.17 14.25L11.1 10.25L11.1 11.45L4.17 15.45ZM2 18L4.17 19.25L4.17 20.45L2 19.2ZM4.17 19.25L11.1 15.25L11.1 16.45L4.17 20.45ZM13.67 10.5L18 13L18 18L13.67 15.5ZM18 13L22.33 10.5L22.33 15.5L18 18Z"/></symbol>
+</svg>
+<main>
+<h1>Rows to Flow: six variations</h1>
+<p class="sub">The same reading in every mark, table rows on the left becoming a flow that gathers into a node or a building on the right, drawn six times under six different influences. Accent #2f66ce on white and white on accent; the wordmark is Space Grotesk 700 at 15 px. Each mark is one path with one fill in a 24 × 24 viewBox, except the isometric one, which uses two fills as allowed.</p>
+
+<!-- 2a -->
+<section class="card">
+  <h3>2a: Swiss grid <small>Bauhaus / Swiss geometric</small></h3>
+  <div class="file">mark-2a-swiss.svg · lockup-2a-swiss.svg</div>
+  <p>Only two shapes, the rectangle and the circle, on a strict 24-unit grid with 3-unit strokes. Three row bars run into a vertical collector, the collector meets one circle. There is no curve except the node, no diagonal, and no element thinner than 3 units, so nothing is lost at any size. It is the most honest translation of the product's claim into geometry: rows, a bus, a result, and the restraint reads as engineering rather than decoration.</p>
+  <div class="row2">
+    <div class="sizes light"><figure><svg width="16" height="16"><use href="#a"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#a"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#a"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#a"/></svg><figcaption>96</figcaption></figure></div>
+    <div class="sizes dark"><figure><svg width="16" height="16"><use href="#a"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#a"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#a"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#a"/></svg><figcaption>96</figcaption></figure></div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#a"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#a"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)"><use href="#a" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+  <p class="weak"><b>Weakest at:</b> distinctiveness. The bars plus collector read as a capital E or a "list" icon, and the circle could be a bullet; it depends on the wordmark for identity.</p>
+</section>
+
+<!-- 2b -->
+<section class="card">
+  <h3>2b: Metro map <small>Transit diagram</small></h3>
+  <div class="file">mark-2b-metro.svg · lockup-2b-metro.svg</div>
+  <p>Three lines leave three termini, run straight, bend at exactly 45 degrees and arrive at one interchange. Line weight 2.4 units, terminus dots larger than the line, a joint dot at each bend so the corner is rounded the way Beck's London map rounds it. The metro vocabulary already means "many routes, one network" to anyone who has read a transit map, and the three lines could take the three pack hues on a start page without changing the geometry.</p>
+  <div class="row2">
+    <div class="sizes light"><figure><svg width="16" height="16"><use href="#b"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#b"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#b"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#b"/></svg><figcaption>96</figcaption></figure></div>
+    <div class="sizes dark"><figure><svg width="16" height="16"><use href="#b"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#b"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#b"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#b"/></svg><figcaption>96</figcaption></figure></div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#b"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#b"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)"><use href="#b" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+  <p class="weak"><b>Weakest at:</b> confusion with a known icon. Three lines merging into a dot is the git-merge and "fork" glyph in most icon sets; the terminus dots are the only thing that says metro, and they shrink to specks at 16 px.</p>
+</section>
+
+<!-- 2c -->
+<section class="card">
+  <h3>2c: Section drawing <small>Architectural drawing</small></h3>
+  <div class="file">mark-2c-drawing.svg · lockup-2c-drawing.svg</div>
+  <p>Drawn with one pen weight, 1.4 units, as an architect's section: on the left a schedule with a margin line and three rows, on the right a four-storey building in section with a roof, three slabs and a heavier ground line, and three thin leaders carrying the rows into the middle floor. It is the only variant where the right-hand element is a building rather than an abstract node, which puts BIM back in the picture, and it is the one an architect would recognise as their own drawing convention.</p>
+  <div class="row2">
+    <div class="sizes light"><figure><svg width="16" height="16"><use href="#c"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#c"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#c"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#c"/></svg><figcaption>96</figcaption></figure></div>
+    <div class="sizes dark"><figure><svg width="16" height="16"><use href="#c"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#c"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#c"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#c"/></svg><figcaption>96</figcaption></figure></div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#c"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#c"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)"><use href="#c" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+  <p class="weak"><b>Weakest at:</b> small-size legibility. A 1.4-unit line is under one pixel at 16 px, so the favicon is a grey smudge with a ladder in it; this mark works from 48 px upward and on paper.</p>
+</section>
+
+<!-- 2d -->
+<section class="card">
+  <h3>2d: Terminal <small>Pixel / terminal</small></h3>
+  <div class="file">mark-2d-pixel.svg · lockup-2d-pixel.svg</div>
+  <p>Everything sits on a 12 × 12 grid of 2-unit cells. The rows are runs of cells, the flow is a staircase of single cells stepping one cell down and one cell right per step, the node is a solid 3 × 3 block. There are no curves and no diagonals, only cells, so the mark is identical at every integer multiple of 12 px and never antialiases at 24 or 48. It speaks to the developer and MCP side of the audience, the people who meet BimOpenFlow in a terminal first.</p>
+  <div class="row2">
+    <div class="sizes light"><figure><svg width="16" height="16"><use href="#d"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#d"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#d"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#d"/></svg><figcaption>96</figcaption></figure></div>
+    <div class="sizes dark"><figure><svg width="16" height="16"><use href="#d"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#d"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#d"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#d"/></svg><figcaption>96</figcaption></figure></div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#d"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#d"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)"><use href="#d" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+  <p class="weak"><b>Weakest at:</b> tone. The staircase cells say retro game or Tetris before they say building data, and at 22 px (not a multiple of 12) the single cells blur into the diagonal they were meant to replace.</p>
+</section>
+
+<!-- 2e -->
+<section class="card">
+  <h3>2e: O for Open <small>Monogram / letterform</small></h3>
+  <div class="file">mark-2e-monogram.svg · lockup-2e-monogram.svg</div>
+  <p>The node is a letter: a geometric O with a stroke the same 2.6 units as the rows, so the mark is one monoline figure. Three rows leave the left edge, the outer two turn through 45 degrees, and all three stop inside the ring's band, so the O is also the hub. Read left to right it is a schedule becoming an Open result; read as a glyph it is the O of OpenFlow and could sit alone as a favicon the way a single letter does. It is the variant that most looks like a brand rather than an icon.</p>
+  <div class="row2">
+    <div class="sizes light"><figure><svg width="16" height="16"><use href="#e"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#e"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#e"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#e"/></svg><figcaption>96</figcaption></figure></div>
+    <div class="sizes dark"><figure><svg width="16" height="16"><use href="#e"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#e"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#e"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#e"/></svg><figcaption>96</figcaption></figure></div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#e"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#e"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)"><use href="#e" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+  <p class="weak"><b>Weakest at:</b> the hole. The ring's 2.4-unit counter is 1.6 px at 16 px and can fill in on a low-density screen, at which point the mark becomes variant 2b with a fatter dot; it also sits close to the "power" and "target" glyph families.</p>
+</section>
+
+<!-- 2f -->
+<section class="card">
+  <h3>2f: Slabs and block <small>Isometric / solid (two fills)</small></h3>
+  <div class="file">mark-2f-isometric.svg · lockup-2f-isometric.svg · fills #2f66ce and #1d479a (reversed: white and #b9cdf5)</div>
+  <p>Rows become physical: three thin slabs stacked in true 30-degree isometric, their long axis pointing at a solid cube on the right. Top faces take the accent, the two visible sides take a darker blue, so the pair of fills does the work that outlines would do. It is the one variant with depth and the one that most resembles the building blocks of the current cube mark, so it would be the smoothest handover from today's command bar; the slabs also recall storeys, which keeps the building in the metaphor without drawing one.</p>
+  <div class="row2">
+    <div class="sizes light"><figure><svg width="16" height="16"><use href="#f"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#f"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#f"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#f"/></svg><figcaption>96</figcaption></figure></div>
+    <div class="sizes dark"><figure><svg width="16" height="16"><use href="#f"/></svg><figcaption>16</figcaption></figure><figure><svg width="22" height="22"><use href="#f"/></svg><figcaption>22</figcaption></figure><figure><svg width="48" height="48"><use href="#f"/></svg><figcaption>48</figcaption></figure><figure><svg width="96" height="96"><use href="#f"/></svg><figcaption>96</figcaption></figure></div>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#f"/></svg><span class="wm">BimOpenFlow</span><span class="sep"></span><span class="ghost">Open</span><span class="ghost">Templates</span><span class="btn">Run</span></div>
+  <div class="favrow"><span class="tab"><svg width="16" height="16"><use href="#f"/></svg>BimOpenFlow studio</span> browser tab at 16 px</div>
+  <div class="lockup"><svg viewBox="0 0 168 32" width="336" height="64"><g transform="translate(4 4)"><use href="#f" width="24" height="24"/></g><text x="36" y="21.5" style="font:700 15px 'Space Grotesk',Inter,sans-serif;fill:var(--text);letter-spacing:-0.01em">BimOpenFlow</text></svg></div>
+  <p class="weak"><b>Weakest at:</b> the flow. Nothing joins the slabs to the cube, so the "gathering" is implied by direction only, and the 1.2-unit slab edges vanish at 16 px, leaving three stripes beside a hexagon; it also needs two colours, so it cannot be a single path in code.</p>
+</section>
+
+<h2>Ranking and pick</h2>
+<section class="card">
+  <table>
+    <tr><th>Favicon legibility (16 px)</th><th>Distinctiveness</th></tr>
+    <tr><td><svg width="16" height="16"><use href="#a"/></svg>1. 2a Swiss grid: 3-unit strokes, nothing thinner</td><td><svg width="16" height="16"><use href="#e"/></svg>1. 2e O for Open: a letterform, not an icon</td></tr>
+    <tr><td><svg width="16" height="16"><use href="#d"/></svg>2. 2d Terminal: built on the pixel grid</td><td><svg width="16" height="16"><use href="#c"/></svg>2. 2c Section drawing: nobody else draws a schedule as a section</td></tr>
+    <tr><td><svg width="16" height="16"><use href="#e"/></svg>3. 2e O for Open: holds if the counter stays open</td><td><svg width="16" height="16"><use href="#f"/></svg>3. 2f Slabs and block: the only one with depth</td></tr>
+    <tr><td><svg width="16" height="16"><use href="#b"/></svg>4. 2b Metro map: lines fine, termini vanish</td><td><svg width="16" height="16"><use href="#d"/></svg>4. 2d Terminal: memorable, but memorable as a game</td></tr>
+    <tr><td><svg width="16" height="16"><use href="#f"/></svg>5. 2f Slabs and block: slab edges vanish</td><td><svg width="16" height="16"><use href="#b"/></svg>5. 2b Metro map: shares a silhouette with git-merge</td></tr>
+    <tr><td><svg width="16" height="16"><use href="#c"/></svg>6. 2c Section drawing: sub-pixel lines</td><td><svg width="16" height="16"><use href="#a"/></svg>6. 2a Swiss grid: reads as E plus bullet</td></tr>
+  </table>
+  <p class="pick" style="margin-top:16px;padding:10px 14px;background:#fff;max-width:none"><b>Pick: 2e, O for Open</b>, with 2a as the fallback. 2e is the only variant that places in the top three on both criteria: the ring is a 10-unit shape that survives 16 px, and the letter gives the mark a meaning ("Open") that none of the merge-shaped variants has, so it does not need the wordmark to be itself. 2a wins outright on legibility and is the cheapest to build and to draw by hand on a whiteboard, which is why it is the fallback if the O's counter proves to fill in on the owner's screens. 2c and 2f are the ones to keep for a start page or a paper figure at 96 px, where their detail pays off, but neither should be the favicon.</p>
+</section>
+</main>
+</body>
+</html>

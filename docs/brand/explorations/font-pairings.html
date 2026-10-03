@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BimOpenFlow font pairings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500&family=Sora:wght@500;600;700&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f4f5f7; --surface:#fff; --border:#e3e6ea; --border2:#cfd4db; --text:#171a1f; --dim:#5a606c; --accent:#2f66ce; --soft:#e8eefb; --green:#16a34a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 Inter, system-ui, sans-serif; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font: 700 26px/1.2 Inter, sans-serif; margin: 0 0 6px; }
+  .lead { color: var(--dim); margin: 0 0 28px; max-width: 760px; }
+  .toc { display:flex; flex-wrap:wrap; gap:8px; margin: 0 0 28px; }
+  .toc a { font-size:12px; padding:4px 10px; border:1px solid var(--border2); border-radius:999px; color:var(--text); text-decoration:none; background:var(--surface); }
+  .toc a:hover { border-color: var(--accent); }
+
+  .pair { background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 0; margin: 0 0 24px; overflow:hidden; }
+  .pair-head { display:grid; grid-template-columns: 1fr 300px; gap: 24px; padding: 18px 22px; border-bottom:1px solid var(--border); }
+  .pair-head h2 { margin:0 0 4px; font: 600 16px/1.3 Inter, sans-serif; }
+  .pair-head .faces { font-size:12px; color:var(--dim); }
+  .pair-head .faces b { color: var(--text); font-weight: 600; }
+  .pair-head p { margin: 8px 0 0; color: var(--dim); font-size: 13px; }
+  .verdict { font-size: 12px; color: var(--dim); border-left: 2px solid var(--border2); padding-left: 14px; align-self:start; }
+  .verdict b { color: var(--text); display:block; margin-bottom: 2px; }
+
+  /* each pairing sets three variables; everything below uses them */
+  .sample { font-family: var(--ui); font-size:13px; }
+  .bar { display:flex; align-items:center; gap:12px; height:52px; padding:0 16px; border-bottom:1px solid var(--border); }
+  .brand { display:flex; align-items:center; gap:8px; color:var(--accent); }
+  .brand svg { width:22px; height:22px; fill:currentColor; }
+  .wordmark { font-family: var(--wm); font-weight: 700; font-size: 15px; letter-spacing: -0.01em; color: var(--text); }
+  .flow { margin-left: 10px; display:flex; flex-direction:column; }
+  .flow .title { font-family: var(--wm); font-weight:600; font-size:18px; line-height:1.2; }
+  .flow .meta { font-size:11px; color:var(--dim); font-family: var(--mono); }
+  .spacer { flex:1; }
+  .btn { height:32px; padding:0 12px; border-radius:6px; border:1px solid var(--border2); background:#fff; font: 600 13px/1 var(--ui); color: var(--text); display:inline-flex; align-items:center; gap:6px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color:#fff; }
+  .conn { font-size:12px; color:var(--dim); display:flex; align-items:center; gap:6px; }
+  .conn i { width:8px;height:8px;border-radius:50%;background:var(--green); display:inline-block; }
+
+  .body { display:grid; grid-template-columns: 300px 1fr 300px; }
+  .col { padding: 14px 16px; }
+  .col + .col { border-left: 1px solid var(--border); }
+  .seg { display:flex; padding:3px; background:#eceff3; border-radius:8px; margin-bottom: 12px; }
+  .seg span { flex:1; text-align:center; font: 600 12px/1 var(--ui); padding:6px; border-radius:6px; color:var(--dim); }
+  .seg span.on { background:#fff; color:var(--text); box-shadow:0 1px 2px rgba(16,24,40,.1); }
+  .step { display:grid; grid-template-columns: 22px 1fr; gap: 1px 8px; padding: 7px 8px; border-radius: 8px; }
+  .step.sel { background: var(--soft); }
+  .step .n { width:22px;height:22px;border-radius:50%;background:#eceff3;color:var(--dim);font: 600 11px/22px var(--ui); text-align:center; grid-row: span 4; }
+  .step.sel .n { background:var(--accent); color:#fff; }
+  .step .t { font-weight:600; font-size:13px; }
+  .step .t small { font-family: var(--mono); font-weight:400; font-size:11px; color:var(--dim); margin-left:4px; }
+  .step .d { font-size:12px; color:var(--text); opacity:.85; }
+  .step .p { font: 11px var(--mono); color: var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .step .m { font-size:11px; color:var(--dim); }
+  .pill { display:inline-block; padding:1px 7px; border-radius:999px; font-weight:600; font-size:10.5px; background:#dcfce7; color:#15803d; }
+  .h { font-family: var(--wm); font-weight: 600; font-size: 18px; margin: 0 0 4px; }
+  .sub { color:var(--dim); font-size: 13px; margin: 0 0 12px; }
+  table { border-collapse: collapse; width:100%; font-size: 12.5px; }
+  th { text-align:left; font-weight:600; color:var(--dim); font-size:11px; text-transform: uppercase; letter-spacing:.05em; padding: 6px 8px; border-bottom:1px solid var(--border); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td.num, td.id { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  td.num { text-align:right; }
+  .para { font-size:13px; color: var(--text); margin: 0 0 10px; }
+  .tabs { display:flex; gap:14px; border-bottom:1px solid var(--border); margin-bottom:10px; }
+  .tabs span { font: 600 12px/1 var(--ui); padding: 6px 2px 8px; color:var(--dim); border-bottom:2px solid transparent; }
+  .tabs span.on { color:var(--accent); border-bottom-color:var(--accent); }
+  .ask { display:flex; gap:8px; margin-bottom: 12px; }
+  .ask input { flex:1; font: 13px var(--ui); padding:7px 10px; border:1px solid var(--border2); border-radius:6px; }
+  .ask .btn { height: 32px; }
+  .log { font-size:12px; color:var(--dim); }
+  .log .tool { font: 11px var(--mono); }
+  .alphabet { font-size: 20px; line-height: 1.3; margin: 10px 0 0; word-break: break-all; }
+  .alphabet.wm { font-family: var(--wm); font-weight:600; }
+  .alphabet.mono { font-family: var(--mono); font-size: 14px; }
+  .label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin-top: 10px; }
+
+  .p0 { --wm: Inter, sans-serif; --ui: Inter, sans-serif; --mono: Consolas, "Cascadia Mono", monospace; }
+  .p1 { --wm: "Space Grotesk", sans-serif; --ui: Inter, sans-serif; --mono: "JetBrains Mono", monospace; }
+  .p2 { --wm: "Instrument Sans", sans-serif; --ui: "IBM Plex Sans", sans-serif; --mono: "IBM Plex Mono", monospace; }
+  .p3 { --wm: Manrope, sans-serif; --ui: Manrope, sans-serif; --mono: "Fira Code", monospace; }
+  .p4 { --wm: Sora, sans-serif; --ui: "Source Sans 3", sans-serif; --mono: "Source Code Pro", monospace; }
+  .p5 { --wm: Archivo, sans-serif; --ui: "Public Sans", sans-serif; --mono: "Roboto Mono", monospace; }
+  .p6 { --wm: Fraunces, serif; --ui: "DM Sans", sans-serif; --mono: "DM Mono", monospace; }
+  .p7 { --wm: "Space Mono", monospace; --ui: "Work Sans", sans-serif; --mono: "Space Mono", monospace; }
+  .p6 .wordmark { font-weight: 600; letter-spacing: 0; font-size: 17px; }
+  .p7 .wordmark { font-weight: 700; letter-spacing: -0.03em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>BimOpenFlow font pairings</h1>
+  <p class="lead">Eight pairings, each rendered in the same studio frame: the command bar with the wordmark and the flow title, the step list, a table pane, and the Ask box. The first is the current setup for comparison. Each pairing names a wordmark face (also used for page headings), an interface face, and a monospace for ids, parameters, and numbers.</p>
+  <div class="toc">
+    <a href="#p0">0 Baseline</a><a href="#p1">1 Geometric</a><a href="#p2">2 Engineering</a><a href="#p3">3 One family</a><a href="#p4">4 Humanist</a><a href="#p5">5 Civic</a><a href="#p6">6 Journal serif</a><a href="#p7">7 All mono</a>
+  </div>
+
+  <script>
+  const MARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h6v3H3zm0 5.5h6v3H3zM3 16h6v3H3zm7-11.5h1.5c2.6 0 3.5 1.2 4.4 3.1l.3.6c.5 1 1 1.6 2.3 1.6V7l4 5-4 5v-1.8c-1.3 0-1.8.6-2.3 1.6l-.3.6c-.9 1.9-1.8 3.1-4.4 3.1H10v-2.5h1.5c1.5 0 1.9-.6 2.6-2l.3-.6c.3-.6.6-1.2 1-1.6-.4-.4-.7-1-1-1.6l-.3-.6c-.7-1.4-1.1-2-2.6-2H10z"/></svg>';
+  const pairings = [
+    { id:"p0", name:"0. Baseline: what the page uses today", faces:"<b>Inter</b> everywhere · <b>Consolas</b> for mono", why:"Inter is a fine interface face, which is why nothing looks wrong. The cost is that the wordmark, the headings, and the buttons all share one voice, so the brand has no handle, and Consolas exists only on Windows; a Mac or Linux visitor gets a different monospace.", verdict:"Reference only", vwhy:"Keep Inter for the interface if you want zero layout risk; change only what sits above it." },
+    { id:"p1", name:"1. Geometric: Space Grotesk + Inter + JetBrains Mono", faces:"Wordmark <b>Space Grotesk</b> · UI <b>Inter</b> · Mono <b>JetBrains Mono</b>", why:"Space Grotesk has squared bowls and a flat-sided a and g that echo node cards and sockets, so the wordmark reads as part of the diagram. Inter stays for every control, so nothing in the studio moves. JetBrains Mono has a tall x-height and clear 0/O and 1/l, which matters in ids like instanceIndex and in row counts.", verdict:"Lowest risk, clear gain", vwhy:"One new face in the chrome, one monospace swap; the interface is untouched." },
+    { id:"p2", name:"2. Engineering: Instrument Sans + IBM Plex Sans + IBM Plex Mono", faces:"Wordmark <b>Instrument Sans</b> · UI <b>IBM Plex Sans</b> · Mono <b>IBM Plex Mono</b>", why:"Plex was drawn for technical documentation: slightly narrow, generous spacing, a monospace cut from the same skeleton, so a parameter line and the sentence next to it feel related. Instrument Sans gives the wordmark a touch more character without leaving the grotesque family. The whole page reads calmer and more like an instrument than a web app.", verdict:"Calm and coherent", vwhy:"Swaps the interface face, so expect a pass over wrapping and button widths." },
+    { id:"p3", name:"3. One family: Manrope + Fira Code", faces:"Wordmark and UI <b>Manrope</b> · Mono <b>Fira Code</b>", why:"One variable family for everything, relying on weight alone to separate the wordmark from the body. Manrope is rounder and friendlier than Inter and a little wider, which suits the approachable goal, and Fira Code adds ligatures for arrows and comparisons in SQL parameters. The simplest pairing to maintain.", verdict:"Friendliest", vwhy:"Width costs horizontal room in the step list; the round forms can look soft next to hard canvas geometry." },
+    { id:"p4", name:"4. Humanist: Sora + Source Sans 3 + Source Code Pro", faces:"Wordmark <b>Sora</b> · UI <b>Source Sans 3</b> · Mono <b>Source Code Pro</b>", why:"Source Sans is the quiet workhorse of documentation sites, narrow enough that the step list and table columns gain room, with a monospace sibling drawn to match. Sora on top is a geometric with a strong, open O and a distinctive lowercase, so the wordmark stands apart while the interface recedes.", verdict:"Most room per pixel", vwhy:"Source Sans can look dated to some eyes; Sora's wide capitals need a slightly smaller wordmark size." },
+    { id:"p5", name:"5. Civic: Archivo + Public Sans + Roboto Mono", faces:"Wordmark <b>Archivo</b> · UI <b>Public Sans</b> · Mono <b>Roboto Mono</b>", why:"Public Sans is the US government's design-system face, chosen for forms and tables; it is plain, sturdy, and very legible at 11 and 12 px. Archivo is a grotesque with slightly compressed proportions and a firm vertical rhythm, which suits a compliance-and-evidence story. This pairing says 'standard, checkable, official' rather than 'startup'.", verdict:"Fits the compliance workflow", vwhy:"Deliberately unglamorous; the least distinctive wordmark of the set." },
+    { id:"p6", name:"6. Journal serif: Fraunces + DM Sans + DM Mono", faces:"Wordmark <b>Fraunces</b> · UI <b>DM Sans</b> · Mono <b>DM Mono</b>", why:"The one serif option. Fraunces is a soft, old-style display face at small optical sizes, giving the wordmark and page headings the feel of an architecture journal or a building's cornerstone plate; DM Sans and DM Mono are low-contrast geometrics that keep the interface modern. The contrast between the two is the point: the brand is architectural, the tool is precise.", verdict:"Most distinctive", vwhy:"A serif next to a geometric mark needs care; at 15 px the wordmark loses some detail and the headings become the real carrier." },
+    { id:"p7", name:"7. All mono: Space Mono + Work Sans", faces:"Wordmark and mono <b>Space Mono</b> · UI <b>Work Sans</b>", why:"Leans into the terminal and MCP side of the product: the wordmark is set in the same monospace as node ids, so 'BimOpenFlow' looks like something you could type. Work Sans is a wide, friendly grotesque that keeps the interface from feeling austere. This is the developer-facing extreme of the set.", verdict:"Developer flavour", vwhy:"Space Mono's quirky g and R draw attention; analysts may read the page as a programmer's tool." },
+  ];
+  const sample = (p) => `
+  <section class="pair ${p.id}" id="${p.id}">
+    <div class="pair-head">
+      <div><h2>${p.name}</h2><div class="faces">${p.faces}</div><p>${p.why}</p></div>
+      <div class="verdict"><b>${p.verdict}</b>${p.vwhy}</div>
+    </div>
+    <div class="sample">
+      <div class="bar">
+        <div class="brand">${MARK}<span class="wordmark">BimOpenFlow</span></div>
+        <div class="flow"><span class="title">Clash candidates</span><span class="meta">clash-candidates · 5 steps</span></div>
+        <span class="btn" style="border-color:transparent">+ New</span>
+        <span class="spacer"></span>
+        <span class="btn">Save</span><span class="btn primary">▶ Run</span><span class="btn" style="border-color:transparent">View</span>
+        <span class="conn"><i></i>Connected</span>
+      </div>
+      <div class="body">
+        <div class="col">
+          <div class="seg"><span class="on">Steps</span><span>Nodes</span></div>
+          <div class="step"><span class="n">1</span><span class="t">view3d.instances<small>inst</small></span><span class="d">Renderable instances of a model file as a table.</span><span class="p">path = duplex.ifc</span><span class="m"><span class="pill">Ok</span> · 714 rows</span></div>
+          <div class="step sel"><span class="n">2</span><span class="t">spatial.intersects<small>overlaps</small></span><span class="d">Emits one row per (a, b) pair whose boxes intersect.</span><span class="p">aKey = instanceIndex · bKey = instanceIndex</span><span class="m"><span class="pill">Ok</span> · 6,954 rows</span></div>
+          <div class="step"><span class="n">3</span><span class="t">table.aggregate<small>perElement</small></span><span class="d">Groups by the comma-separated groupBy columns.</span><span class="p">groupBy = A · aggregates = count(*) as overlaps</span><span class="m"><span class="pill">Ok</span> · 714 rows</span></div>
+        </div>
+        <div class="col">
+          <p class="h">Rooms per storey</p>
+          <p class="sub">Answer: table.aggregate (perStorey) · live graph output</p>
+          <div class="tabs"><span class="on">Table</span><span>Chart</span><span>Inspector</span></div>
+          <table><tr><th>Storey</th><th>Elevation</th><th>Rooms</th><th>Floor area</th></tr>
+            <tr><td>Level 01</td><td class="num">0.000</td><td class="num">12</td><td class="num">1,284.6</td></tr>
+            <tr><td>Level 02</td><td class="num">3.600</td><td class="num">14</td><td class="num">1,302.1</td></tr>
+            <tr><td>Roof</td><td class="num">7.200</td><td class="num">0</td><td class="num">—</td></tr></table>
+          <p class="para" style="margin-top:12px">A missing measure stays missing: no NULL turned into 0, no size read from a name. A verdict is the deterministic execution of an approved rule, and <b>approve</b>, <b>publish</b>, and <b>issue</b> stay human verbs.</p>
+          <div class="label">Wordmark face</div><div class="alphabet wm">BimOpenFlow ABCDEFGHIJKLM abcdefghijklm 0123456789</div>
+          <div class="label">Monospace</div><div class="alphabet mono">instanceIndex · 0O 1lI · count(*) as overlaps · &lt;= 850 mm</div>
+        </div>
+        <div class="col">
+          <div class="ask"><input value="Colour the doors by width"><span class="btn primary">Send</span></div>
+          <div class="log"><div><b>You:</b> Colour the doors by width</div><div class="tool">→ describeDatabase() · 14 tables</div><div class="tool">→ editGraph(addNode table.filter, connect …) · 3 edits</div><div><b>Agent:</b> Added a filter on category = IfcDoor and a view3d.color step on OverallWidth with the viridis map.</div><div><b>Done, checked</b> in 4 turns.</div></div>
+          <div class="label" style="margin-top:14px">Buttons</div>
+          <div style="display:flex;gap:6px;margin-top:6px"><span class="btn primary">▶ Run</span><span class="btn">Save</span><span class="btn">Fit</span><span class="btn">Tidy</span></div>
+        </div>
+      </div>
+    </div>
+  </section>`;
+  document.write(pairings.map(sample).join(""));
+  </script>
+</div>
+</body>
+</html>
