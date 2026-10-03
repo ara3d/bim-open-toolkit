@@ -30,6 +30,13 @@ describe("renderMarkdown: inline constructs", () => {
     expect(strong?.parentElement?.tagName).toBe("P");
   });
 
+  it("leaves underscores inside words literal and italicises _x_ at word boundaries", () => {
+    const abc = render("a_b_c and OperationalCarbon_kgCO2e_per_year");
+    expect(abc.querySelector("em")).toBeNull();
+    expect(abc.textContent).toBe("a_b_c and OperationalCarbon_kgCO2e_per_year");
+    expect(render("see _italic_, then (_more_).").querySelectorAll("em").length).toBe(2);
+  });
+
   it("renders *italic* and _italic_ as <em>", () => {
     const star = render("An *italic* word.").querySelector("em");
     expect(star?.textContent).toBe("italic");

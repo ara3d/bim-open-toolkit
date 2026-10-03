@@ -160,7 +160,11 @@ const INLINE_CODE_RE = /^`([^`]+)`/;
 const LINK_RE = /^\[([^\]]+)\]\(([^)\s]+)\)/;
 const BOLD_RE = /^\*\*(.+?)\*\*/;
 const ITALIC_STAR_RE = /^\*([^*\n]+)\*/;
-const ITALIC_UNDERSCORE_RE = /^_([^_\n]+)_/;
+// CommonMark: underscore emphasis opens and closes only at word boundaries,
+// so snake_case_names stay literal. The closing check is in the pattern; the
+// opening check (no letter or digit before) is in parseInline.
+const ITALIC_UNDERSCORE_RE = /^_([^_\n]+)_(?![\p{L}\p{N}])/u;
+const WORD_CHAR_RE = /[\p{L}\p{N}]/u;
 const HTTP_URL_RE = /^https?:\/\//i;
 
 /** Parses inline markdown (bold, italic, code, links) within one block's
@@ -202,7 +206,7 @@ function parseInline(text: string): Inline[] {
       continue;
     }
 
-    if ((m = rest.match(ITALIC_STAR_RE)) || (m = rest.match(ITALIC_UNDERSCORE_RE))) {
+    if ((m = rest.match(ITALIC_STAR_RE)) || (!(i > 0 && WORD_CHAR_RE.test(text[i - 1])) && (m = rest.match(ITALIC_UNDERSCORE_RE)))) {
       flush();
       nodes.push({ kind: "italic", children: parseInline(m[1]) });
       i += m[0].length;
