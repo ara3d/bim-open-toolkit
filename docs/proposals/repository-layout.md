@@ -41,13 +41,27 @@ Inside the toolkit, by tracked files:
 | `src/data` | 226 | The BOS reference implementation and the IFC stack (loader, mesher, editing, types, conversion to BOS and DuckDB, IDS) |
 | `plugins/` | 188 | Revit 2025 add-ins |
 | `samples/` | 137 | Sample graphs and data, including the NRC paper's |
-| `src/studio`, `src/mcp` | 61, 34 | The studio host and Ask box; two MCP (Model Context Protocol) servers |
+| `src/studio`, `src/mcp` | 61, 34 | The web studio's host and Ask box, an IFC question runner, and Ara 3D Studio scripts (see "Two meanings of studio" below); two MCP (Model Context Protocol) servers |
 | `apps/`, `tools/` | 11, 16 | BOS Browser; IFC type generator and workflow tools |
 
 Two coupling facts matter for any split:
 
 - 23 of the 27 `src/flow` projects depend only on the engine. Four depend on the toolkit's `src/data`: `Nodes.Bos`, `Nodes.BimAnalysis`, `Host` (which composes the `bim` profile), and `NodeDocs`.
 - Of the editor's eight web packages, only `panes` imports the viewer, in six files.
+
+### Two meanings of "studio"
+
+The word names two different things in this repository, and the first version of this proposal used it loosely.
+
+1. **The web studio.** This is the analyst's browser application: graph editor, tables, charts, Ask box, and 3D view. `PROJECT.md` calls it "the Snowdon DuckDB studio". Its code is spread over several folders:
+   - `src/studio/BimOpenFlow.Studio`: the server program `bimopenflow-studio`, which runs the graph host with the BIM node packs and the flow MCP server, and serves the Ask box;
+   - `src/studio/BimOpenFlow.Ask`: the Ask box's agent loop, over any in-process MCP server;
+   - `src/studio/BimOpenMcp.Ifc.Ask`: a command-line runner that answers a list of questions about one IFC file;
+   - the pages in `bimopenflow/web/packages/app` (`studio.html`, `duckdb.html`, `3d.html`) and the 3D pane;
+   - the notebook (section 5.1).
+2. **Ara 3D Studio.** This is the owner's separate desktop application, in its own `studio` repository, with a plug-in API. One project here exists for it: `src/studio/Ara3D.Studio.BimTools`, 26 files of Studio scripts (filters, room and level tools, door clearance, a room navigator). `BimOpenFlow.Studio` can also run inside Ara 3D Studio as well as on its own.
+
+In the rest of this proposal, "the analyst application" means the first. A future repository for it should not be called `bim-open-studio`, because readers would take it for Ara 3D Studio.
 
 ## 3. Requirements
 
@@ -106,9 +120,38 @@ C deserves a fair hearing. It is the fastest for the owner and for parallel agen
 | | `gratify`, `ara3d-dataflow`, `bim-open-schema`, `parakeet`, `ara3d-sdk` | Unchanged |
 | Utilities | One new repository, name in section 6.3 | `src/data`: the BOS reference implementation and the IFC stack, the IFC MCP server, the BOS Browser app, the IFC type generator |
 | | Optionally `bim-open-revit` | `plugins/` (Revit 2025 add-ins; a different platform and build) |
-| Integration | Stays in the toolkit at first | The studio host, the BIM node packs (`Nodes.Bos`, `Nodes.BimAnalysis`), the 3D pane, Snowdon and NRC samples and tests, gates, the paper's walkthrough |
+| Analyst application | Stays in the toolkit at first; later its own repository (section 6.2) | The web studio (`BimOpenFlow.Studio`, its pages, the 3D pane), the BIM node packs (`Nodes.Bos`, `Nodes.BimAnalysis`), the IFC question runner, the notebook's BIM parts (section 5.1), Snowdon and NRC samples and tests, gates, the paper's walkthrough |
+| Plug-ins for other products | Ara 3D Studio's `studio` repository, or a plug-ins repository beside `bim-open-revit` | `Ara3D.Studio.BimTools`. It is a plug-in for another application and needs that application's API, so it does not belong with the web studio. |
 | Working repository | New, names in section 6.1 | Flat submodules of everything above; workspace scripts; cross-repository agent configuration |
 | Entry point | Names in section 6.2 | What `nrc-ifc-llm` adds and Studio 2.5 forks |
+
+### 5.1 Where the notebook fits
+
+`bim-open-notebook` (the package `@bimopenflow/bim-open-notebook`, 63 files in `bimopenflow/web/packages`) records a session with the agent as a document:
+- each turn is a request and a reply;
+- a reply is text, the tool calls the agent made, and embeds: a value, table, chart, graph, 3D view, picture, or file;
+- every embed keeps a snapshot, so a notebook opens with no host;
+- an embed backed by a node can be evaluated again, and says whether its result changed.
+
+Its design is in `docs/proposals/notebook-sessions.md` and its plan in `docs/plans/notebook.md`. Thirteen sample notebooks are in `samples/notebooks`.
+
+What it depends on:
+- the editor's packages (`graph`, `state`, `panes`, `app`, `api-client`, `contracts`), and through `panes` the 3D viewer;
+- the analyst application's host, for `/api/ask`, the Ask box backend.
+
+It also holds `nrc.html`, the NRC project's landing page, which lists the NRC sample notebooks and graphs.
+
+The notebook is a second face of the analyst application rather than a product of its own. It uses the same host, the same agent, and the same kinds of output as the editor and the studio pages. Split by the rule used everywhere else in this proposal, it has three parts:
+
+| Part | Building-specific? | Goes to |
+|---|---|---|
+| The file format, the embed contract and registry, the live comparison, and the embeds for value, table, chart, graph, picture, and file | No | `bim-open-flow`, when that repository is extracted. A notebook of graphs and tables explains the graph system to newcomers better than any README. The embed registry already maps kinds to renderers, so it is the same seam as node packs and panes. |
+| The 3D embed, and the Ask backend configured with the BIM node packs | Yes | The analyst application, which registers the 3D embed the same way it registers the 3D pane |
+| `nrc.html` and the NRC sample notebooks | Specific to one project | The toolkit's `samples/` for now; `nrc-ifc-llm` may want to own them later |
+
+`BimOpenFlow.Ask`, the agent loop behind `/api/ask`, works over any in-process MCP server and knows nothing about buildings. It would move to `bim-open-flow` with the notebook core, so a notebook works there against the generic host. Its system prompt is the `bim-flow` skill's guide files, which section 5 already places in `bim-open-flow`.
+
+**Short term:** the notebook stays where it is. **Long term:** if the notebook rather than the editor becomes what an analyst opens first, the analyst application's repository could be named for it (section 6.2).
 
 ## 6. Names and locations
 
@@ -135,15 +178,26 @@ Those are different audiences on different schedules.
 
 | Option | What it is | For `nrc-ifc-llm` | For a Studio 2.5 fork |
 |---|---|---|---|
-| **E1. `bim-open-toolkit` as integration and entry point** | The toolkit keeps the integration code (studio, BIM packs, 3D pane, samples, NRC tests) and takes the products through `deps/` | No URL change. Paths under `samples/` and `src/data` move once, as the utilities leave. | Fork one repository, then fork only the products they change and point `deps.json` at them |
-| **E2. `bim-open-toolkit` as a pure umbrella** | Only flat submodules pinned to tested combinations, a README, and one start command. Integration code moves to a new `bim-open-studio`. | `git submodule add` plus `--recursive` yields everything. Paths change to `bim-open-toolkit/<repo>/...`. | Lightest fork: edit `.gitmodules` to point at their forks |
+| **E1. `bim-open-toolkit` as the analyst application and entry point** | The toolkit keeps the analyst application (web studio, notebook BIM parts, BIM packs, 3D pane, samples, NRC tests) and takes the products through `deps/` | No URL change. Paths under `samples/` and `src/data` move once, as the utilities leave. | Fork one repository, then fork only the products they change and point `deps.json` at them |
+| **E2. `bim-open-toolkit` as a pure umbrella** | Only flat submodules pinned to tested combinations, a README, and one start command. The analyst application moves to its own repository (names below). | `git submodule add` plus `--recursive` yields everything. Paths change to `bim-open-toolkit/<repo>/...`. | Lightest fork: edit `.gitmodules` to point at their forks |
 | **E3. The working repository is the entry point** | `main` follows the owner's work; release tags mark tested combinations | Pin a tag, never `main` | Forking brings the owner's working clutter |
 | **E4. A new name for the entry point** (`bim-open`, `bim-open-suite`) | Like E2, under a new name; the toolkit is retired or becomes integration | URL changes | As E2 |
 
 **Recommendation:**
 - **Short term, E1.** `nrc-ifc-llm` keeps its URL, and the integration code has a home while the products leave.
-- **Long term, E2**, once the integration code is small enough to justify its own `bim-open-studio`. The toolkit is then exactly the "everything, at a tested combination" entry point the name suggests.
+- **Long term, E2**, once the analyst application is small enough to justify its own repository. The toolkit is then exactly the "everything, at a tested combination" entry point the name suggests.
 - **Tag releases in either case**, and have `nrc-ifc-llm` pin tags rather than arbitrary commits.
+
+Names for the analyst application's repository under E2:
+
+| Name | Fits when | Against |
+|---|---|---|
+| `bim-open-app` | The repository holds several faces (studio pages, notebook, 3D) | Generic |
+| `bim-open-analyst` | It is named for its user, the BIM analyst in `PROJECT.md` | Leaves out the agent, the application's other user |
+| `bim-open-notebook` | The notebook becomes what an analyst opens first, and the editor and 3D view are reached from it (section 5.1) | Wrong if the editor stays the main face |
+| `bim-open-studio` | Not recommended | Confused with Ara 3D Studio |
+
+**Recommendation: `bim-open-app`**, renamed to `bim-open-notebook` if the notebook becomes the front door.
 
 ### 6.3 Utilities repository
 
@@ -166,7 +220,7 @@ Each step is its own commit, or set of commits by path, and is verified before t
    - It builds and typechecks. It passes 2,161 of 2,162 V2 tests and every per-package suite except one test, which expects the repository folder to be named `viewer`. That test fails in the toolkit today for the same reason.
    - One lint error (`prefer-const` in `ui-gratify/src/inspector/host.ts`) also predates the move.
    - It still carries a nested Gratify submodule, which B replaces with `deps/gratify`.
-   - Nothing is pushed. The toolkit is unchanged.
+   - Nothing is pushed. The toolkit is unchanged. The work sits in a temporary session folder, `%LOCALAPPDATA%\Temp\claude\C--Users-cdigg-git-bim-open-toolkit\5b8f2e5c-d661-401c-9de6-c79f2d67b22f\scratchpad\extract`, which is not durable. As the review in section 11.3 says, it should be pushed to a branch before any other step.
 
    Remaining work: switch Gratify to `deps/`, push, replace the toolkit's `viz/` with `deps/bim-open-viewer`, and update the toolkit's consumers:
    - the editor's `panes` package file, `toolkit.config.ts`, `toolkit.tsconfig.json`, and three `tsconfig.json` files;
@@ -183,12 +237,15 @@ Each step is its own commit, or set of commits by path, and is verified before t
 1. **Extract `bim-open-flow`.** First, inside the toolkit:
    - the host takes node packs from whoever composes it, rather than naming `Nodes.Bos`;
    - the editor takes panes the same way, so the toolkit plugs in the 3D pane;
-   - the BIM composition moves into the studio.
+   - the notebook takes embeds the same way, so the toolkit plugs in the 3D embed;
+   - the BIM composition moves into the web studio's host, `BimOpenFlow.Studio`.
+
+   The notebook core and `BimOpenFlow.Ask` go with the extraction (section 5.1).
 
    Then extract with history. Ship a small public building as DuckDB tables so the repository demonstrates BIM questions with no toolkit code.
 2. **Extract `bim-open-data`** from `src/data`, with its tests and the IFC MCP server.
 3. **Decide on `ara3d-dataflow`:** fold it into `bim-open-flow`, or keep it separate and publish to NuGet (Q6).
-4. **Thin the toolkit** to integration plus entry point (E1). When the integration code is small, move it to `bim-open-studio` and make the toolkit a pure umbrella (E2).
+4. **Thin the toolkit** to the analyst application plus entry point (E1). When the application is small, move it to `bim-open-app` and make the toolkit a pure umbrella (E2). Move `Ara3D.Studio.BimTools` to Ara 3D Studio's repository at any point; nothing else depends on it.
 5. **Publish packages** for what outsiders consume: Gratify, the viewer, and the flow web packages on npm; flow and data on NuGet. Switch the matching `deps.json` entries to versions.
 6. **Write down the partner workflow:** how Studio 2.5 forks the entry point, forks only the repositories they change, and pulls the owner's tagged releases.
 
@@ -205,6 +262,8 @@ Each step is its own commit, or set of commits by path, and is verified before t
 | Q7 | Does a downstream project like `nrc-ifc-llm` really want one submodule for everything, or one submodule per product it uses? |
 | Q8 | Is anything lost by dropping the `ara3d-sdk` submodule, given all 24 references are NuGet packages? |
 | Q9 | Are there failure modes of links (junctions or symlinks) under Vite, MSBuild, npm, or on macOS and Linux that make B worse than it looks? |
+| Q10 | (Added after the review in section 11.) Should the notebook core and the Ask agent loop go to `bim-open-flow`, or stay with the analyst application until the notebook's design settles? |
+| Q11 | (Added after the review.) Which name for the analyst application's repository under E2: `bim-open-app`, `bim-open-analyst`, or `bim-open-notebook`? |
 
 ## 10. What the reviewer should check against
 
