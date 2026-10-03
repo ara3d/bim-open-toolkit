@@ -83,3 +83,33 @@ Each phase is its own commit or commits. Each ends with the checks below and lis
   - With the link, the editor's Vite dev server (port 5351) served all 33 Gratify source files from the outside path with `200 OK`, and the page logged no errors. Vite allows files reached through imports even when their real path is outside `server.fs.allow`; only direct requests for other outside files would be refused.
   - Found: `viz` reads Gratify's built output (`dist/`), so a fresh clone needs `npm run build:gratify --prefix viz` (part of `npm run build --prefix viz`) before the `viz` typecheck. The old submodule hid this, because its `dist/` had been built once by hand.
 - 2026-10-03, phase 2: `ara3d/bim-open-viewer` `main` is at `35ce03b`: the history, the `@bim-open-viewer/*` names, and Gratify through `deps/`. Its build and typecheck pass; 2,161 V2 tests pass; one cold-start browser test timed out in the full run and passes alone. In the toolkit, `viz/` is removed, `deps.json` pins the viewer, and the viewer's own `deps/gratify` links to the toolkit's, so one Gratify serves both. The editor's alias file is now `bimopenflow/web/viewer.config.ts`. Checks: web smoke at the baseline (TKT-141 only); all seven editor packages typecheck; the notebook passes 300 of 300; the layering tests pass 8 of 8; `/3d.html` on the dev server loads 123 viewer modules from `deps/bim-open-viewer` with no failed module. The ignored local data from `viz/` (206 MB of BFAST fixtures, 1.7 MB of artifacts) was copied into `deps/bim-open-viewer/`; the rest of the old folder is kept outside the repository until the split is accepted.
+- 2026-10-03, after phase 2: the full solution builds in Release with no errors. `dotnet test` (the CI filter) passes 47 of 50 test projects; the three failures predate the split and are TKT-143.
+
+## Next, in order
+
+What remains, as of 2026-10-03. Each item says why it is in this place.
+
+1. **Owner: switch on GitHub Pages and sign in `gh` (TKT-142).** Every repository now has a Pages workflow, but no page is live until Pages is switched on (Settings, Pages, Source: GitHub Actions). One click per repository; nothing else is blocked on it except seeing the pages.
+2. **Fix the red checks that predate the split: TKT-141 (graph card layout, fails the web smoke) and TKT-143 (three .NET test projects).** The split's own checks compare against the baseline. A green baseline makes every later phase's verdict a plain pass or fail.
+3. **Phase 3: cut the seams inside the toolkit.**
+   - The host takes node packs from whoever composes it; today `HostComposition.cs` names `Nodes.Bos` and `Nodes.BimAnalysis`.
+   - The editor takes panes the same way; the 3D pane imports `@bim-open-viewer/*` in `panes/`.
+   - The notebook takes embeds the same way.
+   - The BIM composition moves into `BimOpenFlow.Studio`.
+
+   Phases 4 and 5 cannot extract cleanly until this lands.
+4. **Phase 4: `bim-open-data`.** `src/data` has no references upward, so it lifts out with its tests, the IFC MCP server, the BOS Browser, and the type generator. The repository's README is in place (written 2026-10-03); the code follows it.
+5. **Phase 5: `bim-open-flow`.** It takes the generic projects of `src/flow`, the editor's web packages, `BimOpenFlow.Ask`, and `BimOpenMcp.Flow`, plus a small public building as DuckDB tables, so its landing page can run graphs over a building without the toolkit. Decide first whether `ara3d-dataflow` folds in (proposal Q6; the reviewer said keep it separate).
+6. **Phase 6: `bim-open-notebook`'s code.** After TKT-86 (the client library) and phase 5. The README and the static sample page are already in that repository; the code then builds the page in its own CI.
+7. **Phase 7: the toolkit as the entry point.** Create the workspace repository with flat siblings and a `.deps-root` marker, tag the first combination that passes every check, and move `nrc-ifc-llm` to the tag. Its documents name paths under `bim-open-toolkit/viz/` that phase 2 removed.
+8. **Live runs that close nearly-finished tickets:** TKT-45 (one Ask box run that builds a graph through the Claude CLI) and TKT-80 (one multi-turn notebook run, plus the web smoke). Then the notebook defects TKT-139 (3D legend) and TKT-140 (underscores).
+
+**Demos per repository**, which the owner asked for on 2026-10-03, and where each stands:
+
+| Repository | Demo | State |
+|---|---|---|
+| `bim-open-viewer` | The gallery as a static page over synthetic buildings | Built by a subagent on 2026-10-03 (see its README) |
+| `bim-open-notebook` | The sample notebooks, opened from their snapshots, no server | Built on 2026-10-03 from the toolkit's package |
+| `bim-open-flow` | Graphs over a public building in DuckDB, in the browser | Needs phase 5 and a way to run the host's evaluation in the browser or a hosted host; until then the page describes and shows screenshots |
+| `bim-open-data` | IFC to BOS in the browser (web-ifc) and the BOS Browser | Needs phase 4; until then the page describes |
+| `bim-open-toolkit` | The family page linking every live demo | Built on 2026-10-03 at `site/` |
