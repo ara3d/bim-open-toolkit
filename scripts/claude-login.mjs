@@ -109,6 +109,16 @@ function findOnPath() {
   return undefined;
 }
 
+/**
+ * claude.exe directly in a version folder (older desktop apps) or one folder below it (2.1.284
+ * and later, such as 2.1.286\635c1867224a\claude.exe); undefined when neither exists.
+ */
+function bundledExe(versionDir) {
+  return [versionDir, ...safeReaddir(versionDir).map((name) => join(versionDir, name))]
+    .map((dir) => join(dir, "claude.exe"))
+    .find((exe) => existsSync(exe));
+}
+
 /** Every packaged (MSIX) and %APPDATA% copy of claude.exe, with its version folder name. */
 function findBundled() {
   const bundled = [];
@@ -118,8 +128,8 @@ function findBundled() {
     for (const pkg of safeReaddir(packagesRoot).filter((name) => name.startsWith("Claude_"))) {
       const claudeCodeRoot = join(packagesRoot, pkg, "LocalCache", "Roaming", "Claude", "claude-code");
       for (const version of safeReaddir(claudeCodeRoot)) {
-        const exe = join(claudeCodeRoot, version, "claude.exe");
-        if (existsSync(exe)) bundled.push({ root: "packaged", version, exe });
+        const exe = bundledExe(join(claudeCodeRoot, version));
+        if (exe) bundled.push({ root: "packaged", version, exe });
       }
     }
   }
@@ -127,8 +137,8 @@ function findBundled() {
   if (appData) {
     const claudeCodeRoot = join(appData, "Claude", "claude-code");
     for (const version of safeReaddir(claudeCodeRoot)) {
-      const exe = join(claudeCodeRoot, version, "claude.exe");
-      if (existsSync(exe)) bundled.push({ root: "appdata", version, exe });
+      const exe = bundledExe(join(claudeCodeRoot, version));
+      if (exe) bundled.push({ root: "appdata", version, exe });
     }
   }
   return bundled;
