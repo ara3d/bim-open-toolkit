@@ -90,11 +90,11 @@ Links below work only while the appropriate local server is running. Ports come 
 | **Snowdon graph demo** — [3d.html](http://127.0.0.1:5300/3d.html) | Editable graph beside its live 3D result; strongest existing demonstration of graphs and visualization meeting | [Sep 8 integration record](bim-flow-3d.md) reports 18 browser scenarios after palette work. Not independently replayed for this report | BIM-profile host and Snowdon BOS; empty or explicitly populated store. Qualify the shared editor after current DuckDB edits |
 | **3D showcase** — [showcase.html](http://127.0.0.1:5300/showcase.html) | Button-based visual recipes plus local model file picker; useful for isolating viewer behavior from graph authoring | Same current integration as the graph demo | Prepared browser BFAST via fixture endpoint, or supplied BOS/BFAST. Keep clearly labeled as a showcase |
 | **DuckDB workflow studio** — [5308/duckdb.html](http://127.0.0.1:5308/duckdb.html) | Nine editable analytical graphs with result-table previews over a typed Snowdon database | Sep 8 **working-tree feature**: launcher, page, docs, graphs and source-node code include untracked files. A live page exists locally; a clean clone of HEAD will not reproduce this feature | Separate host on 5218, compatible typed database, editor dependencies. Review, verify and commit the bounded feature before handoff |
-| **V2 gallery** — [5190/gallery.html](http://localhost:5190/gallery.html) | Current showcase of composable review capabilities, with Gratify controls and inspectors | Five registered demos; [Sep 8 smoke record](../viz/packages/demos/docs/gallery-smoke.md) says five drew. Partial delivery of a 21-demo plan | Viewer workspace; built alpha core; real fixture for default Snowdon routes. Complete composition and selected missing workflows |
-| **Visualization alpha gallery** — [5173](http://127.0.0.1:5173/) | Earlier public-API feature laboratory and reference for behavior | 23 routes; prioritized Sep 7 alpha, with [recorded browser evidence and limits](../viz/packages/visualization/docs/FINDINGS.md). It remains the target of `npm run demo` | Viewer build; optional Snowdon BOS/BFAST and door projection. Preserve until parity-based retirement |
+| **V2 gallery** — [5190/gallery.html](http://localhost:5190/gallery.html) | Current showcase of composable review capabilities, with Gratify controls and inspectors | Five registered demos; [Sep 8 smoke record](https://github.com/ara3d/bim-open-viewer/tree/main/packages/demos/docs/gallery-smoke.md) says five drew. Partial delivery of a 21-demo plan | Viewer workspace; built alpha core; real fixture for default Snowdon routes. Complete composition and selected missing workflows |
+| **Visualization alpha gallery** — [5173](http://127.0.0.1:5173/) | Earlier public-API feature laboratory and reference for behavior | 23 routes; prioritized Sep 7 alpha, with [recorded browser evidence and limits](https://github.com/ara3d/bim-open-viewer/tree/main/packages/visualization/docs/FINDINGS.md). It remains the target of `npm run demo` | Viewer build; optional Snowdon BOS/BFAST and door projection. Preserve until parity-based retirement |
 | **Alpha review sandbox** — [review.html](http://127.0.0.1:5173/review.html) | Older combined selection/edit/save sandbox with two synthetic models and a 10,000-object exercise | Present alongside alpha gallery; separate from the React door-review route | Same alpha server; generated fixture. Historical integration example, not another product |
-| **V2 end-to-end slice** — [5176/slice.html](http://127.0.0.1:5176/slice.html) | Small synthetic building; missing/disputed door fire ratings shown in red; exposes composition cost | Implemented Sep 8 with [page and test documentation](../viz/packages/demos/docs/slice.md) | No private BIM data. Good first visual smoke; consolidate duplicated host code later |
-| **Ambient occlusion lab** — [5177](http://127.0.0.1:5177/ambient-occlusion.html) | Compare contact shading on synthetic fixtures | Implemented Sep 8; focused pixel-test evidence in [docs](../viz/packages/demos/docs/ambient-occlusion.md) | Own renderer/GTAO adapter. Hidden/transparent geometry currently occludes incorrectly; perspective-only. Experimental rendering lab |
+| **V2 end-to-end slice** — [5176/slice.html](http://127.0.0.1:5176/slice.html) | Small synthetic building; missing/disputed door fire ratings shown in red; exposes composition cost | Implemented Sep 8 with [page and test documentation](https://github.com/ara3d/bim-open-viewer/tree/main/packages/demos/docs/slice.md) | No private BIM data. Good first visual smoke; consolidate duplicated host code later |
+| **Ambient occlusion lab** — [5177](http://127.0.0.1:5177/ambient-occlusion.html) | Compare contact shading on synthetic fixtures | Implemented Sep 8; focused pixel-test evidence in [docs](https://github.com/ara3d/bim-open-viewer/tree/main/packages/demos/docs/ambient-occlusion.md) | Own renderer/GTAO adapter. Hidden/transparent geometry currently occludes incorrectly; perspective-only. Experimental rendering lab |
 | **Standalone feature pages** — [show-by](http://127.0.0.1:5181/feature-demos/show-by.html), [separate](http://127.0.0.1:5181/feature-demos/separate.html), [hud-fps](http://127.0.0.1:5181/feature-demos/hud-fps.html) | Isolate by spatial/category groups, spread levels/rooms, inspect timing | Files are present and committed now; original tracks stopped mid-chunk. No complete acceptance record found. Minimap and gumball pages are absent | Shared synthetic host and V2 features. Finish and browser-verify before promoting; [plan](plans/visualization/FEATURE-DEMOS-PLAN.md) remains open |
 | **Feature host smoke** — [host-smoke](http://127.0.0.1:5181/feature-demos/host-smoke.html) | Developer-only check of the shared feature-page host | Shared-host verification documented; not a user workflow | Same feature-page server; useful diagnostic |
 | **Studio Graph / PlatoFlow PoC** | Original browser-evaluated graph prototype, including model/SQL/write-back experiments | Deleted 2026-09-15; code stays in git history. Findings and design docs live in [docs/platoflow](platoflow/README.md) | None. The design record lists features not yet carried into BimOpenFlow |
@@ -105,9 +105,9 @@ Links below work only while the appropriate local server is running. Ports come 
 
 ### V2 gallery: five visible demos and sixteen unfinished registrations
 
-The [discovery code](../viz/packages/demos/src/gallery/discovery.ts) imports `src/demos/*/index.ts`. A directory with helpers but no `index.ts` is not a visible demo. Current registrations are **capture, environment, explode-and-grid, point-and-read, portfolio**.
+The [discovery code](https://github.com/ara3d/bim-open-viewer/tree/main/packages/demos/src/gallery/discovery.ts) imports `src/demos/*/index.ts`. A directory with helpers but no `index.ts` is not a visible demo. Current registrations are **capture, environment, explode-and-grid, point-and-read, portfolio**.
 
-The [gallery guide](../viz/packages/demos/docs/gallery.md) lags a source-data change: it describes geometry-only `snowdon.bfast`. The [current fixture definition](../viz/packages/demos/src/demos/_shared/snowdon.ts) requests **`snowdon-bim.bfast`**, which includes original BOS tables. Use the latter for property-aware demos. Most demos default to Snowdon; **portfolio defaults to the synthetic estate**, with a different, source-backed Snowdon rollup as an alternative.
+The [gallery guide](https://github.com/ara3d/bim-open-viewer/tree/main/packages/demos/docs/gallery.md) lags a source-data change: it describes geometry-only `snowdon.bfast`. The [current fixture definition](https://github.com/ara3d/bim-open-viewer/tree/main/packages/demos/src/demos/_shared/snowdon.ts) requests **`snowdon-bim.bfast`**, which includes original BOS tables. Use the latter for property-aware demos. Most demos default to Snowdon; **portfolio defaults to the synthetic estate**, with a different, source-backed Snowdon rollup as an alternative.
 
 | Planned demo | What it would explain | Current state / remaining work |
 |---|---|---|
@@ -137,7 +137,7 @@ That is **5 registered + 3 partial directories + 13 without an active demo direc
 
 ### Alpha gallery: a broader feature reference
 
-All links below use port 5173. Add `&model=small` for the deterministic fixture where appropriate. The alpha [status](../viz/packages/visualization/docs/STATUS.md) describes limitations per original feature ID; a route is not proof of complete acceptance.
+All links below use port 5173. Add `&model=small` for the deterministic fixture where appropriate. The alpha [status](https://github.com/ara3d/bim-open-viewer/tree/main/packages/visualization/docs/STATUS.md) describes limitations per original feature ID; a route is not proof of complete acceptance.
 
 | Area | Routes and what they show |
 |---|---|
@@ -169,7 +169,7 @@ The C# graph engine separates **evaluation** from **explicit Runs**. Evaluation 
 
 ### Browser workflow adapters are a different layer
 
-[`@bim-open-toolkit/workflows`](../viz/packages/workflows/README.md) contains ten pure adapters: door schedule, revision comparison, takeoff, pricing alternatives, delivery timeline, valve isolation, access coordination, asset handover, material carbon, and portfolio drill-through. They turn supplied tables into result tables, exceptions, color rules, sets, overlays, and command recipes.
+[`@bim-open-viewer/workflows`](https://github.com/ara3d/bim-open-viewer/tree/main/packages/workflows/README.md) contains ten pure adapters: door schedule, revision comparison, takeoff, pricing alternatives, delivery timeline, valve isolation, access coordination, asset handover, material carbon, and portfolio drill-through. They turn supplied tables into result tables, exceptions, color rules, sets, overlays, and command recipes.
 
 They do not read IFC, derive reliable quantities from geometry, infer network topology, or supply real procurement/maintenance/carbon data. Synthetic cases deliberately demonstrate incomplete or conflicting input. The door-projection bridge is the clearest existing connection to the source-backed core workflow path. Completing a demo for another adapter is different from delivering a real-data domain service.
 
@@ -202,7 +202,7 @@ This is the most important terminology cleanup after the demo catalog.
 
 | Artifact | Producer / consumer | What matters for handoff |
 |---|---|---|
-| Browser geometry BFAST | [JS converter](../viz/packages/loaders/scripts/bos-to-bfast.mjs) → viewer loaders/formats | Legacy geometry-only files omit analytical source tables. Current converter preserves original Parquet entries under `BOS/`. Gallery expects the combined `snowdon-bim.bfast` |
+| Browser geometry BFAST | [JS converter](https://github.com/ara3d/bim-open-viewer/tree/main/packages/loaders/scripts/bos-to-bfast.mjs) → viewer loaders/formats | Legacy geometry-only files omit analytical source tables. Current converter preserves original Parquet entries under `BOS/`. Gallery expects the combined `snowdon-bim.bfast` |
 | .NET source cache BFAST | [`SourceCache.Prepare`](../src/data/Ara3D.BimOpenSchema.BuildingModel.Source/README.md) → `SourceCache.Load` and core workflow runner | Decoded typed source columns, source hash/manifest/cache version; geometry optional on read. Version-one CLR type identifiers make it runtime-sensitive. It is not the browser render-table format |
 | Workflow projection JSON | Core workflow runner → reopening, adapters and selected demos | A persisted typed mapped subset with evidence, not raw BOS and not browser geometry |
 | Core typed DuckDB | [BuildingModel.DuckDb](../src/data/Ara3D.BimOpenSchema.BuildingModel.DuckDb/README.md) → SQL consumers / DuckDB studio | 83 core tables; typed scalars, lists and flattened composites with evidence companions. Empty schema tables are intentional. Old JSON-column exports need regeneration |
@@ -232,7 +232,7 @@ The complete [inventory](REPOSITORY-INVENTORY.md) lists **45 C# source projects,
 1. **IFC MCP:** [C# server](../src/mcp/BimOpenMcp.Ifc/README.md) for direct IFC entity/property/SQL/geometry queries; executable implementation, with inherited stale path examples.
 2. **BimOpenFlow MCP:** [C# server source](../src/mcp/BimOpenMcp.Flow/Program.cs) over graph services; stdio default or HTTP. It is not the unfinished browser bridge. It does not run the Host executable's sample-seeding startup path; seed a shared store through the host first if needed.
 3. **Visualization alpha assistant demo:** bounded commands inside the page. It demonstrates a tool boundary, not an external assistant connection.
-4. **V2 viewer MCP:** [package](../viz/packages/mcp/) with internal tool/dispatch/protocol/client/host work but empty public export, no completed server/walkthrough. Still unfinished. The [Platonic MCP wrapper](../tools/README.md) is another developer tool, unrelated to BIM-user functionality.
+4. **V2 viewer MCP:** [package](https://github.com/ara3d/bim-open-viewer/tree/main/packages/mcp/) with internal tool/dispatch/protocol/client/host work but empty public export, no completed server/walkthrough. Still unfinished. The [Platonic MCP wrapper](../tools/README.md) is another developer tool, unrelated to BIM-user functionality.
 
 ## Launch instructions
 
@@ -303,7 +303,7 @@ Open [the index](http://localhost:5190/gallery.html). For a first demo without p
 
 For real data, place the **browser combined** `snowdon-bim.bfast` in the gallery's configured fixture directory, or set `$env:V2_FIXTURES_DIRS='C:/path/prepared-viewer-models'` before starting. It accepts a semicolon-separated directory list. Default directory: `viz/packages/visualization/artifacts/bfast/`. The gallery has its own fixture endpoint; it does not require the standalone 5175 server for these routes.
 
-From `viz/`, each alternative below launches its own server:
+From `deps/bim-open-viewer/`, each alternative below launches its own server:
 
 ```powershell
 npm run demo:slice
@@ -320,13 +320,13 @@ All standalone feature pages use the same server when launched this way. The pla
 
 ### 4. Open the alpha reference
 
-From `viz/`:
+From `deps/bim-open-viewer/`:
 
 ```powershell
 npm run demo
 ```
 
-Open [selection with a small fixture](http://127.0.0.1:5173/?feature=selection&model=small). For real Snowdon set `SNOWDON_BOS_PATH` or `SNOWDON_BFAST_PATH` before startup. The alpha's door-review route additionally expects a prepared workflow projection at the endpoint configured in [its Vite config](../viz/packages/visualization/examples/vite.config.mjs). Do not assume every alpha route is self-contained just because the small geometry fixture works.
+Open [selection with a small fixture](http://127.0.0.1:5173/?feature=selection&model=small). For real Snowdon set `SNOWDON_BOS_PATH` or `SNOWDON_BFAST_PATH` before startup. The alpha's door-review route additionally expects a prepared workflow projection at the endpoint configured in [its Vite config](https://github.com/ara3d/bim-open-viewer/tree/main/packages/visualization/examples/vite.config.mjs). Do not assume every alpha route is self-contained just because the small geometry fixture works.
 
 ### 5. Prepare typed data, then open the DuckDB studio
 
@@ -353,7 +353,7 @@ Stop only the launcher-reported host and web PIDs when finished. Do not kill eve
 |---|---|---|
 | IFC MCP | `dotnet run --project src/mcp/BimOpenMcp.Ifc -- --http 8766` | HTTP at `http://127.0.0.1:8766/mcp`; omit `--http` for stdio |
 | Graph MCP | `dotnet run --project src/mcp/BimOpenMcp.Flow -- --http 8767 --profile tables --store ./artifacts/handoff/tables-store` | Separate process over graph services; use the intended existing store; omit HTTP arguments for stdio |
-| Fixture service | `npm --prefix viewer run serve:fixtures -w @bim-open-toolkit/demos` | Default 5175; currently requires sibling `platonic-ts` runtime; set `V2_FIXTURES_DIRS` |
+| Fixture service | `npm --prefix viewer run serve:fixtures -w @bim-open-viewer/demos` | Default 5175; currently requires sibling `platonic-ts` runtime; set `V2_FIXTURES_DIRS` |
 | Node reference generator | `dotnet run --project src/flow/BimOpenFlow.NodeDocs` | Developer generator; inspect arguments/output before regenerating committed docs |
 
 PoC READMEs still show `ara3d-sdk/wip/...` paths. Current C# project references and the Vite Gratify alias point into this repo. The commands above correct the inherited entry-point examples; **PoC launch was not validated in this audit**.
@@ -426,8 +426,8 @@ This demonstrates a coherent product direction without asking the recipient to i
 - Read the root architecture, package/project manifests, source entry points, sample seeders, launch configs, relevant plans, checkpoints and verification records.
 - Enumerated current gallery registrations and standalone HTML entry points; distinguished missing, partial, draft and working-tree code.
 - Used Git history for freshness, rather than file-copy timestamps. Package dates in the inventory mean **latest commit touching that directory**, possibly documentation, not last successful test or release.
-- Ran `npm run typecheck` from `viz/`: **passed** against the inspected working tree.
-- Ran `npm test -w @bim-open-toolkit/demos -- test/gallery test/demos` from `viz/`: **184 tests passed in 15 files**. This focused suite did not run the separate browser labs or the full V2 suite.
+- Ran `npm run typecheck` from `deps/bim-open-viewer/`: **passed** against the inspected working tree.
+- Ran `npm test -w @bim-open-viewer/demos -- test/gallery test/demos` from `deps/bim-open-viewer/`: **184 tests passed in 15 files**. This focused suite did not run the separate browser labs or the full V2 suite.
 - Read-only HTTP probes returned 200 for the alpha page (5173), current 3D graph page (5300), DuckDB page (5308), new gallery (`localhost:5190`) and catalog endpoints on 5214/5218. IPv4 `127.0.0.1:5190` initially timed out; `localhost:5190` responded. Use the configured address, not a guessed binding.
 - Confirmed local prerequisites/artifacts exist. Did not reinstall dependencies, replace fixtures, alter analyses, launch replacement servers, or rerun full .NET/browser/performance/release suites.
 
@@ -439,9 +439,9 @@ Both report files passed local-link validation: **342 file/section links resolve
 
 | Evidence / command | Scope and limitation |
 |---|---|
-| [Alpha findings](../viz/packages/visualization/docs/FINDINGS.md) and `npm run demo:browser` | Alpha behavior; distinguish it from V2 acceptance |
+| [Alpha findings](https://github.com/ara3d/bim-open-viewer/tree/main/packages/visualization/docs/FINDINGS.md) and `npm run demo:browser` | Alpha behavior; distinguish it from V2 acceptance |
 | [V2 status](plans/visualization/V2-STATUS.md), package checkpoints | Detailed development evidence, but older progress statements need reconciliation with source |
-| [Gallery smoke record](../viz/packages/demos/docs/gallery-smoke.md) and `npm run gallery:smoke` | Five default demo routes drew. Script also rewrites thumbnails/report; not a full interaction matrix or performance qualification |
+| [Gallery smoke record](https://github.com/ara3d/bim-open-viewer/tree/main/packages/demos/docs/gallery-smoke.md) and `npm run gallery:smoke` | Five default demo routes drew. Script also rewrites thumbnails/report; not a full interaction matrix or performance qualification |
 | [3D graph integration](bim-flow-3d.md), `scripts/check-bim-flow-graph.mjs` | Real graph interactions/pixels. Use an isolated store; checks edit and restore an analysis |
 | [DuckDB guide](bim-flow-duckdb.md), `scripts/check-bim-flow-duckdb.mjs` | Nine workflows, recomputation, schema choices and unchanged DB hash. Snowdon-specific assertions; working-tree feature |
 | [Core workflow validation](../tools/building-model-workflows/VALIDATION.md) | Source-backed architectural reports and deterministic reopening; no broad domain/compliance claim |

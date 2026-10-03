@@ -69,7 +69,7 @@ your own building model in its place.
     once to find it and sign it in ([claude-cli-login.md](claude-cli-login.md));
     without the desktop app, `npm install -g @anthropic-ai/claude-code` first.
 
-`npm run demo` (from `viz/`) opens the older visualization alpha gallery, a
+`npm run demo` (from `deps/bim-open-viewer/`) opens the older visualization alpha gallery, a
 separate reference application predating this graph editor. It is not part of the
 first run above; see [REPOSITORY-HANDOFF.md](REPOSITORY-HANDOFF.md) for what it
 still demonstrates.

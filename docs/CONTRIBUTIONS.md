@@ -59,7 +59,7 @@ The compliance pack applies a cited rule deterministically. On the Duplex sample
 Two parts of the repository contain no BIM at all and could stand alone:
 
 - The dataflow engine (`submodules/ara3d-dataflow`), useful for any table pipeline.
-- The `viz/` workspace, seventeen npm packages around three.js, with a pure model layer whose unit tests run under Node without a WebGL context. It renders Snowdon's 456,598 instances from an eleven-node graph; the first frame currently takes 5.2 to 5.8 s, against a target of under 2 s.
+- The `deps/bim-open-viewer/` workspace, seventeen npm packages around three.js, with a pure model layer whose unit tests run under Node without a WebGL context. It renders Snowdon's 456,598 instances from an eleven-node graph; the first frame currently takes 5.2 to 5.8 s, against a target of under 2 s.
 
 Keeping building knowledge out of these layers is a contribution in itself. A layering test fails the build when a reference points the wrong way.
 

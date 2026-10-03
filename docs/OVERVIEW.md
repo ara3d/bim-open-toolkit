@@ -66,7 +66,7 @@ Five layers, each depending only on the ones above it.
    geometry, DuckDB, tables, table ops, cleaning, dates, compliance, viz, effects — each its
    own project with its own dependencies. Packs never reference each other, and every effect
    lives in one pack, which makes the purity rule enforceable by project reference alone.
-5. **Surfaces** (`BimOpenFlow.Host*`, `BimOpenMcp.Flow`, `bimopenflow/web`, `viz/`) — one
+5. **Surfaces** (`BimOpenFlow.Host*`, `BimOpenMcp.Flow`, `bimopenflow/web`, `deps/bim-open-viewer/`) — one
    headless core; every UI is a client of it. An HTTP host generated from the contracts,
    thirteen MCP tools over the same services, the web editor, BIM Open Notebook (a session
    transcript with live embeds, `bimopenflow/web/packages/bim-open-notebook`), the 3D viewer
@@ -75,17 +75,17 @@ Five layers, each depending only on the ones above it.
 
 ## The 3D viewer
 
-`viz/` is a separate npm workspace of seventeen packages: a general-purpose WebGL viewer
+`deps/bim-open-viewer/` is a separate npm workspace of seventeen packages: a general-purpose WebGL viewer
 built on three.js, deliberately BIM-free — it knows nothing about IFC, BOS, or any other
 file format. `three` is a peer dependency of every package, so the host application picks
 the version and only one copy ever loads.
 
 | Package | Role |
 |---|---|
-| `@ara3d/viewer-core` | Renderer: scene management, instanced drawing, materials, per-instance color, frame loop |
-| `@ara3d/viewer-loaders` | Ingestion: BOS geometry and GLB loading with progress reporting |
-| `@ara3d/viewer-controls` | Interaction: camera navigation, picking and selection, section planes |
-| `@bim-open-toolkit/model` | Data contracts and pure operations with no runtime dependencies at all — no three.js, no browser API, no sibling package |
+| `@bim-open-viewer/core` | Renderer: scene management, instanced drawing, materials, per-instance color, frame loop |
+| `@bim-open-viewer/loaders` | Ingestion: BOS geometry and GLB loading with progress reporting |
+| `@bim-open-viewer/controls` | Interaction: camera navigation, picking and selection, section planes |
+| `@bim-open-viewer/model` | Data contracts and pure operations with no runtime dependencies at all — no three.js, no browser API, no sibling package |
 | `render`, `interact` | The instance table and bulk column updates, picking, clipping, overlays, capture; camera arithmetic and three navigation modes |
 | `formats`, `workflows` | One `LoadedModel` entry point that reports its failures instead of raising them; ten review workflows as pure result adapters |
 | `synthetic`, `testing` | Seeded generators for demonstration and test data; named scenes, a hand-wound clock, and a scene built without a browser |
@@ -94,7 +94,7 @@ the version and only one copy ever loads.
 The facade is three lines:
 
 ```ts
-import { createViewer } from '@bim-open-toolkit/viewer';
+import { createViewer } from '@bim-open-viewer/viewer';
 
 const viewer = createViewer(canvas);
 await viewer.open('/models/building.bfast');

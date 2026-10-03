@@ -159,7 +159,7 @@ alone. File-reading nodes are still pure: their cache key is a hash of the file'
 *content*, so an unchanged file is never re-read and an edited one is picked up
 automatically.
 
-### 5. Surfaces — `src/flow/BimOpenFlow.Host*`, `src/mcp/BimOpenMcp.Flow`, `bimopenflow/web`, `viz/`
+### 5. Surfaces — `src/flow/BimOpenFlow.Host*`, `src/mcp/BimOpenMcp.Flow`, `bimopenflow/web`, `deps/bim-open-viewer/`
 
 One headless core; every UI is a client of it.
 
@@ -183,7 +183,7 @@ One headless core; every UI is a client of it.
   separate page and package in the same workspace: a session transcript with live
   embeds, mounting `graph` read-only in every graph cell and reusing `panes` for
   the rest.
-- **`viz/`** — the standalone 3D viewer workspace of seventeen packages, described in
+- **`deps/bim-open-viewer/`** — the standalone 3D viewer workspace of seventeen packages, described in
   [OVERVIEW.md](OVERVIEW.md#the-3d-viewer).
 - **`Publishing` / `Reports` / `Dashboards` / `Evidence`** — turning a run into an
   artifact: self-contained HTML with inlined data, verdict tables, dashboards, and

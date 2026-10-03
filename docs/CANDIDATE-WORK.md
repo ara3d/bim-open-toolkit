@@ -177,7 +177,7 @@ Recorded so nobody proposes them again without a new reason; PROJECT.md's Scope:
 - A second scripting API, agent-as-code as the user surface, or a no-code agent builder before the representation settles. `docs/ARCHITECTURE.md` "Agentic workflows"; `platoflow-agent-concepts.md` §3.1.
 - Autonomous agents, an agent that negotiates between disciplines, or one that grades buildings. `platoflow-agent-concepts.md` §1, §4.
 - General node-graph instrument features (semantic zoom, fisheye, subway maps, 3D canvases, workspaces), scalar wires, new wire types, near-duplicate parameter kinds: none of the 56 enumerated workflows needs them, and a new wire type touches the spec, the engine, every surface, and the conformance vectors. `bimopenflow-ux-proposal.md` §1, §6; `param-data-types.md` §2.
-- Growing Gratify's node-editor example into a shared library, Gratify importing BIM code, wrapping `@ara3d/viewer-controls`, porting the 23 alpha demos. `docs/graph-module-layering.md`; `README.md` decisions of 2026-09-08.
+- Growing Gratify's node-editor example into a shared library, Gratify importing BIM code, wrapping `@bim-open-viewer/controls`, porting the 23 alpha demos. `docs/graph-module-layering.md`; `README.md` decisions of 2026-09-08.
 - C# records or SQL DDL as the master schema, one denormalised table, one database per profession. `docs/proposals/bim-query-platform/contract/README.md`.
 - D3 inside `@bimopenflow/viz`, type-aware lint on every package, aliases for command names, performance gates, picking a new port when 5214 is busy. `NOTES.md` chart nodes wave; `BIMOPENFLOW.md`.
 
@@ -186,7 +186,7 @@ Recorded so nobody proposes them again without a new reason; PROJECT.md's Scope:
 Statements the readers found that a newer document or the code overrides. The brief follows the right-hand side.
 
 - Node and pack counts (98 across 11, 67, "four packs"): `docs/nodes.md` is generated and is the only count worth quoting.
-- The spec at `spec/`, the viewer at `viewer/`: the spec is under `submodules/ara3d-dataflow/spec/`, the viewer workspace is `viz/` (README).
+- The spec at `spec/`, the viewer at `viewer/`: the spec is under `submodules/ara3d-dataflow/spec/`, the viewer workspace is `deps/bim-open-viewer/` (README).
 - The PlatoFlow PoC as a live component: deleted 2026-09-15; MCP and Ask live in BimOpenFlow.
 - "No Run implementation", "no `bfast.*` reader", "no numeric cast": all landed 2026-09-18 (`track-e.md`, `track-t.md`).
 - The NRC handoff "not built yet": the same day's integration record and `docs/nrc-walkthrough.md` show 13 graphs and the figures delivered.

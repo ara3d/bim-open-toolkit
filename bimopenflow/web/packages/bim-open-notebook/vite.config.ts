@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { resolve, basename } from "node:path";
-import { toolkitAlias } from "../../toolkit.config";
+import { viewerAlias } from "../../viewer.config";
 
 const gratify = resolve(__dirname, "../../../../deps/gratify/src/gratify");
 const samples = resolve(__dirname, "../../../../samples/notebooks");
@@ -74,7 +74,7 @@ export default defineConfig({
       input: { notebook: resolve(__dirname, "notebook.html"), nrc: resolve(__dirname, "nrc.html") },
     },
   },
-  resolve: { alias: [toolkitAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
+  resolve: { alias: [viewerAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
   server: {
     // IPv4 loopback explicitly, for the reason given in packages/app/vite.config.ts.
     host: "127.0.0.1",

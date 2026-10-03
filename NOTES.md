@@ -71,7 +71,7 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Root cause of those blobs (fixed 2026-08-31): `.gitignore` patterns `*.bos`/`*.duckdb` match any path component by name, and ignore matching is case-insensitive on Windows, so the directories `src/BimOpenFlow.Nodes.Bos` and `submodules/bim-open-schema/src/Ara3D.BimOpenSchema.DuckDb` were excluded whole. Tracks could only stage their sources with `git add -f`, which bypasses every ignore rule and swept `bin/`+`obj/` in with them. Fixed by re-including all directories under `src/` and `tests/` (`!src/**/`, `!tests/**/`) and moving the build-output rules last so they still win — no `-f` is ever needed now. Lesson: a name-matching ignore pattern that can collide with a project directory is a latent artifact leak; never reach for `git add -f`, fix the ignore rule instead.
 - The blobs were left in history deliberately: removing them needs a force-push of `main` on a public repo, which breaks existing clones and forks for ~2.5MB of a 8.3MB `.git`. Do it only as a deliberate, announced cleanup when no other session is working the repo.
 
-### Track VCORE (@ara3d/viewer-core) — 37 tests
+### Track VCORE (@bim-open-viewer/core) — 37 tests
 - Loader contract: InstancedGroup.append(transforms 16 floats col-major, colors RGBA 4 floats) -> startIndex; renderer sync is pull-based via version counters.
 - Per-instance alpha not rendered yet (three instanceColor is RGB); group opacity works; TODO in group-object.ts.
 - Capacity growth rebuilds the InstancedMesh — consumers must hold GroupObject.root, never cache .mesh.
@@ -99,7 +99,7 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - Geometry asset scheme fixed by supervisor to model:{id} -> /api/models/{id}/bos, matching the host route; promote the endpoint to contracts.json when it stabilizes.
 - vite build emits one 973 kB chunk (three) — code-splitting is a cosmetic TODO.
 
-### Track VEXT (@ara3d/viewer-loaders + @ara3d/viewer-controls) â€” 45 tests
+### Track VEXT (@bim-open-viewer/loaders + @bim-open-viewer/controls) â€” 45 tests
 - BOS reader ported, not stubbed: `.bos` = ZIP of parquet tables (not BFAST); vertices Int32 fixed-point /10000, mesh-local indices; decoded with jszip + hyparquet (pure JS). Sources recovered from @ara3d/ara3d-webgl 1.3.15's published source map.
 - Core API gap: `Viewer.sceneObject` is private â€” picking/clipping can't reach the viewer's meshes; core needs a one-line accessor (`get objects(): SceneObject`).
 - Core API gap: clipping needs `WebGLRenderer.localClippingEnabled = true` but the renderer is private too.
@@ -199,7 +199,7 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 - `markSaved` is an extra internal action beyond the specified set â€” save() must clear dirty through the dispatch choke point.
 
 ### Track PANES (@bimopenflow/panes) â€” 66 tests
-- `@bimopenflow/contracts` and viz resolve through existing workspace junctions; only cross-workspace `@ara3d/viewer-*` need tsconfig/vitest aliases until a real install links them (TODO-marked for the supervisor).
+- `@bimopenflow/contracts` and viz resolve through existing workspace junctions; only cross-workspace `@bim-open-viewer/*` need tsconfig/vitest aliases until a real install links them (TODO-marked for the supervisor).
 - Viewer controls' minimal element interfaces (`InputElement`, `PickElement`) aren't satisfied by `HTMLCanvasElement` under strict function types â€” panes casts through `unknown`; widen those signatures in viewer/packages/controls.
 - viz doesn't export its column helpers, so panes reimplements a small `columns.ts`; promote into viz's public API if a third consumer appears.
 - viz `DataTableView` re-renders on header-click sort with no hook â€” TablePane uses a MutationObserver to keep selection highlights; an `onRender`/row-metadata option in viz would remove that.

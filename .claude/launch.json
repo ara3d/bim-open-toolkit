@@ -61,7 +61,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "viz",
+        "deps/bim-open-viewer",
         "run",
         "gallery"
       ],

@@ -279,7 +279,7 @@ The pane implementations — table, chart, 3D view, inspector, verdict list —
 each an isolated module behind the single pane contract (data in, events out).
 The most naturally parallel surface in the system: one agent per pane, zero
 overlap.
-**Depends on:** @bimopenflow/viz, @ara3d/viewer-core/-loaders/-controls (3D
+**Depends on:** @bimopenflow/viz, @bim-open-viewer/core/-loaders/-controls (3D
 pane only), contracts (generated TS).
 
 ### @bimopenflow/viz
@@ -306,26 +306,26 @@ per-instance color API, and loader progress reporting. BIM-free, split into
 three packages with clean interfaces so agents can work them concurrently;
 the workspace is a candidate to move to its own repo once stable.
 
-### @ara3d/viewer-core
+### @bim-open-viewer/core
 **Location:** `viewer/packages/core/`
 The renderer: scene management, instanced drawing, materials, per-instance
 color, and the frame loop. No file formats and no input handling — it draws
 what it is handed.
 **Depends on:** three (peer).
 
-### @ara3d/viewer-loaders
+### @bim-open-viewer/loaders
 **Location:** `viewer/packages/loaders/`
 Ingestion: BOS geometry and GLB loading into viewer-core's scene structures,
 with incremental/progress reporting as a first-class API. All format knowledge
 lives here.
-**Depends on:** @ara3d/viewer-core; three (peer).
+**Depends on:** @bim-open-viewer/core; three (peer).
 
-### @ara3d/viewer-controls
+### @bim-open-viewer/controls
 **Location:** `viewer/packages/controls/`
 Interaction: camera models and navigation, picking/selection, and section
 planes / overlay hooks (overlay may split out later if it grows). Emits
 selection events; owns no scene content.
-**Depends on:** @ara3d/viewer-core; three (peer).
+**Depends on:** @bim-open-viewer/core; three (peer).
 
 ---
 
@@ -380,7 +380,7 @@ graph BT
   DASH[BimOpenFlow.Dashboards]
   REP[BimOpenFlow.Reports]
   EVID[BimOpenFlow.Evidence]
-  VIEW["@ara3d/viewer-* (core, loaders, controls)"]
+  VIEW["@bim-open-viewer/* (core, loaders, controls)"]
   WEB["@bimopenflow/* (app, state, panes, viz, api-client)"]
 
   NG --> ABS
@@ -441,7 +441,7 @@ same file.
   folders per widget is enough until something external consumes a single chart.
 - **Engine internals** (scheduler vs. memoization/cache) — splitting these
   would freeze a contract exactly where refactoring freedom matters most.
-- **Viewer overlay/annotation** — starts inside `@ara3d/viewer-controls`;
+- **Viewer overlay/annotation** — starts inside `@bim-open-viewer/controls`;
   splits out if section planes / annotations grow their own audience.
 - **Docking/layout manager in the web app** — a genuine module, but its right
   home is gratify; move it upstream when it stabilizes rather than splitting it

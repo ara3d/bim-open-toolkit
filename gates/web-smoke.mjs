@@ -5,13 +5,13 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const viewer = join(root, "viz");
+const viewer = join(root, "deps", "bim-open-viewer");
 const web = join(root, "bimopenflow", "web");
 
 const steps = [
-  [viewer, ["test", "-w", "@ara3d/viewer-core"]],
-  [viewer, ["test", "-w", "@ara3d/viewer-loaders"]],
-  [viewer, ["test", "-w", "@ara3d/viewer-controls"]],
+  [viewer, ["test", "-w", "@bim-open-viewer/core"]],
+  [viewer, ["test", "-w", "@bim-open-viewer/loaders"]],
+  [viewer, ["test", "-w", "@bim-open-viewer/controls"]],
   [web, ["test", "-w", "@bimopenflow/api-client"]],
   [web, ["test", "-w", "@bimopenflow/viz"]],
   [web, ["test", "-w", "@bimopenflow/state"]],

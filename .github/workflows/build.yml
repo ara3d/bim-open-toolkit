@@ -34,7 +34,7 @@ jobs:
       # TKT-19 measured the browser-driven Duplex half of `npm run
       # nrc:walkthrough` (nrc:walkthrough:duplex, i.e. --skip-snowdon) at
       # 6m08s locally with a warm npm/dotnet cache, on top of the solution
-      # build above and two more npm workspaces (bimopenflow/web and viz,
+      # build above and two more npm workspaces (bimopenflow/web and deps/bim-open-viewer,
       # for the editor and its Playwright/Edge capture) that this job does
       # not otherwise install. A cold windows-latest run of that install
       # plus capture is expected to clear the ten-minute budget, so CI runs

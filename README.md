@@ -189,7 +189,7 @@ assessment from 2026-09-08.
 | `plugins/` | The Revit 2025 add-ins: BOS exporter, Bowerbird host, samples, and `Ara3D.Revit.Utils` |
 | `apps/` | The BOS Browser, a WPF grid viewer with glTF and Excel export |
 | `bimopenflow/web/` | The web editor workspace (npm workspaces) |
-| `viz/` | The standalone 3D viewer workspace, seventeen packages |
+| `deps/bim-open-viewer/` | The standalone 3D viewer workspace, seventeen packages |
 | `samples/` | Runnable sample analyses: tables, BIM, and 3D, with sample data |
 | `gates/` | Headless integration smoke checks |
 | `docs/` | Architecture, design decisions, demo guides, and the generated [node reference](docs/nodes.md) |

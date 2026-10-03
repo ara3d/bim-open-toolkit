@@ -129,9 +129,9 @@ export async function captureAll(browser, base, specs, outDir, { viewport = { wi
   return { results, errors };
 }
 
-/** Playwright's Chromium from the viz workspace, using the installed Edge so no browser download is needed. */
+/** Playwright's Chromium from the viewer workspace (deps/bim-open-viewer), using the installed Edge so no browser download is needed. */
 export async function launchBrowser() {
-  const { chromium } = await import(pathToFileURL(resolve(root, "viz/node_modules/playwright-core/index.mjs")).href);
+  const { chromium } = await import(pathToFileURL(resolve(root, "deps/bim-open-viewer/node_modules/playwright-core/index.mjs")).href);
   return chromium.launch({ channel: "msedge", headless: true, args: ["--enable-unsafe-swiftshader"] });
 }
 
