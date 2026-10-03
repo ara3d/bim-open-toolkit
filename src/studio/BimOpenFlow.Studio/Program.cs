@@ -25,7 +25,7 @@ static int WriteNodeDocs(string dir)
     var catalog = Path.Combine(dir, NodeCatalogFile.FileName);
     File.WriteAllText(catalog, NodeCatalogFile.Text(StudioComposition.Profiles));
     Console.WriteLine($"Wrote {catalog}");
-    return NodeDocsProgram.Run(Path.Combine(dir, "nodes.md"), StudioComposition.AllDocPacks);
+    return NodeDocsProgram.Run(Path.Combine(dir, "nodes.md"), StudioComposition.AllDocPacks, StudioComposition.AllDocNotes);
 }
 
 static string DocsDir()

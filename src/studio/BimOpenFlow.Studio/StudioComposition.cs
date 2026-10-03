@@ -72,4 +72,8 @@ public static class StudioComposition
     /// <summary>Every pack docs/nodes.md lists, in its order.</summary>
     public static IReadOnlyList<Pack> AllDocPacks
         => [.. DocPacks, .. NodeDocsProgram.GenericPacks];
+
+    /// <summary>The hand-written notes docs/nodes.md prints: the BIM packs' and the generic ones.</summary>
+    public static IReadOnlyDictionary<string, string> AllDocNotes
+        => BimNodeNotes.All.Concat(NodeNotes.Generic).ToDictionary();
 }
