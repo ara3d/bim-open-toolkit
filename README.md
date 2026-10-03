@@ -1,21 +1,30 @@
-# BIM Open Toolkit
+<p><img src="site/images/family-banner.svg" alt="BIM Open Toolkit" height="60"></p>
 
-An open data layer for building information, and a node graph on top of it that people
-and AI agents edit with the same operations. It is for developers and analysts who need
-to get tables, 3D views, charts, and checks out of building models without writing
-against a vendor's API.
+**Try it in the browser:** [the family page](https://ara3d.github.io/bim-open-toolkit/) links the [viewer's five 3D demos](https://ara3d.github.io/bim-open-viewer/) and [twelve sample notebooks](https://ara3d.github.io/bim-open-notebook/), both running with no install and no server.
+
+BIM Open Toolkit gets schedules, checks, charts, and 3D views out of building models
+without a vendor's API. It stores a model as plain tables (BIM Open Schema, or BOS) and
+turns each question about those tables into a small graph that a person and an AI agent
+build with the same four edits, so an answer arrives with the steps that produced it.
+
+This repository is the hub of the BIM Open family and the analyst application: the
+studio, the node packs that know about buildings, the samples over real models, the
+headless checks, and the NRC (National Research Council Canada) research work. Since
+2026-10-03 the products are being split into repositories of their own; until a product's
+phase lands, its code still lives here at the path given below.
+[docs/plans/repository-split.md](docs/plans/repository-split.md) has the phases.
+
+| Repository | What it is | Status on 2026-10-03 |
+|---|---|---|
+| [bim-open-viewer](https://github.com/ara3d/bim-open-viewer) | WebGL viewer for building models, 17 npm packages | Split out; used here as `deps/bim-open-viewer` |
+| [bim-open-notebook](https://github.com/ara3d/bim-open-notebook) | A session with an agent kept as a document of results that can be evaluated again | Moving in phase 6; code in `bimopenflow/web/packages/bim-open-notebook` |
+| [bim-open-flow](https://github.com/ara3d/bim-open-flow) | Graphs over tables: node packs, headless host, web editor, MCP server | Moving in phase 5; code in `src/flow` and `bimopenflow/web` |
+| [bim-open-data](https://github.com/ara3d/bim-open-data) | BOS and IFC in .NET: read, write, mesh, convert to DuckDB, edit property sets byte-exactly | Moving in phase 4, under way |
+| [bim-open-schema](https://github.com/ara3d/bim-open-schema) | The BOS specification | Separate from the start |
+
+[![The family page: purpose, the two in-browser demos, and the repositories](docs/images/family-page.png)](https://ara3d.github.io/bim-open-toolkit/)
 
 [PROJECT.md](PROJECT.md) is the project brief: purpose, users, workflows, principles, scope, and how success is measured. New work is defined against one of its workflows.
-
-Two things live here:
-
-- **BIM Open Schema (BOS)** and everything that produces or consumes it: the C#
-  reference implementation of the columnar, tool-independent schema (the
-  specification itself is the `bim-open-schema` submodule), IFC loading, meshing,
-  and byte-exact IFC editing, the Revit 2025 exporter add-in, and the BOS Browser.
-- **BimOpenFlow**: a specified dataflow graph, with an engine, a node vocabulary, a
-  headless host, an MCP server, and a web editor, for building ETL pipelines, 3D
-  views, charts, reports, and database queries out of that data.
 
 ## The problem it solves
 

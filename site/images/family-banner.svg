@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 40" width="540" height="60">
+<style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&amp;display=swap');text{font-family:'Instrument Sans','Public Sans','Segoe UI',system-ui,sans-serif;font-size:22px;letter-spacing:-0.01em}</style>
+<g transform="translate(0 8)"><path fill="#b8326e" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></g>
+<g transform="translate(30 8)"><path fill="#2f66ce" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></g>
+<g transform="translate(60 8)"><path fill="#0f8a80" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></g>
+<g transform="translate(90 8)"><path fill="#5a47c7" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></g>
+<text x="130" y="28"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="6">Toolkit</tspan></text>
+</svg>
