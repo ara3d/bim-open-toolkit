@@ -1,9 +1,9 @@
 ---
 id: TKT-30
 title: Merge the seven Snowdon IFC files into one BOS with a correspondence table for storeys, grids, and spaces
-status: claimed
+status: open
 depends_on: []
-owner: assembly-line-supervisor
+owner:
 fence: [src/data/Ara3D.Ifc.Bos/**, src/data/Ara3D.BimOpenSchema.Federation/**, tests/data/Ara3D.Ifc.Tests/ConverterUnitAndAxisTagTests.cs, tests/data/Ara3D.BimOpenSchema.Federation.Tests/**, tests/flow/BimOpenFlow.TableWorkflows.Tests/**, BimOpenToolkit.sln, tools/building-model-workflows/**, samples/snowdon-analyses/**, samples/duckdb-analyses/**, docs/bim-flow-duckdb.md, BIMOPENFLOW.md, scripts/federate-snowdon.mjs, scripts/prepare-bim-flow-duckdb.mjs, scripts/check-bim-flow-duckdb.mjs, docs/plans/snowdon-federation-build.md]
 ---
 
@@ -16,3 +16,7 @@ fence: [src/data/Ara3D.Ifc.Bos/**, src/data/Ara3D.BimOpenSchema.Federation/**, t
 - [ ] docs/bim-flow-duckdb.md and BIMOPENFLOW.md name this export as the canonical Snowdon data and the numbers W1 checks (doors, spaces) are re-derived from it
 
 Decides TKT-2: the canonical Snowdon data is the merged seven-file model, not either single-file export. Design and evidence: docs/proposals/snowdon-federation.md (steps 1 to 4 of 'Where it lives'). GlobalId is not a usable key across the files (the same storey id is L2 in three files and Datum in Site), storeys join on elevation, grids on axis tag, and MEP spaces relate to rooms through Room Number, which means 'space inside room', not 'same thing'. The typed BuildingModel reader is TKT-31. Serves W1 and W3; TKT-7 and TKT-13 wait on this.
+
+## Notes
+
+- 2026-10-03: claim released; the session that held it (assembly-line-supervisor) had stopped. Checked against the code that day. Done: chunks C1 to C6 and C8 of `docs/plans/snowdon-federation-build.md` (library, converter, `federate-union`, the matching graph over the five-document example, `FederationStore` and views; last commit e4d9069). Left: C7 (the Snowdon acceptance test), C9 (`federate-duckdb`), C10 (`scripts/federate-snowdon.mjs` and the manifest), C11 (studio graphs), C12 (prepare and check scripts), C13 (docs). Needs the private files at `BIM_OPEN_SNOWDON_IFC`. The plan's build log stops at C4.

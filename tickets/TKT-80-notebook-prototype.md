@@ -1,9 +1,9 @@
 ---
 id: TKT-80
 title: Analysis notebook prototype: a session transcript with live embeds, over the NRC samples
-status: claimed
+status: open
 depends_on: []
-owner: notebook-supervisor
+owner:
 fence: [bimopenflow/web/packages/bim-open-notebook/**, samples/notebooks/**, docs/plans/notebook.md, docs/proposals/notebook-sessions.md, bimopenflow/web/package-lock.json, apps/README.md, README.md, docs/ARCHITECTURE.md, docs/OVERVIEW.md, docs/claude-cli-login.md, gates/web-smoke.mjs, bimopenflow/web/package.json]
 ---
 
@@ -17,3 +17,7 @@ fence: [bimopenflow/web/packages/bim-open-notebook/**, samples/notebooks/**, doc
 - [ ] Embeds of kind value, table, chart, graph, view3d, picture, and file render; the package's typecheck and tests pass
 
 Serves workflow 2. Design and sessions: docs/proposals/notebook-sessions.md. Plan: docs/plans/notebook.md.
+
+## Notes
+
+- 2026-10-03: claim released; the session that held it (notebook-supervisor) had stopped. Checked against the code that day. Done: the prototype in `bimopenflow/web/packages/bim-open-notebook` (chunks N1 to N10, W1, W2, A1 to A9, G, the graph editor in cells via TKT-94, markdown replies); typecheck clean and 300 tests passing on 2026-10-03; 13 sample notebooks. Left before closing: one live multi-turn run against the studio host (criterion 3; a single Haiku request worked in b70e270), and `node gates/web-smoke.mjs`. The plan's Outcome section is out of date. Two defects seen 2026-10-03 are filed separately (the 3D embed's legend, mid-word underscores in replies). The rest of the work is in TKT-86 to TKT-92, TKT-104 and TKT-105.

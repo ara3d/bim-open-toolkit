@@ -1,9 +1,9 @@
 ---
 id: TKT-18
 title: Fix the double count in the IFC ask: Q8 reported twice the expected carbon
-status: claimed
+status: open
 depends_on: []
-owner: small-job-builder
+owner:
 fence: [src/mcp/BimOpenMcp.Ifc/**, .claude/skills/ifc-ask/**, samples/nrc/**]
 ---
 
@@ -18,3 +18,7 @@ Serves W6 and principle 4 (a reported number comes from a tool result and is rig
 ## Note, 2026-09-27
 
 The code fix landed (9b6e85a, StoreyOfElement view). End-to-end confirmation by a model waits for TKT-41, which now runs through the Claude Code command line with Haiku (TKT-45), not a funded API account.
+
+## Notes
+
+- 2026-10-03: claim released; the session that held it (small-job-builder) had stopped. Checked against the code that day. Done: the fix (9b6e85a, the StoreyOfElement view; StoreyOfEntity counted a storey's rollup twice), confirmed by the scripted replay in `scripts/demo-ifc-mcp.mjs`. Left: a model-driven run of the eight questions through the Claude CLI (TKT-41), its transcript committed, and confirming a regression test for the double count exists.

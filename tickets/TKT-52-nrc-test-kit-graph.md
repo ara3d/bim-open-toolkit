@@ -1,16 +1,16 @@
 ---
 id: TKT-52
 title: NRC test kit as a graph: bring any IFC and CSV, get a match report, colours, and storey totals
-status: claimed
+status: open
 depends_on: []
-owner: parallel-wave-builder-p5
+owner:
 fence: [samples/nrc-analyses/nrc-join-analytics.json, samples/nrc/test-kit/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/JoinAnalyticsTests.cs]
 ---
 
 ## Acceptance criteria
 
-- [x] Graph nrc-join-analytics joins a CSV to a model on a key column (default GlobalId), reports CSV rows with no element and physical elements with no row, colours by a numeric and a text column, and gives per-storey totals and means
-- [x] Run on IFC-Test-Kit/analytics_dataset_with_levels.csv (268 rows) against duplex-base.ifc; the match report's counts are asserted in a test and explained in samples/nrc/test-kit/README.md
+- [ ] Graph nrc-join-analytics joins a CSV to a model on a key column (default GlobalId), reports CSV rows with no element and physical elements with no row, colours by a numeric and a text column, and gives per-storey totals and means
+- [ ] Run on IFC-Test-Kit/analytics_dataset_with_levels.csv (268 rows) against duplex-base.ifc; the match report's counts are asserted in a test and explained in samples/nrc/test-kit/README.md
 
 P5 of Proposal: docs/proposals/nrc-deliverables.md, test kit steps 1 to 5. Step 6 (large_test_model.ifc) moved to the performance ticket.
 
@@ -58,3 +58,7 @@ The reviewer recomputed the per-storey numbers, the 0 unmatched rows, the 61 dis
 10. README CSV SHA-256 is truncated by one digit (append `b`).
 
 Design notes: (1) the model is named in three places that can disagree; add to answer a count of mesh GlobalIds missing from entities (expected 0). (2) nrc-rollup picks the nearest storey, this graph joins every StoreyOfElement row, and groups by StoreyName; a shared nearest-storey view in BosDuckDbViews belongs to TKT-48 or TKT-56. (3) Test helpers duplicate ModelGraphTests' internal Document/EvaluateGreen/Number; evaluate the graph once per fixture. (4) Add a few assertions derived from the test kit's model_elements.csv IFCType column so the definitions themselves are checked. (5) Test kit step 4 (values for a selected element) has no node or test; claim steps 1-3 and 5, or name what covers step 4.
+
+## Notes
+
+- 2026-10-03: claim released; the session that held it (parallel-wave-builder-p5) had stopped. Checked against the code that day. The graph and its tests exist (6a01478), but the fresh-eyes review of 2026-09-27 recorded in this ticket found ten defects and none is fixed: "physical element" means "has a mesh" (the 21 unmatched are IfcSpace rooms), `csvWithStorey` is an inner join that drops 50 opening rows, and the README's explanations are wrong. Both criteria are unticked again. Start with findings 1, 2 and 5 in `samples/nrc-analyses/nrc-join-analytics.json`, `JoinAnalyticsTests.cs`, and `samples/nrc/test-kit/README.md`.

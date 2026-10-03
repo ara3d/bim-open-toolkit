@@ -1,9 +1,9 @@
 ---
 id: TKT-8
 title: Measure the Claude backend on the Ask request set and record the transcript
-status: claimed
+status: open
 depends_on: [TKT-45]
-owner: small-job-builder
+owner:
 fence: [scripts/ask-bim-flow.mjs, docs/bim-flow-mcp-demo.md, artifacts/bim-flow-duckdb/**, samples/duckdb-analyses/**]
 ---
 
@@ -25,3 +25,7 @@ samples/ask/requests.txt holds the ten questions with expected answers; one pass
 ## Owner's decision, 2026-09-27
 
 The Anthropic API account is not to be used. Claude is called from the command line (the Claude Code CLI signed in on the owner's machine), with Haiku models at medium effort. TKT-45 builds that backend; the rerun this ticket waits for (TKT-41) runs through it. The opus-5 row in the score table stays as history; the next row is Haiku over the command line. Depends on TKT-45 now.
+
+## Notes
+
+- 2026-10-03: claim released; the session that held it (small-job-builder) had stopped. Checked against the code that day. Done: the ten-question request file `samples/ask/requests.txt` (70fdc55) and an opus-5 run (4 correct, 1 wrong, 5 failed for credit) in `docs/bim-flow-mcp-demo.md`. Left: run the request file through the Claude CLI backend (Haiku, TKT-45), commit the transcript, add its row to the score table, and file a ticket per wrong answer. The five failures sit in TKT-41.
