@@ -118,3 +118,16 @@ What remains, as of 2026-10-03. Each item says why it is in this place.
   - `bim-open-notebook`: README (the interaction model, honest status) and `site/`, which opens the 12 sample notebooks from their snapshots with no server; built by the toolkit's new `build:pages` script in the notebook package (tests 303 of 303).
   - `bim-open-data`, `bim-open-flow`: READMEs that say what moves there and when, landing pages, Data mark in rose.
   - Toolkit `site/`: the family page, one card per repository with its status; `docs/BRANDING.md` lists four products.
+
+## Execution order (owner: "do it all", 2026-10-03 evening)
+
+Waves run in this order. Agents within a wave have disjoint fences; a wave starts when the one before it has committed and passed its checks.
+
+- **Wave A**, in parallel:
+  - A1: TKT-141 (graph card layout; `bimopenflow/web/packages/graph/**`, sample graph layouts).
+  - A2: TKT-139 and TKT-140 (notebook 3D legend, underscores; `bimopenflow/web/packages/bim-open-notebook/**`, `panes/src/viewPane3D.ts`, `panes/src/instanceLegend.ts`).
+  - A3: phase 4, `bim-open-data`. It owns all .NET building in the checkout during the wave. It also moves the `bim-open-schema`, `ara3d-sdk`, and `parakeet` submodules to `deps/`, so the data repository and the toolkit share one copy of each, and it settles the rest of TKT-143 (meshing, Parakeet).
+- **Wave B**: phase 3, the seams: host packs, editor panes, notebook embeds, BIM composition in `BimOpenFlow.Studio`.
+- **Wave C**: phase 5, `bim-open-flow` (with `ara3d-dataflow` moved to `deps/`, kept as its own repository).
+- **Wave D**: TKT-86, then phase 6, the notebook's code into `bim-open-notebook`.
+- **Wave E**: phase 7: the workspace repository, a tag, and `nrc-ifc-llm` moved to the tag.
