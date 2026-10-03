@@ -143,7 +143,7 @@ Claude Code lists them as `bimopen-ifc` (questions about an IFC file) and
 rules the Ask box's agent is given, so a chat in Claude Code starts with the same knowledge;
 see [docs/bim-flow-mcp-demo.md](docs/bim-flow-mcp-demo.md).
 
-The C# tests need fixtures that are not committed. Run `./data/get-test-data.ps1` first,
+The C# tests need fixtures that are not committed. Run `node deps.mjs`, then `./data/get-test-data.ps1`,
 which copies them from a sibling clone as described in [data/README.md](data/README.md).
 The sample analyses in `samples/` run without fixtures.
 
@@ -190,20 +190,19 @@ assessment from 2026-09-08.
 |---|---|
 | `submodules/ara3d-dataflow/spec/dataflow-graph/` | The normative graph specification and its conformance vectors |
 | `contracts/` | Shared type definitions and the C#/TypeScript generator |
-| `src/data/` | The BOS reference implementation and the IFC stack; depends on nothing above it |
+| `deps/bim-open-data/` | The BOS reference implementation, the IFC stack, the IFC MCP server (`BimOpenMcp.Ifc`), and the BOS Browser, from [bim-open-data](https://github.com/ara3d/bim-open-data); fetched by `node deps.mjs` |
 | `src/flow/` | BimOpenFlow: node packs, host, and run outputs; depends on `data` and the engine submodule |
-| `src/mcp/` | The two MCP servers, `BimOpenMcp.Ifc` over `data` and `BimOpenMcp.Flow` over `flow` |
+| `src/mcp/` | The flow MCP server, `BimOpenMcp.Flow` (the IFC server lives in `deps/bim-open-data/src/mcp/BimOpenMcp.Ifc`) |
 | `src/studio/` | Ara 3D Studio integration: BIM scripts and the Studio hosting of the flow host |
 | `tests/` | NUnit projects mirroring `src/`, plus `BimOpenToolkit.Layering.Tests`, which fails on a reference that points up the layering |
 | `plugins/` | The Revit 2025 add-ins: BOS exporter, Bowerbird host, samples, and `Ara3D.Revit.Utils` |
-| `apps/` | The BOS Browser, a WPF grid viewer with glTF and Excel export |
 | `bimopenflow/web/` | The web editor workspace (npm workspaces) |
 | `deps/bim-open-viewer/` | The standalone 3D viewer workspace, seventeen packages |
 | `samples/` | Runnable sample analyses: tables, BIM, and 3D, with sample data |
 | `gates/` | Headless integration smoke checks |
 | `docs/` | Architecture, design decisions, demo guides, and the generated [node reference](docs/nodes.md) |
-| `submodules/bim-open-schema` | The BIM Open Schema specification: five dependency-free C# files and the sample `.bos` archives |
-| `submodules/ara3d-sdk` | The Ara3D SDK, built from source; `Directory.Build.targets` turns every `Ara3D.*` package reference into a project reference into it |
+| `deps/bim-open-schema` | The BIM Open Schema specification: five dependency-free C# files and the sample `.bos` archives; fetched by `node deps.mjs` |
+| `deps/ara3d-sdk` | The Ara3D SDK, built from source; `Directory.Build.targets` turns every `Ara3D.*` package reference into a project reference into it; fetched by `node deps.mjs` |
 | `deps/` | Dependencies listed in `deps.json` and filled by `node deps.mjs`, not committed; today the Gratify canvas UI library |
 | `data/` | Test fixtures, not committed; populate with `./data/get-test-data.ps1` |
 
