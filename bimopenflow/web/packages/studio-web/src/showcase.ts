@@ -1,8 +1,8 @@
 import { ApiClient } from "@bimopenflow/api-client";
-import { createViewPane3D, ensurePaneStyles } from "@bimopenflow/panes";
+import { ensurePaneStyles } from "@bimopenflow/panes";
+import { createViewPane3D, type ViewStep } from "@bimopenflow/pane-3d";
 import { mountHostBanner, watchHost } from "@bimopenflow/client/host";
 import type { TableSlice } from "@bimopenflow/contracts";
-import type { ViewStep } from "../../panes/src/viewRecipe";
 import "./showcase.css";
 import graphUrl from "../../../../../samples/snowdon-analyses/snowdon-toolkit.json?url";
 

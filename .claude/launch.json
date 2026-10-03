@@ -52,9 +52,22 @@
         "run",
         "dev",
         "--workspace",
-        "packages/app"
+        "packages/studio-web"
       ],
       "port": 5300
+    },
+    {
+      "name": "bof-editor-generic",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "bimopenflow/web",
+        "run",
+        "dev",
+        "--workspace",
+        "packages/app"
+      ],
+      "port": 5304
     },
     {
       "name": "gallery",
@@ -120,7 +133,7 @@
         "run",
         "duckdb",
         "--workspace",
-        "@bimopenflow/app",
+        "@bimopenflow/studio-web",
         "--",
         "--port",
         "5309"
@@ -168,7 +181,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:BOF_HOST='http://127.0.0.1:5224'; npm --prefix bimopenflow/web run dev --workspace packages/app -- --port 5310"
+        "$env:BOF_HOST='http://127.0.0.1:5224'; npm --prefix bimopenflow/web run dev --workspace packages/studio-web -- --port 5310"
       ],
       "port": 5310
     },
@@ -212,7 +225,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:BOF_HOST='http://127.0.0.1:5226'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5312"
+        "$env:BOF_HOST='http://127.0.0.1:5226'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/studio-web'; npx vite --port 5312"
       ],
       "port": 5312
     },
@@ -239,7 +252,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:BOF_HOST='http://127.0.0.1:5228'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5316"
+        "$env:BOF_HOST='http://127.0.0.1:5228'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/studio-web'; npx vite --port 5316"
       ],
       "port": 5316
     },
@@ -271,7 +284,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:BOF_HOST='http://127.0.0.1:5232'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5332"
+        "$env:BOF_HOST='http://127.0.0.1:5232'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/studio-web'; npx vite --port 5332"
       ],
       "port": 5332
     },
@@ -303,7 +316,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:BOF_HOST='http://127.0.0.1:5240'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5340"
+        "$env:BOF_HOST='http://127.0.0.1:5240'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/studio-web'; npx vite --port 5340"
       ],
       "port": 5340
     },
@@ -335,7 +348,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:BOF_HOST='http://127.0.0.1:5242'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5342"
+        "$env:BOF_HOST='http://127.0.0.1:5242'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/studio-web'; npx vite --port 5342"
       ],
       "port": 5342
     },
@@ -377,7 +390,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:BOF_HOST='http://127.0.0.1:5366'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/app'; npx vite --port 5351"
+        "$env:BOF_HOST='http://127.0.0.1:5366'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/studio-web'; npx vite --port 5351"
       ],
       "port": 5351
     }

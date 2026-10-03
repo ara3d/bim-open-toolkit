@@ -40,7 +40,7 @@ export function startHost(dll, { port, profile, models, work, prefix = profile, 
 
 /** The Vite editor on `port`, proxying /api to `hostUrl`. */
 export function startWeb(port, hostUrl, { prefix = "web", config, env = {} } = {}) {
-  const app = join(root, "bimopenflow", "web", "packages", "app");
+  const app = join(root, "bimopenflow", "web", "packages", "studio-web");
   const args = ["vite", "--port", String(port), "--strictPort", ...(config ? ["--config", config] : [])];
   const child = spawn("npx", args, { cwd: app, stdio: ["ignore", "pipe", "pipe"], shell,
     env: { ...process.env, BOF_HOST: hostUrl, BOF_DUCKDB_HOST: hostUrl, ...env } });

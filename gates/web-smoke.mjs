@@ -1,4 +1,4 @@
-// Headless smoke: typecheck + test every web/viewer package, then build the editor app.
+// Headless smoke: typecheck + test every web/viewer package, then build the generic editor and the toolkit pages.
 // Usage: node gates/web-smoke.mjs   (from the repo root; needs prior npm install in both workspaces)
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
@@ -16,9 +16,13 @@ const steps = [
   [web, ["test", "-w", "@bimopenflow/viz"]],
   [web, ["test", "-w", "@bimopenflow/state"]],
   [web, ["test", "-w", "@bimopenflow/panes"]],
+  [web, ["test", "-w", "@bimopenflow/pane-3d"]],
+  [web, ["test", "-w", "@bimopenflow/client"]],
   [web, ["test", "-w", "@bimopenflow/graph"]],
   [web, ["test", "-w", "@bimopenflow/app"]],
+  [web, ["test", "-w", "@bimopenflow/studio-web"]],
   [web, ["run", "build", "-w", "@bimopenflow/app"]],
+  [web, ["run", "build", "-w", "@bimopenflow/studio-web"]],
 ];
 
 let failed = false;

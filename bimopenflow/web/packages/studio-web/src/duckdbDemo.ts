@@ -4,10 +4,9 @@
 // MCP tools; the transcript streams in below the top bar and the new graph
 // opens when it is done.
 import { ApiClient } from '@bimopenflow/api-client';
-import type { App } from './app.js';
+import type { App } from '@bimopenflow/app';
 import { createAskTransport, mountHostBanner, watchHost } from '@bimopenflow/client/host';
-import { startOnce } from './startOnce.js';
-import { appendAskLine as sharedAppendAskLine, shortArgs } from './askClient.js';
+import { appendAskLine as sharedAppendAskLine, shortArgs, startOnce } from '@bimopenflow/app/entry';
 import './duckdbDemo.css';
 
 /** One entry of samples/duckdb-analyses/workflows.json, loaded lazily below. */
@@ -75,7 +74,7 @@ async function download() {
 
 // ── Ask ──────────────────────────────────────────────────────────────────────
 // The event shape and the transport live in @bimopenflow/client/host; shortArgs and
-// the transcript line live in askClient.ts, shared with the editor's Ask panel
+// the transcript line live in @bimopenflow/app/entry (askClient.ts), shared with the editor's Ask panel
 // (askPanel.ts, TKT-84).
 
 /** Bound to this page's log element and its 'duck-ask' classes, so every
@@ -187,7 +186,7 @@ async function start() {
     // offline load (and a test that stubs a failing fetch) from paying for
     // code neither one will use.
     const [{ createApp }, { default: workflows }] = await Promise.all([
-      import('./app.js'),
+      import('@bimopenflow/app'),
       import('../../../../../samples/duckdb-analyses/workflows.json') as Promise<{ default: Workflow[] }>,
     ]);
     if (workflows.some(workflow => !available.some(item => item.id === workflow.id)))

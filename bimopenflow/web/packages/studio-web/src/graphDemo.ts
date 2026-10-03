@@ -3,9 +3,10 @@
 // (3d.html?analysis=color-by-category) and defaults to the Snowdon toolkit.
 
 import { ApiClient } from "@bimopenflow/api-client";
-import { analysisFromSearch } from "./analysisParam.js";
-import { createApp } from "./app.js";
+import { createApp } from "@bimopenflow/app";
+import { analysisFromSearch } from "@bimopenflow/app/entry";
 import { mountHostBanner, watchHost } from "@bimopenflow/client/host";
+import { TEMPLATES, toolkitPanes } from "./toolkitPanes.js";
 
 class GraphDemoApi extends ApiClient {
   override getModelBosUrl(id: string): string {
@@ -18,5 +19,5 @@ const root = document.getElementById("app");
 if (root) {
   const { api, host } = watchHost((fetchFn) => new GraphDemoApi({ baseUrl: "", fetch: fetchFn }));
   mountHostBanner(document, host);
-  createApp(root, api, { graphDemo: true, initialAnalysis: analysisFromSearch(location.search), host });
+  createApp(root, api, { graphDemo: true, initialAnalysis: analysisFromSearch(location.search), host, panes: toolkitPanes, templates: TEMPLATES });
 }

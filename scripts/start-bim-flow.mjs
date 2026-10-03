@@ -32,7 +32,7 @@ const PROFILES = {
 const HOST_PROJECT = "src/studio/BimOpenFlow.Studio";
 const HOST_BUILD = join(root, "artifacts", "bim-flow", "host");
 const HOST_DLL = join(HOST_BUILD, "bimopenflow-studio.dll");
-const APP_DIR = join(root, "bimopenflow", "web", "packages", "app");
+const APP_DIR = join(root, "bimopenflow", "web", "packages", "studio-web");
 
 const flag = (name) => process.argv.includes(name);
 const option = (name, fallback) => {
