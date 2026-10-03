@@ -40,7 +40,9 @@ What makes this editable by a program as easily as by a person:
   allowed enum values, and whether it is Pure or Effect. An agent reads the catalog and
   knows the whole vocabulary; the editor draws its UI from the same declaration; the
   reference in [nodes.md](nodes.md) is generated from it. [nodes.catalog.json](nodes.catalog.json)
-  is the host's catalog answer, committed so web tests can size node cards without a host.
+  is the studio's catalog answer, every pack included; the generic host's answer is committed
+  as `bimopenflow/web/packages/graph/test/nodes.catalog.json`, so the editor's tests size node
+  cards without a host.
 - **Failure is a state, not an exception.** Evaluating returns a per-node summary — `Ok`,
   `Unready`, `EffectPending`, `Unavailable`, `Error` — so a partially wired graph is a
   legitimate intermediate state to reason about and repair.
