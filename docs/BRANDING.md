@@ -3,10 +3,11 @@
 Decided 2026-10-03 by Christopher Diggins from proposals drafted with Claude
 Fable 5.1 (the explorations are kept under `docs/brand/explorations/`). This
 is the reference for the marks, the wordmarks, the fonts, and the colours of
-every BIM Open page. Four products carry it: **BIM Open Flow** (the
+every BIM Open page. Five products carry it: **BIM Open Flow** (the
 graph editor and studio), **BIM Open Notebook** (the session record),
-**BIM Open Viewer** (the 3D viewer), and **BIM Open Data** (the .NET
-implementation of BIM Open Schema and the IFC stack); the
+**BIM Open Viewer** (the 3D viewer), **BIM Open Data** (the .NET
+implementation of BIM Open Schema and the IFC stack), and **BIM Open
+Schema** (the specification the others implement or consume); the
 repository-layout proposal gives each its own repository. The studio
 look (`docs/proposals/studio-look.md`) is the first page to carry it; the
 classic page keeps its current look until the two are reconciled.
@@ -21,6 +22,7 @@ The products share everything except a mark and an accent:
 | **BIM Open Notebook** | Flow to Page, `docs/brand/notebook-mark.svg` | Ink violet `#5a47c7`, `#ece8fb` | `docs/brand/notebook-lockup.svg` | `ara3d/bim-open-notebook` |
 | **BIM Open Viewer** | `docs/brand/viewer-mark.svg` | Teal `#0f8a80`, `#e2f3f1` | `docs/brand/viewer-lockup.svg` | `ara3d/bim-open-viewer` |
 | **BIM Open Data** | Model to Rows, `docs/brand/data-mark.svg` | Rose `#b8326e`, `#f9e6ef` | `docs/brand/data-lockup.svg` | `ara3d/bim-open-data` |
+| **BIM Open Schema** | Hollow Rows, `docs/brand/schema-mark.svg` | Slate `#4f5d78`, `#e9ecf2` | `docs/brand/schema-lockup.svg` | `ara3d/bim-open-schema` |
 
 The toolkit itself (`ara3d/bim-open-toolkit`) is the family hub and has no
 accent of its own: its pages, such as the family landing page under
@@ -35,7 +37,7 @@ other product or status colour uses.
 ## The names
 
 The product names are three words: **BIM Open Flow**, **BIM Open
-Notebook**, **BIM Open Viewer**, **BIM Open Data**. The one-word form "BimOpenFlow" was the wordmark until
+Notebook**, **BIM Open Viewer**, **BIM Open Data**, **BIM Open Schema**. The one-word form "BimOpenFlow" was the wordmark until
 2026-10-03 and remains in code identifiers, package names, and the
 `bimopenflow/` directory, where it is a name for machines. Where a person
 reads it, in a command bar, a page title, a paper, or a README heading,
@@ -48,7 +50,7 @@ product second, and the two bars agree.
 
 ## The marks
 
-![Rows to Flow](brand/mark.svg) ![Flow to Page](brand/notebook-mark.svg) ![Model to Rows](brand/data-mark.svg)
+![Rows to Flow](brand/mark.svg) ![Flow to Page](brand/notebook-mark.svg) ![Model to Rows](brand/data-mark.svg) ![Hollow Rows](brand/schema-mark.svg)
 
 **Rows to Flow** (BIM Open Flow). Three table rows on the left; their wires
 curve and gather into one solid node on the right. It says what the
@@ -67,6 +69,14 @@ table rows on the right, each split into a key cell and a value cell. It
 says what the library does: a building model, read from IFC or Revit,
 becomes rows of plain tables.
 
+**Hollow Rows** (BIM Open Schema). Three rows drawn as frames, each with
+a key cell and a value cell cut out of it: the shape of the data with no
+data inside. The four other marks are verbs, and this is the noun they
+share; it is the only mark in the family drawn in negative space, which
+is what sets the specification apart from the tools. The file uses
+`fill-rule="evenodd"`, so a renderer that pastes the path must keep that
+attribute.
+
 Each file is a 24 by 24 viewBox, one path, one fill, so the path can be
 pasted into code (the studio's command bar draws it as an inline SVG from
 a path string) and scaled without edits.
@@ -78,9 +88,9 @@ Rules:
 - Sizes: 16 px (favicon and browser tab), 22 px (command bar, beside the
   wordmark), 48 px (start page), 96 px and up (papers, slides).
 - Below 16 px, Rows to Flow uses the node alone (the circle), Flow to
-  Page uses the page alone (the spine and its rows), and Model to Rows
-  uses the rows alone (the six cells), so the favicons differ even when
-  the node is lost.
+  Page uses the page alone (the spine and its rows), Model to Rows
+  uses the rows alone (the six cells), and Hollow Rows uses one frame
+  with its two cells, so the favicons differ even when the node is lost.
 - Clear space of half the mark's width on every side.
 - Do not rotate, skew, add rows, or recolour parts of a mark separately.
 
@@ -142,6 +152,8 @@ interface scale, so a table looks the same in a notebook and in the studio.
 | Accent soft (Viewer) | `#e2f3f1` | Selected row and hover, in the viewer |
 | Accent (Data) | `#b8326e` | The data mark and the data repository's pages |
 | Accent soft (Data) | `#f9e6ef` | Selected row and hover, on the data pages |
+| Accent (Schema) | `#4f5d78` | The schema mark, the specification's pages and the key badge |
+| Accent soft (Schema) | `#e9ecf2` | Selected row and badges, on the specification pages |
 | Text | `#171a1f` | Headings, body |
 | Dim | `#5a606c` | Secondary text, ids, meta, the "BIM Open" half of the wordmark |
 | Surface | `#ffffff` | Panels, cards, the command bar |
@@ -169,8 +181,13 @@ data vocabulary, not brand colours, and do not appear in the chrome.
   wordmark "BIM Open Notebook", and the reading type scale above. Until
   the notebook repository exists, the assets live under `docs/brand/` and
   move with the code.
+- Schema pages: the hollow-rows mark and the slate accent, the two-weight
+  wordmark "BIM Open Schema", body text at the notebook reading scale and
+  field tables at the interface scale. A copy of the mark and lockup goes
+  to the `bim-open-schema` repository, where the specification lives.
 - Favicons: `docs/brand/mark.svg` served as `favicon.svg` from the app
-  package; `docs/brand/notebook-mark.svg` from the notebook's page.
+  package; `docs/brand/notebook-mark.svg` from the notebook's page;
+  `docs/brand/schema-mark.svg` from the specification's pages.
 - Papers and slides: a lockup at 96 px or larger; body text in the
   document's own face, headings may use Instrument Sans.
 
@@ -187,11 +204,12 @@ monogram ranked best for favicon legibility and distinctiveness together;
 Ribbon Page, an N monogram), four accents beside the flow blue (ink
 violet, plum, ink, blue kept), three wordmark forms, and a notebook page
 in the family type; its decision, made the same day, is the one above.
-`schema-proposals.html` (2026-10-03, undecided) proposes the fifth
-product's mark and accent for BIM Open Schema: Table Shape (split rows
-under a header bar), Hollow Rows, and Rows with Brace, in slate
-`#4f5d78` or ochre, each shown in a five-tab strip beside the four
-decided marks, with a specification page in the family type.
+`schema-proposals.html` holds the three schema marks (Table Shape,
+Hollow Rows, Rows with Brace) in slate and ochre, each in a five-tab
+strip beside the four decided marks, with a specification page in the
+family type; the page recommended Table Shape, and the owner chose
+Hollow Rows for its clearer statement of "shape with no data", accepting
+the softer 16 px favicon that the page records.
 Each page loads its fonts from Google Fonts and needs no build step. If a
 mark is revisited, start from the monogram (`mark-2e-monogram.svg`) or
 the Swiss grid (`mark-2a-swiss.svg`), which were the strongest at 16 px.
