@@ -107,7 +107,8 @@ export function createGraphRenderer(mount: GraphEditorMount = createGraphEditor)
     link.target = "_blank";
     link.rel = "noopener";
     link.href = editorUrl(embed.analysisId);
-    header.appendChild(link);
+    // The editor runs beside a host; a hostless page has neither, so it has no link to offer.
+    if (!ctx.hostless) header.appendChild(link);
 
     const cell = doc.createElement("div");
     cell.className = "notebook-graph-canvas";

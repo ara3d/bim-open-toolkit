@@ -151,6 +151,13 @@ describe("renderGraph", () => {
     expect(link.href).toBe("http://127.0.0.1:5310/?analysis=nrc-q1");
   });
 
+  it("leaves out the Open in editor link on a hostless page", () => {
+    const el = document.createElement("div");
+    renderGraph(el, graphEmbed(), { ...ctxWith(fakeApi()), hostless: true });
+    expect(el.querySelector(".notebook-graph-header span")!.textContent).toBe("Graph nrc-q1 · 2 nodes");
+    expect(el.querySelector("a.notebook-graph-open")).toBeNull();
+  });
+
   it("gives the Open in editor link a left margin, so it never runs into the header text", () => {
     expect(notebookCss).toMatch(/\.notebook-graph-open\s*\{[^}]*margin-left:\s*\d/);
   });
