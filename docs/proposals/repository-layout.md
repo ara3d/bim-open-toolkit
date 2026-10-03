@@ -211,3 +211,40 @@ Each step is its own commit, or set of commits by path, and is verified before t
 - The owner's coding rules at `github.com/cdiggins/platonic-coder` (`PRINCIPLES.md`, `GIT.md`). Principles are ordered: correct, easy to change, built for parallel agents, no repetition, reasonable performance. `GIT.md` bans git worktrees and requires commits by path.
 - `PROJECT.md` in this repository, especially workflow 6 (requirement R8 above) and the Scope section.
 - `docs/ARCHITECTURE.md`, and the layering test `tests/BimOpenToolkit.Layering.Tests`, which enforces the dependency order data < flow < mcp < studio.
+
+## 11. Review (2026-10-03, Claude Fable 5.1)
+
+Written against the repository at `516e0b3` and the sibling checkouts under `~/git`. Each finding names what was checked.
+
+### 11.1 Verdict
+
+The direction holds: separate product repositories, one working checkout, and one pin per repository are the right goals, and B is the right mechanism. The proposal rests on one wrong fact about the SDK, leaves the only unrecoverable work in an unnamed place, and does the expensive steps before the cheap one that would prove B works.
+
+### 11.2 Facts that do not match the repository
+
+- **The SDK submodule is built from source, not from NuGet.** `Directory.Build.targets` rewrites every `PackageReference` whose id matches a project under `submodules/ara3d-sdk` into a `ProjectReference`, so all 24 references compile the SDK at the pinned commit, which is 156 commits past the v1.6.1 tag (`git submodule status`: `v1.6.1-156-gd41dfa7`). Three projects also reference the submodule directly: `plugins/Ara3D.Bowerbird.Revit2025`, `plugins/Ara3D.Bowerbird.RevitSamples`, and `src/studio/Ara3D.Studio.BimTools`, for `Ara3D.Bowerbird` and `Ara3D.Studio.Samples`, which are not packages. The downstream `poc/EnrichIfc` project in `nrc-ifc-llm` resolves SDK projects through the same path (its `obj/project.assets.json`). Step 4's "drop the unused submodule" would regress the SDK by 156 commits and break four projects. Answer to Q8: keep it, or publish a new SDK version first.
+- **The repository already runs the "D later" pattern.** The targets file is exactly "depend on a version number, substitute local source when present". The engine and schema use raw `ProjectReference`s into `submodules/` instead, about 60 of them (57 engine, 22 schema, 3 Parakeet, counted over `src`, `tests`, `apps`, `tools`, `plugins`). B is a path rename for those. The SDK pattern should be kept and named as the second mechanism, not discarded. The engine cannot move to D yet: no project under `ara3d-dataflow/src` declares a `PackageId` or `Version`.
+- **The diamond already exists on the owner's disk.** `~/git/gratify` is at `f8764ca` and `~/git/bim-open-schema` at `4e507df`; the toolkit pins `a2d1723` and `d12e635`. The Gratify sibling does not contain the pinned commit. Three Gratify histories on one machine is the strongest evidence for B and belongs in section 1.
+- **"Only `panes` imports the viewer, in six files"** is three source files (`boxTable.ts`, `viewerDeps.ts`, `test/toolkitRecipe.test.ts`) plus `panes/package.json`; `app/src/styles.ts` also imports from `viz`. The number is load-bearing for how easy the 3D pane is to unplug.
+
+### 11.3 The plan
+
+- **Say where the extracted viewer is.** Section 7 step 2 describes 285 extracted commits, renamed packages, and "nothing is pushed", with no path. No `bim-open-viewer` folder exists within four levels of the home directory, and `~/git/viewer` is the older `ara3d/viewer` repository. Push it to a branch before any other step.
+- **Prove B on Gratify inside the toolkit first.** Ten web config files (`tsconfig.json`, `vite.config.ts`, `vitest.config.ts` under `app`, `graph`, `bim-open-notebook`, and `vite.duckdb.config.ts`) and the `file:` dependency in `viz/package.json` point at `submodules/gratify`. Switching them to `deps/gratify` and running the web and viz tests proves junctions under Vite, tsc, vitest, and npm in one session with no new repository. Also pick one consumption mode: the editor aliases Gratify source while `viz` compiles it first with `tsc -p ../submodules/gratify/tsconfig.build.json`.
+- **Give the commit-and-pin command its own step with a test.** Every change inside a submodule is two commits in two repositories, and several agents bumping the workspace pointer will race. This is the piece most likely to make the owner want C, and it is one line in step 3. `GIT.md` says nothing about submodules yet. Acceptance: two agents commit to different submodules at once and no pointer bump is lost.
+- **Say where tickets go.** `tickets/` lives in the toolkit. TKT-28, one graph over data and 3D, spans three future repositories and has no home in any product.
+- **Name what replaces the layering test.** `tests/BimOpenToolkit.Layering.Tests` and `docs/ARCHITECTURE.md` describe one repository with data below flow below mcp below studio. After the split, data and flow are separate repositories and the test's `submodules` exemption describes nothing.
+
+### 11.4 Answers to the nine questions
+
+| # | Answer |
+|---|---|
+| Q1 | B. C's real advantage is the single CI run; today `build.yml` is one solution build with `submodules: recursive`. Under B each product repository needs its own pipeline running the deps script, so budget for five pipelines, not one. |
+| Q2 | A separate working repository, kept to `.gitmodules`, the script, a README, and agent configuration. Plans belong with the product they concern. |
+| Q3 | E1 then E2. Going straight to E2 creates a `bim-open-studio` that is most of today's toolkit under a new name, before `bim-open-flow` exists to take the generic half. |
+| Q4 | A copy of the script in each repository, checked identical by the workspace. An npx package puts a registry and a network on the bootstrap path of .NET-only repositories. |
+| Q5 | `bim-open-workspace` is fine. `bim-open-data` next to `bim-open-schema`, both holding projects named `Ara3D.BimOpenSchema.*`, will be confused for each other. The IFC stack is the larger part; name the repository for it. |
+| Q6 | Keep the engine separate. "Knows nothing about buildings" and the conformance suite are its value to a developer, and B makes the extra pin nearly free. |
+| Q7 | One submodule. `nrc-ifc-llm` references toolkit .NET projects by relative path, not packages, so it needs the whole tree at one commit, pinned to a tag. |
+| Q8 | See 11.2: the SDK is built from the submodule everywhere. Keep it. |
+| Q9 | Two known failure modes. Vite's dev server refuses files whose real path is outside its allow list, so every `deps/<x>` junction needs a `server.fs.allow` entry or `resolve.preserveSymlinks`. MSBuild writes `obj/` into the real directory, so the toolkit and `bim-open-flow` building the engine from one linked checkout with different configurations fight over one `project.assets.json`. The existing `dedupe: ["three"]` in the Vite configs shows the npm side of the same problem has already been met. |
