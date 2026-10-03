@@ -10,15 +10,14 @@ data — no private model required.
 node scripts/preflight.mjs
 ```
 
-This names what is missing — Node version, .NET SDK, the uninitialized submodule or a dependency `node deps.mjs` has not fetched, the
-private Snowdon model — before you run anything else. A missing submodule, dependency, or SDK
+This names what is missing — Node version, .NET SDK, a dependency `node deps.mjs` has not fetched, the
+private Snowdon model — before you run anything else. A missing dependency or SDK
 fails the check; a missing private model does not, because the first demo below
 does not need one.
 
 ## 2. One-time setup
 
 ```bash
-git submodule update --init --recursive
 node deps.mjs
 npm ci --prefix bimopenflow/web
 ```

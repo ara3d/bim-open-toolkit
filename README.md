@@ -87,12 +87,12 @@ private model required. The rest of this section is the same path in more detail
 ## Build and run
 
 ```bash
-git clone --recursive https://github.com/ara3d/bim-open-toolkit
+git clone https://github.com/ara3d/bim-open-toolkit
 cd bim-open-toolkit
 node deps.mjs
 ```
 
-`--recursive` fetches the git submodules. `node deps.mjs` clones the other dependencies listed in `deps.json` into `deps/`, at the commits pinned there; `node deps.mjs --check` shows what it found.
+`node deps.mjs` clones the dependencies listed in `deps.json` into `deps/` (the graph engine `ara3d-dataflow` among them), at the commits pinned there; `node deps.mjs --check` shows what it found.
 
 ```bash
 dotnet build BimOpenToolkit.sln
@@ -168,7 +168,7 @@ private Snowdon sample model, and each has its own setup guide:
 This is pre-release software under active development, assessed on 2026-09-13. Working
 and covered by tests:
 
-- The engine passes every conformance vector in `submodules/ara3d-dataflow/spec/dataflow-graph/`, which is what
+- The engine passes every conformance vector in `deps/ara3d-dataflow/spec/dataflow-graph/`, which is what
   makes it the canonical implementation of the spec.
 - 41 NUnit test projects sit beside the 46 C# source projects. Twelve source projects
   have no test project of their own, mostly IO and loader layers exercised through
@@ -188,10 +188,10 @@ assessment from 2026-09-08.
 
 | Where | What |
 |---|---|
-| `submodules/ara3d-dataflow/spec/dataflow-graph/` | The normative graph specification and its conformance vectors |
+| `deps/ara3d-dataflow/spec/dataflow-graph/` | The normative graph specification and its conformance vectors |
 | `contracts/` | Shared type definitions and the C#/TypeScript generator |
 | `deps/bim-open-data/` | The BOS reference implementation, the IFC stack, the IFC MCP server (`BimOpenMcp.Ifc`), and the BOS Browser, from [bim-open-data](https://github.com/ara3d/bim-open-data); fetched by `node deps.mjs` |
-| `src/flow/` | BimOpenFlow: node packs, host, and run outputs; depends on `data` and the engine submodule |
+| `src/flow/` | BimOpenFlow: node packs, host, and run outputs; depends on `data` and the engine (`deps/ara3d-dataflow`) |
 | `src/mcp/` | The flow MCP server, `BimOpenMcp.Flow` (the IFC server lives in `deps/bim-open-data/src/mcp/BimOpenMcp.Ifc`) |
 | `src/studio/` | Ara 3D Studio integration: BIM scripts and the Studio hosting of the flow host |
 | `tests/` | NUnit projects mirroring `src/`, plus `BimOpenToolkit.Layering.Tests`, which fails on a reference that points up the layering |
@@ -212,7 +212,7 @@ assessment from 2026-09-08.
   specification as code. This repository is its reference implementation.
 - [ara3d-sdk](https://github.com/ara3d/ara3d-sdk) holds the general-purpose libraries
   (utilities, geometry, data tables, file formats, glTF export, the Bowerbird plug-in
-  host, the MCP protocol). It is built from source through the submodule. Everything
+  host, the MCP protocol). It is built from source through `deps/ara3d-sdk`. Everything
   specific to BIM authoring tools, Revit, IFC, or BOS lives here, not there.
 - web-ifc parses IFC underneath the loader. DuckDB is the analytical engine on the far end.
 

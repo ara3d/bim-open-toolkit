@@ -52,7 +52,7 @@ What makes this editable by a program as easily as by a person:
 
 The repo is five layers, each depending only on the ones above it.
 
-### 1. Specification — `submodules/ara3d-dataflow/spec/`, `contracts/`
+### 1. Specification — `deps/ara3d-dataflow/spec/`, `contracts/`
 
 The normative definition, in four independently versioned parts: `format` (the graph
 document, canonical JSON, the graph hash), `semantics` (evaluation, memoization, dirty
@@ -68,7 +68,7 @@ descriptors, shared enums. Edit `contracts/contracts.json`, run the generator, a
 the C# host and the TypeScript client are regenerated. Types are never hand-copied
 across the language boundary.
 
-### 2. Engine — `submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine*`, `submodules/ara3d-dataflow/src/Ara3D.NodeGraph*`
+### 2. Engine — `deps/ara3d-dataflow/src/Ara3D.DataFlowEngine*`, `deps/ara3d-dataflow/src/Ara3D.NodeGraph*`
 
 Contains no BIM whatsoever, and is a candidate to graduate to its own repo.
 
@@ -264,8 +264,8 @@ export, the Bowerbird plug-in host, the MCP protocol — built here from source 
 `deps/ara3d-sdk` and `Directory.Build.targets`. [bim-open-data](https://github.com/ara3d/bim-open-data)
 holds the BOS reference implementation, IFC, the IFC MCP server, and the BOS Browser.
 This repository holds the graphs over them, the Revit add-ins, and the Studio BIM tools.
-All three come through `deps.json`. The engine group (now the `ara3d-dataflow`
-submodule) and the viewer take only SDK dependencies.
+All three come through `deps.json`, as do the engine ([ara3d-dataflow](https://github.com/ara3d/ara3d-dataflow),
+at `deps/ara3d-dataflow`) and the viewer, which take only SDK dependencies.
 
 The original project-structure proposal from 2026-08-30, with the dependency sketch and
 build-order rationale, is kept in [bimopenflow-structure.md](bimopenflow-structure.md).

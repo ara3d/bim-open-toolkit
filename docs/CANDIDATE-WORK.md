@@ -186,7 +186,7 @@ Recorded so nobody proposes them again without a new reason; PROJECT.md's Scope:
 Statements the readers found that a newer document or the code overrides. The brief follows the right-hand side.
 
 - Node and pack counts (98 across 11, 67, "four packs"): `docs/nodes.md` is generated and is the only count worth quoting.
-- The spec at `spec/`, the viewer at `viewer/`: the spec is under `submodules/ara3d-dataflow/spec/`, the viewer workspace is `deps/bim-open-viewer/` (README).
+- The spec at `spec/`, the viewer at `viewer/`: the spec is under `deps/ara3d-dataflow/spec/`, the viewer workspace is `deps/bim-open-viewer/` (README).
 - The PlatoFlow PoC as a live component: deleted 2026-09-15; MCP and Ask live in BimOpenFlow.
 - "No Run implementation", "no `bfast.*` reader", "no numeric cast": all landed 2026-09-18 (`track-e.md`, `track-t.md`).
 - The NRC handoff "not built yet": the same day's integration record and `docs/nrc-walkthrough.md` show 13 graphs and the figures delivered.
