@@ -4,7 +4,7 @@ title: A coarse first frame for Snowdon under 2 s warm
 status: open
 depends_on: []
 owner:
-fence: [viz/packages/**, bimopenflow/web/packages/panes/src/viewerDeps.ts, bimopenflow/web/packages/panes/src/viewPane3D.ts, bimopenflow/web/packages/panes/test/viewPane3D.test.ts, scripts/profile-bim-flow-startup.mjs, docs/bim-flow-startup.md, docs/bim-flow-3d.md, docs/plans/coarse-first-frame.md]
+fence: [deps/bim-open-viewer/packages/**, bimopenflow/web/packages/panes/src/viewerDeps.ts, bimopenflow/web/packages/panes/src/viewPane3D.ts, bimopenflow/web/packages/panes/test/viewPane3D.test.ts, scripts/profile-bim-flow-startup.mjs, docs/bim-flow-startup.md, docs/bim-flow-3d.md, docs/plans/coarse-first-frame.md]
 ---
 
 ## Acceptance criteria
@@ -18,3 +18,4 @@ Serves W4. docs/bim-flow-startup.md 'Remaining opportunities' and docs/bim-flow-
 ## Notes
 
 - 2026-10-03: claim released; the session that held it (small-job-builder) had stopped. Checked against the code that day. Done: the coarse preview pipeline, chunks C1 to C5, C7 and P1 (903d9d8 to defb89e). Left: C6, the real-browser measurement, and C8, three warm runs of `scripts/profile-bim-flow-startup.mjs` logged in `docs/bim-flow-startup.md`. Nobody has measured the first frame yet; it needs the Snowdon BFAST and a browser.
+- 2026-10-03: the viewer workspace `viz/` moved to the `bim-open-viewer` repository and reaches the toolkit as `deps/bim-open-viewer`; the fence now names that path. Work in that path belongs to `bim-open-viewer`: a change there is committed in that repository and then pinned in the toolkit's `deps.json`.
