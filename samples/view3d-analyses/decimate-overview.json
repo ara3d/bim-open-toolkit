@@ -15,6 +15,6 @@
   },
   "values": {
     "big": { "keepFraction": "0.25", "minDiagonal": "0.5" },
-    "inst": { "path": "{DATA}/duplex.ifc" }
+    "inst": { "path": "{SAMPLES}/duplex-base.ifc" }
   }
 }

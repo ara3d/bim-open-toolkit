@@ -26,7 +26,7 @@
   },
   "values": {
     "colored": { "colorMap": "viridis", "joinColumn": "instanceIndex", "valueColumn": "overlaps" },
-    "inst": { "path": "{DATA}/duplex.ifc" },
+    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
     "keyed": { "renames": "A=instanceIndex" },
     "overlaps": { "aKey": "instanceIndex", "bKey": "instanceIndex" },
     "perElement": { "aggregates": "count(*) as overlaps", "groupBy": "A" }

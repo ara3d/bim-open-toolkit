@@ -20,6 +20,6 @@
   "values": {
     "byCat": { "aggregates": "count(category) as instances", "groupBy": "category" },
     "colored": { "colorMap": "category10", "joinColumn": "category", "valueColumn": "category" },
-    "inst": { "path": "{DATA}/duplex.ifc" }
+    "inst": { "path": "{SAMPLES}/duplex-base.ifc" }
   }
 }

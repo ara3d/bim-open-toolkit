@@ -15,6 +15,6 @@
   },
   "values": {
     "boxes": { "groupColumn": "category" },
-    "inst": { "path": "{DATA}/duplex.ifc" }
+    "inst": { "path": "{SAMPLES}/duplex-base.ifc" }
   }
 }

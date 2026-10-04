@@ -2,8 +2,9 @@
 
 Ready-made graphs for the 3D visualization nodes (`view3d.*`, see
 `src/flow/BimOpenFlow.Nodes.Geometry/README.md`). Each file is a canonical graph
-document whose file name is the analysis id. The literal placeholder `{DATA}`
-stands for the repo's `data/` directory (they all load `duplex.ifc`).
+document whose file name is the analysis id. The literal placeholder `{SAMPLES}`
+stands for `samples/nrc`; they all load its committed `duplex-base.ifc` (the IFC Test
+Kit's Duplex, see `samples/nrc/README.md`), so they run in a fresh clone.
 
 | Id | Shows |
 |---|---|
@@ -17,10 +18,10 @@ stands for the repo's `data/` directory (they all load `duplex.ifc`).
 | `shared-color-legend` | instances and a top-20 bar chart colored by enclosed mesh volume (`view3d.measures`) from one shared `view.colormap` scale; absorbed `mesh-volume`, its first half (TKT-93) |
 
 Every sample validates against the Bos + Geometry packs and evaluates green
-over `data/duplex.ifc`; `tests/flow/BimOpenFlow.View3dWorkflows.Tests` enforces both.
+over `samples/nrc/duplex-base.ifc`; `tests/flow/BimOpenFlow.View3dWorkflows.Tests` enforces both.
 
 The bim-profile host seeds them into an empty analysis store at startup
-(`BimSampleSeeding` in `src/studio/BimOpenFlow.Studio`, with `{DATA}` rewritten to the
-repo's `data/` directory, which it also registers as a model root). Open one in
+(`BimSampleSeeding` in `src/studio/BimOpenFlow.Studio`, with `{SAMPLES}` rewritten to
+`samples/nrc`, which it also registers as a model root). Open one in
 the 3D demo shell with `3d.html?analysis=<id>`, for example
 `3d.html?analysis=color-by-category`.

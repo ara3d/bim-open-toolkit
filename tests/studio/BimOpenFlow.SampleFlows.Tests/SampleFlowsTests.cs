@@ -22,7 +22,6 @@ public sealed class SampleFlowsTests
     [TestCaseSource(nameof(Cases))]
     public void EveryNode_IsOkOrAllowed(string profile, string id)
     {
-        SampleFlowsFixture.RequireData(id);
         var snapshot = SampleFlowsFixture.Snapshot(profile, id);
         var bad = snapshot.Results
             .Where(r => r.Value.Status != NodeStatus.Ok
@@ -46,7 +45,6 @@ public sealed class SampleFlowsTests
     [TestCaseSource(nameof(Cases))]
     public void NoOpSortFilterLimit(string profile, string id)
     {
-        SampleFlowsFixture.RequireData(id);
         var data = SampleFlowsFixture.Profile(profile);
         var snapshot = SampleFlowsFixture.Snapshot(profile, id);
         var flagged = Lint.NoOpTransforms(snapshot.Document, snapshot, data.Registry)
@@ -58,7 +56,6 @@ public sealed class SampleFlowsTests
     [TestCaseSource(nameof(Cases))]
     public void NoEmptyFinalTable(string profile, string id)
     {
-        SampleFlowsFixture.RequireData(id);
         var data = SampleFlowsFixture.Profile(profile);
         var snapshot = SampleFlowsFixture.Snapshot(profile, id);
         var flagged = Lint.EmptyFinalTables(snapshot.Document, snapshot, data.Runtime)

@@ -29,7 +29,6 @@ public sealed class GoldenTests
     [TestCaseSource(nameof(Cases))]
     public void MatchesGoldenFile(string profile, string id)
     {
-        SampleFlowsFixture.RequireData(id);
         var data = SampleFlowsFixture.Profile(profile);
         var snapshot = SampleFlowsFixture.Snapshot(profile, id);
         var original = SampleSourceFiles.Load(id) ?? snapshot.Document;

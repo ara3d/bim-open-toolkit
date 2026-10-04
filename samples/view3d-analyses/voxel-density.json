@@ -19,7 +19,7 @@
   },
   "values": {
     "colored": { "colorMap": "viridis", "joinColumn": "voxelId", "valueColumn": "count" },
-    "inst": { "path": "{DATA}/duplex.ifc" },
+    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
     "vox": { "size": "0.5" }
   }
 }

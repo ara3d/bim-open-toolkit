@@ -7,8 +7,8 @@ using BimOpenFlow.Studio;
 namespace BimOpenFlow.BimWorkflows.Tests;
 
 /// <summary>Bim-profile seeding: an empty store gets the bim-analyses samples
-/// ({SAMPLES} rewritten), the view3d-analyses samples ({DATA} rewritten to the repo
-/// data directory), the nrc-analyses samples (named sources), and the snowdon-analyses
+/// ({SAMPLES} rewritten), the view3d-analyses samples ({SAMPLES} rewritten to
+/// samples/nrc), the nrc-analyses samples (named sources), and the snowdon-analyses
 /// samples only when the local-only Snowdon model exists; a non-empty store is untouched.</summary>
 [TestFixture]
 public sealed class BimSampleSeedingTests
@@ -62,14 +62,13 @@ public sealed class BimSampleSeedingTests
     }
 
     [Test]
-    public void Seeding_RewritesBothPlaceholders()
+    public void Seeding_RewritesThePlaceholder()
     {
         var store = new AnalysisStore(_storeDir);
         foreach (var id in BimSampleSeeding.Seed(store, AppContext.BaseDirectory))
         {
             var values = store.Load(id).Values.SelectMany(n => n.Value.Values).ToList();
             Assert.That(values, Has.None.Contains(SampleSeeding.PathPlaceholder));
-            Assert.That(values, Has.None.Contains(BimSampleSeeding.DataPlaceholder));
         }
     }
 

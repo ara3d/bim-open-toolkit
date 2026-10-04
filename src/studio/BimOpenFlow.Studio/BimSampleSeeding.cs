@@ -10,15 +10,14 @@ namespace BimOpenFlow.Studio;
 /// Seeds an analysis store with the committed BIM sample analyses:
 /// samples/bim-analyses/*.json with {SAMPLES} pointed at samples/bim (the
 /// sample.bos there is generated from BimSampleModel when absent — the model
-/// binary is never committed), and samples/view3d-analyses/*.json with {DATA}
-/// pointed at the repo data directory, samples/nrc-analyses/*.json, which name
+/// binary is never committed), samples/view3d-analyses/*.json with {SAMPLES}
+/// pointed at samples/nrc (they load its committed duplex-base.ifc), samples/nrc-analyses/*.json, which name
 /// their sources, and samples/showcase-analyses/*.json over samples/nrc, by the rules of
 /// SampleSeeding.Seed; graphs the registry cannot validate are skipped and reported.
 /// </summary>
 public static class BimSampleSeeding
 {
     public const string SampleFileName = "sample.bos";
-    public const string DataPlaceholder = "{DATA}";
 
     public static IReadOnlyList<string> Seed(AnalysisStore store, string startDir,
         INodeRegistry? registry = null, TextWriter? log = null)
@@ -30,7 +29,7 @@ public static class BimSampleSeeding
         var sources = new List<(string, string, string)>
         {
             (Path.Combine(root, "samples", "bim-analyses"), SampleSeeding.PathPlaceholder, samplesDir),
-            (Path.Combine(root, "samples", "view3d-analyses"), DataPlaceholder, Path.Combine(root, "data")),
+            (Path.Combine(root, "samples", "view3d-analyses"), SampleSeeding.PathPlaceholder, NrcSamples.Dir(root)),
             NrcSamples.Analyses(root),
             NrcSamples.Showcase(root),
             NrcSamples.ShowcaseTables(root),
@@ -41,7 +40,8 @@ public static class BimSampleSeeding
     }
 
     /// <summary>The directories the seeded analyses' model paths point at
-    /// (samples/bim, the repo data dir, and samples/nrc), so the host can add them to the
+    /// (samples/bim and samples/nrc), and the repo data dir that data/get-test-data.ps1
+    /// fills with further models, so the host can add them to the
     /// model catalog roots and serve those models' bytes over
     /// /api/models/{id}/bos. Empty outside a repo checkout.</summary>
     public static IReadOnlyList<string> SeededModelRoots(string startDir)

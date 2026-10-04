@@ -19,7 +19,7 @@
   },
   "values": {
     "ghosted": { "alpha": "0.15", "joinColumn": "entityId", "scope": "others" },
-    "inst": { "path": "{DATA}/duplex.ifc" },
+    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
     "walls": { "expr": "category == \"IFCWALLSTANDARDCASE\"" }
   }
 }

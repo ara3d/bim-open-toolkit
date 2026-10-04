@@ -1,12 +1,12 @@
 dfg 0.1.0;
-// shared-color-legend   graph 63a237e355b0
-inst = view3d.instances@1(path: "{DATA}/duplex.ifc");
+// shared-color-legend   graph cf7a981fdc85
+inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-measures = view3d.measures@1(path: "{DATA}/duplex.ifc");
+measures = view3d.measures@1(path: "{SAMPLES}/duplex-base.ifc");
   // Ok  table 714 rows x 8 cols  sha 34dd2ed93996
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, surfaceArea:Number, meshVolume:Number, triangleCount:Integer
   //   [0] 0, 0, 514, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", 90.5, 40.24, 60

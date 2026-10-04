@@ -1,6 +1,6 @@
 dfg 0.1.0;
-// clash-candidates   graph bd2f295e3013
-inst = view3d.instances@1(path: "{DATA}/duplex.ifc");
+// clash-candidates   graph 005c866edaee
+inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden

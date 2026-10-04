@@ -15,7 +15,7 @@ namespace BimOpenFlow.View3dWorkflows.Tests;
 /// <summary>
 /// Every committed view3d sample (samples/view3d-analyses/*.json) parses,
 /// validates against the Bos + TableOps + Geometry + Spatial packs, and evaluates all-green over
-/// data/duplex.ifc ({DATA} rewritten to the repo data directory). One shared
+/// the committed samples/nrc/duplex-base.ifc ({SAMPLES} rewritten to samples/nrc). One shared
 /// session per fixture: the meshed model is cached process-wide, so the IFC
 /// is meshed once for all samples.
 /// </summary>
@@ -131,14 +131,14 @@ public sealed class View3dSampleTests
     private static string Sample(string id)
         => Path.Combine(AnalysesDir, id + ".json");
 
-    /// <summary>Loads the document with {DATA} rewritten to the repo data directory.</summary>
+    /// <summary>Loads the document with {SAMPLES} rewritten to samples/nrc, as BimSampleSeeding does.</summary>
     private static GraphDocument Load(string file)
     {
-        var data = RepoPaths.Data().Replace('\\', '/');
+        var nrc = RepoPaths.Samples("nrc").Replace('\\', '/');
         var temp = Path.Combine(Path.GetTempPath(), "bof-view3d-samples",
             Guid.NewGuid().ToString("N") + ".json");
         Directory.CreateDirectory(Path.GetDirectoryName(temp)!);
-        File.WriteAllText(temp, File.ReadAllText(file).Replace("{DATA}", data));
+        File.WriteAllText(temp, File.ReadAllText(file).Replace("{SAMPLES}", nrc));
         try
         {
             return GraphDocumentIO.Load(temp);

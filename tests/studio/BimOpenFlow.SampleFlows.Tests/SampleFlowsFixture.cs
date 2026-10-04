@@ -63,27 +63,6 @@ public static class SampleFlowsFixture
     private static readonly Lazy<IReadOnlyDictionary<(string Profile, string Id), EvalSnapshot>> Snapshots =
         new(EvaluateAll);
 
-    /// <summary>Ignores the current test when the analysis reads a file under data/ that is
-    /// absent. data/ is git-ignored and filled by data/get-test-data.ps1, so a fresh clone lacks
-    /// it (the samples/view3d-analyses graphs read {DATA}/duplex.ifc); the skip message names
-    /// each missing file instead of reporting a FileNotFoundException as a broken graph.</summary>
-    public static void RequireData(string id)
-    {
-        var missing = MissingDataFiles(id);
-        if (missing.Count > 0)
-            Assert.Ignore($"{id} reads {string.Join(", ", missing)}, absent in this checkout "
-                + "(data/ is not committed; run data/get-test-data.ps1).");
-    }
-
-    private static IReadOnlyList<string> MissingDataFiles(string id)
-        => (SampleSourceFiles.Load(id)?.Values.Values ?? [])
-            .SelectMany(p => p.Values)
-            .Where(v => v.StartsWith(BimSampleSeeding.DataPlaceholder, StringComparison.Ordinal))
-            .Select(v => "data" + v[BimSampleSeeding.DataPlaceholder.Length..])
-            .Where(rel => !File.Exists(Path.Combine(Root, rel)))
-            .Distinct()
-            .ToList();
-
     public static ProfileData Profile(string profile)
         => Data.Value[profile];
 
