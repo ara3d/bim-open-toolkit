@@ -22,3 +22,4 @@ The code fix landed (9b6e85a, StoreyOfElement view). End-to-end confirmation by 
 ## Notes
 
 - 2026-10-03: claim released; the session that held it (small-job-builder) had stopped. Checked against the code that day. Done: the fix (9b6e85a, the StoreyOfElement view; StoreyOfEntity counted a storey's rollup twice), confirmed by the scripted replay in `scripts/demo-ifc-mcp.mjs`. Left: a model-driven run of the eight questions through the Claude CLI (TKT-41), its transcript committed, and confirming a regression test for the double count exists.
+- 2026-10-04: IFC-Bench questions 213 and 236 (TKT-145) doubled totals through the same ParameterText-to-StoreyOfElement join, but for a different cause: the DigitalHub models attach two same-named property sets with equal values to each element. Fixed in bim-open-data 26b8691 (each property read once per element); StoreyOfElement was already right. Nothing changes this ticket's open item.
