@@ -4,7 +4,7 @@ title: The notebook's 3D embed shows IFC classes in its legend instead of the co
 status: done
 depends_on: []
 owner:
-fence: [bimopenflow/web/packages/bim-open-notebook/src/embeds/view3d.ts, bimopenflow/web/packages/bim-open-notebook/test/**, bimopenflow/web/packages/panes/src/viewPane3D.ts, bimopenflow/web/packages/panes/src/instanceLegend.ts]
+fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/embeds/view3d.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/test/**, bimopenflow/web/packages/panes/src/viewPane3D.ts, bimopenflow/web/packages/panes/src/instanceLegend.ts]
 kind: defect
 ---
 

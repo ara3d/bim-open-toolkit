@@ -12,6 +12,9 @@ under `deps/bim-open-viewer/packages` depends on an `@bimopenflow/*` package.
   layout means extending that table in the same commit.
 - `FlowLayeringTests.cs`: the seams of the BIM packs in `src/flow` (packs, run records).
   A reference into `deps/bim-open-flow/src/<group>` counts as that group.
-- `WebSeamTests.cs`: the notebook's vitest layering file, which keeps the 3D pane
-  out of its embeds, still exists and names what it forbids. The rules that kept
-  BIM out of the generic graph tool moved with it to bim-open-flow's layering test.
+- `WebSeamTests.cs`: the web seam now lives in `deps/bim-open-notebook`. Its vitest
+  layering file (which keeps the 3D pane out of the notebook's embeds), the shared
+  `seam.ts`, and the two `seam.test.ts` files still exist and name what they forbid. The
+  rules that kept BIM out of the generic graph tool moved to bim-open-flow's layering test.
+- `DepsCycleTests.cs`: fails if any `deps/*/deps.json` pins `bim-open-toolkit`, so no
+  dependency loops back.

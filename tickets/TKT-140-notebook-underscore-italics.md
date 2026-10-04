@@ -4,7 +4,7 @@ title: Notebook replies italicise text between underscores inside words, manglin
 status: done
 depends_on: []
 owner:
-fence: [bimopenflow/web/packages/bim-open-notebook/src/page/markdown.ts, bimopenflow/web/packages/bim-open-notebook/test/markdown.test.ts]
+fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/page/markdown.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/test/markdown.test.ts]
 kind: defect
 ---
 

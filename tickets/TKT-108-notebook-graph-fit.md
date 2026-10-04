@@ -4,7 +4,7 @@ title: Notebook graph embeds fit the whole graph to the cell
 status: done
 depends_on: []
 owner: claude-tkt108
-fence: [bimopenflow/web/packages/bim-open-notebook/src/embeds/graph.ts, bimopenflow/web/packages/bim-open-notebook/src/page/styles.ts, bimopenflow/web/packages/bim-open-notebook/test/**, bimopenflow/web/packages/graph/src/canvasEditor.ts, bimopenflow/web/packages/graph/test/**]
+fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/embeds/graph.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/page/styles.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/test/**, bimopenflow/web/packages/graph/src/canvasEditor.ts, bimopenflow/web/packages/graph/test/**]
 ---
 
 ## Acceptance criteria

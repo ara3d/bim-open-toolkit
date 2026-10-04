@@ -1,7 +1,7 @@
 # Sample notebooks
 
 Notebook files (`bimopen-notebook/0.1`, the format in
-`bimopenflow/web/packages/bim-open-notebook/src/document/format.ts`) that realise three
+`deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/src/document/format.ts`) that realise three
 of the sessions in `docs/proposals/notebook-sessions.md`:
 
 | Notebook | Session | Host profile | Turns |

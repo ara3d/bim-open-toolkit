@@ -4,7 +4,7 @@ title: Move the app helpers the notebook deep-imports into a client library
 status: done
 depends_on: [TKT-80]
 owner:
-fence: [bimopenflow/web/packages/client/**, bimopenflow/web/packages/app/src/**, bimopenflow/web/packages/bim-open-notebook/src/**]
+fence: [bimopenflow/web/packages/client/**, bimopenflow/web/packages/app/src/**, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/**]
 ---
 
 ## Acceptance criteria

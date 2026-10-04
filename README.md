@@ -196,7 +196,8 @@ assessment from 2026-09-08.
 | `src/studio/` | `BimOpenFlow.Studio`, the host that composes the `bim` profile over bim-open-flow's generic host (`bimopenflow-studio`); `BimOpenMcp.Ifc.Ask`; and the Ara 3D Studio BIM scripts |
 | `tests/` | NUnit projects mirroring `src/`, plus `BimOpenToolkit.Layering.Tests`, which fails on a reference that points up the layering |
 | `plugins/` | The Revit 2025 add-ins: BOS exporter, Bowerbird host, samples, and `Ara3D.Revit.Utils` |
-| `bimopenflow/web/` | The toolkit's web workspace: the studio's pages (`studio-web`), the 3D pane (`pane-3d`), and the notebook, over bim-open-flow's editor packages, linked from `deps/bim-open-flow` (`flow.config.ts`, `deps.tsconfig.json`) |
+| `bimopenflow/web/` | The toolkit's web workspace: the studio's pages (`studio-web`) and the NRC pages (`nrc-web`: `nrc.html` and the sample-notebook page), over bim-open-flow's editor packages and the notebook and 3D pane (`pane-3d`) from `deps/bim-open-notebook`, all linked by `deps.config.ts` and `deps.tsconfig.json` |
+| `deps/bim-open-notebook/` | The notebook and the 3D pane (`@bimopenflow/bim-open-notebook`, `@bimopenflow/pane-3d`), from [bim-open-notebook](https://github.com/ara3d/bim-open-notebook); fetched by `node deps.mjs` |
 | `deps/bim-open-viewer/` | The standalone 3D viewer workspace, seventeen packages |
 | `samples/` | Runnable sample analyses: BIM, NRC, Snowdon, 3D, and notebooks, with sample data (the tables samples are bim-open-flow's) |
 | `gates/` | Headless integration smoke checks |

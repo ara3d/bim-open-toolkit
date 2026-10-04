@@ -4,7 +4,7 @@ title: The notebook column is 50% wider by default
 status: done
 depends_on: []
 owner: claude
-fence: [bimopenflow/web/packages/bim-open-notebook/src/page/styles.ts, bimopenflow/web/packages/bim-open-notebook/src/page/shellStyles.ts]
+fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/page/styles.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/page/shellStyles.ts]
 ---
 
 ## Acceptance criteria

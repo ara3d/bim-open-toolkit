@@ -4,7 +4,7 @@ title: An editable notebook graph cell: a live editor that forks or updates the 
 status: open
 depends_on: [TKT-94]
 owner:
-fence: [bimopenflow/web/packages/bim-open-notebook/src/embeds/graph.ts, bimopenflow/web/packages/bim-open-notebook/src/document/format.ts, bimopenflow/web/packages/bim-open-notebook/test/**]
+fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/embeds/graph.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/document/format.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/test/**]
 kind: idea
 ---
 

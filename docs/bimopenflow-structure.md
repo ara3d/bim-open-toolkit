@@ -291,8 +291,7 @@ each an isolated module behind the single pane contract (data in, events out).
 The most naturally parallel surface in the system: one agent per pane, zero
 overlap.
 **Depends on:** @bimopenflow/viz, contracts (generated TS). The 3D pane is not
-here: it is `@bimopenflow/pane-3d` (`bimopenflow/web/packages/pane-3d/` in this
-repository), which depends on `@bim-open-viewer/*` and registers itself with the
+here: it is `@bimopenflow/pane-3d` (`deps/bim-open-notebook/bimopenflow/web/packages/pane-3d/`), which depends on `@bim-open-viewer/*` and registers itself with the
 editor, so the generic packages import no viewer code.
 
 ### @bimopenflow/viz

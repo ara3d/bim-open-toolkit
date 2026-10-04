@@ -4,7 +4,7 @@ title: The notebook page lays out at the phone's width, with no horizontal scrol
 status: done
 depends_on: []
 owner: wave-w1
-fence: [bimopenflow/web/packages/bim-open-notebook/notebook.html, bimopenflow/web/packages/bim-open-notebook/src/page/**]
+fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/notebook.html, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/page/**]
 ---
 
 ## Acceptance criteria

@@ -4,7 +4,7 @@ title: Charts in the notebook take part in selection and redraw their whole tabl
 status: open
 depends_on: [TKT-80]
 owner:
-fence: [bimopenflow/web/packages/panes/src/chartPane.ts, bimopenflow/web/packages/bim-open-notebook/src/**]
+fence: [bimopenflow/web/packages/panes/src/chartPane.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/**]
 ---
 
 ## Acceptance criteria

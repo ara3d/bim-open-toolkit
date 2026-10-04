@@ -69,7 +69,7 @@ Five layers, each depending only on the ones above it.
 5. **Surfaces** (`BimOpenFlow.Host*`, `BimOpenMcp.Flow`, and the editor packages from `deps/bim-open-flow`; the studio, `bimopenflow/web`, `deps/bim-open-viewer/`) — one
    headless core; every UI is a client of it. An HTTP host generated from the contracts,
    thirteen MCP tools over the same services, the web editor, BIM Open Notebook (a session
-   transcript with live embeds, `bimopenflow/web/packages/bim-open-notebook`), the 3D viewer
+   transcript with live embeds, in `deps/bim-open-notebook`), the 3D viewer
    workspace below, and the publishing path that turns a run into self-contained HTML or an
    evidence package with a SHA-256 per file.
 

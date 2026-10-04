@@ -4,7 +4,7 @@ title: Move the graph document helpers down to state and give the graph package 
 status: open
 depends_on: [TKT-12, TKT-17]
 owner:
-fence: [bimopenflow/web/packages/graph/**, bimopenflow/web/packages/state/src/**, bimopenflow/web/packages/app/src/**, bimopenflow/web/packages/bim-open-notebook/src/**]
+fence: [bimopenflow/web/packages/graph/**, bimopenflow/web/packages/state/src/**, bimopenflow/web/packages/app/src/**, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/**]
 ---
 
 ## Acceptance criteria

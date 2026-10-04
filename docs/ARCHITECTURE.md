@@ -173,7 +173,8 @@ automatically.
 One headless core; every UI is a client of it. The host libraries, the MCP server, the Ask
 loop, the outputs, and the editor's eight generic web packages are bim-open-flow's
 (`deps/bim-open-flow/src/...` and `deps/bim-open-flow/bimopenflow/web/packages/...`); this
-repository composes them in the studio and adds the 3D pane, the notebook, and the pages.
+repository composes them in the studio and adds the pages. The notebook and the 3D pane
+are bim-open-notebook's (`deps/bim-open-notebook`).
 
 - **`Host.Catalog`** — model discovery and IFC→BOS conversion with caching.
 - **`Host.Store`** — the analysis library on disk: versioned graph documents, run archival.
@@ -198,12 +199,13 @@ repository composes them in the studio and adds the 3D pane, the notebook, and t
   shell around it: sidebar, topbar, panes area, palette, step list, problems strip,
   start page), `panes` (table, chart, inspector, verdict), `viz` (SVG charts),
   `client`, `state`, and generated `contracts` / `api-client` packages. This repository's
-  workspace holds `pane-3d` (the 3D pane), `studio-web` (the studio's pages), and
-  `bim-open-notebook`. The canvas is built on
+  workspace holds `studio-web` (the studio's pages) and `nrc-web` (the NRC pages and the
+  sample-notebook page); `pane-3d` (the 3D pane) and `bim-open-notebook` come from
+  `deps/bim-open-notebook`, resolved by `deps.config.ts`. The canvas is built on
   the primitives of Gratify (`deps/gratify`); graph-specific behaviour stays in
   bim-open-flow, deliberately, rather than upstream (see
   [graph-module-layering.md](graph-module-layering.md)). `bim-open-notebook` is a
-  separate page and package in the same workspace: a session transcript with live
+  separate package with its own repository: a session transcript with live
   embeds, mounting `graph` read-only in every graph cell and reusing `panes` for
   the rest.
 - **`deps/bim-open-viewer/`** — the standalone 3D viewer workspace of seventeen packages, described in
@@ -229,10 +231,15 @@ repository composes them in the studio and adds the 3D pane, the notebook, and t
   `Ara3D.Ifc.Mesher`, if a web package depends on or imports `@bim-open-viewer/*`,
   `@bimopenflow/pane-3d`, the notebook, or `studio-web`, or if `NodeDocs`'s notes name a
   kind no generic pack registers; the BIM packs' notes are `BimNodeNotes` in the studio.
-- **The notebook keeps the 3D pane out of its embeds**: its `test/layering.test.ts` keeps
-  `@bim-open-viewer/*` and `@bimopenflow/pane-3d` out of `src/embeds`, where a page registers
-  the 3D embed instead, and `WebSeamTests` fails if that file disappears. The viewer never
-  depends on `@bimopenflow/*` (`LayeringTests`).
+- **The notebook keeps the 3D pane out of its embeds**: its `test/layering.test.ts` (in
+  `deps/bim-open-notebook`) keeps `@bim-open-viewer/*` and `@bimopenflow/pane-3d` out of
+  `src/embeds`, where a page registers the 3D embed instead. Both packages also carry a
+  `seam.test.ts` that bars imports of `@bimopenflow/app`, `studio-web` and `nrc-web` and any
+  mention of `samples/nrc-analyses`, `{SNOWDON}` or `BIMOPENFLOW_SNOWDON`, and `pane-3d`
+  imports nothing from the notebook. `WebSeamTests` fails if those files disappear. The viewer
+  never depends on `@bimopenflow/*` (`LayeringTests`).
+- **No dependency pins the toolkit.** `DepsCycleTests` fails if any `deps/*/deps.json` names
+  `bim-open-toolkit`.
 
 ## Agentic workflows
 

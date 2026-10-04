@@ -4,7 +4,7 @@ title: Notebook graph cells: wire peeks and row counts, and node selection share
 status: open
 depends_on: [TKT-94, TKT-88]
 owner:
-fence: [bimopenflow/web/packages/bim-open-notebook/src/embeds/**, bimopenflow/web/packages/bim-open-notebook/test/**]
+fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/embeds/**, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/test/**]
 kind: idea
 ---
 

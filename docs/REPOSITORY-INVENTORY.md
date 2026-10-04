@@ -86,7 +86,7 @@ Run package tests from `deps/bim-open-viewer/` with `npm test -w <package-name>`
 
 ## Editor packages
 
-Install from `bimopenflow/web/` in this repository; use `npm run <script> -w <package-name>` where the manifest declares it. The six packages below are bim-open-flow's, taken from `deps/bim-open-flow` (as are `client` and `graph`, which the snapshot did not list). This repository's workspace adds `@bimopenflow/pane-3d`, `@bimopenflow/studio-web`, and `@bimopenflow/bim-open-notebook`. All are private workspace components in practice, not independent launchers.
+Install from `bimopenflow/web/` in this repository; use `npm run <script> -w <package-name>` where the manifest declares it. The six packages below are bim-open-flow's, taken from `deps/bim-open-flow` (as are `client` and `graph`, which the snapshot did not list). `@bimopenflow/pane-3d` and `@bimopenflow/bim-open-notebook` come from `deps/bim-open-notebook` (bim-open-notebook, not listed here). This repository's workspace adds `@bimopenflow/studio-web` and `@bimopenflow/nrc-web` (the NRC landing page, the sample-notebook page, and the answer tests of the twelve sample notebooks). All are private workspace components in practice, not independent launchers.
 
 | Package / manifest | Purpose, status and next concern | Declared runtime dependencies and peers | Latest commit |
 |---|---|---|---|
