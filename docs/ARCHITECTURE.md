@@ -54,7 +54,7 @@ What makes this editable by a program as easily as by a person:
 
 The repo is five layers, each depending only on the ones above it.
 
-### 1. Specification — `deps/ara3d-dataflow/spec/`, `contracts/`
+### 1. Specification — `deps/ara3d-dataflow/spec/`, `deps/bim-open-flow/contracts/`
 
 The normative definition, in four independently versioned parts: `format` (the graph
 document, canonical JSON, the graph hash), `semantics` (evaluation, memoization, dirty
@@ -65,8 +65,8 @@ The spec is the authority; the C# engine is the *canonical implementation*, prov
 a conformance suite that runs every vector in the spec directory. Any other
 implementation passes the same vectors or is wrong.
 
-`contracts/` is the single source for shared app-level types — HTTP endpoints, node
-descriptors, shared enums. Edit `contracts/contracts.json`, run the generator, and both
+`contracts/` (in bim-open-flow, at `deps/bim-open-flow/contracts/`) is the single source for shared app-level types — HTTP endpoints, node
+descriptors, shared enums. Edit its `contracts.json`, run the generator, and both
 the C# host and the TypeScript client are regenerated. Types are never hand-copied
 across the language boundary.
 
@@ -140,25 +140,27 @@ add-in under `plugins/` and the BOS Browser under bim-open-data's `apps/`.
 
 ### 4. Node packs — `src/flow/BimOpenFlow.Nodes.*` and `deps/bim-open-flow/src/flow/BimOpenFlow.Nodes.*`
 
-The vocabulary: **98 nodes across 11 packs**, each pack a separate project with its own
+The vocabulary: **124 nodes across 13 packs**, each pack a separate project with its own
 dependencies and its own tests. Packs never reference each other. The counts below come
 from the generated [node reference](nodes.md). `Bos`, `BimAnalysis`, and `Geometry` are this
-repository's; the other packs (and `Nodes.Support`, `Relations`, and the rel.* pack) are
+repository's; the other packs (and the support library `Nodes.Support`) are
 `ara3d/bim-open-flow`'s, taken from `deps/bim-open-flow` since the repository split's
 phase 5 ([repository-split.md](plans/repository-split.md)).
 
 | Pack | Nodes | What it covers |
 |---|---|---|
-| `Bos` | 6 | Loading `.bos`, and the core transforms: filter, derive, aggregate, sort |
+| `Bos` | 2 | Loading `.bos`, and querying it |
 | `BimAnalysis` | 12 | Elements, rooms, levels, bounds, parameter coverage, discipline, containment, nearest, nav graph, hops |
-| `Geometry` | 20 | 3D instances, color, isolate, hide, opacity, explode, arrange, decimate, bounding boxes, voxelize, camera |
-| `DuckDb` | 8 | DuckDB and SQL over files: read, query, CSV/Parquet/JSON sources |
-| `Tables` | 11 | XLSX, SQLite, joins, set operations, projection, inline tables, ranges, calendars |
-| `TableOps` | 14 | Cast, concat, distinct, drop, limit, pivot/unpivot, profile, rename, sample, schema, split, transpose, window |
+| `Geometry` | 21 | 3D instances, color, isolate, hide, opacity, explode, arrange, decimate, bounding boxes, voxelize, camera |
+| `DuckDb` | 9 | DuckDB and SQL over files: read, query, CSV/Parquet/JSON sources |
+| `Tables` | 13 | XLSX, SQLite, BFAST, joins, set operations, projection, inline tables, ranges, calendars |
+| `TableOps` | 18 | Filter, derive, aggregate, sort, cast, concat, distinct, drop, limit, pivot/unpivot, profile, rename, sample, schema, split, transpose, window |
 | `Cleaning` | 6 | Fill/drop nulls, dedupe, replace, text transform and extract |
 | `Dates` | 6 | Parse, part, truncate, diff, offset, filter |
 | `Compliance` | 4 | Rule checks, required-value checks, rollups, unions — the evidence-bearing vocabulary |
-| `Viz` | 3 | Bar chart, line chart, table view |
+| `Viz` | 5 | Bar chart, line chart, table view, colour map, note |
+| `Spatial` | 8 | Bounding-box and polygon candidates: intersects, within, nearest, contains, footprint |
+| `Relations` | 12 | The `rel.*` pack: lazy plans over CSV and DuckDB tables, one SQL statement per chain |
 | `Effects` | 8 | Every Run-gated sink in one place: six export formats, IFC pset write-back, report emission |
 
 Isolating all effects in one pack makes the purity rule enforceable by project reference
@@ -198,8 +200,8 @@ repository composes them in the studio and adds the 3D pane, the notebook, and t
   `client`, `state`, and generated `contracts` / `api-client` packages. This repository's
   workspace holds `pane-3d` (the 3D pane), `studio-web` (the studio's pages), and
   `bim-open-notebook`. The canvas is built on
-  the primitives of Gratify (`deps/gratify`); graph-specific behaviour stays here,
-  deliberately, rather than upstream (see
+  the primitives of Gratify (`deps/gratify`); graph-specific behaviour stays in
+  bim-open-flow, deliberately, rather than upstream (see
   [graph-module-layering.md](graph-module-layering.md)). `bim-open-notebook` is a
   separate page and package in the same workspace: a session transcript with live
   embeds, mounting `graph` read-only in every graph cell and reusing `panes` for

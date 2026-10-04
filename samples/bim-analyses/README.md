@@ -21,6 +21,6 @@ committed.
 | `bim-door-rooms` | the room(s) each door's box overlaps, by `spatial.intersects` filtered to a real overlap |
 | `bim-room-footprints` | room boxes as WKT footprints with polygon area and perimeter, ranked by perimeter |
 
-Every sample validates against `HostComposition.AllPacks()` and evaluates green
-over a generated `sample.bos`; `tests/BimOpenFlow.BimWorkflows.Tests` enforces
+Every sample validates against `StudioComposition.BimPacks()` (in `src/studio/BimOpenFlow.Studio`) and evaluates green
+over a generated `sample.bos`; `tests/studio/BimOpenFlow.BimWorkflows.Tests` enforces
 both.

@@ -3,7 +3,7 @@
 An open, verifiable data layer for building information — and a node graph on top of it
 that people and AI agents edit with the same four operations.
 
-`124 nodes` · `11 node packs` · `46 C# projects` · `41 test projects` · MIT
+`124 nodes` · `13 node packs` · MIT
 
 ## What it is
 
@@ -51,19 +51,19 @@ can never touch your disk.
 
 Five layers, each depending only on the ones above it.
 
-1. **Specification** (`spec/`, `contracts/`) — the normative definition in four versioned
+1. **Specification** (`deps/ara3d-dataflow/spec/`, `deps/bim-open-flow/contracts/`) — the normative definition in four versioned
    parts: format, semantics, expressions, runs. The C# engine is the canonical
    implementation, proven so by a conformance suite that runs every vector in the spec
    directory.
-2. **Engine** (`Ara3D.DataFlowEngine*`, `Ara3D.NodeGraph*`) — document model, evaluator,
+2. **Engine** (`Ara3D.DataFlowEngine*`, `Ara3D.NodeGraph*`, in `deps/ara3d-dataflow`) — document model, evaluator,
    expression language, run records, test kit. Contains no BIM whatsoever, and is a
    candidate to graduate to its own repo.
 3. **BIM data** (`Ara3D.BimOpenSchema*`, `Ara3D.Ifc*`, in bim-open-data at `deps/bim-open-data`) — the schema and its converters, plus
    IFC parsing, meshing, and byte-exact property-set editing: entities located by byte range,
    so everything you did not edit comes out identical, byte for byte. That is what makes
    write-back to a client's file defensible.
-4. **Node packs** (`BimOpenFlow.Nodes.*`) — the vocabulary. Eleven packs — BIM analysis,
-   geometry, DuckDB, tables, table ops, cleaning, dates, compliance, viz, effects — each its
+4. **Node packs** (`BimOpenFlow.Nodes.*`; the BIM ones in `src/flow`, the rest in `deps/bim-open-flow`) — the vocabulary. Thirteen packs — BOS, BIM analysis,
+   geometry, DuckDB, tables, table ops, cleaning, dates, compliance, viz, effects, spatial, relations — each its
    own project with its own dependencies. Packs never reference each other, and every effect
    lives in one pack, which makes the purity rule enforceable by project reference alone.
 5. **Surfaces** (`BimOpenFlow.Host*`, `BimOpenMcp.Flow`, and the editor packages from `deps/bim-open-flow`; the studio, `bimopenflow/web`, `deps/bim-open-viewer/`) — one

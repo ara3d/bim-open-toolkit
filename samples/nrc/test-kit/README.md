@@ -47,7 +47,7 @@ each), not fixed here; see "known gaps" below.
 ## What the match report found on the test kit
 
 Every number below is asserted in
-`tests/flow/BimOpenFlow.NrcWorkflows.Tests/JoinAnalyticsTests.cs`, each
+`tests/studio/BimOpenFlow.NrcWorkflows.Tests/JoinAnalyticsTests.cs`, each
 against an independent computation (a raw SQL query, or the mesh instances
 read straight from `ModelGeometryCache`, never through the `rel.*` engine
 the graph itself uses).

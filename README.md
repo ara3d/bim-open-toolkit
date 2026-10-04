@@ -73,7 +73,7 @@ the design in detail. [docs/OVERVIEW.md](docs/OVERVIEW.md) is the one-page versi
 - **Node.js**, the version the installed Vite requires (`^20.19.0 || >=22.12.0`; older
   "Node 18+" advice is insufficient for the current viewer workspace), with npm, for
   the web editor, the 3D viewer, and the gates.
-- **Git.** The editor canvas comes from Gratify and the 3D viewer from `bim-open-viewer`; `node deps.mjs` fetches both into `deps/`.
+- **Git.** The graph system comes from `bim-open-flow`, the BIM data code from `bim-open-data`, the editor canvas from Gratify, and the 3D viewer from `bim-open-viewer`; `node deps.mjs` fetches them into `deps/`.
 
 Run `node scripts/preflight.mjs` to check these, plus a .NET SDK and the private
 Snowdon model the 3D and DuckDB demos need, before following the steps below.
@@ -170,9 +170,10 @@ and covered by tests:
 
 - The engine passes every conformance vector in `deps/ara3d-dataflow/spec/dataflow-graph/`, which is what
   makes it the canonical implementation of the spec.
-- 41 NUnit test projects sit beside the 46 C# source projects. Twelve source projects
-  have no test project of their own, mostly IO and loader layers exercised through
-  their consumers.
+- This repository's solution holds 12 NUnit test projects, for the BIM node packs, the
+  studio, the samples, and the layering rules. The tests of the generic graph system
+  and of the BIM data code run in `bim-open-flow` and `bim-open-data`, and the solution
+  also lists their libraries from `deps/`.
 - Two headless gates cover what unit tests cannot: a real host process over HTTP, and a
   full typecheck, test, and production build of every web and viewer package. See
   [gates/README.md](gates/README.md).
@@ -192,7 +193,7 @@ assessment from 2026-09-08.
 | `deps/bim-open-flow/` | The generic graph system, from [bim-open-flow](https://github.com/ara3d/bim-open-flow): the generic node packs, the host, the outputs, the flow MCP server (`BimOpenMcp.Flow`), the Ask loop, the editor's eight web packages, `contracts/`, and the tables samples; fetched by `node deps.mjs` |
 | `deps/bim-open-data/` | The BOS reference implementation, the IFC stack, the IFC MCP server (`BimOpenMcp.Ifc`), and the BOS Browser, from [bim-open-data](https://github.com/ara3d/bim-open-data); fetched by `node deps.mjs` |
 | `src/flow/` | The BIM node packs (`Nodes.Bos`, `Nodes.BimAnalysis`, `Nodes.Geometry`); the generic packs, host, MCP server, Ask loop, and editor packages are `deps/bim-open-flow` (from `ara3d/bim-open-flow`), and the engine is `deps/ara3d-dataflow` |
-| `src/studio/` | Ara 3D Studio integration: BIM scripts and the Studio hosting of the flow host |
+| `src/studio/` | `BimOpenFlow.Studio`, the host that composes the `bim` profile over bim-open-flow's generic host (`bimopenflow-studio`); `BimOpenMcp.Ifc.Ask`; and the Ara 3D Studio BIM scripts |
 | `tests/` | NUnit projects mirroring `src/`, plus `BimOpenToolkit.Layering.Tests`, which fails on a reference that points up the layering |
 | `plugins/` | The Revit 2025 add-ins: BOS exporter, Bowerbird host, samples, and `Ara3D.Revit.Utils` |
 | `bimopenflow/web/` | The toolkit's web workspace: the studio's pages (`studio-web`), the 3D pane (`pane-3d`), and the notebook, over bim-open-flow's editor packages, linked from `deps/bim-open-flow` (`flow.config.ts`, `deps.tsconfig.json`) |

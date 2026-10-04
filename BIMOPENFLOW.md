@@ -5,7 +5,6 @@ Requires Node.js/npm, .NET 8 SDK, and the private Snowdon BOS model. Run from th
 One-time setup:
 
 ```powershell
-git submodule update --init --recursive
 node deps.mjs
 npm install --prefix deps/bim-open-viewer
 npm run build --prefix deps/bim-open-viewer

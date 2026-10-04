@@ -28,7 +28,7 @@ into an empty analysis store and add `samples/nrc` to their model roots.
 
 Expected numbers come from `nrc-ifc-llm/poc/results/expected_answers.json` and
 `poc/data/nrc_analytics_storeys.csv`; the tests in
-`tests/flow/BimOpenFlow.NrcWorkflows.Tests` cite them. The five figure graphs are
+`tests/studio/BimOpenFlow.NrcWorkflows.Tests` cite them. The five figure graphs are
 what `scripts/nrc-walkthrough.mjs` captures for the paper; `FigureGraphTests`
 guards them (216 of the 218 analysed elements have a mesh, so that is the
 coloured count).

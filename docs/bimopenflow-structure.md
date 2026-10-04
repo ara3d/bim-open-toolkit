@@ -8,6 +8,14 @@
 > headless core) and `platoflow-graph-semantics.md` (analysis / graph / run
 > vocabulary).
 
+> Where it lives now (2026-10-03, after the repository split): the generic
+> projects named below are in `ara3d/bim-open-flow`, which this repository
+> consumes at `deps/bim-open-flow`; BIM data code is in `deps/bim-open-data`;
+> the engine is `deps/ara3d-dataflow`. Only the BIM node packs
+> (`Nodes.Bos`, `Nodes.Geometry`, `Nodes.BimAnalysis`), the studio host that
+> composes them, and the 3D pane stay in this repository. Each **Location**
+> line gives the current path.
+
 ## Layering rules
 
 1. Dependencies point downward only: spec ← engine ← node packs ← app.
@@ -27,7 +35,7 @@
 ## Specification and contracts
 
 ### DataFlow Graph Specification
-**Location:** `submodules/ara3d-dataflow/spec/dataflow-graph/`
+**Location:** `deps/ara3d-dataflow/spec/dataflow-graph/`
 The normative definition, partitioned into four separately versioned documents
 so spec+implementation pairs can evolve in parallel: `format.md` (the graph
 document: structure + values layers), `semantics.md` (evaluation: dirtiness,
@@ -52,7 +60,7 @@ sources with a small codegen step emitting C# into the host and TypeScript into
 ## Engine group (C#, BIM-free)
 
 ### Ara3D.DataFlowEngine.Abstractions
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/`
+**Location:** `deps/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/`
 The node SDK: node and port interfaces, the value/table types that flow along
 edges, capability declarations (pure vs. effectful, Run-gated), and the node
 registry. Deliberately tiny and stable — it is the contract every node pack
@@ -60,7 +68,7 @@ compiles against, so churn here is churn everywhere.
 **Depends on:** Ara3D.Utils, Ara3D.Collections, Ara3D.DataTable (vendored SDK).
 
 ### Ara3D.NodeGraph
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.NodeGraph/`
+**Location:** `deps/ara3d-dataflow/src/Ara3D.NodeGraph/`
 The graph *document* object model and the NodeGraph API: load/save/validate
 per the spec, plus transactional editing operations (add/remove/connect,
 undo/redo, structural validation against a node catalog). Knows nothing about
@@ -68,7 +76,7 @@ evaluation — it is what editors, agents, and the MCP surface manipulate.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions; Ara3D.Utils (vendored SDK).
 
 ### Ara3D.DataFlowEngine
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine/`
+**Location:** `deps/ara3d-dataflow/src/Ara3D.DataFlowEngine/`
 The canonical evaluator: dependency scheduling, memoization, dirty propagation,
 and standing evaluation sessions that observers (panes, sinks) subscribe to.
 Executes any registered node vocabulary over a NodeGraph document; contains no
@@ -77,14 +85,14 @@ I/O and no BIM.
 Ara3D.DataTable (vendored SDK).
 
 ### Ara3D.DataFlowEngine.Expressions
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Expressions/`
+**Location:** `deps/ara3d-dataflow/src/Ara3D.DataFlowEngine.Expressions/`
 The expression language used by derive/filter/what-if nodes: parser, type
 checker, and evaluator over the table/value types. Pure and dependency-light
 with a large test surface — ideal for an agent to own end-to-end.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions.
 
 ### Ara3D.DataFlowEngine.Runs
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.Runs/`
+**Location:** `deps/ara3d-dataflow/src/Ara3D.DataFlowEngine.Runs/`
 The definition-vs-run split made concrete: freezing an evaluation into a run
 record (graph hash + input hashes + outputs + timestamp), replay, and signing.
 Runs are the only artifact archived or submitted as evidence, and the input to
@@ -92,14 +100,14 @@ both generators below.
 **Depends on:** Ara3D.DataFlowEngine, Ara3D.NodeGraph.
 
 ### Ara3D.NodeGraph.Migrations
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.NodeGraph.Migrations/`
+**Location:** `deps/ara3d-dataflow/src/Ara3D.NodeGraph.Migrations/`
 Version-to-version graph document upgrades, driven by the spec's migration
 notes. Kept out of `Ara3D.NodeGraph` so handling old formats never complicates
 the current document model, and so migration work can proceed in its own fence.
 **Depends on:** Ara3D.NodeGraph.
 
 ### Ara3D.DataFlowEngine.TestKit
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/src/Ara3D.DataFlowEngine.TestKit/`
+**Location:** `deps/ara3d-dataflow/src/Ara3D.DataFlowEngine.TestKit/`
 Test infrastructure for everyone building on the engine: fluent graph
 builders, fake/probe nodes, and evaluation assertions. This is what makes
 every other agent's tests cheap to write, and what third-party node-pack
@@ -111,7 +119,7 @@ authors test against; shipped as a real package, not test-project internals.
 ## BIM data layer (C#)
 
 ### Ara3D.BimOpenSchema.DuckDb
-**Location:** `submodules/bim-open-schema/src/data/Ara3D.BimOpenSchema.DuckDb/`
+**Location:** `deps/bim-open-data/src/data/Ara3D.BimOpenSchema.DuckDb/`
 The DuckDB view/query layer over BOS (`CreateViews`: EntityText, ParameterText,
 RelationText — today buried in the PoC's MCP project; fix-on-entry item 2).
 A dedicated project so the DuckDB native dependency is isolated here instead of
@@ -141,7 +149,7 @@ constraint) out of everything else.
 Ara3D.IfcLoader; Ara3D.Geometry, Ara3D.Models (vendored SDK).
 
 ### BimOpenFlow.Nodes.Compliance
-**Location:** `src/flow/BimOpenFlow.Nodes.Compliance/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Nodes.Compliance/`
 Verdict nodes: rule checks, pass/fail/needs-review rollups, and the check
 metadata the compliance track hands to officials. Kept separate so the
 evidence-bearing vocabulary has a small, auditable surface.
@@ -149,7 +157,7 @@ evidence-bearing vocabulary has a small, auditable surface.
 Ara3D.DataFlowEngine.Expressions.
 
 ### BimOpenFlow.Nodes.Effects
-**Location:** `src/flow/BimOpenFlow.Nodes.Effects/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Nodes.Effects/`
 All Run-gated sinks in one place: byte-exact pset write-back (via
 Ara3D.Ifc.Editing), file exports (GLB, CSV, BOS), and report/dashboard
 emission triggers. Isolating effects makes the purity rule enforceable by
@@ -165,7 +173,7 @@ The host is split four ways up front — it is the likeliest fence-contention
 hotspot, and these seams let four agents work it concurrently.
 
 ### BimOpenFlow.Host.Catalog
-**Location:** `src/flow/BimOpenFlow.Host.Catalog/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Host.Catalog/`
 Model discovery and the conversion pipeline: watching/registering model files,
 IFC → BOS conversion with caching, and model metadata. Owns all knowledge of
 where models live and how they become BOS.
@@ -173,14 +181,14 @@ where models live and how they become BOS.
 Ara3D.Utils (vendored SDK).
 
 ### BimOpenFlow.Host.Store
-**Location:** `src/flow/BimOpenFlow.Host.Store/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Host.Store/`
 Persistence for graph documents and run records: the analysis library on disk,
 versioned saves, and run archival. No HTTP and no evaluation — storage
 semantics only.
 **Depends on:** Ara3D.NodeGraph, Ara3D.DataFlowEngine.Runs.
 
 ### BimOpenFlow.Host.Api
-**Location:** `src/flow/BimOpenFlow.Host.Api/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Host.Api/`
 The HTTP surface, generated-contract-first: endpoint handlers, the
 standing-evaluation subscription channel, and request/response mapping. Holds
 no business logic — every handler delegates to Catalog, Store, or the engine.
@@ -188,18 +196,21 @@ no business logic — every handler delegates to Catalog, Store, or the engine.
 BimOpenFlow.Host.Store; Ara3D.DataFlowEngine.
 
 ### BimOpenFlow.Host
-**Location:** `src/flow/BimOpenFlow.Host/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Host/`
 The composition root and deployable: wires Catalog, Store, Api, the engine,
-and the node packs together into the headless host process. This is P1's "one
+and the node packs of a host profile together into the headless host process.
+The generic host offers only the `tables` profile; the BIM profile is
+composed by `src/studio/BimOpenFlow.Studio` (`bimopenflow-studio`), which adds
+the BIM packs. This is P1's "one
 headless core" as an executable — the web app is strictly a client of it.
 Deliberately thin; if logic accumulates here, it belongs in one of the three
 modules above.
 **Depends on:** BimOpenFlow.Host.Api, BimOpenFlow.Host.Catalog,
-BimOpenFlow.Host.Store; Ara3D.DataFlowEngine (+ Runs, Expressions); all four
-node packs.
+BimOpenFlow.Host.Store; Ara3D.DataFlowEngine (+ Runs, Expressions); the
+generic node packs. The studio adds the BIM packs.
 
 ### BimOpenMcp.Flow
-**Location:** `src/mcp/BimOpenMcp.Flow/`
+**Location:** `deps/bim-open-flow/src/mcp/BimOpenMcp.Flow/`
 The agent surface: an MCP server exposing graph authoring (via the NodeGraph
 API), evaluation, and run retrieval. A thin adapter over the host — it holds
 no logic of its own, so agents and humans manipulate graphs through the same
@@ -208,7 +219,7 @@ operations.
 (or its API client).
 
 ### BimOpenFlow.Publishing
-**Location:** `src/flow/BimOpenFlow.Publishing/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Publishing/`
 The shared document-emission layer under both generators: HTML templating,
 asset embedding (the `viz` bundle, fonts, images as data URIs), theming, and
 self-contained-file assembly. Exists so Dashboards and Reports stay thin and
@@ -217,7 +228,7 @@ visually consistent instead of growing two copies of the same plumbing.
 (build artifact, not a project reference).
 
 ### BimOpenFlow.Dashboards
-**Location:** `src/flow/BimOpenFlow.Dashboards/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Dashboards/`
 The dashboard generator: turns a graph's output tables and views into a
 self-contained interactive HTML dashboard (charts, tables, embedded 3D
 snapshots) by binding run/session data to the `viz` components via Publishing.
@@ -225,7 +236,7 @@ Live dashboards observe a running host; exported ones embed frozen run data.
 **Depends on:** BimOpenFlow.Publishing; Ara3D.DataFlowEngine.Runs.
 
 ### BimOpenFlow.Reports
-**Location:** `src/flow/BimOpenFlow.Reports/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Reports/`
 The report generator: renders a run record into a static, archivable document
 (HTML, printable to PDF) — the audit deliverable with verdicts, provenance
 hashes, and evidence tables. Static by construction: a report never requires a
@@ -233,7 +244,7 @@ running host to read.
 **Depends on:** BimOpenFlow.Publishing; Ara3D.DataFlowEngine.Runs.
 
 ### BimOpenFlow.Evidence
-**Location:** `src/flow/BimOpenFlow.Evidence/`
+**Location:** `deps/bim-open-flow/src/flow/BimOpenFlow.Evidence/`
 The compliance hand-off package (the semantics doc's open question 4 made
 concrete): one archive holding the graph, pinned input snapshots or content
 hashes, the run record, and the rendered report — the thing actually given to
@@ -247,7 +258,7 @@ BimOpenFlow.Reports.
 ## Web (TypeScript, `bimopenflow/web/` npm workspace)
 
 ### @bimopenflow/app
-**Location:** `bimopenflow/web/packages/app/`
+**Location:** `deps/bim-open-flow/bimopenflow/web/packages/app/`
 The editor application shell: node catalog browsing, pane docking, and
 session/run controls. Owns the `layout` and `session` layers of a graph file;
 never evaluates anything itself. Graph editing on the canvas belongs to
@@ -256,7 +267,7 @@ never evaluates anything itself. Graph editing on the canvas belongs to
 @bimopenflow/api-client.
 
 ### @bimopenflow/graph
-**Location:** `bimopenflow/web/packages/graph/`
+**Location:** `deps/bim-open-flow/bimopenflow/web/packages/graph/`
 The node-graph editing surface: node bodies driven by the catalog, port typing
 and connection rules, status badges, wire rendering and inspection, selection
 and cross-probing, and the mapping from canvas gestures to store operations.
@@ -267,23 +278,25 @@ a graph layer there — see `docs/graph-module-layering.md`.
 TS).
 
 ### @bimopenflow/state
-**Location:** `bimopenflow/web/packages/state/`
+**Location:** `deps/bim-open-flow/bimopenflow/web/packages/state/`
 The client-side store and reducer: graph document mirror, selection, undo
 integration with the NodeGraph API, and subscription plumbing for evaluation
 updates. UI-framework-free so it is testable headless with vitest.
 **Depends on:** @bimopenflow/api-client.
 
 ### @bimopenflow/panes
-**Location:** `bimopenflow/web/packages/panes/`
+**Location:** `deps/bim-open-flow/bimopenflow/web/packages/panes/`
 The pane implementations — table, chart, 3D view, inspector, verdict list —
 each an isolated module behind the single pane contract (data in, events out).
 The most naturally parallel surface in the system: one agent per pane, zero
 overlap.
-**Depends on:** @bimopenflow/viz, @bim-open-viewer/core/-loaders/-controls (3D
-pane only), contracts (generated TS).
+**Depends on:** @bimopenflow/viz, contracts (generated TS). The 3D pane is not
+here: it is `@bimopenflow/pane-3d` (`bimopenflow/web/packages/pane-3d/` in this
+repository), which depends on `@bim-open-viewer/*` and registers itself with the
+editor, so the generic packages import no viewer code.
 
 ### @bimopenflow/viz
-**Location:** `bimopenflow/web/packages/viz/`
+**Location:** `deps/bim-open-flow/bimopenflow/web/packages/viz/`
 Chart and table rendering components shared by the editor panes and the
 dashboard generator, bundled as a self-contained artifact the C# generators can
 embed. Keeping it separate is what lets dashboards look identical to the live
@@ -291,7 +304,7 @@ app.
 **Depends on:** contracts (generated TS). No app/state dependency.
 
 ### @bimopenflow/api-client
-**Location:** `bimopenflow/web/packages/api-client/`
+**Location:** `deps/bim-open-flow/bimopenflow/web/packages/api-client/`
 The typed client for the host HTTP API, generated from `contracts/` — never
 hand-edited. Includes the subscription client for standing-evaluation updates.
 **Depends on:** contracts (generated TS).
@@ -332,8 +345,8 @@ selection events; owns no scene content.
 ## Tests and gates
 
 ### Ara3D.DataFlowEngine.Conformance
-**Location:** `submodules/ara3d-dataflow/submodules/ara3d-dataflow/tests/Ara3D.DataFlowEngine.Conformance/`
-Runs every vector in `submodules/ara3d-dataflow/spec/dataflow-graph/conformance/` against the canonical
+**Location:** `deps/ara3d-dataflow/tests/Ara3D.DataFlowEngine.Conformance/`
+Runs every vector in `deps/ara3d-dataflow/spec/dataflow-graph/conformance/` against the canonical
 engine. This suite is the definition of "canonical" — it gates all engine
 changes and doubles as the acceptance test for any future second
 implementation.
@@ -341,14 +354,14 @@ implementation.
 vectors as content.
 
 ### Unit test projects
-**Location:** `tests/<ProjectName>.Tests/` (one per C# project above);
+**Location:** `tests/<ProjectName>.Tests/` (one per C# project above; the generic projects' tests are under `deps/bim-open-flow/tests/`, the BIM packs' under `tests/flow/` and `tests/studio/`);
 `vitest` co-located per web package.
 Standard per-project suites; each lives inside its project's fence so parallel
 agents gate their own work without touching a shared suite.
 **Depends on:** their subject project only.
 
 ### Headless gates
-**Location:** `gates/`
+**Location:** `gates/` (the toolkit's) and `deps/bim-open-flow/gates/` (the generic host and web)
 End-to-end smoke scripts (host up, convert, evaluate, dashboard/report
 emission, editor smoke via headless browser) — the supervisor-run integration
 gate, successor to the PoC's `tools/*.mjs`.
@@ -360,7 +373,7 @@ gate, successor to the PoC's `tools/*.mjs`.
 
 ```mermaid
 graph BT
-  spec[submodules/ara3d-dataflow/spec/dataflow-graph]
+  spec[deps/ara3d-dataflow/spec/dataflow-graph]
   contracts[contracts/]
   ABS[Ara3D.DataFlowEngine.Abstractions]
   NG[Ara3D.NodeGraph]

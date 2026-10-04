@@ -30,11 +30,11 @@ export, private, never committed). Eight graphs SELECT from its `door`,
 | `duckdb-source-lineage` | two queries, join, aggregate, sort |
 | `duckdb-typed-schema` | schema query, filter, aggregate, sort |
 
-All node kinds come from the tables profile (`HostComposition.TablePacks()`).
+All node kinds come from the tables profile (`HostComposition.TablePacks()` in `deps/bim-open-flow/src/flow/BimOpenFlow.Host`).
 
 ## Tests
 
-- `tests/flow/BimOpenFlow.TableWorkflows.Tests/DuckDbWorkflowCatalogTests.cs`
+- `tests/studio/BimOpenFlow.SnowdonWorkflows.Tests/DuckDbWorkflowCatalogTests.cs`
   enumerates the entries: each parses, validates against the tables registry,
   and keeps `{DUCKDB}` as its only database path. `duckdb-typed-schema`
   evaluates every node Ok over a generated `samples/tables/sample.duckdb`; the
