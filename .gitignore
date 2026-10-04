@@ -6,6 +6,7 @@ data/**
 *.bos
 *.parquet
 *.duckdb
+*.stamp
 !samples/tables/*.duckdb
 !samples/nrc/*.ifc
 

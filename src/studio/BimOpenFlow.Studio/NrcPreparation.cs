@@ -33,7 +33,8 @@ public static class NrcPreparation
         var ifc = Path.Combine(dir, ifcName);
         return File.Exists(ifc)
             ? new(source, ifc, Path.Combine(dir, databaseName),
-                (input, output) => IfcDuckDbBuild.Build(new FilePath(input), new FilePath(output)))
+                (input, output) => IfcDuckDbBuild.Build(new FilePath(input), new FilePath(output)),
+                IfcDuckDbBuild.Version)
             : null;
     }
 
@@ -45,7 +46,8 @@ public static class NrcPreparation
         var ifc = Path.Combine(dir, NrcSamples.IfcFileName);
         return File.Exists(ifc)
             ? new(BosName, ifc, Path.Combine(dir, NrcSamples.BosFileName),
-                (input, output) => IfcDuckDbBuild.SaveBos(new FilePath(input), new FilePath(output)))
+                (input, output) => IfcDuckDbBuild.SaveBos(new FilePath(input), new FilePath(output)),
+                IfcDuckDbBuild.Version)
             : null;
     }
 
