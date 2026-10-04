@@ -34,7 +34,7 @@ For each entry, `deps.mjs` does the first of these that applies:
 
 A **deps root** is a folder holding a `.deps-root` marker file. The script writes the marker into every `deps/` folder it creates. The workspace repository will commit one at its own root.
 
-The script then repeats this for each dependency's own `deps.json`, so a dependency's dependencies land flat in the same `deps/` folder as siblings. Rule 2 then links them. The result is one copy of each repository per checkout. When two pins disagree, the first one wins and the script prints both.
+The script then repeats this for each dependency's own `deps.json`, so a dependency's dependencies land flat in the same `deps/` folder as siblings. Rule 2 then links them. The result is one copy of each repository per checkout. When the repository's parent is a deps root, the dependencies of dependencies are also linked into its own `deps/`, so `deps/` holds the whole closure in both modes and the build names each repository only as `deps/<name>` (TKT-152). When two pins disagree, the first one wins and the script prints both.
 
 Why a marker, rather than any sibling folder: `~/git/gratify` on the owner's machine is a separate clone at another commit (`f8764ca`, against the toolkit's `a2d1723`). Linking any sibling it found would build against the wrong Gratify without saying so.
 

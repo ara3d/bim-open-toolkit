@@ -6,4 +6,4 @@ spec/** text eol=lf
 samples/nrc/*.ifc -text
 
 # Golden graph text is compared byte for byte with the printer's LF output (TKT-85).
-tests/flow/BimOpenFlow.SampleFlows.Tests/golden/** text eol=lf
+tests/studio/BimOpenFlow.SampleFlows.Tests/golden/** text eol=lf

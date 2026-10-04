@@ -17,15 +17,15 @@
   </PropertyGroup>
 
   <!--
-    Where deps.mjs puts this repository's dependencies (deps.json): beside the
-    repository when its parent folder is a deps root (holds a .deps-root marker),
-    otherwise in deps/. This is deps.mjs's own rule, and bim-open-data's
-    Directory.Build.props states it the same way, so a project that two
-    repositories both reference (bim-open-schema, the ara3d-sdk projects) is
-    reached by one path and MSBuild builds it once.
+    Every dependency is built from deps\<name>, which deps.mjs fills with every
+    repository the build reaches, cloned or linked to a sibling checkout. The
+    solution names the same paths, and MSBuild never resolves a link, so each
+    project has one path and is built once; bim-open-flow's and bim-open-data's
+    Directory.Build.props resolve DepsRoot to this same folder when they are
+    built from it. ara3d-dataflow and bim-open-schema find this file and
+    Directory.Build.targets by looking in the folders above deps\<name>.
   -->
   <PropertyGroup>
-    <DepsRoot Condition="'$(DepsRoot)' == '' And Exists('$(MSBuildThisFileDirectory)../.deps-root')">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../'))</DepsRoot>
     <DepsRoot Condition="'$(DepsRoot)' == ''">$(MSBuildThisFileDirectory)deps\</DepsRoot>
   </PropertyGroup>
 
