@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\fake-claude\**" LinkBase="fake-claude" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(DepsRoot)bim-open-flow\tests\studio\fake-claude\**" LinkBase="fake-claude" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -23,14 +23,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
-    <ProjectReference Include="..\..\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
-    <ProjectReference Include="..\..\mcp\BimOpenMcp.Flow\BimOpenMcp.Flow.csproj" />
-    <ProjectReference Include="..\..\flow\BimOpenFlow.NodeDocs\BimOpenFlow.NodeDocs.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\studio\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Host\BimOpenFlow.Host.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\mcp\BimOpenMcp.Flow\BimOpenMcp.Flow.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.NodeDocs\BimOpenFlow.NodeDocs.csproj" />
     <ProjectReference Include="..\..\flow\BimOpenFlow.Nodes.Bos\BimOpenFlow.Nodes.Bos.csproj" />
     <ProjectReference Include="..\..\flow\BimOpenFlow.Nodes.BimAnalysis\BimOpenFlow.Nodes.BimAnalysis.csproj" />
     <ProjectReference Include="..\..\flow\BimOpenFlow.Nodes.Geometry\BimOpenFlow.Nodes.Geometry.csproj" />
-    <ProjectReference Include="..\..\flow\BimOpenFlow.Nodes.Compliance\BimOpenFlow.Nodes.Compliance.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.Compliance\BimOpenFlow.Nodes.Compliance.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.Ifc.DuckDb\Ara3D.Ifc.DuckDb.csproj" />
   </ItemGroup>
 

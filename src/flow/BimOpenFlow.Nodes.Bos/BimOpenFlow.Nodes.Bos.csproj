@@ -14,7 +14,7 @@
     <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.BimOpenSchema.IO\Ara3D.BimOpenSchema.IO.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.BimOpenSchema.DuckDb\Ara3D.BimOpenSchema.DuckDb.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-data\src\data\Ara3D.BimOpenSchema.Harmonizer\Ara3D.BimOpenSchema.Harmonizer.csproj" />
-    <ProjectReference Include="..\BimOpenFlow.Nodes.Support\BimOpenFlow.Nodes.Support.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.Support\BimOpenFlow.Nodes.Support.csproj" />
   </ItemGroup>
 
   <ItemGroup>

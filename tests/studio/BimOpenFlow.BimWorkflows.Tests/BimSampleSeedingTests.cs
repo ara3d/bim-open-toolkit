@@ -45,6 +45,7 @@ public sealed class BimSampleSeedingTests
             .Concat(ExpectedIds("view3d-analyses"))
             .Concat(ExpectedIds("nrc-analyses"))
             .Concat(ExpectedIds("showcase-analyses"))
+            .Concat(ExpectedIds("showcase-tables"))
             .Concat(BimSampleSeeding.SnowdonPath() is null ? [] : ExpectedIds("snowdon-analyses").Where(id => !HoldsOtherPlaceholder("snowdon-analyses", id, "{SNOWDON}")));
 
     /// <summary>True when a sample still holds a placeholder its source does not fill, such as

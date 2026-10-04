@@ -31,4 +31,10 @@ public static class NrcSamples
     /// samples/nrc (CSV, the IFC, and the BOS and DuckDB prepared from it).</summary>
     public static (string AnalysesDir, string Placeholder, string TargetDir) Showcase(string root)
         => (Path.Combine(root, "samples", "showcase-analyses"), SampleSeeding.PathPlaceholder, Dir(root));
+
+    /// <summary>The seeding source for samples/showcase-tables: the BFAST demo over
+    /// bim-open-flow's samples/tables (SampleSeeding.SamplesRoot), which {SAMPLES} stands for.</summary>
+    public static (string AnalysesDir, string Placeholder, string TargetDir) ShowcaseTables(string root)
+        => (Path.Combine(root, "samples", "showcase-tables"), SampleSeeding.PathPlaceholder,
+            SampleSeeding.TablesDir(SampleSeeding.SamplesRoot(root) ?? root));
 }

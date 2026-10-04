@@ -37,7 +37,8 @@ public static class StudioComposition
     public static readonly HostProfile Bim = new(BimProfile, r => BimPacks(r),
         BimSampleSeeding.SeededModelRoots, BimSampleSeeding.Seed, NrcPreparation.Jobs);
 
-    /// <summary>The generic tables profile plus the NRC and showcase graphs it can run and their
+    /// <summary>The generic tables profile (its samples come from bim-open-flow's checkout,
+    /// SampleSeeding.SamplesRoot) plus the NRC and showcase graphs it can run and their
     /// samples/nrc root and background jobs.</summary>
     public static readonly HostProfile Tables = HostComposition.Tables with
     {
@@ -45,7 +46,8 @@ public static class StudioComposition
             ? [.. HostComposition.Tables.SeededModelRoots(startDir), NrcSamples.Dir(root)]
             : [],
         Seed = (store, startDir, registry, log) => SampleSeeding.SeedFromCheckout(store, startDir,
-            root => [.. SampleSeeding.TableSources(root), NrcSamples.Analyses(root), NrcSamples.Showcase(root)],
+            root => [.. SampleSeeding.TableSources(SampleSeeding.SamplesRoot(startDir) ?? root),
+                NrcSamples.Analyses(root), NrcSamples.Showcase(root), NrcSamples.ShowcaseTables(root)],
             registry, log),
         Preparation = NrcPreparation.Jobs,
     };

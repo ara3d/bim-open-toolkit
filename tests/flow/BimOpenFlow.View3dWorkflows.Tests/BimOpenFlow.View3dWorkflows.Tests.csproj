@@ -22,10 +22,10 @@
     <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
     <ProjectReference Include="$(DepsRoot)ara3d-dataflow\src\Ara3D.DataFlowEngine.TestKit\Ara3D.DataFlowEngine.TestKit.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Bos\BimOpenFlow.Nodes.Bos.csproj" />
-    <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.TableOps\BimOpenFlow.Nodes.TableOps.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.TableOps\BimOpenFlow.Nodes.TableOps.csproj" />
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Geometry\BimOpenFlow.Nodes.Geometry.csproj" />
-    <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Spatial\BimOpenFlow.Nodes.Spatial.csproj" />
-    <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Viz\BimOpenFlow.Nodes.Viz.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.Spatial\BimOpenFlow.Nodes.Spatial.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.Viz\BimOpenFlow.Nodes.Viz.csproj" />
   </ItemGroup>
 
   <ItemGroup>

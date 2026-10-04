@@ -18,7 +18,9 @@ namespace BimOpenFlow.NrcWorkflows.Tests;
 [TestFixture]
 public sealed class ShowcaseGraphTests
 {
-    private static readonly string[] Ids = ["csv-to-chart", "bos-to-relations", "bfast-buffers"];
+    /// <summary>bfast-buffers, over bim-open-flow's samples/tables, is in samples/showcase-tables
+    /// and BfastGraphTests.</summary>
+    private static readonly string[] Ids = ["csv-to-chart", "bos-to-relations"];
 
     private static string ShowcaseDir
         => Path.Combine(NrcPaths.Root, "samples", "showcase-analyses");

@@ -1,6 +1,7 @@
-// Enforces the seams inside src/flow: node packs depend only on the shared Support
-// pack among packs, never on the host or the run outputs; only the Effects pack sees
-// run records; the relation plan/schema/compile library never sees DuckDB.
+// Enforces the seams inside src/flow for the toolkit's BIM packs (Bos, BimAnalysis,
+// Geometry): node packs depend only on the shared Support pack among packs (in
+// bim-open-flow), never on the host or the run outputs; only the Effects pack sees run
+// records. bim-open-flow's own layering test holds the same rules for its packs.
 namespace BimOpenToolkit.Layering.Tests;
 
 public static class FlowLayering
@@ -65,5 +66,5 @@ public class FlowLayeringTests
     [Test]
     public void FindsTheNodePacks()
         => Assert.That(FlowLayering.FlowProjects().Count(p => FlowLayering.IsPack(FlowLayering.NameOf(p.FullName))),
-            Is.GreaterThanOrEqualTo(12), "expected at least twelve node packs under src/flow");
+            Is.EqualTo(3), "expected the three BIM node packs under src/flow");
 }

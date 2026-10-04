@@ -33,6 +33,7 @@ public static class BimSampleSeeding
             (Path.Combine(root, "samples", "view3d-analyses"), DataPlaceholder, Path.Combine(root, "data")),
             NrcSamples.Analyses(root),
             NrcSamples.Showcase(root),
+            NrcSamples.ShowcaseTables(root),
         };
         if (SnowdonPath() is { } snowdon)
             sources.Add((Path.Combine(root, "samples", "snowdon-analyses"), "{SNOWDON}", snowdon));

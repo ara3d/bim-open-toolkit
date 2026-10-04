@@ -19,13 +19,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\studio\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\studio\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
     <ProjectReference Include="..\..\..\src\studio\BimOpenFlow.Studio\BimOpenFlow.Studio.csproj" />
     <ProjectReference Include="..\..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\fake-claude\**" LinkBase="fake-claude" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(DepsRoot)bim-open-flow\tests\studio\fake-claude\**" LinkBase="fake-claude" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

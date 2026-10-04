@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\studio\BimOpenFlow.Ask\BimOpenFlow.Ask.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-data\src\mcp\BimOpenMcp.Ifc\BimOpenMcp.Ifc.csproj" />
   </ItemGroup>
 

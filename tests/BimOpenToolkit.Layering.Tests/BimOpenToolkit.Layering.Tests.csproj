@@ -17,8 +17,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BimOpenToolkit.TestSupport\BimOpenToolkit.TestSupport.csproj" />
-    <!-- BimSeamTests reads the generic packs and their notes. -->
-    <ProjectReference Include="..\..\src\flow\BimOpenFlow.NodeDocs\BimOpenFlow.NodeDocs.csproj" />
   </ItemGroup>
 
 </Project>

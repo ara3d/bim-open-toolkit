@@ -6,19 +6,21 @@ using BimOpenFlow.Studio;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
-/// <summary>The BFAST showcase graph: bfast.read and bfast.buffer over the committed
+/// <summary>The BFAST showcase graph: bfast.read and bfast.buffer over bim-open-flow's
 /// samples/tables/sample.bfast into two view.table panes, in both host profiles. The graph
-/// reaches the file as {SAMPLES}/../tables/sample.bfast because the showcase placeholder
-/// stands for samples/nrc. Buffer names and sizes are those samples/tables/README.md lists.</summary>
+/// lives in samples/showcase-tables, whose {SAMPLES} stands for that folder. Buffer names and
+/// sizes are those bim-open-flow's samples/tables/README.md lists.</summary>
 [TestFixture]
 public sealed class BfastGraphTests
 {
     private const string Id = "bfast-buffers";
 
+    private static readonly (string AnalysesDir, string Placeholder, string TablesDir) Source
+        = NrcSamples.ShowcaseTables(NrcPaths.Root);
+
     private static GraphDocument Document()
         => SampleSeeding.RewritePaths(
-            GraphDocumentIO.Load(Path.Combine(NrcPaths.Root, "samples", "showcase-analyses", Id + ".json")),
-            NrcPaths.SamplesDir);
+            GraphDocumentIO.Load(Path.Combine(Source.AnalysesDir, Id + ".json")), Source.TablesDir);
 
     private static IDataTable Table(EvalSnapshot snapshot, string nodeId)
         => ((TableValue)snapshot.Results[nodeId].Outputs[0]).Table;
@@ -27,7 +29,7 @@ public sealed class BfastGraphTests
     public void ListsTheFourBuffers_AndReadsThePrices_InBothProfiles()
     {
         var doc = Document();
-        var runtime = RelationRuntime.FromRoots([NrcPaths.SamplesDir]);
+        var runtime = RelationRuntime.FromRoots([Source.TablesDir]);
         foreach (var registry in new[] { HostComposition.TablePacks(runtime), StudioComposition.BimPacks(runtime) })
         {
             Assert.That(doc.Validate(registry), Is.Empty, Id);
