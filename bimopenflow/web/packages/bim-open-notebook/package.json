@@ -6,6 +6,11 @@
   "description": "BIM Open Notebook: the transcript of a session with the agent, with live embeds (value, table, chart, graph, 3D, picture, file) rendered by the existing panes and re-evaluated against the host.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./page": "./src/page/entry.ts",
+    "./vite": "./vite/samples.ts"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

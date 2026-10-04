@@ -8,7 +8,8 @@ import { ApiClient } from "@bimopenflow/api-client";
 import { mountHostBanner, watchHost } from "@bimopenflow/client/host";
 import { editorUrl, viewer3dUrl } from "./editorLinks";
 import { fetchSample, listSamples } from "./files";
-import { notebookEntry, orderNotebooks, parseGraphTable, type GraphEntry, type NotebookEntry } from "./nrcCatalog";
+import { notebookEntry, orderNotebooks, type NotebookEntry } from "./catalog";
+import { NRC_LEAD, parseGraphTable, type GraphEntry } from "./nrcCatalog";
 import { renderNrcPage } from "./nrcView";
 import { ensureNotebookStyles } from "./styles";
 
@@ -30,7 +31,7 @@ async function loadNotebooks(problems: string[]): Promise<NotebookEntry[]> {
         return entry;
       }),
     );
-    return orderNotebooks(entries.filter((e): e is NotebookEntry => e !== undefined));
+    return orderNotebooks(entries.filter((e): e is NotebookEntry => e !== undefined), NRC_LEAD);
   } catch (e) {
     problems.push(`The sample notebooks could not be listed: ${message(e)}`);
     return [];

@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "test", "scripts"]
+  "include": ["src", "test", "scripts", "vite"]
 }

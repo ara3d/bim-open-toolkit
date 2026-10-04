@@ -8,39 +8,17 @@
 // their file names, catalog.json with one landing-page entry each). The base is
 // relative, so the folder works under any path.
 
-import { defineConfig, type Plugin } from "vite";
-import { readdirSync, readFileSync } from "node:fs";
+import { defineConfig } from "vite";
 import { resolve } from "node:path";
-import base, { NOTEBOOK_SUFFIX, samples } from "./vite.config";
-import { notebookEntry, orderNotebooks, type NotebookEntry } from "./src/page/nrcCatalog";
-import { STATIC_CATALOG, STATIC_INDEX, STATIC_SAMPLES } from "./src/page/sitePaths";
-
-/** Emits every sample notebook under notebooks/, with the two indexes the page and a landing page read. */
-function bundleSamples(): Plugin {
-  return {
-    name: "bundle-sample-notebooks",
-    generateBundle() {
-      const names = readdirSync(samples).filter((f) => f.endsWith(NOTEBOOK_SUFFIX)).sort();
-      const entries: NotebookEntry[] = [];
-      for (const name of names) {
-        const text = readFileSync(resolve(samples, name), "utf8");
-        const entry = notebookEntry(name, text);
-        if ("errors" in entry) this.error(`${name} is not a valid notebook: ${entry.errors.join("; ")}`);
-        entries.push(entry);
-        this.emitFile({ type: "asset", fileName: `${STATIC_SAMPLES}${name}`, source: text });
-      }
-      const json = (value: unknown) => JSON.stringify(value, null, 2) + "\n";
-      this.emitFile({ type: "asset", fileName: `${STATIC_SAMPLES}${STATIC_INDEX}`, source: json(names) });
-      this.emitFile({ type: "asset", fileName: `${STATIC_SAMPLES}${STATIC_CATALOG}`, source: json(orderNotebooks(entries)) });
-    },
-  };
-}
+import base, { samples } from "./vite.config";
+import { bundleSamples } from "./vite/samples";
+import { NRC_LEAD } from "./src/page/nrcCatalog";
 
 export default defineConfig({
   ...base,
   mode: "pages",
   base: "./",
-  plugins: [bundleSamples()],
+  plugins: [bundleSamples(samples, NRC_LEAD)],
   build: {
     outDir: "dist/pages",
     rollupOptions: { input: { notebook: resolve(__dirname, "notebook.html") } },

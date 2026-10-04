@@ -74,13 +74,13 @@ describe("sample notebooks", () => {
   // draws them on top of each other. Fix with scripts/sync-embed-layouts.ts.
   it.each(sampleFiles)("%s places every graph card where its graph file does", (file) => {
     const name = file.replace(/\.notebook\.json$/, "");
-    const stale = staleLayouts(readFileSync(join(SAMPLES, file), "utf8"), sampleGraphFiles(name));
+    const stale = staleLayouts(readFileSync(join(SAMPLES, file), "utf8"), sampleGraphFiles(name, SAMPLES, [ANALYSES]));
     expect(stale.map((s) => `${s.analysisId}.${s.node}`)).toEqual([]);
   });
 
   it("the layout check reports a card moved in the graph file but not in the notebook", () => {
     const text = readFileSync(join(SAMPLES, "nrc-eight-questions.notebook.json"), "utf8");
-    const graphs = sampleGraphFiles("nrc-eight-questions");
+    const graphs = sampleGraphFiles("nrc-eight-questions", SAMPLES, [ANALYSES]);
     const embed = load("nrc-eight-questions").turns[8].reply.embeds.find((e) => e.kind === "graph");
     const embedded = embed?.kind === "graph" ? embed.document! : "";
     const document = JSON.parse(embedded) as { layout: object };

@@ -1,8 +1,9 @@
 // The NRC landing page's DOM: a heading, the notebook cards, and the graph
-// table. Pure rendering from nrcCatalog's entries; nrc.ts supplies them and
+// table. Pure rendering from catalog's and nrcCatalog's entries; nrc.ts supplies them and
 // the links. Themed by the "nb-" custom properties of styles.ts.
 
-import type { GraphEntry, NotebookEntry } from "./nrcCatalog";
+import type { NotebookEntry } from "./catalog";
+import type { GraphEntry } from "./nrcCatalog";
 
 export interface NrcPageLinks {
   /** notebook.html with the sample open. */

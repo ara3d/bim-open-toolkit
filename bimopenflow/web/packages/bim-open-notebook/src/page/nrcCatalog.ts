@@ -1,23 +1,11 @@
-// What the NRC landing page (nrc.html) lists: the sample notebooks in
-// samples/notebooks and the graphs in samples/nrc-analyses. The graph list is
-// read from that folder's README table, so the README stays the one place a
-// graph's one-line description lives. Pure functions; nrc.ts fetches.
+// The NRC half of what the NRC landing page (nrc.html) lists: the notebooks
+// that lead it, and the graphs in samples/nrc-analyses. The notebook entries
+// themselves are catalog.ts's. The graph list is read from that folder's
+// README table, so the README stays the one place a graph's one-line
+// description lives. Pure functions; nrc.ts fetches.
 
-import type { Notebook } from "../document/format";
-import { parseNotebook } from "../document/io";
-
-/** One sample notebook as the landing page shows it. */
-export interface NotebookEntry {
-  /** File name without `.notebook.json`, the value of `?notebook=`. */
-  readonly name: string;
-  readonly title: string;
-  readonly profile?: string;
-  readonly turns: number;
-  /** The first request, as a taste of the session. */
-  readonly firstRequest?: string;
-  /** True for a session an agent replayed rather than a recorded one (`host.note`). */
-  readonly reconstructed: boolean;
-}
+/** The three recorded NRC notebooks lead the landing page, in reading order; the reconstructed sessions follow by name. */
+export const NRC_LEAD = ["nrc-eight-questions", "nrc-test-kit", "nrc-door-check"] as const;
 
 /** One row of the README table in samples/nrc-analyses. */
 export interface GraphEntry {
@@ -29,38 +17,6 @@ export interface GraphEntry {
   readonly profiles: string;
   /** True when the graph ends in a 3D view, so the 3D page is the better link. */
   readonly viewer3d: boolean;
-}
-
-/** The three recorded NRC notebooks lead, in reading order; the reconstructed sessions follow by name. */
-const LEAD_NOTEBOOKS = ["nrc-eight-questions", "nrc-test-kit", "nrc-door-check"];
-
-const notebookName = (file: string): string => file.replace(/\.notebook\.json$/, "");
-
-/** A notebook file as a list entry, or the parse errors. */
-export function notebookEntry(file: string, text: string): NotebookEntry | { readonly errors: readonly string[] } {
-  const parsed = parseNotebook(text);
-  if (!parsed.ok) return { errors: parsed.errors };
-  return entryOf(notebookName(file), parsed.notebook);
-}
-
-function entryOf(name: string, notebook: Notebook): NotebookEntry {
-  return {
-    name,
-    title: notebook.title,
-    profile: notebook.host?.profile,
-    turns: notebook.turns.length,
-    firstRequest: notebook.turns[0]?.request.text,
-    reconstructed: /reconstructed/i.test(notebook.host?.note ?? ""),
-  };
-}
-
-/** Entries in reading order: LEAD_NOTEBOOKS first, then the rest in the order given. */
-export function orderNotebooks(entries: readonly NotebookEntry[]): NotebookEntry[] {
-  const rank = (e: NotebookEntry): number => {
-    const i = LEAD_NOTEBOOKS.indexOf(e.name);
-    return i < 0 ? LEAD_NOTEBOOKS.length : i;
-  };
-  return [...entries].sort((a, b) => rank(a) - rank(b));
 }
 
 /** Splits one markdown table row into trimmed cells. */

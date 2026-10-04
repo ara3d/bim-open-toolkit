@@ -10,7 +10,6 @@
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { ROOT } from "./outline";
 
 type Layout = Record<string, { x: number; y: number }>;
 
@@ -27,14 +26,14 @@ export interface StaleLayout {
   readonly source: { x: number; y: number };
 }
 
-/** The graph file of each analysis id a sample notebook may embed: samples/nrc-analyses and the
- *  outline's own `graphs`, whose paths are relative to samples/notebooks/outlines. */
-export function sampleGraphFiles(notebookName: string): Map<string, string> {
-  const analyses = join(ROOT, "samples", "nrc-analyses");
-  const outlines = join(ROOT, "samples", "notebooks", "outlines");
+/** The graph file of each analysis id a sample notebook may embed: every graph in `analysesDirs`
+ *  and the outline's own `graphs`, whose paths are relative to `samplesDir`/outlines. A later
+ *  file of the same id wins. */
+export function sampleGraphFiles(notebookName: string, samplesDir: string, analysesDirs: readonly string[]): Map<string, string> {
+  const outlines = join(samplesDir, "outlines");
   const outline = JSON.parse(readFileSync(join(outlines, `${notebookName}.outline.json`), "utf8")) as { graphs?: string[] };
   const files = [
-    ...readdirSync(analyses).filter((f) => f.endsWith(".json")).map((f) => join(analyses, f)),
+    ...analysesDirs.flatMap((dir) => readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => join(dir, f))),
     ...(outline.graphs ?? []).map((path) => resolve(outlines, path)),
   ];
   return new Map(files.map((file) => [file.split(/[\\/]/).pop()!.replace(/\.json$/, ""), file]));

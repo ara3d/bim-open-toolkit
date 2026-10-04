@@ -3,7 +3,8 @@
 // follow the host, and problems are shown.
 
 import { describe, expect, it } from "vitest";
-import type { GraphEntry, NotebookEntry } from "../src/page/nrcCatalog";
+import type { NotebookEntry } from "../src/page/catalog";
+import type { GraphEntry } from "../src/page/nrcCatalog";
 import { renderNrcPage } from "../src/page/nrcView";
 
 const links = {

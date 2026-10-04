@@ -5,13 +5,8 @@
 // offline, without a running host.
 
 import { existsSync } from "node:fs";
-import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { HostHint, ToolCall, Turn } from "../src/document/format";
-
-/** The repository root: scripts/ sits five levels below it. */
-export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../..");
 
 export interface Outline {
   readonly title: string;
@@ -91,49 +86,73 @@ export function withExtras(turn: Turn, outlineTurn: OutlineTurn): Turn {
   };
 }
 
-// --- Placeholders: {SNOWDON} and this checkout's own path -------------------
+// --- Placeholders: {NAME} in a graph's text, and the outline's own checkout ---
+
+/** Placeholder names (without braces) and the paths they stand for, given by the caller. */
+export type Placeholders = ReadonlyMap<string, string>;
+
+const PLACEHOLDER_NAME = /^[A-Z][A-Z0-9_]*$/;
+const PLACEHOLDER_TOKEN = /\{([A-Z][A-Z0-9_]*)\}/g;
 
 /**
- * The private Snowdon model: BIMOPENFLOW_SNOWDON when it names an existing
- * file, else the default location when that exists, else undefined.
- * Duplicates BimSampleSeeding.SnowdonPath in the host, which fills the same
- * placeholder only when it seeds an empty store, never on a PUT (plan, Debt).
+ * The placeholders a command line gives as `--placeholder NAME=path`, the
+ * path resolved against the working directory. A malformed value or a name
+ * given twice is an error.
  */
-export function snowdonPath(): string | undefined {
-  const fromEnv = process.env.BIMOPENFLOW_SNOWDON;
-  const path =
-    fromEnv && fromEnv.length > 0
-      ? fromEnv
-      : join(homedir(), "Documents", "BIM Open Schema", "Snowdon Towers Sample Architectural.bos");
-  return existsSync(path) ? path : undefined;
+export function parsePlaceholders(argv: readonly string[]): Placeholders {
+  const placeholders = new Map<string, string>();
+  argv.forEach((arg, i) => {
+    if (arg !== "--placeholder") return;
+    const value = argv[i + 1] ?? "";
+    const eq = value.indexOf("=");
+    const name = value.slice(0, eq);
+    if (eq < 0 || !PLACEHOLDER_NAME.test(name) || eq === value.length - 1)
+      throw new Error(`--placeholder expects NAME=path with NAME in capitals, got "${value}"`);
+    if (placeholders.has(name)) throw new Error(`--placeholder ${name} is given twice`);
+    placeholders.set(name, resolve(value.slice(eq + 1)));
+  });
+  return placeholders;
 }
 
 /** Forward slashes need no escaping inside the graph's JSON strings. */
 export const slashed = (path: string): string => path.split("\\").join("/");
 
-/** Replaces {SNOWDON} in a graph's text, so no committed graph names a machine-local path. */
-export function expandPlaceholders(text: string, graphPath: string): string {
-  if (!text.includes("{SNOWDON}")) return text;
-  const snowdon = snowdonPath();
-  if (snowdon === undefined) {
-    throw new Error(
-      `${graphPath} needs the private Snowdon model, not found (set BIMOPENFLOW_SNOWDON or place it at the default location).`,
-    );
-  }
-  return text.split("{SNOWDON}").join(slashed(snowdon));
+/**
+ * Replaces every {NAME} in a graph's text with its path from `placeholders`,
+ * so no committed graph names a machine-local path. A {NAME} with no entry
+ * is an error naming `graphPath` and the option that supplies it.
+ */
+export function expandPlaceholders(text: string, graphPath: string, placeholders: Placeholders): string {
+  return text.replace(PLACEHOLDER_TOKEN, (_token, name: string) => {
+    const path = placeholders.get(name);
+    if (path === undefined) throw new Error(`${graphPath} needs {${name}}; pass --placeholder ${name}=<path>`);
+    return slashed(path);
+  });
 }
 
 /**
  * The reverse, for graph documents the host hands back inside graph embeds:
- * the Snowdon path becomes {SNOWDON} again (skipped when no Snowdon model is
- * configured), and paths inside this checkout (the host's expansion of
- * {SAMPLES} when it seeds) become repository-relative.
+ * each placeholder's path becomes {NAME} again (longest path first, so a
+ * path inside another is not split), and paths inside `root` (the host's
+ * expansion of {SAMPLES} when it seeds) become root-relative.
  */
-export function hidePlaceholders(text: string): string {
-  const snowdon = snowdonPath();
-  const withoutSnowdon = snowdon ? text.split(slashed(snowdon)).join("{SNOWDON}") : text;
-  const rootPrefix = `${slashed(ROOT)}/`;
-  return rootPrefix.length > 1 ? withoutSnowdon.split(rootPrefix).join("") : withoutSnowdon;
+export function hidePlaceholders(text: string, placeholders: Placeholders, root: string): string {
+  const byLength = [...placeholders].filter(([, path]) => path.length > 0).sort(([, a], [, b]) => b.length - a.length);
+  const hidden = byLength.reduce((t, [name, path]) => t.split(slashed(path)).join(`{${name}}`), text);
+  const rootPrefix = `${slashed(root)}/`;
+  return rootPrefix.length > 1 ? hidden.split(rootPrefix).join("") : hidden;
+}
+
+/**
+ * The checkout an outline belongs to: the nearest folder above it that holds
+ * `.git`. File and picture embeds name paths relative to it, and
+ * hidePlaceholders strips it.
+ */
+export function outlineRoot(outlinePath: string): string {
+  for (let dir = dirname(resolve(outlinePath)); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, ".git"))) return dir;
+    if (dirname(dir) === dir) throw new Error(`${outlinePath} is not inside a git checkout`);
+  }
 }
 
 // --- Validating an outline before use ---------------------------------------

@@ -1,8 +1,9 @@
 import { defineConfig, type Plugin } from "vite";
-import { readdirSync, readFileSync, existsSync } from "node:fs";
-import { resolve, basename } from "node:path";
+import { readFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { viewerAlias } from "../../viewer.config";
 import { flowAlias } from "../../flow.config";
+import { sampleNotebooks } from "./vite/samples";
 
 const gratify = resolve(__dirname, "../../../../deps/gratify/src/gratify");
 /** The committed sample notebooks, served in dev and copied into the static site (vite.pages.config.ts). */
@@ -14,39 +15,6 @@ const nrcGraphsReadme = resolve(__dirname, "../../../../samples/nrc-analyses/REA
 // (bimopenflow-studio) for the request box, which needs /api/ask.
 const host = process.env.BOF_HOST ?? "http://127.0.0.1:5224";
 const port = Number(process.env.NOTEBOOK_PORT ?? 5350);
-
-export const NOTEBOOK_SUFFIX = ".notebook.json";
-
-/**
- * Serves the committed sample notebooks in dev: GET /__notebooks/ lists their
- * names, GET /__notebooks/<name> returns one. Read-only; saving goes through
- * the browser's download.
- */
-function sampleNotebooks(): Plugin {
-  return {
-    name: "sample-notebooks",
-    configureServer(server) {
-      server.middlewares.use("/__notebooks", (req, res) => {
-        const name = decodeURIComponent((req.url ?? "/").replace(/^\/+/, "").split("?")[0]);
-        res.setHeader("content-type", "application/json");
-        if (name === "") {
-          const names = existsSync(samples)
-            ? readdirSync(samples).filter((f) => f.endsWith(NOTEBOOK_SUFFIX)).sort()
-            : [];
-          res.end(JSON.stringify(names));
-          return;
-        }
-        const file = resolve(samples, basename(name));
-        if (!file.endsWith(NOTEBOOK_SUFFIX) || !existsSync(file)) {
-          res.statusCode = 404;
-          res.end(JSON.stringify({ error: `No sample notebook ${name}` }));
-          return;
-        }
-        res.end(readFileSync(file, "utf8"));
-      });
-    },
-  };
-}
 
 /**
  * Serves the README of samples/nrc-analyses at GET /__nrc/graphs.md, the
@@ -70,7 +38,7 @@ function nrcGraphs(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [sampleNotebooks(), nrcGraphs()],
+  plugins: [sampleNotebooks(samples), nrcGraphs()],
   build: {
     rollupOptions: {
       input: { notebook: resolve(__dirname, "notebook.html"), nrc: resolve(__dirname, "nrc.html") },

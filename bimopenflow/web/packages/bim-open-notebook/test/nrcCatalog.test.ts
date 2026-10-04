@@ -7,7 +7,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { notebookEntry, orderNotebooks, parseGraphTable, type NotebookEntry } from "../src/page/nrcCatalog";
+import { notebookEntry, orderNotebooks, type NotebookEntry } from "../src/page/catalog";
+import { NRC_LEAD, parseGraphTable } from "../src/page/nrcCatalog";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../../..");
 const README = readFileSync(join(ROOT, "samples", "nrc-analyses", "README.md"), "utf8");
@@ -66,7 +67,7 @@ describe("notebookEntry", () => {
   });
 
   it("orders the three recorded NRC notebooks first, then the rest as listed", () => {
-    const ordered = orderNotebooks(entries.filter((e): e is NotebookEntry => "name" in e));
+    const ordered = orderNotebooks(entries.filter((e): e is NotebookEntry => "name" in e), NRC_LEAD);
     expect(ordered.slice(0, 4).map((e) => e.name)).toEqual([
       "nrc-eight-questions",
       "nrc-test-kit",

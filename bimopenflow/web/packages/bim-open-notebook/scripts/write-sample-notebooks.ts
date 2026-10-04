@@ -17,6 +17,11 @@
 // including the extensions for reconstructed sessions (graphs, tools, stale,
 // earlier, picture and chart embeds) this script implements.
 //
+// Each --placeholder NAME=path fills {NAME} in the outline's graphs before
+// they are saved, and turns the path back into {NAME} in the written
+// notebook; {SNOWDON} defaults to the toolkit's Snowdon model (snowdon.ts).
+// File and picture paths are relative to the outline's git checkout.
+//
 // An --out DIR option redirects the write to DIR/<name>.notebook.json instead
 // of the outline's own folder, for comparing a regeneration without touching
 // the committed file.
@@ -27,21 +32,30 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { ApiClient } from "@bimopenflow/api-client";
 import { parseDocument, type GraphDocument } from "@bimopenflow/state";
 import { chartEmbedDraft, embedsForAnalysis, graphEmbedDraft, type EmbedDraft } from "../src/ask/reply";
-import type { Embed, Notebook, NodeRef, ToolCall } from "../src/document/format";
+import { NOTEBOOK_EXTENSION, type Embed, type Notebook, type NodeRef, type ToolCall } from "../src/document/format";
 import { emptyNotebook, parseNotebook, serializeNotebook } from "../src/document/io";
 import { appendTurn } from "../src/document/edits";
 import type { NotebookApi } from "../src/embeds/contract";
 import { describeSnapshot, snapshotOf, SNAPSHOT_ROWS } from "../src/live/compare";
 import {
-  ROOT,
   expandPlaceholders,
   hidePlaceholders,
   outlineErrors,
+  outlineRoot,
+  parsePlaceholders,
   withExtras,
   type EmbedSpec,
   type Outline,
   type OutlineTurn,
+  type Placeholders,
 } from "./outline";
+import { snowdonPath } from "./snowdon";
+
+/** Where an outline's paths resolve: its checkout (file and picture embeds) and its placeholders (graphs). */
+interface Paths {
+  readonly root: string;
+  readonly placeholders: Placeholders;
+}
 
 /** Lines of a text file kept as a file embed's preview. */
 const PREVIEW_LINES = 6;
@@ -73,14 +87,14 @@ function requireAnalysisId(spec: EmbedSpec, turn: OutlineTurn, describe: string)
   return id;
 }
 
-async function draftsFor(spec: EmbedSpec, turn: OutlineTurn, api: NotebookApi): Promise<EmbedDraft[]> {
+async function draftsFor(spec: EmbedSpec, turn: OutlineTurn, api: NotebookApi, root: string): Promise<EmbedDraft[]> {
   if (spec.kind === "auto") return embedsForAnalysis(requireAnalysisId(spec, turn, "an auto embed"), api);
   if (spec.kind === "graph") {
     const analysisId = requireAnalysisId(spec, turn, "a graph embed");
     return [await graphEmbedDraft(analysisId, api, spec.focus)];
   }
-  if (spec.kind === "file") return [fileEmbed(spec)];
-  if (spec.kind === "picture") return [pictureEmbed(spec)];
+  if (spec.kind === "file") return [fileEmbed(spec, root)];
+  if (spec.kind === "picture") return [pictureEmbed(spec, root)];
   const analysisId = requireAnalysisId(spec, turn, `${spec.kind} embed for ${spec.node}.${spec.port}`);
   const source: NodeRef = { analysisId, nodeId: spec.node, port: spec.port };
   const caption = spec.caption ?? `${spec.node}.${spec.port}`;
@@ -105,9 +119,9 @@ async function draftsFor(spec: EmbedSpec, turn: OutlineTurn, api: NotebookApi): 
   ];
 }
 
-/** A file embed for a path relative to the repository: its size, hash, and first lines. */
-function fileEmbed(spec: Extract<EmbedSpec, { kind: "file" }>): EmbedDraft {
-  const bytes = readFileSync(join(ROOT, spec.path));
+/** A file embed for a path relative to `root`, the outline's checkout: its size, hash, and first lines. */
+function fileEmbed(spec: Extract<EmbedSpec, { kind: "file" }>, root: string): EmbedDraft {
+  const bytes = readFileSync(join(root, spec.path));
   const preview = bytes.toString("utf8").replace(/^﻿/, "").split(/\r?\n/).slice(0, PREVIEW_LINES).join("\n");
   return {
     kind: "file",
@@ -127,9 +141,9 @@ function pictureMediaType(path: string): string {
   throw new Error(`picture ${path}: expected a .png or .svg file`);
 }
 
-/** A picture embed for a path relative to the repository, inlined as a data: URL. */
-function pictureEmbed(spec: Extract<EmbedSpec, { kind: "picture" }>): EmbedDraft {
-  const bytes = readFileSync(join(ROOT, spec.path));
+/** A picture embed for a path relative to `root`, the outline's checkout, inlined as a data: URL. */
+function pictureEmbed(spec: Extract<EmbedSpec, { kind: "picture" }>, root: string): EmbedDraft {
+  const bytes = readFileSync(join(root, spec.path));
   if (bytes.length > MAX_PICTURE_BYTES) {
     throw new Error(`picture ${spec.path} is ${bytes.length} bytes, over the ${MAX_PICTURE_BYTES}-byte limit`);
   }
@@ -201,12 +215,12 @@ function specsFor(turn: OutlineTurn): readonly EmbedSpec[] {
   return turn.analysisId !== undefined ? [{ kind: "auto" }] : [];
 }
 
-async function writeNotebook(outline: Outline, outlineDir: string, api: NotebookApi): Promise<Notebook> {
-  await seedGraphs(outline, outlineDir, api);
+async function writeNotebook(outline: Outline, outlineDir: string, api: NotebookApi, paths: Paths): Promise<Notebook> {
+  await seedGraphs(outline, outlineDir, api, paths.placeholders);
   let notebook: Notebook = { ...emptyNotebook(outline.title, outline.createdUtc), host: outline.host };
   for (const turn of outline.turns) {
     const specs = specsFor(turn);
-    const drafts = (await Promise.all(specs.map((s) => draftsFor(s, turn, api)))).flat();
+    const drafts = (await Promise.all(specs.map((s) => draftsFor(s, turn, api, paths.root)))).flat();
     const embeds = drafts.map((d, i) => ({ ...d, id: `e${i + 1}` }) as Embed);
     const tools = turn.tools ? [...turn.tools] : await toolCallsFor(embeds, analysesOf(turn, specs), api);
     const built = appendTurn(
@@ -227,10 +241,10 @@ async function writeNotebook(outline: Outline, outlineDir: string, api: Notebook
  * built. Runs the graphs in order, one at a time, so two graphs that touch
  * the same host cache never race.
  */
-async function seedGraphs(outline: Outline, outlineDir: string, api: NotebookApi): Promise<void> {
+async function seedGraphs(outline: Outline, outlineDir: string, api: NotebookApi, placeholders: Placeholders): Promise<void> {
   for (const relPath of outline.graphs ?? []) {
     const path = join(outlineDir, relPath);
-    const text = expandPlaceholders(readFileSync(path, "utf8"), path);
+    const text = expandPlaceholders(readFileSync(path, "utf8"), path, placeholders);
     const id = basename(relPath).replace(/\.json$/, "");
     const doc = parseDocument(text);
     const summary = await api.putAnalysis(id, text);
@@ -288,25 +302,31 @@ function requiredOption(name: string): string {
   return value;
 }
 
+/** The command line's placeholders; {SNOWDON} defaults to the toolkit's Snowdon model when one is found (snowdon.ts). */
+function placeholdersOf(argv: readonly string[]): Placeholders {
+  const given = parsePlaceholders(argv);
+  const snowdon = given.has("SNOWDON") ? undefined : snowdonPath();
+  return snowdon === undefined ? given : new Map([...given, ["SNOWDON", snowdon]]);
+}
+
 async function main(): Promise<void> {
   const outlinePath = resolve(requiredOption("--outline"));
+  const paths: Paths = { root: outlineRoot(outlinePath), placeholders: placeholdersOf(process.argv) };
   const name = basename(outlinePath).replace(/\.outline\.json$/, "");
   const raw = JSON.parse(readFileSync(outlinePath, "utf8")) as unknown;
   const errors = outlineErrors(raw, name);
-  if (errors.length > 0) throw new Error(`${relative(ROOT, outlinePath)} is not a valid outline:\n${errors.join("\n")}`);
+  if (errors.length > 0) throw new Error(`${relative(paths.root, outlinePath)} is not a valid outline:\n${errors.join("\n")}`);
   const outline = raw as Outline;
   const api = new ApiClient({ baseUrl: requiredOption("--host") });
-  const notebook = await writeNotebook(outline, dirname(outlinePath), api);
-  const text = hidePlaceholders(serializeNotebook(notebook));
+  const notebook = await writeNotebook(outline, dirname(outlinePath), api, paths);
+  const text = hidePlaceholders(serializeNotebook(notebook), paths.placeholders, paths.root);
   const parsed = parseNotebook(text);
   if (!parsed.ok) throw new Error(`the written notebook does not parse:\n${parsed.errors.join("\n")}`);
   const outDir = option("--out") ? resolve(option("--out")!) : dirname(dirname(outlinePath));
-  const out = join(outDir, `${name}${NOTEBOOK_SUFFIX}`);
+  const out = join(outDir, `${name}${NOTEBOOK_EXTENSION}`);
   writeFileSync(out, text);
-  console.log(`wrote ${relative(ROOT, out)}: ${notebook.turns.length} turns`);
+  console.log(`wrote ${relative(paths.root, out)}: ${notebook.turns.length} turns`);
 }
-
-const NOTEBOOK_SUFFIX = ".notebook.json";
 
 // Runs only as the CLI entry point (vite-node scripts/write-sample-notebooks.ts),
 // not when a test imports this module for its host-calling helpers (waitSettled):

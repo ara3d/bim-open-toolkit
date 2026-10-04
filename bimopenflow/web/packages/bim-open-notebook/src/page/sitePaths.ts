@@ -6,5 +6,5 @@
 export const STATIC_SAMPLES = "notebooks/";
 /** File names, the same list the dev server's /__notebooks/ answers. */
 export const STATIC_INDEX = "index.json";
-/** One NotebookEntry (nrcCatalog.ts) per sample, in reading order, for a landing page. */
+/** One NotebookEntry (catalog.ts) per sample, in reading order, for a landing page. */
 export const STATIC_CATALOG = "catalog.json";
