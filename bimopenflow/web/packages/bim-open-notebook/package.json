@@ -9,7 +9,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./page": "./src/page/entry.ts",
-    "./vite": "./vite/samples.ts"
+    "./vite": "./vite/samples.ts",
+    "./layouts": "./scripts/embedLayouts.ts"
   },
   "scripts": {
     "dev": "vite",

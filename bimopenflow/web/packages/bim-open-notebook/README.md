@@ -24,17 +24,14 @@ node scripts/start-bim-flow.mjs --profile tables
 npm run dev -w @bimopenflow/bim-open-notebook --prefix bimopenflow/web
 ```
 
-Open `http://127.0.0.1:5350/notebook.html`. `BOF_HOST` points the page at
+Open `http://127.0.0.1:5354/notebook.html`. `BOF_HOST` points the page at
 another host; the request box needs the studio host, which serves `/api/ask`.
-`NOTEBOOK_PORT` changes the page's port.
+`NOTEBOOK_PORT` changes the page's port. Editor links use `VITE_BOF_EDITOR`
+(default `http://127.0.0.1:5310/`, the tables profile).
 
-`http://127.0.0.1:5350/nrc.html` is the landing page of the NRC work: every
-sample notebook in `samples/notebooks` as a card that opens it here, and every
-graph in `samples/nrc-analyses` (its row of that folder's README, served at
-`/__nrc/graphs.md`) linked to the editor, and to the 3D page for the graphs
-that colour the model. Editor links use `VITE_BOF_EDITOR` (default
-`http://127.0.0.1:5310/`, the tables profile); a green dot marks a graph the
-connected host holds.
+BIM Open Toolkit serves its own notebook page and its NRC landing page from
+its package `@bimopenflow/nrc-web`, on port 5350, through this package's
+exports.
 
 ## Static site
 
@@ -59,7 +56,7 @@ the request box that asking needs a host. Without `--outDir` it writes
 | `src/embeds/` | The renderer contract (`contract.ts`), the shared selection (`selection.ts`), one renderer per embed kind, and the registry that maps kinds to renderers |
 | `src/live/` | Comparing a snapshot with the host's current result |
 | `src/ask/` | The `/api/ask` event stream, and turning a finished request into a reply with embeds |
-| `src/page/` | The notebook page: one turn's view, the notebook view with toolbar and request box, the landing-page catalog (`catalog.ts`), and `startNotebookPage` (`entry.ts`), which `main.ts` calls; and the NRC landing page (`nrc.html`: `nrcCatalog.ts`, `nrcView.ts`, `nrc.ts`) |
+| `src/page/` | The notebook page: one turn's view, the notebook view with toolbar and request box, the landing-page catalog (`catalog.ts`), and `startNotebookPage` (`entry.ts`), which `main.ts` calls |
 | `vite/` | The Vite plugins that serve a folder of notebooks in dev (`sampleNotebooks`) and bundle it into the static site (`bundleSamples`); the caller names the folder and the notebooks that lead the catalog |
 | `scripts/` | Tools that write sample notebooks from a running host, given `--placeholder NAME=path` for each `{NAME}` in an outline's graphs, and that sync embedded graph layouts, given `--samples` and `--analyses` folders |
 | `test/` | Vitest tests, one file per module |
@@ -68,9 +65,10 @@ the request box that asking needs a host. Without `--outDir` it writes
 
 | Specifier | What |
 |---|---|
-| `@bimopenflow/bim-open-notebook` | The format, edits, embed registry, live comparison, ask reply, catalog, and `mountNotebook` |
+| `@bimopenflow/bim-open-notebook` | The format, edits, embed registry, live comparison, ask reply, catalog, `mountNotebook`, and the page helpers a caller's landing page needs (`listSamples`, `fetchSample`, `ensureNotebookStyles`, `editorUrl`, `viewer3dUrl`) |
 | `@bimopenflow/bim-open-notebook/page` | `startNotebookPage({ renderers?, root? })`, the whole page for a caller's `notebook.html` |
 | `@bimopenflow/bim-open-notebook/vite` | `sampleNotebooks(dir)` and `bundleSamples(dir, lead)` for a caller's Vite config |
+| `@bimopenflow/bim-open-notebook/layouts` | `sampleGraphFiles`, `staleLayouts`, and `syncLayouts` (`scripts/embedLayouts.ts`), for a caller that tests its own sample notebooks |
 
 ## Depends on
 

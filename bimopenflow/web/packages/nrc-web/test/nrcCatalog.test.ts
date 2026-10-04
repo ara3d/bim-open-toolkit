@@ -7,8 +7,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { notebookEntry, orderNotebooks, type NotebookEntry } from "../src/page/catalog";
-import { NRC_LEAD, parseGraphTable } from "../src/page/nrcCatalog";
+import { notebookEntry, orderNotebooks, type NotebookEntry } from "@bimopenflow/bim-open-notebook";
+import { NRC_LEAD, parseGraphTable } from "../src/nrcCatalog";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../../..");
 const README = readFileSync(join(ROOT, "samples", "nrc-analyses", "README.md"), "utf8");

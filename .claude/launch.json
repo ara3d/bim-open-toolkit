@@ -378,7 +378,7 @@
       "runtimeArgs": [
         "-NoProfile",
         "-Command",
-        "$env:VITE_BOF_EDITOR='http://localhost:5351/'; $env:BOF_HOST='http://127.0.0.1:5366'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/bim-open-notebook'; npx vite --port 5350"
+        "$env:VITE_BOF_EDITOR='http://localhost:5351/'; $env:BOF_HOST='http://127.0.0.1:5366'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/nrc-web'; npx vite --port 5350"
       ],
       "port": 5350
     },

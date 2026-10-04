@@ -19,7 +19,8 @@
 //
 // Each --placeholder NAME=path fills {NAME} in the outline's graphs before
 // they are saved, and turns the path back into {NAME} in the written
-// notebook; {SNOWDON} defaults to the toolkit's Snowdon model (snowdon.ts).
+// notebook. A caller with a private model passes its path this way (the
+// toolkit's own pages package wraps this script and adds its model).
 // File and picture paths are relative to the outline's git checkout.
 //
 // An --out DIR option redirects the write to DIR/<name>.notebook.json instead
@@ -49,7 +50,6 @@ import {
   type OutlineTurn,
   type Placeholders,
 } from "./outline";
-import { snowdonPath } from "./snowdon";
 
 /** Where an outline's paths resolve: its checkout (file and picture embeds) and its placeholders (graphs). */
 interface Paths {
@@ -302,16 +302,9 @@ function requiredOption(name: string): string {
   return value;
 }
 
-/** The command line's placeholders; {SNOWDON} defaults to the toolkit's Snowdon model when one is found (snowdon.ts). */
-function placeholdersOf(argv: readonly string[]): Placeholders {
-  const given = parsePlaceholders(argv);
-  const snowdon = given.has("SNOWDON") ? undefined : snowdonPath();
-  return snowdon === undefined ? given : new Map([...given, ["SNOWDON", snowdon]]);
-}
-
 async function main(): Promise<void> {
   const outlinePath = resolve(requiredOption("--outline"));
-  const paths: Paths = { root: outlineRoot(outlinePath), placeholders: placeholdersOf(process.argv) };
+  const paths: Paths = { root: outlineRoot(outlinePath), placeholders: parsePlaceholders(process.argv) };
   const name = basename(outlinePath).replace(/\.outline\.json$/, "");
   const raw = JSON.parse(readFileSync(outlinePath, "utf8")) as unknown;
   const errors = outlineErrors(raw, name);

@@ -4,8 +4,7 @@
 // after relaying out the sample graphs, naming the notebooks' folder and every
 // folder of graphs they embed (--analyses repeats):
 //
-//   npx vite-node scripts/sync-embed-layouts.ts -- --samples ../../../../samples/notebooks \
-//     --analyses ../../../../samples/nrc-analyses
+//   npx vite-node scripts/sync-embed-layouts.ts -- --samples <notebooks folder> --analyses <graphs folder>
 
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";

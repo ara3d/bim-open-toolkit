@@ -47,9 +47,10 @@ empty-flow card, and pack-coloured node stripes; `docs/proposals/studio-look.md`
 `/3d.html?analysis=<id>` (3D-first layout, where picking an element lists its
 property sets under the status line), `/duckdb.html` (DuckDB demo with a
 flow picker and an Ask box), `/showcase.html` (button-driven 3D recipes).
-The notebook package (`notebook-web`, port 5350) serves `/notebook.html` and
-`/nrc.html`, the landing page of the NRC work: the sample notebooks and the
-NRC graphs, each linked to the page that opens it.
+The toolkit's notebook pages (`bimopenflow/web/packages/nrc-web`, the
+`notebook-web` entry, port 5350) serve `/notebook.html` and `/nrc.html`, the
+landing page of the NRC work: the sample notebooks and the NRC graphs, each
+linked to the page that opens it.
 
 ### Ask: edit the open flow by typing a request (TKT-84)
 

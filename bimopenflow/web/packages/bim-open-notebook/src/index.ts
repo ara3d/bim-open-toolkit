@@ -9,4 +9,7 @@ export { defaultRenderers, renderEmbed, withRenderers } from "./embeds/registry"
 export * from "./live/compare";
 export * from "./ask/reply";
 export * from "./page/catalog";
+export { editorUrl, viewer3dUrl } from "./page/editorLinks";
+export { fetchSample, listSamples } from "./page/files";
+export { ensureNotebookStyles } from "./page/styles";
 export { mountNotebook, type NotebookView, type NotebookViewOptions } from "./page/notebookView";

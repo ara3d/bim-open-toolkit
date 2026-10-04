@@ -1,16 +1,15 @@
 // @vitest-environment node  (paths below come from import.meta.url, a file URL only under node)
 /// <reference types="node" />
-// The committed sample notebooks (samples/notebooks, written by
-// scripts/write-sample-notebooks.ts): they parse, and their snapshots carry
-// the paper's expected answers.
+// The toolkit's committed sample notebooks (samples/notebooks, written by
+// scripts/write-sample-notebooks.ts, which runs the notebook package's script
+// of that name): they parse, and their snapshots carry the paper's expected answers.
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import type { Embed, Notebook, TableSnapshot } from "../src/document/format";
-import { parseNotebook } from "../src/document/io";
-import { sampleGraphFiles, staleLayouts, syncLayouts } from "../scripts/embedLayouts";
+import { parseNotebook, type Embed, type Notebook, type TableSnapshot } from "@bimopenflow/bim-open-notebook";
+import { sampleGraphFiles, staleLayouts, syncLayouts } from "@bimopenflow/bim-open-notebook/layouts";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../../..");
 const SAMPLES = join(ROOT, "samples", "notebooks");

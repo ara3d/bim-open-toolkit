@@ -1,12 +1,11 @@
-// Offline tests for scripts/outline.ts and scripts/snowdon.ts: outline
+// Offline tests for scripts/outline.ts: outline
 // validation and the placeholder transforms, none of which need a running host.
 
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { expandPlaceholders, hidePlaceholders, outlineErrors, outlineRoot, parsePlaceholders, slashed } from "../scripts/outline";
-import { snowdonPath } from "../scripts/snowdon";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "fixtures");
 const FIXTURE_OUTLINE = JSON.parse(readFileSync(join(FIXTURES, "nb-fixture.outline.json"), "utf8"));
@@ -58,8 +57,8 @@ describe("outlineErrors", () => {
 
 describe("parsePlaceholders", () => {
   it("reads each --placeholder NAME=path, resolving the path", () => {
-    const placeholders = parsePlaceholders(["--host", "h", "--placeholder", "PUBLIC=C:/w/public", "--placeholder", "SNOWDON=C:/m/s.bos"]);
-    expect([...placeholders.keys()]).toEqual(["PUBLIC", "SNOWDON"]);
+    const placeholders = parsePlaceholders(["--host", "h", "--placeholder", "PUBLIC=C:/w/public", "--placeholder", "MODEL=C:/m/s.bos"]);
+    expect([...placeholders.keys()]).toEqual(["PUBLIC", "MODEL"]);
     expect(slashed(placeholders.get("PUBLIC")!)).toBe(slashed(resolve("C:/w/public")));
   });
 
@@ -93,8 +92,8 @@ describe("placeholder round trip", () => {
   });
 
   it("expandPlaceholders throws naming the graph and the option when a placeholder has no entry", () => {
-    expect(() => expandPlaceholders('"model": "{SNOWDON}"', "g.json", placeholders)).toThrow(
-      "g.json needs {SNOWDON}; pass --placeholder SNOWDON=<path>",
+    expect(() => expandPlaceholders('"model": "{MODEL}"', "g.json", placeholders)).toThrow(
+      "g.json needs {MODEL}; pass --placeholder MODEL=<path>",
     );
   });
 
@@ -112,30 +111,6 @@ describe("placeholder round trip", () => {
     const root = outlineRoot(join(FIXTURES, "nb-fixture.outline.json"));
     const text = `"path": "${slashed(root)}/samples/nrc/questions.txt"`;
     expect(hidePlaceholders(text, new Map(), root)).toBe('"path": "samples/nrc/questions.txt"');
-  });
-});
-
-describe("snowdonPath", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it("is the file BIMOPENFLOW_SNOWDON names when it exists", () => {
-    const stand = join(FIXTURES, "nb-fixture.picture.svg"); // stands in for a .bos file that exists
-    vi.stubEnv("BIMOPENFLOW_SNOWDON", stand);
-    expect(snowdonPath()).toBe(stand);
-  });
-
-  it("an empty BIMOPENFLOW_SNOWDON is treated as unset, not as the path itself (never an empty string)", () => {
-    vi.stubEnv("BIMOPENFLOW_SNOWDON", "");
-    // Whichever branch resolves (the machine's own default location may or
-    // may not exist), the old `?? ` bug's "" result can never come back.
-    expect(snowdonPath()).not.toBe("");
-  });
-
-  it("is undefined when the named file does not exist", () => {
-    vi.stubEnv("BIMOPENFLOW_SNOWDON", join(FIXTURES, "does-not-exist.bos"));
-    expect(snowdonPath()).toBeUndefined();
   });
 });
 

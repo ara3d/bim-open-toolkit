@@ -3,9 +3,9 @@
 // follow the host, and problems are shown.
 
 import { describe, expect, it } from "vitest";
-import type { NotebookEntry } from "../src/page/catalog";
-import type { GraphEntry } from "../src/page/nrcCatalog";
-import { renderNrcPage } from "../src/page/nrcView";
+import type { NotebookEntry } from "@bimopenflow/bim-open-notebook";
+import type { GraphEntry } from "../src/nrcCatalog";
+import { renderNrcPage } from "../src/nrcView";
 
 const links = {
   notebook: (name: string) => `notebook.html?notebook=${name}`,

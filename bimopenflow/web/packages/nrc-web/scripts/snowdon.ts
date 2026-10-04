@@ -1,8 +1,7 @@
 /// <reference types="node" />
-// The toolkit's private Snowdon model, the default for {SNOWDON} when
-// write-sample-notebooks.ts is not given --placeholder SNOWDON=<path>. Toolkit
-// knowledge, not the notebook's: it leaves this package with the NRC page
-// (repository split, phase 6, chunk 6.3).
+// The toolkit's private Snowdon model, which the sample outlines name as
+// {SNOWDON}. write-sample-notebooks.ts adds it to the notebook script's
+// command line, which knows no model of its own.
 
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
@@ -21,4 +20,13 @@ export function snowdonPath(): string | undefined {
       ? fromEnv
       : join(homedir(), "Documents", "BIM Open Schema", "Snowdon Towers Sample Architectural.bos");
   return existsSync(path) ? path : undefined;
+}
+
+/**
+ * `args` with `--placeholder SNOWDON=<path>` appended, unless they already
+ * give SNOWDON or `path` (snowdonPath()'s answer) is undefined.
+ */
+export function withSnowdonPlaceholder(args: readonly string[], path: string | undefined): string[] {
+  const given = args.some((arg, i) => arg === "--placeholder" && args[i + 1]?.startsWith("SNOWDON="));
+  return given || path === undefined ? [...args] : [...args, "--placeholder", `SNOWDON=${path}`];
 }

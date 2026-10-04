@@ -1,9 +1,9 @@
 # NRC walkthrough: analytics on IFC, from file to figure to question
 
-The landing page of this work is `nrc.html` in the notebook package
+The landing page of this work is `nrc.html` in the toolkit's `nrc-web` package
 (`http://127.0.0.1:5350/nrc.html` under the `notebook-web` entry of
 `.claude/launch.json`): it lists the sample notebooks and the NRC graphs and
-opens each in its page. See `bimopenflow/web/packages/bim-open-notebook/README.md`.
+opens each in its page. See `bimopenflow/web/packages/nrc-web/README.md`.
 
 This is the demonstration behind the NRC paper *Storing, Displaying, and Querying
 Building Analytics on IFC Models*. It runs on two models in order: the public

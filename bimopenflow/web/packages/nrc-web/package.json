@@ -1,0 +1,26 @@
+{
+  "name": "@bimopenflow/nrc-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The toolkit's notebook pages: notebook.html over the toolkit's sample notebooks, and nrc.html, the landing page of the NRC work, which lists those notebooks and the graphs in samples/nrc-analyses. Also the toolkit's wrappers of the notebook's sample scripts and the answer tests of its sample notebooks.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bimopenflow/api-client": "0.1.0",
+    "@bimopenflow/bim-open-notebook": "0.1.0",
+    "@bimopenflow/client": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^7.3.6",
+    "vite-node": "^3.2.4",
+    "vitest": "^3.0.0"
+  }
+}

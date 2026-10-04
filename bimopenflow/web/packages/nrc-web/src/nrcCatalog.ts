@@ -1,6 +1,6 @@
 // The NRC half of what the NRC landing page (nrc.html) lists: the notebooks
 // that lead it, and the graphs in samples/nrc-analyses. The notebook entries
-// themselves are catalog.ts's. The graph list is read from that folder's
+// themselves are the notebook package's (its catalog.ts). The graph list is read from that folder's
 // README table, so the README stays the one place a graph's one-line
 // description lives. Pure functions; nrc.ts fetches.
 

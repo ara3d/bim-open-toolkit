@@ -6,12 +6,18 @@
 
 import { ApiClient } from "@bimopenflow/api-client";
 import { mountHostBanner, watchHost } from "@bimopenflow/client/host";
-import { editorUrl, viewer3dUrl } from "./editorLinks";
-import { fetchSample, listSamples } from "./files";
-import { notebookEntry, orderNotebooks, type NotebookEntry } from "./catalog";
+import {
+  editorUrl,
+  ensureNotebookStyles,
+  fetchSample,
+  listSamples,
+  notebookEntry,
+  orderNotebooks,
+  viewer3dUrl,
+  type NotebookEntry,
+} from "@bimopenflow/bim-open-notebook";
 import { NRC_LEAD, parseGraphTable, type GraphEntry } from "./nrcCatalog";
 import { renderNrcPage } from "./nrcView";
-import { ensureNotebookStyles } from "./styles";
 
 /** Where the dev server serves the README of samples/nrc-analyses (vite.config.ts). */
 export const GRAPHS_ROUTE = "/__nrc/graphs.md";

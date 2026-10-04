@@ -15,7 +15,7 @@ const steps = [
   [viewer, ["test", "-w", "@bim-open-viewer/core"]],
   [viewer, ["test", "-w", "@bim-open-viewer/loaders"]],
   [viewer, ["test", "-w", "@bim-open-viewer/controls"]],
-  ...["pane-3d", "studio-web", "bim-open-notebook"].flatMap((p) => [
+  ...["pane-3d", "studio-web", "bim-open-notebook", "nrc-web"].flatMap((p) => [
     [web, ["test", "-w", `@bimopenflow/${p}`]],
     [web, ["run", "typecheck", "-w", `@bimopenflow/${p}`]],
   ]),

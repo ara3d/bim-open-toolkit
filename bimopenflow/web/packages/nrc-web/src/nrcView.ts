@@ -1,8 +1,9 @@
 // The NRC landing page's DOM: a heading, the notebook cards, and the graph
-// table. Pure rendering from catalog's and nrcCatalog's entries; nrc.ts supplies them and
-// the links. Themed by the "nb-" custom properties of styles.ts.
+// table. Pure rendering from the notebook package's catalog entries and
+// nrcCatalog's; nrc.ts supplies them and the links. Themed by the "nb-" custom
+// properties of the notebook's stylesheet (ensureNotebookStyles).
 
-import type { NotebookEntry } from "./catalog";
+import type { NotebookEntry } from "@bimopenflow/bim-open-notebook";
 import type { GraphEntry } from "./nrcCatalog";
 
 export interface NrcPageLinks {

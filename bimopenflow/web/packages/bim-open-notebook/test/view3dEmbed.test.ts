@@ -9,7 +9,7 @@ import { createView3dRenderer } from "../src/page/view3dEmbed";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-// The shape of the category colouring (samples/nrc-analyses/nrc-color-operational-carbon.json with valueColumn Category) as the host holds
+// The shape of the category colouring (the toolkit's NRC graph nrc-color-operational-carbon.json with valueColumn Category) as the host holds
 // it after seeding: {SAMPLES} replaced by an absolute path.
 const colorGraph = JSON.stringify({
   formatVersion: "0.1.0",

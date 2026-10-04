@@ -12,13 +12,12 @@ import { defineConfig } from "vite";
 import { resolve } from "node:path";
 import base, { samples } from "./vite.config";
 import { bundleSamples } from "./vite/samples";
-import { NRC_LEAD } from "./src/page/nrcCatalog";
 
 export default defineConfig({
   ...base,
   mode: "pages",
   base: "./",
-  plugins: [bundleSamples(samples, NRC_LEAD)],
+  plugins: [bundleSamples(samples)],
   build: {
     outDir: "dist/pages",
     rollupOptions: { input: { notebook: resolve(__dirname, "notebook.html") } },

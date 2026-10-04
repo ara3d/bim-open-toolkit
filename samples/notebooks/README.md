@@ -11,21 +11,25 @@ of the sessions in `docs/proposals/notebook-sessions.md`:
 | `nrc-door-check.notebook.json` | S4, door compliance | bim | DC-W1 verdicts in a table and in 3D, then `samples/nrc/door_verdicts.csv` as a file |
 
 These files are generated; do not edit them by hand. Each is written by
-`bimopenflow/web/packages/bim-open-notebook/scripts/write-sample-notebooks.ts` from an
-outline in `outlines/` and a running host, so every snapshot, embed, and tool
-call comes from a graph in `samples/nrc-analyses`. The reply texts are the
-outline's, written after reading the snapshots. `test/samples.test.ts` in the
-notebook package checks the expected answers.
+`bimopenflow/web/packages/nrc-web/scripts/write-sample-notebooks.ts` (which runs
+the notebook package's script of that name and fills `{SNOWDON}` from
+`BIMOPENFLOW_SNOWDON` or the default Snowdon location) from an outline in
+`outlines/` and a running host, so every snapshot, embed, and tool call comes
+from a graph in `samples/nrc-analyses` or the outline's own `graphs`. The reply
+texts are the outline's, written after reading the snapshots.
+`test/samples.test.ts` in `bimopenflow/web/packages/nrc-web` checks the expected answers.
 
 ## Regenerating
 
 Start a host of the outline's profile with a fresh store, so the NRC graphs
-are seeded (seeding happens only into an empty store), then run the script
-from `bimopenflow/web/packages/bim-open-notebook`:
+are seeded (seeding happens only into an empty store); the hosts start from
+the repository root, the script from `bimopenflow/web/packages/nrc-web`:
 
 ```
 node scripts/start-bim-flow.mjs --profile tables     # host on 5224
 node scripts/start-bim-flow.mjs                      # bim host on 5214
+
+cd bimopenflow/web/packages/nrc-web
 
 npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5224 --outline ../../../../samples/notebooks/outlines/nrc-eight-questions.outline.json
 npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/nrc-test-kit.outline.json
@@ -40,8 +44,10 @@ file; reread the snapshots and update the outline's reply texts to match.
 A graph embed keeps its own copy of the graph, card positions included. After
 the sample graphs are relaid out (`npm run relayout-samples` in
 `bimopenflow/web/packages/graph`), run `npx vite-node scripts/sync-embed-layouts.ts`
-to copy the new positions into the notebooks; no host is needed, and
-`test/samples.test.ts` fails until the copies match.
+from `bimopenflow/web/packages/nrc-web` to copy the new positions into the
+notebooks; it runs the notebook package's script with
+`--samples ../../../../samples/notebooks --analyses ../../../../samples/nrc-analyses`.
+No host is needed, and `test/samples.test.ts` fails until the copies match.
 
 ## Outline format
 

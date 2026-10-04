@@ -4,8 +4,8 @@ import type { AskEvent } from "@bimopenflow/client/host";
 import { chartEmbedDraft, embedsForAnalysis, graphEmbedDraft, replyFromAsk } from "../src/ask/reply";
 import type { NotebookApi } from "../src/embeds/contract";
 
-// Shaped like samples/nrc-analyses/nrc-q1-building-total.json (a value answer)
-// and nrc-storey-carbon-chart.json (a chart answer), in one graph.
+// Shaped like the toolkit's NRC sample graphs nrc-q1-building-total.json (a value
+// answer) and nrc-storey-carbon-chart.json (a chart answer), in one graph.
 const document = JSON.stringify({
   formatVersion: "0.1.0",
   structure: {

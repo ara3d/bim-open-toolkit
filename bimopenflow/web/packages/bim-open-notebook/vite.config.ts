@@ -1,5 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
-import { readFileSync, existsSync } from "node:fs";
+import { defineConfig } from "vite";
 import { resolve } from "node:path";
 import { viewerAlias } from "../../viewer.config";
 import { flowAlias } from "../../flow.config";
@@ -8,41 +7,18 @@ import { sampleNotebooks } from "./vite/samples";
 const gratify = resolve(__dirname, "../../../../deps/gratify/src/gratify");
 /** The committed sample notebooks, served in dev and copied into the static site (vite.pages.config.ts). */
 export const samples = resolve(__dirname, "../../../../samples/notebooks");
-const nrcGraphsReadme = resolve(__dirname, "../../../../samples/nrc-analyses/README.md");
 
 // The notebook talks to one host through /api. The default is the tables
 // profile of scripts/start-bim-flow.mjs; point BOF_HOST at the studio host
-// (bimopenflow-studio) for the request box, which needs /api/ask.
+// (bimopenflow-studio) for the request box, which needs /api/ask. Port 5350
+// belongs to BIM Open Toolkit's notebook and NRC pages, so this one defaults to 5354.
 const host = process.env.BOF_HOST ?? "http://127.0.0.1:5224";
-const port = Number(process.env.NOTEBOOK_PORT ?? 5350);
-
-/**
- * Serves the README of samples/nrc-analyses at GET /__nrc/graphs.md, the
- * source of the graph list on nrc.html (src/page/nrcCatalog.ts parses its table).
- */
-function nrcGraphs(): Plugin {
-  return {
-    name: "nrc-graphs",
-    configureServer(server) {
-      server.middlewares.use("/__nrc/graphs.md", (_req, res) => {
-        res.setHeader("content-type", "text/markdown; charset=utf-8");
-        if (!existsSync(nrcGraphsReadme)) {
-          res.statusCode = 404;
-          res.end("No samples/nrc-analyses/README.md");
-          return;
-        }
-        res.end(readFileSync(nrcGraphsReadme, "utf8"));
-      });
-    },
-  };
-}
+const port = Number(process.env.NOTEBOOK_PORT ?? 5354);
 
 export default defineConfig({
-  plugins: [sampleNotebooks(samples), nrcGraphs()],
+  plugins: [sampleNotebooks(samples)],
   build: {
-    rollupOptions: {
-      input: { notebook: resolve(__dirname, "notebook.html"), nrc: resolve(__dirname, "nrc.html") },
-    },
+    rollupOptions: { input: { notebook: resolve(__dirname, "notebook.html") } },
   },
   resolve: { alias: [viewerAlias, ...flowAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
   server: {
