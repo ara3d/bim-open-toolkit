@@ -68,7 +68,7 @@ Each phase is its own commit or commits. Each ends with the checks below and lis
    - Back out: revert.
 4. **`bim-open-data`.** Done 2026-10-03 (toolkit `9b20d0a`, `2e5acdd`, `1977283`; bim-open-data `f7b7496` to `c6916da`). Extract with history, then consume it through `deps/`. Back out: revert the toolkit commits and delete `deps/bim-open-data`. The folders return with their history.
 5. **`bim-open-flow`.** Chunks 5c and 5e done 2026-10-03 (toolkit `c6d9250` to `88a611c`; bim-open-flow `204324b` to `f482e4a`); 5d, the public building, is open. As phase 4.
-6. **`bim-open-notebook`.** As phase 4, after TKT-86. Write the README with screenshots at this point.
+6. **`bim-open-notebook`.** Done 2026-10-04 (toolkit `ffdc3eb`, the repin commit; bim-open-notebook `d5799aa` to `a94ff34`; details in `repository-split-phase-6.md`). As phase 4, after TKT-86. The README has screenshots.
 7. **The toolkit as the entry point.** Create the workspace repository, tag the first combination that passes every check, and move `nrc-ifc-llm` to the tag.
 
 ## Build log
@@ -129,7 +129,7 @@ What remains, as of 2026-10-03. Each item says why it is in this place.
    Phases 4 and 5 cannot extract cleanly until this lands.
 4. **Phase 4: `bim-open-data`.** `src/data` has no references upward, so it lifts out with its tests, the IFC MCP server, the BOS Browser, and the type generator. The repository's README is in place (written 2026-10-03); the code follows it.
 5. **Phase 5: `bim-open-flow`.** It takes the generic projects of `src/flow`, the editor's web packages, `BimOpenFlow.Ask`, and `BimOpenMcp.Flow`, plus a small public building as DuckDB tables, so its landing page can run graphs over a building without the toolkit. Decide first whether `ara3d-dataflow` folds in (proposal Q6; the reviewer said keep it separate).
-6. **Phase 6: `bim-open-notebook`'s code.** After TKT-86 (the client library) and phase 5. The README and the static sample page are already in that repository; the code then builds the page in its own CI.
+6. **Phase 6: `bim-open-notebook`'s code.** Done 2026-10-04; see `repository-split-phase-6.md`. The code builds the page in the repository's own CI.
 7. **Phase 7: the toolkit as the entry point.** Create the workspace repository with flat siblings and a `.deps-root` marker, tag the first combination that passes every check, and move `nrc-ifc-llm` to the tag. Its documents name paths under `bim-open-toolkit/viz/` that phase 2 removed.
 8. **Live runs that close nearly-finished tickets:** TKT-45 (one Ask box run that builds a graph through the Claude CLI) and TKT-80 (one multi-turn notebook run, plus the web smoke). Then the notebook defects TKT-139 (3D legend) and TKT-140 (underscores).
 
