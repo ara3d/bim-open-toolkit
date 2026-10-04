@@ -17,14 +17,14 @@ public static class BimSeam
     [
         "BimOpenFlow.Nodes.Bos", "BimOpenFlow.Nodes.BimAnalysis", "BimOpenFlow.Nodes.Geometry",
         "BimOpenFlow.Nodes.Bos.Tests", "BimOpenFlow.Nodes.BimAnalysis.Tests", "BimOpenFlow.Nodes.Geometry.Tests",
-        "BimOpenFlow.PocParity.Tests", "BimOpenFlow.View3dWorkflows.Tests", "BimOpenFlow.TableWorkflows.Tests",
+        "BimOpenFlow.PocParity.Tests", "BimOpenFlow.View3dWorkflows.Tests",
     ];
 
     /// <summary>The toolkit's test support; the projects that move use their copy, BimOpenFlow.TestSupport.</summary>
     public const string ToolkitTestSupport = "BimOpenToolkit.TestSupport";
 
-    /// <summary>Projects under src/studio that move with flow.</summary>
-    public static readonly string[] MovesFromStudio = ["BimOpenFlow.Ask"];
+    /// <summary>Projects under src/studio and tests/studio that move with flow.</summary>
+    public static readonly string[] MovesFromStudio = ["BimOpenFlow.Ask", "BimOpenFlow.Ask.Tests"];
 
     static readonly string[] Folders = ["src/flow", "src/mcp", "tests/flow", "tests/mcp", "tests/BimOpenFlow.TestSupport"];
 
@@ -34,7 +34,8 @@ public static class BimSeam
     /// <summary>Every project under those folders, and the studio projects that move.</summary>
     public static IEnumerable<FileInfo> Candidates()
         => Folders.SelectMany(ProjectsIn)
-            .Concat(ProjectsIn("src/studio").Where(p => MovesFromStudio.Contains(FlowLayering.NameOf(p.FullName))));
+            .Concat(ProjectsIn("src/studio").Concat(ProjectsIn("tests/studio"))
+                .Where(p => MovesFromStudio.Contains(FlowLayering.NameOf(p.FullName))));
 
     /// <summary>The projects that move to bim-open-flow: the candidates less Stays.</summary>
     public static IEnumerable<FileInfo> Moves()
@@ -45,7 +46,7 @@ public static class BimSeam
            from edge in Layering.References(project)
            let to = FlowLayering.NameOf(edge.To)
            let rel = Path.GetRelativePath(Layering.Root.FullName, edge.To).Replace('\\', '/')
-           where BimOnly.Contains(to) || to == ToolkitTestSupport || rel.StartsWith("src/studio/") || rel.StartsWith("tests/studio/")
+           where BimOnly.Contains(to) || to == ToolkitTestSupport || (rel.StartsWith("src/studio/") || rel.StartsWith("tests/studio/")) && !MovesFromStudio.Contains(to)
            select $"{Path.GetRelativePath(Layering.Root.FullName, project.FullName)} -> {rel} (a project moving to bim-open-flow may reference no BIM pack, no Ifc.Mesher, nothing in studio, and BimOpenFlow.TestSupport rather than {ToolkitTestSupport})";
 }
 
