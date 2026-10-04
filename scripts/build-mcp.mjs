@@ -8,7 +8,7 @@ import { resolve } from "node:path";
 import { root, buildProject } from "./bim-flow-processes.mjs";
 
 const SERVERS = [
-  { project: "src/mcp/BimOpenMcp.Flow", output: "artifacts/bim-flow-duckdb/mcp" },
+  { project: "deps/bim-open-flow/src/mcp/BimOpenMcp.Flow", output: "artifacts/bim-flow-duckdb/mcp" },
   { project: "deps/bim-open-data/src/mcp/BimOpenMcp.Ifc", output: "artifacts/bim-flow-ifc/mcp" },
 ];
 

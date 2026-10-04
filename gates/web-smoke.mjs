@@ -1,4 +1,4 @@
-// Headless smoke: typecheck + test every web/viewer package, then build the generic editor and the toolkit pages.
+// Headless smoke: test the viewer packages, test and typecheck the toolkit's web packages, then build the toolkit pages.
 // Usage: node gates/web-smoke.mjs   (from the repo root; needs prior npm install in both workspaces)
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
@@ -8,20 +8,17 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const viewer = join(root, "deps", "bim-open-viewer");
 const web = join(root, "bimopenflow", "web");
 
+// The eight generic editor packages (api-client, viz, state, panes, client, graph, app,
+// contracts) are bim-open-flow's, tested by its own web smoke; here they are linked from
+// deps/bim-open-flow, and the toolkit's packages are tested and built against them.
 const steps = [
   [viewer, ["test", "-w", "@bim-open-viewer/core"]],
   [viewer, ["test", "-w", "@bim-open-viewer/loaders"]],
   [viewer, ["test", "-w", "@bim-open-viewer/controls"]],
-  [web, ["test", "-w", "@bimopenflow/api-client"]],
-  [web, ["test", "-w", "@bimopenflow/viz"]],
-  [web, ["test", "-w", "@bimopenflow/state"]],
-  [web, ["test", "-w", "@bimopenflow/panes"]],
-  [web, ["test", "-w", "@bimopenflow/pane-3d"]],
-  [web, ["test", "-w", "@bimopenflow/client"]],
-  [web, ["test", "-w", "@bimopenflow/graph"]],
-  [web, ["test", "-w", "@bimopenflow/app"]],
-  [web, ["test", "-w", "@bimopenflow/studio-web"]],
-  [web, ["run", "build", "-w", "@bimopenflow/app"]],
+  ...["pane-3d", "studio-web", "bim-open-notebook"].flatMap((p) => [
+    [web, ["test", "-w", `@bimopenflow/${p}`]],
+    [web, ["run", "typecheck", "-w", `@bimopenflow/${p}`]],
+  ]),
   [web, ["run", "build", "-w", "@bimopenflow/studio-web"]],
 ];
 

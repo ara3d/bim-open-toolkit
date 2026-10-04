@@ -246,7 +246,7 @@ if (!flag("--no-build")) {
   buildProject("src/studio/BimOpenFlow.Studio", join(build, "host"));
   if (!flag("--skip-mcp")) {
     buildProject("deps/bim-open-data/src/mcp/BimOpenMcp.Ifc", join(build, "ifc-mcp"));
-    if (!flag("--skip-snowdon")) buildProject("src/mcp/BimOpenMcp.Flow", join(build, "flow-mcp"));
+    if (!flag("--skip-snowdon")) buildProject("deps/bim-open-flow/src/mcp/BimOpenMcp.Flow", join(build, "flow-mcp"));
   }
 }
 

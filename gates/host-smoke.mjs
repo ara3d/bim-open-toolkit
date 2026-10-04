@@ -19,7 +19,8 @@ const HOSTS = [
   },
   {
     name: "host",
-    project: join(root, "src", "flow", "BimOpenFlow.Host"),
+    // bim-open-flow's generic host, built from deps/ (its own gate runs it too).
+    project: join(root, "deps", "bim-open-flow", "src", "flow", "BimOpenFlow.Host"),
     expect: ["table.inline", "table.sort", "rel.csv", "sink.exportCsv"],
     forbid: ["bos.load", "view3d.camera", "check.rule"],
   },

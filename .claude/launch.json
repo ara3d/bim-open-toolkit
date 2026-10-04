@@ -61,11 +61,9 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "bimopenflow/web",
+        "deps/bim-open-flow/bimopenflow/web",
         "run",
-        "dev",
-        "--workspace",
-        "packages/app"
+        "web"
       ],
       "port": 5304
     },
@@ -160,14 +158,14 @@
       "runtimeArgs": [
         "run",
         "--project",
-        "src/flow/BimOpenFlow.Host",
+        "deps/bim-open-flow/src/flow/BimOpenFlow.Host",
         "--",
         "--port",
         "5224",
         "--profile",
         "tables",
         "--models",
-        "samples/tables",
+        "deps/bim-open-flow/samples/tables",
         "--store",
         "C:/Users/cdigg/AppData/Local/Temp/claude/bof-rel/store",
         "--cache",
@@ -326,7 +324,7 @@
       "runtimeArgs": [
         "run",
         "--project",
-        "C:/Users/cdigg/git/bim-open-toolkit/src/flow/BimOpenFlow.Host",
+        "C:/Users/cdigg/git/bim-open-toolkit/deps/bim-open-flow/src/flow/BimOpenFlow.Host",
         "--no-build",
         "--",
         "--port",
@@ -334,7 +332,7 @@
         "--profile",
         "tables",
         "--models",
-        "C:/Users/cdigg/git/bim-open-toolkit/samples/tables",
+        "C:/Users/cdigg/git/bim-open-toolkit/deps/bim-open-flow/samples/tables",
         "--store",
         "C:/Users/cdigg/AppData/Local/Temp/claude/bof-review-tables/store",
         "--cache",
