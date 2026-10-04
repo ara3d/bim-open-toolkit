@@ -391,6 +391,17 @@
         "$env:BOF_HOST='http://127.0.0.1:5366'; Set-Location 'C:/Users/cdigg/git/bim-open-toolkit/bimopenflow/web/packages/studio-web'; npx vite --port 5351"
       ],
       "port": 5351
+    },
+    {
+      "name": "viewer-pages",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "deps/bim-open-viewer",
+        "run",
+        "pages:preview"
+      ],
+      "port": 5191
     }
   ]
 }
