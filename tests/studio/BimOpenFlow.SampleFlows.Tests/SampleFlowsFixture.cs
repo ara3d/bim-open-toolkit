@@ -37,11 +37,52 @@ public static class SampleFlowsFixture
 
     private static readonly string Root = RepoPaths.Root;
 
+    /// <summary>Builds every profile's generated sample files (the NRC DuckDBs and BOS file in
+    /// samples/nrc, git-ignored) before any profile seeds, as the host does after its port opens.
+    /// Without this, a fresh clone has no duplex-base source and its graphs fail; a checkout where
+    /// the host has already run would hide that. Jobs whose output is current are skipped, and a
+    /// job that fails throws here rather than surfacing later as an unknown source.</summary>
     private static readonly Lazy<IReadOnlyDictionary<string, ProfileData>> Data =
-        new(() => Profiles.ToDictionary(p => p, Seed));
+        new(() =>
+        {
+            Prepare();
+            return Profiles.ToDictionary(p => p, Seed);
+        });
+
+    private static void Prepare()
+    {
+        var jobs = Profiles
+            .SelectMany(p => StudioComposition.Profiles[p].Preparation(Root))
+            .DistinctBy(j => j.Output)
+            .Where(j => !j.IsCurrent)
+            .ToList();
+        foreach (var job in jobs)
+            job.Run();
+    }
 
     private static readonly Lazy<IReadOnlyDictionary<(string Profile, string Id), EvalSnapshot>> Snapshots =
         new(EvaluateAll);
+
+    /// <summary>Ignores the current test when the analysis reads a file under data/ that is
+    /// absent. data/ is git-ignored and filled by data/get-test-data.ps1, so a fresh clone lacks
+    /// it (the samples/view3d-analyses graphs read {DATA}/duplex.ifc); the skip message names
+    /// each missing file instead of reporting a FileNotFoundException as a broken graph.</summary>
+    public static void RequireData(string id)
+    {
+        var missing = MissingDataFiles(id);
+        if (missing.Count > 0)
+            Assert.Ignore($"{id} reads {string.Join(", ", missing)}, absent in this checkout "
+                + "(data/ is not committed; run data/get-test-data.ps1).");
+    }
+
+    private static IReadOnlyList<string> MissingDataFiles(string id)
+        => (SampleSourceFiles.Load(id)?.Values.Values ?? [])
+            .SelectMany(p => p.Values)
+            .Where(v => v.StartsWith(BimSampleSeeding.DataPlaceholder, StringComparison.Ordinal))
+            .Select(v => "data" + v[BimSampleSeeding.DataPlaceholder.Length..])
+            .Where(rel => !File.Exists(Path.Combine(Root, rel)))
+            .Distinct()
+            .ToList();
 
     public static ProfileData Profile(string profile)
         => Data.Value[profile];
