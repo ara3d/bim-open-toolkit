@@ -9,9 +9,31 @@ fence: [scripts/**, samples/ask/**, docs/bim-flow-mcp-demo.md]
 
 ## Acceptance criteria
 
-- [ ] A runner takes questions from IFC-Bench v2 (huggingface.co/datasets/sylvainHellin/ifc-bench, CC BY 4.0, 1,027 questions over 22 projects, 4 categories) for the projects whose models are CC BY 4.0 or MIT, runs the unattended IFC ask (bimopenmcp-ifc-ask, Claude CLI backend) on each, and records answers, tool calls, and cost
-- [ ] Scoring compares each answer with the ground truth, per category; category 4 (information not available) counts an honest 'not available' as correct and an invented value as wrong
-- [ ] A first run on a stratified subset (about 100 questions, all four categories) is committed with its transcript, score per category, model, effort, date, and cost; the full set runs only after the owner approves its cost
+- [x] A runner takes questions from IFC-Bench v2 (huggingface.co/datasets/sylvainHellin/ifc-bench, CC BY 4.0, 1,027 questions over 22 projects, 4 categories) for the projects whose models are CC BY 4.0 or MIT, runs the unattended IFC ask (bimopenmcp-ifc-ask, Claude CLI backend) on each, and records answers, tool calls, and cost
+- [x] Scoring compares each answer with the ground truth, per category; category 4 (information not available) counts an honest 'not available' as correct and an invented value as wrong
+- [x] A first run on a stratified subset (about 100 questions, all four categories) is committed with its transcript, score per category, model, effort, date, and cost; the full set runs only after the owner approves its cost
 - [ ] The score table in docs/bim-flow-mcp-demo.md gains an IFC-Bench row; every wrong answer that shows a toolkit defect becomes a ticket
 
 Filed 2026-10-03 after the owner pointed at IFC-Bench. It answers a gap in PROJECT.md workflow 2: today the agent is measured only on the toolkit's own ten questions and the NRC paper's eight. An external benchmark with ground truth, built by someone else, is stronger evidence, and its category 4 tests principle 3 (honest absence). Download the models at a pinned dataset revision; do not commit the IFC files; cite the dataset (see its README's Citation section) and each project's licence. Related: TKT-8 (Ask set), TKT-18 (IFC ask double count), TKT-41, TKT-144.
+
+## Outcome of the first run (2026-10-03)
+
+The work lives in bim-open-data, not in this repository's `scripts/`: [`bench/ifc-bench/`](https://github.com/ara3d/bim-open-data/tree/main/bench/ifc-bench) (commits 7eb12c3 tooling, a780ebc results), because the IFC MCP server is built there. The runner calls `claude -p` directly with the `bimopen-ifc` server and the ifc-ask guide as the appended system prompt, rather than through `bimopenmcp-ifc-ask`; the effect is the same agent, model, and guide.
+
+- Dataset: IFC-Bench v2 at revision `df630de`, 1,026 questions (one duplicate was removed after the 1,027 count). Licences read from each `license.txt` into `manifest.json`: CC BY 4.0 or MIT for 16 projects; GPL 3.0 for `4351`, `ettenheim_gis`, `hitos`, `samuel_macalister_sample_house`; CC BY 3.0 for `west_riverside_hospital` (no questions). Models are cached, not committed.
+- Subset: 100 questions over 22 models of at most 80 MB, category seats 15/55/11/19 in proportion to the dataset.
+- Score, Claude Haiku 4.5 at medium effort, 30 turns at most: 62 correct, 29 wrong, 7 unresolved, 2 at the turn limit. By category: 1 direct retrieval 8 of 15, 2 aggregation 39 of 55, 3 geometric 3 of 11, 4 not available 12 of 19. The deterministic comparator settled 38 questions; the evaluating agent reviewed all 100 (`review.json`). The owner has not checked those verdicts.
+- Cost and time: $6.79 at list price on a subscription login ($0.068 a question), 46 min wall time at three sessions at a time.
+
+Candidate toolkit defects, not yet filed as tickets (this ticket's fence did not cover them):
+1. A `ParameterText` join to `StoreyOfElement` returns two rows per element for DigitalHub pipes and ducts (questions 213 and 236), doubling totals. Possibly the same as TKT-18.
+2. Material layer sets and thicknesses were not found for wall and roof types (387, 421, 434, 457).
+3. The ifc-ask guide does not tell the agent to compute totals in SQL; two answers listed the right areas and then summed them wrongly (375, 440).
+
+Still open: the IFC-Bench row in `docs/bim-flow-mcp-demo.md`, and the tickets above.
+
+Owner decisions:
+- Whether `review.json`'s verdicts stand, and the four unresolved category 4 questions (210, 343, 502, 946) where the answer cites a value the ground truth says is absent.
+- Whether to run the full set, at this run's rates: the 733 eligible questions about $50 and 5 h; with the five large models (97 to 343 MB) 837 questions, about $57 and 6 h or more; with the GPL projects all 1,026, about $70 and 7 h.
+- Whether GPL 3.0 models may be used for evaluation (no redistribution) or stay excluded.
+
