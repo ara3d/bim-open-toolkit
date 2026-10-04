@@ -1,10 +1,11 @@
 ---
 id: TKT-1
 title: Who comes first when they conflict: the analyst with an agent in the studio, or the developer integrating the libraries?
-status: open
+status: done
 depends_on: []
 owner:
 fence: []
+closed: 2026-10-04
 kind: question
 ---
 
@@ -13,3 +14,6 @@ docs/REPOSITORY-HANDOFF.md ('What I think you are trying to achieve') names the 
 Options: 1. Analyst with an agent first; libraries are shaped by what the studio needs. 2. Libraries first; the studio is a showcase. 3. Both equal, decided per feature.
 
 Default: option 1. Decides which of two competing features wins a chunk, and whether a UX gap outranks a missing API.
+
+
+Decided 2026-10-04 by the owner in the brief alignment interview: option 1. A BIM professional working through Claude (manager, architect, engineer) comes first; ease of use and understandable output win over developer surfaces. Recorded in PROJECT.md, Users.

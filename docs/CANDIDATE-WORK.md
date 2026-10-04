@@ -4,6 +4,8 @@ The ideas scattered across this repository's documents, gathered on 2026-09-26, 
 
 How it was made: nine readers each took one group of documents (architecture, the handoff assessment, agent proposals, UX proposals, the pre-rewrite PlatoFlow design, the NRC plans, the demo guides and skills, the wave notes, the node-vocabulary proposals) and returned users, use cases, principles, ideas, UX findings, agent-integration notes, process lessons, and stale claims, each with its source file. Five synthesis passes merged those by field. Every item below keeps its source so the reasoning can be checked. A status of *built*, *partial*, or *idea* reflects what the newest document says; the repository was last worked on 2026-09-18.
 
+**Workflow numbers changed on 2026-10-04.** The brief was rewritten after an alignment interview (`docs/plans/brief-alignment-2026-10-04.md`). Items and tickets below cite the old numbers: old W1 is new W1 without Snowdon, old W2 is new W2, old W3 and W4 are new W3, old W5 and W6 are Scope In lines rather than workflows, and new W4 (scripts and packs) and W5 (the benchmark) have no items here yet.
+
 ## How to define new work from this list
 
 1. Pick an item. Name the PROJECT.md workflow it serves (W1 to W6) and take the acceptance criteria from that workflow's Done line. An item that serves no workflow is either out of scope or a reason to add a workflow to the brief; say which.
