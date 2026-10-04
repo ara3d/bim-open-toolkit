@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { resolve, basename } from "node:path";
 import { viewerAlias } from "../../viewer.config";
+import { flowAlias } from "../../flow.config";
 
 const gratify = resolve(__dirname, "../../../../deps/gratify/src/gratify");
 /** The committed sample notebooks, served in dev and copied into the static site (vite.pages.config.ts). */
@@ -75,7 +76,7 @@ export default defineConfig({
       input: { notebook: resolve(__dirname, "notebook.html"), nrc: resolve(__dirname, "nrc.html") },
     },
   },
-  resolve: { alias: [viewerAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
+  resolve: { alias: [viewerAlias, ...flowAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
   server: {
     // IPv4 loopback explicitly, for the reason given in packages/app/vite.config.ts.
     host: "127.0.0.1",

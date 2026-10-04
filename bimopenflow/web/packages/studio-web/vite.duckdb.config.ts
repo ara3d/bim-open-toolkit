@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import { viewerAlias } from '../../viewer.config';
+import { flowAlias } from '../../flow.config';
 
 export default defineConfig({
   resolve: {
-    alias: [viewerAlias, { find: 'gratify', replacement: resolve(__dirname, '../../../../deps/gratify/src/gratify') }],
+    alias: [viewerAlias, ...flowAlias, { find: 'gratify', replacement: resolve(__dirname, '../../../../deps/gratify/src/gratify') }],
     dedupe: ['three'],
   },
   build: {

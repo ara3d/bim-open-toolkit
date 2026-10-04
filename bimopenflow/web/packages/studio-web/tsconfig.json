@@ -1,5 +1,5 @@
 {
-  "extends": "../../viewer.tsconfig.json",
+  "extends": "../../deps.tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
@@ -9,14 +9,7 @@
     "noEmit": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client"],
-    "baseUrl": ".",
-    // gratify is consumed from its source in deps/gratify (same pattern as
-    // the former platoflow/web); the vite alias in vite.config.ts is the runtime twin.
-    "paths": {
-      "gratify": ["../../../../deps/gratify/src/gratify/index.ts"],
-      "@bim-open-viewer/*": ["../../../../deps/bim-open-viewer/packages/*/src/index.ts"]
-    }
+    "types": ["vite/client"]
   },
   "include": ["src", "test"]
 }

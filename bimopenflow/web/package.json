@@ -6,10 +6,30 @@
   "workspaces": [
     "packages/*"
   ],
+  "devDependencies": {
+    "@bimopenflow/api-client": "file:../../deps/bim-open-flow/bimopenflow/web/packages/api-client",
+    "@bimopenflow/app": "file:../../deps/bim-open-flow/bimopenflow/web/packages/app",
+    "@bimopenflow/client": "file:../../deps/bim-open-flow/bimopenflow/web/packages/client",
+    "@bimopenflow/contracts": "file:../../deps/bim-open-flow/bimopenflow/web/packages/contracts",
+    "@bimopenflow/graph": "file:../../deps/bim-open-flow/bimopenflow/web/packages/graph",
+    "@bimopenflow/panes": "file:../../deps/bim-open-flow/bimopenflow/web/packages/panes",
+    "@bimopenflow/state": "file:../../deps/bim-open-flow/bimopenflow/web/packages/state",
+    "@bimopenflow/viz": "file:../../deps/bim-open-flow/bimopenflow/web/packages/viz"
+  },
+  "overrides": {
+    "@bimopenflow/api-client": "$@bimopenflow/api-client",
+    "@bimopenflow/app": "$@bimopenflow/app",
+    "@bimopenflow/client": "$@bimopenflow/client",
+    "@bimopenflow/contracts": "$@bimopenflow/contracts",
+    "@bimopenflow/graph": "$@bimopenflow/graph",
+    "@bimopenflow/panes": "$@bimopenflow/panes",
+    "@bimopenflow/state": "$@bimopenflow/state",
+    "@bimopenflow/viz": "$@bimopenflow/viz"
+  },
   "scripts": {
     "host": "dotnet run --project ../../src/studio/BimOpenFlow.Studio -- --profile bim --port 5214 --store ../../artifacts/bim-flow/store --cache ../../artifacts/bim-flow/cache",
     "web": "npm run dev -w @bimopenflow/studio-web",
-    "web:generic": "npm run dev -w @bimopenflow/app",
+    "web:generic": "npm run web --prefix ../../deps/bim-open-flow/bimopenflow/web",
     "notebook": "npm run dev -w @bimopenflow/bim-open-notebook",
     "duckdb:prepare": "node ../../scripts/prepare-bim-flow-duckdb.mjs",
     "duckdb:build": "dotnet build ../../src/studio/BimOpenFlow.Studio -o ../../artifacts/bim-flow-duckdb/studio --verbosity quiet",
@@ -17,7 +37,7 @@
     "duckdb:web": "npm run duckdb -w @bimopenflow/studio-web",
     "mcp:build": "node ../../scripts/build-mcp.mjs",
     "mcp:check": "node ../../scripts/build-mcp.mjs --check",
-    "duckdb:mcp-build": "dotnet build ../../src/mcp/BimOpenMcp.Flow -o ../../artifacts/bim-flow-duckdb/mcp --verbosity quiet",
+    "duckdb:mcp-build": "dotnet build ../../deps/bim-open-flow/src/mcp/BimOpenMcp.Flow -o ../../artifacts/bim-flow-duckdb/mcp --verbosity quiet",
     "duckdb:mcp-demo": "node ../../scripts/demo-bim-flow-mcp.mjs",
     "ifc:mcp-build": "dotnet build ../../deps/bim-open-data/src/mcp/BimOpenMcp.Ifc -o ../../artifacts/bim-flow-ifc/mcp --verbosity quiet",
     "ifc:mcp-demo": "node ../../scripts/demo-ifc-mcp.mjs",

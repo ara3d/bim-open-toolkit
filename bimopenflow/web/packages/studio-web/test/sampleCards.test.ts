@@ -3,10 +3,11 @@
 // in the studio's committed catalog (docs/nodes.catalog.json, every pack), no
 // two cards overlap as the page that loads them shows them, and no text a card
 // paints runs past its edges, in any node style. The graph package checks its
-// own samples (samples/analyses, relations, tables) against the generic
-// catalog; this covers the rest of samples/ with the BIM, NRC, Snowdon,
+// own samples (samples/analyses, relations, tables, in bim-open-flow) against
+// the generic catalog; this covers this repository's samples/: the BIM, NRC, Snowdon,
 // showcase, view3d, and notebook graphs. On an overlap, relay out with
-//   npm run relayout-samples -w @bimopenflow/graph -- --root <toolkit> --catalog docs/nodes.catalog.json --samples <dirs>
+//   npm run relayout-samples --prefix deps/bim-open-flow/bimopenflow/web/packages/graph -- --root <toolkit> --catalog docs/nodes.catalog.json --samples <dirs>
+// (after npm ci --prefix deps/bim-open-flow/bimopenflow/web)
 
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -17,10 +18,10 @@ import { catalogOverflows, sampleOverflows } from "@bimopenflow/graph/scripts/ca
 
 const toolkit = fileURLToPath(new URL("../../../../../", import.meta.url));
 
-/** The toolkit's sample folders; samples/analyses, relations, and tables are the graph tool's. */
+/** The toolkit's sample folders; samples/analyses, relations, and tables are bim-open-flow's. */
 const TOOLKIT_SAMPLE_DIRS = [
   "samples/bim-analyses", "samples/duckdb-analyses", "samples/notebooks", "samples/nrc-analyses",
-  "samples/showcase-analyses", "samples/snowdon-analyses", "samples/view3d-analyses",
+  "samples/showcase-analyses", "samples/showcase-tables", "samples/snowdon-analyses", "samples/view3d-analyses",
 ];
 
 const catalog = committedCatalog(join(toolkit, "docs", "nodes.catalog.json"));

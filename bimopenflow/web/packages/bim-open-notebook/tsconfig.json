@@ -1,5 +1,5 @@
 {
-  "extends": "../../viewer.tsconfig.json",
+  "extends": "../../deps.tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
@@ -9,14 +9,7 @@
     "noEmit": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client"],
-    "baseUrl": ".",
-    // Same source aliases as packages/app: the graph and panes packages this
-    // one imports reach gratify and the viewer packages.
-    "paths": {
-      "gratify": ["../../../../deps/gratify/src/gratify/index.ts"],
-      "@bim-open-viewer/*": ["../../../../deps/bim-open-viewer/packages/*/src/index.ts"]
-    }
+    "types": ["vite/client"]
   },
   "include": ["src", "test", "scripts"]
 }

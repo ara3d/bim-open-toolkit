@@ -1,0 +1,28 @@
+{
+  // Paths into deps/ for every package of this workspace, relative to this file: Gratify and
+  // the viewer's packages from their source, and bim-open-flow's eight editor packages from
+  // theirs (flow.config.ts and viewer.config.ts are the runtime twins). A package that
+  // extends this file declares no paths of its own, since a child's paths replace these.
+  // A file reached in deps/ resolves bare imports from its real path, outside this workspace's
+  // node_modules, so the one third-party module bim-open-flow's test helpers import, vitest,
+  // is mapped here too.
+  "compilerOptions": {
+    "paths": {
+      "gratify": ["../../deps/gratify/src/gratify/index.ts"],
+      "@bim-open-viewer/*": ["../../deps/bim-open-viewer/packages/*/src/index.ts"],
+      "@bimopenflow/api-client": ["../../deps/bim-open-flow/bimopenflow/web/packages/api-client/src/index.ts"],
+      "@bimopenflow/app": ["../../deps/bim-open-flow/bimopenflow/web/packages/app/src/index.ts"],
+      "@bimopenflow/app/entry": ["../../deps/bim-open-flow/bimopenflow/web/packages/app/src/entry.ts"],
+      "@bimopenflow/client": ["../../deps/bim-open-flow/bimopenflow/web/packages/client/src/index.ts"],
+      "@bimopenflow/client/host": ["../../deps/bim-open-flow/bimopenflow/web/packages/client/src/host.ts"],
+      "@bimopenflow/contracts": ["../../deps/bim-open-flow/bimopenflow/web/packages/contracts/src/index.ts"],
+      "@bimopenflow/graph": ["../../deps/bim-open-flow/bimopenflow/web/packages/graph/src/index.ts"],
+      "@bimopenflow/graph/scripts/*": ["../../deps/bim-open-flow/bimopenflow/web/packages/graph/scripts/*"],
+      "@bimopenflow/panes": ["../../deps/bim-open-flow/bimopenflow/web/packages/panes/src/index.ts"],
+      "@bimopenflow/panes/testing": ["../../deps/bim-open-flow/bimopenflow/web/packages/panes/test/testing.ts"],
+      "@bimopenflow/state": ["../../deps/bim-open-flow/bimopenflow/web/packages/state/src/index.ts"],
+      "vitest": ["./node_modules/vitest"],
+      "@bimopenflow/viz": ["../../deps/bim-open-flow/bimopenflow/web/packages/viz/src/index.ts"]
+    }
+  }
+}
