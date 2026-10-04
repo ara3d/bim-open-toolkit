@@ -1,11 +1,12 @@
 ---
 id: TKT-159
 title: Static notebook site: ship the node catalog so graph cells draw their wires
-status: open
+status: done
 depends_on: [TKT-80]
 owner:
 fence: [bim-open-notebook: bimopenflow/web/packages/bim-open-notebook/{vite.pages.config.ts, vite/samples.ts, src/page/notebookView.ts, src/page/entry.ts, src/page/sitePaths.ts, test/notebookView.test.ts, test/site.test.ts}]
 created: 2026-10-04
+closed: 2026-10-04
 ---
 
 ## Acceptance criteria
