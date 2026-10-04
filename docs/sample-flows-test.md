@@ -1,7 +1,8 @@
 # Sample flows test (TKT-85)
 
-`tests/flow/BimOpenFlow.SampleFlows.Tests` loads every committed sample analysis
-(`samples/analyses`, `samples/relations`, `samples/nrc-analyses`,
+`tests/studio/BimOpenFlow.SampleFlows.Tests` loads every committed sample analysis
+(`samples/analyses` and `samples/relations` from `deps/bim-open-flow`, `samples/nrc-analyses`,
+`samples/showcase-tables`,
 `samples/showcase-analyses`, `samples/bim-analyses`, `samples/view3d-analyses`,
 `samples/snowdon-analyses`) into both host profiles ("tables" and "bim"), through the
 same `SampleSeeding` / `BimSampleSeeding` helpers and `HostComposition` registries
@@ -13,7 +14,7 @@ every machine without the private Snowdon model.
 ## Run it
 
 ```
-dotnet test tests/flow/BimOpenFlow.SampleFlows.Tests
+dotnet test tests/studio/BimOpenFlow.SampleFlows.Tests
 ```
 
 It runs as part of `dotnet test BimOpenToolkit.sln`, which `gates/all.mjs` already
@@ -60,7 +61,7 @@ suite evaluates concurrently on purpose rather than one flow at a time.
   finding (see below).
 - **NRC answers (`NrcAnswerTests`)** — the CSV-backed `nrc-q*` flows' materialized
   answers checked against the same numbers
-  `tests/flow/BimOpenFlow.NrcWorkflows.Tests/CsvGraphTests.cs` asserts (both ultimately
+  `tests/studio/BimOpenFlow.NrcWorkflows.Tests/CsvGraphTests.cs` asserts (both ultimately
   cite `nrc-ifc-llm/poc/results/expected_answers.json`). The numbers are necessarily
   duplicated in both projects: this project's fence does not let it reference that test
   project's private literals, and there is no committed `expected_answers.json` in this
@@ -71,7 +72,7 @@ suite evaluates concurrently on purpose rather than one flow at a time.
 After an intentional change to a sample graph or to the graph text format:
 
 ```
-SAMPLE_FLOWS_APPROVE=1 dotnet test tests/flow/BimOpenFlow.SampleFlows.Tests
+SAMPLE_FLOWS_APPROVE=1 dotnet test tests/studio/BimOpenFlow.SampleFlows.Tests
 ```
 
 Every case rewrites its `golden/<profile>/<id>.txt` and passes. Review the diff before

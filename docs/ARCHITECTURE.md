@@ -41,8 +41,8 @@ What makes this editable by a program as easily as by a person:
   knows the whole vocabulary; the editor draws its UI from the same declaration; the
   reference in [nodes.md](nodes.md) is generated from it. [nodes.catalog.json](nodes.catalog.json)
   is the studio's catalog answer, every pack included; the generic host's answer is committed
-  as `bimopenflow/web/packages/graph/test/nodes.catalog.json`, so the editor's tests size node
-  cards without a host.
+  in bim-open-flow as `bimopenflow/web/packages/graph/test/nodes.catalog.json`, so the editor's
+  tests size node cards without a host.
 - **Failure is a state, not an exception.** Evaluating returns a per-node summary — `Ok`,
   `Unready`, `EffectPending`, `Unavailable`, `Error` — so a partially wired graph is a
   legitimate intermediate state to reason about and repair.
@@ -138,11 +138,14 @@ add-in under `plugins/` and the BOS Browser under bim-open-data's `apps/`.
 - `BimOpenMcp.Ifc` — an MCP server exposing IFC models directly to an agent: entities,
   properties, relations, geometry, analytics, and a session cache.
 
-### 4. Node packs — `src/flow/BimOpenFlow.Nodes.*`
+### 4. Node packs — `src/flow/BimOpenFlow.Nodes.*` and `deps/bim-open-flow/src/flow/BimOpenFlow.Nodes.*`
 
 The vocabulary: **98 nodes across 11 packs**, each pack a separate project with its own
 dependencies and its own tests. Packs never reference each other. The counts below come
-from the generated [node reference](nodes.md).
+from the generated [node reference](nodes.md). `Bos`, `BimAnalysis`, and `Geometry` are this
+repository's; the other packs (and `Nodes.Support`, `Relations`, and the rel.* pack) are
+`ara3d/bim-open-flow`'s, taken from `deps/bim-open-flow` since the repository split's
+phase 5 ([repository-split.md](plans/repository-split.md)).
 
 | Pack | Nodes | What it covers |
 |---|---|---|
@@ -163,9 +166,12 @@ alone. File-reading nodes are still pure: their cache key is a hash of the file'
 *content*, so an unchanged file is never re-read and an edited one is picked up
 automatically.
 
-### 5. Surfaces — `src/flow/BimOpenFlow.Host*`, `src/mcp/BimOpenMcp.Flow`, `bimopenflow/web`, `deps/bim-open-viewer/`
+### 5. Surfaces — `deps/bim-open-flow` (host, MCP, editor), `src/studio`, `bimopenflow/web`, `deps/bim-open-viewer/`
 
-One headless core; every UI is a client of it.
+One headless core; every UI is a client of it. The host libraries, the MCP server, the Ask
+loop, the outputs, and the editor's eight generic web packages are bim-open-flow's
+(`deps/bim-open-flow/src/...` and `deps/bim-open-flow/bimopenflow/web/packages/...`); this
+repository composes them in the studio and adds the 3D pane, the notebook, and the pages.
 
 - **`Host.Catalog`** — model discovery and IFC→BOS conversion with caching.
 - **`Host.Store`** — the analysis library on disk: versioned graph documents, run archival.
@@ -182,12 +188,16 @@ One headless core; every UI is a client of it.
 - **`Mcp`** — thirteen MCP tools over *the same* services: `listModels`, `listAnalyses`,
   `getAnalysis`, `saveAnalysis`, `getNodeCatalog`, `addNode`, `connect`, `setParam`,
   `removeNode`, `evaluate`, `getResult`, `listRuns`, `createRun`.
-- **`bimopenflow/web`** — the editor: `graph` (the canvas as a component: nodes,
+- **The editor** — bim-open-flow's packages, linked into `bimopenflow/web` by `file:`
+  dependencies and resolved to their source by `flow.config.ts` (Vite) and
+  `deps.tsconfig.json` (tsc): `graph` (the canvas as a component: nodes,
   wires, inline controls, peeks, node styles, theme; mountable several times on a
   page, each mount with its own state, and read-only on request), `app` (the studio
   shell around it: sidebar, topbar, panes area, palette, step list, problems strip,
-  start page), `panes` (table, chart, 3D, inspector, verdict), `viz` (SVG charts),
-  `state`, and generated `contracts` / `api-client` packages. The canvas is built on
+  start page), `panes` (table, chart, inspector, verdict), `viz` (SVG charts),
+  `client`, `state`, and generated `contracts` / `api-client` packages. This repository's
+  workspace holds `pane-3d` (the 3D pane), `studio-web` (the studio's pages), and
+  `bim-open-notebook`. The canvas is built on
   the primitives of Gratify (`deps/gratify`); graph-specific behaviour stays here,
   deliberately, rather than upstream (see
   [graph-module-layering.md](graph-module-layering.md)). `bim-open-notebook` is a
@@ -205,23 +215,22 @@ One headless core; every UI is a client of it.
 `tests/BimOpenToolkit.Layering.Tests` turns the layering into failing tests:
 
 - **Folders point down.** `flow` may reference `data`; `mcp` adds `flow`; `studio` may
-  reference all three; `plugins` and `tools` sit on `data`. So nothing in `src/flow`,
-  `src/mcp`, `tests/flow`, or `tests/mcp` references `src/studio` (`LayeringTests`).
-- **Packs stay independent.** A node pack references no pack but `Nodes.Support`, never the
-  host or the run outputs; only `Nodes.Effects` sees run records; `Relations` never sees
-  DuckDB (`FlowLayeringTests`).
-- **The generic tool has no BIM in it.** Every project that moves to `bim-open-flow` (all of
-  `src/flow`, `src/mcp`, `tests/flow`, `tests/mcp`, and `src/studio/BimOpenFlow.Ask`, less
-  the `Stays` list in `BimSeamTests.cs`) references none of `Nodes.Bos`, `Nodes.BimAnalysis`,
-  `Nodes.Geometry`, or `Ara3D.Ifc.Mesher`, and nothing in `studio`. The hand-written node
-  notes in `NodeDocs` cover only kinds the generic packs register; the BIM packs' notes are
-  `BimNodeNotes` in the studio (`BimSeamTests`).
-- **The web packages follow the same seam**, checked by vitest beside the code:
-  `client/test/genericPackages.test.ts` fails if `contracts`, `api-client`, `state`, `graph`,
-  `viz`, `client`, `panes`, or `app` depends on or imports `@bim-open-viewer/*` or
-  `@bimopenflow/pane-3d`; the notebook's `test/layering.test.ts` keeps both out of
-  `src/embeds`, where a page registers the 3D embed instead. `BimSeamTests` fails if either
-  file disappears. The viewer never depends on `@bimopenflow/*` (`LayeringTests`).
+  reference all three; `plugins` and `tools` sit on `data`. A reference into
+  `deps/bim-open-flow/src/<group>` counts as that group, so nothing in `src/flow` or
+  `tests/flow` references `src/studio` (`LayeringTests`).
+- **Packs stay independent.** The BIM packs reference no pack but `Nodes.Support`, never the
+  host or the run outputs (`FlowLayeringTests`); bim-open-flow's own layering test holds the
+  same rules for its packs, and that only `Nodes.Effects` sees run records and `Relations`
+  never sees DuckDB.
+- **The generic tool has no BIM in it.** bim-open-flow's layering test fails if any of its
+  projects references `Nodes.Bos`, `Nodes.BimAnalysis`, `Nodes.Geometry`, or
+  `Ara3D.Ifc.Mesher`, if a web package depends on or imports `@bim-open-viewer/*`,
+  `@bimopenflow/pane-3d`, the notebook, or `studio-web`, or if `NodeDocs`'s notes name a
+  kind no generic pack registers; the BIM packs' notes are `BimNodeNotes` in the studio.
+- **The notebook keeps the 3D pane out of its embeds**: its `test/layering.test.ts` keeps
+  `@bim-open-viewer/*` and `@bimopenflow/pane-3d` out of `src/embeds`, where a page registers
+  the 3D embed instead, and `WebSeamTests` fails if that file disappears. The viewer never
+  depends on `@bimopenflow/*` (`LayeringTests`).
 
 ## Agentic workflows
 

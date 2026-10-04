@@ -15,7 +15,7 @@ shows a banner whenever the host is unreachable.
 | Profile | Host | Editor | Packs |
 |---|---|---|---|
 | `bim` | `bof-host` (port 5214, models `data/`) | `bof-web` (port 5300) | Bos, TableOps, BimAnalysis, Geometry, Compliance, Effects, Viz, Relations |
-| `tables` | `bof-rel-host` (port 5224, models `samples/tables`) | `bof-rel-web` (port 5310) | DuckDb, Tables, TableOps, Cleaning, Dates, Viz, table sinks, Relations |
+| `tables` | `bof-rel-host` (port 5224, models `deps/bim-open-flow/samples/tables`) | `bof-rel-web` (port 5310) | DuckDb, Tables, TableOps, Cleaning, Dates, Viz, table sinks, Relations |
 
 One command starts either pair as detached processes and waits until both answer
 (`bof` and `bof-tables` in `.claude/launch.json` run the same script):
@@ -31,7 +31,7 @@ dotnet run --project src/studio/BimOpenFlow.Studio -- --port 5214 --profile bim 
 ```
 
 ```bash
-cd bimopenflow/web/packages/app && npx vite --port 5300
+npm run web --prefix bimopenflow/web   # the studio pages (packages/studio-web) on 5300
 ```
 
 The editor proxies `/api` to the host named by `BOF_HOST` (default
@@ -65,7 +65,7 @@ It needs a model: either the Claude Code CLI, installed and logged in
 (`npm install -g @anthropic-ai/claude-code`, then `claude` and `/login`), or
 `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` in the environment before the host
 starts. `ASK_PROVIDER` picks one explicitly (`claude-cli`, `anthropic`, or
-`openai`); see `ChatSelection` in `src/studio/BimOpenFlow.Ask/ChatSelection.cs`.
+`openai`); see `ChatSelection` in `deps/bim-open-flow/src/studio/BimOpenFlow.Ask/ChatSelection.cs`.
 With no model configured, a request still answers cleanly with the reason
 in the transcript instead of failing.
 
@@ -75,8 +75,9 @@ in the transcript instead of failing.
 |---|---|---|---|---|
 | `samples/showcase-analyses` | CSV, BOS, IFC-derived DuckDB, IFC, BFAST | both / bim | the whole chain: relations into verdicts, a coloured 3D view, a chart, an HTML report; the buffer directory of a BFAST file | `NrcWorkflows.Tests/ShowcaseGraphTests`, `BfastGraphTests` |
 | `samples/nrc-analyses` | CSV and the Duplex DuckDB | both (two graphs bim only) | the NRC paper's eight answers, DC-W1 doors coloured in 3D, property sets written back to an IFC | `NrcWorkflows.Tests` |
-| `samples/analyses` | CSV, XLSX, SQLite, DuckDB | tables | table panes over `samples/tables` | `TableWorkflows.Tests/SampleAnalysesTests` |
-| `samples/relations` | CSV, DuckDB | tables | the `rel.*` pack: lazy plans, one SQL statement per chain | `Nodes.Relations.Tests/SampleGraphTests` |
+| `samples/analyses` (in `deps/bim-open-flow`) | CSV, XLSX, SQLite, DuckDB | tables | table panes over bim-open-flow's `samples/tables` | bim-open-flow's `TableWorkflows.Tests/SampleAnalysesTests` |
+| `samples/relations` (in `deps/bim-open-flow`) | CSV, DuckDB | tables | the `rel.*` pack: lazy plans, one SQL statement per chain | bim-open-flow's `Nodes.Relations.Tests/SampleGraphTests` |
+| `samples/showcase-tables` | BFAST | tables, bim | the buffers of bim-open-flow's `samples/tables/sample.bfast` | `NrcWorkflows.Tests/BfastGraphTests` |
 | `samples/duckdb-analyses` | DuckDB (Snowdon, prepared by `npm run duckdb:prepare`) | tables, `/duckdb.html` | nine query workflows over a building database | `SnowdonWorkflows.Tests/DuckDbWorkflowCatalogTests` |
 | `samples/bim-analyses` | BOS (`samples/bim/sample.bos`, generated) | bim | the `bim.*` analyses: disciplines, levels, rooms, containment, nearest door | `BimWorkflows.Tests` |
 | `samples/view3d-analyses` | IFC (`data/duplex.ifc`, fetched by `data/get-test-data.ps1`) | bim, `/3d.html` | colour by category, ghost context, exploded categories, massing boxes, voxels, decimation | `View3dWorkflows.Tests` |
