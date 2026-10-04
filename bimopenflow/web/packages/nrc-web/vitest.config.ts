@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import { viewerAlias } from "../../viewer.config";
-import { flowAlias } from "../../flow.config";
+import { flowAlias, notebookAlias } from "../../deps.config";
 
 // The same gratify source alias as packages/app/vitest.config.ts.
 const gratify = fileURLToPath(
@@ -9,6 +9,6 @@ const gratify = fileURLToPath(
 );
 
 export default defineConfig({
-  resolve: { alias: [viewerAlias, ...flowAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
+  resolve: { alias: [...viewerAlias, ...flowAlias, ...notebookAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
   test: { environment: "jsdom" },
 });

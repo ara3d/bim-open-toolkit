@@ -7,21 +7,35 @@
     "packages/*"
   ],
   "devDependencies": {
+    "@bim-open-viewer/controls": "file:../../deps/bim-open-viewer/packages/controls",
+    "@bim-open-viewer/core": "file:../../deps/bim-open-viewer/packages/core",
+    "@bim-open-viewer/features": "file:../../deps/bim-open-viewer/packages/features",
+    "@bim-open-viewer/formats": "file:../../deps/bim-open-viewer/packages/formats",
+    "@bim-open-viewer/interact": "file:../../deps/bim-open-viewer/packages/interact",
+    "@bim-open-viewer/loaders": "file:../../deps/bim-open-viewer/packages/loaders",
+    "@bim-open-viewer/model": "file:../../deps/bim-open-viewer/packages/model",
+    "@bim-open-viewer/render": "file:../../deps/bim-open-viewer/packages/render",
+    "@bim-open-viewer/viewer": "file:../../deps/bim-open-viewer/packages/viewer",
     "@bimopenflow/api-client": "file:../../deps/bim-open-flow/bimopenflow/web/packages/api-client",
     "@bimopenflow/app": "file:../../deps/bim-open-flow/bimopenflow/web/packages/app",
+    "@bimopenflow/bim-open-notebook": "file:../../deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook",
     "@bimopenflow/client": "file:../../deps/bim-open-flow/bimopenflow/web/packages/client",
     "@bimopenflow/contracts": "file:../../deps/bim-open-flow/bimopenflow/web/packages/contracts",
     "@bimopenflow/graph": "file:../../deps/bim-open-flow/bimopenflow/web/packages/graph",
+    "@bimopenflow/pane-3d": "file:../../deps/bim-open-notebook/bimopenflow/web/packages/pane-3d",
     "@bimopenflow/panes": "file:../../deps/bim-open-flow/bimopenflow/web/packages/panes",
     "@bimopenflow/state": "file:../../deps/bim-open-flow/bimopenflow/web/packages/state",
-    "@bimopenflow/viz": "file:../../deps/bim-open-flow/bimopenflow/web/packages/viz"
+    "@bimopenflow/viz": "file:../../deps/bim-open-flow/bimopenflow/web/packages/viz",
+    "@types/three": "^0.180.0"
   },
   "overrides": {
     "@bimopenflow/api-client": "$@bimopenflow/api-client",
     "@bimopenflow/app": "$@bimopenflow/app",
+    "@bimopenflow/bim-open-notebook": "$@bimopenflow/bim-open-notebook",
     "@bimopenflow/client": "$@bimopenflow/client",
     "@bimopenflow/contracts": "$@bimopenflow/contracts",
     "@bimopenflow/graph": "$@bimopenflow/graph",
+    "@bimopenflow/pane-3d": "$@bimopenflow/pane-3d",
     "@bimopenflow/panes": "$@bimopenflow/panes",
     "@bimopenflow/state": "$@bimopenflow/state",
     "@bimopenflow/viz": "$@bimopenflow/viz"

@@ -1,8 +1,9 @@
 {
   // Paths into deps/ for every package of this workspace, relative to this file: Gratify and
-  // the viewer's packages from their source, and bim-open-flow's eight editor packages from
-  // theirs (flow.config.ts and viewer.config.ts are the runtime twins). A package that
-  // extends this file declares no paths of its own, since a child's paths replace these.
+  // the viewer's packages from their source, bim-open-flow's eight editor packages, and
+  // bim-open-notebook's notebook and 3D pane from theirs (deps.config.ts and viewer.config.ts
+  // are the runtime twins). A package that extends this file declares no paths of its own,
+  // since a child's paths replace these.
   // A file reached in deps/ resolves bare imports from its real path, outside this workspace's
   // node_modules, so the one third-party module bim-open-flow's test helpers import, vitest,
   // is mapped here too.
@@ -13,11 +14,17 @@
       "@bimopenflow/api-client": ["../../deps/bim-open-flow/bimopenflow/web/packages/api-client/src/index.ts"],
       "@bimopenflow/app": ["../../deps/bim-open-flow/bimopenflow/web/packages/app/src/index.ts"],
       "@bimopenflow/app/entry": ["../../deps/bim-open-flow/bimopenflow/web/packages/app/src/entry.ts"],
+      "@bimopenflow/bim-open-notebook": ["../../deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/src/index.ts"],
+      "@bimopenflow/bim-open-notebook/page": ["../../deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/src/page/entry.ts"],
+      "@bimopenflow/bim-open-notebook/vite": ["../../deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/vite/samples.ts"],
+      "@bimopenflow/bim-open-notebook/layouts": ["../../deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/scripts/embedLayouts.ts"],
+      "@bimopenflow/bim-open-notebook/scripts/*": ["../../deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/scripts/*"],
       "@bimopenflow/client": ["../../deps/bim-open-flow/bimopenflow/web/packages/client/src/index.ts"],
       "@bimopenflow/client/host": ["../../deps/bim-open-flow/bimopenflow/web/packages/client/src/host.ts"],
       "@bimopenflow/contracts": ["../../deps/bim-open-flow/bimopenflow/web/packages/contracts/src/index.ts"],
       "@bimopenflow/graph": ["../../deps/bim-open-flow/bimopenflow/web/packages/graph/src/index.ts"],
       "@bimopenflow/graph/scripts/*": ["../../deps/bim-open-flow/bimopenflow/web/packages/graph/scripts/*"],
+      "@bimopenflow/pane-3d": ["../../deps/bim-open-notebook/bimopenflow/web/packages/pane-3d/src/index.ts"],
       "@bimopenflow/panes": ["../../deps/bim-open-flow/bimopenflow/web/packages/panes/src/index.ts"],
       "@bimopenflow/panes/testing": ["../../deps/bim-open-flow/bimopenflow/web/packages/panes/test/testing.ts"],
       "@bimopenflow/state": ["../../deps/bim-open-flow/bimopenflow/web/packages/state/src/index.ts"],

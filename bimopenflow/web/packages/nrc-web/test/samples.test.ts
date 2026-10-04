@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseNotebook, type Embed, type Notebook, type TableSnapshot } from "@bimopenflow/bim-open-notebook";
 import { sampleGraphFiles, staleLayouts, syncLayouts } from "@bimopenflow/bim-open-notebook/layouts";
+import { outlineErrors } from "@bimopenflow/bim-open-notebook/scripts/outline.js";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../../..");
 const SAMPLES = join(ROOT, "samples", "notebooks");
@@ -17,6 +18,7 @@ const OUTLINES = join(SAMPLES, "outlines");
 const ANALYSES = join(ROOT, "samples", "nrc-analyses");
 
 const sampleFiles = readdirSync(SAMPLES).filter((f) => f.endsWith(".notebook.json"));
+const outlineFiles = readdirSync(OUTLINES).filter((f) => f.endsWith(".outline.json"));
 
 function load(name: string): Notebook {
   const parsed = parseNotebook(readFileSync(join(SAMPLES, `${name}.notebook.json`), "utf8"));
@@ -47,9 +49,14 @@ function snapshotOf(embed: Embed | undefined): TableSnapshot {
 
 describe("sample notebooks", () => {
   it("has one notebook per outline", () => {
-    const outlines = readdirSync(OUTLINES).filter((f) => f.endsWith(".outline.json"));
-    expect(sampleFiles.sort()).toEqual(outlines.map((f) => f.replace(/\.outline\.json$/, ".notebook.json")).sort());
+    expect(sampleFiles.sort()).toEqual(outlineFiles.map((f) => f.replace(/\.outline\.json$/, ".notebook.json")).sort());
     expect(sampleFiles.length).toBeGreaterThanOrEqual(12);
+  });
+
+  // The notebook package's own outline test checks only its repository's outlines.
+  it.each(outlineFiles)("%s passes the outline check, its graph ids starting nb-<outline name>-", (file) => {
+    const outline = JSON.parse(readFileSync(join(OUTLINES, file), "utf8"));
+    expect(outlineErrors(outline, file.replace(/\.outline\.json$/, ""))).toEqual([]);
   });
 
   it.each(sampleFiles)("%s parses", (file) => {

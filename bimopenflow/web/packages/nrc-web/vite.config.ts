@@ -2,15 +2,15 @@ import { defineConfig, type Plugin } from "vite";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { viewerAlias } from "../../viewer.config";
-import { flowAlias } from "../../flow.config";
-// By relative path, not "@bimopenflow/bim-open-notebook/vite": Node loads this
-// config, and Node cannot load a bare .ts specifier; a relative one is bundled.
-import { sampleNotebooks } from "../bim-open-notebook/vite/samples";
+import { flowAlias, notebookAlias } from "../../deps.config";
+// By relative path into deps/bim-open-notebook, not "@bimopenflow/bim-open-notebook/vite":
+// Node loads this config, and Node cannot load a bare .ts specifier; a relative one is bundled.
+import { sampleNotebooks } from "../../../../deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/vite/samples";
 
 const repo = resolve(__dirname, "../../../..");
 const gratify = resolve(repo, "deps/gratify/src/gratify");
 /** The notebook package, whose public/ folder holds the favicon. */
-const notebookPackage = resolve(__dirname, "../bim-open-notebook");
+const notebookPackage = resolve(repo, "deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook");
 /** The toolkit's sample notebooks, served at /__notebooks/. */
 const samples = resolve(repo, "samples/notebooks");
 const nrcGraphsReadme = resolve(repo, "samples/nrc-analyses/README.md");
@@ -50,7 +50,7 @@ export default defineConfig({
       input: { notebook: resolve(__dirname, "notebook.html"), nrc: resolve(__dirname, "nrc.html") },
     },
   },
-  resolve: { alias: [viewerAlias, ...flowAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
+  resolve: { alias: [...viewerAlias, ...flowAlias, ...notebookAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
   server: {
     // IPv4 loopback explicitly, for the reason given in packages/app/vite.config.ts.
     host: "127.0.0.1",

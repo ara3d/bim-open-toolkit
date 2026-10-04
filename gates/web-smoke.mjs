@@ -9,13 +9,14 @@ const viewer = join(root, "deps", "bim-open-viewer");
 const web = join(root, "bimopenflow", "web");
 
 // The eight generic editor packages (api-client, viz, state, panes, client, graph, app,
-// contracts) are bim-open-flow's, tested by its own web smoke; here they are linked from
-// deps/bim-open-flow, and the toolkit's packages are tested and built against them.
+// contracts) are bim-open-flow's, and the notebook and the 3D pane are bim-open-notebook's,
+// each tested by its own repository's web smoke; here they are linked from deps/, and the
+// toolkit's packages are tested and built against them.
 const steps = [
   [viewer, ["test", "-w", "@bim-open-viewer/core"]],
   [viewer, ["test", "-w", "@bim-open-viewer/loaders"]],
   [viewer, ["test", "-w", "@bim-open-viewer/controls"]],
-  ...["pane-3d", "studio-web", "bim-open-notebook", "nrc-web"].flatMap((p) => [
+  ...["studio-web", "nrc-web"].flatMap((p) => [
     [web, ["test", "-w", `@bimopenflow/${p}`]],
     [web, ["run", "typecheck", "-w", `@bimopenflow/${p}`]],
   ]),
