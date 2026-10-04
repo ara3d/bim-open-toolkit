@@ -147,6 +147,28 @@ The C# tests need fixtures that are not committed. Run `node deps.mjs`, then `./
 which copies them from a sibling clone as described in [data/README.md](data/README.md).
 The sample analyses in `samples/` run without fixtures.
 
+## Tested sets
+
+The toolkit is built from eight other repositories, listed in `deps.json`, and each moves on its own schedule. A combination is known to work only once one commit of each has been built and tested together. `deps.json` records such a combination, and a tag on this repository marks one that passed every check below. Use a tag when you need code that does not change under you, for example in a paper's companion repository or in a fork.
+
+Get a tested set:
+
+```bash
+git clone --branch v0.1 https://github.com/ara3d/bim-open-toolkit
+cd bim-open-toolkit
+node deps.mjs
+```
+
+`node deps.mjs` fetches every dependency at the commit the tag's `deps.json` pins, and `node deps.mjs --check` lists them. To consume the toolkit as a git submodule, check the submodule out at the tag (`git -C <submodule> checkout v0.1`), then run `node deps.mjs` inside it.
+
+A tag is made only after these pass on a fresh clone, with no files outside the repositories: the Release build; `dotnet test` with the filter CI uses (`TestCategory!=RequiresTestData`), including the paper's checks in `BimOpenFlow.NrcWorkflows.Tests`; `gates/host-smoke.mjs`; `gates/web-smoke.mjs`; and, in `bim-open-notebook` at its pinned commit, its web and Pages smokes. `node deps.mjs --check` must print no warning, which means every repository in the set pins the same commits of the others.
+
+| Tag | Date | Toolkit commit | Notes |
+|---|---|---|---|
+| `v0.1` | 2026-10-04 | see the tag | First set after the repository split: flow, data, viewer and notebook in their own repositories. |
+
+`main` is where work happens and is not promised to be in a tested state between tags. To work across several repositories at once, put them side by side in a folder that holds a `.deps-root` file; `node deps.mjs` then links `deps/<name>` to the sibling checkouts instead of cloning, so an edit in one repository is seen by the others straight away (see [docs/plans/repository-split.md](docs/plans/repository-split.md)). No other repository may depend on this one; `DepsCycleTests` enforces that.
+
 ## Demos
 
 The tables-profile demo in [docs/START.md](docs/START.md) needs no private model. The
