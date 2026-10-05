@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/flow/BimOpenFlow.Nodes.Spatial/**, src/flow/BimOpenFlow.Nodes.BimAnalysis/**, src/flow/BimOpenFlow.Nodes.Geometry/**, src/flow/BimOpenFlow.Nodes.Support/**, src/data/Ara3D.BimOpenSchema.DataModel/**, tests/flow/**]
+workflow: [process]
 ---
 
 ## Acceptance criteria

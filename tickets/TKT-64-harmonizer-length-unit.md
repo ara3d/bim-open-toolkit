@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [submodules/bim-open-schema/**, src/data/**, tests/data/**]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bim-open-notebook:samples/notebooks/**]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

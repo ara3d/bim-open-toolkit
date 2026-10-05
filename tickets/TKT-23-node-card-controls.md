@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-22]
 owner:
 fence: [bimopenflow/web/packages/graph/**, bimopenflow/web/packages/app/**, docs/DEMOS.md, samples/**]
+workflow: [W2, W3]
 ---
 
 ## Acceptance criteria

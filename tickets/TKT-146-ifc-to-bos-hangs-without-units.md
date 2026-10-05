@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [deps/bim-open-data/src/data/Ara3D.IfcLoader/**, deps/bim-open-data/src/data/Ara3D.Ifc.Bos/**]
+workflow: [W1]
 kind: defect
 ---
 

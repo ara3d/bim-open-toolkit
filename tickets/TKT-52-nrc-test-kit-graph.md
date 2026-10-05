@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [samples/nrc-analyses/nrc-join-analytics.json, samples/nrc/test-kit/**, tests/flow/BimOpenFlow.NrcWorkflows.Tests/JoinAnalyticsTests.cs]
+workflow: [kept]
 ---
 
 ## Acceptance criteria

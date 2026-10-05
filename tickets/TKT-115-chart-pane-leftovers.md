@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [docs/bim-flow-duckdb.md, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/studio-web/src/duckdbDemo.ts, bimopenflow/web/packages/client/src/paneChoice.ts, bimopenflow/web/packages/app/src/paneArea.ts]
+workflow: [W3]
 ---
 
 ## Acceptance criteria

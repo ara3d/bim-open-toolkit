@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/flow/BimOpenFlow.GraphText/**, tests/flow/BimOpenFlow.GraphText.Tests/**, BimOpenToolkit.sln, docs/graph-text.md]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

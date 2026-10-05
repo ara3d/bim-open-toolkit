@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-120]
 owner:
 fence: [bimopenflow/web/packages/graph/src/canvasEditor.ts, bimopenflow/web/packages/graph/test/**, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/app/src/startPage.ts, bimopenflow/web/packages/app/test/**]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

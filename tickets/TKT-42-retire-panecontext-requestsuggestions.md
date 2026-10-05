@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/panes/src/pane.ts, bimopenflow/web/packages/app/src/canvasControls.ts, bimopenflow/web/packages/app/src/app.ts, bimopenflow/web/packages/panes/test/**]
+workflow: [process]
 ---
 
 ## Acceptance criteria

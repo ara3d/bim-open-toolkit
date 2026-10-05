@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-80]
 owner:
 fence: [src/flow/BimOpenFlow.Host.Api/**, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/**]
+workflow: [W3]
 ---
 
 ## Acceptance criteria

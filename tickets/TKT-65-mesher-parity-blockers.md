@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/data/Ara3D.Ifc.Mesher/**, tests/data/**]
+workflow: [W3]
 ---
 
 ## Acceptance criteria

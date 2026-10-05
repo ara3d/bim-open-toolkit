@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-30]
 owner:
 fence: [src/**/BuildingModel*/**]
+workflow: [kept]
 ---
 
 ## Acceptance criteria

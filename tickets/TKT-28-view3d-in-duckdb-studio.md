@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-7, TKT-16]
 owner:
 fence: [bimopenflow/web/packages/app/**, bimopenflow/web/packages/panes/**, bimopenflow/web/packages/viz/**, samples/**, gates/**, docs/bim-flow-3d.md, docs/bim-flow-duckdb.md]
+workflow: [W3]
 ---
 
 ## Acceptance criteria

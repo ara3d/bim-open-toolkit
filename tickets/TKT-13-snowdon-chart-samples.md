@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-30, TKT-7, TKT-20]
 owner:
 fence: [samples/duckdb-analyses/**, samples/snowdon-analyses/**, docs/bim-flow-duckdb.md]
+workflow: [W1, W3]
 ---
 
 ## Acceptance criteria

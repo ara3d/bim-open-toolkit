@@ -1,7 +1,7 @@
 ---
 id: TKT-152
 title: Linked-mode .NET build fails: ara3d-dataflow and bim-open-schema find the wrong Directory.Build.props
-status: closed
+status: done
 depends_on: []
 owner:
 fence: [deps.mjs, Directory.Build.props, Directory.Build.targets]

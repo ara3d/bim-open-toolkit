@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/**, samples/notebooks/**, bim-open-notebook:docs/plans/notebook.md, bim-open-notebook:docs/proposals/notebook-sessions.md, bimopenflow/web/package-lock.json, apps/README.md, README.md, docs/ARCHITECTURE.md, docs/OVERVIEW.md, docs/claude-cli-login.md, gates/web-smoke.mjs, bimopenflow/web/package.json]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

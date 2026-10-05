@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: []
+workflow: [process]
 kind: question
 ---
 

@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [contracts/**, bimopenflow/web/packages/contracts/**, bimopenflow/web/packages/client/src/paneChoice.ts, bimopenflow/web/packages/app/src/defaultShown.ts, src/flow/BimOpenFlow.Nodes.*/**]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

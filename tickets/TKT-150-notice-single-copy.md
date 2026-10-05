@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bim-open-notebook:NOTICE.md, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/test/notice.test.ts]
+workflow: [process]
 ---
 
 ## Acceptance criteria

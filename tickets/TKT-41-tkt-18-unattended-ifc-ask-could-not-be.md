@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-45]
 owner:
 fence: [artifacts/bim-flow-duckdb/**, docs/bim-flow-mcp-demo.md, artifacts/nrc-walkthrough/duplex/**]
+workflow: [W5]
 ---
 
 ## Acceptance criteria

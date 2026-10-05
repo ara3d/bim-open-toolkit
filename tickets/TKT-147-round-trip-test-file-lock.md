@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [deps/bim-open-data/tests/data/Ara3D.Ifc.Tests/IfcRoundTripTests.cs]
+workflow: [kept]
 kind: defect
 ---
 

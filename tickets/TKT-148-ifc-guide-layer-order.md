@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [.claude/skills/ifc-ask/**]
+workflow: [W2, W5]
 kind: idea
 ---
 

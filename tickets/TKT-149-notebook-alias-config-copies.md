@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bim-open-notebook:bimopenflow/web/viewer.config.ts, bim-open-notebook:bimopenflow/web/flow.config.ts, bim-open-notebook:bimopenflow/web/deps.tsconfig.json, deps.config.ts]
+workflow: [process]
 ---
 
 ## Acceptance criteria

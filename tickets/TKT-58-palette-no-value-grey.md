@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-16]
 owner:
 fence: []
+workflow: [W3]
 ---
 
 ## Acceptance criteria

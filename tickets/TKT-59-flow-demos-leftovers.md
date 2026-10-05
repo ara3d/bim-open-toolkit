@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/flow/BimOpenFlow.Nodes.Relations/**, src/flow/BimOpenFlow.Host/**, samples/**, tests/flow/**]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

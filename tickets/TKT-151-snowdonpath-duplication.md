@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/nrc-web/scripts/snowdon.ts, src/**/BimSampleSeeding.cs]
+workflow: [process]
 ---
 
 ## Acceptance criteria

@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-48]
 owner:
 fence: [src/data/Ara3D.Ids/**, tests/data/Ara3D.Ids.Tests/**, samples/nrc/ids/**, docs/proposals/ids-reuse.md, BimOpenToolkit.sln]
+workflow: [kept]
 ---
 
 ## Acceptance criteria

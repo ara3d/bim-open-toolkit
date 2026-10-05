@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/flow/BimOpenFlow.Nodes.Viz/**, src/flow/BimOpenFlow.Nodes.Geometry/**, src/flow/BimOpenFlow.Nodes.Support/**, src/flow/BimOpenFlow.NodeDocs/NodeNotes.cs, bimopenflow/web/packages/panes/**, bimopenflow/web/packages/viz/src/barChart.ts, bimopenflow/web/packages/viz/test/barChart.test.ts, tests/flow/BimOpenFlow.Nodes.Geometry.Tests/**, tests/flow/BimOpenFlow.Nodes.Viz.Tests/**, tests/flow/BimOpenFlow.View3dWorkflows.Tests/**, tests/flow/BimOpenFlow.TableWorkflows.Tests/HostProfileTests.cs, tests/flow/BimOpenFlow.PocParity.Tests/PocCoverageTests.cs, samples/view3d-analyses/**, docs/nodes.md, docs/plans/shared-colour-legend.md]
+workflow: [W3]
 ---
 
 ## Acceptance criteria

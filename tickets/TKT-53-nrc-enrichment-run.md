@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-48, TKT-49, TKT-50, TKT-12]
 owner:
 fence: []
+workflow: [kept]
 ---
 
 ## Acceptance criteria

@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [deps/gratify/**, bimopenflow/web/packages/graph/src/canvasTheme.ts, bimopenflow/web/packages/graph/src/instance.ts]
+workflow: [W3]
 kind: idea
 ---
 

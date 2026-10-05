@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-30]
 owner:
 fence: [samples/duckdb-analyses/**, bimopenflow/web/packages/app/**, scripts/check-bim-flow-duckdb.mjs, docs/bim-flow-duckdb.md]
+workflow: [W1]
 ---
 
 ## Acceptance criteria

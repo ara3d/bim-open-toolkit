@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/flow/BimOpenFlow.Host/**, scripts/prepare-bim-flow-duckdb.mjs, scripts/seed-store.mjs, scripts/seed-store.test.mjs, tests/flow/BimOpenFlow.Host.Tests/**, docs/bim-flow-duckdb.md]
+workflow: [W1]
 ---
 
 ## Acceptance criteria

@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-80]
 owner:
 fence: [bim-open-notebook: bimopenflow/web/packages/bim-open-notebook/{src/document/format.ts, src/document/io.ts, src/document/paths.ts, src/embeds/contract.ts, src/page/view3dEmbed.ts, src/page/files.ts, src/page/site.ts, src/page/sitePaths.ts, vite.config.ts, vite.pages.config.ts, vite/samples.ts, scripts/write-sample-notebooks.ts, test/view3dEmbed.test.ts}, samples/notebooks/]
+workflow: [W3]
 created: 2026-10-04
 ---
 

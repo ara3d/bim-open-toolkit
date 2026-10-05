@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/studio/BimOpenFlow.Ask/**, src/studio/BimOpenFlow.Studio/**, src/studio/BimOpenMcp.Ifc.Ask/**, tests/studio/**, docs/bim-flow-mcp-demo.md, docs/START.md, scripts/ask-bim-flow.mjs]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

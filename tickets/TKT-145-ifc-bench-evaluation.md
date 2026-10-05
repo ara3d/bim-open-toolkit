@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [scripts/**, samples/ask/**, docs/bim-flow-mcp-demo.md]
+workflow: [W5]
 ---
 
 ## Acceptance criteria

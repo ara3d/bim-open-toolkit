@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [gates/**]
+workflow: [process]
 ---
 
 ## Acceptance criteria

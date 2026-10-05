@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [.github/workflows/**, PLAN.md]
+workflow: [process]
 ---
 
 ## Acceptance criteria

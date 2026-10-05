@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-80]
 owner:
 fence: []
+workflow: [W3]
 kind: idea
 ---
 

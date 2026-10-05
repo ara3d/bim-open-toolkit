@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/app/test/**, gates/**]
+workflow: [process]
 ---
 
 ## Acceptance criteria

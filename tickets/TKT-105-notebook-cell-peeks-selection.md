@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-94, TKT-88]
 owner:
 fence: [bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/embeds/**, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/test/**]
+workflow: [W3]
 kind: idea
 ---
 

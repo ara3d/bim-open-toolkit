@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-57, TKT-26]
 owner:
 fence: [src/flow/BimOpenFlow.GraphText/**, tests/flow/BimOpenFlow.GraphText.Tests/**, src/flow/BimOpenFlow.Host.Api/**, src/mcp/BimOpenMcp.Flow/**, bimopenflow/web/packages/app/src/topbar.ts, bimopenflow/web/packages/app/src/toast.ts, bimopenflow/web/packages/graph/src/nodeContextMenu.ts, bimopenflow/web/packages/api-client/**, bimopenflow/web/packages/app/test/**, docs/graph-text.md]
+workflow: [W2]
 kind: idea
 ---
 

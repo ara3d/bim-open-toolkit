@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-4]
 owner:
 fence: [bimopenflow/web/packages/app/**, samples/**, docs/proposals/bimopenflow-ux-proposal.md]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

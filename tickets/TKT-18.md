@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/mcp/BimOpenMcp.Ifc/**, .claude/skills/ifc-ask/**, samples/nrc/**]
+workflow: [W5, kept]
 ---
 
 ## Acceptance criteria

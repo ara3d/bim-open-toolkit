@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [bimopenflow/web/packages/graph/**, bimopenflow/web/packages/app/**, bimopenflow/web/packages/state/**, src/studio/BimOpenFlow.Ask/**]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

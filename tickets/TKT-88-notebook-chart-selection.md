@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-80]
 owner:
 fence: [bimopenflow/web/packages/panes/src/chartPane.ts, bim-open-notebook:bimopenflow/web/packages/bim-open-notebook/src/**]
+workflow: [W3]
 ---
 
 ## Acceptance criteria

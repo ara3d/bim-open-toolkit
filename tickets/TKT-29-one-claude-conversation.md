@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-17, TKT-25, TKT-26]
 owner:
 fence: [bimopenflow/web/packages/app/**, src/**/Host/**, src/mcp/BimOpenMcp.Flow/**, docs/DEMOS.md]
+workflow: [W2]
 ---
 
 ## Acceptance criteria

@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-48, TKT-52]
 owner:
 fence: [scripts/profile-nrc-performance.mjs, docs/nrc-performance.md, artifacts/nrc-perf/**, scripts/nrc-perf/**]
+workflow: [kept]
 ---
 
 ## Acceptance criteria

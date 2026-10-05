@@ -5,6 +5,7 @@ status: open
 depends_on: []
 owner:
 fence: [src/flow/BimOpenFlow.Nodes.Effects/**, tests/flow/BimOpenFlow.Nodes.Effects.Tests/**, tests/BimOpenToolkit.Layering.Tests/**]
+workflow: [W3]
 ---
 
 ## Acceptance criteria

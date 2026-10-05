@@ -5,6 +5,7 @@ status: open
 depends_on: [TKT-45]
 owner:
 fence: [scripts/ask-bim-flow.mjs, docs/bim-flow-mcp-demo.md, artifacts/bim-flow-duckdb/**, samples/duckdb-analyses/**]
+workflow: [W2, W5]
 ---
 
 ## Acceptance criteria
