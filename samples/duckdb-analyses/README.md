@@ -10,13 +10,30 @@ web page imports the file directly for its flow picker and descriptions;
 
 ## Input
 
-Every graph starts from one `duck.source` whose `path` is the placeholder
-`{DUCKDB}`. Preparation replaces it with a typed BIM export, by default
-`artifacts/building-model-workflows/snowdon-cli.duckdb` (the wave R5 Snowdon
-export, private, never committed). Eight graphs SELECT from its `door`,
-`storey`, `space`, `roof`, `evidence`, `source_object`, `source_revision`, and
-`source_document` tables; `duckdb-typed-schema` reads only
-`information_schema.columns`, so it runs over any DuckDB file.
+Every graph starts from one `duck.source` whose `path` is a placeholder, and
+each entry's `database` field says which one it reads:
+
+- `public`: `{PUBLIC_DUCKDB}`, replaced by bim-open-data's
+  `samples/public/schependomlaan.duckdb` (`deps/bim-open-data`, fetched by
+  `node deps.mjs`; CC BY 4.0, attribution in that folder's NOTICE.md). These five
+  graphs come first, run from a clean clone, and are the analysis context of
+  `docs/proposals/demo-contexts.md` (TKT-165). They query the BOS text views
+  `EntityText`, `ParameterText`, and `StoreyOfElement`.
+- `snowdon`: `{DUCKDB}`, replaced by a typed BIM export, by default
+  `artifacts/building-model-workflows/snowdon-cli.duckdb` (the wave R5 Snowdon
+  export, private, never committed). Eight graphs SELECT from its `door`,
+  `storey`, `space`, `roof`, `evidence`, `source_object`, `source_revision`, and
+  `source_document` tables; `duckdb-typed-schema` reads only
+  `information_schema.columns`, so it runs over any DuckDB file. Preparation
+  skips these when the export is absent, and the page's picker then omits them.
+
+| Id | Shape | Schependomlaan result |
+|---|---|---|
+| `public-door-schedule` | two queries, left join, project, sort | 205 doors on four storeys; 101 without an OverallWidth |
+| `public-door-types` | query, aggregate, sort, limit | `32_KD_berkvens_BA` first with 73 doors |
+| `public-rooms-per-storey` | query, aggregate, sort, `chart.bar` | 32, 29, 20, 19 spaces on the four storeys with rooms |
+| `public-missing-widths` | query, filter, project | the 101 doors with no width, left NULL |
+| `public-floor-area-by-use` | two queries, left join, aggregate, `sql.query`, `chart.bar` | Verblijfsruimte 705.8 m2 of 965.8 m2 across six uses |
 
 | Id | Shape |
 |---|---|

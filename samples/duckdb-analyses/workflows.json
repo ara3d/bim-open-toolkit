@@ -1,5 +1,551 @@
 [
   {
+    "id": "public-door-schedule",
+    "title": "Door schedule (Schependomlaan)",
+    "tag": "JOIN + PROJECT",
+    "database": "public",
+    "description": "Join every door to the storey that contains it, keep the schedule fields, and sort by storey then mark. Width_mm is the IFC OverallWidth attribute; NULL means the Archicad export carries no width for that door.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "doors",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "storeys",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "attach-storey",
+            "kind": "table.join",
+            "version": 1
+          },
+          {
+            "id": "schedule-fields",
+            "kind": "table.project",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "doors.table",
+            "to": "attach-storey.a"
+          },
+          {
+            "from": "storeys.table",
+            "to": "attach-storey.b"
+          },
+          {
+            "from": "attach-storey.table",
+            "to": "schedule-fields.table"
+          },
+          {
+            "from": "schedule-fields.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "doors.source"
+          },
+          {
+            "from": "database.source",
+            "to": "storeys.source"
+          }
+        ]
+      },
+      "values": {
+        "doors": {
+          "sql": "SELECT e.EntityIndex AS Door, e.Name AS Mark, e.Type AS DoorType, TRY_CAST(w.Value AS DOUBLE) AS Width_mm FROM EntityText e LEFT JOIN ParameterText w ON w.EntityIndex = e.EntityIndex AND w.Name = 'Ifc:OverallWidth' WHERE e.Category = 'IFCDOOR'"
+        },
+        "storeys": {
+          "sql": "SELECT EntityIndex AS Door, StoreyName AS Storey FROM StoreyOfElement WHERE Depth = 1"
+        },
+        "attach-storey": {
+          "aKey": "Door",
+          "bKey": "Door",
+          "mode": "left"
+        },
+        "schedule-fields": {
+          "columns": "Mark, DoorType, Storey, Width_mm"
+        },
+        "answer": {
+          "A": "Storey",
+          "descendingA": "false",
+          "B": "Mark",
+          "descendingB": "false"
+        },
+        "database": {
+          "path": "{PUBLIC_DUCKDB}"
+        }
+      },
+      "layout": {
+        "database": {
+          "x": 20,
+          "y": 30
+        },
+        "doors": {
+          "x": 330,
+          "y": 30
+        },
+        "storeys": {
+          "x": 330,
+          "y": 265
+        },
+        "attach-storey": {
+          "x": 640,
+          "y": 30
+        },
+        "schedule-fields": {
+          "x": 950,
+          "y": 30
+        },
+        "answer": {
+          "x": 950,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
+    "id": "public-door-types",
+    "title": "Most-used door types (Schependomlaan)",
+    "tag": "AGGREGATE + LIMIT",
+    "database": "public",
+    "description": "Count doors by their IFC type name, rank the types, and take the top ten. Change count on the final node to see the whole list.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.limit",
+            "version": 1
+          },
+          {
+            "id": "doors",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "count-types",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "rank-types",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "doors.table",
+            "to": "count-types.table"
+          },
+          {
+            "from": "count-types.table",
+            "to": "rank-types.table"
+          },
+          {
+            "from": "rank-types.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "doors.source"
+          }
+        ]
+      },
+      "values": {
+        "doors": {
+          "sql": "SELECT Type AS DoorType FROM EntityText WHERE Category = 'IFCDOOR'"
+        },
+        "count-types": {
+          "groupBy": "DoorType",
+          "aggregates": "count(*) as Doors"
+        },
+        "rank-types": {
+          "A": "Doors",
+          "descendingA": "true",
+          "B": "DoorType",
+          "descendingB": "false"
+        },
+        "answer": {
+          "count": "10",
+          "offset": "0"
+        },
+        "database": {
+          "path": "{PUBLIC_DUCKDB}"
+        }
+      },
+      "layout": {
+        "database": {
+          "x": 20,
+          "y": 30
+        },
+        "doors": {
+          "x": 330,
+          "y": 30
+        },
+        "count-types": {
+          "x": 640,
+          "y": 30
+        },
+        "rank-types": {
+          "x": 640,
+          "y": 265
+        },
+        "answer": {
+          "x": 330,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
+    "id": "public-rooms-per-storey",
+    "title": "Rooms per storey (Schependomlaan)",
+    "tag": "AGGREGATE + CHART",
+    "database": "public",
+    "description": "Count the spaces each storey contains and plot them. The storey comes from the StoreyOfElement view, so a space is counted once, under the storey that contains it.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.sort",
+            "version": 1
+          },
+          {
+            "id": "rooms",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "count-rooms",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "chart",
+            "kind": "chart.bar",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "rooms.table",
+            "to": "count-rooms.table"
+          },
+          {
+            "from": "count-rooms.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "answer.table",
+            "to": "chart.table"
+          },
+          {
+            "from": "database.source",
+            "to": "rooms.source"
+          }
+        ]
+      },
+      "values": {
+        "rooms": {
+          "sql": "SELECT s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 WHERE e.Category = 'IFCSPACE'"
+        },
+        "count-rooms": {
+          "groupBy": "Storey",
+          "aggregates": "count(*) as Rooms"
+        },
+        "answer": {
+          "A": "Storey",
+          "descendingA": "false"
+        },
+        "chart": {
+          "labelColumn": "Storey",
+          "valueColumns": "Rooms",
+          "title": "Rooms per storey",
+          "sort": "none"
+        },
+        "database": {
+          "path": "{PUBLIC_DUCKDB}"
+        }
+      },
+      "layout": {
+        "database": {
+          "x": 20,
+          "y": 30
+        },
+        "rooms": {
+          "x": 330,
+          "y": 30
+        },
+        "count-rooms": {
+          "x": 640,
+          "y": 30
+        },
+        "answer": {
+          "x": 640,
+          "y": 265
+        },
+        "chart": {
+          "x": 950,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
+    "id": "public-missing-widths",
+    "title": "Doors without a width (Schependomlaan)",
+    "tag": "FILTER + EXPLAIN",
+    "database": "public",
+    "description": "Keep only the doors whose IFC OverallWidth is absent. The export writes a width for 104 of the 205 doors; the other 101 have none anywhere in the file, and the graph leaves them NULL rather than guessing from the type name.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "table.project",
+            "version": 1
+          },
+          {
+            "id": "door-facts",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "missing-only",
+            "kind": "table.filter",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "door-facts.table",
+            "to": "missing-only.table"
+          },
+          {
+            "from": "missing-only.table",
+            "to": "answer.table"
+          },
+          {
+            "from": "database.source",
+            "to": "door-facts.source"
+          }
+        ]
+      },
+      "values": {
+        "door-facts": {
+          "sql": "SELECT e.Name AS Mark, e.Type AS DoorType, TRY_CAST(w.Value AS DOUBLE) AS Width_mm, CASE WHEN w.Value IS NULL THEN 1 ELSE 0 END AS MissingWidth FROM EntityText e LEFT JOIN ParameterText w ON w.EntityIndex = e.EntityIndex AND w.Name = 'Ifc:OverallWidth' WHERE e.Category = 'IFCDOOR'"
+        },
+        "missing-only": {
+          "expr": "MissingWidth > 0"
+        },
+        "answer": {
+          "columns": "Mark, DoorType, Width_mm"
+        },
+        "database": {
+          "path": "{PUBLIC_DUCKDB}"
+        }
+      },
+      "layout": {
+        "database": {
+          "x": 20,
+          "y": 30
+        },
+        "door-facts": {
+          "x": 330,
+          "y": 30
+        },
+        "missing-only": {
+          "x": 640,
+          "y": 30
+        },
+        "answer": {
+          "x": 640,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
+    "id": "public-floor-area-by-use",
+    "title": "Floor area by room use (Schependomlaan)",
+    "tag": "JOIN + AGGREGATE + CHART",
+    "database": "public",
+    "description": "Join each space to its NetFloorArea base quantity, total the area per space use, and plot it. Living rooms (Verblijfsruimte) hold 705.8 m2 of the 965.8 m2 net floor area.",
+    "result": "answer",
+    "graph": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          {
+            "id": "answer",
+            "kind": "sql.query",
+            "version": 1
+          },
+          {
+            "id": "spaces",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "areas",
+            "kind": "duck.query",
+            "version": 1
+          },
+          {
+            "id": "attach-area",
+            "kind": "table.join",
+            "version": 1
+          },
+          {
+            "id": "total-by-use",
+            "kind": "table.aggregate",
+            "version": 1
+          },
+          {
+            "id": "chart",
+            "kind": "chart.bar",
+            "version": 1
+          },
+          {
+            "id": "database",
+            "kind": "duck.source",
+            "version": 1
+          }
+        ],
+        "edges": [
+          {
+            "from": "spaces.table",
+            "to": "attach-area.a"
+          },
+          {
+            "from": "areas.table",
+            "to": "attach-area.b"
+          },
+          {
+            "from": "attach-area.table",
+            "to": "total-by-use.table"
+          },
+          {
+            "from": "total-by-use.table",
+            "to": "answer.t1"
+          },
+          {
+            "from": "answer.table",
+            "to": "chart.table"
+          },
+          {
+            "from": "database.source",
+            "to": "spaces.source"
+          },
+          {
+            "from": "database.source",
+            "to": "areas.source"
+          }
+        ]
+      },
+      "values": {
+        "spaces": {
+          "sql": "SELECT EntityIndex AS Space, Type AS Use FROM EntityText WHERE Category = 'IFCSPACE'"
+        },
+        "areas": {
+          "sql": "SELECT EntityIndex AS Space, TRY_CAST(Value AS DOUBLE) AS NetFloorArea_m2 FROM ParameterText WHERE Name = 'NetFloorArea' AND ParameterGroup = 'BaseQuantities'"
+        },
+        "attach-area": {
+          "aKey": "Space",
+          "bKey": "Space",
+          "mode": "left"
+        },
+        "total-by-use": {
+          "groupBy": "Use",
+          "aggregates": "count(*) as Spaces, sum(NetFloorArea_m2) as NetFloorArea_m2"
+        },
+        "answer": {
+          "sql": "SELECT Use, Spaces, round(NetFloorArea_m2, 1) AS NetFloorArea_m2 FROM t ORDER BY NetFloorArea_m2 DESC, Use"
+        },
+        "chart": {
+          "labelColumn": "Use",
+          "valueColumns": "NetFloorArea_m2",
+          "title": "Net floor area by room use (m2)",
+          "sort": "none"
+        },
+        "database": {
+          "path": "{PUBLIC_DUCKDB}"
+        }
+      },
+      "layout": {
+        "database": {
+          "x": 20,
+          "y": 30
+        },
+        "spaces": {
+          "x": 330,
+          "y": 30
+        },
+        "areas": {
+          "x": 330,
+          "y": 265
+        },
+        "attach-area": {
+          "x": 640,
+          "y": 30
+        },
+        "total-by-use": {
+          "x": 950,
+          "y": 30
+        },
+        "answer": {
+          "x": 950,
+          "y": 265
+        },
+        "chart": {
+          "x": 1260,
+          "y": 265
+        }
+      }
+    }
+  },
+  {
     "id": "duckdb-door-schedule",
     "title": "Door schedule",
     "tag": "JOIN + PROJECT",
@@ -114,7 +660,8 @@
           "y": 480
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-door-types",
@@ -211,7 +758,8 @@
           "y": 265
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-room-schedule",
@@ -328,7 +876,8 @@
           "y": 480
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-room-distribution",
@@ -478,7 +1027,8 @@
           "y": 700
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-missing-widths",
@@ -554,7 +1104,8 @@
           "y": 265
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-roof-coverage",
@@ -632,7 +1183,8 @@
           "y": 265
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-evidence-trace",
@@ -749,7 +1301,8 @@
           "y": 480
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-source-lineage",
@@ -865,7 +1418,8 @@
           "y": 480
         }
       }
-    }
+    },
+    "database": "snowdon"
   },
   {
     "id": "duckdb-typed-schema",
@@ -961,6 +1515,7 @@
           "y": 265
         }
       }
-    }
+    },
+    "database": "snowdon"
   }
 ]

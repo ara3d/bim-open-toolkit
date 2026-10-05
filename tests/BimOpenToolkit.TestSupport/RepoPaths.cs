@@ -24,6 +24,22 @@ public static class RepoPaths
     public static string Artifacts(params string[] parts)
         => Under("artifacts", parts);
 
+    /// <summary>&lt;deps root&gt;/&lt;parts&gt;: a fetched dependency checkout (deps.json, filled by
+    /// `node deps.mjs`), following deps.mjs's rule: the checkout's siblings when its parent
+    /// folder carries a .deps-root marker, else deps/ under the root.</summary>
+    public static string Deps(params string[] parts)
+        => Path.Combine([DepsRoot, .. parts]);
+
+    /// <summary>bim-open-data's openly licensed sample buildings, converted to DuckDB
+    /// (samples/public there; each file's counts are in its samples.json).</summary>
+    public static string PublicDuckDb(string building)
+        => Deps("bim-open-data", "samples", "public", building + ".duckdb");
+
+    private static string DepsRoot
+        => File.Exists(Path.Combine(Root, "..", ".deps-root"))
+            ? Path.GetFullPath(Path.Combine(Root, ".."))
+            : Path.Combine(Root, "deps");
+
     private static string Under(string top, string[] parts)
         => Path.Combine([Root, top, .. parts]);
 

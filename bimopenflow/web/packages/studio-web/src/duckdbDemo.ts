@@ -1,8 +1,11 @@
-// The DuckDB demo: the shared graph-demo shell (same as 3d.html) over the
-// nine sample workflows, plus an Ask box. Typing a request there posts it to
-// the studio host's /api/ask, which has an agent build the graph through the
-// MCP tools; the transcript streams in below the top bar and the new graph
-// opens when it is done.
+// The DuckDB demo, the analysis context of docs/proposals/demo-contexts.md: the
+// shared graph-demo shell (same as 3d.html) over the sample workflows, plus an
+// Ask box. The "public" workflows run over bim-open-data's Schependomlaan
+// export, which every checkout has; the "snowdon" ones need the private typed
+// export and are simply absent when prepare skipped them. Typing a request in
+// the Ask box posts it to the studio host's /api/ask, which has an agent build
+// the graph through the MCP tools; the transcript streams in below the top bar
+// and the new graph opens when it is done.
 import { ApiClient } from '@bimopenflow/api-client';
 import type { App } from '@bimopenflow/app';
 import { createAskTransport, mountHostBanner, watchHost } from '@bimopenflow/client/host';
@@ -13,15 +16,19 @@ import './duckdbDemo.css';
 interface Workflow {
   id: string;
   title: string;
+  /** Which database the graph reads: "public" (Schependomlaan, always present) or "snowdon" (private). */
+  database: 'public' | 'snowdon';
 }
 
 const START = 'Run `npm run duckdb:host --prefix bimopenflow/web`, then reload this page.';
+const STRAP = 'For an analyst with a question: a table and a chart, with the query behind them. '
+  + 'The model is Schependomlaan, a ten-apartment block (CC BY 4.0): 205 doors, 100 spaces, 6 storeys.';
 const EXAMPLES = [
   'How many rooms are on each storey? Sort by count, largest first.',
-  'A room schedule: room number, name, storey and floor area, sorted by storey then room number.',
+  'A room schedule: room name, use, storey and net floor area, sorted by storey then name.',
   'Which door types are used most often? Show the top ten with counts.',
-  'List every roof with its name, storey and area, and flag which ones have no area.',
-  'Which source documents contributed elements, and how many elements came from each?',
+  'How many doors are external, and how many are internal?',
+  'Which windows are on the top storey, and what are their types?',
   'For every table in the database, how many rows does it have? Only tables with more than 100 rows, largest first.',
 ];
 const root = document.querySelector<HTMLDivElement>('#duckdb-demo')!;
@@ -189,11 +196,19 @@ async function start() {
       import('@bimopenflow/app'),
       import('../../../../../samples/duckdb-analyses/workflows.json') as Promise<{ default: Workflow[] }>,
     ]);
-    if (workflows.some(workflow => !available.some(item => item.id === workflow.id)))
+    // The public graphs must be in the store; the Snowdon ones are absent when prepare
+    // found no private export, and the picker then simply does not list them.
+    const seeded = workflows.filter(workflow => available.some(item => item.id === workflow.id));
+    const publicFlows = workflows.filter(workflow => workflow.database === 'public');
+    if (publicFlows.some(workflow => !seeded.includes(workflow)))
       throw new Error('Demo workflows are missing.');
-    titles = new Map(workflows.map(workflow => [workflow.id, workflow.title]));
-    app = createApp(editor, api, { graphDemo: true, tableOnly: true, autoLayout: true, initialAnalysis: workflows[0]!.id, heading: 'BimOpenFlow · Snowdon DuckDB', host });
+    titles = new Map(seeded.map(workflow => [workflow.id, workflow.title]));
+    app = createApp(editor, api, { graphDemo: true, tableOnly: true, autoLayout: true, initialAnalysis: publicFlows[0]!.id, heading: 'BimOpenFlow · Analysis', host });
     error.hidden = true;
+    const strap = document.createElement('p');
+    strap.className = 'duck-strap';
+    strap.textContent = STRAP;
+    editor.before(strap);
     mountAsk();
     const button = document.createElement('button');
     button.textContent = 'Download';
