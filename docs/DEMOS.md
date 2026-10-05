@@ -10,6 +10,21 @@ opens its port in well under a second and prepares slow generated samples
 "not ready yet" for a few seconds and then turns green on its own. Every page
 shows a banner whenever the host is unreachable.
 
+## Demos by context
+
+The demos are grouped by who they are for (`docs/proposals/demo-contexts.md`).
+Each row names the page that exists today and the ticket that moves it onto a
+public building; every context also runs the same graphs through Claude over
+the MCP servers.
+
+| Context | Who | Today | Ticket |
+|---|---|---|---|
+| Analysis | an analyst with a question | `/duckdb.html` and `samples/duckdb-analyses`, over the private Snowdon export | TKT-165 |
+| 3D | a coordinator reviewing a model | `/3d.html` over `samples/view3d-analyses` (Duplex IFC); `/showcase.html` over a Snowdon fixture | TKT-166 |
+| Checking | a manager auditing a delivery | `nrc-analyses/nrc-dc-w1-verdicts`: IFC to verdicts, 3D, chart, pending report | TKT-167 |
+| Pipelines | an engineer feeding other systems | readers in `samples/showcase-analyses`; writers wait on Run (TKT-12) | TKT-168 |
+| Research | a researcher reproducing a result | `/nrc.html` and `npm run nrc:walkthrough` | TKT-169 |
+
 ## Start a host and the editor
 
 | Profile | Host | Editor | Packs |

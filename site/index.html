@@ -24,6 +24,7 @@
     </a>
     <nav aria-label="Sections">
       <a href="#try">Try it</a>
+      <a href="#ways">Five ways in</a>
       <a href="#family">Repositories</a>
       <a href="#run">Run it</a>
       <a href="https://github.com/ara3d/bim-open-toolkit">GitHub</a>
@@ -63,6 +64,39 @@
         <span class="tile-cta">Open the sample notebooks <span aria-hidden="true">→</span></span>
       </span>
     </a>
+  </div>
+</section>
+
+<section id="ways" aria-labelledby="ways-title">
+  <h2 id="ways-title">Five ways in</h2>
+  <p class="section-lede">One graph system, shown to five kinds of people. Each context is a profile of node packs, a page that says who it is for, and a handful of sample graphs over openly licensed buildings. The same graphs run by hand in the editor and by Claude through the MCP servers. The plan is <a href="https://github.com/ara3d/bim-open-toolkit/blob/main/docs/proposals/demo-contexts.md">docs/proposals/demo-contexts.md</a>.</p>
+
+  <div class="cards">
+    <article class="card" style="--accent: var(--flow)">
+      <div class="card-head"><span class="no-mark" aria-hidden="true"></span><div><h3>Analysis</h3><span class="repo">for an analyst with a question</span></div></div>
+      <p>A table and a chart, with the query that made them one click away. Door schedules, rooms per storey, missing widths, source lineage.</p>
+      <p class="status">Today: nine query graphs and an Ask box in the DuckDB studio, over a private model. Next: the same over Schependomlaan and DigitalHub (TKT-165).</p>
+    </article>
+    <article class="card" style="--accent: var(--viewer)">
+      <div class="card-head"><span class="no-mark" aria-hidden="true"></span><div><h3>3D</h3><span class="repo">for a coordinator reviewing a model</span></div></div>
+      <p>A model coloured, sectioned, exploded, or ghosted by a query result, in the same pane the editor uses.</p>
+      <p class="status">Today: eight 3D graphs over the Duplex and a seven-recipe lab. Next: both over a public building, every recipe a graph (TKT-166).</p>
+    </article>
+    <article class="card" style="--accent: var(--data)">
+      <div class="card-head"><span class="no-mark" aria-hidden="true"></span><div><h3>Checking</h3><span class="repo">for a manager auditing a delivery</span></div></div>
+      <p>Rules as graphs: verdict tables, the model coloured by verdict, and an evidence report that names every input by hash.</p>
+      <p class="status">Today: one door-width check from IFC to verdicts, 3D, chart, and report. Next: three checks over a public building (TKT-167).</p>
+    </article>
+    <article class="card" style="--accent: var(--schema)">
+      <div class="card-head"><span class="no-mark" aria-hidden="true"></span><div><h3>Pipelines</h3><span class="repo">for an engineer feeding other systems</span></div></div>
+      <p>IFC, BOS, DuckDB, Parquet, CSV, and XLSX in and out. Nothing writes until Run, and the run record says what was written.</p>
+      <p class="status">Today: readers for every format; writers wait on Run from the editor. Next: four conversion graphs that run (TKT-168).</p>
+    </article>
+    <article class="card" style="--accent: var(--notebook)">
+      <div class="card-head"><span class="no-mark" aria-hidden="true"></span><div><h3>Research</h3><span class="repo">for a researcher reproducing a result</span></div></div>
+      <p>A published paper's eight answers computed by graphs, each run pinned by content hash, and the IFC written back byte-exact.</p>
+      <p class="status">Today: the NRC walkthrough and its page. Next: presented as one reproducibility demo (TKT-169).</p>
+    </article>
   </div>
 </section>
 
@@ -230,7 +264,7 @@ npm ci --prefix bimopenflow/web</code></pre>
 
 <footer>
   <div class="footer-inner">
-    <p>MIT licence. Page updated 2026-10-03. Source: <a href="https://github.com/ara3d/bim-open-toolkit/tree/main/site">site/</a> in bim-open-toolkit. Marks, fonts, and colours: <a href="https://github.com/ara3d/bim-open-toolkit/blob/main/docs/BRANDING.md">docs/BRANDING.md</a>.</p>
+    <p>MIT licence. Page updated 2026-10-05. Source: <a href="https://github.com/ara3d/bim-open-toolkit/tree/main/site">site/</a> in bim-open-toolkit. Marks, fonts, and colours: <a href="https://github.com/ara3d/bim-open-toolkit/blob/main/docs/BRANDING.md">docs/BRANDING.md</a>.</p>
   </div>
 </footer>
 
