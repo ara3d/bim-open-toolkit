@@ -49,6 +49,20 @@ dotnet run --project src/studio/BimOpenFlow.Studio -- --port 5214 --profile bim 
 npm run web --prefix bimopenflow/web   # the studio pages (packages/studio-web) on 5300
 ```
 
+To run bim-open-flow's generic host and editor from this checkout (for example to
+screenshot its `samples/buildings` graphs), start `flow-host` (port 5214) and
+`bof-editor-generic` (port 5304). `flow-host` runs `npm run host` in
+`deps/bim-open-flow/bimopenflow/web`, whose `dotnet run` makes the host's working
+directory the project folder, so its store is
+`deps/bim-open-flow/src/artifacts/flow/store`. That host seeds only
+`samples/analyses`; to open a building graph, replace `{PUBLIC}` in the document
+with the absolute path of `deps/bim-open-data/samples/public`, write it into that
+store with `scripts/seed-store.mjs`'s `seedFlows`, and open `/?analysis=<id>`
+(choosing it in the picker alone leaves the start page open). A bar chart is at
+least 480 px wide and the result column starts at 420 px, so widen the column
+(the editor keeps the width in `localStorage` under `bof-app-right-width`)
+before a capture.
+
 The editor proxies `/api` to the host named by `BOF_HOST` (default
 `http://127.0.0.1:5214`). An empty store is seeded with every sample graph the
 profile can run; graphs the profile lacks nodes for are skipped and named in the
