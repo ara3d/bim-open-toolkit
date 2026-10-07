@@ -402,6 +402,17 @@
         "pages:preview"
       ],
       "port": 5191
+    },
+    {
+      "name": "flow-host",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "host",
+        "--prefix",
+        "deps/bim-open-flow/bimopenflow/web"
+      ],
+      "port": 5214
     }
   ]
 }
