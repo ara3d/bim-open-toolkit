@@ -413,6 +413,20 @@
         "deps/bim-open-flow/bimopenflow/web"
       ],
       "port": 5214
+    },
+    {
+      "name": "flow-pages",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5320",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "deps/bim-open-flow/site"
+      ],
+      "port": 5320
     }
   ]
 }
