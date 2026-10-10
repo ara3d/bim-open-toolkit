@@ -9,7 +9,7 @@
 - **SDKs.** .NET (`speckle-sharp-sdk`), Python (`specklepy`), and a JavaScript object loader. A three.js viewer with filtering, colouring, and URL-encoded state. **inferred** from the repositories' names and earlier releases.
 - **Automate.** Runs a function when a new version is published; the only trigger is version creation; available only on Speckle Enterprise Server. **docs**
 - **Intelligence.** An AI assistant in the web app and viewer that answers questions about properties, containment, connectivity, versions, and changes; makes charts and colours the viewer; saves "Reports"; has reusable "skills" (playbooks for colour themes, cost, carbon) and standing "AI Rules". Works only on versions in the new format, and only on workspace plans that include it. **docs**
-- **OpenAEC Foundation** publishes a `speckle-claude-skill-package` of 25 Claude skills (core API, data validator, model coordinator, Power BI, Automate). **docs** (skills.sh listing)
+- A `speckle-claude-skill-package` of 25 Claude skills (core API, data validator, model coordinator, Power BI, Automate) is listed on skills.sh under the OpenAEC Foundation, but the repository has since moved to Impertio-Studio (Impertio B.V.) and targets Speckle 2.x and 3.x, before the 2026.9 data model; see `openaec-foundation-integration-brainstorm.md`. **docs** (skills.sh listing, GitHub redirect checked 2026-10-10)
 
 ## Brainstorm
 
