@@ -33,6 +33,7 @@
     <Ara3DSdkVersion>1.6.1</Ara3DSdkVersion>
     <Ara3DClosedXmlVersion>0.105.0</Ara3DClosedXmlVersion>
     <Ara3DCoverletCollectorVersion>6.0.0</Ara3DCoverletCollectorVersion>
+    <Ara3DGoogleFlatBuffersVersion>25.2.10</Ara3DGoogleFlatBuffersVersion>
     <Ara3DDuckDbNetDataFullVersion>1.3.2</Ara3DDuckDbNetDataFullVersion>
     <Ara3DMicrosoftCodeAnalysisCSharpVersion>4.8.0</Ara3DMicrosoftCodeAnalysisCSharpVersion>
     <Ara3DMicrosoftDataSqliteVersion>8.0.6</Ara3DMicrosoftDataSqliteVersion>

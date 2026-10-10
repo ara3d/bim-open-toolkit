@@ -2,7 +2,7 @@
 id: TKT-181
 title: Writer nodes for GLB, USD and BCF that wait for Run, and a reader node for .frag
 status: open
-depends_on: []
+depends_on: [TKT-12]
 owner:
 fence: [src/flow/BimOpenFlow.Nodes.*/**, tests/**, docs/nodes.md, docs/nodes.catalog.json]
 workflow: [W3]
