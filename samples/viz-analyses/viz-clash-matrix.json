@@ -1,0 +1,517 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40
+    },
+    "inst": {
+      "x": 40,
+      "y": 224
+    },
+    "storeys": {
+      "x": 40,
+      "y": 592
+    },
+    "built": {
+      "x": 370,
+      "y": 224
+    },
+    "elementBoxes": {
+      "x": 700,
+      "y": 224
+    },
+    "boxes": {
+      "x": 1030,
+      "y": 224
+    },
+    "touching": {
+      "x": 1360,
+      "y": 224
+    },
+    "overlapping": {
+      "x": 1690,
+      "y": 224
+    },
+    "onePerPair": {
+      "x": 2020,
+      "y": 40
+    },
+    "classOfA": {
+      "x": 1360,
+      "y": 408
+    },
+    "withA": {
+      "x": 2350,
+      "y": 40
+    },
+    "namedA": {
+      "x": 2680,
+      "y": 40
+    },
+    "withB": {
+      "x": 3010,
+      "y": 40
+    },
+    "namedB": {
+      "x": 3340,
+      "y": 40
+    },
+    "rowClass": {
+      "x": 3670,
+      "y": 40
+    },
+    "colClass": {
+      "x": 4000,
+      "y": 40
+    },
+    "classPairs": {
+      "x": 4330,
+      "y": 40
+    },
+    "pairLabel": {
+      "x": 4660,
+      "y": 40
+    },
+    "chart": {
+      "x": 4990,
+      "y": 40
+    },
+    "matrix": {
+      "x": 4990,
+      "y": 224
+    },
+    "matrixView": {
+      "x": 5320,
+      "y": 224
+    },
+    "perElement": {
+      "x": 2020,
+      "y": 408
+    },
+    "keyed": {
+      "x": 2350,
+      "y": 408
+    },
+    "withClass": {
+      "x": 2680,
+      "y": 408
+    },
+    "withStorey": {
+      "x": 3010,
+      "y": 408
+    },
+    "busiest": {
+      "x": 3340,
+      "y": 408
+    },
+    "elementView": {
+      "x": 3670,
+      "y": 408
+    },
+    "scale": {
+      "x": 3670,
+      "y": 592
+    },
+    "colored": {
+      "x": 4000,
+      "y": 592
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "inst.instances",
+        "to": "built.table"
+      },
+      {
+        "from": "built.table",
+        "to": "elementBoxes.table"
+      },
+      {
+        "from": "elementBoxes.table",
+        "to": "boxes.table"
+      },
+      {
+        "from": "boxes.table",
+        "to": "touching.a"
+      },
+      {
+        "from": "boxes.table",
+        "to": "touching.b"
+      },
+      {
+        "from": "touching.table",
+        "to": "overlapping.table"
+      },
+      {
+        "from": "overlapping.table",
+        "to": "onePerPair.table"
+      },
+      {
+        "from": "boxes.table",
+        "to": "classOfA.table"
+      },
+      {
+        "from": "onePerPair.table",
+        "to": "withA.a"
+      },
+      {
+        "from": "classOfA.table",
+        "to": "withA.b"
+      },
+      {
+        "from": "withA.table",
+        "to": "namedA.table"
+      },
+      {
+        "from": "namedA.table",
+        "to": "withB.a"
+      },
+      {
+        "from": "classOfA.table",
+        "to": "withB.b"
+      },
+      {
+        "from": "withB.table",
+        "to": "namedB.table"
+      },
+      {
+        "from": "namedB.table",
+        "to": "rowClass.table"
+      },
+      {
+        "from": "rowClass.table",
+        "to": "colClass.table"
+      },
+      {
+        "from": "colClass.table",
+        "to": "classPairs.table"
+      },
+      {
+        "from": "classPairs.table",
+        "to": "pairLabel.table"
+      },
+      {
+        "from": "pairLabel.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "classPairs.table",
+        "to": "matrix.table"
+      },
+      {
+        "from": "matrix.table",
+        "to": "matrixView.table"
+      },
+      {
+        "from": "overlapping.table",
+        "to": "perElement.table"
+      },
+      {
+        "from": "perElement.table",
+        "to": "keyed.table"
+      },
+      {
+        "from": "keyed.table",
+        "to": "withClass.a"
+      },
+      {
+        "from": "classOfA.table",
+        "to": "withClass.b"
+      },
+      {
+        "from": "withClass.table",
+        "to": "withStorey.a"
+      },
+      {
+        "from": "storeys.table",
+        "to": "withStorey.b"
+      },
+      {
+        "from": "withStorey.table",
+        "to": "busiest.table"
+      },
+      {
+        "from": "busiest.table",
+        "to": "elementView.table"
+      },
+      {
+        "from": "busiest.table",
+        "to": "scale.values"
+      },
+      {
+        "from": "inst.instances",
+        "to": "colored.instances"
+      },
+      {
+        "from": "busiest.table",
+        "to": "colored.values"
+      },
+      {
+        "from": "scale.legend",
+        "to": "colored.scale"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "inst",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "storeys",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "built",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "elementBoxes",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "boxes",
+        "kind": "table.rename",
+        "version": 1
+      },
+      {
+        "id": "touching",
+        "kind": "spatial.intersects",
+        "version": 1
+      },
+      {
+        "id": "overlapping",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "onePerPair",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "classOfA",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "withA",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "namedA",
+        "kind": "table.rename",
+        "version": 1
+      },
+      {
+        "id": "withB",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "namedB",
+        "kind": "table.rename",
+        "version": 1
+      },
+      {
+        "id": "rowClass",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "colClass",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "classPairs",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "pairLabel",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "matrix",
+        "kind": "table.pivot",
+        "version": 1
+      },
+      {
+        "id": "matrixView",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "perElement",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "keyed",
+        "kind": "table.rename",
+        "version": 1
+      },
+      {
+        "id": "withClass",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "withStorey",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "busiest",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "elementView",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "scale",
+        "kind": "view.colormap",
+        "version": 1
+      },
+      {
+        "id": "colored",
+        "kind": "view3d.color",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Clash candidate matrix, for a coordinator. Question: which pairs of IFC classes have the most elements whose bounding boxes overlap, and which elements are involved most often? These are box candidates, not clashes: each element's axis-aligned bounding box (the union of its meshes' boxes from view3d.instances) is tested against every other with spatial.intersects, so an L-shaped wall or a stair's box overlaps things its geometry never touches. Spaces and openings are left out. A pair counts only when the boxes share more than 0.001 m3 (one litre), so walls that merely meet a slab are not counted. spatial.intersects lists each pair twice, once per direction, with self-pairs already dropped; the filter A < B keeps each element pair once, and the row and column classes are put in alphabetical order so the matrix is an upper triangle. Read the figure: the heatmap (specs/viz-clash-matrix.vl.json) puts the row class down the side and the column class across the top, darker for more candidate pairs; the matrix table shows the same numbers, and the 3D view colours each element by how many candidates it is in, grey for none. On the Duplex, 331 element pairs across 25 class pairs overlap: finish floors against furniture (57), ceilings against walls (47), and slabs against walls (40) lead, and the IFCROOF and the roof slab overlap by 61.8 m3 with near-equal mesh volumes (60.7 and 60.4 m3), which suggests the roof geometry is carried twice. The busiest elements are two ground-floor wood finish floors, with 35 candidates each."
+    },
+    "inst": {
+      "path": "{SAMPLES}/duplex-base.ifc"
+    },
+    "storeys": {
+      "path": "{SAMPLES}/duplex-base.duckdb",
+      "sql": "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL"
+    },
+    "built": {
+      "expr": "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')"
+    },
+    "elementBoxes": {
+      "groupBy": "globalId,category",
+      "aggregates": "min(minX) as MinX,min(minY) as MinY,min(minZ) as MinZ,max(maxX) as MaxX,max(maxY) as MaxY,max(maxZ) as MaxZ"
+    },
+    "boxes": {
+      "renames": "globalId=GlobalId,category=Class"
+    },
+    "touching": {
+      "aKey": "GlobalId",
+      "bKey": "GlobalId",
+      "excludeSelf": "true"
+    },
+    "overlapping": {
+      "expr": "OverlapVolume > 0.001"
+    },
+    "onePerPair": {
+      "expr": "A < B"
+    },
+    "classOfA": {
+      "columns": "GlobalId,Class"
+    },
+    "withA": {
+      "aKey": "A",
+      "bKey": "GlobalId",
+      "mode": "inner"
+    },
+    "namedA": {
+      "renames": "Class=ClassA"
+    },
+    "withB": {
+      "aKey": "B",
+      "bKey": "GlobalId",
+      "mode": "inner"
+    },
+    "namedB": {
+      "renames": "Class=ClassB"
+    },
+    "rowClass": {
+      "name": "RowClass",
+      "expr": "ClassA <= ClassB ? ClassA : ClassB"
+    },
+    "colClass": {
+      "name": "ColumnClass",
+      "expr": "ClassA <= ClassB ? ClassB : ClassA"
+    },
+    "classPairs": {
+      "groupBy": "RowClass,ColumnClass",
+      "aggregates": "count(*) as Pairs,sum(OverlapVolume) as OverlapVolume"
+    },
+    "pairLabel": {
+      "name": "ClassPair",
+      "expr": "RowClass & ' / ' & ColumnClass"
+    },
+    "chart": {
+      "labelColumn": "ClassPair",
+      "valueColumns": "Pairs",
+      "sort": "desc",
+      "title": "Box-overlap candidate pairs per pair of IFC classes"
+    },
+    "matrix": {
+      "groupBy": "RowClass",
+      "nameColumn": "ColumnClass",
+      "valueColumn": "Pairs",
+      "aggregate": "sum"
+    },
+    "matrixView": {
+      "title": "Candidate pairs, class by class (upper triangle; each element pair counted once)"
+    },
+    "perElement": {
+      "groupBy": "A",
+      "aggregates": "count(*) as Candidates"
+    },
+    "keyed": {
+      "renames": "A=GlobalId"
+    },
+    "withClass": {
+      "aKey": "GlobalId",
+      "mode": "left"
+    },
+    "withStorey": {
+      "aKey": "GlobalId",
+      "mode": "left"
+    },
+    "busiest": {
+      "by": "Candidates desc"
+    },
+    "elementView": {
+      "title": "Elements by number of box-overlap candidates",
+      "columns": "GlobalId,StepId,Name,Class,Storey,Candidates"
+    },
+    "scale": {
+      "valueColumn": "Candidates",
+      "colorMap": "viridis"
+    },
+    "colored": {
+      "joinColumn": "GlobalId",
+      "valueColumn": "Candidates"
+    }
+  }
+}

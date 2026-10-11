@@ -1,0 +1,47 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Bounding-box overlap candidates between IFC classes",
+    "subtitle": "Element pairs whose boxes share more than 0.001 m³; box candidates, not clashes"
+  },
+  "width": 420,
+  "height": 420,
+  "encoding": {
+    "x": {
+      "field": "ColumnClass",
+      "type": "nominal",
+      "title": "Class",
+      "axis": { "labelAngle": -45, "orient": "top" }
+    },
+    "y": { "field": "RowClass", "type": "nominal", "title": "Class" }
+  },
+  "layer": [
+    {
+      "mark": { "type": "rect", "tooltip": true },
+      "encoding": {
+        "color": {
+          "field": "Pairs",
+          "type": "quantitative",
+          "title": "Candidate pairs",
+          "scale": { "scheme": "viridis", "reverse": true }
+        },
+        "tooltip": [
+          { "field": "RowClass", "type": "nominal" },
+          { "field": "ColumnClass", "type": "nominal" },
+          { "field": "Pairs", "type": "quantitative" },
+          { "field": "OverlapVolume", "type": "quantitative", "format": ".3f", "title": "Overlap volume (m³)" }
+        ]
+      }
+    },
+    {
+      "mark": { "type": "text", "fontSize": 11 },
+      "encoding": {
+        "text": { "field": "Pairs", "type": "quantitative" },
+        "color": {
+          "condition": { "test": "datum.Pairs > 30", "value": "white" },
+          "value": "black"
+        }
+      }
+    }
+  ]
+}

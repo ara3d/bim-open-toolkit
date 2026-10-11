@@ -1,0 +1,44 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Element volume against height, by IFC class",
+    "subtitle": "Large outlined points are ten or more times off their class median volume"
+  },
+  "width": 560,
+  "height": 380,
+  "mark": { "type": "point", "filled": true, "tooltip": true },
+  "encoding": {
+    "x": { "field": "Height", "type": "quantitative", "title": "Height (m)" },
+    "y": {
+      "field": "Volume",
+      "type": "quantitative",
+      "title": "Mesh volume (m³, log scale)",
+      "scale": { "type": "log" }
+    },
+    "color": { "field": "Class", "type": "nominal", "title": "IFC class" },
+    "size": {
+      "field": "Outlier",
+      "type": "nominal",
+      "scale": { "domain": [false, true], "range": [30, 180] },
+      "title": "Outlier"
+    },
+    "opacity": {
+      "condition": { "test": "datum.Outlier", "value": 1 },
+      "value": 0.45
+    },
+    "stroke": {
+      "condition": { "test": "datum.Outlier", "value": "black" },
+      "value": null
+    },
+    "tooltip": [
+      { "field": "Name", "type": "nominal" },
+      { "field": "Class", "type": "nominal" },
+      { "field": "Storey", "type": "nominal" },
+      { "field": "Volume", "type": "quantitative", "format": ".3f" },
+      { "field": "Height", "type": "quantitative", "format": ".2f" },
+      { "field": "ClassMedian", "type": "quantitative", "format": ".3f", "title": "Class median volume" },
+      { "field": "Fold", "type": "quantitative", "format": ".1f" },
+      { "field": "GlobalId", "type": "nominal" }
+    ]
+  }
+}
