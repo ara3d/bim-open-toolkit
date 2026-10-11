@@ -666,7 +666,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "title",
@@ -721,7 +722,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "title",
@@ -768,7 +770,8 @@
         {
           "name": "columns",
           "kind": "Text",
-          "default": ""
+          "default": "",
+          "list": true
         }
       ],
       "description": "Required data check: missing column = InfoNotAvailable everywhere; null cell = Fail; else Pass."
@@ -1472,12 +1475,14 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "input"
-          }
+          },
+          "list": true
         },
         {
           "name": "aggregates",
           "kind": "Text",
-          "default": ""
+          "default": "",
+          "list": true
         }
       ],
       "description": "Groups by the comma-separated columns (may be empty) and computes \u0027func(column) as name\u0027 aggregates (count/sum/min/max/avg)."
@@ -1737,7 +1742,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "input"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Keeps only the comma-separated columns, in that order."
@@ -1768,7 +1774,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "input"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Sorts by comma-separated terms such as \u0027height desc, name\u0027."
@@ -3036,7 +3043,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "keep",
@@ -3054,7 +3062,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Keeps the first/last row per \u0027keys\u0027 by \u0027orderBy\u0027 (empty = input row order); warns with the duplicate count."
@@ -3181,7 +3190,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "mode",
@@ -3221,7 +3231,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "strategy",
@@ -3245,7 +3256,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Fills nulls in \u0027columns\u0027 with a constant, or the nearest earlier/later non-null value in row order."
@@ -4110,7 +4122,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "op",
@@ -4125,6 +4138,115 @@
         }
       ],
       "description": "Applies trim/upper/lower/normalizeSpace to \u0027columns\u0027 (empty = every text column) in place."
+    },
+    {
+      "kind": "value.boolean",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "Boolean",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "value",
+          "kind": "Boolean",
+          "default": "false"
+        }
+      ],
+      "description": "Holds one true or false for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the flag here once."
+    },
+    {
+      "kind": "value.integer",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "Integer",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "value",
+          "kind": "Integer",
+          "default": "0"
+        }
+      ],
+      "description": "Holds one Integer for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the integer here once."
+    },
+    {
+      "kind": "value.number",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "Number",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "value",
+          "kind": "Number",
+          "default": "0"
+        }
+      ],
+      "description": "Holds one Number for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the number here once."
+    },
+    {
+      "kind": "value.path",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "path",
+          "type": "Text",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "path",
+          "kind": "FilePath",
+          "default": "",
+          "suggest": {
+            "kind": "FilesUnderRoots",
+            "source": ""
+          }
+        }
+      ],
+      "description": "Holds one file path for a value that several nodes share through their parameter sockets, such as a model file read by many nodes. Pick the file once and wire the output into each bindable path parameter."
+    },
+    {
+      "kind": "value.text",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "Text",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "value",
+          "kind": "Text",
+          "default": ""
+        }
+      ],
+      "description": "Holds one Text value for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the text here once."
     },
     {
       "kind": "view.colormap",
@@ -4228,7 +4350,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Titles a table view; comma-separated \u0027columns\u0027 optionally projects (default all, kept in the named order; unknown names warn)."

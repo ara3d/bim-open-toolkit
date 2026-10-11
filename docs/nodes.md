@@ -60,6 +60,7 @@ is the content itself, not the path or a timestamp.
 | Dates — `BimOpenFlow.Nodes.Dates` | 6 | `date.parse`, `date.part`, `date.truncate`, `date.diff`, `date.offset`, `date.filter` |
 | Viz — `BimOpenFlow.Nodes.Viz` | 5 | `chart.bar`, `chart.line`, `view.table`, `view.colormap`, `view.note` |
 | Spatial — `BimOpenFlow.Nodes.Spatial` | 8 | `spatial.intersects`, `spatial.within`, `spatial.nearest`, `spatial.contains`, `spatial.footprint`, `spatial.polygon`, `spatial.polygonContains`, `spatial.polygonIntersects` |
+| Value — `BimOpenFlow.Nodes.Value` | 5 | `value.text`, `value.number`, `value.integer`, `value.boolean`, `value.path` |
 | Relations — `BimOpenFlow.Nodes.Relations` | 12 | `rel.csv`, `rel.table`, `rel.fromTable`, `rel.sql`, `rel.select`, `rel.filter`, `rel.derive`, `rel.sort`, `rel.limit`, `rel.aggregate`, `rel.join`, `rel.materialize` |
 
 ## BOS — `BimOpenFlow.Nodes.Bos`
@@ -934,7 +935,7 @@ If any listed column is missing from the table, the node warns and every row is 
 | `checkId` | Text | — | — | — | — |
 | `title` | Text | — | — | — | — |
 | `citation` | Text | — | — | — | — |
-| `columns` | Text | — | — | — | — |
+| `columns` | Text (list) | — | — | — | — |
 
 ### `check.rollup` (v1) — Pure
 
@@ -2164,10 +2165,10 @@ Fills nulls in the listed columns with a typed constant, or with the nearest ear
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `columns` | Text | — | — | — | columns of input `table` |
+| `columns` | Text (list) | — | — | — | columns of input `table` |
 | `strategy` | Enum | — | `constant` | `constant`, `forward`, `backward` | — |
 | `value` | Text | — | — | — | — |
-| `partitionBy` | Text | — | — | — | columns of input `table` |
+| `partitionBy` | Text (list) | — | — | — | columns of input `table` |
 
 ### `table.dropNulls` (v1) — Pure
 
@@ -2191,7 +2192,7 @@ Drops rows where any (or, with mode all, every one) of the listed columns is nul
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `columns` | Text | — | — | — | columns of input `table` |
+| `columns` | Text (list) | — | — | — | columns of input `table` |
 | `mode` | Enum | — | `any` | `any`, `all` | — |
 
 ### `table.dedupe` (v1) — Pure
@@ -2216,9 +2217,9 @@ Keeps one row per key combination: the first or last by orderBy (same syntax as 
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `keys` | Text | — | — | — | columns of input `table` |
+| `keys` | Text (list) | — | — | — | columns of input `table` |
 | `keep` | Enum | — | `first` | `first`, `last` | — |
-| `orderBy` | Text | — | — | — | columns of input `table` |
+| `orderBy` | Text (list) | — | — | — | columns of input `table` |
 
 ### `table.replace` (v1) — Pure
 
@@ -2270,7 +2271,7 @@ Applies trim, upper, lower, or normalizeSpace (trim plus collapse runs of whites
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `columns` | Text | — | — | — | columns of input `table` |
+| `columns` | Text (list) | — | — | — | columns of input `table` |
 | `op` | Enum | — | `trim` | `trim`, `upper`, `lower`, `normalizeSpace` | — |
 
 ### `text.extract` (v1) — Pure
@@ -2492,7 +2493,7 @@ With a `scale` input, colours each bar by looking up the scale's column (or, if 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `labelColumn` | Text | — | — | — | columns of input `table` |
-| `valueColumns` | Text | — | — | — | columns of input `table` |
+| `valueColumns` | Text (list) | — | — | — | columns of input `table` |
 | `title` | Text | — | — | — | — |
 | `sort` | Enum | — | `none` | `none`, `asc`, `desc` | — |
 
@@ -2517,7 +2518,7 @@ Projects 'xColumn' plus the comma-separated numeric 'yColumns' for the line-char
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `xColumn` | Text | — | — | — | columns of input `table` |
-| `yColumns` | Text | — | — | — | columns of input `table` |
+| `yColumns` | Text (list) | — | — | — | columns of input `table` |
 | `title` | Text | — | — | — | — |
 
 ### `view.table` (v1) — Pure
@@ -2541,7 +2542,7 @@ Titles a table view; comma-separated 'columns' optionally projects (default all,
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `title` | Text | — | — | — | — |
-| `columns` | Text | — | — | — | columns of input `table` |
+| `columns` | Text (list) | — | — | — | columns of input `table` |
 
 ### `view.colormap` (v1) — Pure
 
@@ -2807,6 +2808,100 @@ Emits one row per (a, b) pair whose WKT POLYGONs (the 'polygon' column of both i
 | `polygon` | Text | — | `Footprint` | — | columns of input `a` |
 | `excludeSelf` | Boolean | — | `true` | — | — |
 
+## Value — `BimOpenFlow.Nodes.Value`
+
+Constant text, number, integer, boolean, and file-path nodes: a value set once and shared through the parameter sockets of other nodes.
+
+### `value.text` (v1) — Pure
+
+Holds one Text value for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the text here once.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `value` | Text |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `value` | Text | — | — | — | — |
+
+### `value.number` (v1) — Pure
+
+Holds one Number for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the number here once.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `value` | Number |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `value` | Number | — | `0` | — | — |
+
+### `value.integer` (v1) — Pure
+
+Holds one Integer for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the integer here once.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `value` | Integer |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `value` | Integer | — | `0` | — | — |
+
+### `value.boolean` (v1) — Pure
+
+Holds one true or false for a value that several nodes share through their parameter sockets. Wire its output into a bindable parameter, or edit the flag here once.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `value` | Boolean |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `value` | Boolean | — | `false` | — | — |
+
+### `value.path` (v1) — Pure
+
+Holds one file path for a value that several nodes share through their parameter sockets, such as a model file read by many nodes. Pick the file once and wire the output into each bindable path parameter.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `path` | Text |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `` |
+
 ## Relations — `BimOpenFlow.Nodes.Relations`
 
 The rel.* pack: wires carry a logical plan plus its schema instead of rows. A chain compiles to one SQL statement and runs only when inspected or materialized. Sources are named through the host's connection registry (each model root folder, and each .duckdb file inside one).
@@ -2915,7 +3010,7 @@ Keeps only the comma-separated columns, in that order.
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `columns` | Text | — | — | — | columns of input `input` |
+| `columns` | Text (list) | — | — | — | columns of input `input` |
 
 ### `rel.filter` (v1) — Pure
 
@@ -2982,7 +3077,7 @@ Sorts by comma-separated terms such as 'height desc, name'.
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `by` | Text | — | — | — | columns of input `input` |
+| `by` | Text (list) | — | — | — | columns of input `input` |
 
 ### `rel.limit` (v1) — Pure
 
@@ -3027,8 +3122,8 @@ Groups by the comma-separated columns (may be empty) and computes 'func(column) 
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `groupBy` | Text | — | — | — | columns of input `input` |
-| `aggregates` | Text | — | — | — | — |
+| `groupBy` | Text (list) | — | — | — | columns of input `input` |
+| `aggregates` | Text (list) | — | — | — | — |
 
 ### `rel.join` (v1) — Pure
 

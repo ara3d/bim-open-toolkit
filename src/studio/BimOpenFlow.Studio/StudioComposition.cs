@@ -11,6 +11,7 @@ using BimOpenFlow.Nodes.Relations;
 using BimOpenFlow.Nodes.Spatial;
 using BimOpenFlow.Nodes.TableOps;
 using BimOpenFlow.Nodes.Tables;
+using BimOpenFlow.Nodes.Value;
 using BimOpenFlow.Nodes.Viz;
 
 namespace BimOpenFlow.Studio;
@@ -24,12 +25,12 @@ public static class StudioComposition
     /// <summary>The "bim" profile registry: the Bos, TableOps, BimAnalysis, Geometry,
     /// Compliance, Effects, and Viz packs, the DuckDB and Tables packs so an external value
     /// table (CSV, Parquet, a DuckDB query) can be joined to a model and drive a 3D
-    /// colouring, the Spatial pack, plus the rel.* pack. Without a runtime the rel.* pack sees no
+    /// colouring, the Spatial and Value packs, plus the rel.* pack. Without a runtime the rel.* pack sees no
     /// sources, which is enough for validation, catalogs, and docs.</summary>
     public static NodeRegistry BimPacks(RelationRuntime? relations = null)
         => NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, BimAnalysisNodes.All, GeometryNodes.All,
             ComplianceNodes.All, EffectNodes.All, VizNodes.All, DuckDbNodes.All, TableNodes.All,
-            SpatialNodes.All, RelationNodes.All(relations ?? HostComposition.NoSources()));
+            SpatialNodes.All, ValueNodes.All, RelationNodes.All(relations ?? HostComposition.NoSources()));
 
     /// <summary>The bim profile: samples/bim-analyses over a generated sample.bos, the 3D samples
     /// over data/, the NRC and showcase graphs, and the local Snowdon graphs when that model is
