@@ -33,6 +33,10 @@ public sealed class VizDemoExport
     public static IEnumerable<TestCaseData> GraphsWithSpecs
         => VizSampleAnalysesTests.SampleFiles.Where(t => File.Exists(SpecPath((string)t.Arguments[0]!)));
 
+    [OneTimeSetUp]
+    public void PrepareNrcSamples()
+        => VizSampleAnalysesTests.PrepareSamples();
+
     private static string SpecPath(string graphFile)
         => Path.Combine(VizSampleAnalysesTests.AnalysesDir, "specs", Path.GetFileNameWithoutExtension(graphFile) + ".vl.json");
 
