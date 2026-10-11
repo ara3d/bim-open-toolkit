@@ -18,6 +18,42 @@ public static class BimNodeNotes
             "The input table is loaded into an in-memory DuckDB as table `t`. The query must be "
             + "read-only. The node predates `sql.query`, which generalizes it to four inputs.",
 
+        ["ids.check"] =
+            "The entity and parameter tables are `bos.load`'s first two outputs (or any tables with "
+            + "the EntityText and ParameterText columns). Each specification's applicability facets "
+            + "select entities; each requirement facet is judged under its cardinality (expected, "
+            + "optional, prohibited); an entity's row keeps the worst verdict and the reasons behind "
+            + "it. Entity facets match the IFC class exactly (IncludeSubtypes is ignored with a "
+            + "warning); a USERDEFINED predefined type is read from ObjectType. Property `dataType` is "
+            + "checked at the level BOS records: number, logical, or text. Classification, material, "
+            + "part-of and document facets give InfoNotAvailable with one warning each, never a pass. "
+            + "A required specification that applies to nothing gets one model-level Fail row with an "
+            + "empty GlobalId. Numbers are compared in the model's own units.",
+
+        ["ids.specifications"] =
+            "Reads only the IDS file. `Supported` is false when any facet of the specification would "
+            + "give InfoNotAvailable under `ids.check`.",
+
+        ["bcf.topics"] =
+            "The same grouping `bcf.write` applies, as a table: a preview of the file before Run. "
+            + "A verdict table is filtered to the verdicts listed (default Fail) first, then rows "
+            + "sharing a title become one topic whose GlobalIds are listed once each.",
+
+        ["bcf.write"] =
+            "An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (default "
+            + "the file name) and the title, so a rerun with the same seed updates the same topics in "
+            + "a BCF reader instead of adding new ones. With `model`, a .bos file, each topic whose "
+            + "elements have geometry gets a viewpoint selecting them under a perspective camera "
+            + "framing their bounding box; the model's element boxes are cached by file content. "
+            + "A topic with no geometry has no viewpoint (BCF 3.0 requires a camera) and lists its "
+            + "GlobalIds at the end of its description. The file is written beside the target and "
+            + "moved into place when complete.",
+
+        ["bcf.read"] =
+            "Reads markup.bcf per topic and the elements its viewpoints select; a topic written "
+            + "without geometry gets its GlobalIds back from its description. Comments, snapshots "
+            + "and cameras are not read.",
+
         ["view3d.instances"] =
             "One row per placed mesh, with entity ids and world bounds. The loaded geometry "
             + "is cached by file content hash.",

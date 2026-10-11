@@ -1,7 +1,8 @@
 # tests/flow
 
 NUnit projects for the BIM packs in `src/flow` (`Nodes.Bos`, `Nodes.BimAnalysis`,
-`Nodes.Geometry`), the 3D workflow suite `View3dWorkflows.Tests`, and
+`Nodes.Geometry`, `Nodes.Ids`, `Nodes.Bcf`; the last two test their nodes over in-memory
+tables and temporary files, no graph), the 3D workflow suite `View3dWorkflows.Tests`, and
 `BimOpenFlow.PocParity.Tests`, which pins behaviour against the original
 prototype's outputs. The tests of the generic packs, the host, and the MCP
 server moved to `ara3d/bim-open-flow` with them and run in its CI. The suites

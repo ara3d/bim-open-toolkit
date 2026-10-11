@@ -1,5 +1,5 @@
 // Enforces the seams inside src/flow for the toolkit's BIM packs (Bos, BimAnalysis,
-// Geometry): node packs depend only on the shared Support pack among packs (in
+// Geometry, Ids, Bcf): node packs depend only on the shared Support pack among packs (in
 // bim-open-flow), never on the host or the run outputs; only the Effects pack sees run
 // records. bim-open-flow's own layering test holds the same rules for its packs.
 namespace BimOpenToolkit.Layering.Tests;
@@ -66,5 +66,5 @@ public class FlowLayeringTests
     [Test]
     public void FindsTheNodePacks()
         => Assert.That(FlowLayering.FlowProjects().Count(p => FlowLayering.IsPack(FlowLayering.NameOf(p.FullName))),
-            Is.EqualTo(3), "expected the three BIM node packs under src/flow");
+            Is.EqualTo(5), "expected the five BIM node packs under src/flow");
 }

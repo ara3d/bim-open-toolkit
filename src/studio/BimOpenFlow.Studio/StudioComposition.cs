@@ -1,12 +1,14 @@
 using Ara3D.DataFlowEngine.Abstractions;
 using BimOpenFlow.Host;
 using BimOpenFlow.NodeDocs;
+using BimOpenFlow.Nodes.Bcf;
 using BimOpenFlow.Nodes.BimAnalysis;
 using BimOpenFlow.Nodes.Bos;
 using BimOpenFlow.Nodes.Compliance;
 using BimOpenFlow.Nodes.DuckDb;
 using BimOpenFlow.Nodes.Effects;
 using BimOpenFlow.Nodes.Geometry;
+using BimOpenFlow.Nodes.Ids;
 using BimOpenFlow.Nodes.Relations;
 using BimOpenFlow.Nodes.Spatial;
 using BimOpenFlow.Nodes.TableOps;
@@ -22,14 +24,14 @@ public static class StudioComposition
 {
     public const string BimProfile = "bim";
 
-    /// <summary>The "bim" profile registry: the Bos, TableOps, BimAnalysis, Geometry,
+    /// <summary>The "bim" profile registry: the Bos, TableOps, BimAnalysis, Geometry, Ids, Bcf,
     /// Compliance, Effects, and Viz packs, the DuckDB and Tables packs so an external value
     /// table (CSV, Parquet, a DuckDB query) can be joined to a model and drive a 3D
     /// colouring, the Spatial and Value packs, plus the rel.* pack. Without a runtime the rel.* pack sees no
     /// sources, which is enough for validation, catalogs, and docs.</summary>
     public static NodeRegistry BimPacks(RelationRuntime? relations = null)
         => NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, BimAnalysisNodes.All, GeometryNodes.All,
-            ComplianceNodes.All, EffectNodes.All, VizNodes.All, DuckDbNodes.All, TableNodes.All,
+            IdsNodes.All, BcfNodes.All, ComplianceNodes.All, EffectNodes.All, VizNodes.All, DuckDbNodes.All, TableNodes.All,
             SpatialNodes.All, ValueNodes.All, RelationNodes.All(relations ?? HostComposition.NoSources()));
 
     /// <summary>The bim profile: samples/bim-analyses over a generated sample.bos, the 3D samples
@@ -70,6 +72,14 @@ public static class StudioComposition
         new("Geometry — `BimOpenFlow.Nodes.Geometry`",
             "The view3d pack: the tables the 3D pane consumes — instances, colors, isolation, camera.",
             GeometryNodes.All),
+        new("IDS — `BimOpenFlow.Nodes.Ids`",
+            "The ids.* pack: a buildingSMART IDS 1.0 file evaluated over the entity and parameter tables "
+            + "as a verdict table, and the specifications it holds listed before any model is read.",
+            IdsNodes.All),
+        new("BCF — `BimOpenFlow.Nodes.Bcf`",
+            "The bcf.* pack: an issue or verdict table previewed as BCF topics, written as a BCF 3.0 file "
+            + "on Run, and a BCF file read back as an issues table.",
+            BcfNodes.All),
     ];
 
     /// <summary>Every pack docs/nodes.md lists, in its order.</summary>
