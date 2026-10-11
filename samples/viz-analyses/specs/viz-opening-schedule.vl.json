@@ -1,0 +1,29 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "Doors and windows per storey and type",
+  "description": "Grouped bar chart of the Duplex opening schedule: one group per storey, one bar per opening type, bar height the count. Colours follow category10 over the sorted type names, the same assignment the graph's view.colormap gives the 3D view.",
+  "width": { "step": 18 },
+  "height": 260,
+  "mark": { "type": "bar" },
+  "encoding": {
+    "x": { "field": "Storey", "type": "nominal", "title": "Storey", "sort": "ascending" },
+    "xOffset": { "field": "OpeningType", "type": "nominal", "sort": "ascending" },
+    "y": { "field": "Count", "type": "quantitative", "title": "Openings", "axis": { "tickMinStep": 1 } },
+    "color": {
+      "field": "OpeningType",
+      "type": "nominal",
+      "sort": "ascending",
+      "scale": { "scheme": "category10" },
+      "title": "Opening type"
+    },
+    "tooltip": [
+      { "field": "Storey", "type": "nominal" },
+      { "field": "Kind", "type": "nominal" },
+      { "field": "Type", "type": "nominal" },
+      { "field": "Width_mm", "type": "quantitative", "title": "Width (mm)" },
+      { "field": "Height_mm", "type": "quantitative", "title": "Height (mm)" },
+      { "field": "Count", "type": "quantitative" },
+      { "field": "Area_m2", "type": "quantitative", "title": "Area (m2)", "format": ".2f" }
+    ]
+  }
+}

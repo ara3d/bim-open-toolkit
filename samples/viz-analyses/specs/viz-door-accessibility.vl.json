@@ -1,0 +1,46 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "Door widths against the 850 mm minimum",
+  "description": "Histogram of door width (IFC OverallWidth, 50 mm bins) for the Duplex; bars below the minimum are red, at or above it green, and the vertical rule marks MinWidth_mm. Doors with no width are counted in the top-right label, never binned.",
+  "width": 480,
+  "height": 260,
+  "layer": [
+    {
+      "transform": [{ "filter": "isValid(datum.BinStart_mm)" }],
+      "mark": { "type": "bar", "stroke": "white", "strokeWidth": 1 },
+      "encoding": {
+        "x": { "field": "BinStart_mm", "type": "quantitative", "title": "Door width (mm)", "scale": { "zero": false } },
+        "x2": { "field": "BinEnd_mm" },
+        "y": { "field": "Doors", "type": "quantitative", "title": "Doors", "axis": { "tickMinStep": 1 } },
+        "color": {
+          "field": "PassScore",
+          "type": "quantitative",
+          "scale": { "domain": [0, 0.5, 1], "range": ["#d62728", "#f2dd5c", "#2ca02c"] },
+          "legend": null
+        },
+        "tooltip": [
+          { "field": "Bin", "type": "nominal" },
+          { "field": "Doors", "type": "quantitative" }
+        ]
+      }
+    },
+    {
+      "transform": [{ "filter": "isValid(datum.BinStart_mm)" }, { "aggregate": [{ "op": "max", "field": "MinWidth_mm", "as": "MinWidth_mm" }] }],
+      "mark": { "type": "rule", "color": "black", "strokeDash": [4, 3], "strokeWidth": 2 },
+      "encoding": { "x": { "field": "MinWidth_mm", "type": "quantitative" } }
+    },
+    {
+      "transform": [{ "filter": "isValid(datum.BinStart_mm)" }, { "aggregate": [{ "op": "max", "field": "MinWidth_mm", "as": "MinWidth_mm" }] }, { "calculate": "'minimum ' + datum.MinWidth_mm + ' mm'", "as": "Label" }],
+      "mark": { "type": "text", "align": "left", "dx": 4, "dy": -4, "y": 0, "baseline": "top" },
+      "encoding": {
+        "x": { "field": "MinWidth_mm", "type": "quantitative" },
+        "text": { "field": "Label" }
+      }
+    },
+    {
+      "transform": [{ "filter": "datum.Bin === 'unknown'" }, { "calculate": "'no width: ' + datum.Doors + ' door(s)'", "as": "Label" }],
+      "mark": { "type": "text", "align": "right", "x": "width", "y": 0, "baseline": "top", "color": "#7f7f7f" },
+      "encoding": { "text": { "field": "Label" } }
+    }
+  ]
+}
