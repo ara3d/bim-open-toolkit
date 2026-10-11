@@ -1,13 +1,14 @@
 ---
 id: TKT-203
 title: Bindable parameters: a parameter is a socket with an inline value, wired from another node or edited in place
-status: open
+status: done
 depends_on: []
 owner:
 fence: []
 workflow: [W2]
 related: [TKT-138, TKT-5, TKT-207]
 created: 2026-10-11
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria
