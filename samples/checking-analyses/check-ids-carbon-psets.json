@@ -1,0 +1,81 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "model": {
+      "x": 40,
+      "y": 40
+    },
+    "verdicts": {
+      "x": 370,
+      "y": 40
+    },
+    "chart": {
+      "x": 700,
+      "y": 40
+    },
+    "failures": {
+      "x": 700,
+      "y": 300
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "model.entities",
+        "to": "verdicts.entities"
+      },
+      {
+        "from": "model.parameters",
+        "to": "verdicts.parameters"
+      },
+      {
+        "from": "verdicts.summary",
+        "to": "chart.table"
+      },
+      {
+        "from": "verdicts.verdicts",
+        "to": "failures.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "model",
+        "kind": "bos.load",
+        "version": 1
+      },
+      {
+        "id": "verdicts",
+        "kind": "ids.check",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "failures",
+        "kind": "table.filter",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "model": {
+      "path": "{SAMPLES}/duplex-enriched.bos",
+      "harmonize": "false"
+    },
+    "verdicts": {
+      "ids": "{SAMPLES}/ids/nrc-analytics.ids"
+    },
+    "chart": {
+      "labelColumn": "CheckId",
+      "valueColumns": "Pass, Fail",
+      "title": "NRC carbon property sets: elements per IDS verdict",
+      "sort": "none"
+    },
+    "failures": {
+      "expr": "[Verdict] != 'Pass'"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "model": {
+      "x": 40,
+      "y": 40
+    },
+    "verdicts": {
+      "x": 370,
+      "y": 40
+    },
+    "topics": {
+      "x": 700,
+      "y": 40
+    },
+    "bcf": {
+      "x": 700,
+      "y": 300
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "model.entities",
+        "to": "verdicts.entities"
+      },
+      {
+        "from": "model.parameters",
+        "to": "verdicts.parameters"
+      },
+      {
+        "from": "verdicts.verdicts",
+        "to": "topics.issues"
+      },
+      {
+        "from": "verdicts.verdicts",
+        "to": "bcf.issues"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "model",
+        "kind": "bos.load",
+        "version": 1
+      },
+      {
+        "id": "verdicts",
+        "kind": "ids.check",
+        "version": 1
+      },
+      {
+        "id": "topics",
+        "kind": "bcf.topics",
+        "version": 1
+      },
+      {
+        "id": "bcf",
+        "kind": "bcf.write",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "model": {
+      "path": "{SAMPLES}/duplex-enriched.bos",
+      "harmonize": "false"
+    },
+    "verdicts": {
+      "ids": "{SAMPLES}/ids/dc-w1.ids"
+    },
+    "topics": {
+      "preset": "auto",
+      "verdicts": "Fail"
+    },
+    "bcf": {
+      "path": "{SAMPLES}/../../artifacts/checking/dc-w1-failures.bcf",
+      "model": "{SAMPLES}/duplex-enriched.bos",
+      "preset": "auto",
+      "verdicts": "Fail",
+      "author": "",
+      "guidSeed": "dc-w1"
+    }
+  }
+}

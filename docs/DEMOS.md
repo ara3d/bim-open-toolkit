@@ -110,6 +110,7 @@ in the transcript instead of failing.
 | `samples/showcase-tables` | BFAST | tables, bim | the buffers of bim-open-flow's `samples/tables/sample.bfast` | `NrcWorkflows.Tests/BfastGraphTests` |
 | `samples/duckdb-analyses` | DuckDB (Snowdon, prepared by `npm run duckdb:prepare`) | tables, `/duckdb.html` | nine query workflows over a building database | `SnowdonWorkflows.Tests/DuckDbWorkflowCatalogTests` |
 | `samples/bim-analyses` | BOS (`samples/bim/sample.bos`, generated) | bim | the `bim.*` analyses: disciplines, levels, rooms, containment, nearest door | `BimWorkflows.Tests` |
+| `samples/checking-analyses` | IDS files under `samples/nrc/ids`, the Duplex BOS and IFC, a committed BCF under `samples/nrc/bcf` | bim | the `ids.*` and `bcf.*` packs: an IDS evaluated to verdicts, a chart and a coloured model; a BCF written from IDS failures and from a SQL result (pending until Run); a BCF read back and coloured | `NrcWorkflows.Tests/CheckingGraphTests` |
 | `samples/view3d-analyses` | IFC (the committed `samples/nrc/duplex-base.ifc`) | bim, `/3d.html` | colour by category, ghost context, exploded categories, massing boxes, voxels, decimation | `View3dWorkflows.Tests` |
 | `samples/snowdon-analyses` | BOS (local Snowdon model, never committed) | bim, when present | the 3D recipe nodes over a real building | `View3dWorkflows.Tests` |
 

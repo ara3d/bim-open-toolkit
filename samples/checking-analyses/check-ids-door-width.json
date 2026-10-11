@@ -1,0 +1,116 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "model": {
+      "x": 40,
+      "y": 40
+    },
+    "verdicts": {
+      "x": 370,
+      "y": 40
+    },
+    "perVerdict": {
+      "x": 700,
+      "y": 40
+    },
+    "chart": {
+      "x": 1030,
+      "y": 40
+    },
+    "scene": {
+      "x": 370,
+      "y": 300
+    },
+    "coloured": {
+      "x": 700,
+      "y": 300
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "model.entities",
+        "to": "verdicts.entities"
+      },
+      {
+        "from": "model.parameters",
+        "to": "verdicts.parameters"
+      },
+      {
+        "from": "verdicts.verdicts",
+        "to": "perVerdict.table"
+      },
+      {
+        "from": "perVerdict.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "scene.instances",
+        "to": "coloured.instances"
+      },
+      {
+        "from": "verdicts.verdicts",
+        "to": "coloured.values"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "model",
+        "kind": "bos.load",
+        "version": 1
+      },
+      {
+        "id": "verdicts",
+        "kind": "ids.check",
+        "version": 1
+      },
+      {
+        "id": "perVerdict",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "scene",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "coloured",
+        "kind": "view3d.color",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "model": {
+      "path": "{SAMPLES}/duplex-enriched.bos",
+      "harmonize": "false"
+    },
+    "verdicts": {
+      "ids": "{SAMPLES}/ids/dc-w1.ids"
+    },
+    "perVerdict": {
+      "groupBy": "Verdict",
+      "aggregates": "count(*) as Doors"
+    },
+    "chart": {
+      "labelColumn": "Verdict",
+      "valueColumns": "Doors",
+      "title": "DC-W1 as an IDS: door width verdicts",
+      "sort": "desc"
+    },
+    "scene": {
+      "path": "{SAMPLES}/duplex-enriched.ifc"
+    },
+    "coloured": {
+      "joinColumn": "GlobalId",
+      "valueColumn": "Verdict",
+      "colorMap": "category10"
+    }
+  }
+}

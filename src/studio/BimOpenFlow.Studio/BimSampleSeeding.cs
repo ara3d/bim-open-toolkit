@@ -32,6 +32,7 @@ public static class BimSampleSeeding
             (Path.Combine(root, "samples", "bim-analyses"), SampleSeeding.PathPlaceholder, samplesDir),
             (Path.Combine(root, "samples", "view3d-analyses"), SampleSeeding.PathPlaceholder, NrcSamples.Dir(root)),
             (Path.Combine(root, "samples", "viz-analyses"), SampleSeeding.PathPlaceholder, NrcSamples.Dir(root)),
+            (Path.Combine(root, "samples", "checking-analyses"), SampleSeeding.PathPlaceholder, NrcSamples.Dir(root)),
             NrcSamples.Analyses(root),
             NrcSamples.Showcase(root),
             NrcSamples.ShowcaseTables(root),

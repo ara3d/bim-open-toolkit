@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ids xmlns="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd">
+  <info>
+    <title>DC-W1: door leaf width</title>
+    <description>Rule DC-W1 of the NRC door checks as an IDS: every IfcDoor's OverallWidth attribute is at least 0.85 m. Illustrative, not legal text (NBC 2020 3.8.3.12).</description>
+    <author>cdiggins@gmail.com</author>
+    <date>2026-10-11</date>
+  </info>
+  <specifications>
+    <specification name="DC-W1" ifcVersion="IFC4" description="Door leaf width at least 850 mm">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCDOOR</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute>
+          <name>
+            <simpleValue>OverallWidth</simpleValue>
+          </name>
+          <value>
+            <xs:restriction base="xs:double">
+              <xs:minInclusive value="0.85"/>
+            </xs:restriction>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>

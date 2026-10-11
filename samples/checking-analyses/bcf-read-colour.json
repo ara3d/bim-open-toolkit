@@ -1,0 +1,76 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "issues": {
+      "x": 40,
+      "y": 40
+    },
+    "scene": {
+      "x": 40,
+      "y": 300
+    },
+    "coloured": {
+      "x": 370,
+      "y": 300
+    },
+    "perTopic": {
+      "x": 370,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "scene.instances",
+        "to": "coloured.instances"
+      },
+      {
+        "from": "issues.issues",
+        "to": "coloured.values"
+      },
+      {
+        "from": "issues.issues",
+        "to": "perTopic.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "issues",
+        "kind": "bcf.read",
+        "version": 1
+      },
+      {
+        "id": "scene",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "coloured",
+        "kind": "view3d.color",
+        "version": 1
+      },
+      {
+        "id": "perTopic",
+        "kind": "table.aggregate",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "issues": {
+      "path": "{SAMPLES}/bcf/dc-w1-failures.bcf"
+    },
+    "scene": {
+      "path": "{SAMPLES}/duplex-enriched.ifc"
+    },
+    "coloured": {
+      "joinColumn": "GlobalId",
+      "valueColumn": "Title",
+      "colorMap": "category10"
+    },
+    "perTopic": {
+      "groupBy": "Title",
+      "aggregates": "count(*) as Elements"
+    }
+  }
+}
