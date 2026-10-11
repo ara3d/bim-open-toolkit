@@ -18,7 +18,7 @@ public sealed class BimNavGraphNode : IFlowNode
         Params:
         [
             new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos")),
-            new ParamSpec("doorCategories", ParamKind.Text, "Doors"),
+            new ParamSpec("doorCategories", ParamKind.Text, "Doors", List: true),
         ],
         "Loads a .bos file into one row per door in the given categories: Door (entity index), "
         + "DoorName, Level, FromRoom, ToRoom — the rooms from the door's from/to-room parameters, "

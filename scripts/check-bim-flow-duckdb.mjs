@@ -78,7 +78,7 @@ try {
     assert.equal(sources.length, 1);
     for (const query of document.structure.nodes.filter(node => node.kind === 'duck.query')) {
       assert.equal(document.values[query.id].path, undefined);
-      assert.ok(document.structure.edges.some(edge => edge.from === sources[0].id + '.source' && edge.to === query.id + '.source'));
+      assert.ok(document.structure.edges.some(edge => edge.from === sources[0].id + '.source' && edge.to === query.id + '.path'));
     }
   }
   scenarios.push(`The flow picker opens all ${workflows.length} editable graphs with a result table or chart on the right`);

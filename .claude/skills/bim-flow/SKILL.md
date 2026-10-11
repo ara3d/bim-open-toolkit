@@ -19,7 +19,7 @@ The same three files are embedded in the studio's Ask endpoint as its system pro
 
 | Tool | Use it for |
 |---|---|
-| `listDatabases` | The `.duckdb` files under the model roots, with paths for a `duck.source` node. Prefer the file the existing graphs use (`listAnalyses` then `getAnalysis` shows their `duck.source` path). |
+| `listDatabases` | The `.duckdb` files under the model roots, with paths for a `duck.source` node, whose Database value wires into the `path` socket of `duck.query`, `duck.table` and `duck.tables`. Prefer the file the existing graphs use (`listAnalyses` then `getAnalysis` shows their `duck.source` path). |
 | `describeDatabase` | Without `table`: every table with row count and base column names, companion columns folded. With `table`: types, NULL and distinct counts, sample values, numeric range. |
 | `getNodeCatalog` | Every node kind with ports, parameters and enum values. Read it once per session. |
 | `listAnalyses`, `getAnalysis`, `saveAnalysis` | The graph library: list, read as JSON, replace a whole document. |

@@ -153,7 +153,7 @@ Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Eleva
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
-| `categories` | Text | — | `Rooms,Spaces` | — | — |
+| `categories` | Text (list) | — | `Rooms,Spaces` | — | — |
 
 ### `bim.levels` (v1) — Pure
 
@@ -208,7 +208,7 @@ Loads a .bos file into one row per element with EntityIndex, Name, Category plus
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
-| `parameters` | Text | — | — | — | — |
+| `parameters` | Text (list) | — | — | — | — |
 
 ### `bim.paramCoverage` (v1) — Pure
 
@@ -354,7 +354,7 @@ Loads a .bos file into one row per door in the given categories: Door (entity in
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
-| `doorCategories` | Text | — | `Doors` | — | — |
+| `doorCategories` | Text (list) | — | `Doors` | — | — |
 
 ### `bim.hops` (v1) — Pure
 

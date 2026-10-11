@@ -60,11 +60,11 @@
           },
           {
             "from": "database.source",
-            "to": "doors.source"
+            "to": "doors.path"
           },
           {
             "from": "database.source",
-            "to": "storeys.source"
+            "to": "storeys.path"
           }
         ]
       },
@@ -173,7 +173,7 @@
           },
           {
             "from": "database.source",
-            "to": "doors.source"
+            "to": "doors.path"
           }
         ]
       },
@@ -275,7 +275,7 @@
           },
           {
             "from": "database.source",
-            "to": "rooms.source"
+            "to": "rooms.path"
           }
         ]
       },
@@ -368,7 +368,7 @@
           },
           {
             "from": "database.source",
-            "to": "door-facts.source"
+            "to": "door-facts.path"
           }
         ]
       },
@@ -476,11 +476,11 @@
           },
           {
             "from": "database.source",
-            "to": "spaces.source"
+            "to": "spaces.path"
           },
           {
             "from": "database.source",
-            "to": "areas.source"
+            "to": "areas.path"
           }
         ]
       },
@@ -605,11 +605,11 @@
           },
           {
             "from": "database.source",
-            "to": "doors.source"
+            "to": "doors.path"
           },
           {
             "from": "database.source",
-            "to": "levels.source"
+            "to": "levels.path"
           }
         ]
       },
@@ -714,7 +714,7 @@
           },
           {
             "from": "database.source",
-            "to": "doors.source"
+            "to": "doors.path"
           }
         ]
       },
@@ -821,11 +821,11 @@
           },
           {
             "from": "database.source",
-            "to": "rooms.source"
+            "to": "rooms.path"
           },
           {
             "from": "database.source",
-            "to": "levels.source"
+            "to": "levels.path"
           }
         ]
       },
@@ -949,11 +949,11 @@
           },
           {
             "from": "database.source",
-            "to": "rooms.source"
+            "to": "rooms.path"
           },
           {
             "from": "database.source",
-            "to": "levels.source"
+            "to": "levels.path"
           },
           {
             "from": "attach-level.table",
@@ -1072,7 +1072,7 @@
           },
           {
             "from": "database.source",
-            "to": "door-facts.source"
+            "to": "door-facts.path"
           }
         ]
       },
@@ -1149,7 +1149,7 @@
           },
           {
             "from": "database.source",
-            "to": "roof-facts.source"
+            "to": "roof-facts.path"
           }
         ]
       },
@@ -1246,11 +1246,11 @@
           },
           {
             "from": "database.source",
-            "to": "width-evidence.source"
+            "to": "width-evidence.path"
           },
           {
             "from": "database.source",
-            "to": "evidence.source"
+            "to": "evidence.path"
           }
         ]
       },
@@ -1364,11 +1364,11 @@
           },
           {
             "from": "database.source",
-            "to": "source-objects.source"
+            "to": "source-objects.path"
           },
           {
             "from": "database.source",
-            "to": "deliveries.source"
+            "to": "deliveries.path"
           }
         ]
       },
@@ -1472,7 +1472,7 @@
           },
           {
             "from": "database.source",
-            "to": "column-catalog.source"
+            "to": "column-catalog.path"
           }
         ]
       },

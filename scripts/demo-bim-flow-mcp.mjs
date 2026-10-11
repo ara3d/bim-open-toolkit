@@ -120,8 +120,8 @@ try {
   await call('addNode', { id, nodeId: 'answer', kind: 'table.sort' });
   await call('setParam', { id, nodeId: 'answer', name: 'A', value: 'Storey' });
   await call('setParam', { id, nodeId: 'answer', name: 'B', value: 'Mark' });
-  await call('connect', { id, from: 'database.source', to: 'doors.source' });
-  await call('connect', { id, from: 'database.source', to: 'levels.source' });
+  await call('connect', { id, from: 'database.source', to: 'doors.path' });
+  await call('connect', { id, from: 'database.source', to: 'levels.path' });
   await call('connect', { id, from: 'doors.table', to: 'attach-level.a' });
   await call('connect', { id, from: 'levels.table', to: 'attach-level.b' });
   await call('connect', { id, from: 'attach-level.table', to: 'schedule-fields.table' });

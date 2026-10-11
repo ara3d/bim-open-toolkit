@@ -19,7 +19,7 @@ public sealed class BimParamTableNode : IFlowNode
         Params:
         [
             new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos")),
-            new ParamSpec("parameters", ParamKind.Text),
+            new ParamSpec("parameters", ParamKind.Text, List: true),
         ],
         "Loads a .bos file into one row per element with EntityIndex, Name, Category plus one "
         + "typed column per requested parameter ('parameters' is a comma-separated list of full "

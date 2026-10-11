@@ -15,8 +15,8 @@ export function upgradeDuckDbGraph(document) {
         graph.values[source] = { path: values.path };
         sources.set(values.path, source);
       }
-      if (!graph.structure.edges.some(edge => edge.to === node.id + '.source'))
-        graph.structure.edges.push({ from: source + '.source', to: node.id + '.source' });
+      if (!graph.structure.edges.some(edge => edge.to === node.id + '.path'))
+        graph.structure.edges.push({ from: source + '.source', to: node.id + '.path' });
       delete values.path;
     }
     if (node.kind === 'table.sort' && values.by && !values.A && !values.B && !values.C) {

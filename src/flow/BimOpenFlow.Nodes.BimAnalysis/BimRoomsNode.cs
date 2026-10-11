@@ -17,7 +17,7 @@ public sealed class BimRoomsNode : IFlowNode
         Params:
         [
             new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos")),
-            new ParamSpec("categories", ParamKind.Text, "Rooms,Spaces"),
+            new ParamSpec("categories", ParamKind.Text, "Rooms,Spaces", List: true),
         ],
         "Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, "
         + "Volume, UnboundedHeight, ElementCount (elements whose Room/Space parameter points here), "

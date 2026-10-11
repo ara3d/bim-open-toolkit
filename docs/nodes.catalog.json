@@ -363,7 +363,8 @@
         {
           "name": "doorCategories",
           "kind": "Text",
-          "default": "Doors"
+          "default": "Doors",
+          "list": true
         }
       ],
       "description": "Loads a .bos file into one row per door in the given categories: Door (entity index), DoorName, Level, FromRoom, ToRoom \u2014 the rooms from the door\u0027s from/to-room parameters, labelled \u0027Name Number\u0027 (so two Corridors on different floors stay distinct), with Outside standing in for a missing side. The rows are the undirected edges of the room navigation graph; feed them to bim.hops for reachability."
@@ -519,7 +520,8 @@
         {
           "name": "parameters",
           "kind": "Text",
-          "default": ""
+          "default": "",
+          "list": true
         }
       ],
       "description": "Loads a .bos file into one row per element with EntityIndex, Name, Category plus one typed column per requested parameter (\u0027parameters\u0027 is a comma-separated list of full descriptor names, e.g. Rvt:Room:Volume). Columns take the short name after the last colon (the full name on collision); Int maps to integer, Number to double, String and Entity to text, and Point parameters expand to three .X/.Y/.Z double columns."
@@ -549,7 +551,8 @@
         {
           "name": "categories",
           "kind": "Text",
-          "default": "Rooms,Spaces"
+          "default": "Rooms,Spaces",
+          "list": true
         }
       ],
       "description": "Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, Volume, UnboundedHeight, ElementCount (elements whose Room/Space parameter points here), and when bounds exist MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea. Rooms are the elements whose category is in the comma-separated \u0027categories\u0027 list."

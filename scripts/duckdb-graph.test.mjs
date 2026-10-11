@@ -10,7 +10,7 @@ test('migration shares paths, preserves edits and is idempotent', () => {
   };
   const upgraded = upgradeDuckDbGraph(original);
   assert.equal(upgraded.structure.nodes.filter(node => node.kind === 'duck.source').length, 2);
-  assert.equal(upgraded.structure.edges.find(edge => edge.to === 'q1.source').from, upgraded.structure.edges.find(edge => edge.to === 'q2.source').from);
+  assert.equal(upgraded.structure.edges.find(edge => edge.to === 'q1.path').from, upgraded.structure.edges.find(edge => edge.to === 'q2.path').from);
   assert.equal(upgraded.values.q1.sql, original.values.q1.sql);
   assert.equal(upgraded.values.q1.path, undefined);
   assert.deepEqual(upgraded.values.sort, { A: 'Name', descendingA: 'false', B: 'Count', descendingB: 'true', C: 'Level', descendingC: 'false' });

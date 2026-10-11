@@ -9,7 +9,7 @@
       { "id": "write", "kind": "sink.exportParquet", "version": 1 }
     ],
     "edges": [
-      { "from": "union.source", "to": "storey-rule.source" },
+      { "from": "union.source", "to": "storey-rule.path" },
       { "from": "storey-rule.table", "to": "correspondence.t1" },
       { "from": "confirmations.table", "to": "correspondence.t4" },
       { "from": "correspondence.table", "to": "write.in" }
