@@ -1,0 +1,16 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "Distribution of room areas",
+  "description": "Reads the rooms table of viz-room-areas: one row per IfcSpace with GlobalId, Number, Name, Area (m2), Storey and RoomType. Bars count rooms per 4 m2 band, stacked by room type.",
+  "mark": { "type": "bar", "tooltip": true },
+  "encoding": {
+    "x": { "field": "Area", "type": "quantitative", "bin": { "step": 4 }, "title": "Room area (m2)" },
+    "y": { "aggregate": "count", "type": "quantitative", "title": "Rooms" },
+    "color": { "field": "RoomType", "type": "nominal", "title": "Room type" },
+    "tooltip": [
+      { "field": "Area", "type": "quantitative", "bin": { "step": 4 }, "title": "Area band (m2)" },
+      { "field": "RoomType", "type": "nominal" },
+      { "aggregate": "count", "type": "quantitative", "title": "Rooms" }
+    ]
+  }
+}

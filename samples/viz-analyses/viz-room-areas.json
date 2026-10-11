@@ -1,0 +1,73 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": { "x": 40, "y": 520 },
+    "load": { "x": 40, "y": 40 },
+    "spaces": { "x": 370, "y": 40 },
+    "storeys": { "x": 370, "y": 280 },
+    "located": { "x": 700, "y": 40 },
+    "rooms": { "x": 1030, "y": 40 },
+    "scale": { "x": 1360, "y": 280 },
+    "areaChart": { "x": 1690, "y": 280 },
+    "model": { "x": 1360, "y": 520 },
+    "roomsOnly": { "x": 1690, "y": 520 },
+    "colored": { "x": 2020, "y": 520 },
+    "byType": { "x": 1360, "y": 40 },
+    "wide": { "x": 1690, "y": 40 },
+    "typeChart": { "x": 2020, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "load.entities", "to": "spaces.t1" },
+      { "from": "load.parameters", "to": "spaces.t2" },
+      { "from": "load.entities", "to": "storeys.t1" },
+      { "from": "load.relations", "to": "storeys.t2" },
+      { "from": "spaces.table", "to": "located.a" },
+      { "from": "storeys.table", "to": "located.b" },
+      { "from": "located.table", "to": "rooms.table" },
+      { "from": "rooms.table", "to": "scale.values" },
+      { "from": "rooms.table", "to": "areaChart.table" },
+      { "from": "scale.legend", "to": "areaChart.scale" },
+      { "from": "model.instances", "to": "roomsOnly.instances" },
+      { "from": "rooms.table", "to": "roomsOnly.ids" },
+      { "from": "roomsOnly.instances", "to": "colored.instances" },
+      { "from": "rooms.table", "to": "colored.values" },
+      { "from": "scale.legend", "to": "colored.scale" },
+      { "from": "rooms.table", "to": "byType.table" },
+      { "from": "byType.table", "to": "wide.table" },
+      { "from": "wide.table", "to": "typeChart.table" }
+    ],
+    "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "load", "kind": "bos.load", "version": 1 },
+      { "id": "spaces", "kind": "sql.query", "version": 1 },
+      { "id": "storeys", "kind": "sql.query", "version": 1 },
+      { "id": "located", "kind": "table.join", "version": 1 },
+      { "id": "rooms", "kind": "bim.classifyRooms", "version": 1 },
+      { "id": "scale", "kind": "view.colormap", "version": 1 },
+      { "id": "areaChart", "kind": "chart.bar", "version": 1 },
+      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "roomsOnly", "kind": "view3d.isolate", "version": 1 },
+      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "byType", "kind": "table.aggregate", "version": 1 },
+      { "id": "wide", "kind": "table.pivot", "version": 1 },
+      { "id": "typeChart", "kind": "chart.bar", "version": 1 }
+    ]
+  },
+  "values": {
+    "about": { "text": "For a space planner: how big is each room, and how much floor area does each room type take on each storey? Source: the 21 IfcSpace elements of the Duplex, with Area read from the IFC quantity 'GSA BIM Area' in square metres (the Revit Area parameter agrees for every room) and the storey from the space's IfcRelAggregates link to its IfcBuildingStorey. RoomType comes from bim.classifyRooms on the room name with the built-in rules, so names it does not know stay Other: B105 is named 'Room' although its OmniClass description says Stairway, and the two Utility rooms and the Roof space are Other too. Read areaChart as one bar per room number, coloured on the shared scale; the 3D view (colored) shows only the rooms, coloured on the same scale. The scale's domain is fixed at 0 to 32 m2 so the 30 m2 living rooms and the 2 m2 utility rooms are told apart; the Roof space (R301, 145.7 m2, the attic volume, not an occupied room) is clamped to the top colour and counted in the legend's above row. typeChart shows the total area per room type with one bar series per storey (Level 1 142 m2, Level 2 135 m2, Roof 146 m2); a missing bar means that type has no room on that storey, not zero area. Each row of rooms keeps GlobalId, StepId and Storey so a plan drawing can colour the same table. The Vega-Lite spec (specs/viz-room-areas.vl.json) draws the histogram of room areas, binned at 4 m2 and coloured by RoomType." },
+    "load": { "path": "{SAMPLES}/duplex-enriched.bos" },
+    "spaces": { "sql": "SELECT e.EntityIndex, e.GlobalId, e.StepId, num.Value AS Number, e.Name, TRY_CAST(area.Value AS DOUBLE) AS Area FROM t1 e LEFT JOIN t2 num ON num.EntityIndex = e.EntityIndex AND num.Name = 'Number' AND num.ParameterGroup = 'PSet_Revit_Identity Data' LEFT JOIN t2 area ON area.EntityIndex = e.EntityIndex AND area.Name = 'GSA BIM Area' WHERE e.Category = 'IFCSPACE' ORDER BY Number" },
+    "storeys": { "sql": "WITH RECURSIVE up(EntityIndex, Parent, Depth) AS (SELECT EntityIndexA, EntityIndexB, 1 FROM t2 WHERE RelationType IN ('ContainedIn', 'MemberOf') UNION ALL SELECT up.EntityIndex, r.EntityIndexB, up.Depth + 1 FROM up JOIN t2 r ON r.EntityIndexA = up.Parent AND r.RelationType IN ('ContainedIn', 'MemberOf') WHERE up.Depth < 4) SELECT up.EntityIndex, arg_min(s.Name, up.Depth) AS Storey FROM up JOIN t1 s ON s.EntityIndex = up.Parent AND s.Category = 'IFCBUILDINGSTOREY' GROUP BY up.EntityIndex ORDER BY up.EntityIndex" },
+    "located": { "aKey": "EntityIndex", "bKey": "EntityIndex", "mode": "left" },
+    "rooms": { "column": "Name", "as": "RoomType" },
+    "scale": { "valueColumn": "Area", "colorMap": "viridis", "auto": "false", "min": "0", "max": "32" },
+    "areaChart": { "labelColumn": "Number", "valueColumns": "Area", "title": "Room area (m2), coloured on the shared scale", "sort": "desc" },
+    "model": { "path": "{SAMPLES}/duplex-enriched.ifc" },
+    "roomsOnly": { "joinColumn": "GlobalId" },
+    "colored": { "joinColumn": "GlobalId" },
+    "byType": { "groupBy": "Storey, RoomType", "aggregates": "sum(Area) as TotalArea, count(*) as Rooms" },
+    "wide": { "groupBy": "RoomType", "nameColumn": "Storey", "valueColumn": "TotalArea", "aggregate": "sum" },
+    "typeChart": { "labelColumn": "RoomType", "valueColumns": "Level 1, Level 2, Roof", "title": "Total room area (m2) per type, by storey" }
+  }
+}

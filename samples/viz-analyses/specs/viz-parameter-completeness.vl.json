@@ -1,0 +1,39 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "Handover fill rate per element class",
+  "description": "Reads the coverage table of viz-parameter-completeness: one row per class and handover parameter the class carries. A combination with no row is drawn blank, not as 0%: the class never carries that field.",
+  "width": { "step": 44 },
+  "height": { "step": 26 },
+  "encoding": {
+    "x": { "field": "Parameter", "type": "nominal", "title": "Handover parameter", "axis": { "labelAngle": -40 } },
+    "y": { "field": "Class", "type": "nominal", "title": "IFC class" }
+  },
+  "layer": [
+    {
+      "mark": { "type": "rect", "stroke": "white", "strokeWidth": 1 },
+      "encoding": {
+        "color": {
+          "field": "FillRate",
+          "type": "quantitative",
+          "title": "Fill rate",
+          "scale": { "domain": [0, 1], "scheme": "redyellowgreen" },
+          "legend": { "format": ".0%" }
+        },
+        "tooltip": [
+          { "field": "Class", "type": "nominal" },
+          { "field": "Parameter", "type": "nominal" },
+          { "field": "FillRate", "type": "quantitative", "format": ".0%" },
+          { "field": "FilledElements", "type": "quantitative", "title": "Filled" },
+          { "field": "Elements", "type": "quantitative" }
+        ]
+      }
+    },
+    {
+      "mark": { "type": "text", "fontSize": 10 },
+      "encoding": {
+        "text": { "field": "FillRate", "type": "quantitative", "format": ".0%" },
+        "color": { "value": "black" }
+      }
+    }
+  ]
+}
