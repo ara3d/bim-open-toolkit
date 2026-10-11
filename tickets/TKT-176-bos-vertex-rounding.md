@@ -12,6 +12,6 @@ kind: defect
 
 ## Acceptance criteria
 
-- [ ] BuildModel rounds each coordinate to the nearest 0.1 mm, and a test shows a 5 cm tube keeps its volume within 0.01 %
+- [ ] Each stored vertex coordinate is within 0.05 mm of its source (round to nearest, not truncate); the volume of a 5 cm radius tube changes by at most 0.4 % at any tessellation and by about 0.001 % at 4,096 segments; meshes with non-finite vertices are left empty and counted; coordinates beyond ±214.7 km are clamped and counted (restated 2026-10-11 after review: the old 0.01 % held only at 4,096 segments)
 
 Found in the BOS formats wave (docs/plans/bos-formats.md, Architecture notes). (int)(v * 1e4) truncates toward zero; the Fragments reader measured a 0.26 % volume loss on a 5 cm tube. Every BOS writer goes through this builder, so the sample .bos files change when it is fixed; regenerate them and their recorded counts.
