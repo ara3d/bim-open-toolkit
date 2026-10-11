@@ -111,13 +111,16 @@
       }
     },
     {
-      "data": {
-        "values": [
-          {
-            "threshold": 0.8
-          }
-        ]
-      },
+      "transform": [
+        {
+          "aggregate": [
+            {
+              "op": "count",
+              "as": "Rows"
+            }
+          ]
+        }
+      ],
       "mark": {
         "type": "rule",
         "strokeDash": [
@@ -128,7 +131,7 @@
       },
       "encoding": {
         "y": {
-          "field": "threshold",
+          "datum": 0.8,
           "type": "quantitative",
           "scale": {
             "domain": [
