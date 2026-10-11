@@ -10,7 +10,7 @@ Paths are relative to `deps/bim-open-data` unless they start with `deps/`, `tick
 
 ## Acceptance criteria
 
-- No `Approach1` remains in bim-open-data, in the toolkit's live documents, tickets, and code, or in the studio's live documents and tracker. Dated build logs under `docs/plans/` keep the word as history.
+- No `Approach1` remains in bim-open-data, in the toolkit's live documents, open tickets, and code, or in the studio's live documents and open tracker items. Dated build logs under `docs/plans/`, done tickets, and closed tracker records keep the word as history.
 - `Ara3D.Ifc.Mesher` targets `net8.0`, references no project that loads native code, and builds on its own.
 - No source file in the mesher is over 400 lines; `Brep.cs` and `CurveEvaluator.cs` are split by subject.
 - `src/data/Ara3D.Ifc.Mesher` holds no `PROGRESS.md` or `progress-notes/`; its README says what the library does, how it is laid out, and how it is measured, and names no path that does not exist.
@@ -59,7 +59,7 @@ A caller holding an `IfcFile` passes `file.EntityResolver`. `IfcMeshingResult.Me
 
 ## Chunks
 
-Checks per chunk: `dotnet build BimOpenData.sln -c Release`; `dotnet test tests/data/Ara3D.IfcMeshingComparison -c Release --no-build` with `ARA3D_IFC_TEST_DIRS=C:\Users\cdigg\git\studio\data` (the corpus on this machine); `dotnet test tests/mcp/BimOpenMcp.Ifc.Tests -c Release --no-build` where the MCP server changes. A refactor chunk passes with the same counts as the baseline.
+Checks per chunk: `dotnet build BimOpenData.sln -c Release`; `dotnet test tests/data/Ara3D.IfcMeshingComparison -c Release --no-build` with `ARA3D_IFC_TEST_DIRS` set to the owner's corpus folder (a clone of `ara3d/IFC-toolkit` `test-files` holds every public model the tests name); `dotnet test tests/mcp/BimOpenMcp.Ifc.Tests -c Release --no-build` where the MCP server changes. A refactor chunk passes with the same counts as the baseline.
 
 | Id | One-sentence commit | Fence | Test |
 |---|---|---|---|
@@ -96,4 +96,5 @@ L1 and L2 first; L3, L4, L5, L6 are independent of each other and of L7; L7 afte
 - 2026-10-11, T1: `deps.json` pins bim-open-data `b367400`; `ModelGeometry.Load` calls `IfcMesher.Build(file.EntityResolver)`; ARCHITECTURE and the inventory say the mesher is net8.0 with no native code; TKT-65 rewritten from the fresh scorecard (its old criteria quoted the deleted progress notes), TKT-188/189 reworded, TKT-190 renamed and its cause marked as suspected, not measured. Toolkit Release solution build 0 errors; `node deps.mjs --check` matches every pin.
 - 2026-10-11, S1 studio `8ca7608c`: ara3d-030 closed; the diagnosis plan, three archived mesher documents and `IfcGeometryPipeline.cs` deleted.
 - 2026-10-11, S2 not done: at `24939c1` the studio's `Ara3D.Studio.App.slnf` has 8 errors in `src/Ara3D.IO`, all `Ara3D.BimOpenSchema` missing, which the SDK removed in `d8735f3` (2026-09-15). The pointer is back at `82df732`; the blocker is studio issue `studio-333` (`4a2c9f71`). Until it moves, `ara3d-sdk/wip/Ara3D.Ifc.Mesher` and `tests/Ara3D.IfcMeshingComparison` remain in that checkout as tracked files of the old SDK commit.
+- 2026-10-11, review and fixes: a fresh reviewer (platonic:reviewer) found three mesher files still over 400 lines, documents that attributed the October measurements (TKT-188, TKT-190) to the deleted July notes, a wrong merged-mesh description and symbol in the bench README, stale "native mesher" wording in three toolkit documents, links to deleted files in the studio issue, a copied Frobenius norm, and the parity gates spread over four fixtures. Each fix is its own commit in bim-open-data (`1fd869a`..`202786d`: SweptSolids, ProfileBuilder, and ModelAssembler split into eleven files, largest now 347 lines; `ParityGates.cs`; `MatrixNorms`; `IfcFile.SchemaOf` dropped), the studio (`0b351e17`), and this repository. Done tickets and closed tracker records keep the Approach1 name as history; the criterion above says so now. Follow-ups that were not fixed are TKT-223 (a test-support library; the remaining large files) and TKT-224 (owner-machine paths elsewhere in bim-open-data). S2 stays deferred behind studio-333; TKT-216 is closed with that noted. Fence crossings during L5, L6, and L7 (src/data/README.md, about twenty test files and .gitignore, Harness/*.cs and the comparison csproj) were harmless with one agent working in order.
 - Builds in this checkout sometimes fail with NuGet's "Cannot create a file when that file already exists" during restore; a retry passes. Another session was building the same `deps/` projects at the time.
