@@ -44,6 +44,7 @@ public sealed class BimSampleSeedingTests
         => ExpectedIds("bim-analyses")
             .Concat(ExpectedIds("view3d-analyses"))
             .Concat(ExpectedIds("viz-analyses"))
+            .Concat(ExpectedIds("checking-analyses"))
             .Concat(ExpectedIds("nrc-analyses"))
             .Concat(ExpectedIds("showcase-analyses"))
             .Concat(ExpectedIds("showcase-tables"))
