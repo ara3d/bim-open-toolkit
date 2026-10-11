@@ -1,13 +1,14 @@
 ---
 id: TKT-225
 title: Compare Ara3D.Ifc.Mesher with four other IFC meshers (web-ifc DLL, web-ifc 0.0.78, IFClite, IfcOpenShell) from stored mesh dumps
-status: open
+status: done
 depends_on: []
 owner:
 fence: [deps/bim-open-data/bench/ifc-mesher/**, deps/bim-open-data/tests/data/Ara3D.IfcMeshingComparison/**, docs/plans/ifc-mesher-comparison.md]
 workflow: [W3]
 related: [TKT-216, TKT-65]
 created: 2026-10-11
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria

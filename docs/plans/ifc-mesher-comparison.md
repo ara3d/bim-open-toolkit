@@ -59,4 +59,8 @@ M1 first; M2 and M3's code are independent of each other, but M3's results need 
 
 ## Build log
 
+- 2026-10-11, M1 `8cf6f2b`: MeshDump, DumpBackend, MesherCatalog; round-trip test. Two struct pitfalls: `FilePath` is a struct, so `FirstOrDefault` returns an empty path, not null, and `Matrix4x4.M41` is a `Number`, so a test compares `(float)` of it.
+- 2026-10-11, M2 `814ead9`: adapters, `run.mjs`, nine quick-file dumps (1.2 MB) committed. The three tools were all present or installable here (`npm install`, `pip install ifclite-geom==4.15.0`).
+- 2026-10-11, M3 `75c067d`: MesherMatrix and tests; `meshers.json`; RESULTS.md matrix. The first web-ifc dumps were Y-up (web-ifc's three.js frame): `SetGeometryTransformation(identity)` did not change `StreamAllMeshes` output, so the adapter rotates each placement back to Z-up itself. The default test took 36.5 s serially and 7.2 s with the pairs compared in parallel (`AsParallel`). Results: the two web-ifc builds agree at 0.988 to 0.997, IFClite and IfcOpenShell at 0.964 to 0.997, the C# mesher 0.92 to 0.96 against both; three count differences are recorded as unexplained.
+- 2026-10-11, M4: toolkit pins bim-open-data `75c067d`; TKT-225 closed. Follow-ups worth a ticket when someone picks them up: the three unexplained count differences in RESULTS.md, and running the larger models (Duplex, DigitalHub, Schependomlaan) through `run.mjs --out artifacts` for a timing table.
 - 2026-10-11, plan written; TKT-225 filed. IfcOpenShell 0.8.5 is installed and its iterator meshes IfcOpenHouse in 0.2 s; web-ifc 0.0.78 and ifclite-geom 4.15.0 are the current releases (checked on npm and PyPI).
