@@ -24,4 +24,5 @@ The brief above says what the project is for. A plan names the workflow it serve
 ## Working here
 
 - Tickets use platonic-coder's `ticket.py`: `python ~/.claude/plugins/marketplaces/platonic/scripts/ticket.py --dir tickets <command>`.
+- Tickets for every repository under `deps/` live here too, with the fence under `deps/<repo>/`, so ids never collide and cross-repository work has one list; a commit in that repository carries the same `Ticket: TKT-n` trailer. Each repository keeps its own `PROJECT.md`, a component brief whose workflows serve this one's (`deps/bim-open-plot/PROJECT.md` is the first).
 - The three guide files under `.claude/skills/bim-flow/` are also the Ask box's system prompt, so an edit there changes both.
