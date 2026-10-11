@@ -21,6 +21,7 @@ which code still lives here.
 | <img src="docs/brand/mark.svg" width="22" height="22" alt=""> | [bim-open-flow](https://github.com/ara3d/bim-open-flow) | Graphs over tables: node packs, headless host, web editor, MCP server |
 | <img src="docs/brand/viewer-mark.svg" width="22" height="22" alt=""> | [bim-open-viewer](https://github.com/ara3d/bim-open-viewer) | WebGL viewer for building models, 17 npm packages |
 | <img src="docs/brand/notebook-mark.svg" width="22" height="22" alt=""> | [bim-open-notebook](https://github.com/ara3d/bim-open-notebook) | A session with an agent kept as a document of results that can be evaluated again |
+| <img src="docs/brand/plot-mark.svg" width="22" height="22" alt=""> | [bim-open-plot](https://github.com/ara3d/bim-open-plot) | Charts, drawings, and figures from result tables; brand and design research so far, no code yet |
 
 [![The family page: purpose, the two in-browser demos, and the repositories](docs/images/family-page.png)](https://ara3d.github.io/bim-open-toolkit/)
 
@@ -220,6 +221,7 @@ assessment from 2026-09-08.
 | `plugins/` | The Revit 2025 add-ins: BOS exporter, Bowerbird host, samples, and `Ara3D.Revit.Utils` |
 | `bimopenflow/web/` | The toolkit's web workspace: the studio's pages (`studio-web`) and the NRC pages (`nrc-web`: `nrc.html` and the sample-notebook page), over bim-open-flow's editor packages and the notebook and 3D pane (`pane-3d`) from `deps/bim-open-notebook`, all linked by `deps.config.ts` and `deps.tsconfig.json` |
 | `deps/bim-open-notebook/` | The notebook and the 3D pane (`@bimopenflow/bim-open-notebook`, `@bimopenflow/pane-3d`), from [bim-open-notebook](https://github.com/ara3d/bim-open-notebook); fetched by `node deps.mjs` |
+| `deps/bim-open-plot/` | The figure layer to come, from [bim-open-plot](https://github.com/ara3d/bim-open-plot): its brand and the chart-spec research, no code yet; fetched by `node deps.mjs` |
 | `deps/bim-open-viewer/` | The standalone 3D viewer workspace, seventeen packages |
 | `samples/` | Runnable sample analyses: BIM, NRC, Snowdon, 3D, and notebooks, with sample data (the tables samples are bim-open-flow's) |
 | `gates/` | Headless integration smoke checks |

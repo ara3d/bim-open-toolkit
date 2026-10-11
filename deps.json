@@ -30,5 +30,9 @@
   "bim-open-notebook": {
     "url": "https://github.com/ara3d/bim-open-notebook",
     "commit": "013867552ccd193ca370a18f259bedd7b2d07b13"
+  },
+  "bim-open-plot": {
+    "url": "https://github.com/ara3d/bim-open-plot",
+    "commit": "7eed544c7feaa1293fed6f448b1a8fdbdd35e6db"
   }
 }
