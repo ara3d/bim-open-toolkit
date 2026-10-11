@@ -427,6 +427,17 @@
         "deps/bim-open-flow/site"
       ],
       "port": 5320
+    },
+    {
+      "name": "flow-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "web",
+        "--prefix",
+        "deps/bim-open-flow/bimopenflow/web"
+      ],
+      "port": 5304
     }
   ]
 }
