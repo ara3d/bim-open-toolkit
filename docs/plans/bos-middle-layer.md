@@ -39,4 +39,7 @@ Supervisor-owned: `BimOpenData.sln`, `Directory.Build.props`, every README outsi
 
 ## Build log
 
+- TKT-184 (another session's fixer) landed as bim-open-data `521b837`, `43386b2`, `46e5885`: `WriteToParquetZip` now writes the geometry tables. Its files were released, and `FragmentsToBos.cs` went back into T180's fence. The toolkit pin moved to `46e5885` in `92bdb52`; this wave rebases over it at the end.
+- T183 (selective read, `ParquetUtils.cs` and `SelectiveReadTests.cs`) dispatched early, once `ParquetUtils.cs` was free. The `.usdc` half of TKT-183 stays an idea.
+
 ## Wave record
