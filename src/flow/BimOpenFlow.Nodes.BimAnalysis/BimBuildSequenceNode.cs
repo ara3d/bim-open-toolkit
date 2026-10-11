@@ -50,9 +50,10 @@ public sealed class BimBuildSequenceNode : IFlowNode
         + "'elevationColumn' value, then by name. A task starts when the previous trade has left "
         + "its storey and its own trade has left the storey below, so trades overlap by one storey; "
         + "each task with elements lasts 'daysPerTask' calendar days from 'start'. Output 'tasks': "
-        + "Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (week of "
-        + "End counted from 'start', from 1), ElementCount, Synthetic. Output 'elements': the input "
-        + "rows plus Task, Trade, Finish, FinishWeek, Synthetic; rows with no storey or no trade "
+        + "Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (the week "
+        + "of the last working day, End - 1, counted from 1 at 'start'), ElementCount, Synthetic. "
+        + "Output 'elements': the input rows plus Task, Trade, Finish (the task's exclusive End), "
+        + "FinishWeek (as in 'tasks'), Synthetic; rows with no storey or no trade "
         + "get nulls and are counted in one warning. Same input, same schedule.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
@@ -169,8 +170,10 @@ public sealed class BimBuildSequenceNode : IFlowNode
     private static string IsoDate(DateTime start, int day)
         => start.AddDays(day).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
+    /// <summary>The 1-based week holding the last working day of a task ending (exclusively)
+    /// on endDay; every emitted task lasts at least one day.</summary>
     private static long Week(int endDay)
-        => Math.Max(1, (endDay + 6) / 7);
+        => (endDay - 1) / 7 + 1;
 
     private static int IndexOf(IReadOnlyList<string> names, string name)
     {

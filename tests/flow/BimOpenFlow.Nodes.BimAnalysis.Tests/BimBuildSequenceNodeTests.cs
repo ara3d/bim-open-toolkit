@@ -88,6 +88,16 @@ public sealed class BimBuildSequenceNodeTests
     }
 
     [Test]
+    public void FinishWeek_IsTheWeekOfTheLastWorkingDay_NotOfTheExclusiveEnd()
+    {
+        var schedule = Schedule(Elements(("L1", 0, "Walls")), ("daysPerTask", "7"), ("start", "2027-03-01"));
+        Assert.That(schedule[0].Cell("End", 0), Is.EqualTo("2027-03-08"));
+        Assert.That(schedule[0].Cell("FinishWeek", 0), Is.EqualTo(1L));
+        Assert.That(schedule[1].Cell("Finish", 0), Is.EqualTo("2027-03-08"));
+        Assert.That(schedule[1].Cell("FinishWeek", 0), Is.EqualTo(1L));
+    }
+
+    [Test]
     public void TradeOrder_AndOverrides_AndDisciplineNames()
     {
         var tasks = Schedule(Elements(("L1", 0, "Mechanical"), ("L1", 0, "Structure"), ("L1", 0, "Frobnicators")),
