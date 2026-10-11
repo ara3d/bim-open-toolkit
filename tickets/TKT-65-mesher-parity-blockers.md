@@ -1,18 +1,20 @@
 ---
 id: TKT-65
-title: Clear the Ara3D.Ifc.Mesher parity blockers and rerun its scorecard
+title: Explain the Ara3D.Ifc.Mesher parity gaps on the quick files and raise the scorecard
 status: open
 depends_on: []
 owner:
-fence: [src/data/Ara3D.Ifc.Mesher/**, tests/data/**]
+fence: [deps/bim-open-data/src/data/Ara3D.Ifc.Mesher/**, deps/bim-open-data/tests/data/**, deps/bim-open-data/bench/ifc-mesher/**]
 workflow: [W3]
 ---
 
 ## Acceptance criteria
 
-- [ ] The Schependomlaan window and door offset (about 10 m, mapping origin inverse versus target times origin) is fixed and its entity bbox match rises above 15%
-- [ ] PRIMARK oracle-only null meshes fall under the gate of 100 (232 at the last run)
-- [ ] The SHS volume metric, steelplates clipped-beam booleans, DigitalHub mesh-bbox (target 0.55), and W12 tessellation each pass or are recorded as out of scope with a reason
-- [ ] The M4 scorecard is rerun and committed with the date
+- [ ] On `example.ifc`, the one product (of 116) whose bounds differ from web-ifc by more than 5 % is named, and either the mesher is fixed so `Example_SharedEntityBoundingBoxesMatchOracle` passes, or the ticket records that web-ifc is the one in error and the test is changed to say so
+- [ ] On `steelplates.ifc`, the 4 of 14 products whose shapes differ from web-ifc are named with the cause measured on the file, and the triangle ratio (716 to 1,428 at the last run) is explained: a density choice, missing geometry, or a web-ifc artefact
+- [ ] On `example.ifc`, the 28 of 116 products whose shapes differ are grouped by cause, from the file, not from earlier notes
+- [ ] `bench/ifc-mesher/scorecard.json` and `RESULTS.md` are rerun and committed with the date after each change, and no quick-file parity drops below its last committed value
 
-The progress notes in `src/data/Ara3D.Ifc.Mesher/progress-notes/` (`wp-backlog-placement-voids-primark.md:88`, `wp-m4-session.md:78`, `wp-mesh-index-session.md:39`, `wp-placement-schependomlaan.md:43`, `wp-w5.md:81`) list these; the last run was 2026-07-09. The mesher feeds the Geometry nodes and the IFC MCP server, and no ticket mentioned it. Split into one ticket per blocker when picked up. Raised by reviews/2026-09-27-status.md
+## Context
+
+`bench/ifc-mesher/RESULTS.md` (run of 2026-10-11, bim-open-data `b367400`) has parity 0.963, 0.938, and 0.918 on `IfcOpenHouse_IFC4.ifc`, `example.ifc`, and `steelplates.ifc`, with every product meshed and the mesh and instance counts equal to web-ifc's. What remains is shape and triangle density on a minority of products. The mesher's July 2026 development notes named causes for these (unclipped walls, curve density, mapped-item origins); those notes were deleted in the layout work (TKT-216) because they were theories from mid-development, and this ticket does not inherit them. Each criterion above is answered by reading the file and the two meshes, with the diagnostics under `tests/data/Ara3D.IfcMeshingComparison/Tests/Comparison/` (`DiagnoseExampleGaps`, `SurfaceDistanceTests`) and `Tests/Corpus/`. TKT-188 and TKT-190 hold two of the old theories as questions to re-measure; close or merge them into this one when answered. Split into one ticket per cause once the causes are known. Raised by reviews/2026-09-27-status.md; rewritten 2026-10-11.

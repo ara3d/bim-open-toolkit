@@ -129,7 +129,7 @@ add-in under `plugins/` and the BOS Browser under bim-open-data's `apps/`.
 **IFC workflows** are handled by four projects that stay deliberately separate:
 
 - `Ara3D.IfcTypes` / `Ara3D.IfcLoader` — parsing and the entity/relation model (backed by web-ifc).
-- `Ara3D.Ifc.Mesher` — tessellation, the only place the native geometry dependency lives.
+- `Ara3D.Ifc.Mesher` — tessellation from the STEP geometry definitions, in C# with no native code; the web-ifc dependency is `Ara3D.IfcLoader`'s.
 - `Ara3D.Ifc.Editing` — **byte-exact** property-set editing: `IfcSourceFile` and
   `IfcEntitySpan` locate entities by byte range, `IfcPropertySetBuilder` composes new
   psets, `IfcDiff` and `IfcPatcher` splice them in. Everything you did not edit comes out

@@ -1,5 +1,5 @@
 using Ara3D.Geometry;
-using Ara3D.Ifc.Mesher.Approach1;
+using Ara3D.Ifc.Mesher;
 using Ara3D.IfcLoader;
 using Ara3D.Models;
 using Ara3D.Utils;
@@ -35,7 +35,7 @@ public sealed class ModelGeometry
     public static ModelGeometry Load(FilePath path)
     {
         using var file = new IfcFile(path, includeGeometry: false);
-        var result = new Approach1Mesher().Build(file);
+        var result = IfcMesher.Build(file.EntityResolver);
         if (result.Model is null)
             throw new InvalidOperationException(
                 $"Meshing failed for {path}: {string.Join("; ", result.Errors)}");

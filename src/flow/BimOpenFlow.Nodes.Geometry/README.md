@@ -17,7 +17,7 @@ local setup, verification and limits.
 
 ## Library
 
-- `ModelGeometry.Load(path)` — meshes an IFC file (pure C# `Approach1Mesher`)
+- `ModelGeometry.Load(path)` — meshes an IFC file (the pure C# `Ara3D.Ifc.Mesher`)
   into immutable meshes (`meshId` = index into `Meshes`) and a
   `GeometryInstance` list (index, meshId, transform, entityId, globalId,
   category, world bounds).

@@ -154,7 +154,7 @@ Agents: append findings here (contract friction, surprises, perf numbers).
 
 ### Track GEO (BimOpenFlow.Nodes.Geometry) â€” 19 tests
 - `InstanceStruct.EntityIndex` actually holds the STEP express id, not an index â€” misleading; worth renaming upstream or documenting in Ara3D.Models.
-- `Approach1Mesher.Build` with `includeGeometry: false` is pure C# â€” the native web-ifc dll never loads on this path; the windows/x64 constraint is inherited, not exercised.
+- `IfcMesher.Build` over the entity resolver is pure C#: the native web-ifc dll never loads on this path.
 - `DataTableBuilder.AddColumn(IDataColumn)` reuses live column objects; safe copying needs materializing via `Array.CreateInstance` â€” a shared "copy/select rows" helper may belong in Ara3D.DataTable.
 - Canonical cell-text join rules duplicate `Scalar.ToCanonicalText` from Expressions; promote to a shared table-utils module if a third pack needs them.
 - ModelGeometryCache is unbounded (TODO); host should own eviction. Instance table rebuilt per `view3d.instances` eval â€” cache it if eval frequency grows.
