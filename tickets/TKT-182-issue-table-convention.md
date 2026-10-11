@@ -1,19 +1,24 @@
 ---
 id: TKT-182
 title: One column convention for issue and selection tables across checks, IDS, SQL, BCF and the viewer
-status: open
+status: done
 depends_on: []
 owner:
 fence: []
 workflow: [W3]
 related: [TKT-171, TKT-206]
 created: 2026-10-10
+closed: 2026-10-11
 kind: question
 ---
 
 Found in the BOS formats wave (docs/plans/bos-formats.md, Architecture notes). BCF reads GlobalId, Title, Description, Status, Priority. The flow's verdict tables use camelCase (checkTitle, verdict in BimOpenFlow.Nodes.Compliance/VerdictSchema.cs), Ara3D.Ids uses PascalCase, the DuckDB views PascalCase. Which names and casing, and where is the constants class that both repositories can see?
 
-## Recommendation (supervisor, 2026-10-10), for the owner to accept or change
+## Decision (owner, 2026-10-11)
+
+Accepted as recommended below: PascalCase, and one `IssueColumns` constants class in `Ara3D.BimOpenSchema.ObjectModel` (bim-open-data) that the flow's `VerdictSchema.cs` and `VerdictTables.cs`, `Ara3D.Ids`, and the BCF writer all read. The flow's verdict columns become `Verdict`, `CheckId`, `CheckTitle`, `Citation`; issue and selection tables carry `GlobalId` plus optional `EntityIndex`, `Title`, `Description`, `Status`, `Priority`. TKT-206 (the column vocabulary) carries out the change, including the compliance tests, golden outputs, and saved graphs that name the old camelCase columns.
+
+## Recommendation (supervisor, 2026-10-10), accepted above
 
 - **Casing: PascalCase.** It is what the BOS tables, the DuckDB views (`EntityText.GlobalId`), `Ara3D.Ids.IdsVerdict` and the BCF reader already use. Only the flow's verdict tables are camelCase.
 - **Columns.**
