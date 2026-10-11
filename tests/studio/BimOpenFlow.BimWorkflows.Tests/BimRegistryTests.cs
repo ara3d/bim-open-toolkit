@@ -15,11 +15,12 @@ public sealed class BimRegistryTests
             Is.SupersetOf(BimAnalysisNodes.All.Select(n => n.Spec.Kind)));
 
     [Test]
-    public void BimAnalysisPack_HasTheTwelveKinds()
+    public void BimAnalysisPack_HasItsKinds()
         => Assert.That(BimAnalysisNodes.All.Select(n => n.Spec.Kind), Is.EquivalentTo(new[]
         {
             "bim.elements", "bim.rooms", "bim.levels", "bim.bounds",
             "bim.paramTable", "bim.paramCoverage", "bim.discipline", "bim.classifyRooms",
             "bim.containment", "bim.nearest", "bim.navGraph", "bim.hops",
+            "bim.orientation", "bim.buildSequence",
         }));
 }
