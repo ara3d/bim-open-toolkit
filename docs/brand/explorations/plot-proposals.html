@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIM Open Plot brand proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&family=Public+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f4f5f7; --surface:#fff; --text:#171a1f; --dim:#5a606c; --line:#e3e6ea; --edge:#cfd4db;
+  --flow:#2f66ce; --notebook:#5a47c7; --viewer:#0f8a80; --data:#b8326e; --schema:#4f5d78;
+  --ochre:#a16207; --ochre-soft:#f6efdb;
+  --olive:#4d7c0f; --olive-soft:#edf3e1;
+  --coral:#c2410c; --coral-soft:#fbe9e1;
+  --green:#16a34a; --amber:#d97706; --red:#dc2626;
+  --font-brand:"Instrument Sans","Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-ui:"Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-mono:"Fira Code","Cascadia Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui);padding:32px 16px 64px}
+main{max-width:1040px;margin:0 auto}
+h1{font:700 24px/1.2 var(--font-brand);margin:0 0 4px}
+h2{font:600 18px/1.3 var(--font-brand);margin:40px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font:600 15px/1.3 var(--font-brand);margin:0 0 6px}
+p{margin:0 0 10px;max-width:72ch}
+.sub{color:var(--dim);margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:0 0 16px}
+.rec{border-left:4px solid var(--ochre)}
+.file{font:12px/1.4 var(--font-mono);color:var(--dim)}
+.notes{color:var(--dim);font-size:13px}
+.sizes{display:flex;gap:28px;align-items:flex-end;padding:18px 20px;border-radius:6px;margin-top:12px;flex-wrap:wrap}
+.sizes.light{background:#fff;border:1px solid var(--line)}
+.sizes.dark{color:#fff}
+.sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.sizes figcaption{font:11px/1 var(--font-mono);opacity:.75}
+.sizes svg{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.row2{grid-template-columns:1fr}}
+.favrow{display:flex;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:var(--dim);flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;gap:6px;background:#e8eaef;border-radius:6px 6px 0 0;padding:6px 10px;font:12px/1 var(--font-ui);color:var(--text)}
+.tab.flow svg{color:var(--flow)} .tab.nb svg{color:var(--notebook)} .tab.vw svg{color:var(--viewer)} .tab.dt svg{color:var(--data)} .tab.sc svg{color:var(--schema)}
+.lockup{margin-top:12px;padding:16px;background:#fff;border:1px dashed var(--line);border-radius:6px;display:inline-block}
+.lockup svg{display:block}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+@media (max-width:900px){.grid3{grid-template-columns:1fr}}
+.mini{background:#fff;border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.mini svg{vertical-align:-4px;margin-right:6px}
+.mini .btn{display:inline-block;font:600 13px/1 var(--font-ui);color:#fff;border-radius:5px;padding:7px 10px;margin-top:8px}
+.mini .sel{display:block;font:400 13px/1.4 var(--font-ui);padding:4px 8px;border-radius:4px;margin-top:8px}
+.pal{display:flex;gap:6px;margin-top:8px;align-items:center;font:11px var(--font-mono);color:var(--dim)}
+.pal span{width:22px;height:22px;border-radius:4px;display:block}
+.family{display:flex;gap:18px;align-items:center;padding:16px 20px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:12px;flex-wrap:wrap}
+.family figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px;font:11px/1 var(--font-mono);color:var(--dim)}
+/* a chart card in the product's accent */
+.chart{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.chart .bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-bottom:1px solid var(--line)}
+.chart .wm{font:700 15px/1 var(--font-brand);letter-spacing:-0.01em}
+.chart .wm .fam{font-weight:600;color:var(--dim);margin-right:4px}
+.chart .sep{flex:1}
+.chart .btn{font:600 13px/1 var(--font-ui);color:#fff;border-radius:5px;padding:7px 10px}
+.chart .body{padding:16px 20px 20px}
+.chart .title{font:600 15px/1.3 var(--font-brand);margin:0 0 2px}
+.chart .meta{font:400 11px/1.5 var(--font-mono);color:var(--dim);margin-bottom:10px}
+code{font:12px var(--font-mono)}
+</style>
+</head>
+<body>
+<main>
+<h1>BIM Open Plot: brand proposals</h1>
+<p class="sub">Drawn 2026-10-11 for the sixth product, <code>ara3d/bim-open-plot</code>, the chart, drawing and figure layer. Three marks from the family's parts (the rows, the wire, the node disc), three accents that no product or status colour uses, each in a tab strip beside the five decided marks. The rules are those of <code>docs/BRANDING.md</code>: 24 by 24 viewBox, one path, one fill.</p>
+
+<h2>The three marks</h2>
+<div class="grid3">
+  <div class="mini">
+    <h3>P1 Flow to Bars</h3>
+    <svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg>
+    <p class="notes">The node disc on the left, as in Flow to Page and the viewer mark; one wire leaves it and becomes the first of three rising bars. It says the product is a client of the flow host, and that an answer becomes a picture. Below 16 px the bars alone are the favicon.</p>
+    <p class="file">explorations/mark-p1-flow-to-bars.svg</p>
+  </div>
+  <div class="mini">
+    <h3>P2 Rows to Bars</h3>
+    <svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 3h6v4h-6ZM8.5 10h13.5v4H8.5ZM8.5 17h9.5v4H8.5Z"/></svg>
+    <p class="notes">The three key cells of Model to Rows, each followed by a bar whose length is its value: a table that is already a horizontal bar chart. The most literal of the three and the closest to the Data and Schema marks. Weakness: at 16 px it can pass for a list icon.</p>
+    <p class="file">explorations/mark-p2-rows-to-bars.svg</p>
+  </div>
+  <div class="mini">
+    <h3>P3 Flow to Line</h3>
+    <svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4v2h-4ZM10.5 11L15 15.6L22 4V7.6L15 19.2L10.5 13.4ZM10 20h12v2H10Z"/></svg>
+    <p class="notes">The disc and wire, then the wire itself becomes a line chart over a baseline. Says "plot" as a verb most directly. Weakness: the diagonal is the only one in the family, which is all orthogonal, and it softens at 16 px.</p>
+    <p class="file">explorations/mark-p3-flow-to-line.svg</p>
+  </div>
+</div>
+
+<h2>Sizes, P1 in each accent</h2>
+<div class="row2">
+  <div>
+    <div class="sizes light" style="color:var(--ochre)">
+      <figure><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>16</figcaption></figure>
+      <figure><svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>22</figcaption></figure>
+      <figure><svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>48</figcaption></figure>
+      <figure><svg width="96" height="96" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>96</figcaption></figure>
+      <figure><svg width="12" height="12" viewBox="10 1 13 22"><path fill="currentColor" d="M11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>&lt;16: bars</figcaption></figure>
+    </div>
+    <div class="pal"><span style="background:var(--ochre)"></span><span style="background:var(--ochre-soft)"></span> Ochre #a16207, soft #f6efdb</div>
+    <div class="pal"><span style="background:var(--olive)"></span><span style="background:var(--olive-soft)"></span> Olive #4d7c0f, soft #edf3e1</div>
+    <div class="pal"><span style="background:var(--coral)"></span><span style="background:var(--coral-soft)"></span> Coral #c2410c, soft #fbe9e1</div>
+  </div>
+  <div>
+    <div class="sizes dark" style="background:var(--ochre)">
+      <figure><svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>ochre</figcaption></figure>
+    </div>
+    <div class="sizes dark" style="background:var(--olive);margin-top:8px">
+      <figure><svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>olive</figcaption></figure>
+    </div>
+    <div class="sizes dark" style="background:var(--coral);margin-top:8px">
+      <figure><svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><figcaption>coral</figcaption></figure>
+    </div>
+  </div>
+</div>
+
+<h2>In the tab strip, beside the family</h2>
+<p class="notes">The test every earlier round used: six favicons at 16 px in grey tabs. Each row is one candidate mark in ochre; the last row shows P1 in the other two accents.</p>
+<div class="favrow">
+  <span class="tab flow"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg>Flow</span>
+  <span class="tab nb"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></svg>Notebook</span>
+  <span class="tab vw"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></svg>Viewer</span>
+  <span class="tab dt"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></svg>Data</span>
+  <span class="tab sc"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M2 2h20v6H2ZM3.5 3.5h4.5v3H3.5ZM9.5 3.5h11v3h-11ZM2 9h20v6H2ZM3.5 10.5h4.5v3H3.5ZM9.5 10.5h11v3h-11ZM2 16h20v6H2ZM3.5 17.5h4.5v3H3.5ZM9.5 17.5h11v3h-11Z"/></svg>Schema</span>
+  <span class="tab" style="color:var(--text)"><svg width="16" height="16" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg>Plot P1</span>
+</div>
+<div class="favrow">
+  <span class="tab flow"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg>Flow</span>
+  <span class="tab nb"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></svg>Notebook</span>
+  <span class="tab vw"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></svg>Viewer</span>
+  <span class="tab dt"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></svg>Data</span>
+  <span class="tab sc"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M2 2h20v6H2ZM3.5 3.5h4.5v3H3.5ZM9.5 3.5h11v3h-11ZM2 9h20v6H2ZM3.5 10.5h4.5v3H3.5ZM9.5 10.5h11v3h-11ZM2 16h20v6H2ZM3.5 17.5h4.5v3H3.5ZM9.5 17.5h11v3h-11Z"/></svg>Schema</span>
+  <span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 3h6v4h-6ZM8.5 10h13.5v4H8.5ZM8.5 17h9.5v4H8.5Z"/></svg>Plot P2</span>
+</div>
+<div class="favrow">
+  <span class="tab flow"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg>Flow</span>
+  <span class="tab nb"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></svg>Notebook</span>
+  <span class="tab vw"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></svg>Viewer</span>
+  <span class="tab dt"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></svg>Data</span>
+  <span class="tab sc"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M2 2h20v6H2ZM3.5 3.5h4.5v3H3.5ZM9.5 3.5h11v3h-11ZM2 9h20v6H2ZM3.5 10.5h4.5v3H3.5ZM9.5 10.5h11v3h-11ZM2 16h20v6H2ZM3.5 17.5h4.5v3H3.5ZM9.5 17.5h11v3h-11Z"/></svg>Schema</span>
+  <span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4v2h-4ZM10.5 11L15 15.6L22 4V7.6L15 19.2L10.5 13.4ZM10 20h12v2H10Z"/></svg>Plot P3</span>
+</div>
+<div class="favrow">
+  <span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:var(--olive)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg>P1 olive</span>
+  <span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:var(--coral)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg>P1 coral</span>
+  <span class="tab" style="background:none;color:var(--dim)">status: <svg width="10" height="10"><rect width="10" height="10" rx="2" fill="#16a34a"/></svg> <svg width="10" height="10"><rect width="10" height="10" rx="2" fill="#d97706"/></svg> <svg width="10" height="10"><rect width="10" height="10" rx="2" fill="#dc2626"/></svg></span>
+</div>
+
+<h2>The family of six</h2>
+<div class="family">
+  <figure><svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--flow)"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg>Flow</figure>
+  <figure><svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--notebook)"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></svg>Notebook</figure>
+  <figure><svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--viewer)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></svg>Viewer</figure>
+  <figure><svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg>Plot</figure>
+  <figure><svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--data)"><path fill="currentColor" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></svg>Data</figure>
+  <figure><svg width="48" height="48" viewBox="0 0 24 24" style="color:var(--schema)"><path fill="currentColor" fill-rule="evenodd" d="M2 2h20v6H2ZM3.5 3.5h4.5v3H3.5ZM9.5 3.5h11v3h-11ZM2 9h20v6H2ZM3.5 10.5h4.5v3H3.5ZM9.5 10.5h11v3h-11ZM2 16h20v6H2ZM3.5 17.5h4.5v3H3.5ZM9.5 17.5h11v3h-11Z"/></svg>Schema</figure>
+</div>
+<p class="notes" style="margin-top:10px">Read left to right: rows become a flow; the flow becomes a page, a 3D view, or a plot; a model becomes rows; and the rows have a shape. The three clients of the host (Notebook, Viewer, Plot) all start from the disc on the left.</p>
+
+<h2>Lockup and a chart card</h2>
+<div class="lockup">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 32" width="352" height="64">
+<g transform="translate(4 4)"><path fill="#a16207" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></g>
+<text x="36" y="21.5" style="font-family:'Instrument Sans','Public Sans',system-ui,sans-serif;font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Plot</tspan></text>
+</svg>
+</div>
+<div class="chart">
+  <div class="bar"><svg width="22" height="22" viewBox="0 0 24 24" style="color:var(--ochre)"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg><span class="wm"><span class="fam">BIM Open</span>Plot</span><span class="sep"></span><span class="btn" style="background:var(--ochre)">Export SVG</span></div>
+  <div class="body">
+    <div class="title">Spaces per storey</div>
+    <div class="meta">p01-schependomlaan · chart.bar · 6 rows · 2026-10-04</div>
+    <svg width="100%" viewBox="0 0 520 150" style="display:block;max-width:520px;font:11px 'Public Sans',sans-serif">
+      <g fill="#a16207">
+        <rect x="40" y="70" width="60" height="60"/><rect x="118" y="30" width="60" height="100"/><rect x="196" y="38" width="60" height="92"/><rect x="274" y="42" width="60" height="88"/><rect x="352" y="56" width="60" height="74"/><rect x="430" y="110" width="60" height="20"/>
+      </g>
+      <line x1="36" y1="130.5" x2="494" y2="130.5" stroke="#cfd4db"/>
+      <g fill="#5a606c" text-anchor="middle"><text x="70" y="145">-1</text><text x="148" y="145">00</text><text x="226" y="145">01</text><text x="304" y="145">02</text><text x="382" y="145">03</text><text x="460" y="145">04</text></g>
+      <g fill="#171a1f" text-anchor="middle" font-family="Fira Code,monospace"><text x="70" y="64">12</text><text x="148" y="24">25</text><text x="226" y="32">23</text><text x="304" y="36">22</text><text x="382" y="50">15</text><text x="460" y="104">3</text></g>
+    </svg>
+  </div>
+</div>
+<p class="notes">The chart's series colour is the accent only when a chart has one series; several series take the data palette, which is a vocabulary and not a brand colour, as the node stripes are.</p>
+
+<h2>Recommendation</h2>
+<div class="card rec">
+  <p><strong>P1 Flow to Bars in ochre</strong>, written as <code>docs/brand/plot-mark.svg</code> and <code>docs/brand/plot-lockup.svg</code>.</p>
+  <ul>
+    <li>P1 keeps the family grammar: the three clients of the host, Notebook, Viewer and Plot, all start from the disc on the left and differ only in what the wire becomes. P2 has no disc and reads as data rather than as a tool; P3 adds the family's only diagonal.</li>
+    <li>Ochre is the one warm accent in a family that is otherwise cool apart from rose, and it is a traditional drawing colour. It is distinct from the amber status colour in both lightness and saturation (#a16207 beside #d97706 in the strip above), and a chart page will show amber only on a stale embed, in a badge, never on the chrome.</li>
+    <li>Olive is distinct but sits near the green status colour at 16 px; coral is handsome but a chart accent that reads as "error" beside red is a cost every page would pay.</li>
+    <li>Below 16 px the three bars alone are the favicon, as the rules provide for the other marks.</li>
+  </ul>
+</div>
+</main>
+</body>
+</html>
