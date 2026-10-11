@@ -49,7 +49,7 @@ namespace Ara3D.Studio.Tools
                 var inst = model.InstanceData[i];
                 var ei = inst.EntityIndex;
                 var cat = data.GetCategoryName((EntityIndex)ei);
-                if (cat.StartsWith("room", StringComparison.CurrentCultureIgnoreCase))
+                if (cat?.StartsWith("room", StringComparison.CurrentCultureIgnoreCase) == true)
                 {
                     if (inst.MeshIndex < 0) continue;
                     var bounds = model.InstanceBoundsData[i];

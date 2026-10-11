@@ -141,7 +141,7 @@ public class SimulateSequence : IModifier
         => bim.Entities.ElementAtOrDefault(inst.EntityIndex)?.Category ?? "";
 
     public static string GetCategory(BimData bim, InstanceStruct inst)
-        => bim.GetCategoryName((EntityIndex)inst.EntityIndex);
+        => bim.GetCategoryName((EntityIndex)inst.EntityIndex) ?? "";
 
     public FlowObject Eval(FlowObject obj, EvalContext context)
     {
