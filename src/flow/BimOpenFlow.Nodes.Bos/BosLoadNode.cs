@@ -71,10 +71,17 @@ public sealed class BosLoadNode : IFlowNode
             data = BosHarmonizer.Harmonize(data);
         using var conn = data.ToDuckDb();
         return new(
-            conn.Query("SELECT * FROM EntityText ORDER BY EntityIndex", "entities"),
-            conn.Query("SELECT * FROM ParameterText ORDER BY EntityIndex, Name", "parameters"),
-            conn.Query("SELECT * FROM RelationText ORDER BY EntityIndexA, EntityIndexB, RelationType", "relations"));
+            conn.Query(EntitiesQuery, "entities"),
+            conn.Query(ParametersQuery, "parameters"),
+            conn.Query(RelationsQuery, "relations"));
     }
+
+    /// <summary>The queries behind the three outputs. Each order is total, so two parameters
+    /// that share an entity and a name (in different groups) always come out in the same order.</summary>
+    public const string EntitiesQuery = "SELECT * FROM EntityText ORDER BY EntityIndex";
+    public const string ParametersQuery =
+        "SELECT * FROM ParameterText ORDER BY EntityIndex, Name, ParameterGroup NULLS FIRST, ValueType, Value NULLS FIRST";
+    public const string RelationsQuery = "SELECT * FROM RelationText ORDER BY EntityIndexA, EntityIndexB, RelationType";
 
     private static string ContentHash(string path)
     {

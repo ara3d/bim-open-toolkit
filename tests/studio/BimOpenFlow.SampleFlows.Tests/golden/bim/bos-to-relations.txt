@@ -7,11 +7,11 @@ model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18551 rows x 6 cols  sha 9d922d761112
+  //   parameters: table 18551 rows x 6 cols  sha 61628ffa56f3
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", "", "String", "Revit"
-  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", "", "Number", "0.0"
-  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", "", "Number", "0.0"
+  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
   //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
   //     [0] 133, "Level 1", 4705, null, "MemberOf"

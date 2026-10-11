@@ -9,19 +9,19 @@ load = bos.load@1(path: "{SAMPLES}/sample.bos");
   //     [0] 0, 1001, "GUID-1001", "Levels", null, null
   //     [1] 1, 1002, "GUID-1002", "Rooms", null, null
   //     [2] 2, 1003, "GUID-1003", "Walls", null, null
-  //   parameters: table 123 rows x 6 cols  sha 36d8e8adebfb
+  //   parameters: table 123 rows x 6 cols  sha 40a4f3f032aa
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 0, "Rvt:Category:CategoryType", "Category", "", "String", "Model"
-  //     [1] 1, "Rvt:Category:CategoryType", "Category", "", "String", "Model"
-  //     [2] 2, "Rvt:Category:CategoryType", "Category", "", "String", "Model"
+  //     [0] 0, "Rvt:Category:CategoryType", "Category", null, "String", "Model"
+  //     [1] 1, "Rvt:Category:CategoryType", "Category", null, "String", "Model"
+  //     [2] 2, "Rvt:Category:CategoryType", "Category", null, "String", "Model"
   //   relations: table 0 rows x 5 cols  sha a3606a2fbc71
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
 joinCategory = table.join@1(a: load.parameters, b: load.entities, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 123 rows x 11 cols  sha acaec478887f
+  // Ok  table 123 rows x 11 cols  sha 5c7cc34d5ee6
   //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text
-  //   [0] 0, "Rvt:Category:CategoryType", "Category", "", "String", "Model", 1001, "GUID-1001", "Levels", null, null
-  //   [1] 1, "Rvt:Category:CategoryType", "Category", "", "String", "Model", 1002, "GUID-1002", "Rooms", null, null
-  //   [2] 2, "Rvt:Category:CategoryType", "Category", "", "String", "Model", 1003, "GUID-1003", "Walls", null, null
+  //   [0] 0, "Rvt:Category:CategoryType", "Category", null, "String", "Model", 1001, "GUID-1001", "Levels", null, null
+  //   [1] 1, "Rvt:Category:CategoryType", "Category", null, "String", "Model", 1002, "GUID-1002", "Rooms", null, null
+  //   [2] 2, "Rvt:Category:CategoryType", "Category", null, "String", "Model", 1003, "GUID-1003", "Walls", null, null
 coverage = bim.paramCoverage@1(parameters: joinCategory.table, groupBy: "Category");
   // Ok  table 44 rows x 7 cols  sha 8613f5d24712
   //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Category:Text, Count:Integer, Distinct:Integer, FillRate:Number

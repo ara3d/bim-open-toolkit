@@ -48,9 +48,9 @@ public sealed class BosLoadSelectiveReadTests
         using var conn = data.ToDuckDb();
         return
         [
-            conn.Query("SELECT * FROM EntityText ORDER BY EntityIndex", "entities"),
-            conn.Query("SELECT * FROM ParameterText ORDER BY EntityIndex, Name", "parameters"),
-            conn.Query("SELECT * FROM RelationText ORDER BY EntityIndexA, EntityIndexB, RelationType", "relations"),
+            conn.Query(BosLoadNode.EntitiesQuery, "entities"),
+            conn.Query(BosLoadNode.ParametersQuery, "parameters"),
+            conn.Query(BosLoadNode.RelationsQuery, "relations"),
         ];
     }
 
