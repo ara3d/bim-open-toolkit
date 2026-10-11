@@ -1,0 +1,144 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Where the embodied carbon is: A1-A3 by material, ranked",
+    "subtitle": "Bars: kgCO2e per material or class (synthetic). Line: cumulative share. Rule: 80%."
+  },
+  "width": 640,
+  "height": 320,
+  "layer": [
+    {
+      "mark": "bar",
+      "encoding": {
+        "x": {
+          "field": "MaterialOrClass",
+          "type": "nominal",
+          "sort": {
+            "field": "MaterialTotal_kgCO2e",
+            "order": "descending"
+          },
+          "axis": {
+            "title": null,
+            "labelAngle": -45,
+            "labelLimit": 180
+          }
+        },
+        "y": {
+          "field": "MaterialTotal_kgCO2e",
+          "type": "quantitative",
+          "title": "Embodied carbon (kgCO2e)"
+        },
+        "color": {
+          "field": "MaterialTotal_kgCO2e",
+          "type": "quantitative",
+          "scale": {
+            "scheme": "viridis"
+          },
+          "legend": {
+            "title": "kgCO2e"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "MaterialOrClass",
+            "type": "nominal",
+            "title": "Material or class"
+          },
+          {
+            "field": "MaterialTotal_kgCO2e",
+            "type": "quantitative",
+            "format": ",.1f",
+            "title": "kgCO2e"
+          },
+          {
+            "field": "Share",
+            "type": "quantitative",
+            "format": ".1%"
+          },
+          {
+            "field": "CumulativeShare",
+            "type": "quantitative",
+            "format": ".1%",
+            "title": "Cumulative"
+          },
+          {
+            "field": "ParetoClass",
+            "type": "nominal",
+            "title": "Pareto class"
+          }
+        ]
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "isValid(datum.Share)"
+        }
+      ],
+      "mark": {
+        "type": "line",
+        "point": true,
+        "color": "#d62728"
+      },
+      "encoding": {
+        "x": {
+          "field": "MaterialOrClass",
+          "type": "nominal",
+          "sort": {
+            "field": "MaterialTotal_kgCO2e",
+            "order": "descending"
+          }
+        },
+        "y": {
+          "field": "CumulativeShare",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              0,
+              1
+            ]
+          },
+          "axis": {
+            "format": "%",
+            "title": "Cumulative share"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "values": [
+          {
+            "threshold": 0.8
+          }
+        ]
+      },
+      "mark": {
+        "type": "rule",
+        "strokeDash": [
+          4,
+          4
+        ],
+        "color": "#d62728"
+      },
+      "encoding": {
+        "y": {
+          "field": "threshold",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              0,
+              1
+            ]
+          },
+          "axis": null
+        }
+      }
+    }
+  ],
+  "resolve": {
+    "scale": {
+      "y": "independent"
+    }
+  }
+}

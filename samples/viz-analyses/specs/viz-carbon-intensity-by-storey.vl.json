@@ -1,0 +1,55 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Embodied carbon per m2 of floor, by storey",
+    "subtitle": "kgCO2e (A1-A3, synthetic) over net space area; a storey with no spaces has no intensity"
+  },
+  "width": 420,
+  "height": 220,
+  "encoding": {
+    "y": {
+      "field": "Storey",
+      "type": "nominal",
+      "sort": { "field": "Intensity_kgCO2e_per_m2", "order": "descending" },
+      "axis": { "title": null }
+    }
+  },
+  "layer": [
+    {
+      "mark": "bar",
+      "encoding": {
+        "x": { "field": "Intensity_kgCO2e_per_m2", "type": "quantitative", "title": "kgCO2e/m2" },
+        "color": {
+          "field": "Intensity_kgCO2e_per_m2",
+          "type": "quantitative",
+          "scale": { "scheme": "viridis" },
+          "legend": { "title": "kgCO2e/m2" }
+        },
+        "tooltip": [
+          { "field": "Storey", "type": "nominal" },
+          { "field": "Intensity_kgCO2e_per_m2", "type": "quantitative", "format": ",.1f", "title": "kgCO2e/m2" },
+          { "field": "EmbodiedCarbon_kgCO2e", "type": "quantitative", "format": ",.1f", "title": "kgCO2e" },
+          { "field": "FloorArea_m2", "type": "quantitative", "format": ",.1f", "title": "Floor area (m2)" },
+          { "field": "ElementsWithCarbon", "type": "quantitative", "title": "Elements with carbon" },
+          { "field": "Elements", "type": "quantitative" }
+        ]
+      }
+    },
+    {
+      "transform": [{ "filter": "!isValid(datum.Intensity_kgCO2e_per_m2)" }],
+      "mark": { "type": "text", "align": "left", "dx": 4, "color": "#808080", "fontStyle": "italic" },
+      "encoding": {
+        "x": { "datum": 0 },
+        "text": { "value": "no floor area: intensity missing" }
+      }
+    },
+    {
+      "transform": [{ "filter": "isValid(datum.Intensity_kgCO2e_per_m2)" }],
+      "mark": { "type": "text", "align": "left", "dx": 4 },
+      "encoding": {
+        "x": { "field": "Intensity_kgCO2e_per_m2", "type": "quantitative" },
+        "text": { "field": "Intensity_kgCO2e_per_m2", "type": "quantitative", "format": ",.1f" }
+      }
+    }
+  ]
+}
