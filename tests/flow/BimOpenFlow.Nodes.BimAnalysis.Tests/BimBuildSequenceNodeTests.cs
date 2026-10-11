@@ -3,14 +3,14 @@ using Ara3D.DataTable;
 
 namespace BimOpenFlow.Nodes.BimAnalysis.Tests;
 
-/// <summary>bim.schedule over the sample building and small inline tables: the
+/// <summary>bim.buildSequence over the sample building and small inline tables: the
 /// floor-by-floor cycle, the per-element finish dates, the trade map, and the error paths.
 /// Sample building, 10-day tasks: Level 1 holds SC1 (Structure), W1 W2 WN1 (Envelope),
 /// D1..D4 (Finishes); Level 2 holds W3 (Envelope), DU1 LF1 (MEP), D5 (Finishes).</summary>
 [TestFixture]
-public sealed class BimScheduleNodeTests
+public sealed class BimBuildSequenceNodeTests
 {
-    private static readonly BimScheduleNode Node = new();
+    private static readonly BimBuildSequenceNode Node = new();
 
     private static IReadOnlyList<IDataTable> Schedule(FlowValue elements, params (string Name, string Value)[] ps)
         => Node.Eval(NodeTestHelpers.Ctx, [elements], NodeTestHelpers.Params(ps))
@@ -72,7 +72,7 @@ public sealed class BimScheduleNodeTests
     public void Unscheduled_Rows_AreCountedInOneWarning()
     {
         var (_, warnings) = Node.EvalWithWarnings([Elements(("L1", 0, "Walls"), ("L1", 0, "Rooms"))]);
-        Assert.That(warnings, Is.EqualTo(new[] { "bim.schedule: 1 of 2 rows have no storey or no trade and are not scheduled." }));
+        Assert.That(warnings, Is.EqualTo(new[] { "bim.buildSequence: 1 of 2 rows have no storey or no trade and are not scheduled." }));
     }
 
     [Test]

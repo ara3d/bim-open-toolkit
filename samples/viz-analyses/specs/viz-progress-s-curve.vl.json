@@ -1,0 +1,20 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": { "text": "Duplex progress S-curve", "subtitle": "Synthetic: planned from bim.buildSequence, actual held three weeks late" },
+  "description": "Cumulative elements installed by week; Planned and Actual are folded into one Series column and drawn as two lines.",
+  "width": 560,
+  "transform": [{ "fold": ["Planned", "Actual"], "as": ["Series", "Elements"] }],
+  "mark": { "type": "line", "point": true },
+  "encoding": {
+    "x": { "field": "Week", "type": "quantitative", "title": "Week from start (synthetic)", "axis": { "tickMinStep": 1 } },
+    "y": { "field": "Elements", "type": "quantitative", "title": "Elements installed (cumulative)" },
+    "color": { "field": "Series", "type": "nominal", "sort": ["Planned", "Actual"] },
+    "strokeDash": { "field": "Series", "type": "nominal", "sort": ["Planned", "Actual"] },
+    "tooltip": [
+      { "field": "Week", "type": "quantitative" },
+      { "field": "Series", "type": "nominal" },
+      { "field": "Elements", "type": "quantitative" },
+      { "field": "Synthetic", "type": "nominal" }
+    ]
+  }
+}

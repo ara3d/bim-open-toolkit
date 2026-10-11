@@ -10,9 +10,9 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 /// the previous trade has left its storey and its own trade has left the storey below, so
 /// with equal durations trade t works storey s from day (s + t) * daysPerTask. A task with
 /// no elements takes no time and is not emitted.</summary>
-public sealed class BimScheduleNode : IFlowNode
+public sealed class BimBuildSequenceNode : IFlowNode
 {
-    public const string Kind = "bim.schedule";
+    public const string Kind = "bim.buildSequence";
     public const string DefaultStart = "2027-01-04";
     public const string DefaultDaysPerTask = "10";
     public const string DefaultTrades = "Structure,Envelope,MEP,Finishes";
@@ -62,7 +62,7 @@ public sealed class BimScheduleNode : IFlowNode
             if (table.ColumnIndex(name) >= 0)
                 throw new ArgumentException($"{Kind}: column '{name}' already exists.");
         var trades = parameters.TextOr("trades", DefaultTrades).SplitNames();
-        var rows = ReadRows(table, parameters, BimScheduleTrades.Classifier(trades, parameters.GetText("overrides"), Kind));
+        var rows = ReadRows(table, parameters, BimBuildSequenceTrades.Classifier(trades, parameters.GetText("overrides"), Kind));
         var storeys = StoreyOrder(rows);
         var plan = Plan(rows, storeys, trades.Count, DaysPerTask(parameters));
         var start = StartDate(parameters);
@@ -195,7 +195,7 @@ public sealed class BimScheduleNode : IFlowNode
 
 /// <summary>The built-in map from categories, IFC classes, and bim.discipline names to the
 /// four default trades, matched case-insensitively by prefix in order.</summary>
-internal static class BimScheduleTrades
+internal static class BimBuildSequenceTrades
 {
     public static Func<string?, int?> Classifier(IReadOnlyList<string> trades, string overridesJson, string kind)
     {

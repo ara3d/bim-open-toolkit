@@ -1,0 +1,22 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": { "text": "Duplex construction sequence", "subtitle": "Synthetic schedule: 10-day tasks, storeys bottom-up, trades one floor apart" },
+  "description": "Gantt of bim.buildSequence's tasks output: one bar per task from Start to End (End is exclusive), coloured by trade.",
+  "width": 640,
+  "mark": { "type": "bar", "cornerRadius": 2 },
+  "encoding": {
+    "y": { "field": "Task", "type": "nominal", "sort": { "field": "Start", "op": "min" }, "title": null },
+    "x": { "field": "Start", "type": "temporal", "title": "Date (synthetic)" },
+    "x2": { "field": "End" },
+    "color": { "field": "Trade", "type": "nominal", "sort": ["Structure", "Envelope", "MEP", "Finishes"] },
+    "tooltip": [
+      { "field": "Task", "type": "nominal" },
+      { "field": "Start", "type": "temporal" },
+      { "field": "End", "type": "temporal" },
+      { "field": "DurationDays", "type": "quantitative", "title": "Days" },
+      { "field": "ElementCount", "type": "quantitative", "title": "Elements" },
+      { "field": "FinishWeek", "type": "ordinal", "title": "Finish week" },
+      { "field": "Synthetic", "type": "nominal" }
+    ]
+  }
+}

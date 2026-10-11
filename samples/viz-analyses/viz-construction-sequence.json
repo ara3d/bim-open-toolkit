@@ -1,0 +1,48 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": { "x": 40, "y": 520 },
+    "elements": { "x": 40, "y": 40 },
+    "sequence": { "x": 370, "y": 40 },
+    "weeks": { "x": 700, "y": 224 },
+    "inst": { "x": 370, "y": 300 },
+    "colored": { "x": 1030, "y": 300 },
+    "gantt": { "x": 1030, "y": 40 },
+    "taskTable": { "x": 700, "y": 40 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "elements.table", "to": "sequence.table" },
+      { "from": "sequence.elements", "to": "weeks.values" },
+      { "from": "sequence.tasks", "to": "taskTable.table" },
+      { "from": "sequence.tasks", "to": "gantt.table" },
+      { "from": "weeks.legend", "to": "gantt.scale" },
+      { "from": "inst.instances", "to": "colored.instances" },
+      { "from": "sequence.elements", "to": "colored.values" },
+      { "from": "weeks.legend", "to": "colored.scale" }
+    ],
+    "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "elements", "kind": "duck.query", "version": 1 },
+      { "id": "sequence", "kind": "bim.buildSequence", "version": 1 },
+      { "id": "weeks", "kind": "view.colormap", "version": 1 },
+      { "id": "taskTable", "kind": "view.table", "version": 1 },
+      { "id": "gantt", "kind": "chart.bar", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "colored", "kind": "view3d.color", "version": 1 }
+    ]
+  },
+  "values": {
+    "about": { "text": "For a site superintendent: in what order do the Duplex's floors and trades get built, and which parts are finished by which week? The DATES ARE SYNTHETIC: bim.buildSequence invents a floor-by-floor cycle from the model, it reads no real programme. Storeys run bottom-up (T/FDN, Level 1, Level 2, Roof); trades run Structure, Envelope, MEP, Finishes, each task 10 calendar days from Monday 2027-01-04, and a trade starts a storey once the trade before it has left that storey and its own crew has left the storey below, so trades overlap by one floor. The Duplex has no MEP elements, so MEP takes no time; IfcSpace rows belong to no trade and stay unscheduled (one warning). Read the Gantt (specs/viz-construction-sequence.vl.json: bar from Start to End per Task, coloured by Trade) or, in the studio, the task table and the bar of elements per task. The 3D view colours each element by the week its task finishes (viridis: dark is early, yellow is late) on the same scale as the bars; grey parts have no storey or no trade. Storeys come from StoreyOfElement in the DuckDB export, because bim.elements has no Level for an IFC-derived model." },
+    "elements": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb",
+      "sql": "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId"
+    },
+    "sequence": { "levelColumn": "Level", "elevationColumn": "Elevation", "column": "Category", "start": "2027-01-04", "daysPerTask": "10", "trades": "Structure,Envelope,MEP,Finishes" },
+    "weeks": { "valueColumn": "FinishWeek", "colorMap": "viridis" },
+    "taskTable": { "title": "Synthetic construction sequence", "columns": "Task,Storey,Trade,Start,End,DurationDays,FinishWeek,ElementCount,Synthetic" },
+    "gantt": { "labelColumn": "Task", "valueColumns": "ElementCount", "title": "Elements per task, coloured by finish week (synthetic)" },
+    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
+    "colored": { "joinColumn": "GlobalId", "valueColumn": "FinishWeek" }
+  }
+}
