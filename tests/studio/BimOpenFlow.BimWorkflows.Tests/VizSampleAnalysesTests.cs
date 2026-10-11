@@ -12,7 +12,9 @@ namespace BimOpenFlow.BimWorkflows.Tests;
 /// Every committed visualization demo (samples/viz-analyses/*.json) parses, validates
 /// against the bim profile registry, evaluates all-green with {SAMPLES} pointed at
 /// samples/nrc, explains itself in a view.note, and has a Vega-Lite spec for its figure
-/// at samples/viz-analyses/specs/&lt;id&gt;.vl.json.
+/// at samples/viz-analyses/specs/&lt;id&gt;.vl.json. The git-ignored files the graphs read
+/// (duplex-enriched.bos, duplex-enriched.duckdb, duplex-base.duckdb) are built from the
+/// committed IFCs the way the studio prepares them (NrcPreparation), once, when missing or stale.
 /// </summary>
 [TestFixture]
 public sealed class VizSampleAnalysesTests
@@ -24,6 +26,19 @@ public sealed class VizSampleAnalysesTests
         => Directory.EnumerateFiles(AnalysesDir, "*.json")
             .Order(StringComparer.Ordinal)
             .Select(f => new TestCaseData(f).SetArgDisplayNames(Path.GetFileNameWithoutExtension(f)));
+
+    /// <summary>Builds every NRC sample file the studio would prepare in the background that is
+    /// missing or older than its IFC; about 30 s per file when cold.</summary>
+    public static void PrepareSamples()
+    {
+        foreach (var job in NrcPreparation.Jobs(RepoPaths.Root))
+            if (!job.IsCurrent)
+                job.Run();
+    }
+
+    [OneTimeSetUp]
+    public void PrepareNrcSamples()
+        => PrepareSamples();
 
     private static GraphDocument Load(string file)
         => SampleSeeding.RewritePaths(GraphDocumentIO.Load(file), NrcSamples.Dir(RepoPaths.Root));
