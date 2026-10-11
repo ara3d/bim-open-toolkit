@@ -5,6 +5,8 @@ Ready-made graphs for the 3D visualization nodes (`view3d.*`, see
 document whose file name is the analysis id. The literal placeholder `{SAMPLES}`
 stands for `samples/nrc`; they all load its committed `duplex-base.ifc` (the IFC Test
 Kit's Duplex, see `samples/nrc/README.md`), so they run in a fresh clone.
+`shared-color-legend` reads it through one `value.path` node `model`, wired into
+the `path` of `view3d.instances` and `view3d.measures` (TKT-138).
 
 | Id | Shows |
 |---|---|

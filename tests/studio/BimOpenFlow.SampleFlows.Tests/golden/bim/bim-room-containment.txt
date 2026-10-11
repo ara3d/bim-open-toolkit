@@ -1,8 +1,10 @@
 dfg 0.1.0;
-// bim-room-containment   graph f18b28a5bb71
+// bim-room-containment   graph 5e8c3cd91e52
 about = view.note@1(text: "Doors touching each room (spatial.intersects between doors and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches). Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display.");
   // Ok
-bounds = bim.bounds@1(path: "{SAMPLES}/sample.bos");
+model = value.path@1(path: "{SAMPLES}/sample.bos");
+  // Ok  Text "{MODELS}/sample.bos"
+bounds = bim.bounds@1(path: model.path);
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
   //   columns EntityIndex:Integer, Name:Text, Category:Text, Level:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number, SizeZ:Number, CenterX:Number, CenterY:Number, CenterZ:Number (+3 more)
   //   scene 18 boxes: 18 opaque, 0 faded, 0 hidden
@@ -14,7 +16,7 @@ doorsOnly = table.filter@1(table: bounds.table, expr: "Category == 'Doors'");
   //   scene 5 boxes (of 18 upstream): 5 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (4.5, 1.4, 0) to (7.5, 8.1, 5.1)
-rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
+rooms = bim.rooms@1(path: model.path);
   // Ok  table 6 rows x 21 cols  sha 1a25261d271b
   //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden

@@ -7,6 +7,12 @@ Paths use the literal placeholder `{SAMPLES}` for the directory holding
 `BimSampleModel` (in `BimOpenFlow.Nodes.BimAnalysis`); no model binary is
 committed.
 
+The four graphs that read the model twice (`bim-room-containment`,
+`bim-nearest-door`, `bim-duct-rooms`, `bim-door-rooms`) hold the path once, in a
+`value.path` node `model` whose `path` output feeds the `path` parameter of both
+`bim.bounds` and `bim.rooms` (TKT-138). The path strings stored on those two
+nodes are ignored while the wire is there.
+
 | Id | Shows |
 |---|---|
 | `bim-discipline-mix` | elements classified into disciplines, counted, ranked |

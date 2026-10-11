@@ -8,6 +8,7 @@ using BimOpenFlow.Nodes.TableOps;
 using BimOpenFlow.Nodes.Geometry;
 using BimOpenFlow.Nodes.Spatial;
 using BimOpenFlow.Nodes.Viz;
+using BimOpenFlow.Nodes.Value;
 using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.View3dWorkflows.Tests;
@@ -22,7 +23,7 @@ namespace BimOpenFlow.View3dWorkflows.Tests;
 [TestFixture]
 public sealed class View3dSampleTests
 {
-    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, GeometryNodes.All, SpatialNodes.All, VizNodes.All);
+    private static readonly NodeRegistry Registry = NodeRegistry.Combine(BosNodes.All, TableOpsNodes.All, GeometryNodes.All, SpatialNodes.All, VizNodes.All, ValueNodes.All);
 
     public static IEnumerable<TestCaseData> SampleFiles
         => Directory.EnumerateFiles(AnalysesDir, "*.json")

@@ -1,6 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "model": { "x": -290, "y": 40 },
     "about": { "x": 700, "y": 500 },
     "bounds": { "x": 40, "y": 40 },
     "doorsOnly": { "x": 370, "y": 40 },
@@ -10,12 +11,15 @@
   },
   "structure": {
     "edges": [
+      { "from": "model.path", "to": "bounds.path" },
+      { "from": "model.path", "to": "rooms.path" },
       { "from": "bounds.table", "to": "doorsOnly.table" },
       { "from": "doorsOnly.table", "to": "overlap.a" },
       { "from": "rooms.table", "to": "overlap.b" },
       { "from": "overlap.table", "to": "touching.table" }
     ],
     "nodes": [
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
@@ -25,6 +29,7 @@
     ]
   },
   "values": {
+    "model": { "path": "{SAMPLES}/sample.bos" },
     "about": { "text": "The rooms each door's box actually overlaps (spatial.intersects, filtered to OverlapVolume > 0). An exterior door such as D4 lists one room; a door in an interior wall lists both. The sample doors also carry from/to-room parameters (see bim-nav-hops); use this only when those are missing." },
     "bounds": { "path": "{SAMPLES}/sample.bos" },
     "doorsOnly": { "expr": "Category == 'Doors'" },

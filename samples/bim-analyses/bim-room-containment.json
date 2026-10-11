@@ -1,6 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "model": { "x": -290, "y": 40 },
     "about": { "x": 1690, "y": 224 },
     "bounds": { "x": 40, "y": 40 },
     "byRoom": { "x": 1030, "y": 40 },
@@ -15,6 +16,8 @@
   },
   "structure": {
     "edges": [
+      { "from": "model.path", "to": "bounds.path" },
+      { "from": "model.path", "to": "rooms.path" },
       { "from": "bounds.table", "to": "doorsOnly.table" },
       { "from": "rooms.table", "to": "overlap.b" },
       { "from": "doorsOnly.table", "to": "overlap.a" },
@@ -27,6 +30,7 @@
       { "from": "final.table", "to": "sorted.table" }
     ],
     "nodes": [
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "byRoom", "kind": "table.aggregate", "version": 1 },
@@ -41,6 +45,7 @@
     ]
   },
   "values": {
+    "model": { "path": "{SAMPLES}/sample.bos" },
     "about": { "text": "Doors touching each room (spatial.intersects between doors and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches). Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display." },
     "bounds": { "path": "{SAMPLES}/sample.bos" },
     "byRoom": { "aggregates": "count(*) as Doors", "groupBy": "B" },

@@ -1,6 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "model": { "x": -290, "y": 280 },
     "bounds": { "x": 40, "y": 280 },
     "doorsOnly": { "x": 370, "y": 224 },
     "nearest": { "x": 700, "y": 40 },
@@ -9,12 +10,15 @@
   },
   "structure": {
     "edges": [
+      { "from": "model.path", "to": "bounds.path" },
+      { "from": "model.path", "to": "rooms.path" },
       { "from": "bounds.table", "to": "doorsOnly.table" },
       { "from": "rooms.table", "to": "nearest.a" },
       { "from": "doorsOnly.table", "to": "nearest.b" },
       { "from": "nearest.table", "to": "ranked.table" }
     ],
     "nodes": [
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
       { "id": "nearest", "kind": "bim.nearest", "version": 1 },
@@ -23,6 +27,7 @@
     ]
   },
   "values": {
+    "model": { "path": "{SAMPLES}/sample.bos" },
     "bounds": { "path": "{SAMPLES}/sample.bos" },
     "doorsOnly": { "expr": "Category == 'Doors'" },
     "ranked": { "by": "Distance desc" },

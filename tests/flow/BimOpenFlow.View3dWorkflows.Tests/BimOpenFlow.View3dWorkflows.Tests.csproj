@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\..\src\flow\BimOpenFlow.Nodes.Geometry\BimOpenFlow.Nodes.Geometry.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.Spatial\BimOpenFlow.Nodes.Spatial.csproj" />
     <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.Viz\BimOpenFlow.Nodes.Viz.csproj" />
+    <ProjectReference Include="$(DepsRoot)bim-open-flow\src\flow\BimOpenFlow.Nodes.Value\BimOpenFlow.Nodes.Value.csproj" />
   </ItemGroup>
 
   <ItemGroup>

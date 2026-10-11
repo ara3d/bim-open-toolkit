@@ -1,6 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "model": { "x": -290, "y": 280 },
     "bounds": { "x": 40, "y": 280 },
     "ductsOnly": { "x": 370, "y": 224 },
     "overlaps": { "x": 700, "y": 40 },
@@ -9,12 +10,15 @@
   },
   "structure": {
     "edges": [
+      { "from": "model.path", "to": "bounds.path" },
+      { "from": "model.path", "to": "rooms.path" },
       { "from": "bounds.table", "to": "ductsOnly.table" },
       { "from": "ductsOnly.table", "to": "overlaps.a" },
       { "from": "rooms.table", "to": "overlaps.b" },
       { "from": "overlaps.table", "to": "ranked.table" }
     ],
     "nodes": [
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "ductsOnly", "kind": "table.filter", "version": 1 },
       { "id": "overlaps", "kind": "spatial.intersects", "version": 1 },
@@ -23,6 +27,7 @@
     ]
   },
   "values": {
+    "model": { "path": "{SAMPLES}/sample.bos" },
     "bounds": { "path": "{SAMPLES}/sample.bos" },
     "ductsOnly": { "expr": "Category == 'Ducts'" },
     "overlaps": { "bKey": "Number" },

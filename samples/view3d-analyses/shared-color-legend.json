@@ -1,6 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "model": { "x": -290, "y": 40 },
     "inst": { "x": 40, "y": 40 },
     "measures": { "x": 40, "y": 224 },
     "scale": { "x": 360, "y": 224 },
@@ -11,6 +12,8 @@
   },
   "structure": {
     "edges": [
+      { "from": "model.path", "to": "inst.path" },
+      { "from": "model.path", "to": "measures.path" },
       { "from": "inst.instances", "to": "colored.instances" },
       { "from": "measures.measures", "to": "colored.values" },
       { "from": "measures.measures", "to": "scale.values" },
@@ -21,6 +24,7 @@
       { "from": "scale.legend", "to": "chart.scale" }
     ],
     "nodes": [
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "inst", "kind": "view3d.instances", "version": 1 },
       { "id": "measures", "kind": "view3d.measures", "version": 1 },
       { "id": "scale", "kind": "view.colormap", "version": 1 },
@@ -31,6 +35,7 @@
     ]
   },
   "values": {
+    "model": { "path": "{SAMPLES}/duplex-base.ifc" },
     "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
     "measures": { "path": "{SAMPLES}/duplex-base.ifc" },
     "scale": { "valueColumn": "meshVolume", "colorMap": "viridis", "auto": "false", "min": "0", "max": "1" },

@@ -1,6 +1,7 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "model": { "x": -290, "y": 40 },
     "bos": { "x": 40, "y": 40 },
     "elements": { "x": 40, "y": 310 },
     "doorsOnly": { "x": 350, "y": 260 },
@@ -12,6 +13,8 @@
   },
   "structure": {
     "edges": [
+      { "from": "model.path", "to": "bos.path" },
+      { "from": "model.path", "to": "elements.path" },
       { "from": "elements.table", "to": "doorsOnly.table" },
       { "from": "doorsOnly.table", "to": "storeyDoors.table" },
       { "from": "bos.parameters", "to": "roughWidth.table" },
@@ -21,6 +24,7 @@
       { "from": "withMm.table", "to": "verdicts.in" }
     ],
     "nodes": [
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "bos", "kind": "bos.load", "version": 1 },
       { "id": "elements", "kind": "bim.elements", "version": 1 },
       { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
@@ -32,6 +36,7 @@
     ]
   },
   "values": {
+    "model": { "path": "{SNOWDON}" },
     "bos": { "path": "{SNOWDON}" },
     "elements": { "path": "{SNOWDON}" },
     "doorsOnly": { "expr": "Category == 'Doors'" },
