@@ -12,7 +12,7 @@ workflow: [process]
 
 - [ ] `.github/workflows/build.yml` converts `duplex.ifc` to BOS (Phase 3)
 - [ ] The `nrc-ifc-llm` README points at this repository (Phase 5)
-- [ ] `studio/ara3d-sdk/wip/Ara3D.Ifc.Mesher`, `studio/ara3d-sdk/wip/platoflow-poc`, and `studio/labs/platoflow` are removed from `studio`, or kept with a reason (Phase 7)
+- [ ] `studio/ara3d-sdk/wip/Ara3D.Ifc.Mesher`, `studio/ara3d-sdk/wip/platoflow-poc`, and `studio/labs/platoflow` are removed from `studio`, or kept with a reason (Phase 7). The mesher copy goes when the `ara3d-sdk` submodule moves past `d8735f3`, which studio issue `studio-333` tracks (blocked on `src/Ara3D.IO` taking BIM Open Schema from the package)
 - [ ] `PLAN.md` gets a Status line
 
 `PLAN.md` (last changed 2026-08-30) finished Phases 0 to 4 and 6; these three items have no ticket. Phases 5 and 7 change other repositories. Raised by reviews/2026-09-27-status.md
