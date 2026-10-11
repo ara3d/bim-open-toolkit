@@ -65,6 +65,11 @@
             "field": "ParetoClass",
             "type": "nominal",
             "title": "Pareto class"
+          },
+          {
+            "field": "Synthetic",
+            "type": "nominal",
+            "title": "Synthetic carbon"
           }
         ]
       }
