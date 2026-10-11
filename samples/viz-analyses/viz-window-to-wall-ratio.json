@@ -1,0 +1,242 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "orient": {
+      "x": 40,
+      "y": 40
+    },
+    "attrs": {
+      "x": 40,
+      "y": 260
+    },
+    "joined": {
+      "x": 360,
+      "y": 120
+    },
+    "facade": {
+      "x": 640,
+      "y": 120
+    },
+    "kind": {
+      "x": 920,
+      "y": 120
+    },
+    "byFacing": {
+      "x": 1200,
+      "y": 40
+    },
+    "facings": {
+      "x": 1200,
+      "y": 260
+    },
+    "framed": {
+      "x": 1480,
+      "y": 120
+    },
+    "ratio": {
+      "x": 1760,
+      "y": 120
+    },
+    "limit": {
+      "x": 2040,
+      "y": 120
+    },
+    "sorted": {
+      "x": 2320,
+      "y": 120
+    },
+    "areas": {
+      "x": 2600,
+      "y": 40
+    },
+    "chart": {
+      "x": 2600,
+      "y": 260
+    },
+    "about": {
+      "x": 40,
+      "y": 520
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "orient.table",
+        "to": "joined.a"
+      },
+      {
+        "from": "attrs.table",
+        "to": "joined.b"
+      },
+      {
+        "from": "joined.table",
+        "to": "facade.table"
+      },
+      {
+        "from": "facade.table",
+        "to": "kind.table"
+      },
+      {
+        "from": "kind.table",
+        "to": "byFacing.table"
+      },
+      {
+        "from": "facings.table",
+        "to": "framed.a"
+      },
+      {
+        "from": "byFacing.table",
+        "to": "framed.b"
+      },
+      {
+        "from": "framed.table",
+        "to": "ratio.table"
+      },
+      {
+        "from": "ratio.table",
+        "to": "limit.table"
+      },
+      {
+        "from": "limit.table",
+        "to": "sorted.table"
+      },
+      {
+        "from": "sorted.table",
+        "to": "areas.table"
+      },
+      {
+        "from": "sorted.table",
+        "to": "chart.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "orient",
+        "kind": "bim.orientation",
+        "version": 1
+      },
+      {
+        "id": "attrs",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "joined",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "facade",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "kind",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "byFacing",
+        "kind": "table.pivot",
+        "version": 1
+      },
+      {
+        "id": "facings",
+        "kind": "table.inline",
+        "version": 1
+      },
+      {
+        "id": "framed",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "ratio",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "limit",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "sorted",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "areas",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "orient": {
+      "path": "{SAMPLES}/duplex-enriched.bos",
+      "categories": "IFCWALL,IFCWALLSTANDARDCASE,IFCWINDOW"
+    },
+    "attrs": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb",
+      "sql": "SELECT e.GlobalId, s.StoreyName AS Storey, p.Value = '.T.' AS IsExternal FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 LEFT JOIN ParameterText p ON p.EntityIndex = e.EntityIndex AND p.Name = 'IsExternal' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCWINDOW')"
+    },
+    "joined": {
+      "aKey": "GlobalId",
+      "mode": "inner"
+    },
+    "facade": {
+      "expr": "IsExternal and Storey != 'T/FDN' and not contains(Name, 'Party Wall')"
+    },
+    "kind": {
+      "name": "Element",
+      "expr": "Category == 'IFCWINDOW' ? 'Window' : 'Wall'"
+    },
+    "byFacing": {
+      "groupBy": "Facing",
+      "nameColumn": "Element",
+      "valueColumn": "FacingArea",
+      "aggregate": "sum"
+    },
+    "facings": {
+      "rows": "[{\"Order\":0,\"Facing\":\"N\"},{\"Order\":1,\"Facing\":\"E\"},{\"Order\":2,\"Facing\":\"S\"},{\"Order\":3,\"Facing\":\"W\"}]"
+    },
+    "framed": {
+      "aKey": "Facing",
+      "mode": "left"
+    },
+    "ratio": {
+      "name": "WWR",
+      "expr": "coalesce(Window, 0) / Wall"
+    },
+    "limit": {
+      "name": "Limit",
+      "expr": "0.4"
+    },
+    "sorted": {
+      "A": "Order"
+    },
+    "areas": {
+      "title": "Facade areas and window-to-wall ratio by facing (m2)",
+      "columns": "Facing,Wall,Window,WWR"
+    },
+    "chart": {
+      "labelColumn": "Facing",
+      "valueColumns": "WWR,Limit",
+      "title": "Window-to-wall ratio by facing (Limit = 0.40 reference)"
+    },
+    "about": {
+      "text": "For an energy modeller: what share of each facade of the Duplex is glazing? The window-to-wall ratio (WWR) is window area over gross wall area on one facing, both from bim.orientation's face area (the larger vertical face of each box, length x height, so a wall's area includes its openings). Facing is the side a wall's or window's long face looks out to (N, E, S, W from project north; the model carries no true north). The facade is the elements flagged IsExternal, less the party wall and the T/FDN foundation walls. A facing with no wall has no ratio: the cell stays empty, never 0. Glass lets in far more solar heat than wall and loses heat several times faster, so a high WWR on a sun-facing side means summer gain and winter loss; 0.40 is the common prescriptive ceiling (ASHRAE 90.1), drawn as the Limit bar here and as a rule in the spec. Skylights are flagged not external and are left out."
+    }
+  }
+}

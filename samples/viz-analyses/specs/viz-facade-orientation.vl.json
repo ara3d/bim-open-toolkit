@@ -1,0 +1,126 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Duplex facade area by compass direction",
+    "subtitle": "m2 of wall and window per 45-degree sector, project north up"
+  },
+  "width": 360,
+  "height": 360,
+  "transform": [
+    {
+      "calculate": "1",
+      "as": "Slice"
+    }
+  ],
+  "encoding": {
+    "theta": {
+      "field": "Slice",
+      "type": "quantitative",
+      "stack": true,
+      "scale": {
+        "range": [
+          -0.3927,
+          5.8905
+        ]
+      }
+    },
+    "order": {
+      "field": "Sector",
+      "type": "quantitative"
+    },
+    "tooltip": [
+      {
+        "field": "Direction",
+        "type": "nominal"
+      },
+      {
+        "field": "Wall",
+        "type": "quantitative",
+        "format": ".1f",
+        "title": "Wall m2"
+      },
+      {
+        "field": "Window",
+        "type": "quantitative",
+        "format": ".1f",
+        "title": "Window m2"
+      }
+    ]
+  },
+  "layer": [
+    {
+      "mark": {
+        "type": "arc",
+        "stroke": "white",
+        "opacity": 0.55
+      },
+      "encoding": {
+        "radius": {
+          "field": "Total",
+          "type": "quantitative",
+          "scale": {
+            "type": "sqrt",
+            "zero": true,
+            "rangeMin": 12
+          },
+          "title": "Wall + window m2"
+        },
+        "color": {
+          "field": "Direction",
+          "type": "nominal",
+          "scale": {
+            "scheme": "category10"
+          },
+          "legend": null
+        }
+      }
+    },
+    {
+      "mark": {
+        "type": "arc",
+        "stroke": "white"
+      },
+      "encoding": {
+        "radius": {
+          "field": "Window",
+          "type": "quantitative",
+          "scale": {
+            "type": "sqrt",
+            "zero": true,
+            "rangeMin": 12
+          }
+        },
+        "color": {
+          "field": "Direction",
+          "type": "nominal",
+          "scale": {
+            "scheme": "category10"
+          },
+          "legend": null
+        }
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "radiusOffset": 16,
+        "fontWeight": "bold"
+      },
+      "encoding": {
+        "radius": {
+          "field": "Total",
+          "type": "quantitative",
+          "scale": {
+            "type": "sqrt",
+            "zero": true,
+            "rangeMin": 12
+          }
+        },
+        "text": {
+          "field": "Direction",
+          "type": "nominal"
+        }
+      }
+    }
+  ]
+}

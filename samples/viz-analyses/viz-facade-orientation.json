@@ -1,0 +1,283 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "orient": {
+      "x": 40,
+      "y": 40
+    },
+    "attrs": {
+      "x": 40,
+      "y": 260
+    },
+    "joined": {
+      "x": 360,
+      "y": 120
+    },
+    "facade": {
+      "x": 640,
+      "y": 120
+    },
+    "kind": {
+      "x": 920,
+      "y": 120
+    },
+    "byDir": {
+      "x": 1200,
+      "y": 40
+    },
+    "compass": {
+      "x": 1200,
+      "y": 260
+    },
+    "framed": {
+      "x": 1480,
+      "y": 120
+    },
+    "total": {
+      "x": 1760,
+      "y": 120
+    },
+    "sorted": {
+      "x": 2040,
+      "y": 120
+    },
+    "chart": {
+      "x": 2320,
+      "y": 120
+    },
+    "scale": {
+      "x": 1480,
+      "y": 400
+    },
+    "keyed": {
+      "x": 1200,
+      "y": 520
+    },
+    "inst": {
+      "x": 1200,
+      "y": 700
+    },
+    "colored": {
+      "x": 1760,
+      "y": 600
+    },
+    "about": {
+      "x": 40,
+      "y": 520
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "orient.table",
+        "to": "joined.a"
+      },
+      {
+        "from": "attrs.table",
+        "to": "joined.b"
+      },
+      {
+        "from": "joined.table",
+        "to": "facade.table"
+      },
+      {
+        "from": "facade.table",
+        "to": "kind.table"
+      },
+      {
+        "from": "kind.table",
+        "to": "byDir.table"
+      },
+      {
+        "from": "compass.table",
+        "to": "framed.a"
+      },
+      {
+        "from": "byDir.table",
+        "to": "framed.b"
+      },
+      {
+        "from": "framed.table",
+        "to": "total.table"
+      },
+      {
+        "from": "total.table",
+        "to": "sorted.table"
+      },
+      {
+        "from": "kind.table",
+        "to": "scale.values"
+      },
+      {
+        "from": "sorted.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "scale.legend",
+        "to": "chart.scale"
+      },
+      {
+        "from": "kind.table",
+        "to": "keyed.table"
+      },
+      {
+        "from": "inst.instances",
+        "to": "colored.instances"
+      },
+      {
+        "from": "keyed.table",
+        "to": "colored.values"
+      },
+      {
+        "from": "scale.legend",
+        "to": "colored.scale"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "orient",
+        "kind": "bim.orientation",
+        "version": 1
+      },
+      {
+        "id": "attrs",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "joined",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "facade",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "kind",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "byDir",
+        "kind": "table.pivot",
+        "version": 1
+      },
+      {
+        "id": "compass",
+        "kind": "table.inline",
+        "version": 1
+      },
+      {
+        "id": "framed",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "total",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "sorted",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "scale",
+        "kind": "view.colormap",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "keyed",
+        "kind": "table.rename",
+        "version": 1
+      },
+      {
+        "id": "inst",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "colored",
+        "kind": "view3d.color",
+        "version": 1
+      },
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "orient": {
+      "path": "{SAMPLES}/duplex-enriched.bos",
+      "categories": "IFCWALL,IFCWALLSTANDARDCASE,IFCWINDOW"
+    },
+    "attrs": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb",
+      "sql": "SELECT e.GlobalId, s.StoreyName AS Storey, p.Value = '.T.' AS IsExternal FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 LEFT JOIN ParameterText p ON p.EntityIndex = e.EntityIndex AND p.Name = 'IsExternal' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCWINDOW')"
+    },
+    "joined": {
+      "aKey": "GlobalId",
+      "mode": "inner"
+    },
+    "facade": {
+      "expr": "IsExternal and Storey != 'T/FDN' and not contains(Name, 'Party Wall')"
+    },
+    "kind": {
+      "name": "Element",
+      "expr": "Category == 'IFCWINDOW' ? 'Window' : 'Wall'"
+    },
+    "byDir": {
+      "groupBy": "Direction",
+      "nameColumn": "Element",
+      "valueColumn": "FacingArea",
+      "aggregate": "sum"
+    },
+    "compass": {
+      "rows": "[{\"Sector\":0,\"Direction\":\"N\"},{\"Sector\":1,\"Direction\":\"NE\"},{\"Sector\":2,\"Direction\":\"E\"},{\"Sector\":3,\"Direction\":\"SE\"},{\"Sector\":4,\"Direction\":\"S\"},{\"Sector\":5,\"Direction\":\"SW\"},{\"Sector\":6,\"Direction\":\"W\"},{\"Sector\":7,\"Direction\":\"NW\"}]"
+    },
+    "framed": {
+      "aKey": "Direction",
+      "mode": "left"
+    },
+    "total": {
+      "name": "Total",
+      "expr": "coalesce(Wall, 0) + coalesce(Window, 0)"
+    },
+    "sorted": {
+      "A": "Sector"
+    },
+    "scale": {
+      "valueColumn": "Direction",
+      "colorMap": "category10"
+    },
+    "chart": {
+      "labelColumn": "Direction",
+      "valueColumns": "Wall,Window",
+      "title": "Duplex facade area by compass direction (m2, project north)"
+    },
+    "keyed": {
+      "renames": "GlobalId=globalId"
+    },
+    "inst": {
+      "path": "{SAMPLES}/duplex-base.ifc"
+    },
+    "colored": {
+      "joinColumn": "globalId",
+      "valueColumn": "Direction",
+      "colorMap": "category10"
+    },
+    "about": {
+      "text": "For a facade engineer: how much wall and glazing sits on each side of the Duplex? bim.orientation puts every wall and window in one of eight compass sectors by the bearing from the plan centre to its box centre, measured from project north (+Y; the model carries no true north), and gives its face area as the larger vertical face of its box (length x height). The facade is the elements flagged IsExternal, less the party wall and the T/FDN foundation walls, which the source also flags. Read the bars as m2 of wall and window per sector; the 3D view colours each facade element by its sector with the same scale, and everything else stays grey. The long east and west walls centre on E and W, but their windows sit toward the ends, so they land in NE, SE, SW, and NW: sector is position around the plan, not the way a face looks (see viz-window-to-wall-ratio for that). The polar spec draws each sector as a wedge whose radius is the total area, with the window share inside."
+    }
+  }
+}

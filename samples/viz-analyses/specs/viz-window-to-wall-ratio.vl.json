@@ -1,0 +1,106 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Duplex window-to-wall ratio by facing",
+    "subtitle": "window area / gross wall area; dashed rule at the 0.40 prescriptive limit"
+  },
+  "width": 320,
+  "height": 240,
+  "encoding": {
+    "x": {
+      "field": "Facing",
+      "type": "nominal",
+      "sort": {
+        "field": "Order"
+      },
+      "title": "Facing (project north)"
+    }
+  },
+  "layer": [
+    {
+      "mark": {
+        "type": "bar"
+      },
+      "encoding": {
+        "y": {
+          "field": "WWR",
+          "type": "quantitative",
+          "axis": {
+            "format": ".0%"
+          },
+          "title": "Window-to-wall ratio",
+          "scale": {
+            "domain": [
+              0,
+              0.6
+            ]
+          }
+        },
+        "color": {
+          "condition": {
+            "test": "datum.WWR > datum.Limit",
+            "value": "#d62728"
+          },
+          "value": "#1f77b4"
+        },
+        "tooltip": [
+          {
+            "field": "Facing",
+            "type": "nominal"
+          },
+          {
+            "field": "Wall",
+            "type": "quantitative",
+            "format": ".1f",
+            "title": "Wall m2"
+          },
+          {
+            "field": "Window",
+            "type": "quantitative",
+            "format": ".1f",
+            "title": "Window m2"
+          },
+          {
+            "field": "WWR",
+            "type": "quantitative",
+            "format": ".1%"
+          }
+        ]
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "dy": -6
+      },
+      "encoding": {
+        "y": {
+          "field": "WWR",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "WWR",
+          "type": "quantitative",
+          "format": ".0%"
+        }
+      }
+    },
+    {
+      "mark": {
+        "type": "rule",
+        "strokeDash": [
+          6,
+          4
+        ],
+        "color": "#444"
+      },
+      "encoding": {
+        "y": {
+          "aggregate": "max",
+          "field": "Limit",
+          "type": "quantitative"
+        }
+      }
+    }
+  ]
+}
