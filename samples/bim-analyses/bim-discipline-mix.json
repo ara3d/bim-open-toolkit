@@ -1,18 +1,24 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "model": { "x": -290, "y": 40 },
     "byDiscipline": { "x": 700, "y": 40 },
     "disciplines": { "x": 370, "y": 40 },
     "elements": { "x": 40, "y": 40 },
     "ranked": { "x": 1030, "y": 40 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
+      { "from": "model.path", "to": "elements.path" },
       { "from": "elements.table", "to": "disciplines.table" },
       { "from": "disciplines.table", "to": "byDiscipline.table" },
       { "from": "byDiscipline.table", "to": "ranked.table" }
     ],
     "nodes": [
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "byDiscipline", "kind": "table.aggregate", "version": 1 },
       { "id": "disciplines", "kind": "bim.discipline", "version": 1 },
       { "id": "elements", "kind": "bim.elements", "version": 1 },
@@ -21,6 +27,7 @@
   },
   "values": {
     "byDiscipline": { "aggregates": "count(*) as Elements", "groupBy": "Discipline" },
+    "model": { "path": "$model" },
     "elements": { "path": "{SAMPLES}/sample.bos" },
     "ranked": { "by": "Elements desc" }
   }

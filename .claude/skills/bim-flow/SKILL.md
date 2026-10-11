@@ -24,7 +24,8 @@ The same three files are embedded in the studio's Ask endpoint as its system pro
 | `getNodeCatalog` | Every node kind with ports, parameters and enum values. Read it once per session. |
 | `listAnalyses`, `getAnalysis`, `saveAnalysis` | The graph library: list, read as JSON, replace a whole document. |
 | `editGraph` | A list of addNode / setParam / connect / removeNode edits, validated together and saved once. A failed batch saves nothing. |
-| `addNode`, `setParam`, `connect`, `removeNode` | Single edits for small fixes. |
+| `addNode`, `setParam`, `connect`, `removeNode` | Single edits for small fixes. `setParam` with no `nodeId` and a name such as `$model` sets a graph input. |
+| `declareInput`, `removeInput` (ops inside `editGraph`) | Declare or remove a graph input (name, kind, default). A parameter whose whole value is `$name` reads it. See working-rules.md, "Running a graph on another building". |
 | `evaluate` | Per-node status: `Ok`, `Unready`, `EffectPending`, `Unavailable`, or `Error` with the message. |
 | `getResult` | One node output as a paged table slice (`skip`, `take`). |
 | `createRun`, `listRuns` | Freeze the current evaluation as an immutable run; list the archive. |

@@ -13,6 +13,12 @@ The four graphs that read the model twice (`bim-room-containment`,
 `bim.bounds` and `bim.rooms` (TKT-138). The path strings stored on those two
 nodes are ignored while the wire is there.
 
+`bim-discipline-mix` also declares a graph input `model` (kind FilePath, default `{SAMPLES}/sample.bos`) that its
+`value.path` node `model` reads as `$model` and feeds to `bim.elements` (TKT-204). To run it on another building,
+set the input to that building's `.bos` file: one `setParam` with no `nodeId` and the name `$model` over MCP, or the
+`graphInputs` argument of `evaluate`. On the generated sample it counts 20 elements; on
+`deps/bim-open-data/samples/public/duplex.bos` it counts 4607. `BimGraphInputTests` checks both.
+
 | Id | Shows |
 |---|---|
 | `bim-discipline-mix` | elements classified into disciplines, counted, ranked |

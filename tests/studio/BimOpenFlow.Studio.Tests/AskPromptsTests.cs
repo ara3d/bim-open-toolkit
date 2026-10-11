@@ -16,6 +16,11 @@ public sealed class AskPromptsTests
     public void RulesAreEmbedded()
         => Assert.That(AskPrompts.Rules, Does.Contain("editGraph"));
 
+    // TKT-204: swapping the building is one setParam on a graph input.
+    [Test]
+    public void RulesTellClaudeToDeclareAModelInputAndSwapItWithOneSetParam()
+        => Assert.That(AskPrompts.Rules, Does.Contain("declareInput").And.Contain("$model").And.Contain("setParam call with no nodeId"));
+
     // TKT-127: questions about the toolkit are answered from its documents, with no graph.
     [Test]
     public void RulesSayAToolkitQuestionIsAnsweredInTextFromTheDocuments()

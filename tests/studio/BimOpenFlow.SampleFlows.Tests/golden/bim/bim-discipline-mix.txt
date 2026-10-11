@@ -1,6 +1,9 @@
 dfg 0.1.0;
-// bim-discipline-mix   graph 3f6360c6f5f6
-elements = bim.elements@1(path: "{SAMPLES}/sample.bos");
+// bim-discipline-mix   graph e9c0323bf149
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/sample.bos"
+elements = bim.elements@1(path: model.path);
   // Ok  table 20 rows x 14 cols  sha 5f10f12d635b
   //   columns EntityIndex:Integer, LocalId:Integer, GlobalId:Text, Name:Text, Category:Text, CategoryType:Text, Type:Text, ClassName:Text, Level:Text, Elevation:Number, Room:Text, Document:Text, Workset:Integer, Group:Text
   //   [0] 10, 1011, "GUID-1011", "Level 1", "Levels", "Model", null, null, null, null, null, "Sample Tower", null, null
