@@ -20,7 +20,7 @@ Paths are relative to `deps/bim-open-data` unless they start with `deps/`.
 | - | TKT-181 format nodes | blocked: depends on TKT-12 (Run from the editor), still open |
 | - | TKT-182 column convention | a question for the owner; the supervisor drafts a recommendation |
 
-Off limits until their owner commits: `src/data/Ara3D.BimOpenSchema.IO/ParquetUtils.cs`, `src/data/Ara3D.BimOpenSchema.Federation/BosUnion.cs`, `tests/data/Ara3D.BimOpenSchema.IO.Fragments.Tests/DuplexFixtureTests.cs`, `tests/mcp/BimOpenMcp.Ifc.Tests/BosFileToolTests.cs` (session "Web USD viewer", 24157cfb).
+Off limits until their owner commits: `src/data/Ara3D.BimOpenSchema.IO/ParquetUtils.cs`, `src/data/Ara3D.BimOpenSchema.Federation/BosUnion.cs`, `tests/data/Ara3D.BimOpenSchema.IO.Fragments.Tests/DuplexFixtureTests.cs`, `tests/mcp/BimOpenMcp.Ifc.Tests/BosFileToolTests.cs` (the "BIM Open Toolkit + Speckle integration" session's fixer, TKT-184: `.frag` saves had no geometry), plus `src/data/Ara3D.BimOpenSchema.IO.Fragments/FragmentsToBos.cs` and `src/mcp/BimOpenMcp.Ifc/BosFileTools.cs` until that session sends its commit hash. T180 was told to leave `FragmentsToBos.cs` alone.
 
 ## Chunk table (wave A)
 
