@@ -1,12 +1,13 @@
 ---
 id: TKT-137
 title: FilePath parameters offer the files under the model roots in a combo box, plus a browse button
-status: open
+status: done
 depends_on: []
 owner:
 fence: []
 workflow: [W1]
 related: [TKT-138, TKT-202]
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria

@@ -1,13 +1,14 @@
 ---
 id: TKT-205
 title: The column picker shows one entry when the field already holds a column name
-status: open
+status: done
 depends_on: []
 owner:
 fence: [deps/bim-open-flow/bimopenflow/web/packages/graph/src/{suggestInput, suggestText, columnSelect}.ts, deps/bim-open-flow/bimopenflow/web/packages/graph/test/**]
 workflow: [W2]
 related: [TKT-23]
 created: 2026-10-11
+closed: 2026-10-11
 kind: defect
 ---
 

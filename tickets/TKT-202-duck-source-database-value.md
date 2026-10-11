@@ -1,13 +1,14 @@
 ---
 id: TKT-202
 title: duck.table and duck.tables take a source input, and the source wire carries a Database value instead of a path string
-status: open
+status: done
 depends_on: []
 owner:
 fence: [deps/ara3d-dataflow/src/Ara3D.DataFlowEngine.Abstractions/**, deps/bim-open-flow/src/flow/BimOpenFlow.Nodes.DuckDb/**, deps/bim-open-flow/src/flow/BimOpenFlow.Host.Api/RunInputs.cs]
 workflow: [W2]
 related: [TKT-138]
 created: 2026-10-11
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria
