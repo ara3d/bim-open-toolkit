@@ -68,6 +68,6 @@ public sealed class BimModel
     public IEnumerable<EntityModel> ElementsInCategories(string categories)
     {
         var set = new HashSet<string>(categories.SplitNames(), StringComparer.OrdinalIgnoreCase);
-        return InstanceElements().Where(e => set.Contains(e.Category));
+        return InstanceElements().Where(e => e.Category is { } c && set.Contains(c));
     }
 }

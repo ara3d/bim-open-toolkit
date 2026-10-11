@@ -32,7 +32,7 @@ public sealed class BimElementsNode : IFlowNode
         b.AddColumn(Cells(e => e.Name), BimColumns.Name, typeof(string));
         b.AddColumn(Cells(e => e.Category), BimColumns.Category, typeof(string));
         b.AddColumn(Cells(e => e.CategoryType), BimColumns.CategoryType, typeof(string));
-        b.AddColumn(Cells(e => e.TypeName is { Length: > 0 } t ? t : null), BimColumns.Type, typeof(string));
+        b.AddColumn(Cells(e => e.TypeName), BimColumns.Type, typeof(string));
         b.AddColumn(Cells(e => e.ClassName), BimColumns.ClassName, typeof(string));
         b.AddColumn(Cells(e => e.LevelName), BimColumns.Level, typeof(string));
         b.AddColumn(Cells(e => (object?)e.ElevationOrNull()), BimColumns.Elevation, typeof(double));
@@ -44,7 +44,5 @@ public sealed class BimElementsNode : IFlowNode
     }
 
     private static object? Workset(EntityModel e)
-        => e.ParameterValues.ContainsKey(CommonRevitParameters.ElementWorksetId)
-            ? (long)e.GetParameterAsInt(CommonRevitParameters.ElementWorksetId)
-            : null;
+        => (long?)e.WorksetId;
 }

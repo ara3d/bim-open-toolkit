@@ -50,9 +50,13 @@ public sealed class BimNavGraphNode : IFlowNode
     private static string SideLabel(EntityModel door, string roomParameter)
         => door.GetParameterAsEntity(roomParameter) is { } room ? RoomLabel(room) : BimColumns.Outside;
 
-    /// <summary>"Name Number" when the room has a number, else just Name.</summary>
+    /// <summary>"Name Number" when the room has a number, else just Name; a room without a
+    /// name is "[entity index]", so it stays its own vertex.</summary>
     private static string RoomLabel(EntityModel room)
-        => room.GetParameterAsString(CommonRevitParameters.RoomNumber) is { Length: > 0 } number
-            ? $"{room.Name} {number}"
-            : room.Name;
+    {
+        var name = room.Name ?? $"[{(int)room.Index}]";
+        return room.GetParameterAsString(CommonRevitParameters.RoomNumber) is { Length: > 0 } number
+            ? $"{name} {number}"
+            : name;
+    }
 }

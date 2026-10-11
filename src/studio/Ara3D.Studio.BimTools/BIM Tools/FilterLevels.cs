@@ -22,7 +22,7 @@ public class FilterLevels : IModifier
     }
 
     private int _numLevels => LevelNames.Count;
-    private List<(string Name, float Elevation)> _levelData;
+    private List<(string? Name, float? Elevation)> _levelData;
 
     private BimData? _data;
     private BimObjectModel _bom; 
@@ -39,14 +39,15 @@ public class FilterLevels : IModifier
         _app.RefreshUI(this);
     }
 
-    public string CurLevelName => _levelData == null ? "" : _levelData[Level].Name;
-    public float CurLevelElevation => _levelData == null ? 0f : _levelData[Level].Elevation;
+    public string? CurLevelName => _levelData == null ? "" : _levelData[Level].Name;
+    public float? CurLevelElevation => _levelData == null ? 0f : _levelData[Level].Elevation;
 
     public bool FilterLevel(InstanceStruct inst)
     {
         var em = _bom.Entities.ElementAtOrDefault(inst.EntityIndex);
         if (em == null) return false;
-        return em.LevelName == CurLevelName && (Math.Abs(em.Elevation - CurLevelElevation) < 0.0001);
+        return em.LevelName == CurLevelName
+            && BimObjectModelExtensions.SameElevation(em.Elevation, CurLevelElevation, 0.0001);
     }
 
     public IModel3D Eval(IModel3D model3D, EvalContext context)

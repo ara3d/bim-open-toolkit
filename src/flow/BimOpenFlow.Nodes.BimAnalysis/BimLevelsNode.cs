@@ -40,7 +40,7 @@ public sealed class BimLevelsNode : IFlowNode
         b.AddColumn(Cells(e => e.Name), BimColumns.Name, typeof(string));
         b.AddColumn(Cells(e => Elevation(e)), BimColumns.Elevation, typeof(double));
         b.AddColumn(Cells(e => CountOnLevel(e.Index, _ => true)), BimColumns.ElementCount, typeof(long));
-        b.AddColumn(Cells(e => CountOnLevel(e.Index, r => roomCategories.Contains(r.Category))),
+        b.AddColumn(Cells(e => CountOnLevel(e.Index, r => r.Category is { } c && roomCategories.Contains(c))),
             BimColumns.RoomCount, typeof(long));
         return [new TableValue(b.Build())];
     }

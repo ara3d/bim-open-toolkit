@@ -53,6 +53,7 @@ public class FilterCategoryWithUI : IModifier
             .Entities
             .Where(e => e.HasGeometry)
             .Select(e => e.Category)
+            .OfType<string>()
             .Distinct()
             .OrderBy(x => x)
             .ToList();
@@ -64,7 +65,7 @@ public class FilterCategoryWithUI : IModifier
         var ei = inst.EntityIndex;
         if (ei < 0) return false;
         var cat = _model.Entities[ei].Category;
-        return _selectedNames.Contains(cat);
+        return cat != null && _selectedNames.Contains(cat);
     }
 
     public IModel3D Eval(IModel3D model3D, EvalContext context)

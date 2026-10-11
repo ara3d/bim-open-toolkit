@@ -49,18 +49,19 @@ public sealed class BimParamTableNode : IFlowNode
                 string.Equals(d.Name, fullName, StringComparison.OrdinalIgnoreCase));
             var column = ColumnName(CommonRevitParameters.ParameterNameToUI(fullName), fullName, used,
                 desc?.ParameterType == ParameterType.Point);
-            if (desc == null)
+            // A descriptor without a name cannot match a requested name.
+            if (desc?.Name is not { } name)
             {
                 context.Warn($"{Kind}: unknown parameter '{fullName}'.");
                 builder.AddColumn(new object?[elements.Count], column, typeof(string));
             }
             else if (desc.ParameterType == ParameterType.Point)
             {
-                AddPointColumns(builder, model, elements, desc.Name, column);
+                AddPointColumns(builder, model, elements, name, column);
             }
             else
             {
-                builder.AddColumn(elements.Select(e => CellValue(e, desc.Name)).ToArray(),
+                builder.AddColumn(elements.Select(e => CellValue(e, name)).ToArray(),
                     column, CellType(desc.ParameterType));
             }
         }

@@ -43,7 +43,8 @@ public class DrawLevelRooms : IModifier
             .ThenBy(e => e.Name)
             .ToList();
 
-        LevelNames = _levelEntities.Select(e => e.Name).ToList();
+        // A level without a name is listed as "[entity index]" so it can still be picked.
+        LevelNames = _levelEntities.Select(e => e.Name ?? $"[{(int)e.Index}]").ToList();
         context.Services.RefreshUI(this);
     }
 

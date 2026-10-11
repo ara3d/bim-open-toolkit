@@ -38,6 +38,7 @@ public class IfcDoorClearance : IModifier
             .Entities
             .Where(e => e.HasGeometry)
             .Select(e => e.Category)
+            .OfType<string>()
             .Distinct()
             .OrderBy(x => x)
             .ToList();
