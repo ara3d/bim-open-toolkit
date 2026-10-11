@@ -47,7 +47,8 @@ public sealed class BimBuildSequenceNode : IFlowNode
         + "(Revit categories, IFC classes, or bim.discipline names) by a built-in map to Structure, "
         + "Envelope, MEP, and Finishes; 'overrides' is a JSON {\"value\": \"trade\"} object that wins. "
         + "'trades' orders the trades; storeys from 'levelColumn' run bottom-up by the lowest "
-        + "'elevationColumn' value, then by name. A task starts when the previous trade has left "
+        + "'elevationColumn' value, then by name (only by name, with a warning, when that column is "
+        + "missing). A task starts when the previous trade has left "
         + "its storey and its own trade has left the storey below, so trades overlap by one storey; "
         + "each task with elements lasts 'daysPerTask' calendar days from 'start'. Output 'tasks': "
         + "Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (the week "
@@ -63,7 +64,7 @@ public sealed class BimBuildSequenceNode : IFlowNode
             if (table.ColumnIndex(name) >= 0)
                 throw new ArgumentException($"{Kind}: column '{name}' already exists.");
         var trades = parameters.TextOr("trades", DefaultTrades).SplitNames();
-        var rows = ReadRows(table, parameters, BimBuildSequenceTrades.Classifier(trades, parameters.GetText("overrides"), Kind));
+        var rows = ReadRows(context, table, parameters, BimBuildSequenceTrades.Classifier(trades, parameters.GetText("overrides"), Kind));
         var storeys = StoreyOrder(rows);
         var plan = Plan(rows, storeys, trades.Count, DaysPerTask(parameters));
         var start = StartDate(parameters);
@@ -83,12 +84,15 @@ public sealed class BimBuildSequenceNode : IFlowNode
 
     private sealed record Slot(int StartDay, int EndDay, int Elements);
 
-    private static IReadOnlyList<Row> ReadRows(IDataTable table, ParamValues parameters,
+    private static IReadOnlyList<Row> ReadRows(IEvalContext context, IDataTable table, ParamValues parameters,
         Func<string?, int?> classify)
     {
         var level = table.RequireColumn(parameters.TextOr("levelColumn", BimColumns.Level), Kind);
         var source = table.RequireColumn(parameters.TextOr("column", BimColumns.Category), Kind);
-        var elevation = table.ColumnIndex(parameters.TextOr("elevationColumn", BimColumns.Elevation));
+        var elevationName = parameters.TextOr("elevationColumn", BimColumns.Elevation);
+        var elevation = table.ColumnIndex(elevationName);
+        if (elevation < 0)
+            context.Warn($"{Kind}: column '{elevationName}' not found; storeys are ordered by name.");
         var rows = new Row[table.RowCount()];
         for (var row = 0; row < rows.Length; row++)
             rows[row] = new Row(

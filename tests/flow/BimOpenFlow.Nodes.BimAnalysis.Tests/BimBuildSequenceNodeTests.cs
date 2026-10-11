@@ -76,6 +76,15 @@ public sealed class BimBuildSequenceNodeTests
     }
 
     [Test]
+    public void MissingElevationColumn_WarnsAndOrdersStoreysByName()
+    {
+        var (tasks, warnings) = Node.EvalWithWarnings(
+            [Elements(("Basement", -3, "Walls"), ("Attic", 6, "Walls"))], ("elevationColumn", "Height"));
+        Assert.That(warnings, Is.EqualTo(new[] { "bim.buildSequence: column 'Height' not found; storeys are ordered by name." }));
+        Assert.That(tasks.ColumnCells("Storey"), Is.EqualTo(new[] { "Attic", "Basement" }), "by name, not by Elevation");
+    }
+
+    [Test]
     public void TradesOverlapByOneStorey()
     {
         var tasks = Schedule(Elements(
