@@ -67,10 +67,21 @@ public sealed class BimOrientationNodeTests
         Assert.That(t.ColumnCells(BimColumns.Name), Is.EqualTo(new[] { "Level 1" }));
         Assert.That((double)t.Cell(BimColumns.CenterX, 0)!, Is.EqualTo(9.5).Within(Tolerance));
         Assert.That((double)t.Cell(BimColumns.CenterY, 0)!, Is.EqualTo(21).Within(Tolerance));
-        Assert.That(t.Cell(BimOrientationNode.Facing, 0), Is.EqualTo("E"));
         Assert.That((double)t.Cell(BimOrientationNode.FacingArea, 0)!, Is.EqualTo(2).Within(Tolerance));
     }
 
+    [Test]
+    public void ElementAtThePlanCentre_HasNoBearingOrSide()
+    {
+        var t = Node.SampleTable(("categories", "Windows"));
+        Assert.That(t.ColumnCells(BimColumns.Name), Is.EqualTo(new[] { "WN1" }), "the only row sets the centre");
+        Assert.That((double)t.Cell(BimColumns.Distance, 0)!, Is.EqualTo(0).Within(Tolerance));
+        Assert.That(t.Cell(BimOrientationNode.Bearing, 0), Is.Null);
+        Assert.That(t.Cell(BimOrientationNode.Sector, 0), Is.Null);
+        Assert.That(t.Cell(BimOrientationNode.Direction, 0), Is.Null);
+        Assert.That(t.Cell(BimOrientationNode.Facing, 0), Is.Null);
+        Assert.That((double)t.Cell(BimOrientationNode.FacingArea, 0)!, Is.EqualTo(1.8).Within(Tolerance));
+    }
 
     [Test]
     public void MissingFile_Throws()

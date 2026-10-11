@@ -41,16 +41,23 @@ public sealed class BimOrientationNode : IFlowNode
         + "on each point; Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side "
         + "the box's larger vertical face looks out to, by which side of the centre the box lies on; "
         + "FacingArea is that face's area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall's or "
-        + "window's gross face when it runs along a model axis and overstates a diagonal one.");
+        + "window's gross face when it runs along a model axis and overstates a diagonal one. An element "
+        + "whose box centre is the plan centre (Distance 0, as when it is the only row) has no bearing and "
+        + "no side, so its Bearing, Sector, Direction, and Facing are null; FacingArea is still given.");
+
+    /// <summary>Closer than this to the plan centre (m), an element has no bearing or side.</summary>
+    public const double CentreTolerance = 1e-9;
 
     private sealed record Row(EntityModel Element, BosBox Box, Vector2 Centre)
     {
         public double Dx => Box.Center.X - Centre.X;
         public double Dy => Box.Center.Y - Centre.Y;
-        public double Bearing => (Math.Atan2(Dx, Dy) * 180 / Math.PI + 360) % 360;
-        public int Sector => (int)Math.Floor((Bearing + 22.5) / 45) % 8;
         public double Distance => Math.Sqrt(Dx * Dx + Dy * Dy);
-        public string Facing => Box.Size.X >= Box.Size.Y ? (Dy >= 0 ? "N" : "S") : (Dx >= 0 ? "E" : "W");
+        public bool AtCentre => Distance < CentreTolerance;
+        public double? Bearing => AtCentre ? null : (Math.Atan2(Dx, Dy) * 180 / Math.PI + 360) % 360;
+        public int? Sector => Bearing is { } b ? (int)Math.Floor((b + 22.5) / 45) % 8 : null;
+        public string? Facing => AtCentre ? null
+            : Box.Size.X >= Box.Size.Y ? (Dy >= 0 ? "N" : "S") : (Dx >= 0 ? "E" : "W");
         public double FacingArea => (double)Math.Max(Box.Size.X, Box.Size.Y) * Box.Size.Z;
     }
 
@@ -83,8 +90,8 @@ public sealed class BimOrientationNode : IFlowNode
         t.AddColumn(Cells(r => (double)r.Box.Center.X), BimColumns.CenterX, typeof(double));
         t.AddColumn(Cells(r => (double)r.Box.Center.Y), BimColumns.CenterY, typeof(double));
         t.AddColumn(Cells(r => r.Bearing), Bearing, typeof(double));
-        t.AddColumn(Cells(r => (long)r.Sector), Sector, typeof(long));
-        t.AddColumn(Cells(r => Compass[r.Sector]), Direction, typeof(string));
+        t.AddColumn(Cells(r => r.Sector is { } s ? (long)s : null), Sector, typeof(long));
+        t.AddColumn(Cells(r => r.Sector is { } s ? Compass[s] : null), Direction, typeof(string));
         t.AddColumn(Cells(r => r.Distance), BimColumns.Distance, typeof(double));
         t.AddColumn(Cells(r => r.Facing), Facing, typeof(string));
         t.AddColumn(Cells(r => r.FacingArea), FacingArea, typeof(double));
