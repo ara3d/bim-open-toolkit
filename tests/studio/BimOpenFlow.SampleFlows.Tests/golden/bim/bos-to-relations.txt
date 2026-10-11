@@ -2,30 +2,30 @@ dfg 0.1.0;
 // bos-to-relations   graph 04aa7dd7bca8
 model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
   // Ok
-  //   entities: table 4721 rows x 6 cols  sha c89f638b53fa
+  //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
-  //     [0] 0, -1, "", "IFCORGANIZATION", null, null
-  //     [1] 1, -1, "", "IFCAPPLICATION", null, null
-  //     [2] 2, -1, "", "IFCSIUNIT", null, null
-  //   parameters: table 18551 rows x 6 cols  sha 64e25710814a
+  //     [0] 0, -1, null, "IFCORGANIZATION", null, null
+  //     [1] 1, -1, null, "IFCAPPLICATION", null, null
+  //     [2] 2, -1, null, "IFCSIUNIT", null, null
+  //   parameters: table 18551 rows x 6 cols  sha 9d922d761112
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
   //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", "", "String", "Revit"
   //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", "", "Number", "0.0"
   //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", "", "Number", "0.0"
-  //   relations: table 949 rows x 5 cols  sha 8044b3dc11b8
+  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 133, "Level 1", 4705, "#36", "MemberOf"
-  //     [1] 134, "Level 2", 4705, "#36", "MemberOf"
-  //     [2] 135, "T/FDN", 4705, "#36", "MemberOf"
+  //     [0] 133, "Level 1", 4705, null, "MemberOf"
+  //     [1] 134, "Level 2", 4705, null, "MemberOf"
+  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
 entities = rel.fromTable@1(table: model.entities, name: "entities");
-  // Ok  relation plan 0754f1a92954
-  //   "(inline \"entities\" \"9da43092df84bf7c9e3681c3634ed0a3e2fed35872a75f5765718a04e404cab8\")"
+  // Ok  relation plan aff8f6fcc81f
+  //   "(inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\")"
 byCategory = rel.aggregate@1(input: entities.relation, groupBy: "Category", aggregates: "count(*) as Elements");
-  // Ok  relation plan ab9a84f130d1
-  //   "(aggregate (inline \"entities\" \"9da43092df84bf7c9e3681c3634ed0a3e2fed35872a75f5765718a04e404cab8\") [\"Category\"] [Count(*)>\"Elements\"])"
+  // Ok  relation plan e99063d73f7b
+  //   "(aggregate (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") [\"Category\"] [Count(*)>\"Elements\"])"
 ranked = rel.sort@1(input: byCategory.relation, by: "Elements desc, Category");
-  // Ok  relation plan a8e766dc0e85
-  //   "(sort (aggregate (inline \"entities\" \"9da43092df84bf7c9e3681c3634ed0a3e2fed35872a75f5765718a04e404cab8\") [\"Category\"] [Count(*)>\"Elements\"]) [\"Elements\" desc \"Category\" asc])"
+  // Ok  relation plan a8e3ec65cfab
+  //   "(sort (aggregate (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") [\"Category\"] [Count(*)>\"Elements\"]) [\"Elements\" desc \"Category\" asc])"
 rows = rel.materialize@1(input: ranked.relation, limit: "0");
   // Ok  table 78 rows x 2 cols  sha 2c743d305340
   //   columns Category:Text, Elements:Integer
