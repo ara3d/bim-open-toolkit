@@ -49,8 +49,10 @@ is the content itself, not the path or a timestamp.
 | Pack | Nodes | Kinds |
 |---|---|---|
 | BOS — `BimOpenFlow.Nodes.Bos` | 2 | `bos.load`, `bos.query` |
-| BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 12 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops` |
+| BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 14 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops`, `bim.orientation`, `bim.buildSequence` |
 | Geometry — `BimOpenFlow.Nodes.Geometry` | 21 | `view3d.instances`, `view3d.measures`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
+| IDS — `BimOpenFlow.Nodes.Ids` | 2 | `ids.check`, `ids.specifications` |
+| BCF — `BimOpenFlow.Nodes.Bcf` | 3 | `bcf.topics`, `bcf.write`, `bcf.read` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
 | DuckDB — `BimOpenFlow.Nodes.DuckDb` | 9 | `duck.read`, `duck.source`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
@@ -379,6 +381,54 @@ Walks the undirected graph whose edges are the (from, to) column pairs, breadth-
 | `from` | Text | — | `FromRoom` | — | columns of input `edges` |
 | `to` | Text | — | `ToRoom` | — | columns of input `edges` |
 | `start` | Text | — | — | — | — |
+
+### `bim.orientation` (v1) — Pure
+
+Loads a .bos file into one row per element with a box: EntityIndex, GlobalId, Name, Category, Level, CenterX, CenterY, Bearing, Sector, Direction, Distance, Facing, FacingArea. The box is the element's Rvt:Element:Bounds when present, else the world box of its visible geometry. The plan centre is the middle of the rows' combined XY extent, so 'categories' (comma-separated, blank for every element) also sets the centre. Bearing is degrees clockwise from project north (+Y of the model) to the element's box centre; a BOS carries no true-north angle, so it is not true north. Sector 0..7 and Direction (N, NE, E, SE, S, SW, W, NW) bin the bearing in 45-degree slices centred on each point; Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side the box's larger vertical face looks out to, by which side of the centre the box lies on; FacingArea is that face's area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall's or window's gross face when it runs along a model axis and overstates a diagonal one.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `table` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
+| `categories` | Text (list) | — | — | — | — |
+
+### `bim.buildSequence` (v1) — Pure
+
+A synthetic construction sequence (4D) for an element table such as bim.elements or bim.discipline's output; it takes a table rather than a .bos path so a filtered or re-classified element set schedules the same way. Each row's trade comes from 'column' (Revit categories, IFC classes, or bim.discipline names) by a built-in map to Structure, Envelope, MEP, and Finishes; 'overrides' is a JSON {"value": "trade"} object that wins. 'trades' orders the trades; storeys from 'levelColumn' run bottom-up by the lowest 'elevationColumn' value, then by name. A task starts when the previous trade has left its storey and its own trade has left the storey below, so trades overlap by one storey; each task with elements lasts 'daysPerTask' calendar days from 'start'. Output 'tasks': Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (week of End counted from 'start', from 1), ElementCount, Synthetic. Output 'elements': the input rows plus Task, Trade, Finish, FinishWeek, Synthetic; rows with no storey or no trade get nulls and are counted in one warning. Same input, same schedule.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `table` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `tasks` | Table |
+| `elements` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `levelColumn` | Text | — | `Level` | — | columns of input `table` |
+| `elevationColumn` | Text | — | `Elevation` | — | columns of input `table` |
+| `column` | Text | — | `Category` | — | columns of input `table` |
+| `start` | DateTime | — | `2027-01-04` | — | — |
+| `daysPerTask` | Integer | — | `10` | — | — |
+| `trades` | Text (list) | — | `Structure,Envelope,MEP,Finishes` | — | — |
+| `overrides` | Json | — | — | — | — |
 
 ## Geometry — `BimOpenFlow.Nodes.Geometry`
 
@@ -878,6 +928,135 @@ Keep the band between two fractions of the original model bounds along an axis.
 | `axis` | Enum | — | `z` | `x`, `y`, `z` | — |
 | `range` | Text | — | `[0.3,0.7]` | — | — |
 
+## IDS — `BimOpenFlow.Nodes.Ids`
+
+The ids.* pack: a buildingSMART IDS 1.0 file evaluated over the entity and parameter tables as a verdict table, and the specifications it holds listed before any model is read.
+
+### `ids.check` (v1) — Pure
+
+Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification. A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass.
+
+The entity and parameter tables are `bos.load`'s first two outputs (or any tables with the EntityText and ParameterText columns). Each specification's applicability facets select entities; each requirement facet is judged under its cardinality (expected, optional, prohibited); an entity's row keeps the worst verdict and the reasons behind it. Entity facets match the IFC class exactly (IncludeSubtypes is ignored with a warning); a USERDEFINED predefined type is read from ObjectType. Property `dataType` is checked at the level BOS records: number, logical, or text. Classification, material, part-of and document facets give InfoNotAvailable with one warning each, never a pass. A required specification that applies to nothing gets one model-level Fail row with an empty GlobalId. Numbers are compared in the model's own units.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `entities` | Table | required |
+| `parameters` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `verdicts` | Table |
+| `summary` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `ids` | FilePath | Text | — | — | files under the model roots ending `.ids` |
+
+### `ids.specifications` (v1) — Pure
+
+Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable). Reads no model; use it to see what an IDS asks before running ids.check.
+
+Reads only the IDS file. `Supported` is false when any facet of the specification would give InfoNotAvailable under `ids.check`.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `specifications` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `ids` | FilePath | Text | — | — | files under the model roots ending `.ids` |
+
+## BCF — `BimOpenFlow.Nodes.Bcf`
+
+The bcf.* pack: an issue or verdict table previewed as BCF topics, written as a BCF 3.0 file on Run, and a BCF file read back as an issues table.
+
+### `bcf.topics` (v1) — Pure
+
+Groups an issue or verdict table into the BCF topics bcf.write would write (one per distinct title: Title, Description, Status, Priority, Type, Elements, GlobalIds), so the file's contents can be checked before Run. 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
+
+The same grouping `bcf.write` applies, as a table: a preview of the file before Run. A verdict table is filtered to the verdicts listed (default Fail) first, then rows sharing a title become one topic whose GlobalIds are listed once each.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `issues` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `topics` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `preset` | Enum | — | `auto` | `auto`, `issue`, `verdict` | — |
+| `verdicts` | Text | — | `Fail` | — | — |
+
+### `bcf.write` (v1) — Effect
+
+Writes the input issue or verdict table as a BCF 3.0 file at 'path' that Revit, Solibri and BIMcollab open as topics. With 'model' (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic's description. 'guidSeed' keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
+
+An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (default the file name) and the title, so a rerun with the same seed updates the same topics in a BCF reader instead of adding new ones. With `model`, a .bos file, each topic whose elements have geometry gets a viewpoint selecting them under a perspective camera framing their bounding box; the model's element boxes are cached by file content. A topic with no geometry has no viewpoint (BCF 3.0 requires a camera) and lists its GlobalIds at the end of its description. The file is written beside the target and moved into place when complete.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `issues` | Table | required |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `out` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `model` | FilePath | Text | — | — | files under the model roots ending `.bos` |
+| `preset` | Enum | — | `auto` | `auto`, `issue`, `verdict` | — |
+| `verdicts` | Text | — | `Fail` | — | — |
+| `author` | Text | — | — | — | — |
+| `guidSeed` | Text | — | — | — | — |
+
+### `bcf.read` (v1) — Pure
+
+Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate; one row per topic and selected element, with an empty GlobalId for a topic that selects nothing) and a topics table (one row per topic with its element count). The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged.
+
+Reads markup.bcf per topic and the elements its viewpoints select; a topic written without geometry gets its GlobalIds back from its description. Comments, snapshots and cameras are not read.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `issues` | Table |
+| `topics` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bcf` |
+
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
 
 The verdict-bearing vocabulary: rule checks, required-data checks, rollups, and unions of verdict tables.
@@ -886,7 +1065,7 @@ The verdict-bearing vocabulary: rule checks, required-data checks, rollups, and 
 
 Per row: expr true = Pass, false = Fail (NeedsReview where reviewExpr is true), null = InfoNotAvailable.
 
-Per row: `expr` true is Pass; false is Fail, unless `reviewExpr` is also true, which makes it NeedsReview; a null result (missing data) is InfoNotAvailable. An empty `reviewExpr` means false never escalates to NeedsReview. The output is the input columns plus the verdict columns (`verdict`, `checkId`, `checkTitle`, `citation`).
+Per row: `expr` true is Pass; false is Fail, unless `reviewExpr` is also true, which makes it NeedsReview; a null result (missing data) is InfoNotAvailable. An empty `reviewExpr` means false never escalates to NeedsReview. The output is the input columns plus the verdict columns (`Verdict`, `CheckId`, `CheckTitle`, `Citation`).
 
 **Inputs**
 
@@ -939,9 +1118,9 @@ If any listed column is missing from the table, the node warns and every row is 
 
 ### `check.rollup` (v1) — Pure
 
-Groups a verdict table by checkId into counts and the worst verdict per check.
+Groups a verdict table by CheckId into counts and the worst verdict per check.
 
-Input must be a verdict table. Output has one row per checkId in first-appearance order, with per-verdict counts (`passCount`, `failCount`, `needsReviewCount`, `infoNotAvailableCount`) and `worst`, the worst verdict present by severity Fail > NeedsReview > InfoNotAvailable > Pass.
+Input must be a verdict table. Output has one row per CheckId in first-appearance order, with per-verdict counts (`passCount`, `failCount`, `needsReviewCount`, `infoNotAvailableCount`) and `worst`, the worst verdict present by severity Fail > NeedsReview > InfoNotAvailable > Pass.
 
 **Inputs**
 
@@ -1592,7 +1771,7 @@ Row-set algebra on a key column; a's columns and row order pass through. `inters
 
 ### `table.project` (v1) — Pure
 
-Keeps the comma-separated columns, in that order; unknown names warn.
+Keeps the comma-separated columns, in that order; 'column as Alias' renames one; unknown names warn.
 
 Keeps the named columns in the given order. A name with no matching column warns and is skipped rather than erroring; naming no columns at all is an error.
 
@@ -1656,6 +1835,12 @@ One numeric column from `start` to `stop` by `step`, inclusive of stop when a st
 | `start` | Number | — | `0` | — | — |
 | `stop` | Number | — | — | — | — |
 | `step` | Number | — | `1` | — | — |
+
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `value` | Number | no | — |
 
 ### `table.calendar` (v1) — Pure
 
@@ -1940,6 +2125,8 @@ Turns long data wide: each distinct value of nameColumn becomes a column, filled
 | `valueColumn` | Text | — | — | — | columns of input `table` |
 | `aggregate` | Enum | — | `first` | `first`, `sum`, `count`, `min`, `max`, `avg` | — |
 
+**Columns of `table`**: unknown until run
+
 ### `table.profile` (v1) — Pure
 
 Profiles every column: type, counts, distinct count, min, max, and mean.
@@ -2081,6 +2268,8 @@ Rows become columns: the header column's values name the new columns and every o
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `headerColumn` | Text | — | — | — | — |
+
+**Columns of `table`**: unknown until run
 
 ### `table.unpivot` (v1) — Pure
 
@@ -2992,7 +3181,7 @@ One read-only SELECT over the connected relations, which it sees as t1, t2, and 
 
 ### `rel.select` (v1) — Pure
 
-Keeps only the comma-separated columns, in that order.
+Keeps only the comma-separated columns, in that order; 'column as Alias' renames one.
 
 **Inputs**
 

@@ -1,6 +1,136 @@
 {
   "nodes": [
     {
+      "kind": "bcf.read",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "issues",
+          "type": "Table",
+          "optional": false
+        },
+        {
+          "name": "topics",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "path",
+          "kind": "FilePath",
+          "default": "",
+          "suggest": {
+            "kind": "FilesUnderRoots",
+            "source": ".bcf"
+          },
+          "bindable": "Text"
+        }
+      ],
+      "description": "Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate; one row per topic and selected element, with an empty GlobalId for a topic that selects nothing) and a topics table (one row per topic with its element count). The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged."
+    },
+    {
+      "kind": "bcf.topics",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [
+        {
+          "name": "issues",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "topics",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "preset",
+          "kind": "Enum",
+          "default": "auto",
+          "enumValues": [
+            "auto",
+            "issue",
+            "verdict"
+          ]
+        },
+        {
+          "name": "verdicts",
+          "kind": "Text",
+          "default": "Fail"
+        }
+      ],
+      "description": "Groups an issue or verdict table into the BCF topics bcf.write would write (one per distinct title: Title, Description, Status, Priority, Type, Elements, GlobalIds), so the file\u0027s contents can be checked before Run. \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row."
+    },
+    {
+      "kind": "bcf.write",
+      "version": 1,
+      "capability": "Effect",
+      "inputs": [
+        {
+          "name": "issues",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "out",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "path",
+          "kind": "FilePath",
+          "default": ""
+        },
+        {
+          "name": "model",
+          "kind": "FilePath",
+          "default": "",
+          "suggest": {
+            "kind": "FilesUnderRoots",
+            "source": ".bos"
+          },
+          "bindable": "Text"
+        },
+        {
+          "name": "preset",
+          "kind": "Enum",
+          "default": "auto",
+          "enumValues": [
+            "auto",
+            "issue",
+            "verdict"
+          ]
+        },
+        {
+          "name": "verdicts",
+          "kind": "Text",
+          "default": "Fail"
+        },
+        {
+          "name": "author",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "guidSeed",
+          "kind": "Text",
+          "default": ""
+        }
+      ],
+      "description": "Writes the input issue or verdict table as a BCF 3.0 file at \u0027path\u0027 that Revit, Solibri and BIMcollab open as topics. With \u0027model\u0027 (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic\u0027s description. \u0027guidSeed\u0027 keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row."
+    },
+    {
       "kind": "bfast.buffer",
       "version": 1,
       "capability": "Pure",
@@ -95,6 +225,81 @@
         }
       ],
       "description": "Loads a .bos file into one row per element that has bounds: EntityIndex, Name, Category, Level, MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea (SizeX*SizeY), Volume (box volume), Diagonal. Feeds bim.containment, bim.nearest, and dimension analyses."
+    },
+    {
+      "kind": "bim.buildSequence",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [
+        {
+          "name": "table",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tasks",
+          "type": "Table",
+          "optional": false
+        },
+        {
+          "name": "elements",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "levelColumn",
+          "kind": "Text",
+          "default": "Level",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "table"
+          }
+        },
+        {
+          "name": "elevationColumn",
+          "kind": "Text",
+          "default": "Elevation",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "table"
+          }
+        },
+        {
+          "name": "column",
+          "kind": "Text",
+          "default": "Category",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "table"
+          }
+        },
+        {
+          "name": "start",
+          "kind": "DateTime",
+          "default": "2027-01-04"
+        },
+        {
+          "name": "daysPerTask",
+          "kind": "Integer",
+          "default": "10"
+        },
+        {
+          "name": "trades",
+          "kind": "Text",
+          "default": "Structure,Envelope,MEP,Finishes",
+          "list": true
+        },
+        {
+          "name": "overrides",
+          "kind": "Json",
+          "default": ""
+        }
+      ],
+      "description": "A synthetic construction sequence (4D) for an element table such as bim.elements or bim.discipline\u0027s output; it takes a table rather than a .bos path so a filtered or re-classified element set schedules the same way. Each row\u0027s trade comes from \u0027column\u0027 (Revit categories, IFC classes, or bim.discipline names) by a built-in map to Structure, Envelope, MEP, and Finishes; \u0027overrides\u0027 is a JSON {\u0022value\u0022: \u0022trade\u0022} object that wins. \u0027trades\u0027 orders the trades; storeys from \u0027levelColumn\u0027 run bottom-up by the lowest \u0027elevationColumn\u0027 value, then by name. A task starts when the previous trade has left its storey and its own trade has left the storey below, so trades overlap by one storey; each task with elements lasts \u0027daysPerTask\u0027 calendar days from \u0027start\u0027. Output \u0027tasks\u0027: Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (week of End counted from \u0027start\u0027, from 1), ElementCount, Synthetic. Output \u0027elements\u0027: the input rows plus Task, Trade, Finish, FinishWeek, Synthetic; rows with no storey or no trade get nulls and are counted in one warning. Same input, same schedule."
     },
     {
       "kind": "bim.classifyRooms",
@@ -471,6 +676,38 @@
       "description": "Adds two columns to a: \u0027as\u0027 (default Nearest) holding the \u0027key\u0027 of the closest b row by 3D distance between (x,y,z) and (bx,by,bz), and Distance holding that distance. Rows with null coordinates, or when b is empty, get nulls. Typical use: distance from each room center to the nearest exit door."
     },
     {
+      "kind": "bim.orientation",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "table",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "path",
+          "kind": "FilePath",
+          "default": "",
+          "suggest": {
+            "kind": "FilesUnderRoots",
+            "source": ".bos"
+          },
+          "bindable": "Text"
+        },
+        {
+          "name": "categories",
+          "kind": "Text",
+          "default": "",
+          "list": true
+        }
+      ],
+      "description": "Loads a .bos file into one row per element with a box: EntityIndex, GlobalId, Name, Category, Level, CenterX, CenterY, Bearing, Sector, Direction, Distance, Facing, FacingArea. The box is the element\u0027s Rvt:Element:Bounds when present, else the world box of its visible geometry. The plan centre is the middle of the rows\u0027 combined XY extent, so \u0027categories\u0027 (comma-separated, blank for every element) also sets the centre. Bearing is degrees clockwise from project north (\u002BY of the model) to the element\u0027s box centre; a BOS carries no true-north angle, so it is not true north. Sector 0..7 and Direction (N, NE, E, SE, S, SW, W, NW) bin the bearing in 45-degree slices centred on each point; Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side the box\u0027s larger vertical face looks out to, by which side of the centre the box lies on; FacingArea is that face\u0027s area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall\u0027s or window\u0027s gross face when it runs along a model axis and overstates a diagonal one."
+    },
+    {
       "kind": "bim.paramCoverage",
       "version": 1,
       "capability": "Pure",
@@ -807,7 +1044,7 @@
         }
       ],
       "params": [],
-      "description": "Groups a verdict table by checkId into counts and the worst verdict per check."
+      "description": "Groups a verdict table by CheckId into counts and the worst verdict per check."
     },
     {
       "kind": "check.rule",
@@ -1397,6 +1634,74 @@
       "description": "Lists the tables in a .duckdb database file with their column and row counts."
     },
     {
+      "kind": "ids.check",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [
+        {
+          "name": "entities",
+          "type": "Table",
+          "optional": false
+        },
+        {
+          "name": "parameters",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "verdicts",
+          "type": "Table",
+          "optional": false
+        },
+        {
+          "name": "summary",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "ids",
+          "kind": "FilePath",
+          "default": "",
+          "suggest": {
+            "kind": "FilesUnderRoots",
+            "source": ".ids"
+          },
+          "bindable": "Text"
+        }
+      ],
+      "description": "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification. A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass."
+    },
+    {
+      "kind": "ids.specifications",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "specifications",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "ids",
+          "kind": "FilePath",
+          "default": "",
+          "suggest": {
+            "kind": "FilesUnderRoots",
+            "source": ".ids"
+          },
+          "bindable": "Text"
+        }
+      ],
+      "description": "Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable). Reads no model; use it to see what an IDS asks before running ids.check."
+    },
+    {
       "kind": "json.read",
       "version": 1,
       "capability": "Pure",
@@ -1759,7 +2064,7 @@
           "list": true
         }
       ],
-      "description": "Keeps only the comma-separated columns, in that order."
+      "description": "Keeps only the comma-separated columns, in that order; \u0027column as Alias\u0027 renames one."
     },
     {
       "kind": "rel.sort",
@@ -3473,7 +3778,13 @@
           ]
         }
       ],
-      "description": "Pivots long data wide: one new column per distinct value of nameColumn."
+      "description": "Pivots long data wide: one new column per distinct value of nameColumn.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Dynamic"
+        }
+      ]
     },
     {
       "kind": "table.profile",
@@ -3526,7 +3837,7 @@
           "list": true
         }
       ],
-      "description": "Keeps the comma-separated columns, in that order; unknown names warn."
+      "description": "Keeps the comma-separated columns, in that order; \u0027column as Alias\u0027 renames one; unknown names warn."
     },
     {
       "kind": "table.range",
@@ -3562,7 +3873,20 @@
           "default": "1"
         }
       ],
-      "description": "Generates one numeric column from start to stop (inclusive when a step lands on it) by step; a negative step counts down."
+      "description": "Generates one numeric column from start to stop (inclusive when a step lands on it) by step; a negative step counts down.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "value",
+              "type": "Number",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "table.rename",
@@ -3928,7 +4252,13 @@
           "default": ""
         }
       ],
-      "description": "Turns rows into columns, using the header column\u0027s values as the new column names."
+      "description": "Turns rows into columns, using the header column\u0027s values as the new column names.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Dynamic"
+        }
+      ]
     },
     {
       "kind": "table.unpivot",
