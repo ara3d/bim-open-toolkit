@@ -160,12 +160,13 @@ describe("nrc-eight-questions", () => {
 describe("nrc-door-check", () => {
   const notebook = load("nrc-door-check");
   const verdicts = snapshotOf(notebook.turns[0].reply.embeds.find((e) => e.kind === "table"));
-  const column = (name: string) => verdicts.columns.findIndex((c) => c.name === name);
+  // The recorded notebook predates the PascalCase verdict columns, so names match ignoring case.
+  const column = (name: string) => verdicts.columns.findIndex((c) => c.name.toLowerCase() === name.toLowerCase());
 
   it("has 8 pass and 6 fail verdicts for DC-W1", () => {
     expect(verdicts.totalRows).toBe(14);
-    expect(new Set(verdicts.rows.map((r) => r[column("checkId")]))).toEqual(new Set(["DC-W1"]));
-    const count = (v: string) => verdicts.rows.filter((r) => r[column("verdict")] === v).length;
+    expect(new Set(verdicts.rows.map((r) => r[column("CheckId")]))).toEqual(new Set(["DC-W1"]));
+    const count = (v: string) => verdicts.rows.filter((r) => r[column("Verdict")] === v).length;
     expect([count("Pass"), count("Fail")]).toEqual([8, 6]);
   });
 
@@ -175,7 +176,7 @@ describe("nrc-door-check", () => {
       .map((line) => /^"([^"]+)","DC-W1",(\w+),/.exec(line))
       .filter((m) => m !== null)
       .map((m) => [m[1], m[2]]);
-    const fromGraph = verdicts.rows.map((r) => [r[column("GlobalId")], String(r[column("verdict")]).toLowerCase()]);
+    const fromGraph = verdicts.rows.map((r) => [r[column("GlobalId")], String(r[column("Verdict")]).toLowerCase()]);
     expect(fromGraph.sort()).toEqual(fromFile.sort());
   });
 

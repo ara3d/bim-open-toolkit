@@ -1,61 +1,62 @@
+using Ara3D.BimOpenSchema;
+
 namespace BimOpenFlow.Nodes.BimAnalysis;
 
-/// <summary>The shared column vocabulary of the pack. Nodes that produce these
-/// columns and nodes that consume them agree by these names; changing one is a
-/// contract change.</summary>
+/// <summary>The pack's column names, read from the registry in bim-open-data (<see cref="ColumnKinds"/>),
+/// where each column's type, unit and meaning live. A name is not declared here.</summary>
 public static class BimColumns
 {
-    public const string EntityIndex = "EntityIndex";
-    public const string LocalId = "LocalId";
-    public const string GlobalId = "GlobalId";
-    public const string Name = "Name";
-    public const string Category = "Category";
-    public const string CategoryType = "CategoryType";
-    public const string Type = "Type";
-    public const string ClassName = "ClassName";
-    public const string Level = "Level";
-    public const string Elevation = "Elevation";
-    public const string Room = "Room";
-    public const string Document = "Document";
-    public const string Workset = "Workset";
-    public const string Group = "Group";
+    public static string EntityIndex => ColumnKinds.EntityIndex.Name;
+    public static string LocalId => ColumnKinds.LocalId.Name;
+    public static string GlobalId => ColumnKinds.GlobalId.Name;
+    public static string Name => ColumnKinds.Name.Name;
+    public static string Category => ColumnKinds.Category.Name;
+    public static string CategoryType => ColumnKinds.CategoryType.Name;
+    public static string Type => ColumnKinds.Type.Name;
+    public static string ClassName => ColumnKinds.ClassName.Name;
+    public static string Level => ColumnKinds.Level.Name;
+    public static string Elevation => ColumnKinds.Elevation.Name;
+    public static string Room => ColumnKinds.Room.Name;
+    public static string Document => ColumnKinds.Document.Name;
+    public static string Workset => ColumnKinds.Workset.Name;
+    public static string Group => ColumnKinds.Group.Name;
 
-    public const string MinX = "MinX";
-    public const string MinY = "MinY";
-    public const string MinZ = "MinZ";
-    public const string MaxX = "MaxX";
-    public const string MaxY = "MaxY";
-    public const string MaxZ = "MaxZ";
-    public const string SizeX = "SizeX";
-    public const string SizeY = "SizeY";
-    public const string SizeZ = "SizeZ";
-    public const string CenterX = "CenterX";
-    public const string CenterY = "CenterY";
-    public const string CenterZ = "CenterZ";
-    public const string FootprintArea = "FootprintArea";
-    public const string Volume = "Volume";
-    public const string Diagonal = "Diagonal";
+    public static string MinX => ColumnKinds.MinX.Name;
+    public static string MinY => ColumnKinds.MinY.Name;
+    public static string MinZ => ColumnKinds.MinZ.Name;
+    public static string MaxX => ColumnKinds.MaxX.Name;
+    public static string MaxY => ColumnKinds.MaxY.Name;
+    public static string MaxZ => ColumnKinds.MaxZ.Name;
+    public static string SizeX => ColumnKinds.SizeX.Name;
+    public static string SizeY => ColumnKinds.SizeY.Name;
+    public static string SizeZ => ColumnKinds.SizeZ.Name;
+    public static string CenterX => ColumnKinds.CenterX.Name;
+    public static string CenterY => ColumnKinds.CenterY.Name;
+    public static string CenterZ => ColumnKinds.CenterZ.Name;
+    public static string FootprintArea => ColumnKinds.FootprintArea.Name;
+    public static string Volume => ColumnKinds.Volume.Name;
+    public static string Diagonal => ColumnKinds.Diagonal.Name;
 
-    public const string Number = "Number";
-    public const string UnboundedHeight = "UnboundedHeight";
-    public const string ElementCount = "ElementCount";
-    public const string RoomCount = "RoomCount";
+    public static string Number => ColumnKinds.Number.Name;
+    public static string UnboundedHeight => ColumnKinds.UnboundedHeight.Name;
+    public static string ElementCount => ColumnKinds.ElementCount.Name;
+    public static string RoomCount => ColumnKinds.RoomCount.Name;
 
-    public const string Discipline = "Discipline";
-    public const string RoomClass = "RoomClass";
+    public static string Discipline => ColumnKinds.Discipline.Name;
+    public static string RoomClass => ColumnKinds.RoomClass.Name;
 
-    public const string Door = "Door";
-    public const string DoorName = "DoorName";
-    public const string FromRoom = "FromRoom";
-    public const string ToRoom = "ToRoom";
-    public const string Hops = "Hops";
-    public const string Distance = "Distance";
+    public static string Door => ColumnKinds.Door.Name;
+    public static string DoorName => ColumnKinds.DoorName.Name;
+    public static string FromRoom => ColumnKinds.FromRoom.Name;
+    public static string ToRoom => ColumnKinds.ToRoom.Name;
+    public static string Hops => ColumnKinds.Hops.Name;
+    public static string Distance => ColumnKinds.Distance.Name;
 
-    public const string ParameterGroup = "ParameterGroup";
-    public const string ValueType = "ValueType";
-    public const string Count = "Count";
-    public const string Distinct = "Distinct";
-    public const string FillRate = "FillRate";
+    public static string ParameterGroup => ColumnKinds.ParameterGroup.Name;
+    public static string ValueType => ColumnKinds.ValueType.Name;
+    public static string Count => ColumnKinds.Count.Name;
+    public static string Distinct => ColumnKinds.Distinct.Name;
+    public static string FillRate => ColumnKinds.FillRate.Name;
 
     /// <summary>The name a door edge uses when a door has no room on one side.</summary>
     public const string Outside = "Outside";
