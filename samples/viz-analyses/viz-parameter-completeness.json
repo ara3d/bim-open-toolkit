@@ -18,7 +18,11 @@
     "colored": { "x": 2350, "y": 560 },
     "byClass": { "x": 2020, "y": 800 },
     "ranked": { "x": 2350, "y": 800 },
-    "classChart": { "x": 2680, "y": 800 }
+    "classChart": { "x": 2680, "y": 800 },
+    "fileTotal": { "x": 1360, "y": -200 },
+    "fileTable": { "x": 1690, "y": -200 },
+    "placeholders": { "x": 1030, "y": -440 },
+    "placeholderTable": { "x": 1360, "y": -440 }
   },
   "structure": {
     "edges": [
@@ -43,7 +47,13 @@
       { "from": "perElement.table", "to": "byClass.table" },
       { "from": "byClass.table", "to": "ranked.table" },
       { "from": "ranked.table", "to": "classChart.table" },
-      { "from": "scale.legend", "to": "classChart.scale" }
+      { "from": "scale.legend", "to": "classChart.scale" },
+      { "from": "cells.table", "to": "fileTotal.table" },
+      { "from": "fileTotal.table", "to": "fileTable.table" },
+      { "from": "placed.table", "to": "placeholders.t1" },
+      { "from": "load.parameters", "to": "placeholders.t2" },
+      { "from": "required.table", "to": "placeholders.t3" },
+      { "from": "placeholders.table", "to": "placeholderTable.table" }
     ],
     "nodes": [
       { "id": "about", "kind": "view.note", "version": 1 },
@@ -63,11 +73,15 @@
       { "id": "colored", "kind": "view3d.color", "version": 1 },
       { "id": "byClass", "kind": "table.aggregate", "version": 1 },
       { "id": "ranked", "kind": "table.sort", "version": 1 },
-      { "id": "classChart", "kind": "chart.bar", "version": 1 }
+      { "id": "classChart", "kind": "chart.bar", "version": 1 },
+      { "id": "fileTotal", "kind": "table.aggregate", "version": 1 },
+      { "id": "fileTable", "kind": "view.table", "version": 1 },
+      { "id": "placeholders", "kind": "sql.query", "version": 1 },
+      { "id": "placeholderTable", "kind": "view.table", "version": 1 }
     ]
   },
   "values": {
-    "about": { "text": "For a BIM manager checking a handover: which classes of element are missing the parameters the handover needs? The list is the required node: fourteen COBie-style fields (type reference, marks, manufacturer, asset identifier, serial number, barcode, installation and warranty dates, Uniformat and OmniClass codes, fire rating, external, load-bearing); edit it to match your own handover requirements. A parameter counts as filled when its value is not empty and is not the template placeholder that repeats the parameter's own name: this Duplex carries 'SerialNumber' = 'SerialNumber' on 211 elements, which is a blank template field, not data. FillRate in the coverage table is the share of a class's elements whose value is filled. A parameter that no element of a class carries is left out, so it shows blank in the matrix and the heatmap, not 0%: blank means 'the class never has this field', 0% means 'the field is there but empty'. Each element's own Completeness is the share of its class's carried handover fields that it fills; the 3D view (colored) paints it red (0) to green (1) on the scale shared with classChart, which ranks classes worst first. The four IfcMember stair parts carry none of the fourteen fields, so their Completeness is blank and they stay grey; the two stair flights carry only Reference and fill it, so they read 100% from one field. On this file 543 of 2,157 element-field cells are filled (25%); footings and spaces are worst at 0%, doors and windows best among the large classes at 38%. Elements are every rooted, placed product in the file (239: types, styles, openings and spatial containers excluded); Storey comes from walking the containment and aggregation links up to the IfcBuildingStorey. The Vega-Lite spec (specs/viz-parameter-completeness.vl.json) draws the heatmap from the coverage table: Parameter across, Class down, FillRate as colour." },
+    "about": { "text": "For a BIM manager checking a handover: which classes of element are missing the parameters the handover needs? The list is the required node: fourteen COBie-style fields (type reference, marks, manufacturer, asset identifier, serial number, barcode, installation and warranty dates, Uniformat and OmniClass codes, fire rating, external, load-bearing); edit it to match your own handover requirements. A parameter counts as filled when its value is not empty and is not the template placeholder that repeats the parameter's own name: the placeholderTable lists every such value, for example 'SerialNumber' = 'SerialNumber' on 211 elements of this Duplex, which is a blank template field, not data. FillRate in the coverage table is the share of a class's elements whose value is filled. A parameter that no element of a class carries is left out, so it shows blank in the matrix and the heatmap, not 0%: blank means 'the class never has this field', 0% means 'the field is there but empty'. Each element's own Completeness is the share of its class's carried handover fields that it fills; the 3D view (colored) paints it red (0) to green (1) on the scale shared with classChart, which ranks classes worst first. The four IfcMember stair parts carry none of the fourteen fields, so their Completeness is blank and they stay grey; the two stair flights carry only Reference and fill it, so they read 100% from one field. On this file the fileTable counts 543 of 2,157 element-field cells filled (25%); footings and spaces are worst at 0%, doors and windows best among the large classes at 38%. Elements are every rooted, placed product in the file (239: types, styles, openings and spatial containers excluded); Storey comes from walking the containment and aggregation links up to the IfcBuildingStorey. The Vega-Lite spec (specs/viz-parameter-completeness.vl.json) draws the heatmap from the coverage table: Parameter across, Class down, FillRate as colour." },
     "load": { "path": "{SAMPLES}/duplex-enriched.bos" },
     "required": { "rows": "[{\"Parameter\":\"Reference\",\"Field\":\"Type reference\"},{\"Parameter\":\"Mark\",\"Field\":\"Instance mark\"},{\"Parameter\":\"Type Mark\",\"Field\":\"Type mark\"},{\"Parameter\":\"Manufacturer\",\"Field\":\"Manufacturer\"},{\"Parameter\":\"AssetIdentifier\",\"Field\":\"Asset identifier\"},{\"Parameter\":\"SerialNumber\",\"Field\":\"Serial number\"},{\"Parameter\":\"BarCode\",\"Field\":\"Barcode\"},{\"Parameter\":\"InstallationDate\",\"Field\":\"Installation date\"},{\"Parameter\":\"WarrantyStartDate\",\"Field\":\"Warranty start\"},{\"Parameter\":\"Assembly Code\",\"Field\":\"Uniformat code\"},{\"Parameter\":\"OmniClass Number\",\"Field\":\"OmniClass code\"},{\"Parameter\":\"FireRating\",\"Field\":\"Fire rating\"},{\"Parameter\":\"IsExternal\",\"Field\":\"External\"},{\"Parameter\":\"LoadBearing\",\"Field\":\"Load bearing\"}]" },
     "elements": { "sql": "SELECT EntityIndex, GlobalId, StepId, Name, Category AS Class FROM t WHERE coalesce(GlobalId, '') <> '' AND Category NOT IN ('IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 'IFCOPENINGELEMENT') AND NOT regexp_matches(Category, '(TYPE|STYLE|PROPERTIES)$') ORDER BY EntityIndex" },
@@ -84,6 +98,10 @@
     "colored": { "joinColumn": "GlobalId" },
     "byClass": { "groupBy": "Class", "aggregates": "count(*) as Elements, avg(Completeness) as Completeness" },
     "ranked": { "A": "Completeness", "B": "Class" },
+    "fileTotal": { "groupBy": "", "aggregates": "count(*) as Cells, sum(Filled) as FilledCells, avg(Filled) as FillRate" },
+    "fileTable": { "title": "Whole file: element-field cells filled" },
+    "placeholders": { "sql": "SELECT p.Name AS Parameter, p.Value AS PlaceholderValue, count(DISTINCT p.EntityIndex) AS Elements FROM t2 p JOIN t3 r ON r.Parameter = p.Name JOIN t1 e ON e.EntityIndex = p.EntityIndex WHERE trim(coalesce(p.Value, '')) <> '' AND lower(replace(p.Value, ' ', '')) = lower(replace(p.Name, ' ', '')) GROUP BY p.Name, p.Value ORDER BY p.Name, p.Value" },
+    "placeholderTable": { "title": "Template placeholders counted as empty (value repeats the parameter's name)" },
     "classChart": { "labelColumn": "Class", "valueColumns": "Completeness", "title": "Mean handover completeness per class, worst first" }
   }
 }
