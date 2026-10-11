@@ -143,8 +143,9 @@ Ara3D.BimOpenSchema.DuckDb, Ara3D.BimOpenSchema.Harmonizer.
 **Location:** `src/flow/BimOpenFlow.Nodes.Geometry/`
 Nodes that produce or transform 3D content for the viewer: mesh extraction,
 coloring, isolation/explosion, massing, camera/view tables. The only pack that
-touches meshing, keeping the geometry dependency (and its windows/x64 native
-constraint) out of everything else.
+touches meshing, keeping the geometry dependency (and the windows/x64
+constraint of `Ara3D.IfcLoader`'s web-ifc; the mesher is pure C#) out of
+everything else.
 **Depends on:** Ara3D.DataFlowEngine.Abstractions; Ara3D.Ifc.Mesher,
 Ara3D.IfcLoader; Ara3D.Geometry, Ara3D.Models (vendored SDK).
 

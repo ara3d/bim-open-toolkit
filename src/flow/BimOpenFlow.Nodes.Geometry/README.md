@@ -2,8 +2,8 @@
 
 The `view3d.*` node pack plus the library the host uses to serve renderable
 geometry to the viewer. This is the only pack that touches meshing, which keeps
-the native windows/x64 constraint (inherited from `Ara3D.Ifc.Mesher`) out of
-every other pack.
+the windows/x64 constraint (inherited from `Ara3D.IfcLoader`, which ships
+web-ifc; the mesher itself is pure C#) out of every other pack.
 
 3D content flows through graphs as tables. Mesh bytes never enter the graph:
 the host loads a `ModelGeometry` (via `ModelGeometryCache`) and serves the

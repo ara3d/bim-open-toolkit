@@ -9,7 +9,7 @@ taken from `deps/bim-open-flow` (see `deps.json`); these packs reference its
 |---|---|
 | `BimOpenFlow.Nodes.Bos` | Loading BIM Open Schema (`.bos`) files and querying them with SQL |
 | `BimOpenFlow.Nodes.BimAnalysis` | The `bim.*` pack: elements, rooms, levels, typed parameters, bounds, classification, containment, navigation |
-| `BimOpenFlow.Nodes.Geometry` | The `view3d.*` pack: the tables the 3D pane consumes, from native tessellation (`Ara3D.Ifc.Mesher`) |
+| `BimOpenFlow.Nodes.Geometry` | The `view3d.*` pack: the tables the 3D pane consumes, from the pure C# tessellation in `Ara3D.Ifc.Mesher` |
 
 `src/studio/BimOpenFlow.Studio` composes them with the generic packs into the `bim`
 profile. Tests are under `tests/flow`.
