@@ -14,7 +14,7 @@ public sealed class BimElementsNode : IFlowNode
         Kind, 1, NodeCapability.Pure,
         Inputs: [],
         Outputs: [new PortSpec("table", PortType.Table)],
-        Params: [new ParamSpec("path", ParamKind.FilePath)],
+        Params: [new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos"))],
         "Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name, "
         + "Category, CategoryType, Type, ClassName, Level, Elevation, Room, Document, Workset, Group. "
         + "The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms.");

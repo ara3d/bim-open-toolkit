@@ -10,7 +10,7 @@ public static class ViewRecipeNodes
     public static IReadOnlyList<IFlowNode> All { get; } =
     [
         new ViewRecipeNode("scene", "Open a model with the visualization toolkit. Connect view outputs to compose a presentation.",
-            [new("path", ParamKind.FilePath)], p => new { path = p.GetText("path") }, source: true),
+            [new("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos"))], p => new { path = p.GetText("path") }, source: true),
         new ViewRecipeNode("section", "Cut along an axis at a fraction of the model bounds (0–1). Keeps the lower side; no capped solids.",
             [new("axis", ParamKind.Enum, "z", ["x", "y", "z"]), Slider("fraction", "0.5", 0, 1, "Position")],
             p => new { axis = Choice(p, "axis", "z", "x", "y", "z"), fraction = Range(p, "fraction", .5, 0, 1) }),

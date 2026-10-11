@@ -10,7 +10,7 @@ public sealed class InstancesNode : IFlowNode
         "view3d.instances", 1, NodeCapability.Pure,
         [],
         [new("instances", PortType.Table)],
-        [new("path", ParamKind.FilePath)],
+        [new("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos"))],
         "Renderable instances of a model file as a table: one row per placed mesh, with entity ids and world bounds.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)

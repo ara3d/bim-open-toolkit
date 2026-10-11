@@ -11,7 +11,7 @@ public sealed class MeasuresNode : IFlowNode
         "view3d.measures", 1, NodeCapability.Pure,
         [],
         [new("measures", PortType.Table)],
-        [new("path", ParamKind.FilePath)],
+        [new("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos"))],
         "One row per placed mesh of a model file: instanceIndex, meshId, entityId, globalId, "
         + "category, surfaceArea, meshVolume, and triangleCount, computed in world space from "
         + "the mesh triangles. meshVolume is the enclosed volume and is exact only for closed "

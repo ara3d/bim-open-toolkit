@@ -18,7 +18,7 @@ public sealed class BimParamTableNode : IFlowNode
         Outputs: [new PortSpec("table", PortType.Table)],
         Params:
         [
-            new ParamSpec("path", ParamKind.FilePath),
+            new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos")),
             new ParamSpec("parameters", ParamKind.Text),
         ],
         "Loads a .bos file into one row per element with EntityIndex, Name, Category plus one "

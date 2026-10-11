@@ -16,7 +16,7 @@ public sealed class BimRoomsNode : IFlowNode
         Outputs: [new PortSpec("table", PortType.Table)],
         Params:
         [
-            new ParamSpec("path", ParamKind.FilePath),
+            new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos")),
             new ParamSpec("categories", ParamKind.Text, "Rooms,Spaces"),
         ],
         "Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, "

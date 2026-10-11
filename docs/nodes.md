@@ -82,7 +82,7 @@ Loads the .bos file into an in-memory DuckDB once and outputs three materialized
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 | `harmonize` | Boolean | `false` | — | — |
 
 ### `bos.query` (v1) — Pure
@@ -129,7 +129,7 @@ Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 
 ### `bim.rooms` (v1) — Pure
 
@@ -147,7 +147,7 @@ Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Eleva
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 | `categories` | Text | `Rooms,Spaces` | — | — |
 
 ### `bim.levels` (v1) — Pure
@@ -166,7 +166,7 @@ Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Nam
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 
 ### `bim.bounds` (v1) — Pure
 
@@ -184,7 +184,7 @@ Loads a .bos file into one row per element that has bounds: EntityIndex, Name, C
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 
 ### `bim.paramTable` (v1) — Pure
 
@@ -202,7 +202,7 @@ Loads a .bos file into one row per element with EntityIndex, Name, Category plus
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 | `parameters` | Text | — | — | — |
 
 ### `bim.paramCoverage` (v1) — Pure
@@ -348,7 +348,7 @@ Loads a .bos file into one row per door in the given categories: Door (entity in
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 | `doorCategories` | Text | `Doors` | — | — |
 
 ### `bim.hops` (v1) — Pure
@@ -397,7 +397,7 @@ One row per placed mesh, with entity ids and world bounds. The loaded geometry i
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.measures` (v1) — Pure
 
@@ -415,7 +415,7 @@ One row per placed mesh of a model file: instanceIndex, meshId, entityId, global
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.color` (v1) — Pure
 
@@ -690,7 +690,7 @@ Open a model with the visualization toolkit. Connect view outputs to compose a p
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.section` (v1) — Pure
 
@@ -1156,7 +1156,7 @@ Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`,
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `sourcePath` | FilePath | — | — | — |
+| `sourcePath` | FilePath | — | — | files under the model roots ending `.ifc` |
 | `targetPath` | FilePath | — | — | — |
 
 ### `sink.report` (v1) — Effect
@@ -1206,7 +1206,7 @@ With `format` auto, the reader is inferred from the file extension (.csv, .parqu
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.csv,.parquet,.json` |
 | `format` | Enum | `auto` | `auto`, `csv`, `parquet`, `json` | — |
 
 ### `duck.source` (v1) — Pure
@@ -1219,13 +1219,13 @@ Opens one shared read-only DuckDB source for connected query branches.
 
 | Name | Type |
 |---|---|
-| `source` | Text |
+| `source` | Database |
 
 **Params**
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.duckdb` |
 
 ### `duck.query` (v1) — Pure
 
@@ -1237,7 +1237,7 @@ The database file is opened read-only (the node can never mutate it), and the SQ
 
 | Name | Type | Required |
 |---|---|---|
-| `source` | Text | optional |
+| `source` | Database | optional |
 
 **Outputs**
 
@@ -1297,7 +1297,7 @@ Reads one CSV file or a glob of files via DuckDB `read_csv`, with typed delimite
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.csv,.tsv,.txt` |
 | `delimiter` | Text | `,` | — | — |
 | `header` | Boolean | `true` | — | — |
 | `skipRows` | Integer | `0` | — | — |
@@ -1324,7 +1324,7 @@ Reads a Parquet file or glob of files via DuckDB `read_parquet`. Parquet is self
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.parquet` |
 
 ### `json.read` (v1) — Pure
 
@@ -1344,7 +1344,7 @@ Reads a JSON file via DuckDB `read_json`; `layout` selects the file shape (auto,
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.json,.ndjson` |
 | `layout` | Enum | `auto` | `auto`, `records`, `lines` | — |
 | `flatten` | Boolean | `false` | — | — |
 
@@ -1354,7 +1354,11 @@ Reads one named table from a .duckdb database file, read-only.
 
 Reads one named table from a .duckdb database opened read-only, so the node can never mutate the file. An unknown table name is an error naming the table; the no-SQL companion to duck.query.
 
-**Inputs**: none
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `source` | Database | optional |
 
 **Outputs**
 
@@ -1366,7 +1370,7 @@ Reads one named table from a .duckdb database opened read-only, so the node can 
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.duckdb` |
 | `table` | Text | — | — | tables in the file at `path` |
 
 ### `duck.tables` (v1) — Pure
@@ -1375,7 +1379,11 @@ Lists the tables in a .duckdb database file with their column and row counts.
 
 Lists the tables of a .duckdb database (read-only) as a table with `name`, `columnCount`, and real `rowCount` per table, ordered by name. The discovery step before duck.table or duck.query.
 
-**Inputs**: none
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `source` | Database | optional |
 
 **Outputs**
 
@@ -1387,7 +1395,7 @@ Lists the tables of a .duckdb database (read-only) as a table with `name`, `colu
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.duckdb` |
 
 ## Tables — `BimOpenFlow.Nodes.Tables`
 
@@ -1411,7 +1419,7 @@ An empty `sheet` means the first worksheet; a named sheet that does not exist is
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.xlsx` |
 | `sheet` | Text | — | — | — |
 | `headerRow` | Integer | `1` | — | — |
 | `range` | Text | — | — | — |
@@ -1434,7 +1442,7 @@ Lists a workbook's worksheets as a table: `name`, `index` (1-based position), an
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.xlsx` |
 
 ### `sqlite.query` (v1) — Pure
 
@@ -1454,7 +1462,7 @@ The database file is opened read-only, and the SQL is validated as a single SELE
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 | `sql` | Text | — | — | — |
 
 ### `sqlite.table` (v1) — Pure
@@ -1475,7 +1483,7 @@ Reads one whole table (`SELECT *`, read-only, case-insensitive name match) with 
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 | `table` | Text | — | — | — |
 
 ### `sqlite.tables` (v1) — Pure
@@ -1496,7 +1504,7 @@ Lists a database's user tables (`name`, `columnCount`, `rowCount`) in name order
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 
 ### `bfast.read` (v1) — Pure
 
@@ -1514,7 +1522,7 @@ Lists the buffers in a BFAST file: name, byteLength, index (0-based file order).
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bfast` |
 
 ### `bfast.buffer` (v1) — Pure
 
@@ -1532,7 +1540,7 @@ Reads one buffer of a BFAST file as a table with a single `value` column, interp
 
 | Name | Kind | Default | Allowed values | Suggestions |
 |---|---|---|---|---|
-| `path` | FilePath | — | — | — |
+| `path` | FilePath | — | — | files under the model roots ending `.bfast` |
 | `name` | Text | — | — | — |
 | `type` | Enum | `float32` | `uint8`, `int16`, `int32`, `int64`, `float32`, `float64` | — |
 
