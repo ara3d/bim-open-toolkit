@@ -1,0 +1,32 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Elements per storey of the Duplex, stacked by element class. Input: the table feeding the graph's 'chart' node (Storey, Elevation, then one count column per class).",
+  "title": "Elements per storey, by class",
+  "width": 480,
+  "height": 220,
+  "transform": [
+    {
+      "fold": ["Beam", "Covering", "Door", "Footing", "Furniture", "Member", "Railing", "Roof", "Slab", "Stair", "Wall", "Window"],
+      "as": ["Class", "Elements"]
+    },
+    { "filter": "datum.Elements > 0" }
+  ],
+  "mark": "bar",
+  "encoding": {
+    "y": {
+      "field": "Storey",
+      "type": "nominal",
+      "sort": { "field": "Elevation", "op": "min", "order": "descending" },
+      "title": "Storey (top to bottom by elevation)"
+    },
+    "x": { "field": "Elements", "type": "quantitative", "stack": "zero", "title": "Elements" },
+    "color": { "field": "Class", "type": "nominal", "scale": { "scheme": "tableau20" }, "title": "Class" },
+    "order": { "field": "Class", "type": "nominal" },
+    "tooltip": [
+      { "field": "Storey", "type": "nominal" },
+      { "field": "Elevation", "type": "quantitative", "title": "Elevation (m)" },
+      { "field": "Class", "type": "nominal" },
+      { "field": "Elements", "type": "quantitative" }
+    ]
+  }
+}

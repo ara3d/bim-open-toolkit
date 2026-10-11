@@ -1,0 +1,28 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "What the Duplex is made of: the seven largest element classes by count, the rest folded into Other and drawn last. Input: the table feeding the graph's 'chart' node (Group, Elements, Share, IsOther), already in display order. Colours follow category10 over the sorted group names, the same assignment the graph's view.colormap gives the 3D view.",
+  "title": "What the Duplex is made of: elements by class",
+  "width": 420,
+  "height": 240,
+  "encoding": {
+    "y": { "field": "Group", "type": "nominal", "sort": null, "title": "Class" },
+    "x": { "field": "Elements", "type": "quantitative", "title": "Elements" }
+  },
+  "layer": [
+    {
+      "mark": "bar",
+      "encoding": {
+        "color": { "field": "Group", "type": "nominal", "scale": { "scheme": "category10" }, "legend": null },
+        "tooltip": [
+          { "field": "Group", "type": "nominal", "title": "Class" },
+          { "field": "Elements", "type": "quantitative" },
+          { "field": "Share", "type": "quantitative", "format": ".1%" }
+        ]
+      }
+    },
+    {
+      "mark": { "type": "text", "align": "left", "dx": 4 },
+      "encoding": { "text": { "field": "Share", "type": "quantitative", "format": ".0%" } }
+    }
+  ]
+}
