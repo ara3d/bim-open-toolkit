@@ -3,12 +3,14 @@
 Decided 2026-10-03 by Christopher Diggins from proposals drafted with Claude
 Fable 5.1 (the explorations are kept under `docs/brand/explorations/`). This
 is the reference for the marks, the wordmarks, the fonts, and the colours of
-every BIM Open page. Five products carry it: **BIM Open Flow** (the
+every BIM Open page. Six products carry it: **BIM Open Flow** (the
 graph editor and studio), **BIM Open Notebook** (the session record),
 **BIM Open Viewer** (the 3D viewer), **BIM Open Data** (the .NET
-implementation of BIM Open Schema and the IFC stack), and **BIM Open
-Schema** (the specification the others implement or consume); the
-repository-layout proposal gives each its own repository. The studio
+implementation of BIM Open Schema and the IFC stack), **BIM Open
+Schema** (the specification the others implement or consume), and
+**BIM Open Bench** (benchmarks that measure parsers, meshers, viewers,
+and AI agents, ours and others, on public models with known answers,
+added 2026-10-11); each has its own repository. The studio
 look (`docs/proposals/studio-look.md`) is the first page to carry it; the
 classic page keeps its current look until the two are reconciled.
 
@@ -23,6 +25,7 @@ The products share everything except a mark and an accent:
 | **BIM Open Viewer** | `docs/brand/viewer-mark.svg` | Teal `#0f8a80`, `#e2f3f1` | `docs/brand/viewer-lockup.svg` | `ara3d/bim-open-viewer` |
 | **BIM Open Data** | Model to Rows, `docs/brand/data-mark.svg` | Rose `#b8326e`, `#f9e6ef` | `docs/brand/data-lockup.svg` | `ara3d/bim-open-data` |
 | **BIM Open Schema** | Hollow Rows, `docs/brand/schema-mark.svg` | Slate `#4f5d78`, `#e9ecf2` | `docs/brand/schema-lockup.svg` | `ara3d/bim-open-schema` |
+| **BIM Open Bench** | Ranked Rows, `docs/brand/bench-mark.svg` | Ochre `#8f6214`, `#f5ecdc` | `docs/brand/bench-lockup.svg` | `ara3d/bim-open-bench` |
 
 The toolkit itself (`ara3d/bim-open-toolkit`) is the family hub and has no
 accent of its own: its pages, such as the family landing page under
@@ -37,7 +40,7 @@ other product or status colour uses.
 ## The names
 
 The product names are three words: **BIM Open Flow**, **BIM Open
-Notebook**, **BIM Open Viewer**, **BIM Open Data**, **BIM Open Schema**. The one-word form "BimOpenFlow" was the wordmark until
+Notebook**, **BIM Open Viewer**, **BIM Open Data**, **BIM Open Schema**, **BIM Open Bench**. The one-word form "BimOpenFlow" was the wordmark until
 2026-10-03 and remains in code identifiers, package names, and the
 `bimopenflow/` directory, where it is a name for machines. Where a person
 reads it, in a command bar, a page title, a paper, or a README heading,
@@ -50,7 +53,7 @@ product second, and the two bars agree.
 
 ## The marks
 
-![Rows to Flow](brand/mark.svg) ![Flow to Page](brand/notebook-mark.svg) ![Model to Rows](brand/data-mark.svg) ![Hollow Rows](brand/schema-mark.svg)
+![Rows to Flow](brand/mark.svg) ![Flow to Page](brand/notebook-mark.svg) ![Model to Rows](brand/data-mark.svg) ![Hollow Rows](brand/schema-mark.svg) ![Ranked Rows](brand/bench-mark.svg)
 
 **Rows to Flow** (BIM Open Flow). Three table rows on the left; their wires
 curve and gather into one solid node on the right. It says what the
@@ -77,6 +80,15 @@ is what sets the specification apart from the tools. The file uses
 `fill-rule="evenodd"`, so a renderer that pastes the path must keep that
 attribute.
 
+**Ranked Rows** (BIM Open Bench). A start line on the left; three rows
+run from it, each longer than the one above, and the longest ends in the
+node disc. It says what the benchmark does: the same work, measured and
+ranked, with the best result reaching the answer. It is the only mark
+whose rows differ in length, which is what a result looks like. The rows
+grow downward because the first draft, longest row on top, read as the
+letter F at 16 px. Away from the family it can pass for a generic bar
+chart; the node disc and the ochre tie it back.
+
 Each file is a 24 by 24 viewBox, one path, one fill, so the path can be
 pasted into code (the studio's command bar draws it as an inline SVG from
 a path string) and scaled without edits.
@@ -89,8 +101,10 @@ Rules:
   wordmark), 48 px (start page), 96 px and up (papers, slides).
 - Below 16 px, Rows to Flow uses the node alone (the circle), Flow to
   Page uses the page alone (the spine and its rows), Model to Rows
-  uses the rows alone (the six cells), and Hollow Rows uses one frame
-  with its two cells, so the favicons differ even when the node is lost.
+  uses the rows alone (the six cells), Hollow Rows uses one frame
+  with its two cells, and Ranked Rows uses the start line and the three
+  rows without the disc, so the favicons differ even when the node is
+  lost.
 - Clear space of half the mark's width on every side.
 - Do not rotate, skew, add rows, or recolour parts of a mark separately.
 
@@ -154,6 +168,8 @@ interface scale, so a table looks the same in a notebook and in the studio.
 | Accent soft (Data) | `#f9e6ef` | Selected row and hover, on the data pages |
 | Accent (Schema) | `#4f5d78` | The schema mark, the specification's pages and the key badge |
 | Accent soft (Schema) | `#e9ecf2` | Selected row and badges, on the specification pages |
+| Accent (Bench) | `#8f6214` | The bench mark, the bench's pages, bars in a results table |
+| Accent soft (Bench) | `#f5ecdc` | Selected row and hover, on the bench pages |
 | Text | `#171a1f` | Headings, body |
 | Dim | `#5a606c` | Secondary text, ids, meta, the "BIM Open" half of the wordmark |
 | Surface | `#ffffff` | Panels, cards, the command bar |
@@ -187,6 +203,14 @@ data vocabulary, not brand colours, and do not appear in the chrome.
   holds its copy at `bim-open-schema/brand/` (`mark.svg`, `lockup.svg`,
   and a short `BRANDING.md` that defers to this guide); its README opens
   with the lockup. Change the mark here first, then copy.
+- Bench pages: the ranked-rows mark and the ochre accent, the two-weight
+  wordmark "BIM Open Bench", results tables at the interface scale with
+  numbers in Fira Code, right-aligned. Ochre is for the chrome and for
+  bars in a results table; a pass or a failure in a result keeps the
+  status colours. The bench repository holds its copy at
+  `bim-open-bench/brand/` (`mark.svg`, `lockup.svg`, and a short
+  `BRANDING.md` that defers to this guide). Change the mark here first,
+  then copy.
 - Favicons: `docs/brand/mark.svg` served as `favicon.svg` from the app
   package; `docs/brand/notebook-mark.svg` from the notebook's page;
   `docs/brand/schema-mark.svg` from the specification's pages.
@@ -212,6 +236,11 @@ strip beside the four decided marks, with a specification page in the
 family type; the page recommended Table Shape, and the owner chose
 Hollow Rows for its clearer statement of "shape with no data", accepting
 the softer 16 px favicon that the page records.
+`bench-proposals.html` holds the three bench marks (Ranked Rows, Rows on
+the Bench, Rows against the Clock), the ochre and olive accents, and a
+results page in the family type; the owner chose Ranked Rows in ochre on
+2026-10-11. Ochre was free because the schema took slate; olive was
+dropped for sitting too near the green "ok" status in a results table.
 Each page loads its fonts from Google Fonts and needs no build step. If a
 mark is revisited, start from the monogram (`mark-2e-monogram.svg`) or
 the Swiss grid (`mark-2a-swiss.svg`), which were the strongest at 16 px.
