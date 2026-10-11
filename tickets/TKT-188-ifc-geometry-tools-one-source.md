@@ -4,7 +4,7 @@ title: ifc_mesh, ifc_bounds and ifc_volume measure Ara3D.Ifc.Mesher geometry whi
 status: open
 depends_on: []
 owner:
-fence: [deps/bim-open-data/src/mcp/BimOpenMcp.Ifc/IfcGeometryTools.cs, deps/bim-open-data/src/mcp/BimOpenMcp.Ifc/IfcGeometry.cs, deps/bim-open-data/src/data/Ara3D.Ifc.Mesher/**, deps/bim-open-data/tests/mcp/**]
+fence: [deps/bim-open-data/src/mcp/BimOpenMcp.Ifc/IfcGeometryTools.cs, deps/bim-open-data/src/mcp/BimOpenMcp.Ifc/IfcGeometry.cs, deps/bim-open-data/src/data/Ara3D.Ifc.Mesher/**, deps/bim-open-data/tests/data/Ara3D.Ifc.Mesher.Tests/**, deps/bim-open-data/tests/mcp/**]
 workflow: [W2]
 related: [TKT-178]
 created: 2026-10-10

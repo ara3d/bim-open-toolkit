@@ -1,10 +1,10 @@
 ---
 id: TKT-190
-title: Ara3D.Ifc.Mesher samples curves about 1.45 times more densely than web-ifc, now that small brep faces mesh
+title: FM_ARC_DigitalHub meshes to 1.45 times web-ifc's triangle count since small brep faces mesh
 status: open
 depends_on: []
 owner:
-fence: [deps/bim-open-data/src/data/Ara3D.Ifc.Mesher/**, deps/bim-open-data/tests/data/Ara3D.IfcMeshingComparison/**]
+fence: [deps/bim-open-data/src/data/Ara3D.Ifc.Mesher/**, deps/bim-open-data/tests/data/Ara3D.Ifc.Mesher.Tests/**, deps/bim-open-data/tests/data/Ara3D.IfcMeshingComparison/**, deps/bim-open-data/bench/ifc-mesher/**]
 workflow: [W2]
 related: [TKT-179, TKT-188]
 created: 2026-10-10
