@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>BIM Open Bench, graphite</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&family=Public+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#f4f5f7;color:#171a1f;font:14px/1.5 "Public Sans",system-ui,sans-serif;padding:24px 16px}
+h2{font:600 16px "Instrument Sans",sans-serif;margin:22px 0 8px}
+.sizes{display:flex;gap:28px;align-items:flex-end;padding:18px 20px;border-radius:6px;flex-wrap:wrap}
+.light{background:#fff;border:1px solid #e3e6ea;color:#3b3f47}
+.dark{background:#3b3f47;color:#fff}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+figcaption{font:11px "Fira Code",monospace;opacity:.75}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;gap:6px;background:#e8eaef;border-radius:6px 6px 0 0;padding:6px 10px;font:12px "Public Sans",sans-serif}
+.lockup{padding:16px;background:#fff;border:1px dashed #e3e6ea;border-radius:6px;display:inline-block}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:#fff;border:1px solid #e3e6ea;border-radius:8px;overflow:hidden}
+.bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-bottom:1px solid #e3e6ea}
+.wm{font:700 15px "Instrument Sans",sans-serif;letter-spacing:-0.01em}.wm .fam{font-weight:600;color:#5a606c;margin-right:4px}
+.sep{flex:1}.btn{font:600 13px "Public Sans";color:#fff;background:#3b3f47;border-radius:5px;padding:7px 10px}
+table{border-collapse:collapse;width:100%;font:12.5px "Public Sans"}th{text-align:left;padding:6px 10px;border-bottom:1px solid #e3e6ea;color:#5a606c;background:#f4f5f7;font-weight:600}
+td{padding:5px 10px;border-bottom:1px solid #e3e6ea}td.n{font:12px "Fira Code",monospace;text-align:right}
+tr.sel td{background:#ebebed}.ok{color:#16a34a}.bad{color:#dc2626}
+.bg{display:inline-block;height:10px;background:#3b3f47;border-radius:2px;vertical-align:middle;margin-left:6px}
+.pal{display:flex;gap:10px;align-items:center;font:11px "Fira Code",monospace;color:#5a606c;margin-top:8px}.pal span{width:22px;height:22px;border-radius:4px;display:block}
+</style></head><body>
+<h2>Ranked Rows in graphite #3b3f47, soft #ebebed</h2>
+<div class="row">
+<div class="sizes light">
+<figure><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><figcaption>16</figcaption></figure>
+<figure><svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><figcaption>22</figcaption></figure>
+<figure><svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><figcaption>48</figcaption></figure>
+<figure><svg width="96" height="96" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><figcaption>96</figcaption></figure>
+<figure><svg width="12" height="12" viewBox="1 1 16 22"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5Z"/></svg><figcaption>&lt;16</figcaption></figure>
+</div>
+<div class="sizes dark">
+<figure><svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><figcaption>22</figcaption></figure>
+<figure><svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><figcaption>48</figcaption></figure>
+<figure><svg width="96" height="96" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><figcaption>96</figcaption></figure>
+</div>
+</div>
+<div class="pal"><span style="background:#3b3f47"></span><span style="background:#ebebed"></span> graphite, soft &nbsp;&nbsp; <span style="background:#4f5d78"></span> schema slate for comparison &nbsp;&nbsp; <span style="background:#171a1f"></span> text</div>
+
+<h2>Lockup</h2>
+<div class="lockup"><svg viewBox="0 0 176 32" width="352" height="64"><g transform="translate(4 4)"><path fill="#3b3f47" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></g><text x="36" y="21.5" style="font-family:'Instrument Sans',sans-serif;font-size:15px;letter-spacing:-0.01em"><tspan font-weight="600" fill="#5a606c">BIM Open</tspan><tspan font-weight="700" fill="#171a1f" dx="4">Bench</tspan></text></svg></div>
+
+<h2>Tab strip, the family of seven</h2>
+<div class="tabs">
+<span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:#2f66ce"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg>Flow</span>
+<span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:#5a47c7"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></svg>Notebook</span>
+<span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:#0f8a80"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></svg>Viewer</span>
+<span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:#a16207"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h4.5v2H6.5ZM11 10h3v11h-3ZM15 6h3v15h-3ZM19 2h3v19h-3Z"/></svg>Plot</span>
+<span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:#b8326e"><path fill="currentColor" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></svg>Data</span>
+<span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:#4f5d78"><path fill="currentColor" fill-rule="evenodd" d="M2 2h20v6H2ZM3.5 3.5h4.5v3H3.5ZM9.5 3.5h11v3h-11ZM2 9h20v6H2ZM3.5 10.5h4.5v3H3.5ZM9.5 10.5h11v3h-11ZM2 16h20v6H2ZM3.5 17.5h4.5v3H3.5ZM9.5 17.5h11v3h-11Z"/></svg>Schema</span>
+<span class="tab"><svg width="16" height="16" viewBox="0 0 24 24" style="color:#3b3f47"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg>Bench</span>
+</div>
+
+<h2>A results page in the bench chrome</h2>
+<div class="card">
+<div class="bar"><svg width="22" height="22" viewBox="0 0 24 24" style="color:#3b3f47"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></svg><span class="wm"><span class="fam">BIM Open</span>Bench</span><span class="sep"></span><span class="btn">Run suite</span></div>
+<table><tr><th>Tool</th><th>Version</th><th style="text-align:right">Parse, s</th><th>Correct</th></tr>
+<tr><td>web-ifc</td><td>0.0.68</td><td class="n">4.21<span class="bg" style="width:84px"></span></td><td class="ok">pass</td></tr>
+<tr class="sel"><td>bim-open-data</td><td>f065f10</td><td class="n">2.87<span class="bg" style="width:57px"></span></td><td class="ok">pass</td></tr>
+<tr><td>IfcOpenShell</td><td>0.8.1</td><td class="n">6.40<span class="bg" style="width:128px"></span></td><td class="bad">fail</td></tr>
+</table></div>
+</body></html>
