@@ -54,8 +54,8 @@ public sealed class BimBuildSequenceNode : IFlowNode
         + "Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (the week "
         + "of the last working day, End - 1, counted from 1 at 'start'), ElementCount, Synthetic. "
         + "Output 'elements': the input rows plus Task, Trade, Finish (the task's exclusive End), "
-        + "FinishWeek (as in 'tasks'), Synthetic; rows with no storey or no trade "
-        + "get nulls and are counted in one warning. Same input, same schedule.");
+        + "FinishWeek (as in 'tasks'), Synthetic (true on every scheduled row); rows with no storey or "
+        + "no trade get nulls in all five and are counted in one warning. Same input, same schedule.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
@@ -66,20 +66,22 @@ public sealed class BimBuildSequenceNode : IFlowNode
         var trades = parameters.TextOr("trades", DefaultTrades).SplitNames();
         var rows = ReadRows(context, table, parameters, BimBuildSequenceTrades.Classifier(trades, parameters.GetText("overrides"), Kind));
         var storeys = StoreyOrder(rows);
-        var plan = Plan(rows, storeys, trades.Count, DaysPerTask(parameters));
+        var storeyIndex = storeys.Select((name, i) => (name, i)).ToDictionary(p => p.name, p => p.i, StringComparer.Ordinal);
+        var tasks = rows.Select(r => r.TaskIndex(storeyIndex)).ToList();
+        var plan = Plan(tasks, storeys.Count, trades.Count, DaysPerTask(parameters));
         var start = StartDate(parameters);
 
-        var unscheduled = rows.Count(r => r.TaskIndex(storeys) is null);
+        var unscheduled = tasks.Count(t => t is null);
         if (unscheduled > 0)
             context.Warn($"{Kind}: {unscheduled} of {rows.Count} rows have no storey or no trade and are not scheduled.");
         return [new TableValue(TasksTable(plan, storeys, trades, start)),
-            new TableValue(ElementsTable(table, rows, storeys, plan, trades, start))];
+            new TableValue(ElementsTable(table, tasks, storeys, plan, trades, start))];
     }
 
     private sealed record Row(string? Storey, double? Elevation, int? Trade)
     {
-        public (int Storey, int Trade)? TaskIndex(IReadOnlyList<string> storeys)
-            => Storey is null || Trade is not { } t ? null : (IndexOf(storeys, Storey), t);
+        public (int Storey, int Trade)? TaskIndex(IReadOnlyDictionary<string, int> storeyIndex)
+            => Storey is null || Trade is not { } t ? null : (storeyIndex[Storey], t);
     }
 
     private sealed record Slot(int StartDay, int EndDay, int Elements);
@@ -112,14 +114,14 @@ public sealed class BimBuildSequenceNode : IFlowNode
             .Select(s => s.Name)
             .ToList();
 
-    private static Slot[,] Plan(IReadOnlyList<Row> rows, IReadOnlyList<string> storeys, int tradeCount, int days)
+    private static Slot[,] Plan(IReadOnlyList<(int Storey, int Trade)?> tasks, int storeyCount, int tradeCount, int days)
     {
-        var counts = new int[storeys.Count, tradeCount];
-        foreach (var r in rows)
-            if (r.TaskIndex(storeys) is { } i)
+        var counts = new int[storeyCount, tradeCount];
+        foreach (var task in tasks)
+            if (task is { } i)
                 counts[i.Storey, i.Trade]++;
-        var plan = new Slot[storeys.Count, tradeCount];
-        for (var s = 0; s < storeys.Count; s++)
+        var plan = new Slot[storeyCount, tradeCount];
+        for (var s = 0; s < storeyCount; s++)
             for (var t = 0; t < tradeCount; t++)
             {
                 var startDay = Math.Max(t > 0 ? plan[s, t - 1].EndDay : 0, s > 0 ? plan[s - 1, t].EndDay : 0);
@@ -152,10 +154,9 @@ public sealed class BimBuildSequenceNode : IFlowNode
         return b.Build();
     }
 
-    private static IDataTable ElementsTable(IDataTable table, IReadOnlyList<Row> rows, IReadOnlyList<string> storeys,
-        Slot[,] plan, IReadOnlyList<string> trades, DateTime start)
+    private static IDataTable ElementsTable(IDataTable table, IReadOnlyList<(int Storey, int Trade)?> tasks,
+        IReadOnlyList<string> storeys, Slot[,] plan, IReadOnlyList<string> trades, DateTime start)
     {
-        var tasks = rows.Select(r => r.TaskIndex(storeys)).ToList();
         object?[] Cells(Func<(int Storey, int Trade), object?> f)
             => tasks.Select(x => x is { } i ? f(i) : null).ToArray();
 
@@ -164,7 +165,7 @@ public sealed class BimBuildSequenceNode : IFlowNode
         b.AddColumn(Cells(i => trades[i.Trade]), Trade, typeof(string));
         b.AddColumn(Cells(i => IsoDate(start, plan[i.Storey, i.Trade].EndDay)), Finish, typeof(string));
         b.AddColumn(Cells(i => Week(plan[i.Storey, i.Trade].EndDay)), FinishWeek, typeof(long));
-        b.AddColumn(rows.Select(_ => (object?)true).ToArray(), Synthetic, typeof(bool));
+        b.AddColumn(Cells(_ => true), Synthetic, typeof(bool));
         return b.Build();
     }
 
@@ -179,14 +180,6 @@ public sealed class BimBuildSequenceNode : IFlowNode
     private static long Week(int endDay)
         => (endDay - 1) / 7 + 1;
 
-    private static int IndexOf(IReadOnlyList<string> names, string name)
-    {
-        for (var i = 0; i < names.Count; i++)
-            if (names[i] == name)
-                return i;
-        return -1;
-    }
-
     private static int DaysPerTask(ParamValues parameters)
         => int.TryParse(parameters.TextOr("daysPerTask", DefaultDaysPerTask), NumberStyles.Integer,
             CultureInfo.InvariantCulture, out var days) && days > 0
@@ -194,10 +187,9 @@ public sealed class BimBuildSequenceNode : IFlowNode
             : throw new ArgumentException($"{Kind}: parameter 'daysPerTask' must be a positive whole number.");
 
     private static DateTime StartDate(ParamValues parameters)
-        => DateTime.TryParseExact(parameters.TextOr("start", DefaultStart).Trim(),
-            ["yyyy-MM-dd", "yyyy-MM-ddTHH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
-            ? date.Date
-            : throw new ArgumentException($"{Kind}: parameter 'start' must be an ISO-8601 date (yyyy-MM-dd).");
+        => string.IsNullOrWhiteSpace(parameters.GetText("start"))
+            ? DateTime.ParseExact(DefaultStart, "yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : parameters.RequiredDateTime("start", Kind).Date;
 }
 
 /// <summary>The built-in map from categories, IFC classes, and bim.discipline names to the

@@ -65,6 +65,8 @@ public sealed class BimBuildSequenceNodeTests
         Assert.That(elements.Cell("FinishWeek", w3), Is.EqualTo(5L));
         var office = elements.ColumnCells(BimColumns.Name).ToList().IndexOf("Office");
         Assert.That(elements.Cell("Task", office), Is.Null, "rooms belong to no trade");
+        Assert.That(elements.Cell("Synthetic", office), Is.Null, "an unscheduled row carries no synthetic date");
+        Assert.That(elements.Cell("Synthetic", w3), Is.EqualTo(true));
         Assert.That(elements.ColumnCells("Task").Count(t => t is not null), Is.EqualTo(12));
     }
 
@@ -132,6 +134,16 @@ public sealed class BimBuildSequenceNodeTests
     public void NonPositiveDays_Throws()
         => Assert.That(() => Schedule(Elements(("L1", 0, "Walls")), ("daysPerTask", "0")),
             Throws.ArgumentException.With.Message.Contains("daysPerTask"));
+
+    [Test]
+    public void StartWithATime_SchedulesFromItsDate()
+        => Assert.That(Schedule(Elements(("L1", 0, "Walls")), ("start", "2027-03-01T15:30:00"))[0].Cell("Start", 0),
+            Is.EqualTo("2027-03-01"));
+
+    [Test]
+    public void BadStart_Throws()
+        => Assert.That(() => Schedule(Elements(("L1", 0, "Walls")), ("start", "March 1")),
+            Throws.ArgumentException.With.Message.Contains("'start'"));
 
     [Test]
     public void ExistingTaskColumn_Throws()
