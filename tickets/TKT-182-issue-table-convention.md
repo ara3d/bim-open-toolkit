@@ -6,7 +6,7 @@ depends_on: []
 owner:
 fence: []
 workflow: [W3]
-related: [TKT-171]
+related: [TKT-171, TKT-206]
 created: 2026-10-10
 kind: question
 ---
@@ -23,3 +23,5 @@ Found in the BOS formats wave (docs/plans/bos-formats.md, Architecture notes). B
 - **Cost:**
   - The flow's verdict column names change from `verdict`/`checkTitle` to `Verdict`/`CheckTitle`. That changes the compliance node tests, any committed golden output, and saved graphs that name those columns in SQL or parameters.
   - SQL over DuckDB is case-insensitive for identifiers, so queries keep working. C# lookups by name may not.
+
+Note 2026-10-11: TKT-206 (the column vocabulary) applies this recommendation and extends it to every BIM column; see `docs/plans/declared-schemas.md`. The owner's decision here unblocks TKT-206.

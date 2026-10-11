@@ -6,6 +6,7 @@ depends_on: [TKT-22]
 owner:
 fence: [bimopenflow/web/packages/graph/**, bimopenflow/web/packages/app/**, docs/DEMOS.md, samples/**]
 workflow: [W2, W3]
+related: [TKT-205, TKT-210]
 ---
 
 ## Acceptance criteria
@@ -23,3 +24,5 @@ The registry is ready: a control is a `SlotControl` member, a `CONTROL_HEIGHT` r
 
 ## Notes from TKT-94 (2026-09-28)
 The controls live in `bimopenflow/web/packages/graph` now: `canvasControls.ts`, `canvasSlots.ts`, `slotRegistry.ts`, `graphWidgets.ts`. Every control reaches its row's `CanvasInstance` through `SlotContext.instance` (dispatch, islands, dropdown flags) and must honour `instance.readOnly`. Planned debt to pay here: `gratifyWidgets.ts` and `gratifyRangeMath.ts` are copies of gratify's example slider and range (the package must not import gratify's examples); the typed slider this ticket builds replaces them, and the copies are deleted.
+
+Note 2026-10-11: the column picker landed in TKT-205 (bim-open-flow `2932c1c`). TKT-210 fills every picker from declared schemas (join keys, numeric chart values, an aggregate builder); see `docs/plans/declared-schemas.md`.

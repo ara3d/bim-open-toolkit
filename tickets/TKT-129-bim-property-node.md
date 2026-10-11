@@ -6,6 +6,7 @@ depends_on: []
 owner:
 fence: []
 workflow: [W2]
+related: [TKT-212]
 ---
 
 ## Acceptance criteria
@@ -15,3 +16,5 @@ workflow: [W2]
 - [ ] The six ocRows/ecRows/baseOcRows/... rel.sql nodes in the nb-s09-ids-check graphs are replaced, answers unchanged
 
 Source: node review of 2026-09-29. Six copies of the same 400-character LEFT JOIN over Parameters. Relates to the bos.parameters idea in docs/proposals/core-node-sets.md Set 3.
+
+Note 2026-10-11: TKT-212's `bim.schedule` generalizes this node (a type plus the property columns to add, with a declared schema). Build this one first if it is wanted sooner; the schedule node then wraps it.

@@ -6,7 +6,7 @@ depends_on: []
 owner:
 fence: []
 workflow: [W2]
-related: [TKT-138, TKT-5]
+related: [TKT-138, TKT-5, TKT-207]
 created: 2026-10-11
 ---
 
@@ -21,3 +21,5 @@ created: 2026-10-11
 Source: the owner's design discussion of 2026-10-11: a parameter is either a constant edited inline or computed from another node, as in Blender's geometry nodes. Cross-repository: ara3d-dataflow (spec and engine), bim-open-flow (host, contracts, editor), this repository (packs). Land the engine and contracts first, in their own commits, so the editor and packs can follow in parallel.
 
 Note 2026-10-11 (from TKT-205): while changing the parameter contract, add a flag saying a Text parameter holds a comma-separated list, so the column picker stops guessing from the parameter name (`isMultiColumn` in `suggestText.ts`).
+
+Note 2026-10-11: TKT-207 (declared output schemas) also changes `NodeSpec`, `contracts.json` and the catalog. Land the engine members in separate commits and read each other's commits first; see the fences in `docs/plans/declared-schemas.md`.
