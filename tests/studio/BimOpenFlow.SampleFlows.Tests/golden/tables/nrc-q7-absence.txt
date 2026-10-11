@@ -1,12 +1,14 @@
 dfg 0.1.0;
-// nrc-q7-absence   graph ab84a087d177
-metricsForEmbodied = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
+// nrc-q7-absence   graph 0f811ae6ef40
+csvPath = value.path@1(path: "nrc_analytics_long.csv");
+  // Ok  Text "nrc_analytics_long.csv"
+metricsForEmbodied = rel.csv@1(path: csvPath.path, source: "nrc");
   // Ok  relation plan d8e1967ca45d
   //   "(csv \"nrc\" \"nrc_analytics_long.csv\")"
 embodied = rel.filter@1(input: metricsForEmbodied.relation, expr: "[MetricId] == 'NRC.EC.A1A3.TOTAL'");
   // Ok  relation plan b0d1b9c52aae
   //   "(filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([MetricId] == 'NRC.EC.A1A3.TOTAL')\")"
-metricsForRoofs = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
+metricsForRoofs = rel.csv@1(path: csvPath.path, source: "nrc");
   // Ok  relation plan d8e1967ca45d
   //   "(csv \"nrc\" \"nrc_analytics_long.csv\")"
 roofs = rel.filter@1(input: metricsForRoofs.relation, expr: "[IfcClass] == 'IFCROOF'");

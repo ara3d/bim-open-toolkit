@@ -1,6 +1,10 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "csvPath": {
+      "x": -290,
+      "y": 160
+    },
     "answer": {
       "x": 1690,
       "y": 40
@@ -33,6 +37,14 @@
   "structure": {
     "edges": [
       {
+        "from": "csvPath.path",
+        "to": "metricsForRoofs.path"
+      },
+      {
+        "from": "csvPath.path",
+        "to": "metricsForEmbodied.path"
+      },
+      {
         "from": "metricsForRoofs.relation",
         "to": "roofs.input"
       },
@@ -58,6 +70,11 @@
       }
     ],
     "nodes": [
+      {
+        "id": "csvPath",
+        "kind": "value.path",
+        "version": 1
+      },
       {
         "id": "answer",
         "kind": "rel.select",
@@ -96,6 +113,9 @@
     ]
   },
   "values": {
+    "csvPath": {
+      "path": "nrc_analytics_long.csv"
+    },
     "answer": {
       "columns": "GlobalId, IfcClass"
     },

@@ -1515,7 +1515,7 @@ Lists the buffers in a BFAST file: name, byteLength, index (0-based file order).
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bfast` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bfast` |
 
 ### `bfast.buffer` (v1) — Pure
 
@@ -1533,7 +1533,7 @@ Reads one buffer of a BFAST file as a table with a single `value` column, interp
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bfast` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bfast` |
 | `name` | Text | — | — | — | — |
 | `type` | Enum | — | `float32` | `uint8`, `int16`, `int32`, `int64`, `float32`, `float64` | — |
 
@@ -2923,7 +2923,7 @@ A CSV file, named by its registered source folder and relative path. Nothing is 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `source` | Text | — | — | — | — |
-| `path` | Text | — | — | — | — |
+| `path` | Text | Text | — | — | — |
 
 ### `rel.table` (v1) — Pure
 

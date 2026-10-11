@@ -6,6 +6,11 @@ source is named (`nrc` for the CSV folder, `duplex-enriched` and `duplex-base`
 for the DuckDB databases built from the two IFC files), so the graphs are portable. Both host profiles seed them
 into an empty analysis store and add `samples/nrc` to their model roots.
 
+`nrc-q7-absence` reads `nrc_analytics_long.csv` twice, so it holds that name once, in a
+`value.path` node `csvPath` whose `path` output feeds the `path` parameter of both `rel.csv`
+nodes (TKT-138). The `source` stays `nrc` on each node, and the path strings stored on the
+two nodes are ignored while the wire is there.
+
 | Graph | Answers | Runs in profile |
 |-------|---------|-----------------|
 | `nrc-q1-building-total` | total operational carbon and element count | tables, bim |

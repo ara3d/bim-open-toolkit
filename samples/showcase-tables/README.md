@@ -4,6 +4,10 @@ The showcase demo that reads bim-open-flow's `samples/tables` (in `deps/bim-open
 rather than `samples/nrc`. The literal placeholder `{SAMPLES}` stands for that folder;
 `NrcSamples.ShowcaseTables` in the studio names it, and both studio profiles seed the graph.
 
+`bfast-buffers` holds its file once, in a `value.path` node `model` whose `path` output feeds
+`bfast.read` and `bfast.buffer` (TKT-138); the path strings stored on those two nodes are
+ignored while the wire is there.
+
 | Id | Input | Chain | You see | Profile |
 |---|---|---|---|---|
 | `bfast-buffers` | `samples/tables/sample.bfast` in bim-open-flow (reached as `{SAMPLES}/sample.bfast`) | `bfast.read` into `view.table`; `bfast.buffer` (unitPrices as float64) into `view.table` | the four-buffer directory (32, 32, 64, 25 bytes) and the eight prices, 99.99 fourth | tables, bim |
