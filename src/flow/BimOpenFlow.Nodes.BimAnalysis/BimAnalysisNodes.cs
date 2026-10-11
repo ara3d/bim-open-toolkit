@@ -21,5 +21,7 @@ public static class BimAnalysisNodes
         new BimNearestNode(),
         new BimNavGraphNode(),
         new BimHopsNode(),
+        new BimOrientationNode(),
+        new BimScheduleNode(),
     ];
 }

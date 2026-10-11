@@ -8,7 +8,7 @@ namespace BimOpenFlow.BimWorkflows.Tests;
 
 /// <summary>Bim-profile seeding: an empty store gets the bim-analyses samples
 /// ({SAMPLES} rewritten), the view3d-analyses samples ({SAMPLES} rewritten to
-/// samples/nrc), the nrc-analyses samples (named sources), and the snowdon-analyses
+/// samples/nrc), the viz-analyses samples (also over samples/nrc), the nrc-analyses samples (named sources), and the snowdon-analyses
 /// samples only when the local-only Snowdon model exists; a non-empty store is untouched.</summary>
 [TestFixture]
 public sealed class BimSampleSeedingTests
@@ -43,6 +43,7 @@ public sealed class BimSampleSeedingTests
     private static IEnumerable<string> ExpectedSeedIds()
         => ExpectedIds("bim-analyses")
             .Concat(ExpectedIds("view3d-analyses"))
+            .Concat(ExpectedIds("viz-analyses"))
             .Concat(ExpectedIds("nrc-analyses"))
             .Concat(ExpectedIds("showcase-analyses"))
             .Concat(ExpectedIds("showcase-tables"))

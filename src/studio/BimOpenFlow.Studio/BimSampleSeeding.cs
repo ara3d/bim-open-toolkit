@@ -11,7 +11,8 @@ namespace BimOpenFlow.Studio;
 /// samples/bim-analyses/*.json with {SAMPLES} pointed at samples/bim (the
 /// sample.bos there is generated from BimSampleModel when absent — the model
 /// binary is never committed), samples/view3d-analyses/*.json with {SAMPLES}
-/// pointed at samples/nrc (they load its committed duplex-base.ifc), samples/nrc-analyses/*.json, which name
+/// pointed at samples/nrc (they load its committed duplex-base.ifc), samples/viz-analyses/*.json (the
+/// visualization demos) over samples/nrc too, samples/nrc-analyses/*.json, which name
 /// their sources, and samples/showcase-analyses/*.json over samples/nrc, by the rules of
 /// SampleSeeding.Seed; graphs the registry cannot validate are skipped and reported.
 /// </summary>
@@ -30,6 +31,7 @@ public static class BimSampleSeeding
         {
             (Path.Combine(root, "samples", "bim-analyses"), SampleSeeding.PathPlaceholder, samplesDir),
             (Path.Combine(root, "samples", "view3d-analyses"), SampleSeeding.PathPlaceholder, NrcSamples.Dir(root)),
+            (Path.Combine(root, "samples", "viz-analyses"), SampleSeeding.PathPlaceholder, NrcSamples.Dir(root)),
             NrcSamples.Analyses(root),
             NrcSamples.Showcase(root),
             NrcSamples.ShowcaseTables(root),
