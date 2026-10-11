@@ -59,6 +59,38 @@ Decisions worth knowing:
   Pass for IDS-OC and 217 Pass, 1 Fail (the roof, no embodied-carbon row) for
   IDS-EC; the failing doors become one BCF topic of 6 elements with a viewpoint.
 
+## Review and fixes
+
+A fresh-context reviewer (platonic:reviewer, 2026-10-11) found eight defects
+and ten design notes; four defects could give a false Pass. Fixed in
+bim-open-data `e12cf2e` (the IDS loader's warnings were discarded, so a
+misspelled facet passed everything), `05b07c0` (enumerations are stored as
+`.DOOR.` with dots and never matched; a space's Name is its LongName in BOS;
+no warning on a model not in metres; IFCDESCRIPTIVEMEASURE is text), `eea5884`
+(the summary dropped specifications with no rows and merged two with one name;
+type-object property sets are not in BOS, now a warning and TKT-237), and
+`2002858` (BCF 2.1 lists viewpoints beside the topic, so every selection was
+lost; a recovered id list is stripped from the description). In the toolkit:
+`ids.check` takes its summary from `IdsTables.Summary` and both nodes pass the
+loader's warnings on; the checking tests assert the roof and the door
+specification's support.
+
+Skipped, with reasons:
+
+- A prohibited specification fails every applicable entity without reading its
+  requirements. IDS 1.0 leaves the combination ill-defined and ifctester's
+  reading is uncertain; the choice errs toward Fail, never toward Pass.
+- `BcfIssues.Find`, the preset check, `SummaryRow` and the Effect gate repeat
+  helpers that are internal to bim-open-flow's Effects pack or sit in
+  Nodes.Support. Moving them into Nodes.Support is a bim-open-flow change,
+  which another session had open on 2026-10-11; recorded as debt below.
+- `bcf.read` puts an AuthoringToolId under GlobalId when a component has no
+  IfcGuid, and fails the node on one malformed viewpoint. Both wait for a real
+  BCF from a Revit user to show which shape matters.
+- The model path appears twice in two sample graphs (`bos.load.path` and
+  `bcf.write.model`); a graph input (TKT-204's `$model`) would share it, and
+  that is a sample-wide change.
+
 ## Left open
 
 - `ifc_ids_check` MCP tool (TKT-50); the run record naming the BCF by hash
@@ -67,3 +99,9 @@ Decisions worth knowing:
   schema metadata; the relation-based facets.
 - `ids.check` parses the IDS on every evaluation; cache by content hash if an
   IDS ever grows large.
+- The two IDS files exist twice, as toolkit samples (`samples/nrc/ids`) and as
+  bim-open-data test fixtures (`tests/data/Ara3D.Ids.Tests/ids`); the copies are
+  byte-identical today and nothing checks that they stay so.
+- `RequireRun` and `SummaryRow` belong in `BimOpenFlow.Nodes.Support` so the
+  Effects pack and the Bcf pack share them; `BcfIssues.Find` should be
+  `TableColumns.ColumnIndex`.

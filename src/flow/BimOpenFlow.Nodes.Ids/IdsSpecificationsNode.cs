@@ -18,5 +18,5 @@ public sealed class IdsSpecificationsNode : IFlowNode
         + "InfoNotAvailable). Reads no model; use it to see what an IDS asks before running ids.check.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
-        => [new TableValue(IdsTables.Specifications(IdsFiles.Load(parameters, Kind)))];
+        => [new TableValue(IdsTables.Specifications(IdsFiles.Load(parameters, context, Kind)))];
 }

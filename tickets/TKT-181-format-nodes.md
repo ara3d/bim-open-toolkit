@@ -4,7 +4,7 @@ title: Writer nodes for GLB, USD and BCF that wait for Run, and a reader node fo
 status: open
 depends_on: [TKT-12]
 owner:
-fence: [src/flow/BimOpenFlow.Nodes.*/**, tests/**, docs/nodes.md, docs/nodes.catalog.json]
+fence: [src/flow/BimOpenFlow.Nodes.*/**, tests/**, docs/nodes.md, docs/nodes.catalog.json, src/studio/BimOpenFlow.Studio/StudioComposition.cs, src/studio/BimOpenFlow.Studio/BimNodeNotes.cs, src/studio/BimOpenFlow.Studio/BimOpenFlow.Studio.csproj, src/studio/BimOpenFlow.Studio/BimSampleSeeding.cs, samples/checking-analyses/**, samples/nrc/bcf/**, samples/nrc/ids/**]
 workflow: [W3]
 related: [TKT-170, TKT-171, TKT-172, TKT-173]
 created: 2026-10-10

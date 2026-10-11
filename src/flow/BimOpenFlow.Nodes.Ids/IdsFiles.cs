@@ -1,6 +1,5 @@
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.Ids;
-using Xbim.InformationSpecifications;
 
 namespace BimOpenFlow.Nodes.Ids;
 
@@ -12,11 +11,16 @@ internal static class IdsFiles
     public static readonly ParamSpec PathSpec =
         new(PathParam, ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".ids"));
 
-    public static Xids Load(ParamValues parameters, string kind)
+    /// <summary>The document and, on the context, the loader's warnings: a facet the loader
+    /// skipped is a requirement nobody checked, so it is never silent.</summary>
+    public static IdsDocument Load(ParamValues parameters, IEvalContext context, string kind)
     {
         var path = parameters.RequiredText(PathParam, kind);
         if (!File.Exists(path))
             throw new FileNotFoundException($"{kind}: IDS file not found: {path}", path);
-        return IdsFile.Load(path);
+        var document = IdsFile.Load(path);
+        foreach (var warning in document.Warnings)
+            context.Warn($"{kind}: {warning}");
+        return document;
     }
 }

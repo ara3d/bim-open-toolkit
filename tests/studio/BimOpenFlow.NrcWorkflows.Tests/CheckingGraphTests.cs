@@ -16,6 +16,9 @@ public sealed class CheckingGraphTests
 {
     private static readonly string Dir = Path.Combine(NrcPaths.Root, "samples", "checking-analyses");
 
+    /// <summary>The Duplex roof's GlobalId, the element nrc-q7-absence also answers with.</summary>
+    private const string RoofGlobalId = "0jf0rYHfX3RAB3bSIRjmxl";
+
     private static readonly string[] Ids =
     [
         "check-ids-door-width", "check-ids-specifications", "check-ids-carbon-psets",
@@ -93,6 +96,7 @@ public sealed class CheckingGraphTests
         Assert.That(Table(snapshot, "carbon").ColumnCells("CheckId"), Is.EqualTo(new object?[] { "IDS-OC", "IDS-EC" }));
         Assert.That(Table(snapshot, "carbon").ColumnCells("Supported"), Has.All.EqualTo(true));
         Assert.That(Table(snapshot, "doors").Cell("CheckTitle", 0), Is.EqualTo("Door leaf width at least 850 mm"));
+        Assert.That(Table(snapshot, "doors").ColumnCells("Supported"), Has.All.EqualTo(true));
     }
 
     [Test]
@@ -112,6 +116,7 @@ public sealed class CheckingGraphTests
             Assert.That(summary.Cell("Fail", 1), Is.EqualTo(1L));
             Assert.That(failures.Rows, Has.Count.EqualTo(1));
             Assert.That(failures.Cell("CheckId", 0), Is.EqualTo("IDS-EC"));
+            Assert.That(failures.Cell("GlobalId", 0), Is.EqualTo(RoofGlobalId), "the roof, the one element with no embodied-carbon row");
             Assert.That(Table(snapshot, "chart").ColumnNames(), Is.EqualTo(new[] { "CheckId", "Pass", "Fail" }));
         });
     }

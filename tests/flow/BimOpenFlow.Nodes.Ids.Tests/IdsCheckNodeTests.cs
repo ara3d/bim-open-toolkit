@@ -97,6 +97,26 @@ public sealed class IdsCheckNodeTests
     }
 
     [Test]
+    public void MisspelledFacet_WarnsOnTheNode()
+    {
+        var path = _idsPath + ".typo.ids";
+        File.WriteAllText(path, Ids.Replace("<attribute>", "<atribute>").Replace("</attribute>", "</atribute>"));
+        try
+        {
+            var context = new FakeEvalContext();
+            new IdsCheckNode().Eval(context, [Entities(), Parameters()], NodeTestHelpers.Params(("ids", path)));
+            Assert.That(context.Warnings, Has.Some.Contains("atribute"));
+            var specs = new FakeEvalContext();
+            new IdsSpecificationsNode().Eval(specs, [], NodeTestHelpers.Params(("ids", path)));
+            Assert.That(specs.Warnings, Has.Some.Contains("atribute"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
     public void MissingIdsFile_IsAnError()
         => Assert.That(() => new IdsCheckNode().Eval(new FakeEvalContext(), [Entities(), Parameters()],
             NodeTestHelpers.Params(("ids", _idsPath + ".missing"))), Throws.TypeOf<FileNotFoundException>());
