@@ -272,3 +272,7 @@ Builders: one for D1 to D6 (the SDK's object model is the one context worth keep
 ## Measurements
 
 (criterion 14: model, renderer, first frame ms, memory MB, machine)
+
+## Build log
+
+- 2026-10-10: the owner asked for the Speckle viewer as its own repository with the Speckle dependencies split out. `C:\Users\cdigg\git\bim-open-web-viewer` (no remote yet) holds a fork of speckle-server `packages/viewer` at 51d43b91: `packages/viewer` is the engine with no `@speckle/*` import (a test enforces it), `packages/speckle` holds `SpeckleLoader`, `SpeckleOfflineLoader`, the converters and `UrlHelper` over `@speckle/objectloader2` 2.31.14, and `packages/sandbox` is a Vite page. Spike S2 is answered there: a three-object set (collection, data object, mesh) loads from memory with no server, renders, and a click returns the data object's `properties`. Spike S1 is not: the fork pins `three` 0.140.2; running on 0.185 is still open. Chunks W1 to W3 should build on the fork's core package rather than on `@speckle/viewer` from npm.
