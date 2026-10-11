@@ -1,13 +1,14 @@
 ---
 id: TKT-204
 title: Graph inputs: promote a source to a graph input so swapping the model is one gesture
-status: open
+status: done
 depends_on: []
 owner:
 fence: []
 workflow: [W1, W2]
 related: [TKT-138, TKT-73]
 created: 2026-10-11
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria
