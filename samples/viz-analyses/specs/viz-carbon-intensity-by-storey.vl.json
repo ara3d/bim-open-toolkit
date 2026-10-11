@@ -31,7 +31,8 @@
           { "field": "EmbodiedCarbon_kgCO2e", "type": "quantitative", "format": ",.1f", "title": "kgCO2e" },
           { "field": "FloorArea_m2", "type": "quantitative", "format": ",.1f", "title": "Floor area (m2)" },
           { "field": "ElementsWithCarbon", "type": "quantitative", "title": "Elements with carbon" },
-          { "field": "Elements", "type": "quantitative" }
+          { "field": "Elements", "type": "quantitative" },
+          { "field": "Synthetic", "type": "nominal", "title": "Synthetic carbon" }
         ]
       }
     },
