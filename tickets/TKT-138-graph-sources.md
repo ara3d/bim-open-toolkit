@@ -1,12 +1,13 @@
 ---
 id: TKT-138
 title: A file path lives once per graph: source nodes sit in a sources rail and parameters refer to them by chip
-status: open
+status: done
 depends_on: [TKT-203]
 owner:
 fence: []
 workflow: [W1, W2]
 related: [TKT-202, TKT-204, TKT-73]
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria
