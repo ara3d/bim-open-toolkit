@@ -79,4 +79,48 @@ Defects (D) and design notes (N), with the fix chunk (F) that owns each. Paths a
 - N7 Waves B and C had no fence table, and TKT-175's and TKT-183's ticket fences did not match the work. Recorded in the wave record.
 - N8 Status of the bos-formats architecture notes: see the wave record.
 
+## Fix log
+
+- F10 `0bb5b28`: `ElementBox` deleted; IO.Bcf uses `BosBox` (net -12 lines). BCF 30/30.
+- F1 `b4888f0` (D1: `ParameterText` renders a Point as `Point { X = 1.5, Y = 2.0, Z = -3.0 }`, NULL for -1) and `bc9eb65` (D8 view: `NULLIF` on Units and ParameterGroup). DuckDb 47 pass, 2 skipped.
+- F5 `a0db841` (D5; its trailer says TKT-176 by mistake, and it belongs to TKT-179): Approach1 records every dropped face (failed triangulation, area off by more than 1 %, fewer than 3 points, ShellMesher false) as one line per product with counts and the first three face ids; the product's IFCFACE status becomes Approximate. Corpus: Duplex 256 dropped faces in 8 products, Schependomlaan 198 in 31, FZK-Haus, Institute and model_0 none. IfcMeshingComparison 200 pass, MCP 96.
+- F6 `e5c3d88` (D6: a mesh with a non-finite vertex is left empty with its slot kept, so no instance index shifts; `NonFiniteMeshCount` and `ClampedCoordinateCount`; `ToVertexUnits` throws on non-finite) and `427577c` (N4: the test asserts each vertex within 0.05 mm, at most 0.4 % volume change at any tessellation, and about 0.001 % at 4,096 segments as an observation; TKT-176's criterion restated). Wiring both counts into diagnostics in the two readers was handed to F3 (the first message went to F2 by mistake; corrected on resume).
+- Committed before the stall: F9 `1373cab` (D11: `ifc_table`, `ifc_sql`, `ifc_sql_export` and `ifc_export_glb` take a `.bos` path), F4 `38dbdd2` (D3: Federation and Harmonizer read absent strings through `Get`/`Label`).
+- 2026-10-11: F2, F3, F4, F8 and F9 stalled together (the stream watchdog, no progress for 600 s), each mid-chunk with uncommitted work in its own fence. All five were resumed with `SendMessage`, keeping their context, and continued from the files on disk.
+- F2 `eb3e1a5` (D2): `WithReferencedTables` follows a single references table to a fixed point. Parameters, Relations, Diagnostics and Geometry now also read Entities (hence Strings and Documents), and Entities reads Documents. A new test checks that every index in the selected rows resolves to a row that was read, for each table. Callers still pass: Gltf 12, Catalog 28, Nodes.Bos 12.
+- F4 `38dbdd2`, `307840a` (D3: Federation and Harmonizer read absent strings through `Get`/`Label`; an unnamed category gets no canonical category, counted in one diagnostic) and bim-open-flow `81c058a` (N3: `ModelEntityIndex` keeps absence null and never finds LocalId -1). The API still sends `""` because the wire contract requires strings: TKT-198. Federation 14, Harmonizer 13, Catalog 31, Host.Api 43.
+- Supervisor toolkit `55573c4`: `bos.load` orders parameters totally (two same-named parameters in different groups came out in either order, so F4's run hit a flaky test). The node's three queries are constants that its test reuses. Two goldens re-approved for F1's null units.
+- F9 `1373cab` (D11), `dfb106e` (N1: a lease per call, so a session in use is never evicted or disposed; an IFC session leases its conversion's BOS session; derived files live under `%TEMP%/bimopenmcp`, keyed by source and build id, reused after a restart and swept at start), `4aed48c` (N2: named hidden instances are exported by both GLB tools), `964e91a` (N6: `BosSession.FromData` and `CopyDatabaseBeside`); toolkit `52befea` (ifc-ask skill). MCP 103/103, suite about 15 s instead of 70 s. The query tools open DuckDB read-only. Leftovers: TKT-199.
+- F8 bim-open-data `4f57e83` (D9: the object model reads absence like BosScene, through `Label`; `GetParameterAsNumber` returns `float?`; Elevation, TypeName, WorksetId are nullable; bad parameter rows are left out; `BimGeometry.GetInstanceFlags` gives the short-column rule to every caller; nullable warnings 33 → 0) and toolkit `83ee110` (BimAnalysis nodes and studio tools handle nulls). ObjectModel 20, BimOpenSchema 96, BimAnalysis 80; both solutions 0 errors. Leftovers: TKT-200.
+- F3 `205bdd6` (D4 and N5's duplicate: `IfcNames.NameOf` in Ara3D.Ifc.Conventions is the one naming rule; `IfcEntity.GetName` in IfcLoader uses it, and both readers and `GetEntityLabel` call it; `NameOrNull` and `MaterialNameIndex` deleted. A name may be an enumeration value, so IfcSIUnit is named METRE from both readers. A new Duplex test pairs every entity both readers keep and compares name and room number; it failed on all 21 spaces before), `aaebb39` (D8 readers: null units, and null groups from Fragments), `7bf79ac` (F6's counts become ExporterWarning diagnostics in both readers). Conventions 35, Fragments 36, Ifc 23, MCP 102. Out of fence: TKT-201 (IfcPropData names an unnamed set "$"); the Revit exporter's "" units are in TKT-193. The samples need regenerating (units -1, SI unit names): C1 resumed.
+
+- C1, third regeneration `9fde349`: units NULL in all 16,110 Duplex ParameterText rows (were ""), five IfcSIUnit entities named (METRE, SQUARE_METRE, ...), no diagnostics in any sample, counts unchanged; the temporary `UnitsUnnamedInTheCommittedSample` list in DuplexFixtureTests deleted.
+
 ## Wave record
+
+Outcome: success. TKT-174, 175, 176, 177, 178, 179, 180 and 183 (selective read) are closed with every criterion met. The review's 11 defects were fixed, except D10, which became tickets. Its 8 design notes were fixed, filed, or recorded here (N7). TKT-181 (format nodes) waits on TKT-12, and TKT-182 (column convention) waits on the owner.
+Gates (final, 2026-10-11):
+- bim-open-data `f065f10`: BimOpenData.sln 0 errors, and every project passes with `TestCategory!=RequiresTestData` (MCP 103, BimOpenSchema 74, Workflows 96, DuckDb 47+2 skipped, USD 41, Fragments 36, Conventions 35, BCF 30, Ifc 23+11, ObjectModel 20, GLB 12, IfcMeshingComparison 192+45).
+- bim-open-flow `469a3ad`: every project under tests/flow passes (BimOpenFlow.sln itself does not build inside deps/: TKT-197).
+- Toolkit: BimOpenToolkit.sln 0 errors, every test project passes, and two pairs of golden texts were re-approved for intended changes.
+- Not run: tests tagged RequiresTestData, the explorer's Playwright smoke test, the web gates.
+Pins: bim-open-data `f065f10` (pins schema `c369c32`, sdk `24939c1`, viewer `16b8a3c`), bim-open-flow `469a3ad` (pins data `f065f10`), toolkit pins all five.
+Commits: in the build and fix logs above.
+Findings:
+- Wave A ran five builders and one early chunk (T183) once another session released `ParquetUtils.cs`. Wave B ran two, wave C two, and the review fix round nine.
+- Coordination with three peer sessions went by message. The Speckle session's TKT-184 held six files; it released them by sending a hash, and its Speckle reader was told the absence rule before it starts.
+- Two builders edited outside their fence because the build would not compile otherwise (T175 `BimObjectModel.cs`, F3 IfcLoader); both were accepted and recorded.
+- One message went to the wrong fixer (F2 instead of F3) and was corrected on resume.
+- Five fixers stalled together on the stream watchdog. All were resumed with `SendMessage` and finished from their files on disk; nothing was redone.
+- Regenerating the samples found work that predated the wave (`817e609` material rows, `26b8691` duplicates), and a real defect (names read from a STEP reference, fixed in `e28a28b`). It ran three times, because two review fixes changed fresh conversions.
+- N7: waves B and C had no fence table in this plan, and the fences of TKT-175 and TKT-183 did not match the work. Fences were set in each brief instead. Next time, write them here before dispatch.
+- Tickets filed along the way: TKT-187 to TKT-201.
+Status of the architecture notes in `docs/plans/bos-formats.md`:
+- 1, scene view: resolved (DataModel: TKT-192).
+- 2, absence: resolved in the spec, builder, readers, views, object model, Federation, Harmonizer, catalog and JS readers (leftovers: TKT-193, 198, 200, 201).
+- 3, BOS session: resolved, and the `ifc_*` query tools take a `.bos`.
+- 4, one glTF writer: resolved.
+- 5, earcut and conventions: resolved (TKT-191 for the SDK leftovers).
+- 6 and 7: open (TKT-182, TKT-181).
+- 8, selective read: resolved (`.usdc`: TKT-196; row counts: TKT-195).
+Timing: 2026-10-10 afternoon to 2026-10-11. The builders ran 2 to 47 minutes each, mostly in parallel; run one after another, their total would be about 9 hours of agent time.
