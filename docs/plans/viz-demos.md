@@ -66,3 +66,14 @@ TKT-234 (wire `plot.vegaLite` into these graphs). Existing tickets that cover th
 Findings from builders: aggregated chart tables cannot carry an element key, so the key lives in the per-element
 table that feeds the 3D side; every builder subagent shares the session id, so their `Agent:` trailers and
 scratchpad cannot tell them apart.
+
+Review and fixes, 2026-10-11. A fresh reviewer found 7 defects and 10 design notes. Fixed, one commit each:
+the test now prepares the git-ignored NRC files (a82a2a2); `bim.buildSequence` FinishWeek text, missing
+elevation-column warning, date parsing and Synthetic on unscheduled rows (13480a8, 83114af, c6601b5);
+`bim.orientation` leaves bearing and direction missing at the plan centre (54724b8) with boundary tests
+(27106de); graph notes now quote only computed numbers or say a value was checked by hand (b711c86 corrects
+the whole-building intensity from 274.2 to 246.3 kgCO2e/m2, since the old figure counted foundation carbon
+over storeys with spaces; 5b69e92 carries b711c86's subject by mistake but holds the carbon-by-material totals);
+Synthetic columns, the parameter-completeness coverage view, honest layer weights, and a spec with no inline
+data. Node docs patched for the two nodes only (85571d5). Mirrors re-exported in bim-open-plot 484b054, pushed
+by its owner session. Design notes filed: TKT-235 (one storey rule), TKT-236 (shared chains, Duplex-specific values).
