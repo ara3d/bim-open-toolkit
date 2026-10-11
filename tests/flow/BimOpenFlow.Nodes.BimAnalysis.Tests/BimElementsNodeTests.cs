@@ -1,3 +1,4 @@
+using Ara3D.DataFlowEngine.Abstractions;
 using BimOpenFlow.Nodes.BimAnalysis;
 
 namespace BimOpenFlow.Nodes.BimAnalysis.Tests;
@@ -6,6 +7,21 @@ namespace BimOpenFlow.Nodes.BimAnalysis.Tests;
 public sealed class BimElementsNodeTests
 {
     private static readonly BimElementsNode Node = new();
+
+    [Test]
+    public void Path_WiredFromAText_GivesTheSameTableAsTheString()
+    {
+        var fromString = Node.SampleTable();
+        var bound = new Dictionary<string, FlowValue> { ["path"] = new TextValue(BimAnalysisTestHelpers.SampleBosPath) };
+        var stale = new ParamValues(new Dictionary<string, string> { ["path"] = "stale-not-a-file.bos" }, bound);
+
+        var fromBound = ((TableValue)Node.Eval(NodeTestHelpers.Ctx, [], stale)[0]).Table;
+
+        Assert.That(Node.Spec.Params.Single(p => p.Name == "path").Bindable, Is.EqualTo(PortType.Text));
+        Assert.That(fromBound.ColumnNames(), Is.EqualTo(fromString.ColumnNames()));
+        foreach (var column in fromString.ColumnNames())
+            Assert.That(fromBound.ColumnCells(column), Is.EqualTo(fromString.ColumnCells(column)), column);
+    }
 
     [Test]
     public void Elements_HaveTheContractColumnsInOrder()

@@ -87,7 +87,7 @@ Loads the .bos file into an in-memory DuckDB once and outputs three materialized
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `harmonize` | Boolean | — | `false` | — | — |
 
 ### `bos.query` (v1) — Pure
@@ -134,7 +134,7 @@ Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
 ### `bim.rooms` (v1) — Pure
 
@@ -152,7 +152,7 @@ Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Eleva
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `categories` | Text (list) | — | `Rooms,Spaces` | — | — |
 
 ### `bim.levels` (v1) — Pure
@@ -171,7 +171,7 @@ Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Nam
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
 ### `bim.bounds` (v1) — Pure
 
@@ -189,7 +189,7 @@ Loads a .bos file into one row per element that has bounds: EntityIndex, Name, C
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
 ### `bim.paramTable` (v1) — Pure
 
@@ -207,7 +207,7 @@ Loads a .bos file into one row per element with EntityIndex, Name, Category plus
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `parameters` | Text (list) | — | — | — | — |
 
 ### `bim.paramCoverage` (v1) — Pure
@@ -353,7 +353,7 @@ Loads a .bos file into one row per door in the given categories: Door (entity in
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `doorCategories` | Text (list) | — | `Doors` | — | — |
 
 ### `bim.hops` (v1) — Pure
@@ -402,7 +402,7 @@ One row per placed mesh, with entity ids and world bounds. The loaded geometry i
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.measures` (v1) — Pure
 
@@ -420,7 +420,7 @@ One row per placed mesh of a model file: instanceIndex, meshId, entityId, global
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.color` (v1) — Pure
 
@@ -695,7 +695,7 @@ Open a model with the visualization toolkit. Connect view outputs to compose a p
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.section` (v1) — Pure
 

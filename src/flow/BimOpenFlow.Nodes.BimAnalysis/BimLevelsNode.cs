@@ -13,7 +13,7 @@ public sealed class BimLevelsNode : IFlowNode
         Kind, 1, NodeCapability.Pure,
         Inputs: [],
         Outputs: [new PortSpec("table", PortType.Table)],
-        Params: [new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos"))],
+        Params: [new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bos"))],
         "Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Name, "
         + "Elevation, ElementCount (elements whose Level parameter points here), RoomCount. "
         + "Levels are the elements carrying a level-elevation parameter or categorized as Levels.");

@@ -88,7 +88,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         }
       ],
       "description": "Loads a .bos file into one row per element that has bounds: EntityIndex, Name, Category, Level, MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea (SizeX*SizeY), Volume (box volume), Diagonal. Feeds bim.containment, bim.nearest, and dimension analyses."
@@ -263,7 +264,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         }
       ],
       "description": "Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name, Category, CategoryType, Type, ClassName, Level, Elevation, Room, Document, Workset, Group. The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms."
@@ -333,7 +335,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         }
       ],
       "description": "Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Name, Elevation, ElementCount (elements whose Level parameter points here), RoomCount. Levels are the elements carrying a level-elevation parameter or categorized as Levels."
@@ -358,7 +361,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         },
         {
           "name": "doorCategories",
@@ -515,7 +519,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         },
         {
           "name": "parameters",
@@ -546,7 +551,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         },
         {
           "name": "categories",
@@ -587,7 +593,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         },
         {
           "name": "harmonize",
@@ -4753,7 +4760,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         }
       ],
       "description": "Renderable instances of a model file as a table: one row per placed mesh, with entity ids and world bounds."
@@ -4810,7 +4818,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         }
       ],
       "description": "One row per placed mesh of a model file: instanceIndex, meshId, entityId, globalId, category, surfaceArea, meshVolume, and triangleCount, computed in world space from the mesh triangles. meshVolume is the enclosed volume and is exact only for closed meshes with consistent winding; open shells report the absolute signed sum. Join on entityId or globalId to bring quantities onto any other table. The loaded geometry is cached by file content hash."
@@ -4917,7 +4926,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".bos"
-          }
+          },
+          "bindable": "Text"
         }
       ],
       "description": "Open a model with the visualization toolkit. Connect view outputs to compose a presentation."

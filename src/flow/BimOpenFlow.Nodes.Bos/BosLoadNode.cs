@@ -44,7 +44,7 @@ public sealed class BosLoadNode : IFlowNode
         ],
         Params:
         [
-            new ParamSpec("path", ParamKind.FilePath, Suggest: SuggestSource.FilesWith(".bos")),
+            new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bos")),
             new ParamSpec("harmonize", ParamKind.Boolean, "false"),
         ],
         "Loads a BIM Open Schema (.bos) file and outputs its entity, parameter, and relation text tables.");
