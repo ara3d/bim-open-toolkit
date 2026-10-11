@@ -16,3 +16,5 @@ Options: hash the resolved file (exact, but a large file costs a full read); or 
 No default in the source.
 
 Raised by reviews/2026-09-27-status.md
+
+Note 2026-10-11: TKT-202 makes a source node the one place a database is opened and gives its value a content hash, so for file-backed sources the answer is the first option, hash the resolved file, taken at the source node and cached by the source's own cache. The registry question stays open only for sources the registry resolves without a file.
