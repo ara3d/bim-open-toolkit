@@ -84,9 +84,9 @@ public sealed class PocPipelineTests
             .Build());
 
         var verdicts = ((TableValue)session.Output("check", "out")).Table;
-        Assert.That(Column(verdicts, "verdict"),
+        Assert.That(Column(verdicts, "Verdict"),
             Is.EqualTo(new[] { "Pass", "Pass", "Fail", "Fail", "InfoNotAvailable" }));
-        Assert.That(Column(verdicts, "checkId"), Has.All.EqualTo("HEIGHT-01"));
+        Assert.That(Column(verdicts, "CheckId"), Has.All.EqualTo("HEIGHT-01"));
     }
 
     /// <summary>PoC viz.colorBy/viz.colormap: color columns joined onto instances,

@@ -128,9 +128,9 @@ public sealed class ShowcaseGraphTests
             Assert.Multiple(() =>
             {
                 Assert.That(verdicts.Rows, Has.Count.EqualTo(14), "14 doors");
-                Assert.That(chart.ColumnNames(), Is.EqualTo(new[] { "verdict", "Doors" }));
+                Assert.That(chart.ColumnNames(), Is.EqualTo(new[] { "Verdict", "Doors" }));
                 Assert.That(chart.Rows, Has.Count.EqualTo(2), "Pass and Fail");
-                Assert.That(chart.Cell("verdict", 0), Is.EqualTo("Pass"), "sorted desc by count: 8 Pass before 6 Fail");
+                Assert.That(chart.Cell("Verdict", 0), Is.EqualTo("Pass"), "sorted desc by count: 8 Pass before 6 Fail");
                 Assert.That(Convert.ToInt64(chart.Cell("Doors", 0)), Is.EqualTo(8));
                 Assert.That(Convert.ToInt64(chart.Cell("Doors", 1)), Is.EqualTo(6));
                 Assert.That(coloured.ColumnNames(), Is.SupersetOf(new[] { "r", "g", "b", "a" }), "view3d.color appends a colour per instance");

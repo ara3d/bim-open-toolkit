@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-dc-w1-verdicts   graph b6c1df012235
+// nrc-dc-w1-verdicts   graph 3b0c0a710821
 entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
   // Ok  relation plan 9a8be9f3b5d5
   //   "(table \"duplex-enriched\" \"EntityText\")"
@@ -40,29 +40,29 @@ rows = rel.materialize@1(input: byDoor.relation, limit: "0");
   //   [1] "1aj$VJZFn2TxepZUBcKpac", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20403"..., 0.762, 762
   //   [2] "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., 1.25, 1250
 answer = check.rule@1(in: rows.table, checkId: "DC-W1", title: "Door leaf width at least 850 mm", citation: "NBC 2020 3.8.3.12 (illustrative, not legal text)", expr: "[Width_mm] >= 850", reviewExpr: "");
-  // Ok  table 14 rows x 8 cols  sha 23f731f1c26b
-  //   columns GlobalId:Text, Name:Text, Width_m:Number, Width_mm:Number, verdict:Text, checkId:Text, checkTitle:Text, citation:Text
+  // Ok  table 14 rows x 8 cols  sha d3b1093030e3
+  //   columns GlobalId:Text, Name:Text, Width_m:Number, Width_mm:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text
   //   verdicts "DC-W1": Fail 6, Pass 8
-coloured = view3d.color@1(instances: model.instances, values: answer.out, joinColumn: "globalId", valueColumn: "verdict", colorMap: "category10");
+coloured = view3d.color@1(instances: model.instances, values: answer.out, joinColumn: "globalId", valueColumn: "Verdict", colorMap: "category10");
   // Ok
   //   instances: table 714 rows x 15 cols  sha 9e318dd21642
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
   //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //     44 coloured in 2 colours, 670 grey
-  //     legend "verdict" categorical: "Fail" 20, "Pass" 24
+  //     legend "Verdict" categorical: "Fail" 20, "Pass" 24
   //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-  //   legend: table 2 rows x 9 cols  sha 5dcc09be55c3
+  //   legend: table 2 rows x 9 cols  sha 502f07450b53
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //     legend "verdict" categorical: category "Fail" 6, category "Pass" 8
-perVerdict = table.aggregate@1(table: answer.out, groupBy: "verdict", aggregates: "count(*) as Doors");
-  // Ok  table 2 rows x 2 cols  sha 9e32fc56f60d
-  //   columns verdict:Text, Doors:Integer
+  //     legend "Verdict" categorical: category "Fail" 6, category "Pass" 8
+perVerdict = table.aggregate@1(table: answer.out, groupBy: "Verdict", aggregates: "count(*) as Doors");
+  // Ok  table 2 rows x 2 cols  sha 67e6ed9acc1c
+  //   columns Verdict:Text, Doors:Integer
   //   [0] "Fail", 6
   //   [1] "Pass", 8
-chart = chart.bar@1(table: perVerdict.table, labelColumn: "verdict", valueColumns: "Doors", title: "DC-W1 door width verdicts", sort: "desc");
+chart = chart.bar@1(table: perVerdict.table, labelColumn: "Verdict", valueColumns: "Doors", title: "DC-W1 door width verdicts", sort: "desc");
   // Ok
-  //   table: table 2 rows x 2 cols  sha 9033941d17d6
-  //     columns verdict:Text, Doors:Integer
+  //   table: table 2 rows x 2 cols  sha b22709a31420
+  //     columns Verdict:Text, Doors:Integer
   //     chart 2 categories x 1 series: "Doors"
   //     "Pass": 8
   //     "Fail": 6

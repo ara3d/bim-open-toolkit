@@ -261,15 +261,15 @@
     },
     "coloured": {
       "joinColumn": "globalId",
-      "valueColumn": "verdict",
+      "valueColumn": "Verdict",
       "colorMap": "category10"
     },
     "perVerdict": {
-      "groupBy": "verdict",
+      "groupBy": "Verdict",
       "aggregates": "count(*) as Doors"
     },
     "chart": {
-      "labelColumn": "verdict",
+      "labelColumn": "Verdict",
       "valueColumns": "Doors",
       "title": "DC-W1 door width verdicts",
       "sort": "desc"

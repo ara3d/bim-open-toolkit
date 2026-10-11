@@ -106,8 +106,8 @@ public sealed class ModelGraphTests
         var expected = DoorVerdicts();
         Assert.That(expected, Has.Count.EqualTo(14));
         Assert.That(answer.Rows, Has.Count.EqualTo(14));
-        Assert.That(answer.ColumnCells("verdict").Count(v => Equals(v, "Pass")), Is.EqualTo(8));
-        Assert.That(answer.ColumnCells("verdict").Count(v => Equals(v, "Fail")), Is.EqualTo(6));
+        Assert.That(answer.ColumnCells("Verdict").Count(v => Equals(v, "Pass")), Is.EqualTo(8));
+        Assert.That(answer.ColumnCells("Verdict").Count(v => Equals(v, "Fail")), Is.EqualTo(6));
 
         // Door by door, against the same file's globalId and verdict columns. The graph keeps
         // the source spelling GlobalId (rel.select cannot rename); lookups downstream are
@@ -116,12 +116,12 @@ public sealed class ModelGraphTests
         for (var row = 0; row < answer.Rows.Count; row++)
         {
             var globalId = (string)answer.Cell("GlobalId", row)!;
-            Assert.That(answer.Cell("verdict", row), Is.EqualTo(expected[globalId].Verdict), globalId);
+            Assert.That(answer.Cell("Verdict", row), Is.EqualTo(expected[globalId].Verdict), globalId);
             Assert.That(Number(answer, "Width_mm", row),
                 Is.EqualTo(expected[globalId].WidthMm).Within(Tolerance), globalId);
         }
 
-        Assert.That(answer.ColumnCells("checkId"), Has.All.EqualTo("DC-W1"));
+        Assert.That(answer.ColumnCells("CheckId"), Has.All.EqualTo("DC-W1"));
 
         // view3d.color runs downstream and outputs the coloured instance table, not the verdicts,
         // so "answer" is the check.rule node. Its colour columns still prove the join landed.
