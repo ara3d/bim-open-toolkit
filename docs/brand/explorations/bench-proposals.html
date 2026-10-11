@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIM Open Bench brand proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&family=Public+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f4f5f7; --surface:#fff; --text:#171a1f; --dim:#5a606c; --line:#e3e6ea; --edge:#cfd4db;
+  --flow:#2f66ce; --notebook:#5a47c7; --viewer:#0f8a80; --data:#b8326e; --schema:#4f5d78;
+  --accent:#8f6214; --accent-soft:#f5ecdc;
+  --olive:#5d7a1e; --olive-soft:#eef3e1;
+  --green:#16a34a; --amber:#d97706; --red:#dc2626;
+  --font-brand:"Instrument Sans","Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-ui:"Public Sans","Segoe UI",system-ui,sans-serif;
+  --font-mono:"Fira Code","Cascadia Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui);padding:32px 16px 64px}
+main{max-width:1040px;margin:0 auto}
+h1{font:700 24px/1.2 var(--font-brand);margin:0 0 4px}
+h2{font:600 18px/1.3 var(--font-brand);margin:40px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font:600 15px/1.3 var(--font-brand);margin:0 0 6px}
+p{margin:0 0 10px;max-width:72ch}
+.sub{color:var(--dim);margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:0 0 16px}
+.rec{border-left:4px solid var(--accent)}
+.rec ul{margin:8px 0 0 18px;padding:0}
+.notes{color:var(--dim);font-size:13px}
+.sizes{display:flex;gap:28px;align-items:flex-end;padding:18px 20px;border-radius:6px;margin-top:12px;flex-wrap:wrap}
+.sizes.light{background:#fff;border:1px solid var(--line);color:var(--accent)}
+.sizes.dark{background:var(--accent);color:#fff}
+.sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.sizes figcaption{font:11px/1 var(--font-mono);opacity:.75}
+.sizes svg{display:block}
+.bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:12px}
+.bar .wm{font:700 15px/1 var(--font-brand);color:var(--text);letter-spacing:-0.01em}
+.bar .wm .fam{font-weight:600;color:var(--dim);margin-right:4px}
+.bar .sep{flex:1}
+.bar .btn{font:600 13px/1 var(--font-ui);color:#fff;background:var(--accent);border-radius:5px;padding:7px 10px}
+.bar .ghost{font:500 13px/1 var(--font-ui);color:var(--dim);padding:7px 10px}
+.bar svg{color:var(--accent)}
+.favrow{display:flex;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:var(--dim);flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;gap:6px;background:#e8eaef;border-radius:6px 6px 0 0;padding:6px 10px;font:12px/1 var(--font-ui);color:var(--text)}
+.tab svg{color:var(--accent)}
+.tab.flow svg{color:var(--flow)} .tab.nb svg{color:var(--notebook)} .tab.vw svg{color:var(--viewer)} .tab.dt svg{color:var(--data)} .tab.sc svg{color:var(--schema)}
+.pal{display:flex;gap:6px;margin-top:8px;align-items:center;font:11px var(--font-mono);color:var(--dim);flex-wrap:wrap}
+.pal span{width:22px;height:22px;border-radius:4px;display:block}
+.page{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.page .bar{margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0}
+.page .body{padding:20px 24px 24px}
+.page .title{font:600 20px/1.25 var(--font-brand);margin:0 0 2px}
+.page .meta{font:400 12px/1.5 var(--font-mono);color:var(--dim);margin-bottom:14px}
+table{border-collapse:collapse;width:100%;font:400 12.5px/1.4 var(--font-ui)}
+th{font-weight:600;text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);color:var(--dim);background:var(--bg)}
+td{padding:5px 10px;border-bottom:1px solid var(--line)}
+td.n{font-family:var(--font-mono);font-size:12px;text-align:right}
+th.n{text-align:right}
+tr.sel td{background:var(--accent-soft)}
+.meter{display:inline-block;height:8px;background:var(--accent);border-radius:2px;vertical-align:middle}
+.ok{color:var(--green)} .warn{color:var(--amber)}
+.tablewrap{overflow-x:auto}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mf" viewBox="0 0 24 24"><path fill="currentColor" d="M2 3h5v4H2ZM2 10h5v4H2ZM2 17h5v4H2ZM8.5 4C12.5 4 11.5 11 15.5 11V13C11.5 13 12.5 6 8.5 6ZM8.5 11h7v2h-7ZM8.5 18C12.5 18 11.5 11 15.5 11V13C11.5 13 12.5 20 8.5 20ZM14.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></symbol>
+  <symbol id="mn" viewBox="0 0 24 24"><path fill="currentColor" d="M1.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM8 11h4.5v2H8ZM12 2h2v20h-2ZM15.5 3h4.5v2.2h-4.5ZM15.5 7h6.5v4h-6.5ZM15.5 13h4.5v2.2h-4.5ZM15.5 17h6.5v4h-6.5Z"/></symbol>
+  <symbol id="mv" viewBox="0 0 24 24"><path fill="currentColor" d="M0.8 12a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0ZM6.5 11h6v2h-6ZM13 3h10l-3 4H10ZM13 10h10l-3 4H10ZM13 17h10l-3 4H10Z"/></symbol>
+  <symbol id="md" viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0ZM15.5 4C11.5 4 12.5 11 8.5 11V13C12.5 13 11.5 6 15.5 6ZM15.5 11h-7v2h7ZM15.5 18C11.5 18 12.5 11 8.5 11V13C12.5 13 11.5 20 15.5 20ZM17 3h2v4h-2ZM20 3h2.5v4H20ZM17 10h2v4h-2ZM20 10h2.5v4H20ZM17 17h2v4h-2ZM20 17h2.5v4H20Z"/></symbol>
+  <symbol id="ms" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M2 2h20v6H2ZM3.5 3.5h4.5v3H3.5ZM9.5 3.5h11v3h-11ZM2 9h20v6H2ZM3.5 10.5h4.5v3H3.5ZM9.5 10.5h11v3h-11ZM2 16h20v6H2ZM3.5 17.5h4.5v3H3.5ZM9.5 17.5h11v3h-11Z"/></symbol>
+  <!-- B1 Ranked Rows: a start line, three rows growing in length downward, the longest ending in the node disc -->
+  <symbol id="b1" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h2v20H2ZM5.5 3h5v4H5.5ZM5.5 10h9v4H5.5ZM5.5 17h10.5v4H5.5ZM15.6 19a3.2 3.2 0 1 1 6.4 0a3.2 3.2 0 1 1-6.4 0Z"/></symbol>
+  <!-- B2 Rows on the Bench: three rows of different length resting on a bench -->
+  <symbol id="b2" viewBox="0 0 24 24"><path fill="currentColor" d="M3 2.5h8v3.5H3ZM3 7.5h13v3.5H3ZM3 12.5h18v3.5H3ZM1 17.5h22v2.5H1ZM3 20h2.5v3H3ZM18.5 20h2.5v3h-2.5Z"/></symbol>
+  <!-- B3 Rows against the Clock: three rows feeding a stopwatch; nonzero fill, inner circle wound the other way -->
+  <symbol id="b3" viewBox="0 0 24 24"><path fill="currentColor" d="M1 7h5.5v3H1ZM1 12h5.5v3H1ZM1 17h5.5v3H1ZM8.5 14a7 7 0 1 1 14 0a7 7 0 1 1-14 0ZM10.3 14a5.2 5.2 0 1 0 10.4 0a5.2 5.2 0 1 0-10.4 0ZM13.8 3h3.4v3h-3.4ZM14.7 9.5h1.6v4.5h-1.6ZM14.2 14a1.3 1.3 0 1 1 2.6 0a1.3 1.3 0 1 1-2.6 0Z"/></symbol>
+  <!-- favicon reductions below 16 px -->
+  <symbol id="b1s" viewBox="0 0 24 24"><path fill="currentColor" d="M2 2h3v20H2ZM7 3h6v5H7ZM7 10h10v5H7ZM7 17h15v5H7Z"/></symbol>
+  <symbol id="b2s" viewBox="0 0 24 24"><path fill="currentColor" d="M3 4h10v5H3ZM3 11h18v5H3ZM1 18h22v3H1Z"/></symbol>
+  <symbol id="b3s" viewBox="0 0 24 24"><path fill="currentColor" d="M3 13a9 9 0 1 1 18 0a9 9 0 1 1-18 0ZM5.6 13a6.4 6.4 0 1 0 12.8 0a6.4 6.4 0 1 0-12.8 0ZM10.5 1h3v3h-3ZM11 7h2v6h-2Z"/></symbol>
+</svg>
+<main>
+<h1>BIM Open Bench: brand proposals</h1>
+<p class="sub">2026-10-11. BIM Open Bench (<code>ara3d/bim-open-bench</code>) measures tools that read building models: parsers, meshers, viewers, and AI agents, on public IFC models with known answers. It joins the five products in <code>docs/BRANDING.md</code> and takes everything from the family except a mark and an accent.</p>
+
+<div class="card rec">
+  <h3>Recommendation: B1 Ranked Rows in ochre</h3>
+  <ul>
+    <li><b>Accent: ochre <code>#8f6214</code>, soft <code>#f5ecdc</code>.</b> The only hue left between rose and the Flow blue that no product or status colour uses. It was the runner-up for the schema on 2026-10-03, so it already sits in the family palette. Contrast on white is 5.35:1, the same as the Flow blue, so it works for link text. It reads as brass, a measuring instrument, not as the amber pending status (<code>#d97706</code>), which is brighter and more orange.</li>
+    <li><b>Mark: Ranked Rows.</b> The family's three rows, set against a start line at different lengths, the longest ending in the node disc: tools ranked on one measure, the best reaching the answer. It is the only family mark whose rows differ in length, which is what a result looks like.</li>
+    <li>The rows grow downward, so the start line and rows read as steps rather than the letter F, which the first draft (longest row on top) did at 16 px.</li>
+    <li>Weakness: away from the family it can pass for a generic bar chart. The node disc and the ochre are what tie it back.</li>
+  </ul>
+</div>
+
+<h2>The family with each candidate</h2>
+<p>A browser tab strip at 16 px, the size where marks are hardest to tell apart.</p>
+<div class="card">
+  <div class="favrow"><b style="width:120px">B1 Ranked Rows</b>
+    <span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab nb"><svg width="16" height="16"><use href="#mn"/></svg>Notebook</span><span class="tab vw"><svg width="16" height="16"><use href="#mv"/></svg>Viewer</span><span class="tab dt"><svg width="16" height="16"><use href="#md"/></svg>Data</span><span class="tab sc"><svg width="16" height="16"><use href="#ms"/></svg>Schema</span><span class="tab"><svg width="16" height="16"><use href="#b1"/></svg>Bench</span></div>
+  <div class="favrow"><b style="width:120px">B2 On the Bench</b>
+    <span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab nb"><svg width="16" height="16"><use href="#mn"/></svg>Notebook</span><span class="tab vw"><svg width="16" height="16"><use href="#mv"/></svg>Viewer</span><span class="tab dt"><svg width="16" height="16"><use href="#md"/></svg>Data</span><span class="tab sc"><svg width="16" height="16"><use href="#ms"/></svg>Schema</span><span class="tab"><svg width="16" height="16"><use href="#b2"/></svg>Bench</span></div>
+  <div class="favrow"><b style="width:120px">B3 Against the Clock</b>
+    <span class="tab flow"><svg width="16" height="16"><use href="#mf"/></svg>Flow</span><span class="tab nb"><svg width="16" height="16"><use href="#mn"/></svg>Notebook</span><span class="tab vw"><svg width="16" height="16"><use href="#mv"/></svg>Viewer</span><span class="tab dt"><svg width="16" height="16"><use href="#md"/></svg>Data</span><span class="tab sc"><svg width="16" height="16"><use href="#ms"/></svg>Schema</span><span class="tab"><svg width="16" height="16"><use href="#b3"/></svg>Bench</span></div>
+</div>
+
+<h2>B1 Ranked Rows (recommended)</h2>
+<div class="card">
+  <p>A start line on the left; three rows run from it, each longer than the one above, and the longest ends in the node disc. Reads as "the same rows, measured and ranked".</p>
+  <div class="sizes light">
+    <figure><svg width="12" height="12"><use href="#b1s"/></svg><figcaption>12 reduced</figcaption></figure>
+    <figure><svg width="16" height="16"><use href="#b1"/></svg><figcaption>16</figcaption></figure>
+    <figure><svg width="22" height="22"><use href="#b1"/></svg><figcaption>22</figcaption></figure>
+    <figure><svg width="48" height="48"><use href="#b1"/></svg><figcaption>48</figcaption></figure>
+    <figure><svg width="96" height="96"><use href="#b1"/></svg><figcaption>96</figcaption></figure>
+  </div>
+  <div class="sizes dark">
+    <figure><svg width="16" height="16"><use href="#b1"/></svg><figcaption>16</figcaption></figure>
+    <figure><svg width="22" height="22"><use href="#b1"/></svg><figcaption>22</figcaption></figure>
+    <figure><svg width="48" height="48"><use href="#b1"/></svg><figcaption>48</figcaption></figure>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#b1"/></svg><span class="wm"><span class="fam">BIM Open</span>Bench</span><span class="sep"></span><span class="ghost">Suites</span><span class="ghost">Models</span><span class="btn">Run suite</span></div>
+</div>
+
+<h2>B2 Rows on the Bench</h2>
+<div class="card">
+  <p>Three rows of different length stacked on a bench with two legs: a test bench, and the name made literal. Clear at every size; the weakest family tie, since it drops the wire and the node disc.</p>
+  <div class="sizes light">
+    <figure><svg width="12" height="12"><use href="#b2s"/></svg><figcaption>12 reduced</figcaption></figure>
+    <figure><svg width="16" height="16"><use href="#b2"/></svg><figcaption>16</figcaption></figure>
+    <figure><svg width="22" height="22"><use href="#b2"/></svg><figcaption>22</figcaption></figure>
+    <figure><svg width="48" height="48"><use href="#b2"/></svg><figcaption>48</figcaption></figure>
+    <figure><svg width="96" height="96"><use href="#b2"/></svg><figcaption>96</figcaption></figure>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#b2"/></svg><span class="wm"><span class="fam">BIM Open</span>Bench</span><span class="sep"></span><span class="ghost">Suites</span><span class="ghost">Models</span><span class="btn">Run suite</span></div>
+</div>
+
+<h2>B3 Rows against the Clock</h2>
+<div class="card">
+  <p>Three rows feeding a stopwatch: the node disc becomes the dial. Says "speed" most plainly, but the bench also scores correctness and tokens, and the dial is the busiest shape in the family at 16 px.</p>
+  <div class="sizes light">
+    <figure><svg width="12" height="12"><use href="#b3s"/></svg><figcaption>12 reduced</figcaption></figure>
+    <figure><svg width="16" height="16"><use href="#b3"/></svg><figcaption>16</figcaption></figure>
+    <figure><svg width="22" height="22"><use href="#b3"/></svg><figcaption>22</figcaption></figure>
+    <figure><svg width="48" height="48"><use href="#b3"/></svg><figcaption>48</figcaption></figure>
+    <figure><svg width="96" height="96"><use href="#b3"/></svg><figcaption>96</figcaption></figure>
+  </div>
+  <div class="bar"><svg width="22" height="22"><use href="#b3"/></svg><span class="wm"><span class="fam">BIM Open</span>Bench</span><span class="sep"></span><span class="ghost">Suites</span><span class="ghost">Models</span><span class="btn">Run suite</span></div>
+</div>
+
+<h2>Accent</h2>
+<div class="card">
+  <p>The family accents and the status colours, with the two candidates for the bench.</p>
+  <div class="pal"><span style="background:var(--flow)"></span><span style="background:var(--notebook)"></span><span style="background:var(--viewer)"></span><span style="background:var(--data)"></span><span style="background:var(--schema)"></span>&nbsp;family&nbsp;&nbsp;<span style="background:var(--green)"></span><span style="background:var(--amber)"></span><span style="background:var(--red)"></span>&nbsp;status</div>
+  <div class="pal"><span style="background:var(--accent)"></span><span style="background:var(--accent-soft)"></span>&nbsp;ochre #8f6214 / #f5ecdc, 5.35:1 on white (recommended)</div>
+  <div class="pal"><span style="background:var(--olive)"></span><span style="background:var(--olive-soft)"></span>&nbsp;olive #5d7a1e / #eef3e1, 4.92:1 on white; too near the green "ok" status in a results table</div>
+</div>
+
+<h2>A results page in the family type</h2>
+<div class="page">
+  <div class="bar"><svg width="22" height="22"><use href="#b1"/></svg><span class="wm"><span class="fam">BIM Open</span>Bench</span><span class="sep"></span><span class="ghost">Suites</span><span class="ghost">Models</span><span class="btn">Run suite</span></div>
+  <div class="body">
+    <div class="title">view: time to first frame</div>
+    <div class="meta">run 2026-10-11 · 5 tools · 6 models · machine win11-rtx4070 · sample figures, not measured</div>
+    <div class="tablewrap">
+    <table>
+      <tr><th>Tool</th><th>Version</th><th>Route</th><th class="n">First frame, s</th><th></th><th>Geometry check</th></tr>
+      <tr class="sel"><td>BIM Open Viewer</td><td class="n">0.4.0</td><td>BOS, converted ahead</td><td class="n">1.8</td><td><span class="meter" style="width:22px"></span></td><td class="ok">ok</td></tr>
+      <tr><td>ifc-lite</td><td class="n">1.2.0</td><td>IFC in browser</td><td class="n">2.6</td><td><span class="meter" style="width:32px"></span></td><td class="ok">ok</td></tr>
+      <tr><td>xeokit</td><td class="n">2.6.0</td><td>XKT, converted ahead</td><td class="n">3.1</td><td><span class="meter" style="width:38px"></span></td><td class="warn">12 elements missing</td></tr>
+      <tr><td>That Open Engine</td><td class="n">2.4.0</td><td>IFC in browser</td><td class="n">6.9</td><td><span class="meter" style="width:84px"></span></td><td class="ok">ok</td></tr>
+      <tr><td>three.js glTF</td><td class="n">0.170</td><td>IfcConvert to GLB</td><td class="n">4.2</td><td><span class="meter" style="width:51px"></span></td><td class="warn">no properties</td></tr>
+    </table>
+    </div>
+  </div>
+</div>
+<p class="notes" style="margin-top:12px">The figures above are placeholders to show the type and colours, not measurements.</p>
+</main>
+</body>
+</html>
