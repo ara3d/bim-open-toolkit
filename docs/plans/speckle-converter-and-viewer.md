@@ -154,7 +154,9 @@ public static class SpeckleUnits
 In `BosFileTools.cs`, beside `frag_to_bos`:
 
 - `bos_export_speckle(bosPath, outPath?)`: reads the `.bos`, calls `BosToSpeckle.ConvertAsync`, saves `.speckle.json`, returns the summary and the path.
-- `speckle_to_bos(specklePath, bosPath?)`: loads the file, calls `SpeckleToBos.Convert`, writes the `.bos` **with geometry** through the `WriteBimOpenSchema` path (`ParquetUtils.cs:506`), not `WriteToParquetZip`, which omits geometry tables (TKT-184, filed with this plan). Returns the summary.
+- `speckle_to_bos(specklePath, bosPath?)`: loads the file, calls `SpeckleToBos.Convert`, then follows `frag_to_bos`'s recipe: `BosSession.FromData(data, bosPath, files)` plus `CopyDatabaseBeside()` (bim-open-data `964e91a`), which saves the `.bos` with its geometry (`WriteToParquetZip` includes geometry since TKT-184, `521b837`) and registers the session so `bos_sql`, `bos_table`, `ifc_table`, `ifc_sql`, and `bos_export_*` open it by its `.bos` path (`1373cab`). Returns the summary.
+
+Recipe facts from the middle-layer wave (bim-open-data `f065f10`, plan `docs/plans/bos-middle-layer.md`) that D1 to D6 code against: a descriptor's units and group are `null` for "none", not `""` (`aaebb39`), so the writer emits a `{value, units}` leaf only when units is non-null; `BimGeometryBuilder` skips non-finite meshes and counts clamped coordinates (`NonFiniteMeshCount`, `ClampedCoordinateCount`), and the reader turns both into `ExporterWarning` diagnostics the way `IfcToBosConverter` does (`7bf79ac`).
 
 `tools/bos-to-speckle` is a one-file console like `bos-to-usd`, for converting outside the MCP server. Both tools gain a row in `src/data/README.md` and `BosFileToolTests` entries.
 
