@@ -19,6 +19,11 @@ public sealed class BosLoadNode : IFlowNode
 {
     public const string Kind = "bos.load";
 
+    /// <summary>The tables the three text views and the harmonizer use: entities, parameters, and relations
+    /// (a read adds the descriptors, strings, numbers, and points those index). Geometry, documents, and
+    /// diagnostics are never read; harmonizing adds its own diagnostics, which no output shows.</summary>
+    private const BosTables TablesRead = BosTables.Entities | BosTables.Parameters | BosTables.Relations;
+
     private sealed record LoadedTables(IDataTable Entities, IDataTable Parameters, IDataTable Relations);
 
     // TODO: unbounded cache; add eviction (or move memoization fully into the engine)
@@ -61,7 +66,7 @@ public sealed class BosLoadNode : IFlowNode
 
     private static LoadedTables Load(string path, bool harmonize)
     {
-        IBimData data = new FilePath(path).ReadBimDataFromParquetZip();
+        IBimData data = new FilePath(path).ReadBimDataFromParquetZip(TablesRead);
         if (harmonize)
             data = BosHarmonizer.Harmonize(data);
         using var conn = data.ToDuckDb();
