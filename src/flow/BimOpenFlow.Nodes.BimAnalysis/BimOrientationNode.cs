@@ -38,8 +38,10 @@ public sealed class BimOrientationNode : IFlowNode
         + "every element) also sets the centre. Bearing is degrees clockwise from project north (+Y of the "
         + "model) to the element's box centre; a BOS carries no true-north angle, so it is not true north. "
         + "Sector 0..7 and Direction (N, NE, E, SE, S, SW, W, NW) bin the bearing in 45-degree slices centred "
-        + "on each point; Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side "
-        + "the box's larger vertical face looks out to, by which side of the centre the box lies on; "
+        + "on each point, a bearing on a boundary going to the clockwise slice (22.5 is NE, 337.5 is N); "
+        + "Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side the box's "
+        + "larger vertical face looks out to, by which side of the centre the box lies on (a square box "
+        + "counts its X-running face, so it faces N or S); "
         + "FacingArea is that face's area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall's or "
         + "window's gross face when it runs along a model axis and overstates a diagonal one. An element "
         + "whose box centre is the plan centre (Distance 0, as when it is the only row) has no bearing and "
@@ -55,11 +57,20 @@ public sealed class BimOrientationNode : IFlowNode
         public double Distance => Math.Sqrt(Dx * Dx + Dy * Dy);
         public bool AtCentre => Distance < CentreTolerance;
         public double? Bearing => AtCentre ? null : (Math.Atan2(Dx, Dy) * 180 / Math.PI + 360) % 360;
-        public int? Sector => Bearing is { } b ? (int)Math.Floor((b + 22.5) / 45) % 8 : null;
-        public string? Facing => AtCentre ? null
-            : Box.Size.X >= Box.Size.Y ? (Dy >= 0 ? "N" : "S") : (Dx >= 0 ? "E" : "W");
+        public int? Sector => Bearing is { } b ? SectorOf(b) : null;
+        public string? Facing => AtCentre ? null : FacingOf(Box.Size.X, Box.Size.Y, Dx, Dy);
         public double FacingArea => (double)Math.Max(Box.Size.X, Box.Size.Y) * Box.Size.Z;
     }
+
+    /// <summary>The 45-degree compass slice (0 = N, clockwise) holding a bearing in [0, 360);
+    /// a bearing on a boundary goes to the clockwise slice.</summary>
+    public static int SectorOf(double bearing)
+        => (int)Math.Floor((bearing + 22.5) / 45) % 8;
+
+    /// <summary>The side a box's larger vertical face looks out to, given its plan size and its
+    /// offset (dx, dy) from the plan centre; a square box counts its X-running face.</summary>
+    public static string FacingOf(double sizeX, double sizeY, double dx, double dy)
+        => sizeX >= sizeY ? (dy >= 0 ? "N" : "S") : (dx >= 0 ? "E" : "W");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

@@ -60,6 +60,25 @@ public sealed class BimOrientationNodeTests
             Node.SampleTable().ColumnCells(BimOrientationNode.Direction).Distinct(),
             Is.SubsetOf(BimOrientationNode.Compass));
 
+    [TestCase(0.0, 0)]
+    [TestCase(22.4999, 0)]
+    [TestCase(22.5, 1)]
+    [TestCase(67.5, 2)]
+    [TestCase(180.0, 4)]
+    [TestCase(337.4999, 7)]
+    [TestCase(337.5, 0)]
+    [TestCase(359.9999999, 0)]
+    public void Sectors_SplitAtTheHalfPoints_ClockwiseSliceWinsABoundary(double bearing, int sector)
+        => Assert.That(BimOrientationNode.SectorOf(bearing), Is.EqualTo(sector));
+
+    [TestCase(2.0, 2.0, 0.0, 1.0, "N")]
+    [TestCase(2.0, 2.0, 5.0, -1.0, "S")]
+    [TestCase(1.0, 2.0, 0.0, 1.0, "E")]
+    [TestCase(1.0, 2.0, -0.5, 1.0, "W")]
+    public void SquareBox_FacesNorthOrSouth_ElseTheLongFaceDecides(
+        double sizeX, double sizeY, double dx, double dy, string facing)
+        => Assert.That(BimOrientationNode.FacingOf(sizeX, sizeY, dx, dy), Is.EqualTo(facing));
+
     [Test]
     public void ElementWithoutBoundsParameters_TakesItsBoxFromGeometry()
     {
