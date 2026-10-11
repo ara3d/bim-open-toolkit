@@ -28,3 +28,5 @@ Shared file: `deps/bim-open-flow/contracts/contracts.json` and its generated out
 Supervisor-owned: every `deps.json`, `PROJECT.md`, this file, the tickets.
 
 ## Build log
+
+- T205: bim-open-flow `2932c1c`. `attachSuggestions` takes a `picker` option; with it the control is a popup list of every upstream column with its type, opened on focus, whatever the field holds; a pick toggles a column in a comma-separated value or replaces a single value. Graph package: 41 files, 299 tests pass; `tsc` clean. One line outside the fence in `canvasControls.ts` (the only call site), accepted. Debt: the catalog does not say which column parameters take several values, so `isMultiColumn` guesses from the name (`groupBy`, `columns`, `keys`, `orderBy`, `partitionBy`, `keep`, a `Columns` suffix) or a comma in the value; a catalog flag belongs with TKT-203's contract change. Not tried in a browser.
