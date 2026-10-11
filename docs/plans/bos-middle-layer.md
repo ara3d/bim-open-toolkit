@@ -55,4 +55,28 @@ Supervisor-owned: `BimOpenData.sln`, `Directory.Build.props`, every README outsi
 - C1, first run: stopped before committing because DigitalHub architecture's entity count changed (2,972 → 3,640, material constituents from `817e609`, which landed after the samples of 2026-10-03). Parameter-row changes were traced to `817e609` (material rows), `26b8691` (duplicate rows) and TKT-175 (empty values). The supervisor accepted the new counts and asked for a second regeneration after `e28a28b`.
 - C2: bim-open-data `ebfa619` (`BosGlb.WriteGlb(path)` reads Geometry and Entities; byte-identical against a full read) and `752dd49` (the last `Ara3D.IO.GltfExporter` reference removed); bim-open-flow `3af0b4f` (`ModelCatalog`: the entity index reads Entities and Parameters, `GetInfo` four tables); toolkit `caa178f` (`bos.load` reads Entities, Parameters and Relations; its test copies the sample before reading). Each has a test that fails when a needed table is dropped. Schependomlaan reads: GLB 361 → 224 ms, entity index 373 → 227 ms, `GetInfo` 373 → 337 ms, `bos.load` 298 → 278 ms. Left reading everything: the Browser (shows every table) and `bos-to-usd` (uses all but Diagnostics). A row-count-only read would help `GetInfo`.
 
+## Review findings (fresh reviewer, 2026-10-10)
+
+Defects (D) and design notes (N), with the fix chunk (F) that owns each. Paths are in bim-open-data unless named.
+
+- D1 `BosDuckDbViews.cs:41-46`: `ParameterText` shows a Point parameter's table index ('17', '-1') as its value. -> F1
+- D2 `ParquetUtils.cs:558-566` `WithReferencedTables`: Entities does not pull in Documents; Parameters, Relations, Diagnostics and Geometry do not pull in Entities, so "not read" looks like "absent". -> F2
+- D3 `Federation/BosUnion.cs:98`, `Harmonizer/BosHarmonizer.cs:25,89,113,170`, `Harmonizer/SourceKind.cs:34,46` index `Strings` directly and throw on -1. -> F4
+- D4 The IFC and Fragments readers name the same entity differently (IfcToBosConverter `NameAttributes`/`NameOrNull`/the space rule against `FragmentsEntityReader.NameOf`, Name only); the rule belongs in Ara3D.Ifc.Conventions, and `DuplexFixtureTests` compares names for doors only. -> F3
+- D5 `Ifc.Mesher/Approach1/Brep.cs:111` and `Tessellated.cs` drop faces without a diagnostic; `Brep.cs:311-320` has two stacked summaries. -> F5
+- D6 `BimGeometryBuilder.ToVertexUnits`: a NaN vertex becomes int.MinValue; clamping at ±214 km is silent. -> F6
+- D7 The spec comment said older absence is index 0. Fixed in bim-open-schema `c369c32`.
+- D8 Units and groups still store "" for none, and `ParameterText` shows the "". -> F1 (view `NULLIF`), F3 (readers pass null)
+- D9 `ObjectModel/BimObjectModel.cs:166,169,205`: GlobalId/Name use `Get`, not `Label` (legacy "" leaks out); about 30 nullable warnings; `GetParameterAsNumber` unboxes a null `float?`. `BimGeometryExtensions.cs:87,306` index `InstanceFlags` without a length check. -> F8
+- D10 Debt marked "Left" has no tickets, and the wave's tickets are still open. -> supervisor
+- D11 TKT-177's "ifc_table works on a .bos" is not met; `bos_table` exists instead. -> F9
+- N1 BOS session lifetime: eviction during an HTTP call, a leak when Dispose fails, GUID folders leak per run, and an IFC session's `databasePath` can vanish under capacity 3. -> F9
+- N2 Explicit selection includes hidden instances in `ifc_export_glb` but not in `bos_export_glb`. -> F9 (both include hidden when named)
+- N3 bim-open-flow `ModelEntityIndex.cs:88-115` turns absence into "", copies `Label`, and `Find(-1)` returns an arbitrary category. -> F4
+- N4 The TKT-176 tolerance holds only at 4,096 segments; the worst case on a 0.1 mm grid is about 0.2 %. -> F6 restates it
+- N5 Duplicates: `ElementBox` against `BosBox` (-> F10), `DataModel/GeometryConversion` (ticket), `NameOrNull` against `GetEntityLabel` (-> F3), the Revit exporter makes up GlobalIds (ticket).
+- N6 What the Speckle reader will trip on (units and groups, naming hooks, the harmonizer on -1, unread against empty, the silent clamp, the `frag_to_bos` recipe). Covered by F1-F4, F6, F9 (`BosSession.FromData`).
+- N7 Waves B and C had no fence table, and TKT-175's and TKT-183's ticket fences did not match the work. Recorded in the wave record.
+- N8 Status of the bos-formats architecture notes: see the wave record.
+
 ## Wave record
