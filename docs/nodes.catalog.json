@@ -1232,13 +1232,7 @@
       "kind": "duck.query",
       "version": 1,
       "capability": "Pure",
-      "inputs": [
-        {
-          "name": "source",
-          "type": "Database",
-          "optional": true
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "name": "table",
@@ -1251,9 +1245,11 @@
           "name": "path",
           "kind": "FilePath",
           "default": "",
-          "control": {
-            "kind": "hidden"
-          }
+          "suggest": {
+            "kind": "FilesUnderRoots",
+            "source": ".duckdb"
+          },
+          "bindable": "Database"
         },
         {
           "name": "sql",
@@ -1261,7 +1257,7 @@
           "default": ""
         }
       ],
-      "description": "Runs read-only SQL against a connected shared DuckDB source."
+      "description": "Runs read-only SQL against a DuckDB file: type the path, or wire a duck.source into path."
     },
     {
       "kind": "duck.read",
@@ -1328,13 +1324,7 @@
       "kind": "duck.table",
       "version": 1,
       "capability": "Pure",
-      "inputs": [
-        {
-          "name": "source",
-          "type": "Database",
-          "optional": true
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "name": "table",
@@ -1350,7 +1340,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".duckdb"
-          }
+          },
+          "bindable": "Database"
         },
         {
           "name": "table",
@@ -1368,13 +1359,7 @@
       "kind": "duck.tables",
       "version": 1,
       "capability": "Pure",
-      "inputs": [
-        {
-          "name": "source",
-          "type": "Database",
-          "optional": true
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "name": "tables",
@@ -1390,7 +1375,8 @@
           "suggest": {
             "kind": "FilesUnderRoots",
             "source": ".duckdb"
-          }
+          },
+          "bindable": "Database"
         }
       ],
       "description": "Lists the tables in a .duckdb database file with their column and row counts."
@@ -2875,12 +2861,14 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "aggregates",
           "kind": "Text",
-          "default": ""
+          "default": "",
+          "list": true
         }
       ],
       "description": "Groups by the comma-separated groupBy columns (may be empty) and computes comma-separated \u0027func(column) as name\u0027 aggregates (count/sum/min/max/avg)."
@@ -3129,7 +3117,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Removes duplicate rows; with key columns named, keeps the first row per key with all columns."
@@ -3160,7 +3149,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Removes the named columns and keeps all others."
@@ -3423,7 +3413,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "nameColumn",
@@ -3506,7 +3497,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Keeps the comma-separated columns, in that order; unknown names warn."
@@ -3573,7 +3565,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Renames columns using comma-separated \u0027old=new\u0027 pairs."
@@ -3832,7 +3825,8 @@
           "default": "",
           "control": {
             "kind": "hidden"
-          }
+          },
+          "list": true
         }
       ],
       "description": "Sorts by columns A, B, then C, each with its own ascending or descending direction."
@@ -3873,7 +3867,8 @@
         {
           "name": "names",
           "kind": "Text",
-          "default": ""
+          "default": "",
+          "list": true
         },
         {
           "name": "keep",
@@ -3936,7 +3931,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "columns",
@@ -3945,7 +3941,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "nameColumn",
@@ -4010,7 +4007,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "orderBy",
@@ -4019,7 +4017,8 @@
           "suggest": {
             "kind": "ColumnsOfInput",
             "source": "table"
-          }
+          },
+          "list": true
         },
         {
           "name": "offset",

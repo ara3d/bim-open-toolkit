@@ -33,6 +33,10 @@ columns of a table input, or the tables in the file another parameter
 names): editors offer those values as a live pull-down, but they are
 advisory only — any string is accepted, and validation stays an
 evaluation-time concern (see docs/proposals/live-param-suggestions.md).
+A text parameter marked (list) holds a comma-separated list. A parameter
+with a Socket type is also an input: wire a node of that type into the
+port named like the parameter and the wired value replaces the typed one;
+unwired, the typed value is used.
 
 **File-reading nodes and caching.** Nodes that read files (`bos.load`,
 `duck.read`, `xlsx.read`, `view3d.instances`) are pure despite touching
@@ -80,10 +84,10 @@ Loads the .bos file into an in-memory DuckDB once and outputs three materialized
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
-| `harmonize` | Boolean | `false` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `harmonize` | Boolean | — | `false` | — | — |
 
 ### `bos.query` (v1) — Pure
 
@@ -105,9 +109,9 @@ The input table is loaded into an in-memory DuckDB as table `t`. The query must 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `sql` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `sql` | Text | — | — | — | — |
 
 ## BIM analysis — `BimOpenFlow.Nodes.BimAnalysis`
 
@@ -127,9 +131,9 @@ Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
 
 ### `bim.rooms` (v1) — Pure
 
@@ -145,10 +149,10 @@ Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Eleva
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
-| `categories` | Text | `Rooms,Spaces` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `categories` | Text | — | `Rooms,Spaces` | — | — |
 
 ### `bim.levels` (v1) — Pure
 
@@ -164,9 +168,9 @@ Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Nam
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
 
 ### `bim.bounds` (v1) — Pure
 
@@ -182,9 +186,9 @@ Loads a .bos file into one row per element that has bounds: EntityIndex, Name, C
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
 
 ### `bim.paramTable` (v1) — Pure
 
@@ -200,10 +204,10 @@ Loads a .bos file into one row per element with EntityIndex, Name, Category plus
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
-| `parameters` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `parameters` | Text | — | — | — | — |
 
 ### `bim.paramCoverage` (v1) — Pure
 
@@ -223,9 +227,9 @@ Profiles a long parameter table (the bos.load parameters output: EntityIndex, Na
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupBy` | Text | — | — | columns of input `parameters` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `groupBy` | Text | — | — | — | columns of input `parameters` |
 
 ### `bim.discipline` (v1) — Pure
 
@@ -245,10 +249,10 @@ Adds a Discipline column (Architecture, Structure, Mechanical, Electrical, Plumb
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | `Category` | — | columns of input `table` |
-| `overrides` | Json | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | `Category` | — | columns of input `table` |
+| `overrides` | Json | — | — | — | — |
 
 ### `bim.classifyRooms` (v1) — Pure
 
@@ -268,11 +272,11 @@ Adds a room class column ('as', default RoomClass) by matching the name column a
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | `Name` | — | columns of input `table` |
-| `rules` | Json | — | — | — |
-| `as` | Text | `RoomClass` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | `Name` | — | columns of input `table` |
+| `rules` | Json | — | — | — | — |
+| `as` | Text | — | `RoomClass` | — | — |
 
 ### `bim.containment` (v1) — Pure
 
@@ -293,14 +297,14 @@ Adds a column ('as') to the points table holding the 'key' of the smallest box r
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `x` | Text | `CenterX` | — | columns of input `points` |
-| `y` | Text | `CenterY` | — | columns of input `points` |
-| `z` | Text | `CenterZ` | — | columns of input `points` |
-| `key` | Text | `Name` | — | columns of input `boxes` |
-| `as` | Text | `ContainedIn` | — | — |
-| `ignoreZ` | Boolean | `false` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `x` | Text | — | `CenterX` | — | columns of input `points` |
+| `y` | Text | — | `CenterY` | — | columns of input `points` |
+| `z` | Text | — | `CenterZ` | — | columns of input `points` |
+| `key` | Text | — | `Name` | — | columns of input `boxes` |
+| `as` | Text | — | `ContainedIn` | — | — |
+| `ignoreZ` | Boolean | — | `false` | — | — |
 
 ### `bim.nearest` (v1) — Pure
 
@@ -321,16 +325,16 @@ Adds two columns to a: 'as' (default Nearest) holding the 'key' of the closest b
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `x` | Text | `CenterX` | — | columns of input `a` |
-| `y` | Text | `CenterY` | — | columns of input `a` |
-| `z` | Text | `CenterZ` | — | columns of input `a` |
-| `bx` | Text | `CenterX` | — | columns of input `b` |
-| `by` | Text | `CenterY` | — | columns of input `b` |
-| `bz` | Text | `CenterZ` | — | columns of input `b` |
-| `key` | Text | `Name` | — | columns of input `b` |
-| `as` | Text | `Nearest` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `x` | Text | — | `CenterX` | — | columns of input `a` |
+| `y` | Text | — | `CenterY` | — | columns of input `a` |
+| `z` | Text | — | `CenterZ` | — | columns of input `a` |
+| `bx` | Text | — | `CenterX` | — | columns of input `b` |
+| `by` | Text | — | `CenterY` | — | columns of input `b` |
+| `bz` | Text | — | `CenterZ` | — | columns of input `b` |
+| `key` | Text | — | `Name` | — | columns of input `b` |
+| `as` | Text | — | `Nearest` | — | — |
 
 ### `bim.navGraph` (v1) — Pure
 
@@ -346,10 +350,10 @@ Loads a .bos file into one row per door in the given categories: Door (entity in
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
-| `doorCategories` | Text | `Doors` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
+| `doorCategories` | Text | — | `Doors` | — | — |
 
 ### `bim.hops` (v1) — Pure
 
@@ -369,11 +373,11 @@ Walks the undirected graph whose edges are the (from, to) column pairs, breadth-
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `from` | Text | `FromRoom` | — | columns of input `edges` |
-| `to` | Text | `ToRoom` | — | columns of input `edges` |
-| `start` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `from` | Text | — | `FromRoom` | — | columns of input `edges` |
+| `to` | Text | — | `ToRoom` | — | columns of input `edges` |
+| `start` | Text | — | — | — | — |
 
 ## Geometry — `BimOpenFlow.Nodes.Geometry`
 
@@ -395,9 +399,9 @@ One row per placed mesh, with entity ids and world bounds. The loaded geometry i
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.measures` (v1) — Pure
 
@@ -413,9 +417,9 @@ One row per placed mesh of a model file: instanceIndex, meshId, entityId, global
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.color` (v1) — Pure
 
@@ -440,14 +444,14 @@ Numeric value columns map through a gradient normalized over the column's min..m
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `joinColumn` | Text | — | — | — |
-| `valueColumn` | Text | — | — | — |
-| `colorMap` | Enum | `viridis` | `viridis`, `category10`, `redgreen` | — |
-| `auto` | Boolean | `true` | — | — |
-| `min` | Number | `0` | — | — |
-| `max` | Number | `1` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `joinColumn` | Text | — | — | — | — |
+| `valueColumn` | Text | — | — | — | — |
+| `colorMap` | Enum | — | `viridis` | `viridis`, `category10`, `redgreen` | — |
+| `auto` | Boolean | — | `true` | — | — |
+| `min` | Number | — | `0` | — | — |
+| `max` | Number | — | `1` | — | — |
 
 ### `view3d.isolate` (v1) — Pure
 
@@ -470,9 +474,9 @@ The ids table is matched on its column with the same name as `joinColumn`, or it
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `joinColumn` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `joinColumn` | Text | — | — | — | — |
 
 ### `view3d.hide` (v1) — Pure
 
@@ -495,9 +499,9 @@ The exact inverse of `view3d.isolate`: rows whose join key appears in the ids ta
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `joinColumn` | Text | — | — | columns of input `instances` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `joinColumn` | Text | — | — | — | columns of input `instances` |
 
 ### `view3d.opacity` (v1) — Pure
 
@@ -520,11 +524,11 @@ Writes only the `a` column (added with default 1 when absent); existing colors a
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `alpha` | Number | `0.25` | — | — |
-| `joinColumn` | Text | — | — | columns of input `instances` |
-| `scope` | Enum | `matched` | `matched`, `others` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `alpha` | Number | — | `0.25` | — | — |
+| `joinColumn` | Text | — | — | — | columns of input `instances` |
+| `scope` | Enum | — | `matched` | `matched`, `others` | — |
 
 ### `view3d.spacing` (v1) — Pure
 
@@ -546,11 +550,11 @@ Explode-by-column: groups are the sorted distinct values of `groupColumn` and gr
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupColumn` | Text | — | — | columns of input `instances` |
-| `axis` | Enum | `x` | `x`, `y`, `z` | — |
-| `spacing` | Number | `10` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `groupColumn` | Text | — | — | — | columns of input `instances` |
+| `axis` | Enum | — | `x` | `x`, `y`, `z` | — |
+| `spacing` | Number | — | `10` | — | — |
 
 ### `view3d.arrange` (v1) — Pure
 
@@ -572,10 +576,10 @@ Parts-catalog layout: each group gets a cell in a square XY grid sized by the la
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupColumn` | Text | — | — | columns of input `instances` |
-| `gap` | Number | `5` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `groupColumn` | Text | — | — | — | columns of input `instances` |
+| `gap` | Number | — | `5` | — | — |
 
 ### `view3d.decimate` (v1) — Pure
 
@@ -597,10 +601,10 @@ Instance thinning, not mesh simplification: drops rows with a bounds diagonal un
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `keepFraction` | Number | `0.25` | — | — |
-| `minDiagonal` | Number | `0` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `keepFraction` | Number | — | `0.25` | — | — |
+| `minDiagonal` | Number | — | `0` | — | — |
 
 ### `view3d.boundingBoxes` (v1) — Pure
 
@@ -622,9 +626,9 @@ Emits a boxes table (see the Geometry README): one box per row, or with `groupCo
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupColumn` | Text | — | — | columns of input `instances` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `groupColumn` | Text | — | — | — | columns of input `instances` |
 
 ### `view3d.voxelize` (v1) — Pure
 
@@ -646,9 +650,9 @@ AABB rasterization, not triangle-accurate: every voxel overlapped by an instance
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `size` | Number | `1` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `size` | Number | — | `1` | — | — |
 
 ### `view3d.camera` (v1) — Pure
 
@@ -664,15 +668,15 @@ A named camera as a one-row table: position and look-at target.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `name` | Text | `default` | — | — |
-| `posX` | Number | `0` | — | — |
-| `posY` | Number | `0` | — | — |
-| `posZ` | Number | `0` | — | — |
-| `targetX` | Number | `0` | — | — |
-| `targetY` | Number | `0` | — | — |
-| `targetZ` | Number | `0` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `name` | Text | — | `default` | — | — |
+| `posX` | Number | — | `0` | — | — |
+| `posY` | Number | — | `0` | — | — |
+| `posZ` | Number | — | `0` | — | — |
+| `targetX` | Number | — | `0` | — | — |
+| `targetY` | Number | — | `0` | — | — |
+| `targetZ` | Number | — | `0` | — | — |
 
 ### `view3d.scene` (v1) — Pure
 
@@ -688,9 +692,9 @@ Open a model with the visualization toolkit. Connect view outputs to compose a p
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bos` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bos` |
 
 ### `view3d.section` (v1) — Pure
 
@@ -710,10 +714,10 @@ Cut along an axis at a fraction of the model bounds (0–1). Keeps the lower sid
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `axis` | Enum | `z` | `x`, `y`, `z` | — |
-| `fraction` | Fraction | `0.5` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `axis` | Enum | — | `z` | `x`, `y`, `z` | — |
+| `fraction` | Fraction | — | `0.5` | — | — |
 
 ### `view3d.sectionBox` (v1) — Pure
 
@@ -733,9 +737,9 @@ Reveal a centered box inside the model. Fraction 1 keeps the full model; 0.5 kee
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `fraction` | Fraction | `0.5` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `fraction` | Fraction | — | `0.5` | — | — |
 
 ### `view3d.explode` (v1) — Pure
 
@@ -755,9 +759,9 @@ Fan source categories apart using the toolkit layout feature. Reset restores ori
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `strength` | Number | `0.5` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `strength` | Number | — | `0.5` | — | — |
 
 ### `view3d.projection` (v1) — Pure
 
@@ -777,9 +781,9 @@ Frame the model in perspective, orthographic or overhead plan view.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `mode` | Enum | `orthographic` | `perspective`, `orthographic`, `plan` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `mode` | Enum | — | `orthographic` | `perspective`, `orthographic`, `plan` | — |
 
 ### `view3d.environment` (v1) — Pure
 
@@ -799,10 +803,10 @@ Set a light or dark review background with scale-aware grid and axes.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `theme` | Enum | `light` | `light`, `dark` | — |
-| `grid` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `theme` | Enum | — | `light` | `light`, `dark` | — |
+| `grid` | Boolean | — | `true` | — | — |
 
 ### `view3d.categoryStyle` (v1) — Pure
 
@@ -822,10 +826,10 @@ Color source categories, with a distinct unknown category; optionally ghost the 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `palette` | Enum | `classic` | `classic`, `vivid`, `pastel`, `earth`, `grayscale` | — |
-| `opacity` | Fraction | `1` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `palette` | Enum | — | `classic` | `classic`, `vivid`, `pastel`, `earth`, `grayscale` | — |
+| `opacity` | Fraction | — | `1` | — | — |
 
 ### `view3d.tint` (v1) — Pure
 
@@ -845,10 +849,10 @@ Apply a uniform color and opacity to the model.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `color` | Text | `#2b8bd6` | — | — |
-| `opacityPercent` | Percent | `100` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `color` | Text | — | `#2b8bd6` | — | — |
+| `opacityPercent` | Percent | — | `100` | — | — |
 
 ### `view3d.sectionRange` (v1) — Pure
 
@@ -868,10 +872,10 @@ Keep the band between two fractions of the original model bounds along an axis.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `axis` | Enum | `z` | `x`, `y`, `z` | — |
-| `range` | Text | `[0.3,0.7]` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `axis` | Enum | — | `z` | `x`, `y`, `z` | — |
+| `range` | Text | — | `[0.3,0.7]` | — | — |
 
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
 
@@ -897,13 +901,13 @@ Per row: `expr` true is Pass; false is Fail, unless `reviewExpr` is also true, w
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `checkId` | Text | — | — | — |
-| `title` | Text | — | — | — |
-| `citation` | Text | — | — | — |
-| `expr` | Expression | — | — | — |
-| `reviewExpr` | Expression | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `checkId` | Text | — | — | — | — |
+| `title` | Text | — | — | — | — |
+| `citation` | Text | — | — | — | — |
+| `expr` | Expression | — | — | — | — |
+| `reviewExpr` | Expression | — | — | — | — |
 
 ### `check.required` (v1) — Pure
 
@@ -925,12 +929,12 @@ If any listed column is missing from the table, the node warns and every row is 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `checkId` | Text | — | — | — |
-| `title` | Text | — | — | — |
-| `citation` | Text | — | — | — |
-| `columns` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `checkId` | Text | — | — | — | — |
+| `title` | Text | — | — | — | — |
+| `citation` | Text | — | — | — | — |
+| `columns` | Text | — | — | — | — |
 
 ### `check.rollup` (v1) — Pure
 
@@ -997,11 +1001,11 @@ Effect: runs only inside a Run. Writes the table as RFC-4180 CSV with invariant 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `delimiter` | Text | `,` | — | — |
-| `header` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `delimiter` | Text | — | `,` | — | — |
+| `header` | Boolean | — | `true` | — | — |
 
 ### `sink.exportParquet` (v1) — Effect
 
@@ -1023,10 +1027,10 @@ Effect: runs only inside a Run. Writes the table as a Parquet file, the hand-off
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `compression` | Enum | `zstd` | `zstd`, `snappy`, `none` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `compression` | Enum | — | `zstd` | `zstd`, `snappy`, `none` | — |
 
 ### `sink.exportJson` (v1) — Effect
 
@@ -1048,11 +1052,11 @@ Effect: runs only inside a Run. Writes the table as JSON: `records` is one array
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `layout` | Enum | `records` | `records`, `lines` | — |
-| `indent` | Boolean | `false` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `layout` | Enum | — | `records` | `records`, `lines` | — |
+| `indent` | Boolean | — | `false` | — | — |
 
 ### `sink.exportXlsx` (v1) — Effect
 
@@ -1074,13 +1078,13 @@ Effect: runs only inside a Run. Writes the table to one sheet of an Excel workbo
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `sheet` | Text | `Sheet1` | — | — |
-| `mode` | Enum | `replaceFile` | `replaceFile`, `replaceSheet` | — |
-| `autoWidth` | Boolean | `true` | — | — |
-| `headerBold` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `sheet` | Text | — | `Sheet1` | — | — |
+| `mode` | Enum | — | `replaceFile` | `replaceFile`, `replaceSheet` | — |
+| `autoWidth` | Boolean | — | `true` | — | — |
+| `headerBold` | Boolean | — | `true` | — | — |
 
 ### `sink.exportSqlite` (v1) — Effect
 
@@ -1102,11 +1106,11 @@ Effect: runs only inside a Run. Writes the table into a SQLite database in one t
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `table` | Text | — | — | — |
-| `mode` | Enum | `replace` | `replace`, `append`, `failIfExists` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `table` | Text | — | — | — | — |
+| `mode` | Enum | — | `replace` | `replace`, `append`, `failIfExists` | — |
 
 ### `sink.exportDuckDb` (v1) — Effect
 
@@ -1128,11 +1132,11 @@ Effect: runs only inside a Run. Writes the table into a DuckDB database file —
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `table` | Text | — | — | — |
-| `mode` | Enum | `replace` | `replace`, `append`, `failIfExists` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `table` | Text | — | — | — | — |
+| `mode` | Enum | — | `replace` | `replace`, `append`, `failIfExists` | — |
 
 ### `sink.writePsets` (v1) — Effect
 
@@ -1154,10 +1158,10 @@ Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`,
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `sourcePath` | FilePath | — | — | files under the model roots ending `.ifc` |
-| `targetPath` | FilePath | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `sourcePath` | FilePath | — | — | — | files under the model roots ending `.ifc` |
+| `targetPath` | FilePath | — | — | — | — |
 
 ### `sink.report` (v1) — Effect
 
@@ -1179,10 +1183,10 @@ Effect: runs only inside a Run. The report is a minimal standalone HTML page: th
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `title` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | — |
+| `title` | Text | — | — | — | — |
 
 ## DuckDB — `BimOpenFlow.Nodes.DuckDb`
 
@@ -1204,10 +1208,10 @@ With `format` auto, the reader is inferred from the file extension (.csv, .parqu
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.csv,.parquet,.json` |
-| `format` | Enum | `auto` | `auto`, `csv`, `parquet`, `json` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.csv,.parquet,.json` |
+| `format` | Enum | — | `auto` | `auto`, `csv`, `parquet`, `json` | — |
 
 ### `duck.source` (v1) — Pure
 
@@ -1223,21 +1227,17 @@ Opens one shared read-only DuckDB source for connected query branches.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.duckdb` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.duckdb` |
 
 ### `duck.query` (v1) — Pure
 
-Runs read-only SQL against a connected shared DuckDB source.
+Runs read-only SQL against a DuckDB file: type the path, or wire a duck.source into path.
 
 The database file is opened read-only (the node can never mutate it), and the SQL is validated as a single SELECT or WITH statement before it runs.
 
-**Inputs**
-
-| Name | Type | Required |
-|---|---|---|
-| `source` | Database | optional |
+**Inputs**: none
 
 **Outputs**
 
@@ -1247,10 +1247,10 @@ The database file is opened read-only (the node can never mutate it), and the SQ
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | — |
-| `sql` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | Database | — | — | files under the model roots ending `.duckdb` |
+| `sql` | Text | — | — | — | — |
 
 ### `sql.query` (v1) — Pure
 
@@ -1275,9 +1275,9 @@ Connected inputs load into an in-memory DuckDB as `t1`..`t4`, and `t` is a view 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `sql` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `sql` | Text | — | — | — | — |
 
 ### `csv.read` (v1) — Pure
 
@@ -1295,16 +1295,16 @@ Reads one CSV file or a glob of files via DuckDB `read_csv`, with typed delimite
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.csv,.tsv,.txt` |
-| `delimiter` | Text | `,` | — | — |
-| `header` | Boolean | `true` | — | — |
-| `skipRows` | Integer | `0` | — | — |
-| `quote` | Text | `"` | — | — |
-| `nullText` | Text | — | — | — |
-| `encoding` | Enum | `utf8` | `utf8`, `utf16`, `latin1` | — |
-| `inferTypes` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.csv,.tsv,.txt` |
+| `delimiter` | Text | — | `,` | — | — |
+| `header` | Boolean | — | `true` | — | — |
+| `skipRows` | Integer | — | `0` | — | — |
+| `quote` | Text | — | `"` | — | — |
+| `nullText` | Text | — | — | — | — |
+| `encoding` | Enum | — | `utf8` | `utf8`, `utf16`, `latin1` | — |
+| `inferTypes` | Boolean | — | `true` | — | — |
 
 ### `parquet.read` (v1) — Pure
 
@@ -1322,9 +1322,9 @@ Reads a Parquet file or glob of files via DuckDB `read_parquet`. Parquet is self
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.parquet` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.parquet` |
 
 ### `json.read` (v1) — Pure
 
@@ -1342,11 +1342,11 @@ Reads a JSON file via DuckDB `read_json`; `layout` selects the file shape (auto,
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.json,.ndjson` |
-| `layout` | Enum | `auto` | `auto`, `records`, `lines` | — |
-| `flatten` | Boolean | `false` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.json,.ndjson` |
+| `layout` | Enum | — | `auto` | `auto`, `records`, `lines` | — |
+| `flatten` | Boolean | — | `false` | — | — |
 
 ### `duck.table` (v1) — Pure
 
@@ -1354,11 +1354,7 @@ Reads one named table from a .duckdb database file, read-only.
 
 Reads one named table from a .duckdb database opened read-only, so the node can never mutate the file. An unknown table name is an error naming the table; the no-SQL companion to duck.query.
 
-**Inputs**
-
-| Name | Type | Required |
-|---|---|---|
-| `source` | Database | optional |
+**Inputs**: none
 
 **Outputs**
 
@@ -1368,10 +1364,10 @@ Reads one named table from a .duckdb database opened read-only, so the node can 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.duckdb` |
-| `table` | Text | — | — | tables in the file at `path` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | Database | — | — | files under the model roots ending `.duckdb` |
+| `table` | Text | — | — | — | tables in the file at `path` |
 
 ### `duck.tables` (v1) — Pure
 
@@ -1379,11 +1375,7 @@ Lists the tables in a .duckdb database file with their column and row counts.
 
 Lists the tables of a .duckdb database (read-only) as a table with `name`, `columnCount`, and real `rowCount` per table, ordered by name. The discovery step before duck.table or duck.query.
 
-**Inputs**
-
-| Name | Type | Required |
-|---|---|---|
-| `source` | Database | optional |
+**Inputs**: none
 
 **Outputs**
 
@@ -1393,9 +1385,9 @@ Lists the tables of a .duckdb database (read-only) as a table with `name`, `colu
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.duckdb` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | Database | — | — | files under the model roots ending `.duckdb` |
 
 ## Tables — `BimOpenFlow.Nodes.Tables`
 
@@ -1417,12 +1409,12 @@ An empty `sheet` means the first worksheet; a named sheet that does not exist is
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.xlsx` |
-| `sheet` | Text | — | — | — |
-| `headerRow` | Integer | `1` | — | — |
-| `range` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.xlsx` |
+| `sheet` | Text | — | — | — | — |
+| `headerRow` | Integer | — | `1` | — | — |
+| `range` | Text | — | — | — | — |
 
 ### `xlsx.sheets` (v1) — Pure
 
@@ -1440,9 +1432,9 @@ Lists a workbook's worksheets as a table: `name`, `index` (1-based position), an
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.xlsx` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.xlsx` |
 
 ### `sqlite.query` (v1) — Pure
 
@@ -1460,10 +1452,10 @@ The database file is opened read-only, and the SQL is validated as a single SELE
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
-| `sql` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
+| `sql` | Text | — | — | — | — |
 
 ### `sqlite.table` (v1) — Pure
 
@@ -1481,10 +1473,10 @@ Reads one whole table (`SELECT *`, read-only, case-insensitive name match) with 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
-| `table` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
+| `table` | Text | — | — | — | — |
 
 ### `sqlite.tables` (v1) — Pure
 
@@ -1502,9 +1494,9 @@ Lists a database's user tables (`name`, `columnCount`, `rowCount`) in name order
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 
 ### `bfast.read` (v1) — Pure
 
@@ -1520,9 +1512,9 @@ Lists the buffers in a BFAST file: name, byteLength, index (0-based file order).
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bfast` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bfast` |
 
 ### `bfast.buffer` (v1) — Pure
 
@@ -1538,11 +1530,11 @@ Reads one buffer of a BFAST file as a table with a single `value` column, interp
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `path` | FilePath | — | — | files under the model roots ending `.bfast` |
-| `name` | Text | — | — | — |
-| `type` | Enum | `float32` | `uint8`, `int16`, `int32`, `int64`, `float32`, `float64` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `path` | FilePath | — | — | — | files under the model roots ending `.bfast` |
+| `name` | Text | — | — | — | — |
+| `type` | Enum | — | `float32` | `uint8`, `int16`, `int32`, `int64`, `float32`, `float64` | — |
 
 ### `table.join` (v1) — Pure
 
@@ -1565,11 +1557,11 @@ Joins b's columns onto a by key, matching on canonical cell text; `bKey` default
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `aKey` | Text | — | — | columns of input `a` |
-| `bKey` | Text | — | — | columns of input `b` |
-| `mode` | Enum | `left` | `left`, `inner`, `full`, `semi`, `anti` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `aKey` | Text | — | — | — | columns of input `a` |
+| `bKey` | Text | — | — | — | columns of input `b` |
+| `mode` | Enum | — | `left` | `left`, `inner`, `full`, `semi`, `anti` | — |
 
 ### `table.setOp` (v1) — Pure
 
@@ -1592,10 +1584,10 @@ Row-set algebra on a key column; a's columns and row order pass through. `inters
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `op` | Enum | `intersect` | `union`, `intersect`, `subtract` | — |
-| `key` | Text | — | — | columns of input `a` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `op` | Enum | — | `intersect` | `union`, `intersect`, `subtract` | — |
+| `key` | Text | — | — | — | columns of input `a` |
 
 ### `table.project` (v1) — Pure
 
@@ -1617,9 +1609,9 @@ Keeps the named columns in the given order. A name with no matching column warns
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Text | — | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Text (list) | — | — | — | columns of input `table` |
 
 ### `table.inline` (v1) — Pure
 
@@ -1637,9 +1629,9 @@ Builds a small table from a JSON array of objects typed into the node. Column ty
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `rows` | Json | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `rows` | Json | — | — | — | — |
 
 ### `table.range` (v1) — Pure
 
@@ -1657,12 +1649,12 @@ One numeric column from `start` to `stop` by `step`, inclusive of stop when a st
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `name` | Text | `value` | — | — |
-| `start` | Number | `0` | — | — |
-| `stop` | Number | — | — | — |
-| `step` | Number | `1` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `name` | Text | — | `value` | — | — |
+| `start` | Number | — | `0` | — | — |
+| `stop` | Number | — | — | — | — |
+| `step` | Number | — | `1` | — | — |
 
 ### `table.calendar` (v1) — Pure
 
@@ -1680,12 +1672,12 @@ One ISO-8601 date column from `start` to `end` inclusive, stepping by day/week/m
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `name` | Text | `date` | — | — |
-| `start` | DateTime | — | — | — |
-| `end` | DateTime | — | — | — |
-| `step` | Enum | `day` | `day`, `week`, `month`, `quarter`, `year` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `name` | Text | — | `date` | — | — |
+| `start` | DateTime | — | — | — | — |
+| `end` | DateTime | — | — | — | — |
+| `step` | Enum | — | `day` | `day`, `week`, `month`, `quarter`, `year` | — |
 
 ## TableOps — `BimOpenFlow.Nodes.TableOps`
 
@@ -1711,9 +1703,9 @@ The expression must be statically Boolean; a non-Boolean expression is an error.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `expr` | Expression | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `expr` | Expression | — | — | — | — |
 
 ### `table.derive` (v1) — Pure
 
@@ -1735,10 +1727,10 @@ The new column's type comes from the expression's static type; rows where the ex
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `name` | Text | — | — | — |
-| `expr` | Expression | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `name` | Text | — | — | — | — |
+| `expr` | Expression | — | — | — | — |
 
 ### `table.aggregate` (v1) — Pure
 
@@ -1760,10 +1752,10 @@ Runs via DuckDB. Each aggregate is written `func(column) as name` with funcs cou
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupBy` | Text | — | — | columns of input `table` |
-| `aggregates` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `groupBy` | Text (list) | — | — | — | columns of input `table` |
+| `aggregates` | Text (list) | — | — | — | — |
 
 ### `table.sort` (v1) — Pure
 
@@ -1785,15 +1777,15 @@ Runs via DuckDB. Each comma-separated term is a column name with an optional ` d
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `A` | Text | — | — | columns of input `table` |
-| `B` | Text | — | — | columns of input `table` |
-| `C` | Text | — | — | columns of input `table` |
-| `descendingA` | Boolean | `false` | — | — |
-| `descendingB` | Boolean | `false` | — | — |
-| `descendingC` | Boolean | `false` | — | — |
-| `by` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `A` | Text | — | — | — | columns of input `table` |
+| `B` | Text | — | — | — | columns of input `table` |
+| `C` | Text | — | — | — | columns of input `table` |
+| `descendingA` | Boolean | — | `false` | — | — |
+| `descendingB` | Boolean | — | `false` | — | — |
+| `descendingC` | Boolean | — | `false` | — | — |
+| `by` | Text (list) | — | — | — | — |
 
 ### `table.cast` (v1) — Pure
 
@@ -1815,12 +1807,12 @@ Converts one column to boolean, integer, number, text, date, or datetime, in pla
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `type` | Enum | — | `boolean`, `integer`, `number`, `text`, `date`, `datetime` | — |
-| `onError` | Enum | `error` | `error`, `null` | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `type` | Enum | — | — | `boolean`, `integer`, `number`, `text`, `date`, `datetime` | — |
+| `onError` | Enum | — | `error` | `error`, `null` | — |
+| `name` | Text | — | — | — | — |
 
 ### `table.concat` (v1) — Pure
 
@@ -1843,9 +1835,9 @@ Appends b's rows after a's. Strict mode requires both tables to have identical c
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Enum | `strict` | `strict`, `byName` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Enum | — | `strict` | `strict`, `byName` | — |
 
 ### `table.distinct` (v1) — Pure
 
@@ -1867,9 +1859,9 @@ Removes duplicate rows. With no columns named, whole rows are compared; with key
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Text | — | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Text (list) | — | — | — | columns of input `table` |
 
 ### `table.drop` (v1) — Pure
 
@@ -1891,9 +1883,9 @@ Removes the named columns and keeps everything else — the complement of table.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Text | — | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Text (list) | — | — | — | columns of input `table` |
 
 ### `table.limit` (v1) — Pure
 
@@ -1915,10 +1907,10 @@ Keeps `count` rows starting at `offset` in the table's deterministic order — t
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `count` | Integer | — | — | — |
-| `offset` | Integer | `0` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `count` | Integer | — | — | — | — |
+| `offset` | Integer | — | `0` | — | — |
 
 ### `table.pivot` (v1) — Pure
 
@@ -1940,12 +1932,12 @@ Turns long data wide: each distinct value of nameColumn becomes a column, filled
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupBy` | Text | — | — | columns of input `table` |
-| `nameColumn` | Text | — | — | columns of input `table` |
-| `valueColumn` | Text | — | — | columns of input `table` |
-| `aggregate` | Enum | `first` | `first`, `sum`, `count`, `min`, `max`, `avg` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `groupBy` | Text (list) | — | — | — | columns of input `table` |
+| `nameColumn` | Text | — | — | — | columns of input `table` |
+| `valueColumn` | Text | — | — | — | columns of input `table` |
+| `aggregate` | Enum | — | `first` | `first`, `sum`, `count`, `min`, `max`, `avg` | — |
 
 ### `table.profile` (v1) — Pure
 
@@ -1987,9 +1979,9 @@ Renames columns via comma-separated `old=new` pairs. Unknown old names warn and 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `renames` | Text | — | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `renames` | Text (list) | — | — | — | columns of input `table` |
 
 ### `table.sample` (v1) — Pure
 
@@ -2011,12 +2003,12 @@ Takes a seeded random sample: `rows` mode keeps a fixed number of rows (reservoi
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `mode` | Enum | `rows` | `rows`, `fraction` | — |
-| `rows` | Integer | `100` | — | — |
-| `fraction` | Number | `0.1` | — | — |
-| `seed` | Integer | `1` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `mode` | Enum | — | `rows` | `rows`, `fraction` | — |
+| `rows` | Integer | — | `100` | — | — |
+| `fraction` | Number | — | `0.1` | — | — |
+| `seed` | Integer | — | `1` | — | — |
 
 ### `table.schema` (v1) — Pure
 
@@ -2058,12 +2050,12 @@ Splits a text column on a separator into new columns, one per requested name. Ro
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `separator` | Text | `-` | — | — |
-| `names` | Text | — | — | — |
-| `keep` | Boolean | `false` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `separator` | Text | — | `-` | — | — |
+| `names` | Text (list) | — | — | — | — |
+| `keep` | Boolean | — | `false` | — | — |
 
 ### `table.transpose` (v1) — Pure
 
@@ -2085,9 +2077,9 @@ Rows become columns: the header column's values name the new columns and every o
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `headerColumn` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `headerColumn` | Text | — | — | — | — |
 
 ### `table.unpivot` (v1) — Pure
 
@@ -2109,12 +2101,12 @@ Turns wide data long: the chosen columns fold into name/value rows next to the k
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `keep` | Text | — | — | columns of input `table` |
-| `columns` | Text | — | — | columns of input `table` |
-| `nameColumn` | Text | `name` | — | — |
-| `valueColumn` | Text | `value` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `keep` | Text (list) | — | — | — | columns of input `table` |
+| `columns` | Text (list) | — | — | — | columns of input `table` |
+| `nameColumn` | Text | — | `name` | — | — |
+| `valueColumn` | Text | — | `value` | — | — |
 
 ### `table.window` (v1) — Pure
 
@@ -2136,15 +2128,15 @@ Adds one window-function column: rankings (rowNumber/rank/denseRank), lag/lead, 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `function` | Enum | — | `rowNumber`, `rank`, `denseRank`, `lag`, `lead`, `cumSum`, `movingAvg`, `percentOfTotal` | — |
-| `column` | Text | — | — | columns of input `table` |
-| `partitionBy` | Text | — | — | columns of input `table` |
-| `orderBy` | Text | — | — | columns of input `table` |
-| `offset` | Integer | `1` | — | — |
-| `windowSize` | Integer | `3` | — | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `function` | Enum | — | — | `rowNumber`, `rank`, `denseRank`, `lag`, `lead`, `cumSum`, `movingAvg`, `percentOfTotal` | — |
+| `column` | Text | — | — | — | columns of input `table` |
+| `partitionBy` | Text (list) | — | — | — | columns of input `table` |
+| `orderBy` | Text (list) | — | — | — | columns of input `table` |
+| `offset` | Integer | — | `1` | — | — |
+| `windowSize` | Integer | — | `3` | — | — |
+| `name` | Text | — | — | — | — |
 
 ## Cleaning — `BimOpenFlow.Nodes.Cleaning`
 
@@ -2170,12 +2162,12 @@ Fills nulls in the listed columns with a typed constant, or with the nearest ear
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Text | — | — | columns of input `table` |
-| `strategy` | Enum | `constant` | `constant`, `forward`, `backward` | — |
-| `value` | Text | — | — | — |
-| `partitionBy` | Text | — | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Text | — | — | — | columns of input `table` |
+| `strategy` | Enum | — | `constant` | `constant`, `forward`, `backward` | — |
+| `value` | Text | — | — | — | — |
+| `partitionBy` | Text | — | — | — | columns of input `table` |
 
 ### `table.dropNulls` (v1) — Pure
 
@@ -2197,10 +2189,10 @@ Drops rows where any (or, with mode all, every one) of the listed columns is nul
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Text | — | — | columns of input `table` |
-| `mode` | Enum | `any` | `any`, `all` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Text | — | — | — | columns of input `table` |
+| `mode` | Enum | — | `any` | `any`, `all` | — |
 
 ### `table.dedupe` (v1) — Pure
 
@@ -2222,11 +2214,11 @@ Keeps one row per key combination: the first or last by orderBy (same syntax as 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `keys` | Text | — | — | columns of input `table` |
-| `keep` | Enum | `first` | `first`, `last` | — |
-| `orderBy` | Text | — | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `keys` | Text | — | — | — | columns of input `table` |
+| `keep` | Enum | — | `first` | `first`, `last` | — |
+| `orderBy` | Text | — | — | — | columns of input `table` |
 
 ### `table.replace` (v1) — Pure
 
@@ -2248,13 +2240,13 @@ Rewrites values in one text column by exact match (whole-value recode), substrin
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `find` | Text | — | — | — |
-| `replaceWith` | Text | — | — | — |
-| `match` | Enum | `exact` | `exact`, `substring`, `regex` | — |
-| `caseSensitive` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `find` | Text | — | — | — | — |
+| `replaceWith` | Text | — | — | — | — |
+| `match` | Enum | — | `exact` | `exact`, `substring`, `regex` | — |
+| `caseSensitive` | Boolean | — | `true` | — | — |
 
 ### `text.transform` (v1) — Pure
 
@@ -2276,10 +2268,10 @@ Applies trim, upper, lower, or normalizeSpace (trim plus collapse runs of whites
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Text | — | — | columns of input `table` |
-| `op` | Enum | `trim` | `trim`, `upper`, `lower`, `normalizeSpace` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Text | — | — | — | columns of input `table` |
+| `op` | Enum | — | `trim` | `trim`, `upper`, `lower`, `normalizeSpace` | — |
 
 ### `text.extract` (v1) — Pure
 
@@ -2301,12 +2293,12 @@ Adds one new column holding a regex capture group (0 = the whole match) pulled f
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `pattern` | Text | — | — | — |
-| `group` | Integer | `1` | — | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `pattern` | Text | — | — | — | — |
+| `group` | Integer | — | `1` | — | — |
+| `name` | Text | — | — | — | — |
 
 ## Dates — `BimOpenFlow.Nodes.Dates`
 
@@ -2332,12 +2324,12 @@ Turns a text column into canonical ISO-8601 date text, using a strptime format (
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `format` | Text | — | — | — |
-| `onError` | Enum | `error` | `error`, `null` | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `format` | Text | — | — | — | — |
+| `onError` | Enum | — | `error` | `error`, `null` | — |
+| `name` | Text | — | — | — | — |
 
 ### `date.part` (v1) — Pure
 
@@ -2359,11 +2351,11 @@ Adds one Integer column holding a component of an ISO date column: year, quarter
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `part` | Enum | — | `year`, `quarter`, `month`, `week`, `dayOfMonth`, `dayOfWeek`, `dayOfYear`, `hour`, `minute`, `second` | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `part` | Enum | — | — | `year`, `quarter`, `month`, `week`, `dayOfMonth`, `dayOfWeek`, `dayOfYear`, `hour`, `minute`, `second` | — |
+| `name` | Text | — | — | — | — |
 
 ### `date.truncate` (v1) — Pure
 
@@ -2385,11 +2377,11 @@ Rounds an ISO date column down to the start of its year, quarter, month, week (M
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `period` | Enum | — | `year`, `quarter`, `month`, `week`, `day`, `hour` | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `period` | Enum | — | — | `year`, `quarter`, `month`, `week`, `day`, `hour` | — |
+| `name` | Text | — | — | — | — |
 
 ### `date.diff` (v1) — Pure
 
@@ -2411,12 +2403,12 @@ Adds an Integer column counting unit boundaries (years to seconds, default days)
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `a` | Text | — | — | — |
-| `b` | Text | — | — | — |
-| `unit` | Enum | `days` | `years`, `months`, `days`, `hours`, `minutes`, `seconds` | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `a` | Text | — | — | — | — |
+| `b` | Text | — | — | — | — |
+| `unit` | Enum | — | `days` | `years`, `months`, `days`, `hours`, `minutes`, `seconds` | — |
+| `name` | Text | — | — | — | — |
 
 ### `date.offset` (v1) — Pure
 
@@ -2438,12 +2430,12 @@ Shifts an ISO date column by a signed whole number of years, months, days, hours
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `amount` | Integer | — | — | — |
-| `unit` | Enum | `days` | `years`, `months`, `days`, `hours`, `minutes` | — |
-| `name` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `amount` | Integer | — | — | — | — |
+| `unit` | Enum | — | `days` | `years`, `months`, `days`, `hours`, `minutes` | — |
+| `name` | Text | — | — | — | — |
 
 ### `date.filter` (v1) — Pure
 
@@ -2465,11 +2457,11 @@ Keeps rows whose ISO date column falls in the half-open range [from, to), so adj
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `column` | Text | — | — | columns of input `table` |
-| `from` | DateTime | — | — | — |
-| `to` | DateTime | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `column` | Text | — | — | — | columns of input `table` |
+| `from` | DateTime | — | — | — | — |
+| `to` | DateTime | — | — | — | — |
 
 ## Viz — `BimOpenFlow.Nodes.Viz`
 
@@ -2497,12 +2489,12 @@ With a `scale` input, colours each bar by looking up the scale's column (or, if 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `labelColumn` | Text | — | — | columns of input `table` |
-| `valueColumns` | Text | — | — | columns of input `table` |
-| `title` | Text | — | — | — |
-| `sort` | Enum | `none` | `none`, `asc`, `desc` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `labelColumn` | Text | — | — | — | columns of input `table` |
+| `valueColumns` | Text | — | — | — | columns of input `table` |
+| `title` | Text | — | — | — | — |
+| `sort` | Enum | — | `none` | `none`, `asc`, `desc` | — |
 
 ### `chart.line` (v1) — Pure
 
@@ -2522,11 +2514,11 @@ Projects 'xColumn' plus the comma-separated numeric 'yColumns' for the line-char
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `xColumn` | Text | — | — | columns of input `table` |
-| `yColumns` | Text | — | — | columns of input `table` |
-| `title` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `xColumn` | Text | — | — | — | columns of input `table` |
+| `yColumns` | Text | — | — | — | columns of input `table` |
+| `title` | Text | — | — | — | — |
 
 ### `view.table` (v1) — Pure
 
@@ -2546,10 +2538,10 @@ Titles a table view; comma-separated 'columns' optionally projects (default all,
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `title` | Text | — | — | — |
-| `columns` | Text | — | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `title` | Text | — | — | — | — |
+| `columns` | Text | — | — | — | columns of input `table` |
 
 ### `view.colormap` (v1) — Pure
 
@@ -2571,13 +2563,13 @@ Builds a legend table (the shared colour scale) for 'valueColumn' of 'values'; w
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `valueColumn` | Text | — | — | columns of input `values` |
-| `colorMap` | Enum | `viridis` | `viridis`, `category10`, `redgreen` | — |
-| `auto` | Boolean | `true` | — | — |
-| `min` | Number | `0` | — | — |
-| `max` | Number | `1` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `valueColumn` | Text | — | — | — | columns of input `values` |
+| `colorMap` | Enum | — | `viridis` | `viridis`, `category10`, `redgreen` | — |
+| `auto` | Boolean | — | `true` | — | — |
+| `min` | Number | — | `0` | — | — |
+| `max` | Number | — | `1` | — | — |
 
 ### `view.note` (v1) — Pure
 
@@ -2589,9 +2581,9 @@ A comment on the canvas; computes nothing and has no ports.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `text` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `text` | Text | — | — | — | — |
 
 ## Spatial — `BimOpenFlow.Nodes.Spatial`
 
@@ -2616,14 +2608,14 @@ Emits one row per (a, b) pair whose boxes intersect: A ('aKey' of the a row), B 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `aKey` | Text | `Name` | — | columns of input `a` |
-| `bKey` | Text | `Name` | — | columns of input `b` |
-| `x` | Text | `CenterX` | — | columns of input `a` |
-| `y` | Text | `CenterY` | — | columns of input `a` |
-| `z` | Text | `CenterZ` | — | columns of input `a` |
-| `excludeSelf` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `aKey` | Text | — | `Name` | — | columns of input `a` |
+| `bKey` | Text | — | `Name` | — | columns of input `b` |
+| `x` | Text | — | `CenterX` | — | columns of input `a` |
+| `y` | Text | — | `CenterY` | — | columns of input `a` |
+| `z` | Text | — | `CenterZ` | — | columns of input `a` |
+| `excludeSelf` | Boolean | — | `true` | — | — |
 
 ### `spatial.within` (v1) — Pure
 
@@ -2644,16 +2636,16 @@ Emits one row per (a, b) pair whose boxes are at most 'distance' apart: A, B, an
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `distance` | Number | — | — | — |
-| `measure` | Enum | `box` | `box`, `center` | — |
-| `aKey` | Text | `Name` | — | columns of input `a` |
-| `bKey` | Text | `Name` | — | columns of input `b` |
-| `x` | Text | `CenterX` | — | columns of input `a` |
-| `y` | Text | `CenterY` | — | columns of input `a` |
-| `z` | Text | `CenterZ` | — | columns of input `a` |
-| `excludeSelf` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `distance` | Number | — | — | — | — |
+| `measure` | Enum | — | `box` | `box`, `center` | — |
+| `aKey` | Text | — | `Name` | — | columns of input `a` |
+| `bKey` | Text | — | `Name` | — | columns of input `b` |
+| `x` | Text | — | `CenterX` | — | columns of input `a` |
+| `y` | Text | — | `CenterY` | — | columns of input `a` |
+| `z` | Text | — | `CenterZ` | — | columns of input `a` |
+| `excludeSelf` | Boolean | — | `true` | — | — |
 
 ### `spatial.nearest` (v1) — Pure
 
@@ -2674,16 +2666,16 @@ Emits, for each a row, its 'k' nearest b rows: A, B, Distance, and Rank (1 = clo
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `k` | Integer | `1` | — | — |
-| `measure` | Enum | `box` | `box`, `center` | — |
-| `aKey` | Text | `Name` | — | columns of input `a` |
-| `bKey` | Text | `Name` | — | columns of input `b` |
-| `x` | Text | `CenterX` | — | columns of input `a` |
-| `y` | Text | `CenterY` | — | columns of input `a` |
-| `z` | Text | `CenterZ` | — | columns of input `a` |
-| `excludeSelf` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `k` | Integer | — | `1` | — | — |
+| `measure` | Enum | — | `box` | `box`, `center` | — |
+| `aKey` | Text | — | `Name` | — | columns of input `a` |
+| `bKey` | Text | — | `Name` | — | columns of input `b` |
+| `x` | Text | — | `CenterX` | — | columns of input `a` |
+| `y` | Text | — | `CenterY` | — | columns of input `a` |
+| `z` | Text | — | `CenterZ` | — | columns of input `a` |
+| `excludeSelf` | Boolean | — | `true` | — | — |
 
 ### `spatial.contains` (v1) — Pure
 
@@ -2704,16 +2696,16 @@ Emits one row per (a, boxes) pair where the boxes row's box contains a's box or 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `aKey` | Text | `Name` | — | columns of input `a` |
-| `bKey` | Text | `Name` | — | columns of input `boxes` |
-| `x` | Text | `CenterX` | — | columns of input `a` |
-| `y` | Text | `CenterY` | — | columns of input `a` |
-| `z` | Text | `CenterZ` | — | columns of input `a` |
-| `smallest` | Boolean | `true` | — | — |
-| `ignoreZ` | Boolean | `false` | — | — |
-| `excludeSelf` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `aKey` | Text | — | `Name` | — | columns of input `a` |
+| `bKey` | Text | — | `Name` | — | columns of input `boxes` |
+| `x` | Text | — | `CenterX` | — | columns of input `a` |
+| `y` | Text | — | `CenterY` | — | columns of input `a` |
+| `z` | Text | — | `CenterZ` | — | columns of input `a` |
+| `smallest` | Boolean | — | `true` | — | — |
+| `ignoreZ` | Boolean | — | `false` | — | — |
+| `excludeSelf` | Boolean | — | `true` | — | — |
 
 ### `spatial.footprint` (v1) — Pure
 
@@ -2733,9 +2725,9 @@ Adds a Text column ('as', default Footprint) holding the WKT POLYGON of each row
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `as` | Text | `Footprint` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `as` | Text | — | `Footprint` | — | — |
 
 ### `spatial.polygon` (v1) — Pure
 
@@ -2755,9 +2747,9 @@ Adds Area, Perimeter, CentroidX, CentroidY (area-weighted), Vertices, and IsConv
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `polygon` | Text | `Footprint` | — | columns of input `table` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `polygon` | Text | — | `Footprint` | — | columns of input `table` |
 
 ### `spatial.polygonContains` (v1) — Pure
 
@@ -2778,16 +2770,16 @@ Emits one row per (a, polygons) pair where the WKT POLYGON in the 'polygon' colu
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `aKey` | Text | `Name` | — | columns of input `a` |
-| `bKey` | Text | `Name` | — | columns of input `polygons` |
-| `x` | Text | `CenterX` | — | columns of input `a` |
-| `y` | Text | `CenterY` | — | columns of input `a` |
-| `z` | Text | `CenterZ` | — | columns of input `a` |
-| `polygon` | Text | `Footprint` | — | columns of input `polygons` |
-| `smallest` | Boolean | `true` | — | — |
-| `excludeSelf` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `aKey` | Text | — | `Name` | — | columns of input `a` |
+| `bKey` | Text | — | `Name` | — | columns of input `polygons` |
+| `x` | Text | — | `CenterX` | — | columns of input `a` |
+| `y` | Text | — | `CenterY` | — | columns of input `a` |
+| `z` | Text | — | `CenterZ` | — | columns of input `a` |
+| `polygon` | Text | — | `Footprint` | — | columns of input `polygons` |
+| `smallest` | Boolean | — | `true` | — | — |
+| `excludeSelf` | Boolean | — | `true` | — | — |
 
 ### `spatial.polygonIntersects` (v1) — Pure
 
@@ -2808,12 +2800,12 @@ Emits one row per (a, b) pair whose WKT POLYGONs (the 'polygon' column of both i
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `aKey` | Text | `Name` | — | columns of input `a` |
-| `bKey` | Text | `Name` | — | columns of input `b` |
-| `polygon` | Text | `Footprint` | — | columns of input `a` |
-| `excludeSelf` | Boolean | `true` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `aKey` | Text | — | `Name` | — | columns of input `a` |
+| `bKey` | Text | — | `Name` | — | columns of input `b` |
+| `polygon` | Text | — | `Footprint` | — | columns of input `a` |
+| `excludeSelf` | Boolean | — | `true` | — | — |
 
 ## Relations — `BimOpenFlow.Nodes.Relations`
 
@@ -2833,10 +2825,10 @@ A CSV file, named by its registered source folder and relative path. Nothing is 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `source` | Text | — | — | — |
-| `path` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `source` | Text | — | — | — | — |
+| `path` | Text | — | — | — | — |
 
 ### `rel.table` (v1) — Pure
 
@@ -2852,10 +2844,10 @@ A table in a registered database source. Nothing is read until a node is inspect
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `source` | Text | — | — | — |
-| `table` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `source` | Text | — | — | — | — |
+| `table` | Text | — | — | — | — |
 
 ### `rel.fromTable` (v1) — Pure
 
@@ -2875,9 +2867,9 @@ Makes the input table available to rel.* nodes as a relation, keyed by the table
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `name` | Text | `t` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `name` | Text | — | `t` | — | — |
 
 ### `rel.sql` (v1) — Pure
 
@@ -2899,9 +2891,9 @@ One read-only SELECT over the connected relations, which it sees as t1, t2, and 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `sql` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `sql` | Text | — | — | — | — |
 
 ### `rel.select` (v1) — Pure
 
@@ -2921,9 +2913,9 @@ Keeps only the comma-separated columns, in that order.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `columns` | Text | — | — | columns of input `input` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `columns` | Text | — | — | — | columns of input `input` |
 
 ### `rel.filter` (v1) — Pure
 
@@ -2943,9 +2935,9 @@ Keeps rows where the Boolean expression is true.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `expr` | Expression | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `expr` | Expression | — | — | — | — |
 
 ### `rel.derive` (v1) — Pure
 
@@ -2965,10 +2957,10 @@ Appends a column computed from the expression.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `name` | Text | — | — | — |
-| `expr` | Expression | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `name` | Text | — | — | — | — |
+| `expr` | Expression | — | — | — | — |
 
 ### `rel.sort` (v1) — Pure
 
@@ -2988,9 +2980,9 @@ Sorts by comma-separated terms such as 'height desc, name'.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `by` | Text | — | — | columns of input `input` |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `by` | Text | — | — | — | columns of input `input` |
 
 ### `rel.limit` (v1) — Pure
 
@@ -3010,10 +3002,10 @@ Keeps count rows after skipping offset rows.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `count` | Integer | `100` | — | — |
-| `offset` | Integer | `0` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `count` | Integer | — | `100` | — | — |
+| `offset` | Integer | — | `0` | — | — |
 
 ### `rel.aggregate` (v1) — Pure
 
@@ -3033,10 +3025,10 @@ Groups by the comma-separated columns (may be empty) and computes 'func(column) 
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `groupBy` | Text | — | — | columns of input `input` |
-| `aggregates` | Text | — | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `groupBy` | Text | — | — | — | columns of input `input` |
+| `aggregates` | Text | — | — | — | — |
 
 ### `rel.join` (v1) — Pure
 
@@ -3057,11 +3049,11 @@ Joins left to right on one key each. Right columns that collide with left ones g
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `leftKey` | Text | — | — | columns of input `left` |
-| `rightKey` | Text | — | — | columns of input `right` |
-| `kind` | Enum | `inner` | `inner`, `left`, `right`, `full`, `semi`, `anti` | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `leftKey` | Text | — | — | — | columns of input `left` |
+| `rightKey` | Text | — | — | — | columns of input `right` |
+| `kind` | Enum | — | `inner` | `inner`, `left`, `right`, `full`, `semi`, `anti` | — |
 
 ### `rel.materialize` (v1) — Pure
 
@@ -3081,6 +3073,6 @@ Runs the relation and outputs its rows as a Table; limit 0 means every row.
 
 **Params**
 
-| Name | Kind | Default | Allowed values | Suggestions |
-|---|---|---|---|---|
-| `limit` | Integer | `0` | — | — |
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `limit` | Integer | — | `0` | — | — |
