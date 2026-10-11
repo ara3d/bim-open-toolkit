@@ -10,7 +10,7 @@ using BimOpenMcp.Flow;
 //                                       from a plain-language request through the MCP tools;
 //                                       same options as bimopenflow-host, default profile "bim"
 //   bimopenflow-studio mcp [options]    the bimopenflow MCP server over the studio's profiles
-//   bimopenflow-studio nodedocs [dir]   writes nodes.md and nodes.catalog.json into dir
+//   bimopenflow-studio nodedocs [dir]   writes nodes.md, nodes.catalog.json, columns.json and columns.md into dir
 //                                       (default: the checkout's docs/)
 return args.FirstOrDefault() switch
 {
@@ -25,6 +25,8 @@ static int WriteNodeDocs(string dir)
     var catalog = Path.Combine(dir, NodeCatalogFile.FileName);
     File.WriteAllText(catalog, NodeCatalogFile.Text(StudioComposition.Profiles));
     Console.WriteLine($"Wrote {catalog}");
+    foreach (var path in ColumnDocs.Write(dir))
+        Console.WriteLine($"Wrote {path}");
     return NodeDocsProgram.Run(Path.Combine(dir, "nodes.md"), StudioComposition.AllDocPacks, StudioComposition.AllDocNotes);
 }
 

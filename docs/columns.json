@@ -1,0 +1,398 @@
+[
+  {
+    "name": "EntityIndex",
+    "type": "Integer",
+    "meaning": "Row number of the entity in the BOS Entities table; -1 when a row is about no entity.",
+    "role": "Key"
+  },
+  {
+    "name": "LocalId",
+    "type": "Integer",
+    "meaning": "The id the source file gave the entity (the STEP id of an IFC file, the element id of Revit).",
+    "role": "Key"
+  },
+  {
+    "name": "StepId",
+    "type": "Integer",
+    "meaning": "The EntityText view\u0027s name for LocalId.",
+    "role": "Key"
+  },
+  {
+    "name": "GlobalId",
+    "type": "Text",
+    "meaning": "The entity\u0027s globally unique id (an IfcGloballyUniqueId); empty when the source gave none.",
+    "role": "Key"
+  },
+  {
+    "name": "Name",
+    "type": "Text",
+    "meaning": "The entity\u0027s name, or a parameter\u0027s name in a parameter table.",
+    "role": "Label"
+  },
+  {
+    "name": "Category",
+    "type": "Text",
+    "meaning": "The entity\u0027s category: the IFC class (IFCWALL) or the Revit category.",
+    "role": "Category"
+  },
+  {
+    "name": "CategoryType",
+    "type": "Text",
+    "meaning": "The kind of the category, as the source file classifies it.",
+    "role": "Category"
+  },
+  {
+    "name": "Type",
+    "type": "Text",
+    "meaning": "The name of the entity\u0027s type (the family type of an element), or the type of a BCF issue.",
+    "role": "Category"
+  },
+  {
+    "name": "ClassName",
+    "type": "Text",
+    "meaning": "The class of the entity in the source model.",
+    "role": "Category"
+  },
+  {
+    "name": "Level",
+    "type": "Text",
+    "meaning": "Name of the level or storey the entity sits on.",
+    "role": "Category"
+  },
+  {
+    "name": "Elevation",
+    "type": "Number",
+    "meaning": "Height of the level or element; absent when the model gives none.",
+    "role": "Measure"
+  },
+  {
+    "name": "Room",
+    "type": "Text",
+    "meaning": "Name of the room the entity is in, or a room\u0027s label in a hop table.",
+    "role": "Reference"
+  },
+  {
+    "name": "Document",
+    "type": "Text",
+    "meaning": "Title of the document (the linked or host model) the entity comes from.",
+    "role": "Category"
+  },
+  {
+    "name": "Workset",
+    "type": "Integer",
+    "meaning": "Id of the workset the entity belongs to; absent when it has none.",
+    "role": "Category"
+  },
+  {
+    "name": "Group",
+    "type": "Text",
+    "meaning": "Name of the group the entity belongs to.",
+    "role": "Category"
+  },
+  {
+    "name": "MinX",
+    "type": "Number",
+    "meaning": "Smallest X of the element\u0027s bounding box.",
+    "role": "Measure"
+  },
+  {
+    "name": "MinY",
+    "type": "Number",
+    "meaning": "Smallest Y of the element\u0027s bounding box.",
+    "role": "Measure"
+  },
+  {
+    "name": "MinZ",
+    "type": "Number",
+    "meaning": "Smallest Z of the element\u0027s bounding box.",
+    "role": "Measure"
+  },
+  {
+    "name": "MaxX",
+    "type": "Number",
+    "meaning": "Largest X of the element\u0027s bounding box.",
+    "role": "Measure"
+  },
+  {
+    "name": "MaxY",
+    "type": "Number",
+    "meaning": "Largest Y of the element\u0027s bounding box.",
+    "role": "Measure"
+  },
+  {
+    "name": "MaxZ",
+    "type": "Number",
+    "meaning": "Largest Z of the element\u0027s bounding box.",
+    "role": "Measure"
+  },
+  {
+    "name": "SizeX",
+    "type": "Number",
+    "meaning": "Extent of the bounding box along X (MaxX - MinX).",
+    "role": "Measure"
+  },
+  {
+    "name": "SizeY",
+    "type": "Number",
+    "meaning": "Extent of the bounding box along Y (MaxY - MinY).",
+    "role": "Measure"
+  },
+  {
+    "name": "SizeZ",
+    "type": "Number",
+    "meaning": "Extent of the bounding box along Z (MaxZ - MinZ).",
+    "role": "Measure"
+  },
+  {
+    "name": "CenterX",
+    "type": "Number",
+    "meaning": "X of the bounding box\u0027s center.",
+    "role": "Measure"
+  },
+  {
+    "name": "CenterY",
+    "type": "Number",
+    "meaning": "Y of the bounding box\u0027s center.",
+    "role": "Measure"
+  },
+  {
+    "name": "CenterZ",
+    "type": "Number",
+    "meaning": "Z of the bounding box\u0027s center.",
+    "role": "Measure"
+  },
+  {
+    "name": "FootprintArea",
+    "type": "Number",
+    "meaning": "Area of the bounding box seen from above (SizeX * SizeY), not of the element\u0027s true footprint.",
+    "role": "Measure"
+  },
+  {
+    "name": "Volume",
+    "type": "Number",
+    "meaning": "A volume: of the bounding box in bim.bounds (SizeX * SizeY * SizeZ), of the room in bim.rooms.",
+    "role": "Measure"
+  },
+  {
+    "name": "Diagonal",
+    "type": "Number",
+    "meaning": "Length of the bounding box\u0027s space diagonal.",
+    "role": "Measure"
+  },
+  {
+    "name": "Number",
+    "type": "Text",
+    "meaning": "The room\u0027s number as a label (text, because numbers like \u0027A-101\u0027 occur).",
+    "role": "Label"
+  },
+  {
+    "name": "UnboundedHeight",
+    "type": "Number",
+    "meaning": "The room\u0027s unbounded height parameter; absent when the room has none.",
+    "role": "Measure"
+  },
+  {
+    "name": "ElementCount",
+    "type": "Integer",
+    "meaning": "How many elements a level or room holds.",
+    "role": "Measure"
+  },
+  {
+    "name": "RoomCount",
+    "type": "Integer",
+    "meaning": "How many rooms a level holds.",
+    "role": "Measure"
+  },
+  {
+    "name": "Discipline",
+    "type": "Text",
+    "meaning": "The discipline an element is assigned to (architectural, structural, mechanical, ...).",
+    "role": "Category"
+  },
+  {
+    "name": "RoomClass",
+    "type": "Text",
+    "meaning": "The class bim.classifyRooms gave the room from its name.",
+    "role": "Category"
+  },
+  {
+    "name": "Door",
+    "type": "Integer",
+    "meaning": "EntityIndex of a door.",
+    "role": "Reference"
+  },
+  {
+    "name": "DoorName",
+    "type": "Text",
+    "meaning": "The door\u0027s name.",
+    "role": "Label"
+  },
+  {
+    "name": "FromRoom",
+    "type": "Text",
+    "meaning": "Label of the room on the door\u0027s from side; \u0027Outside\u0027 when there is none.",
+    "role": "Reference"
+  },
+  {
+    "name": "ToRoom",
+    "type": "Text",
+    "meaning": "Label of the room on the door\u0027s to side; \u0027Outside\u0027 when there is none.",
+    "role": "Reference"
+  },
+  {
+    "name": "Hops",
+    "type": "Integer",
+    "meaning": "Doors to pass from the start room; absent when the room cannot be reached.",
+    "role": "Measure"
+  },
+  {
+    "name": "Distance",
+    "type": "Number",
+    "meaning": "Straight-line distance to the nearest candidate row, in the model\u0027s length unit.",
+    "role": "Measure"
+  },
+  {
+    "name": "ParameterGroup",
+    "type": "Text",
+    "meaning": "The group a parameter is filed under in the source tool\u0027s property dialog.",
+    "role": "Category"
+  },
+  {
+    "name": "ValueType",
+    "type": "Text",
+    "meaning": "The kind of a parameter\u0027s value: String, Number, Entity, Point and so on.",
+    "role": "Category"
+  },
+  {
+    "name": "Units",
+    "type": "Text",
+    "meaning": "The unit name the source file gave a parameter; absent when it gave none.",
+    "role": "Category"
+  },
+  {
+    "name": "Value",
+    "type": "Text",
+    "meaning": "A parameter\u0027s value as text, whatever its ValueType.",
+    "role": "Label"
+  },
+  {
+    "name": "Count",
+    "type": "Integer",
+    "meaning": "How many rows or entities fall in the group.",
+    "role": "Measure"
+  },
+  {
+    "name": "Distinct",
+    "type": "Integer",
+    "meaning": "How many different values a parameter takes.",
+    "role": "Measure"
+  },
+  {
+    "name": "FillRate",
+    "type": "Number",
+    "meaning": "Share of entities that carry the parameter, from 0 to 1.",
+    "role": "Measure"
+  },
+  {
+    "name": "EntityIndexA",
+    "type": "Integer",
+    "meaning": "EntityIndex of the first entity of a relation.",
+    "role": "Reference"
+  },
+  {
+    "name": "EntityIndexB",
+    "type": "Integer",
+    "meaning": "EntityIndex of the second entity of a relation; for containment, the container.",
+    "role": "Reference"
+  },
+  {
+    "name": "NameA",
+    "type": "Text",
+    "meaning": "Name of the first entity of a relation.",
+    "role": "Label"
+  },
+  {
+    "name": "NameB",
+    "type": "Text",
+    "meaning": "Name of the second entity of a relation.",
+    "role": "Label"
+  },
+  {
+    "name": "RelationType",
+    "type": "Text",
+    "meaning": "The kind of a relation: PartOf, MemberOf, ContainedIn and so on.",
+    "role": "Category"
+  },
+  {
+    "name": "StoreyIndex",
+    "type": "Integer",
+    "meaning": "EntityIndex of the building storey above an entity.",
+    "role": "Reference"
+  },
+  {
+    "name": "StoreyName",
+    "type": "Text",
+    "meaning": "Name of the building storey above an entity.",
+    "role": "Label"
+  },
+  {
+    "name": "Depth",
+    "type": "Integer",
+    "meaning": "Relations between an entity and its storey; 0 for the storey itself.",
+    "role": "Measure"
+  },
+  {
+    "name": "Title",
+    "type": "Text",
+    "meaning": "The issue\u0027s title; rows with one title form one issue (one BCF topic).",
+    "role": "Label"
+  },
+  {
+    "name": "Description",
+    "type": "Text",
+    "meaning": "What is wrong, in words.",
+    "role": "Label"
+  },
+  {
+    "name": "Status",
+    "type": "Text",
+    "meaning": "The issue\u0027s state, for example Open or Closed.",
+    "role": "Category"
+  },
+  {
+    "name": "Priority",
+    "type": "Text",
+    "meaning": "The issue\u0027s priority, for example High.",
+    "role": "Category"
+  },
+  {
+    "name": "CheckId",
+    "type": "Text",
+    "meaning": "Identifier of the check or specification that produced the verdict.",
+    "role": "Key"
+  },
+  {
+    "name": "Verdict",
+    "type": "Text",
+    "meaning": "The result of a check on an entity: Pass, Fail, or InfoNotAvailable when the model lacks what the check reads.",
+    "role": "Category"
+  },
+  {
+    "name": "CheckTitle",
+    "type": "Text",
+    "meaning": "Human title of the check, shown to people.",
+    "role": "Label"
+  },
+  {
+    "name": "Citation",
+    "type": "Text",
+    "meaning": "The requirement the check enforces, as its source states it (a code clause, the IDS facets).",
+    "role": "Label"
+  },
+  {
+    "name": "Reason",
+    "type": "Text",
+    "meaning": "Why the entity got its verdict.",
+    "role": "Label"
+  }
+]
