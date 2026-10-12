@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// viz-clash-matrix   graph 221ad6c002ec
+// viz-clash-matrix   graph 0c7c1d8e32fd
 about = view.note@1(text: """
 Role: a coordinator. Question: which pairs of IFC classes have the most elements whose bounding boxes overlap, and which elements are involved most often?
 These are box candidates, not clashes: each element's axis-aligned bounding box (the union of its meshes' boxes from view3d.instances) is tested against every other with spatial.intersects, so an L-shaped wall or a stair's box overlaps things its geometry never touches. Spaces and openings are left out ('built'). A pair counts only when the boxes share more than 0.001 m3, one litre ('overlapping'), so walls that merely meet a slab are not counted. spatial.intersects lists each pair once per direction; 'onePerPair' keeps A < B, and the row and column classes are put in alphabetical order so the matrix is an upper triangle.
@@ -41,7 +41,7 @@ classOfA = table.project@1(table: boxes.table, columns: "GlobalId,Class");
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER"
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE"
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE"
-storeys = duck.query@1(path: database.source, sql: "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL ORDER BY e.StepId");
+storeys = duck.query@1(path: database.source, sql: "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN (SELECT EntityIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL ORDER BY e.StepId");
   // Ok  table 239 rows x 4 cols  sha 2e4c8c2f5446
   //   columns GlobalId:Text, StepId:Integer, Name:Text, Storey:Text
   //   [0] "0BTBFw6f90Nfh9rP1dlXr2", 67, "Living Room", "Level 1"

@@ -37,6 +37,13 @@ Each graph's `about` note explains how to read it; the numbers it computes for t
 the note stays true on another building. The goldens under
 `tests/studio/BimOpenFlow.SampleFlows.Tests/golden/bim/<id>.txt` record the same values.
 
+An element's storey is the nearest IfcBuildingStorey that contains it: the row of `StoreyOfElement` (or
+`StoreyOfEntity`) with the least `Depth`, taken with `arg_min(..., Depth)`. A filter on `Depth = 1` would leave
+72 of the Duplex's 239 elements (furniture in rooms, stair parts), which only have a depth-2 row, with no
+storey; the graphs that read only spaces, doors, windows, or walls, which a storey contains directly
+(`viz-carbon-intensity-by-storey`, `viz-door-accessibility`, `viz-facade-orientation`, `viz-opening-schedule`,
+`viz-window-to-wall-ratio`), filter on `Depth = 1`.
+
 - **`viz-storey-stacking`**: 218 physical elements on four storeys, from T/FDN (-1.25 m) to Roof (6.0 m):
   T/FDN 14, Level 1 103, Level 2 93, Roof 8. 102 entities have no storey (the warning on `withStorey`).
 - **`viz-model-composition`**: of the 218 elements, Furniture 61, Wall 57, Window 24, Slab 21, Door 14,
@@ -57,6 +64,14 @@ the note stays true on another building. The goldens under
 - **`viz-construction-sequence`**: 10 tasks from T/FDN - Structure (2027-01-04, 7 elements) to
   Level 2 - Finishes (36 elements), finishing in weeks 2 to 8; 21 of 239 rows have no storey or no trade and
   stay unscheduled.
+- **`viz-opening-schedule`**: 38 openings on 11 lines. The skylight's type name says 1180 x 1170 mm, but the
+  IFC gives 1173 x 635 mm.
+- **`viz-progress-s-curve`**: 218 elements scheduled.
+- **`viz-element-size-outliers`**: 22 of 216 elements are outliers: the roof slab is 144 times its class
+  median, and eight furring walls are 70 to 74 times below theirs.
+- **`viz-parameter-completeness`**: 543 of 2,157 parameter cells are filled (25%); the placeholder
+  SerialNumber appears on 211 elements.
+- **`viz-room-areas`**: Level 1 142 m2, Level 2 135 m2, Roof 146 m2.
 - **`viz-door-accessibility`**: 14 doors, 6 fail (four 762 mm, two 813 mm), 8 pass (six 864 mm,
   two 1250 mm), 0 unknown.
 
