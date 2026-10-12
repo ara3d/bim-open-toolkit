@@ -31,5 +31,34 @@ A demo whose numbers are synthetic (a schedule, unit rates) says so in its note 
 | `viz-parameter-completeness` | BIM manager at handover: which classes miss the fields a handover needs? | Heatmap of fill rate, class by parameter, blank where a class never has the field; worst classes ranked; 3D by element completeness |
 | `viz-room-areas` | Space planner: how big is each room, and how much area does each room type take per storey? | Area histogram by room type; per-room bars and 3D rooms on one area scale; totals per type per storey |
 
+## Numbers on the Duplex
+
+Each graph's `about` note explains how to read it; the numbers it computes for the Duplex are kept here, so
+the note stays true on another building. The goldens under
+`tests/studio/BimOpenFlow.SampleFlows.Tests/golden/bim/<id>.txt` record the same values.
+
+- **`viz-storey-stacking`**: 218 physical elements on four storeys, from T/FDN (-1.25 m) to Roof (6.0 m):
+  T/FDN 14, Level 1 103, Level 2 93, Roof 8. 102 entities have no storey (the warning on `withStorey`).
+- **`viz-model-composition`**: of the 218 elements, Furniture 61, Wall 57, Window 24, Slab 21, Door 14,
+  Covering 13, Beam 8, and Other 20.
+- **`viz-carbon-by-material`**: 115,730.3 kgCO2e both before and after the split (217 of 218 elements
+  have a carbon value). 26 bars: Metal - Stud Layer leads with about 23,470 kgCO2e (20%), then
+  Wood - Flooring and Ceramic Tile; ten groups make class A (80%). Roofing - EPDM Membrane, Roofing - Barrier,
+  and Site - Grass, used only by the IFCROOF, stay missing.
+- **`viz-carbon-intensity-by-storey`**: Level 2 362.0 and Level 1 348.8 kgCO2e/m2; Roof 39.9 kgCO2e/m2
+  over one 145.7 m2 attic space; T/FDN carries 11,761.3 kgCO2e and no spaces, so its intensity is missing.
+  Roof has carbon on 7 of its 8 elements. Whole building: 115,730.3 kgCO2e, of which 103,969.0 kgCO2e sits on
+  the 3 storeys with 422.0 m2 of space, 246.3 kgCO2e/m2.
+- **`viz-clash-matrix`**: 331 element pairs across 25 class pairs overlap by more than one litre: finish
+  floors (IfcSlab) against furniture 57, ceilings against walls 47, and slabs against walls 40 lead. The
+  IFCROOF and the roof slab overlap by 61.8 m3 with near-equal mesh volumes (60.7 and 60.4 m3, measured by
+  `view3d.measures` in `viz-element-size-outliers`), which suggests the roof geometry is carried twice. The
+  busiest elements are two Level 1 wood finish floors, with 35 candidates each.
+- **`viz-construction-sequence`**: 10 tasks from T/FDN - Structure (2027-01-04, 7 elements) to
+  Level 2 - Finishes (36 elements), finishing in weeks 2 to 8; 21 of 239 rows have no storey or no trade and
+  stay unscheduled.
+- **`viz-door-accessibility`**: 14 doors, 6 fail (four 762 mm, two 813 mm), 8 pass (six 864 mm,
+  two 1250 mm), 0 unknown.
+
 `tests/studio/BimOpenFlow.BimWorkflows.Tests/VizSampleAnalysesTests.cs` checks that every graph validates
 against the bim profile, evaluates all-green, carries a `view.note`, and has its spec.

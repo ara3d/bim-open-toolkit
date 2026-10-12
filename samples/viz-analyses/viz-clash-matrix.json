@@ -3,119 +3,129 @@
   "layout": {
     "about": {
       "x": 40,
-      "y": 40
+      "y": 40,
+      "w": 560,
+      "h": 410
+    },
+    "database": {
+      "x": 40,
+      "y": 592
+    },
+    "model": {
+      "x": 40,
+      "y": 776
     },
     "inst": {
-      "x": 40,
-      "y": 224
-    },
-    "storeys": {
-      "x": 40,
+      "x": 370,
       "y": 592
     },
     "built": {
-      "x": 370,
-      "y": 224
+      "x": 700,
+      "y": 592
     },
     "elementBoxes": {
-      "x": 700,
-      "y": 224
+      "x": 1360,
+      "y": 592
     },
     "boxes": {
-      "x": 1030,
-      "y": 224
+      "x": 2020,
+      "y": 592
     },
     "touching": {
-      "x": 1360,
-      "y": 224
+      "x": 2350,
+      "y": 592
     },
     "overlapping": {
-      "x": 1690,
-      "y": 224
+      "x": 2680,
+      "y": 592
     },
     "onePerPair": {
-      "x": 2020,
-      "y": 40
-    },
-    "classOfA": {
-      "x": 1360,
-      "y": 408
+      "x": 3010,
+      "y": 592
     },
     "withA": {
-      "x": 2350,
-      "y": 40
+      "x": 3340,
+      "y": 592
     },
     "namedA": {
-      "x": 2680,
-      "y": 40
+      "x": 3670,
+      "y": 592
     },
     "withB": {
-      "x": 3010,
-      "y": 40
+      "x": 4000,
+      "y": 592
     },
     "namedB": {
-      "x": 3340,
-      "y": 40
+      "x": 4330,
+      "y": 592
     },
     "rowClass": {
-      "x": 3670,
-      "y": 40
+      "x": 4660,
+      "y": 592
     },
     "colClass": {
-      "x": 4000,
-      "y": 40
+      "x": 4990,
+      "y": 592
     },
     "classPairs": {
-      "x": 4330,
-      "y": 40
+      "x": 5320,
+      "y": 592
     },
     "pairLabel": {
-      "x": 4660,
-      "y": 40
+      "x": 5980,
+      "y": 592
     },
     "chart": {
-      "x": 4990,
-      "y": 40
+      "x": 6310,
+      "y": 592
     },
     "matrix": {
-      "x": 4990,
-      "y": 224
+      "x": 5980,
+      "y": 960
     },
     "matrixView": {
-      "x": 5320,
-      "y": 224
+      "x": 6310,
+      "y": 960
+    },
+    "classOfA": {
+      "x": 2350,
+      "y": 1144
     },
     "perElement": {
-      "x": 2020,
-      "y": 408
+      "x": 3010,
+      "y": 1328
     },
     "keyed": {
-      "x": 2350,
-      "y": 408
+      "x": 3340,
+      "y": 1328
     },
     "withClass": {
-      "x": 2680,
-      "y": 408
+      "x": 3670,
+      "y": 1328
+    },
+    "storeys": {
+      "x": 3670,
+      "y": 1696
     },
     "withStorey": {
-      "x": 3010,
-      "y": 408
+      "x": 4330,
+      "y": 1328
     },
     "busiest": {
-      "x": 3340,
-      "y": 408
+      "x": 4660,
+      "y": 1328
     },
     "elementView": {
-      "x": 3670,
-      "y": 408
+      "x": 4990,
+      "y": 1328
     },
     "scale": {
-      "x": 3670,
-      "y": 592
+      "x": 4990,
+      "y": 1696
     },
     "colored": {
-      "x": 4000,
-      "y": 592
+      "x": 5320,
+      "y": 1696
     }
   },
   "structure": {
@@ -251,12 +261,30 @@
       {
         "from": "scale.legend",
         "to": "colored.scale"
+      },
+      {
+        "from": "database.source",
+        "to": "storeys.path"
+      },
+      {
+        "from": "model.path",
+        "to": "inst.path"
       }
     ],
     "nodes": [
       {
         "id": "about",
         "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
         "version": 1
       },
       {
@@ -403,14 +431,10 @@
   },
   "values": {
     "about": {
-      "text": "Clash candidate matrix, for a coordinator. Question: which pairs of IFC classes have the most elements whose bounding boxes overlap, and which elements are involved most often? These are box candidates, not clashes: each element's axis-aligned bounding box (the union of its meshes' boxes from view3d.instances) is tested against every other with spatial.intersects, so an L-shaped wall or a stair's box overlaps things its geometry never touches. Spaces and openings are left out. A pair counts only when the boxes share more than 0.001 m3 (one litre), so walls that merely meet a slab are not counted. spatial.intersects lists each pair twice, once per direction, with self-pairs already dropped; the filter A < B keeps each element pair once, and the row and column classes are put in alphabetical order so the matrix is an upper triangle. Read the figure: the heatmap (specs/viz-clash-matrix.vl.json) puts the row class down the side and the column class across the top, darker for more candidate pairs; the matrix table shows the same numbers, and the 3D view colours each element by how many candidates it is in, grey for none. On the Duplex, 331 element pairs across 25 class pairs overlap: finish floors against furniture (57), ceilings against walls (47), and slabs against walls (40) lead, and the IFCROOF and the roof slab overlap by 61.8 m3 with near-equal mesh volumes (60.7 and 60.4 m3, measured by view3d.measures in viz-element-size-outliers, not by this graph), which suggests the roof geometry is carried twice. The busiest elements are two ground-floor wood finish floors, with 35 candidates each."
-    },
-    "inst": {
-      "path": "{SAMPLES}/duplex-base.ifc"
+      "text": "Role: a coordinator. Question: which pairs of IFC classes have the most elements whose bounding boxes overlap, and which elements are involved most often?\nThese are box candidates, not clashes: each element's axis-aligned bounding box (the union of its meshes' boxes from view3d.instances) is tested against every other with spatial.intersects, so an L-shaped wall or a stair's box overlaps things its geometry never touches. Spaces and openings are left out ('built'). A pair counts only when the boxes share more than 0.001 m3, one litre ('overlapping'), so walls that merely meet a slab are not counted. spatial.intersects lists each pair once per direction; 'onePerPair' keeps A < B, and the row and column classes are put in alphabetical order so the matrix is an upper triangle.\nHow to read it: 'chart' ranks the class pairs by candidate count; 'matrixView' shows the same numbers class by class, and the heatmap in specs/viz-clash-matrix.vl.json draws them. 'elementView' lists the elements by how many candidates each is in, with its storey (the nearest one that contains it), and the 3D view ('colored') colours each element by that count, grey for none.\nThe numbers for the Duplex, and what they suggest about its roof, are in samples/viz-analyses/README.md."
     },
     "storeys": {
-      "path": "{SAMPLES}/duplex-base.duckdb",
-      "sql": "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL"
+      "sql": "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL ORDER BY e.StepId"
     },
     "built": {
       "expr": "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')"
@@ -499,7 +523,9 @@
       "mode": "left"
     },
     "busiest": {
-      "by": "Candidates desc"
+      "A": "Candidates",
+      "descendingA": "true",
+      "B": "GlobalId"
     },
     "elementView": {
       "title": "Elements by number of box-overlap candidates",
@@ -512,6 +538,12 @@
     "colored": {
       "joinColumn": "GlobalId",
       "valueColumn": "Candidates"
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-base.duckdb"
+    },
+    "model": {
+      "path": "{SAMPLES}/duplex-base.ifc"
     }
   }
 }

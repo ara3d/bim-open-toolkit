@@ -1,29 +1,31 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "about": { "x": 40, "y": -260 },
-    "carbon": { "x": 40, "y": 40 },
-    "storeyCarbon": { "x": 330, "y": 40 },
-    "database": { "x": 40, "y": 300 },
-    "spaces": { "x": 330, "y": 300 },
-    "storeyArea": { "x": 620, "y": 300 },
-    "joined": { "x": 910, "y": 120 },
-    "intensity": { "x": 1200, "y": 120 },
-    "areaBasis": { "x": 1490, "y": 120 },
-    "ranked": { "x": 1780, "y": 120 },
-    "synthetic": { "x": 2070, "y": 40 },
-    "scale": { "x": 2070, "y": 300 },
-    "chart": { "x": 2360, "y": 40 },
-    "storeyTable": { "x": 2360, "y": -180 },
-    "carbonWithArea": { "x": 2070, "y": -420 },
-    "building": { "x": 2360, "y": -420 },
-    "buildingIntensity": { "x": 2650, "y": -420 },
-    "buildingTable": { "x": 2940, "y": -420 },
-    "storeyIntensity": { "x": 1780, "y": 480 },
-    "elementIntensity": { "x": 2070, "y": 560 },
-    "elements": { "x": 2360, "y": 560 },
-    "model": { "x": 2360, "y": 780 },
-    "colored": { "x": 2650, "y": 560 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 410 },
+    "database": { "x": 40, "y": 592 },
+    "carbonFile": { "x": 40, "y": 776 },
+    "model": { "x": 40, "y": 960 },
+    "spaces": { "x": 370, "y": 592 },
+    "storeyArea": { "x": 1030, "y": 592 },
+    "carbon": { "x": 370, "y": 960 },
+    "storeyCarbon": { "x": 1030, "y": 960 },
+    "joined": { "x": 1690, "y": 592 },
+    "intensity": { "x": 2020, "y": 592 },
+    "areaBasis": { "x": 2680, "y": 592 },
+    "ranked": { "x": 3340, "y": 592 },
+    "synthetic": { "x": 3670, "y": 592 },
+    "chart": { "x": 4000, "y": 592 },
+    "storeyTable": { "x": 4660, "y": 592 },
+    "scale": { "x": 3670, "y": 960 },
+    "storeyIntensity": { "x": 3010, "y": 1512 },
+    "elementIntensity": { "x": 3670, "y": 1512 },
+    "inst": { "x": 4330, "y": 1880 },
+    "elements": { "x": 4000, "y": 1512 },
+    "colored": { "x": 4660, "y": 1512 },
+    "carbonWithArea": { "x": 3340, "y": 2064 },
+    "building": { "x": 4000, "y": 2064 },
+    "buildingIntensity": { "x": 4660, "y": 2064 },
+    "buildingTable": { "x": 5320, "y": 2064 }
   },
   "structure": {
     "edges": [
@@ -48,12 +50,16 @@
       { "from": "carbon.table", "to": "elementIntensity.a" },
       { "from": "storeyIntensity.table", "to": "elementIntensity.b" },
       { "from": "elementIntensity.table", "to": "elements.table" },
-      { "from": "model.instances", "to": "colored.instances" },
+      { "from": "inst.instances", "to": "colored.instances" },
       { "from": "elements.table", "to": "colored.values" },
-      { "from": "scale.legend", "to": "colored.scale" }
+      { "from": "scale.legend", "to": "colored.scale" },
+      { "from": "model.path", "to": "inst.path" },
+      { "from": "carbonFile.path", "to": "carbon.path" }
     ],
     "nodes": [
       { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "carbonFile", "kind": "value.path", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "carbon", "kind": "csv.read", "version": 1 },
       { "id": "storeyCarbon", "kind": "table.aggregate", "version": 1 },
       { "id": "database", "kind": "duck.source", "version": 1 },
@@ -74,13 +80,12 @@
       { "id": "storeyIntensity", "kind": "table.project", "version": 1 },
       { "id": "elementIntensity", "kind": "table.join", "version": 1 },
       { "id": "elements", "kind": "table.project", "version": 1 },
-      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
       { "id": "colored", "kind": "view3d.color", "version": 1 }
     ]
   },
   "values": {
-    "about": { "text": "Role: sustainability lead. Question: how much embodied carbon (A1-A3) does each storey carry per square metre of floor, so storeys of different size compare fairly? Carbon is summed per storey from nrc_analytics_elements.csv (synthetic); floor area is the sum of the IfcSpace areas on that storey (PSet_Revit_Dimensions Area, net room area, m2) read from the enriched Duplex; the ratio is kgCO2e/m2. Honest absence: T/FDN (the foundation) has 11,761.3 kgCO2e but no spaces, so its intensity stays missing, never zero; it shows gray in 3D and as 'no floor area' in the Vega-Lite figure. Roof's area is one space named Roof (145.7 m2, the attic volume Revit modelled as a room), so its 39.9 kgCO2e/m2 measures the attic, not a living floor. The IFCROOF element has no carbon value: ElementsWithCarbon counts 7 of Roof's 8 elements. Living floors: Level 2 362.0 and Level 1 348.8 kgCO2e/m2. The 'Whole building' table sums every storey's carbon (EmbodiedCarbon_kgCO2e, foundation included) and, separately, the carbon of only the storeys that have spaces; its intensity divides that second sum by their floor area, so the foundation's carbon is left out of the ratio rather than spread over an area it does not have: 115,730.3 kgCO2e in all, of which 103,969.0 kgCO2e sits on the 3 storeys with 422.0 m2 of space, 246.3 kgCO2e/m2. Bars: storeys ranked by intensity on one viridis scale; 3D: every element tinted with its storey's intensity on the same scale." },
-    "carbon": { "path": "{SAMPLES}/nrc_analytics_elements.csv" },
+    "about": { "text": "Role: a sustainability lead. Question: how much embodied carbon (A1-A3) does each storey carry per square metre of floor, so storeys of different size compare fairly?\nHow it counts: carbon is summed per storey from nrc_analytics_elements.csv (synthetic); floor area is the sum of the IfcSpace areas on that storey (PSet_Revit_Dimensions Area, net room area, m2) from the enriched Duplex; the ratio is kgCO2e/m2. A storey with no spaces, such as T/FDN (the foundation), keeps a missing intensity, never zero: grey in 3D and 'no floor area' in the Vega-Lite figure. Roof's area is one space named Roof, the attic volume Revit modelled as a room, so its intensity measures the attic, not a living floor. ElementsWithCarbon counts the elements that have a carbon value; the IFCROOF has none.\nHow to read it: 'chart' ranks the storeys by intensity on one viridis scale ('scale'); the 3D view ('colored') tints every element with its storey's intensity on the same scale. 'buildingTable' sums every storey's carbon, the foundation included, and separately the carbon of only the storeys that have spaces; its intensity divides that second sum by their floor area, so the foundation's carbon is not spread over an area it does not have.\nThe numbers for the Duplex are in samples/viz-analyses/README.md." },
     "storeyCarbon": { "groupBy": "StoreyEntityId,Storey", "aggregates": "sum(EmbodiedCarbon_A1A3_kgCO2e) as EmbodiedCarbon_kgCO2e,count(*) as Elements,count(EmbodiedCarbon_A1A3_kgCO2e) as ElementsWithCarbon" },
     "database": { "path": "{SAMPLES}/duplex-enriched.duckdb" },
     "spaces": { "sql": "SELECT e.GlobalId, e.StepId, e.Name, st.StepId AS StoreyEntityId, s.StoreyName AS Storey, TRY_CAST(p.Value AS DOUBLE) AS Area_m2 FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 JOIN EntityText st ON st.EntityIndex = s.StoreyIndex LEFT JOIN ParameterText p ON p.EntityIndex = e.EntityIndex AND p.Name = 'Area' AND p.ParameterGroup = 'PSet_Revit_Dimensions' WHERE e.Category = 'IFCSPACE' ORDER BY st.StepId, e.StepId" },
@@ -91,7 +96,7 @@
     "ranked": { "A": "Intensity_kgCO2e_per_m2", "descendingA": "true", "B": "Storey" },
     "synthetic": { "name": "Synthetic", "expr": "true" },
     "scale": { "valueColumn": "Intensity_kgCO2e_per_m2", "colorMap": "viridis" },
-    "chart": { "labelColumn": "Storey", "valueColumns": "Intensity_kgCO2e_per_m2", "title": "Embodied carbon intensity per storey (kgCO2e/m2 of space, synthetic carbon); T/FDN has no floor area", "sort": "desc" },
+    "chart": { "labelColumn": "Storey", "valueColumns": "Intensity_kgCO2e_per_m2", "title": "Embodied carbon intensity per storey (kgCO2e/m2 of space, synthetic carbon); T/FDN has no floor area" },
     "storeyTable": { "title": "Carbon, floor area, and intensity per storey", "columns": "StoreyEntityId,Storey,EmbodiedCarbon_kgCO2e,Elements,ElementsWithCarbon,FloorArea_m2,Spaces,Intensity_kgCO2e_per_m2,AreaBasis,Synthetic" },
     "carbonWithArea": { "name": "CarbonOnStoreysWithSpaces_kgCO2e", "expr": "FloorArea_m2 > 0 ? EmbodiedCarbon_kgCO2e : null" },
     "building": { "groupBy": "", "aggregates": "sum(EmbodiedCarbon_kgCO2e) as EmbodiedCarbon_kgCO2e,sum(CarbonOnStoreysWithSpaces_kgCO2e) as CarbonOnStoreysWithSpaces_kgCO2e,sum(FloorArea_m2) as FloorArea_m2,count(*) as Storeys,count(FloorArea_m2) as StoreysWithSpaces" },
@@ -100,7 +105,8 @@
     "storeyIntensity": { "columns": "StoreyEntityId,Intensity_kgCO2e_per_m2" },
     "elementIntensity": { "aKey": "StoreyEntityId", "bKey": "StoreyEntityId", "mode": "left" },
     "elements": { "columns": "GlobalId,EntityId,Storey,IfcType,EmbodiedCarbon_A1A3_kgCO2e,Intensity_kgCO2e_per_m2" },
+    "colored": { "joinColumn": "globalId", "valueColumn": "Intensity_kgCO2e_per_m2" },
     "model": { "path": "{SAMPLES}/duplex-enriched.ifc" },
-    "colored": { "joinColumn": "globalId", "valueColumn": "Intensity_kgCO2e_per_m2" }
+    "carbonFile": { "path": "{SAMPLES}/nrc_analytics_elements.csv" }
   }
 }

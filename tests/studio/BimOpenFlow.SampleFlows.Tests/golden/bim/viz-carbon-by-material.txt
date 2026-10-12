@@ -1,8 +1,15 @@
 dfg 0.1.0;
-// viz-carbon-by-material   graph 784fd2ce3f22
-about = view.note@1(text: "Role: sustainability lead. Question: which few materials carry 80% of the Duplex's embodied carbon (A1-A3), and where are they in the building? Each element's carbon (nrc_analytics_elements.csv, synthetic) is split over its IFC material layers in proportion to layer thickness, which within one element is its share of volume; air-space layers carry no embodied carbon and are dropped before the split. Beams name one material and keep all their carbon (the `direct` query gives them a weight of 1). A layer with no thickness keeps a missing weight, so its slice of carbon stays missing. Elements with no material in the IFC (footings, windows, doors, furniture, stairs and stair flights, members, railings, one slab) are grouped by IFC class, labelled '<class> (no material)', so no carbon is lost: the 'Carbon before and after' table sums the element carbon and the bars side by side, and both come to 115,730.3 kgCO2e. Bars: total per material or class, ranked; the Vega-Lite spec adds the cumulative share as a line and a rule at 80%. ParetoClass A is the materials needed to reach 80% (ten groups), B the next 15%, C the rest. The IFCROOF element has no carbon value, so the three materials only it uses (Roofing - EPDM Membrane, Roofing - Barrier, Site - Grass) stay missing, never zero. 3D: every element takes the colour of its main material's bar (the layer holding most of its carbon, or its class) on the same viridis scale, so the yellow walls are the stud walls that top the chart. Gray is an element outside the carbon table, or the IFCROOF, which has no carbon value and is left out of the colour table.");
+// viz-carbon-by-material   graph 9576b54e046b
+about = view.note@1(text: """
+Role: a sustainability lead. Question: which few materials carry 80% of the Duplex's embodied carbon (A1-A3), and where are they in the building?
+How it splits: each element's carbon (nrc_analytics_elements.csv, synthetic) is shared over its IFC material layers in proportion to layer thickness, which within one element is its share of volume. Air-space layers carry no embodied carbon and are dropped first ('solidLayers'). Beams name one material and keep all their carbon ('direct' gives them a weight of 1). A layer with no thickness keeps a missing weight, so its slice stays missing. Elements with no material in the IFC are grouped by IFC class as '<class> (no material)', so no carbon is lost: 'totalsTable' sums the element carbon and the bars side by side, and the two totals should match.
+How to read it: 'chart' ranks the total per material or class ('ranked'); the Vega-Lite spec adds the cumulative share as a line and a rule at 80%. ParetoClass A is the groups needed to reach 80%, B the next 15%, C the rest. A material only the IFCROOF uses stays missing, never zero, because that element has no carbon value. The 3D view ('colored') gives every element the colour of its main material's bar (the layer holding most of its carbon, or its class) on the same viridis scale; grey is an element outside the carbon table, or the IFCROOF.
+The numbers for the Duplex are in samples/viz-analyses/README.md.
+""");
   // Ok
-carbon = csv.read@1(path: "{SAMPLES}/nrc_analytics_elements.csv");
+carbonFile = value.path@1(path: "{SAMPLES}/nrc_analytics_elements.csv");
+  // Ok  Text "{MODELS}/nrc_analytics_elements.csv"
+carbon = csv.read@1(path: carbonFile.path);
   // Ok  table 218 rows x 13 cols  sha b4a76a421e6d
   //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text
   //   [0] "2O2Fr$t4X7Zf8NOew3FNtn", 3797, "IFCWALLSTANDARDCASE", "Basic Wall:Exterior - Brick on Block:138062", "Level 1", 39, "Wall", 615.5, 689.4, 372, 83.6, "Baseline", "run-2026-09-17-01"
@@ -30,7 +37,9 @@ layers = duck.query@1(path: database.source, sql: "SELECT e.GlobalId, m.Material
   //   [0] "0dxE1Sy6nDqfpDb5vIMN_Z", "Metal - Stud Layer", 0.136
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "Plasterboard", 0.016
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "Metal - Stud Layer", 0.136
-model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+model = value.path@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  Text "{MODELS}/duplex-enriched.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
@@ -132,7 +141,7 @@ synthetic = table.derive@1(table: pareto.table, name: "Synthetic", expr: "true")
   //   [0] "Metal - Stud Layer", 2.347E+04, 0.2028, 0.2028, "A", true
   //   [1] "Wood - Flooring", 1.524E+04, 0.1317, 0.3345, "A", true
   //   [2] "Ceramic Tile", 1.1E+04, 0.09506, 0.4295, "A", true
-chart = chart.bar@1(table: synthetic.table, scale: scale.legend, labelColumn: "MaterialOrClass", valueColumns: "MaterialTotal_kgCO2e", title: "Embodied carbon A1-A3 by material (kgCO2e, synthetic), ranked; ten groups make 80%", sort: "desc");
+chart = chart.bar@1(table: synthetic.table, scale: scale.legend, labelColumn: "MaterialOrClass", valueColumns: "MaterialTotal_kgCO2e", title: "Embodied carbon A1-A3 by material (kgCO2e, synthetic), ranked; ten groups make 80%");
   // Ok
   //   table: table 26 rows x 5 cols  sha fd0235d09dc5
   //     columns MaterialOrClass:Text, MaterialTotal_kgCO2e:Number, r:Number, g:Number, b:Number
@@ -194,7 +203,7 @@ elements = table.project@1(table: withTotal.table, columns: "GlobalId,EntityId,S
   //   [0] "0dxE1Sy6nDqfpDb5vIMN_Z", 31476, "Level 2", "IFCWALLSTANDARDCASE", "Metal - Stud Layer", 875.1, 2.347E+04, "A"
   //   [1] "0dxE1Sy6nDqfpDb5vIMNiA", 31431, "Level 2", "IFCWALLSTANDARDCASE", "Metal - Stud Layer", 888.8, 2.347E+04, "A"
   //   [2] "0iEHWY1$XA8eQeeULq4jDb", 24768, "Level 1", "IFCWALLSTANDARDCASE", "Metal - Stud Layer", 709.1, 2.347E+04, "A"
-colored = view3d.color@1(instances: model.instances, values: elements.table, scale: scale.legend, joinColumn: "globalId", valueColumn: "MaterialTotal_kgCO2e");
+colored = view3d.color@1(instances: inst.instances, values: elements.table, scale: scale.legend, joinColumn: "globalId", valueColumn: "MaterialTotal_kgCO2e");
   // Ok
   //   instances: table 714 rows x 15 cols  sha 2deee1b33b08
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number

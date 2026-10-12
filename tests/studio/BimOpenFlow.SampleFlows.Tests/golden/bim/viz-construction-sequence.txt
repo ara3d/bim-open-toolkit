@@ -1,14 +1,23 @@
 dfg 0.1.0;
-// viz-construction-sequence   graph 075cc76b63ac
-about = view.note@1(text: "For a site superintendent: in what order do the Duplex's floors and trades get built, and which parts are finished by which week? The DATES ARE SYNTHETIC: bim.buildSequence invents a floor-by-floor cycle from the model, it reads no real programme. Storeys run bottom-up (T/FDN, Level 1, Level 2, Roof); trades run Structure, Envelope, MEP, Finishes, each task 10 calendar days from Monday 2027-01-04, and a trade starts a storey once the trade before it has left that storey and its own crew has left the storey below, so trades overlap by one floor. The Duplex has no MEP elements, so MEP takes no time; IfcSpace rows belong to no trade and stay unscheduled (one warning). Read the Gantt (specs/viz-construction-sequence.vl.json: bar from Start to End per Task, coloured by Trade) or, in the studio, the task table and the bar of elements per task. The 3D view colours each element by the week its task finishes (viridis: dark is early, yellow is late) on the same scale as the bars; grey parts have no storey or no trade. Storeys come from StoreyOfElement in the DuckDB export, because bim.elements has no Level for an IFC-derived model.");
+// viz-construction-sequence   graph 5159d7abf84b
+about = view.note@1(text: """
+Role: a site superintendent. Question: in what order do the Duplex's floors and trades get built, and which parts are finished by which week? The dates are synthetic: bim.buildSequence invents a floor-by-floor cycle from the model and reads no real programme.
+How it schedules: storeys run bottom-up; trades run Structure, Envelope, MEP, Finishes, each task 10 calendar days from Monday 2027-01-04. A trade starts a storey once the trade before it has left that storey and its own crew has left the storey below, so trades overlap by one floor. A trade with no elements in the model (the Duplex has no MEP) takes no time; IfcSpace rows belong to no trade and stay unscheduled (one warning on 'sequence'). Storeys come from StoreyOfElement in the DuckDB export ('elements'), because bim.elements has no Level for an IFC-derived model.
+How to read it: 'taskChart' has one bar of elements per task, coloured by finish week; 'taskTable' lists each task's dates; the Gantt in specs/viz-construction-sequence.vl.json draws a bar from Start to End per task, coloured by trade. The 3D view ('colored') colours each element by the week its task finishes on the same viridis scale ('weeks'): dark is early, yellow late; grey parts have no storey or no trade.
+The schedule for the Duplex is in samples/viz-analyses/README.md.
+""");
   // Ok
-elements = duck.query@1(path: "{SAMPLES}/duplex-enriched.duckdb", sql: "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId");
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+elements = duck.query@1(path: database.source, sql: "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId");
   // Ok  table 239 rows x 6 cols  sha 846295c3e7da
   //   columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number
   //   [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0
   //   [1] 212, "0BTBFw6f90Nfh9rP1dlXr$", "Kitchen", "IFCSPACE", "Level 1", 0
   //   [2] 355, "0BTBFw6f90Nfh9rP1dlXru", "Bathroom 1", "IFCSPACE", "Level 1", 0
-inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+model = value.path@1(path: "{SAMPLES}/duplex-base.ifc");
+  // Ok  Text "{MODELS}/duplex-base.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
@@ -48,7 +57,7 @@ colored = view3d.color@1(instances: inst.instances, values: sequence.elements, s
   //   legend: table 6 rows x 9 cols  sha eb7a3f83cd4a
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "FinishWeek" auto: 2, 3.5, 5, 6.5, 8, missing "no value" 21
-gantt = chart.bar@1(table: sequence.tasks, scale: weeks.legend, labelColumn: "Task", valueColumns: "ElementCount", title: "Elements per task, coloured by finish week (synthetic)");
+taskChart = chart.bar@1(table: sequence.tasks, scale: weeks.legend, labelColumn: "Task", valueColumns: "ElementCount", title: "Elements per task");
   // Ok
   //   table: table 10 rows x 5 cols  sha 1e06d3a10a98
   //     columns Task:Text, ElementCount:Integer, r:Number, g:Number, b:Number

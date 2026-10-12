@@ -1,16 +1,30 @@
 dfg 0.1.0;
-// viz-door-accessibility   graph 3644ad3ac390
-about = view.note@1(text: "Accessibility reviewer: which doors of the Duplex are narrower than the 850 mm minimum, and where are they? Rule (an assumption, not legal advice): a door on an accessible path needs at least 850 mm clear width, as NBC 2020 (National Building Code of Canada) 3.8.3.12 is cited by the NRC door check (samples/nrc/door_verdicts.csv, rule DC-W1, marked illustrative); the 'rule' node holds the number and its source, and every step reads it from there. The model has no Pset_DoorCommon.ClearWidth on any door, so the width checked is the IFC OverallWidth of the door (leaf plus frame as exported). Clear width is never larger than that, so a fail is certain and a pass is provisional until clear width is measured. A door with no width is 'unknown' (PassScore empty, grey in both panes), never a pass or a fail. Result: 14 doors, 6 fail (four 762 mm, two 813 mm), 8 pass (six 864 mm, two 1250 mm), 0 unknown. Reading the figure: the histogram counts doors per 50 mm bin of width, red bins lie below 850 and green bins at or above it, and the 'unknown' bar counts doors with no width; the Vega-Lite spec draws the 850 mm rule as a vertical line. The 3D view shares the same red-green scale: failing doors are red and everything else is faded to 15 percent.");
+// viz-door-accessibility   graph e9041332ba00
+about = view.note@1(text: """
+Role: an accessibility reviewer. Question: which doors of the Duplex are narrower than the 850 mm minimum, and where are they?
+Rule (an assumption, not legal advice): a door on an accessible path needs at least 850 mm clear width, as NBC 2020 (National Building Code of Canada) 3.8.3.12 is cited by the NRC door check (samples/nrc/door_verdicts.csv, rule DC-W1, marked illustrative). The 'rule' node holds the number and its source, and every step reads it from there.
+What is measured: the model has no Pset_DoorCommon.ClearWidth on any door, so the width checked is the IFC OverallWidth ('doors'), leaf plus frame as exported. Clear width is never larger, so a fail is certain and a pass is provisional until clear width is measured. A door with no width is 'unknown' (PassScore empty, grey in both panes), never a pass or a fail.
+How to read it: 'chart' counts doors per 50 mm of width, red bins below 850 mm and green at or above, with an 'unknown' bar for doors with no width; the Vega-Lite spec draws the 850 mm rule as a vertical line. 'doorTable' lists every door with its verdict. The 3D view shares the red-green scale: failing doors are red and every other element is faded to 15 percent ('ghosted').
+The verdicts for the Duplex are in samples/viz-analyses/README.md.
+""");
   // Ok
 database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
   // Ok  Database
-doors = duck.query@1(path: database.source, sql: "SELECT e.EntityIndex, e.StepId, e.GlobalId, e.Type, s.StoreyName AS Storey FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 WHERE e.Category = 'IFCDOOR' ORDER BY e.StepId");
-  // Ok  table 14 rows x 5 cols  sha 86d3f04ccad7
-  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Type:Text, Storey:Text
-  //   [0] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1"
-  //   [1] 1802, 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1"
-  //   [2] 2034, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1"
-model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+doors = duck.query@1(path: database.source, sql: "SELECT e.StepId, e.GlobalId, e.Type, s.StoreyName AS Storey, TRY_CAST(w.Value AS DOUBLE) AS Width_m FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 LEFT JOIN ParameterText w ON w.EntityIndex = e.EntityIndex AND w.Name = 'Ifc:OverallWidth' WHERE e.Category = 'IFCDOOR' ORDER BY e.StepId");
+  // Ok  table 14 rows x 5 cols  sha 5a5a0a091f5a
+  //   columns StepId:Integer, GlobalId:Text, Type:Text, Storey:Text, Width_m:Number
+  //   [0] 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1", 1.25
+  //   [1] 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1", 1.25
+  //   [2] 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1", 0.762
+millimetres = table.derive@1(table: doors.table, name: "Width_mm", expr: "round([Width_m] * 1000)");
+  // Ok  table 14 rows x 6 cols  sha 110d407f8740
+  //   columns StepId:Integer, GlobalId:Text, Type:Text, Storey:Text, Width_m:Number, Width_mm:Number
+  //   [0] 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1", 1.25, 1250
+  //   [1] 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1", 1.25, 1250
+  //   [2] 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1", 0.762, 762
+model = value.path@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  Text "{MODELS}/duplex-enriched.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
@@ -20,24 +34,6 @@ rule = table.inline@1(rows: "[{\"RuleId\":\"DC-W1\",\"MinWidth_mm\":850.0,\"Sour
   // Ok  table 1 rows x 3 cols  sha 04ad96345e69
   //   columns RuleId:Text, MinWidth_mm:Number, Source:Text
   //   [0] "DC-W1", 850, "NBC 2020 3.8.3.12 as cited by samples/nrc/door_v"...
-widths = duck.query@1(path: database.source, sql: "SELECT p.EntityIndex, TRY_CAST(p.Value AS DOUBLE) AS Width_m FROM ParameterText p JOIN EntityText e ON e.EntityIndex = p.EntityIndex WHERE e.Category = 'IFCDOOR' AND p.Name = 'Ifc:OverallWidth'");
-  // Ok  table 14 rows x 2 cols  sha 7343ea430025
-  //   columns EntityIndex:Integer, Width_m:Number
-  //   [0] 2066, 0.864
-  //   [1] 2073, 0.864
-  //   [2] 2745, 0.864
-withWidth = table.join@1(a: doors.table, b: widths.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 14 rows x 6 cols  sha c7df94c20dcf
-  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Type:Text, Storey:Text, Width_m:Number
-  //   [0] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1", 1.25
-  //   [1] 1802, 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1", 1.25
-  //   [2] 2034, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1", 0.762
-millimetres = table.derive@1(table: withWidth.table, name: "Width_mm", expr: "round([Width_m] * 1000)");
-  // Ok  table 14 rows x 7 cols  sha c9de4963f630
-  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Type:Text, Storey:Text, Width_m:Number, Width_mm:Number
-  //   [0] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1", 1.25, 1250
-  //   [1] 1802, 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1", 1.25, 1250
-  //   [2] 2034, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1", 0.762, 762
 verdicts = sql.query@1(t1: millimetres.table, t2: rule.table, sql: "SELECT d.StepId, d.GlobalId, d.Storey, d.Type, d.Width_mm, r.MinWidth_mm, r.RuleId, CASE WHEN d.Width_mm IS NULL THEN 'unknown' WHEN d.Width_mm >= r.MinWidth_mm THEN 'pass' ELSE 'fail' END AS Verdict, CASE WHEN d.Width_mm IS NULL THEN NULL WHEN d.Width_mm >= r.MinWidth_mm THEN CAST(1 AS DOUBLE) ELSE CAST(0 AS DOUBLE) END AS PassScore FROM t1 d CROSS JOIN t2 r ORDER BY d.Width_mm NULLS LAST, d.StepId");
   // Ok  table 14 rows x 9 cols  sha 0978ac55d4d0
   //   columns StepId:Integer, GlobalId:Text, Storey:Text, Type:Text, Width_mm:Number, MinWidth_mm:Number, RuleId:Text, Verdict:Text, PassScore:Number
@@ -92,7 +88,7 @@ chart = chart.bar@1(table: histogram.table, scale: scale.legend, labelColumn: "B
   //   legend: table 3 rows x 9 cols  sha 3b5d7fc14ba5
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "PassScore" manual: 0, 0.5, 1
-colored = view3d.color@1(instances: model.instances, values: verdicts.table, scale: scale.legend, joinColumn: "globalId");
+colored = view3d.color@1(instances: inst.instances, values: verdicts.table, scale: scale.legend, joinColumn: "globalId");
   // Ok
   //   instances: table 714 rows x 15 cols  sha c327bc107682
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number

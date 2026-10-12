@@ -1,8 +1,15 @@
 dfg 0.1.0;
-// viz-carbon-intensity-by-storey   graph a28b6bc4f816
-about = view.note@1(text: "Role: sustainability lead. Question: how much embodied carbon (A1-A3) does each storey carry per square metre of floor, so storeys of different size compare fairly? Carbon is summed per storey from nrc_analytics_elements.csv (synthetic); floor area is the sum of the IfcSpace areas on that storey (PSet_Revit_Dimensions Area, net room area, m2) read from the enriched Duplex; the ratio is kgCO2e/m2. Honest absence: T/FDN (the foundation) has 11,761.3 kgCO2e but no spaces, so its intensity stays missing, never zero; it shows gray in 3D and as 'no floor area' in the Vega-Lite figure. Roof's area is one space named Roof (145.7 m2, the attic volume Revit modelled as a room), so its 39.9 kgCO2e/m2 measures the attic, not a living floor. The IFCROOF element has no carbon value: ElementsWithCarbon counts 7 of Roof's 8 elements. Living floors: Level 2 362.0 and Level 1 348.8 kgCO2e/m2. The 'Whole building' table sums every storey's carbon (EmbodiedCarbon_kgCO2e, foundation included) and, separately, the carbon of only the storeys that have spaces; its intensity divides that second sum by their floor area, so the foundation's carbon is left out of the ratio rather than spread over an area it does not have: 115,730.3 kgCO2e in all, of which 103,969.0 kgCO2e sits on the 3 storeys with 422.0 m2 of space, 246.3 kgCO2e/m2. Bars: storeys ranked by intensity on one viridis scale; 3D: every element tinted with its storey's intensity on the same scale.");
+// viz-carbon-intensity-by-storey   graph 5e4cca2d26d1
+about = view.note@1(text: """
+Role: a sustainability lead. Question: how much embodied carbon (A1-A3) does each storey carry per square metre of floor, so storeys of different size compare fairly?
+How it counts: carbon is summed per storey from nrc_analytics_elements.csv (synthetic); floor area is the sum of the IfcSpace areas on that storey (PSet_Revit_Dimensions Area, net room area, m2) from the enriched Duplex; the ratio is kgCO2e/m2. A storey with no spaces, such as T/FDN (the foundation), keeps a missing intensity, never zero: grey in 3D and 'no floor area' in the Vega-Lite figure. Roof's area is one space named Roof, the attic volume Revit modelled as a room, so its intensity measures the attic, not a living floor. ElementsWithCarbon counts the elements that have a carbon value; the IFCROOF has none.
+How to read it: 'chart' ranks the storeys by intensity on one viridis scale ('scale'); the 3D view ('colored') tints every element with its storey's intensity on the same scale. 'buildingTable' sums every storey's carbon, the foundation included, and separately the carbon of only the storeys that have spaces; its intensity divides that second sum by their floor area, so the foundation's carbon is not spread over an area it does not have.
+The numbers for the Duplex are in samples/viz-analyses/README.md.
+""");
   // Ok
-carbon = csv.read@1(path: "{SAMPLES}/nrc_analytics_elements.csv");
+carbonFile = value.path@1(path: "{SAMPLES}/nrc_analytics_elements.csv");
+  // Ok  Text "{MODELS}/nrc_analytics_elements.csv"
+carbon = csv.read@1(path: carbonFile.path);
   // Ok  table 218 rows x 13 cols  sha b4a76a421e6d
   //   columns GlobalId:Text, EntityId:Integer, IfcType:Text, Name:Text, Storey:Text, StoreyEntityId:Integer, Category:Text, EmbodiedCarbon_A1A3_kgCO2e:Number, EmbodiedCarbon_A1A5_kgCO2e:Number, OperationalCarbon_kgCO2e_per_year:Number, EnergyUseIntensity_kWh_per_m2_year:Number, ScenarioName:Text, AnalysisRunId:Text
   //   [0] "2O2Fr$t4X7Zf8NOew3FNtn", 3797, "IFCWALLSTANDARDCASE", "Basic Wall:Exterior - Brick on Block:138062", "Level 1", 39, "Wall", 615.5, 689.4, 372, 83.6, "Baseline", "run-2026-09-17-01"
@@ -10,7 +17,9 @@ carbon = csv.read@1(path: "{SAMPLES}/nrc_analytics_elements.csv");
   //   [2] "2O2Fr$t4X7Zf8NOew3FNr2", 4043, "IFCWALLSTANDARDCASE", "Basic Wall:Exterior - Brick on Block:138237", "Level 1", 39, "Wall", 887.5, 994, 310.8, 63.9, "Baseline", "run-2026-09-17-01"
 database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
   // Ok  Database
-model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+model = value.path@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  Text "{MODELS}/duplex-enriched.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
@@ -99,7 +108,7 @@ elements = table.project@1(table: elementIntensity.table, columns: "GlobalId,Ent
   //   [0] "2O2Fr$t4X7Zf8NOew3FNtn", 3797, "Level 1", "IFCWALLSTANDARDCASE", 615.5, 348.8
   //   [1] "2O2Fr$t4X7Zf8NOew3FNqI", 3999, "Level 1", "IFCWALLSTANDARDCASE", 690, 348.8
   //   [2] "2O2Fr$t4X7Zf8NOew3FNr2", 4043, "Level 1", "IFCWALLSTANDARDCASE", 887.5, 348.8
-colored = view3d.color@1(instances: model.instances, values: elements.table, scale: scale.legend, joinColumn: "globalId", valueColumn: "Intensity_kgCO2e_per_m2");
+colored = view3d.color@1(instances: inst.instances, values: elements.table, scale: scale.legend, joinColumn: "globalId", valueColumn: "Intensity_kgCO2e_per_m2");
   // Ok
   //   instances: table 714 rows x 15 cols  sha 493a886d3bd7
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
@@ -116,7 +125,7 @@ synthetic = table.derive@1(table: ranked.table, name: "Synthetic", expr: "true")
   //   [0] 43, "Level 2", 4.87E+04, 93, 93, 134.5, 10, 10, 362, "net space area", true
   //   [1] 39, "Level 1", 4.945E+04, 103, 103, 141.8, 10, 10, 348.8, "net space area", true
   //   [2] 51, "Roof", 5821, 8, 7, 145.7, 1, 1, 39.95, "net space area", true
-chart = chart.bar@1(table: synthetic.table, scale: scale.legend, labelColumn: "Storey", valueColumns: "Intensity_kgCO2e_per_m2", title: "Embodied carbon intensity per storey (kgCO2e/m2 of space, synthetic carbon); T/FDN has no floor area", sort: "desc");
+chart = chart.bar@1(table: synthetic.table, scale: scale.legend, labelColumn: "Storey", valueColumns: "Intensity_kgCO2e_per_m2", title: "Embodied carbon intensity per storey (kgCO2e/m2 of space, synthetic carbon); T/FDN has no floor area");
   // Ok
   //   table: table 4 rows x 5 cols  sha dab550a44948
   //     columns Storey:Text, Intensity_kgCO2e_per_m2:Number, r:Number, g:Number, b:Number
