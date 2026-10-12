@@ -1,55 +1,77 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "snowdon": {
+    "about": {
       "x": 40,
-      "y": 300
+      "y": 40,
+      "w": 560,
+      "h": 160
+    },
+    "model": {
+      "x": 40,
+      "y": 224
+    },
+    "scene": {
+      "x": 370,
+      "y": 224
     },
     "categories": {
-      "x": 340,
-      "y": 240
+      "x": 700,
+      "y": 224
     },
     "cutaway": {
-      "x": 640,
-      "y": 40
-    },
-    "interior": {
-      "x": 640,
-      "y": 280
-    },
-    "exploded": {
-      "x": 640,
-      "y": 480
+      "x": 1030,
+      "y": 224
     },
     "plan": {
-      "x": 940,
-      "y": 60
+      "x": 1360,
+      "y": 224
+    },
+    "interior": {
+      "x": 1030,
+      "y": 408
+    },
+    "exploded": {
+      "x": 1030,
+      "y": 592
     },
     "orthographic": {
-      "x": 640,
-      "y": 680
-    },
-    "ghost": {
-      "x": 340,
-      "y": 650
-    },
-    "night": {
-      "x": 640,
-      "y": 880
-    },
-    "tint": {
-      "x": 340,
-      "y": 900
+      "x": 1030,
+      "y": 776
     },
     "band": {
-      "x": 940,
-      "y": 320
+      "x": 1030,
+      "y": 960
+    },
+    "ghost": {
+      "x": 700,
+      "y": 1144
+    },
+    "night": {
+      "x": 1030,
+      "y": 1144
+    },
+    "tint": {
+      "x": 700,
+      "y": 1328
     }
   },
   "structure": {
+    "inputs": [
+      {
+        "default": "{SNOWDON}",
+        "description": "The building's BIM Open Schema (.bos) file; the Snowdon Towers model when the host found it, or any public sample such as duplex-enriched.bos.",
+        "kind": "FilePath",
+        "name": "model"
+      }
+    ],
     "edges": [
       {
-        "from": "snowdon.view",
+        "from": "model.path",
+        "to": "scene.path"
+      },
+      {
+        "from": "scene.view",
         "to": "categories.view"
       },
       {
@@ -73,7 +95,7 @@
         "to": "orthographic.view"
       },
       {
-        "from": "snowdon.view",
+        "from": "scene.view",
         "to": "ghost.view"
       },
       {
@@ -81,7 +103,7 @@
         "to": "night.view"
       },
       {
-        "from": "snowdon.view",
+        "from": "scene.view",
         "to": "tint.view"
       },
       {
@@ -91,7 +113,17 @@
     ],
     "nodes": [
       {
-        "id": "snowdon",
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "scene",
         "kind": "view3d.scene",
         "version": 1
       },
@@ -148,8 +180,11 @@
     ]
   },
   "values": {
-    "snowdon": {
-      "path": "{SNOWDON}"
+    "about": {
+      "text": "Every view3d recipe kind on one model. The model input feeds scene, which has three roots: categories (classic palette; parent of the section, box, explode, band and orthographic views, and plan through the section), ghost (22% opacity, shown at night) and tint. Open any leaf in the 3D pane to see its view. Change the model input to run every recipe on another .bos file, such as duplex-enriched.bos."
+    },
+    "model": {
+      "path": "$model"
     },
     "categories": {
       "opacity": "1"

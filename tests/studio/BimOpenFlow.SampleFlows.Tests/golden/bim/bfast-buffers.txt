@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// bfast-buffers   graph 4c2154c23988
+// bfast-buffers   graph c2eeda9d037a
+about = view.note@1(text: "Both chains read one file, the path in model. The top chain lists the buffers in sample.bfast (name, byte length, file order); the bottom chain reads the unitPrices buffer as float64, eight prices with 99.99 fourth. BFAST records no element types, so bfast.buffer is told the type.");
+  // Ok
 model = value.path@1(path: "{SAMPLES}/sample.bfast");
   // Ok  Text "C:/Users/cdigg/git/bim-open-toolkit/deps/bim-open-flow/samples/tables/sample.bfast"
 buffers = bfast.read@1(path: model.path);
@@ -20,7 +22,7 @@ prices = bfast.buffer@1(path: model.path, name: "unitPrices", type: "float64");
   //   [0] 12.5
   //   [1] 30
   //   [2] 4.25
-values = view.table@1(table: prices.table, title: "unitPrices as float64");
+answer = view.table@1(table: prices.table, title: "unitPrices as float64");
   // Ok  table 8 rows x 1 cols  sha 20c080941370
   //   columns value:Number
   //   [0] 12.5

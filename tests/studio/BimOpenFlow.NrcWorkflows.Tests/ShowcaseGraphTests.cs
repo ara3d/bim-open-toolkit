@@ -11,7 +11,8 @@ using BimOpenFlow.Studio;
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
 /// <summary>The end-to-end demos in samples/showcase-analyses, each over samples/nrc: CSV into a
-/// chart (both profiles), a BOS file into the relation pack and a chart, and the IFC-derived
+/// chart (both profiles), a BOS file into the relation pack and a chart of the building elements
+/// a ContainedIn relation places on a storey, and the IFC-derived
 /// DuckDB into verdicts, a coloured 3D view, a chart, and an HTML report (nrc-dc-w1-verdicts, which
 /// absorbed ifc-to-verdicts-and-chart in TKT-93). Numbers cite
 /// nrc-ifc-llm/poc/results/expected_answers.json (Q5) and samples/nrc/door_verdicts.csv.</summary>
@@ -98,7 +99,7 @@ public sealed class ShowcaseGraphTests
     }
 
     [Test]
-    public void BosToRelations_CountsDuplexEntitiesPerCategory()
+    public void BosToRelations_CountsDuplexBuildingElementsPerCategory()
     {
         var doc = WithParam(Document("bos-to-relations"), "model", "path", DuplexBos.Value.Replace('\\', '/'));
         var chart = Table(EvaluateGreen(doc, "bos-to-relations", Fixture.Registry(Fixture.Runtime)), "answer");
@@ -107,7 +108,9 @@ public sealed class ShowcaseGraphTests
         {
             Assert.That(chart.ColumnNames(), Is.EqualTo(new[] { "Category", "Elements" }));
             Assert.That(Convert.ToInt64(chart.Cell("Elements", doors)), Is.EqualTo(14), "door_verdicts.csv lists 14 doors");
-            Assert.That(chart.Rows.Count, Is.GreaterThan(10), "Duplex has more than ten entity categories");
+            Assert.That(chart.Rows, Has.Count.EqualTo(11), "the 207 entities a ContainedIn relation places on a storey fall in 11 IFC categories");
+            Assert.That(chart.Cell("Category", 0), Is.EqualTo("IFCFURNISHINGELEMENT"), "furnishing leads with 61, not a STEP geometry entity");
+            Assert.That(Convert.ToInt64(chart.Cell("Elements", 0)), Is.EqualTo(61));
         });
     }
 

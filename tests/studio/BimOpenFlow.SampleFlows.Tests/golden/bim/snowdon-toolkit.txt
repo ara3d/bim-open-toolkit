@@ -1,10 +1,15 @@
 dfg 0.1.0;
-// snowdon-toolkit   graph b03df6fc41b5
-snowdon = view3d.scene@1(path: "{SNOWDON}");
+// snowdon-toolkit   graph d16bd151d1fb
+inputs model: FilePath = "{SNOWDON}" now "{MODELS}/Snowdon Towers Sample Architectural.bos";
+about = view.note@1(text: "Every view3d recipe kind on one model. The model input feeds scene, which has three roots: categories (classic palette; parent of the section, box, explode, band and orthographic views, and plan through the section), ghost (22% opacity, shown at night) and tint. Open any leaf in the 3D pane to see its view. Change the model input to run every recipe on another .bos file, such as duplex-enriched.bos.");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/Snowdon Towers Sample Architectural.bos"
+scene = view3d.scene@1(path: model.path);
   // Ok  table 1 rows x 2 cols  sha 2955637107a0
   //   columns operation:Text, input:Text
   //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
-categories = view3d.categoryStyle@1(view: snowdon.view, opacity: "1");
+categories = view3d.categoryStyle@1(view: scene.view, opacity: "1");
   // Ok  table 2 rows x 2 cols  sha 19b8d036a941
   //   columns operation:Text, input:Text
   //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
@@ -27,7 +32,7 @@ exploded = view3d.explode@1(view: categories.view, strength: "0.5");
   //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
   //   view categoryStyle {"palette":"classic","opacity":1}
   //   view explode {"by":"category","strength":0.5}
-ghost = view3d.categoryStyle@1(view: snowdon.view, opacity: "0.22");
+ghost = view3d.categoryStyle@1(view: scene.view, opacity: "0.22");
   // Ok  table 2 rows x 2 cols  sha a56285ad1ae1
   //   columns operation:Text, input:Text
   //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}
@@ -57,7 +62,7 @@ plan = view3d.projection@1(view: cutaway.view, mode: "plan");
   //   view categoryStyle {"palette":"classic","opacity":1}
   //   view section {"axis":"z","fraction":0.5}
   //   view projection {"mode":"plan"}
-tint = view3d.tint@1(view: snowdon.view, color: "#2b8bd6", opacityPercent: "100");
+tint = view3d.tint@1(view: scene.view, color: "#2b8bd6", opacityPercent: "100");
   // Ok  table 2 rows x 2 cols  sha 024663514f17
   //   columns operation:Text, input:Text
   //   view scene {"path":"{MODELS}/Snowdon Towers Sample Architectural.bos"}

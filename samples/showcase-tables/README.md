@@ -5,8 +5,8 @@ rather than `samples/nrc`. The literal placeholder `{SAMPLES}` stands for that f
 `NrcSamples.ShowcaseTables` in the studio names it, and both studio profiles seed the graph.
 
 `bfast-buffers` holds its file once, in a `value.path` node `model` whose `path` output feeds
-`bfast.read` and `bfast.buffer` (TKT-138); the path strings stored on those two nodes are
-ignored while the wire is there.
+`bfast.read` and `bfast.buffer` (TKT-138); those two readers store no path of their own. The
+prices table is the node `answer`.
 
 | Id | Input | Chain | You see | Profile |
 |---|---|---|---|---|

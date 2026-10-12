@@ -38,7 +38,7 @@ public sealed class BfastGraphTests
                 .Select(r => $"{r.Key}: {r.Value.Status} {r.Value.Error}"), Is.Empty, Id);
 
             var directory = Table(snapshot, "directory");
-            var prices = Table(snapshot, "values");
+            var prices = Table(snapshot, "answer");
             Assert.Multiple(() =>
             {
                 Assert.That(directory.ColumnCells("name"), Is.EqualTo(new[] { "orderIds", "quantities", "unitPrices", "productCodes" }));

@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// csv-to-chart   graph b5a584522528
+// csv-to-chart   graph e9eedc0dfc48
+about = view.note@1(text: "Operational carbon per year by element category, from the NRC analytics CSV (source nrc, the samples/nrc folder). The rel.* chain compiles to one SQL statement that runs when rows materializes it. Walls lead at 22854.1 kgCO2e/year, the Q5 answer in the NRC paper.");
+  // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"

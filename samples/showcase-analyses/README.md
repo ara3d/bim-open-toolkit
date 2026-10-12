@@ -10,7 +10,7 @@ registry can run and report the ones they skip.
 | Id | Input | Chain | You see | Profile |
 |---|---|---|---|---|
 | `csv-to-chart` | `nrc_analytics_elements.csv` | `rel.csv`, `rel.aggregate` by Category, `rel.sort`, `rel.materialize`, `chart.bar` | a bar chart of operational carbon per category, Wall first at 22854.1 kgCO2e/year | tables, bim |
-| `bos-to-relations` | `duplex-enriched.bos` (prepared from the IFC) | `bos.load`, `rel.fromTable`, `rel.aggregate`, `rel.sort`, `rel.materialize`, `chart.bar` | a bar chart of Duplex entities per IFC category (14 doors) | bim |
+| `bos-to-relations` | `duplex-enriched.bos` (prepared from the IFC), the graph input `model` | `bos.load`; `rel.fromTable` of its entities and of its relations; `rel.filter` RelationType ContainedIn; `rel.join` semi; `rel.aggregate`, `rel.sort`, `rel.materialize`, `chart.bar` | a bar chart of the Duplex's 207 building elements per IFC category: 11 bars, furnishing first at 61, 14 doors | bim |
 
 The door check that runs from the IFC through relations, a rule, 3D, a chart and an
 HTML report is one flow, `nrc-analyses/nrc-dc-w1-verdicts` (TKT-93 merged

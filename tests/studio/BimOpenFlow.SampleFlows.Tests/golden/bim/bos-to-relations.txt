@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// bos-to-relations   graph 04aa7dd7bca8
-model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+// bos-to-relations   graph d48bbf6b2baa
+inputs model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
+about = view.note@1(text: "Building elements per IFC category. bos.load lists every STEP entity (polylines, placements, styles), so the chart keeps only the entities a ContainedIn relation places on a storey: a semi join of entities to those relations. On the Duplex that is 207 elements in 11 categories, 14 of them doors. To run it on another building, change the model input.");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.bos"
+bos = bos.load@1(path: model.path, harmonize: "false");
   // Ok
   //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
@@ -17,67 +22,46 @@ model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
   //     [0] 133, "Level 1", 4705, null, "MemberOf"
   //     [1] 134, "Level 2", 4705, null, "MemberOf"
   //     [2] 135, "T/FDN", 4705, null, "MemberOf"
-entities = rel.fromTable@1(table: model.entities, name: "entities");
+entities = rel.fromTable@1(table: bos.entities, name: "entities");
   // Ok  relation plan aff8f6fcc81f
   //   "(inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\")"
-byCategory = rel.aggregate@1(input: entities.relation, groupBy: "Category", aggregates: "count(*) as Elements");
-  // Ok  relation plan e99063d73f7b
-  //   "(aggregate (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") [\"Category\"] [Count(*)>\"Elements\"])"
+relations = rel.fromTable@1(table: bos.relations, name: "relations");
+  // Ok  relation plan 535940f766d2
+  //   "(inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\")"
+contained = rel.filter@1(input: relations.relation, expr: "RelationType == 'ContainedIn'");
+  // Ok  relation plan 732e00456f50
+  //   "(filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\") \"([RelationType] == 'ContainedIn')\")"
+elements = rel.join@1(left: entities.relation, right: contained.relation, leftKey: "EntityIndex", rightKey: "EntityIndexA", kind: "semi");
+  // Ok  relation plan baa0cf14bb55
+  //   "(join Semi (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\") \"([Rel"...
+byCategory = rel.aggregate@1(input: elements.relation, groupBy: "Category", aggregates: "count(*) as Elements");
+  // Ok  relation plan 84205b0e3061
+  //   "(aggregate (join Semi (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c12"...
 ranked = rel.sort@1(input: byCategory.relation, by: "Elements desc, Category");
-  // Ok  relation plan a8e3ec65cfab
-  //   "(sort (aggregate (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") [\"Category\"] [Count(*)>\"Elements\"]) [\"Elements\" desc \"Category\" asc])"
+  // Ok  relation plan 333a8a043787
+  //   "(sort (aggregate (join Semi (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905"...
 rows = rel.materialize@1(input: ranked.relation, limit: "0");
-  // Ok  table 78 rows x 2 cols  sha 2c743d305340
+  // Ok  table 11 rows x 2 cols  sha a0c00097af76
   //   columns Category:Text, Elements:Integer
-  //   [0] "IFCPOLYLINE", 864
-  //   [1] "IFCAXIS2PLACEMENT2D", 397
-  //   [2] "IFCCOMPOSITECURVESEGMENT", 322
-answer = chart.bar@1(table: rows.table, labelColumn: "Category", valueColumns: "Elements", title: "Duplex entities per IFC category", sort: "none");
+  //   [0] "IFCFURNISHINGELEMENT", 61
+  //   [1] "IFCWALLSTANDARDCASE", 56
+  //   [2] "IFCWINDOW", 24
+answer = chart.bar@1(table: rows.table, labelColumn: "Category", valueColumns: "Elements", title: "Duplex building elements per IFC category", sort: "none");
   // Ok
-  //   table: table 78 rows x 2 cols  sha 2c743d305340
+  //   table: table 11 rows x 2 cols  sha a0c00097af76
   //     columns Category:Text, Elements:Integer
-  //     chart 78 categories x 1 series: "Elements"
-  //     "IFCPOLYLINE": 864
-  //     "IFCAXIS2PLACEMENT2D": 397
-  //     "IFCCOMPOSITECURVESEGMENT": 322
-  //     "IFCRECTANGLEPROFILEDEF": 293
-  //     "IFCPRESENTATIONSTYLEASSIGNMENT": 267
-  //     "IFCCONNECTIONSURFACEGEOMETRY": 265
-  //     "IFCCONNECTEDFACESET": 235
-  //     "IFCARBITRARYOPENPROFILEDEF": 184
-  //     "IFCSURFACEOFLINEAREXTRUSION": 184
-  //     "IFCCARTESIANTRANSFORMATIONOPERATOR3D": 167
-  //     "IFCCIRCLE": 96
-  //     "IFCTRIMMEDCURVE": 96
-  //     "IFCMATERIALLAYERSETUSAGE": 91
-  //     "IFCPLANE": 88
-  //     "IFCCURVEBOUNDEDPLANE": 81
-  //     null: 77
+  //     chart 11 categories x 1 series: "Elements"
   //     "IFCFURNISHINGELEMENT": 61
-  //     "IFCFACEBOUND": 60
-  //     "IFCREPRESENTATIONMAP": 60
-  //     "IFCCURVESTYLEFONTPATTERN": 57
   //     "IFCWALLSTANDARDCASE": 56
-  //     "IFCOPENINGELEMENT": 50
-  //     "IFCCOMPOSITECURVE": 44
-  //     "IFCCOLOURRGB": 43
-  //     "IFCMATERIALLAYER": 41
-  //     "IFCFACEBASEDSURFACEMODEL": 40
-  //     "IFCSURFACESTYLE": 33
-  //     "IFCSURFACESTYLERENDERING": 33
-  //     "IFCCURVESTYLE": 31
-  //     "IFCFILLAREASTYLEHATCHING": 31
-  //     "IFCFURNITURETYPE": 25
-  //     "IFCGEOMETRICSET": 25
   //     "IFCWINDOW": 24
-  //     "IFCSLAB": 21
-  //     "IFCSPACE": 21
-  //     "IFCCURVESTYLEFONT": 19
-  //     "IFCARBITRARYPROFILEDEFWITHVOIDS": 18
-  //     "IFCMATERIAL": 18
-  //     "IFCMATERIALDEFINITIONREPRESENTATION": 18
-  //     "IFCSTYLEDREPRESENTATION": 18
-  //     (+38 more categories)
+  //     "IFCSLAB": 20
+  //     "IFCDOOR": 14
+  //     "IFCCOVERING": 13
+  //     "IFCBEAM": 8
+  //     "IFCFOOTING": 7
+  //     "IFCSTAIR": 2
+  //     "IFCROOF": 1
+  //     "IFCWALL": 1
   //   legend: table 0 rows x 9 cols  sha b47d2a37380c
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
