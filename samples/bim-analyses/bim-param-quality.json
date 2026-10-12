@@ -1,32 +1,42 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "about": { "x": 40, "y": 310 },
-    "coverage": { "x": 700, "y": 40 },
-    "joinCategory": { "x": 390, "y": 40 },
-    "load": { "x": 40, "y": 40 },
-    "top": { "x": 1030, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 158 },
+    "model": { "x": 40, "y": 224 },
+    "load": { "x": 370, "y": 224 },
+    "joinCategory": { "x": 700, "y": 224 },
+    "coverage": { "x": 1030, "y": 224 },
+    "elementsOnly": { "x": 1360, "y": 224 },
+    "answer": { "x": 1690, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
+      { "from": "model.path", "to": "load.path" },
       { "from": "load.parameters", "to": "joinCategory.a" },
       { "from": "load.entities", "to": "joinCategory.b" },
       { "from": "joinCategory.table", "to": "coverage.parameters" },
-      { "from": "coverage.table", "to": "top.table" }
+      { "from": "coverage.table", "to": "elementsOnly.table" },
+      { "from": "elementsOnly.table", "to": "answer.table" }
     ],
     "nodes": [
       { "id": "about", "kind": "view.note", "version": 1 },
-      { "id": "coverage", "kind": "bim.paramCoverage", "version": 1 },
-      { "id": "joinCategory", "kind": "table.join", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "load", "kind": "bos.load", "version": 1 },
-      { "id": "top", "kind": "table.sort", "version": 1 }
+      { "id": "joinCategory", "kind": "table.join", "version": 1 },
+      { "id": "coverage", "kind": "bim.paramCoverage", "version": 1 },
+      { "id": "elementsOnly", "kind": "table.filter", "version": 1 },
+      { "id": "answer", "kind": "view.table", "version": 1 }
     ]
   },
   "values": {
-    "about": { "text": "FillRate is measured within each parameter's Category (joined in from bos.load's entities table), not against every entity in the file. A parameter that only applies to one category, such as a room's Number, now reads as fully filled instead of a small fraction of all 28 entities; a parameter that spans several categories, such as Bounds.Max, gets one row per category." },
-    "coverage": { "groupBy": "Category" },
+    "about": { "text": "How well each parameter is filled within its own category. Category is joined in from bos.load's entities table, so a room's Number reads as fully filled instead of a fraction of all 30 entities, and a parameter on several categories, such as Bounds.Max, gets one row per category. Eight of the 30 entities are the categories themselves (Levels, Rooms, Walls and so on); they have no Category, so their rows are filtered out." },
+    "model": { "path": "$model" },
     "joinCategory": { "aKey": "EntityIndex", "bKey": "EntityIndex", "mode": "left" },
-    "load": { "path": "{SAMPLES}/sample.bos" },
-    "top": { "A": "Count", "descendingA": "true" }
+    "coverage": { "groupBy": "Category" },
+    "elementsOnly": { "expr": "not isnull(Category)" },
+    "answer": { "columns": "Name, Category, FillRate, Count, Distinct, ValueType", "title": "Parameter fill rate per category" }
   }
 }

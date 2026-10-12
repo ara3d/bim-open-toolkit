@@ -1,6 +1,9 @@
 dfg 0.1.0;
-// bim-nearest-door   graph 60fcf8c6ff7e
-model = value.path@1(path: "{SAMPLES}/sample.bos");
+// bim-nearest-door   graph e94677e0f062
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+about = view.note@1(text: "Each room's nearest door, by straight-line distance between box centres (bim.nearest), farthest first. The distance ignores walls, so it is a lower bound on the walk, not the walk itself.");
+  // Ok
+model = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/sample.bos"
 bounds = bim.bounds@1(path: model.path);
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
@@ -26,9 +29,15 @@ nearest = bim.nearest@1(a: rooms.table, b: doorsOnly.table);
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (0, 0, 0) to (9, 8, 6)
-ranked = table.sort@1(table: nearest.table, by: "Distance desc");
+ranked = table.sort@1(table: nearest.table, A: "Distance", descendingA: "true");
   // Ok  table 6 rows x 23 cols  sha 846ca6654302
   //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+7 more)
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (0, 0, 0) to (9, 8, 6)
+answer = view.table@1(table: ranked.table, title: "Nearest door to each room", columns: "Name, Number, Level, Nearest, Distance");
+  // Ok  table 6 rows x 5 cols  sha 9ffbc85909bb
+  //   columns Name:Text, Number:Text, Level:Text, Nearest:Text, Distance:Number
+  //   [0] "Office", "101", "Level 1", "D1", 2.54
+  //   [1] "Kitchen", "103", "Level 1", "D2", 2.54
+  //   [2] "Meeting Room", "201", "Level 2", "D5", 2.54

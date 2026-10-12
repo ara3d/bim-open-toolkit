@@ -1,36 +1,44 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": { "x": -290, "y": 280 },
-    "bounds": { "x": 40, "y": 280 },
-    "doorsOnly": { "x": 370, "y": 224 },
-    "nearest": { "x": 700, "y": 40 },
-    "ranked": { "x": 1030, "y": 40 },
-    "rooms": { "x": 40, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 86 },
+    "model": { "x": 40, "y": 224 },
+    "rooms": { "x": 370, "y": 224 },
+    "bounds": { "x": 370, "y": 408 },
+    "doorsOnly": { "x": 700, "y": 408 },
+    "nearest": { "x": 1030, "y": 224 },
+    "ranked": { "x": 1360, "y": 224 },
+    "answer": { "x": 1690, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "model.path", "to": "bounds.path" },
       { "from": "model.path", "to": "rooms.path" },
+      { "from": "model.path", "to": "bounds.path" },
       { "from": "bounds.table", "to": "doorsOnly.table" },
       { "from": "rooms.table", "to": "nearest.a" },
       { "from": "doorsOnly.table", "to": "nearest.b" },
-      { "from": "nearest.table", "to": "ranked.table" }
+      { "from": "nearest.table", "to": "ranked.table" },
+      { "from": "ranked.table", "to": "answer.table" }
     ],
     "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "model", "kind": "value.path", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
       { "id": "nearest", "kind": "bim.nearest", "version": 1 },
       { "id": "ranked", "kind": "table.sort", "version": 1 },
-      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+      { "id": "answer", "kind": "view.table", "version": 1 }
     ]
   },
   "values": {
-    "model": { "path": "{SAMPLES}/sample.bos" },
-    "bounds": { "path": "{SAMPLES}/sample.bos" },
+    "about": { "text": "Each room's nearest door, by straight-line distance between box centres (bim.nearest), farthest first. The distance ignores walls, so it is a lower bound on the walk, not the walk itself." },
+    "model": { "path": "$model" },
     "doorsOnly": { "expr": "Category == 'Doors'" },
-    "ranked": { "by": "Distance desc" },
-    "rooms": { "path": "{SAMPLES}/sample.bos" }
+    "ranked": { "A": "Distance", "descendingA": "true" },
+    "answer": { "columns": "Name, Number, Level, Nearest, Distance", "title": "Nearest door to each room" }
   }
 }

@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// bim-room-footprints   graph 3f4dcf7f41bf
-rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
+// bim-room-footprints   graph 488edae02b5b
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+about = view.note@1(text: "Each room's box seen from above as a WKT polygon (spatial.footprint), with its area and perimeter (spatial.polygon), longest perimeter first. A box overstates an L-shaped or angled room. The Footprint text opens unchanged in DuckDB spatial, PostGIS, or QGIS.");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/sample.bos"
+rooms = bim.rooms@1(path: model.path);
   // Ok  table 6 rows x 21 cols  sha 1a25261d271b
   //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
@@ -18,9 +23,15 @@ measures = spatial.polygon@1(table: footprint.table);
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (0, 0, 0) to (9, 8, 6)
-ranked = table.sort@1(table: measures.table, by: "Perimeter desc");
+ranked = table.sort@1(table: measures.table, A: "Perimeter", descendingA: "true");
   // Ok  table 6 rows x 28 cols  sha cbe3a723373a
   //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+12 more)
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (0, 0, 0) to (9, 8, 6)
+answer = view.table@1(table: ranked.table, title: "Room footprints by perimeter", columns: "Name, Number, Level, Area, Perimeter, Footprint");
+  // Ok  table 6 rows x 6 cols  sha 12da04bbc07e
+  //   columns Name:Text, Number:Text, Level:Text, Area:Number, Perimeter:Number, Footprint:Text
+  //   [0] "Meeting Room", "201", "Level 2", 40, 26, "POLYGON((0 0, 5 0, 5 8, 0 8, 0 0))"
+  //   [1] "Corridor", "102", "Level 1", 16, 20, "POLYGON((5 0, 7 0, 7 8, 5 8, 5 0))"
+  //   [2] "Corridor", "202", "Level 2", 16, 20, "POLYGON((5 0, 7 0, 7 8, 5 8, 5 0))"

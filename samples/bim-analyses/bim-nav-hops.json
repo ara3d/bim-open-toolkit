@@ -1,20 +1,33 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "hops": { "x": 370, "y": 40 },
-    "nav": { "x": 40, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 122 },
+    "model": { "x": 40, "y": 224 },
+    "nav": { "x": 370, "y": 224 },
+    "hops": { "x": 700, "y": 224 },
+    "answer": { "x": 1030, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "nav.table", "to": "hops.edges" }
+      { "from": "model.path", "to": "nav.path" },
+      { "from": "nav.table", "to": "hops.edges" },
+      { "from": "hops.table", "to": "answer.table" }
     ],
     "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
+      { "id": "nav", "kind": "bim.navGraph", "version": 1 },
       { "id": "hops", "kind": "bim.hops", "version": 1 },
-      { "id": "nav", "kind": "bim.navGraph", "version": 1 }
+      { "id": "answer", "kind": "view.table", "version": 1 }
     ]
   },
   "values": {
+    "about": { "text": "How many doors you pass to reach each room from Corridor 102, walking the door graph that bim.navGraph builds from each door's from-room and to-room parameters. Outside counts as a room; a room no door reaches has no Hops. Change start on hops to walk from another room." },
+    "model": { "path": "$model" },
     "hops": { "start": "Corridor 102" },
-    "nav": { "path": "{SAMPLES}/sample.bos" }
+    "answer": { "title": "Doors to pass from Corridor 102" }
   }
 }

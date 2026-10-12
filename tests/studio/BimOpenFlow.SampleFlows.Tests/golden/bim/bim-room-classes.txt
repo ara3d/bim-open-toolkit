@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// bim-room-classes   graph bb7543d2b9af
-rooms = bim.rooms@1(path: "{SAMPLES}/sample.bos");
+// bim-room-classes   graph 1e082fe82ab8
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+about = view.note@1(text: "Rooms put in classes by name with bim.classifyRooms' built-in rules (Office, Circulation, Kitchen, Sanitary and more; a name no rule matches is Other), counted, with the total room volume of each class. The chart shows the volume per class.");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/sample.bos"
+rooms = bim.rooms@1(path: model.path);
   // Ok  table 6 rows x 21 cols  sha 1a25261d271b
   //   columns EntityIndex:Integer, Name:Text, Number:Text, Level:Text, Elevation:Number, Volume:Number, UnboundedHeight:Number, ElementCount:Integer, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number, SizeX:Number, SizeY:Number (+5 more)
   //   scene 6 boxes: 6 opaque, 0 faded, 0 hidden
@@ -24,3 +29,22 @@ ranked = table.sort@1(table: byClass.table, A: "Rooms", descendingA: "true");
   //   [0] "Circulation", 2, 96
   //   [1] "Kitchen", 1, 60
   //   [2] "Meeting", 1, 120
+answer = view.table@1(table: ranked.table, title: "Rooms and volume per class");
+  // Ok  table 5 rows x 3 cols  sha a6f39aeda5d7
+  //   columns RoomClass:Text, Rooms:Integer, TotalVolume:Number
+  //   [0] "Circulation", 2, 96
+  //   [1] "Kitchen", 1, 60
+  //   [2] "Meeting", 1, 120
+chart = chart.bar@1(table: ranked.table, labelColumn: "RoomClass", valueColumns: "TotalVolume", title: "Room volume per class", sort: "desc");
+  // Ok
+  //   table: table 5 rows x 2 cols  sha 95072237ff43
+  //     columns RoomClass:Text, TotalVolume:Number
+  //     chart 5 categories x 1 series: "TotalVolume"
+  //     "Meeting": 120
+  //     "Circulation": 96
+  //     "Kitchen": 60
+  //     "Office": 60
+  //     "Sanitary": 18
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

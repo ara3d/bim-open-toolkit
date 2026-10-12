@@ -1,27 +1,44 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "byClass": { "x": 700, "y": 40 },
-    "classes": { "x": 370, "y": 40 },
-    "ranked": { "x": 1140, "y": 40 },
-    "rooms": { "x": 40, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 104 },
+    "model": { "x": 40, "y": 224 },
+    "rooms": { "x": 370, "y": 224 },
+    "classes": { "x": 700, "y": 224 },
+    "byClass": { "x": 1030, "y": 224 },
+    "ranked": { "x": 1360, "y": 224 },
+    "answer": { "x": 1690, "y": 224 },
+    "chart": { "x": 1690, "y": 408 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "classes.table", "to": "byClass.table" },
+      { "from": "model.path", "to": "rooms.path" },
       { "from": "rooms.table", "to": "classes.table" },
-      { "from": "byClass.table", "to": "ranked.table" }
+      { "from": "classes.table", "to": "byClass.table" },
+      { "from": "byClass.table", "to": "ranked.table" },
+      { "from": "ranked.table", "to": "answer.table" },
+      { "from": "ranked.table", "to": "chart.table" }
     ],
     "nodes": [
-      { "id": "byClass", "kind": "table.aggregate", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 },
       { "id": "classes", "kind": "bim.classifyRooms", "version": 1 },
+      { "id": "byClass", "kind": "table.aggregate", "version": 1 },
       { "id": "ranked", "kind": "table.sort", "version": 1 },
-      { "id": "rooms", "kind": "bim.rooms", "version": 1 }
+      { "id": "answer", "kind": "view.table", "version": 1 },
+      { "id": "chart", "kind": "chart.bar", "version": 1 }
     ]
   },
   "values": {
+    "about": { "text": "Rooms put in classes by name with bim.classifyRooms' built-in rules (Office, Circulation, Kitchen, Sanitary and more; a name no rule matches is Other), counted, with the total room volume of each class. The chart shows the volume per class." },
+    "model": { "path": "$model" },
     "byClass": { "aggregates": "count(*) as Rooms, sum(Volume) as TotalVolume", "groupBy": "RoomClass" },
     "ranked": { "A": "Rooms", "descendingA": "true" },
-    "rooms": { "path": "{SAMPLES}/sample.bos" }
+    "answer": { "title": "Rooms and volume per class" },
+    "chart": { "labelColumn": "RoomClass", "sort": "desc", "title": "Room volume per class", "valueColumns": "TotalVolume" }
   }
 }

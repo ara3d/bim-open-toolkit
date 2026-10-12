@@ -43,7 +43,7 @@
     "doorsOnly": { "expr": "Category == 'Doors'" },
     "overlap": { "bKey": "Number" },
     "touching": { "expr": "OverlapVolume > 0" },
-    "named": { "columns": "A as Door, B as Room, OverlapVolume" },
+    "named": { "columns": "A as DoorName, B as Room, OverlapVolume" },
     "answer": { "title": "Rooms each door opens into" }
   }
 }

@@ -1,8 +1,11 @@
 dfg 0.1.0;
-// bim-param-quality   graph 363193ce16bd
-about = view.note@1(text: "FillRate is measured within each parameter's Category (joined in from bos.load's entities table), not against every entity in the file. A parameter that only applies to one category, such as a room's Number, now reads as fully filled instead of a small fraction of all 28 entities; a parameter that spans several categories, such as Bounds.Max, gets one row per category.");
+// bim-param-quality   graph 791ddc620598
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+about = view.note@1(text: "How well each parameter is filled within its own category. Category is joined in from bos.load's entities table, so a room's Number reads as fully filled instead of a fraction of all 30 entities, and a parameter on several categories, such as Bounds.Max, gets one row per category. Eight of the 30 entities are the categories themselves (Levels, Rooms, Walls and so on); they have no Category, so their rows are filtered out.");
   // Ok
-load = bos.load@1(path: "{SAMPLES}/sample.bos");
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/sample.bos"
+load = bos.load@1(path: model.path);
   // Ok
   //   entities: table 30 rows x 6 cols  sha 8412288c76d7
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
@@ -28,9 +31,15 @@ coverage = bim.paramCoverage@1(parameters: joinCategory.table, groupBy: "Categor
   //   [0] "Rvt:Category:CategoryType", "Category", "String", null, 8, 1, 1
   //   [1] "Rvt:Element:Bounds.Max", "Geometry", "Point", "Rooms", 6, 6, 1
   //   [2] "Rvt:Element:Bounds.Min", "Geometry", "Point", "Rooms", 6, 6, 1
-top = table.sort@1(table: coverage.table, A: "Count", descendingA: "true");
-  // Ok  table 44 rows x 7 cols  sha 8613f5d24712
+elementsOnly = table.filter@1(table: coverage.table, expr: "not isnull(Category)");
+  // Ok  table 43 rows x 7 cols  sha ea559c0f182c
   //   columns Name:Text, ParameterGroup:Text, ValueType:Text, Category:Text, Count:Integer, Distinct:Integer, FillRate:Number
-  //   [0] "Rvt:Category:CategoryType", "Category", "String", null, 8, 1, 1
-  //   [1] "Rvt:Element:Bounds.Max", "Geometry", "Point", "Rooms", 6, 6, 1
-  //   [2] "Rvt:Element:Bounds.Min", "Geometry", "Point", "Rooms", 6, 6, 1
+  //   [0] "Rvt:Element:Bounds.Max", "Geometry", "Point", "Rooms", 6, 6, 1
+  //   [1] "Rvt:Element:Bounds.Min", "Geometry", "Point", "Rooms", 6, 6, 1
+  //   [2] "Rvt:Element:Level", "Constraints", "Entity", "Rooms", 6, 2, 1
+answer = view.table@1(table: elementsOnly.table, title: "Parameter fill rate per category", columns: "Name, Category, FillRate, Count, Distinct, ValueType");
+  // Ok  table 43 rows x 6 cols  sha 728f9391db95
+  //   columns Name:Text, Category:Text, FillRate:Number, Count:Integer, Distinct:Integer, ValueType:Text
+  //   [0] "Rvt:Element:Bounds.Max", "Rooms", 1, 6, 6, "Point"
+  //   [1] "Rvt:Element:Bounds.Min", "Rooms", 1, 6, 6, "Point"
+  //   [2] "Rvt:Element:Level", "Rooms", 1, 6, 2, "Entity"

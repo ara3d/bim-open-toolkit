@@ -1,8 +1,9 @@
 dfg 0.1.0;
-// bim-room-containment   graph 5e8c3cd91e52
-about = view.note@1(text: "Doors touching each room (spatial.intersects between doors and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches). Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display.");
+// bim-room-containment   graph 4b3507aa11ec
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+about = view.note@1(text: "Doors touching each room (spatial.intersects between door and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches), most doors first. Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display. bim-door-rooms and bim-duct-rooms show the pairs themselves.");
   // Ok
-model = value.path@1(path: "{SAMPLES}/sample.bos");
+model = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/sample.bos"
 bounds = bim.bounds@1(path: model.path);
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
@@ -52,15 +53,15 @@ labeled = table.join@1(a: byRoom.table, b: roomLabels.table, aKey: "B", bKey: "E
   //   [0] 12, 1, "Office", "101"
   //   [1] 13, 4, "Corridor", "102"
   //   [2] 14, 1, "Kitchen", "103"
-final = table.project@1(table: labeled.table, columns: "Name, Number, Doors");
-  // Ok  table 6 rows x 3 cols  sha 3b2e9f1303f8
-  //   columns Name:Text, Number:Text, Doors:Integer
-  //   [0] "Office", "101", 1
-  //   [1] "Corridor", "102", 4
-  //   [2] "Kitchen", "103", 1
-sorted = table.sort@1(table: final.table, A: "Name", B: "Number");
-  // Ok  table 6 rows x 3 cols  sha 449096a68094
+sorted = table.sort@1(table: labeled.table, A: "Doors", B: "Number", descendingA: "true");
+  // Ok  table 6 rows x 4 cols  sha 53dc5da3096b
+  //   columns B:Integer, Doors:Integer, Name:Text, Number:Text
+  //   [0] 13, 4, "Corridor", "102"
+  //   [1] 12, 1, "Office", "101"
+  //   [2] 14, 1, "Kitchen", "103"
+answer = view.table@1(table: sorted.table, title: "Doors touching each room", columns: "Name, Number, Doors");
+  // Ok  table 6 rows x 3 cols  sha 898d422c558c
   //   columns Name:Text, Number:Text, Doors:Integer
   //   [0] "Corridor", "102", 4
-  //   [1] "Corridor", "202", 1
+  //   [1] "Office", "101", 1
   //   [2] "Kitchen", "103", 1

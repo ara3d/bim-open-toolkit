@@ -1,61 +1,62 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": { "x": -290, "y": 40 },
-    "about": { "x": 1690, "y": 224 },
-    "bounds": { "x": 40, "y": 40 },
-    "byRoom": { "x": 1030, "y": 40 },
-    "doorsOnly": { "x": 370, "y": 40 },
-    "final": { "x": 1690, "y": 40 },
-    "labeled": { "x": 1360, "y": 40 },
-    "overlap": { "x": 700, "y": 40 },
-    "roomLabels": { "x": 700, "y": 500 },
-    "rooms": { "x": 40, "y": 224 },
-    "sorted": { "x": 2040, "y": 40 },
-    "touching": { "x": 1030, "y": 280 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 140 },
+    "model": { "x": 40, "y": 224 },
+    "bounds": { "x": 370, "y": 224 },
+    "doorsOnly": { "x": 700, "y": 224 },
+    "overlap": { "x": 1030, "y": 224 },
+    "touching": { "x": 1360, "y": 224 },
+    "byRoom": { "x": 1690, "y": 224 },
+    "labeled": { "x": 2020, "y": 224 },
+    "sorted": { "x": 2350, "y": 224 },
+    "answer": { "x": 2680, "y": 224 },
+    "rooms": { "x": 370, "y": 408 },
+    "roomLabels": { "x": 700, "y": 408 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
       { "from": "model.path", "to": "bounds.path" },
       { "from": "model.path", "to": "rooms.path" },
       { "from": "bounds.table", "to": "doorsOnly.table" },
-      { "from": "rooms.table", "to": "overlap.b" },
       { "from": "doorsOnly.table", "to": "overlap.a" },
+      { "from": "rooms.table", "to": "overlap.b" },
       { "from": "overlap.table", "to": "touching.table" },
       { "from": "touching.table", "to": "byRoom.table" },
       { "from": "rooms.table", "to": "roomLabels.table" },
       { "from": "byRoom.table", "to": "labeled.a" },
       { "from": "roomLabels.table", "to": "labeled.b" },
-      { "from": "labeled.table", "to": "final.table" },
-      { "from": "final.table", "to": "sorted.table" }
+      { "from": "labeled.table", "to": "sorted.table" },
+      { "from": "sorted.table", "to": "answer.table" }
     ],
     "nodes": [
-      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
-      { "id": "byRoom", "kind": "table.aggregate", "version": 1 },
       { "id": "doorsOnly", "kind": "table.filter", "version": 1 },
-      { "id": "final", "kind": "table.project", "version": 1 },
-      { "id": "labeled", "kind": "table.join", "version": 1 },
       { "id": "overlap", "kind": "spatial.intersects", "version": 1 },
-      { "id": "roomLabels", "kind": "table.project", "version": 1 },
-      { "id": "rooms", "kind": "bim.rooms", "version": 1 },
+      { "id": "touching", "kind": "table.filter", "version": 1 },
+      { "id": "byRoom", "kind": "table.aggregate", "version": 1 },
+      { "id": "labeled", "kind": "table.join", "version": 1 },
       { "id": "sorted", "kind": "table.sort", "version": 1 },
-      { "id": "touching", "kind": "table.filter", "version": 1 }
+      { "id": "answer", "kind": "view.table", "version": 1 },
+      { "id": "rooms", "kind": "bim.rooms", "version": 1 },
+      { "id": "roomLabels", "kind": "table.project", "version": 1 }
     ]
   },
   "values": {
-    "model": { "path": "{SAMPLES}/sample.bos" },
-    "about": { "text": "Doors touching each room (spatial.intersects between doors and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches). Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display." },
-    "bounds": { "path": "{SAMPLES}/sample.bos" },
-    "byRoom": { "aggregates": "count(*) as Doors", "groupBy": "B" },
+    "about": { "text": "Doors touching each room (spatial.intersects between door and room boxes, filtered to OverlapVolume > 0, one row per door per room it touches), most doors first. Rooms are keyed and grouped by EntityIndex, not Name, so the two rooms named Corridor stay separate; Name and Number are joined back in for display. bim-door-rooms and bim-duct-rooms show the pairs themselves." },
+    "model": { "path": "$model" },
     "doorsOnly": { "expr": "Category == 'Doors'" },
-    "final": { "columns": "Name, Number, Doors" },
-    "labeled": { "aKey": "B", "bKey": "EntityIndex", "mode": "left" },
     "overlap": { "bKey": "EntityIndex" },
-    "roomLabels": { "columns": "EntityIndex, Name, Number" },
-    "rooms": { "path": "{SAMPLES}/sample.bos" },
-    "sorted": { "A": "Name", "B": "Number" },
-    "touching": { "expr": "OverlapVolume > 0" }
+    "touching": { "expr": "OverlapVolume > 0" },
+    "byRoom": { "aggregates": "count(*) as Doors", "groupBy": "B" },
+    "labeled": { "aKey": "B", "bKey": "EntityIndex", "mode": "left" },
+    "sorted": { "A": "Doors", "B": "Number", "descendingA": "true" },
+    "answer": { "columns": "Name, Number, Doors", "title": "Doors touching each room" },
+    "roomLabels": { "columns": "EntityIndex, Name, Number" }
   }
 }
