@@ -6,7 +6,7 @@ pack only wires it to tables and parameters.
 
 | Node | Inputs | Outputs | Parameters |
 |---|---|---|---|
-| `ids.check` | `entities`, `parameters` (the first two outputs of `bos.load`) | `verdicts`, `summary` | `ids` (the `.ids` file) |
+| `ids.check` | `entities`, `parameters` (the first two outputs of `bos.load`); `relations` (its third output, optional) | `verdicts`, `summary` | `ids` (the `.ids` file) |
 | `ids.specifications` | none | `specifications` | `ids` |
 
 `verdicts` carries the issue-table columns (TKT-182): `GlobalId`, `EntityIndex`,
@@ -16,6 +16,9 @@ and `bcf.write` the same way a `check.rule` table does. `summary` has one row
 per specification with its Pass, Fail and InfoNotAvailable counts.
 
 Facets evaluated: entity (class and predefined type), property (set, name,
-value, data type at the number, logical, or text level) and attribute.
-Classification, material, part-of and document facets give InfoNotAvailable
-with a warning on the node. Values are compared in the model's own units.
+value, data type at the number, logical, or text level), attribute, and, when
+`relations` is wired, material and part-of. Classification and document facets,
+and material and part-of without `relations`, give InfoNotAvailable with a
+warning on the node. IDS values are in SI units and the model's numbers are
+converted before comparing; Ara3D.Ids's README in bim-open-data says how each
+facet reads the model.

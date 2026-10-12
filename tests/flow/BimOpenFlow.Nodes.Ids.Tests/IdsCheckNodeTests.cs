@@ -57,6 +57,22 @@ public sealed class IdsCheckNodeTests
             ("ValueType", typeof(string), ["Number", "Number"]),
             ("Value", typeof(string), ["0.9", "0.8"]));
 
+    /// <summary>The wall HasLayer a layer whose material is "Concrete" (entities 3 and 4).</summary>
+    private static TableValue Relations()
+        => NodeTestHelpers.Table(
+            ("EntityIndexA", typeof(long), [2L, 3L]),
+            ("NameA", typeof(string), ["Wall 1", null]),
+            ("EntityIndexB", typeof(long), [3L, 4L]),
+            ("NameB", typeof(string), [null, "concrete"]),
+            ("RelationType", typeof(string), ["HasLayer", "HasMaterial"]));
+
+    private static TableValue EntitiesWithMaterials()
+        => NodeTestHelpers.Table(
+            ("EntityIndex", typeof(long), [0L, 1L, 2L, 3L, 4L]),
+            ("GlobalId", typeof(string), ["D1", "D2", "W1", null, null]),
+            ("Name", typeof(string), ["Door 1", "Door 2", "Wall 1", null, "concrete"]),
+            ("Category", typeof(string), ["IFCDOOR", "IFCDOOR", "IFCWALL", "IFCMATERIALLAYER", "IFCMATERIAL"]));
+
     private IReadOnlyList<FlowValue> Check(FakeEvalContext? context = null)
         => new IdsCheckNode().Eval(context ?? new FakeEvalContext(), [Entities(), Parameters()],
             NodeTestHelpers.Params(("ids", _idsPath)));
@@ -86,6 +102,17 @@ public sealed class IdsCheckNodeTests
         Assert.That(summary.ColumnCells("Pass"), Is.EqualTo(new object?[] { 1L, 0L }));
         Assert.That(summary.ColumnCells("Fail"), Is.EqualTo(new object?[] { 1L, 0L }));
         Assert.That(summary.ColumnCells("InfoNotAvailable"), Is.EqualTo(new object?[] { 0L, 1L }));
+    }
+
+    [Test]
+    public void RelationsInput_EvaluatesTheMaterialFacet()
+    {
+        var context = new FakeEvalContext();
+        var outputs = new IdsCheckNode().Eval(context, [EntitiesWithMaterials(), Parameters(), Relations()],
+            NodeTestHelpers.Params(("ids", _idsPath)));
+        var verdicts = ((TableValue)outputs[0]).Table;
+        Assert.That(verdicts.ColumnCells("Verdict"), Is.EqualTo(new object?[] { "Pass", "Fail", "Pass" }), "the wall's layer is concrete");
+        Assert.That(context.Warnings, Has.None.Contains("material"));
     }
 
     [Test]
@@ -126,7 +153,7 @@ public sealed class IdsCheckNodeTests
     {
         var table = new IdsSpecificationsNode().EvalTable([], ("ids", _idsPath));
         Assert.That(table.ColumnCells("CheckId"), Is.EqualTo(new object?[] { "DC-W1", "MAT" }));
-        Assert.That(table.ColumnCells("Supported"), Is.EqualTo(new object?[] { true, false }));
+        Assert.That(table.ColumnCells("Supported"), Is.EqualTo(new object?[] { true, true }), "material needs only the relations input");
         Assert.That((string?)table.Cell("Requirements", 0), Does.Contain("OverallWidth"));
     }
 
@@ -134,7 +161,8 @@ public sealed class IdsCheckNodeTests
     public void Specs_DeclareThePortsAndTheIdsParameter()
     {
         var check = new IdsCheckNode().Spec;
-        Assert.That(check.Inputs.Select(p => p.Name), Is.EqualTo(new[] { "entities", "parameters" }));
+        Assert.That(check.Inputs.Select(p => p.Name), Is.EqualTo(new[] { "entities", "parameters", "relations" }));
+        Assert.That(check.Inputs.Select(p => p.Optional), Is.EqualTo(new[] { false, false, true }));
         Assert.That(check.Outputs.Select(p => p.Name), Is.EqualTo(new[] { "verdicts", "summary" }));
         Assert.That(check.Params.Single().Kind, Is.EqualTo(ParamKind.FilePath));
         Assert.That(IdsNodes.All.Select(n => n.Spec.Kind), Is.EqualTo(new[] { "ids.check", "ids.specifications" }));

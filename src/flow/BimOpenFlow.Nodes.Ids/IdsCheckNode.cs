@@ -3,8 +3,9 @@ using Ara3D.Ids;
 
 namespace BimOpenFlow.Nodes.Ids;
 
-/// <summary>ids.check: evaluates an IDS file over the entity and parameter tables and emits the
-/// standard verdict table plus one summary row per specification.</summary>
+/// <summary>ids.check: evaluates an IDS file over the entity and parameter tables, and the
+/// relation table when it is wired, and emits the standard verdict table plus one summary row
+/// per specification.</summary>
 public sealed class IdsCheckNode : IFlowNode
 {
     public const string Kind = "ids.check";
@@ -15,6 +16,7 @@ public sealed class IdsCheckNode : IFlowNode
         [
             new PortSpec("entities", PortType.Table),
             new PortSpec("parameters", PortType.Table),
+            new PortSpec("relations", PortType.Table, Optional: true),
         ],
         Outputs:
         [
@@ -23,7 +25,8 @@ public sealed class IdsCheckNode : IFlowNode
         ],
         Params: [IdsFiles.PathSpec],
         "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two "
-        + "outputs of bos.load) and outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, "
+        + "outputs of bos.load) and, when wired, the relations table (its third output), which material "
+        + "and part-of facets need; without it they give InfoNotAvailable. Outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, "
         + "Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, "
         + "Fail and InfoNotAvailable counts per specification (one row per specification, zeros when "
         + "none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, "
@@ -32,7 +35,8 @@ public sealed class IdsCheckNode : IFlowNode
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var document = IdsFiles.Load(parameters, context, Kind);
-        var model = IdsModel.FromTables(inputs.TableInput(0, Kind), inputs.TableInput(1, Kind));
+        var relations = inputs.Count > 2 && inputs[2] is TableValue r ? r.Table : null;
+        var model = IdsModel.FromTables(inputs.TableInput(0, Kind), inputs.TableInput(1, Kind), relations);
         var report = IdsEvaluator.Evaluate(document.Ids, model);
         foreach (var warning in report.Warnings)
             context.Warn($"{Kind}: {warning}");

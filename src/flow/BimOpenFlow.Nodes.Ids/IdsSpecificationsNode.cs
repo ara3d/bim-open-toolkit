@@ -15,7 +15,8 @@ public sealed class IdsSpecificationsNode : IFlowNode
         Params: [IdsFiles.PathSpec],
         "Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, "
         + "Cardinality, Applicability, Requirements, and Supported (false when a facet would give "
-        + "InfoNotAvailable). Reads no model; use it to see what an IDS asks before running ids.check.");
+        + "InfoNotAvailable; material and part-of facets count as supported and need ids.check's "
+        + "relations input). Reads no model; use it to see what an IDS asks before running ids.check.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
         => [new TableValue(IdsTables.Specifications(IdsFiles.Load(parameters, context, Kind)))];
