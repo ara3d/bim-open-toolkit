@@ -1,47 +1,64 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": { "x": -290, "y": 40 },
-    "inst": { "x": 40, "y": 40 },
-    "measures": { "x": 40, "y": 224 },
-    "scale": { "x": 360, "y": 224 },
-    "colored": { "x": 700, "y": 40 },
-    "largest": { "x": 360, "y": 560 },
-    "top": { "x": 700, "y": 470 },
-    "chart": { "x": 1010, "y": 408 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 158 },
+    "model": { "x": 40, "y": 224 },
+    "inst": { "x": 370, "y": 224 },
+    "shown": { "x": 1030, "y": 224 },
+    "colored": { "x": 1360, "y": 224 },
+    "measures": { "x": 370, "y": 408 },
+    "elements": { "x": 700, "y": 408 },
+    "largest": { "x": 1030, "y": 408 },
+    "top": { "x": 1360, "y": 408 },
+    "labelled": { "x": 1690, "y": 408 },
+    "chart": { "x": 2020, "y": 408 },
+    "scale": { "x": 1030, "y": 592 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/duplex-base.ifc", "description": "The building's IFC file; any IFC model works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
       { "from": "model.path", "to": "inst.path" },
       { "from": "model.path", "to": "measures.path" },
-      { "from": "inst.instances", "to": "colored.instances" },
-      { "from": "measures.measures", "to": "colored.values" },
-      { "from": "measures.measures", "to": "scale.values" },
+      { "from": "measures.measures", "to": "elements.table" },
+      { "from": "inst.instances", "to": "shown.instances" },
+      { "from": "elements.table", "to": "shown.ids" },
+      { "from": "shown.instances", "to": "colored.instances" },
+      { "from": "elements.table", "to": "colored.values" },
+      { "from": "elements.table", "to": "scale.values" },
       { "from": "scale.legend", "to": "colored.scale" },
-      { "from": "measures.measures", "to": "largest.table" },
+      { "from": "elements.table", "to": "largest.table" },
       { "from": "largest.table", "to": "top.table" },
-      { "from": "top.table", "to": "chart.table" },
+      { "from": "top.table", "to": "labelled.table" },
+      { "from": "labelled.table", "to": "chart.table" },
       { "from": "scale.legend", "to": "chart.scale" }
     ],
     "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "inst", "kind": "view3d.instances", "version": 1 },
       { "id": "measures", "kind": "view3d.measures", "version": 1 },
+      { "id": "elements", "kind": "table.filter", "version": 1 },
+      { "id": "shown", "kind": "view3d.isolate", "version": 1 },
       { "id": "scale", "kind": "view.colormap", "version": 1 },
       { "id": "colored", "kind": "view3d.color", "version": 1 },
       { "id": "largest", "kind": "table.sort", "version": 1 },
       { "id": "top", "kind": "table.limit", "version": 1 },
+      { "id": "labelled", "kind": "table.derive", "version": 1 },
       { "id": "chart", "kind": "chart.bar", "version": 1 }
     ]
   },
   "values": {
-    "model": { "path": "{SAMPLES}/duplex-base.ifc" },
-    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
-    "measures": { "path": "{SAMPLES}/duplex-base.ifc" },
-    "scale": { "valueColumn": "meshVolume", "colorMap": "viridis", "auto": "false", "min": "0", "max": "1" },
+    "about": { "text": "Colours elements in 3D and the 20 largest in a bar chart by enclosed mesh volume, through one view.colormap scale, so both panes show the same legend. Spaces and openings are left out. The scale is automatic: on the Duplex 0 to 60.75 m3, the roof; most elements are small and take the dark end. Bars are labelled by category and STEP id." },
+    "model": { "path": "$model" },
+    "elements": { "expr": "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')" },
+    "shown": { "joinColumn": "instanceIndex" },
+    "scale": { "valueColumn": "meshVolume", "colorMap": "viridis" },
     "colored": { "joinColumn": "instanceIndex" },
     "largest": { "A": "meshVolume", "descendingA": "true" },
     "top": { "count": "20" },
-    "chart": { "labelColumn": "category", "valueColumns": "meshVolume" }
+    "labelled": { "name": "element", "expr": "category & ' ' & entityId" },
+    "chart": { "labelColumn": "element", "valueColumns": "meshVolume" }
   }
 }

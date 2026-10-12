@@ -1,25 +1,34 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "colored": { "x": 700, "y": 40 },
-    "inst": { "x": 40, "y": 40 },
-    "vox": { "x": 370, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 104 },
+    "model": { "x": 40, "y": 224 },
+    "inst": { "x": 370, "y": 224 },
+    "voxels": { "x": 700, "y": 224 },
+    "colored": { "x": 1030, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/duplex-base.ifc", "description": "The building's IFC file; any IFC model works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "inst.instances", "to": "vox.instances" },
-      { "from": "vox.boxes", "to": "colored.instances" },
-      { "from": "vox.boxes", "to": "colored.values" }
+      { "from": "model.path", "to": "inst.path" },
+      { "from": "inst.instances", "to": "voxels.instances" },
+      { "from": "voxels.boxes", "to": "colored.instances" },
+      { "from": "voxels.boxes", "to": "colored.values" }
     ],
     "nodes": [
-      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "inst", "kind": "view3d.instances", "version": 1 },
-      { "id": "vox", "kind": "view3d.voxelize", "version": 1 }
+      { "id": "voxels", "kind": "view3d.voxelize", "version": 1 },
+      { "id": "colored", "kind": "view3d.color", "version": 1 }
     ]
   },
   "values": {
-    "colored": { "colorMap": "viridis", "joinColumn": "voxelId", "valueColumn": "count" },
-    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
-    "vox": { "size": "0.5" }
+    "about": { "text": "Cuts the model into 0.5 m voxels and colours each by how many instances' boxes reach into it, a quick view of where the model is dense. On the Duplex that is 14,503 voxels with counts from 1 to 17." },
+    "model": { "path": "$model" },
+    "voxels": { "size": "0.5" },
+    "colored": { "colorMap": "viridis", "joinColumn": "voxelId", "valueColumn": "count" }
   }
 }

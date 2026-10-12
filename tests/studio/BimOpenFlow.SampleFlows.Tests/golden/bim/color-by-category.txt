@@ -1,25 +1,42 @@
 dfg 0.1.0;
-// color-by-category   graph de1248915f61
-inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+// color-by-category   graph f517f9eb4197
+inputs model: FilePath = "{SAMPLES}/duplex-base.ifc" now "{MODELS}/duplex-base.ifc";
+about = view.note@1(text: "Colours each element by a group of IFC categories, so the palette's 10 colours stay distinct: walls, structure, slabs, roofs, doors, windows, stairs and railings, coverings, furniture, other. Spaces and openings are left out. groups lists each category with its instance count and group; on the Duplex 13 categories fold into 9 groups over 693 instances.");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-base.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-byCat = table.aggregate@1(table: inst.instances, groupBy: "category", aggregates: "count(category) as instances");
-  // Ok  table 14 rows x 2 cols  sha 5c8ac0f88212
+visible = table.filter@1(table: inst.instances, expr: "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')");
+  // Ok  table 693 rows x 11 cols  sha e24dfce66526
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 693 instances (of 714 upstream): 693 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 6.635)
+perCategory = table.aggregate@1(table: visible.table, groupBy: "category", aggregates: "count(*) as instances");
+  // Ok  table 13 rows x 2 cols  sha cec14dacebfc
   //   columns category:Text, instances:Integer
   //   [0] "IFCBEAM", 8
   //   [1] "IFCCOVERING", 13
   //   [2] "IFCDOOR", 44
-colored = view3d.color@1(instances: inst.instances, values: byCat.table, joinColumn: "category", valueColumn: "category", colorMap: "category10");
+groups = table.derive@1(table: perCategory.table, name: "group", expr: "category in ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCCURTAINWALL') ? 'Walls' : (category in ('IFCBEAM', 'IFCCOLUMN', 'IFCMEMBER', 'IFCFOOTING', 'IFCPILE', 'IFCPLATE') ? 'Structure' : (category == 'IFCSLAB' ? 'Slabs' : (category == 'IFCROOF' ? 'Roofs' : (category == 'IFCDOOR' ? 'Doors' : (category == 'IFCWINDOW' ? 'Windows' : (category in ('IFCSTAIR', 'IFCSTAIRFLIGHT', 'IFCRAILING', 'IFCRAMP', 'IFCRAMPFLIGHT') ? 'Stairs and railings' : (category == 'IFCCOVERING' ? 'Coverings' : (category in ('IFCFURNISHINGELEMENT', 'IFCFURNITURE') ? 'Furniture' : 'Other'))))))))");
+  // Ok  table 13 rows x 3 cols  sha e778536c6e50
+  //   columns category:Text, instances:Integer, group:Text
+  //   [0] "IFCBEAM", 8, "Structure"
+  //   [1] "IFCCOVERING", 13, "Coverings"
+  //   [2] "IFCDOOR", 44, "Doors"
+colored = view3d.color@1(instances: visible.table, values: groups.table, joinColumn: "category", valueColumn: "group", colorMap: "category10");
   // Ok
-  //   instances: table 714 rows x 15 cols  sha bdfdb827a910
+  //   instances: table 693 rows x 15 cols  sha af25043e7bee
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
-  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
-  //     714 coloured in 10 colours, 0 grey
-  //     legend "category" categorical: "IFCBEAM/IFCSTAIRFLIGHT" 70, "IFCCOVERING/IFCWALL" 14, "IFCDOOR/IFCWALLSTANDARDCASE" 100, "IFCFOOTING/IFCWINDOW" 101, "IFCFURNISHINGELEMENT" 252, "IFCMEMBER" 4, "IFCRAILING" 130, "IFCROOF" 1, "IFCSLAB" 21, "IFCSPACE" 21
-  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-  //   legend: table 14 rows x 9 cols  sha 7f7ce68e0a0b
+  //     scene 693 instances: 693 opaque, 0 faded, 0 hidden
+  //     693 coloured in 9 colours, 0 grey
+  //     legend "group" categorical: "Coverings" 13, "Doors" 44, "Furniture" 252, "Roofs" 1, "Slabs" 21, "Stairs and railings" 192, "Structure" 19, "Walls" 57, "Windows" 94
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 6.635)
+  //   legend: table 9 rows x 9 cols  sha 4e4b561dc061
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //     legend "category" categorical: category "IFCBEAM" 1, category "IFCCOVERING" 1, category "IFCDOOR" 1, category "IFCFOOTING" 1, category "IFCFURNISHINGELEMENT" 1, category "IFCMEMBER" 1, category "IFCRAILING" 1, category "IFCROOF" 1, category "IFCSLAB" 1, category "IFCSPACE" 1, category "IFCSTAIRFLIGHT" 1, category "IFCWALL" 1, category "IFCWALLSTANDARDCASE" 1, category "IFCWINDOW" 1
+  //     legend "group" categorical: category "Coverings" 1, category "Doors" 1, category "Furniture" 1, category "Roofs" 1, category "Slabs" 1, category "Stairs and railings" 2, category "Structure" 3, category "Walls" 2, category "Windows" 1

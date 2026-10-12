@@ -1,34 +1,51 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "colored": { "x": 1360, "y": 40 },
-    "inst": { "x": 40, "y": 40 },
-    "keyed": { "x": 1030, "y": 224 },
-    "overlaps": { "x": 370, "y": 224 },
-    "perElement": { "x": 700, "y": 224 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 158 },
+    "model": { "x": 40, "y": 224 },
+    "inst": { "x": 370, "y": 224 },
+    "solids": { "x": 700, "y": 224 },
+    "overlaps": { "x": 1030, "y": 408 },
+    "clashes": { "x": 1360, "y": 408 },
+    "perElement": { "x": 1690, "y": 408 },
+    "keyed": { "x": 2020, "y": 408 },
+    "colored": { "x": 2350, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/duplex-base.ifc", "description": "The building's IFC file; any IFC model works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "inst.instances", "to": "overlaps.a" },
-      { "from": "inst.instances", "to": "overlaps.b" },
-      { "from": "overlaps.table", "to": "perElement.table" },
+      { "from": "model.path", "to": "inst.path" },
+      { "from": "inst.instances", "to": "solids.table" },
+      { "from": "solids.table", "to": "overlaps.a" },
+      { "from": "solids.table", "to": "overlaps.b" },
+      { "from": "overlaps.table", "to": "clashes.table" },
+      { "from": "clashes.table", "to": "perElement.table" },
       { "from": "perElement.table", "to": "keyed.table" },
-      { "from": "inst.instances", "to": "colored.instances" },
+      { "from": "solids.table", "to": "colored.instances" },
       { "from": "keyed.table", "to": "colored.values" }
     ],
     "nodes": [
-      { "id": "colored", "kind": "view3d.color", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "inst", "kind": "view3d.instances", "version": 1 },
-      { "id": "keyed", "kind": "table.rename", "version": 1 },
+      { "id": "solids", "kind": "table.filter", "version": 1 },
       { "id": "overlaps", "kind": "spatial.intersects", "version": 1 },
-      { "id": "perElement", "kind": "table.aggregate", "version": 1 }
+      { "id": "clashes", "kind": "table.filter", "version": 1 },
+      { "id": "perElement", "kind": "table.aggregate", "version": 1 },
+      { "id": "keyed", "kind": "table.rename", "version": 1 },
+      { "id": "colored", "kind": "view3d.color", "version": 1 }
     ]
   },
   "values": {
-    "colored": { "colorMap": "viridis", "joinColumn": "instanceIndex", "valueColumn": "overlaps" },
-    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
-    "keyed": { "renames": "A=instanceIndex" },
+    "about": { "text": "Elements whose bounding boxes overlap with positive volume (spatial.intersects of the model with itself; OverlapVolume > 0 drops boxes that only touch). Spaces and openings are left out. Colour is the number of other elements an element overlaps; grey means none. On the Duplex 549 of 693 elements overlap something, up to 74 others. Boxes, not meshes: a candidate is not a confirmed clash." },
+    "model": { "path": "$model" },
+    "solids": { "expr": "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')" },
     "overlaps": { "aKey": "instanceIndex", "bKey": "instanceIndex" },
-    "perElement": { "aggregates": "count(*) as overlaps", "groupBy": "A" }
+    "clashes": { "expr": "OverlapVolume > 0" },
+    "perElement": { "aggregates": "count(*) as overlaps", "groupBy": "A" },
+    "keyed": { "renames": "A=instanceIndex" },
+    "colored": { "colorMap": "viridis", "joinColumn": "instanceIndex", "valueColumn": "overlaps" }
   }
 }

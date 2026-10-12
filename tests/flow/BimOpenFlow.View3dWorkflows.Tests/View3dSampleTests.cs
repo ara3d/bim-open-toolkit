@@ -15,8 +15,8 @@ namespace BimOpenFlow.View3dWorkflows.Tests;
 
 /// <summary>
 /// Every committed view3d sample (samples/view3d-analyses/*.json) parses,
-/// validates against the Bos + TableOps + Geometry + Spatial packs, and evaluates all-green over
-/// the committed samples/nrc/duplex-base.ifc ({SAMPLES} rewritten to samples/nrc). One shared
+/// validates against the Bos, TableOps, Geometry, Spatial, Viz and Value packs, and evaluates all-green
+/// over the committed samples/nrc/duplex-base.ifc ({SAMPLES} rewritten to samples/nrc). One shared
 /// session per fixture: the meshed model is cached process-wide, so the IFC
 /// is meshed once for all samples.
 /// </summary>
@@ -102,25 +102,70 @@ public sealed class View3dSampleTests
     {
         var session = Evaluate(Sample("decimate-overview"));
         var all = OutputTable(session,"inst", "instances").Rows.Count;
-        var kept = OutputTable(session,"big", "instances").Rows.Count;
+        var kept = OutputTable(session,"largest", "instances").Rows.Count;
         Assert.That(kept, Is.GreaterThan(0));
         Assert.That(kept, Is.LessThan(all));
     }
 
-    [Test]
-    public void Debug_MeshVolumeStats()
+    [TestCaseSource(nameof(SampleFiles))]
+    public void DeclaresAModelInputAndANote(string file)
     {
-        // mesh-volume merged into shared-color-legend (TKT-93): same view3d.measures node "measures".
-        var table = OutputTable(Evaluate(Sample("shared-color-legend")), "measures", "measures");
-        var col = table.Columns.Single(c => c.Descriptor.Name == "meshVolume").ColumnIndex;
-        var values = Enumerable.Range(0, table.Rows.Count)
-            .Select(r => table[col, r] as double?)
-            .Where(v => v.HasValue).Select(v => v!.Value).OrderBy(v => v).ToList();
-        Console.WriteLine("count=" + values.Count);
-        Console.WriteLine("min=" + values.First() + " max=" + values.Last());
-        foreach (var max in new[] { 1.0, 2.0, 5.0, 10.0 })
-            Console.WriteLine($"max={max}: above={values.Count(v => v > max)}");
-        Assert.Pass();
+        var doc = Load(file);
+        Assert.That(doc.Inputs.Select(i => i.Name), Does.Contain("model"));
+        Assert.That(doc.Nodes.Any(n => n.Id == "about" && n.Kind == "view.note"), Is.True);
+    }
+
+    [Test]
+    public void SharedColorLegend_ScaleClampsNothingAndBarsHaveDistinctLabels()
+    {
+        var session = Evaluate(Sample("shared-color-legend"));
+        var legend = OutputTable(session, "scale", "legend");
+        var roles = Column(legend, "role").Select(v => v?.ToString()).ToList();
+        Assert.That(roles, Has.None.EqualTo("above").And.None.EqualTo("below"));
+        var bars = Column(OutputTable(session, "chart", "table"), "element").Select(v => v?.ToString()).ToList();
+        Assert.That(bars, Has.Count.EqualTo(20));
+        Assert.That(bars, Is.Unique);
+        Assert.That(bars, Has.None.StartsWith("IFCSPACE"));
+    }
+
+    [Test]
+    public void GhostContext_KeepsEveryWallClassOpaque()
+    {
+        var session = Evaluate(Sample("ghost-context"));
+        var walls = Column(OutputTable(session, "walls", "table"), "category").Select(v => v?.ToString()).Distinct();
+        Assert.That(walls, Is.EquivalentTo(new[] { "IFCWALL", "IFCWALLSTANDARDCASE" }));
+    }
+
+    [Test]
+    public void ClashCandidates_CountsOnlyOverlappingSolids()
+    {
+        var session = Evaluate(Sample("clash-candidates"));
+        Assert.That(Column(OutputTable(session, "clashes", "table"), "OverlapVolume").Select(Convert.ToDouble),
+            Has.All.GreaterThan(0.0));
+        Assert.That(Column(OutputTable(session, "solids", "table"), "category").Select(v => v?.ToString()),
+            Has.None.EqualTo("IFCSPACE").And.None.EqualTo("IFCOPENINGELEMENT"));
+    }
+
+    [Test]
+    public void ColorByCategory_FoldsCategoriesIntoAtMostTenGroups()
+    {
+        var groups = Column(OutputTable(Evaluate(Sample("color-by-category")), "groups", "table"), "group")
+            .Select(v => v?.ToString()).Distinct().ToList();
+        Assert.That(groups, Has.Count.InRange(1, 10));
+    }
+
+    [Test]
+    public void MassingBoxes_ColoursEachBoxByLabel()
+    {
+        var table = OutputTable(Evaluate(Sample("massing-boxes")), "colored", "instances");
+        Assert.That(table.Columns.Select(c => c.Descriptor.Name),
+            Is.SupersetOf(new[] { "label", "r", "g", "b", "a" }));
+    }
+
+    private static IEnumerable<object?> Column(IDataTable table, string name)
+    {
+        var col = table.Columns.Single(c => c.Descriptor.Name == name).ColumnIndex;
+        return Enumerable.Range(0, table.Rows.Count).Select(r => table[col, r]);
     }
 
     private static int CategoryColumn(IDataTable table)

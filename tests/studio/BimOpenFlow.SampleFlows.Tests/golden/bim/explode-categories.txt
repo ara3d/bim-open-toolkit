@@ -1,15 +1,20 @@
 dfg 0.1.0;
-// explode-categories   graph db42f9195eca
-inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+// explode-categories   graph ee5b6cb378e8
+inputs model: FilePath = "{SAMPLES}/duplex-base.ifc" now "{MODELS}/duplex-base.ifc";
+about = view.note@1(text: "Lays the model's IFC categories out side by side on a grid (view3d.arrange, 5 m gap), so each category can be seen on its own and the first frame shows them all. On the Duplex the 14 categories fill about 52 m by 113 m.");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-base.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-exploded = view3d.spacing@1(instances: inst.instances, groupColumn: "category", axis: "x", spacing: "15");
-  // Ok  table 714 rows x 14 cols  sha 3c30de592819
+arranged = view3d.arrange@1(instances: inst.instances, groupColumn: "category", gap: "5");
+  // Ok  table 714 rows x 14 cols  sha 003030cd796c
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, offsetX:Number, offsetY:Number, offsetZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //   no colour columns
-  //   offsets move 706 instances
-  //   bounds (0.1776, -22.18, -1.55) to (203.8, 4.383, 9)
+  //   offsets move 714 instances
+  //   bounds (0, 0, -1.55) to (52.13, 112.5, 9)

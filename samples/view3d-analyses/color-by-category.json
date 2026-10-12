@@ -1,25 +1,42 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "byCat": { "x": 370, "y": 224 },
-    "colored": { "x": 700, "y": 40 },
-    "inst": { "x": 40, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 158 },
+    "model": { "x": 40, "y": 224 },
+    "inst": { "x": 370, "y": 224 },
+    "visible": { "x": 700, "y": 224 },
+    "perCategory": { "x": 1030, "y": 408 },
+    "groups": { "x": 1360, "y": 408 },
+    "colored": { "x": 1690, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/duplex-base.ifc", "description": "The building's IFC file; any IFC model works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "inst.instances", "to": "byCat.table" },
-      { "from": "inst.instances", "to": "colored.instances" },
-      { "from": "byCat.table", "to": "colored.values" }
+      { "from": "model.path", "to": "inst.path" },
+      { "from": "inst.instances", "to": "visible.table" },
+      { "from": "visible.table", "to": "perCategory.table" },
+      { "from": "perCategory.table", "to": "groups.table" },
+      { "from": "visible.table", "to": "colored.instances" },
+      { "from": "groups.table", "to": "colored.values" }
     ],
     "nodes": [
-      { "id": "byCat", "kind": "table.aggregate", "version": 1 },
-      { "id": "colored", "kind": "view3d.color", "version": 1 },
-      { "id": "inst", "kind": "view3d.instances", "version": 1 }
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "visible", "kind": "table.filter", "version": 1 },
+      { "id": "perCategory", "kind": "table.aggregate", "version": 1 },
+      { "id": "groups", "kind": "table.derive", "version": 1 },
+      { "id": "colored", "kind": "view3d.color", "version": 1 }
     ]
   },
   "values": {
-    "byCat": { "aggregates": "count(category) as instances", "groupBy": "category" },
-    "colored": { "colorMap": "category10", "joinColumn": "category", "valueColumn": "category" },
-    "inst": { "path": "{SAMPLES}/duplex-base.ifc" }
+    "about": { "text": "Colours each element by a group of IFC categories, so the palette's 10 colours stay distinct: walls, structure, slabs, roofs, doors, windows, stairs and railings, coverings, furniture, other. Spaces and openings are left out. groups lists each category with its instance count and group; on the Duplex 13 categories fold into 9 groups over 693 instances." },
+    "model": { "path": "$model" },
+    "visible": { "expr": "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')" },
+    "perCategory": { "aggregates": "count(*) as instances", "groupBy": "category" },
+    "groups": { "name": "group", "expr": "category in ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCCURTAINWALL') ? 'Walls' : (category in ('IFCBEAM', 'IFCCOLUMN', 'IFCMEMBER', 'IFCFOOTING', 'IFCPILE', 'IFCPLATE') ? 'Structure' : (category == 'IFCSLAB' ? 'Slabs' : (category == 'IFCROOF' ? 'Roofs' : (category == 'IFCDOOR' ? 'Doors' : (category == 'IFCWINDOW' ? 'Windows' : (category in ('IFCSTAIR', 'IFCSTAIRFLIGHT', 'IFCRAILING', 'IFCRAMP', 'IFCRAMPFLIGHT') ? 'Stairs and railings' : (category == 'IFCCOVERING' ? 'Coverings' : (category in ('IFCFURNISHINGELEMENT', 'IFCFURNITURE') ? 'Furniture' : 'Other'))))))))" },
+    "colored": { "colorMap": "category10", "joinColumn": "category", "valueColumn": "group" }
   }
 }

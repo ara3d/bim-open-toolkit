@@ -1,37 +1,54 @@
 dfg 0.1.0;
-// clash-candidates   graph 005c866edaee
-inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+// clash-candidates   graph ac679a4298df
+inputs model: FilePath = "{SAMPLES}/duplex-base.ifc" now "{MODELS}/duplex-base.ifc";
+about = view.note@1(text: "Elements whose bounding boxes overlap with positive volume (spatial.intersects of the model with itself; OverlapVolume > 0 drops boxes that only touch). Spaces and openings are left out. Colour is the number of other elements an element overlaps; grey means none. On the Duplex 549 of 693 elements overlap something, up to 74 others. Boxes, not meshes: a candidate is not a confirmed clash.");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-base.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-overlaps = spatial.intersects@1(a: inst.instances, b: inst.instances, aKey: "instanceIndex", bKey: "instanceIndex");
-  // Ok  table 6240 rows x 3 cols  sha 268705106116
+solids = table.filter@1(table: inst.instances, expr: "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')");
+  // Ok  table 693 rows x 11 cols  sha e24dfce66526
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 693 instances (of 714 upstream): 693 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 6.635)
+overlaps = spatial.intersects@1(a: solids.table, b: solids.table, aKey: "instanceIndex", bKey: "instanceIndex");
+  // Ok  table 4390 rows x 3 cols  sha 22d20934f3b1
   //   columns A:Integer, B:Integer, OverlapVolume:Number
-  //   [0] 0, 7, 9.818
-  //   [1] 0, 11, 0
-  //   [2] 0, 14, 0.008321
-perElement = table.aggregate@1(table: overlaps.table, groupBy: "A", aggregates: "count(*) as overlaps");
-  // Ok  table 714 rows x 2 cols  sha 8a3beae4ac3f
+  //   [0] 10, 16, 0
+  //   [1] 10, 23, 0
+  //   [2] 10, 30, 1.059E-07
+clashes = table.filter@1(table: overlaps.table, expr: "OverlapVolume > 0");
+  // Ok  table 2096 rows x 3 cols  sha 01e3963fa051
+  //   columns A:Integer, B:Integer, OverlapVolume:Number
+  //   [0] 10, 30, 1.059E-07
+  //   [1] 10, 406, 0.008442
+  //   [2] 10, 409, 0.00256
+perElement = table.aggregate@1(table: clashes.table, groupBy: "A", aggregates: "count(*) as overlaps");
+  // Ok  table 549 rows x 2 cols  sha 9c3eeeb88437
   //   columns A:Integer, overlaps:Integer
-  //   [0] 0, 88
-  //   [1] 1, 68
-  //   [2] 2, 13
+  //   [0] 10, 4
+  //   [1] 11, 7
+  //   [2] 12, 8
 keyed = table.rename@1(table: perElement.table, renames: "A=instanceIndex");
-  // Ok  table 714 rows x 2 cols  sha bb433e6b45c5
+  // Ok  table 549 rows x 2 cols  sha 6c4ee3150982
   //   columns instanceIndex:Integer, overlaps:Integer
-  //   [0] 0, 88
-  //   [1] 1, 68
-  //   [2] 2, 13
-colored = view3d.color@1(instances: inst.instances, values: keyed.table, joinColumn: "instanceIndex", valueColumn: "overlaps", colorMap: "viridis");
+  //   [0] 10, 4
+  //   [1] 11, 7
+  //   [2] 12, 8
+colored = view3d.color@1(instances: solids.table, values: keyed.table, joinColumn: "instanceIndex", valueColumn: "overlaps", colorMap: "viridis");
   // Ok
-  //   instances: table 714 rows x 15 cols  sha 1baf1c2143b3
+  //   instances: table 693 rows x 15 cols  sha f3e7ff17c89c
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
-  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
-  //     714 coloured in 59 colours, 0 grey
-  //     legend "overlaps" auto 2 to 99: bins 668 / 23 / 11 / 12
-  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-  //   legend: table 5 rows x 9 cols  sha 8efa1f8bf84c
+  //     scene 693 instances: 693 opaque, 0 faded, 0 hidden
+  //     549 coloured in 27 colours, 144 grey
+  //     legend "overlaps" auto 1 to 74: bins 533 / 7 / 5 / 4
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 6.635)
+  //   legend: table 5 rows x 9 cols  sha 1d696cffa105
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //     legend "overlaps" auto: 2, 26.25, 50.5, 74.75, 99
+  //     legend "overlaps" auto: 1, 19.25, 37.5, 55.75, 74

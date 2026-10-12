@@ -1,25 +1,34 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "ghosted": { "x": 700, "y": 40 },
-    "inst": { "x": 40, "y": 40 },
-    "walls": { "x": 370, "y": 224 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 131 },
+    "model": { "x": 40, "y": 224 },
+    "inst": { "x": 370, "y": 224 },
+    "walls": { "x": 700, "y": 408 },
+    "ghosted": { "x": 1030, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/duplex-base.ifc", "description": "The building's IFC file; any IFC model works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
+      { "from": "model.path", "to": "inst.path" },
       { "from": "inst.instances", "to": "walls.table" },
       { "from": "inst.instances", "to": "ghosted.instances" },
       { "from": "walls.table", "to": "ghosted.ids" }
     ],
     "nodes": [
-      { "id": "ghosted", "kind": "view3d.opacity", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "inst", "kind": "view3d.instances", "version": 1 },
-      { "id": "walls", "kind": "table.filter", "version": 1 }
+      { "id": "walls", "kind": "table.filter", "version": 1 },
+      { "id": "ghosted", "kind": "view3d.opacity", "version": 1 }
     ]
   },
   "values": {
-    "ghosted": { "alpha": "0.15", "joinColumn": "entityId", "scope": "others" },
-    "inst": { "path": "{SAMPLES}/duplex-base.ifc" },
-    "walls": { "expr": "category == \"IFCWALLSTANDARDCASE\"" }
+    "about": { "text": "Walls stay opaque (IFCWALL and IFCWALLSTANDARDCASE) and everything else fades to alpha 0.15, so the walls read against the rest of the building. On the Duplex that is 57 walls (one IFCWALL) opaque and 657 instances faded." },
+    "model": { "path": "$model" },
+    "walls": { "expr": "category in ('IFCWALL', 'IFCWALLSTANDARDCASE')" },
+    "ghosted": { "alpha": "0.15", "joinColumn": "entityId", "scope": "others" }
   }
 }

@@ -1,20 +1,29 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "exploded": { "x": 370, "y": 40 },
-    "inst": { "x": 40, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 131 },
+    "model": { "x": 40, "y": 224 },
+    "inst": { "x": 370, "y": 224 },
+    "arranged": { "x": 700, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/duplex-base.ifc", "description": "The building's IFC file; any IFC model works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "inst.instances", "to": "exploded.instances" }
+      { "from": "model.path", "to": "inst.path" },
+      { "from": "inst.instances", "to": "arranged.instances" }
     ],
     "nodes": [
-      { "id": "exploded", "kind": "view3d.spacing", "version": 1 },
-      { "id": "inst", "kind": "view3d.instances", "version": 1 }
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
+      { "id": "inst", "kind": "view3d.instances", "version": 1 },
+      { "id": "arranged", "kind": "view3d.arrange", "version": 1 }
     ]
   },
   "values": {
-    "exploded": { "axis": "x", "groupColumn": "category", "spacing": "15" },
-    "inst": { "path": "{SAMPLES}/duplex-base.ifc" }
+    "about": { "text": "Lays the model's IFC categories out side by side on a grid (view3d.arrange, 5 m gap), so each category can be seen on its own and the first frame shows them all. On the Duplex the 14 categories fill about 52 m by 113 m." },
+    "model": { "path": "$model" },
+    "arranged": { "groupColumn": "category", "gap": "5" }
   }
 }
