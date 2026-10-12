@@ -1670,7 +1670,7 @@ With `format` auto, the reader is inferred from the file extension (.csv, .parqu
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.csv,.parquet,.json` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.csv,.parquet,.json` |
 | `format` | Enum | — | `auto` | `auto`, `csv`, `parquet`, `json` | — |
 
 **Columns of `table`**: inferred from the inputs
@@ -1763,7 +1763,7 @@ Reads one CSV file or a glob of files via DuckDB `read_csv`, with typed delimite
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.csv,.tsv,.txt` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.csv,.tsv,.txt` |
 | `delimiter` | Text | — | `,` | — | — |
 | `header` | Boolean | — | `true` | — | — |
 | `skipRows` | Integer | — | `0` | — | — |
@@ -1792,7 +1792,7 @@ Reads a Parquet file or glob of files via DuckDB `read_parquet`. Parquet is self
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.parquet` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.parquet` |
 
 **Columns of `table`**: inferred from the inputs
 
@@ -1814,7 +1814,7 @@ Reads a JSON file via DuckDB `read_json`; `layout` selects the file shape (auto,
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.json,.ndjson` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.json,.ndjson` |
 | `layout` | Enum | — | `auto` | `auto`, `records`, `lines` | — |
 | `flatten` | Boolean | — | `false` | — | — |
 
@@ -1893,7 +1893,7 @@ An empty `sheet` means the first worksheet; a named sheet that does not exist is
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.xlsx` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.xlsx` |
 | `sheet` | Text | — | — | — | — |
 | `headerRow` | Integer | — | `1` | — | — |
 | `range` | Text | — | — | — | — |
@@ -1918,7 +1918,7 @@ Lists a workbook's worksheets as a table: `name`, `index` (1-based position), an
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.xlsx` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.xlsx` |
 
 **Columns of `sheets`**
 
@@ -1947,7 +1947,7 @@ The database file is opened read-only, and the SQL is validated as a single SELE
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 | `sql` | Text | — | — | — | — |
 
 **Columns of `table`**: inferred from the inputs
@@ -1970,7 +1970,7 @@ Reads one whole table (`SELECT *`, read-only, case-insensitive name match) with 
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 | `table` | Text | — | — | — | — |
 
 **Columns of `table`**: inferred from the inputs
@@ -1993,7 +1993,7 @@ Lists a database's user tables (`name`, `columnCount`, `rowCount`) in name order
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
+| `path` | FilePath | Text | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 
 **Columns of `tables`**
 
