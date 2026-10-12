@@ -60,3 +60,5 @@ G1 and G2 run in parallel against the manifest contract; G2 may use a hand-writt
 
 | Chunk | Commit | Result |
 |---|---|---|
+| G1 | bim-open-data 94e10bf | 16 GLBs (4 files x 4 meshers, 4.4 MB) and manifest.json; Y-up by right-multiplying ZUpToYUp; in-process elapsedMs noisy (other builds running) |
+| G2 | bim-open-data 23aef91 | compare.html, four panes over the alpha viewer, linkCameraViews from the first pane, lock toggle, compare-smoke.mjs; verified in the browser: sync and selector work; models stood on end (Y-up GLB in a Z-up viewer), fix requested |

@@ -208,3 +208,4 @@ Order: B0; then B1, B3, B4, B5 in parallel, B2 after B1; then B6 (after B2, B3, 
 | B5 | bim-open-data 017ca5d | SurfaceMap family and BSplineKnots moved; FaceSurfaceMaps and BSplineSurfaceReader keep the entity reading; 8 kernel tests; no forwarders |
 | B4 | bim-open-data 08e6475, 16ccbb3 | CircleSamples.Ring and Arc replace two identical copies and AddArc; 4 kernel tests |
 | B1 | bim-open-data 4bf322c | PolygonWithHoles moved (partial class with RingBandTriangulation.cs); 5 kernel tests, bow-tie one ignored: the SDK self-intersection sweep never fires (TKT filed) |
+| B2 | bim-open-data eeefb1d | MeshOps, MeshMeasure, Extrusion in the kernel; MeshHelpers keeps readers and 5 forwarders; 29 kernel tests |
