@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// nrc-color-operational-carbon   graph af3377f20683
-model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+// nrc-color-operational-carbon   graph c816b8a63ea2
+inputs model: FilePath = "{SAMPLES}/duplex-enriched.ifc" now "{MODELS}/duplex-enriched.ifc";
+about = view.note@1(text: "Figure 5: the Duplex model coloured by operational carbon (kgCO2e/yr) from nrc_analytics_elements.csv, joined on GlobalId, on the viridis scale from 14.2 (dark purple) to 412 (yellow). 21 of the 714 mesh instances stay grey: their elements have no row in the CSV. Figures 6 and 7 are this graph with answer's valueColumn set to EmbodiedCarbon_A1A3_kgCO2e (viridis) or Category (category10).");
+  // Ok
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.ifc"
+meshes = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
@@ -12,7 +17,7 @@ values = csv.read@1(path: "{SAMPLES}/nrc_analytics_elements.csv");
   //   [0] "2O2Fr$t4X7Zf8NOew3FNtn", 3797, "IFCWALLSTANDARDCASE", "Basic Wall:Exterior - Brick on Block:138062", "Level 1", 39, "Wall", 615.5, 689.4, 372, 83.6, "Baseline", "run-2026-09-17-01"
   //   [1] "2O2Fr$t4X7Zf8NOew3FNqI", 3999, "IFCWALLSTANDARDCASE", "Basic Wall:Exterior - Brick on Block:138157", "Level 1", 39, "Wall", 690, 772.8, 332, 79.2, "Baseline", "run-2026-09-17-01"
   //   [2] "2O2Fr$t4X7Zf8NOew3FNr2", 4043, "IFCWALLSTANDARDCASE", "Basic Wall:Exterior - Brick on Block:138237", "Level 1", 39, "Wall", 887.5, 994, 310.8, 63.9, "Baseline", "run-2026-09-17-01"
-answer = view3d.color@1(instances: model.instances, values: values.table, joinColumn: "globalId", valueColumn: "OperationalCarbon_kgCO2e_per_year", colorMap: "viridis");
+answer = view3d.color@1(instances: meshes.instances, values: values.table, joinColumn: "globalId", valueColumn: "OperationalCarbon_kgCO2e_per_year", colorMap: "viridis");
   // Ok
   //   instances: table 714 rows x 15 cols  sha b90205255086
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number

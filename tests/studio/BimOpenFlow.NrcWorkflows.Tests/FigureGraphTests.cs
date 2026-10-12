@@ -23,6 +23,10 @@ public sealed class FigureGraphTests
     /// review's merge of nrc-color-category and nrc-color-embodied-carbon into it); a figure for
     /// another column sets `answer`'s valueColumn/colorMap the way the walkthrough does.</summary>
     private static IDataTable Answer(string id, IReadOnlyDictionary<string, string>? paramOverrides = null)
+        => Table(id, "answer", paramOverrides);
+
+    /// <summary>Evaluates the graph green and returns the first output table of one node.</summary>
+    private static IDataTable Table(string id, string nodeId, IReadOnlyDictionary<string, string>? paramOverrides = null)
     {
         var doc = SampleSeeding.RewritePaths(GraphDocumentIO.Load(NrcPaths.Graph(id)), NrcPaths.SamplesDir);
         if (paramOverrides is not null)
@@ -39,7 +43,7 @@ public sealed class FigureGraphTests
         var snapshot = doc.Evaluate(Registry);
         Assert.That(snapshot.Results.Where(r => r.Value.Status != NodeStatus.Ok)
             .Select(r => $"{r.Key}: {r.Value.Status} {r.Value.Error}"), Is.Empty, id);
-        return ((TableValue)snapshot.Results["answer"].Outputs[0]).Table;
+        return ((TableValue)snapshot.Results[nodeId].Outputs[0]).Table;
     }
 
     private static readonly IReadOnlyDictionary<string, string> EmbodiedCarbonColumn = new Dictionary<string, string>
@@ -98,17 +102,33 @@ public sealed class FigureGraphTests
     public void StoreyCarbonChart_HasOneBarPerStorey_SortedByEmbodiedCarbon()
     {
         // The Building row is the sum of the four storeys, not a fifth storey, so the chart
-        // excludes it (its total is stated in the title instead); see PROJECT.md's "honest
-        // absence" principle and, more directly, that a total plotted as a peer distorts the
-        // axis and shrinks the real storeys to slivers.
+        // excludes it (buildingTotal shows it instead): a total plotted as a peer distorts the
+        // axis and shrinks the real storeys to slivers. table.rename gives the two series the
+        // readable names the legend shows.
         var chart = Answer("nrc-storey-carbon-chart");
         Assert.Multiple(() =>
         {
             Assert.That(chart.ColumnNames(), Is.EqualTo(new[]
-                { "Container", "EmbodiedCarbon_A1A3_kgCO2e", "OperationalCarbon_kgCO2e_per_year" }));
+                { "Container", "Embodied A1-A3 (kgCO2e)", "Operational (kgCO2e/yr)" }));
             Assert.That(chart.Rows, Has.Count.EqualTo(4), "the four storeys only, no Building row");
             Assert.That(chart.ColumnCells("Container"), Has.None.EqualTo("Building"));
             Assert.That(chart.Cell("Container", 0), Is.EqualTo("Level 1"), "Level 1 at 49451.2 before Level 2 at 48696.8");
+        });
+    }
+
+    /// <summary>The building total comes from the CSV's Building row, not from a number typed
+    /// into the chart title: nrc_analytics_storeys.csv gives 115,730.3 kgCO2e embodied and
+    /// 37,196.2 kgCO2e/yr operational (expected_answers.json Q1 for the latter).</summary>
+    [Test]
+    public void StoreyCarbonChart_BuildingTotalIsATable()
+    {
+        var total = Table("nrc-storey-carbon-chart", "buildingTotal");
+        Assert.Multiple(() =>
+        {
+            Assert.That(total.Rows, Has.Count.EqualTo(1));
+            Assert.That(total.Cell("Container", 0), Is.EqualTo("Building"));
+            Assert.That(Convert.ToDouble(total.Cell("Embodied A1-A3 (kgCO2e)", 0)), Is.EqualTo(115730.3).Within(0.05));
+            Assert.That(Convert.ToDouble(total.Cell("Operational (kgCO2e/yr)", 0)), Is.EqualTo(37196.2).Within(0.05));
         });
     }
 

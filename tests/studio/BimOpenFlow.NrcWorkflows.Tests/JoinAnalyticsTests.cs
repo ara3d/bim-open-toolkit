@@ -47,20 +47,20 @@ public sealed class JoinAnalyticsTests
         catch (IOException) { }
     }
 
-    private static (EvalSnapshot Snapshot, RelationRuntime Runtime) Evaluate()
+    private static EvalSnapshot Evaluate()
     {
-        var runtime = Runtime;
-        var registry = StudioComposition.BimPacks(runtime);
+        var registry = StudioComposition.BimPacks(Runtime);
         var doc = SampleSeeding.RewritePaths(GraphDocumentIO.Load(NrcPaths.Graph(GraphId)), NrcPaths.SamplesDir);
         Assert.That(doc.Validate(registry), Is.Empty, GraphId);
         var snapshot = doc.Evaluate(registry);
         Assert.That(snapshot.Results.Where(r => r.Value.Status != NodeStatus.Ok)
             .Select(r => $"{r.Key}: {r.Value.Status} {r.Value.Error}"), Is.Empty, GraphId);
-        return (snapshot, runtime);
+        return snapshot;
     }
 
-    private static IDataTable Materialize(EvalSnapshot snapshot, RelationRuntime runtime, string nodeId)
-        => runtime.Materialize((Plan)((RelationValue)snapshot.Results[nodeId].Outputs[0]).Payload!);
+    /// <summary>The rows a titled view.table terminal shows.</summary>
+    private static IDataTable Table(EvalSnapshot snapshot, string nodeId)
+        => ((TableValue)snapshot.Results[nodeId].Outputs[0]).Table;
 
     private static double Number(IDataTable table, string column, int row)
         => Convert.ToDouble(table.Cell(column, row));
@@ -139,8 +139,8 @@ public sealed class JoinAnalyticsTests
         Assert.That(expectedNonPhysicalMatches.Count(r => entities[r.GlobalId] == "IFCOPENINGELEMENT"), Is.EqualTo(50));
         Assert.That(expectedNonPhysicalMatches.Count(r => entities[r.GlobalId] == "IFCSTAIR"), Is.EqualTo(2));
 
-        var (snapshot, runtime) = Evaluate();
-        var answer = Materialize(snapshot, runtime, "answer");
+        var snapshot = Evaluate();
+        var answer = Table(snapshot, "answer");
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
         Assert.That(answer.Cell("CsvRowsWithNoEntity", 0), Is.EqualTo((long)expectedCsvNoEntity));
         Assert.That(answer.Cell("PhysicalElementsWithNoCsvRow", 0), Is.EqualTo((long)expectedPhysicalNoCsv));
@@ -150,7 +150,7 @@ public sealed class JoinAnalyticsTests
     [Test]
     public void Colouring_MatchesTheSameInstanceRowsForBothColumns()
     {
-        var (snapshot, _) = Evaluate();
+        var snapshot = Evaluate();
         var unmatched = ColorNode.Unmatched.R;
 
         var carbon = ((TableValue)snapshot.Results["coloredCarbon"].Outputs[0]).Table;
@@ -180,8 +180,8 @@ public sealed class JoinAnalyticsTests
             .ToDictionary(g => g.Key, g => (Count: g.Count(), Total: g.Sum(r => r.Carbon),
                 Mean: g.Average(r => r.Carbon), MeanEui: g.Average(r => r.Energy)));
 
-        var (snapshot, runtime) = Evaluate();
-        var perStorey = Materialize(snapshot, runtime, "perStorey");
+        var snapshot = Evaluate();
+        var perStorey = Table(snapshot, "perStorey");
         Assert.That(perStorey.Rows, Has.Count.EqualTo(4));
         Assert.That(perStorey.ColumnCells("StoreyName"),
             Is.EquivalentTo(new object?[] { "Level 1", "Level 2", "Roof", "T/FDN" }));
@@ -190,7 +190,7 @@ public sealed class JoinAnalyticsTests
         {
             var storey = (string)perStorey.Cell("StoreyName", row)!;
             var exp = expected[storey];
-            Assert.That(perStorey.Cell("Elements", row), Is.EqualTo((long)exp.Count), storey);
+            Assert.That(Convert.ToInt64(perStorey.Cell("Elements", row)), Is.EqualTo((long)exp.Count), storey);
             Assert.That(Number(perStorey, "TotalOperationalCarbon", row), Is.EqualTo(exp.Total).Within(Tolerance), storey);
             Assert.That(Number(perStorey, "MeanOperationalCarbon", row), Is.EqualTo(exp.Mean).Within(Tolerance), storey);
             Assert.That(Number(perStorey, "MeanEnergyIntensity", row), Is.EqualTo(exp.MeanEui).Within(Tolerance), storey);
@@ -217,12 +217,20 @@ public sealed class JoinAnalyticsTests
         // that mark, so StoreyOfElement's answer legitimately disagrees with it.
         Assert.That(expectedDisagreements, Is.EqualTo(61));
 
-        var (snapshot, runtime) = Evaluate();
-        var comparison = Materialize(snapshot, runtime, "storeyComparison");
+        var snapshot = Evaluate();
+        var comparison = Table(snapshot, "storeyComparison");
         Assert.That(comparison.Rows, Has.Count.EqualTo(218));
         var disagreements = Enumerable.Range(0, comparison.Rows.Count)
             .Count(row => !string.Equals((string?)comparison.Cell("Level", row),
                 (string?)comparison.Cell("StoreyName", row), StringComparison.OrdinalIgnoreCase));
         Assert.That(disagreements, Is.EqualTo(61));
+        Assert.That(Enumerable.Range(0, comparison.Rows.Count).Count(row => Equals(comparison.Cell("Agrees", row), false)),
+            Is.EqualTo(61), "the graph's own Agrees column marks the same rows");
+
+        // levelAgreement counts the same split: 61 rows disagree, the other 157 agree.
+        var agreement = Table(snapshot, "levelAgreement");
+        var rowsByAgrees = Enumerable.Range(0, agreement.Rows.Count)
+            .ToDictionary(row => (bool)agreement.Cell("Agrees", row)!, row => Convert.ToInt64(agreement.Cell("Rows", row)));
+        Assert.That(rowsByAgrees, Is.EquivalentTo(new Dictionary<bool, long> { [false] = 61, [true] = 157 }));
     }
 }

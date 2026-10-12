@@ -52,7 +52,7 @@ public sealed class CsvGraphTests
         var answer = Answer("nrc-q1-building-total");
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
         // expected_answers.json Q1: 37196.2 kgCO2e/yr over the 218 rows of nrc_analytics_elements.csv.
-        Assert.That(Number(answer, "Total", 0), Is.EqualTo(37196.2).Within(Tolerance));
+        Assert.That(Number(answer, "OperationalCarbon_kgCO2e_per_year", 0), Is.EqualTo(37196.2).Within(Tolerance));
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(218L));
     }
 
@@ -64,12 +64,12 @@ public sealed class CsvGraphTests
         // expected_answers.json Q8, in descending embodied carbon.
         Assert.That(answer.ColumnCells("Storey"),
             Is.EqualTo(new object?[] { "Level 1", "Level 2", "T/FDN", "Roof" }));
-        Assert.That(Numbers(answer, "Embodied"), Near(49451.2, 48696.8, 11761.3, 5821.0));
+        Assert.That(Numbers(answer, "EmbodiedCarbon_A1A3_kgCO2e"), Near(49451.2, 48696.8, 11761.3, 5821.0));
         // nrc_analytics_storeys.csv row "Level 1": 103 elements; Q2: mean EUI 40.5.
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(103L));
-        Assert.That(Number(answer, "MeanEui", 0), Is.EqualTo(40.5).Within(Tolerance));
+        Assert.That(Number(answer, "MeanEui_kWh_per_m2_year", 0), Is.EqualTo(40.5).Within(Tolerance));
         // Honest absence (Q7): Roof has 8 elements, but only 7 carry an embodied-carbon row;
-        // the sum in "Embodied" covers only those 7, and ElementsWithValue says so.
+        // the sum in "EmbodiedCarbon_A1A3_kgCO2e" covers only those 7, and ElementsWithValue says so.
         Assert.That(answer.Cell("Elements", 3), Is.EqualTo(8L));
         Assert.That(answer.Cell("ElementsWithValue", 3), Is.EqualTo(7L));
         Assert.That(answer.Cell("ElementsWithValue", 0), Is.EqualTo(103L));
@@ -83,7 +83,7 @@ public sealed class CsvGraphTests
         // nrc_analytics_storeys.csv: Level 1 mean EUI 40.5, Level 2 mean EUI 40.56;
         // Level 2 is higher, so the higher-first sort puts it first.
         Assert.That(answer.ColumnCells("Storey"), Is.EqualTo(new object?[] { "Level 2", "Level 1" }));
-        Assert.That(Numbers(answer, "MeanEui"), Near(40.56, 40.5));
+        Assert.That(Numbers(answer, "MeanEui_kWh_per_m2_year"), Near(40.56, 40.5));
         Assert.That(answer.ColumnCells("Elements"), Is.EqualTo(new object?[] { 93L, 103L }));
     }
 
@@ -151,7 +151,7 @@ public sealed class CsvGraphTests
         {
             "Wall", "Floor", "Other", "Stair", "Finish", "Window", "Door", "Roof", "Railing",
         }));
-        Assert.That(Numbers(answer, "Total"),
+        Assert.That(Numbers(answer, "OperationalCarbon_kgCO2e_per_year"),
             Near(22854.1, 5593.5, 4313.1, 1144.2, 985.7, 978.9, 687.2, 474.7, 164.8));
     }
 
@@ -163,8 +163,9 @@ public sealed class CsvGraphTests
         // answer is the roof itself, as a row. nrc_analytics_long.csv holds two metrics for
         // it, which the graph's aggregate collapses to one row per GlobalId.
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
-        Assert.That(answer.ColumnNames(), Is.EqualTo(new[] { "GlobalId", "IfcClass" }));
+        Assert.That(answer.ColumnNames(), Is.EqualTo(new[] { "IfcClass", "GlobalId", "OtherMetrics" }));
         Assert.That(answer.Cell("GlobalId", 0), Is.EqualTo("0jf0rYHfX3RAB3bSIRjmxl"));
         Assert.That(answer.Cell("IfcClass", 0), Is.EqualTo("IFCROOF"));
+        Assert.That(Convert.ToInt64(answer.Cell("OtherMetrics", 0)), Is.EqualTo(2L), "the roof's two other metrics");
     }
 }

@@ -1,23 +1,32 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": { "x": 40, "y": 40 },
-    "values": { "x": 40, "y": 260 },
-    "answer": { "x": 420, "y": 140 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 200 },
+    "model": { "x": 40, "y": 284 },
+    "meshes": { "x": 370, "y": 284 },
+    "answer": { "x": 700, "y": 284 },
+    "values": { "x": 370, "y": 468 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/duplex-enriched.ifc", "description": "The IFC model to colour; elements the values CSV has no GlobalId row for stay grey.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
-      { "from": "model.instances", "to": "answer.instances" },
+      { "from": "model.path", "to": "meshes.path" },
+      { "from": "meshes.instances", "to": "answer.instances" },
       { "from": "values.table", "to": "answer.values" }
     ],
     "nodes": [
-      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
+      { "id": "meshes", "kind": "view3d.instances", "version": 1 },
       { "id": "values", "kind": "csv.read", "version": 1 },
       { "id": "answer", "kind": "view3d.color", "version": 1 }
     ]
   },
   "values": {
-    "model": { "path": "{SAMPLES}/duplex-enriched.ifc" },
+    "about": { "text": "Figure 5: the Duplex model coloured by operational carbon (kgCO2e/yr) from nrc_analytics_elements.csv, joined on GlobalId, on the viridis scale from 14.2 (dark purple) to 412 (yellow). 21 of the 714 mesh instances stay grey: their elements have no row in the CSV. Figures 6 and 7 are this graph with answer's valueColumn set to EmbodiedCarbon_A1A3_kgCO2e (viridis) or Category (category10)." },
+    "model": { "path": "$model" },
     "values": { "path": "{SAMPLES}/nrc_analytics_elements.csv" },
     "answer": { "joinColumn": "globalId", "valueColumn": "OperationalCarbon_kgCO2e_per_year", "colorMap": "viridis" }
   }

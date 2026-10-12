@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// nrc-dc-w1-verdicts   graph 3b0c0a710821
+// nrc-dc-w1-verdicts   graph bcfcb188c4f7
+about = view.note@1(text: "Rule DC-W1 over the 14 doors of duplex-enriched: a door's Ifc:OverallWidth, in millimetres, must be at least 850 (NBC 2020 3.8.3.12, illustrative, not legal text); 8 pass and 6 fail. This is the check.rule twin of checking-analyses/check-ids-door-width, which states the same rule as an IDS file and gets the same verdicts. coloured paints the verdicts on the model, chart counts them, and report writes its HTML file only when you press Run.");
+  // Ok
 entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
   // Ok  relation plan 9a8be9f3b5d5
   //   "(table \"duplex-enriched\" \"EntityText\")"
@@ -21,29 +23,26 @@ overallWidth = rel.filter@1(input: parameters.relation, expr: "[Name] == 'Ifc:Ov
 doorWidths = rel.join@1(left: doors.relation, right: overallWidth.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
   // Ok  relation plan 7e18b08201dc
   //   "(join Inner (filter (table \"duplex-enriched\" \"EntityText\") \"([Category] == 'IFCDOOR')\") (filter (table \"duplex-enriched\" \"ParameterText\") \"([Name] == 'Ifc:OverallWidth')\") [\"EntityIndex\"=\"EntityIndex\""...
-metres = rel.derive@1(input: doorWidths.relation, name: "Width_m", expr: "toNumber([Value])");
-  // Ok  relation plan 025f27524ac7
+widthMm = rel.derive@1(input: doorWidths.relation, name: "Width_mm", expr: "toNumber([Value]) * 1000");
+  // Ok  relation plan 654923bab038
   //   "(derive (join Inner (filter (table \"duplex-enriched\" \"EntityText\") \"([Category] == 'IFCDOOR')\") (filter (table \"duplex-enriched\" \"ParameterText\") \"([Name] == 'Ifc:OverallWidth')\") [\"EntityIndex\"=\"Enti"...
-millimetres = rel.derive@1(input: metres.relation, name: "Width_mm", expr: "[Width_m] * 1000");
-  // Ok  relation plan f4a81cbc872e
-  //   "(derive (derive (join Inner (filter (table \"duplex-enriched\" \"EntityText\") \"([Category] == 'IFCDOOR')\") (filter (table \"duplex-enriched\" \"ParameterText\") \"([Name] == 'Ifc:OverallWidth')\") [\"EntityInde"...
-columns = rel.select@1(input: millimetres.relation, columns: "GlobalId, Name, Width_m, Width_mm");
-  // Ok  relation plan c5a0d07eeb17
-  //   "(select (derive (derive (join Inner (filter (table \"duplex-enriched\" \"EntityText\") \"([Category] == 'IFCDOOR')\") (filter (table \"duplex-enriched\" \"ParameterText\") \"([Name] == 'Ifc:OverallWidth')\") [\"En"...
+columns = rel.select@1(input: widthMm.relation, columns: "Name, Width_mm, GlobalId");
+  // Ok  relation plan 77b64ed4e415
+  //   "(select (derive (join Inner (filter (table \"duplex-enriched\" \"EntityText\") \"([Category] == 'IFCDOOR')\") (filter (table \"duplex-enriched\" \"ParameterText\") \"([Name] == 'Ifc:OverallWidth')\") [\"EntityInde"...
 byDoor = rel.sort@1(input: columns.relation, by: "GlobalId");
-  // Ok  relation plan b4e3b317ba16
-  //   "(sort (select (derive (derive (join Inner (filter (table \"duplex-enriched\" \"EntityText\") \"([Category] == 'IFCDOOR')\") (filter (table \"duplex-enriched\" \"ParameterText\") \"([Name] == 'Ifc:OverallWidth')\""...
+  // Ok  relation plan da4564fc132f
+  //   "(sort (select (derive (join Inner (filter (table \"duplex-enriched\" \"EntityText\") \"([Category] == 'IFCDOOR')\") (filter (table \"duplex-enriched\" \"ParameterText\") \"([Name] == 'Ifc:OverallWidth')\") [\"Enti"...
 rows = rel.materialize@1(input: byDoor.relation, limit: "0");
-  // Ok  table 14 rows x 4 cols  sha acde2896fc2c
-  //   columns GlobalId:Text, Name:Text, Width_m:Number, Width_mm:Number
-  //   [0] "1aj$VJZFn2TxepZUBcKp$i", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20372"..., 0.762, 762
-  //   [1] "1aj$VJZFn2TxepZUBcKpac", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20403"..., 0.762, 762
-  //   [2] "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., 1.25, 1250
+  // Ok  table 14 rows x 3 cols  sha 80f60d10654a
+  //   columns Name:Text, Width_mm:Number, GlobalId:Text
+  //   [0] "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20372"..., 762, "1aj$VJZFn2TxepZUBcKp$i"
+  //   [1] "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20403"..., 762, "1aj$VJZFn2TxepZUBcKpac"
+  //   [2] "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., 1250, "1hOSvn6df7F8_7GcBWlRGQ"
 answer = check.rule@1(in: rows.table, checkId: "DC-W1", title: "Door leaf width at least 850 mm", citation: "NBC 2020 3.8.3.12 (illustrative, not legal text)", expr: "[Width_mm] >= 850", reviewExpr: "");
-  // Ok  table 14 rows x 8 cols  sha d3b1093030e3
-  //   columns GlobalId:Text, Name:Text, Width_m:Number, Width_mm:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text
+  // Ok  table 14 rows x 7 cols  sha 3ffbbf7d47ed
+  //   columns Name:Text, Width_mm:Number, GlobalId:Text, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text
   //   verdicts "DC-W1": Fail 6, Pass 8
-coloured = view3d.color@1(instances: model.instances, values: answer.out, joinColumn: "globalId", valueColumn: "Verdict", colorMap: "category10");
+coloured = view3d.color@1(instances: model.instances, values: answer.out, joinColumn: "GlobalId", valueColumn: "Verdict", colorMap: "category10");
   // Ok
   //   instances: table 714 rows x 15 cols  sha 9e318dd21642
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number

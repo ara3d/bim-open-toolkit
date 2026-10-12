@@ -1,68 +1,34 @@
 dfg 0.1.0;
-// nrc-join-analytics   graph b2e10b4f563a
-about = view.note@1(text: "Template: point the CSV and the model at your own files. An element that reaches more than one storey through ContainedIn/PartOf/MemberOf (StoreyOfElement can hold several rows per element, one per ancestor storey) is assigned to the storey with the smallest Depth, the same rule nrc-enrich-run uses, so perStorey and storeyComparison count each element once.");
+// nrc-join-analytics   graph 372c618e0db3
+inputs csv: FilePath = "test-kit/analytics_dataset_with_levels.csv", model: FilePath = "{SAMPLES}/duplex-base.ifc" now "{MODELS}/duplex-base.ifc";
+about = view.note@1(text: "Template: joins an analytics CSV to a model by GlobalId (here the IFC viewer test kit's analytics_dataset_with_levels.csv, 268 rows, over duplex-base.ifc). Set the csv input to another CSV under the nrc sample folder and model to another IFC; the entity and storey tables come from the duplex-base database source, so another model also needs its database registered under that name. answer counts CSV rows with no entity (0), physical elements with no CSV row (21), and CSV rows on entities with no mesh (52: openings and stairs). An element that reaches several storeys gets the one with the smallest Depth, the rule nrc-enrich-run uses, so perStorey and storeyComparison count each element once; levelAgreement counts the 61 rows whose Level (often a door or window mark such as A102) is not the model's storey.");
   // Ok
-csv = rel.csv@1(source: "nrc", path: "test-kit/analytics_dataset_with_levels.csv");
+csv = value.path@1(path: "$csv");
+  // Ok  Text "test-kit/analytics_dataset_with_levels.csv"
+analytics = rel.csv@1(path: csv.path, source: "nrc");
   // Ok  relation plan d86be52e53af
   //   "(csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\")"
-entities = rel.table@1(source: "duplex-base", table: "EntityText");
-  // Ok  relation plan fbac43cf5e83
-  //   "(table \"duplex-base\" \"EntityText\")"
-csvNoEntity = rel.join@1(left: csv.relation, right: entities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
-  // Ok  relation plan cf6507388a45
-  //   "(join Anti (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (table \"duplex-base\" \"EntityText\") [\"GlobalId\"=\"GlobalId\"])"
-model = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
-  // Ok  table 714 rows x 11 cols  sha f912cca851d5
-  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
-  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
-  //   no colour columns
-  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-instances = rel.fromTable@1(table: model.instances, name: "instances");
-  // Ok  relation plan 68e385fef766
-  //   "(inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\")"
-physical = rel.aggregate@1(input: instances.relation, groupBy: "globalId", aggregates: "count(*) as meshCount");
-  // Ok  relation plan f772f89fd074
-  //   "(aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"])"
-nonPhysicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: "GlobalId", rightKey: "globalId", kind: "anti");
-  // Ok  relation plan fee6227021b1
-  //   "(join Anti (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"GlobalId\"=\"globa"...
-csvMatchedNonPhysical = rel.join@1(left: csv.relation, right: nonPhysicalEntities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "semi");
-  // Ok  relation plan b2ede90dd9d9
-  //   "(join Semi (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Anti (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b0"...
-physicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: "GlobalId", rightKey: "globalId", kind: "semi");
-  // Ok  relation plan 52347b7c0711
-  //   "(join Semi (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"GlobalId\"=\"globa"...
-physicalNoCsv = rel.join@1(left: physicalEntities.relation, right: csv.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
-  // Ok  relation plan 062a7f3282ff
-  //   "(join Anti (join Semi (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"Globa"...
-answer = rel.sql@1(t1: csvNoEntity.relation, t2: physicalNoCsv.relation, t3: csvMatchedNonPhysical.relation, sql: "SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity");
-  // Ok  relation plan 0779788ee83a
-  //   "(sql \"SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity\" [(join Anti (cs"...
-storeyOf = rel.table@1(source: "duplex-base", table: "StoreyOfElement");
-  // Ok  relation plan a8c1aa22dccb
-  //   "(table \"duplex-base\" \"StoreyOfElement\")"
-storeyOfMin = rel.sql@1(t1: storeyOf.relation, sql: "SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1");
-  // Ok  relation plan a4ff5775ba64
-  //   "(sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \"StoreyOfElement\")])"
-entityStorey = rel.join@1(left: storeyOfMin.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
-  // Ok  relation plan a4d65f9aa8f6
-  //   "(join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \"StoreyOfElement\")]) (table \"duplex-base\" \"EntityText\") [\"EntityIndex\""...
-csvWithStorey = rel.join@1(left: csv.relation, right: entityStorey.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
-  // Ok  relation plan c4071f7dac91
-  //   "(join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \""...
-perStorey = rel.aggregate@1(input: csvWithStorey.relation, groupBy: "StoreyName", aggregates: "count(*) as Elements, sum(operational_carbon) as TotalOperationalCarbon, avg(operational_carbon) as MeanOperationalCarbon, avg(energy_intensity) as MeanEnergyIntensity");
-  // Ok  relation plan ba957e509ea9
-  //   "(aggregate (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"dup"...
-storeyComparison = rel.select@1(input: csvWithStorey.relation, columns: "GlobalId, Level, StoreyName");
-  // Ok  relation plan a9e5c5f5b90f
-  //   "(select (join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex"...
-values = csv.read@1(path: "{SAMPLES}/test-kit/analytics_dataset_with_levels.csv");
+analyticsRows = rel.materialize@1(input: analytics.relation, limit: "0");
   // Ok  table 268 rows x 6 cols  sha 2ed673e1a75a
   //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text
   //   [0] "2OrWItJ6zAwBNp0OUxK_l8", "M_W-Wide Flange:W310X60:W310X60:207325", "Level 1", 139.5, 27.7, "Other"
   //   [1] "2OrWItJ6zAwBNp0OUxK$8W", "M_W-Wide Flange:W410X60:W410X60:208949", "Level 1", 59.5, 25.9, "Other"
   //   [2] "2OrWItJ6zAwBNp0OUxK$Bq", "M_W-Wide Flange:W410X60:W410X60:209121", "Level 2", 95.1, 29.3, "Other"
-coloredCarbon = view3d.color@1(instances: model.instances, values: values.table, joinColumn: "globalId", valueColumn: "operational_carbon", colorMap: "viridis");
+entities = rel.table@1(source: "duplex-base", table: "EntityText");
+  // Ok  relation plan fbac43cf5e83
+  //   "(table \"duplex-base\" \"EntityText\")"
+csvNoEntity = rel.join@1(left: analytics.relation, right: entities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
+  // Ok  relation plan cf6507388a45
+  //   "(join Anti (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (table \"duplex-base\" \"EntityText\") [\"GlobalId\"=\"GlobalId\"])"
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-base.ifc"
+meshes = view3d.instances@1(path: model.path);
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+coloredCarbon = view3d.color@1(instances: meshes.instances, values: analyticsRows.table, joinColumn: "globalId", valueColumn: "operational_carbon", colorMap: "viridis");
   // Ok
   //   instances: table 714 rows x 15 cols  sha b90205255086
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
@@ -73,7 +39,7 @@ coloredCarbon = view3d.color@1(instances: model.instances, values: values.table,
   //   legend: table 5 rows x 9 cols  sha 6bf9262fa5ab
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "operational_carbon" auto: 14.2, 113.7, 213.1, 312.6, 412
-coloredCategory = view3d.color@1(instances: model.instances, values: values.table, joinColumn: "globalId", valueColumn: "category", colorMap: "category10");
+coloredCategory = view3d.color@1(instances: meshes.instances, values: analyticsRows.table, joinColumn: "globalId", valueColumn: "category", colorMap: "category10");
   // Ok
   //   instances: table 714 rows x 15 cols  sha 34fadff187e3
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
@@ -84,3 +50,84 @@ coloredCategory = view3d.color@1(instances: model.instances, values: values.tabl
   //   legend: table 9 rows x 9 cols  sha 8413c16661f4
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "category" categorical: category "Door" 37, category "Finish" 13, category "Floor" 20, category "Other" 64, category "Railing" 4, category "Roof" 4, category "Stair" 8, category "Wall" 72, category "Window" 46
+instances = rel.fromTable@1(table: meshes.instances, name: "instances");
+  // Ok  relation plan 68e385fef766
+  //   "(inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\")"
+physical = rel.aggregate@1(input: instances.relation, groupBy: "globalId", aggregates: "count(*) as meshCount");
+  // Ok  relation plan f772f89fd074
+  //   "(aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"])"
+nonPhysicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: "GlobalId", rightKey: "globalId", kind: "anti");
+  // Ok  relation plan fee6227021b1
+  //   "(join Anti (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"GlobalId\"=\"globa"...
+csvMatchedNonPhysical = rel.join@1(left: analytics.relation, right: nonPhysicalEntities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "semi");
+  // Ok  relation plan b2ede90dd9d9
+  //   "(join Semi (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Anti (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b0"...
+physicalEntities = rel.join@1(left: entities.relation, right: physical.relation, leftKey: "GlobalId", rightKey: "globalId", kind: "semi");
+  // Ok  relation plan 52347b7c0711
+  //   "(join Semi (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"GlobalId\"=\"globa"...
+physicalNoCsv = rel.join@1(left: physicalEntities.relation, right: analytics.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
+  // Ok  relation plan 062a7f3282ff
+  //   "(join Anti (join Semi (table \"duplex-base\" \"EntityText\") (aggregate (inline \"instances\" \"c5999dea3123ed7d55e127f4e36438f74e208bf311cf3180eb77b058a42cbe50\") [\"globalId\"] [Count(*)>\"meshCount\"]) [\"Globa"...
+matchCounts = rel.sql@1(t1: csvNoEntity.relation, t2: physicalNoCsv.relation, t3: csvMatchedNonPhysical.relation, sql: "SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity");
+  // Ok  relation plan 0779788ee83a
+  //   "(sql \"SELECT (SELECT count(*) FROM t1) AS CsvRowsWithNoEntity, (SELECT count(*) FROM t2) AS PhysicalElementsWithNoCsvRow, (SELECT count(*) FROM t3) AS CsvRowsMatchingNonPhysicalEntity\" [(join Anti (cs"...
+matchRows = rel.materialize@1(input: matchCounts.relation, limit: "0");
+  // Ok  table 1 rows x 3 cols  sha fbbe8891c5ce
+  //   columns CsvRowsWithNoEntity:Integer, PhysicalElementsWithNoCsvRow:Integer, CsvRowsMatchingNonPhysicalEntity:Integer
+  //   [0] 0, 21, 52
+answer = view.table@1(table: matchRows.table, title: "How the CSV and the model match");
+  // Ok  table 1 rows x 3 cols  sha fbbe8891c5ce
+  //   columns CsvRowsWithNoEntity:Integer, PhysicalElementsWithNoCsvRow:Integer, CsvRowsMatchingNonPhysicalEntity:Integer
+  //   [0] 0, 21, 52
+storeyOf = rel.table@1(source: "duplex-base", table: "StoreyOfElement");
+  // Ok  relation plan a8c1aa22dccb
+  //   "(table \"duplex-base\" \"StoreyOfElement\")"
+storeyOfMin = rel.sql@1(t1: storeyOf.relation, sql: "SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1");
+  // Ok  relation plan a4ff5775ba64
+  //   "(sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \"StoreyOfElement\")])"
+entityStorey = rel.join@1(left: storeyOfMin.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
+  // Ok  relation plan a4d65f9aa8f6
+  //   "(join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \"StoreyOfElement\")]) (table \"duplex-base\" \"EntityText\") [\"EntityIndex\""...
+csvWithStorey = rel.join@1(left: analytics.relation, right: entityStorey.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan c4071f7dac91
+  //   "(join Inner (csv \"nrc\" \"test-kit/analytics_dataset_with_levels.csv\") (join Inner (sql \"SELECT * FROM t1 QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth) = 1\" [(table \"duplex-base\" \""...
+withStorey = rel.materialize@1(input: csvWithStorey.relation, limit: "0");
+  // Ok  table 218 rows x 16 cols  sha e771c6393534
+  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text, EntityIndex:Integer, StoreyIndex:Integer, StoreyName:Text, Depth:Integer, EntityIndex_right:Integer, StepId:Integer, GlobalId_right:Text, Name_right:Text, Category_right:Text, Type:Text
+  //   [0] "1hOSvn6df7F8_7GcBWlSFK", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037"..., "Level 2", 53.9, 45.8, "Other", 2066, 134, "Level 2", 1, 2066, 8283, "1hOSvn6df7F8_7GcBWlSFK", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037"..., "IFCDOOR", "0864 x 2032mm"
+  //   [1] "1hOSvn6df7F8_7GcBWlSDm", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047"..., "Level 2", 85.1, 21.2, "Other", 2073, 134, "Level 2", 1, 2073, 8386, "1hOSvn6df7F8_7GcBWlSDm", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047"..., "IFCDOOR", "0864 x 2032mm"
+  //   [2] "0wkEuT1wr1kOyafLY4vyu$", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572"..., "B202", 16, 15.9, "Door", 2561, 134, "Level 2", 2, 2561, 12574, "0wkEuT1wr1kOyafLY4vyu$", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572"..., "IFCFURNISHINGELEMENT", "800 mm"
+agrees = table.derive@1(table: withStorey.table, name: "Agrees", expr: "lower(Level) == lower(StoreyName)");
+  // Ok  table 218 rows x 17 cols  sha 42fb24b5d2c0
+  //   columns GlobalId:Text, Name:Text, Level:Text, operational_carbon:Number, energy_intensity:Number, category:Text, EntityIndex:Integer, StoreyIndex:Integer, StoreyName:Text, Depth:Integer, EntityIndex_right:Integer, StepId:Integer, GlobalId_right:Text, Name_right:Text, Category_right:Text, Type:Text (+1 more)
+  //   [0] "1hOSvn6df7F8_7GcBWlSFK", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037"..., "Level 2", 53.9, 45.8, "Other", 2066, 134, "Level 2", 1, 2066, 8283, "1hOSvn6df7F8_7GcBWlSFK", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037"..., "IFCDOOR", "0864 x 2032mm", ...
+  //   [1] "1hOSvn6df7F8_7GcBWlSDm", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047"..., "Level 2", 85.1, 21.2, "Other", 2073, 134, "Level 2", 1, 2073, 8386, "1hOSvn6df7F8_7GcBWlSDm", "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047"..., "IFCDOOR", "0864 x 2032mm", ...
+  //   [2] "0wkEuT1wr1kOyafLY4vyu$", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572"..., "B202", 16, 15.9, "Door", 2561, 134, "Level 2", 2, 2561, 12574, "0wkEuT1wr1kOyafLY4vyu$", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572"..., "IFCFURNISHINGELEMENT", "800 mm", ...
+levelCounts = table.aggregate@1(table: agrees.table, groupBy: "Agrees", aggregates: "count(*) as Rows");
+  // Ok  table 2 rows x 2 cols  sha 52d8a3af3f63
+  //   columns Agrees:Boolean, Rows:Integer
+  //   [0] false, 61
+  //   [1] true, 157
+levelAgreement = view.table@1(table: levelCounts.table, title: "CSV rows whose Level agrees with the model's storey");
+  // Ok  table 2 rows x 2 cols  sha 52d8a3af3f63
+  //   columns Agrees:Boolean, Rows:Integer
+  //   [0] false, 61
+  //   [1] true, 157
+storeyComparison = view.table@1(table: agrees.table, title: "CSV Level against the model's storey", columns: "Name, Level, StoreyName, Agrees, GlobalId");
+  // Ok  table 218 rows x 5 cols  sha 8c3576d7855a
+  //   columns Name:Text, Level:Text, StoreyName:Text, Agrees:Boolean, GlobalId:Text
+  //   [0] "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037"..., "Level 2", "Level 2", true, "1hOSvn6df7F8_7GcBWlSFK"
+  //   [1] "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047"..., "Level 2", "Level 2", true, "1hOSvn6df7F8_7GcBWlSDm"
+  //   [2] "M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572"..., "B202", "Level 2", false, "0wkEuT1wr1kOyafLY4vyu$"
+storeyTotals = table.aggregate@1(table: withStorey.table, groupBy: "StoreyName", aggregates: "count(*) as Elements, sum(operational_carbon) as TotalOperationalCarbon, avg(operational_carbon) as MeanOperationalCarbon, avg(energy_intensity) as MeanEnergyIntensity");
+  // Ok  table 4 rows x 5 cols  sha 625eee9f1d1d
+  //   columns StoreyName:Text, Elements:Integer, TotalOperationalCarbon:Number, MeanOperationalCarbon:Number, MeanEnergyIntensity:Number
+  //   [0] "Level 1", 103, 1.746E+04, 169.5, 40.5
+  //   [1] "Level 2", 93, 1.397E+04, 150.2, 40.56
+  //   [2] "Roof", 8, 1767, 220.9, 62.04
+perStorey = view.table@1(table: storeyTotals.table, title: "Operational carbon per storey (CSV values, model storeys)");
+  // Ok  table 4 rows x 5 cols  sha 625eee9f1d1d
+  //   columns StoreyName:Text, Elements:Integer, TotalOperationalCarbon:Number, MeanOperationalCarbon:Number, MeanEnergyIntensity:Number
+  //   [0] "Level 1", 103, 1.746E+04, 169.5, 40.5
+  //   [1] "Level 2", 93, 1.397E+04, 150.2, 40.56
+  //   [2] "Roof", 8, 1767, 220.9, 62.04

@@ -1,69 +1,71 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 180
+    },
     "entities": {
       "x": 40,
-      "y": 40
-    },
-    "parameters": {
-      "x": 40,
-      "y": 280
+      "y": 264
     },
     "doors": {
       "x": 370,
-      "y": 40
-    },
-    "overallWidth": {
-      "x": 370,
-      "y": 300
+      "y": 264
     },
     "doorWidths": {
       "x": 700,
-      "y": 40
+      "y": 264
     },
-    "metres": {
+    "widthMm": {
       "x": 1030,
-      "y": 40
-    },
-    "millimetres": {
-      "x": 1360,
-      "y": 40
+      "y": 264
     },
     "columns": {
-      "x": 1690,
-      "y": 40
+      "x": 1360,
+      "y": 264
     },
     "byDoor": {
-      "x": 2030,
-      "y": 40
+      "x": 1690,
+      "y": 264
     },
     "rows": {
-      "x": 2350,
-      "y": 40
+      "x": 2020,
+      "y": 264
     },
     "answer": {
-      "x": 2680,
-      "y": 40
-    },
-    "model": {
-      "x": 2680,
-      "y": 600
+      "x": 2350,
+      "y": 264
     },
     "coloured": {
-      "x": 3140,
-      "y": 40
+      "x": 2680,
+      "y": 264
     },
     "perVerdict": {
-      "x": 3450,
-      "y": 40
+      "x": 3010,
+      "y": 264
     },
     "chart": {
-      "x": 3760,
-      "y": 40
+      "x": 3340,
+      "y": 264
+    },
+    "parameters": {
+      "x": 40,
+      "y": 504
+    },
+    "overallWidth": {
+      "x": 370,
+      "y": 504
+    },
+    "model": {
+      "x": 2350,
+      "y": 504
     },
     "report": {
-      "x": 3450,
-      "y": 440
+      "x": 2680,
+      "y": 504
     }
   },
   "structure": {
@@ -86,14 +88,10 @@
       },
       {
         "from": "doorWidths.relation",
-        "to": "metres.input"
+        "to": "widthMm.input"
       },
       {
-        "from": "metres.relation",
-        "to": "millimetres.input"
-      },
-      {
-        "from": "millimetres.relation",
+        "from": "widthMm.relation",
         "to": "columns.input"
       },
       {
@@ -131,6 +129,11 @@
     ],
     "nodes": [
       {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
         "id": "entities",
         "kind": "rel.table",
         "version": 1
@@ -156,12 +159,7 @@
         "version": 1
       },
       {
-        "id": "metres",
-        "kind": "rel.derive",
-        "version": 1
-      },
-      {
-        "id": "millimetres",
+        "id": "widthMm",
         "kind": "rel.derive",
         "version": 1
       },
@@ -213,6 +211,9 @@
     ]
   },
   "values": {
+    "about": {
+      "text": "Rule DC-W1 over the 14 doors of duplex-enriched: a door's Ifc:OverallWidth, in millimetres, must be at least 850 (NBC 2020 3.8.3.12, illustrative, not legal text); 8 pass and 6 fail. This is the check.rule twin of checking-analyses/check-ids-door-width, which states the same rule as an IDS file and gets the same verdicts. coloured paints the verdicts on the model, chart counts them, and report writes its HTML file only when you press Run."
+    },
     "entities": {
       "source": "duplex-enriched",
       "table": "EntityText"
@@ -232,16 +233,12 @@
       "rightKey": "EntityIndex",
       "kind": "inner"
     },
-    "metres": {
-      "name": "Width_m",
-      "expr": "toNumber([Value])"
-    },
-    "millimetres": {
+    "widthMm": {
       "name": "Width_mm",
-      "expr": "[Width_m] * 1000"
+      "expr": "toNumber([Value]) * 1000"
     },
     "columns": {
-      "columns": "GlobalId, Name, Width_m, Width_mm"
+      "columns": "Name, Width_mm, GlobalId"
     },
     "byDoor": {
       "by": "GlobalId"
@@ -260,7 +257,7 @@
       "path": "{SAMPLES}/duplex-enriched.ifc"
     },
     "coloured": {
-      "joinColumn": "globalId",
+      "joinColumn": "GlobalId",
       "valueColumn": "Verdict",
       "colorMap": "category10"
     },
