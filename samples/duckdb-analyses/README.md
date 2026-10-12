@@ -1,6 +1,6 @@
 # DuckDB workflow catalog
 
-`workflows.json` holds the nine sample graphs of the DuckDB workflow studio
+`workflows.json` holds the 14 sample graphs of the DuckDB workflow studio
 (`/duckdb.html`, described in [docs/bim-flow-duckdb.md](../../docs/bim-flow-duckdb.md)).
 Unlike the other sample folders, which keep one graph document per file, this is
 one JSON array: each entry carries `id`, `title`, `tag`, `description`, the name of
@@ -10,8 +10,10 @@ web page imports the file directly for its flow picker and descriptions;
 
 ## Input
 
-Every graph starts from one `duck.source` whose `path` is a placeholder, and
-each entry's `database` field says which one it reads:
+Every graph declares a graph input `model`, the database file, and starts from
+one `duck.source` whose `path` is `$model`, so setting `model` runs the graph on
+another building. The input's default is a placeholder, and each entry's
+`database` field says which one:
 
 - `public`: `{PUBLIC_DUCKDB}`, replaced by bim-open-data's
   `samples/public/schependomlaan.duckdb` (`deps/bim-open-data`, fetched by
@@ -29,23 +31,23 @@ each entry's `database` field says which one it reads:
 
 | Id | Shape | Schependomlaan result |
 |---|---|---|
-| `public-door-schedule` | two queries, left join, project, sort | 205 doors on four storeys; 101 without an OverallWidth |
+| `public-door-schedule` | two queries, left join, derive WidthStatus, project, sort | 205 doors on four storeys; 101 without an OverallWidth, WidthStatus says so |
 | `public-door-types` | query, aggregate, sort, limit | `32_KD_berkvens_BA` first with 73 doors |
 | `public-rooms-per-storey` | query, aggregate, sort, `chart.bar` | 32, 29, 20, 19 spaces on the four storeys with rooms |
-| `public-missing-widths` | query, filter, project | the 101 doors with no width, left NULL |
-| `public-floor-area-by-use` | two queries, left join, aggregate, `sql.query`, `chart.bar` | Verblijfsruimte 705.8 m2 of 965.8 m2 across six uses |
+| `public-missing-widths` | query, filter `isnull(Width_mm)`, project | the 101 doors with no width, left NULL |
+| `public-floor-area-by-use` | two queries, left join, aggregate, derive (round), project, sort, `chart.bar`; a note translates the Dutch use names | Verblijfsruimte (habitable rooms) 705.8 m2 of 965.8 m2 across six uses |
 
 | Id | Shape |
 |---|---|
 | `duckdb-door-schedule` | two queries, left join, project, sort |
 | `duckdb-door-types` | query, aggregate, sort, limit |
 | `duckdb-room-schedule` | two queries, left join, project, sort |
-| `duckdb-room-distribution` | two queries, aggregate, join, `sql.query`; a `sql.query` and `chart.bar` branch plot rooms per storey |
-| `duckdb-missing-widths` | query, filter, project |
+| `duckdb-room-distribution` | two queries, aggregate, join, `sql.query` that numbers storeys sharing a name, `chart.bar` of the answer; a note explains the numbering |
+| `duckdb-missing-widths` | query, filter `isnull(Width_m)`, project |
 | `duckdb-roof-coverage` | query, aggregate, sort |
 | `duckdb-evidence-trace` | UNNEST query and evidence query, join, project, sort |
 | `duckdb-source-lineage` | two queries, join, aggregate, sort |
-| `duckdb-typed-schema` | schema query, filter, aggregate, sort |
+| `duckdb-typed-schema` | schema query, filter on SqlType, aggregate, sort |
 
 All node kinds come from the tables profile (`HostComposition.TablePacks()` in `deps/bim-open-flow/src/flow/BimOpenFlow.Host`).
 
@@ -53,9 +55,12 @@ All node kinds come from the tables profile (`HostComposition.TablePacks()` in `
 
 - `tests/studio/BimOpenFlow.SnowdonWorkflows.Tests/DuckDbWorkflowCatalogTests.cs`
   enumerates the entries: each parses, validates against the tables registry,
-  and keeps `{DUCKDB}` as its only database path. `duckdb-typed-schema`
-  evaluates every node Ok over a generated `samples/tables/sample.duckdb`; the
-  other eight are evaluated over the same file to confirm that only their
-  `duck.query` nodes fail (missing Snowdon tables).
+  declares the `model` input with its placeholder as default, and lays its
+  wires out left to right from the database at (20, 30). The public five
+  evaluate over Schependomlaan with the numbers above, and `public-door-types`
+  also over the duplex through the `model` input. The Snowdon nine evaluate
+  every node Ok over a small database the test writes with the Snowdon tables
+  and columns; `duckdb-typed-schema` also over a generated
+  `samples/tables/sample.duckdb`.
 - `scripts/check-bim-flow-duckdb.mjs` drives the running page over the Snowdon
   export and checks the row counts listed in docs/bim-flow-duckdb.md.

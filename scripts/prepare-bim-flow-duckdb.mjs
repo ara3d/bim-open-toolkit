@@ -1,5 +1,7 @@
 // Seeds the DuckDB demo store (artifacts/bim-flow-duckdb/store) with every graph of
-// samples/duckdb-analyses/workflows.json, pointing each at its database:
+// samples/duckdb-analyses/workflows.json, pointing each at its database. The placeholder is
+// the default of each graph's `model` input, which its duck.source reads as $model; it is
+// rewritten there and in any parameter value, as the host's SampleSeeding.RewritePaths does:
 //
 //   {PUBLIC_DUCKDB}  graphs with "database": "public", over bim-open-data's public
 //                    Schependomlaan export (deps/bim-open-data/samples/public), present
@@ -14,6 +16,7 @@ import { existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seedFlows } from './seed-store.mjs';
+import { rewritePlaceholder } from './duckdb-graph.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // deps.mjs's rule: the siblings when the parent folder is a deps root, else deps/.
@@ -26,7 +29,7 @@ const store = resolve(process.argv[3] ?? resolve(root, 'artifacts/bim-flow-duckd
 await access(publicDb);
 const hasSnowdon = existsSync(snowdon);
 const databases = { public: publicDb, snowdon: hasSnowdon ? snowdon : undefined };
-const placeholders = { '{PUBLIC_DUCKDB}': 'public', '{DUCKDB}': 'snowdon' };
+const placeholders = { public: '{PUBLIC_DUCKDB}', snowdon: '{DUCKDB}' };
 
 const workflows = JSON.parse(await readFile(resolve(root, 'samples/duckdb-analyses/workflows.json'), 'utf8'));
 const flows = [];
@@ -34,10 +37,7 @@ const skipped = [];
 for (const workflow of workflows) {
   const database = databases[workflow.database];
   if (!database) { skipped.push(workflow.id); continue; }
-  const graph = structuredClone(workflow.graph);
-  for (const values of Object.values(graph.values))
-    if (placeholders[values.path] === workflow.database) values.path = database.replaceAll('\\', '/');
-  flows.push({ id: workflow.id, graph });
+  flows.push({ id: workflow.id, graph: rewritePlaceholder(workflow.graph, placeholders[workflow.database], database) });
 }
 // Untouched copies follow a changed sample or database; copies you edited are kept and named.
 seedFlows(store, 'duckdb-analyses', flows);

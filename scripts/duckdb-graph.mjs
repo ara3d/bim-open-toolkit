@@ -33,3 +33,16 @@ export function upgradeDuckDbGraph(document) {
   }
   return graph;
 }
+
+/** A copy of the graph with the placeholder replaced by target (forward slashes) in every
+ * parameter value and every graph input default, as the host's SampleSeeding.RewritePaths does. */
+export function rewritePlaceholder(document, placeholder, target) {
+  const graph = structuredClone(document);
+  const path = target.replaceAll('\\', '/');
+  for (const values of Object.values(graph.values ?? {}))
+    for (const [name, value] of Object.entries(values))
+      if (typeof value === 'string') values[name] = value.replaceAll(placeholder, path);
+  for (const input of graph.structure?.inputs ?? [])
+    if (typeof input.default === 'string') input.default = input.default.replaceAll(placeholder, path);
+  return graph;
+}

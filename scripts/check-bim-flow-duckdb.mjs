@@ -39,8 +39,9 @@ assert.ok(doors.rows.every(row => row[widthColumn] === null));
 assert.equal(rows.get('duckdb-missing-widths').totalRows, doors.totalRows);
 assert.equal(rows.get('duckdb-room-distribution').rows.reduce((total, row) => total + row[1], 0), rooms.totalRows);
 const storeyChart = await json('/api/analyses/duckdb-room-distribution/results/chart/table');
-assert.equal(storeyChart.totalRows, 33, 'The rooms-per-storey chart plots the 33 storeys that have rooms');
-assert.equal(storeyChart.rows.reduce((total, row) => total + row[1], 0), rooms.totalRows - 4, 'Four rooms carry no storey reference');
+assert.equal(storeyChart.totalRows, 34, 'The chart plots the answer: the 33 storeys that have rooms and a row for rooms with no storey');
+assert.equal(storeyChart.rows.reduce((total, row) => total + row[1], 0), rooms.totalRows);
+assert.deepEqual(storeyChart.rows.at(-1), ['(no storey reference)', 4], 'Four rooms carry no storey reference');
 const roofs = rows.get('duckdb-roof-coverage');
 assert.equal(roofs.rows[0][roofs.columns.findIndex(column => column.name === 'Roofs')], 26);
 assert.equal(roofs.rows[0][roofs.columns.findIndex(column => column.name === 'KnownArea_m2')], null);
@@ -84,22 +85,22 @@ try {
   scenarios.push(`The flow picker opens all ${workflows.length} editable graphs with a result table or chart on the right`);
   await page.getByLabel('Open flow', { exact: true }).selectOption({ label: 'Rooms by storey' });
   await page.waitForFunction(() => document.querySelector('select[aria-label="Preview node"]')?.value === 'chart');
-  await page.waitForFunction(() => document.querySelectorAll('.bof-app-panearea rect.bof-viz-bar').length === 33);
+  await page.waitForFunction(() => document.querySelectorAll('.bof-app-panearea rect.bof-viz-bar').length === 34);
   assert.equal(await page.locator('.bof-app-panearea .bof-app-tab-active').textContent(), 'Chart');
   assert.equal(await page.locator('.bof-app-panearea .bof-viz-title').textContent(), 'Rooms per storey');
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'rooms-per-storey-chart.png'), fullPage: true });
   await page.locator('.bof-app-panearea .bof-app-tab', { hasText: 'Table' }).click();
-  await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 33);
+  await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 34);
   assert.equal(await page.locator('.bof-app-panearea svg.bof-viz-bar-chart').count(), 0);
-  scenarios.push('Rooms by storey opens on a Chart tab with 33 storey bars, beside a Table tab with the same 33 rows');
+  scenarios.push('Rooms by storey opens on a Chart tab with 34 bars (33 storeys and the rooms with no storey), beside a Table tab with the same 34 rows');
   await page.getByLabel('Open flow', { exact: true }).selectOption({ label: 'Most-used door types' });
   await page.getByLabel('answer count', { exact: true }).fill('3');
   const saved = page.waitForResponse(response => response.url() === base + endpoint && response.request().method() === 'PUT' && response.ok());
   await page.getByLabel('answer count', { exact: true }).press('Enter');
   await saved;
   await page.waitForFunction(() => document.querySelectorAll('#duck-editor tbody tr').length === 3);
-  assert.equal((await result(workflows[1])).totalRows, 3);
+  assert.equal((await result(workflows.find(workflow => workflow.id === 'duckdb-door-types'))).totalRows, 3);
   await page.waitForTimeout(1800); // Let the graph's entrance animation settle before visual capture.
   await page.screenshot({ path: resolve(output, 'edited-top-three.png'), fullPage: true });
   scenarios.push('Editing the limit on the graph autosaves and recomputes the table to three rows');
