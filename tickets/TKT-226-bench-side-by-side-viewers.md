@@ -22,3 +22,4 @@ The owner's first bench deliverable (2026-10-11): a person sees what loading the
 ## Notes
 
 - 2026-10-11: corpus (three models, .ifc and .glb forms, IfcConvert 0.9.0 pinned) and the Static glTF Viewer pane are built in ara3d/bim-open-bench up to commit 2e8463a; the Duplex reaches first frame in 0.56 s there. The other forms (.bos, .frag, .xkt) arrive with their panes, so the first criterion stays open. Build log: the bench README.
+- 2026-10-12: the five other panes and the side-by-side page are in the bench (commits ab68263 to 4ad5091). Five panes load the Duplex together in the page; the xeokit pane fails with "offset is out of bounds" on its web-ifc path and its builder is still on it. Fourth criterion met (a failed pane stays in its slot). Not done: GitHub Pages (the converted forms have no public home, see the bench README open questions), and the .bos, .frag, .xkt conversion times need a rerun on a quiet machine.
