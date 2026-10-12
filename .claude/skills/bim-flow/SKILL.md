@@ -9,7 +9,7 @@ The `bimopenflow-duckdb` server (registered in `.mcp.json`; build it with `node 
 
 Read, in this folder, before the first tool call:
 
-- [schema-guide.md](schema-guide.md): what the element tables share, how storeys link, why measures are NULL, how lineage chains, how list columns behave.
+- [schema-guide.md](schema-guide.md): how storeys link, why measures are NULL, how lineage chains, how list columns behave.
 - [node-guide.md](node-guide.md): the expression language of `table.derive` and `table.filter` (`isnull` for missing values, `in` for lists), aggregate syntax, join modes, when to reach for `sql.query`.
 - [working-rules.md](working-rules.md): the order of calls that builds a correct graph in one `editGraph` plus a fix-up, and when to answer instead of build.
 
@@ -21,8 +21,8 @@ The same three files are embedded in the studio's Ask endpoint as its system pro
 |---|---|
 | `listDatabases` | The `.duckdb` files under the model roots, with paths for a `duck.source` node, whose Database value wires into the `path` socket of `duck.query`, `duck.table` and `duck.tables`. Prefer the file the existing graphs use (`listAnalyses` then `getAnalysis` shows their `duck.source` path). |
 | `describeDatabase` | Without `table`: every table with row count and base column names, companion columns folded. With `table`: types, NULL and distinct counts, sample values, numeric range. |
-| `getNodeCatalog` | Every node kind with ports, parameters and enum values. Read it once per session. |
-| `listAnalyses`, `getAnalysis`, `saveAnalysis` | The graph library: list, read as JSON, replace a whole document. |
+| `getNodeCatalog` | Every node kind with ports, parameters, enum values and the declared output columns (name, type, kind, meaning). Read it once per session. |
+| `listAnalyses`, `getAnalysis`, `saveAnalysis` | The graph library: list, read as JSON, replace a whole document. `getAnalysis` also reports each output's inferred columns (`name:Type`) and warnings before any run; use it, not `evaluate`, to see columns. |
 | `editGraph` | A list of addNode / setParam / connect / removeNode edits, validated together and saved once. A failed batch saves nothing. |
 | `addNode`, `setParam`, `connect`, `removeNode` | Single edits for small fixes. `setParam` with no `nodeId` and a name such as `$model` sets a graph input. |
 | `declareInput`, `removeInput` (ops inside `editGraph`) | Declare or remove a graph input (name, kind, default). A parameter whose whole value is `$name` reads it. See working-rules.md, "Running a graph on another building". |

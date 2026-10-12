@@ -1,0 +1,1 @@
+{"mcpServers":{"bimopenflow-duckdb":{"command":"dotnet","args":["C:/Users/cdigg/AppData/Local/Temp/c3/mcp/bimopenmcp-flow.dll","--profile","tables","--store","C:/Users/cdigg/AppData/Local/Temp/c3/store1","--cache","C:/Users/cdigg/AppData/Local/Temp/c3/cache","--models","C:/Users/cdigg/git/bim-open-toolkit/deps/bim-open-data/samples/public"]}}}
