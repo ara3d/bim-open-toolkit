@@ -29,7 +29,123 @@
           "bindable": "Text"
         }
       ],
-      "description": "Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate; one row per topic and selected element, with an empty GlobalId for a topic that selects nothing) and a topics table (one row per topic with its element count). The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged."
+      "description": "Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId; one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.",
+      "schemas": [
+        {
+          "output": "issues",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "GlobalId",
+              "type": "Text",
+              "nullable": true,
+              "kind": "GlobalId"
+            },
+            {
+              "name": "Title",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Title"
+            },
+            {
+              "name": "Description",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Description"
+            },
+            {
+              "name": "Status",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Status"
+            },
+            {
+              "name": "Priority",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Priority"
+            },
+            {
+              "name": "Type",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Type"
+            },
+            {
+              "name": "TopicGuid",
+              "type": "Text",
+              "nullable": true,
+              "kind": "TopicGuid"
+            },
+            {
+              "name": "Author",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Author"
+            },
+            {
+              "name": "CreationDate",
+              "type": "Text",
+              "nullable": true,
+              "kind": "CreationDate"
+            },
+            {
+              "name": "AuthoringToolId",
+              "type": "Text",
+              "nullable": true,
+              "kind": "AuthoringToolId"
+            }
+          ]
+        },
+        {
+          "output": "topics",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "Title",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Title"
+            },
+            {
+              "name": "Description",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Description"
+            },
+            {
+              "name": "Status",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Status"
+            },
+            {
+              "name": "Priority",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Priority"
+            },
+            {
+              "name": "Type",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Type"
+            },
+            {
+              "name": "Elements",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "Elements"
+            },
+            {
+              "name": "GlobalIds",
+              "type": "Text",
+              "nullable": false,
+              "kind": "GlobalIds"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bcf.topics",
@@ -66,7 +182,57 @@
           "default": "Fail"
         }
       ],
-      "description": "Groups an issue or verdict table into the BCF topics bcf.write would write (one per distinct title: Title, Description, Status, Priority, Type, Elements, GlobalIds), so the file\u0027s contents can be checked before Run. \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row."
+      "description": "Groups an issue or verdict table into the BCF topics bcf.write would write (one per distinct title: Title, Description, Status, Priority, Type, Elements, GlobalIds), so the file\u0027s contents can be checked before Run. \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row.",
+      "schemas": [
+        {
+          "output": "topics",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "Title",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Title"
+            },
+            {
+              "name": "Description",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Description"
+            },
+            {
+              "name": "Status",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Status"
+            },
+            {
+              "name": "Priority",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Priority"
+            },
+            {
+              "name": "Type",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Type"
+            },
+            {
+              "name": "Elements",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "Elements"
+            },
+            {
+              "name": "GlobalIds",
+              "type": "Text",
+              "nullable": false,
+              "kind": "GlobalIds"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bcf.write",
@@ -128,7 +294,50 @@
           "default": ""
         }
       ],
-      "description": "Writes the input issue or verdict table as a BCF 3.0 file at \u0027path\u0027 that Revit, Solibri and BIMcollab open as topics. With \u0027model\u0027 (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic\u0027s description. \u0027guidSeed\u0027 keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row."
+      "description": "Writes the input issue or verdict table as a BCF 3.0 file at \u0027path\u0027 that Revit, Solibri and BIMcollab open as topics. With \u0027model\u0027 (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic\u0027s description. \u0027guidSeed\u0027 keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row.",
+      "schemas": [
+        {
+          "output": "out",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "path",
+              "type": "Text",
+              "nullable": false
+            },
+            {
+              "name": "topics",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "viewpoints",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "elements",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "elementsWithoutGeometry",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "bytes",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "sha256",
+              "type": "Text",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bfast.buffer",
@@ -172,7 +381,13 @@
           ]
         }
       ],
-      "description": "Reads one buffer of a BFAST file as a table with a single \u0060value\u0060 column, interpreting its bytes as the given element type (integers widen to long, floats to double). An unknown buffer name or a byte length that is not a multiple of the element size is an error."
+      "description": "Reads one buffer of a BFAST file as a table with a single \u0060value\u0060 column, interpreting its bytes as the given element type (integers widen to long, floats to double). An unknown buffer name or a byte length that is not a multiple of the element size is an error.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bfast.read",
@@ -198,7 +413,30 @@
           "bindable": "Text"
         }
       ],
-      "description": "Lists the buffers in a BFAST file: name, byteLength, index (0-based file order). BFAST records no element types; bfast.buffer reads one buffer under a type you name."
+      "description": "Lists the buffers in a BFAST file: name, byteLength, index (0-based file order). BFAST records no element types; bfast.buffer reads one buffer under a type you name.",
+      "schemas": [
+        {
+          "output": "buffers",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "name",
+              "type": "Text",
+              "nullable": false
+            },
+            {
+              "name": "byteLength",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "index",
+              "type": "Integer",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bim.bounds",
@@ -224,7 +462,129 @@
           "bindable": "Text"
         }
       ],
-      "description": "Loads a .bos file into one row per element that has bounds: EntityIndex, Name, Category, Level, MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea (SizeX*SizeY), Volume (box volume), Diagonal. Feeds bim.containment, bim.nearest, and dimension analyses."
+      "description": "Loads a .bos file into one row per element that has bounds: EntityIndex, Name, Category, Level, MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea (SizeX*SizeY), Volume (box volume), Diagonal. Feeds bim.containment, bim.nearest, and dimension analyses.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "Name",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Name"
+            },
+            {
+              "name": "Category",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Category"
+            },
+            {
+              "name": "Level",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Level"
+            },
+            {
+              "name": "MinX",
+              "type": "Number",
+              "nullable": false,
+              "kind": "MinX"
+            },
+            {
+              "name": "MinY",
+              "type": "Number",
+              "nullable": false,
+              "kind": "MinY"
+            },
+            {
+              "name": "MinZ",
+              "type": "Number",
+              "nullable": false,
+              "kind": "MinZ"
+            },
+            {
+              "name": "MaxX",
+              "type": "Number",
+              "nullable": false,
+              "kind": "MaxX"
+            },
+            {
+              "name": "MaxY",
+              "type": "Number",
+              "nullable": false,
+              "kind": "MaxY"
+            },
+            {
+              "name": "MaxZ",
+              "type": "Number",
+              "nullable": false,
+              "kind": "MaxZ"
+            },
+            {
+              "name": "SizeX",
+              "type": "Number",
+              "nullable": false,
+              "kind": "SizeX"
+            },
+            {
+              "name": "SizeY",
+              "type": "Number",
+              "nullable": false,
+              "kind": "SizeY"
+            },
+            {
+              "name": "SizeZ",
+              "type": "Number",
+              "nullable": false,
+              "kind": "SizeZ"
+            },
+            {
+              "name": "CenterX",
+              "type": "Number",
+              "nullable": false,
+              "kind": "CenterX"
+            },
+            {
+              "name": "CenterY",
+              "type": "Number",
+              "nullable": false,
+              "kind": "CenterY"
+            },
+            {
+              "name": "CenterZ",
+              "type": "Number",
+              "nullable": false,
+              "kind": "CenterZ"
+            },
+            {
+              "name": "FootprintArea",
+              "type": "Number",
+              "nullable": false,
+              "kind": "FootprintArea"
+            },
+            {
+              "name": "Volume",
+              "type": "Number",
+              "nullable": false,
+              "kind": "Volume"
+            },
+            {
+              "name": "Diagonal",
+              "type": "Number",
+              "nullable": false,
+              "kind": "Diagonal"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bim.buildSequence",
@@ -299,7 +659,73 @@
           "default": ""
         }
       ],
-      "description": "A synthetic construction sequence (4D) for an element table such as bim.elements or bim.discipline\u0027s output; it takes a table rather than a .bos path so a filtered or re-classified element set schedules the same way. Each row\u0027s trade comes from \u0027column\u0027 (Revit categories, IFC classes, or bim.discipline names) by a built-in map to Structure, Envelope, MEP, and Finishes; \u0027overrides\u0027 is a JSON {\u0022value\u0022: \u0022trade\u0022} object that wins. \u0027trades\u0027 orders the trades; storeys from \u0027levelColumn\u0027 run bottom-up by the lowest \u0027elevationColumn\u0027 value, then by name (only by name, with a warning, when that column is missing). A task starts when the previous trade has left its storey and its own trade has left the storey below, so trades overlap by one storey; each task with elements lasts \u0027daysPerTask\u0027 calendar days from \u0027start\u0027. Output \u0027tasks\u0027: Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (the week of the last working day, End - 1, counted from 1 at \u0027start\u0027), ElementCount, Synthetic. Output \u0027elements\u0027: the input rows plus Task, Trade, Finish (the task\u0027s exclusive End), FinishWeek (as in \u0027tasks\u0027), Synthetic (true on every scheduled row); rows with no storey or no trade get nulls in all five and are counted in one warning. Same input, same schedule."
+      "description": "A synthetic construction sequence (4D) for an element table such as bim.elements or bim.discipline\u0027s output; it takes a table rather than a .bos path so a filtered or re-classified element set schedules the same way. Each row\u0027s trade comes from \u0027column\u0027 (Revit categories, IFC classes, or bim.discipline names) by a built-in map to Structure, Envelope, MEP, and Finishes; \u0027overrides\u0027 is a JSON {\u0022value\u0022: \u0022trade\u0022} object that wins. \u0027trades\u0027 orders the trades; storeys from \u0027levelColumn\u0027 run bottom-up by the lowest \u0027elevationColumn\u0027 value, then by name (only by name, with a warning, when that column is missing). A task starts when the previous trade has left its storey and its own trade has left the storey below, so trades overlap by one storey; each task with elements lasts \u0027daysPerTask\u0027 calendar days from \u0027start\u0027. Output \u0027tasks\u0027: Task, Storey, Trade, Start, End (exclusive, ISO dates), DurationDays, FinishWeek (the week of the last working day, End - 1, counted from 1 at \u0027start\u0027), ElementCount, Synthetic. Output \u0027elements\u0027: the input rows plus Task, Trade, Finish (the task\u0027s exclusive End), FinishWeek (as in \u0027tasks\u0027), Synthetic (true on every scheduled row); rows with no storey or no trade get nulls in all five and are counted in one warning. Same input, same schedule.",
+      "schemas": [
+        {
+          "output": "tasks",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "Task",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Task"
+            },
+            {
+              "name": "Storey",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Storey"
+            },
+            {
+              "name": "Trade",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Trade"
+            },
+            {
+              "name": "Start",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Start"
+            },
+            {
+              "name": "End",
+              "type": "Text",
+              "nullable": false,
+              "kind": "End"
+            },
+            {
+              "name": "DurationDays",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "DurationDays"
+            },
+            {
+              "name": "FinishWeek",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "FinishWeek"
+            },
+            {
+              "name": "ElementCount",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "ElementCount"
+            },
+            {
+              "name": "Synthetic",
+              "type": "Boolean",
+              "nullable": false,
+              "kind": "Synthetic"
+            }
+          ]
+        },
+        {
+          "output": "elements",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bim.classifyRooms",
@@ -340,7 +766,13 @@
           "default": "RoomClass"
         }
       ],
-      "description": "Adds a room class column (\u0027as\u0027, default RoomClass) by matching the name column against ordered case-insensitive regex rules; first match wins, no match gets Other. The built-in ruleset covers Office, Meeting, Circulation, Stair, Elevator, Sanitary, Kitchen, Storage, Mechanical, Residential, and Parking; \u0027rules\u0027 is an optional JSON array of {\u0022class\u0022: ..., \u0022pattern\u0022: ...} that replaces it."
+      "description": "Adds a room class column (\u0027as\u0027, default RoomClass) by matching the name column against ordered case-insensitive regex rules; first match wins, no match gets Other. The built-in ruleset covers Office, Meeting, Circulation, Stair, Elevator, Sanitary, Kitchen, Storage, Mechanical, Residential, and Parking; \u0027rules\u0027 is an optional JSON array of {\u0022class\u0022: ..., \u0022pattern\u0022: ...} that replaces it.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bim.containment",
@@ -413,7 +845,13 @@
           "default": "false"
         }
       ],
-      "description": "Adds a column (\u0027as\u0027) to the points table holding the \u0027key\u0027 of the smallest box row whose MinX..MaxZ box contains the point (x, y, z); rows in no box get null. With ignoreZ, containment is tested in plan (XY) only. Typical use: element centers from bim.bounds against room boxes from bim.rooms, when the model has no room parameters."
+      "description": "Adds a column (\u0027as\u0027) to the points table holding the \u0027key\u0027 of the smallest box row whose MinX..MaxZ box contains the point (x, y, z); rows in no box get null. With ignoreZ, containment is tested in plan (XY) only. Typical use: element centers from bim.bounds against room boxes from bim.rooms, when the model has no room parameters.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bim.discipline",
@@ -449,7 +887,13 @@
           "default": ""
         }
       ],
-      "description": "Adds a Discipline column (Architecture, Structure, Mechanical, Electrical, Plumbing, FireProtection, Site, or General) classified from the category column by a built-in mapping of common Revit categories and IFC classes; \u0027overrides\u0027 is an optional JSON object of {\u0022category\u0022: \u0022discipline\u0022} entries that win over the built-ins. Unmatched categories get General."
+      "description": "Adds a Discipline column (Architecture, Structure, Mechanical, Electrical, Plumbing, FireProtection, Site, or General) classified from the category column by a built-in mapping of common Revit categories and IFC classes; \u0027overrides\u0027 is an optional JSON object of {\u0022category\u0022: \u0022discipline\u0022} entries that win over the built-ins. Unmatched categories get General.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bim.elements",
@@ -475,7 +919,99 @@
           "bindable": "Text"
         }
       ],
-      "description": "Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name, Category, CategoryType, Type, ClassName, Level, Elevation, Room, Document, Workset, Group. The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms."
+      "description": "Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name, Category, CategoryType, Type, ClassName, Level, Elevation, Room, Document, Workset, Group. The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "LocalId",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "LocalId"
+            },
+            {
+              "name": "GlobalId",
+              "type": "Text",
+              "nullable": true,
+              "kind": "GlobalId"
+            },
+            {
+              "name": "Name",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Name"
+            },
+            {
+              "name": "Category",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Category"
+            },
+            {
+              "name": "CategoryType",
+              "type": "Text",
+              "nullable": true,
+              "kind": "CategoryType"
+            },
+            {
+              "name": "Type",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Type"
+            },
+            {
+              "name": "ClassName",
+              "type": "Text",
+              "nullable": true,
+              "kind": "ClassName"
+            },
+            {
+              "name": "Level",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Level"
+            },
+            {
+              "name": "Elevation",
+              "type": "Number",
+              "nullable": true,
+              "kind": "Elevation"
+            },
+            {
+              "name": "Room",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Room"
+            },
+            {
+              "name": "Document",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Document"
+            },
+            {
+              "name": "Workset",
+              "type": "Integer",
+              "nullable": true,
+              "kind": "Workset"
+            },
+            {
+              "name": "Group",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Group"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bim.hops",
@@ -520,7 +1056,27 @@
           "default": ""
         }
       ],
-      "description": "Walks the undirected graph whose edges are the (from, to) column pairs, breadth-first from the \u0027start\u0027 room, into one row per room seen in either column: Room, Hops (0 for the start, null for unreachable rooms), ordered by Hops then Room. An unknown start room is an error. Typical input: the bim.navGraph edge table."
+      "description": "Walks the undirected graph whose edges are the (from, to) column pairs, breadth-first from the \u0027start\u0027 room, into one row per room seen in either column: Room, Hops (0 for the start, null for unreachable rooms), ordered by Hops then Room. An unknown start room is an error. Typical input: the bim.navGraph edge table.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "Room",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Room"
+            },
+            {
+              "name": "Hops",
+              "type": "Integer",
+              "nullable": true,
+              "kind": "Hops"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bim.levels",
@@ -546,7 +1102,45 @@
           "bindable": "Text"
         }
       ],
-      "description": "Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Name, Elevation, ElementCount (elements whose Level parameter points here), RoomCount. Levels are the elements carrying a level-elevation parameter or categorized as Levels."
+      "description": "Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Name, Elevation, ElementCount (elements whose Level parameter points here), RoomCount. Levels are the elements carrying a level-elevation parameter or categorized as Levels.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "Name",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Name"
+            },
+            {
+              "name": "Elevation",
+              "type": "Number",
+              "nullable": false,
+              "kind": "Elevation"
+            },
+            {
+              "name": "ElementCount",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "ElementCount"
+            },
+            {
+              "name": "RoomCount",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "RoomCount"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bim.navGraph",
@@ -578,7 +1172,45 @@
           "list": true
         }
       ],
-      "description": "Loads a .bos file into one row per door in the given categories: Door (entity index), DoorName, Level, FromRoom, ToRoom \u2014 the rooms from the door\u0027s from/to-room parameters, labelled \u0027Name Number\u0027 (so two Corridors on different floors stay distinct), with Outside standing in for a missing side. The rows are the undirected edges of the room navigation graph; feed them to bim.hops for reachability."
+      "description": "Loads a .bos file into one row per door in the given categories: Door (entity index), DoorName, Level, FromRoom, ToRoom \u2014 the rooms from the door\u0027s from/to-room parameters, labelled \u0027Name Number\u0027 (so two Corridors on different floors stay distinct), with Outside standing in for a missing side. The rows are the undirected edges of the room navigation graph; feed them to bim.hops for reachability.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "Door",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "Door"
+            },
+            {
+              "name": "DoorName",
+              "type": "Text",
+              "nullable": true,
+              "kind": "DoorName"
+            },
+            {
+              "name": "Level",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Level"
+            },
+            {
+              "name": "FromRoom",
+              "type": "Text",
+              "nullable": false,
+              "kind": "FromRoom"
+            },
+            {
+              "name": "ToRoom",
+              "type": "Text",
+              "nullable": false,
+              "kind": "ToRoom"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bim.nearest",
@@ -673,7 +1305,13 @@
           "default": "Nearest"
         }
       ],
-      "description": "Adds two columns to a: \u0027as\u0027 (default Nearest) holding the \u0027key\u0027 of the closest b row by 3D distance between (x,y,z) and (bx,by,bz), and Distance holding that distance. Rows with null coordinates, or when b is empty, get nulls. Typical use: distance from each room center to the nearest exit door."
+      "description": "Adds two columns to a: \u0027as\u0027 (default Nearest) holding the \u0027key\u0027 of the closest b row by 3D distance between (x,y,z) and (bx,by,bz), and Distance holding that distance. Rows with null coordinates, or when b is empty, get nulls. Typical use: distance from each room center to the nearest exit door.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bim.orientation",
@@ -705,7 +1343,93 @@
           "list": true
         }
       ],
-      "description": "Loads a .bos file into one row per element with a box: EntityIndex, GlobalId, Name, Category, Level, CenterX, CenterY, Bearing, Sector, Direction, Distance, Facing, FacingArea. The box is the element\u0027s Rvt:Element:Bounds when present, else the world box of its visible geometry. The plan centre is the middle of the rows\u0027 combined XY extent, so \u0027categories\u0027 (comma-separated, blank for every element) also sets the centre. Bearing is degrees clockwise from project north (\u002BY of the model) to the element\u0027s box centre; a BOS carries no true-north angle, so it is not true north. Sector 0..7 and Direction (N, NE, E, SE, S, SW, W, NW) bin the bearing in 45-degree slices centred on each point, a bearing on a boundary going to the clockwise slice (22.5 is NE, 337.5 is N); Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side the box\u0027s larger vertical face looks out to, by which side of the centre the box lies on (a square box counts its X-running face, so it faces N or S); FacingArea is that face\u0027s area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall\u0027s or window\u0027s gross face when it runs along a model axis and overstates a diagonal one. An element whose box centre is the plan centre (Distance 0, as when it is the only row) has no bearing and no side, so its Bearing, Sector, Direction, and Facing are null; FacingArea is still given."
+      "description": "Loads a .bos file into one row per element with a box: EntityIndex, GlobalId, Name, Category, Level, CenterX, CenterY, Bearing, Sector, Direction, Distance, Facing, FacingArea. The box is the element\u0027s Rvt:Element:Bounds when present, else the world box of its visible geometry. The plan centre is the middle of the rows\u0027 combined XY extent, so \u0027categories\u0027 (comma-separated, blank for every element) also sets the centre. Bearing is degrees clockwise from project north (\u002BY of the model) to the element\u0027s box centre; a BOS carries no true-north angle, so it is not true north. Sector 0..7 and Direction (N, NE, E, SE, S, SW, W, NW) bin the bearing in 45-degree slices centred on each point, a bearing on a boundary going to the clockwise slice (22.5 is NE, 337.5 is N); Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side the box\u0027s larger vertical face looks out to, by which side of the centre the box lies on (a square box counts its X-running face, so it faces N or S); FacingArea is that face\u0027s area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall\u0027s or window\u0027s gross face when it runs along a model axis and overstates a diagonal one. An element whose box centre is the plan centre (Distance 0, as when it is the only row) has no bearing and no side, so its Bearing, Sector, Direction, and Facing are null; FacingArea is still given.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "GlobalId",
+              "type": "Text",
+              "nullable": true,
+              "kind": "GlobalId"
+            },
+            {
+              "name": "Name",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Name"
+            },
+            {
+              "name": "Category",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Category"
+            },
+            {
+              "name": "Level",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Level"
+            },
+            {
+              "name": "CenterX",
+              "type": "Number",
+              "nullable": false,
+              "kind": "CenterX"
+            },
+            {
+              "name": "CenterY",
+              "type": "Number",
+              "nullable": false,
+              "kind": "CenterY"
+            },
+            {
+              "name": "Bearing",
+              "type": "Number",
+              "nullable": true,
+              "kind": "Bearing"
+            },
+            {
+              "name": "Sector",
+              "type": "Integer",
+              "nullable": true,
+              "kind": "Sector"
+            },
+            {
+              "name": "Direction",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Direction"
+            },
+            {
+              "name": "Distance",
+              "type": "Number",
+              "nullable": false,
+              "kind": "Distance"
+            },
+            {
+              "name": "Facing",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Facing"
+            },
+            {
+              "name": "FacingArea",
+              "type": "Number",
+              "nullable": false,
+              "kind": "FacingArea"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bim.paramCoverage",
@@ -736,7 +1460,13 @@
           }
         }
       ],
-      "description": "Profiles a long parameter table (the bos.load parameters output: EntityIndex, Name, ParameterGroup, Units, ValueType, Value) into one row per parameter name: Name, ParameterGroup, ValueType, Count, Distinct, FillRate, ordered by Count descending. With \u0027groupBy\u0027 empty (the default), FillRate is the share of every distinct entity in the input that carries the parameter, which understates fill for a parameter that only applies to one kind of entity. With \u0027groupBy\u0027 naming a column present on the input (for example a Category column joined in from bos.load\u0027s entities table), the output gets one row per parameter per group value, and FillRate is the share of that group\u0027s entities that carry the parameter."
+      "description": "Profiles a long parameter table (the bos.load parameters output: EntityIndex, Name, ParameterGroup, Units, ValueType, Value) into one row per parameter name: Name, ParameterGroup, ValueType, Count, Distinct, FillRate, ordered by Count descending. With \u0027groupBy\u0027 empty (the default), FillRate is the share of every distinct entity in the input that carries the parameter, which understates fill for a parameter that only applies to one kind of entity. With \u0027groupBy\u0027 naming a column present on the input (for example a Category column joined in from bos.load\u0027s entities table), the output gets one row per parameter per group value, and FillRate is the share of that group\u0027s entities that carry the parameter.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bim.paramTable",
@@ -768,7 +1498,13 @@
           "list": true
         }
       ],
-      "description": "Loads a .bos file into one row per element with EntityIndex, Name, Category plus one typed column per requested parameter (\u0027parameters\u0027 is a comma-separated list of full descriptor names, e.g. Rvt:Room:Volume). Columns take the short name after the last colon (the full name on collision); Int maps to integer, Number to double, String and Entity to text, and Point parameters expand to three .X/.Y/.Z double columns."
+      "description": "Loads a .bos file into one row per element with EntityIndex, Name, Category plus one typed column per requested parameter (\u0027parameters\u0027 is a comma-separated list of full descriptor names, e.g. Rvt:Room:Volume). Columns take the short name after the last colon (the full name on collision); Int maps to integer, Number to double, String and Entity to text, and Point parameters expand to three .X/.Y/.Z double columns.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "bim.rooms",
@@ -800,7 +1536,141 @@
           "list": true
         }
       ],
-      "description": "Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, Volume, UnboundedHeight, ElementCount (elements whose Room/Space parameter points here), and when bounds exist MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea. Rooms are the elements whose category is in the comma-separated \u0027categories\u0027 list."
+      "description": "Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, Volume, UnboundedHeight, ElementCount (elements whose Room/Space parameter points here), and when bounds exist MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea. Rooms are the elements whose category is in the comma-separated \u0027categories\u0027 list.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "Name",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Name"
+            },
+            {
+              "name": "Number",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Number"
+            },
+            {
+              "name": "Level",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Level"
+            },
+            {
+              "name": "Elevation",
+              "type": "Number",
+              "nullable": true,
+              "kind": "Elevation"
+            },
+            {
+              "name": "Volume",
+              "type": "Number",
+              "nullable": true,
+              "kind": "Volume"
+            },
+            {
+              "name": "UnboundedHeight",
+              "type": "Number",
+              "nullable": true,
+              "kind": "UnboundedHeight"
+            },
+            {
+              "name": "ElementCount",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "ElementCount"
+            },
+            {
+              "name": "MinX",
+              "type": "Number",
+              "nullable": true,
+              "kind": "MinX"
+            },
+            {
+              "name": "MinY",
+              "type": "Number",
+              "nullable": true,
+              "kind": "MinY"
+            },
+            {
+              "name": "MinZ",
+              "type": "Number",
+              "nullable": true,
+              "kind": "MinZ"
+            },
+            {
+              "name": "MaxX",
+              "type": "Number",
+              "nullable": true,
+              "kind": "MaxX"
+            },
+            {
+              "name": "MaxY",
+              "type": "Number",
+              "nullable": true,
+              "kind": "MaxY"
+            },
+            {
+              "name": "MaxZ",
+              "type": "Number",
+              "nullable": true,
+              "kind": "MaxZ"
+            },
+            {
+              "name": "SizeX",
+              "type": "Number",
+              "nullable": true,
+              "kind": "SizeX"
+            },
+            {
+              "name": "SizeY",
+              "type": "Number",
+              "nullable": true,
+              "kind": "SizeY"
+            },
+            {
+              "name": "SizeZ",
+              "type": "Number",
+              "nullable": true,
+              "kind": "SizeZ"
+            },
+            {
+              "name": "CenterX",
+              "type": "Number",
+              "nullable": true,
+              "kind": "CenterX"
+            },
+            {
+              "name": "CenterY",
+              "type": "Number",
+              "nullable": true,
+              "kind": "CenterY"
+            },
+            {
+              "name": "CenterZ",
+              "type": "Number",
+              "nullable": true,
+              "kind": "CenterZ"
+            },
+            {
+              "name": "FootprintArea",
+              "type": "Number",
+              "nullable": true,
+              "kind": "FootprintArea"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bos.load",
@@ -841,7 +1711,129 @@
           "default": "false"
         }
       ],
-      "description": "Loads a BIM Open Schema (.bos) file and outputs its entity, parameter, and relation text tables."
+      "description": "Loads a BIM Open Schema (.bos) file and outputs its entity, parameter, and relation text tables.",
+      "schemas": [
+        {
+          "output": "entities",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "StepId",
+              "type": "Integer",
+              "nullable": true,
+              "kind": "StepId"
+            },
+            {
+              "name": "GlobalId",
+              "type": "Text",
+              "nullable": true,
+              "kind": "GlobalId"
+            },
+            {
+              "name": "Name",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Name"
+            },
+            {
+              "name": "Category",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Category"
+            },
+            {
+              "name": "Type",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Type"
+            }
+          ]
+        },
+        {
+          "output": "parameters",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "Name",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Name"
+            },
+            {
+              "name": "ParameterGroup",
+              "type": "Text",
+              "nullable": true,
+              "kind": "ParameterGroup"
+            },
+            {
+              "name": "Units",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Units"
+            },
+            {
+              "name": "ValueType",
+              "type": "Text",
+              "nullable": true,
+              "kind": "ValueType"
+            },
+            {
+              "name": "Value",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Value"
+            }
+          ]
+        },
+        {
+          "output": "relations",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "EntityIndexA",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndexA"
+            },
+            {
+              "name": "NameA",
+              "type": "Text",
+              "nullable": true,
+              "kind": "NameA"
+            },
+            {
+              "name": "EntityIndexB",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "EntityIndexB"
+            },
+            {
+              "name": "NameB",
+              "type": "Text",
+              "nullable": true,
+              "kind": "NameB"
+            },
+            {
+              "name": "RelationType",
+              "type": "Text",
+              "nullable": true,
+              "kind": "RelationType"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "bos.query",
@@ -1023,7 +2015,13 @@
           "list": true
         }
       ],
-      "description": "Required data check: missing column = InfoNotAvailable everywhere; null cell = Fail; else Pass."
+      "description": "Required data check: missing column = InfoNotAvailable everywhere; null cell = Fail; else Pass.",
+      "schemas": [
+        {
+          "output": "out",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "check.rollup",
@@ -1044,7 +2042,58 @@
         }
       ],
       "params": [],
-      "description": "Groups a verdict table by CheckId into counts and the worst verdict per check."
+      "description": "Groups a verdict table by CheckId into counts and the worst verdict per check.",
+      "schemas": [
+        {
+          "output": "out",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "CheckId",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckId"
+            },
+            {
+              "name": "CheckTitle",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckTitle"
+            },
+            {
+              "name": "Citation",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Citation"
+            },
+            {
+              "name": "passCount",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "failCount",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "needsReviewCount",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "infoNotAvailableCount",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "worst",
+              "type": "Text",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "check.rule",
@@ -1182,7 +2231,13 @@
           "default": "true"
         }
       ],
-      "description": "Reads a CSV file or glob of files into a table, with typed delimiter, header, skip, quote, null-text, and encoding options."
+      "description": "Reads a CSV file or glob of files into a table, with typed delimiter, header, skip, quote, null-text, and encoding options.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "date.diff",
@@ -1509,7 +2564,13 @@
           "default": ""
         }
       ],
-      "description": "Runs read-only SQL against a DuckDB file: type the path, or wire a duck.source into path."
+      "description": "Runs read-only SQL against a DuckDB file: type the path, or wire a duck.source into path.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "duck.read",
@@ -1545,7 +2606,13 @@
           ]
         }
       ],
-      "description": "Loads a CSV, Parquet, or JSON file into a table using DuckDB\u0027s readers."
+      "description": "Loads a CSV, Parquet, or JSON file into a table using DuckDB\u0027s readers.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "duck.source",
@@ -1605,7 +2672,13 @@
           }
         }
       ],
-      "description": "Reads one named table from a .duckdb database file, read-only."
+      "description": "Reads one named table from a .duckdb database file, read-only.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "duck.tables",
@@ -1631,7 +2704,30 @@
           "bindable": "Database"
         }
       ],
-      "description": "Lists the tables in a .duckdb database file with their column and row counts."
+      "description": "Lists the tables in a .duckdb database file with their column and row counts.",
+      "schemas": [
+        {
+          "output": "tables",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "name",
+              "type": "Text",
+              "nullable": false
+            },
+            {
+              "name": "columnCount",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "rowCount",
+              "type": "Integer",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "ids.check",
@@ -1647,6 +2743,11 @@
           "name": "parameters",
           "type": "Table",
           "optional": false
+        },
+        {
+          "name": "relations",
+          "type": "Table",
+          "optional": true
         }
       ],
       "outputs": [
@@ -1673,7 +2774,7 @@
           "bindable": "Text"
         }
       ],
-      "description": "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification (one row per specification, zeros when none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass; a facet the IDS loader skipped is a warning too."
+      "description": "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and, when wired, the relations table (its third output), which material and part-of facets need; without it they give InfoNotAvailable. Outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification (one row per specification, zeros when none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass; a facet the IDS loader skipped is a warning too."
     },
     {
       "kind": "ids.specifications",
@@ -1699,7 +2800,7 @@
           "bindable": "Text"
         }
       ],
-      "description": "Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable). Reads no model; use it to see what an IDS asks before running ids.check."
+      "description": "Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable; material and part-of facets count as supported and need ids.check\u0027s relations input). Reads no model; use it to see what an IDS asks before running ids.check."
     },
     {
       "kind": "json.read",
@@ -1739,7 +2840,13 @@
           "default": "false"
         }
       ],
-      "description": "Reads a JSON file (record array or newline-delimited) into a table, optionally flattening one level of nested objects into dotted columns."
+      "description": "Reads a JSON file (record array or newline-delimited) into a table, optionally flattening one level of nested objects into dotted columns.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "parquet.read",
@@ -1764,7 +2871,13 @@
           }
         }
       ],
-      "description": "Reads a Parquet file or glob of files into a table using DuckDB read_parquet."
+      "description": "Reads a Parquet file or glob of files into a table using DuckDB read_parquet.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "rel.aggregate",
@@ -3073,7 +4186,13 @@
           "default": ""
         }
       ],
-      "description": "Runs one read-only SQL query over the connected input tables t1..t4 (t = t1)."
+      "description": "Runs one read-only SQL query over the connected input tables t1..t4 (t = t1).",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "sqlite.query",
@@ -3103,7 +4222,13 @@
           "default": ""
         }
       ],
-      "description": "Runs one read-only SQL query against a SQLite database file."
+      "description": "Runs one read-only SQL query against a SQLite database file.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "sqlite.table",
@@ -3133,7 +4258,13 @@
           "default": ""
         }
       ],
-      "description": "Reads one whole table from a SQLite database file (SELECT *, read-only)."
+      "description": "Reads one whole table from a SQLite database file (SELECT *, read-only).",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "sqlite.tables",
@@ -3158,7 +4289,30 @@
           }
         }
       ],
-      "description": "Lists the tables in a SQLite database file: name, columnCount, rowCount (read-only)."
+      "description": "Lists the tables in a SQLite database file: name, columnCount, rowCount (read-only).",
+      "schemas": [
+        {
+          "output": "tables",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "name",
+              "type": "Text",
+              "nullable": false
+            },
+            {
+              "name": "columnCount",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "rowCount",
+              "type": "Integer",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "table.aggregate",
@@ -3196,7 +4350,13 @@
           "list": true
         }
       ],
-      "description": "Groups by the comma-separated groupBy columns (may be empty) and computes comma-separated \u0027func(column) as name\u0027 aggregates (count/sum/min/max/avg)."
+      "description": "Groups by the comma-separated groupBy columns (may be empty) and computes comma-separated \u0027func(column) as name\u0027 aggregates (count/sum/min/max/avg).",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.calendar",
@@ -3239,7 +4399,13 @@
           ]
         }
       ],
-      "description": "Generates one ISO-8601 date column from start to end inclusive; month/quarter/year steps use calendar arithmetic."
+      "description": "Generates one ISO-8601 date column from start to end inclusive; month/quarter/year steps use calendar arithmetic.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.cast",
@@ -3297,7 +4463,13 @@
           "default": ""
         }
       ],
-      "description": "Converts a column to boolean, integer, number, text, date, or datetime."
+      "description": "Converts a column to boolean, integer, number, text, date, or datetime.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.concat",
@@ -3333,7 +4505,13 @@
           ]
         }
       ],
-      "description": "Appends b\u0027s rows after a\u0027s, matching columns strictly by position or loosely by name."
+      "description": "Appends b\u0027s rows after a\u0027s, matching columns strictly by position or loosely by name.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.dedupe",
@@ -3416,7 +4594,13 @@
           "default": ""
         }
       ],
-      "description": "Outputs the input table plus one computed column."
+      "description": "Outputs the input table plus one computed column.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.distinct",
@@ -3448,7 +4632,13 @@
           "list": true
         }
       ],
-      "description": "Removes duplicate rows; with key columns named, keeps the first row per key with all columns."
+      "description": "Removes duplicate rows; with key columns named, keeps the first row per key with all columns.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.drop",
@@ -3480,7 +4670,13 @@
           "list": true
         }
       ],
-      "description": "Removes the named columns and keeps all others."
+      "description": "Removes the named columns and keeps all others.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.dropNulls",
@@ -3605,7 +4801,13 @@
           "default": ""
         }
       ],
-      "description": "Keeps rows where the Boolean expression is true; null results exclude the row."
+      "description": "Keeps rows where the Boolean expression is true; null results exclude the row.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.inline",
@@ -3626,7 +4828,13 @@
           "default": ""
         }
       ],
-      "description": "Builds a table from a JSON array of objects, e.g. [{\u0022type\u0022:\u0022Wall\u0022,\u0022rate\u0022:120.5}]. Column types are inferred (bool/integer/number/text); a column mixing value types is an error; nulls and missing keys are allowed."
+      "description": "Builds a table from a JSON array of objects, e.g. [{\u0022type\u0022:\u0022Wall\u0022,\u0022rate\u0022:120.5}]. Column types are inferred (bool/integer/number/text); a column mixing value types is an error; nulls and missing keys are allowed.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.join",
@@ -3683,7 +4891,13 @@
           ]
         }
       ],
-      "description": "Joins b\u0027s columns onto a by key (bKey defaults to aKey). left keeps all a rows; inner keeps matches; full also appends unmatched b rows; semi/anti keep only a rows with/without a match and attach no b columns."
+      "description": "Joins b\u0027s columns onto a by key (bKey defaults to aKey). left keeps all a rows; inner keeps matches; full also appends unmatched b rows; semi/anti keep only a rows with/without a match and attach no b columns.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.limit",
@@ -3715,7 +4929,13 @@
           "default": "0"
         }
       ],
-      "description": "Keeps \u0027count\u0027 rows starting at \u0027offset\u0027 in the table\u0027s order."
+      "description": "Keeps \u0027count\u0027 rows starting at \u0027offset\u0027 in the table\u0027s order.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.pivot",
@@ -3837,7 +5057,13 @@
           "list": true
         }
       ],
-      "description": "Keeps the comma-separated columns, in that order; \u0027column as Alias\u0027 renames one; unknown names warn."
+      "description": "Keeps the comma-separated columns, in that order; \u0027column as Alias\u0027 renames one; unknown names warn.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.range",
@@ -3877,14 +5103,7 @@
       "schemas": [
         {
           "output": "table",
-          "mode": "Static",
-          "columns": [
-            {
-              "name": "value",
-              "type": "Number",
-              "nullable": false
-            }
-          ]
+          "mode": "Inferred"
         }
       ]
     },
@@ -3918,7 +5137,13 @@
           "list": true
         }
       ],
-      "description": "Renames columns using comma-separated \u0027old=new\u0027 pairs."
+      "description": "Renames columns using comma-separated \u0027old=new\u0027 pairs.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.replace",
@@ -4087,7 +5312,13 @@
           }
         }
       ],
-      "description": "Keeps a\u0027s rows by key-set operation with b: union, intersect, or subtract."
+      "description": "Keeps a\u0027s rows by key-set operation with b: union, intersect, or subtract.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.sort",
@@ -4178,7 +5409,13 @@
           "list": true
         }
       ],
-      "description": "Sorts by columns A, B, then C, each with its own ascending or descending direction."
+      "description": "Sorts by columns A, B, then C, each with its own ascending or descending direction.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "table.splitColumn",
@@ -5543,7 +6780,13 @@
           "default": ""
         }
       ],
-      "description": "Reads a worksheet (named, or the first) from an .xlsx file. headerRow is the header\u0027s row within the range (rows above are skipped); range is an A1-style rectangle like B3:F100 (empty = used range)."
+      "description": "Reads a worksheet (named, or the first) from an .xlsx file. headerRow is the header\u0027s row within the range (rows above are skipped); range is an A1-style rectangle like B3:F100 (empty = used range).",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "xlsx.sheets",
@@ -5568,7 +6811,35 @@
           }
         }
       ],
-      "description": "Lists the worksheets in an .xlsx file: name, index (1-based), rowCount, columnCount of the used range."
+      "description": "Lists the worksheets in an .xlsx file: name, index (1-based), rowCount, columnCount of the used range.",
+      "schemas": [
+        {
+          "output": "sheets",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "name",
+              "type": "Text",
+              "nullable": false
+            },
+            {
+              "name": "index",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "rowCount",
+              "type": "Integer",
+              "nullable": false
+            },
+            {
+              "name": "columnCount",
+              "type": "Integer",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     }
   ]
 }

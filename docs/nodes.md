@@ -92,6 +92,38 @@ Loads the .bos file into an in-memory DuckDB once and outputs three materialized
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `harmonize` | Boolean | — | `false` | — | — |
 
+**Columns of `entities`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` |
+| `StepId` | Integer | yes | `StepId` |
+| `GlobalId` | Text | yes | `GlobalId` |
+| `Name` | Text | yes | `Name` |
+| `Category` | Text | yes | `Category` |
+| `Type` | Text | yes | `Type` |
+
+**Columns of `parameters`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` |
+| `Name` | Text | yes | `Name` |
+| `ParameterGroup` | Text | yes | `ParameterGroup` |
+| `Units` | Text | yes | `Units` |
+| `ValueType` | Text | yes | `ValueType` |
+| `Value` | Text | yes | `Value` |
+
+**Columns of `relations`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndexA` | Integer | no | `EntityIndexA` |
+| `NameA` | Text | yes | `NameA` |
+| `EntityIndexB` | Integer | no | `EntityIndexB` |
+| `NameB` | Text | yes | `NameB` |
+| `RelationType` | Text | yes | `RelationType` |
+
 ### `bos.query` (v1) — Pure
 
 Runs one read-only SQL query over the input table, available as 't'.
@@ -138,6 +170,25 @@ Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` |
+| `LocalId` | Integer | no | `LocalId` |
+| `GlobalId` | Text | yes | `GlobalId` |
+| `Name` | Text | yes | `Name` |
+| `Category` | Text | no | `Category` |
+| `CategoryType` | Text | yes | `CategoryType` |
+| `Type` | Text | yes | `Type` |
+| `ClassName` | Text | yes | `ClassName` |
+| `Level` | Text | yes | `Level` |
+| `Elevation` | Number | yes | `Elevation` |
+| `Room` | Text | yes | `Room` |
+| `Document` | Text | yes | `Document` |
+| `Workset` | Integer | yes | `Workset` |
+| `Group` | Text | yes | `Group` |
+
 ### `bim.rooms` (v1) — Pure
 
 Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, Volume, UnboundedHeight, ElementCount (elements whose Room/Space parameter points here), and when bounds exist MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea. Rooms are the elements whose category is in the comma-separated 'categories' list.
@@ -157,6 +208,32 @@ Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Eleva
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `categories` | Text (list) | — | `Rooms,Spaces` | — | — |
 
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` |
+| `Name` | Text | yes | `Name` |
+| `Number` | Text | yes | `Number` |
+| `Level` | Text | yes | `Level` |
+| `Elevation` | Number | yes | `Elevation` |
+| `Volume` | Number | yes | `Volume` |
+| `UnboundedHeight` | Number | yes | `UnboundedHeight` |
+| `ElementCount` | Integer | no | `ElementCount` |
+| `MinX` | Number | yes | `MinX` |
+| `MinY` | Number | yes | `MinY` |
+| `MinZ` | Number | yes | `MinZ` |
+| `MaxX` | Number | yes | `MaxX` |
+| `MaxY` | Number | yes | `MaxY` |
+| `MaxZ` | Number | yes | `MaxZ` |
+| `SizeX` | Number | yes | `SizeX` |
+| `SizeY` | Number | yes | `SizeY` |
+| `SizeZ` | Number | yes | `SizeZ` |
+| `CenterX` | Number | yes | `CenterX` |
+| `CenterY` | Number | yes | `CenterY` |
+| `CenterZ` | Number | yes | `CenterZ` |
+| `FootprintArea` | Number | yes | `FootprintArea` |
+
 ### `bim.levels` (v1) — Pure
 
 Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Name, Elevation, ElementCount (elements whose Level parameter points here), RoomCount. Levels are the elements carrying a level-elevation parameter or categorized as Levels.
@@ -174,6 +251,16 @@ Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Nam
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
+
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` |
+| `Name` | Text | yes | `Name` |
+| `Elevation` | Number | no | `Elevation` |
+| `ElementCount` | Integer | no | `ElementCount` |
+| `RoomCount` | Integer | no | `RoomCount` |
 
 ### `bim.bounds` (v1) — Pure
 
@@ -193,6 +280,30 @@ Loads a .bos file into one row per element that has bounds: EntityIndex, Name, C
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` |
+| `Name` | Text | yes | `Name` |
+| `Category` | Text | yes | `Category` |
+| `Level` | Text | yes | `Level` |
+| `MinX` | Number | no | `MinX` |
+| `MinY` | Number | no | `MinY` |
+| `MinZ` | Number | no | `MinZ` |
+| `MaxX` | Number | no | `MaxX` |
+| `MaxY` | Number | no | `MaxY` |
+| `MaxZ` | Number | no | `MaxZ` |
+| `SizeX` | Number | no | `SizeX` |
+| `SizeY` | Number | no | `SizeY` |
+| `SizeZ` | Number | no | `SizeZ` |
+| `CenterX` | Number | no | `CenterX` |
+| `CenterY` | Number | no | `CenterY` |
+| `CenterZ` | Number | no | `CenterZ` |
+| `FootprintArea` | Number | no | `FootprintArea` |
+| `Volume` | Number | no | `Volume` |
+| `Diagonal` | Number | no | `Diagonal` |
+
 ### `bim.paramTable` (v1) — Pure
 
 Loads a .bos file into one row per element with EntityIndex, Name, Category plus one typed column per requested parameter ('parameters' is a comma-separated list of full descriptor names, e.g. Rvt:Room:Volume). Columns take the short name after the last colon (the full name on collision); Int maps to integer, Number to double, String and Entity to text, and Point parameters expand to three .X/.Y/.Z double columns.
@@ -211,6 +322,8 @@ Loads a .bos file into one row per element with EntityIndex, Name, Category plus
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `parameters` | Text (list) | — | — | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `bim.paramCoverage` (v1) — Pure
 
@@ -233,6 +346,8 @@ Profiles a long parameter table (the bos.load parameters output: EntityIndex, Na
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `groupBy` | Text | — | — | — | columns of input `parameters` |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `bim.discipline` (v1) — Pure
 
@@ -257,6 +372,8 @@ Adds a Discipline column (Architecture, Structure, Mechanical, Electrical, Plumb
 | `column` | Text | — | `Category` | — | columns of input `table` |
 | `overrides` | Json | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `bim.classifyRooms` (v1) — Pure
 
 Adds a room class column ('as', default RoomClass) by matching the name column against ordered case-insensitive regex rules; first match wins, no match gets Other. The built-in ruleset covers Office, Meeting, Circulation, Stair, Elevator, Sanitary, Kitchen, Storage, Mechanical, Residential, and Parking; 'rules' is an optional JSON array of {"class": ..., "pattern": ...} that replaces it.
@@ -280,6 +397,8 @@ Adds a room class column ('as', default RoomClass) by matching the name column a
 | `column` | Text | — | `Name` | — | columns of input `table` |
 | `rules` | Json | — | — | — | — |
 | `as` | Text | — | `RoomClass` | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `bim.containment` (v1) — Pure
 
@@ -308,6 +427,8 @@ Adds a column ('as') to the points table holding the 'key' of the smallest box r
 | `key` | Text | — | `Name` | — | columns of input `boxes` |
 | `as` | Text | — | `ContainedIn` | — | — |
 | `ignoreZ` | Boolean | — | `false` | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `bim.nearest` (v1) — Pure
 
@@ -339,6 +460,8 @@ Adds two columns to a: 'as' (default Nearest) holding the 'key' of the closest b
 | `key` | Text | — | `Name` | — | columns of input `b` |
 | `as` | Text | — | `Nearest` | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `bim.navGraph` (v1) — Pure
 
 Loads a .bos file into one row per door in the given categories: Door (entity index), DoorName, Level, FromRoom, ToRoom — the rooms from the door's from/to-room parameters, labelled 'Name Number' (so two Corridors on different floors stay distinct), with Outside standing in for a missing side. The rows are the undirected edges of the room navigation graph; feed them to bim.hops for reachability.
@@ -357,6 +480,16 @@ Loads a .bos file into one row per door in the given categories: Door (entity in
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `doorCategories` | Text (list) | — | `Doors` | — | — |
+
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `Door` | Integer | no | `Door` |
+| `DoorName` | Text | yes | `DoorName` |
+| `Level` | Text | yes | `Level` |
+| `FromRoom` | Text | no | `FromRoom` |
+| `ToRoom` | Text | no | `ToRoom` |
 
 ### `bim.hops` (v1) — Pure
 
@@ -382,6 +515,13 @@ Walks the undirected graph whose edges are the (from, to) column pairs, breadth-
 | `to` | Text | — | `ToRoom` | — | columns of input `edges` |
 | `start` | Text | — | — | — | — |
 
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `Room` | Text | no | `Room` |
+| `Hops` | Integer | yes | `Hops` |
+
 ### `bim.orientation` (v1) — Pure
 
 Loads a .bos file into one row per element with a box: EntityIndex, GlobalId, Name, Category, Level, CenterX, CenterY, Bearing, Sector, Direction, Distance, Facing, FacingArea. The box is the element's Rvt:Element:Bounds when present, else the world box of its visible geometry. The plan centre is the middle of the rows' combined XY extent, so 'categories' (comma-separated, blank for every element) also sets the centre. Bearing is degrees clockwise from project north (+Y of the model) to the element's box centre; a BOS carries no true-north angle, so it is not true north. Sector 0..7 and Direction (N, NE, E, SE, S, SW, W, NW) bin the bearing in 45-degree slices centred on each point, a bearing on a boundary going to the clockwise slice (22.5 is NE, 337.5 is N); Distance is the plan distance from the centre (m). Facing (N, E, S, W) is the side the box's larger vertical face looks out to, by which side of the centre the box lies on (a square box counts its X-running face, so it faces N or S); FacingArea is that face's area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall's or window's gross face when it runs along a model axis and overstates a diagonal one. An element whose box centre is the plan centre (Distance 0, as when it is the only row) has no bearing and no side, so its Bearing, Sector, Direction, and Facing are null; FacingArea is still given.
@@ -400,6 +540,24 @@ Loads a .bos file into one row per element with a box: EntityIndex, GlobalId, Na
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `categories` | Text (list) | — | — | — | — |
+
+**Columns of `table`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` |
+| `GlobalId` | Text | yes | `GlobalId` |
+| `Name` | Text | yes | `Name` |
+| `Category` | Text | yes | `Category` |
+| `Level` | Text | yes | `Level` |
+| `CenterX` | Number | no | `CenterX` |
+| `CenterY` | Number | no | `CenterY` |
+| `Bearing` | Number | yes | `Bearing` |
+| `Sector` | Integer | yes | `Sector` |
+| `Direction` | Text | yes | `Direction` |
+| `Distance` | Number | no | `Distance` |
+| `Facing` | Text | yes | `Facing` |
+| `FacingArea` | Number | no | `FacingArea` |
 
 ### `bim.buildSequence` (v1) — Pure
 
@@ -429,6 +587,22 @@ A synthetic construction sequence (4D) for an element table such as bim.elements
 | `daysPerTask` | Integer | — | `10` | — | — |
 | `trades` | Text (list) | — | `Structure,Envelope,MEP,Finishes` | — | — |
 | `overrides` | Json | — | — | — | — |
+
+**Columns of `tasks`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `Task` | Text | no | `Task` |
+| `Storey` | Text | no | `Storey` |
+| `Trade` | Text | no | `Trade` |
+| `Start` | Text | no | `Start` |
+| `End` | Text | no | `End` |
+| `DurationDays` | Integer | no | `DurationDays` |
+| `FinishWeek` | Integer | no | `FinishWeek` |
+| `ElementCount` | Integer | no | `ElementCount` |
+| `Synthetic` | Boolean | no | `Synthetic` |
+
+**Columns of `elements`**: inferred from the inputs
 
 ## Geometry — `BimOpenFlow.Nodes.Geometry`
 
@@ -934,7 +1108,7 @@ The ids.* pack: a buildingSMART IDS 1.0 file evaluated over the entity and param
 
 ### `ids.check` (v1) — Pure
 
-Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification (one row per specification, zeros when none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass; a facet the IDS loader skipped is a warning too.
+Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and, when wired, the relations table (its third output), which material and part-of facets need; without it they give InfoNotAvailable. Outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification (one row per specification, zeros when none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass; a facet the IDS loader skipped is a warning too.
 
 The entity and parameter tables are `bos.load`'s first two outputs (or any tables with the EntityText and ParameterText columns). Each specification's applicability facets select entities; each requirement facet is judged under its cardinality (expected, optional, prohibited); an entity's row keeps the worst verdict and the reasons behind it. Entity facets match the IFC class exactly (IncludeSubtypes is ignored with a warning); a USERDEFINED predefined type is read from ObjectType. Property `dataType` is checked at the level BOS records: number, logical, or text. Classification, material, part-of and document facets give InfoNotAvailable with one warning each, never a pass. A required specification that applies to nothing gets one model-level Fail row with an empty GlobalId. Numbers are compared in the model's own units.
 
@@ -944,6 +1118,7 @@ The entity and parameter tables are `bos.load`'s first two outputs (or any table
 |---|---|---|
 | `entities` | Table | required |
 | `parameters` | Table | required |
+| `relations` | Table | optional |
 
 **Outputs**
 
@@ -960,7 +1135,7 @@ The entity and parameter tables are `bos.load`'s first two outputs (or any table
 
 ### `ids.specifications` (v1) — Pure
 
-Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable). Reads no model; use it to see what an IDS asks before running ids.check.
+Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable; material and part-of facets count as supported and need ids.check's relations input). Reads no model; use it to see what an IDS asks before running ids.check.
 
 Reads only the IDS file. `Supported` is false when any facet of the specification would give InfoNotAvailable under `ids.check`.
 
@@ -1007,6 +1182,18 @@ The same grouping `bcf.write` applies, as a table: a preview of the file before 
 | `preset` | Enum | — | `auto` | `auto`, `issue`, `verdict` | — |
 | `verdicts` | Text | — | `Fail` | — | — |
 
+**Columns of `topics`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `Title` | Text | yes | `Title` |
+| `Description` | Text | yes | `Description` |
+| `Status` | Text | yes | `Status` |
+| `Priority` | Text | yes | `Priority` |
+| `Type` | Text | yes | `Type` |
+| `Elements` | Integer | no | `Elements` |
+| `GlobalIds` | Text | no | `GlobalIds` |
+
 ### `bcf.write` (v1) — Effect
 
 Writes the input issue or verdict table as a BCF 3.0 file at 'path' that Revit, Solibri and BIMcollab open as topics. With 'model' (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic's description. 'guidSeed' keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
@@ -1036,9 +1223,21 @@ An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (d
 | `author` | Text | — | — | — | — |
 | `guidSeed` | Text | — | — | — | — |
 
+**Columns of `out`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `path` | Text | no | — |
+| `topics` | Integer | no | — |
+| `viewpoints` | Integer | no | — |
+| `elements` | Integer | no | — |
+| `elementsWithoutGeometry` | Integer | no | — |
+| `bytes` | Integer | no | — |
+| `sha256` | Text | no | — |
+
 ### `bcf.read` (v1) — Pure
 
-Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate; one row per topic and selected element, with an empty GlobalId for a topic that selects nothing) and a topics table (one row per topic with its element count). The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged.
+Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId; one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.
 
 Reads markup.bcf per topic and the elements its viewpoints select; a topic written without geometry gets its GlobalIds back from its description. Comments, snapshots and cameras are not read.
 
@@ -1056,6 +1255,33 @@ Reads markup.bcf per topic and the elements its viewpoints select; a topic writt
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bcf` |
+
+**Columns of `issues`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `GlobalId` | Text | yes | `GlobalId` |
+| `Title` | Text | yes | `Title` |
+| `Description` | Text | yes | `Description` |
+| `Status` | Text | yes | `Status` |
+| `Priority` | Text | yes | `Priority` |
+| `Type` | Text | yes | `Type` |
+| `TopicGuid` | Text | yes | `TopicGuid` |
+| `Author` | Text | yes | `Author` |
+| `CreationDate` | Text | yes | `CreationDate` |
+| `AuthoringToolId` | Text | yes | `AuthoringToolId` |
+
+**Columns of `topics`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `Title` | Text | yes | `Title` |
+| `Description` | Text | yes | `Description` |
+| `Status` | Text | yes | `Status` |
+| `Priority` | Text | yes | `Priority` |
+| `Type` | Text | yes | `Type` |
+| `Elements` | Integer | no | `Elements` |
+| `GlobalIds` | Text | no | `GlobalIds` |
 
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
 
@@ -1116,6 +1342,8 @@ If any listed column is missing from the table, the node warns and every row is 
 | `citation` | Text | — | — | — | — |
 | `columns` | Text (list) | — | — | — | — |
 
+**Columns of `out`**: inferred from the inputs
+
 ### `check.rollup` (v1) — Pure
 
 Groups a verdict table by CheckId into counts and the worst verdict per check.
@@ -1135,6 +1363,19 @@ Input must be a verdict table. Output has one row per CheckId in first-appearanc
 | `out` | Table |
 
 **Params**: none
+
+**Columns of `out`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `CheckId` | Text | no | `CheckId` |
+| `CheckTitle` | Text | no | `CheckTitle` |
+| `Citation` | Text | no | `Citation` |
+| `passCount` | Integer | no | — |
+| `failCount` | Integer | no | — |
+| `needsReviewCount` | Integer | no | — |
+| `infoNotAvailableCount` | Integer | no | — |
+| `worst` | Text | no | — |
 
 ### `check.union` (v1) — Pure
 
@@ -1393,6 +1634,8 @@ With `format` auto, the reader is inferred from the file extension (.csv, .parqu
 | `path` | FilePath | — | — | — | files under the model roots ending `.csv,.parquet,.json` |
 | `format` | Enum | — | `auto` | `auto`, `csv`, `parquet`, `json` | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `duck.source` (v1) — Pure
 
 Opens one shared read-only DuckDB source for connected query branches.
@@ -1432,6 +1675,8 @@ The database file is opened read-only (the node can never mutate it), and the SQ
 | `path` | FilePath | Database | — | — | files under the model roots ending `.duckdb` |
 | `sql` | Text | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `sql.query` (v1) — Pure
 
 Runs one read-only SQL query over the connected input tables t1..t4 (t = t1).
@@ -1458,6 +1703,8 @@ Connected inputs load into an in-memory DuckDB as `t1`..`t4`, and `t` is a view 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `sql` | Text | — | — | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `csv.read` (v1) — Pure
 
@@ -1486,6 +1733,8 @@ Reads one CSV file or a glob of files via DuckDB `read_csv`, with typed delimite
 | `encoding` | Enum | — | `utf8` | `utf8`, `utf16`, `latin1` | — |
 | `inferTypes` | Boolean | — | `true` | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `parquet.read` (v1) — Pure
 
 Reads a Parquet file or glob of files into a table using DuckDB read_parquet.
@@ -1505,6 +1754,8 @@ Reads a Parquet file or glob of files via DuckDB `read_parquet`. Parquet is self
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | — | — | — | files under the model roots ending `.parquet` |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `json.read` (v1) — Pure
 
@@ -1528,6 +1779,8 @@ Reads a JSON file via DuckDB `read_json`; `layout` selects the file shape (auto,
 | `layout` | Enum | — | `auto` | `auto`, `records`, `lines` | — |
 | `flatten` | Boolean | — | `false` | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `duck.table` (v1) — Pure
 
 Reads one named table from a .duckdb database file, read-only.
@@ -1549,6 +1802,8 @@ Reads one named table from a .duckdb database opened read-only, so the node can 
 | `path` | FilePath | Database | — | — | files under the model roots ending `.duckdb` |
 | `table` | Text | — | — | — | tables in the file at `path` |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `duck.tables` (v1) — Pure
 
 Lists the tables in a .duckdb database file with their column and row counts.
@@ -1568,6 +1823,14 @@ Lists the tables of a .duckdb database (read-only) as a table with `name`, `colu
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | Database | — | — | files under the model roots ending `.duckdb` |
+
+**Columns of `tables`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `name` | Text | no | — |
+| `columnCount` | Integer | no | — |
+| `rowCount` | Integer | no | — |
 
 ## Tables — `BimOpenFlow.Nodes.Tables`
 
@@ -1596,6 +1859,8 @@ An empty `sheet` means the first worksheet; a named sheet that does not exist is
 | `headerRow` | Integer | — | `1` | — | — |
 | `range` | Text | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `xlsx.sheets` (v1) — Pure
 
 Lists the worksheets in an .xlsx file: name, index (1-based), rowCount, columnCount of the used range.
@@ -1615,6 +1880,15 @@ Lists a workbook's worksheets as a table: `name`, `index` (1-based position), an
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | — | — | — | files under the model roots ending `.xlsx` |
+
+**Columns of `sheets`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `name` | Text | no | — |
+| `index` | Integer | no | — |
+| `rowCount` | Integer | no | — |
+| `columnCount` | Integer | no | — |
 
 ### `sqlite.query` (v1) — Pure
 
@@ -1637,6 +1911,8 @@ The database file is opened read-only, and the SQL is validated as a single SELE
 | `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 | `sql` | Text | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `sqlite.table` (v1) — Pure
 
 Reads one whole table from a SQLite database file (SELECT *, read-only).
@@ -1658,6 +1934,8 @@ Reads one whole table (`SELECT *`, read-only, case-insensitive name match) with 
 | `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 | `table` | Text | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `sqlite.tables` (v1) — Pure
 
 Lists the tables in a SQLite database file: name, columnCount, rowCount (read-only).
@@ -1678,6 +1956,14 @@ Lists a database's user tables (`name`, `columnCount`, `rowCount`) in name order
 |---|---|---|---|---|---|
 | `path` | FilePath | — | — | — | files under the model roots ending `.sqlite,.sqlite3,.db` |
 
+**Columns of `tables`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `name` | Text | no | — |
+| `columnCount` | Integer | no | — |
+| `rowCount` | Integer | no | — |
+
 ### `bfast.read` (v1) — Pure
 
 Lists the buffers in a BFAST file: name, byteLength, index (0-based file order). BFAST records no element types; bfast.buffer reads one buffer under a type you name.
@@ -1695,6 +1981,14 @@ Lists the buffers in a BFAST file: name, byteLength, index (0-based file order).
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bfast` |
+
+**Columns of `buffers`**
+
+| Name | Type | Nullable | Kind |
+|---|---|---|---|
+| `name` | Text | no | — |
+| `byteLength` | Integer | no | — |
+| `index` | Integer | no | — |
 
 ### `bfast.buffer` (v1) — Pure
 
@@ -1715,6 +2009,8 @@ Reads one buffer of a BFAST file as a table with a single `value` column, interp
 | `path` | FilePath | Text | — | — | files under the model roots ending `.bfast` |
 | `name` | Text | — | — | — | — |
 | `type` | Enum | — | `float32` | `uint8`, `int16`, `int32`, `int64`, `float32`, `float64` | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.join` (v1) — Pure
 
@@ -1743,6 +2039,8 @@ Joins b's columns onto a by key, matching on canonical cell text; `bKey` default
 | `bKey` | Text | — | — | — | columns of input `b` |
 | `mode` | Enum | — | `left` | `left`, `inner`, `full`, `semi`, `anti` | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.setOp` (v1) — Pure
 
 Keeps a's rows by key-set operation with b: union, intersect, or subtract.
@@ -1769,6 +2067,8 @@ Row-set algebra on a key column; a's columns and row order pass through. `inters
 | `op` | Enum | — | `intersect` | `union`, `intersect`, `subtract` | — |
 | `key` | Text | — | — | — | columns of input `a` |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.project` (v1) — Pure
 
 Keeps the comma-separated columns, in that order; 'column as Alias' renames one; unknown names warn.
@@ -1793,6 +2093,8 @@ Keeps the named columns in the given order. A name with no matching column warns
 |---|---|---|---|---|---|
 | `columns` | Text (list) | — | — | — | columns of input `table` |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.inline` (v1) — Pure
 
 Builds a table from a JSON array of objects, e.g. [{"type":"Wall","rate":120.5}]. Column types are inferred (bool/integer/number/text); a column mixing value types is an error; nulls and missing keys are allowed.
@@ -1812,6 +2114,8 @@ Builds a small table from a JSON array of objects typed into the node. Column ty
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `rows` | Json | — | — | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.range` (v1) — Pure
 
@@ -1836,11 +2140,7 @@ One numeric column from `start` to `stop` by `step`, inclusive of stop when a st
 | `stop` | Number | — | — | — | — |
 | `step` | Number | — | `1` | — | — |
 
-**Columns of `table`**
-
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `value` | Number | no | — |
+**Columns of `table`**: inferred from the inputs
 
 ### `table.calendar` (v1) — Pure
 
@@ -1864,6 +2164,8 @@ One ISO-8601 date column from `start` to `end` inclusive, stepping by day/week/m
 | `start` | DateTime | — | — | — | — |
 | `end` | DateTime | — | — | — | — |
 | `step` | Enum | — | `day` | `day`, `week`, `month`, `quarter`, `year` | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ## TableOps — `BimOpenFlow.Nodes.TableOps`
 
@@ -1893,6 +2195,8 @@ The expression must be statically Boolean; a non-Boolean expression is an error.
 |---|---|---|---|---|---|
 | `expr` | Expression | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.derive` (v1) — Pure
 
 Outputs the input table plus one computed column.
@@ -1918,6 +2222,8 @@ The new column's type comes from the expression's static type; rows where the ex
 | `name` | Text | — | — | — | — |
 | `expr` | Expression | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.aggregate` (v1) — Pure
 
 Groups by the comma-separated groupBy columns (may be empty) and computes comma-separated 'func(column) as name' aggregates (count/sum/min/max/avg).
@@ -1942,6 +2248,8 @@ Runs via DuckDB. Each aggregate is written `func(column) as name` with funcs cou
 |---|---|---|---|---|---|
 | `groupBy` | Text (list) | — | — | — | columns of input `table` |
 | `aggregates` | Text (list) | — | — | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.sort` (v1) — Pure
 
@@ -1973,6 +2281,8 @@ Runs via DuckDB. Each comma-separated term is a column name with an optional ` d
 | `descendingC` | Boolean | — | `false` | — | — |
 | `by` | Text (list) | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.cast` (v1) — Pure
 
 Converts a column to boolean, integer, number, text, date, or datetime.
@@ -2000,6 +2310,8 @@ Converts one column to boolean, integer, number, text, date, or datetime, in pla
 | `onError` | Enum | — | `error` | `error`, `null` | — |
 | `name` | Text | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.concat` (v1) — Pure
 
 Appends b's rows after a's, matching columns strictly by position or loosely by name.
@@ -2025,6 +2337,8 @@ Appends b's rows after a's. Strict mode requires both tables to have identical c
 |---|---|---|---|---|---|
 | `columns` | Enum | — | `strict` | `strict`, `byName` | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.distinct` (v1) — Pure
 
 Removes duplicate rows; with key columns named, keeps the first row per key with all columns.
@@ -2048,6 +2362,8 @@ Removes duplicate rows. With no columns named, whole rows are compared; with key
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `columns` | Text (list) | — | — | — | columns of input `table` |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.drop` (v1) — Pure
 
@@ -2073,6 +2389,8 @@ Removes the named columns and keeps everything else — the complement of table.
 |---|---|---|---|---|---|
 | `columns` | Text (list) | — | — | — | columns of input `table` |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.limit` (v1) — Pure
 
 Keeps 'count' rows starting at 'offset' in the table's order.
@@ -2097,6 +2415,8 @@ Keeps `count` rows starting at `offset` in the table's deterministic order — t
 |---|---|---|---|---|---|
 | `count` | Integer | — | — | — | — |
 | `offset` | Integer | — | `0` | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.pivot` (v1) — Pure
 
@@ -2170,6 +2490,8 @@ Renames columns via comma-separated `old=new` pairs. Unknown old names warn and 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `renames` | Text (list) | — | — | — | columns of input `table` |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.sample` (v1) — Pure
 
