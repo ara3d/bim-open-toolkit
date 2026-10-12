@@ -34,6 +34,14 @@ public static class AllowLists
             "ranks duct-room overlaps by volume; the sample's few overlaps already arrive largest first"),
         new(SampleFlowsFixture.BimProfile, "bim-room-classes", "ranked",
             "ranks room classes by room count; table.aggregate orders by class name, which matches only on this sample"),
+        new(SampleFlowsFixture.BimProfile, "viz-facade-orientation", "sorted",
+            "sorts sectors by name; the compass table.inline happens to list them in that order and the join keeps the left order"),
+        new(SampleFlowsFixture.BimProfile, "viz-window-to-wall-ratio", "sorted",
+            "sorts by the compass Order column; the facings table.inline happens to list sectors in that order"),
+        new(SampleFlowsFixture.BimProfile, "viz-opening-schedule", "ordered",
+            "sorts by Storey, OpeningType, Width_mm for a deterministic golden; the aggregate groups by Storey, Kind, Type, which spells the same order on the Duplex"),
+        new(SampleFlowsFixture.BimProfile, "bcf-from-sql", "sorted",
+            "sorts issues by GlobalId for a deterministic golden; the join's output follows the entity index, which matches only on the Duplex"),
     ];
 
     /// <summary>No entries: an empty final table is either a genuinely absent answer (which a
