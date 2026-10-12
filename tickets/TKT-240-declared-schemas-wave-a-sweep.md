@@ -22,5 +22,8 @@ created: 2026-10-11
 - [ ] `bim.paramTable`'s inference reads the model through `BimModel.Get`, which hashes the whole file on every call; it caches by path, length and write time as `CachedCatalog` does
 - [ ] `SqlQueryNode.WithAlias` uses `Nodes.Support/SqlAlias.WithT` instead of its own copy
 - [ ] `check.rollup`'s count columns and `bcf.write`'s path and sha256 columns name a kind or say why not
+- [ ] `table.drop` with every named column missing keeps a Date column's type in its inferred schema, as the run does
+- [ ] `table.fillNulls`'s constant checks are one function shared by the rule and the run
+- [ ] `table.window` and `table.splitColumn` reject at inference exactly the operand types DuckDB rejects at run
 
 Collected from the A1 to A4 reports in docs/plans/declared-schemas.md (build log). The git-ignored site/app/site.js in bim-open-flow still names camelCase verdict columns until the site is rebuilt.
