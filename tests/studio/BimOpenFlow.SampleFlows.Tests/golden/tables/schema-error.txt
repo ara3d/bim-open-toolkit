@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// schema-error   graph df85d61e4bf2
+// schema-error   graph e3d4015c0774
+about = view.note@1(text: "Quantiy is misspelled on purpose: the error is reported before any rows are read. Click answer to see the message naming the unknown column; fix the spelling to Quantity and the filter keeps the 2 orders of 100 units or more.");
+  // Ok
 orders = rel.csv@1(source: "tables", path: "orders.csv");
   // Ok  relation plan efb1fa517b20
   //   "(csv \"tables\" \"orders.csv\")"
