@@ -47,7 +47,19 @@ public sealed class BosLoadNode : IFlowNode
             new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bos")),
             new ParamSpec("harmonize", ParamKind.Boolean, "false"),
         ],
-        "Loads a BIM Open Schema (.bos) file and outputs its entity, parameter, and relation text tables.");
+        "Loads a BIM Open Schema (.bos) file and outputs its entity, parameter, and relation text tables.",
+        Schemas:
+        [
+            KindSchemas.Static("entities",
+                ColumnKinds.EntityIndex.NotNull(), ColumnKinds.StepId, ColumnKinds.GlobalId, ColumnKinds.Name,
+                ColumnKinds.Category, ColumnKinds.Type),
+            KindSchemas.Static("parameters",
+                ColumnKinds.EntityIndex.NotNull(), ColumnKinds.Name, ColumnKinds.ParameterGroup, ColumnKinds.Units,
+                ColumnKinds.ValueType, ColumnKinds.Value),
+            KindSchemas.Static("relations",
+                ColumnKinds.EntityIndexA.NotNull(), ColumnKinds.NameA, ColumnKinds.EntityIndexB.NotNull(),
+                ColumnKinds.NameB, ColumnKinds.RelationType),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

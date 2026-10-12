@@ -17,7 +17,15 @@ public sealed class BimElementsNode : IFlowNode
         Params: [new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bos"))],
         "Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name, "
         + "Category, CategoryType, Type, ClassName, Level, Elevation, Room, Document, Workset, Group. "
-        + "The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms.");
+        + "The grouping workhorse: feed it to table.aggregate, bim.discipline, or bim.classifyRooms.",
+        Schemas:
+        [
+            KindSchemas.Static("table",
+                ColumnKinds.EntityIndex.NotNull(), ColumnKinds.LocalId.NotNull(), ColumnKinds.GlobalId, ColumnKinds.Name,
+                ColumnKinds.Category.NotNull(), ColumnKinds.CategoryType, ColumnKinds.Type, ColumnKinds.ClassName,
+                ColumnKinds.Level, ColumnKinds.Elevation, ColumnKinds.Room, ColumnKinds.Document,
+                ColumnKinds.Workset, ColumnKinds.Group),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

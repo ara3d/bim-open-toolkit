@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.BimOpenSchema.IO.Bcf;
 using Ara3D.DataFlowEngine.Abstractions;
 
@@ -25,7 +26,15 @@ public sealed class BcfReadNode : IFlowNode
         + "(a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues "
         + "table joins to a model on GlobalId, so view3d.color can colour the elements a colleague "
         + "flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, "
-        + "is skipped with a warning; the other topics still come through.");
+        + "is skipped with a warning; the other topics still come through.",
+        Schemas:
+        [
+            KindSchemas.Static("issues",
+                ColumnKinds.GlobalId, ColumnKinds.Title, ColumnKinds.Description, ColumnKinds.Status,
+                ColumnKinds.Priority, ColumnKinds.Type, ColumnKinds.TopicGuid, ColumnKinds.Author,
+                ColumnKinds.CreationDate, ColumnKinds.AuthoringToolId),
+            BcfIssues.TopicsSchema("topics"),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

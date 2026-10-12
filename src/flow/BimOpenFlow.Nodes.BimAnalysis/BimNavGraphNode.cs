@@ -24,7 +24,13 @@ public sealed class BimNavGraphNode : IFlowNode
         + "DoorName, Level, FromRoom, ToRoom — the rooms from the door's from/to-room parameters, "
         + "labelled 'Name Number' (so two Corridors on different floors stay distinct), with "
         + "Outside standing in for a missing side. The rows are the undirected edges of the room "
-        + "navigation graph; feed them to bim.hops for reachability.");
+        + "navigation graph; feed them to bim.hops for reachability.",
+        Schemas:
+        [
+            KindSchemas.Static("table",
+                ColumnKinds.Door.NotNull(), ColumnKinds.DoorName, ColumnKinds.Level,
+                ColumnKinds.FromRoom.NotNull(), ColumnKinds.ToRoom.NotNull()),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

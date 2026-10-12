@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 
@@ -6,7 +7,7 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 
 /// <summary>Adds a Discipline column classified from a category column via a built-in
 /// Revit/IFC category mapping, overridable per category.</summary>
-public sealed class BimDisciplineNode : IFlowNode
+public sealed class BimDisciplineNode : ISchemaNode
 {
     public const string Kind = "bim.discipline";
 
@@ -24,7 +25,16 @@ public sealed class BimDisciplineNode : IFlowNode
         + "FireProtection, Site, or General) classified from the category column by a built-in "
         + "mapping of common Revit categories and IFC classes; 'overrides' is an optional JSON "
         + "object of {\"category\": \"discipline\"} entries that win over the built-ins. "
-        + "Unmatched categories get General.");
+        + "Unmatched categories get General.",
+        Schemas:
+        [
+            SchemaSpec.Inferred("table"),
+        ]);
+
+    public SchemaResult Infer(string output, IReadOnlyList<SchemaInput> inputs, ParamValues parameters, ISchemaCatalog catalog)
+        => BimSchemas.Input(inputs, 0, Kind)
+            .Require(Kind, parameters.TextOr("column", BimColumns.Category))
+            .Add(Kind, ColumnKinds.Discipline.NotNull());
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 
@@ -5,7 +6,7 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 
 /// <summary>Data-quality profile of a long parameter table: how often each parameter
 /// occurs, how many distinct values it takes, and its fill rate across entities.</summary>
-public sealed class BimParamCoverageNode : IFlowNode
+public sealed class BimParamCoverageNode : ISchemaNode
 {
     public const string Kind = "bim.paramCoverage";
 
@@ -24,7 +25,25 @@ public sealed class BimParamCoverageNode : IFlowNode
         + "a parameter that only applies to one kind of entity. With 'groupBy' naming a column "
         + "present on the input (for example a Category column joined in from bos.load's "
         + "entities table), the output gets one row per parameter per group value, and FillRate "
-        + "is the share of that group's entities that carry the parameter.");
+        + "is the share of that group's entities that carry the parameter.",
+        Schemas:
+        [
+            SchemaSpec.Inferred("table"),
+        ]);
+
+    public SchemaResult Infer(string output, IReadOnlyList<SchemaInput> inputs, ParamValues parameters, ISchemaCatalog catalog)
+    {
+        var groupBy = parameters.GetText(GroupBy);
+        string[] required = [BimColumns.EntityIndex, BimColumns.Name, "Value", .. groupBy.Length > 0 ? [groupBy] : Array.Empty<string>()];
+        var input = BimSchemas.Input(inputs, 0, Kind).Require(Kind, required);
+        KindColumn[] columns =
+        [
+            ColumnKinds.Name, ColumnKinds.ParameterGroup, ColumnKinds.ValueType,
+            .. groupBy.Length > 0 ? [KindColumn.Plain(groupBy, ColumnType.Text)] : Array.Empty<KindColumn>(),
+            ColumnKinds.Count.NotNull(), ColumnKinds.Distinct.NotNull(), ColumnKinds.FillRate.NotNull(),
+        ];
+        return input.Ok ? SchemaResult.Of(columns.ToSchema()) : input;
+    }
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

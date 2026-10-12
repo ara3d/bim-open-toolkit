@@ -59,6 +59,12 @@ internal static class BcfIssues
         return table.KeepRows(rows, table.Name);
     }
 
+    /// <summary>The declared columns of <see cref="TopicsTable"/> for the named output.</summary>
+    public static SchemaSpec TopicsSchema(string output)
+        => KindSchemas.Static(output,
+            ColumnKinds.Title, ColumnKinds.Description, ColumnKinds.Status, ColumnKinds.Priority, ColumnKinds.Type,
+            ColumnKinds.Elements.NotNull(), ColumnKinds.GlobalIds.NotNull());
+
     /// <summary>One row per topic: Title, Description, Status, Priority, Type, Elements, GlobalIds.</summary>
     public static IDataTable TopicsTable(IReadOnlyList<BcfIssue> issues, string name)
     {
@@ -72,6 +78,17 @@ internal static class BcfIssues
         builder.AddColumn(issues.Select(i => (object?)string.Join(", ", i.GlobalIds)).ToArray(), "GlobalIds", typeof(string));
         return builder.Build();
     }
+
+    /// <summary>The declared columns of the one-row table bcf.write's Run returns (see <see cref="SummaryRow"/>).</summary>
+    public static SchemaSpec SummarySchema(string output)
+        => KindSchemas.Static(output,
+            KindColumn.Plain("path", ColumnType.Text, nullable: false),
+            KindColumn.Plain("topics", ColumnType.Integer, nullable: false),
+            KindColumn.Plain("viewpoints", ColumnType.Integer, nullable: false),
+            KindColumn.Plain("elements", ColumnType.Integer, nullable: false),
+            KindColumn.Plain("elementsWithoutGeometry", ColumnType.Integer, nullable: false),
+            KindColumn.Plain("bytes", ColumnType.Integer, nullable: false),
+            KindColumn.Plain("sha256", ColumnType.Text, nullable: false));
 
     /// <summary>A one-row table; long cells become Integer columns, everything else Text.</summary>
     public static IDataTable SummaryRow(string name, params (string Name, object Value)[] cells)

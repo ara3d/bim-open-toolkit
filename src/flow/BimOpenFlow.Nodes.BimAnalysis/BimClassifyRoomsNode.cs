@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 
@@ -7,7 +8,7 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 
 /// <summary>Adds a room-classification column derived from room names by ordered
 /// regular-expression rules, with a built-in ruleset for common room types.</summary>
-public sealed class BimClassifyRoomsNode : IFlowNode
+public sealed class BimClassifyRoomsNode : ISchemaNode
 {
     public const string Kind = "bim.classifyRooms";
 
@@ -26,7 +27,16 @@ public sealed class BimClassifyRoomsNode : IFlowNode
         + "ordered case-insensitive regex rules; first match wins, no match gets Other. The "
         + "built-in ruleset covers Office, Meeting, Circulation, Stair, Elevator, Sanitary, "
         + "Kitchen, Storage, Mechanical, Residential, and Parking; 'rules' is an optional JSON "
-        + "array of {\"class\": ..., \"pattern\": ...} that replaces it.");
+        + "array of {\"class\": ..., \"pattern\": ...} that replaces it.",
+        Schemas:
+        [
+            SchemaSpec.Inferred("table"),
+        ]);
+
+    public SchemaResult Infer(string output, IReadOnlyList<SchemaInput> inputs, ParamValues parameters, ISchemaCatalog catalog)
+        => BimSchemas.Input(inputs, 0, Kind)
+            .Require(Kind, parameters.TextOr("column", BimColumns.Name))
+            .Add(Kind, BimSchemas.Named(ColumnKinds.RoomClass, parameters.TextOr("as", BimColumns.RoomClass), nullable: false));
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

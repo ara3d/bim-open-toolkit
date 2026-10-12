@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.Ids;
 
@@ -30,7 +31,16 @@ public sealed class IdsCheckNode : IFlowNode
         + "Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, "
         + "Fail and InfoNotAvailable counts per specification (one row per specification, zeros when "
         + "none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, "
-        + "never a pass; a facet the IDS loader skipped is a warning too.");
+        + "never a pass; a facet the IDS loader skipped is a warning too.",
+        Schemas:
+        [
+            KindSchemas.Static("verdicts",
+                ColumnKinds.GlobalId, ColumnKinds.EntityIndex, ColumnKinds.CheckId.NotNull(), ColumnKinds.CheckTitle.NotNull(),
+                ColumnKinds.Citation, ColumnKinds.Verdict.NotNull(), ColumnKinds.Reason),
+            KindSchemas.Static("summary",
+                ColumnKinds.CheckId.NotNull(), ColumnKinds.CheckTitle.NotNull(), ColumnKinds.Pass.NotNull(),
+                ColumnKinds.Fail.NotNull(), ColumnKinds.InfoNotAvailable.NotNull(), ColumnKinds.Rows.NotNull()),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

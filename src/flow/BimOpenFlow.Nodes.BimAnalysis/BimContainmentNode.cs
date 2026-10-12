@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 
@@ -5,7 +6,7 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 
 /// <summary>Spatial join: assigns each point row (an element center) to the smallest
 /// containing box row (a room), by axis-aligned containment.</summary>
-public sealed class BimContainmentNode : IFlowNode
+public sealed class BimContainmentNode : ISchemaNode
 {
     public const string Kind = "bim.containment";
 
@@ -29,7 +30,11 @@ public sealed class BimContainmentNode : IFlowNode
         "Adds a column ('as') to the points table holding the 'key' of the smallest box row "
         + "whose MinX..MaxZ box contains the point (x, y, z); rows in no box get null. With "
         + "ignoreZ, containment is tested in plan (XY) only. Typical use: element centers from "
-        + "bim.bounds against room boxes from bim.rooms, when the model has no room parameters.");
+        + "bim.bounds against room boxes from bim.rooms, when the model has no room parameters.",
+        Schemas:
+        [
+            SchemaSpec.Inferred("table"),
+        ]);
 
     private sealed record Box(string? Key,
         double MinX, double MinY, double MinZ, double MaxX, double MaxY, double MaxZ, double Measure);
@@ -62,6 +67,26 @@ public sealed class BimContainmentNode : IFlowNode
             builder.AddColumn(cells, c.Descriptor.Name, c.Descriptor.Type);
         }
         return builder;
+    }
+
+    public SchemaResult Infer(string output, IReadOnlyList<SchemaInput> inputs, ParamValues parameters, ISchemaCatalog catalog)
+    {
+        var ignoreZ = parameters.GetBoolean("ignoreZ");
+        string[] boxColumns =
+        [
+            parameters.TextOr("key", BimColumns.Name), BimColumns.MinX, BimColumns.MinY, BimColumns.MaxX, BimColumns.MaxY,
+            .. ignoreZ ? Array.Empty<string>() : [BimColumns.MinZ, BimColumns.MaxZ],
+        ];
+        string[] pointColumns =
+        [
+            parameters.TextOr("x", BimColumns.CenterX), parameters.TextOr("y", BimColumns.CenterY),
+            .. ignoreZ ? Array.Empty<string>() : [parameters.TextOr("z", BimColumns.CenterZ)],
+        ];
+        var boxes = BimSchemas.Input(inputs, 1, Kind).Require(Kind, boxColumns);
+        return boxes.Ok
+            ? BimSchemas.Input(inputs, 0, Kind).Require(Kind, pointColumns)
+                .Add(Kind, KindColumn.Plain(parameters.TextOr("as", "ContainedIn"), ColumnType.Text))
+            : boxes;
     }
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)

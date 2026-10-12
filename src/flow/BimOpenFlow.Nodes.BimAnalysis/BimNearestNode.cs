@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 
@@ -5,7 +6,7 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 
 /// <summary>Nearest-neighbour join: for each row of a, the key of the closest row of b
 /// by Euclidean distance between the two coordinate triples, plus the distance.</summary>
-public sealed class BimNearestNode : IFlowNode
+public sealed class BimNearestNode : ISchemaNode
 {
     public const string Kind = "bim.nearest";
 
@@ -31,7 +32,11 @@ public sealed class BimNearestNode : IFlowNode
         "Adds two columns to a: 'as' (default Nearest) holding the 'key' of the closest b row by "
         + "3D distance between (x,y,z) and (bx,by,bz), and Distance holding that distance. Rows "
         + "with null coordinates, or when b is empty, get nulls. Typical use: distance from each "
-        + "room center to the nearest exit door.");
+        + "room center to the nearest exit door.",
+        Schemas:
+        [
+            SchemaSpec.Inferred("table"),
+        ]);
 
     // TODO: Numeric/CopyColumns are duplicated in BimContainmentNode; promote to
     // BimOpenFlow.Nodes.Support.
@@ -61,6 +66,19 @@ public sealed class BimNearestNode : IFlowNode
             builder.AddColumn(cells, c.Descriptor.Name, c.Descriptor.Type);
         }
         return builder;
+    }
+
+    public SchemaResult Infer(string output, IReadOnlyList<SchemaInput> inputs, ParamValues parameters, ISchemaCatalog catalog)
+    {
+        var b = BimSchemas.Input(inputs, 1, Kind).Require(Kind,
+            parameters.TextOr("bx", BimColumns.CenterX), parameters.TextOr("by", BimColumns.CenterY),
+            parameters.TextOr("bz", BimColumns.CenterZ), parameters.TextOr("key", BimColumns.Name));
+        return b.Ok
+            ? BimSchemas.Input(inputs, 0, Kind)
+                .Require(Kind, parameters.TextOr("x", BimColumns.CenterX), parameters.TextOr("y", BimColumns.CenterY),
+                    parameters.TextOr("z", BimColumns.CenterZ))
+                .Add(Kind, KindColumn.Plain(parameters.TextOr("as", "Nearest"), ColumnType.Text), ColumnKinds.Distance.Declared())
+            : b;
     }
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)

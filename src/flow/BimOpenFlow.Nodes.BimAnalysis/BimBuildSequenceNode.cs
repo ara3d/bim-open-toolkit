@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 
@@ -10,7 +11,7 @@ namespace BimOpenFlow.Nodes.BimAnalysis;
 /// the previous trade has left its storey and its own trade has left the storey below, so
 /// with equal durations trade t works storey s from day (s + t) * daysPerTask. A task with
 /// no elements takes no time and is not emitted.</summary>
-public sealed class BimBuildSequenceNode : IFlowNode
+public sealed class BimBuildSequenceNode : ISchemaNode
 {
     public const string Kind = "bim.buildSequence";
     public const string DefaultStart = "2027-01-04";
@@ -55,7 +56,20 @@ public sealed class BimBuildSequenceNode : IFlowNode
         + "of the last working day, End - 1, counted from 1 at 'start'), ElementCount, Synthetic. "
         + "Output 'elements': the input rows plus Task, Trade, Finish (the task's exclusive End), "
         + "FinishWeek (as in 'tasks'), Synthetic (true on every scheduled row); rows with no storey or "
-        + "no trade get nulls in all five and are counted in one warning. Same input, same schedule.");
+        + "no trade get nulls in all five and are counted in one warning. Same input, same schedule.",
+        Schemas:
+        [
+            KindSchemas.Static("tasks",
+                ColumnKinds.Task.NotNull(), ColumnKinds.Storey.NotNull(), ColumnKinds.Trade.NotNull(),
+                ColumnKinds.Start.NotNull(), ColumnKinds.End.NotNull(), ColumnKinds.DurationDays.NotNull(),
+                ColumnKinds.FinishWeek.NotNull(), ColumnKinds.ElementCount.NotNull(), ColumnKinds.Synthetic.NotNull()),
+            SchemaSpec.Inferred("elements"),
+        ]);
+
+    public SchemaResult Infer(string output, IReadOnlyList<SchemaInput> inputs, ParamValues parameters, ISchemaCatalog catalog)
+        => BimSchemas.Input(inputs, 0, Kind)
+            .Require(Kind, parameters.TextOr("levelColumn", BimColumns.Level), parameters.TextOr("column", BimColumns.Category))
+            .Add(Kind, ColumnKinds.Task, ColumnKinds.Trade, ColumnKinds.Finish, ColumnKinds.FinishWeek, ColumnKinds.Synthetic);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

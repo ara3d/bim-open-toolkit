@@ -17,7 +17,14 @@ public sealed class BimBoundsNode : IFlowNode
         Params: [new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bos"))],
         "Loads a .bos file into one row per element that has bounds: EntityIndex, Name, Category, "
         + "Level, MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea (SizeX*SizeY), Volume "
-        + "(box volume), Diagonal. Feeds bim.containment, bim.nearest, and dimension analyses.");
+        + "(box volume), Diagonal. Feeds bim.containment, bim.nearest, and dimension analyses.",
+        Schemas:
+        [
+            KindSchemas.Static("table",
+                [ColumnKinds.EntityIndex.NotNull(), ColumnKinds.Name, ColumnKinds.Category, ColumnKinds.Level,
+                    .. BimSchemas.Box(nullable: false),
+                    .. BimSchemas.Declared(false, ColumnKinds.Volume, ColumnKinds.Diagonal)]),
+        ]);
 
     private sealed record Row(EntityModel Element,
         double MinX, double MinY, double MinZ, double MaxX, double MaxY, double MaxZ)

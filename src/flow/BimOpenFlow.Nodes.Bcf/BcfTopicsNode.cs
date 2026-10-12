@@ -15,7 +15,8 @@ public sealed class BcfTopicsNode : IFlowNode
         Params: [BcfIssues.PresetSpec, BcfIssues.VerdictsSpec],
         "Groups an issue or verdict table into the BCF topics bcf.write would write (one per distinct "
         + "title: Title, Description, Status, Priority, Type, Elements, GlobalIds), so the file's contents "
-        + "can be checked before Run. " + BcfIssues.ParamsDescription);
+        + "can be checked before Run. " + BcfIssues.ParamsDescription,
+        Schemas: [BcfIssues.TopicsSchema("topics")]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

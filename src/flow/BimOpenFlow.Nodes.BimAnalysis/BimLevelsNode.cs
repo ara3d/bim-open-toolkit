@@ -16,7 +16,13 @@ public sealed class BimLevelsNode : IFlowNode
         Params: [new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bos"))],
         "Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Name, "
         + "Elevation, ElementCount (elements whose Level parameter points here), RoomCount. "
-        + "Levels are the elements carrying a level-elevation parameter or categorized as Levels.");
+        + "Levels are the elements carrying a level-elevation parameter or categorized as Levels.",
+        Schemas:
+        [
+            KindSchemas.Static("table",
+                ColumnKinds.EntityIndex.NotNull(), ColumnKinds.Name, ColumnKinds.Elevation.NotNull(),
+                ColumnKinds.ElementCount.NotNull(), ColumnKinds.RoomCount.NotNull()),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

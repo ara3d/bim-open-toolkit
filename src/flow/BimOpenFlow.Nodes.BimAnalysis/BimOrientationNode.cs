@@ -45,7 +45,15 @@ public sealed class BimOrientationNode : IFlowNode
         + "FacingArea is that face's area, max(SizeX, SizeY) * SizeZ (m2), which approximates a wall's or "
         + "window's gross face when it runs along a model axis and overstates a diagonal one. An element "
         + "whose box centre is the plan centre (Distance 0, as when it is the only row) has no bearing and "
-        + "no side, so its Bearing, Sector, Direction, and Facing are null; FacingArea is still given.");
+        + "no side, so its Bearing, Sector, Direction, and Facing are null; FacingArea is still given.",
+        Schemas:
+        [
+            KindSchemas.Static("table",
+                ColumnKinds.EntityIndex.NotNull(), ColumnKinds.GlobalId, ColumnKinds.Name, ColumnKinds.Category,
+                ColumnKinds.Level, ColumnKinds.CenterX.NotNull(), ColumnKinds.CenterY.NotNull(),
+                ColumnKinds.Bearing, ColumnKinds.Sector, ColumnKinds.Direction, ColumnKinds.Distance.NotNull(),
+                ColumnKinds.Facing, ColumnKinds.FacingArea.NotNull()),
+        ]);
 
     /// <summary>Closer than this to the plan centre (m), an element has no bearing or side.</summary>
     public const double CentreTolerance = 1e-9;

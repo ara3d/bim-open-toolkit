@@ -33,7 +33,8 @@ public sealed class BcfWriteNode : IFlowNode
         + "elements under a camera framing them; without it, or for elements with no geometry, the "
         + "GlobalIds go in the topic's description. 'guidSeed' keeps topic GUIDs stable across reruns "
         + "(default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, "
-        + "viewpoints, elements, elementsWithoutGeometry, bytes, sha256). " + BcfIssues.ParamsDescription);
+        + "viewpoints, elements, elementsWithoutGeometry, bytes, sha256). " + BcfIssues.ParamsDescription,
+        Schemas: [BcfIssues.SummarySchema("out")]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

@@ -22,7 +22,14 @@ public sealed class BimRoomsNode : IFlowNode
         "Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Elevation, "
         + "Volume, UnboundedHeight, ElementCount (elements whose Room/Space parameter points here), "
         + "and when bounds exist MinX..MaxZ, SizeX/Y/Z, CenterX/Y/Z, FootprintArea. Rooms are the "
-        + "elements whose category is in the comma-separated 'categories' list.");
+        + "elements whose category is in the comma-separated 'categories' list.",
+        Schemas:
+        [
+            KindSchemas.Static("table",
+                [ColumnKinds.EntityIndex.NotNull(), ColumnKinds.Name, ColumnKinds.Number, ColumnKinds.Level,
+                    ColumnKinds.Elevation, ColumnKinds.Volume, ColumnKinds.UnboundedHeight,
+                    ColumnKinds.ElementCount.NotNull(), .. BimSchemas.Box(nullable: true)]),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {

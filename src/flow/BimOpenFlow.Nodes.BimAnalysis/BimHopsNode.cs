@@ -1,3 +1,4 @@
+using Ara3D.BimOpenSchema;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 using BimOpenFlow.Nodes.Support;
@@ -24,7 +25,11 @@ public sealed class BimHopsNode : IFlowNode
         "Walks the undirected graph whose edges are the (from, to) column pairs, breadth-first "
         + "from the 'start' room, into one row per room seen in either column: Room, Hops (0 for "
         + "the start, null for unreachable rooms), ordered by Hops then Room. An unknown start "
-        + "room is an error. Typical input: the bim.navGraph edge table.");
+        + "room is an error. Typical input: the bim.navGraph edge table.",
+        Schemas:
+        [
+            KindSchemas.Static("table", ColumnKinds.Room.NotNull(), ColumnKinds.Hops),
+        ]);
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
