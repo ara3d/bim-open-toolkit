@@ -103,8 +103,8 @@ in the transcript instead of failing.
 
 | Folder | Input | Profile | You see | Guarded by |
 |---|---|---|---|---|
-| `samples/showcase-analyses` | CSV, BOS, IFC-derived DuckDB, IFC, BFAST | both / bim | the whole chain: relations into verdicts, a coloured 3D view, a chart, an HTML report; the buffer directory of a BFAST file | `NrcWorkflows.Tests/ShowcaseGraphTests`, `BfastGraphTests` |
-| `samples/nrc-analyses` | CSV and the Duplex DuckDB | both (two graphs bim only) | the NRC paper's eight answers, DC-W1 doors coloured in 3D, property sets written back to an IFC | `NrcWorkflows.Tests` |
+| `samples/showcase-analyses` | CSV, BOS | csv-to-chart in both, bos-to-relations in bim | two bar charts: operational carbon per category from a CSV (`csv-to-chart`), Duplex entities per IFC category from the BOS (`bos-to-relations`). The IFC-to-verdicts chain with 3D and an HTML report is `nrc-analyses/nrc-dc-w1-verdicts`; the BFAST buffers are in `samples/showcase-tables` | `NrcWorkflows.Tests/ShowcaseGraphTests` |
+| `samples/nrc-analyses` | CSV and the Duplex DuckDB | both (four graphs bim only: `nrc-dc-w1-verdicts`, `nrc-enrich-run`, `nrc-color-operational-carbon`, `nrc-join-analytics`) | the NRC paper's eight answers, DC-W1 doors coloured in 3D, property sets written back to an IFC | `NrcWorkflows.Tests` |
 | `samples/analyses` (in `deps/bim-open-flow`) | CSV, XLSX, SQLite, DuckDB | tables | table panes over bim-open-flow's `samples/tables` | bim-open-flow's `TableWorkflows.Tests/SampleAnalysesTests` |
 | `samples/relations` (in `deps/bim-open-flow`) | CSV, DuckDB | tables | the `rel.*` pack: lazy plans, one SQL statement per chain | bim-open-flow's `Nodes.Relations.Tests/SampleGraphTests` |
 | `samples/showcase-tables` | BFAST | tables, bim | the buffers of bim-open-flow's `samples/tables/sample.bfast` | `NrcWorkflows.Tests/BfastGraphTests` |
@@ -112,7 +112,7 @@ in the transcript instead of failing.
 | `samples/bim-analyses` | BOS (`samples/bim/sample.bos`, generated) | bim | the `bim.*` analyses: disciplines, levels, rooms, containment, nearest door | `BimWorkflows.Tests` |
 | `samples/checking-analyses` | IDS files under `samples/nrc/ids`, the Duplex BOS and IFC, a committed BCF under `samples/nrc/bcf` | bim | the `ids.*` and `bcf.*` packs: an IDS evaluated to verdicts, a chart and a coloured model; a BCF written from IDS failures and from a SQL result (pending until Run); a BCF read back and coloured | `NrcWorkflows.Tests/CheckingGraphTests` |
 | `samples/view3d-analyses` | IFC (the committed `samples/nrc/duplex-base.ifc`) | bim, `/3d.html` | colour by category, ghost context, exploded categories, massing boxes, voxels, decimation | `View3dWorkflows.Tests` |
-| `samples/snowdon-analyses` | BOS (local Snowdon model, never committed) | bim, when present | the 3D recipe nodes over a real building | `View3dWorkflows.Tests` |
+| `samples/snowdon-analyses` | BOS (local Snowdon model, never committed); the union DuckDB and `federation-confirmations.csv` for the federation graph | bim, when present | `snowdon-toolkit`: the 3D recipe nodes over a real building; `federation-match`: a storey rule and confirmed matches joined into a correspondence table, written to Parquet on Run | `View3dWorkflows.Tests`, `SnowdonWorkflows.Tests/SnowdonFederationGraphTests` |
 
 Each folder's README lists its graphs and the numbers they produce.
 

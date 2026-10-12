@@ -1,12 +1,15 @@
 ---
 id: TKT-273
 title: docs/DEMOS.md describes showcase-analyses as before TKT-93, undercounts the bim-only NRC graphs, and omits the federation graph
-status: open
+status: done
 depends_on: []
-owner:
+owner: builder-TKT-273
+session: 747367c7-cc40-452c-911b-37ed983339cb
 fence: [docs/DEMOS.md]
 workflow: [W1]
 created: 2026-10-11
+claimed: 2026-10-11
+closed: 2026-10-11
 kind: defect
 ---
 
