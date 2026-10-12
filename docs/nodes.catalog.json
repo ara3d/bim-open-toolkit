@@ -1860,7 +1860,13 @@
           "default": ""
         }
       ],
-      "description": "Runs one read-only SQL query over the input table, available as \u0027t\u0027."
+      "description": "Runs one read-only SQL query over the input table, available as \u0027t\u0027.",
+      "schemas": [
+        {
+          "output": "table",
+          "mode": "Inferred"
+        }
+      ]
     },
     {
       "kind": "chart.bar",
@@ -2774,7 +2780,99 @@
           "bindable": "Text"
         }
       ],
-      "description": "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and, when wired, the relations table (its third output), which material and part-of facets need; without it they give InfoNotAvailable. Outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification (one row per specification, zeros when none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass; a facet the IDS loader skipped is a warning too."
+      "description": "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and, when wired, the relations table (its third output), which material and part-of facets need; without it they give InfoNotAvailable. Outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification (one row per specification, zeros when none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass; a facet the IDS loader skipped is a warning too.",
+      "schemas": [
+        {
+          "output": "verdicts",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "GlobalId",
+              "type": "Text",
+              "nullable": true,
+              "kind": "GlobalId"
+            },
+            {
+              "name": "EntityIndex",
+              "type": "Integer",
+              "nullable": true,
+              "kind": "EntityIndex"
+            },
+            {
+              "name": "CheckId",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckId"
+            },
+            {
+              "name": "CheckTitle",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckTitle"
+            },
+            {
+              "name": "Citation",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Citation"
+            },
+            {
+              "name": "Verdict",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Verdict"
+            },
+            {
+              "name": "Reason",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Reason"
+            }
+          ]
+        },
+        {
+          "output": "summary",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "CheckId",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckId"
+            },
+            {
+              "name": "CheckTitle",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckTitle"
+            },
+            {
+              "name": "Pass",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "Pass"
+            },
+            {
+              "name": "Fail",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "Fail"
+            },
+            {
+              "name": "InfoNotAvailable",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "InfoNotAvailable"
+            },
+            {
+              "name": "Rows",
+              "type": "Integer",
+              "nullable": false,
+              "kind": "Rows"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "ids.specifications",
@@ -2800,7 +2898,57 @@
           "bindable": "Text"
         }
       ],
-      "description": "Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable; material and part-of facets count as supported and need ids.check\u0027s relations input). Reads no model; use it to see what an IDS asks before running ids.check."
+      "description": "Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable; material and part-of facets count as supported and need ids.check\u0027s relations input). Reads no model; use it to see what an IDS asks before running ids.check.",
+      "schemas": [
+        {
+          "output": "specifications",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "CheckId",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckId"
+            },
+            {
+              "name": "CheckTitle",
+              "type": "Text",
+              "nullable": false,
+              "kind": "CheckTitle"
+            },
+            {
+              "name": "IfcVersion",
+              "type": "Text",
+              "nullable": false,
+              "kind": "IfcVersion"
+            },
+            {
+              "name": "Cardinality",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Cardinality"
+            },
+            {
+              "name": "Applicability",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Applicability"
+            },
+            {
+              "name": "Requirements",
+              "type": "Text",
+              "nullable": false,
+              "kind": "Requirements"
+            },
+            {
+              "name": "Supported",
+              "type": "Boolean",
+              "nullable": false,
+              "kind": "Supported"
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "json.read",

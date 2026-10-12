@@ -94,35 +94,35 @@ Loads the .bos file into an in-memory DuckDB once and outputs three materialized
 
 **Columns of `entities`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndex` | Integer | no | `EntityIndex` |
-| `StepId` | Integer | yes | `StepId` |
-| `GlobalId` | Text | yes | `GlobalId` |
-| `Name` | Text | yes | `Name` |
-| `Category` | Text | yes | `Category` |
-| `Type` | Text | yes | `Type` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `StepId` | Integer | yes | `StepId` | The EntityText view's name for LocalId. |
+| `GlobalId` | Text | yes | `GlobalId` | The entity's globally unique id (an IfcGloballyUniqueId); empty when the source gave none. |
+| `Name` | Text | yes | `Name` | The entity's name, or a parameter's name in a parameter table. |
+| `Category` | Text | yes | `Category` | The entity's category: the IFC class (IFCWALL) or the Revit category. |
+| `Type` | Text | yes | `Type` | The name of the entity's type (the family type of an element), or the type of a BCF issue. |
 
 **Columns of `parameters`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndex` | Integer | no | `EntityIndex` |
-| `Name` | Text | yes | `Name` |
-| `ParameterGroup` | Text | yes | `ParameterGroup` |
-| `Units` | Text | yes | `Units` |
-| `ValueType` | Text | yes | `ValueType` |
-| `Value` | Text | yes | `Value` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `Name` | Text | yes | `Name` | The entity's name, or a parameter's name in a parameter table. |
+| `ParameterGroup` | Text | yes | `ParameterGroup` | The group a parameter is filed under in the source tool's property dialog. |
+| `Units` | Text | yes | `Units` | The unit name the source file gave a parameter; absent when it gave none. |
+| `ValueType` | Text | yes | `ValueType` | The kind of a parameter's value: String, Number, Entity, Point and so on. |
+| `Value` | Text | yes | `Value` | A parameter's value as text, whatever its ValueType (the ParameterText view). The lowercase value column of chart, scale and colour tables is a number and is not this kind. |
 
 **Columns of `relations`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndexA` | Integer | no | `EntityIndexA` |
-| `NameA` | Text | yes | `NameA` |
-| `EntityIndexB` | Integer | no | `EntityIndexB` |
-| `NameB` | Text | yes | `NameB` |
-| `RelationType` | Text | yes | `RelationType` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndexA` | Integer | no | `EntityIndexA` | EntityIndex of the first entity of a relation. |
+| `NameA` | Text | yes | `NameA` | Name of the first entity of a relation. |
+| `EntityIndexB` | Integer | no | `EntityIndexB` | EntityIndex of the second entity of a relation; for containment, the container. |
+| `NameB` | Text | yes | `NameB` | Name of the second entity of a relation. |
+| `RelationType` | Text | yes | `RelationType` | The kind of a relation: PartOf, MemberOf, ContainedIn and so on. |
 
 ### `bos.query` (v1) — Pure
 
@@ -148,6 +148,8 @@ The input table is loaded into an in-memory DuckDB as table `t`. The query must 
 |---|---|---|---|---|---|
 | `sql` | Text | — | — | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ## BIM analysis — `BimOpenFlow.Nodes.BimAnalysis`
 
 The bim.* pack: grouping tables (elements, rooms, levels), typed parameter tables and coverage, bounding boxes with dimensions, spatial joins, discipline and room classification, and door navigation graphs.
@@ -172,22 +174,22 @@ Loads a .bos file into one row per element: EntityIndex, LocalId, GlobalId, Name
 
 **Columns of `table`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndex` | Integer | no | `EntityIndex` |
-| `LocalId` | Integer | no | `LocalId` |
-| `GlobalId` | Text | yes | `GlobalId` |
-| `Name` | Text | yes | `Name` |
-| `Category` | Text | no | `Category` |
-| `CategoryType` | Text | yes | `CategoryType` |
-| `Type` | Text | yes | `Type` |
-| `ClassName` | Text | yes | `ClassName` |
-| `Level` | Text | yes | `Level` |
-| `Elevation` | Number | yes | `Elevation` |
-| `Room` | Text | yes | `Room` |
-| `Document` | Text | yes | `Document` |
-| `Workset` | Integer | yes | `Workset` |
-| `Group` | Text | yes | `Group` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `LocalId` | Integer | no | `LocalId` | The id the source file gave the entity (the STEP id of an IFC file, the element id of Revit). |
+| `GlobalId` | Text | yes | `GlobalId` | The entity's globally unique id (an IfcGloballyUniqueId); empty when the source gave none. |
+| `Name` | Text | yes | `Name` | The entity's name, or a parameter's name in a parameter table. |
+| `Category` | Text | no | `Category` | The entity's category: the IFC class (IFCWALL) or the Revit category. |
+| `CategoryType` | Text | yes | `CategoryType` | The kind of the category, as the source file classifies it. |
+| `Type` | Text | yes | `Type` | The name of the entity's type (the family type of an element), or the type of a BCF issue. |
+| `ClassName` | Text | yes | `ClassName` | The class of the entity in the source model. |
+| `Level` | Text | yes | `Level` | Name of the level or storey the entity sits on. |
+| `Elevation` | Number | yes | `Elevation` | Height of the level or element; absent when the model gives none. |
+| `Room` | Text | yes | `Room` | Name of the room the entity is in, or a room's label in a hop table. |
+| `Document` | Text | yes | `Document` | Title of the document (the linked or host model) the entity comes from. |
+| `Workset` | Integer | yes | `Workset` | Id of the workset the entity belongs to; absent when it has none. |
+| `Group` | Text | yes | `Group` | Name of the group the entity belongs to. |
 
 ### `bim.rooms` (v1) — Pure
 
@@ -210,29 +212,29 @@ Loads a .bos file into one row per room: EntityIndex, Name, Number, Level, Eleva
 
 **Columns of `table`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndex` | Integer | no | `EntityIndex` |
-| `Name` | Text | yes | `Name` |
-| `Number` | Text | yes | `Number` |
-| `Level` | Text | yes | `Level` |
-| `Elevation` | Number | yes | `Elevation` |
-| `Volume` | Number | yes | `Volume` |
-| `UnboundedHeight` | Number | yes | `UnboundedHeight` |
-| `ElementCount` | Integer | no | `ElementCount` |
-| `MinX` | Number | yes | `MinX` |
-| `MinY` | Number | yes | `MinY` |
-| `MinZ` | Number | yes | `MinZ` |
-| `MaxX` | Number | yes | `MaxX` |
-| `MaxY` | Number | yes | `MaxY` |
-| `MaxZ` | Number | yes | `MaxZ` |
-| `SizeX` | Number | yes | `SizeX` |
-| `SizeY` | Number | yes | `SizeY` |
-| `SizeZ` | Number | yes | `SizeZ` |
-| `CenterX` | Number | yes | `CenterX` |
-| `CenterY` | Number | yes | `CenterY` |
-| `CenterZ` | Number | yes | `CenterZ` |
-| `FootprintArea` | Number | yes | `FootprintArea` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `Name` | Text | yes | `Name` | The entity's name, or a parameter's name in a parameter table. |
+| `Number` | Text | yes | `Number` | The room's number as a label (text, because numbers like 'A-101' occur). |
+| `Level` | Text | yes | `Level` | Name of the level or storey the entity sits on. |
+| `Elevation` | Number | yes | `Elevation` | Height of the level or element; absent when the model gives none. |
+| `Volume` | Number | yes | `Volume` | A volume: of the bounding box in bim.bounds (SizeX * SizeY * SizeZ), of the room in bim.rooms. |
+| `UnboundedHeight` | Number | yes | `UnboundedHeight` | The room's unbounded height parameter; absent when the room has none. |
+| `ElementCount` | Integer | no | `ElementCount` | How many elements a level or room holds. |
+| `MinX` | Number | yes | `MinX` | Smallest X of the element's bounding box. |
+| `MinY` | Number | yes | `MinY` | Smallest Y of the element's bounding box. |
+| `MinZ` | Number | yes | `MinZ` | Smallest Z of the element's bounding box. |
+| `MaxX` | Number | yes | `MaxX` | Largest X of the element's bounding box. |
+| `MaxY` | Number | yes | `MaxY` | Largest Y of the element's bounding box. |
+| `MaxZ` | Number | yes | `MaxZ` | Largest Z of the element's bounding box. |
+| `SizeX` | Number | yes | `SizeX` | Extent of the bounding box along X (MaxX - MinX). |
+| `SizeY` | Number | yes | `SizeY` | Extent of the bounding box along Y (MaxY - MinY). |
+| `SizeZ` | Number | yes | `SizeZ` | Extent of the bounding box along Z (MaxZ - MinZ). |
+| `CenterX` | Number | yes | `CenterX` | X of the bounding box's center. |
+| `CenterY` | Number | yes | `CenterY` | Y of the bounding box's center. |
+| `CenterZ` | Number | yes | `CenterZ` | Z of the bounding box's center. |
+| `FootprintArea` | Number | yes | `FootprintArea` | Area of the bounding box seen from above (SizeX * SizeY), not of the element's true footprint. |
 
 ### `bim.levels` (v1) — Pure
 
@@ -254,13 +256,13 @@ Loads a .bos file into one row per level, ordered by elevation: EntityIndex, Nam
 
 **Columns of `table`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndex` | Integer | no | `EntityIndex` |
-| `Name` | Text | yes | `Name` |
-| `Elevation` | Number | no | `Elevation` |
-| `ElementCount` | Integer | no | `ElementCount` |
-| `RoomCount` | Integer | no | `RoomCount` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `Name` | Text | yes | `Name` | The entity's name, or a parameter's name in a parameter table. |
+| `Elevation` | Number | no | `Elevation` | Height of the level or element; absent when the model gives none. |
+| `ElementCount` | Integer | no | `ElementCount` | How many elements a level or room holds. |
+| `RoomCount` | Integer | no | `RoomCount` | How many rooms a level holds. |
 
 ### `bim.bounds` (v1) — Pure
 
@@ -282,27 +284,27 @@ Loads a .bos file into one row per element that has bounds: EntityIndex, Name, C
 
 **Columns of `table`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndex` | Integer | no | `EntityIndex` |
-| `Name` | Text | yes | `Name` |
-| `Category` | Text | yes | `Category` |
-| `Level` | Text | yes | `Level` |
-| `MinX` | Number | no | `MinX` |
-| `MinY` | Number | no | `MinY` |
-| `MinZ` | Number | no | `MinZ` |
-| `MaxX` | Number | no | `MaxX` |
-| `MaxY` | Number | no | `MaxY` |
-| `MaxZ` | Number | no | `MaxZ` |
-| `SizeX` | Number | no | `SizeX` |
-| `SizeY` | Number | no | `SizeY` |
-| `SizeZ` | Number | no | `SizeZ` |
-| `CenterX` | Number | no | `CenterX` |
-| `CenterY` | Number | no | `CenterY` |
-| `CenterZ` | Number | no | `CenterZ` |
-| `FootprintArea` | Number | no | `FootprintArea` |
-| `Volume` | Number | no | `Volume` |
-| `Diagonal` | Number | no | `Diagonal` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `Name` | Text | yes | `Name` | The entity's name, or a parameter's name in a parameter table. |
+| `Category` | Text | yes | `Category` | The entity's category: the IFC class (IFCWALL) or the Revit category. |
+| `Level` | Text | yes | `Level` | Name of the level or storey the entity sits on. |
+| `MinX` | Number | no | `MinX` | Smallest X of the element's bounding box. |
+| `MinY` | Number | no | `MinY` | Smallest Y of the element's bounding box. |
+| `MinZ` | Number | no | `MinZ` | Smallest Z of the element's bounding box. |
+| `MaxX` | Number | no | `MaxX` | Largest X of the element's bounding box. |
+| `MaxY` | Number | no | `MaxY` | Largest Y of the element's bounding box. |
+| `MaxZ` | Number | no | `MaxZ` | Largest Z of the element's bounding box. |
+| `SizeX` | Number | no | `SizeX` | Extent of the bounding box along X (MaxX - MinX). |
+| `SizeY` | Number | no | `SizeY` | Extent of the bounding box along Y (MaxY - MinY). |
+| `SizeZ` | Number | no | `SizeZ` | Extent of the bounding box along Z (MaxZ - MinZ). |
+| `CenterX` | Number | no | `CenterX` | X of the bounding box's center. |
+| `CenterY` | Number | no | `CenterY` | Y of the bounding box's center. |
+| `CenterZ` | Number | no | `CenterZ` | Z of the bounding box's center. |
+| `FootprintArea` | Number | no | `FootprintArea` | Area of the bounding box seen from above (SizeX * SizeY), not of the element's true footprint. |
+| `Volume` | Number | no | `Volume` | A volume: of the bounding box in bim.bounds (SizeX * SizeY * SizeZ), of the room in bim.rooms. |
+| `Diagonal` | Number | no | `Diagonal` | Length of the bounding box's space diagonal. |
 
 ### `bim.paramTable` (v1) — Pure
 
@@ -483,13 +485,13 @@ Loads a .bos file into one row per door in the given categories: Door (entity in
 
 **Columns of `table`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `Door` | Integer | no | `Door` |
-| `DoorName` | Text | yes | `DoorName` |
-| `Level` | Text | yes | `Level` |
-| `FromRoom` | Text | no | `FromRoom` |
-| `ToRoom` | Text | no | `ToRoom` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `Door` | Integer | no | `Door` | EntityIndex of a door. |
+| `DoorName` | Text | yes | `DoorName` | The door's name. |
+| `Level` | Text | yes | `Level` | Name of the level or storey the entity sits on. |
+| `FromRoom` | Text | no | `FromRoom` | Label of the room on the door's from side; 'Outside' when there is none. |
+| `ToRoom` | Text | no | `ToRoom` | Label of the room on the door's to side; 'Outside' when there is none. |
 
 ### `bim.hops` (v1) — Pure
 
@@ -517,10 +519,10 @@ Walks the undirected graph whose edges are the (from, to) column pairs, breadth-
 
 **Columns of `table`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `Room` | Text | no | `Room` |
-| `Hops` | Integer | yes | `Hops` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `Room` | Text | no | `Room` | Name of the room the entity is in, or a room's label in a hop table. |
+| `Hops` | Integer | yes | `Hops` | Doors to pass from the start room; absent when the room cannot be reached. |
 
 ### `bim.orientation` (v1) — Pure
 
@@ -543,21 +545,21 @@ Loads a .bos file into one row per element with a box: EntityIndex, GlobalId, Na
 
 **Columns of `table`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `EntityIndex` | Integer | no | `EntityIndex` |
-| `GlobalId` | Text | yes | `GlobalId` |
-| `Name` | Text | yes | `Name` |
-| `Category` | Text | yes | `Category` |
-| `Level` | Text | yes | `Level` |
-| `CenterX` | Number | no | `CenterX` |
-| `CenterY` | Number | no | `CenterY` |
-| `Bearing` | Number | yes | `Bearing` |
-| `Sector` | Integer | yes | `Sector` |
-| `Direction` | Text | yes | `Direction` |
-| `Distance` | Number | no | `Distance` |
-| `Facing` | Text | yes | `Facing` |
-| `FacingArea` | Number | no | `FacingArea` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `EntityIndex` | Integer | no | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `GlobalId` | Text | yes | `GlobalId` | The entity's globally unique id (an IfcGloballyUniqueId); empty when the source gave none. |
+| `Name` | Text | yes | `Name` | The entity's name, or a parameter's name in a parameter table. |
+| `Category` | Text | yes | `Category` | The entity's category: the IFC class (IFCWALL) or the Revit category. |
+| `Level` | Text | yes | `Level` | Name of the level or storey the entity sits on. |
+| `CenterX` | Number | no | `CenterX` | X of the bounding box's center. |
+| `CenterY` | Number | no | `CenterY` | Y of the bounding box's center. |
+| `Bearing` | Number | yes | `Bearing` | Degrees clockwise from project north (+Y of the model) to the element's box centre as seen from the plan centre; absent at the centre. BOS records no true-north angle. |
+| `Sector` | Integer | yes | `Sector` | The 45-degree compass slice of the bearing, 0 (N) to 7 (NW), clockwise. |
+| `Direction` | Text | yes | `Direction` | The compass point of the bearing's slice: N, NE, E, SE, S, SW, W or NW. |
+| `Distance` | Number | no | `Distance` | A distance in the model's length unit: to the nearest candidate row in bim.nearest, from the plan centre in bim.orientation. |
+| `Facing` | Text | yes | `Facing` | The side (N, E, S or W) the box's larger vertical face looks out to. |
+| `FacingArea` | Number | no | `FacingArea` | Area of the box's larger vertical face, max(SizeX, SizeY) * SizeZ; it overstates a diagonal element's face. |
 
 ### `bim.buildSequence` (v1) — Pure
 
@@ -590,17 +592,17 @@ A synthetic construction sequence (4D) for an element table such as bim.elements
 
 **Columns of `tasks`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `Task` | Text | no | `Task` |
-| `Storey` | Text | no | `Storey` |
-| `Trade` | Text | no | `Trade` |
-| `Start` | Text | no | `Start` |
-| `End` | Text | no | `End` |
-| `DurationDays` | Integer | no | `DurationDays` |
-| `FinishWeek` | Integer | no | `FinishWeek` |
-| `ElementCount` | Integer | no | `ElementCount` |
-| `Synthetic` | Boolean | no | `Synthetic` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `Task` | Text | no | `Task` | One trade's work on one storey, named 'Storey - Trade'. |
+| `Storey` | Text | no | `Storey` | Name of the storey a scheduled task works. |
+| `Trade` | Text | no | `Trade` | The trade that does a task: Structure, Envelope, MEP, Finishes, or the names the node was given. |
+| `Start` | Text | no | `Start` | First day of a task, as an ISO date (yyyy-MM-dd). |
+| `End` | Text | no | `End` | Day after a task's last day (exclusive), as an ISO date (yyyy-MM-dd). |
+| `DurationDays` | Integer | no | `DurationDays` | Calendar days a task lasts. |
+| `FinishWeek` | Integer | no | `FinishWeek` | The week, counted from 1 at the schedule's start, that holds the task's last working day (End - 1). |
+| `ElementCount` | Integer | no | `ElementCount` | How many elements a level or room holds. |
+| `Synthetic` | Boolean | no | `Synthetic` | True when the value comes from a generated schedule, not from the model: an invented plan, not a recorded one. |
 
 **Columns of `elements`**: inferred from the inputs
 
@@ -1133,6 +1135,29 @@ The entity and parameter tables are `bos.load`'s first two outputs (or any table
 |---|---|---|---|---|---|
 | `ids` | FilePath | Text | — | — | files under the model roots ending `.ids` |
 
+**Columns of `verdicts`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `GlobalId` | Text | yes | `GlobalId` | The entity's globally unique id (an IfcGloballyUniqueId); empty when the source gave none. |
+| `EntityIndex` | Integer | yes | `EntityIndex` | Row number of the entity in the BOS Entities table; -1 when a row is about no entity. |
+| `CheckId` | Text | no | `CheckId` | Identifier of the check or specification that produced the verdict. |
+| `CheckTitle` | Text | no | `CheckTitle` | Human title of the check, shown to people. |
+| `Citation` | Text | yes | `Citation` | The requirement the check enforces, as its source states it (a code clause, the IDS facets). |
+| `Verdict` | Text | no | `Verdict` | The result of a check on an entity: Pass, Fail, or InfoNotAvailable when the model lacks what the check reads. |
+| `Reason` | Text | yes | `Reason` | Why the entity got its verdict. |
+
+**Columns of `summary`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `CheckId` | Text | no | `CheckId` | Identifier of the check or specification that produced the verdict. |
+| `CheckTitle` | Text | no | `CheckTitle` | Human title of the check, shown to people. |
+| `Pass` | Integer | no | `Pass` | How many rows of a check got the verdict Pass. |
+| `Fail` | Integer | no | `Fail` | How many rows of a check got the verdict Fail. |
+| `InfoNotAvailable` | Integer | no | `InfoNotAvailable` | How many rows of a check got the verdict InfoNotAvailable. |
+| `Rows` | Integer | no | `Rows` | How many verdict rows a check produced. |
+
 ### `ids.specifications` (v1) — Pure
 
 Lists the specifications of a buildingSMART IDS 1.0 file: CheckId, CheckTitle, IfcVersion, Cardinality, Applicability, Requirements, and Supported (false when a facet would give InfoNotAvailable; material and part-of facets count as supported and need ids.check's relations input). Reads no model; use it to see what an IDS asks before running ids.check.
@@ -1152,6 +1177,18 @@ Reads only the IDS file. `Supported` is false when any facet of the specificatio
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `ids` | FilePath | Text | — | — | files under the model roots ending `.ids` |
+
+**Columns of `specifications`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `CheckId` | Text | no | `CheckId` | Identifier of the check or specification that produced the verdict. |
+| `CheckTitle` | Text | no | `CheckTitle` | Human title of the check, shown to people. |
+| `IfcVersion` | Text | no | `IfcVersion` | The IFC schema versions a specification applies to, comma-separated. |
+| `Cardinality` | Text | no | `Cardinality` | Whether a specification's applicable entities are required, optional or prohibited. |
+| `Applicability` | Text | no | `Applicability` | The facets that select the entities a specification applies to, in short form. |
+| `Requirements` | Text | no | `Requirements` | The facets an applicable entity must satisfy, in short form. |
+| `Supported` | Boolean | no | `Supported` | False when a facet of the specification would give InfoNotAvailable because BOS cannot answer it. |
 
 ## BCF — `BimOpenFlow.Nodes.Bcf`
 
@@ -1184,15 +1221,15 @@ The same grouping `bcf.write` applies, as a table: a preview of the file before 
 
 **Columns of `topics`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `Title` | Text | yes | `Title` |
-| `Description` | Text | yes | `Description` |
-| `Status` | Text | yes | `Status` |
-| `Priority` | Text | yes | `Priority` |
-| `Type` | Text | yes | `Type` |
-| `Elements` | Integer | no | `Elements` |
-| `GlobalIds` | Text | no | `GlobalIds` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `Title` | Text | yes | `Title` | The issue's title; rows with one title form one issue (one BCF topic). |
+| `Description` | Text | yes | `Description` | What is wrong, in words. |
+| `Status` | Text | yes | `Status` | The issue's state, for example Open or Closed. |
+| `Priority` | Text | yes | `Priority` | The issue's priority, for example High. |
+| `Type` | Text | yes | `Type` | The name of the entity's type (the family type of an element), or the type of a BCF issue. |
+| `Elements` | Integer | no | `Elements` | How many elements a BCF topic selects. |
+| `GlobalIds` | Text | no | `GlobalIds` | The GlobalIds of a BCF topic's elements, comma-separated. |
 
 ### `bcf.write` (v1) — Effect
 
@@ -1225,15 +1262,15 @@ An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (d
 
 **Columns of `out`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `path` | Text | no | — |
-| `topics` | Integer | no | — |
-| `viewpoints` | Integer | no | — |
-| `elements` | Integer | no | — |
-| `elementsWithoutGeometry` | Integer | no | — |
-| `bytes` | Integer | no | — |
-| `sha256` | Text | no | — |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `path` | Text | no | — | — |
+| `topics` | Integer | no | — | — |
+| `viewpoints` | Integer | no | — | — |
+| `elements` | Integer | no | — | — |
+| `elementsWithoutGeometry` | Integer | no | — | — |
+| `bytes` | Integer | no | — | — |
+| `sha256` | Text | no | — | — |
 
 ### `bcf.read` (v1) — Pure
 
@@ -1258,30 +1295,30 @@ Reads markup.bcf per topic and the elements its viewpoints select; a topic writt
 
 **Columns of `issues`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `GlobalId` | Text | yes | `GlobalId` |
-| `Title` | Text | yes | `Title` |
-| `Description` | Text | yes | `Description` |
-| `Status` | Text | yes | `Status` |
-| `Priority` | Text | yes | `Priority` |
-| `Type` | Text | yes | `Type` |
-| `TopicGuid` | Text | yes | `TopicGuid` |
-| `Author` | Text | yes | `Author` |
-| `CreationDate` | Text | yes | `CreationDate` |
-| `AuthoringToolId` | Text | yes | `AuthoringToolId` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `GlobalId` | Text | yes | `GlobalId` | The entity's globally unique id (an IfcGloballyUniqueId); empty when the source gave none. |
+| `Title` | Text | yes | `Title` | The issue's title; rows with one title form one issue (one BCF topic). |
+| `Description` | Text | yes | `Description` | What is wrong, in words. |
+| `Status` | Text | yes | `Status` | The issue's state, for example Open or Closed. |
+| `Priority` | Text | yes | `Priority` | The issue's priority, for example High. |
+| `Type` | Text | yes | `Type` | The name of the entity's type (the family type of an element), or the type of a BCF issue. |
+| `TopicGuid` | Text | yes | `TopicGuid` | The BCF topic's guid. |
+| `Author` | Text | yes | `Author` | Who created the BCF topic. |
+| `CreationDate` | Text | yes | `CreationDate` | When the BCF topic was created, as UTC ISO text (yyyy-MM-ddTHH:mm:ssZ); empty when the file gives none. |
+| `AuthoringToolId` | Text | yes | `AuthoringToolId` | An id the authoring tool gave the entity (a Revit UniqueId), set when a BCF names a component only by it; GlobalId is then empty. |
 
 **Columns of `topics`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `Title` | Text | yes | `Title` |
-| `Description` | Text | yes | `Description` |
-| `Status` | Text | yes | `Status` |
-| `Priority` | Text | yes | `Priority` |
-| `Type` | Text | yes | `Type` |
-| `Elements` | Integer | no | `Elements` |
-| `GlobalIds` | Text | no | `GlobalIds` |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `Title` | Text | yes | `Title` | The issue's title; rows with one title form one issue (one BCF topic). |
+| `Description` | Text | yes | `Description` | What is wrong, in words. |
+| `Status` | Text | yes | `Status` | The issue's state, for example Open or Closed. |
+| `Priority` | Text | yes | `Priority` | The issue's priority, for example High. |
+| `Type` | Text | yes | `Type` | The name of the entity's type (the family type of an element), or the type of a BCF issue. |
+| `Elements` | Integer | no | `Elements` | How many elements a BCF topic selects. |
+| `GlobalIds` | Text | no | `GlobalIds` | The GlobalIds of a BCF topic's elements, comma-separated. |
 
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
 
@@ -1366,16 +1403,16 @@ Input must be a verdict table. Output has one row per CheckId in first-appearanc
 
 **Columns of `out`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `CheckId` | Text | no | `CheckId` |
-| `CheckTitle` | Text | no | `CheckTitle` |
-| `Citation` | Text | no | `Citation` |
-| `passCount` | Integer | no | — |
-| `failCount` | Integer | no | — |
-| `needsReviewCount` | Integer | no | — |
-| `infoNotAvailableCount` | Integer | no | — |
-| `worst` | Text | no | — |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `CheckId` | Text | no | `CheckId` | Identifier of the check or specification that produced the verdict. |
+| `CheckTitle` | Text | no | `CheckTitle` | Human title of the check, shown to people. |
+| `Citation` | Text | no | `Citation` | The requirement the check enforces, as its source states it (a code clause, the IDS facets). |
+| `passCount` | Integer | no | — | — |
+| `failCount` | Integer | no | — | — |
+| `needsReviewCount` | Integer | no | — | — |
+| `infoNotAvailableCount` | Integer | no | — | — |
+| `worst` | Text | no | — | — |
 
 ### `check.union` (v1) — Pure
 
@@ -1826,11 +1863,11 @@ Lists the tables of a .duckdb database (read-only) as a table with `name`, `colu
 
 **Columns of `tables`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `name` | Text | no | — |
-| `columnCount` | Integer | no | — |
-| `rowCount` | Integer | no | — |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `name` | Text | no | — | — |
+| `columnCount` | Integer | no | — | — |
+| `rowCount` | Integer | no | — | — |
 
 ## Tables — `BimOpenFlow.Nodes.Tables`
 
@@ -1883,12 +1920,12 @@ Lists a workbook's worksheets as a table: `name`, `index` (1-based position), an
 
 **Columns of `sheets`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `name` | Text | no | — |
-| `index` | Integer | no | — |
-| `rowCount` | Integer | no | — |
-| `columnCount` | Integer | no | — |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `name` | Text | no | — | — |
+| `index` | Integer | no | — | — |
+| `rowCount` | Integer | no | — | — |
+| `columnCount` | Integer | no | — | — |
 
 ### `sqlite.query` (v1) — Pure
 
@@ -1958,11 +1995,11 @@ Lists a database's user tables (`name`, `columnCount`, `rowCount`) in name order
 
 **Columns of `tables`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `name` | Text | no | — |
-| `columnCount` | Integer | no | — |
-| `rowCount` | Integer | no | — |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `name` | Text | no | — | — |
+| `columnCount` | Integer | no | — | — |
+| `rowCount` | Integer | no | — | — |
 
 ### `bfast.read` (v1) — Pure
 
@@ -1984,11 +2021,11 @@ Lists the buffers in a BFAST file: name, byteLength, index (0-based file order).
 
 **Columns of `buffers`**
 
-| Name | Type | Nullable | Kind |
-|---|---|---|---|
-| `name` | Text | no | — |
-| `byteLength` | Integer | no | — |
-| `index` | Integer | no | — |
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `name` | Text | no | — | — |
+| `byteLength` | Integer | no | — | — |
+| `index` | Integer | no | — | — |
 
 ### `bfast.buffer` (v1) — Pure
 

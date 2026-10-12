@@ -248,7 +248,7 @@
   {
     "name": "Distance",
     "type": "Number",
-    "meaning": "Straight-line distance to the nearest candidate row, in the model\u0027s length unit.",
+    "meaning": "A distance in the model\u0027s length unit: to the nearest candidate row in bim.nearest, from the plan centre in bim.orientation.",
     "role": "Measure"
   },
   {
@@ -394,5 +394,179 @@
     "type": "Text",
     "meaning": "Why the entity got its verdict.",
     "role": "Label"
+  },
+  {
+    "name": "TopicGuid",
+    "type": "Text",
+    "meaning": "The BCF topic\u0027s guid.",
+    "role": "Key"
+  },
+  {
+    "name": "Author",
+    "type": "Text",
+    "meaning": "Who created the BCF topic.",
+    "role": "Label"
+  },
+  {
+    "name": "CreationDate",
+    "type": "Text",
+    "meaning": "When the BCF topic was created, as UTC ISO text (yyyy-MM-ddTHH:mm:ssZ); empty when the file gives none.",
+    "role": "Measure"
+  },
+  {
+    "name": "AuthoringToolId",
+    "type": "Text",
+    "meaning": "An id the authoring tool gave the entity (a Revit UniqueId), set when a BCF names a component only by it; GlobalId is then empty.",
+    "role": "Key"
+  },
+  {
+    "name": "Elements",
+    "type": "Integer",
+    "meaning": "How many elements a BCF topic selects.",
+    "role": "Measure"
+  },
+  {
+    "name": "GlobalIds",
+    "type": "Text",
+    "meaning": "The GlobalIds of a BCF topic\u0027s elements, comma-separated.",
+    "role": "Label"
+  },
+  {
+    "name": "Bearing",
+    "type": "Number",
+    "meaning": "Degrees clockwise from project north (\u002BY of the model) to the element\u0027s box centre as seen from the plan centre; absent at the centre. BOS records no true-north angle.",
+    "role": "Measure"
+  },
+  {
+    "name": "Sector",
+    "type": "Integer",
+    "meaning": "The 45-degree compass slice of the bearing, 0 (N) to 7 (NW), clockwise.",
+    "role": "Category"
+  },
+  {
+    "name": "Direction",
+    "type": "Text",
+    "meaning": "The compass point of the bearing\u0027s slice: N, NE, E, SE, S, SW, W or NW.",
+    "role": "Category"
+  },
+  {
+    "name": "Facing",
+    "type": "Text",
+    "meaning": "The side (N, E, S or W) the box\u0027s larger vertical face looks out to.",
+    "role": "Category"
+  },
+  {
+    "name": "FacingArea",
+    "type": "Number",
+    "meaning": "Area of the box\u0027s larger vertical face, max(SizeX, SizeY) * SizeZ; it overstates a diagonal element\u0027s face.",
+    "role": "Measure"
+  },
+  {
+    "name": "Task",
+    "type": "Text",
+    "meaning": "One trade\u0027s work on one storey, named \u0027Storey - Trade\u0027.",
+    "role": "Label"
+  },
+  {
+    "name": "Storey",
+    "type": "Text",
+    "meaning": "Name of the storey a scheduled task works.",
+    "role": "Category"
+  },
+  {
+    "name": "Trade",
+    "type": "Text",
+    "meaning": "The trade that does a task: Structure, Envelope, MEP, Finishes, or the names the node was given.",
+    "role": "Category"
+  },
+  {
+    "name": "Start",
+    "type": "Text",
+    "meaning": "First day of a task, as an ISO date (yyyy-MM-dd).",
+    "role": "Measure"
+  },
+  {
+    "name": "End",
+    "type": "Text",
+    "meaning": "Day after a task\u0027s last day (exclusive), as an ISO date (yyyy-MM-dd).",
+    "role": "Measure"
+  },
+  {
+    "name": "DurationDays",
+    "type": "Integer",
+    "meaning": "Calendar days a task lasts.",
+    "role": "Measure"
+  },
+  {
+    "name": "Finish",
+    "type": "Text",
+    "meaning": "The End of the task an element is installed in, as an ISO date.",
+    "role": "Measure"
+  },
+  {
+    "name": "FinishWeek",
+    "type": "Integer",
+    "meaning": "The week, counted from 1 at the schedule\u0027s start, that holds the task\u0027s last working day (End - 1).",
+    "role": "Measure"
+  },
+  {
+    "name": "Synthetic",
+    "type": "Boolean",
+    "meaning": "True when the value comes from a generated schedule, not from the model: an invented plan, not a recorded one.",
+    "role": "Category"
+  },
+  {
+    "name": "IfcVersion",
+    "type": "Text",
+    "meaning": "The IFC schema versions a specification applies to, comma-separated.",
+    "role": "Category"
+  },
+  {
+    "name": "Cardinality",
+    "type": "Text",
+    "meaning": "Whether a specification\u0027s applicable entities are required, optional or prohibited.",
+    "role": "Category"
+  },
+  {
+    "name": "Applicability",
+    "type": "Text",
+    "meaning": "The facets that select the entities a specification applies to, in short form.",
+    "role": "Label"
+  },
+  {
+    "name": "Requirements",
+    "type": "Text",
+    "meaning": "The facets an applicable entity must satisfy, in short form.",
+    "role": "Label"
+  },
+  {
+    "name": "Supported",
+    "type": "Boolean",
+    "meaning": "False when a facet of the specification would give InfoNotAvailable because BOS cannot answer it.",
+    "role": "Category"
+  },
+  {
+    "name": "Pass",
+    "type": "Integer",
+    "meaning": "How many rows of a check got the verdict Pass.",
+    "role": "Measure"
+  },
+  {
+    "name": "Fail",
+    "type": "Integer",
+    "meaning": "How many rows of a check got the verdict Fail.",
+    "role": "Measure"
+  },
+  {
+    "name": "InfoNotAvailable",
+    "type": "Integer",
+    "meaning": "How many rows of a check got the verdict InfoNotAvailable.",
+    "role": "Measure"
+  },
+  {
+    "name": "Rows",
+    "type": "Integer",
+    "meaning": "How many verdict rows a check produced.",
+    "role": "Measure"
   }
 ]
