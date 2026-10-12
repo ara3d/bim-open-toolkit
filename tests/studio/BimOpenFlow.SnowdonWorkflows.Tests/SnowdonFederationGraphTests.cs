@@ -1,3 +1,4 @@
+using Ara3D.DataFlowEngine;
 using Ara3D.DataTable;
 using Ara3D.NodeGraph;
 using BimOpenFlow.Host;
@@ -7,7 +8,8 @@ namespace BimOpenFlow.SnowdonWorkflows.Tests;
 
 /// <summary>
 /// samples/snowdon-analyses/federation-match.json over FederationExample's five-document
-/// union: the storey-by-elevation rule (C5) and the confirmations join. The 12 expected
+/// union: the storey-by-elevation rule (C5) and the confirmations join. This is the graph's
+/// only evaluation: the bim profile does not seed it (BimSampleSeeding.TestOnly). The 12 expected
 /// storey rows and their conflicts/warnings are the worked example in
 /// docs/plans/snowdon-federation-build.md ("Match graph", "Worked example").
 /// </summary>
@@ -37,7 +39,7 @@ public sealed class SnowdonFederationGraphTests
     }
 
     /// <summary>conflicts/warnings are comma-joined VARCHAR, not VARCHAR[] (see the graph's
-    /// session.description): every sink and multi-input node round-trips its input table
+    /// about note): every sink and multi-input node round-trips its input table
     /// through Ara3D.BimOpenSchema.IO.DuckDbUtils.WriteTable, which has no branch for
     /// array-typed values.</summary>
     private static string[] AsStringArray(object? value)
@@ -49,6 +51,31 @@ public sealed class SnowdonFederationGraphTests
         var built = SnowdonFederationFixture.Build(_dir, Header);
         Assert.That(built.Graph.Nodes, Is.Not.Empty);
         Assert.That(built.Graph.Validate(HostComposition.TablePacks()), Is.Empty);
+    }
+
+    /// <summary>An opener sees the answer view before Run: every node evaluates Ok except the
+    /// Parquet sink, which waits for Run and reads its rows from `answer`, not from
+    /// `correspondence` directly.</summary>
+    [Test]
+    public void EveryNodeIsOk_AndTheAnswerViewFeedsTheSink()
+    {
+        var built = SnowdonFederationFixture.Build(_dir, Header + ConfirmStructL1Low);
+        var session = TableReads.NewTableSession();
+        var snapshot = session.Evaluate(built.Graph);
+        TestContext.Out.WriteLine(string.Join("\n", snapshot.Warnings));
+
+        Assert.Multiple(() =>
+        {
+            foreach (var (id, result) in snapshot.Results)
+                Assert.That(result.Status, Is.EqualTo(id == "write" ? NodeStatus.EffectPending : NodeStatus.Ok),
+                    $"{id}: {result.Error}");
+            Assert.That(built.Graph.Edges.Select(e => (e.From, e.To)), Is.SupersetOf(new[]
+            {
+                ("correspondence.table", "answer.table"),
+                ("answer.table", "write.in"),
+            }));
+            Assert.That(snapshot.Warnings, Has.None.Contains("unknown column").IgnoreCase);
+        });
     }
 
     /// <summary>One row per (canonical_key, source_document), in the graph's own

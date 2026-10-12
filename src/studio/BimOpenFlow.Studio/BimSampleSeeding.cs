@@ -13,12 +13,22 @@ namespace BimOpenFlow.Studio;
 /// binary is never committed), samples/view3d-analyses/*.json with {SAMPLES}
 /// pointed at samples/nrc (they load its committed duplex-base.ifc), samples/viz-analyses/*.json (the
 /// visualization demos) over samples/nrc too, samples/nrc-analyses/*.json, which name
-/// their sources, and samples/showcase-analyses/*.json over samples/nrc, by the rules of
-/// SampleSeeding.Seed; graphs the registry cannot validate are skipped and reported.
+/// their sources, samples/showcase-analyses/*.json over samples/nrc, and, when the private
+/// Snowdon model is present, samples/snowdon-analyses/*.json with {SNOWDON} pointed at it, by
+/// the rules of SampleSeeding.Seed; graphs the registry cannot validate are skipped and
+/// reported, and so are the TestOnly samples.
 /// </summary>
 public static class BimSampleSeeding
 {
     public const string SampleFileName = "sample.bos";
+
+    /// <summary>Committed samples this profile never seeds, on purpose. federation-match
+    /// (samples/snowdon-analyses) reads a union of the seven Snowdon discipline models, which
+    /// no preparation job builds, so its {FEDERATION_UNION}, {FEDERATION_CONFIRMATIONS}, and
+    /// {FEDERATION_CORRESPONDENCE} placeholders are given no target here and
+    /// SampleSeeding.Seed skips it as unresolved. BimOpenFlow.SnowdonWorkflows.Tests fills them
+    /// in and evaluates it over FederationExample's five-document union.</summary>
+    public static readonly IReadOnlyList<string> TestOnly = ["federation-match"];
 
     public static IReadOnlyList<string> Seed(AnalysisStore store, string startDir,
         INodeRegistry? registry = null, TextWriter? log = null)

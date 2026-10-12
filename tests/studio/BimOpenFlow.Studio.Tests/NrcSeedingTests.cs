@@ -50,13 +50,14 @@ public sealed class NrcSeedingTests
         Assert.Multiple(() =>
         {
             Assert.That(seeded, Is.SupersetOf(SharedIds.Concat(BimOnlyIds)));
-            // Every NRC sample validates against the bim registry. On a machine with the local
-            // Snowdon model, samples/snowdon-analyses/federation-match.json also seeds; its
-            // {FEDERATION_CONFIRMATIONS} and {FEDERATION_UNION} placeholders resolve to no
-            // target directory the profile names, so TKT-83's unresolved-placeholder check skips
-            // it rather than seed a graph whose nodes would fail reading a literal "{...}" path.
+            // Every NRC sample validates against the bim registry. The only skips are the
+            // samples BimSampleSeeding.TestOnly names, for their unresolved {FEDERATION_*}
+            // placeholders; they show only on a machine with the local Snowdon model, the one
+            // place samples/snowdon-analyses is seeded from.
             var lines = log.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            Assert.That(lines, Has.All.Contains("skipped sample analysis federation-match"));
+            Assert.That(lines, Has.All.Matches<string>(line => BimSampleSeeding.TestOnly.Any(id =>
+                line.Contains($"skipped sample analysis {id}: parameter still holds unresolved placeholder {{FEDERATION_"))));
+            Assert.That(seeded, Has.None.AnyOf(BimSampleSeeding.TestOnly.ToArray()));
         });
     }
 
