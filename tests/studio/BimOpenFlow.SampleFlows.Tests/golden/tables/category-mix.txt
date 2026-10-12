@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// category-mix   graph 3dcd181c2ec4
+// category-mix   graph b98f4a057830
+about = view.note@1(text: "Revenue per product category with no SQL: table.join puts each product's price and category on its order, table.derive multiplies Quantity by UnitPrice, and the totals are ranked and charted. Structural leads with 8,880 from 2 orders.");
+  // Ok
 orders = duck.read@1(path: "{SAMPLES}/orders.csv");
   // Ok  table 8 rows x 5 cols  sha 8c29a3917fc1
   //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
@@ -12,21 +14,44 @@ products = duck.read@1(path: "{SAMPLES}/products.csv");
   //   [0] "P-10", "Stud 2x4", 3.85, "Lumber"
   //   [1] "P-11", "Drywall Sheet", 12.5, "Interior"
   //   [2] "P-12", "Steel Beam", 240, "Structural"
-mix = sql.query@1(t1: orders.table, t2: products.table, sql: "SELECT p.Category AS Category, o.Quantity * p.UnitPrice AS Revenue FROM t1 o JOIN t2 p ON o.ProductId = p.ProductId");
-  // Ok  table 8 rows x 2 cols  sha ad2e47b74ece
-  //   columns Category:Text, Revenue:Number
-  //   [0] "Lumber", 462
-  //   [1] "Interior", 500
-  //   [2] "Lumber", 1155
-byCategory = table.aggregate@1(table: mix.table, groupBy: "Category", aggregates: "sum(Revenue) as TotalRevenue, count(Revenue) as Orders");
+priced = table.join@1(a: orders.table, b: products.table, aKey: "ProductId", mode: "inner");
+  // Ok  table 8 rows x 8 cols  sha 2076379efe25
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text, ProductName:Text, UnitPrice:Number, Category:Text
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15", "Stud 2x4", 3.85, "Lumber"
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03", "Drywall Sheet", 12.5, "Interior"
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14", "Stud 2x4", 3.85, "Lumber"
+revenue = table.derive@1(table: priced.table, name: "Revenue", expr: "Quantity * UnitPrice");
+  // Ok  table 8 rows x 9 cols  sha 4bcfe50f6f42
+  //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text, ProductName:Text, UnitPrice:Number, Category:Text, Revenue:Number
+  //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15", "Stud 2x4", 3.85, "Lumber", 462
+  //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03", "Drywall Sheet", 12.5, "Interior", 500
+  //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14", "Stud 2x4", 3.85, "Lumber", 1155
+byCategory = table.aggregate@1(table: revenue.table, groupBy: "Category", aggregates: "sum(Revenue) as TotalRevenue, count(*) as Orders");
   // Ok  table 3 rows x 3 cols  sha 2a81e220b033
   //   columns Category:Text, TotalRevenue:Number, Orders:Integer
   //   [0] "Interior", 4681, 3
   //   [1] "Lumber", 1964, 3
   //   [2] "Structural", 8880, 2
-ranked = table.sort@1(table: byCategory.table, by: "TotalRevenue desc");
+ranked = table.sort@1(table: byCategory.table, A: "TotalRevenue", descendingA: "true");
   // Ok  table 3 rows x 3 cols  sha 4be12883360a
   //   columns Category:Text, TotalRevenue:Number, Orders:Integer
   //   [0] "Structural", 8880, 2
   //   [1] "Interior", 4681, 3
   //   [2] "Lumber", 1964, 3
+answer = view.table@1(table: ranked.table, title: "Revenue per category");
+  // Ok  table 3 rows x 3 cols  sha 4be12883360a
+  //   columns Category:Text, TotalRevenue:Number, Orders:Integer
+  //   [0] "Structural", 8880, 2
+  //   [1] "Interior", 4681, 3
+  //   [2] "Lumber", 1964, 3
+chart = chart.bar@1(table: ranked.table, labelColumn: "Category", valueColumns: "TotalRevenue", title: "Revenue per category");
+  // Ok
+  //   table: table 3 rows x 2 cols  sha 096b8cded86a
+  //     columns Category:Text, TotalRevenue:Number
+  //     chart 3 categories x 1 series: "TotalRevenue"
+  //     "Structural": 8880
+  //     "Interior": 4681
+  //     "Lumber": 1964
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

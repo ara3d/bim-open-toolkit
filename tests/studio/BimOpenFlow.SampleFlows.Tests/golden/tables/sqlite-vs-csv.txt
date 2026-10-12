@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// sqlite-vs-csv   graph fe5dbe7e3855
+// sqlite-vs-csv   graph 259bb35e7956
+about = view.note@1(text: "A parity check: the same orders read from orders.csv and from sample.sqlite, intersected on OrderId. All 8 of the CSV's 8 rows are in the database, so the two sources agree; a row missing from either would drop out of the answer.");
+  // Ok
 csvOrders = duck.read@1(path: "{SAMPLES}/orders.csv");
   // Ok  table 8 rows x 5 cols  sha 8c29a3917fc1
   //   columns OrderId:Text, CustomerId:Text, ProductId:Text, Quantity:Integer, OrderDate:Text
@@ -18,3 +20,9 @@ common = table.setOp@1(a: csvOrders.table, b: dbOrders.table, op: "intersect", k
   //   [0] "O-1001", "C001", "P-10", 120, "2026-01-15"
   //   [1] "O-1002", "C001", "P-11", 40, "2026-02-03"
   //   [2] "O-1003", "C002", "P-10", 300, "2026-02-14"
+answer = view.table@1(table: common.table, title: "Orders in both sources", columns: "OrderDate, Quantity, OrderId, CustomerId, ProductId");
+  // Ok  table 8 rows x 5 cols  sha 4450a8a90eaa
+  //   columns OrderDate:Text, Quantity:Integer, OrderId:Text, CustomerId:Text, ProductId:Text
+  //   [0] "2026-01-15", 120, "O-1001", "C001", "P-10"
+  //   [1] "2026-02-03", 40, "O-1002", "C001", "P-11"
+  //   [2] "2026-02-14", 300, "O-1003", "C002", "P-10"

@@ -1,12 +1,14 @@
 dfg 0.1.0;
-// duckdb-warehouse   graph ec1093802ccc
-warehouse = duck.query@1(path: "{SAMPLES}/sample.duckdb", sql: "SELECT c.Name AS Customer, p.ProductName AS Product, o.OrderDate AS OrderDate, CAST(o.Quantity * p.UnitPrice AS DOUBLE) AS Revenue FROM Orders o JOIN Products p ON o.ProductId = p.ProductId JOIN Customers c ON o.CustomerId = c.CustomerId ORDER BY Revenue DESC");
-  // Ok  table 8 rows x 4 cols  sha 7678a263cfdd
-  //   columns Customer:Text, Product:Text, OrderDate:Text, Revenue:Number
-  //   [0] "Acme Construction", "Steel Beam", "2026-04-30", 5280
-  //   [1] "Cedar Design", "Steel Beam", "2026-03-01", 3600
-  //   [2] "Beaver Builds", "Insulation Roll", "2026-03-22", 3431
-slim = table.project@1(table: warehouse.table, columns: "Customer, Product, Revenue");
+// duckdb-warehouse   graph 5010b7e1b025
+about = view.note@1(text: "One duck.query joins the Orders, Products, and Customers tables inside sample.duckdb. The three tables live in one database file, so the join runs there in SQL instead of loading each table into the graph. Largest order line first.");
+  // Ok
+warehouse = duck.query@1(path: "{SAMPLES}/sample.duckdb", sql: "SELECT c.Name AS Customer, p.ProductName AS Product, o.Quantity * p.UnitPrice AS Revenue FROM Orders o JOIN Products p ON o.ProductId = p.ProductId JOIN Customers c ON o.CustomerId = c.CustomerId ORDER BY Revenue DESC");
+  // Ok  table 8 rows x 3 cols  sha ede152d83c67
+  //   columns Customer:Text, Product:Text, Revenue:Number
+  //   [0] "Acme Construction", "Steel Beam", 5280
+  //   [1] "Cedar Design", "Steel Beam", 3600
+  //   [2] "Beaver Builds", "Insulation Roll", 3431
+answer = view.table@1(table: warehouse.table, title: "Revenue per order line");
   // Ok  table 8 rows x 3 cols  sha ede152d83c67
   //   columns Customer:Text, Product:Text, Revenue:Number
   //   [0] "Acme Construction", "Steel Beam", 5280

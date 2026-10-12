@@ -1,12 +1,14 @@
 ---
 id: TKT-272
 title: bim-open-flow analyses and relations graphs: current sort form, answer nodes, notes, shared sources, even columns
-status: open
+status: claimed
 depends_on: [TKT-271]
-owner:
+owner: builder-TKT-272
+session: 747367c7-cc40-452c-911b-37ed983339cb
 fence: [deps/bim-open-flow/samples/analyses/**, deps/bim-open-flow/samples/relations/**, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/category-mix.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/customer-revenue.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/duckdb-warehouse.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/order-size-split.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/sqlite-vs-csv.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/xlsx-enrichment.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/large-orders.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/monthly-spend-sql.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/orders-per-customer.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/revenue-by-customer.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/schema-error.txt]
 workflow: [W2]
 created: 2026-10-11
+claimed: 2026-10-11
 ---
 
 ## Acceptance criteria
