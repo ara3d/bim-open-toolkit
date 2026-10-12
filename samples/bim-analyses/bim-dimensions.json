@@ -1,28 +1,41 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "aspect": { "x": 370, "y": 40 },
-    "bounds": { "x": 40, "y": 40 },
-    "ranked": { "x": 1030, "y": 40 },
-    "tall": { "x": 700, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 104 },
+    "model": { "x": 40, "y": 224 },
+    "bounds": { "x": 370, "y": 224 },
+    "aspect": { "x": 700, "y": 224 },
+    "tall": { "x": 1030, "y": 224 },
+    "ranked": { "x": 1360, "y": 224 },
+    "answer": { "x": 1690, "y": 224 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
+      { "from": "model.path", "to": "bounds.path" },
       { "from": "bounds.table", "to": "aspect.table" },
+      { "from": "aspect.table", "to": "tall.table" },
       { "from": "tall.table", "to": "ranked.table" },
-      { "from": "aspect.table", "to": "tall.table" }
+      { "from": "ranked.table", "to": "answer.table" }
     ],
     "nodes": [
-      { "id": "aspect", "kind": "table.derive", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
+      { "id": "aspect", "kind": "table.derive", "version": 1 },
+      { "id": "tall", "kind": "table.filter", "version": 1 },
       { "id": "ranked", "kind": "table.sort", "version": 1 },
-      { "id": "tall", "kind": "table.filter", "version": 1 }
+      { "id": "answer", "kind": "view.table", "version": 1 }
     ]
   },
   "values": {
-    "aspect": { "expr": "SizeX / SizeY", "name": "Aspect" },
-    "bounds": { "path": "{SAMPLES}/sample.bos" },
-    "ranked": { "by": "Volume desc" },
-    "tall": { "expr": "SizeZ > 2.5" }
+    "about": { "text": "Each element's bounding box from bim.bounds, with Aspect = SizeX / SizeY (plan length over width, blank when SizeY is 0), kept when the box is taller than 2.5 m and ranked by box Volume. Boxes are axis-aligned, so a diagonal wall reads longer and wider than it is." },
+    "model": { "path": "$model" },
+    "aspect": { "expr": "SizeY == 0 ? null : SizeX / SizeY", "name": "Aspect" },
+    "tall": { "expr": "SizeZ > 2.5" },
+    "ranked": { "A": "Volume", "descendingA": "true" },
+    "answer": { "columns": "Name, Category, Level, SizeX, SizeY, SizeZ, Aspect, Volume", "title": "Tall elements by box volume" }
   }
 }

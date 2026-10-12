@@ -1,37 +1,49 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": { "x": -290, "y": 280 },
-    "bounds": { "x": 40, "y": 280 },
-    "ductsOnly": { "x": 370, "y": 224 },
-    "overlaps": { "x": 700, "y": 40 },
-    "ranked": { "x": 1030, "y": 40 },
-    "rooms": { "x": 40, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 140 },
+    "model": { "x": 40, "y": 224 },
+    "bounds": { "x": 370, "y": 224 },
+    "ductsOnly": { "x": 700, "y": 224 },
+    "overlaps": { "x": 1030, "y": 224 },
+    "ranked": { "x": 1360, "y": 224 },
+    "named": { "x": 1690, "y": 224 },
+    "answer": { "x": 2020, "y": 224 },
+    "rooms": { "x": 370, "y": 408 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
       { "from": "model.path", "to": "bounds.path" },
       { "from": "model.path", "to": "rooms.path" },
       { "from": "bounds.table", "to": "ductsOnly.table" },
       { "from": "ductsOnly.table", "to": "overlaps.a" },
       { "from": "rooms.table", "to": "overlaps.b" },
-      { "from": "overlaps.table", "to": "ranked.table" }
+      { "from": "overlaps.table", "to": "ranked.table" },
+      { "from": "ranked.table", "to": "named.table" },
+      { "from": "named.table", "to": "answer.table" }
     ],
     "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "model", "kind": "value.path", "version": 1 },
       { "id": "bounds", "kind": "bim.bounds", "version": 1 },
       { "id": "ductsOnly", "kind": "table.filter", "version": 1 },
       { "id": "overlaps", "kind": "spatial.intersects", "version": 1 },
       { "id": "ranked", "kind": "table.sort", "version": 1 },
+      { "id": "named", "kind": "table.project", "version": 1 },
+      { "id": "answer", "kind": "view.table", "version": 1 },
       { "id": "rooms", "kind": "bim.rooms", "version": 1 }
     ]
   },
   "values": {
-    "model": { "path": "{SAMPLES}/sample.bos" },
-    "bounds": { "path": "{SAMPLES}/sample.bos" },
+    "about": { "text": "The rooms each duct's box passes through (spatial.intersects of duct boxes against room boxes), largest overlap first; Room is the room's Number. Boxes are axis-aligned, so a diagonal duct overstates its rooms. bim-room-containment is the full version of this pattern, for doors: it keeps real overlaps only, counts them per room, and names each room." },
+    "model": { "path": "$model" },
     "ductsOnly": { "expr": "Category == 'Ducts'" },
     "overlaps": { "bKey": "Number" },
     "ranked": { "A": "OverlapVolume", "descendingA": "true" },
-    "rooms": { "path": "{SAMPLES}/sample.bos" }
+    "named": { "columns": "A as Duct, B as Room, OverlapVolume" },
+    "answer": { "title": "Rooms each duct passes through" }
   }
 }

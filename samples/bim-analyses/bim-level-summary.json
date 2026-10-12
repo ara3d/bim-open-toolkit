@@ -1,23 +1,33 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "about": { "x": 40, "y": 240 },
-    "chart": { "x": 370, "y": 40 },
-    "levels": { "x": 40, "y": 40 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 86 },
+    "model": { "x": 40, "y": 224 },
+    "levels": { "x": 370, "y": 224 },
+    "answer": { "x": 700, "y": 224 },
+    "chart": { "x": 700, "y": 408 }
   },
   "structure": {
+    "inputs": [
+      { "default": "{SAMPLES}/sample.bos", "description": "The building's BIM Open Schema (.bos) file; any public sample building works here.", "kind": "FilePath", "name": "model" }
+    ],
     "edges": [
+      { "from": "model.path", "to": "levels.path" },
+      { "from": "levels.table", "to": "answer.table" },
       { "from": "levels.table", "to": "chart.table" }
     ],
     "nodes": [
       { "id": "about", "kind": "view.note", "version": 1 },
-      { "id": "chart", "kind": "chart.bar", "version": 1 },
-      { "id": "levels", "kind": "bim.levels", "version": 1 }
+      { "id": "model", "kind": "value.path", "version": 1 },
+      { "id": "levels", "kind": "bim.levels", "version": 1 },
+      { "id": "answer", "kind": "view.table", "version": 1 },
+      { "id": "chart", "kind": "chart.bar", "version": 1 }
     ]
   },
   "values": {
     "about": { "text": "Elements and rooms on each level, from bim.levels (which counts them itself). Elements with no Level parameter are not counted on any level." },
-    "chart": { "labelColumn": "Name", "title": "Elements and rooms per level", "valueColumns": "ElementCount, RoomCount" },
-    "levels": { "path": "{SAMPLES}/sample.bos" }
+    "model": { "path": "$model" },
+    "answer": { "columns": "Name, Elevation, ElementCount, RoomCount", "title": "Elements and rooms per level" },
+    "chart": { "labelColumn": "Name", "title": "Elements and rooms per level", "valueColumns": "ElementCount, RoomCount" }
   }
 }

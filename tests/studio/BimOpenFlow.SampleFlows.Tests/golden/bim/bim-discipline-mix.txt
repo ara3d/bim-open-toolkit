@@ -1,6 +1,8 @@
 dfg 0.1.0;
-// bim-discipline-mix   graph e9c0323bf149
+// bim-discipline-mix   graph ef1a7763f950
 inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+about = view.note@1(text: "Every element from bim.elements, put in a discipline by its category (bim.discipline), counted and ranked. Levels count too and land in General. Set the model input to another .bos file to run the same graph on that building.");
+  // Ok
 model = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/sample.bos"
 elements = bim.elements@1(path: model.path);
@@ -21,9 +23,28 @@ byDiscipline = table.aggregate@1(table: disciplines.table, groupBy: "Discipline"
   //   [0] "Architecture", 15
   //   [1] "Electrical", 1
   //   [2] "General", 2
-ranked = table.sort@1(table: byDiscipline.table, by: "Elements desc");
+ranked = table.sort@1(table: byDiscipline.table, A: "Elements", descendingA: "true");
   // Ok  table 5 rows x 2 cols  sha 7fc7f1250be9
   //   columns Discipline:Text, Elements:Integer
   //   [0] "Architecture", 15
   //   [1] "General", 2
   //   [2] "Electrical", 1
+answer = view.table@1(table: ranked.table, title: "Elements per discipline");
+  // Ok  table 5 rows x 2 cols  sha 7fc7f1250be9
+  //   columns Discipline:Text, Elements:Integer
+  //   [0] "Architecture", 15
+  //   [1] "General", 2
+  //   [2] "Electrical", 1
+chart = chart.bar@1(table: ranked.table, labelColumn: "Discipline", valueColumns: "Elements", title: "Elements per discipline");
+  // Ok
+  //   table: table 5 rows x 2 cols  sha 7fc7f1250be9
+  //     columns Discipline:Text, Elements:Integer
+  //     chart 5 categories x 1 series: "Elements"
+  //     "Architecture": 15
+  //     "General": 2
+  //     "Electrical": 1
+  //     "Mechanical": 1
+  //     "Structure": 1
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

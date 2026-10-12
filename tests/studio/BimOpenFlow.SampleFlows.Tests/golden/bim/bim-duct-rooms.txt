@@ -1,6 +1,9 @@
 dfg 0.1.0;
-// bim-duct-rooms   graph 3ce581eed628
-model = value.path@1(path: "{SAMPLES}/sample.bos");
+// bim-duct-rooms   graph c0ad6b612cb1
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
+about = view.note@1(text: "The rooms each duct's box passes through (spatial.intersects of duct boxes against room boxes), largest overlap first; Room is the room's Number. Boxes are axis-aligned, so a diagonal duct overstates its rooms. bim-room-containment is the full version of this pattern, for doors: it keeps real overlaps only, counts them per room, and names each room.");
+  // Ok
+model = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/sample.bos"
 bounds = bim.bounds@1(path: model.path);
   // Ok  table 18 rows x 19 cols  sha 40cf6c5935d9
@@ -28,5 +31,15 @@ overlaps = spatial.intersects@1(a: ductsOnly.table, b: rooms.table, bKey: "Numbe
 ranked = table.sort@1(table: overlaps.table, A: "OverlapVolume", descendingA: "true");
   // Ok  table 2 rows x 3 cols  sha a17bff222b7d
   //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "DU1", "201", 0.2
+  //   [1] "DU1", "202", 0.08
+named = table.project@1(table: ranked.table, columns: "A as Duct, B as Room, OverlapVolume");
+  // Ok  table 2 rows x 3 cols  sha 9f64d688ffaf
+  //   columns Duct:Text, Room:Text, OverlapVolume:Number
+  //   [0] "DU1", "201", 0.2
+  //   [1] "DU1", "202", 0.08
+answer = view.table@1(table: named.table, title: "Rooms each duct passes through");
+  // Ok  table 2 rows x 3 cols  sha 9f64d688ffaf
+  //   columns Duct:Text, Room:Text, OverlapVolume:Number
   //   [0] "DU1", "201", 0.2
   //   [1] "DU1", "202", 0.08

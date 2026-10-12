@@ -1,12 +1,20 @@
 dfg 0.1.0;
-// bim-level-summary   graph 4da4468d44bf
+// bim-level-summary   graph 85210cc9ebf8
+inputs model: FilePath = "{SAMPLES}/sample.bos" now "{MODELS}/sample.bos";
 about = view.note@1(text: "Elements and rooms on each level, from bim.levels (which counts them itself). Elements with no Level parameter are not counted on any level.");
   // Ok
-levels = bim.levels@1(path: "{SAMPLES}/sample.bos");
+model = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/sample.bos"
+levels = bim.levels@1(path: model.path);
   // Ok  table 2 rows x 5 cols  sha f81f9e52d41e
   //   columns EntityIndex:Integer, Name:Text, Elevation:Number, ElementCount:Integer, RoomCount:Integer
   //   [0] 10, "Level 1", 0, 12, 4
   //   [1] 11, "Level 2", 3, 6, 2
+answer = view.table@1(table: levels.table, title: "Elements and rooms per level", columns: "Name, Elevation, ElementCount, RoomCount");
+  // Ok  table 2 rows x 4 cols  sha 52b10e273333
+  //   columns Name:Text, Elevation:Number, ElementCount:Integer, RoomCount:Integer
+  //   [0] "Level 1", 0, 12, 4
+  //   [1] "Level 2", 3, 6, 2
 chart = chart.bar@1(table: levels.table, labelColumn: "Name", valueColumns: "ElementCount, RoomCount", title: "Elements and rooms per level");
   // Ok
   //   table: table 2 rows x 3 cols  sha 7a8a9e8d6c35
