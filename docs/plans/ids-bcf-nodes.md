@@ -68,7 +68,7 @@ misspelled facet passed everything), `05b07c0` (enumerations are stored as
 `.DOOR.` with dots and never matched; a space's Name is its LongName in BOS;
 no warning on a model not in metres; IFCDESCRIPTIVEMEASURE is text), `eea5884`
 (the summary dropped specifications with no rows and merged two with one name;
-type-object property sets are not in BOS, now a warning and TKT-237), and
+type-object property sets were not in BOS, a warning then and fixed in the second wave, TKT-237), and
 `2002858` (BCF 2.1 lists viewpoints beside the topic, so every selection was
 lost; a recovered id list is stripped from the description). In the toolkit:
 `ids.check` takes its summary from `IdsTables.Summary` and both nodes pass the
@@ -121,4 +121,44 @@ supervisor (session bcfc489d) pushes, pins, and integrates.
 | G | toolkit | `scripts/nrc-ids.mjs`, `samples/nrc/ids/**`, `IdsFilesTests.cs` | nrc-analytics.ids generated from nrc-metrics.csv; the two IDS copies checked identical |
 | F (after A and B) | bim-open-data, toolkit | `Ara3D.Ids/**`, `Nodes.Ids/**` | material and part-of facets from BOS relations; inherited type values read |
 
-Build log follows as the tracks land.
+Build log, all on 2026-10-11:
+
+- A, bim-open-data `bda9b91` and `62379c7`: `IdsUnits` converts a number to SI
+  from the descriptor's unit, the attribute name, or the facet's dataType, and
+  warns by name for a number it cannot classify; IncludeSubtypes is not part of
+  IDS 1.0 (the schema in ids-lib has no such flag), so entity facets match
+  exactly and the warning is gone. 38 tests.
+- B, bim-open-data `f103af0`: a type object's own property sets become
+  parameters on the type entity; occurrences resolve through `Entity.Type`
+  (`Ara3D.Ifc.Conventions/IfcTypeObjects.cs` states the rule). The Duplex's door
+  styles carry only empty lining properties, so the tests use an IFC4 door type,
+  an IFC2x3 door style, and model_0's beam types.
+- C, bim-open-data `6f6adef`: MCP tools `ifc_ids_check` (path, idsPath,
+  verdict, skip, take; summary, warnings, a page of verdicts) and
+  `ifc_ids_specifications`; 109 MCP tests; the ifc-ask guide tells Claude how.
+- D, bim-open-data `061d498` and `d0f39e3`, toolkit `78667eb8`: BcfReader
+  returns `BcfContents` (topics and warnings), keeps authoring-tool ids apart
+  from GlobalIds, skips a bad or missing viewpoint with a warning; the IfcGuid
+  test is shared with the writer.
+- G, toolkit `a3d0a843` and `8cc366e3`: `scripts/nrc-ids.mjs` generates
+  nrc-analytics.ids from nrc-metrics.csv byte for byte; `IdsFilesTests` fails
+  when the file is stale or differs from bim-open-data's fixture copy.
+- F, bim-open-data `7732448`, toolkit `49590b41`: material and part-of facets
+  over BOS relations (`IdsRelations`, `IdsRelationFacets`; the IDS to BOS
+  relation mapping mirrors the converter's); `ids.check` gains an optional
+  `relations` input; the loader's silent "unknown relation means any" is caught
+  by reading the XML a second time. 56 tests. On the Duplex every door is in a
+  storey, 15 of 56 standard-case walls have a concrete block layer, doors have
+  no material.
+- H, bim-open-data `5a23e83`: property facets see the values an occurrence
+  inherits from its type; the TKT-237 warning is gone. 66 tests.
+- Supervisor: pin 5a23e83; guide, README and ticket notes.
+
+Not done in this wave: docs/nodes.md and nodes.catalog.json were not
+regenerated, because the TKT-207 session had uncommitted schema declarations
+in the same packs when the wave closed; that session regenerates them. The
+NrcWorkflows test project did not build at the end of the wave for the same
+reason (an ambiguous `Ident` in bim-open-flow's TableOps, uncommitted there);
+track F ran CheckingGraphTests green before that edit appeared. A `TypeIndex`
+column on the EntityText view (and through bos.load) would remove the
+type-name ambiguity `IdsModel.FromTables` now warns about.
