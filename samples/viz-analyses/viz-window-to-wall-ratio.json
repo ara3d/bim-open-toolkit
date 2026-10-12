@@ -1,61 +1,90 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "orient": {
-      "x": 40,
-      "y": 40
-    },
-    "attrs": {
-      "x": 40,
-      "y": 260
-    },
-    "joined": {
-      "x": 360,
-      "y": 120
-    },
-    "facade": {
-      "x": 640,
-      "y": 120
-    },
-    "kind": {
-      "x": 920,
-      "y": 120
-    },
-    "byFacing": {
-      "x": 1200,
-      "y": 40
-    },
-    "facings": {
-      "x": 1200,
-      "y": 260
-    },
-    "framed": {
-      "x": 1480,
-      "y": 120
-    },
-    "ratio": {
-      "x": 1760,
-      "y": 120
-    },
-    "limit": {
-      "x": 2040,
-      "y": 120
-    },
-    "sorted": {
-      "x": 2320,
-      "y": 120
-    },
-    "areas": {
-      "x": 2600,
-      "y": 40
-    },
-    "chart": {
-      "x": 2600,
-      "y": 260
-    },
     "about": {
       "x": 40,
-      "y": 520
+      "y": 40,
+      "w": 560,
+      "h": 266
+    },
+    "orient": {
+      "x": 40,
+      "y": 408,
+      "w": 310
+    },
+    "joined": {
+      "x": 370,
+      "y": 408
+    },
+    "facade": {
+      "x": 700,
+      "y": 408,
+      "w": 310
+    },
+    "kind": {
+      "x": 1030,
+      "y": 408,
+      "w": 310
+    },
+    "byFacing": {
+      "x": 1360,
+      "y": 408
+    },
+    "framed": {
+      "x": 1690,
+      "y": 408
+    },
+    "ratio": {
+      "x": 2020,
+      "y": 408
+    },
+    "limit": {
+      "x": 2350,
+      "y": 408
+    },
+    "sorted": {
+      "x": 2680,
+      "y": 408
+    },
+    "answer": {
+      "x": 3010,
+      "y": 408,
+      "w": 310
+    },
+    "database": {
+      "x": 40,
+      "y": 776
+    },
+    "attrs": {
+      "x": 370,
+      "y": 776,
+      "w": 310
+    },
+    "facings": {
+      "x": 1360,
+      "y": 776,
+      "w": 310
+    },
+    "chart": {
+      "x": 3010,
+      "y": 776,
+      "w": 310
+    },
+    "inst": {
+      "x": 40,
+      "y": 1144
+    },
+    "scale": {
+      "x": 1360,
+      "y": 1144
+    },
+    "keyed": {
+      "x": 1690,
+      "y": 1144
+    },
+    "colored": {
+      "x": 2020,
+      "y": 1144
     }
   },
   "structure": {
@@ -102,17 +131,55 @@
       },
       {
         "from": "sorted.table",
-        "to": "areas.table"
+        "to": "answer.table"
       },
       {
         "from": "sorted.table",
         "to": "chart.table"
+      },
+      {
+        "from": "database.source",
+        "to": "attrs.path"
+      },
+      {
+        "from": "kind.table",
+        "to": "scale.values"
+      },
+      {
+        "from": "scale.legend",
+        "to": "chart.scale"
+      },
+      {
+        "from": "kind.table",
+        "to": "keyed.table"
+      },
+      {
+        "from": "inst.instances",
+        "to": "colored.instances"
+      },
+      {
+        "from": "keyed.table",
+        "to": "colored.values"
+      },
+      {
+        "from": "scale.legend",
+        "to": "colored.scale"
       }
     ],
     "nodes": [
       {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
         "id": "orient",
         "kind": "bim.orientation",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
         "version": 1
       },
       {
@@ -166,7 +233,7 @@
         "version": 1
       },
       {
-        "id": "areas",
+        "id": "answer",
         "kind": "view.table",
         "version": 1
       },
@@ -176,8 +243,23 @@
         "version": 1
       },
       {
-        "id": "about",
-        "kind": "view.note",
+        "id": "scale",
+        "kind": "view.colormap",
+        "version": 1
+      },
+      {
+        "id": "keyed",
+        "kind": "table.rename",
+        "version": 1
+      },
+      {
+        "id": "inst",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "colored",
+        "kind": "view3d.color",
         "version": 1
       }
     ]
@@ -188,7 +270,6 @@
       "categories": "IFCWALL,IFCWALLSTANDARDCASE,IFCWINDOW"
     },
     "attrs": {
-      "path": "{SAMPLES}/duplex-enriched.duckdb",
       "sql": "SELECT e.GlobalId, s.StoreyName AS Storey, p.Value = '.T.' AS IsExternal FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 LEFT JOIN ParameterText p ON p.EntityIndex = e.EntityIndex AND p.Name = 'IsExternal' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCWINDOW')"
     },
     "joined": {
@@ -226,17 +307,35 @@
     "sorted": {
       "A": "Order"
     },
-    "areas": {
-      "title": "Facade areas and window-to-wall ratio by facing (m2)",
-      "columns": "Facing,Wall,Window,WWR"
-    },
     "chart": {
       "labelColumn": "Facing",
-      "valueColumns": "WWR,Limit",
-      "title": "Window-to-wall ratio by facing (Limit = 0.40 reference)"
+      "valueColumns": "WWR",
+      "title": "Window-to-wall ratio by facing (limit 0.40)"
     },
     "about": {
-      "text": "For an energy modeller: what share of each facade of the Duplex is glazing? The window-to-wall ratio (WWR) is window area over gross wall area on one facing, both from bim.orientation's face area (the larger vertical face of each box, length x height, so a wall's area includes its openings). Facing is the side a wall's or window's long face looks out to (N, E, S, W from project north; the model carries no true north). The facade is the elements flagged IsExternal, less the party wall and the T/FDN foundation walls. A facing with no wall has no ratio: the cell stays empty, never 0. Glass lets in far more solar heat than wall and loses heat several times faster, so a high WWR on a sun-facing side means summer gain and winter loss; 0.40 is the common prescriptive ceiling (ASHRAE 90.1), drawn as the Limit bar here and as a rule in the spec. Skylights are flagged not external and are left out."
+      "text": "Energy modeller: what share of each facade is glazing, and does any side pass 0.40? The window-to-wall ratio (WWR) is window area over gross wall area on one facing, both from bim.orientation's face area (the larger vertical face of each box, length x height, so a wall's area includes its openings). Facing is the side a wall's or window's long face looks out to: N, E, S or W from project north, since the model carries no true north. The facade is the elements flagged IsExternal, less the party wall and the T/FDN foundation walls; skylights are flagged not external and are left out. A facing with no wall has no ratio: the cell stays empty, never 0. 0.40 is the common prescriptive ceiling (ASHRAE 90.1); the Limit column carries it for the rule in the spec. The 3D view colours each facade element by its facing on the chart's scale."
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb"
+    },
+    "answer": {
+      "title": "Facade areas (m2) and window-to-wall ratio by facing",
+      "columns": "Facing,Wall,Window,WWR"
+    },
+    "scale": {
+      "valueColumn": "Facing",
+      "colorMap": "category10"
+    },
+    "keyed": {
+      "renames": "GlobalId=globalId"
+    },
+    "inst": {
+      "path": "{SAMPLES}/duplex-base.ifc"
+    },
+    "colored": {
+      "joinColumn": "globalId",
+      "valueColumn": "Facing",
+      "colorMap": "category10"
     }
   }
 }

@@ -1,7 +1,13 @@
 dfg 0.1.0;
-// viz-parameter-completeness   graph 7bc578fe40b6
-about = view.note@1(text: "For a BIM manager checking a handover: which classes of element are missing the parameters the handover needs? The list is the required node: fourteen COBie-style fields (type reference, marks, manufacturer, asset identifier, serial number, barcode, installation and warranty dates, Uniformat and OmniClass codes, fire rating, external, load-bearing); edit it to match your own handover requirements. A parameter counts as filled when its value is not empty and is not the template placeholder that repeats the parameter's own name: the placeholderTable lists every such value, for example 'SerialNumber' = 'SerialNumber' on 211 elements of this Duplex, which is a blank template field, not data. FillRate in the coverage table is the share of a class's elements whose value is filled. A parameter that no element of a class carries is left out, so it shows blank in the matrix and the heatmap, not 0%: blank means 'the class never has this field', 0% means 'the field is there but empty'. Each element's own Completeness is the share of its class's carried handover fields that it fills; the 3D view (colored) paints it red (0) to green (1) on the scale shared with classChart, which ranks classes worst first. The four IfcMember stair parts carry none of the fourteen fields, so their Completeness is blank and they stay grey; the two stair flights carry only Reference and fill it, so they read 100% from one field. On this file the fileTable counts 543 of 2,157 element-field cells filled (25%); footings and spaces are worst at 0%, doors and windows best among the large classes at 38%. Elements are every rooted, placed product in the file (239: types, styles, openings and spatial containers excluded); Storey comes from walking the containment and aggregation links up to the IfcBuildingStorey. The Vega-Lite spec (specs/viz-parameter-completeness.vl.json) draws the heatmap from the coverage table, which coverageTable shows: Parameter across, Class down, FillRate as colour.");
+// viz-parameter-completeness   graph 86146e66125a
+about = view.note@1(text: "BIM manager at handover: which classes of element miss the parameters the handover needs? The required node lists fourteen COBie-style fields; edit it to match your own requirements. A field counts as filled when its value is not empty and is not the template placeholder that repeats the field's own name (placeholderTable lists those). FillRate is the share of a class's elements that fill a field. A field no element of a class carries is left out, so the answer matrix and the heatmap show it blank, not 0%: blank means the class never has the field, 0% means it is there but empty. An element's Completeness is the share of its class's fields it fills; the 3D view paints it red (0) to green (1) on the scale classChart uses to rank classes worst first. Elements are the rooted, placed products (types, styles, openings and spatial containers excluded), each on the storey its containment and aggregation links reach. The spec draws the heatmap from coverageTable.");
   // Ok
+inst = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 load = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos");
   // Ok
   //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
@@ -25,12 +31,6 @@ elements = sql.query@1(t1: load.entities, sql: "SELECT EntityIndex, GlobalId, St
   //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE"
   //   [1] 351, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE"
   //   [2] 717, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE"
-model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
-  // Ok  table 714 rows x 11 cols  sha f912cca851d5
-  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
-  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
-  //   no colour columns
-  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 required = table.inline@1(rows: "[{\"Parameter\":\"Reference\",\"Field\":\"Type reference\"},{\"Parameter\":\"Mark\",\"Field\":\"Instance mark\"},{\"Parameter\":\"Type Mark\",\"Field\":\"Type mark\"},{\"Parameter\":\"Manufacturer\",\"Field\":\"Manufacturer\"},{\"Parameter\":\"AssetIdentifier\",\"Field\":\"Asset identifier\"},{\"Parameter\":\"SerialNumber\",\"Field\":\"Serial number\"},{\"Parameter\":\"BarCode\",\"Field\":\"Barcode\"},{\"Parameter\":\"InstallationDate\",\"Field\":\"Installation date\"},{\"Parameter\":\"WarrantyStartDate\",\"Field\":\"Warranty start\"},{\"Parameter\":\"Assembly Code\",\"Field\":\"Uniformat code\"},{\"Parameter\":\"OmniClass Number\",\"Field\":\"OmniClass code\"},{\"Parameter\":\"FireRating\",\"Field\":\"Fire rating\"},{\"Parameter\":\"IsExternal\",\"Field\":\"External\"},{\"Parameter\":\"LoadBearing\",\"Field\":\"Load bearing\"}]");
   // Ok  table 14 rows x 2 cols  sha 579e5c3c9567
   //   columns Parameter:Text, Field:Text
@@ -139,7 +139,7 @@ classChart = chart.bar@1(table: ranked.table, scale: scale.legend, labelColumn: 
   //   legend: table 4 rows x 9 cols  sha f5a5852505a8
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "Completeness" manual: 0, 0.5, 1, missing "no value" 4
-colored = view3d.color@1(instances: model.instances, values: perElement.table, scale: scale.legend, joinColumn: "GlobalId");
+colored = view3d.color@1(instances: inst.instances, values: perElement.table, scale: scale.legend, joinColumn: "GlobalId");
   // Ok
   //   instances: table 714 rows x 15 cols  sha 178451180081
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
@@ -156,7 +156,7 @@ wide = table.pivot@1(table: coverage.table, groupBy: "Class", nameColumn: "Param
   //   [0] "IFCBEAM", 0, 0, 0, null, 0, 1, 1, 0, null, 1, 1, 0, null, 0
   //   [1] "IFCCOVERING", 0, 0, 0, null, 0, null, null, 0, null, null, 1, 0, null, 0
   //   [2] "IFCDOOR", 0, 0, 0, 0, 0, 1, null, 0, 1, 1, 1, 0, 1, 0
-matrix = view.table@1(table: wide.table, title: "Handover fill rate per class (blank: the class never carries the field)");
+answer = view.table@1(table: wide.table, title: "Handover fill rate per class (blank: the class never carries the field)");
   // Ok  table 14 rows x 15 cols  sha 726c920152b2
   //   columns Class:Text, Assembly Code:Number, AssetIdentifier:Number, BarCode:Number, FireRating:Number, InstallationDate:Number, IsExternal:Number, LoadBearing:Number, Manufacturer:Number, Mark:Number, OmniClass Number:Number, Reference:Number, SerialNumber:Number, Type Mark:Number, WarrantyStartDate:Number
   //   [0] "IFCBEAM", 0, 0, 0, null, 0, 1, 1, 0, null, 1, 1, 0, null, 0

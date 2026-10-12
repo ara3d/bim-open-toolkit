@@ -1,8 +1,10 @@
 dfg 0.1.0;
-// viz-progress-s-curve   graph c1b1ef45df2f
-about = view.note@1(text: "For a project manager: how many of the Duplex's elements should be installed by each week, and how far behind is the site? BOTH SERIES ARE SYNTHETIC. Planned is the cumulative count of elements whose bim.buildSequence task has finished by the end of each week (10-day tasks from 2027-01-04, storeys bottom-up, trades overlapping by one floor); Actual is the same curve held three weeks late (table.window lag 3), a made-up slip for the demo, not site data. Read the S-curve (specs/viz-progress-s-curve.vl.json, or the line chart in the studio): the gap between the lines at a week is the shortfall in elements, and the horizontal gap at a height is the delay in weeks. Week 0 is the start; both lines end at the 218 scheduled elements. Storeys come from StoreyOfElement in the DuckDB export, because bim.elements has no Level for an IFC-derived model.");
+// viz-progress-s-curve   graph 6285406c72ed
+about = view.note@1(text: "Project manager: how many elements should be installed by each week, and how far behind is the site? BOTH SERIES ARE SYNTHETIC. Planned is the cumulative count of elements whose bim.buildSequence task has finished by the end of each week (10-day tasks from 2027-01-04, storeys bottom-up, trades overlapping by one floor); Actual is the same curve held three weeks late (table.window lag 3), a made-up slip, not site data. On the S-curve, the vertical gap between the lines at a week is the shortfall in elements, and the horizontal gap at a height is the delay in weeks; week 0 is the start. Storeys come from StoreyOfElement in the DuckDB export, because bim.elements has no Level for an IFC-derived model.");
   // Ok
-elements = duck.query@1(path: "{SAMPLES}/duplex-enriched.duckdb", sql: "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId");
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+elements = duck.query@1(path: database.source, sql: "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId");
   // Ok  table 239 rows x 6 cols  sha 846295c3e7da
   //   columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number
   //   [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0
@@ -70,6 +72,12 @@ synthetic = table.derive@1(table: zeroActual.table, name: "Synthetic", expr: "tr
   //   [0] 0, null, 0, 0, null, 0, true
   //   [1] 1, null, 0, 0, null, 0, true
   //   [2] 2, 7, 7, 7, null, 0, true
+answer = view.table@1(table: synthetic.table, title: "Synthetic progress by week (elements)", columns: "Week,Finished,Planned,Actual,Synthetic");
+  // Ok  table 12 rows x 5 cols  sha a1965ba91ef6
+  //   columns Week:Number, Finished:Integer, Planned:Integer, Actual:Integer, Synthetic:Boolean
+  //   [0] 0, 0, 0, 0, true
+  //   [1] 1, 0, 0, 0, true
+  //   [2] 2, 7, 7, 0, true
 curve = chart.line@1(table: synthetic.table, xColumn: "Week", yColumns: "Planned,Actual", title: "Elements installed by week (synthetic)");
   // Ok  table 12 rows x 3 cols  sha a590bdf5d2f9
   //   columns Week:Number, Planned:Integer, Actual:Integer
@@ -86,9 +94,3 @@ curve = chart.line@1(table: synthetic.table, xColumn: "Week", yColumns: "Planned
   //   9: 218, 175
   //   10: 218, 175
   //   11: 218, 218
-curveTable = view.table@1(table: synthetic.table, title: "Synthetic progress by week", columns: "Week,Finished,Planned,Actual,Synthetic");
-  // Ok  table 12 rows x 5 cols  sha a1965ba91ef6
-  //   columns Week:Number, Finished:Integer, Planned:Integer, Actual:Integer, Synthetic:Boolean
-  //   [0] 0, 0, 0, 0, true
-  //   [1] 1, 0, 0, 0, true
-  //   [2] 2, 7, 7, 0, true

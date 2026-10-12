@@ -3,115 +3,132 @@
   "layout": {
     "about": {
       "x": 40,
-      "y": 40
+      "y": 40,
+      "w": 560,
+      "h": 320
     },
-    "inst": {
-      "x": 40,
-      "y": 224
-    },
-    "meas": {
+    "model": {
       "x": 40,
       "y": 408
     },
-    "storeys": {
-      "x": 40,
-      "y": 592
-    },
-    "zrange": {
+    "measures": {
       "x": 370,
-      "y": 224
+      "y": 408
     },
     "meshes": {
-      "x": 370,
-      "y": 408
-    },
-    "perElement": {
       "x": 700,
       "y": 408
     },
-    "named": {
+    "perElement": {
       "x": 1030,
-      "y": 408
+      "y": 408,
+      "w": 310
     },
-    "solid": {
+    "named": {
       "x": 1360,
       "y": 408
     },
-    "height": {
+    "solid": {
       "x": 1690,
-      "y": 408
+      "y": 408,
+      "w": 310
     },
-    "withStorey": {
+    "height": {
       "x": 2020,
       "y": 408
     },
+    "withStorey": {
+      "x": 2350,
+      "y": 408
+    },
     "rankInClass": {
-      "x": 2350,
-      "y": 224
-    },
-    "classSize": {
-      "x": 2350,
-      "y": 592
-    },
-    "withSize": {
       "x": 2680,
       "y": 408
     },
-    "middle": {
+    "withSize": {
       "x": 3010,
-      "y": 592
-    },
-    "medians": {
-      "x": 3340,
-      "y": 592
+      "y": 408
     },
     "withMedian": {
-      "x": 3670,
+      "x": 3340,
       "y": 408
     },
     "ratio": {
-      "x": 4000,
+      "x": 3670,
       "y": 408
     },
     "fold": {
-      "x": 4330,
+      "x": 4000,
       "y": 408
     },
     "flagged": {
-      "x": 4660,
+      "x": 4330,
       "y": 408
     },
     "scored": {
+      "x": 4660,
+      "y": 408,
+      "w": 310
+    },
+    "ranked": {
       "x": 4990,
       "y": 408
     },
-    "ranked": {
+    "outliers": {
       "x": 5320,
       "y": 408
     },
-    "scale": {
+    "answer": {
       "x": 5650,
-      "y": 592
+      "y": 408,
+      "w": 310
+    },
+    "database": {
+      "x": 40,
+      "y": 960
+    },
+    "inst": {
+      "x": 370,
+      "y": 960
+    },
+    "zrange": {
+      "x": 700,
+      "y": 960
+    },
+    "storeys": {
+      "x": 2020,
+      "y": 960,
+      "w": 310
+    },
+    "classSize": {
+      "x": 2680,
+      "y": 960
+    },
+    "middle": {
+      "x": 3010,
+      "y": 960,
+      "w": 310
+    },
+    "medians": {
+      "x": 3340,
+      "y": 960
+    },
+    "scale": {
+      "x": 5320,
+      "y": 960
     },
     "chart": {
-      "x": 5980,
-      "y": 592
-    },
-    "outliers": {
       "x": 5650,
-      "y": 224
-    },
-    "list": {
-      "x": 5980,
-      "y": 224
+      "y": 960,
+      "w": 310
     },
     "colored": {
-      "x": 5980,
-      "y": 40
+      "x": 5650,
+      "y": 1512
     },
     "ghosted": {
-      "x": 6310,
-      "y": 40
+      "x": 5980,
+      "y": 1512
     }
   },
   "structure": {
@@ -121,7 +138,7 @@
         "to": "zrange.table"
       },
       {
-        "from": "meas.measures",
+        "from": "measures.measures",
         "to": "meshes.a"
       },
       {
@@ -205,11 +222,11 @@
         "to": "ranked.table"
       },
       {
-        "from": "ranked.table",
+        "from": "outliers.table",
         "to": "scale.values"
       },
       {
-        "from": "ranked.table",
+        "from": "outliers.table",
         "to": "chart.table"
       },
       {
@@ -222,7 +239,7 @@
       },
       {
         "from": "outliers.table",
-        "to": "list.table"
+        "to": "answer.table"
       },
       {
         "from": "inst.instances",
@@ -243,6 +260,18 @@
       {
         "from": "outliers.table",
         "to": "ghosted.ids"
+      },
+      {
+        "from": "model.path",
+        "to": "inst.path"
+      },
+      {
+        "from": "model.path",
+        "to": "measures.path"
+      },
+      {
+        "from": "database.source",
+        "to": "storeys.path"
       }
     ],
     "nodes": [
@@ -252,12 +281,22 @@
         "version": 1
       },
       {
+        "id": "model",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
+        "version": 1
+      },
+      {
         "id": "inst",
         "kind": "view3d.instances",
         "version": 1
       },
       {
-        "id": "meas",
+        "id": "measures",
         "kind": "view3d.measures",
         "version": 1
       },
@@ -372,7 +411,7 @@
         "version": 1
       },
       {
-        "id": "list",
+        "id": "answer",
         "kind": "view.table",
         "version": 1
       },
@@ -390,17 +429,11 @@
   },
   "values": {
     "about": {
-      "text": "Element size outliers, for a model auditor. Question: which elements are an order of magnitude larger or smaller than the other elements of their IFC class, and where are they? Volume is the enclosed mesh volume from view3d.measures, summed over each element's meshes; Height is the element's vertical extent from its instance bounds. Each class's median volume comes from table.window (row number by volume within the class) and the middle row of each class; Fold is how many times larger or smaller than that median an element is (always at least 1). An element is an outlier when Fold is 10 or more in a class of at least 5 elements; spaces and openings are left out because they are not built elements. Read the figure: the scatter (specs/viz-element-size-outliers.vl.json) plots Volume on a log scale against Height, one colour per class, outliers drawn large and outlined; the bar chart ranks every element by Fold on the same colour scale as the 3D view, which ghosts everything except the outliers. On the Duplex, 28 of 216 elements are outliers: the live roof modelled as an IFCSLAB is 144 times the slab median, eight 38 mm furring walls are 70 times smaller than the wall median, and the large fixed windows are 11 to 20 times the window median. A large Fold is a question to ask of the model, not an error: a class that mixes finish floors with structural slabs has a wide spread by design. Mesh volume is exact only for closed meshes."
+      "text": "Model auditor: which elements are ten times larger or smaller than the median of their IFC class, and where are they? Volume is the enclosed mesh volume from view3d.measures, summed per element; Height is the element's vertical extent from its instance bounds. Storey is the nearest storey above an element in StoreyOfElement (smallest Depth), so each element sits on one storey. A class's median is the volume of its middle row by volume (table.window); Fold is how many times larger or smaller than that median an element is, never below 1. An element is an outlier when Fold is 10 or more in a class of at least 5 elements; spaces and openings are left out. The chart ranks the outliers by Fold on the scale the 3D view colours them with, and the 3D view ghosts everything else; the scatter in specs/viz-element-size-outliers.vl.json plots Volume on a log scale against Height. A large Fold is a question to ask of the model, not an error, and mesh volume is exact only for closed meshes."
     },
-    "inst": {
-      "path": "{SAMPLES}/duplex-base.ifc"
-    },
-    "meas": {
-      "path": "{SAMPLES}/duplex-base.ifc"
-    },
+    "inst": {},
     "storeys": {
-      "path": "{SAMPLES}/duplex-base.duckdb",
-      "sql": "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL"
+      "sql": "SELECT e.GlobalId, e.StepId, e.Name, s.Storey FROM EntityText e JOIN (SELECT EntityIndex, arg_min(StoreyName, Depth) AS Storey FROM StoreyOfElement GROUP BY EntityIndex) s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL"
     },
     "zrange": {
       "columns": "instanceIndex,minZ,maxZ"
@@ -468,7 +501,9 @@
       "columns": "GlobalId,StepId,Name,Class,Storey,Volume,Height,ClassMedian,Ratio,Fold,Outlier"
     },
     "ranked": {
-      "by": "Fold desc"
+      "A": "Fold",
+      "descendingA": "true",
+      "B": "GlobalId"
     },
     "scale": {
       "valueColumn": "Fold",
@@ -477,14 +512,10 @@
     "chart": {
       "labelColumn": "Name",
       "valueColumns": "Fold",
-      "title": "How far each element sits from its class median (Fold)"
+      "title": "Outliers: how many times off their class median each element is (Fold)"
     },
     "outliers": {
       "expr": "Outlier"
-    },
-    "list": {
-      "title": "Elements ten or more times off their class median",
-      "columns": "GlobalId,StepId,Name,Class,Storey,Volume,Height,ClassMedian,Fold"
     },
     "colored": {
       "joinColumn": "GlobalId",
@@ -494,6 +525,17 @@
       "joinColumn": "GlobalId",
       "scope": "others",
       "alpha": "0.12"
+    },
+    "measures": {},
+    "answer": {
+      "title": "Elements ten or more times off their class median (Volume m3, Height m)",
+      "columns": "Name,Class,Storey,Volume,Height,ClassMedian,Fold,StepId,GlobalId"
+    },
+    "model": {
+      "path": "{SAMPLES}/duplex-base.ifc"
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-base.duckdb"
     }
   }
 }

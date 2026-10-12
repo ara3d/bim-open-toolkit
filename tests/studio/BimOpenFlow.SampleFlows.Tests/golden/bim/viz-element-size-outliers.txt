@@ -1,20 +1,24 @@
 dfg 0.1.0;
-// viz-element-size-outliers   graph cd54117a4420
-about = view.note@1(text: "Element size outliers, for a model auditor. Question: which elements are an order of magnitude larger or smaller than the other elements of their IFC class, and where are they? Volume is the enclosed mesh volume from view3d.measures, summed over each element's meshes; Height is the element's vertical extent from its instance bounds. Each class's median volume comes from table.window (row number by volume within the class) and the middle row of each class; Fold is how many times larger or smaller than that median an element is (always at least 1). An element is an outlier when Fold is 10 or more in a class of at least 5 elements; spaces and openings are left out because they are not built elements. Read the figure: the scatter (specs/viz-element-size-outliers.vl.json) plots Volume on a log scale against Height, one colour per class, outliers drawn large and outlined; the bar chart ranks every element by Fold on the same colour scale as the 3D view, which ghosts everything except the outliers. On the Duplex, 28 of 216 elements are outliers: the live roof modelled as an IFCSLAB is 144 times the slab median, eight 38 mm furring walls are 70 times smaller than the wall median, and the large fixed windows are 11 to 20 times the window median. A large Fold is a question to ask of the model, not an error: a class that mixes finish floors with structural slabs has a wide spread by design. Mesh volume is exact only for closed meshes.");
+// viz-element-size-outliers   graph cbd10323bab0
+about = view.note@1(text: "Model auditor: which elements are ten times larger or smaller than the median of their IFC class, and where are they? Volume is the enclosed mesh volume from view3d.measures, summed per element; Height is the element's vertical extent from its instance bounds. Storey is the nearest storey above an element in StoreyOfElement (smallest Depth), so each element sits on one storey. A class's median is the volume of its middle row by volume (table.window); Fold is how many times larger or smaller than that median an element is, never below 1. An element is an outlier when Fold is 10 or more in a class of at least 5 elements; spaces and openings are left out. The chart ranks the outliers by Fold on the scale the 3D view colours them with, and the 3D view ghosts everything else; the scatter in specs/viz-element-size-outliers.vl.json plots Volume on a log scale against Height. A large Fold is a question to ask of the model, not an error, and mesh volume is exact only for closed meshes.");
   // Ok
-inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+database = duck.source@1(path: "{SAMPLES}/duplex-base.duckdb");
+  // Ok  Database
+model = value.path@1(path: "{SAMPLES}/duplex-base.ifc");
+  // Ok  Text "{MODELS}/duplex-base.ifc"
+inst = view3d.instances@1(path: model.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //   no colour columns
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-meas = view3d.measures@1(path: "{SAMPLES}/duplex-base.ifc");
-  // Ok  table 714 rows x 8 cols  sha 4d5b64741ecd
+measures = view3d.measures@1(path: model.path);
+  // Ok  table 714 rows x 8 cols  sha a95807e244ef
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, surfaceArea:Number, meshVolume:Number, triangleCount:Integer
   //   [0] 0, 0, 514, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", 90.5, 40.24, 60
   //   [1] 1, 1, 819, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", 52.55, 4.504, 60
   //   [2] 2, 2, 1928, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", 25.09, 8.177, 12
-storeys = duck.query@1(path: "{SAMPLES}/duplex-base.duckdb", sql: "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL");
+storeys = duck.query@1(path: database.source, sql: "SELECT e.GlobalId, e.StepId, e.Name, s.Storey FROM EntityText e JOIN (SELECT EntityIndex, arg_min(StoreyName, Depth) AS Storey FROM StoreyOfElement GROUP BY EntityIndex) s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL");
   // Ok  table 239 rows x 4 cols  sha 0fce8841ec6e
   //   columns GlobalId:Text, StepId:Integer, Name:Text, Storey:Text
   //   [0] "1hOSvn6df7F8_7GcBWlSFK", 8283, "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037"..., "Level 2"
@@ -26,38 +30,38 @@ zrange = table.project@1(table: inst.instances, columns: "instanceIndex,minZ,max
   //   [0] 0, 0.019, 2.6
   //   [1] 1, 3.119, 6
   //   [2] 2, 0.013, 2.6
-meshes = table.join@1(a: meas.measures, b: zrange.table, aKey: "instanceIndex", mode: "left");
-  // Ok  table 714 rows x 10 cols  sha 2998658c6c2b
+meshes = table.join@1(a: measures.measures, b: zrange.table, aKey: "instanceIndex", mode: "left");
+  // Ok  table 714 rows x 10 cols  sha c0aaa74cf9ae
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, surfaceArea:Number, meshVolume:Number, triangleCount:Integer, minZ:Number, maxZ:Number
   //   [0] 0, 0, 514, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", 90.5, 40.24, 60, 0.019, 2.6
   //   [1] 1, 1, 819, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", 52.55, 4.504, 60, 3.119, 6
   //   [2] 2, 2, 1928, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", 25.09, 8.177, 12, 0.013, 2.6
 perElement = table.aggregate@1(table: meshes.table, groupBy: "globalId,category", aggregates: "sum(meshVolume) as Volume,min(minZ) as Bottom,max(maxZ) as Top,count(*) as Meshes");
-  // Ok  table 237 rows x 6 cols  sha 6d9be195a239
+  // Ok  table 237 rows x 6 cols  sha 8aceacabc877
   //   columns globalId:Text, category:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1
   //   [1] "0BTBFw6f90Nfh9rP1dlXr$", "IFCSPACE", 33.51, 0.013, 2.6, 1
   //   [2] "0BTBFw6f90Nfh9rP1dlXr2", "IFCSPACE", 71.39, 0.019, 2.6, 1
 named = table.rename@1(table: perElement.table, renames: "globalId=GlobalId,category=Class");
-  // Ok  table 237 rows x 6 cols  sha 407a4e65fead
+  // Ok  table 237 rows x 6 cols  sha 7a9b0b15ec98
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1
   //   [1] "0BTBFw6f90Nfh9rP1dlXr$", "IFCSPACE", 33.51, 0.013, 2.6, 1
   //   [2] "0BTBFw6f90Nfh9rP1dlXr2", "IFCSPACE", 71.39, 0.019, 2.6, 1
 solid = table.filter@1(table: named.table, expr: "Volume > 0 and Class != \"IFCSPACE\" and Class != \"IFCOPENINGELEMENT\"");
-  // Ok  table 216 rows x 6 cols  sha 267916279ee4
+  // Ok  table 216 rows x 6 cols  sha 5660d3209d5d
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1
 height = table.derive@1(table: solid.table, name: "Height", expr: "Top - Bottom");
-  // Ok  table 216 rows x 7 cols  sha e618fd4f8e99
+  // Ok  table 216 rows x 7 cols  sha 1d8def1079ea
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595
 withStorey = table.join@1(a: height.table, b: storeys.table, aKey: "GlobalId", mode: "left");
-  // Ok  table 216 rows x 10 cols  sha 5c9d2854400a
+  // Ok  table 216 rows x 10 cols  sha 839111ba439c
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number, StepId:Integer, Name:Text, Storey:Text
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1, 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1"
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2"
@@ -69,13 +73,13 @@ classSize = table.aggregate@1(table: withStorey.table, groupBy: "Class", aggrega
   //   [1] "IFCCOVERING", 13
   //   [2] "IFCDOOR", 14
 rankInClass = table.window@1(table: withStorey.table, function: "rowNumber", partitionBy: "Class", orderBy: "Volume", name: "RankInClass");
-  // Ok  table 216 rows x 11 cols  sha cb08cdd8f031
+  // Ok  table 216 rows x 11 cols  sha 3ef3f420c6f0
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number, StepId:Integer, Name:Text, Storey:Text, RankInClass:Integer
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1, 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1", 1
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2", 30
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31431, "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "Level 2", 31
 withSize = table.join@1(a: rankInClass.table, b: classSize.table, aKey: "Class", mode: "left");
-  // Ok  table 216 rows x 12 cols  sha d1e7cee18124
+  // Ok  table 216 rows x 12 cols  sha 3d8b636a7368
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number, StepId:Integer, Name:Text, Storey:Text, RankInClass:Integer, ClassCount:Integer
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1, 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1", 1, 4
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2", 30, 56
@@ -93,37 +97,37 @@ medians = table.aggregate@1(table: middle.table, groupBy: "Class", aggregates: "
   //   [1] "IFCCOVERING", 0.2244
   //   [2] "IFCDOOR", 0.1088
 withMedian = table.join@1(a: withSize.table, b: medians.table, aKey: "Class", mode: "left");
-  // Ok  table 216 rows x 13 cols  sha 47c4f1c4fddd
+  // Ok  table 216 rows x 13 cols  sha 89619ba4b8d0
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number, StepId:Integer, Name:Text, Storey:Text, RankInClass:Integer, ClassCount:Integer, ClassMedian:Number
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1, 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1", 1, 4, 0.09262
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2", 30, 56, 1.242
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31431, "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "Level 2", 31, 56, 1.242
 ratio = table.derive@1(table: withMedian.table, name: "Ratio", expr: "Volume / ClassMedian");
-  // Ok  table 216 rows x 14 cols  sha 3edccdd4bd13
+  // Ok  table 216 rows x 14 cols  sha 7816b4f55e66
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number, StepId:Integer, Name:Text, Storey:Text, RankInClass:Integer, ClassCount:Integer, ClassMedian:Number, Ratio:Number
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1, 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1", 1, 4, 0.09262, 1
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2", 30, 56, 1.242, 1.321
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31431, "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "Level 2", 31, 56, 1.242, 1.321
 fold = table.derive@1(table: ratio.table, name: "Fold", expr: "max(Ratio, 1 / Ratio)");
-  // Ok  table 216 rows x 15 cols  sha 0bdfa15bb2fd
+  // Ok  table 216 rows x 15 cols  sha 72919384e3d9
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number, StepId:Integer, Name:Text, Storey:Text, RankInClass:Integer, ClassCount:Integer, ClassMedian:Number, Ratio:Number, Fold:Number
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1, 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1", 1, 4, 0.09262, 1, 1
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2", 30, 56, 1.242, 1.321, 1.321
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31431, "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "Level 2", 31, 56, 1.242, 1.321, 1.321
 flagged = table.derive@1(table: fold.table, name: "Outlier", expr: "Fold >= 10 and ClassCount >= 5");
-  // Ok  table 216 rows x 16 cols  sha d5945f2809be
+  // Ok  table 216 rows x 16 cols  sha 01fab0c0f5c0
   //   columns GlobalId:Text, Class:Text, Volume:Number, Bottom:Number, Top:Number, Meshes:Integer, Height:Number, StepId:Integer, Name:Text, Storey:Text, RankInClass:Integer, ClassCount:Integer, ClassMedian:Number, Ratio:Number, Fold:Number, Outlier:Boolean
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER", 0.09262, -5.96E-08, 3.1, 1, 3.1, 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1", 1, 4, 0.09262, 1, 1, false
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2", 30, 56, 1.242, 1.321, 1.321, false
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", 1.641, 3.1, 5.695, 1, 2.595, 31431, "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "Level 2", 31, 56, 1.242, 1.321, 1.321, false
 scored = table.project@1(table: flagged.table, columns: "GlobalId,StepId,Name,Class,Storey,Volume,Height,ClassMedian,Ratio,Fold,Outlier");
-  // Ok  table 216 rows x 11 cols  sha fcc245e16404
+  // Ok  table 216 rows x 11 cols  sha 8cb7ecde348b
   //   columns GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text, Volume:Number, Height:Number, ClassMedian:Number, Ratio:Number, Fold:Number, Outlier:Boolean
   //   [0] "01KzA4SPn5IOODwLEb5RNY", 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "IFCMEMBER", "Level 1", 0.09262, 3.1, 0.09262, 1, 1, false
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "IFCWALLSTANDARDCASE", "Level 2", 1.641, 2.595, 1.242, 1.321, 1.321, false
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", 31431, "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "IFCWALLSTANDARDCASE", "Level 2", 1.641, 2.595, 1.242, 1.321, 1.321, false
-ranked = table.sort@1(table: scored.table, by: "Fold desc");
-  // Ok  table 216 rows x 11 cols  sha 46b805552628
+ranked = table.sort@1(table: scored.table, A: "Fold", B: "GlobalId", descendingA: "true");
+  // Ok  table 216 rows x 11 cols  sha 09c9e6dd2d6e
   //   columns GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text, Volume:Number, Height:Number, ClassMedian:Number, Ratio:Number, Fold:Number, Outlier:Boolean
   //   [0] "3ThA22djr8AQQ9eQMA5s7I", 22492, "Basic Roof:Live Roof over Wood Joist Flat Roof:1"..., "IFCSLAB", "Roof", 60.41, 0.457, 0.4188, 144.2, 144.2, true
   //   [1] "3Y4YRln2r91vflHcHE5ITn", 38195, "Basic Wall:Interior - Furring (38 mm Stud):21757"..., "IFCWALLSTANDARDCASE", "Level 2", 0.01684, 0.288, 1.242, 0.01356, 73.72, true
@@ -134,21 +138,21 @@ outliers = table.filter@1(table: ranked.table, expr: "Outlier");
   //   [0] "3ThA22djr8AQQ9eQMA5s7I", 22492, "Basic Roof:Live Roof over Wood Joist Flat Roof:1"..., "IFCSLAB", "Roof", 60.41, 0.457, 0.4188, 144.2, 144.2, true
   //   [1] "3Y4YRln2r91vflHcHE5ITn", 38195, "Basic Wall:Interior - Furring (38 mm Stud):21757"..., "IFCWALLSTANDARDCASE", "Level 2", 0.01684, 0.288, 1.242, 0.01356, 73.72, true
   //   [2] "3Y4YRln2r91vflHcHE5ITp", 38105, "Basic Wall:Interior - Furring (38 mm Stud):21757"..., "IFCWALLSTANDARDCASE", "Level 2", 0.01684, 0.288, 1.242, 0.01356, 73.72, true
-list = view.table@1(table: outliers.table, title: "Elements ten or more times off their class median", columns: "GlobalId,StepId,Name,Class,Storey,Volume,Height,ClassMedian,Fold");
-  // Ok  table 22 rows x 9 cols  sha 1bff8fa969e1
-  //   columns GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text, Volume:Number, Height:Number, ClassMedian:Number, Fold:Number
-  //   [0] "3ThA22djr8AQQ9eQMA5s7I", 22492, "Basic Roof:Live Roof over Wood Joist Flat Roof:1"..., "IFCSLAB", "Roof", 60.41, 0.457, 0.4188, 144.2
-  //   [1] "3Y4YRln2r91vflHcHE5ITn", 38195, "Basic Wall:Interior - Furring (38 mm Stud):21757"..., "IFCWALLSTANDARDCASE", "Level 2", 0.01684, 0.288, 1.242, 73.72
-  //   [2] "3Y4YRln2r91vflHcHE5ITp", 38105, "Basic Wall:Interior - Furring (38 mm Stud):21757"..., "IFCWALLSTANDARDCASE", "Level 2", 0.01684, 0.288, 1.242, 73.72
-scale = view.colormap@1(values: ranked.table, valueColumn: "Fold", colorMap: "viridis");
-  // Ok  table 5 rows x 9 cols  sha 0dc99b9e0d56
+answer = view.table@1(table: outliers.table, title: "Elements ten or more times off their class median (Volume m3, Height m)", columns: "Name,Class,Storey,Volume,Height,ClassMedian,Fold,StepId,GlobalId");
+  // Ok  table 22 rows x 9 cols  sha 99c6515a1595
+  //   columns Name:Text, Class:Text, Storey:Text, Volume:Number, Height:Number, ClassMedian:Number, Fold:Number, StepId:Integer, GlobalId:Text
+  //   [0] "Basic Roof:Live Roof over Wood Joist Flat Roof:1"..., "IFCSLAB", "Roof", 60.41, 0.457, 0.4188, 144.2, 22492, "3ThA22djr8AQQ9eQMA5s7I"
+  //   [1] "Basic Wall:Interior - Furring (38 mm Stud):21757"..., "IFCWALLSTANDARDCASE", "Level 2", 0.01684, 0.288, 1.242, 73.72, 38195, "3Y4YRln2r91vflHcHE5ITn"
+  //   [2] "Basic Wall:Interior - Furring (38 mm Stud):21757"..., "IFCWALLSTANDARDCASE", "Level 2", 0.01684, 0.288, 1.242, 73.72, 38105, "3Y4YRln2r91vflHcHE5ITp"
+scale = view.colormap@1(values: outliers.table, valueColumn: "Fold", colorMap: "viridis");
+  // Ok  table 5 rows x 9 cols  sha 3f926d61c7d3
   //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //   legend "Fold" auto: 1, 36.81, 72.62, 108.4, 144.2
-chart = chart.bar@1(table: ranked.table, scale: scale.legend, labelColumn: "Name", valueColumns: "Fold", title: "How far each element sits from its class median (Fold)");
+  //   legend "Fold" auto: 10.17, 43.68, 77.2, 110.7, 144.2
+chart = chart.bar@1(table: outliers.table, scale: scale.legend, labelColumn: "Name", valueColumns: "Fold", title: "Outliers: how many times off their class median each element is (Fold)");
   // Ok
-  //   table: table 216 rows x 5 cols  sha b74c5aa60e37
+  //   table: table 22 rows x 5 cols  sha 85ea57d19532
   //     columns Name:Text, Fold:Number, r:Number, g:Number, b:Number
-  //     chart 216 categories x 1 series: "Fold"
+  //     chart 22 categories x 1 series: "Fold"
   //     "Basic Roof:Live Roof over Wood Joist Flat Roof:1"...: 144.2
   //     "Basic Wall:Interior - Furring (38 mm Stud):21757"...: 73.72
   //     "Basic Wall:Interior - Furring (38 mm Stud):21757"...: 73.72
@@ -158,8 +162,6 @@ chart = chart.bar@1(table: ranked.table, scale: scale.legend, labelColumn: "Name
   //     "Basic Wall:Interior - Furring (38 mm Stud):21758"...: 70.34
   //     "Basic Wall:Interior - Furring (38 mm Stud):21741"...: 70.34
   //     "Basic Wall:Interior - Furring (38 mm Stud):21741"...: 70.34
-  //     "Railing:1100mm Guard Rail:151166": 51.4
-  //     "Railing:1100mm Guard Rail:198972": 50.45
   //     "Floor:Residential - Wood Joist with Subflooring:"...: 43.21
   //     "Floor:Residential - Wood Joist with Subflooring:"...: 43.13
   //     "Floor:127mm Slab on Grade:143106": 19.68
@@ -173,39 +175,22 @@ chart = chart.bar@1(table: ranked.table, scale: scale.legend, labelColumn: "Name
   //     "Floor:Finish Floor - Ceramic Tile:171261": 10.19
   //     "M_Counter Top:600mm Depth:600mm Depth:161646": 10.17
   //     "M_Counter Top:600mm Depth:600mm Depth:162491": 10.17
-  //     "Floor:150mm Exterior Slab on Grade:216507": 9.104
-  //     "Floor:150mm Exterior Slab on Grade:216552": 9.104
-  //     "Compound Ceiling:Gypsum Board:187149": 8.86
-  //     "Basic Wall:Foundation - Concrete (417mm):140520": 7.297
-  //     "Basic Wall:Foundation - Concrete (417mm):140602": 7.122
-  //     "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788": 6.903
-  //     "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016": 6.903
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "M_Table-Coffee:0610 x 0610 x 0610mm:0610 x 0610 "...: 6.865
-  //     "Basic Wall:Interior - Partition (92mm Stud):2043"...: 5.905
-  //     (+176 more categories)
-  //   legend: table 5 rows x 9 cols  sha 0dc99b9e0d56
+  //   legend: table 5 rows x 9 cols  sha 3f926d61c7d3
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //     legend "Fold" auto: 1, 36.81, 72.62, 108.4, 144.2
+  //     legend "Fold" auto: 10.17, 43.68, 77.2, 110.7, 144.2
 colored = view3d.color@1(instances: inst.instances, values: outliers.table, scale: scale.legend, joinColumn: "GlobalId", valueColumn: "Fold");
   // Ok
-  //   instances: table 714 rows x 15 cols  sha 018d351194cb
+  //   instances: table 714 rows x 15 cols  sha 8f7f44083bea
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
   //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
   //     24 coloured in 13 colours, 690 grey
-  //     legend "Fold" auto 1 to 144.2: bins 13 / 6 / 4 / 1
+  //     legend "Fold" auto 10.17 to 144.2: bins 15 / 8 / 0 / 1
   //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-  //   legend: table 5 rows x 9 cols  sha 0dc99b9e0d56
+  //   legend: table 5 rows x 9 cols  sha 3f926d61c7d3
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //     legend "Fold" auto: 1, 36.81, 72.62, 108.4, 144.2
+  //     legend "Fold" auto: 10.17, 43.68, 77.2, 110.7, 144.2
 ghosted = view3d.opacity@1(instances: colored.instances, ids: outliers.table, alpha: "0.12", joinColumn: "GlobalId", scope: "others");
-  // Ok  table 714 rows x 15 cols  sha bd1378a61e35
+  // Ok  table 714 rows x 15 cols  sha 5b8d83877349
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
   //   scene 714 instances: 24 opaque, 690 faded, 0 hidden
   //   24 coloured in 13 colours, 690 grey
