@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { RECORD_FILE, hashGraph, seedFlows } from './seed-store.mjs';
@@ -8,6 +9,9 @@ import { RECORD_FILE, hashGraph, seedFlows } from './seed-store.mjs';
 const graph = (path) => ({ structure: { nodes: [{ id: 'src', kind: 'duck.source', version: 1 }], edges: [] }, values: { src: { path } } });
 const flow = (id, path) => ({ id, graph: graph(path) });
 const quiet = () => {};
+/** Keys sorted at every depth, as a host before 2026-10-11 hashed the whole graph. */
+const sorted = (value) => Array.isArray(value) ? value.map(sorted)
+  : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map((k) => [k, sorted(value[k])])) : value;
 
 function withStore(body) {
   const store = mkdtempSync(join(tmpdir(), 'bof-seed-store-'));
@@ -26,7 +30,7 @@ test('a fresh store is seeded and the record holds each graph hash', () => withS
   const result = seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/a.duckdb')], quiet);
   assert.deepEqual(result.seeded, ['doors']);
   assert.deepEqual(current(store, 'doors'), graph('C:/a.duckdb'));
-  assert.deepEqual(record(store).doors, { source: 'duckdb-analyses', sha256: hashGraph(graph('C:/a.duckdb')) });
+  assert.deepEqual(record(store).doors, { source: 'duckdb-analyses', graphSha256: hashGraph(graph('C:/a.duckdb')) });
 }));
 
 test('a changed sample refreshes an untouched copy and archives the old one', () => withStore((store) => {
@@ -47,6 +51,53 @@ test('a changed sample keeps an edited copy and says so', () => withStore((store
   assert.deepEqual(result.kept, ['doors']);
   assert.equal(current(store, 'doors').values.src.path, 'C:/mine.duckdb');
   assert.match(lines.join('\n'), /Kept your edited copy of doors/);
+}));
+
+/** A drag as the host saves one: archive the current copy, write it with the node moved. */
+function drag(store, id, nodeId, place) {
+  const moved = current(store, id);
+  moved.layout = { ...moved.layout, [nodeId]: place };
+  mkdirSync(join(store, id, 'versions'), { recursive: true });
+  const next = readdirSync(join(store, id, 'versions')).length + 1;
+  writeFileSync(join(store, id, 'versions', `${String(next).padStart(4, '0')}.dfg.json`), readFileSync(join(store, id, 'current.dfg.json')));
+  writeFileSync(join(store, id, 'current.dfg.json'), JSON.stringify(moved));
+}
+/** The next revision of a sample: a second node, and a layout for both. */
+const withHead = (path) => {
+  const next = graph(path);
+  next.structure.nodes.push({ id: 'head', kind: 'table.head', version: 1 });
+  next.layout = { src: { x: 0, y: 0 }, head: { x: 300, y: 0 } };
+  return { id: 'doors', graph: next };
+};
+
+test('a changed sample refreshes a copy the user only moved, keeping their positions', () => withStore((store) => {
+  seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/a.duckdb')], quiet);
+  drag(store, 'doors', 'src', { x: 619.89, y: 40 });
+  assert.deepEqual(seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/a.duckdb')], quiet).unchanged, ['doors']);
+  const result = seedFlows(store, 'duckdb-analyses', [withHead('C:/b.duckdb')], quiet);
+  assert.deepEqual(result.refreshed, ['doors']);
+  const copy = current(store, 'doors');
+  assert.deepEqual(copy.structure.nodes.map((n) => n.id), ['src', 'head']);
+  assert.deepEqual(copy.layout, { src: { x: 619.89, y: 40 }, head: { x: 300, y: 0 } });
+}));
+
+test('a record that hashed the whole graph still refreshes a copy the user only moved', () => withStore((store) => {
+  seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/a.duckdb')], quiet);
+  const legacy = createHash('sha256').update(JSON.stringify(sorted(current(store, 'doors')))).digest('hex');
+  writeFileSync(join(store, RECORD_FILE), JSON.stringify({ doors: { source: 'duckdb-analyses', sha256: legacy } }));
+  drag(store, 'doors', 'src', { x: 619.89, y: 40 });
+  const result = seedFlows(store, 'duckdb-analyses', [withHead('C:/b.duckdb')], quiet);
+  assert.deepEqual(result.refreshed, ['doors']);
+  assert.deepEqual(current(store, 'doors').layout.src, { x: 619.89, y: 40 });
+  assert.deepEqual(record(store).doors, { source: 'duckdb-analyses', graphSha256: hashGraph(withHead('C:/b.duckdb').graph) });
+}));
+
+test('a record that hashed the whole graph keeps a copy the user edited', () => withStore((store) => {
+  seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/a.duckdb')], quiet);
+  const legacy = createHash('sha256').update(JSON.stringify(sorted(current(store, 'doors')))).digest('hex');
+  writeFileSync(join(store, RECORD_FILE), JSON.stringify({ doors: { source: 'duckdb-analyses', sha256: legacy } }));
+  edit(store, 'doors', 'C:/mine.duckdb');
+  assert.deepEqual(seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/b.duckdb')], quiet).kept, ['doors']);
 }));
 
 test('the placeholder path is hashed after substitution, so the same database is no change', () => withStore((store) => {
@@ -76,11 +127,19 @@ test('a store prepared before the record: unedited copies refresh, edited ones a
   const result = seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/new.duckdb'), flow('rooms', 'C:/new.duckdb')], quiet);
   assert.deepEqual(result.refreshed, ['doors']);
   assert.deepEqual(result.kept, ['rooms']);
-  assert.equal(record(store).rooms.sha256, '');
+  assert.equal(record(store).rooms.graphSha256, '');
 }));
 
 test('entries the host wrote are kept', () => withStore((store) => {
   writeFileSync(join(store, RECORD_FILE), JSON.stringify({ walls: { source: 'analyses', sha256: 'abc' } }));
   seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/a.duckdb')], quiet);
   assert.deepEqual(record(store).walls, { source: 'analyses', sha256: 'abc' });
+}));
+
+test('an empty recorded hash takes the oldest saved graph as the seed, so a moved copy refreshes', () => withStore((store) => {
+  seedFlows(store, 'duckdb-analyses', [flow('doors', 'C:/a.duckdb')], quiet);
+  writeFileSync(join(store, RECORD_FILE), JSON.stringify({ doors: { source: 'duckdb-analyses', sha256: '' } }));
+  drag(store, 'doors', 'src', { x: 619.89, y: 40 });
+  assert.deepEqual(seedFlows(store, 'duckdb-analyses', [withHead('C:/b.duckdb')], quiet).refreshed, ['doors']);
+  assert.deepEqual(current(store, 'doors').layout.src, { x: 619.89, y: 40 });
 }));
