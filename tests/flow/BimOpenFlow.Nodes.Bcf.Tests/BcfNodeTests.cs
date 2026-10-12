@@ -148,6 +148,50 @@ public sealed class BcfNodeTests
         Assert.That(issues.ColumnCells("GlobalId"), Is.EquivalentTo(new object?[] { Door1, Door2, Door3 }));
     }
 
+    /// <summary>A hand-built BCF with one good topic (a GlobalId and a Revit UniqueId) and one
+    /// whose viewpoint is not XML: the node warns, naming the entry, and outputs both topics.</summary>
+    [Test]
+    public void Read_ABadViewpoint_WarnsAndKeepsTheGoodTopics()
+    {
+        const string good = "00000000-0000-4000-8000-000000000001", broken = "00000000-0000-4000-8000-000000000002";
+        const string revitId = "5a1b2c3d-0000-4000-8000-00000000abcd-0004a1f2";
+        var path = Path.Combine(_folder, "colleague.bcf");
+        using (var zip = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Create))
+        {
+            foreach (var (guid, title) in new[] { (good, "Swap handle"), (broken, "Broken view") })
+                Add(zip, $"{guid}/markup.bcf", $"""
+                    <Markup><Topic Guid="{guid}"><Title>{title}</Title>
+                    <Viewpoints><ViewPoint Guid="{guid}"><Viewpoint>viewpoint.bcfv</Viewpoint></ViewPoint></Viewpoints>
+                    </Topic></Markup>
+                    """);
+            Add(zip, $"{good}/viewpoint.bcfv", $"""
+                <VisualizationInfo><Components><Selection>
+                <Component IfcGuid="{Door1}" /><Component><AuthoringToolId>{revitId}</AuthoringToolId></Component>
+                </Selection></Components></VisualizationInfo>
+                """);
+            Add(zip, $"{broken}/viewpoint.bcfv", "not <xml");
+        }
+        var context = new RunContext();
+        var outputs = new BcfReadNode().Eval(context, [], NodeTestHelpers.Params(("path", path)));
+        var issues = ((TableValue)outputs[0]).Table;
+        var topics = ((TableValue)outputs[1]).Table;
+        Assert.Multiple(() =>
+        {
+            Assert.That(context.Warnings, Has.Count.EqualTo(1));
+            Assert.That(context.Warnings[0], Does.StartWith("bcf.read: ").And.Contains($"{broken}/viewpoint.bcfv"));
+            Assert.That(issues.ColumnCells("Title"), Is.EqualTo(new object?[] { "Swap handle", "Swap handle", "Broken view" }));
+            Assert.That(issues.ColumnCells("GlobalId"), Is.EqualTo(new object?[] { Door1, "", "" }));
+            Assert.That(issues.ColumnCells("AuthoringToolId"), Is.EqualTo(new object?[] { "", revitId, "" }));
+            Assert.That(topics.ColumnCells("Elements"), Is.EqualTo(new object?[] { 2L, 0L }));
+        });
+    }
+
+    private static void Add(System.IO.Compression.ZipArchive zip, string name, string text)
+    {
+        using var entry = zip.CreateEntry(name).Open();
+        entry.Write(System.Text.Encoding.UTF8.GetBytes(text));
+    }
+
     [Test]
     public void Read_MissingFile_IsAnError()
         => Assert.That(() => new BcfReadNode().Eval(NodeTestHelpers.Ctx, [], NodeTestHelpers.Params(("path", Path.Combine(_folder, "none.bcf")))),

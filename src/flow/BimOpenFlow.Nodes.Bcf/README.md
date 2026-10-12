@@ -27,4 +27,8 @@ row names the file with its byte count and SHA-256.
 
 `bcf.topics` is the preview: the same grouping as `bcf.write`, as a table on the
 canvas. `bcf.read` brings a BCF back as an issues table that joins to a model on
-`GlobalId`.
+`GlobalId`. A component the BCF names only by `AuthoringToolId` (a Revit
+UniqueId, say) gets its own row with the id in an `AuthoringToolId` column and
+an empty `GlobalId`, so the two kinds of id never mix. A viewpoint or markup
+that is not XML, or a viewpoint the markup lists but the file lacks, is skipped
+with a warning naming the entry; the other topics still come through.

@@ -19,18 +19,25 @@ public sealed class BcfReadNode : IFlowNode
         ],
         Params: [new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bcf"))],
         "Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, "
-        + "Priority, Type, TopicGuid, Author, CreationDate; one row per topic and selected element, "
-        + "with an empty GlobalId for a topic that selects nothing) and a topics table (one row per "
-        + "topic with its element count). The issues table joins to a model on GlobalId, so view3d.color "
-        + "can colour the elements a colleague flagged.");
+        + "Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId; one row per topic and "
+        + "selected element, with both ids empty for a topic that selects nothing) and a topics table "
+        + "(one row per topic with its element count). A component BCF names only by AuthoringToolId "
+        + "(a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues "
+        + "table joins to a model on GlobalId, so view3d.color can colour the elements a colleague "
+        + "flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, "
+        + "is skipped with a warning; the other topics still come through.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var path = parameters.RequiredText("path", Kind);
         if (!File.Exists(path))
             throw new FileNotFoundException($"{Kind}: BCF file not found: {path}", path);
-        var topics = BcfReader.ReadFile(path);
-        var issues = topics.Select(t => new BcfIssue(t.Title, t.GlobalIds, t.Description, t.Status, t.Priority, t.Type)).ToList();
-        return [new TableValue(topics.ToTable("issues")), new TableValue(BcfIssues.TopicsTable(issues, "topics"))];
+        var contents = BcfReader.ReadFile(path);
+        foreach (var warning in contents.Warnings)
+            context.Warn($"{Kind}: {warning}");
+        var issues = contents.Topics
+            .Select(t => new BcfIssue(t.Title, [.. t.GlobalIds, .. t.AuthoringToolIds], t.Description, t.Status, t.Priority, t.Type))
+            .ToList();
+        return [new TableValue(contents.Topics.ToTable("issues")), new TableValue(BcfIssues.TopicsTable(issues, "topics"))];
     }
 }
