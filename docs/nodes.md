@@ -673,7 +673,7 @@ Numeric value columns map through a gradient normalized over the column's min..m
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `joinColumn` | Text | — | — | — | — |
+| `joinColumn` | Text | — | — | — | columns of input `instances`, keys shared with `values` first |
 | `valueColumn` | Text | — | — | — | — |
 | `colorMap` | Enum | — | `viridis` | `viridis`, `category10`, `redgreen` | — |
 | `auto` | Boolean | — | `true` | — | — |
@@ -703,7 +703,7 @@ The ids table is matched on its column with the same name as `joinColumn`, or it
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `joinColumn` | Text | — | — | — | — |
+| `joinColumn` | Text | — | — | — | columns of input `instances`, keys first |
 
 ### `view3d.hide` (v1) — Pure
 
@@ -728,7 +728,7 @@ The exact inverse of `view3d.isolate`: rows whose join key appears in the ids ta
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `joinColumn` | Text | — | — | — | columns of input `instances` |
+| `joinColumn` | Text | — | — | — | columns of input `instances`, keys first |
 
 ### `view3d.opacity` (v1) — Pure
 
@@ -754,7 +754,7 @@ Writes only the `a` column (added with default 1 when absent); existing colors a
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `alpha` | Number | — | `0.25` | — | — |
-| `joinColumn` | Text | — | — | — | columns of input `instances` |
+| `joinColumn` | Text | — | — | — | columns of input `instances`, keys first |
 | `scope` | Enum | — | `matched` | `matched`, `others` | — |
 
 ### `view3d.spacing` (v1) — Pure
@@ -1217,7 +1217,7 @@ The same grouping `bcf.write` applies, as a table: a preview of the file before 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `preset` | Enum | — | `auto` | `auto`, `issue`, `verdict` | — |
-| `verdicts` | Text | — | `Fail` | — | — |
+| `verdicts` | Text (list) | — | `Fail` | — | — |
 
 **Columns of `topics`**
 
@@ -1257,7 +1257,7 @@ An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (d
 | `path` | FilePath | — | — | — | — |
 | `model` | FilePath | Text | — | — | files under the model roots ending `.bos` |
 | `preset` | Enum | — | `auto` | `auto`, `issue`, `verdict` | — |
-| `verdicts` | Text | — | `Fail` | — | — |
+| `verdicts` | Text (list) | — | `Fail` | — | — |
 | `author` | Text | — | — | — | — |
 | `guidSeed` | Text | — | — | — | — |
 
@@ -2074,8 +2074,8 @@ Joins b's columns onto a by key, matching on canonical cell text; `bKey` default
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `aKey` | Text | — | — | — | columns of input `a` |
-| `bKey` | Text | — | — | — | columns of input `b` |
+| `aKey` | Text | — | — | — | columns of input `a`, keys shared with `b` first |
+| `bKey` | Text | — | — | — | columns of input `b`, keys shared with `a` first |
 | `mode` | Enum | — | `left` | `left`, `inner`, `full`, `semi`, `anti` | — |
 
 **Columns of `table`**: inferred from the inputs
@@ -2286,7 +2286,7 @@ Runs via DuckDB. Each aggregate is written `func(column) as name` with funcs cou
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `groupBy` | Text (list) | — | — | — | columns of input `table` |
-| `aggregates` | Text (list) | — | — | — | — |
+| `aggregates` | Text (list) | — | — | — | columns of input `table`, each with the aggregate functions its type allows |
 
 **Columns of `table`**: inferred from the inputs
 
@@ -3083,8 +3083,8 @@ With a `scale` input, colours each bar by looking up the scale's column (or, if 
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `labelColumn` | Text | — | — | — | columns of input `table` |
-| `valueColumns` | Text (list) | — | — | — | columns of input `table` |
+| `labelColumn` | Text | — | — | — | columns of input `table`, labels and categories first |
+| `valueColumns` | Text (list) | — | — | — | columns of input `table`, numeric only |
 | `title` | Text | — | — | — | — |
 | `sort` | Enum | — | `none` | `none`, `asc`, `desc` | — |
 
@@ -3109,7 +3109,7 @@ Projects 'xColumn' plus the comma-separated numeric 'yColumns' for the line-char
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `xColumn` | Text | — | — | — | columns of input `table` |
-| `yColumns` | Text (list) | — | — | — | columns of input `table` |
+| `yColumns` | Text (list) | — | — | — | columns of input `table`, numeric only |
 | `title` | Text | — | — | — | — |
 
 ### `view.table` (v1) — Pure
@@ -3714,7 +3714,7 @@ Groups by the comma-separated columns (may be empty) and computes 'func(column) 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
 | `groupBy` | Text (list) | — | — | — | columns of input `input` |
-| `aggregates` | Text (list) | — | — | — | — |
+| `aggregates` | Text (list) | — | — | — | columns of input `input`, each with the aggregate functions its type allows |
 
 ### `rel.join` (v1) — Pure
 
@@ -3737,8 +3737,8 @@ Joins left to right on one key each. Right columns that collide with left ones g
 
 | Name | Kind | Socket | Default | Allowed values | Suggestions |
 |---|---|---|---|---|---|
-| `leftKey` | Text | — | — | — | columns of input `left` |
-| `rightKey` | Text | — | — | — | columns of input `right` |
+| `leftKey` | Text | — | — | — | columns of input `left`, keys shared with `right` first |
+| `rightKey` | Text | — | — | — | columns of input `right`, keys shared with `left` first |
 | `kind` | Enum | — | `inner` | `inner`, `left`, `right`, `full`, `semi`, `anti` | — |
 
 ### `rel.materialize` (v1) — Pure

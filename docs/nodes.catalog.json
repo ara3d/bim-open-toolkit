@@ -184,7 +184,8 @@
         {
           "name": "verdicts",
           "kind": "Text",
-          "default": "Fail"
+          "default": "Fail",
+          "list": true
         }
       ],
       "description": "Groups an issue or verdict table into the BCF topics bcf.write would write (one per distinct title: Title, Description, Status, Priority, Type, Elements, GlobalIds), so the file\u0027s contents can be checked before Run. \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row.",
@@ -291,7 +292,8 @@
         {
           "name": "verdicts",
           "kind": "Text",
-          "default": "Fail"
+          "default": "Fail",
+          "list": true
         },
         {
           "name": "author",
@@ -1913,7 +1915,8 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "table"
+            "source": "table",
+            "use": "Label"
           }
         },
         {
@@ -1922,7 +1925,8 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "table"
+            "source": "table",
+            "use": "Value"
           },
           "list": true
         },
@@ -1978,7 +1982,8 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "table"
+            "source": "table",
+            "use": "Value"
           },
           "list": true
         },
@@ -3074,6 +3079,11 @@
           "name": "aggregates",
           "kind": "Text",
           "default": "",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "input",
+            "use": "Aggregate"
+          },
           "list": true
         }
       ],
@@ -3222,7 +3232,9 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "left"
+            "source": "left",
+            "use": "JoinKey",
+            "sharedWith": "right"
           }
         },
         {
@@ -3231,7 +3243,9 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "right"
+            "source": "right",
+            "use": "JoinKey",
+            "sharedWith": "left"
           }
         },
         {
@@ -4512,6 +4526,11 @@
           "name": "aggregates",
           "kind": "Text",
           "default": "",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "table",
+            "use": "Aggregate"
+          },
           "list": true
         }
       ],
@@ -5049,7 +5068,9 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "a"
+            "source": "a",
+            "use": "JoinKey",
+            "sharedWith": "b"
           }
         },
         {
@@ -5058,7 +5079,9 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "b"
+            "source": "b",
+            "use": "JoinKey",
+            "sharedWith": "a"
           }
         },
         {
@@ -6433,7 +6456,13 @@
         {
           "name": "joinColumn",
           "kind": "Text",
-          "default": ""
+          "default": "",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "instances",
+            "use": "JoinKey",
+            "sharedWith": "values"
+          }
         },
         {
           "name": "valueColumn",
@@ -6600,7 +6629,8 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "instances"
+            "source": "instances",
+            "use": "Key"
           }
         }
       ],
@@ -6659,7 +6689,12 @@
         {
           "name": "joinColumn",
           "kind": "Text",
-          "default": ""
+          "default": "",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "instances",
+            "use": "Key"
+          }
         }
       ],
       "description": "Keeps only the instance rows whose join column value appears in the ids table."
@@ -6725,7 +6760,8 @@
           "default": "",
           "suggest": {
             "kind": "ColumnsOfInput",
-            "source": "instances"
+            "source": "instances",
+            "use": "Key"
           }
         },
         {
