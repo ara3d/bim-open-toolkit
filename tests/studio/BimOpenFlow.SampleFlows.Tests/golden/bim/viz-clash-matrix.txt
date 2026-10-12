@@ -1,0 +1,202 @@
+dfg 0.1.0;
+// viz-clash-matrix   graph 50fd4be5ae2f
+about = view.note@1(text: "Clash candidate matrix, for a coordinator. Question: which pairs of IFC classes have the most elements whose bounding boxes overlap, and which elements are involved most often? These are box candidates, not clashes: each element's axis-aligned bounding box (the union of its meshes' boxes from view3d.instances) is tested against every other with spatial.intersects, so an L-shaped wall or a stair's box overlaps things its geometry never touches. Spaces and openings are left out. A pair counts only when the boxes share more than 0.001 m3 (one litre), so walls that merely meet a slab are not counted. spatial.intersects lists each pair twice, once per direction, with self-pairs already dropped; the filter A < B keeps each element pair once, and the row and column classes are put in alphabetical order so the matrix is an upper triangle. Read the figure: the heatmap (specs/viz-clash-matrix.vl.json) puts the row class down the side and the column class across the top, darker for more candidate pairs; the matrix table shows the same numbers, and the 3D view colours each element by how many candidates it is in, grey for none. On the Duplex, 331 element pairs across 25 class pairs overlap: finish floors against furniture (57), ceilings against walls (47), and slabs against walls (40) lead, and the IFCROOF and the roof slab overlap by 61.8 m3 with near-equal mesh volumes (60.7 and 60.4 m3, measured by view3d.measures in viz-element-size-outliers, not by this graph), which suggests the roof geometry is carried twice. The busiest elements are two ground-floor wood finish floors, with 35 candidates each.");
+  // Ok
+inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+built = table.filter@1(table: inst.instances, expr: "category not in ('IFCSPACE', 'IFCOPENINGELEMENT')");
+  // Ok  table 693 rows x 11 cols  sha e24dfce66526
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 693 instances (of 714 upstream): 693 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 6.635)
+elementBoxes = table.aggregate@1(table: built.table, groupBy: "globalId,category", aggregates: "min(minX) as MinX,min(minY) as MinY,min(minZ) as MinZ,max(maxX) as MaxX,max(maxY) as MaxY,max(maxZ) as MaxZ");
+  // Ok  table 216 rows x 8 cols  sha 342ac5c5b055
+  //   columns globalId:Text, category:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number
+  //   scene 216 boxes (of 693 upstream): 216 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 6.635)
+boxes = table.rename@1(table: elementBoxes.table, renames: "globalId=GlobalId,category=Class");
+  // Ok  table 216 rows x 8 cols  sha 8e4a321bec44
+  //   columns GlobalId:Text, Class:Text, MinX:Number, MinY:Number, MinZ:Number, MaxX:Number, MaxY:Number, MaxZ:Number
+  //   scene 216 boxes: 216 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 6.635)
+classOfA = table.project@1(table: boxes.table, columns: "GlobalId,Class");
+  // Ok  table 216 rows x 2 cols  sha 60b202095c27
+  //   columns GlobalId:Text, Class:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "IFCMEMBER"
+  //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE"
+  //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE"
+storeys = duck.query@1(path: "{SAMPLES}/duplex-base.duckdb", sql: "SELECT e.GlobalId, e.StepId, e.Name, s.StoreyName AS Storey FROM EntityText e JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex WHERE e.GlobalId IS NOT NULL");
+  // Ok  table 239 rows x 4 cols  sha 0fce8841ec6e
+  //   columns GlobalId:Text, StepId:Integer, Name:Text, Storey:Text
+  //   [0] "1hOSvn6df7F8_7GcBWlSFK", 8283, "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15037"..., "Level 2"
+  //   [1] "1hOSvn6df7F8_7GcBWlSDm", 8386, "M_Single-Flush:0864 x 2032mm:0864 x 2032mm:15047"..., "Level 2"
+  //   [2] "0wkEuT1wr1kOyafLY4vyu$", 12574, "M_Tall Cabinet-Single Door(2):800 mm:800 mm:1572"..., "Level 2"
+touching = spatial.intersects@1(a: boxes.table, b: boxes.table, aKey: "GlobalId", bKey: "GlobalId", excludeSelf: "true");
+  // Ok  table 1950 rows x 3 cols  sha b1ea7c5596c2
+  //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1aj$VJZFn2TxepZUBcKpee", 0
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlSFK", 9.998E-10
+overlapping = table.filter@1(table: touching.table, expr: "OverlapVolume > 0.001");
+  // Ok  table 662 rows x 3 cols  sha dc547df3cdc9
+  //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026
+onePerPair = table.filter@1(table: overlapping.table, expr: "A < B");
+  // Ok  table 331 rows x 3 cols  sha 8aacfc398fa8
+  //   columns A:Text, B:Text, OverlapVolume:Number
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026
+perElement = table.aggregate@1(table: overlapping.table, groupBy: "A", aggregates: "count(*) as Candidates");
+  // Ok  table 170 rows x 2 cols  sha b6b286842289
+  //   columns A:Text, Candidates:Integer
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", 7
+  //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", 1
+  //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", 1
+keyed = table.rename@1(table: perElement.table, renames: "A=GlobalId");
+  // Ok  table 170 rows x 2 cols  sha 0d85eb72c5c6
+  //   columns GlobalId:Text, Candidates:Integer
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", 7
+  //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", 1
+  //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", 1
+withA = table.join@1(a: onePerPair.table, b: classOfA.table, aKey: "A", bKey: "GlobalId", mode: "inner");
+  // Ok  table 331 rows x 4 cols  sha 84f9bb8b1e6f
+  //   columns A:Text, B:Text, OverlapVolume:Number, Class:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719, "IFCMEMBER"
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812, "IFCMEMBER"
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026, "IFCMEMBER"
+namedA = table.rename@1(table: withA.table, renames: "Class=ClassA");
+  // Ok  table 331 rows x 4 cols  sha 0290fe031b4a
+  //   columns A:Text, B:Text, OverlapVolume:Number, ClassA:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719, "IFCMEMBER"
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812, "IFCMEMBER"
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026, "IFCMEMBER"
+withB = table.join@1(a: namedA.table, b: classOfA.table, aKey: "B", bKey: "GlobalId", mode: "inner");
+  // Ok  table 331 rows x 5 cols  sha 1a5bfd125afb
+  //   columns A:Text, B:Text, OverlapVolume:Number, ClassA:Text, Class:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719, "IFCMEMBER", "IFCSLAB"
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812, "IFCMEMBER", "IFCRAILING"
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026, "IFCMEMBER", "IFCWALLSTANDARDCASE"
+namedB = table.rename@1(table: withB.table, renames: "Class=ClassB");
+  // Ok  table 331 rows x 5 cols  sha 1d1e9626318a
+  //   columns A:Text, B:Text, OverlapVolume:Number, ClassA:Text, ClassB:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719, "IFCMEMBER", "IFCSLAB"
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812, "IFCMEMBER", "IFCRAILING"
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026, "IFCMEMBER", "IFCWALLSTANDARDCASE"
+rowClass = table.derive@1(table: namedB.table, name: "RowClass", expr: "ClassA <= ClassB ? ClassA : ClassB");
+  // Ok  table 331 rows x 6 cols  sha 49ebca8ffc1d
+  //   columns A:Text, B:Text, OverlapVolume:Number, ClassA:Text, ClassB:Text, RowClass:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719, "IFCMEMBER", "IFCSLAB", "IFCMEMBER"
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812, "IFCMEMBER", "IFCRAILING", "IFCMEMBER"
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026, "IFCMEMBER", "IFCWALLSTANDARDCASE", "IFCMEMBER"
+colClass = table.derive@1(table: rowClass.table, name: "ColumnClass", expr: "ClassA <= ClassB ? ClassB : ClassA");
+  // Ok  table 331 rows x 7 cols  sha 50f9e7761bbf
+  //   columns A:Text, B:Text, OverlapVolume:Number, ClassA:Text, ClassB:Text, RowClass:Text, ColumnClass:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", "1hOSvn6df7F8_7GcBWlRqU", 0.05719, "IFCMEMBER", "IFCSLAB", "IFCMEMBER", "IFCSLAB"
+  //   [1] "01KzA4SPn5IOODwLEb5RNY", "21ldoMpbP4VfsJ0XGY_335", 0.4812, "IFCMEMBER", "IFCRAILING", "IFCMEMBER", "IFCRAILING"
+  //   [2] "01KzA4SPn5IOODwLEb5RNY", "2O2Fr$t4X7Zf8NOew3FLTF", 0.003026, "IFCMEMBER", "IFCWALLSTANDARDCASE", "IFCMEMBER", "IFCWALLSTANDARDCASE"
+classPairs = table.aggregate@1(table: colClass.table, groupBy: "RowClass,ColumnClass", aggregates: "count(*) as Pairs,sum(OverlapVolume) as OverlapVolume");
+  // Ok  table 25 rows x 4 cols  sha 87e0ddcaf191
+  //   columns RowClass:Text, ColumnClass:Text, Pairs:Integer, OverlapVolume:Number
+  //   [0] "IFCBEAM", "IFCWALLSTANDARDCASE", 12, 2.133
+  //   [1] "IFCBEAM", "IFCWINDOW", 8, 0.0438
+  //   [2] "IFCCOVERING", "IFCCOVERING", 12, 2.108
+matrix = table.pivot@1(table: classPairs.table, groupBy: "RowClass", nameColumn: "ColumnClass", valueColumn: "Pairs", aggregate: "sum");
+  // Ok  table 11 rows x 8 cols  sha 6a6a11e53af0
+  //   columns RowClass:Text, IFCCOVERING:Integer, IFCMEMBER:Integer, IFCRAILING:Integer, IFCSLAB:Integer, IFCSTAIRFLIGHT:Integer, IFCWALLSTANDARDCASE:Integer, IFCWINDOW:Integer
+  //   [0] "IFCBEAM", null, null, null, null, null, 12, 8
+  //   [1] "IFCCOVERING", 12, 8, 8, null, 4, 47, null
+  //   [2] "IFCDOOR", null, null, 2, 16, null, 21, null
+matrixView = view.table@1(table: matrix.table, title: "Candidate pairs, class by class (upper triangle; each element pair counted once)");
+  // Ok  table 11 rows x 8 cols  sha 6a6a11e53af0
+  //   columns RowClass:Text, IFCCOVERING:Integer, IFCMEMBER:Integer, IFCRAILING:Integer, IFCSLAB:Integer, IFCSTAIRFLIGHT:Integer, IFCWALLSTANDARDCASE:Integer, IFCWINDOW:Integer
+  //   [0] "IFCBEAM", null, null, null, null, null, 12, 8
+  //   [1] "IFCCOVERING", 12, 8, 8, null, 4, 47, null
+  //   [2] "IFCDOOR", null, null, 2, 16, null, 21, null
+pairLabel = table.derive@1(table: classPairs.table, name: "ClassPair", expr: "RowClass & ' / ' & ColumnClass");
+  // Ok  table 25 rows x 5 cols  sha c2d337c25b0e
+  //   columns RowClass:Text, ColumnClass:Text, Pairs:Integer, OverlapVolume:Number, ClassPair:Text
+  //   [0] "IFCBEAM", "IFCWALLSTANDARDCASE", 12, 2.133, "IFCBEAM / IFCWALLSTANDARDCASE"
+  //   [1] "IFCBEAM", "IFCWINDOW", 8, 0.0438, "IFCBEAM / IFCWINDOW"
+  //   [2] "IFCCOVERING", "IFCCOVERING", 12, 2.108, "IFCCOVERING / IFCCOVERING"
+chart = chart.bar@1(table: pairLabel.table, labelColumn: "ClassPair", valueColumns: "Pairs", title: "Box-overlap candidate pairs per pair of IFC classes", sort: "desc");
+  // Ok
+  //   table: table 25 rows x 2 cols  sha ec7380c35a2f
+  //     columns ClassPair:Text, Pairs:Integer
+  //     chart 25 categories x 1 series: "Pairs"
+  //     "IFCFURNISHINGELEMENT / IFCSLAB": 57
+  //     "IFCCOVERING / IFCWALLSTANDARDCASE": 47
+  //     "IFCSLAB / IFCWALLSTANDARDCASE": 40
+  //     "IFCWALLSTANDARDCASE / IFCWINDOW": 22
+  //     "IFCDOOR / IFCWALLSTANDARDCASE": 21
+  //     "IFCDOOR / IFCSLAB": 16
+  //     "IFCBEAM / IFCWALLSTANDARDCASE": 12
+  //     "IFCCOVERING / IFCCOVERING": 12
+  //     "IFCMEMBER / IFCSLAB": 12
+  //     "IFCSLAB / IFCSLAB": 12
+  //     "IFCRAILING / IFCSLAB": 10
+  //     "IFCWALLSTANDARDCASE / IFCWALLSTANDARDCASE": 10
+  //     "IFCBEAM / IFCWINDOW": 8
+  //     "IFCCOVERING / IFCMEMBER": 8
+  //     "IFCCOVERING / IFCRAILING": 8
+  //     "IFCRAILING / IFCWALLSTANDARDCASE": 8
+  //     "IFCSLAB / IFCSTAIRFLIGHT": 6
+  //     "IFCCOVERING / IFCSTAIRFLIGHT": 4
+  //     "IFCMEMBER / IFCRAILING": 4
+  //     "IFCMEMBER / IFCWALLSTANDARDCASE": 4
+  //     "IFCSTAIRFLIGHT / IFCWALLSTANDARDCASE": 4
+  //     "IFCDOOR / IFCRAILING": 2
+  //     "IFCWALL / IFCWALLSTANDARDCASE": 2
+  //     "IFCFURNISHINGELEMENT / IFCWALLSTANDARDCASE": 1
+  //     "IFCROOF / IFCSLAB": 1
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty
+withClass = table.join@1(a: keyed.table, b: classOfA.table, aKey: "GlobalId", mode: "left");
+  // Ok  table 170 rows x 3 cols  sha 1eebb5a5f577
+  //   columns GlobalId:Text, Candidates:Integer, Class:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", 7, "IFCMEMBER"
+  //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", 1, "IFCWALLSTANDARDCASE"
+  //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", 1, "IFCWALLSTANDARDCASE"
+withStorey = table.join@1(a: withClass.table, b: storeys.table, aKey: "GlobalId", mode: "left");
+  // Ok  table 170 rows x 6 cols  sha 7cbc7edcce84
+  //   columns GlobalId:Text, Candidates:Integer, Class:Text, StepId:Integer, Name:Text, Storey:Text
+  //   [0] "01KzA4SPn5IOODwLEb5RNY", 7, "IFCMEMBER", 32096, "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "Level 1"
+  //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", 1, "IFCWALLSTANDARDCASE", 31476, "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Level 2"
+  //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", 1, "IFCWALLSTANDARDCASE", 31431, "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "Level 2"
+busiest = table.sort@1(table: withStorey.table, by: "Candidates desc");
+  // Ok  table 170 rows x 6 cols  sha a3e6b6b6abed
+  //   columns GlobalId:Text, Candidates:Integer, Class:Text, StepId:Integer, Name:Text, Storey:Text
+  //   [0] "2OBrcmyk58NupXoVOHUtgP", 35, "IFCSLAB", 21610, "Floor:Finish Floor - Wood:171292", "Level 1"
+  //   [1] "2OBrcmyk58NupXoVOHUtxr", 35, "IFCSLAB", 21401, "Floor:Finish Floor - Wood:170352", "Level 1"
+  //   [2] "3bXiCStxP6Fgxdej$yc50n", 26, "IFCCOVERING", 23992, "Compound Ceiling:Gypsum Board:187508", "Level 1"
+elementView = view.table@1(table: busiest.table, title: "Elements by number of box-overlap candidates", columns: "GlobalId,StepId,Name,Class,Storey,Candidates");
+  // Ok  table 170 rows x 6 cols  sha 7845aa36420c
+  //   columns GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text, Candidates:Integer
+  //   [0] "2OBrcmyk58NupXoVOHUtgP", 21610, "Floor:Finish Floor - Wood:171292", "IFCSLAB", "Level 1", 35
+  //   [1] "2OBrcmyk58NupXoVOHUtxr", 21401, "Floor:Finish Floor - Wood:170352", "IFCSLAB", "Level 1", 35
+  //   [2] "3bXiCStxP6Fgxdej$yc50n", 23992, "Compound Ceiling:Gypsum Board:187508", "IFCCOVERING", "Level 1", 26
+scale = view.colormap@1(values: busiest.table, valueColumn: "Candidates", colorMap: "viridis");
+  // Ok  table 5 rows x 9 cols  sha c954fcb8906d
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "Candidates" auto: 1, 9.5, 18, 26.5, 35
+colored = view3d.color@1(instances: inst.instances, values: busiest.table, scale: scale.legend, joinColumn: "GlobalId", valueColumn: "Candidates");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha bdfee8e3403a
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     579 coloured in 13 colours, 135 grey
+  //     legend "Candidates" auto 1 to 35: bins 443 / 132 / 2 / 2
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 5 rows x 9 cols  sha c954fcb8906d
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "Candidates" auto: 1, 9.5, 18, 26.5, 35

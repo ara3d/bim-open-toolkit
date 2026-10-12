@@ -1,0 +1,11 @@
+dfg 0.1.0;
+// check-ids-specifications   graph b60578e80745
+carbon = ids.specifications@1(ids: "{SAMPLES}/ids/nrc-analytics.ids");
+  // Ok  table 2 rows x 7 cols  sha 4712348d07c9
+  //   columns CheckId:Text, CheckTitle:Text, IfcVersion:Text, Cardinality:Text, Applicability:Text, Requirements:Text, Supported:Boolean
+  //   [0] "IDS-OC", "IDS-OC", "IFC4", "Required", "Is of type IFCWALL or IFCWALLSTANDARDCASE or IFC"..., "Has property 'OperationalCarbon_kgCO2e_per_year'"..., true
+  //   [1] "IDS-EC", "IDS-EC", "IFC4", "Required", "Is of type IFCWALL or IFCWALLSTANDARDCASE or IFC"..., "Has property 'EmbodiedCarbon_A1A3_kgCO2e' in pro"..., true
+doors = ids.specifications@1(ids: "{SAMPLES}/ids/dc-w1.ids");
+  // Ok  table 1 rows x 7 cols  sha ea04f6643ec9
+  //   columns CheckId:Text, CheckTitle:Text, IfcVersion:Text, Cardinality:Text, Applicability:Text, Requirements:Text, Supported:Boolean
+  //   [0] "DC-W1", "Door leaf width at least 850 mm", "IFC4", "Required", "Is of type IFCDOOR.", "attribute OverallWidth = >=0.85", true

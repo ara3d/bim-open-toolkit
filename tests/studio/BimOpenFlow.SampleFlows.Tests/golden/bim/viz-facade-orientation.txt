@@ -1,0 +1,107 @@
+dfg 0.1.0;
+// viz-facade-orientation   graph 9e1afc355faf
+about = view.note@1(text: "For a facade engineer: how much wall and glazing sits on each side of the Duplex? bim.orientation puts every wall and window in one of eight compass sectors by the bearing from the plan centre to its box centre, measured from project north (+Y; the model carries no true north), and gives its face area as the larger vertical face of its box (length x height). The facade is the elements flagged IsExternal, less the party wall and the T/FDN foundation walls, which the source also flags. Read the bars as m2 of wall and window per sector; the 3D view colours each facade element by its sector with the same scale, and everything else stays grey. The long east and west walls centre on E and W, but their windows sit toward the ends, so they land in NE, SE, SW, and NW: sector is position around the plan, not the way a face looks (see viz-window-to-wall-ratio for that). The polar spec draws each sector as a wedge whose radius is the total area, with the window share inside.");
+  // Ok
+attrs = duck.query@1(path: "{SAMPLES}/duplex-enriched.duckdb", sql: "SELECT e.GlobalId, s.StoreyName AS Storey, p.Value = '.T.' AS IsExternal FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 LEFT JOIN ParameterText p ON p.EntityIndex = e.EntityIndex AND p.Name = 'IsExternal' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCWINDOW')");
+  // Ok  table 81 rows x 3 cols  sha 286c2795019a
+  //   columns GlobalId:Text, Storey:Text, IsExternal:Boolean
+  //   [0] "1hOSvn6df7F8_7GcBWlR72", "Level 1", true
+  //   [1] "1hOSvn6df7F8_7GcBWlRBU", "Level 1", true
+  //   [2] "1hOSvn6df7F8_7GcBWlRLx", "Level 1", true
+compass = table.inline@1(rows: "[{\"Sector\":0,\"Direction\":\"N\"},{\"Sector\":1,\"Direction\":\"NE\"},{\"Sector\":2,\"Direction\":\"E\"},{\"Sector\":3,\"Direction\":\"SE\"},{\"Sector\":4,\"Direction\":\"S\"},{\"Sector\":5,\"Direction\":\"SW\"},{\"Sector\":6,\"Direction\":\"W\"},{\"Sector\":7,\"Direction\":\"NW\"}]");
+  // Ok  table 8 rows x 2 cols  sha fb0771df45a4
+  //   columns Sector:Integer, Direction:Text
+  //   [0] 0, "N"
+  //   [1] 1, "NE"
+  //   [2] 2, "E"
+inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+orient = bim.orientation@1(path: "{SAMPLES}/duplex-enriched.bos", categories: "IFCWALL,IFCWALLSTANDARDCASE,IFCWINDOW");
+  // Ok  table 81 rows x 13 cols  sha 48150513dc0b
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number
+  //   [0] 1391, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01
+  //   [1] 1414, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74
+  //   [2] 1436, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74
+joined = table.join@1(a: orient.table, b: attrs.table, aKey: "GlobalId", mode: "inner");
+  // Ok  table 81 rows x 15 cols  sha 27d830feab52
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean
+  //   [0] 1391, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01, "Level 1", false
+  //   [1] 1414, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74, "Level 1", true
+  //   [2] 1436, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74, "Level 1", true
+facade = table.filter@1(table: joined.table, expr: "IsExternal and Storey != 'T/FDN' and not contains(Name, 'Party Wall')");
+  // Ok  table 34 rows x 15 cols  sha 32899654e134
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean
+  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true
+  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true
+  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true
+kind = table.derive@1(table: facade.table, name: "Element", expr: "Category == 'IFCWINDOW' ? 'Window' : 'Wall'");
+  // Ok  table 34 rows x 16 cols  sha 2172a2939484
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean, Element:Text
+  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true, "Window"
+  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true, "Window"
+  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true, "Wall"
+byDir = table.pivot@1(table: kind.table, groupBy: "Direction", nameColumn: "Element", valueColumn: "FacingArea", aggregate: "sum");
+  // Ok  table 8 rows x 3 cols  sha 2f90a3abbce6
+  //   columns Direction:Text, Wall:Number, Window:Number
+  //   [0] "E", 116.1, null
+  //   [1] "N", 58.16, 20.31
+  //   [2] "NE", null, 10.26
+framed = table.join@1(a: compass.table, b: byDir.table, aKey: "Direction", mode: "left");
+  // Ok  table 8 rows x 4 cols  sha e974751c8228
+  //   columns Sector:Integer, Direction:Text, Wall:Number, Window:Number
+  //   [0] 0, "N", 58.16, 20.31
+  //   [1] 1, "NE", null, 10.26
+  //   [2] 2, "E", 116.1, null
+keyed = table.rename@1(table: kind.table, renames: "GlobalId=globalId");
+  // Ok  table 34 rows x 16 cols  sha 70550bab4e68
+  //   columns EntityIndex:Integer, globalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean, Element:Text
+  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true, "Window"
+  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true, "Window"
+  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true, "Wall"
+scale = view.colormap@1(values: kind.table, valueColumn: "Direction", colorMap: "category10");
+  // Ok  table 8 rows x 9 cols  sha b660b1c43bb4
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "Direction" categorical: category "E" 3, category "N" 8, category "NE" 5, category "NW" 1, category "S" 8, category "SE" 1, category "SW" 5, category "W" 3
+colored = view3d.color@1(instances: inst.instances, values: keyed.table, scale: scale.legend, joinColumn: "globalId", valueColumn: "Direction", colorMap: "category10");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha e6d9c82e7c02
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     100 coloured in 8 colours, 614 grey
+  //     legend "Direction" categorical: "E" 3, "N" 23, "NE" 20, "NW" 4, "S" 23, "SE" 4, "SW" 20, "W" 3
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 8 rows x 9 cols  sha b660b1c43bb4
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "Direction" categorical: category "E" 3, category "N" 8, category "NE" 5, category "NW" 1, category "S" 8, category "SE" 1, category "SW" 5, category "W" 3
+total = table.derive@1(table: framed.table, name: "Total", expr: "coalesce(Wall, 0) + coalesce(Window, 0)");
+  // Ok  table 8 rows x 5 cols  sha 441c09f34ac4
+  //   columns Sector:Integer, Direction:Text, Wall:Number, Window:Number, Total:Number
+  //   [0] 0, "N", 58.16, 20.31, 78.47
+  //   [1] 1, "NE", null, 10.26, 10.26
+  //   [2] 2, "E", 116.1, null, 116.1
+sorted = table.sort@1(table: total.table, A: "Sector");
+  // Ok  table 8 rows x 5 cols  sha 441c09f34ac4
+  //   columns Sector:Integer, Direction:Text, Wall:Number, Window:Number, Total:Number
+  //   [0] 0, "N", 58.16, 20.31, 78.47
+  //   [1] 1, "NE", null, 10.26, 10.26
+  //   [2] 2, "E", 116.1, null, 116.1
+chart = chart.bar@1(table: sorted.table, scale: scale.legend, labelColumn: "Direction", valueColumns: "Wall,Window", title: "Duplex facade area by compass direction (m2, project north)");
+  // Ok
+  //   table: table 8 rows x 6 cols  sha 7f566f524ae5
+  //     columns Direction:Text, Wall:Number, Window:Number, r:Number, g:Number, b:Number
+  //     chart 8 categories x 2 series: "Wall", "Window"
+  //     "N": 58.16, 20.31
+  //     "NE": null, 10.26
+  //     "E": 116.1, null
+  //     "SE": null, 1.65
+  //     "S": 56.61, 20.31
+  //     "SW": null, 10.26
+  //     "W": 114.5, null
+  //     "NW": null, 1.65
+  //   legend: table 8 rows x 9 cols  sha b660b1c43bb4
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "Direction" categorical: category "E" 3, category "N" 8, category "NE" 5, category "NW" 1, category "S" 8, category "SE" 1, category "SW" 5, category "W" 3

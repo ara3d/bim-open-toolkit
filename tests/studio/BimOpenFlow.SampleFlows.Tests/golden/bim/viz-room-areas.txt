@@ -1,0 +1,129 @@
+dfg 0.1.0;
+// viz-room-areas   graph 8c657f1f4881
+about = view.note@1(text: "For a space planner: how big is each room, and how much floor area does each room type take on each storey? Source: the 21 IfcSpace elements of the Duplex, with Area read from the IFC quantity 'GSA BIM Area' in square metres (checked by hand against the Revit Area parameter in PSet_Revit_Dimensions, which this graph does not read: the two agree for all 21 rooms) and the storey from the space's IfcRelAggregates link to its IfcBuildingStorey. RoomType comes from bim.classifyRooms on the room name with the built-in rules, so names it does not know stay Other: B105 is named 'Room' although its OmniClass description says Stairway, and the two Utility rooms and the Roof space are Other too. Read areaChart as one bar per room number, coloured on the shared scale; the 3D view (colored) shows only the rooms, coloured on the same scale. The scale's domain is fixed at 0 to 32 m2 so the 30 m2 living rooms and the 2 m2 utility rooms are told apart; the Roof space (R301, 145.7 m2, the attic volume, not an occupied room) is clamped to the top colour and counted in the legend's above row. typeChart shows the total area per room type with one bar series per storey (Level 1 142 m2, Level 2 135 m2, Roof 146 m2); a missing bar means that type has no room on that storey, not zero area. Each row of rooms keeps GlobalId, StepId and Storey so a plan drawing can colour the same table. The Vega-Lite spec (specs/viz-room-areas.vl.json) draws the histogram of room areas, binned at 4 m2 and coloured by RoomType.");
+  // Ok
+load = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos");
+  // Ok
+  //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
+  //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
+  //     [0] 0, -1, null, "IFCORGANIZATION", null, null
+  //     [1] 1, -1, null, "IFCAPPLICATION", null, null
+  //     [2] 2, -1, null, "IFCSIUNIT", null, null
+  //   parameters: table 18551 rows x 6 cols  sha 61628ffa56f3
+  //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
+  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
+  //     [0] 133, "Level 1", 4705, null, "MemberOf"
+  //     [1] 134, "Level 2", 4705, null, "MemberOf"
+  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+spaces = sql.query@1(t1: load.entities, t2: load.parameters, sql: "SELECT e.EntityIndex, e.GlobalId, e.StepId, num.Value AS Number, e.Name, TRY_CAST(area.Value AS DOUBLE) AS Area FROM t1 e LEFT JOIN t2 num ON num.EntityIndex = e.EntityIndex AND num.Name = 'Number' AND num.ParameterGroup = 'PSet_Revit_Identity Data' LEFT JOIN t2 area ON area.EntityIndex = e.EntityIndex AND area.Name = 'GSA BIM Area' WHERE e.Category = 'IFCSPACE' ORDER BY Number");
+  // Ok  table 21 rows x 6 cols  sha df6dafdee72c
+  //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Number:Text, Name:Text, Area:Number
+  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94
+  //   [1] 3029, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14
+  //   [2] 3684, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9
+storeys = sql.query@1(t1: load.entities, t2: load.relations, sql: "WITH RECURSIVE up(EntityIndex, Parent, Depth) AS (SELECT EntityIndexA, EntityIndexB, 1 FROM t2 WHERE RelationType IN ('ContainedIn', 'MemberOf') UNION ALL SELECT up.EntityIndex, r.EntityIndexB, up.Depth + 1 FROM up JOIN t2 r ON r.EntityIndexA = up.Parent AND r.RelationType IN ('ContainedIn', 'MemberOf') WHERE up.Depth < 4) SELECT up.EntityIndex, arg_min(s.Name, up.Depth) AS Storey FROM up JOIN t1 s ON s.EntityIndex = up.Parent AND s.Category = 'IFCBUILDINGSTOREY' GROUP BY up.EntityIndex ORDER BY up.EntityIndex");
+  // Ok  table 239 rows x 2 cols  sha ed1771253551
+  //   columns EntityIndex:Integer, Storey:Text
+  //   [0] 275, "Level 1"
+  //   [1] 351, "Level 2"
+  //   [2] 717, "Level 1"
+located = table.join@1(a: spaces.table, b: storeys.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
+  // Ok  table 21 rows x 7 cols  sha f72b340a00d1
+  //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Number:Text, Name:Text, Area:Number, Storey:Text
+  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94, "Level 1"
+  //   [1] 3029, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14, "Level 1"
+  //   [2] 3684, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9, "Level 1"
+rooms = bim.classifyRooms@1(table: located.table, column: "Name", as: "RoomType");
+  // Ok  table 21 rows x 8 cols  sha 636c08e945ee
+  //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Number:Text, Name:Text, Area:Number, Storey:Text, RoomType:Text
+  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94, "Level 1", "Circulation"
+  //   [1] 3029, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14, "Level 1", "Residential"
+  //   [2] 3684, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9, "Level 1", "Kitchen"
+byType = table.aggregate@1(table: rooms.table, groupBy: "Storey, RoomType", aggregates: "sum(Area) as TotalArea, count(*) as Rooms");
+  // Ok  table 11 rows x 4 cols  sha bd702ba9be0c
+  //   columns Storey:Text, RoomType:Text, TotalArea:Number, Rooms:Integer
+  //   [0] "Level 1", "Circulation", 35.87, 2
+  //   [1] "Level 1", "Kitchen", 27.8, 2
+  //   [2] "Level 1", "Other", 4.922, 1
+roomsOnly = view3d.isolate@1(instances: model.instances, ids: rooms.table, joinColumn: "GlobalId");
+  // Ok  table 21 rows x 11 cols  sha ea695276707a
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 21 instances (of 714 upstream): 21 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (0.417, -17.38, 0.013) to (8.383, -0.417, 9)
+scale = view.colormap@1(values: rooms.table, valueColumn: "Area", colorMap: "viridis", auto: "false", min: "0", max: "32");
+  // Ok  table 6 rows x 9 cols  sha f2ff49b5a128
+  //   warn view.colormap: 1 of 21 values in 'Area' lie outside the manual domain 0..32 and take its end colours (0 below, 1 above)
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "Area" manual: 0, 8, 16, 24, 32, above "> 32" 1
+areaChart = chart.bar@1(table: rooms.table, scale: scale.legend, labelColumn: "Number", valueColumns: "Area", title: "Room area (m2), coloured on the shared scale", sort: "desc");
+  // Ok
+  //   warn chart.bar: 1 of 21 bars in 'Area' lie outside the domain and take its end colours (0 below, 1 above)
+  //   table: table 21 rows x 5 cols  sha 0188ffa44a6f
+  //     columns Number:Text, Area:Number, r:Number, g:Number, b:Number
+  //     chart 21 categories x 1 series: "Area"
+  //     "R301": 145.7
+  //     "A102": 30.14
+  //     "B102": 30.14
+  //     "A203": 26.18
+  //     "B203": 26.18
+  //     "A202": 26.12
+  //     "B202": 26.12
+  //     "A101": 17.94
+  //     "B101": 17.94
+  //     "A103": 13.9
+  //     "B103": 13.9
+  //     "A201": 7.8
+  //     "B201": 7.8
+  //     "B204": 5.441
+  //     "A204": 5.416
+  //     "A105": 4.922
+  //     "B105": 4.922
+  //     "A104": 3.998
+  //     "B104": 3.998
+  //     "A205": 1.754
+  //     "B205": 1.728
+  //   legend: table 6 rows x 9 cols  sha f2ff49b5a128
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "Area" manual: 0, 8, 16, 24, 32, above "> 32" 1
+colored = view3d.color@1(instances: roomsOnly.instances, values: rooms.table, scale: scale.legend, joinColumn: "GlobalId");
+  // Ok
+  //   instances: table 21 rows x 15 cols  sha b3dc6293243f
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 21 instances: 21 opaque, 0 faded, 0 hidden
+  //     21 coloured in 13 colours, 0 grey
+  //     legend "Area" manual 0 to 32: bins 10 / 2 / 2 / 7
+  //     bounds (0.417, -17.38, 0.013) to (8.383, -0.417, 9)
+  //   legend: table 6 rows x 9 cols  sha f2ff49b5a128
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "Area" manual: 0, 8, 16, 24, 32, above "> 32" 1
+wide = table.pivot@1(table: byType.table, groupBy: "RoomType", nameColumn: "Storey", valueColumn: "TotalArea", aggregate: "sum");
+  // Ok  table 6 rows x 4 cols  sha 8b27122272db
+  //   columns RoomType:Text, Level 1:Number, Level 2:Number, Roof:Number
+  //   [0] "Circulation", 35.87, 15.6, null
+  //   [1] "Kitchen", 27.8, null, null
+  //   [2] "Other", 4.922, 3.482, 145.7
+typeChart = chart.bar@1(table: wide.table, labelColumn: "RoomType", valueColumns: "Level 1, Level 2, Roof", title: "Total room area (m2) per type, by storey");
+  // Ok
+  //   table: table 6 rows x 4 cols  sha 8b27122272db
+  //     columns RoomType:Text, Level 1:Number, Level 2:Number, Roof:Number
+  //     chart 6 categories x 3 series: "Level 1", "Level 2", "Roof"
+  //     "Circulation": 35.87, 15.6, null
+  //     "Kitchen": 27.8, null, null
+  //     "Other": 4.922, 3.482, 145.7
+  //     "Residential": 60.28, 104.6, null
+  //     "Sanitary": 7.996, 10.86, null
+  //     "Stair": 4.922, null, null
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

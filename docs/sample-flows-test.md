@@ -4,7 +4,7 @@
 (`samples/analyses` and `samples/relations` from `deps/bim-open-flow`, `samples/nrc-analyses`,
 `samples/showcase-tables`,
 `samples/showcase-analyses`, `samples/bim-analyses`, `samples/view3d-analyses`,
-`samples/snowdon-analyses`) into both host profiles ("tables" and "bim"), through the
+`samples/snowdon-analyses`, `samples/viz-analyses`, `samples/checking-analyses`) into both host profiles ("tables" and "bim"), through the
 same `SampleSeeding` / `BimSampleSeeding` helpers and `HostComposition` registries
 `BimOpenFlow.Host.HostRunner` calls at start-up, and evaluates each one. A graph a
 profile's registry cannot validate is skipped here exactly as the host would skip it

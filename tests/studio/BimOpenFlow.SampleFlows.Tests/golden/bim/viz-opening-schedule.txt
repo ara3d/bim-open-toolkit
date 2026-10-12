@@ -1,0 +1,112 @@
+dfg 0.1.0;
+// viz-opening-schedule   graph 33105a1e6378
+about = view.note@1(text: "Estimator: how many doors and windows of each type sit on each storey of the Duplex, and what size are they? Sizes are the IFC OverallWidth and OverallHeight of each door and window (metres in the model, shown in millimetres); Area_m2 is width times height per opening, summed per schedule line. A schedule line is one storey, kind, type, and size, so a type with two sizes would show as two lines; an opening with no size keeps an empty size and area, never zero. Result: 38 openings on 11 lines. Doors: 14 (Level 1: two 762 x 2032, two 813 x 2420, two 1250 x 2010; Level 2: two 762 x 2032, six 864 x 2032). Windows: 24 (Level 1: two 4835 x 2420, two 750 x 2200; Level 2: four 2800 x 2410, two 750 x 2200, twelve 819 x 759; Roof: two skylights). Check before pricing the skylights: their type is named 1180 x 1170mm but the IFC gives 1173 x 635 mm, while Revit's own type parameter Height (PSet_Revit_Type_Dimensions) says 1170, checked by hand in duplex-enriched.duckdb because this graph does not read it, so the IFC height looks like a sloped or projected dimension. Reading the figure: one bar per schedule line, its length the count, coloured by opening type; the Vega-Lite spec groups the bars by storey. The 3D view uses the same colours for the same types and fades everything that is not a door or window to 15 percent. The eighth type in sorted order (Window 750mm x 2200mm) takes category10's grey, close to the grey of uncoloured elements; in 3D it stays opaque while those fade.");
+  // Ok
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+openings = duck.query@1(path: database.source, sql: "SELECT e.EntityIndex, e.StepId, e.GlobalId, CASE e.Category WHEN 'IFCDOOR' THEN 'Door' ELSE 'Window' END AS Kind, e.Type, s.StoreyName AS Storey FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 WHERE e.Category IN ('IFCDOOR', 'IFCWINDOW') ORDER BY e.StepId");
+  // Ok  table 38 rows x 6 cols  sha b168bfa410bb
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Kind:Text, Type:Text, Storey:Text
+  //   [0] 1760, 6426, "1hOSvn6df7F8_7GcBWlR72", "Window", "4835mm x 2420mm", "Level 1"
+  //   [1] 1766, 6531, "1hOSvn6df7F8_7GcBWlRBU", "Window", "4835mm x 2420mm", "Level 1"
+  //   [2] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "Door", "1250mm x 2010mm", "Level 1"
+sizes = duck.query@1(path: database.source, sql: "SELECT p.EntityIndex, round(max(CASE WHEN p.Name = 'Ifc:OverallWidth' THEN TRY_CAST(p.Value AS DOUBLE) END) * 1000) AS Width_mm, round(max(CASE WHEN p.Name = 'Ifc:OverallHeight' THEN TRY_CAST(p.Value AS DOUBLE) END) * 1000) AS Height_mm FROM ParameterText p JOIN EntityText e ON e.EntityIndex = p.EntityIndex WHERE e.Category IN ('IFCDOOR', 'IFCWINDOW') AND p.Name IN ('Ifc:OverallWidth', 'Ifc:OverallHeight') GROUP BY p.EntityIndex");
+  // Ok  table 38 rows x 3 cols  sha 43335e81839e
+  //   columns EntityIndex:Integer, Width_mm:Number, Height_mm:Number
+  //   [0] 2034, 762, 2032
+  //   [1] 3366, 819, 759
+  //   [2] 2002, 819, 759
+withSizes = table.join@1(a: openings.table, b: sizes.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
+  // Ok  table 38 rows x 8 cols  sha 2974d88e055b
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Kind:Text, Type:Text, Storey:Text, Width_mm:Number, Height_mm:Number
+  //   [0] 1760, 6426, "1hOSvn6df7F8_7GcBWlR72", "Window", "4835mm x 2420mm", "Level 1", 4835, 2420
+  //   [1] 1766, 6531, "1hOSvn6df7F8_7GcBWlRBU", "Window", "4835mm x 2420mm", "Level 1", 4835, 2420
+  //   [2] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "Door", "1250mm x 2010mm", "Level 1", 1250, 2010
+typed = table.derive@1(table: withSizes.table, name: "OpeningType", expr: "[Kind] & ' ' & [Type]");
+  // Ok  table 38 rows x 9 cols  sha 2063cc3b6d4f
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Kind:Text, Type:Text, Storey:Text, Width_mm:Number, Height_mm:Number, OpeningType:Text
+  //   [0] 1760, 6426, "1hOSvn6df7F8_7GcBWlR72", "Window", "4835mm x 2420mm", "Level 1", 4835, 2420, "Window 4835mm x 2420mm"
+  //   [1] 1766, 6531, "1hOSvn6df7F8_7GcBWlRBU", "Window", "4835mm x 2420mm", "Level 1", 4835, 2420, "Window 4835mm x 2420mm"
+  //   [2] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "Door", "1250mm x 2010mm", "Level 1", 1250, 2010, "Door 1250mm x 2010mm"
+area = table.derive@1(table: typed.table, name: "Area_m2", expr: "[Width_mm] * [Height_mm] / 1000000");
+  // Ok  table 38 rows x 10 cols  sha 5e69cb4738b0
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Kind:Text, Type:Text, Storey:Text, Width_mm:Number, Height_mm:Number, OpeningType:Text, Area_m2:Number
+  //   [0] 1760, 6426, "1hOSvn6df7F8_7GcBWlR72", "Window", "4835mm x 2420mm", "Level 1", 4835, 2420, "Window 4835mm x 2420mm", 11.7
+  //   [1] 1766, 6531, "1hOSvn6df7F8_7GcBWlRBU", "Window", "4835mm x 2420mm", "Level 1", 4835, 2420, "Window 4835mm x 2420mm", 11.7
+  //   [2] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "Door", "1250mm x 2010mm", "Level 1", 1250, 2010, "Door 1250mm x 2010mm", 2.513
+openingIds = table.project@1(table: area.table, columns: "GlobalId");
+  // Ok  table 38 rows x 1 cols  sha d01536f64bf7
+  //   columns GlobalId:Text
+  //   [0] "1hOSvn6df7F8_7GcBWlR72"
+  //   [1] "1hOSvn6df7F8_7GcBWlRBU"
+  //   [2] "1hOSvn6df7F8_7GcBWlRGQ"
+scale = view.colormap@1(values: area.table, valueColumn: "OpeningType", colorMap: "category10");
+  // Ok  table 9 rows x 9 cols  sha 935096f1d374
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "OpeningType" categorical: category "Door 0762 x 2032mm" 4, category "Door 0813 x 2420mm" 2, category "Door 0864 x 2032mm" 6, category "Door 1250mm x 2010mm" 2, category "Window 1180 x 1170mm" 2, category "Window 2800mm x 2410mm" 4, category "Window 4835mm x 2420mm" 2, category "Window 750mm x 2200mm" 4, category "Window 819mm x 759mm" 12
+colored = view3d.color@1(instances: model.instances, values: area.table, scale: scale.legend, joinColumn: "globalId");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha 623d1d1069dc
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     138 coloured in 9 colours, 576 grey
+  //     legend "OpeningType" categorical: "Door 0762 x 2032mm" 12, "Door 0813 x 2420mm" 8, "Door 0864 x 2032mm" 18, "Door 1250mm x 2010mm" 6, "Window 1180 x 1170mm" 6, "Window 2800mm x 2410mm" 16, "Window 4835mm x 2420mm" 8, "Window 750mm x 2200mm" 16, "Window 819mm x 759mm" 48
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 9 rows x 9 cols  sha 935096f1d374
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "OpeningType" categorical: category "Door 0762 x 2032mm" 4, category "Door 0813 x 2420mm" 2, category "Door 0864 x 2032mm" 6, category "Door 1250mm x 2010mm" 2, category "Window 1180 x 1170mm" 2, category "Window 2800mm x 2410mm" 4, category "Window 4835mm x 2420mm" 2, category "Window 750mm x 2200mm" 4, category "Window 819mm x 759mm" 12
+ghosted = view3d.opacity@1(instances: colored.instances, ids: openingIds.table, alpha: "0.15", joinColumn: "globalId", scope: "others");
+  // Ok  table 714 rows x 15 cols  sha a3cd6b28ddd8
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //   scene 714 instances: 138 opaque, 576 faded, 0 hidden
+  //   138 coloured in 9 colours, 576 grey
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+schedule = table.aggregate@1(table: area.table, groupBy: "Storey, Kind, Type, OpeningType, Width_mm, Height_mm", aggregates: "count(*) as Count, sum(Area_m2) as Area_m2");
+  // Ok  table 11 rows x 8 cols  sha 25334fd294ef
+  //   columns Storey:Text, Kind:Text, Type:Text, OpeningType:Text, Width_mm:Number, Height_mm:Number, Count:Integer, Area_m2:Number
+  //   [0] "Level 1", "Door", "0762 x 2032mm", "Door 0762 x 2032mm", 762, 2032, 2, 3.097
+  //   [1] "Level 1", "Door", "0813 x 2420mm", "Door 0813 x 2420mm", 813, 2420, 2, 3.935
+  //   [2] "Level 1", "Door", "1250mm x 2010mm", "Door 1250mm x 2010mm", 1250, 2010, 2, 5.025
+ordered = table.sort@1(table: schedule.table, A: "Storey", B: "Kind", C: "Type");
+  // Ok  table 11 rows x 8 cols  sha 25334fd294ef
+  //   columns Storey:Text, Kind:Text, Type:Text, OpeningType:Text, Width_mm:Number, Height_mm:Number, Count:Integer, Area_m2:Number
+  //   [0] "Level 1", "Door", "0762 x 2032mm", "Door 0762 x 2032mm", 762, 2032, 2, 3.097
+  //   [1] "Level 1", "Door", "0813 x 2420mm", "Door 0813 x 2420mm", 813, 2420, 2, 3.935
+  //   [2] "Level 1", "Door", "1250mm x 2010mm", "Door 1250mm x 2010mm", 1250, 2010, 2, 5.025
+labelled = table.derive@1(table: ordered.table, name: "Label", expr: "[Storey] & ' | ' & [OpeningType]");
+  // Ok  table 11 rows x 9 cols  sha 2ae499a8b180
+  //   columns Storey:Text, Kind:Text, Type:Text, OpeningType:Text, Width_mm:Number, Height_mm:Number, Count:Integer, Area_m2:Number, Label:Text
+  //   [0] "Level 1", "Door", "0762 x 2032mm", "Door 0762 x 2032mm", 762, 2032, 2, 3.097, "Level 1 | Door 0762 x 2032mm"
+  //   [1] "Level 1", "Door", "0813 x 2420mm", "Door 0813 x 2420mm", 813, 2420, 2, 3.935, "Level 1 | Door 0813 x 2420mm"
+  //   [2] "Level 1", "Door", "1250mm x 2010mm", "Door 1250mm x 2010mm", 1250, 2010, 2, 5.025, "Level 1 | Door 1250mm x 2010mm"
+chart = chart.bar@1(table: labelled.table, scale: scale.legend, labelColumn: "Label", valueColumns: "Count", title: "Doors and windows per storey and type");
+  // Ok
+  //   table: table 11 rows x 5 cols  sha eba8fdc28d57
+  //     columns Label:Text, Count:Integer, r:Number, g:Number, b:Number
+  //     chart 11 categories x 1 series: "Count"
+  //     "Level 1 | Door 0762 x 2032mm": 2
+  //     "Level 1 | Door 0813 x 2420mm": 2
+  //     "Level 1 | Door 1250mm x 2010mm": 2
+  //     "Level 1 | Window 4835mm x 2420mm": 2
+  //     "Level 1 | Window 750mm x 2200mm": 2
+  //     "Level 2 | Door 0762 x 2032mm": 2
+  //     "Level 2 | Door 0864 x 2032mm": 6
+  //     "Level 2 | Window 2800mm x 2410mm": 4
+  //     "Level 2 | Window 750mm x 2200mm": 2
+  //     "Level 2 | Window 819mm x 759mm": 12
+  //     "Roof | Window 1180 x 1170mm": 2
+  //   legend: table 9 rows x 9 cols  sha 935096f1d374
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "OpeningType" categorical: category "Door 0762 x 2032mm" 4, category "Door 0813 x 2420mm" 2, category "Door 0864 x 2032mm" 6, category "Door 1250mm x 2010mm" 2, category "Window 1180 x 1170mm" 2, category "Window 2800mm x 2410mm" 4, category "Window 4835mm x 2420mm" 2, category "Window 750mm x 2200mm" 4, category "Window 819mm x 759mm" 12
+scheduleTable = view.table@1(table: labelled.table, title: "Opening schedule per storey", columns: "Storey, Kind, Type, Width_mm, Height_mm, Count, Area_m2");
+  // Ok  table 11 rows x 7 cols  sha 7b91607ab578
+  //   columns Storey:Text, Kind:Text, Type:Text, Width_mm:Number, Height_mm:Number, Count:Integer, Area_m2:Number
+  //   [0] "Level 1", "Door", "0762 x 2032mm", 762, 2032, 2, 3.097
+  //   [1] "Level 1", "Door", "0813 x 2420mm", 813, 2420, 2, 3.935
+  //   [2] "Level 1", "Door", "1250mm x 2010mm", 1250, 2010, 2, 5.025

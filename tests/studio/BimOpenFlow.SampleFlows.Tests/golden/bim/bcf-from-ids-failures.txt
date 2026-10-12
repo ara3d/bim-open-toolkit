@@ -1,0 +1,33 @@
+dfg 0.1.0;
+// bcf-from-ids-failures   graph 5d4c68087a87
+model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+  // Ok
+  //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
+  //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
+  //     [0] 0, -1, null, "IFCORGANIZATION", null, null
+  //     [1] 1, -1, null, "IFCAPPLICATION", null, null
+  //     [2] 2, -1, null, "IFCSIUNIT", null, null
+  //   parameters: table 18551 rows x 6 cols  sha 61628ffa56f3
+  //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
+  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
+  //     [0] 133, "Level 1", 4705, null, "MemberOf"
+  //     [1] 134, "Level 2", 4705, null, "MemberOf"
+  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, ids: "{SAMPLES}/ids/dc-w1.ids");
+  // Ok
+  //   verdicts: table 14 rows x 7 cols  sha caa3504fd62e
+  //     columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
+  //     verdicts "DC-W1": Fail 6, Pass 8
+  //   summary: table 1 rows x 6 cols  sha d86c82a6e34d
+  //     columns CheckId:Text, CheckTitle:Text, Pass:Integer, Fail:Integer, InfoNotAvailable:Integer, Rows:Integer
+  //     [0] "DC-W1", "Door leaf width at least 850 mm", 8, 6, 0, 14
+bcf = bcf.write@1(issues: verdicts.verdicts, path: "{SAMPLES}/../../artifacts/checking/dc-w1-failures.bcf", model: "{SAMPLES}/duplex-enriched.bos", preset: "auto", verdicts: "Fail", author: "", guidSeed: "dc-w1");
+  // EffectPending  not executed outside a Run
+topics = bcf.topics@1(issues: verdicts.verdicts, preset: "auto", verdicts: "Fail");
+  // Ok  table 1 rows x 8 cols  sha 4e4296527ca1
+  //   columns Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Elements:Integer, GlobalIds:Text, AuthoringToolIds:Text
+  //   [0] "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "", "", "", 6, "1hOSvn6df7F8_7GcBWlS8Z, 1hOSvn6df7F8_7GcBWlS9F, "..., ""

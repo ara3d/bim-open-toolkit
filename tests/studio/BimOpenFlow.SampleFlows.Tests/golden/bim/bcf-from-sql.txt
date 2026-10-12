@@ -1,0 +1,31 @@
+dfg 0.1.0;
+// bcf-from-sql   graph e15428fb4177
+model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+  // Ok
+  //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
+  //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
+  //     [0] 0, -1, null, "IFCORGANIZATION", null, null
+  //     [1] 1, -1, null, "IFCAPPLICATION", null, null
+  //     [2] 2, -1, null, "IFCSIUNIT", null, null
+  //   parameters: table 18551 rows x 6 cols  sha 61628ffa56f3
+  //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
+  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
+  //     [0] 133, "Level 1", 4705, null, "MemberOf"
+  //     [1] 134, "Level 2", 4705, null, "MemberOf"
+  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+doors = sql.query@1(t1: model.entities, t2: model.parameters, sql: "SELECT e.GlobalId, 'External doors' AS Title, 'Pset_DoorCommon.IsExternal is true: confirm the weather seal on ' || e.Name AS Description, 'Normal' AS Priority FROM t1 e JOIN t2 p ON p.EntityIndex = e.EntityIndex WHERE e.Category = 'IFCDOOR' AND p.ParameterGroup = 'Pset_DoorCommon' AND p.Name = 'IsExternal' AND p.Value = '.T.' ORDER BY e.GlobalId");
+  // Ok  table 4 rows x 4 cols  sha e73588861be3
+  //   columns GlobalId:Text, Title:Text, Description:Text, Priority:Text
+  //   [0] "1hOSvn6df7F8_7GcBWlRGQ", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "Normal"
+  //   [1] "1hOSvn6df7F8_7GcBWlRH8", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "Normal"
+  //   [2] "1s1jVhK8z0pgKYcr9jt781", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "Normal"
+bcf = bcf.write@1(issues: doors.table, path: "{SAMPLES}/../../artifacts/checking/external-doors.bcf", model: "{SAMPLES}/duplex-enriched.bos", preset: "issue", verdicts: "", author: "", guidSeed: "external-doors");
+  // EffectPending  not executed outside a Run
+topics = bcf.topics@1(issues: doors.table, preset: "issue", verdicts: "");
+  // Ok  table 1 rows x 8 cols  sha a4b2bb89ed5c
+  //   columns Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Elements:Integer, GlobalIds:Text, AuthoringToolIds:Text
+  //   [0] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "", "Normal", "", 4, "1hOSvn6df7F8_7GcBWlRGQ, 1hOSvn6df7F8_7GcBWlRH8, "..., ""

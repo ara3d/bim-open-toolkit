@@ -1,0 +1,43 @@
+dfg 0.1.0;
+// check-ids-carbon-psets   graph 7003277c1eaf
+model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+  // Ok
+  //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
+  //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
+  //     [0] 0, -1, null, "IFCORGANIZATION", null, null
+  //     [1] 1, -1, null, "IFCAPPLICATION", null, null
+  //     [2] 2, -1, null, "IFCSIUNIT", null, null
+  //   parameters: table 18551 rows x 6 cols  sha 61628ffa56f3
+  //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
+  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
+  //     [0] 133, "Level 1", 4705, null, "MemberOf"
+  //     [1] 134, "Level 2", 4705, null, "MemberOf"
+  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, ids: "{SAMPLES}/ids/nrc-analytics.ids");
+  // Ok
+  //   verdicts: table 436 rows x 7 cols  sha 9a83ff8e29ad
+  //     columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
+  //     verdicts "IDS-EC": Fail 1, Pass 217
+  //     verdicts "IDS-OC": Pass 218
+  //   summary: table 2 rows x 6 cols  sha 5d7d117d02b1
+  //     columns CheckId:Text, CheckTitle:Text, Pass:Integer, Fail:Integer, InfoNotAvailable:Integer, Rows:Integer
+  //     [0] "IDS-OC", "IDS-OC", 218, 0, 0, 218
+  //     [1] "IDS-EC", "IDS-EC", 217, 1, 0, 218
+chart = chart.bar@1(table: verdicts.summary, labelColumn: "CheckId", valueColumns: "Pass, Fail", title: "NRC carbon property sets: elements per IDS verdict", sort: "none");
+  // Ok
+  //   table: table 2 rows x 3 cols  sha ff92a387f21a
+  //     columns CheckId:Text, Pass:Integer, Fail:Integer
+  //     chart 2 categories x 2 series: "Pass", "Fail"
+  //     "IDS-OC": 218, 0
+  //     "IDS-EC": 217, 1
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty
+failures = table.filter@1(table: verdicts.verdicts, expr: "[Verdict] != 'Pass'");
+  // Ok  table 1 rows x 7 cols  sha 8493b5ffc182
+  //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
+  //   verdicts "IDS-EC": Fail 1

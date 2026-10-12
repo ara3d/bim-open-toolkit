@@ -1,0 +1,88 @@
+dfg 0.1.0;
+// viz-window-to-wall-ratio   graph 5ec95e2018c8
+about = view.note@1(text: "For an energy modeller: what share of each facade of the Duplex is glazing? The window-to-wall ratio (WWR) is window area over gross wall area on one facing, both from bim.orientation's face area (the larger vertical face of each box, length x height, so a wall's area includes its openings). Facing is the side a wall's or window's long face looks out to (N, E, S, W from project north; the model carries no true north). The facade is the elements flagged IsExternal, less the party wall and the T/FDN foundation walls. A facing with no wall has no ratio: the cell stays empty, never 0. Glass lets in far more solar heat than wall and loses heat several times faster, so a high WWR on a sun-facing side means summer gain and winter loss; 0.40 is the common prescriptive ceiling (ASHRAE 90.1), drawn as the Limit bar here and as a rule in the spec. Skylights are flagged not external and are left out.");
+  // Ok
+attrs = duck.query@1(path: "{SAMPLES}/duplex-enriched.duckdb", sql: "SELECT e.GlobalId, s.StoreyName AS Storey, p.Value = '.T.' AS IsExternal FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 LEFT JOIN ParameterText p ON p.EntityIndex = e.EntityIndex AND p.Name = 'IsExternal' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCWINDOW')");
+  // Ok  table 81 rows x 3 cols  sha 286c2795019a
+  //   columns GlobalId:Text, Storey:Text, IsExternal:Boolean
+  //   [0] "1hOSvn6df7F8_7GcBWlR72", "Level 1", true
+  //   [1] "1hOSvn6df7F8_7GcBWlRBU", "Level 1", true
+  //   [2] "1hOSvn6df7F8_7GcBWlRLx", "Level 1", true
+facings = table.inline@1(rows: "[{\"Order\":0,\"Facing\":\"N\"},{\"Order\":1,\"Facing\":\"E\"},{\"Order\":2,\"Facing\":\"S\"},{\"Order\":3,\"Facing\":\"W\"}]");
+  // Ok  table 4 rows x 2 cols  sha 25329b7ec603
+  //   columns Order:Integer, Facing:Text
+  //   [0] 0, "N"
+  //   [1] 1, "E"
+  //   [2] 2, "S"
+orient = bim.orientation@1(path: "{SAMPLES}/duplex-enriched.bos", categories: "IFCWALL,IFCWALLSTANDARDCASE,IFCWINDOW");
+  // Ok  table 81 rows x 13 cols  sha 48150513dc0b
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number
+  //   [0] 1391, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01
+  //   [1] 1414, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74
+  //   [2] 1436, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74
+joined = table.join@1(a: orient.table, b: attrs.table, aKey: "GlobalId", mode: "inner");
+  // Ok  table 81 rows x 15 cols  sha 27d830feab52
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean
+  //   [0] 1391, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01, "Level 1", false
+  //   [1] 1414, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74, "Level 1", true
+  //   [2] 1436, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74, "Level 1", true
+facade = table.filter@1(table: joined.table, expr: "IsExternal and Storey != 'T/FDN' and not contains(Name, 'Party Wall')");
+  // Ok  table 34 rows x 15 cols  sha 32899654e134
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean
+  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true
+  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true
+  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true
+kind = table.derive@1(table: facade.table, name: "Element", expr: "Category == 'IFCWINDOW' ? 'Window' : 'Wall'");
+  // Ok  table 34 rows x 16 cols  sha 2172a2939484
+  //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean, Element:Text
+  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true, "Window"
+  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true, "Window"
+  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true, "Wall"
+byFacing = table.pivot@1(table: kind.table, groupBy: "Facing", nameColumn: "Element", valueColumn: "FacingArea", aggregate: "sum");
+  // Ok  table 4 rows x 3 cols  sha da01eeed56e0
+  //   columns Facing:Text, Wall:Number, Window:Number
+  //   [0] "E", 116.1, 11.91
+  //   [1] "N", 58.16, 20.31
+  //   [2] "S", 56.61, 20.31
+framed = table.join@1(a: facings.table, b: byFacing.table, aKey: "Facing", mode: "left");
+  // Ok  table 4 rows x 4 cols  sha 4b79f7f84b5d
+  //   columns Order:Integer, Facing:Text, Wall:Number, Window:Number
+  //   [0] 0, "N", 58.16, 20.31
+  //   [1] 1, "E", 116.1, 11.91
+  //   [2] 2, "S", 56.61, 20.31
+ratio = table.derive@1(table: framed.table, name: "WWR", expr: "coalesce(Window, 0) / Wall");
+  // Ok  table 4 rows x 5 cols  sha 419a28530ce1
+  //   columns Order:Integer, Facing:Text, Wall:Number, Window:Number, WWR:Number
+  //   [0] 0, "N", 58.16, 20.31, 0.3493
+  //   [1] 1, "E", 116.1, 11.91, 0.1026
+  //   [2] 2, "S", 56.61, 20.31, 0.3588
+limit = table.derive@1(table: ratio.table, name: "Limit", expr: "0.4");
+  // Ok  table 4 rows x 6 cols  sha b87e250beddd
+  //   columns Order:Integer, Facing:Text, Wall:Number, Window:Number, WWR:Number, Limit:Number
+  //   [0] 0, "N", 58.16, 20.31, 0.3493, 0.4
+  //   [1] 1, "E", 116.1, 11.91, 0.1026, 0.4
+  //   [2] 2, "S", 56.61, 20.31, 0.3588, 0.4
+sorted = table.sort@1(table: limit.table, A: "Order");
+  // Ok  table 4 rows x 6 cols  sha b87e250beddd
+  //   columns Order:Integer, Facing:Text, Wall:Number, Window:Number, WWR:Number, Limit:Number
+  //   [0] 0, "N", 58.16, 20.31, 0.3493, 0.4
+  //   [1] 1, "E", 116.1, 11.91, 0.1026, 0.4
+  //   [2] 2, "S", 56.61, 20.31, 0.3588, 0.4
+areas = view.table@1(table: sorted.table, title: "Facade areas and window-to-wall ratio by facing (m2)", columns: "Facing,Wall,Window,WWR");
+  // Ok  table 4 rows x 4 cols  sha d43aab70a567
+  //   columns Facing:Text, Wall:Number, Window:Number, WWR:Number
+  //   [0] "N", 58.16, 20.31, 0.3493
+  //   [1] "E", 116.1, 11.91, 0.1026
+  //   [2] "S", 56.61, 20.31, 0.3588
+chart = chart.bar@1(table: sorted.table, labelColumn: "Facing", valueColumns: "WWR,Limit", title: "Window-to-wall ratio by facing (Limit = 0.40 reference)");
+  // Ok
+  //   table: table 4 rows x 3 cols  sha be64448d9110
+  //     columns Facing:Text, WWR:Number, Limit:Number
+  //     chart 4 categories x 2 series: "WWR", "Limit"
+  //     "N": 0.3493, 0.4
+  //     "E": 0.1026, 0.4
+  //     "S": 0.3588, 0.4
+  //     "W": 0.104, 0.4
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

@@ -1,0 +1,68 @@
+dfg 0.1.0;
+// viz-construction-sequence   graph 075cc76b63ac
+about = view.note@1(text: "For a site superintendent: in what order do the Duplex's floors and trades get built, and which parts are finished by which week? The DATES ARE SYNTHETIC: bim.buildSequence invents a floor-by-floor cycle from the model, it reads no real programme. Storeys run bottom-up (T/FDN, Level 1, Level 2, Roof); trades run Structure, Envelope, MEP, Finishes, each task 10 calendar days from Monday 2027-01-04, and a trade starts a storey once the trade before it has left that storey and its own crew has left the storey below, so trades overlap by one floor. The Duplex has no MEP elements, so MEP takes no time; IfcSpace rows belong to no trade and stay unscheduled (one warning). Read the Gantt (specs/viz-construction-sequence.vl.json: bar from Start to End per Task, coloured by Trade) or, in the studio, the task table and the bar of elements per task. The 3D view colours each element by the week its task finishes (viridis: dark is early, yellow is late) on the same scale as the bars; grey parts have no storey or no trade. Storeys come from StoreyOfElement in the DuckDB export, because bim.elements has no Level for an IFC-derived model.");
+  // Ok
+elements = duck.query@1(path: "{SAMPLES}/duplex-enriched.duckdb", sql: "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId");
+  // Ok  table 239 rows x 6 cols  sha 846295c3e7da
+  //   columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number
+  //   [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0
+  //   [1] 212, "0BTBFw6f90Nfh9rP1dlXr$", "Kitchen", "IFCSPACE", "Level 1", 0
+  //   [2] 355, "0BTBFw6f90Nfh9rP1dlXru", "Bathroom 1", "IFCSPACE", "Level 1", 0
+inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+sequence = bim.buildSequence@1(table: elements.table, levelColumn: "Level", elevationColumn: "Elevation", column: "Category", start: "2027-01-04", daysPerTask: "10", trades: "Structure,Envelope,MEP,Finishes");
+  // Ok
+  //   warn bim.buildSequence: 21 of 239 rows have no storey or no trade and are not scheduled.
+  //   tasks: table 10 rows x 9 cols  sha 6204d5af75c4
+  //     columns Task:Text, Storey:Text, Trade:Text, Start:Text, End:Text, DurationDays:Integer, FinishWeek:Integer, ElementCount:Integer, Synthetic:Boolean
+  //     [0] "T/FDN - Structure", "T/FDN", "Structure", "2027-01-04", "2027-01-14", 10, 2, 7, true
+  //     [1] "Level 1 - Structure", "Level 1", "Structure", "2027-01-14", "2027-01-24", 10, 3, 22, true
+  //     [2] "T/FDN - Envelope", "T/FDN", "Envelope", "2027-01-14", "2027-01-24", 10, 3, 7, true
+  //   elements: table 239 rows x 11 cols  sha 69356f709339
+  //     columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number, Task:Text, Trade:Text, Finish:Text, FinishWeek:Integer, Synthetic:Boolean
+  //     [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+  //     [1] 212, "0BTBFw6f90Nfh9rP1dlXr$", "Kitchen", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+  //     [2] 355, "0BTBFw6f90Nfh9rP1dlXru", "Bathroom 1", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+taskTable = view.table@1(table: sequence.tasks, title: "Synthetic construction sequence", columns: "Task,Storey,Trade,Start,End,DurationDays,FinishWeek,ElementCount,Synthetic");
+  // Ok  table 10 rows x 9 cols  sha 6204d5af75c4
+  //   columns Task:Text, Storey:Text, Trade:Text, Start:Text, End:Text, DurationDays:Integer, FinishWeek:Integer, ElementCount:Integer, Synthetic:Boolean
+  //   [0] "T/FDN - Structure", "T/FDN", "Structure", "2027-01-04", "2027-01-14", 10, 2, 7, true
+  //   [1] "Level 1 - Structure", "Level 1", "Structure", "2027-01-14", "2027-01-24", 10, 3, 22, true
+  //   [2] "T/FDN - Envelope", "T/FDN", "Envelope", "2027-01-14", "2027-01-24", 10, 3, 7, true
+weeks = view.colormap@1(values: sequence.elements, valueColumn: "FinishWeek", colorMap: "viridis");
+  // Ok  table 6 rows x 9 cols  sha eb7a3f83cd4a
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "FinishWeek" auto: 2, 3.5, 5, 6.5, 8, missing "no value" 21
+colored = view3d.color@1(instances: inst.instances, values: sequence.elements, scale: weeks.legend, joinColumn: "GlobalId", valueColumn: "FinishWeek");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha 20774af39108
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     693 coloured in 5 colours, 21 grey
+  //     legend "FinishWeek" auto 2 to 8: bins 94 / 51 / 413 / 135
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 6 rows x 9 cols  sha eb7a3f83cd4a
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "FinishWeek" auto: 2, 3.5, 5, 6.5, 8, missing "no value" 21
+gantt = chart.bar@1(table: sequence.tasks, scale: weeks.legend, labelColumn: "Task", valueColumns: "ElementCount", title: "Elements per task, coloured by finish week (synthetic)");
+  // Ok
+  //   table: table 10 rows x 5 cols  sha 1e06d3a10a98
+  //     columns Task:Text, ElementCount:Integer, r:Number, g:Number, b:Number
+  //     chart 10 categories x 1 series: "ElementCount"
+  //     "T/FDN - Structure": 7
+  //     "Level 1 - Structure": 22
+  //     "T/FDN - Envelope": 7
+  //     "Level 2 - Structure": 14
+  //     "Level 1 - Envelope": 25
+  //     "Roof - Structure": 1
+  //     "Level 2 - Envelope": 43
+  //     "Level 1 - Finishes": 56
+  //     "Roof - Envelope": 7
+  //     "Level 2 - Finishes": 36
+  //   legend: table 6 rows x 9 cols  sha eb7a3f83cd4a
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "FinishWeek" auto: 2, 3.5, 5, 6.5, 8, missing "no value" 21

@@ -1,0 +1,111 @@
+dfg 0.1.0;
+// viz-door-accessibility   graph 3644ad3ac390
+about = view.note@1(text: "Accessibility reviewer: which doors of the Duplex are narrower than the 850 mm minimum, and where are they? Rule (an assumption, not legal advice): a door on an accessible path needs at least 850 mm clear width, as NBC 2020 (National Building Code of Canada) 3.8.3.12 is cited by the NRC door check (samples/nrc/door_verdicts.csv, rule DC-W1, marked illustrative); the 'rule' node holds the number and its source, and every step reads it from there. The model has no Pset_DoorCommon.ClearWidth on any door, so the width checked is the IFC OverallWidth of the door (leaf plus frame as exported). Clear width is never larger than that, so a fail is certain and a pass is provisional until clear width is measured. A door with no width is 'unknown' (PassScore empty, grey in both panes), never a pass or a fail. Result: 14 doors, 6 fail (four 762 mm, two 813 mm), 8 pass (six 864 mm, two 1250 mm), 0 unknown. Reading the figure: the histogram counts doors per 50 mm bin of width, red bins lie below 850 and green bins at or above it, and the 'unknown' bar counts doors with no width; the Vega-Lite spec draws the 850 mm rule as a vertical line. The 3D view shares the same red-green scale: failing doors are red and everything else is faded to 15 percent.");
+  // Ok
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+doors = duck.query@1(path: database.source, sql: "SELECT e.EntityIndex, e.StepId, e.GlobalId, e.Type, s.StoreyName AS Storey FROM EntityText e LEFT JOIN StoreyOfElement s ON s.EntityIndex = e.EntityIndex AND s.Depth = 1 WHERE e.Category = 'IFCDOOR' ORDER BY e.StepId");
+  // Ok  table 14 rows x 5 cols  sha 86d3f04ccad7
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Type:Text, Storey:Text
+  //   [0] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1"
+  //   [1] 1802, 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1"
+  //   [2] 2034, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1"
+model = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+rule = table.inline@1(rows: "[{\"RuleId\":\"DC-W1\",\"MinWidth_mm\":850.0,\"Source\":\"NBC 2020 3.8.3.12 as cited by samples/nrc/door_verdicts.csv (illustrative, not legal text)\"}]");
+  // Ok  table 1 rows x 3 cols  sha 04ad96345e69
+  //   columns RuleId:Text, MinWidth_mm:Number, Source:Text
+  //   [0] "DC-W1", 850, "NBC 2020 3.8.3.12 as cited by samples/nrc/door_v"...
+widths = duck.query@1(path: database.source, sql: "SELECT p.EntityIndex, TRY_CAST(p.Value AS DOUBLE) AS Width_m FROM ParameterText p JOIN EntityText e ON e.EntityIndex = p.EntityIndex WHERE e.Category = 'IFCDOOR' AND p.Name = 'Ifc:OverallWidth'");
+  // Ok  table 14 rows x 2 cols  sha 7343ea430025
+  //   columns EntityIndex:Integer, Width_m:Number
+  //   [0] 2066, 0.864
+  //   [1] 2073, 0.864
+  //   [2] 2745, 0.864
+withWidth = table.join@1(a: doors.table, b: widths.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
+  // Ok  table 14 rows x 6 cols  sha c7df94c20dcf
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Type:Text, Storey:Text, Width_m:Number
+  //   [0] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1", 1.25
+  //   [1] 1802, 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1", 1.25
+  //   [2] 2034, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1", 0.762
+millimetres = table.derive@1(table: withWidth.table, name: "Width_mm", expr: "round([Width_m] * 1000)");
+  // Ok  table 14 rows x 7 cols  sha c9de4963f630
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Type:Text, Storey:Text, Width_m:Number, Width_mm:Number
+  //   [0] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "1250mm x 2010mm", "Level 1", 1.25, 1250
+  //   [1] 1802, 6757, "1hOSvn6df7F8_7GcBWlRH8", "1250mm x 2010mm", "Level 1", 1.25, 1250
+  //   [2] 2034, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "0762 x 2032mm", "Level 1", 0.762, 762
+verdicts = sql.query@1(t1: millimetres.table, t2: rule.table, sql: "SELECT d.StepId, d.GlobalId, d.Storey, d.Type, d.Width_mm, r.MinWidth_mm, r.RuleId, CASE WHEN d.Width_mm IS NULL THEN 'unknown' WHEN d.Width_mm >= r.MinWidth_mm THEN 'pass' ELSE 'fail' END AS Verdict, CASE WHEN d.Width_mm IS NULL THEN NULL WHEN d.Width_mm >= r.MinWidth_mm THEN CAST(1 AS DOUBLE) ELSE CAST(0 AS DOUBLE) END AS PassScore FROM t1 d CROSS JOIN t2 r ORDER BY d.Width_mm NULLS LAST, d.StepId");
+  // Ok  table 14 rows x 9 cols  sha 0978ac55d4d0
+  //   columns StepId:Integer, GlobalId:Text, Storey:Text, Type:Text, Width_mm:Number, MinWidth_mm:Number, RuleId:Text, Verdict:Text, PassScore:Number
+  //   [0] 8066, "1hOSvn6df7F8_7GcBWlS8Z", "Level 1", "0762 x 2032mm", 762, 850, "DC-W1", "fail", 0
+  //   [1] 8169, "1hOSvn6df7F8_7GcBWlS9F", "Level 1", "0762 x 2032mm", 762, 850, "DC-W1", "fail", 0
+  //   [2] 35318, "1aj$VJZFn2TxepZUBcKp$i", "Level 2", "0762 x 2032mm", 762, 850, "DC-W1", "fail", 0
+doorTable = view.table@1(table: verdicts.table, title: "Door widths against the 850 mm minimum", columns: "StepId, GlobalId, Storey, Type, Width_mm, MinWidth_mm, Verdict");
+  // Ok  table 14 rows x 7 cols  sha 8ef78c01090f
+  //   columns StepId:Integer, GlobalId:Text, Storey:Text, Type:Text, Width_mm:Number, MinWidth_mm:Number, Verdict:Text
+  //   [0] 8066, "1hOSvn6df7F8_7GcBWlS8Z", "Level 1", "0762 x 2032mm", 762, 850, "fail"
+  //   [1] 8169, "1hOSvn6df7F8_7GcBWlS9F", "Level 1", "0762 x 2032mm", 762, 850, "fail"
+  //   [2] 35318, "1aj$VJZFn2TxepZUBcKp$i", "Level 2", "0762 x 2032mm", 762, 850, "fail"
+failing = table.filter@1(table: verdicts.table, expr: "[Verdict] == 'fail'");
+  // Ok  table 6 rows x 9 cols  sha adc0bf409273
+  //   columns StepId:Integer, GlobalId:Text, Storey:Text, Type:Text, Width_mm:Number, MinWidth_mm:Number, RuleId:Text, Verdict:Text, PassScore:Number
+  //   [0] 8066, "1hOSvn6df7F8_7GcBWlS8Z", "Level 1", "0762 x 2032mm", 762, 850, "DC-W1", "fail", 0
+  //   [1] 8169, "1hOSvn6df7F8_7GcBWlS9F", "Level 1", "0762 x 2032mm", 762, 850, "DC-W1", "fail", 0
+  //   [2] 35318, "1aj$VJZFn2TxepZUBcKp$i", "Level 2", "0762 x 2032mm", 762, 850, "DC-W1", "fail", 0
+failingIds = table.project@1(table: failing.table, columns: "GlobalId");
+  // Ok  table 6 rows x 1 cols  sha b6840fe14dec
+  //   columns GlobalId:Text
+  //   [0] "1hOSvn6df7F8_7GcBWlS8Z"
+  //   [1] "1hOSvn6df7F8_7GcBWlS9F"
+  //   [2] "1aj$VJZFn2TxepZUBcKp$i"
+histogram = sql.query@1(t1: verdicts.table, t2: rule.table, sql: "WITH known AS (SELECT CAST(floor(Width_mm / 50) * 50 AS BIGINT) AS BinStart_mm FROM t1 WHERE Width_mm IS NOT NULL), bins AS (SELECT range AS BinStart_mm FROM range((SELECT min(BinStart_mm) FROM known), (SELECT max(BinStart_mm) FROM known) + 50, 50)) SELECT CAST(b.BinStart_mm AS VARCHAR) || '-' || CAST(b.BinStart_mm + 50 AS VARCHAR) || ' mm' AS Bin, b.BinStart_mm, b.BinStart_mm + 50 AS BinEnd_mm, (SELECT count(*) FROM known k WHERE k.BinStart_mm = b.BinStart_mm) AS Doors, CASE WHEN b.BinStart_mm >= r.MinWidth_mm THEN CAST(1 AS DOUBLE) WHEN b.BinStart_mm + 50 <= r.MinWidth_mm THEN CAST(0 AS DOUBLE) ELSE CAST(0.5 AS DOUBLE) END AS PassScore, r.MinWidth_mm FROM bins b CROSS JOIN t2 r UNION ALL SELECT 'unknown', NULL, NULL, (SELECT count(*) FROM t1 WHERE Width_mm IS NULL), NULL, (SELECT MinWidth_mm FROM t2) ORDER BY BinStart_mm NULLS LAST");
+  // Ok  table 12 rows x 6 cols  sha 54b1547deb95
+  //   columns Bin:Text, BinStart_mm:Integer, BinEnd_mm:Integer, Doors:Integer, PassScore:Number, MinWidth_mm:Number
+  //   [0] "750-800 mm", 750, 800, 4, 0, 850
+  //   [1] "800-850 mm", 800, 850, 2, 0, 850
+  //   [2] "850-900 mm", 850, 900, 6, 1, 850
+scale = view.colormap@1(values: verdicts.table, valueColumn: "PassScore", colorMap: "redgreen", auto: "false", min: "0", max: "1");
+  // Ok  table 3 rows x 9 cols  sha 3b5d7fc14ba5
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "PassScore" manual: 0, 0.5, 1
+chart = chart.bar@1(table: histogram.table, scale: scale.legend, labelColumn: "Bin", valueColumns: "Doors", title: "Doors per 50 mm of width (red: below 850 mm)");
+  // Ok
+  //   table: table 12 rows x 5 cols  sha a795520d674f
+  //     columns Bin:Text, Doors:Integer, r:Number, g:Number, b:Number
+  //     chart 12 categories x 1 series: "Doors"
+  //     "750-800 mm": 4
+  //     "800-850 mm": 2
+  //     "850-900 mm": 6
+  //     "900-950 mm": 0
+  //     "950-1000 mm": 0
+  //     "1000-1050 mm": 0
+  //     "1050-1100 mm": 0
+  //     "1100-1150 mm": 0
+  //     "1150-1200 mm": 0
+  //     "1200-1250 mm": 0
+  //     "1250-1300 mm": 2
+  //     "unknown": 0
+  //   legend: table 3 rows x 9 cols  sha 3b5d7fc14ba5
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "PassScore" manual: 0, 0.5, 1
+colored = view3d.color@1(instances: model.instances, values: verdicts.table, scale: scale.legend, joinColumn: "globalId");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha c327bc107682
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     44 coloured in 2 colours, 670 grey
+  //     legend "PassScore" manual 0 to 1: bins 20 / 24
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 3 rows x 9 cols  sha 3b5d7fc14ba5
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "PassScore" manual: 0, 0.5, 1
+ghosted = view3d.opacity@1(instances: colored.instances, ids: failingIds.table, alpha: "0.15", joinColumn: "globalId", scope: "others");
+  // Ok  table 714 rows x 15 cols  sha 405a7cc16c0a
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //   scene 714 instances: 20 opaque, 694 faded, 0 hidden
+  //   44 coloured in 2 colours, 670 grey
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)

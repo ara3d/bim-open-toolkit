@@ -1,0 +1,94 @@
+dfg 0.1.0;
+// viz-progress-s-curve   graph c1b1ef45df2f
+about = view.note@1(text: "For a project manager: how many of the Duplex's elements should be installed by each week, and how far behind is the site? BOTH SERIES ARE SYNTHETIC. Planned is the cumulative count of elements whose bim.buildSequence task has finished by the end of each week (10-day tasks from 2027-01-04, storeys bottom-up, trades overlapping by one floor); Actual is the same curve held three weeks late (table.window lag 3), a made-up slip for the demo, not site data. Read the S-curve (specs/viz-progress-s-curve.vl.json, or the line chart in the studio): the gap between the lines at a week is the shortfall in elements, and the horizontal gap at a height is the delay in weeks. Week 0 is the start; both lines end at the 218 scheduled elements. Storeys come from StoreyOfElement in the DuckDB export, because bim.elements has no Level for an IFC-derived model.");
+  // Ok
+elements = duck.query@1(path: "{SAMPLES}/duplex-enriched.duckdb", sql: "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId");
+  // Ok  table 239 rows x 6 cols  sha 846295c3e7da
+  //   columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number
+  //   [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0
+  //   [1] 212, "0BTBFw6f90Nfh9rP1dlXr$", "Kitchen", "IFCSPACE", "Level 1", 0
+  //   [2] 355, "0BTBFw6f90Nfh9rP1dlXru", "Bathroom 1", "IFCSPACE", "Level 1", 0
+sequence = bim.buildSequence@1(table: elements.table, levelColumn: "Level", elevationColumn: "Elevation", column: "Category", start: "2027-01-04", daysPerTask: "10", trades: "Structure,Envelope,MEP,Finishes");
+  // Ok
+  //   warn bim.buildSequence: 21 of 239 rows have no storey or no trade and are not scheduled.
+  //   tasks: table 10 rows x 9 cols  sha 6204d5af75c4
+  //     columns Task:Text, Storey:Text, Trade:Text, Start:Text, End:Text, DurationDays:Integer, FinishWeek:Integer, ElementCount:Integer, Synthetic:Boolean
+  //     [0] "T/FDN - Structure", "T/FDN", "Structure", "2027-01-04", "2027-01-14", 10, 2, 7, true
+  //     [1] "Level 1 - Structure", "Level 1", "Structure", "2027-01-14", "2027-01-24", 10, 3, 22, true
+  //     [2] "T/FDN - Envelope", "T/FDN", "Envelope", "2027-01-14", "2027-01-24", 10, 3, 7, true
+  //   elements: table 239 rows x 11 cols  sha 69356f709339
+  //     columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number, Task:Text, Trade:Text, Finish:Text, FinishWeek:Integer, Synthetic:Boolean
+  //     [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+  //     [1] 212, "0BTBFw6f90Nfh9rP1dlXr$", "Kitchen", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+  //     [2] 355, "0BTBFw6f90Nfh9rP1dlXru", "Bathroom 1", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+spine = table.range@1(name: "Week", start: "0", stop: "11", step: "1");
+  // Ok  table 12 rows x 1 cols  sha 58d2ad3cd105
+  //   columns Week:Number
+  //   [0] 0
+  //   [1] 1
+  //   [2] 2
+weekly = table.aggregate@1(table: sequence.elements, groupBy: "FinishWeek", aggregates: "count(Task) as Installed");
+  // Ok  table 6 rows x 2 cols  sha 20a1452060b7
+  //   columns FinishWeek:Integer, Installed:Integer
+  //   [0] 2, 7
+  //   [1] 3, 29
+  //   [2] 5, 39
+joined = table.join@1(a: spine.table, b: weekly.table, aKey: "Week", bKey: "FinishWeek", mode: "left");
+  // Ok  table 12 rows x 2 cols  sha b5c6cd5334d1
+  //   warn table.join: 7 of 12 rows unmatched
+  //   columns Week:Number, Installed:Integer
+  //   [0] 0, null
+  //   [1] 1, null
+  //   [2] 2, 7
+zeroWeeks = table.derive@1(table: joined.table, name: "Finished", expr: "coalesce(Installed, 0)");
+  // Ok  table 12 rows x 3 cols  sha bb2b4792da3a
+  //   columns Week:Number, Installed:Integer, Finished:Integer
+  //   [0] 0, null, 0
+  //   [1] 1, null, 0
+  //   [2] 2, 7, 7
+planned = table.window@1(table: zeroWeeks.table, function: "cumSum", column: "Finished", orderBy: "Week", name: "Planned");
+  // Ok  table 12 rows x 4 cols  sha 7e1cdd07fbc9
+  //   columns Week:Number, Installed:Integer, Finished:Integer, Planned:Integer
+  //   [0] 0, null, 0, 0
+  //   [1] 1, null, 0, 0
+  //   [2] 2, 7, 7, 7
+actual = table.window@1(table: planned.table, function: "lag", column: "Planned", orderBy: "Week", offset: "3", name: "LaggedPlanned");
+  // Ok  table 12 rows x 5 cols  sha 83d0f8207676
+  //   columns Week:Number, Installed:Integer, Finished:Integer, Planned:Integer, LaggedPlanned:Integer
+  //   [0] 0, null, 0, 0, null
+  //   [1] 1, null, 0, 0, null
+  //   [2] 2, 7, 7, 7, null
+zeroActual = table.derive@1(table: actual.table, name: "Actual", expr: "coalesce(LaggedPlanned, 0)");
+  // Ok  table 12 rows x 6 cols  sha cd438c1c4fd8
+  //   columns Week:Number, Installed:Integer, Finished:Integer, Planned:Integer, LaggedPlanned:Integer, Actual:Integer
+  //   [0] 0, null, 0, 0, null, 0
+  //   [1] 1, null, 0, 0, null, 0
+  //   [2] 2, 7, 7, 7, null, 0
+synthetic = table.derive@1(table: zeroActual.table, name: "Synthetic", expr: "true");
+  // Ok  table 12 rows x 7 cols  sha 9458da81de81
+  //   columns Week:Number, Installed:Integer, Finished:Integer, Planned:Integer, LaggedPlanned:Integer, Actual:Integer, Synthetic:Boolean
+  //   [0] 0, null, 0, 0, null, 0, true
+  //   [1] 1, null, 0, 0, null, 0, true
+  //   [2] 2, 7, 7, 7, null, 0, true
+curve = chart.line@1(table: synthetic.table, xColumn: "Week", yColumns: "Planned,Actual", title: "Elements installed by week (synthetic)");
+  // Ok  table 12 rows x 3 cols  sha a590bdf5d2f9
+  //   columns Week:Number, Planned:Integer, Actual:Integer
+  //   chart 12 categories x 2 series: "Planned", "Actual"
+  //   0: 0, 0
+  //   1: 0, 0
+  //   2: 7, 0
+  //   3: 36, 0
+  //   4: 36, 0
+  //   5: 75, 7
+  //   6: 175, 36
+  //   7: 175, 36
+  //   8: 218, 75
+  //   9: 218, 175
+  //   10: 218, 175
+  //   11: 218, 218
+curveTable = view.table@1(table: synthetic.table, title: "Synthetic progress by week", columns: "Week,Finished,Planned,Actual,Synthetic");
+  // Ok  table 12 rows x 5 cols  sha a1965ba91ef6
+  //   columns Week:Number, Finished:Integer, Planned:Integer, Actual:Integer, Synthetic:Boolean
+  //   [0] 0, 0, 0, 0, true
+  //   [1] 1, 0, 0, 0, true
+  //   [2] 2, 7, 7, 0, true

@@ -16,7 +16,7 @@ public static class SampleSourceFiles
     private static readonly string[] Dirs =
     [
         .. SampleSeeding.TableSources(SampleSeeding.SamplesRoot(RepoPaths.Root) ?? RepoPaths.Root).Select(s => s.AnalysesDir),
-        .. new[] { "nrc-analyses", "showcase-analyses", "showcase-tables", "bim-analyses", "view3d-analyses", "snowdon-analyses" }
+        .. new[] { "nrc-analyses", "showcase-analyses", "showcase-tables", "bim-analyses", "view3d-analyses", "snowdon-analyses", "viz-analyses", "checking-analyses" }
             .Select(dir => RepoPaths.Samples(dir)),
     ];
 
