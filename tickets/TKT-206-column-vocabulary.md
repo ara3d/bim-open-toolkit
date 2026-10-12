@@ -1,13 +1,14 @@
 ---
 id: TKT-206
 title: A column vocabulary: one registry of column kinds with type, unit, meaning and role, shared by the packs, the views and the writers
-status: open
+status: done
 depends_on: [TKT-182]
 owner:
 fence: []
 workflow: [W2]
 related: [TKT-182]
 created: 2026-10-11
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria

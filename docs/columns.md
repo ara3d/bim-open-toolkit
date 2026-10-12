@@ -28,7 +28,7 @@ Name a row for a person.
 | `Name` | Text |  | Label | The entity's name, or a parameter's name in a parameter table. |
 | `Number` | Text |  | Label | The room's number as a label (text, because numbers like 'A-101' occur). |
 | `DoorName` | Text |  | Label | The door's name. |
-| `Value` | Text |  | Label | A parameter's value as text, whatever its ValueType. |
+| `Value` | Text |  | Label | A parameter's value as text, whatever its ValueType (the ParameterText view). The lowercase value column of chart, scale and colour tables is a number and is not this kind. |
 | `NameA` | Text |  | Label | Name of the first entity of a relation. |
 | `NameB` | Text |  | Label | Name of the second entity of a relation. |
 | `StoreyName` | Text |  | Label | Name of the building storey above an entity. |

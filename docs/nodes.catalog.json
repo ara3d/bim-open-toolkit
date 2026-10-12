@@ -1673,7 +1673,7 @@
           "bindable": "Text"
         }
       ],
-      "description": "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification. A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass."
+      "description": "Evaluates a buildingSMART IDS 1.0 file over the entity and parameter tables (the first two outputs of bos.load) and outputs a verdict table (GlobalId, EntityIndex, CheckId, CheckTitle, Citation, Verdict, Reason; one row per entity per specification) and a summary with the Pass, Fail and InfoNotAvailable counts per specification (one row per specification, zeros when none of its rows exist). A facet BOS cannot answer gives InfoNotAvailable and a warning, never a pass; a facet the IDS loader skipped is a warning too."
     },
     {
       "kind": "ids.specifications",

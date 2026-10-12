@@ -272,7 +272,7 @@
   {
     "name": "Value",
     "type": "Text",
-    "meaning": "A parameter\u0027s value as text, whatever its ValueType.",
+    "meaning": "A parameter\u0027s value as text, whatever its ValueType (the ParameterText view). The lowercase value column of chart, scale and colour tables is a number and is not this kind.",
     "role": "Label"
   },
   {
