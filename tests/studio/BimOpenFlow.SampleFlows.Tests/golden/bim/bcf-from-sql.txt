@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// bcf-from-sql   graph e15428fb4177
-model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+// bcf-from-sql   graph ce6d8b5ad638
+inputs model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
+about = view.note@1(text: "The Duplex's external doors as one BCF issue, with table steps and no SQL: the parameter rows where Pset_DoorCommon.IsExternal is true, joined to the doors among the entities (the door's name arrives as Name_b), then a title and a description derived for each. topics, shown in answer, previews the topic; bcf writes artifacts/checking/external-doors.bcf with a viewpoint only when you press Run.");
+  // Ok
+modelPath = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.bos"
+model = bos.load@1(path: modelPath.path, harmonize: "false");
   // Ok
   //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
@@ -17,15 +22,55 @@ model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
   //     [0] 133, "Level 1", 4705, null, "MemberOf"
   //     [1] 134, "Level 2", 4705, null, "MemberOf"
   //     [2] 135, "T/FDN", 4705, null, "MemberOf"
-doors = sql.query@1(t1: model.entities, t2: model.parameters, sql: "SELECT e.GlobalId, 'External doors' AS Title, 'Pset_DoorCommon.IsExternal is true: confirm the weather seal on ' || e.Name AS Description, 'Normal' AS Priority FROM t1 e JOIN t2 p ON p.EntityIndex = e.EntityIndex WHERE e.Category = 'IFCDOOR' AND p.ParameterGroup = 'Pset_DoorCommon' AND p.Name = 'IsExternal' AND p.Value = '.T.' ORDER BY e.GlobalId");
-  // Ok  table 4 rows x 4 cols  sha e73588861be3
-  //   columns GlobalId:Text, Title:Text, Description:Text, Priority:Text
-  //   [0] "1hOSvn6df7F8_7GcBWlRGQ", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "Normal"
-  //   [1] "1hOSvn6df7F8_7GcBWlRH8", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "Normal"
-  //   [2] "1s1jVhK8z0pgKYcr9jt781", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "Normal"
-bcf = bcf.write@1(issues: doors.table, path: "{SAMPLES}/../../artifacts/checking/external-doors.bcf", model: "{SAMPLES}/duplex-enriched.bos", preset: "issue", verdicts: "", author: "", guidSeed: "external-doors");
+doors = table.filter@1(table: model.entities, expr: "[Category] == 'IFCDOOR'");
+  // Ok  table 14 rows x 6 cols  sha 0646f198acf1
+  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
+  //   [0] 1796, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [1] 1802, 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [2] 2034, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15017"..., "IFCDOOR", "0762 x 2032mm"
+isExternal = table.filter@1(table: model.parameters, expr: "[ParameterGroup] == 'Pset_DoorCommon' and [Name] == 'IsExternal' and [Value] == '.T.'");
+  // Ok  table 4 rows x 6 cols  sha 275d122b08b8
+  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
+  //   [0] 1796, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
+  //   [1] 1802, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
+  //   [2] 3335, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
+external = table.join@1(a: isExternal.table, b: doors.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "inner");
+  // Ok  table 4 rows x 11 cols  sha d4b4a7548c1a
+  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text
+  //   [0] 1796, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [1] 1802, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [2] 3335, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm"
+titled = table.derive@1(table: external.table, name: "Title", expr: "'External doors'");
+  // Ok  table 4 rows x 12 cols  sha 86cc395cf970
+  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text, Title:Text
+  //   [0] 1796, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors"
+  //   [1] 1802, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors"
+  //   [2] 3335, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm", "External doors"
+described = table.derive@1(table: titled.table, name: "Description", expr: "'Pset_DoorCommon.IsExternal is true: confirm the weather seal on ' & [Name_b]");
+  // Ok  table 4 rows x 13 cols  sha 7f15c7bb546b
+  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text, Title:Text, Description:Text
+  //   [0] 1796, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
+  //   [1] 1802, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
+  //   [2] 3335, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
+columns = table.project@1(table: described.table, columns: "Title, Description, Name_b as Name, GlobalId");
+  // Ok  table 4 rows x 4 cols  sha 06565651f5ad
+  //   columns Title:Text, Description:Text, Name:Text, GlobalId:Text
+  //   [0] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "1hOSvn6df7F8_7GcBWlRGQ"
+  //   [1] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "1hOSvn6df7F8_7GcBWlRH8"
+  //   [2] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "1s1jVhK8z0pgKYcr9jt781"
+sorted = table.sort@1(table: columns.table, A: "GlobalId");
+  // Ok  table 4 rows x 4 cols  sha 06565651f5ad
+  //   columns Title:Text, Description:Text, Name:Text, GlobalId:Text
+  //   [0] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "1hOSvn6df7F8_7GcBWlRGQ"
+  //   [1] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "1hOSvn6df7F8_7GcBWlRH8"
+  //   [2] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "1s1jVhK8z0pgKYcr9jt781"
+bcf = bcf.write@1(issues: sorted.table, model: modelPath.path, path: "{SAMPLES}/../../artifacts/checking/external-doors.bcf", preset: "issue", verdicts: "", author: "", guidSeed: "external-doors");
   // EffectPending  not executed outside a Run
-topics = bcf.topics@1(issues: doors.table, preset: "issue", verdicts: "");
-  // Ok  table 1 rows x 8 cols  sha a4b2bb89ed5c
+topics = bcf.topics@1(issues: sorted.table, preset: "issue", verdicts: "");
+  // Ok  table 1 rows x 8 cols  sha a4d2eb7b6f50
   //   columns Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Elements:Integer, GlobalIds:Text, AuthoringToolIds:Text
-  //   [0] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "", "Normal", "", 4, "1hOSvn6df7F8_7GcBWlRGQ, 1hOSvn6df7F8_7GcBWlRH8, "..., ""
+  //   [0] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "", "", "", 4, "1hOSvn6df7F8_7GcBWlRGQ, 1hOSvn6df7F8_7GcBWlRH8, "..., ""
+answer = view.table@1(table: topics.topics, title: "BCF topic Run will write", columns: "Title, Elements, Description, GlobalIds");
+  // Ok  table 1 rows x 4 cols  sha bb3e701fb056
+  //   columns Title:Text, Elements:Integer, Description:Text, GlobalIds:Text
+  //   [0] "External doors", 4, "Pset_DoorCommon.IsExternal is true: confirm the "..., "1hOSvn6df7F8_7GcBWlRGQ, 1hOSvn6df7F8_7GcBWlRH8, "...

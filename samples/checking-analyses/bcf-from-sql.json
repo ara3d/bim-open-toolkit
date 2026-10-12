@@ -1,43 +1,135 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": {
+    "about": {
       "x": 40,
-      "y": 40
+      "y": 40,
+      "w": 560,
+      "h": 158
+    },
+    "modelPath": {
+      "x": 40,
+      "y": 248
+    },
+    "model": {
+      "x": 370,
+      "y": 248
     },
     "doors": {
-      "x": 370,
-      "y": 40
+      "x": 700,
+      "y": 248
+    },
+    "external": {
+      "x": 1030,
+      "y": 248
+    },
+    "titled": {
+      "x": 1360,
+      "y": 248
+    },
+    "described": {
+      "x": 1690,
+      "y": 248
+    },
+    "columns": {
+      "x": 2020,
+      "y": 248
+    },
+    "sorted": {
+      "x": 2350,
+      "y": 248
     },
     "topics": {
+      "x": 2680,
+      "y": 248
+    },
+    "answer": {
+      "x": 3010,
+      "y": 248
+    },
+    "isExternal": {
       "x": 700,
-      "y": 40
+      "y": 432
     },
     "bcf": {
-      "x": 700,
-      "y": 300
+      "x": 2680,
+      "y": 432
     }
   },
   "structure": {
+    "inputs": [
+      {
+        "name": "model",
+        "kind": "FilePath",
+        "default": "{SAMPLES}/duplex-enriched.bos",
+        "description": "The building's BIM Open Schema (.bos) file; the NRC Duplex by default, any .bos file works here."
+      }
+    ],
     "edges": [
       {
+        "from": "modelPath.path",
+        "to": "model.path"
+      },
+      {
         "from": "model.entities",
-        "to": "doors.t1"
+        "to": "doors.table"
       },
       {
         "from": "model.parameters",
-        "to": "doors.t2"
+        "to": "isExternal.table"
+      },
+      {
+        "from": "isExternal.table",
+        "to": "external.a"
       },
       {
         "from": "doors.table",
+        "to": "external.b"
+      },
+      {
+        "from": "external.table",
+        "to": "titled.table"
+      },
+      {
+        "from": "titled.table",
+        "to": "described.table"
+      },
+      {
+        "from": "described.table",
+        "to": "columns.table"
+      },
+      {
+        "from": "columns.table",
+        "to": "sorted.table"
+      },
+      {
+        "from": "sorted.table",
         "to": "topics.issues"
       },
       {
-        "from": "doors.table",
+        "from": "topics.topics",
+        "to": "answer.table"
+      },
+      {
+        "from": "sorted.table",
         "to": "bcf.issues"
+      },
+      {
+        "from": "modelPath.path",
+        "to": "bcf.model"
       }
     ],
     "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "modelPath",
+        "kind": "value.path",
+        "version": 1
+      },
       {
         "id": "model",
         "kind": "bos.load",
@@ -45,12 +137,47 @@
       },
       {
         "id": "doors",
-        "kind": "sql.query",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "external",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "titled",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "described",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "columns",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "sorted",
+        "kind": "table.sort",
         "version": 1
       },
       {
         "id": "topics",
         "kind": "bcf.topics",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "isExternal",
+        "kind": "table.filter",
         "version": 1
       },
       {
@@ -61,20 +188,50 @@
     ]
   },
   "values": {
+    "about": {
+      "text": "The Duplex's external doors as one BCF issue, with table steps and no SQL: the parameter rows where Pset_DoorCommon.IsExternal is true, joined to the doors among the entities (the door's name arrives as Name_b), then a title and a description derived for each. topics, shown in answer, previews the topic; bcf writes artifacts/checking/external-doors.bcf with a viewpoint only when you press Run."
+    },
+    "modelPath": {
+      "path": "$model"
+    },
     "model": {
-      "path": "{SAMPLES}/duplex-enriched.bos",
       "harmonize": "false"
     },
     "doors": {
-      "sql": "SELECT e.GlobalId, 'External doors' AS Title, 'Pset_DoorCommon.IsExternal is true: confirm the weather seal on ' || e.Name AS Description, 'Normal' AS Priority FROM t1 e JOIN t2 p ON p.EntityIndex = e.EntityIndex WHERE e.Category = 'IFCDOOR' AND p.ParameterGroup = 'Pset_DoorCommon' AND p.Name = 'IsExternal' AND p.Value = '.T.' ORDER BY e.GlobalId"
+      "expr": "[Category] == 'IFCDOOR'"
+    },
+    "isExternal": {
+      "expr": "[ParameterGroup] == 'Pset_DoorCommon' and [Name] == 'IsExternal' and [Value] == '.T.'"
+    },
+    "external": {
+      "aKey": "EntityIndex",
+      "bKey": "EntityIndex",
+      "mode": "inner"
+    },
+    "titled": {
+      "name": "Title",
+      "expr": "'External doors'"
+    },
+    "described": {
+      "name": "Description",
+      "expr": "'Pset_DoorCommon.IsExternal is true: confirm the weather seal on ' & [Name_b]"
+    },
+    "columns": {
+      "columns": "Title, Description, Name_b as Name, GlobalId"
+    },
+    "sorted": {
+      "A": "GlobalId"
     },
     "topics": {
       "preset": "issue",
       "verdicts": ""
     },
+    "answer": {
+      "title": "BCF topic Run will write",
+      "columns": "Title, Elements, Description, GlobalIds"
+    },
     "bcf": {
       "path": "{SAMPLES}/../../artifacts/checking/external-doors.bcf",
-      "model": "{SAMPLES}/duplex-enriched.bos",
       "preset": "issue",
       "verdicts": "",
       "author": "",

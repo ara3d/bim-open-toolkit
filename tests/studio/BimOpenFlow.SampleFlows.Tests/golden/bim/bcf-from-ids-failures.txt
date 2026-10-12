@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// bcf-from-ids-failures   graph 5d4c68087a87
-model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+// bcf-from-ids-failures   graph b3c1ad490607
+inputs model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
+about = view.note@1(text: "The DC-W1 door width IDS checked over the Duplex, and its 6 failing doors turned into one BCF topic. topics, shown in answer, is the preview of the file Run writes: nothing is written until then. bcf then writes artifacts/checking/dc-w1-failures.bcf with one viewpoint framing the doors, read from the same model input.");
+  // Ok
+modelPath = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.bos"
+model = bos.load@1(path: modelPath.path, harmonize: "false");
   // Ok
   //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
@@ -25,9 +30,13 @@ verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, i
   //   summary: table 1 rows x 6 cols  sha d86c82a6e34d
   //     columns CheckId:Text, CheckTitle:Text, Pass:Integer, Fail:Integer, InfoNotAvailable:Integer, Rows:Integer
   //     [0] "DC-W1", "Door leaf width at least 850 mm", 8, 6, 0, 14
-bcf = bcf.write@1(issues: verdicts.verdicts, path: "{SAMPLES}/../../artifacts/checking/dc-w1-failures.bcf", model: "{SAMPLES}/duplex-enriched.bos", preset: "auto", verdicts: "Fail", author: "", guidSeed: "dc-w1");
+bcf = bcf.write@1(issues: verdicts.verdicts, model: modelPath.path, path: "{SAMPLES}/../../artifacts/checking/dc-w1-failures.bcf", preset: "auto", verdicts: "Fail", author: "", guidSeed: "dc-w1");
   // EffectPending  not executed outside a Run
 topics = bcf.topics@1(issues: verdicts.verdicts, preset: "auto", verdicts: "Fail");
   // Ok  table 1 rows x 8 cols  sha 4e4296527ca1
   //   columns Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Elements:Integer, GlobalIds:Text, AuthoringToolIds:Text
   //   [0] "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "", "", "", 6, "1hOSvn6df7F8_7GcBWlS8Z, 1hOSvn6df7F8_7GcBWlS9F, "..., ""
+answer = view.table@1(table: topics.topics, title: "BCF topics Run will write", columns: "Title, Elements, Description, Status, GlobalIds");
+  // Ok  table 1 rows x 5 cols  sha d53a03b61cd6
+  //   columns Title:Text, Elements:Integer, Description:Text, Status:Text, GlobalIds:Text
+  //   [0] "Door leaf width at least 850 mm", 6, "attribute OverallWidth = >=0.85", "", "1hOSvn6df7F8_7GcBWlS8Z, 1hOSvn6df7F8_7GcBWlS9F, "...

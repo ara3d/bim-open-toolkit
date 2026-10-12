@@ -1,36 +1,83 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 122
+    },
     "carbon": {
       "x": 40,
-      "y": 40
+      "y": 224
+    },
+    "carbonTable": {
+      "x": 370,
+      "y": 224
     },
     "doors": {
       "x": 40,
-      "y": 300
+      "y": 408
+    },
+    "answer": {
+      "x": 370,
+      "y": 408
     }
   },
   "structure": {
-    "edges": [],
+    "edges": [
+      {
+        "from": "carbon.specifications",
+        "to": "carbonTable.table"
+      },
+      {
+        "from": "doors.specifications",
+        "to": "answer.table"
+      }
+    ],
     "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
       {
         "id": "carbon",
         "kind": "ids.specifications",
         "version": 1
       },
       {
+        "id": "carbonTable",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
         "id": "doors",
         "kind": "ids.specifications",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
         "version": 1
       }
     ]
   },
   "values": {
+    "about": {
+      "text": "What each IDS file asks, read by ids.specifications before any check: no model is read. The carbon file (nrc-analytics.ids) has two specifications and the door file (dc-w1.ids) one; Supported is true for all three, so ids.check can answer every facet from a .bos file."
+    },
     "carbon": {
       "ids": "{SAMPLES}/ids/nrc-analytics.ids"
     },
+    "carbonTable": {
+      "title": "NRC carbon property sets IDS: what it asks"
+    },
     "doors": {
       "ids": "{SAMPLES}/ids/dc-w1.ids"
+    },
+    "answer": {
+      "title": "DC-W1 door width IDS: what it asks"
     }
   }
 }

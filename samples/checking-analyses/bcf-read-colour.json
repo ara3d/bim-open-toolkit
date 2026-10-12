@@ -1,25 +1,51 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 122
+    },
     "issues": {
       "x": 40,
-      "y": 40
+      "y": 224
+    },
+    "answer": {
+      "x": 370,
+      "y": 224
+    },
+    "modelPath": {
+      "x": 40,
+      "y": 408
     },
     "scene": {
-      "x": 40,
-      "y": 300
+      "x": 370,
+      "y": 408
     },
     "coloured": {
-      "x": 370,
-      "y": 300
-    },
-    "perTopic": {
-      "x": 370,
-      "y": 40
+      "x": 700,
+      "y": 408
     }
   },
   "structure": {
+    "inputs": [
+      {
+        "name": "model",
+        "kind": "FilePath",
+        "default": "{SAMPLES}/duplex-enriched.ifc",
+        "description": "The building's IFC file, the one the BCF's GlobalIds come from; view3d.instances meshes IFC."
+      }
+    ],
     "edges": [
+      {
+        "from": "issues.topics",
+        "to": "answer.table"
+      },
+      {
+        "from": "modelPath.path",
+        "to": "scene.path"
+      },
       {
         "from": "scene.instances",
         "to": "coloured.instances"
@@ -27,16 +53,27 @@
       {
         "from": "issues.issues",
         "to": "coloured.values"
-      },
-      {
-        "from": "issues.issues",
-        "to": "perTopic.table"
       }
     ],
     "nodes": [
       {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
         "id": "issues",
         "kind": "bcf.read",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "modelPath",
+        "kind": "value.path",
         "version": 1
       },
       {
@@ -48,29 +85,27 @@
         "id": "coloured",
         "kind": "view3d.color",
         "version": 1
-      },
-      {
-        "id": "perTopic",
-        "kind": "table.aggregate",
-        "version": 1
       }
     ]
   },
   "values": {
+    "about": {
+      "text": "bcf.read over the committed samples/nrc/bcf/dc-w1-failures.bcf, not the file bcf-from-ids-failures writes on Run: one topic flagging 6 doors. answer is the file's topics table; coloured paints the flagged doors on the model input, an IFC file because view3d.instances meshes IFC, matched on GlobalId."
+    },
     "issues": {
       "path": "{SAMPLES}/bcf/dc-w1-failures.bcf"
     },
-    "scene": {
-      "path": "{SAMPLES}/duplex-enriched.ifc"
+    "answer": {
+      "title": "Topics in the committed BCF",
+      "columns": "Title, Elements, Status, Type, Description"
+    },
+    "modelPath": {
+      "path": "$model"
     },
     "coloured": {
       "joinColumn": "GlobalId",
       "valueColumn": "Title",
       "colorMap": "category10"
-    },
-    "perTopic": {
-      "groupBy": "Title",
-      "aggregates": "count(*) as Elements"
     }
   }
 }

@@ -1,33 +1,77 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": {
+    "about": {
       "x": 40,
-      "y": 40
+      "y": 40,
+      "w": 560,
+      "h": 176
+    },
+    "modelPath": {
+      "x": 40,
+      "y": 264
+    },
+    "model": {
+      "x": 370,
+      "y": 264
     },
     "verdicts": {
-      "x": 370,
-      "y": 40
+      "x": 700,
+      "y": 264
+    },
+    "named": {
+      "x": 1030,
+      "y": 264
+    },
+    "sorted": {
+      "x": 1360,
+      "y": 264
+    },
+    "answer": {
+      "x": 1690,
+      "y": 264
     },
     "perVerdict": {
-      "x": 700,
-      "y": 40
+      "x": 1030,
+      "y": 448
     },
     "chart": {
-      "x": 1030,
-      "y": 40
+      "x": 1360,
+      "y": 448
+    },
+    "scenePath": {
+      "x": 40,
+      "y": 632
     },
     "scene": {
       "x": 370,
-      "y": 300
+      "y": 632
     },
     "coloured": {
-      "x": 700,
-      "y": 300
+      "x": 1030,
+      "y": 632
     }
   },
   "structure": {
+    "inputs": [
+      {
+        "name": "geometry",
+        "kind": "FilePath",
+        "default": "{SAMPLES}/duplex-enriched.ifc",
+        "description": "The same building as an IFC file, for the 3D scene: view3d.instances meshes IFC and cannot read a .bos file yet."
+      },
+      {
+        "name": "model",
+        "kind": "FilePath",
+        "default": "{SAMPLES}/duplex-enriched.bos",
+        "description": "The building's BIM Open Schema (.bos) file; the NRC Duplex by default, any .bos file works here."
+      }
+    ],
     "edges": [
+      {
+        "from": "modelPath.path",
+        "to": "model.path"
+      },
       {
         "from": "model.entities",
         "to": "verdicts.entities"
@@ -38,11 +82,31 @@
       },
       {
         "from": "verdicts.verdicts",
+        "to": "named.a"
+      },
+      {
+        "from": "model.entities",
+        "to": "named.b"
+      },
+      {
+        "from": "named.table",
+        "to": "sorted.table"
+      },
+      {
+        "from": "sorted.table",
+        "to": "answer.table"
+      },
+      {
+        "from": "verdicts.verdicts",
         "to": "perVerdict.table"
       },
       {
         "from": "perVerdict.table",
         "to": "chart.table"
+      },
+      {
+        "from": "scenePath.path",
+        "to": "scene.path"
       },
       {
         "from": "scene.instances",
@@ -55,6 +119,16 @@
     ],
     "nodes": [
       {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "modelPath",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
         "id": "model",
         "kind": "bos.load",
         "version": 1
@@ -65,6 +139,21 @@
         "version": 1
       },
       {
+        "id": "named",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "sorted",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
         "id": "perVerdict",
         "kind": "table.aggregate",
         "version": 1
@@ -72,6 +161,11 @@
       {
         "id": "chart",
         "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "scenePath",
+        "kind": "value.path",
         "version": 1
       },
       {
@@ -87,12 +181,30 @@
     ]
   },
   "values": {
+    "about": {
+      "text": "Rule DC-W1, a door leaf at least 850 mm wide (NBC 2020 3.8.3.12, illustrative), stated as an IDS file (samples/nrc/ids/dc-w1.ids) and checked by ids.check over the 14 doors of the Duplex: 8 pass and 6 fail, the same verdicts as nrc-dc-w1-verdicts gets with check.rule. answer names each door; chart counts the verdicts and coloured paints them on the model. The scene reads the IFC through the second input, geometry, because view3d.instances cannot read a .bos file yet; point both inputs at the same building."
+    },
+    "modelPath": {
+      "path": "$model"
+    },
     "model": {
-      "path": "{SAMPLES}/duplex-enriched.bos",
       "harmonize": "false"
     },
     "verdicts": {
       "ids": "{SAMPLES}/ids/dc-w1.ids"
+    },
+    "named": {
+      "aKey": "EntityIndex",
+      "bKey": "EntityIndex",
+      "mode": "left"
+    },
+    "sorted": {
+      "A": "Verdict",
+      "B": "Name"
+    },
+    "answer": {
+      "title": "DC-W1 door width verdicts",
+      "columns": "Name, Verdict, Reason, GlobalId"
     },
     "perVerdict": {
       "groupBy": "Verdict",
@@ -104,8 +216,8 @@
       "title": "DC-W1 as an IDS: door width verdicts",
       "sort": "desc"
     },
-    "scene": {
-      "path": "{SAMPLES}/duplex-enriched.ifc"
+    "scenePath": {
+      "path": "$geometry"
     },
     "coloured": {
       "joinColumn": "GlobalId",

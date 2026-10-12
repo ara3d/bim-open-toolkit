@@ -1,5 +1,8 @@
 dfg 0.1.0;
-// bcf-read-colour   graph 3e7466370c55
+// bcf-read-colour   graph 00717d879963
+inputs model: FilePath = "{SAMPLES}/duplex-enriched.ifc" now "{MODELS}/duplex-enriched.ifc";
+about = view.note@1(text: "bcf.read over the committed samples/nrc/bcf/dc-w1-failures.bcf, not the file bcf-from-ids-failures writes on Run: one topic flagging 6 doors. answer is the file's topics table; coloured paints the flagged doors on the model input, an IFC file because view3d.instances meshes IFC, matched on GlobalId.");
+  // Ok
 issues = bcf.read@1(path: "{SAMPLES}/bcf/dc-w1-failures.bcf");
   // Ok
   //   issues: table 6 rows x 10 cols  sha 8edf3bc778e4
@@ -10,11 +13,13 @@ issues = bcf.read@1(path: "{SAMPLES}/bcf/dc-w1-failures.bcf");
   //   topics: table 1 rows x 8 cols  sha 8cd0e0867f83
   //     columns Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Elements:Integer, GlobalIds:Text, AuthoringToolIds:Text
   //     [0] "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", 6, "1hOSvn6df7F8_7GcBWlS8Z, 1hOSvn6df7F8_7GcBWlS9F, "..., ""
-perTopic = table.aggregate@1(table: issues.issues, groupBy: "Title", aggregates: "count(*) as Elements");
-  // Ok  table 1 rows x 2 cols  sha 7b74e64a3728
-  //   columns Title:Text, Elements:Integer
-  //   [0] "Door leaf width at least 850 mm", 6
-scene = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+answer = view.table@1(table: issues.topics, title: "Topics in the committed BCF", columns: "Title, Elements, Status, Type, Description");
+  // Ok  table 1 rows x 5 cols  sha d25c6c59cb1a
+  //   columns Title:Text, Elements:Integer, Status:Text, Type:Text, Description:Text
+  //   [0] "Door leaf width at least 850 mm", 6, "Open", "Issue", "attribute OverallWidth = >=0.85"
+modelPath = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.ifc"
+scene = view3d.instances@1(path: modelPath.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden

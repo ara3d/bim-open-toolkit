@@ -66,6 +66,25 @@ public sealed class CheckingGraphTests
         var doc = GraphDocumentIO.Load(Path.Combine(Dir, id + ".json"));
         Assert.That(doc.Nodes, Is.Not.Empty);
         Assert.That(doc.Validate(StudioComposition.BimPacks()), Is.Empty);
+        Assert.That(doc.Nodes.Select(n => n.Id), Does.Contain("answer"), "every graph ends in a node named answer");
+    }
+
+    /// <summary>A graph that reads the Duplex reads it from one value.path, modelPath, holding the
+    /// graph input model, so a user swaps the building in one place. check-ids-door-width also
+    /// declares geometry, the IFC its 3D scene reads, because view3d.instances meshes IFC only.</summary>
+    [TestCaseSource(nameof(Ids))]
+    public void TheModelPathIsOneGraphInput(string id)
+    {
+        var doc = GraphDocumentIO.Load(Path.Combine(Dir, id + ".json"));
+        var literals = doc.Values.SelectMany(node => node.Value.Values).Where(v => v.Contains("duplex-enriched"));
+        Assert.That(literals, Is.Empty, "no node types the model path");
+        if (id == "check-ids-specifications")
+            return;
+        var scene = id == "check-ids-door-width";
+        Assert.That(doc.Inputs.Select(i => i.Name), Is.EquivalentTo(scene ? new[] { "model", "geometry" } : new[] { "model" }));
+        Assert.That(doc.Nodes.Where(n => n.Kind == "value.path").Select(n => n.Id),
+            Is.EquivalentTo(scene ? new[] { "modelPath", "scenePath" } : new[] { "modelPath" }));
+        Assert.That(doc.Values["modelPath"]["path"], Is.EqualTo("$model"));
     }
 
     [Test]
@@ -75,9 +94,13 @@ public sealed class CheckingGraphTests
         var verdicts = Table(snapshot, "verdicts");
         var summary = Table(snapshot, "verdicts", 1);
         var chart = Table(snapshot, "chart");
+        var answer = Table(snapshot, "answer");
         Assert.Multiple(() =>
         {
             Assert.That(verdicts.Rows, Has.Count.EqualTo(14), "one row per IFCDOOR");
+            Assert.That(answer.ColumnNames(), Is.EqualTo(new[] { "Name", "Verdict", "Reason", "GlobalId" }));
+            Assert.That(answer.Rows, Has.Count.EqualTo(14));
+            Assert.That(answer.ColumnCells("Name"), Has.None.Null, "every door is named from the entity table");
             Assert.That(verdicts.ColumnCells("Verdict").Count(v => Equals(v, "Pass")), Is.EqualTo(8));
             Assert.That(verdicts.ColumnCells("Verdict").Count(v => Equals(v, "Fail")), Is.EqualTo(6));
             Assert.That(summary.Rows, Has.Count.EqualTo(1));
@@ -105,6 +128,7 @@ public sealed class CheckingGraphTests
         var snapshot = ModelGraphTests.EvaluateGreen(Document("check-ids-carbon-psets"), "check-ids-carbon-psets", Fixture.Registry(Fixture.Runtime));
         var summary = Table(snapshot, "verdicts", 1);
         var failures = Table(snapshot, "failures");
+        var answer = Table(snapshot, "answer");
         Assert.Multiple(() =>
         {
             Assert.That(summary.ColumnCells("CheckId"), Is.EqualTo(new object?[] { "IDS-OC", "IDS-EC" }));
@@ -117,7 +141,9 @@ public sealed class CheckingGraphTests
             Assert.That(failures.Rows, Has.Count.EqualTo(1));
             Assert.That(failures.Cell("CheckId", 0), Is.EqualTo("IDS-EC"));
             Assert.That(failures.Cell("GlobalId", 0), Is.EqualTo(RoofGlobalId), "the roof, the one element with no embodied-carbon row");
-            Assert.That(Table(snapshot, "chart").ColumnNames(), Is.EqualTo(new[] { "CheckId", "Pass", "Fail" }));
+            Assert.That(answer.ColumnNames(), Is.EqualTo(new[] { "GlobalId", "CheckId", "Reason" }));
+            Assert.That(answer.Rows, Has.Count.EqualTo(1));
+            Assert.That(Table(snapshot, "chart").ColumnNames(), Is.EqualTo(new[] { "CheckTitle", "Pass", "Fail", "InfoNotAvailable" }));
         });
     }
 
@@ -155,13 +181,14 @@ public sealed class CheckingGraphTests
         var path = TempBcf("external-doors.bcf");
         var doc = WithParam(Document("bcf-from-sql"), "bcf", "path", path);
         var snapshot = ModelGraphTests.RunGreen(doc, "bcf-from-sql", Fixture.Registry(Fixture.Runtime), "bcf");
-        var doors = Table(snapshot, "doors");
+        var doors = Table(snapshot, "sorted");
         var topics = Table(snapshot, "topics");
         try
         {
             Assert.Multiple(() =>
             {
                 Assert.That(doors.Rows, Is.Not.Empty.And.Count.LessThan(14), "some, not all, Duplex doors are external");
+                Assert.That(doors.ColumnNames(), Is.EqualTo(new[] { "Title", "Description", "Name", "GlobalId" }));
                 Assert.That(topics.Rows, Has.Count.EqualTo(1));
                 Assert.That(topics.Cell("Elements", 0), Is.EqualTo((long)doors.Rows.Count));
                 Assert.That(Table(snapshot, "bcf").Cell("viewpoints", 0), Is.EqualTo(1L));
@@ -178,12 +205,13 @@ public sealed class CheckingGraphTests
     {
         var snapshot = ModelGraphTests.EvaluateGreen(Document("bcf-read-colour"), "bcf-read-colour", Fixture.Registry(Fixture.Runtime));
         var issues = Table(snapshot, "issues");
-        var perTopic = Table(snapshot, "perTopic");
+        var answer = Table(snapshot, "answer");
         Assert.Multiple(() =>
         {
             Assert.That(issues.Rows, Has.Count.EqualTo(6));
             Assert.That(issues.ColumnCells("Title"), Has.All.EqualTo("Door leaf width at least 850 mm"));
-            Assert.That(perTopic.Cell("Elements", 0), Is.EqualTo(6L));
+            Assert.That(answer.Rows, Has.Count.EqualTo(1), "bcf.read's topics port, one row per topic");
+            Assert.That(answer.Cell("Elements", 0), Is.EqualTo(6L));
             Assert.That(Table(snapshot, "coloured").Rows, Is.Not.Empty);
         });
     }

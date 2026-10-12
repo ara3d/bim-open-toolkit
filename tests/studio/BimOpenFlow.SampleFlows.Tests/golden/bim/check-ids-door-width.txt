@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// check-ids-door-width   graph d01adb3aa427
-model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+// check-ids-door-width   graph bc03ec4d42fb
+inputs geometry: FilePath = "{SAMPLES}/duplex-enriched.ifc" now "{MODELS}/duplex-enriched.ifc", model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
+about = view.note@1(text: "Rule DC-W1, a door leaf at least 850 mm wide (NBC 2020 3.8.3.12, illustrative), stated as an IDS file (samples/nrc/ids/dc-w1.ids) and checked by ids.check over the 14 doors of the Duplex: 8 pass and 6 fail, the same verdicts as nrc-dc-w1-verdicts gets with check.rule. answer names each door; chart counts the verdicts and coloured paints them on the model. The scene reads the IFC through the second input, geometry, because view3d.instances cannot read a .bos file yet; point both inputs at the same building.");
+  // Ok
+modelPath = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.bos"
+model = bos.load@1(path: modelPath.path, harmonize: "false");
   // Ok
   //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
@@ -17,7 +22,9 @@ model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
   //     [0] 133, "Level 1", 4705, null, "MemberOf"
   //     [1] 134, "Level 2", 4705, null, "MemberOf"
   //     [2] 135, "T/FDN", 4705, null, "MemberOf"
-scene = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
+scenePath = value.path@1(path: "$geometry");
+  // Ok  Text "{MODELS}/duplex-enriched.ifc"
+scene = view3d.instances@1(path: scenePath.path);
   // Ok  table 714 rows x 11 cols  sha f912cca851d5
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
   //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
@@ -42,6 +49,10 @@ coloured = view3d.color@1(instances: scene.instances, values: verdicts.verdicts,
   //   legend: table 2 rows x 9 cols  sha 502f07450b53
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "Verdict" categorical: category "Fail" 6, category "Pass" 8
+named = table.join@1(a: verdicts.verdicts, b: model.entities, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
+  // Ok  table 14 rows x 12 cols  sha 4e2290b8ff95
+  //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text, StepId:Integer, GlobalId_b:Text, Name:Text, Category:Text, Type:Text
+  //   verdicts "DC-W1": Fail 6, Pass 8
 perVerdict = table.aggregate@1(table: verdicts.verdicts, groupBy: "Verdict", aggregates: "count(*) as Doors");
   // Ok  table 2 rows x 2 cols  sha 67e6ed9acc1c
   //   columns Verdict:Text, Doors:Integer
@@ -57,3 +68,13 @@ chart = chart.bar@1(table: perVerdict.table, labelColumn: "Verdict", valueColumn
   //   legend: table 0 rows x 9 cols  sha b47d2a37380c
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
+sorted = table.sort@1(table: named.table, A: "Verdict", B: "Name");
+  // Ok  table 14 rows x 12 cols  sha 85e265fdec2f
+  //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text, StepId:Integer, GlobalId_b:Text, Name:Text, Category:Text, Type:Text
+  //   verdicts "DC-W1": Fail 6, Pass 8
+answer = view.table@1(table: sorted.table, title: "DC-W1 door width verdicts", columns: "Name, Verdict, Reason, GlobalId");
+  // Ok  table 14 rows x 4 cols  sha db5ddaca3ce6
+  //   columns Name:Text, Verdict:Text, Reason:Text, GlobalId:Text
+  //   [0] "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15017"..., "Fail", "OverallWidth = '0.762' is not >=0.85", "1hOSvn6df7F8_7GcBWlS8Z"
+  //   [1] "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15025"..., "Fail", "OverallWidth = '0.762' is not >=0.85", "1hOSvn6df7F8_7GcBWlS9F"
+  //   [2] "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:20372"..., "Fail", "OverallWidth = '0.762' is not >=0.85", "1aj$VJZFn2TxepZUBcKp$i"

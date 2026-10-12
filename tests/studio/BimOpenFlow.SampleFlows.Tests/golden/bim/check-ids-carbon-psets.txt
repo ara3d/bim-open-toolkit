@@ -1,6 +1,11 @@
 dfg 0.1.0;
-// check-ids-carbon-psets   graph 7003277c1eaf
-model = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos", harmonize: "false");
+// check-ids-carbon-psets   graph 29e5727ce50c
+inputs model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
+about = view.note@1(text: "The NRC carbon property sets as an IDS (nrc-analytics.ids) over the enriched Duplex: each of the two specifications applies to the 218 analysed elements. Every one has its operational carbon; one, the roof, has no embodied-carbon row and fails IDS-EC (honest absence, the same answer as nrc-q7-absence). chart counts verdicts per specification; answer lists the failing elements.");
+  // Ok
+modelPath = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.bos"
+model = bos.load@1(path: modelPath.path, harmonize: "false");
   // Ok
   //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
@@ -27,13 +32,13 @@ verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, i
   //     columns CheckId:Text, CheckTitle:Text, Pass:Integer, Fail:Integer, InfoNotAvailable:Integer, Rows:Integer
   //     [0] "IDS-OC", "IDS-OC", 218, 0, 0, 218
   //     [1] "IDS-EC", "IDS-EC", 217, 1, 0, 218
-chart = chart.bar@1(table: verdicts.summary, labelColumn: "CheckId", valueColumns: "Pass, Fail", title: "NRC carbon property sets: elements per IDS verdict", sort: "none");
+chart = chart.bar@1(table: verdicts.summary, labelColumn: "CheckTitle", valueColumns: "Pass, Fail, InfoNotAvailable", title: "NRC carbon property sets: elements per IDS verdict", sort: "none");
   // Ok
-  //   table: table 2 rows x 3 cols  sha ff92a387f21a
-  //     columns CheckId:Text, Pass:Integer, Fail:Integer
-  //     chart 2 categories x 2 series: "Pass", "Fail"
-  //     "IDS-OC": 218, 0
-  //     "IDS-EC": 217, 1
+  //   table: table 2 rows x 4 cols  sha eb144287d845
+  //     columns CheckTitle:Text, Pass:Integer, Fail:Integer, InfoNotAvailable:Integer
+  //     chart 2 categories x 3 series: "Pass", "Fail", "InfoNotAvailable"
+  //     "IDS-OC": 218, 0, 0
+  //     "IDS-EC": 217, 1, 0
   //   legend: table 0 rows x 9 cols  sha b47d2a37380c
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
@@ -41,3 +46,7 @@ failures = table.filter@1(table: verdicts.verdicts, expr: "[Verdict] != 'Pass'")
   // Ok  table 1 rows x 7 cols  sha 8493b5ffc182
   //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
   //   verdicts "IDS-EC": Fail 1
+answer = view.table@1(table: failures.table, title: "Failing elements", columns: "GlobalId, CheckId, Reason");
+  // Ok  table 1 rows x 3 cols  sha 600714fd3ecf
+  //   columns GlobalId:Text, CheckId:Text, Reason:Text
+  //   [0] "0jf0rYHfX3RAB3bSIRjmxl", "IDS-EC", "no Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kg"...
