@@ -11,4 +11,6 @@ or `poc/data/nrc_analytics_storeys.csv`.
 |------|--------|
 | `CsvGraphTests.cs` | the five `nrc-q*` graphs over the CSVs |
 | `ModelGraphTests.cs` | the storey walk and DC-W1 graphs over the built database |
+| `CheckingGraphTests.cs` | the six `samples/checking-analyses` graphs: IDS checks, BCF written from them and read back, over `samples/nrc/duplex-enriched.bos` built the way the host does |
+| `IdsFilesTests.cs` | `samples/nrc/ids/nrc-analytics.ids` is what `scripts/nrc-ids.mjs` generates, and both IDS files equal bim-open-data's fixture copies |
 | `RollupGraphTests.cs` | the analytics contract: `nrc-element-psets` and `nrc-rollup` against the generator's element and storey CSVs, `nrc-enrich-run` as an exact copy of both, and the committed `duplex-enriched.ifc` as its byte-exact, additions-only output |
