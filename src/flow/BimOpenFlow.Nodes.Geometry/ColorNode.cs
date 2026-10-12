@@ -27,7 +27,7 @@ public sealed class ColorNode : IFlowNode
             new("legend", PortType.Table),
         ],
         [
-            new("joinColumn", ParamKind.Text),
+            new("joinColumn", ParamKind.Text, Suggest: SuggestSource.ColumnsOf("instances", ColumnUse.JoinKey, "values")),
             new("valueColumn", ParamKind.Text),
             new("colorMap", ParamKind.Enum, "viridis", ColorScale.ColorMapNames),
             new("auto", ParamKind.Boolean, "true"),

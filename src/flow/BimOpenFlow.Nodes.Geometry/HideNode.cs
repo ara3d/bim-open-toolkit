@@ -13,7 +13,7 @@ public sealed class HideNode : IFlowNode
         "view3d.hide", 1, NodeCapability.Pure,
         [new("instances", PortType.Table), new("ids", PortType.Table)],
         [new("instances", PortType.Table)],
-        [new("joinColumn", ParamKind.Text, Suggest: SuggestSource.ColumnsOf("instances"))],
+        [new("joinColumn", ParamKind.Text, Suggest: SuggestSource.ColumnsOf("instances", ColumnUse.Key))],
         "Removes the instance rows whose join column value appears in the ids table.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)

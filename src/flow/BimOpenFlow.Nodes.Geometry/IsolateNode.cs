@@ -12,7 +12,7 @@ public sealed class IsolateNode : IFlowNode
         "view3d.isolate", 1, NodeCapability.Pure,
         [new("instances", PortType.Table), new("ids", PortType.Table)],
         [new("instances", PortType.Table)],
-        [new("joinColumn", ParamKind.Text)],
+        [new("joinColumn", ParamKind.Text, Suggest: SuggestSource.ColumnsOf("instances", ColumnUse.Key))],
         "Keeps only the instance rows whose join column value appears in the ids table.");
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)

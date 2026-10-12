@@ -20,7 +20,7 @@ internal static class BcfIssues
     public static readonly ParamSpec PresetSpec = new(PresetParam, ParamKind.Enum, Auto, Presets);
 
     /// <summary>The Verdict values to keep when the table has a Verdict column; empty keeps every row.</summary>
-    public static readonly ParamSpec VerdictsSpec = new(VerdictsParam, ParamKind.Text, "Fail");
+    public static readonly ParamSpec VerdictsSpec = new(VerdictsParam, ParamKind.Text, "Fail", List: true);
 
     public static readonly string ParamsDescription =
         $"'{PresetParam}' names the topic columns: '{Issue}' reads Title and Description, '{VerdictPreset}' "

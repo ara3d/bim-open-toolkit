@@ -18,7 +18,7 @@ public sealed class OpacityNode : IFlowNode
         [new("instances", PortType.Table)],
         [
             new("alpha", ParamKind.Number, "0.25"),
-            new("joinColumn", ParamKind.Text, Suggest: SuggestSource.ColumnsOf("instances")),
+            new("joinColumn", ParamKind.Text, Suggest: SuggestSource.ColumnsOf("instances", ColumnUse.Key)),
             new("scope", ParamKind.Enum, "matched", ["matched", "others"]),
         ],
         "Sets the alpha column of an instance table, for all rows or for rows matched against an ids table.");
