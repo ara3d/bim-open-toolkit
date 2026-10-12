@@ -38,3 +38,9 @@ Track B (kernel extraction into `Ara3D.MeshKernel`) waits for C2, since both tou
 
 | Chunk | Commit | Result |
 |---|---|---|
+| E1 | bim-open-data 4940d85 | floors 0.958 / 0.933 / 0.913, Supported count 16; 6 ParityGates tests pass |
+| A | bim-open-data 90d7316 | tables for 3 quick files; example 28/116 differ (18 extrusion+polyline beams at 0.74, 9 columns, 1 clipped wall), steelplates 4 clipped beams/columns with a bbox item, OpenHouse 3 walls; no example.ifc bounds product off by 5 % in the dumps |
+| D1 | bim-open-data 23c1b84 | warm medians: OpenHouse 12.0 vs web-ifc 10.6 ms, steelplates 4.6 vs 34.0, duplex 109.5 vs 102.4, example 129.7 vs 21.9 (BenchmarkDotNet figure inconsistent with 48.7 ms quick pass, unexplained) |
+| C1 | bim-open-data 45be29b | Cox-de Boor evaluator (SplineDefinition, SampleCount); IFCBSPLINECURVE and WITHKNOTS Supported; 149/149 fast tests; rational dispatch in CurveEvaluator pending (C1 resumed) |
+| C2 | bim-open-data ea78043 | FZK-Haus walls #67536/#75347: agreement flag read backwards for oblique planes; BooleanPlane struct; 2 products off web-ifc before, 0 after; 150/150 fast tests; Z-aligned planes still use the inverted reading (C4 dispatched) |
+| C1b | bim-open-data f9d0b28 | rational B-spline dispatched in CurveEvaluator; three B-spline curve rows Supported; 151/151 fast tests |
