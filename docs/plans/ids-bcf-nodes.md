@@ -105,3 +105,20 @@ Skipped, with reasons:
 - `RequireRun` and `SummaryRow` belong in `BimOpenFlow.Nodes.Support` so the
   Effects pack and the Bcf pack share them; `BcfIssues.Find` should be
   `TableColumns.ColumnIndex`.
+
+## Second wave, 2026-10-11
+
+The owner asked for the "do next" and "smaller" items, all by subagents. One
+shared checkout, no worktrees, one builder per fence, committing by path; the
+supervisor (session bcfc489d) pushes, pins, and integrates.
+
+| Track | Repository | Fence | Work |
+|---|---|---|---|
+| A | bim-open-data | `src/data/Ara3D.Ids/**`, its tests | IDS values scaled into the model's units; IncludeSubtypes settled |
+| B | bim-open-data | `Ara3D.IfcLoader/IfcPropData.cs`, `Ara3D.Ifc.Bos/**`, `Ara3D.Ifc.Conventions/**`, their tests | type-object property sets into BOS (TKT-237) |
+| C | bim-open-data | `BimOpenMcp.Ifc/IdsTools.cs`, the server registration, the MCP tests | `ifc_ids_check` and `ifc_ids_specifications` MCP tools |
+| D | both | `BcfReader.cs` and its tests; `BcfReadNode.cs` and its tests | authoring-tool ids in their own column; warnings instead of a failed read |
+| G | toolkit | `scripts/nrc-ids.mjs`, `samples/nrc/ids/**`, `IdsFilesTests.cs` | nrc-analytics.ids generated from nrc-metrics.csv; the two IDS copies checked identical |
+| F (after A and B) | bim-open-data, toolkit | `Ara3D.Ids/**`, `Nodes.Ids/**` | material and part-of facets from BOS relations; inherited type values read |
+
+Build log follows as the tracks land.
