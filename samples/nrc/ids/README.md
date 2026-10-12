@@ -1,0 +1,23 @@
+# samples/nrc/ids
+
+Two IDS (Information Delivery Specification, buildingSMART's XML format for model requirements)
+files the `ids.check` node reads over the Duplex. The graphs in `samples/checking-analyses` use
+both.
+
+| File | Specifications | Made by |
+|---|---|---|
+| `nrc-analytics.ids` | `IDS-OC` and `IDS-EC`: every element of the fourteen analysed IFC classes carries `Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year` and `Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e` as `IFCREAL` | `scripts/nrc-ids.mjs`, from `../nrc-metrics.csv` |
+| `dc-w1.ids` | rule DC-W1, door leaf width at least 850 mm | by hand |
+
+Regenerate `nrc-analytics.ids` after a change to the metric dictionary:
+
+    node scripts/nrc-ids.mjs           # rewrites nrc-analytics.ids
+    node scripts/nrc-ids.mjs --check   # exits 1 if the committed file is stale
+
+The dictionary gives each requirement's property set, property name, and data type. The
+script's header says what it does not: which metrics become specifications, their names, and
+the IFC class list, which it checks against the `IfcClass` column of
+`../nrc_analytics_long.csv`.
+
+Both files are also bim-open-data's test fixtures, in `tests/data/Ara3D.Ids.Tests/ids` there;
+a change here is copied there in the same change.

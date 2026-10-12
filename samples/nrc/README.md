@@ -21,6 +21,12 @@ model root exposes the source name `nrc`.
 
 Every value is synthetic; NRC has supplied no model or dataset.
 
+`ids/` holds the two IDS files the checking graphs read (see `ids/README.md`).
+`ids/nrc-analytics.ids` is generated from `nrc-metrics.csv` by `node scripts/nrc-ids.mjs`,
+so the property sets and names it requires are the ones the enrichment writes; rerun it after
+editing the dictionary, or `--check` to see whether the file is current. `dc-w1.ids` is
+written by hand.
+
 `.gitattributes` marks `samples/nrc/*.ifc` as binary so line endings are never converted.
 `.gitignore` excludes `*.ifc` repository-wide and re-includes `samples/nrc/*.ifc`,
 so the IFC is committed on purpose.
