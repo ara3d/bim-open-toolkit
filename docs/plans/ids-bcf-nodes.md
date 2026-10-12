@@ -162,3 +162,37 @@ reason (an ambiguous `Ident` in bim-open-flow's TableOps, uncommitted there);
 track F ran CheckingGraphTests green before that edit appeared. A `TypeIndex`
 column on the EntityText view (and through bos.load) would remove the
 type-name ambiguity `IdsModel.FromTables` now warns about.
+
+### Review and fixes of the second wave
+
+A fresh-context reviewer found eight defects (three could give a false Pass)
+and eight design notes. Four fixers, one per fence:
+
+- Ara3D.Ids and the converter (`ad26d33`, `65dc4ec`, `22106c6`, `2678b53`,
+  `8a187d3`, `d21f180`): areas and volumes were scaled by the length unit
+  squared and cubed, but IFC declares AREAUNIT and VOLUMEUNIT separately (a
+  metric Revit export is millimetres with square metres), so the converter now
+  records `Ifc:AreaUnitToSquareMetre` and `Ifc:VolumeUnitToCubicMetre` and
+  `IdsModel.Units` replaces `LengthToMetre`; the material facet inherits from
+  the type through the same "own, else type" helper the property facet uses; a
+  pattern-named property over an unresolved type is InfoNotAvailable, not Pass;
+  type lookup by name considers type-object classes only; applicability
+  short-circuits on the entity facet. 82 tests.
+- MCP (`8af850e`, `723566b`, `aa995f0`): the tool descriptions now say IDS
+  values are SI and what `Supported` means; the IDS model is built once per
+  BOS session; the third dc-w1.ids copy is gone. 110 tests.
+- BCF (`97179f5`, `6d9a11d`; toolkit `89f04498`): a component with only an
+  AuthoringToolId survives read, then write (`BcfColumns.AuthoringToolId`);
+  the topics table splits `GlobalIds` and `AuthoringToolIds`; a corrupt
+  compressed entry is a warning. 42 and 11 tests.
+- Script (`d65dcc75`): `nrc-ids.mjs` fails loudly on a missing column, an empty
+  set or name, or a duplicate element row, with a Node test.
+
+Ticketed instead of fixed: TKT-246 (a TypeIndex column on EntityText), TKT-247
+(regenerate the public .bos files and record the converter version), TKT-248
+(IFC4 material profile sets), TKT-249 (the MCP parameter index counts type
+objects; its file had another session's uncommitted edits). Debt: the
+case-insensitive column lookup exists in `IdsTableColumns` and `BcfIssueTable`.
+The node docs were regenerated and committed by the declared-schemas session
+(`75689cdb`); a later regeneration here showed only that session's unlanded
+`bindable` changes, so it was not committed.
