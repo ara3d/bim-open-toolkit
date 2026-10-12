@@ -1,6 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "description": "Elements per storey of the Duplex, stacked by element class. Input: the table feeding the graph's 'chart' node (Storey, Elevation, then one count column per class).",
+  "description": "Elements per storey of the Duplex, stacked by element class. Input: the table feeding the graph's 'byClass' node (Storey, Elevation, then one count column per class).",
   "title": "Elements per storey, by class",
   "width": 480,
   "height": 220,
