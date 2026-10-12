@@ -20,4 +20,6 @@ the IFC class list, which it checks against the `IfcClass` column of
 `../nrc_analytics_long.csv`.
 
 Both files are also bim-open-data's test fixtures, in `tests/data/Ara3D.Ids.Tests/ids` there;
-a change here is copied there in the same change.
+a change here is copied there in the same change. `IdsFilesTests` in
+`tests/studio/BimOpenFlow.NrcWorkflows.Tests` fails when the generated file is stale or when
+either file differs from its copy.
