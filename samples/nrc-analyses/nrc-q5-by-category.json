@@ -1,17 +1,31 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 820,
-      "y": 40
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 104
     },
     "elements": {
       "x": 40,
-      "y": 40
+      "y": 280
     },
     "perCategory": {
       "x": 370,
-      "y": 40
+      "y": 280
+    },
+    "answer": {
+      "x": 700,
+      "y": 280
+    },
+    "rows": {
+      "x": 1030,
+      "y": 280
+    },
+    "chart": {
+      "x": 1360,
+      "y": 280
     }
   },
   "structure": {
@@ -23,12 +37,20 @@
       {
         "from": "perCategory.relation",
         "to": "answer.input"
+      },
+      {
+        "from": "answer.relation",
+        "to": "rows.input"
+      },
+      {
+        "from": "rows.table",
+        "to": "chart.table"
       }
     ],
     "nodes": [
       {
-        "id": "answer",
-        "kind": "rel.sort",
+        "id": "about",
+        "kind": "view.note",
         "version": 1
       },
       {
@@ -40,20 +62,47 @@
         "id": "perCategory",
         "kind": "rel.aggregate",
         "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.sort",
+        "version": 1
+      },
+      {
+        "id": "rows",
+        "kind": "rel.materialize",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
       }
     ]
   },
   "values": {
-    "answer": {
-      "by": "Total desc"
+    "about": {
+      "text": "Q5: operational carbon summed per category, highest first (expected_answers.json Q5): Wall leads at 22,854.1 kgCO2e/yr and Railing is last at 164.8. rows runs the plan so chart can draw the nine totals as bars."
     },
     "elements": {
       "path": "nrc_analytics_elements.csv",
       "source": "nrc"
     },
     "perCategory": {
-      "aggregates": "sum(OperationalCarbon_kgCO2e_per_year) as Total",
+      "aggregates": "sum(OperationalCarbon_kgCO2e_per_year) as OperationalCarbon_kgCO2e_per_year",
       "groupBy": "Category"
+    },
+    "answer": {
+      "by": "OperationalCarbon_kgCO2e_per_year desc"
+    },
+    "rows": {
+      "limit": "0"
+    },
+    "chart": {
+      "labelColumn": "Category",
+      "valueColumns": "OperationalCarbon_kgCO2e_per_year",
+      "title": "Operational carbon per category (kgCO2e/yr, synthetic)",
+      "sort": "none"
     }
   }
 }

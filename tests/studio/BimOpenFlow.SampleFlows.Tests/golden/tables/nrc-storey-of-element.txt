@@ -1,23 +1,32 @@
 dfg 0.1.0;
-// nrc-storey-of-element   graph 3075fb61ec2e
+// nrc-storey-of-element   graph 800cd6a1d7f9
+about = view.note@1(text: "Figure 10: the storey of every analysed element, read from the model instead of the CSV's Storey column. StoreyOfElement walks ContainedIn, PartOf and MemberOf; placed keeps each element's row with the smallest Depth, the pick nrc-rollup applies, so no element counts twice. Expected: 103, 93, 14 and 8 elements (nrc_analytics_storeys.csv).");
+  // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
 entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
   // Ok  relation plan 9a8be9f3b5d5
   //   "(table \"duplex-enriched\" \"EntityText\")"
-storeyOf = rel.table@1(source: "duplex-enriched", table: "StoreyOfEntity");
-  // Ok  relation plan e9acf473fc16
-  //   "(table \"duplex-enriched\" \"StoreyOfEntity\")"
-withGlobalId = rel.join@1(left: storeyOf.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
-  // Ok  relation plan d8ea9f8a7f58
-  //   "(join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"])"
+storeys = rel.table@1(source: "duplex-enriched", table: "StoreyOfElement");
+  // Ok  relation plan 471abe7cda5f
+  //   "(table \"duplex-enriched\" \"StoreyOfElement\")"
+placed = rel.sql@1(t1: storeys.relation, sql: """
+SELECT EntityIndex, StoreyName
+FROM t1
+QUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth, StoreyIndex) = 1
+""");
+  // Ok  relation plan 49f7bf5edcad
+  //   "(sql \"SELECT EntityIndex, StoreyName\nFROM t1\nQUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth, StoreyIndex) = 1\" [(table \"duplex-enriched\" \"StoreyOfElement\")])"
+withGlobalId = rel.join@1(left: placed.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
+  // Ok  relation plan bf72c39e9109
+  //   "(join Inner (sql \"SELECT EntityIndex, StoreyName\nFROM t1\nQUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth, StoreyIndex) = 1\" [(table \"duplex-enriched\" \"StoreyOfElement\")]) (table \"du"...
 analysed = rel.join@1(left: withGlobalId.relation, right: elements.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
-  // Ok  relation plan ef648c204eb6
-  //   "(join Inner (join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\"=\"GlobalId\""...
-perStorey = rel.aggregate@1(input: analysed.relation, groupBy: "StoreyName", aggregates: "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied");
-  // Ok  relation plan 2d9af5e2bafe
-  //   "(aggregate (join Inner (join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\""...
-answer = rel.sort@1(input: perStorey.relation, by: "Embodied desc");
-  // Ok  relation plan e220fd5e70fb
-  //   "(sort (aggregate (join Inner (join Inner (table \"duplex-enriched\" \"StoreyOfEntity\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Glo"...
+  // Ok  relation plan 24ccf22f005e
+  //   "(join Inner (join Inner (sql \"SELECT EntityIndex, StoreyName\nFROM t1\nQUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth, StoreyIndex) = 1\" [(table \"duplex-enriched\" \"StoreyOfElement\")]"...
+perStorey = rel.aggregate@1(input: analysed.relation, groupBy: "StoreyName", aggregates: "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as EmbodiedCarbon_A1A3_kgCO2e");
+  // Ok  relation plan d31ef94e6121
+  //   "(aggregate (join Inner (join Inner (sql \"SELECT EntityIndex, StoreyName\nFROM t1\nQUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth, StoreyIndex) = 1\" [(table \"duplex-enriched\" \"StoreyO"...
+answer = rel.sort@1(input: perStorey.relation, by: "EmbodiedCarbon_A1A3_kgCO2e desc");
+  // Ok  relation plan 5257f22fd778
+  //   "(sort (aggregate (join Inner (join Inner (sql \"SELECT EntityIndex, StoreyName\nFROM t1\nQUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth, StoreyIndex) = 1\" [(table \"duplex-enriched\" \"S"...

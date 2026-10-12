@@ -1,14 +1,16 @@
 dfg 0.1.0;
-// nrc-q2-storey-eui   graph 7a1d22aa590c
+// nrc-q2-storey-eui   graph b7200656e1d9
+about = view.note@1(text: "Q2: which of Level 1 and Level 2 has the higher mean energy use intensity. levels keeps the two storeys before the average, so no other storey is computed; the sort puts the higher first: Level 2 at 40.56 kWh/m2/yr, then Level 1 at 40.5.");
+  // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
-perStorey = rel.aggregate@1(input: elements.relation, groupBy: "Storey", aggregates: "count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui");
-  // Ok  relation plan f85aa003552f
-  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"])"
-levels = rel.filter@1(input: perStorey.relation, expr: "[Storey] == 'Level 1' or [Storey] == 'Level 2'");
-  // Ok  relation plan 7ea99122c6d0
-  //   "(filter (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"]) \"(([Storey] == 'Level 1') or ([Storey] == 'Level 2'))\""...
-answer = rel.sort@1(input: levels.relation, by: "MeanEui desc");
-  // Ok  relation plan 2647f6eac13f
-  //   "(sort (filter (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui\"]) \"(([Storey] == 'Level 1') or ([Storey] == 'Level"...
+levels = rel.filter@1(input: elements.relation, expr: "[Storey] == 'Level 1' or [Storey] == 'Level 2'");
+  // Ok  relation plan ae4238140b8f
+  //   "(filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"(([Storey] == 'Level 1') or ([Storey] == 'Level 2'))\")"
+perStorey = rel.aggregate@1(input: levels.relation, groupBy: "Storey", aggregates: "count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui_kWh_per_m2_year");
+  // Ok  relation plan ac09e5eef919
+  //   "(aggregate (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"(([Storey] == 'Level 1') or ([Storey] == 'Level 2'))\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"MeanEui_k"...
+answer = rel.sort@1(input: perStorey.relation, by: "MeanEui_kWh_per_m2_year desc");
+  // Ok  relation plan 36d93d69a1b6
+  //   "(sort (aggregate (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"(([Storey] == 'Level 1') or ([Storey] == 'Level 2'))\") [\"Storey\"] [Count(*)>\"Elements\" Avg(\"EnergyUseIntensity_kWh_per_m2_year\")>\"Mea"...

@@ -1,39 +1,53 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "storeyOf": {
+    "about": {
       "x": 40,
-      "y": 40
+      "y": 40,
+      "w": 560,
+      "h": 140
     },
-    "entities": {
+    "storeys": {
       "x": 40,
       "y": 280
     },
-    "withGlobalId": {
-      "x": 370,
-      "y": 40
+    "entities": {
+      "x": 40,
+      "y": 520
     },
     "elements": {
+      "x": 40,
+      "y": 760
+    },
+    "placed": {
       "x": 370,
-      "y": 340
+      "y": 280
+    },
+    "withGlobalId": {
+      "x": 700,
+      "y": 280
     },
     "analysed": {
-      "x": 700,
-      "y": 40
+      "x": 1030,
+      "y": 280
     },
     "perStorey": {
-      "x": 1030,
-      "y": 40
+      "x": 1360,
+      "y": 280
     },
     "answer": {
-      "x": 1600,
-      "y": 40
+      "x": 1690,
+      "y": 280
     }
   },
   "structure": {
     "edges": [
       {
-        "from": "storeyOf.relation",
+        "from": "storeys.relation",
+        "to": "placed.t1"
+      },
+      {
+        "from": "placed.relation",
         "to": "withGlobalId.left"
       },
       {
@@ -59,7 +73,12 @@
     ],
     "nodes": [
       {
-        "id": "storeyOf",
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "storeys",
         "kind": "rel.table",
         "version": 1
       },
@@ -69,13 +88,18 @@
         "version": 1
       },
       {
-        "id": "withGlobalId",
-        "kind": "rel.join",
+        "id": "elements",
+        "kind": "rel.csv",
         "version": 1
       },
       {
-        "id": "elements",
-        "kind": "rel.csv",
+        "id": "placed",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "withGlobalId",
+        "kind": "rel.join",
         "version": 1
       },
       {
@@ -96,22 +120,28 @@
     ]
   },
   "values": {
-    "storeyOf": {
+    "about": {
+      "text": "Figure 10: the storey of every analysed element, read from the model instead of the CSV's Storey column. StoreyOfElement walks ContainedIn, PartOf and MemberOf; placed keeps each element's row with the smallest Depth, the pick nrc-rollup applies, so no element counts twice. Expected: 103, 93, 14 and 8 elements (nrc_analytics_storeys.csv)."
+    },
+    "storeys": {
       "source": "duplex-enriched",
-      "table": "StoreyOfEntity"
+      "table": "StoreyOfElement"
     },
     "entities": {
       "source": "duplex-enriched",
       "table": "EntityText"
     },
+    "elements": {
+      "source": "nrc",
+      "path": "nrc_analytics_elements.csv"
+    },
+    "placed": {
+      "sql": "SELECT EntityIndex, StoreyName\nFROM t1\nQUALIFY row_number() OVER (PARTITION BY EntityIndex ORDER BY Depth, StoreyIndex) = 1"
+    },
     "withGlobalId": {
       "leftKey": "EntityIndex",
       "rightKey": "EntityIndex",
       "kind": "inner"
-    },
-    "elements": {
-      "source": "nrc",
-      "path": "nrc_analytics_elements.csv"
     },
     "analysed": {
       "leftKey": "GlobalId",
@@ -120,10 +150,10 @@
     },
     "perStorey": {
       "groupBy": "StoreyName",
-      "aggregates": "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied"
+      "aggregates": "count(*) as Elements, sum(EmbodiedCarbon_A1A3_kgCO2e) as EmbodiedCarbon_A1A3_kgCO2e"
     },
     "answer": {
-      "by": "Embodied desc"
+      "by": "EmbodiedCarbon_A1A3_kgCO2e desc"
     }
   }
 }

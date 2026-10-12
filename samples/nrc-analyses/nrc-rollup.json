@@ -1,45 +1,51 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 1820,
-      "y": 240
-    },
-    "containers": {
-      "x": 370,
-      "y": 240
-    },
-    "entities": {
+    "about": {
       "x": 40,
-      "y": 520
-    },
-    "inContainers": {
-      "x": 940,
-      "y": 240
-    },
-    "metrics": {
-      "x": 40,
-      "y": 760
-    },
-    "provenance": {
-      "x": 1250,
-      "y": 640
-    },
-    "run": {
-      "x": 40,
-      "y": 1000
-    },
-    "storeys": {
-      "x": 40,
-      "y": 280
-    },
-    "summaries": {
-      "x": 1250,
-      "y": 240
+      "y": 40,
+      "w": 560,
+      "h": 140
     },
     "values": {
       "x": 40,
-      "y": 40
+      "y": 280
+    },
+    "storeys": {
+      "x": 40,
+      "y": 520
+    },
+    "entities": {
+      "x": 40,
+      "y": 760
+    },
+    "metrics": {
+      "x": 40,
+      "y": 1000
+    },
+    "run": {
+      "x": 40,
+      "y": 1240
+    },
+    "containers": {
+      "x": 370,
+      "y": 520
+    },
+    "inContainers": {
+      "x": 700,
+      "y": 280
+    },
+    "summaries": {
+      "x": 1030,
+      "y": 280
+    },
+    "provenance": {
+      "x": 1030,
+      "y": 760
+    },
+    "answer": {
+      "x": 1360,
+      "y": 280
     }
   },
   "structure": {
@@ -91,37 +97,12 @@
     ],
     "nodes": [
       {
-        "id": "answer",
-        "kind": "rel.sql",
+        "id": "about",
+        "kind": "view.note",
         "version": 1
       },
       {
-        "id": "containers",
-        "kind": "rel.sql",
-        "version": 1
-      },
-      {
-        "id": "entities",
-        "kind": "rel.table",
-        "version": 1
-      },
-      {
-        "id": "inContainers",
-        "kind": "rel.join",
-        "version": 1
-      },
-      {
-        "id": "metrics",
-        "kind": "rel.csv",
-        "version": 1
-      },
-      {
-        "id": "provenance",
-        "kind": "rel.sql",
-        "version": 1
-      },
-      {
-        "id": "run",
+        "id": "values",
         "kind": "rel.csv",
         "version": 1
       },
@@ -131,54 +112,87 @@
         "version": 1
       },
       {
+        "id": "entities",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "metrics",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "run",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "containers",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "inContainers",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
         "id": "summaries",
         "kind": "rel.sql",
         "version": 1
       },
       {
-        "id": "values",
-        "kind": "rel.csv",
+        "id": "provenance",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.sql",
         "version": 1
       }
     ]
   },
   "values": {
-    "answer": {
-      "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"
+    "about": {
+      "text": "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows."
     },
-    "containers": {
-      "sql": "SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so.StoreyIndex\nWHERE e.GlobalId IS NOT NULL\nQUALIFY row_number() OVER (PARTITION BY so.EntityIndex ORDER BY so.Depth, so.StoreyIndex) = 1\nUNION ALL\nSELECT e.GlobalId, 'building', b.StepId\nFROM t2 e JOIN t2 b ON b.Category = 'IFCBUILDING'\nWHERE e.GlobalId IS NOT NULL"
-    },
-    "entities": {
-      "source": "duplex-base",
-      "table": "EntityText"
-    },
-    "inContainers": {
-      "kind": "inner",
-      "leftKey": "GlobalId",
-      "rightKey": "GlobalId"
-    },
-    "metrics": {
-      "path": "nrc-metrics.csv",
-      "source": "nrc"
-    },
-    "provenance": {
-      "sql": "SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFCPROJECT'\nORDER BY paramName"
-    },
-    "run": {
-      "path": "nrc-run.csv",
+    "values": {
+      "path": "nrc_analytics_long.csv",
       "source": "nrc"
     },
     "storeys": {
       "source": "duplex-base",
       "table": "StoreyOfElement"
     },
+    "entities": {
+      "source": "duplex-base",
+      "table": "EntityText"
+    },
+    "metrics": {
+      "path": "nrc-metrics.csv",
+      "source": "nrc"
+    },
+    "run": {
+      "path": "nrc-run.csv",
+      "source": "nrc"
+    },
+    "containers": {
+      "sql": "SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so.StoreyIndex\nWHERE e.GlobalId IS NOT NULL\nQUALIFY row_number() OVER (PARTITION BY so.EntityIndex ORDER BY so.Depth, so.StoreyIndex) = 1\nUNION ALL\nSELECT e.GlobalId, 'building', b.StepId\nFROM t2 e JOIN t2 b ON b.Category = 'IFCBUILDING'\nWHERE e.GlobalId IS NOT NULL"
+    },
+    "inContainers": {
+      "kind": "inner",
+      "leftKey": "GlobalId",
+      "rightKey": "GlobalId"
+    },
     "summaries": {
       "sql": "SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE m.Rollup\n           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n           WHEN 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n           WHEN 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)\n       END AS paramValue\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none' AND (m.Rollup = 'count' OR m.MetricId = p.MetricId)\nGROUP BY p.entityId, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals\nUNION\nSELECT p.entityId, m.PropertySet, r.Field, r.ValueType, r.Value\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'\nJOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\nORDER BY entityId, psetName, paramName"
     },
-    "values": {
-      "path": "nrc_analytics_long.csv",
-      "source": "nrc"
+    "provenance": {
+      "sql": "SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFCPROJECT'\nORDER BY paramName"
+    },
+    "answer": {
+      "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"
     }
   }
 }

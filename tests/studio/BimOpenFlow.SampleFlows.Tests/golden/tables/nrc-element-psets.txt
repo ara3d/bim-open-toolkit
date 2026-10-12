@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// nrc-element-psets   graph c786275c23ad
+// nrc-element-psets   graph a0c1f8d166b2
+about = view.note@1(text: "The element property-set rows nrc-enrich-run writes (README: How the enrichment rows are derived). metricRows places each value of nrc_analytics_long.csv in its set by nrc-metrics.csv; runFactRows fills a set's property that has no value from nrc-run.csv; runIdRows adds AnalysisRunId and ScenarioName to every set. 2,394 rows in (entityId, psetName, paramName) order.");
+  // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
   // Ok  relation plan fbac43cf5e83
   //   "(table \"duplex-base\" \"EntityText\")"
@@ -15,20 +17,28 @@ values = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
 withStepId = rel.join@1(left: values.relation, right: entities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
   // Ok  relation plan be5c641177e6
   //   "(join Inner (csv \"nrc\" \"nrc_analytics_long.csv\") (table \"duplex-base\" \"EntityText\") [\"GlobalId\"=\"GlobalId\"])"
-answer = rel.sql@1(t1: withStepId.relation, t2: metrics.relation, t3: run.relation, sql: """
+metricRows = rel.sql@1(t1: withStepId.relation, t2: metrics.relation, sql: """
 SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,
        m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue
 FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
-UNION
-SELECT p.StepId, s.PropertySet, s.PropertyName, s.ValueType, r.Value
-FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
-JOIN t2 s ON s.Level = 'element' AND s.PropertySet = m.PropertySet
-JOIN t3 r ON r.Field = s.PropertyName
-UNION
-SELECT p.StepId, m.PropertySet, r.Field, r.ValueType, r.Value
-FROM t1 p JOIN t2 m ON m.Level = 'element' AND m.MetricId = p.MetricId
-JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
-ORDER BY entityId, psetName, paramName
 """);
-  // Ok  relation plan 496f6585c50c
+  // Ok  relation plan ca7deee8d01b
   //   "(sql \"SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,\n       m.ValueType AS valueType, CAST(p.Value AS VARCHAR) AS paramValue\nFROM t1 p JOIN t2 m ON m.Level = 'ele"...
+runFactRows = rel.sql@1(t1: metricRows.relation, t2: metrics.relation, t3: run.relation, sql: """
+SELECT DISTINCT v.entityId, s.PropertySet AS psetName, s.PropertyName AS paramName,
+       s.ValueType AS valueType, r.Value AS paramValue
+FROM t1 v
+JOIN t2 s ON s.Level = 'element' AND s.PropertySet = v.psetName
+JOIN t3 r ON r.Field = s.PropertyName
+""");
+  // Ok  relation plan 9a985e5b2373
+  //   "(sql \"SELECT DISTINCT v.entityId, s.PropertySet AS psetName, s.PropertyName AS paramName,\n       s.ValueType AS valueType, r.Value AS paramValue\nFROM t1 v\nJOIN t2 s ON s.Level = 'element' AND s.Proper"...
+runIdRows = rel.sql@1(t1: metricRows.relation, t2: run.relation, sql: """
+SELECT DISTINCT v.entityId, v.psetName, r.Field AS paramName, r.ValueType AS valueType, r.Value AS paramValue
+FROM t1 v JOIN t2 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
+""");
+  // Ok  relation plan 944850ab13a5
+  //   "(sql \"SELECT DISTINCT v.entityId, v.psetName, r.Field AS paramName, r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 v JOIN t2 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\" [(sql \"SELECT p"...
+answer = rel.sql@1(t1: metricRows.relation, t2: runFactRows.relation, t3: runIdRows.relation, sql: "SELECT * FROM t1 UNION SELECT * FROM t2 UNION SELECT * FROM t3 ORDER BY entityId, psetName, paramName");
+  // Ok  relation plan d80847ee9fd0
+  //   "(sql \"SELECT * FROM t1 UNION SELECT * FROM t2 UNION SELECT * FROM t3 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,"...

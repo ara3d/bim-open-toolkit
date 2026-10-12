@@ -116,10 +116,13 @@ public sealed class RollupGraphTests
     }
 
     /// <summary>nrc-enrich-run cannot reference another graph, so it carries copies of the two graphs'
-    /// nodes, their answers renamed elementRows and rollupRows. This keeps the copies from drifting.</summary>
-    [TestCase(ElementGraph, "elementRows")]
-    [TestCase(RollupGraph, "rollupRows")]
-    public void EnrichRun_CarriesAnExactCopyOf(string id, string answerAs)
+    /// nodes. This keeps the copies from drifting. nrc-element-psets' answer is copied whole as
+    /// elementRows; nrc-rollup's answer, the union of summaries and provenance, is folded into enrich's
+    /// rows, which unions the same two inputs on the same ports plus elementRows, so only its wires
+    /// are compared. Each graph's about note describes that graph and is not copied.</summary>
+    [TestCase(ElementGraph, "elementRows", true)]
+    [TestCase(RollupGraph, "rows", false)]
+    public void EnrichRun_CarriesAnExactCopyOf(string id, string answerAs, bool answerCopied)
     {
         var part = ModelGraphTests.Document(id);
         var enrich = ModelGraphTests.Document(EnrichGraph);
@@ -128,7 +131,7 @@ public sealed class RollupGraphTests
 
         Assert.Multiple(() =>
         {
-            foreach (var node in part.Nodes)
+            foreach (var node in part.Nodes.Where(n => n.Kind != "view.note" && (answerCopied || n.Id != "answer")))
             {
                 var copy = enrich.FindNode(Renamed(node.Id));
                 Assert.That(copy, Is.Not.Null, node.Id);

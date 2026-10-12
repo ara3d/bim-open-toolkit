@@ -1,55 +1,41 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "csvPath": {
-      "x": -290,
-      "y": 160
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 122
     },
-    "answer": {
-      "x": 1690,
-      "y": 40
-    },
-    "distinct": {
-      "x": 1360,
-      "y": 40
-    },
-    "embodied": {
-      "x": 370,
-      "y": 300
-    },
-    "metricsForEmbodied": {
+    "metrics": {
       "x": 40,
       "y": 280
     },
-    "metricsForRoofs": {
-      "x": 40,
-      "y": 40
-    },
-    "missing": {
-      "x": 1030,
-      "y": 40
-    },
     "roofs": {
       "x": 370,
-      "y": 40
+      "y": 280
+    },
+    "embodied": {
+      "x": 370,
+      "y": 520
+    },
+    "missing": {
+      "x": 700,
+      "y": 280
+    },
+    "answer": {
+      "x": 1030,
+      "y": 280
     }
   },
   "structure": {
     "edges": [
       {
-        "from": "csvPath.path",
-        "to": "metricsForRoofs.path"
-      },
-      {
-        "from": "csvPath.path",
-        "to": "metricsForEmbodied.path"
-      },
-      {
-        "from": "metricsForRoofs.relation",
+        "from": "metrics.relation",
         "to": "roofs.input"
       },
       {
-        "from": "metricsForEmbodied.relation",
+        "from": "metrics.relation",
         "to": "embodied.input"
       },
       {
@@ -62,27 +48,23 @@
       },
       {
         "from": "missing.relation",
-        "to": "distinct.input"
-      },
-      {
-        "from": "distinct.relation",
         "to": "answer.input"
       }
     ],
     "nodes": [
       {
-        "id": "csvPath",
-        "kind": "value.path",
+        "id": "about",
+        "kind": "view.note",
         "version": 1
       },
       {
-        "id": "answer",
-        "kind": "rel.select",
+        "id": "metrics",
+        "kind": "rel.csv",
         "version": 1
       },
       {
-        "id": "distinct",
-        "kind": "rel.aggregate",
+        "id": "roofs",
+        "kind": "rel.filter",
         "version": 1
       },
       {
@@ -91,56 +73,39 @@
         "version": 1
       },
       {
-        "id": "metricsForEmbodied",
-        "kind": "rel.csv",
-        "version": 1
-      },
-      {
-        "id": "metricsForRoofs",
-        "kind": "rel.csv",
-        "version": 1
-      },
-      {
         "id": "missing",
         "kind": "rel.join",
         "version": 1
       },
       {
-        "id": "roofs",
-        "kind": "rel.filter",
+        "id": "answer",
+        "kind": "rel.aggregate",
         "version": 1
       }
     ]
   },
   "values": {
-    "csvPath": {
-      "path": "nrc_analytics_long.csv"
+    "about": {
+      "text": "Q7: which element has no embodied-carbon value. One reader of nrc_analytics_long.csv feeds both filters; the anti join keeps the roof rows whose GlobalId has no NRC.EC.A1A3.TOTAL row. The answer is the roof itself, as a row, not a zero; OtherMetrics counts the metric rows it does have."
     },
-    "answer": {
-      "columns": "GlobalId, IfcClass"
+    "metrics": {
+      "path": "nrc_analytics_long.csv",
+      "source": "nrc"
     },
-    "distinct": {
-      "aggregates": "count(*) as OtherMetrics",
-      "groupBy": "GlobalId, IfcClass"
+    "roofs": {
+      "expr": "[IfcClass] == 'IFCROOF'"
     },
     "embodied": {
       "expr": "[MetricId] == 'NRC.EC.A1A3.TOTAL'"
-    },
-    "metricsForEmbodied": {
-      "path": "nrc_analytics_long.csv",
-      "source": "nrc"
-    },
-    "metricsForRoofs": {
-      "path": "nrc_analytics_long.csv",
-      "source": "nrc"
     },
     "missing": {
       "kind": "anti",
       "leftKey": "GlobalId",
       "rightKey": "GlobalId"
     },
-    "roofs": {
-      "expr": "[IfcClass] == 'IFCROOF'"
+    "answer": {
+      "aggregates": "count(*) as OtherMetrics",
+      "groupBy": "IfcClass, GlobalId"
     }
   }
 }

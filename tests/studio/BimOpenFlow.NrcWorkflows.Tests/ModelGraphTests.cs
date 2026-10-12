@@ -87,10 +87,10 @@ public sealed class ModelGraphTests
 
         // nrc_analytics_storeys.csv columns Elements and EmbodiedCarbon_A1A3_kgCO2e, row by row.
         Assert.That(answer.ColumnCells("Elements"), Is.EqualTo(new object?[] { 103L, 93L, 14L, 8L }));
-        Assert.That(Number(answer, "Embodied", 0), Is.EqualTo(49451.2).Within(Tolerance));
-        Assert.That(Number(answer, "Embodied", 1), Is.EqualTo(48696.8).Within(Tolerance));
-        Assert.That(Number(answer, "Embodied", 2), Is.EqualTo(11761.3).Within(Tolerance));
-        Assert.That(Number(answer, "Embodied", 3), Is.EqualTo(5821.0).Within(Tolerance));
+        Assert.That(Number(answer, "EmbodiedCarbon_A1A3_kgCO2e", 0), Is.EqualTo(49451.2).Within(Tolerance));
+        Assert.That(Number(answer, "EmbodiedCarbon_A1A3_kgCO2e", 1), Is.EqualTo(48696.8).Within(Tolerance));
+        Assert.That(Number(answer, "EmbodiedCarbon_A1A3_kgCO2e", 2), Is.EqualTo(11761.3).Within(Tolerance));
+        Assert.That(Number(answer, "EmbodiedCarbon_A1A3_kgCO2e", 3), Is.EqualTo(5821.0).Within(Tolerance));
     }
 
     [Test]

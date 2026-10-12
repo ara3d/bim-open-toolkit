@@ -1,42 +1,48 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 1380,
-      "y": 40
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 104
     },
     "elements": {
       "x": 40,
-      "y": 40
+      "y": 280
     },
     "levels": {
-      "x": 940,
-      "y": 40
+      "x": 370,
+      "y": 280
     },
     "perStorey": {
-      "x": 370,
-      "y": 40
+      "x": 700,
+      "y": 280
+    },
+    "answer": {
+      "x": 1030,
+      "y": 280
     }
   },
   "structure": {
     "edges": [
       {
         "from": "elements.relation",
-        "to": "perStorey.input"
-      },
-      {
-        "from": "perStorey.relation",
         "to": "levels.input"
       },
       {
         "from": "levels.relation",
+        "to": "perStorey.input"
+      },
+      {
+        "from": "perStorey.relation",
         "to": "answer.input"
       }
     ],
     "nodes": [
       {
-        "id": "answer",
-        "kind": "rel.sort",
+        "id": "about",
+        "kind": "view.note",
         "version": 1
       },
       {
@@ -53,12 +59,17 @@
         "id": "perStorey",
         "kind": "rel.aggregate",
         "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.sort",
+        "version": 1
       }
     ]
   },
   "values": {
-    "answer": {
-      "by": "MeanEui desc"
+    "about": {
+      "text": "Q2: which of Level 1 and Level 2 has the higher mean energy use intensity. levels keeps the two storeys before the average, so no other storey is computed; the sort puts the higher first: Level 2 at 40.56 kWh/m2/yr, then Level 1 at 40.5."
     },
     "elements": {
       "path": "nrc_analytics_elements.csv",
@@ -68,8 +79,11 @@
       "expr": "[Storey] == 'Level 1' or [Storey] == 'Level 2'"
     },
     "perStorey": {
-      "aggregates": "count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui",
+      "aggregates": "count(*) as Elements, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui_kWh_per_m2_year",
       "groupBy": "Storey"
+    },
+    "answer": {
+      "by": "MeanEui_kWh_per_m2_year desc"
     }
   }
 }

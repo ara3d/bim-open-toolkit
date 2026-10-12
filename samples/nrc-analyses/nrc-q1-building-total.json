@@ -1,13 +1,19 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 370,
-      "y": 40
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 86
     },
     "elements": {
       "x": 40,
-      "y": 40
+      "y": 280
+    },
+    "answer": {
+      "x": 370,
+      "y": 280
     }
   },
   "structure": {
@@ -19,25 +25,33 @@
     ],
     "nodes": [
       {
-        "id": "answer",
-        "kind": "rel.aggregate",
+        "id": "about",
+        "kind": "view.note",
         "version": 1
       },
       {
         "id": "elements",
         "kind": "rel.csv",
         "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.aggregate",
+        "version": 1
       }
     ]
   },
   "values": {
-    "answer": {
-      "aggregates": "sum(OperationalCarbon_kgCO2e_per_year) as Total, count(*) as Elements",
-      "groupBy": ""
+    "about": {
+      "text": "Q1: the building's total operational carbon, summed over the 218 analysed elements of nrc_analytics_elements.csv. Expected (expected_answers.json Q1): 37,196.2 kgCO2e/yr."
     },
     "elements": {
       "path": "nrc_analytics_elements.csv",
       "source": "nrc"
+    },
+    "answer": {
+      "aggregates": "sum(OperationalCarbon_kgCO2e_per_year) as OperationalCarbon_kgCO2e_per_year, count(*) as Elements",
+      "groupBy": ""
     }
   }
 }

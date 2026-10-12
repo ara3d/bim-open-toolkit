@@ -1,5 +1,7 @@
 dfg 0.1.0;
-// nrc-rollup   graph ec5fc896733e
+// nrc-rollup   graph c5906797c921
+about = view.note@1(text: "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows.");
+  // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
   // Ok  relation plan fbac43cf5e83
   //   "(table \"duplex-base\" \"EntityText\")"

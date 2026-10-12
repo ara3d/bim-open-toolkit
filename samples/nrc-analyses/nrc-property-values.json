@@ -1,34 +1,69 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 370,
-      "y": 40
-    },
-    "entities": {
+    "about": {
       "x": 40,
-      "y": 280
+      "y": 40,
+      "w": 560,
+      "h": 122
     },
     "parameters": {
       "x": 40,
-      "y": 40
+      "y": 280
+    },
+    "entities": {
+      "x": 40,
+      "y": 520
+    },
+    "nrcOnly": {
+      "x": 370,
+      "y": 280
+    },
+    "withStepId": {
+      "x": 700,
+      "y": 280
+    },
+    "columns": {
+      "x": 1030,
+      "y": 280
+    },
+    "answer": {
+      "x": 1360,
+      "y": 280
     }
   },
   "structure": {
     "edges": [
       {
         "from": "parameters.relation",
-        "to": "answer.t1"
+        "to": "nrcOnly.input"
+      },
+      {
+        "from": "nrcOnly.relation",
+        "to": "withStepId.left"
       },
       {
         "from": "entities.relation",
-        "to": "answer.t2"
+        "to": "withStepId.right"
+      },
+      {
+        "from": "withStepId.relation",
+        "to": "columns.input"
+      },
+      {
+        "from": "columns.relation",
+        "to": "answer.input"
       }
     ],
     "nodes": [
       {
-        "id": "answer",
-        "kind": "rel.sql",
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "parameters",
+        "kind": "rel.table",
         "version": 1
       },
       {
@@ -37,23 +72,52 @@
         "version": 1
       },
       {
-        "id": "parameters",
-        "kind": "rel.table",
+        "id": "nrcOnly",
+        "kind": "rel.filter",
+        "version": 1
+      },
+      {
+        "id": "withStepId",
+        "kind": "rel.join",
+        "version": 1
+      },
+      {
+        "id": "columns",
+        "kind": "rel.select",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.sort",
         "version": 1
       }
     ]
   },
   "values": {
-    "answer": {
-      "sql": "SELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\n       p.ValueType AS valueType, p.Value AS paramValue\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\nWHERE p.ParameterGroup LIKE 'Pset_NRC%'\nORDER BY entityId, psetName, paramName"
+    "about": {
+      "text": "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the Pset_NRC sets and withStepId adds each entity's STEP id: 2,441 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names."
+    },
+    "parameters": {
+      "source": "duplex-enriched",
+      "table": "ParameterText"
     },
     "entities": {
       "source": "duplex-enriched",
       "table": "EntityText"
     },
-    "parameters": {
-      "source": "duplex-enriched",
-      "table": "ParameterText"
+    "nrcOnly": {
+      "expr": "startswith([ParameterGroup], 'Pset_NRC')"
+    },
+    "withStepId": {
+      "leftKey": "EntityIndex",
+      "rightKey": "EntityIndex",
+      "kind": "inner"
+    },
+    "columns": {
+      "columns": "StepId as entityId, ParameterGroup as psetName, Name as paramName, ValueType as valueType, Value as paramValue"
+    },
+    "answer": {
+      "by": "entityId, psetName, paramName"
     }
   }
 }

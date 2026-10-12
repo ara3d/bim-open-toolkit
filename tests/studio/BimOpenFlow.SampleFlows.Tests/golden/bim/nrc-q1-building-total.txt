@@ -1,8 +1,10 @@
 dfg 0.1.0;
-// nrc-q1-building-total   graph 06aaf2423703
+// nrc-q1-building-total   graph e2da37ee9c37
+about = view.note@1(text: "Q1: the building's total operational carbon, summed over the 218 analysed elements of nrc_analytics_elements.csv. Expected (expected_answers.json Q1): 37,196.2 kgCO2e/yr.");
+  // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
-answer = rel.aggregate@1(input: elements.relation, groupBy: "", aggregates: "sum(OperationalCarbon_kgCO2e_per_year) as Total, count(*) as Elements");
-  // Ok  relation plan 66e6d9ab3e2d
-  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"Total\" Count(*)>\"Elements\"])"
+answer = rel.aggregate@1(input: elements.relation, groupBy: "", aggregates: "sum(OperationalCarbon_kgCO2e_per_year) as OperationalCarbon_kgCO2e_per_year, count(*) as Elements");
+  // Ok  relation plan 5c2a74db828b
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"OperationalCarbon_kgCO2e_per_year\" Count(*)>\"Elements\"])"

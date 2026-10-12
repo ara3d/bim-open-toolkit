@@ -1,21 +1,27 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": {
-      "x": 1370,
-      "y": 40
-    },
-    "columns": {
-      "x": 370,
-      "y": 40
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 104
     },
     "elements": {
       "x": 40,
-      "y": 40
+      "y": 280
+    },
+    "columns": {
+      "x": 370,
+      "y": 280
     },
     "ranked": {
-      "x": 910,
-      "y": 40
+      "x": 700,
+      "y": 280
+    },
+    "answer": {
+      "x": 1030,
+      "y": 280
     }
   },
   "structure": {
@@ -35,13 +41,8 @@
     ],
     "nodes": [
       {
-        "id": "answer",
-        "kind": "rel.limit",
-        "version": 1
-      },
-      {
-        "id": "columns",
-        "kind": "rel.select",
+        "id": "about",
+        "kind": "view.note",
         "version": 1
       },
       {
@@ -50,25 +51,38 @@
         "version": 1
       },
       {
+        "id": "columns",
+        "kind": "rel.select",
+        "version": 1
+      },
+      {
         "id": "ranked",
         "kind": "rel.sort",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.limit",
         "version": 1
       }
     ]
   },
   "values": {
-    "answer": {
-      "count": "5"
-    },
-    "columns": {
-      "columns": "GlobalId, Name, Category, OperationalCarbon_kgCO2e_per_year"
+    "about": {
+      "text": "Q3: the five elements with the highest operational carbon, highest first, from 412.0 down to 398.6 kgCO2e/yr (expected_answers.json Q3). Ties break on GlobalId, so the order never changes between runs."
     },
     "elements": {
       "path": "nrc_analytics_elements.csv",
       "source": "nrc"
     },
+    "columns": {
+      "columns": "Name, Category, OperationalCarbon_kgCO2e_per_year, GlobalId"
+    },
     "ranked": {
       "by": "OperationalCarbon_kgCO2e_per_year desc, GlobalId"
+    },
+    "answer": {
+      "count": "5"
     }
   }
 }

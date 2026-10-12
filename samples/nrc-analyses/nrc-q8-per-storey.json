@@ -1,10 +1,10 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "answer": { "x": 960, "y": 40 },
-    "elements": { "x": 40, "y": 40 },
-    "perStorey": { "x": 390, "y": 40 },
-    "about": { "x": 40, "y": 280 }
+    "about": { "x": 40, "y": 40, "w": 560, "h": 122 },
+    "elements": { "x": 40, "y": 280 },
+    "perStorey": { "x": 370, "y": 280 },
+    "answer": { "x": 700, "y": 280 }
   },
   "structure": {
     "edges": [
@@ -12,16 +12,16 @@
       { "from": "perStorey.relation", "to": "answer.input" }
     ],
     "nodes": [
-      { "id": "answer", "kind": "rel.sort", "version": 1 },
+      { "id": "about", "kind": "view.note", "version": 1 },
       { "id": "elements", "kind": "rel.csv", "version": 1 },
       { "id": "perStorey", "kind": "rel.aggregate", "version": 1 },
-      { "id": "about", "kind": "view.note", "version": 1 }
+      { "id": "answer", "kind": "rel.sort", "version": 1 }
     ]
   },
   "values": {
-    "answer": { "by": "Embodied desc" },
+    "about": { "text": "Q8: embodied carbon A1-A3 summed per storey, with the mean energy use intensity. Elements is every element on the storey; ElementsWithValue is how many have an embodied-carbon row (Q7). On Roof, 7 of 8 elements have a value; the roof itself has none, so the Roof sum covers only those 7." },
     "elements": { "path": "nrc_analytics_elements.csv", "source": "nrc" },
-    "perStorey": { "aggregates": "count(*) as Elements, count(EmbodiedCarbon_A1A3_kgCO2e) as ElementsWithValue, sum(EmbodiedCarbon_A1A3_kgCO2e) as Embodied, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui", "groupBy": "Storey" },
-    "about": { "text": "Q8: embodied carbon A1-A3 summed per storey. Elements is every element on the storey; ElementsWithValue is how many of them have an embodied-carbon row (Q7). On Roof, 7 of 8 elements have a value; the roof itself has none, so its sum (Embodied) covers only those 7." }
+    "perStorey": { "aggregates": "count(*) as Elements, count(EmbodiedCarbon_A1A3_kgCO2e) as ElementsWithValue, sum(EmbodiedCarbon_A1A3_kgCO2e) as EmbodiedCarbon_A1A3_kgCO2e, avg(EnergyUseIntensity_kWh_per_m2_year) as MeanEui_kWh_per_m2_year", "groupBy": "Storey" },
+    "answer": { "by": "EmbodiedCarbon_A1A3_kgCO2e desc" }
   }
 }

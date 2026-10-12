@@ -1,14 +1,16 @@
 dfg 0.1.0;
-// nrc-q3-top-elements   graph 00a2976fc379
+// nrc-q3-top-elements   graph 56f79795e5e9
+about = view.note@1(text: "Q3: the five elements with the highest operational carbon, highest first, from 412.0 down to 398.6 kgCO2e/yr (expected_answers.json Q3). Ties break on GlobalId, so the order never changes between runs.");
+  // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
-columns = rel.select@1(input: elements.relation, columns: "GlobalId, Name, Category, OperationalCarbon_kgCO2e_per_year");
-  // Ok  relation plan f72398d0794e
-  //   "(select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\" \"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\"])"
+columns = rel.select@1(input: elements.relation, columns: "Name, Category, OperationalCarbon_kgCO2e_per_year, GlobalId");
+  // Ok  relation plan 7eff75ab201b
+  //   "(select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\" \"GlobalId\"])"
 ranked = rel.sort@1(input: columns.relation, by: "OperationalCarbon_kgCO2e_per_year desc, GlobalId");
-  // Ok  relation plan 2c3e5327533e
-  //   "(sort (select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\" \"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc \"GlobalId\" asc])"
+  // Ok  relation plan 7219663e3e85
+  //   "(sort (select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\" \"GlobalId\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc \"GlobalId\" asc])"
 answer = rel.limit@1(input: ranked.relation, count: "5");
-  // Ok  relation plan 0af3a51fdc91
-  //   "(limit (sort (select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"GlobalId\" \"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc \"GlobalId\" asc]) 5 0)"
+  // Ok  relation plan ab46d32f76fa
+  //   "(limit (sort (select (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Name\" \"Category\" \"OperationalCarbon_kgCO2e_per_year\" \"GlobalId\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc \"GlobalId\" asc]) 5 0)"

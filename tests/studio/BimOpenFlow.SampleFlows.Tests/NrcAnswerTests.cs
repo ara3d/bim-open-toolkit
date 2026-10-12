@@ -36,7 +36,7 @@ public sealed class NrcAnswerTests
     {
         var answer = Answer("nrc-q1-building-total");
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
-        Assert.That(Convert.ToDouble(answer.Cell("Total", 0)), Is.EqualTo(37196.2).Within(Tolerance));
+        Assert.That(Convert.ToDouble(answer.Cell("OperationalCarbon_kgCO2e_per_year", 0)), Is.EqualTo(37196.2).Within(Tolerance));
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(218L));
     }
 
@@ -49,6 +49,11 @@ public sealed class NrcAnswerTests
         {
             "Wall", "Floor", "Other", "Stair", "Finish", "Window", "Door", "Roof", "Railing",
         }));
+
+        // The chart draws the same nine totals, through rel.materialize.
+        var chart = SampleFlowsFixture.Snapshot(SampleFlowsFixture.BimProfile, "nrc-q5-by-category").Results["chart"];
+        Assert.That(chart.Status, Is.EqualTo(NodeStatus.Ok));
+        Assert.That(((TableValue)chart.Outputs[0]).Table.Rows, Has.Count.EqualTo(9));
     }
 
     [Test]
@@ -60,6 +65,8 @@ public sealed class NrcAnswerTests
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
         Assert.That(answer.Cell("GlobalId", 0), Is.EqualTo("0jf0rYHfX3RAB3bSIRjmxl"));
         Assert.That(answer.Cell("IfcClass", 0), Is.EqualTo("IFCROOF"));
+        // The two metric rows it does have: operational carbon and energy use intensity.
+        Assert.That(answer.Cell("OtherMetrics", 0), Is.EqualTo(2L));
     }
 
     [Test]
