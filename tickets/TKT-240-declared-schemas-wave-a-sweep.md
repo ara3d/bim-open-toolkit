@@ -26,5 +26,6 @@ created: 2026-10-11
 - [ ] `table.fillNulls`'s constant checks are one function shared by the rule and the run
 - [ ] `table.window` and `table.splitColumn` reject at inference exactly the operand types DuckDB rejects at run
 - [ ] The editor's card badge colours a warning; `portResults` refreshes on a schemas-only update; `stepList` passes the warning count to `nodeBadge`
+- [ ] Column uses: view3d selectors and chart.bar labels filter as well as order; `table.setOp`, spatial keys, `chart.line` x and `view3d.color`'s value column declare a use; one aggregate edit is one undo step; the static site sends the allowed aggregate functions
 
 Collected from the A1 to A4 reports in docs/plans/declared-schemas.md (build log). The git-ignored site/app/site.js in bim-open-flow still names camelCase verdict columns until the site is rebuilt.
