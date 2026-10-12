@@ -63,11 +63,21 @@ internal static class BcfIssues
     public static SchemaSpec TopicsSchema(string output)
         => KindSchemas.Static(output,
             ColumnKinds.Title, ColumnKinds.Description, ColumnKinds.Status, ColumnKinds.Priority, ColumnKinds.Type,
-            ColumnKinds.Elements.NotNull(), ColumnKinds.GlobalIds.NotNull());
+            ColumnKinds.Elements.NotNull(), ColumnKinds.GlobalIds.NotNull(),
+            KindColumn.Plain(AuthoringToolIdsColumn, ColumnType.Text, nullable: false));
 
-    /// <summary>One row per topic: Title, Description, Status, Priority, Type, Elements, GlobalIds.</summary>
+    /// <summary>The topics-table column listing the ids not in IFC's GlobalId form.</summary>
+    public const string AuthoringToolIdsColumn = "AuthoringToolIds";
+
+    /// <summary>One row per topic: Title, Description, Status, Priority, Type, Elements, GlobalIds,
+    /// AuthoringToolIds. Elements counts every id; the ids split by the writer's rule, so an id in
+    /// IFC's 22-character form is listed under GlobalIds and any other (a Revit UniqueId, say)
+    /// under AuthoringToolIds, the way bcf.write will emit it.</summary>
     public static IDataTable TopicsTable(IReadOnlyList<BcfIssue> issues, string name)
     {
+        string Ids(BcfIssue issue, bool globalIds)
+            => string.Join(", ", issue.GlobalIds.Where(id => BcfIssueTable.IsGlobalId(id) == globalIds));
+
         var builder = new DataTableBuilder(name);
         builder.AddColumn(issues.Select(i => (object?)i.Title).ToArray(), IssueColumns.Title, typeof(string));
         builder.AddColumn(issues.Select(i => (object?)i.Description).ToArray(), IssueColumns.Description, typeof(string));
@@ -75,7 +85,8 @@ internal static class BcfIssues
         builder.AddColumn(issues.Select(i => (object?)i.Priority).ToArray(), IssueColumns.Priority, typeof(string));
         builder.AddColumn(issues.Select(i => (object?)i.Type).ToArray(), IssueColumns.Type, typeof(string));
         builder.AddColumn(issues.Select(i => (object?)(long)i.GlobalIds.Count).ToArray(), "Elements", typeof(long));
-        builder.AddColumn(issues.Select(i => (object?)string.Join(", ", i.GlobalIds)).ToArray(), "GlobalIds", typeof(string));
+        builder.AddColumn(issues.Select(i => (object?)Ids(i, globalIds: true)).ToArray(), "GlobalIds", typeof(string));
+        builder.AddColumn(issues.Select(i => (object?)Ids(i, globalIds: false)).ToArray(), AuthoringToolIdsColumn, typeof(string));
         return builder.Build();
     }
 

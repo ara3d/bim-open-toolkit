@@ -26,9 +26,14 @@ description, because BCF 3.0 requires a camera in every viewpoint. The summary
 row names the file with its byte count and SHA-256.
 
 `bcf.topics` is the preview: the same grouping as `bcf.write`, as a table on the
-canvas. `bcf.read` brings a BCF back as an issues table that joins to a model on
+canvas. Its `GlobalIds` column lists the ids in IFC's 22-character form and
+`AuthoringToolIds` the rest, the way `bcf.write` will emit them; `Elements`
+counts both. `bcf.read` brings a BCF back as an issues table that joins to a model on
 `GlobalId`. A component the BCF names only by `AuthoringToolId` (a Revit
 UniqueId, say) gets its own row with the id in an `AuthoringToolId` column and
-an empty `GlobalId`, so the two kinds of id never mix. A viewpoint or markup
+an empty `GlobalId`, so the two kinds of id never mix; its `topics` output
+splits them the same way. `bcf.topics` and `bcf.write` take a row's
+`AuthoringToolId` when its `GlobalId` is empty, so a BCF read and written again
+keeps every component. A viewpoint or markup
 that is not XML, or a viewpoint the markup lists but the file lacks, is skipped
 with a warning naming the entry; the other topics still come through.

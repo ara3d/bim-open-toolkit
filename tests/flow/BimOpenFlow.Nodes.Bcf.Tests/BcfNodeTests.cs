@@ -64,7 +64,7 @@ public sealed class BcfNodeTests
     public void Topics_VerdictTable_KeepsFailingRowsAndGroupsByCheckTitle()
     {
         var topics = new BcfTopicsNode().EvalTable([Verdicts()]);
-        Assert.That(topics.ColumnNames(), Is.EqualTo(new[] { "Title", "Description", "Status", "Priority", "Type", "Elements", "GlobalIds" }));
+        Assert.That(topics.ColumnNames(), Is.EqualTo(new[] { "Title", "Description", "Status", "Priority", "Type", "Elements", "GlobalIds", "AuthoringToolIds" }));
         Assert.That(topics.Rows, Has.Count.EqualTo(1));
         Assert.That(topics.Cell("Title", 0), Is.EqualTo("Door leaf width at least 850 mm"));
         Assert.That(topics.Cell("Description", 0), Is.EqualTo("NBC 2020 3.8.3.12"));
@@ -183,7 +183,15 @@ public sealed class BcfNodeTests
             Assert.That(issues.ColumnCells("GlobalId"), Is.EqualTo(new object?[] { Door1, "", "" }));
             Assert.That(issues.ColumnCells("AuthoringToolId"), Is.EqualTo(new object?[] { "", revitId, "" }));
             Assert.That(topics.ColumnCells("Elements"), Is.EqualTo(new object?[] { 2L, 0L }));
+            Assert.That(topics.ColumnCells("GlobalIds"), Is.EqualTo(new object?[] { Door1, "" }));
+            Assert.That(topics.ColumnCells("AuthoringToolIds"), Is.EqualTo(new object?[] { revitId, "" }));
         });
+
+        var written = Path.Combine(_folder, "again.bcf");
+        new BcfWriteNode().Eval(new RunContext(), [new TableValue(issues)], NodeTestHelpers.Params(("path", written)));
+        var again = ((TableValue)new BcfReadNode().Eval(NodeTestHelpers.Ctx, [], NodeTestHelpers.Params(("path", written)))[0]).Table;
+        Assert.That(again.ColumnCells("GlobalId"), Has.Exactly(1).EqualTo(Door1), "read, written, and read again");
+        Assert.That(again.ColumnCells("AuthoringToolId"), Has.Exactly(1).EqualTo(revitId), "read, written, and read again");
     }
 
     private static void Add(System.IO.Compression.ZipArchive zip, string name, string text)
