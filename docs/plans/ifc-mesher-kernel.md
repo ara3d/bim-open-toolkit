@@ -203,3 +203,8 @@ Order: B0; then B1, B3, B4, B5 in parallel, B2 after B1; then B6 (after B2, B3, 
 
 | Chunk | Commit | Result |
 |---|---|---|
+| B0 | bim-open-data 59f2949 | Ara3D.MeshKernel and its test project; Tolerance moved; global using in mesher and both test projects; 152/152 fast tests |
+| B3 | bim-open-data 4ab0818 | SweepRings and MeshDedup moved; 4 kernel tests; MeshDedup inlines GetBounds until B2 |
+| B5 | bim-open-data 017ca5d | SurfaceMap family and BSplineKnots moved; FaceSurfaceMaps and BSplineSurfaceReader keep the entity reading; 8 kernel tests; no forwarders |
+| B4 | bim-open-data 08e6475, 16ccbb3 | CircleSamples.Ring and Arc replace two identical copies and AddArc; 4 kernel tests |
+| B1 | bim-open-data 4bf322c | PolygonWithHoles moved (partial class with RingBandTriangulation.cs); 5 kernel tests, bow-tie one ignored: the SDK self-intersection sweep never fires (TKT filed) |
