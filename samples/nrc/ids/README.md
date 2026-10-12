@@ -19,6 +19,12 @@ script's header says what it does not: which metrics become specifications, thei
 the IFC class list, which it checks against the `IfcClass` column of
 `../nrc_analytics_long.csv`.
 
+The script refuses a dictionary that would give a requirement accepting anything. It exits 1,
+with the reason on stderr, when the header lacks `MetricId`, `Level`, `PropertySet`,
+`PropertyName`, or `ValueType`; when an element-level row has an empty `PropertySet` or
+`PropertyName` (the message names the row); or when a metric has more than one element-level row.
+`node --test scripts/nrc-ids.test.mjs` covers these.
+
 Both files are also bim-open-data's test fixtures, in `tests/data/Ara3D.Ids.Tests/ids` there;
 a change here is copied there in the same change. `IdsFilesTests` in
 `tests/studio/BimOpenFlow.NrcWorkflows.Tests` fails when the generated file is stale or when
