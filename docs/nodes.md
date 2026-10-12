@@ -1230,6 +1230,7 @@ The same grouping `bcf.write` applies, as a table: a preview of the file before 
 | `Type` | Text | yes | `Type` | The name of the entity's type (the family type of an element), or the type of a BCF issue. |
 | `Elements` | Integer | no | `Elements` | How many elements a BCF topic selects. |
 | `GlobalIds` | Text | no | `GlobalIds` | The GlobalIds of a BCF topic's elements, comma-separated. |
+| `AuthoringToolIds` | Text | no | — | — |
 
 ### `bcf.write` (v1) — Effect
 
@@ -1319,6 +1320,7 @@ Reads markup.bcf per topic and the elements its viewpoints select; a topic writt
 | `Type` | Text | yes | `Type` | The name of the entity's type (the family type of an element), or the type of a BCF issue. |
 | `Elements` | Integer | no | `Elements` | How many elements a BCF topic selects. |
 | `GlobalIds` | Text | no | `GlobalIds` | The GlobalIds of a BCF topic's elements, comma-separated. |
+| `AuthoringToolIds` | Text | no | — | — |
 
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
 
@@ -2504,6 +2506,19 @@ Profiles every column via DuckDB SUMMARIZE, projected to a fixed column set: typ
 
 **Params**: none
 
+**Columns of `profile`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `column` | Text | no | — | — |
+| `type` | Text | no | — | — |
+| `count` | Integer | no | — | — |
+| `nullCount` | Integer | no | — | — |
+| `distinctCount` | Integer | yes | — | — |
+| `min` | Text | yes | — | — |
+| `max` | Text | yes | — | — |
+| `mean` | Number | yes | — | — |
+
 ### `table.rename` (v1) — Pure
 
 Renames columns using comma-separated 'old=new' pairs.
@@ -2557,6 +2572,8 @@ Takes a seeded random sample: `rows` mode keeps a fixed number of rows (reservoi
 | `fraction` | Number | — | `0.1` | — | — |
 | `seed` | Integer | — | `1` | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.schema` (v1) — Pure
 
 Outputs the table's columns as a table: name, type, and index.
@@ -2576,6 +2593,14 @@ Outputs the table's shape as a table: one row per column with its name, wire typ
 | `schema` | Table |
 
 **Params**: none
+
+**Columns of `schema`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `column` | Text | no | — | — |
+| `type` | Text | no | — | — |
+| `index` | Integer | no | — | — |
 
 ### `table.splitColumn` (v1) — Pure
 
@@ -2603,6 +2628,8 @@ Splits a text column on a separator into new columns, one per requested name. Ro
 | `separator` | Text | — | `-` | — | — |
 | `names` | Text (list) | — | — | — | — |
 | `keep` | Boolean | — | `false` | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.transpose` (v1) — Pure
 
@@ -2657,6 +2684,8 @@ Turns wide data long: the chosen columns fold into name/value rows next to the k
 | `nameColumn` | Text | — | `name` | — | — |
 | `valueColumn` | Text | — | `value` | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.window` (v1) — Pure
 
 Adds one window-function column: ranking, lag/lead, cumulative sum, moving average, or percent of total.
@@ -2686,6 +2715,8 @@ Adds one window-function column: rankings (rowNumber/rank/denseRank), lag/lead, 
 | `offset` | Integer | — | `1` | — | — |
 | `windowSize` | Integer | — | `3` | — | — |
 | `name` | Text | — | — | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ## Cleaning — `BimOpenFlow.Nodes.Cleaning`
 
@@ -2718,6 +2749,8 @@ Fills nulls in the listed columns with a typed constant, or with the nearest ear
 | `value` | Text | — | — | — | — |
 | `partitionBy` | Text (list) | — | — | — | columns of input `table` |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `table.dropNulls` (v1) — Pure
 
 Drops rows where any/all of 'columns' (empty = all columns) are null; warns with the dropped count.
@@ -2742,6 +2775,8 @@ Drops rows where any (or, with mode all, every one) of the listed columns is nul
 |---|---|---|---|---|---|
 | `columns` | Text (list) | — | — | — | columns of input `table` |
 | `mode` | Enum | — | `any` | `any`, `all` | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.dedupe` (v1) — Pure
 
@@ -2768,6 +2803,8 @@ Keeps one row per key combination: the first or last by orderBy (same syntax as 
 | `keys` | Text (list) | — | — | — | columns of input `table` |
 | `keep` | Enum | — | `first` | `first`, `last` | — |
 | `orderBy` | Text (list) | — | — | — | columns of input `table` |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `table.replace` (v1) — Pure
 
@@ -2797,6 +2834,8 @@ Rewrites values in one text column by exact match (whole-value recode), substrin
 | `match` | Enum | — | `exact` | `exact`, `substring`, `regex` | — |
 | `caseSensitive` | Boolean | — | `true` | — | — |
 
+**Columns of `table`**: inferred from the inputs
+
 ### `text.transform` (v1) — Pure
 
 Applies trim/upper/lower/normalizeSpace to 'columns' (empty = every text column) in place.
@@ -2821,6 +2860,8 @@ Applies trim, upper, lower, or normalizeSpace (trim plus collapse runs of whites
 |---|---|---|---|---|---|
 | `columns` | Text (list) | — | — | — | columns of input `table` |
 | `op` | Enum | — | `trim` | `trim`, `upper`, `lower`, `normalizeSpace` | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ### `text.extract` (v1) — Pure
 
@@ -2848,6 +2889,8 @@ Adds one new column holding a regex capture group (0 = the whole match) pulled f
 | `pattern` | Text | — | — | — | — |
 | `group` | Integer | — | `1` | — | — |
 | `name` | Text | — | — | — | — |
+
+**Columns of `table`**: inferred from the inputs
 
 ## Dates — `BimOpenFlow.Nodes.Dates`
 
