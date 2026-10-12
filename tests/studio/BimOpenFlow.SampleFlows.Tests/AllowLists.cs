@@ -32,8 +32,6 @@ public static class AllowLists
     [
         new(SampleFlowsFixture.BimProfile, "bim-duct-rooms", "ranked",
             "ranks duct-room overlaps by volume; the sample's few overlaps already arrive largest first"),
-        new(SampleFlowsFixture.BimProfile, "bim-param-quality", "top",
-            "ranks parameters by count; bim.paramCoverage promises no order, the sample's happens to match"),
         new(SampleFlowsFixture.BimProfile, "bim-room-classes", "ranked",
             "ranks room classes by room count; table.aggregate orders by class name, which matches only on this sample"),
     ];

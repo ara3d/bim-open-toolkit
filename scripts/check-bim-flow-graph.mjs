@@ -25,7 +25,7 @@ try {
   page.on("request", r => { if (/\/api\/models\/.*\/bos/.test(r.url())) modelRequests++; });
   page.on("request", r => {
     if(r.url()===endpoint && r.method()==="PUT") saves.push({event:"request",at:Date.now(),
-      values:Object.fromEntries(Object.entries(r.postDataJSON().values).filter(([id])=>id!=="snowdon"))});
+      values:Object.fromEntries(Object.entries(r.postDataJSON().values).filter(([id])=>id!=="scene" && id!=="model"))});
   });
   page.on("response", r => {
     if(r.url()===endpoint && r.request().method()==="PUT") saves.push({event:"response",at:Date.now(),status:r.status()});
