@@ -3,6 +3,8 @@
 import { genericPanes } from "@bimopenflow/client";
 import { view3dPane } from "@bimopenflow/pane-3d";
 
+import "./narrow.css";
+
 export { TEMPLATES } from "./templates.generated.js";
 
 export const toolkitPanes = [...genericPanes, view3dPane];

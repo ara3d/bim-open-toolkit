@@ -1,0 +1,18 @@
+/* TKT-256: below 900 px the three editor columns (left 240-280, right 420-460,
+   plus the canvas) no longer fit, and the right column (Ask box, Answer line,
+   Table/Chart/Inspector tabs) was clipped at the page edge. At that width the
+   columns stack: canvas above, right column below, full width. The left
+   sidebar and the column splitters are hidden (the splitters have nothing to
+   resize). Rules are !important because the width variables and the editor's
+   own grid rules are set inline or with higher specificity. */
+@media (max-width: 900px) {
+  html, body { overflow-x: hidden; }
+  .bof-app-main, .bof-studio-main,
+  .bof-app-graph-demo .bof-app-main {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 2fr) minmax(0, 3fr) !important;
+  }
+  .bof-app-sidebar, .bof-studio-left,
+  .bof-app-splitter, .bof-studio-splitter { display: none !important; }
+  .bof-app-topbar, .bof-studio-top { overflow-x: auto; min-width: 0; }
+}
