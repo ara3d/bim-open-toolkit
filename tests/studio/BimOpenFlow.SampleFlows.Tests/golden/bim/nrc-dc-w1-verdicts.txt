@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-dc-w1-verdicts   graph bcfcb188c4f7
+// nrc-dc-w1-verdicts   graph 6cb283450e13
 about = view.note@1(text: "Rule DC-W1 over the 14 doors of duplex-enriched: a door's Ifc:OverallWidth, in millimetres, must be at least 850 (NBC 2020 3.8.3.12, illustrative, not legal text); 8 pass and 6 fail. This is the check.rule twin of checking-analyses/check-ids-door-width, which states the same rule as an IDS file and gets the same verdicts. coloured paints the verdicts on the model, chart counts them, and report writes its HTML file only when you press Run.");
   // Ok
 entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
@@ -68,5 +68,5 @@ chart = chart.bar@1(table: perVerdict.table, labelColumn: "Verdict", valueColumn
   //   legend: table 0 rows x 9 cols  sha b47d2a37380c
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
-report = sink.report@1(in: answer.out, path: "{SAMPLES}/../../artifacts/nrc/dc-w1-verdicts.html", title: "DC-W1 door width verdicts");
+report = sink.report@1(in: answer.out, path: "{ARTIFACTS}/nrc/dc-w1-verdicts.html", title: "DC-W1 door width verdicts");
   // EffectPending  not executed outside a Run

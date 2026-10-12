@@ -4,7 +4,10 @@ Graph documents that answer the NRC paper's proof-of-concept questions over the
 data in `samples/nrc`. Every graph ends in a node named `answer`, and every
 source is named (`nrc` for the CSV folder, `duplex-enriched` and `duplex-base`
 for the DuckDB databases built from the two IFC files), so the graphs are portable. Both host profiles seed them
-into an empty analysis store and add `samples/nrc` to their model roots.
+into an empty analysis store and add `samples/nrc` to their model roots. The two graphs
+that write a file on Run, `nrc-enrich-run` and `nrc-dc-w1-verdicts`, target
+`{ARTIFACTS}/nrc/...`; the seeder resolves `{ARTIFACTS}` to the checkout's git-ignored
+`artifacts` folder.
 
 Every graph opens with an `about` note stating the question it answers. Aggregates keep the
 unit in the column name (`OperationalCarbon_kgCO2e_per_year`, `EmbodiedCarbon_A1A3_kgCO2e`,

@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// bcf-from-ids-failures   graph b3c1ad490607
+// bcf-from-ids-failures   graph a6332fa4fb24
 inputs model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
 about = view.note@1(text: "The DC-W1 door width IDS checked over the Duplex, and its 6 failing doors turned into one BCF topic. topics, shown in answer, is the preview of the file Run writes: nothing is written until then. bcf then writes artifacts/checking/dc-w1-failures.bcf with one viewpoint framing the doors, read from the same model input.");
   // Ok
@@ -30,7 +30,7 @@ verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, i
   //   summary: table 1 rows x 6 cols  sha d86c82a6e34d
   //     columns CheckId:Text, CheckTitle:Text, Pass:Integer, Fail:Integer, InfoNotAvailable:Integer, Rows:Integer
   //     [0] "DC-W1", "Door leaf width at least 850 mm", 8, 6, 0, 14
-bcf = bcf.write@1(issues: verdicts.verdicts, model: modelPath.path, path: "{SAMPLES}/../../artifacts/checking/dc-w1-failures.bcf", preset: "auto", verdicts: "Fail", author: "", guidSeed: "dc-w1");
+bcf = bcf.write@1(issues: verdicts.verdicts, model: modelPath.path, path: "{ARTIFACTS}/checking/dc-w1-failures.bcf", preset: "auto", verdicts: "Fail", author: "", guidSeed: "dc-w1");
   // EffectPending  not executed outside a Run
 topics = bcf.topics@1(issues: verdicts.verdicts, preset: "auto", verdicts: "Fail");
   // Ok  table 1 rows x 8 cols  sha 4e4296527ca1

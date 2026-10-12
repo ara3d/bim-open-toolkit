@@ -8,8 +8,9 @@ verdicts and read back. Each file is a canonical graph document whose file
 name is the analysis id. `{SAMPLES}` is `samples/nrc`; the host seeds the
 graphs with it resolved and builds `duplex-enriched.bos` from the IFC in the
 background. The two IDS files live in `samples/nrc/ids`, the committed BCF in
-`samples/nrc/bcf`. The written BCF files go to `artifacts/checking`, which is
-git-ignored, and only after Run (PROJECT.md principle 2).
+`samples/nrc/bcf`. The `bcf.write` nodes target `{ARTIFACTS}/checking`, which
+the seeder resolves to the checkout's git-ignored `artifacts` folder; they write
+only after Run (PROJECT.md principle 2).
 
 Every graph that reads the Duplex declares a graph input `model`, held by one
 `value.path` node, `modelPath`, so a user runs it on another building by

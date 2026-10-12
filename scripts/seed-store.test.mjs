@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSy
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { RECORD_FILE, hashGraph, seedFlows } from './seed-store.mjs';
+import { ARTIFACTS_DIR, RECORD_FILE, hashGraph, seedFlows } from './seed-store.mjs';
 
 const graph = (path) => ({ structure: { nodes: [{ id: 'src', kind: 'duck.source', version: 1 }], edges: [] }, values: { src: { path } } });
 const flow = (id, path) => ({ id, graph: graph(path) });
@@ -31,6 +31,12 @@ test('a fresh store is seeded and the record holds each graph hash', () => withS
   assert.deepEqual(result.seeded, ['doors']);
   assert.deepEqual(current(store, 'doors'), graph('C:/a.duckdb'));
   assert.deepEqual(record(store).doors, { source: 'duckdb-analyses', graphSha256: hashGraph(graph('C:/a.duckdb')) });
+}));
+
+test('{ARTIFACTS} becomes the checkout artifacts folder, as the host seeder does', () => withStore((store) => {
+  seedFlows(store, 'duckdb-analyses', [flow('report', '{ARTIFACTS}/nrc/out.html')], quiet);
+  assert.equal(current(store, 'report').values.src.path, ARTIFACTS_DIR.replaceAll('\\', '/') + '/nrc/out.html');
+  assert.match(ARTIFACTS_DIR, /[\\/]artifacts$/);
 }));
 
 test('a changed sample refreshes an untouched copy and archives the old one', () => withStore((store) => {

@@ -272,7 +272,7 @@
       "sort": "desc"
     },
     "report": {
-      "path": "{SAMPLES}/../../artifacts/nrc/dc-w1-verdicts.html",
+      "path": "{ARTIFACTS}/nrc/dc-w1-verdicts.html",
       "title": "DC-W1 door width verdicts"
     }
   }

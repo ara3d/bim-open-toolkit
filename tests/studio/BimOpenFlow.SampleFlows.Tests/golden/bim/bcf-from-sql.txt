@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// bcf-from-sql   graph ce6d8b5ad638
+// bcf-from-sql   graph 07f9ba121168
 inputs model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
 about = view.note@1(text: "The Duplex's external doors as one BCF issue, with table steps and no SQL: the parameter rows where Pset_DoorCommon.IsExternal is true, joined to the doors among the entities (the door's name arrives as Name_b), then a title and a description derived for each. topics, shown in answer, previews the topic; bcf writes artifacts/checking/external-doors.bcf with a viewpoint only when you press Run.");
   // Ok
@@ -64,7 +64,7 @@ sorted = table.sort@1(table: columns.table, A: "GlobalId");
   //   [0] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "1hOSvn6df7F8_7GcBWlRGQ"
   //   [1] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "1hOSvn6df7F8_7GcBWlRH8"
   //   [2] "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "..., "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "1s1jVhK8z0pgKYcr9jt781"
-bcf = bcf.write@1(issues: sorted.table, model: modelPath.path, path: "{SAMPLES}/../../artifacts/checking/external-doors.bcf", preset: "issue", verdicts: "", author: "", guidSeed: "external-doors");
+bcf = bcf.write@1(issues: sorted.table, model: modelPath.path, path: "{ARTIFACTS}/checking/external-doors.bcf", preset: "issue", verdicts: "", author: "", guidSeed: "external-doors");
   // EffectPending  not executed outside a Run
 topics = bcf.topics@1(issues: sorted.table, preset: "issue", verdicts: "");
   // Ok  table 1 rows x 8 cols  sha a4d2eb7b6f50

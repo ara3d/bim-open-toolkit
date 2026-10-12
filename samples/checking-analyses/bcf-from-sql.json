@@ -231,7 +231,7 @@
       "columns": "Title, Elements, Description, GlobalIds"
     },
     "bcf": {
-      "path": "{SAMPLES}/../../artifacts/checking/external-doors.bcf",
+      "path": "{ARTIFACTS}/checking/external-doors.bcf",
       "preset": "issue",
       "verdicts": "",
       "author": "",

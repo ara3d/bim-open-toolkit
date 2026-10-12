@@ -131,7 +131,7 @@
       "columns": "Title, Elements, Description, Status, GlobalIds"
     },
     "bcf": {
-      "path": "{SAMPLES}/../../artifacts/checking/dc-w1-failures.bcf",
+      "path": "{ARTIFACTS}/checking/dc-w1-failures.bcf",
       "preset": "auto",
       "verdicts": "Fail",
       "author": "",

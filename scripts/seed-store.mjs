@@ -8,6 +8,9 @@
 //     as the store itself does; moving or resizing nodes is not an edit;
 //   - a copy the user edited is kept, and the log says the sample changed.
 //
+// Every flow's {ARTIFACTS} becomes this checkout's artifacts folder, as the host's seeder
+// does for every seeding source; the caller substitutes the source's own placeholder.
+//
 // What each copy was seeded from lives in <store>/.samples.json as { id: { source, graphSha256 } },
 // shared with the host (SampleSeedRecord.cs), which keeps entries it does not own. The hash is of
 // the structure and values after placeholder substitution, with object keys sorted, so a copy
@@ -18,10 +21,17 @@
 // one in .trash stays deleted.
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { rewritePlaceholder } from './duckdb-graph.mjs';
 
 export const RECORD_FILE = '.samples.json';
 const CURRENT = 'current.dfg.json';
+
+/** Stands for ARTIFACTS_DIR in a sample graph: where a writer's Run puts its file. */
+export const ARTIFACTS_PLACEHOLDER = '{ARTIFACTS}';
+/** The git-ignored artifacts folder at the root of the checkout holding this script. */
+export const ARTIFACTS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'artifacts');
 
 /** Object keys in sorted order at every depth, so equal graphs serialize identically. */
 const sorted = (value) => Array.isArray(value) ? value.map(sorted)
@@ -83,8 +93,8 @@ function archiveCurrent(dir) {
 }
 
 /**
- * Seeds `flows` ([{ id, graph }], placeholders already substituted) from the sample folder named
- * `source` into `store`. Returns { seeded, refreshed, kept, unchanged } id lists; `log` receives
+ * Seeds `flows` ([{ id, graph }], the source's placeholder already substituted; {ARTIFACTS} is
+ * rewritten here) from the sample folder named `source` into `store`. Returns { seeded, refreshed, kept, unchanged } id lists; `log` receives
  * one line per flow.
  */
 export function seedFlows(store, source, flows, log = console.log) {
@@ -92,7 +102,8 @@ export function seedFlows(store, source, flows, log = console.log) {
   const recordPath = join(store, RECORD_FILE);
   const record = existsSync(recordPath) ? readJson(recordPath) : {};
   const result = { seeded: [], refreshed: [], kept: [], unchanged: [] };
-  for (const { id, graph } of flows) {
+  for (const { id, graph: sample } of flows) {
+    const graph = rewritePlaceholder(sample, ARTIFACTS_PLACEHOLDER, ARTIFACTS_DIR);
     const dir = join(store, id);
     const current = join(dir, CURRENT);
     const hash = hashGraph(graph);

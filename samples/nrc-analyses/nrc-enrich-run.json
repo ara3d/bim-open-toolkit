@@ -339,7 +339,7 @@
     },
     "answer": {
       "sourcePath": "{SAMPLES}/duplex-base.ifc",
-      "targetPath": "{SAMPLES}/../../artifacts/nrc/duplex-enriched-out.ifc"
+      "targetPath": "{ARTIFACTS}/nrc/duplex-enriched-out.ifc"
     }
   }
 }

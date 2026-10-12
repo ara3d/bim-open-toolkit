@@ -15,8 +15,9 @@ namespace BimOpenFlow.Studio;
 /// visualization demos) over samples/nrc too, samples/nrc-analyses/*.json, which name
 /// their sources, samples/showcase-analyses/*.json over samples/nrc, and, when the private
 /// Snowdon model is present, samples/snowdon-analyses/*.json with {SNOWDON} pointed at it, by
-/// the rules of SampleSeeding.Seed; graphs the registry cannot validate are skipped and
-/// reported, and so are the TestOnly samples.
+/// the rules of SampleSeeding.Seed, which also points every {ARTIFACTS} (a writer's target,
+/// e.g. nrc-dc-w1-verdicts' report) at the checkout's artifacts folder; graphs the registry
+/// cannot validate are skipped and reported, and so are the TestOnly samples.
 /// </summary>
 public static class BimSampleSeeding
 {

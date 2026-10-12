@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-enrich-run   graph 18444c643f88
+// nrc-enrich-run   graph 585000ea304e
 about = view.note@1(text: "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,441 values on 224 entities. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, so every Run writes the same bytes.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
@@ -99,5 +99,5 @@ table = rel.materialize@1(input: rows.relation, limit: "0");
   //   [0] 34, "Pset_NRCAnalyticsProvenance", "AnalysisRunId", "Identifier", "run-2026-09-17-01"
   //   [1] 34, "Pset_NRCAnalyticsProvenance", "ComputedAt", "Label", "2026-09-17T00:00:00Z"
   //   [2] 34, "Pset_NRCAnalyticsProvenance", "ComputedBy", "Label", "Ara 3D"
-answer = sink.writePsets@1(in: table.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{SAMPLES}/../../artifacts/nrc/duplex-enriched-out.ifc");
+answer = sink.writePsets@1(in: table.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{ARTIFACTS}/nrc/duplex-enriched-out.ifc");
   // EffectPending  not executed outside a Run
