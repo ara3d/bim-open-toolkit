@@ -1,12 +1,15 @@
 ---
 id: TKT-262
 title: nrc-analyses questions pass: notes, unit aliases, readable columns, the storey pick, smaller SQL, one grid
-status: open
+status: done
 depends_on: []
-owner:
+owner: builder-TKT-262
+session: 747367c7-cc40-452c-911b-37ed983339cb
 fence: [samples/nrc-analyses/nrc-q*.json, samples/nrc-analyses/nrc-storey-of-element.json, samples/nrc-analyses/nrc-property-values.json, samples/nrc-analyses/nrc-element-psets.json, samples/nrc-analyses/nrc-rollup.json, samples/nrc-analyses/nrc-enrich-run.json, samples/nrc-analyses/README.md, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/bim/nrc-*.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/tables/nrc-*.txt, tests/studio/BimOpenFlow.SampleFlows.Tests/NrcAnswerTests.cs, tests/studio/BimOpenFlow.NrcWorkflows.Tests/RollupGraphTests.cs, tests/studio/BimOpenFlow.NrcWorkflows.Tests/ModelGraphTests.cs]
 workflow: [W2]
 created: 2026-10-11
+claimed: 2026-10-11
+closed: 2026-10-11
 ---
 
 ## Acceptance criteria
