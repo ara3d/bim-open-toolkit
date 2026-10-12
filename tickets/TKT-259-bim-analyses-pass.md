@@ -1,12 +1,15 @@
 ---
 id: TKT-259
 title: bim-analyses pass: a model input, an answer view with readable columns, a note and a chart per graph, one grid
-status: open
+status: done
 depends_on: []
-owner:
+owner: builder-TKT-259
+session: 747367c7-cc40-452c-911b-37ed983339cb
 fence: [samples/bim-analyses/**, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/bim/bim-*.txt, tests/studio/BimOpenFlow.BimWorkflows.Tests/BimSampleAnalysesTests.cs, tests/studio/BimOpenFlow.BimWorkflows.Tests/BimGraphInputTests.cs]
 workflow: [W2]
 created: 2026-10-11
+claimed: 2026-10-11
+closed: 2026-10-12
 ---
 
 ## Acceptance criteria
