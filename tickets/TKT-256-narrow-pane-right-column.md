@@ -1,12 +1,15 @@
 ---
 id: TKT-256
 title: Below about 900 px the editor's right column is clipped: the Ask box, the Answer line, and the pane tabs are cut off
-status: open
+status: done
 depends_on: []
-owner:
+owner: builder-TKT-256
+session: 747367c7-cc40-452c-911b-37ed983339cb
 fence: [bimopenflow/web/packages/studio-web/src/**, deps/bim-open-flow/bimopenflow/web/packages/app/src/**]
 workflow: [W2]
 created: 2026-10-11
+claimed: 2026-10-11
+closed: 2026-10-11
 kind: defect
 ---
 
