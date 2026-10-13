@@ -15,6 +15,7 @@ Split the toolkit into the repositories of the proposal, so that each one builds
 | `ara3d/bim-open-flow` | the generic part of `src/flow` and `tests/flow`, the editor's web packages, `BimOpenFlow.Ask`, `BimOpenMcp.Flow` | 5 |
 | `ara3d/bim-open-notebook` | `bimopenflow/web/packages/bim-open-notebook` and its design | 6 |
 | `ara3d/bim-open-toolkit` | what remains: the studio host and pages, the BIM node packs, the samples, the gates, the NRC work | 7 |
+| `ara3d/bim-open-plot` | nothing yet: created new on 2026-10-11, not split out, as the figure layer (charts, drawings, composed figures) that will take bim-open-flow's `viz` package and `chart.*` nodes (TKT-220); pinned in `deps.json` since then | none |
 
 ## How a repository finds its dependencies
 

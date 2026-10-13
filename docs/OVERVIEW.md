@@ -116,6 +116,7 @@ Because the model layer is pure and the three.js object-graph logic is kept sepa
 |---|---|
 | [bim-open-schema](https://github.com/ara3d/bim-open-schema) | The schema's spec repo: five dependency-free C# files; `deps/bim-open-schema`. |
 | [bim-open-data](https://github.com/ara3d/bim-open-data) | The schema's reference implementation: BOS reading and writing, IFC loading, meshing, byte-exact property-set editing, the IFC MCP server, the BOS Browser; `deps/bim-open-data`. |
+| [bim-open-plot](https://github.com/ara3d/bim-open-plot) | The figure layer to come: charts, drawings, and composed figures from result tables; `deps/bim-open-plot`. On 2026-10-13 it holds the brand, a component brief, and a demo page of 34 figures, no library; its brief names bim-open-flow's `viz` package and the `chart.bar` and `chart.line` nodes as what it replaces (TKT-220). |
 | [ara3d-sdk](https://github.com/ara3d/ara3d-sdk) | General-purpose utilities, geometry, data tables, file formats, glTF, the Bowerbird host, MCP protocol — built from source through `deps/ara3d-sdk`. Everything specific to Revit, IFC, or BOS lives in bim-open-data or this repo. |
 | `deps/gratify` | The canvas UI library the web editor's graph surface is built on; fetched by `node deps.mjs`. |
 | web-ifc, DuckDB | The IFC parser underneath the loader, and the analytical engine on the far end. |

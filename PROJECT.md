@@ -1,6 +1,6 @@
 # BIM Open Toolkit: project brief
 
-Written 2026-09-26 from the repository's documents; rewritten 2026-10-04 after an alignment interview with the owner (the elicitation, three rounds of forced choices, and the diff are in `docs/plans/brief-alignment-2026-10-04.md`). It covers the family of repositories the toolkit composes: bim-open-schema, bim-open-data, bim-open-flow, bim-open-notebook, bim-open-viewer, and this one. A line ending `(unconfirmed)` rests on an inference; the owner confirms or corrects it and removes the marker.
+Written 2026-09-26 from the repository's documents; rewritten 2026-10-04 after an alignment interview with the owner (the elicitation, three rounds of forced choices, and the diff are in `docs/plans/brief-alignment-2026-10-04.md`). It covers the family of repositories the toolkit composes: bim-open-schema, bim-open-data, bim-open-flow, bim-open-notebook, bim-open-viewer, bim-open-plot (the figure layer: charts, drawings, and composed figures from result tables; brand, a component brief, and a demo page as of 2026-10-13, no library yet), and this one. A line ending `(unconfirmed)` rests on an inference; the owner confirms or corrects it and removes the marker.
 
 ## Purpose
 
@@ -39,7 +39,7 @@ Replaces: SQL typed into a DuckDB shell and spreadsheet checks over exports; scr
 
 ## Scope
 
-In: the schema and its reference implementation; the dataflow engine, host, MCP servers, editor, and panes; the notebook; the 3D viewer; the BIM node packs, studio, samples, and gates; scripts as node definitions; the public sample pages; the benchmark. Also kept and tested, no longer driving priorities: the rule check with its evidence package, and the NRC (National Research Council Canada) paper's reproduction and byte-exact IFC write-back. Windows for the full toolkit; the engine, schema, and web parts are portable.
+In: the schema and its reference implementation; the dataflow engine, host, MCP servers, editor, and panes; the notebook; the 3D viewer; the figure layer (charts, drawings, and composed figures, bim-open-plot); the BIM node packs, studio, samples, and gates; scripts as node definitions; the public sample pages; the benchmark. Also kept and tested, no longer driving priorities: the rule check with its evidence package, and the NRC (National Research Council Canada) paper's reproduction and byte-exact IFC write-back. Windows for the full toolkit; the engine, schema, and web parts are portable.
 Out: authoring or editing geometry; a live connection to any authoring tool (the Revit add-in exports and is not extended); a hosted multi-user service with accounts; a general scripting API outside node definitions; several models in one graph or one Run (TKT-21 may reopen this); clash detection beyond bounding-box candidates; node-graph instrument features no workflow needs; Gratify learning anything about BIM.
 
 ## Success
