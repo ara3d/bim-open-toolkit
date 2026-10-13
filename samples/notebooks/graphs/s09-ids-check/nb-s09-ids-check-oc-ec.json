@@ -1,16 +1,16 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "entities": { "x": 40, "y": 40 },
-    "parameters": { "x": 40, "y": 340 },
-    "ocRows": { "x": 370, "y": 40 },
-    "ocTable": { "x": 940, "y": 40 },
-    "ocAnswer": { "x": 1250, "y": 40 },
-    "ecRows": { "x": 370, "y": 350 },
-    "ecTable": { "x": 940, "y": 340 },
-    "ecAnswer": { "x": 1250, "y": 470 },
-    "answer": { "x": 1820, "y": 190 },
-    "rollup": { "x": 2060, "y": 190 }
+    "entities": { "x": 40, "y": 137 },
+    "parameters": { "x": 40, "y": 421 },
+    "ocRows": { "x": 389, "y": 40 },
+    "ocTable": { "x": 998, "y": 40 },
+    "ocAnswer": { "x": 1347, "y": 40 },
+    "ecRows": { "x": 389, "y": 494 },
+    "ecTable": { "x": 998, "y": 494 },
+    "ecAnswer": { "x": 1347, "y": 494 },
+    "answer": { "x": 1956, "y": 255 },
+    "rollup": { "x": 2229, "y": 255 }
   },
   "structure": {
     "edges": [

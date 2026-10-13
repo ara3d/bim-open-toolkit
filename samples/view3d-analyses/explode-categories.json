@@ -2,9 +2,9 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 131 },
-    "model": { "x": 40, "y": 224 },
-    "inst": { "x": 370, "y": 224 },
-    "arranged": { "x": 700, "y": 224 }
+    "model": { "x": 40, "y": 247 },
+    "inst": { "x": 385, "y": 211 },
+    "arranged": { "x": 734, "y": 211 }
   },
   "structure": {
     "inputs": [

@@ -2,8 +2,8 @@
   "formatVersion": "0.1.0",
   "layout": {
     "model": { "x": 40, "y": 40 },
-    "values": { "x": 40, "y": 260 },
-    "answer": { "x": 420, "y": 140 }
+    "values": { "x": 40, "y": 270 },
+    "answer": { "x": 389, "y": 143 }
   },
   "structure": {
     "edges": [

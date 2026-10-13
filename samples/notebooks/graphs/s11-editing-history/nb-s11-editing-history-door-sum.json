@@ -2,8 +2,8 @@
   "formatVersion": "0.1.0",
   "layout": {
     "elements": { "x": 40, "y": 40 },
-    "doors": { "x": 370, "y": 40 },
-    "answer": { "x": 840, "y": 40 }
+    "doors": { "x": 389, "y": 40 },
+    "answer": { "x": 898, "y": 40 }
   },
   "structure": {
     "edges": [

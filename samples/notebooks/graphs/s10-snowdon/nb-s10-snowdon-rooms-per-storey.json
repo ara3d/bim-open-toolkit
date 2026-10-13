@@ -2,9 +2,9 @@
   "formatVersion": "0.1.0",
   "layout": {
     "levels": { "x": 40, "y": 40 },
-    "withRooms": { "x": 360, "y": 40 },
-    "ranked": { "x": 680, "y": 40 },
-    "chart": { "x": 1000, "y": 40 }
+    "withRooms": { "x": 389, "y": 40 },
+    "ranked": { "x": 738, "y": 40 },
+    "chart": { "x": 1087, "y": 40 }
   },
   "structure": {
     "edges": [

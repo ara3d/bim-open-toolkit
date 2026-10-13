@@ -2,12 +2,12 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 122 },
-    "model": { "x": 40, "y": 224 },
-    "rooms": { "x": 370, "y": 224 },
-    "footprint": { "x": 700, "y": 224 },
-    "measures": { "x": 1030, "y": 224 },
-    "ranked": { "x": 1360, "y": 224 },
-    "answer": { "x": 1690, "y": 224 }
+    "model": { "x": 40, "y": 238 },
+    "rooms": { "x": 385, "y": 202 },
+    "footprint": { "x": 734, "y": 202 },
+    "measures": { "x": 1083, "y": 202 },
+    "ranked": { "x": 1432, "y": 202 },
+    "answer": { "x": 1781, "y": 202 }
   },
   "structure": {
     "inputs": [

@@ -2,10 +2,10 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 200 },
-    "model": { "x": 40, "y": 284 },
-    "meshes": { "x": 370, "y": 284 },
-    "answer": { "x": 700, "y": 284 },
-    "values": { "x": 370, "y": 468 }
+    "model": { "x": 40, "y": 316 },
+    "meshes": { "x": 385, "y": 280 },
+    "answer": { "x": 734, "y": 374 },
+    "values": { "x": 385, "y": 492 }
   },
   "structure": {
     "inputs": [

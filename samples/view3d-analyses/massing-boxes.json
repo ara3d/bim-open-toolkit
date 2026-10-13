@@ -2,10 +2,10 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 131 },
-    "model": { "x": 40, "y": 224 },
-    "inst": { "x": 370, "y": 224 },
-    "boxes": { "x": 700, "y": 224 },
-    "colored": { "x": 1030, "y": 224 }
+    "model": { "x": 40, "y": 259 },
+    "inst": { "x": 385, "y": 223 },
+    "boxes": { "x": 734, "y": 223 },
+    "colored": { "x": 1083, "y": 211 }
   },
   "structure": {
     "inputs": [

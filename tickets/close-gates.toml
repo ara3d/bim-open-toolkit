@@ -1,0 +1,31 @@
+# Checks `ticket.py close` runs before it closes a ticket whose fence touches
+# a gate's paths (platonic-coder scripts/README.md, "close"). A failing gate
+# refuses the close; a passing one is quoted in the ticket. TKT-289.
+
+[[gate]]
+name = "toolkit sample graphs"
+paths = [
+  "samples/**",
+  "docs/nodes.catalog.json",
+  "deps/bim-open-flow/bimopenflow/web/packages/graph/**",
+  "deps/bim-open-flow/samples/**",
+]
+command = "npx vitest run test/sampleCards.test.ts test/sampleLayout.test.ts"
+cwd = "bimopenflow/web/packages/studio-web"
+why = "card sizes, the catalog, and the stored sample layouts must agree: no overlap, no wire behind a card, no overflowing text, positions from relayout-samples"
+
+[[gate]]
+name = "bim-open-flow sample graphs"
+paths = [
+  "deps/bim-open-flow/bimopenflow/web/packages/graph/**",
+  "deps/bim-open-flow/samples/**",
+]
+command = "npx vitest run test/sampleLayout.test.ts test/sampleOverlap.test.ts test/textOverflow.test.ts"
+cwd = "deps/bim-open-flow/bimopenflow/web/packages/graph"
+why = "the graph tool's own samples against the card sizes it draws"
+
+[[gate]]
+name = "bim-open-flow pin"
+paths = ["deps/bim-open-flow/**"]
+command = "node scripts/check-pin.mjs bim-open-flow"
+why = "a change in bim-open-flow is done when the toolkit pins it: the ticket that changes it moves the pin"

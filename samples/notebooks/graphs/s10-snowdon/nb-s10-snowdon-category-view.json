@@ -2,7 +2,7 @@
   "formatVersion": "0.1.0",
   "layout": {
     "snowdon": { "x": 40, "y": 40 },
-    "categories": { "x": 360, "y": 40 }
+    "categories": { "x": 389, "y": 40 }
   },
   "structure": {
     "edges": [

@@ -1,12 +1,12 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "entities": { "x": 40, "y": 40 },
-    "byClass": { "x": 370, "y": 40 },
-    "sorted": { "x": 700, "y": 40 },
-    "rows": { "x": 1030, "y": 40 },
-    "chartRows": { "x": 1030, "y": 200 },
-    "answer": { "x": 1360, "y": 200 }
+    "entities": { "x": 40, "y": 139 },
+    "byClass": { "x": 389, "y": 139 },
+    "sorted": { "x": 738, "y": 139 },
+    "rows": { "x": 1087, "y": 40 },
+    "chartRows": { "x": 1087, "y": 238 },
+    "answer": { "x": 1436, "y": 238 }
   },
   "structure": {
     "edges": [

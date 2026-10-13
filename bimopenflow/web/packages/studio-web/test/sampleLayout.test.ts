@@ -2,7 +2,8 @@
 // TKT-286: every toolkit sample graph passes the layout and wiring check of the
 // graph package (layoutCheck.ts) as the studio and a plain canvas draw it: no
 // overlapping cards, no wire behind a card, no wire running backwards, no
-// unwired input, no node with no wire. The graph package checks its own
+// unwired input, no node with no wire, and every position where autoLayout
+// puts it (positions come from the tool, never from a hand). The graph package checks its own
 // samples the same way. On a failure, list the faults or relay out with
 //   npm run layout-report --prefix deps/bim-open-flow/bimopenflow/web/packages/graph -- --root <toolkit> --catalog docs/nodes.catalog.json --samples <dirs>
 //   npm run relayout-samples --prefix deps/bim-open-flow/bimopenflow/web/packages/graph -- --root <toolkit> --catalog docs/nodes.catalog.json --samples <dirs>

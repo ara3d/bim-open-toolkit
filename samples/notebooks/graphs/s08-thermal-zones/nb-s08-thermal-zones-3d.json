@@ -1,10 +1,10 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "model": { "x": 40, "y": 40 },
-    "zoneFinal": { "x": 40, "y": 240 },
-    "zoneFinalJoinable": { "x": 610, "y": 240 },
-    "coloured": { "x": 920, "y": 40 }
+    "model": { "x": 645, "y": 40 },
+    "zoneFinal": { "x": 40, "y": 270 },
+    "zoneFinalJoinable": { "x": 649, "y": 270 },
+    "coloured": { "x": 998, "y": 143 }
   },
   "structure": {
     "edges": [

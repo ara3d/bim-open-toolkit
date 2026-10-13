@@ -2,19 +2,19 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 230 },
-    "database": { "x": 40, "y": 408 },
-    "elements": { "x": 370, "y": 408, "w": 310 },
-    "sequence": { "x": 700, "y": 408 },
-    "weekly": { "x": 1030, "y": 408 },
-    "joined": { "x": 1360, "y": 408 },
-    "zeroWeeks": { "x": 1690, "y": 408 },
-    "planned": { "x": 2020, "y": 408 },
-    "actual": { "x": 2350, "y": 408 },
-    "zeroActual": { "x": 2680, "y": 408 },
-    "synthetic": { "x": 3010, "y": 408 },
-    "answer": { "x": 3340, "y": 408, "w": 310 },
-    "spine": { "x": 1030, "y": 776 },
-    "curve": { "x": 3340, "y": 776, "w": 310 }
+    "database": { "x": 40, "y": 679 },
+    "elements": { "x": 385, "y": 643, "w": 310 },
+    "sequence": { "x": 784, "y": 643 },
+    "weekly": { "x": 1148, "y": 667 },
+    "joined": { "x": 1497, "y": 479 },
+    "zeroWeeks": { "x": 1846, "y": 479 },
+    "planned": { "x": 2195, "y": 479 },
+    "actual": { "x": 2544, "y": 479 },
+    "zeroActual": { "x": 2893, "y": 479 },
+    "synthetic": { "x": 3242, "y": 479 },
+    "answer": { "x": 3591, "y": 648, "w": 310 },
+    "spine": { "x": 1143, "y": 315 },
+    "curve": { "x": 3591, "y": 310, "w": 310 }
   },
   "structure": {
     "edges": [
