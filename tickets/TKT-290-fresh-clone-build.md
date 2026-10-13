@@ -14,9 +14,13 @@ kind: defect
 
 ## Acceptance criteria
 
-- [ ] README.md and .github/workflows/build.yml name the Platonic.Core and Platonic.Analyzers 0.1.0 packages, where they come from, and the step that makes them restorable (clone cdiggins/Platonic.CSharp and pack, or a nuget.org restore once TKT-293 is done)
+- [x] README.md and .github/workflows/build.yml name the Platonic.Core and Platonic.Analyzers 0.1.0 packages, where they come from, and the step that makes them restorable (clone cdiggins/Platonic.CSharp and pack, or a nuget.org restore once TKT-293 is done)
 - [ ] deps/bim-open-flow SqlCompiler.cs line 89 compiles with the .NET 8 SDK: the condition before ? [] is parenthesised, and a global.json or an explicit LangVersion keeps CI and an 8.0-only machine on the same compiler
-- [ ] .mcp.json no longer lists the platonic server (it depends on ../platonic-ts, which exists only on the owner's machine); the owner's user-level MCP config carries it instead
+- [x] .mcp.json no longer lists the platonic server (it depends on ../platonic-ts, which exists only on the owner's machine); the owner's user-level MCP config carries it instead
 - [ ] golden/bim/bfast-buffers.txt holds no absolute path from the owner's machine; the test passes in a clone at any location
 
 Reported 2026-10-12 by the Studio 2.5 colleague from a clone on Windows 11 with .NET SDK 8.0.424 only: NU1101 on the seven BuildingModel and DataModel projects (Platonic packages not on nuget.org, Platonic.props expects a sibling Platonic.CSharp/artifacts), CS1513/CS1002 at SqlCompiler.cs(90,17), and the bfast golden expecting C:/Users/cdigg/.... The same cause explains the red CI on ara3d/bim-open-toolkit, whose workflow has no Platonic step. The bim-open-flow change is committed in deps/bim-open-flow and pushed; the supervisor moves the pin in deps.json afterwards (deps.json is outside this fence).
+
+## Notes
+
+2026-10-12, builder a2a91874: SqlCompiler.cs condition parenthesised (bim-open-flow c74cc5bb, pushed; the pin in deps.json still has to move). README gains a Platonic packages note and build.yml a clone-and-pack step; .mcp.json no longer lists the platonic server. Not done: no global.json (this machine has only the 9.0 and 10.0 SDKs, so a 8.0 pin cannot be tested; criterion 2's parenthesis part is met, the pin part is open). Not done: bfast golden. The path is printed because the bim profile's model roots (BimSampleSeeding.SeededModelRoots) and GoldenTests.ModelRoots do not include deps/bim-open-flow/samples/tables, the {SAMPLES} target of samples/showcase-tables; the fix is a PathAlias there, outside this fence (GoldenTests.cs), followed by re-approving the golden.
