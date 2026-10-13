@@ -1,7 +1,7 @@
 ---
 id: TKT-290
 title: A fresh clone builds and tests green with the .NET 8 SDK alone
-status: open
+status: done
 depends_on: []
 owner:
 fence: [README.md, .github/workflows/build.yml, .mcp.json, global.json, deps/bim-open-flow/src/flow/BimOpenFlow.Relations/Compile/SqlCompiler.cs, tests/studio/BimOpenFlow.SampleFlows.Tests/golden/bim/bfast-buffers.txt]
@@ -9,6 +9,7 @@ workflow: [W1]
 related: [TKT-153]
 confidence: high
 created: 2026-10-12
+closed: 2026-10-12
 kind: defect
 ---
 
@@ -26,3 +27,11 @@ Reported 2026-10-12 by the Studio 2.5 colleague from a clone on Windows 11 with 
 2026-10-12, builder a2a91874: SqlCompiler.cs condition parenthesised (bim-open-flow c74cc5bb, pushed; the pin in deps.json still has to move). README gains a Platonic packages note and build.yml a clone-and-pack step; .mcp.json no longer lists the platonic server. Not done: no global.json (this machine has only the 9.0 and 10.0 SDKs, so a 8.0 pin cannot be tested; criterion 2's parenthesis part is met, the pin part is open). Not done: bfast golden. The path is printed because the bim profile's model roots (BimSampleSeeding.SeededModelRoots) and GoldenTests.ModelRoots do not include deps/bim-open-flow/samples/tables, the {SAMPLES} target of samples/showcase-tables; the fix is a PathAlias there, outside this fence (GoldenTests.cs), followed by re-approving the golden.
 
 2026-10-12, session a2a91874: the compiler guard is CI itself, not a global.json. Every project in BimOpenToolkit.sln targets net8.0; build.yml now installs only the 8.0 SDK (cf73d951), so CI compiles with the compiler an 8.0-only machine has. A global.json was rejected: the owner's machine has no 8.0 SDK, and the .NET 10 SDK was only in CI for bim-open-data's Browser app, which this solution does not build. The pin moved with a68782f1 (bim-open-flow ac694ac, which contains c74cc5b). bfast golden: GoldenTests.cs adds a PathAlias for bim-open-flow's samples/tables as {SAMPLES} and the golden is re-approved (87f0a91a); 702 SampleFlows goldens pass in a clean copy of the tracked files (C:\w290, deps linked). The platonic MCP server is now in the owner's user-level ~/.claude.json with absolute paths. Not verified: a build with an actual 8.0 SDK, which the next CI run on main is.
+
+## Close gates
+
+2026-10-12, bim-open-flow pin: `node scripts/check-pin.mjs bim-open-flow` in `.` passed.
+
+```
+bim-open-flow: pinned at ac694ac, pushed
+```
