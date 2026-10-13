@@ -13,11 +13,13 @@ jobs:
       # Every dependency, the engine (ara3d-dataflow) included, comes from
       # deps.json and is cloned into deps/.
       - run: node deps.mjs
+      # Only the 8.0 SDK: every project in the solution targets net8.0, and a
+      # build with the 8.0 compiler is the check that a machine with no newer
+      # SDK can build it (TKT-290: a newer compiler accepted code the 8.0 one
+      # rejected, and CI never saw it).
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            10.0.x
+          dotnet-version: 8.0.x
       # Platonic.Core and Platonic.Analyzers 0.1.0 are not on nuget.org yet
       # (TKT-293). Platonic.props restores them from a sibling Platonic.CSharp/artifacts.
       - run: |
