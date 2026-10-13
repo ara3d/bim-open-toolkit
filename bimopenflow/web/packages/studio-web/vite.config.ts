@@ -4,8 +4,9 @@ import { viewerAlias } from "../../viewer.config";
 import { flowAlias, notebookAlias } from "../../deps.config";
 import { snowdonFixture } from "./snowdonFixture";
 
-// The toolkit's editor pages: index (classic look), studio, the Snowdon 3D
-// graph demo, and the 3D showcase. The DuckDB demo has its own config
+// The toolkit's editor pages: index and studio (both the studio look, the
+// default since 2026-10-12), classic (the earlier look), the Snowdon 3D graph
+// demo, and the 3D showcase. The DuckDB demo has its own config
 // (vite.duckdb.config.ts).
 
 // Gratify is imported from its source in deps/gratify (pattern copied from
@@ -18,7 +19,7 @@ const host = process.env.BOF_HOST ?? "http://127.0.0.1:5214";
 
 export default defineConfig({
   plugins: [snowdonFixture()],
-  build: { rollupOptions: { input: { app: resolve(__dirname, "index.html"), studio: resolve(__dirname, "studio.html"), graphDemo: resolve(__dirname, "3d.html"), showcase: resolve(__dirname, "showcase.html") } } },
+  build: { rollupOptions: { input: { app: resolve(__dirname, "index.html"), studio: resolve(__dirname, "studio.html"), classic: resolve(__dirname, "classic.html"), graphDemo: resolve(__dirname, "3d.html"), showcase: resolve(__dirname, "showcase.html") } } },
   resolve: { alias: [...viewerAlias, ...flowAlias, ...notebookAlias, { find: "gratify", replacement: gratify }], dedupe: ["three"] },
   server: {
     // Bind the IPv4 loopback explicitly. Vite's default host is the name

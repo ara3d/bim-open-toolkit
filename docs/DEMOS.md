@@ -68,11 +68,12 @@ The editor proxies `/api` to the host named by `BOF_HOST` (default
 profile can run; graphs the profile lacks nodes for are skipped and named in the
 host log. `start-bim-flow.mjs` runs `bimopenflow-studio` (BimOpenFlow.Host plus
 `POST /api/ask`), so both pages below get the Ask box from one binary; there is
-no separate ask-only host to start. Pages: `/` (editor with table, chart, 3D,
-and verdict panes, and the Ask panel described below), `/studio.html` (the
-same editor in the studio look, a prototype kept beside the classic one:
+no separate ask-only host to start. Pages: `/` (the editor in the studio look, the default since 2026-10-12,
+with table, chart, 3D, and verdict panes and the Ask panel described below:
 flow titles, a Run button, a floating canvas toolbar with Fit and Tidy, an
-empty-flow card, and pack-coloured node stripes; `docs/proposals/studio-look.md`),
+empty-flow card, node borders coloured by pack role with a key under the "?"
+button; `docs/proposals/studio-look.md`), `/classic.html` (the earlier look,
+kept for comparison),
 `/3d.html?analysis=<id>` (3D-first layout, where picking an element lists its
 property sets under the status line), `/duckdb.html` (DuckDB demo with a
 flow picker and an Ask box), `/showcase.html` (button-driven 3D recipes).

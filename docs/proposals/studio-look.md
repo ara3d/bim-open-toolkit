@@ -2,7 +2,7 @@
 
 > Written 2026-09-29 by Claude Fable 5.1 with Christopher Diggins, from a
 > review of a screenshot of the editor at `/?analysis=clash-candidates` and
-> a prototype built the same day. Status: prototype at `/studio.html`, kept
+> a prototype built the same day. Status: the default look at `/` since 2026-10-12 (the classic look moved to `/classic.html`); before that a prototype at `/studio.html`, kept
 > beside the classic look at `/`; which one to continue, or whether to start
 > a third, is an open decision.
 
