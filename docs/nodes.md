@@ -3061,7 +3061,7 @@ Chart and table-view nodes that validate and project table data for the web pane
 
 ### `chart.bar` (v1) — Pure
 
-Projects 'labelColumn' plus the comma-separated numeric 'valueColumns' for the bar-chart pane; 'sort' orders rows by the first value column. With a 'scale' input, appends 'r g b' colour columns computed from the scale's column (or the first value column) and passes the scale through on 'legend'; without one, 'legend' is the empty legend table.
+Projects 'labelColumn' plus the comma-separated numeric 'valueColumns' for the bar-chart pane; 'sort' orders rows by the first value column. 'layout' draws the bars vertical, horizontal, or stacked, and 'colorBy' says what their colours encode: one hue per category or per series, none for the single accent, or auto (category for one value column, series for several). With a 'scale' input, appends 'r g b' colour columns computed from the scale's column (or the first value column) and passes the scale through on 'legend'; without one, 'legend' is the empty legend table.
 
 With a `scale` input, colours each bar by looking up the scale's column (or, if the projection dropped it, the first value column, with a warning) in the source table and appending `r g b` columns; pre-existing `r`, `g`, or `b` columns from the projection are dropped first, with a warning naming them. Bars outside the scale's domain warn once, by count. The scale is passed through unchanged on `legend`, so the chart and its source scale (or a 3D pane sharing it) report the same domain. Without a `scale` input, `legend` is the empty legend table and bars keep their default fill.
 
@@ -3087,6 +3087,8 @@ With a `scale` input, colours each bar by looking up the scale's column (or, if 
 | `valueColumns` | Text (list) | — | — | — | columns of input `table`, numeric only |
 | `title` | Text | — | — | — | — |
 | `sort` | Enum | — | `none` | `none`, `asc`, `desc` | — |
+| `layout` | Enum | — | `vertical` | `vertical`, `horizontal`, `stacked` | — |
+| `colorBy` | Enum | — | `auto` | `auto`, `category`, `series`, `none` | — |
 
 ### `chart.line` (v1) — Pure
 
