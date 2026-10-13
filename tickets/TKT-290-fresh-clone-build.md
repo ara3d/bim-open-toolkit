@@ -14,7 +14,7 @@ kind: defect
 
 ## Acceptance criteria
 
-- [ ] README.md and .github/workflows/build.yml name the Platonic.Core and Platonic.Analyzers 0.1.0 packages, where they come from, and the step that makes them restorable (clone cdiggins/Platonic.CSharp and pack, or a nuget.org restore once TKT-291 is done)
+- [ ] README.md and .github/workflows/build.yml name the Platonic.Core and Platonic.Analyzers 0.1.0 packages, where they come from, and the step that makes them restorable (clone cdiggins/Platonic.CSharp and pack, or a nuget.org restore once TKT-293 is done)
 - [ ] deps/bim-open-flow SqlCompiler.cs line 89 compiles with the .NET 8 SDK: the condition before ? [] is parenthesised, and a global.json or an explicit LangVersion keeps CI and an 8.0-only machine on the same compiler
 - [ ] .mcp.json no longer lists the platonic server (it depends on ../platonic-ts, which exists only on the owner's machine); the owner's user-level MCP config carries it instead
 - [ ] golden/bim/bfast-buffers.txt holds no absolute path from the owner's machine; the test passes in a clone at any location
