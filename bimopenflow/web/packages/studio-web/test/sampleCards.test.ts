@@ -17,11 +17,7 @@ import { catalogOverflows, sampleOverflows } from "@bimopenflow/graph/scripts/ca
 
 const toolkit = fileURLToPath(new URL("../../../../../", import.meta.url));
 
-/** The toolkit's sample folders; samples/analyses, relations, and tables are bim-open-flow's. */
-const TOOLKIT_SAMPLE_DIRS = [
-  "samples/bim-analyses", "samples/checking-analyses", "samples/duckdb-analyses", "samples/notebooks", "samples/nrc-analyses",
-  "samples/showcase-analyses", "samples/showcase-tables", "samples/snowdon-analyses", "samples/view3d-analyses", "samples/viz-analyses",
-];
+import { TOOLKIT_SAMPLE_DIRS } from "./sampleDirs.js";
 
 const catalog = committedCatalog(join(toolkit, "docs", "nodes.catalog.json"));
 const samples = sampleGraphs(TOOLKIT_SAMPLE_DIRS, toolkit);
