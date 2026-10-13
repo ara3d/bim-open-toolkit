@@ -68,3 +68,5 @@ Later, as their own tickets when this proves useful:
 ```
 bim-open-flow: pinned at c3e7941, pushed
 ```
+
+2026-10-12, bim-open-flow 2a12e98: in the studio look the toggle is a Compact button in the canvas toolbar beside Tidy, highlighted while on; the owner could not find the sidebar text. The classic look keeps it above the step list.
