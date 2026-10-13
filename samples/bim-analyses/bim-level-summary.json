@@ -2,10 +2,10 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 86 },
-    "model": { "x": 40, "y": 224 },
-    "levels": { "x": 370, "y": 224 },
-    "answer": { "x": 700, "y": 224 },
-    "chart": { "x": 700, "y": 408 }
+    "model": { "x": 40, "y": 344 },
+    "levels": { "x": 385, "y": 308 },
+    "answer": { "x": 734, "y": 166 },
+    "chart": { "x": 734, "y": 450 }
   },
   "structure": {
     "inputs": [

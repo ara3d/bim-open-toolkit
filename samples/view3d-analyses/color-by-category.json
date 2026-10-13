@@ -2,12 +2,12 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 158 },
-    "model": { "x": 40, "y": 224 },
-    "inst": { "x": 370, "y": 224 },
-    "visible": { "x": 700, "y": 224 },
-    "perCategory": { "x": 1030, "y": 408 },
-    "groups": { "x": 1360, "y": 408 },
-    "colored": { "x": 1690, "y": 224 }
+    "model": { "x": 40, "y": 275 },
+    "inst": { "x": 385, "y": 239 },
+    "visible": { "x": 734, "y": 239 },
+    "perCategory": { "x": 1235, "y": 318 },
+    "groups": { "x": 1584, "y": 318 },
+    "colored": { "x": 2193, "y": 238 }
   },
   "structure": {
     "inputs": [

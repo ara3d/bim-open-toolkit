@@ -1,12 +1,12 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "elements": { "x": 40, "y": 40 },
-    "byCategory": { "x": 360, "y": 40 },
-    "ranked": { "x": 680, "y": 40 },
-    "doorsRow": { "x": 360, "y": 280 },
-    "roomsRow": { "x": 360, "y": 540 },
-    "spacesRow": { "x": 360, "y": 800 }
+    "elements": { "x": 40, "y": 472 },
+    "byCategory": { "x": 389, "y": 472 },
+    "ranked": { "x": 738, "y": 40 },
+    "doorsRow": { "x": 738, "y": 324 },
+    "roomsRow": { "x": 738, "y": 616 },
+    "spacesRow": { "x": 738, "y": 908 }
   },
   "structure": {
     "edges": [

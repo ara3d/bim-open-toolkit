@@ -2,14 +2,14 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 158 },
-    "model": { "x": 40, "y": 224 },
-    "inst": { "x": 370, "y": 224 },
-    "solids": { "x": 700, "y": 224 },
-    "overlaps": { "x": 1030, "y": 408 },
-    "clashes": { "x": 1360, "y": 408 },
-    "perElement": { "x": 1690, "y": 408 },
-    "keyed": { "x": 2020, "y": 408 },
-    "colored": { "x": 2350, "y": 224 }
+    "model": { "x": 40, "y": 278 },
+    "inst": { "x": 385, "y": 242 },
+    "solids": { "x": 734, "y": 242 },
+    "overlaps": { "x": 1235, "y": 318 },
+    "clashes": { "x": 1584, "y": 318 },
+    "perElement": { "x": 1933, "y": 318 },
+    "keyed": { "x": 2282, "y": 318 },
+    "colored": { "x": 2631, "y": 238 }
   },
   "structure": {
     "inputs": [

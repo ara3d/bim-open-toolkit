@@ -2,11 +2,11 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 140 },
-    "model": { "x": 40, "y": 224 },
-    "buffers": { "x": 370, "y": 224 },
-    "directory": { "x": 700, "y": 224 },
-    "prices": { "x": 370, "y": 408 },
-    "answer": { "x": 700, "y": 408 }
+    "model": { "x": 40, "y": 405 },
+    "buffers": { "x": 385, "y": 220 },
+    "directory": { "x": 734, "y": 220 },
+    "prices": { "x": 385, "y": 518 },
+    "answer": { "x": 734, "y": 518 }
   },
   "structure": {
     "edges": [

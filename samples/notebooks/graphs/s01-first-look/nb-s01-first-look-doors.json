@@ -2,19 +2,19 @@
   "formatVersion": "0.1.0",
   "layout": {
     "entities": { "x": 40, "y": 40 },
-    "doors": { "x": 370, "y": 40 },
-    "parameters": { "x": 40, "y": 280 },
-    "overallWidth": { "x": 370, "y": 300 },
-    "doorWidths": { "x": 700, "y": 140 },
-    "storeyOf": { "x": 700, "y": 440 },
-    "withStorey": { "x": 1030, "y": 240 },
-    "metres": { "x": 1360, "y": 240 },
-    "millimetres": { "x": 1690, "y": 240 },
-    "columns": { "x": 2020, "y": 240 },
-    "sorted": { "x": 2350, "y": 240 },
-    "rows": { "x": 2680, "y": 240 },
-    "model": { "x": 2020, "y": 440 },
-    "isolated": { "x": 2680, "y": 440 }
+    "doors": { "x": 389, "y": 40 },
+    "parameters": { "x": 40, "y": 332 },
+    "overallWidth": { "x": 389, "y": 332 },
+    "doorWidths": { "x": 738, "y": 174 },
+    "storeyOf": { "x": 734, "y": 518 },
+    "withStorey": { "x": 1087, "y": 334 },
+    "metres": { "x": 1436, "y": 334 },
+    "millimetres": { "x": 1785, "y": 334 },
+    "columns": { "x": 2134, "y": 334 },
+    "sorted": { "x": 2537, "y": 334 },
+    "rows": { "x": 2886, "y": 334 },
+    "model": { "x": 2882, "y": 104 },
+    "isolated": { "x": 3235, "y": 207 }
   },
   "structure": {
     "edges": [

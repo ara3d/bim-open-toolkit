@@ -2,15 +2,15 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 410 },
-    "database": { "x": 40, "y": 592 },
-    "model": { "x": 40, "y": 776 },
-    "elements": { "x": 370, "y": 592 },
-    "sequence": { "x": 1030, "y": 592 },
-    "taskTable": { "x": 1360, "y": 592 },
-    "weeks": { "x": 1360, "y": 960 },
-    "taskChart": { "x": 2020, "y": 592 },
-    "inst": { "x": 1360, "y": 1328 },
-    "colored": { "x": 2020, "y": 1144 }
+    "database": { "x": 40, "y": 926 },
+    "model": { "x": 989, "y": 526 },
+    "elements": { "x": 385, "y": 890 },
+    "sequence": { "x": 994, "y": 890 },
+    "taskTable": { "x": 1358, "y": 1525 },
+    "weeks": { "x": 1358, "y": 1095 },
+    "taskChart": { "x": 1967, "y": 1160 },
+    "inst": { "x": 1353, "y": 490 },
+    "colored": { "x": 1967, "y": 600 }
   },
   "structure": {
     "edges": [

@@ -2,11 +2,11 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 140 },
-    "elements": { "x": 40, "y": 224 },
-    "byCategory": { "x": 370, "y": 224 },
-    "ranked": { "x": 700, "y": 224 },
-    "rows": { "x": 1030, "y": 224 },
-    "answer": { "x": 1360, "y": 224 }
+    "elements": { "x": 40, "y": 220 },
+    "byCategory": { "x": 389, "y": 220 },
+    "ranked": { "x": 998, "y": 220 },
+    "rows": { "x": 1347, "y": 220 },
+    "answer": { "x": 1696, "y": 220 }
   },
   "structure": {
     "edges": [

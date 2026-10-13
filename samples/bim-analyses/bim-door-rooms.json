@@ -2,14 +2,14 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 158 },
-    "model": { "x": 40, "y": 224 },
-    "bounds": { "x": 370, "y": 224 },
-    "doorsOnly": { "x": 700, "y": 224 },
-    "overlap": { "x": 1030, "y": 224 },
-    "touching": { "x": 1360, "y": 224 },
-    "named": { "x": 1690, "y": 224 },
-    "answer": { "x": 2020, "y": 224 },
-    "rooms": { "x": 370, "y": 408 }
+    "model": { "x": 40, "y": 557 },
+    "bounds": { "x": 385, "y": 238 },
+    "doorsOnly": { "x": 734, "y": 238 },
+    "overlap": { "x": 1083, "y": 372 },
+    "touching": { "x": 1432, "y": 372 },
+    "named": { "x": 1781, "y": 372 },
+    "answer": { "x": 2207, "y": 372 },
+    "rooms": { "x": 729, "y": 530 }
   },
   "structure": {
     "inputs": [

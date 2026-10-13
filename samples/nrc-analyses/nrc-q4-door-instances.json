@@ -2,10 +2,10 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 122 },
-    "elements": { "x": 40, "y": 280 },
-    "doors": { "x": 370, "y": 280 },
-    "columns": { "x": 700, "y": 280 },
-    "answer": { "x": 1030, "y": 280 }
+    "elements": { "x": 40, "y": 202 },
+    "doors": { "x": 389, "y": 202 },
+    "columns": { "x": 898, "y": 202 },
+    "answer": { "x": 1478, "y": 202 }
   },
   "structure": {
     "edges": [

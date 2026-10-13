@@ -2,11 +2,11 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 122 },
-    "elements": { "x": 40, "y": 280 },
-    "counts": { "x": 370, "y": 280 },
-    "run": { "x": 40, "y": 520 },
-    "runFacts": { "x": 370, "y": 520 },
-    "answer": { "x": 700, "y": 280 }
+    "elements": { "x": 40, "y": 202 },
+    "counts": { "x": 389, "y": 202 },
+    "run": { "x": 40, "y": 500 },
+    "runFacts": { "x": 389, "y": 500 },
+    "answer": { "x": 998, "y": 339 }
   },
   "structure": {
     "edges": [

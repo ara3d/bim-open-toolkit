@@ -2,17 +2,17 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 140 },
-    "model": { "x": 40, "y": 224 },
-    "bounds": { "x": 370, "y": 224 },
-    "doorsOnly": { "x": 700, "y": 224 },
-    "overlap": { "x": 1030, "y": 224 },
-    "touching": { "x": 1360, "y": 224 },
-    "byRoom": { "x": 1690, "y": 224 },
-    "labeled": { "x": 2020, "y": 224 },
-    "sorted": { "x": 2350, "y": 224 },
-    "answer": { "x": 2680, "y": 224 },
-    "rooms": { "x": 370, "y": 408 },
-    "roomLabels": { "x": 700, "y": 408 }
+    "model": { "x": 40, "y": 714 },
+    "bounds": { "x": 385, "y": 220 },
+    "doorsOnly": { "x": 734, "y": 220 },
+    "overlap": { "x": 1083, "y": 220 },
+    "touching": { "x": 1432, "y": 404 },
+    "byRoom": { "x": 1781, "y": 404 },
+    "labeled": { "x": 2130, "y": 541 },
+    "sorted": { "x": 2479, "y": 541 },
+    "answer": { "x": 2828, "y": 541 },
+    "rooms": { "x": 729, "y": 693 },
+    "roomLabels": { "x": 1781, "y": 702 }
   },
   "structure": {
     "inputs": [

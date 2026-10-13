@@ -2,9 +2,9 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 122 },
-    "elements": { "x": 40, "y": 280 },
-    "perStorey": { "x": 370, "y": 280 },
-    "answer": { "x": 700, "y": 280 }
+    "elements": { "x": 40, "y": 202 },
+    "perStorey": { "x": 389, "y": 202 },
+    "answer": { "x": 998, "y": 202 }
   },
   "structure": {
     "edges": [

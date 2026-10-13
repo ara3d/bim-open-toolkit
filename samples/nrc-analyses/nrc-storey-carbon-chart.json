@@ -2,12 +2,12 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 160 },
-    "storeys": { "x": 40, "y": 244 },
-    "named": { "x": 370, "y": 244 },
-    "storeysOnly": { "x": 700, "y": 244 },
-    "answer": { "x": 1030, "y": 244 },
-    "buildingOnly": { "x": 700, "y": 484 },
-    "buildingTotal": { "x": 1030, "y": 484 }
+    "storeys": { "x": 40, "y": 460 },
+    "named": { "x": 389, "y": 460 },
+    "storeysOnly": { "x": 998, "y": 240 },
+    "answer": { "x": 1347, "y": 240 },
+    "buildingOnly": { "x": 998, "y": 680 },
+    "buildingTotal": { "x": 1347, "y": 680 }
   },
   "structure": {
     "edges": [

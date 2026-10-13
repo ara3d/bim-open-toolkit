@@ -2,12 +2,12 @@
   "formatVersion": "0.1.0",
   "layout": {
     "entities": { "x": 40, "y": 40 },
-    "door": { "x": 370, "y": 40 },
-    "parameters": { "x": 40, "y": 280 },
-    "psets": { "x": 750, "y": 140 },
-    "columns": { "x": 1060, "y": 140 },
-    "sorted": { "x": 1540, "y": 140 },
-    "rows": { "x": 1890, "y": 140 }
+    "door": { "x": 389, "y": 40 },
+    "parameters": { "x": 385, "y": 318 },
+    "psets": { "x": 805, "y": 167 },
+    "columns": { "x": 1154, "y": 167 },
+    "sorted": { "x": 1672, "y": 167 },
+    "rows": { "x": 2059, "y": 167 }
   },
   "structure": {
     "edges": [

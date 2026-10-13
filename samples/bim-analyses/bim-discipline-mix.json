@@ -2,13 +2,13 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 104 },
-    "model": { "x": 40, "y": 224 },
-    "elements": { "x": 370, "y": 224 },
-    "disciplines": { "x": 700, "y": 224 },
-    "byDiscipline": { "x": 1030, "y": 224 },
-    "ranked": { "x": 1360, "y": 224 },
-    "answer": { "x": 1690, "y": 224 },
-    "chart": { "x": 1690, "y": 408 }
+    "model": { "x": 40, "y": 369 },
+    "elements": { "x": 385, "y": 333 },
+    "disciplines": { "x": 734, "y": 333 },
+    "byDiscipline": { "x": 1083, "y": 333 },
+    "ranked": { "x": 1432, "y": 333 },
+    "answer": { "x": 1781, "y": 184 },
+    "chart": { "x": 1781, "y": 482 }
   },
   "structure": {
     "inputs": [

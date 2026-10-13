@@ -2,16 +2,16 @@
   "formatVersion": "0.1.0",
   "layout": {
     "about": { "x": 40, "y": 40, "w": 560, "h": 160 },
-    "model": { "x": 40, "y": 224 },
-    "bos": { "x": 370, "y": 224 },
-    "entities": { "x": 700, "y": 224 },
-    "relations": { "x": 700, "y": 408 },
-    "contained": { "x": 1030, "y": 408 },
-    "elements": { "x": 1360, "y": 224 },
-    "byCategory": { "x": 1690, "y": 224 },
-    "ranked": { "x": 2020, "y": 224 },
-    "rows": { "x": 2350, "y": 224 },
-    "answer": { "x": 2680, "y": 224 }
+    "model": { "x": 40, "y": 330 },
+    "bos": { "x": 385, "y": 246 },
+    "entities": { "x": 1083, "y": 240 },
+    "relations": { "x": 734, "y": 470 },
+    "contained": { "x": 1083, "y": 470 },
+    "elements": { "x": 1432, "y": 343 },
+    "byCategory": { "x": 1781, "y": 343 },
+    "ranked": { "x": 2130, "y": 343 },
+    "rows": { "x": 2479, "y": 343 },
+    "answer": { "x": 2828, "y": 343 }
   },
   "structure": {
     "inputs": [
