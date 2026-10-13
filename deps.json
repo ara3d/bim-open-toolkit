@@ -17,7 +17,7 @@
   },
   "bim-open-data": {
     "url": "https://github.com/ara3d/bim-open-data",
-    "commit": "26d3d027a942ad96e45e461cfa6b6d0698c5d449"
+    "commit": "fa4b801f0f8f6a19c930a13575310054ef035122"
   },
   "ara3d-dataflow": {
     "url": "https://github.com/ara3d/ara3d-dataflow",
@@ -25,11 +25,11 @@
   },
   "bim-open-flow": {
     "url": "https://github.com/ara3d/bim-open-flow",
-    "commit": "2a12e983d7a586ffc17914540e8eb7bdfde0ea1b"
+    "commit": "a1aa7ac2688a587e2d36b2ce65801944c941fab3"
   },
   "bim-open-notebook": {
     "url": "https://github.com/ara3d/bim-open-notebook",
-    "commit": "b69305cdc6556c1b31a37873dc349d9f6454ca90"
+    "commit": "4c809481f2ddfe6f4a995d0e5165624131afb876"
   },
   "bim-open-plot": {
     "url": "https://github.com/ara3d/bim-open-plot",
