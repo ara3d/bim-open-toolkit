@@ -22,6 +22,7 @@ Verdicts: **keep**, **adjust**, **off**, **watch** (not enough evidence yet).
 | Performance tests as `*.perf.ts` behind `npm run perf` | — | 0 | — | 0 | watch | PERF track is the first user. |
 | Parallel-wave checkpoints and briefs | supervisor time | 10 briefs | — | 1 | keep | Friction: none from the format. The checkpoints were what made the stalled tracks resumable: S and M could be relaunched from their own notes without re-deriving anything. |
 | Concurrent subagent count | — | 7 at once | — | 1 | watch | Seven subagents stalled at once on 2026-09-07 20:07; the user reports a disconnection on their side at that time, so the count is not shown to be the cause. Documented default limit is 20 (`CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`). Running seven again from 22:40. |
+| MSBuild node reuse off (`MSBUILDDISABLENODEREUSE=1` in `.claude/settings.json` and the platonic `build_servers.py` SessionStart hook) | 0 (a few seconds of warm-up per build) | 1 | 196 idle nodes, 247 dotnet processes, 7 to 20 minute test runs during the 2026-10-11 sample graph wave | 0 | watch | Measure at the next wave: dotnet process count after the builders finish, and one builder's SampleFlows run time against the 7 to 20 minutes seen. Drop the hook if the variable alone keeps the count under 20. |
 
 ## Track reports
 
