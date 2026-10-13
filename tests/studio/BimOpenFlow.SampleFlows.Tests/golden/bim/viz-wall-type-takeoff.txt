@@ -1,0 +1,75 @@
+dfg 0.1.0;
+// viz-wall-type-takeoff   graph 059df34678bb
+about = view.note@1(text: "Estimator: how much wall of each type is there, and where is it? One row per wall from the DuckDB export, with the Revit type read from the second part of the name (Basic Wall:Exterior - Brick on Block:138062) and Length, Area and Volume from the PSet_Revit_Dimensions parameters (metres, m2, m3, as exported); a wall without a dimension keeps it missing, so a type's total is the sum of what was declared. The chart ranks the types by area as horizontal bars, so the long type names read left to right, and colours each type from the view.colormap scale the 3D view uses: a bar and the walls it counts are the same colour. Everything that is not a wall is ghosted. The totals for the Duplex are in samples/viz-analyses/README.md.");
+  // Ok
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+model = value.path@1(path: "{SAMPLES}/duplex-enriched.ifc");
+  // Ok  Text "{MODELS}/duplex-enriched.ifc"
+inst = view3d.instances@1(path: model.path);
+  // Ok  table 714 rows x 11 cols  sha f912cca851d5
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number
+  //   scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //   no colour columns
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+walls = duck.query@1(path: database.source, sql: "SELECT e.GlobalId, e.Name, split_part(e.Name, ':', 2) AS WallType, s.Storey, TRY_CAST(l.Value AS DOUBLE) AS Length_m, TRY_CAST(a.Value AS DOUBLE) AS Area_m2, TRY_CAST(v.Value AS DOUBLE) AS Volume_m3 FROM EntityText e LEFT JOIN (SELECT EntityIndex, arg_min(StoreyName, Depth) AS Storey FROM StoreyOfElement GROUP BY EntityIndex) s ON s.EntityIndex = e.EntityIndex LEFT JOIN ParameterText l ON l.EntityIndex = e.EntityIndex AND l.ParameterGroup = 'PSet_Revit_Dimensions' AND l.Name = 'Length' LEFT JOIN ParameterText a ON a.EntityIndex = e.EntityIndex AND a.ParameterGroup = 'PSet_Revit_Dimensions' AND a.Name = 'Area' LEFT JOIN ParameterText v ON v.EntityIndex = e.EntityIndex AND v.ParameterGroup = 'PSet_Revit_Dimensions' AND v.Name = 'Volume' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE') ORDER BY e.GlobalId");
+  // Ok  table 57 rows x 7 cols  sha 4e88ef5fda7f
+  //   columns GlobalId:Text, Name:Text, WallType:Text, Storey:Text, Length_m:Number, Area_m2:Number, Volume_m3:Number
+  //   [0] "0dxE1Sy6nDqfpDb5vIMN_Z", "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "Interior - Furring (152 mm Stud)", "Level 2", 4.314, 10.8, 1.641
+  //   [1] "0dxE1Sy6nDqfpDb5vIMNiA", "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "Interior - Furring (152 mm Stud)", "Level 2", 4.314, 10.8, 1.641
+  //   [2] "0iEHWY1$XA8eQeeULq4jDb", "Basic Wall:Interior - Furring (152 mm Stud):1907"..., "Interior - Furring (152 mm Stud)", "Level 1", 2.508, 6.415, 0.975
+byType = table.aggregate@1(table: walls.table, groupBy: "WallType", aggregates: "count(*) as Walls, sum(Length_m) as Length_m, sum(Area_m2) as Area_m2, sum(Volume_m3) as Volume_m3");
+  // Ok  table 8 rows x 5 cols  sha 011c8f885b27
+  //   columns WallType:Text, Walls:Integer, Length_m:Number, Area_m2:Number, Volume_m3:Number
+  //   [0] "Exterior - Brick on Block", 12, 154.6, 272, 111.4
+  //   [1] "Foundation - Concrete (417mm)", 4, 51.53, 64.42, 26.86
+  //   [2] "Foundation - Concrete (435mm)", 3, 10.58, 12.48, 5.43
+ranked = table.sort@1(table: byType.table, A: "Area_m2", descendingA: "true");
+  // Ok  table 8 rows x 5 cols  sha f1df4ff48366
+  //   columns WallType:Text, Walls:Integer, Length_m:Number, Area_m2:Number, Volume_m3:Number
+  //   [0] "Exterior - Brick on Block", 12, 154.6, 272, 111.4
+  //   [1] "Interior - Partition (92mm Stud)", 18, 51.81, 106.4, 13.19
+  //   [2] "Foundation - Concrete (417mm)", 4, 51.53, 64.42, 26.86
+answer = view.table@1(table: ranked.table, title: "Wall takeoff by type (m, m2, m3)", columns: "WallType,Walls,Length_m,Area_m2,Volume_m3");
+  // Ok  table 8 rows x 5 cols  sha f1df4ff48366
+  //   columns WallType:Text, Walls:Integer, Length_m:Number, Area_m2:Number, Volume_m3:Number
+  //   [0] "Exterior - Brick on Block", 12, 154.6, 272, 111.4
+  //   [1] "Interior - Partition (92mm Stud)", 18, 51.81, 106.4, 13.19
+  //   [2] "Foundation - Concrete (417mm)", 4, 51.53, 64.42, 26.86
+scale = view.colormap@1(values: ranked.table, valueColumn: "WallType", colorMap: "category10");
+  // Ok  table 8 rows x 9 cols  sha 4bac3428f45b
+  //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //   legend "WallType" categorical: category "Exterior - Brick on Block" 1, category "Foundation - Concrete (417mm)" 1, category "Foundation - Concrete (435mm)" 1, category "Interior - Furring (152 mm Stud)" 1, category "Interior - Furring (38 mm Stud)" 1, category "Interior - Partition (92mm Stud)" 1, category "Interior - Plumbing (152mm Stud)" 1, category "Party Wall - CMU Residential Unit Dimising Wall" 1
+chart = chart.bar@1(table: ranked.table, scale: scale.legend, labelColumn: "WallType", valueColumns: "Area_m2", title: "Wall area by type (m2), ranked", layout: "horizontal", colorBy: "category");
+  // Ok
+  //   table: table 8 rows x 5 cols  sha 6c790ab7ca05
+  //     columns WallType:Text, Area_m2:Number, r:Number, g:Number, b:Number
+  //     chart 8 categories x 1 series: "Area_m2"
+  //     "Exterior - Brick on Block": 272
+  //     "Interior - Partition (92mm Stud)": 106.4
+  //     "Foundation - Concrete (417mm)": 64.42
+  //     "Party Wall - CMU Residential Unit Dimising Wall": 61.89
+  //     "Interior - Furring (152 mm Stud)": 58.56
+  //     "Foundation - Concrete (435mm)": 12.48
+  //     "Interior - Plumbing (152mm Stud)": 9.39
+  //     "Interior - Furring (38 mm Stud)": 2.555
+  //   legend: table 8 rows x 9 cols  sha 4bac3428f45b
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "WallType" categorical: category "Exterior - Brick on Block" 1, category "Foundation - Concrete (417mm)" 1, category "Foundation - Concrete (435mm)" 1, category "Interior - Furring (152 mm Stud)" 1, category "Interior - Furring (38 mm Stud)" 1, category "Interior - Partition (92mm Stud)" 1, category "Interior - Plumbing (152mm Stud)" 1, category "Party Wall - CMU Residential Unit Dimising Wall" 1
+colored = view3d.color@1(instances: inst.instances, values: walls.table, scale: scale.legend, joinColumn: "GlobalId", valueColumn: "WallType", colorMap: "category10");
+  // Ok
+  //   instances: table 714 rows x 15 cols  sha 2b76c7858989
+  //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //     scene 714 instances: 714 opaque, 0 faded, 0 hidden
+  //     57 coloured in 8 colours, 657 grey
+  //     legend "WallType" categorical: "Exterior - Brick on Block" 12, "Foundation - Concrete (417mm)" 4, "Foundation - Concrete (435mm)" 3, "Interior - Furring (152 mm Stud)" 6, "Interior - Furring (38 mm Stud)" 8, "Interior - Partition (92mm Stud)" 18, "Interior - Plumbing (152mm Stud)" 2, "Party Wall - CMU Residential Unit Dimising Wall" 4
+  //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
+  //   legend: table 8 rows x 9 cols  sha 4bac3428f45b
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend "WallType" categorical: category "Exterior - Brick on Block" 1, category "Foundation - Concrete (417mm)" 1, category "Foundation - Concrete (435mm)" 1, category "Interior - Furring (152 mm Stud)" 1, category "Interior - Furring (38 mm Stud)" 1, category "Interior - Partition (92mm Stud)" 1, category "Interior - Plumbing (152mm Stud)" 1, category "Party Wall - CMU Residential Unit Dimising Wall" 1
+ghosted = view3d.opacity@1(instances: colored.instances, ids: walls.table, alpha: "0.12", joinColumn: "GlobalId", scope: "others");
+  // Ok  table 714 rows x 15 cols  sha e7437d2e566f
+  //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, r:Number, g:Number, b:Number, a:Number
+  //   scene 714 instances: 57 opaque, 657 faded, 0 hidden
+  //   57 coloured in 8 colours, 657 grey
+  //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)

@@ -77,6 +77,27 @@ storey; the graphs that read only spaces, doors, windows, or walls, which a stor
 - **`viz-parameter-completeness`**: 543 of 2,157 parameter cells are filled (25%); the placeholder
   SerialNumber appears on 211 elements.
 - **`viz-room-areas`**: Level 1 142 m2, Level 2 135 m2, Roof 146 m2.
+- **`viz-wall-type-takeoff`**: 57 walls of 8 types, 587.8 m2 and 207.1 m3 in all. By area: Exterior - Brick on Block
+  12 walls, 154.6 m, 272.0 m2, 111.4 m3; Interior - Partition (92mm Stud) 18 walls, 106.4 m2; Foundation - Concrete
+  (417mm) 4 walls, 64.4 m2; Party Wall - CMU 4 walls, 61.9 m2; Interior - Furring (152 mm Stud) 6 walls, 58.6 m2;
+  Foundation - Concrete (435mm) 3 walls, 12.5 m2; Interior - Plumbing (152mm Stud) 2 walls, 9.4 m2; Interior - Furring
+  (38 mm Stud) 8 walls, 2.6 m2. Every wall declares all three dimensions. In 3D, 57 instances are coloured and 657 ghosted.
+- **`viz-assembly-buildup`**: 15 assemblies over 17 materials (36 assembly-material pairs). Thickest: Party Wall - CMU
+  550 mm (concrete block 386, stud 82, air 50, plasterboard 32), Live Roof over Wood Joist Flat Roof 457 mm (lumber 286,
+  rigid insulation 76, grass 64, plywood 19, EPDM 6, barrier 6), Foundation - Concrete (435mm) 435, Exterior - Brick on
+  Block 417 (block 193, brick 92, insulation 50, stud 41, air 25, plasterboard 16), Foundation - Concrete (417mm) 417,
+  Residential - Wood Joist with Subflooring 305; thinnest: Finish Floor - Wood 19 mm and Finish Floor - Ceramic Tile 13 mm.
+- **`viz-declared-vs-measured-volume`**: 216 elements in 12 classes; 2 have no mesh (the join warns). Six classes declare a
+  volume: Wall 207.1 m3 declared against 194.7 measured (-6%), Slab 64.6 against 125.0 (+93.5%: 20 of 21 slabs declare one,
+  and the undeclared roof slab alone measures about 60 m3), Roof 60.75 against 60.75 (0), Footing 16.5 against 16.5 (0),
+  Covering 13.9 against 8.0, Beam 0.33 against 0.51. Door, Window, Furniture, Member, Stair and Railing declare none and
+  keep Declared_m3 and Gap_pct missing.
+- **`viz-trade-progress`**: 218 scheduled elements over 8 weeks in three trades (the Duplex has no MEP); 10 week-trade
+  pairs finish something, and the grid has 24 week-trade rows. Cumulative by week 5: Structure 43, Envelope 32, Finishes 0;
+  weeks 1 and 4 finish nothing (zeros, not gaps); everything is finished by week 8.
+- **`viz-ffe-schedule`**: 61 items in 9 families, 41 on Level 1 and 20 on Level 2. Base Cabinet-Double Door & 2 Drawer 16
+  (all Level 1), Table-Coffee 10 (6 and 4), Tall Cabinet-Single Door(2) 8 (Level 2), Upper Cabinet-Double Door-Wall 8,
+  Vanity Cabinet-Double Door Sink Unit 5, Sofa 4, Bed-Standard 4, Counter Top 4, Counter Top w Sink Hole 2.
 - **`viz-door-accessibility`**: 14 doors, 6 fail (four 762 mm, two 813 mm), 8 pass (six 864 mm,
   two 1250 mm), 0 unknown.
 

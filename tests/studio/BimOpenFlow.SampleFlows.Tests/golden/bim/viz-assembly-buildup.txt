@@ -1,0 +1,71 @@
+dfg 0.1.0;
+// viz-assembly-buildup   graph 4359e67c1171
+about = view.note@1(text: "Architect or specification writer: how thick is each wall, floor, roof and ceiling assembly, and what makes up its thickness? Every layered element (IfcWall, IfcSlab, IfcRoof, IfcCovering) reaches its IfcMaterialLayer rows through the HasLayer relation and each layer its material through HasMaterial; the export repeats those relations, so the query takes them DISTINCT. Thickness is Ifc:LayerThickness in millimetres, summed per element and material (a partition has plasterboard on both faces), then taken per assembly as the largest value over its elements, since every element of a type carries the same layers. The chart stacks one bar per assembly from its materials, one colour per material, ranked by total thickness; the table gives each assembly's element count, number of materials and total. An air space is a layer with a thickness and stays in the stack. The totals for the Duplex are in samples/viz-analyses/README.md.");
+  // Ok
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+layers = duck.query@1(path: database.source, sql: "WITH lay AS (SELECT DISTINCT w.GlobalId, w.Category, split_part(w.Name, ':', 1) AS Kind, split_part(w.Name, ':', 2) AS Assembly, r.EntityIndexB AS LayerIndex, m.NameB AS Material, TRY_CAST(t.Value AS DOUBLE) * 1000 AS Thickness_mm FROM EntityText w JOIN RelationText r ON r.EntityIndexA = w.EntityIndex AND r.RelationType = 'HasLayer' JOIN RelationText m ON m.EntityIndexA = r.EntityIndexB AND m.RelationType = 'HasMaterial' LEFT JOIN ParameterText t ON t.EntityIndex = r.EntityIndexB AND t.Name = 'Ifc:LayerThickness' WHERE w.GlobalId IS NOT NULL) SELECT GlobalId, Category, Kind, Assembly, Material, SUM(Thickness_mm) AS Thickness_mm FROM lay GROUP BY GlobalId, Category, Kind, Assembly, Material ORDER BY GlobalId, Material");
+  // Ok  table 231 rows x 6 cols  sha f0f470e9f900
+  //   columns GlobalId:Text, Category:Text, Kind:Text, Assembly:Text, Material:Text, Thickness_mm:Number
+  //   [0] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", "Basic Wall", "Interior - Furring (152 mm Stud)", "Metal - Stud Layer", 136
+  //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "IFCWALLSTANDARDCASE", "Basic Wall", "Interior - Furring (152 mm Stud)", "Plasterboard", 16
+  //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "IFCWALLSTANDARDCASE", "Basic Wall", "Interior - Furring (152 mm Stud)", "Metal - Stud Layer", 136
+perAssembly = table.aggregate@1(table: layers.table, groupBy: "Kind, Assembly, Material", aggregates: "max(Thickness_mm) as Thickness_mm, count(*) as Elements");
+  // Ok  table 36 rows x 5 cols  sha f88664d8da04
+  //   columns Kind:Text, Assembly:Text, Material:Text, Thickness_mm:Number, Elements:Integer
+  //   [0] "Basic Roof", "Live Roof over Wood Joist Flat Roof", "Insulation / Thermal Barriers - Rigid insulation", 76, 1
+  //   [1] "Basic Roof", "Live Roof over Wood Joist Flat Roof", "Roofing - Barrier", 6, 1
+  //   [2] "Basic Roof", "Live Roof over Wood Joist Flat Roof", "Roofing - EPDM Membrane", 6, 1
+totals = table.aggregate@1(table: perAssembly.table, groupBy: "Assembly", aggregates: "sum(Thickness_mm) as Total_mm, count(*) as Materials, max(Elements) as Elements");
+  // Ok  table 15 rows x 4 cols  sha c0fd1f793090
+  //   columns Assembly:Text, Total_mm:Number, Materials:Integer, Elements:Integer
+  //   [0] "127mm Slab on Grade", 127, 1, 2
+  //   [1] "150mm Exterior Slab on Grade", 150, 1, 2
+  //   [2] "Exterior - Brick on Block", 417, 6, 12
+wide = table.pivot@1(table: perAssembly.table, groupBy: "Kind, Assembly", nameColumn: "Material", valueColumn: "Thickness_mm", aggregate: "sum");
+  // Ok  table 15 rows x 19 cols  sha e0692ceea32e
+  //   columns Kind:Text, Assembly:Text, Ceramic Tile:Number, Concrete:Number, Concrete - Cast In Situ:Number, Insulation / Thermal Barriers - Rigid insulation:Number, Insulation / Thermal Barriers - Semi-rigid insulation:Number, Masonry - Brick:Number, Masonry - Concrete Block:Number, Masonry - Grout:Number, Metal - Stud Layer:Number, Misc. Air Layers - Air Space:Number, Plasterboard:Number, Roofing - Barrier:Number, Roofing - EPDM Membrane:Number, Site - Grass:Number (+3 more)
+  //   [0] "Basic Roof", "Live Roof over Wood Joist Flat Roof", null, null, null, 76, null, null, null, null, null, null, null, 6, 6, 64, ...
+  //   [1] "Basic Wall", "Exterior - Brick on Block", null, null, null, 50, null, 92, 193, null, 41, 25, 16, null, null, null, ...
+  //   [2] "Basic Wall", "Foundation - Concrete (417mm)", null, null, 417, null, null, null, null, null, null, null, null, null, null, null, ...
+joined = table.join@1(a: wide.table, b: totals.table, aKey: "Assembly", mode: "left");
+  // Ok  table 15 rows x 22 cols  sha 9f5011819e02
+  //   columns Kind:Text, Assembly:Text, Ceramic Tile:Number, Concrete:Number, Concrete - Cast In Situ:Number, Insulation / Thermal Barriers - Rigid insulation:Number, Insulation / Thermal Barriers - Semi-rigid insulation:Number, Masonry - Brick:Number, Masonry - Concrete Block:Number, Masonry - Grout:Number, Metal - Stud Layer:Number, Misc. Air Layers - Air Space:Number, Plasterboard:Number, Roofing - Barrier:Number, Roofing - EPDM Membrane:Number, Site - Grass:Number (+6 more)
+  //   [0] "Basic Roof", "Live Roof over Wood Joist Flat Roof", null, null, null, 76, null, null, null, null, null, null, null, 6, 6, 64, ...
+  //   [1] "Basic Wall", "Exterior - Brick on Block", null, null, null, 50, null, 92, 193, null, 41, 25, 16, null, null, null, ...
+  //   [2] "Basic Wall", "Foundation - Concrete (417mm)", null, null, 417, null, null, null, null, null, null, null, null, null, null, null, ...
+ranked = table.sort@1(table: joined.table, A: "Total_mm", descendingA: "true");
+  // Ok  table 15 rows x 22 cols  sha 8a9d571fac4f
+  //   columns Kind:Text, Assembly:Text, Ceramic Tile:Number, Concrete:Number, Concrete - Cast In Situ:Number, Insulation / Thermal Barriers - Rigid insulation:Number, Insulation / Thermal Barriers - Semi-rigid insulation:Number, Masonry - Brick:Number, Masonry - Concrete Block:Number, Masonry - Grout:Number, Metal - Stud Layer:Number, Misc. Air Layers - Air Space:Number, Plasterboard:Number, Roofing - Barrier:Number, Roofing - EPDM Membrane:Number, Site - Grass:Number (+6 more)
+  //   [0] "Basic Wall", "Party Wall - CMU Residential Unit Dimising Wall", null, null, null, null, null, null, 386, null, 82, 50, 32, null, null, null, ...
+  //   [1] "Basic Roof", "Live Roof over Wood Joist Flat Roof", null, null, null, 76, null, null, null, null, null, null, null, 6, 6, 64, ...
+  //   [2] "Basic Wall", "Foundation - Concrete (435mm)", null, null, 435, null, null, null, null, null, null, null, null, null, null, null, ...
+answer = view.table@1(table: ranked.table, title: "Assembly build-ups: elements, materials and total thickness (mm)", columns: "Kind,Assembly,Elements,Materials,Total_mm");
+  // Ok  table 15 rows x 5 cols  sha 7e284fefca2b
+  //   columns Kind:Text, Assembly:Text, Elements:Integer, Materials:Integer, Total_mm:Number
+  //   [0] "Basic Wall", "Party Wall - CMU Residential Unit Dimising Wall", 4, 4, 550
+  //   [1] "Basic Roof", "Live Roof over Wood Joist Flat Roof", 1, 6, 457
+  //   [2] "Basic Wall", "Foundation - Concrete (435mm)", 3, 1, 435
+chart = chart.bar@1(table: ranked.table, labelColumn: "Assembly", valueColumns: "Ceramic Tile, Concrete, Concrete - Cast In Situ, Insulation / Thermal Barriers - Rigid insulation, Insulation / Thermal Barriers - Semi-rigid insulation, Masonry - Brick, Masonry - Concrete Block, Masonry - Grout, Metal - Stud Layer, Misc. Air Layers - Air Space, Plasterboard, Roofing - Barrier, Roofing - EPDM Membrane, Site - Grass, Wood - Dimensional Lumber, Wood - Flooring, Wood - Sheathing - plywood", title: "Build-up thickness by material (mm), per assembly", layout: "stacked", colorBy: "series");
+  // Ok
+  //   table: table 15 rows x 18 cols  sha d75054fc5380
+  //     columns Assembly:Text, Ceramic Tile:Number, Concrete:Number, Concrete - Cast In Situ:Number, Insulation / Thermal Barriers - Rigid insulation:Number, Insulation / Thermal Barriers - Semi-rigid insulation:Number, Masonry - Brick:Number, Masonry - Concrete Block:Number, Masonry - Grout:Number, Metal - Stud Layer:Number, Misc. Air Layers - Air Space:Number, Plasterboard:Number, Roofing - Barrier:Number, Roofing - EPDM Membrane:Number, Site - Grass:Number, Wood - Dimensional Lumber:Number (+2 more)
+  //     chart 15 categories x 17 series: "Ceramic Tile", "Concrete", "Concrete - Cast In Situ", "Insulation / Thermal Barriers - Rigid insulation", "Insulation / Thermal Barriers - Semi-rigid insulation", "Masonry - Brick", "Masonry - Concrete Block", "Masonry - Grout", "Metal - Stud Layer", "Misc. Air Layers - Air Space", "Plasterboard", "Roofing - Barrier", "Roofing - EPDM Membrane", "Site - Grass", "Wood - Dimensional Lumber", "Wood - Flooring", "Wood - Sheathing - plywood"
+  //     "Party Wall - CMU Residential Unit Dimising Wall": null, null, null, null, null, null, 386, null, 82, 50, 32, null, null, null, null, null, null
+  //     "Live Roof over Wood Joist Flat Roof": null, null, null, 76, null, null, null, null, null, null, null, 6, 6, 64, 286, null, 19
+  //     "Foundation - Concrete (435mm)": null, null, 435, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+  //     "Exterior - Brick on Block": null, null, null, 50, null, 92, 193, null, 41, 25, 16, null, null, null, null, null, null
+  //     "Foundation - Concrete (417mm)": null, null, 417, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+  //     "Residential - Wood Joist with Subflooring": null, null, null, null, null, null, null, null, null, null, null, null, null, null, 286, null, 19
+  //     "Interior - Plumbing (152mm Stud)": null, null, null, null, null, null, null, null, 152, null, 32, null, null, null, null, null, null
+  //     "Interior - Furring (152 mm Stud)": null, null, null, null, null, null, null, null, 136, null, 16, null, null, null, null, null, null
+  //     "150mm Exterior Slab on Grade": null, null, 150, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+  //     "127mm Slab on Grade": null, 127, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+  //     "Interior - Partition (92mm Stud)": null, null, null, null, null, null, null, null, 92, null, 32, null, null, null, null, null, null
+  //     "Gypsum Board": null, null, null, null, null, null, null, null, 45, null, 12, null, null, null, null, null, null
+  //     "Interior - Furring (38 mm Stud)": null, null, null, null, null, null, null, null, 38, null, 16, null, null, null, null, null, null
+  //     "Finish Floor - Wood": null, null, null, null, 3, null, null, null, null, null, null, null, null, null, null, 16, null
+  //     "Finish Floor - Ceramic Tile": 10, null, null, null, null, null, null, 3, null, null, null, null, null, null, null, null, null
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

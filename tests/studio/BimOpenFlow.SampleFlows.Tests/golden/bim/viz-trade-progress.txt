@@ -1,0 +1,95 @@
+dfg 0.1.0;
+// viz-trade-progress   graph 017890fcddae
+about = view.note@1(text: "Project manager: how many elements does each trade finish per week, and how far along is each trade? The dates are synthetic: bim.buildSequence invents a floor-by-floor cycle (storeys bottom-up; Structure, Envelope, MEP, Finishes; 10 calendar days per task from 2027-01-04) and reads no real programme; the Duplex has no MEP elements, so that trade never appears. Elements are counted by the week their task finishes; the SQL node lays the counts on a full week-by-trade grid, so a week in which a trade finishes nothing is a zero, and runs a cumulative sum per trade. The line chart draws one line per trade over the weeks; the bar chart stacks the same weeks by trade, one colour per trade in both. Rows with no storey or no trade (spaces, the site) stay unscheduled and are not counted. The schedule for the Duplex is in samples/viz-analyses/README.md.");
+  // Ok
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+elements = duck.query@1(path: database.source, sql: "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId");
+  // Ok  table 239 rows x 6 cols  sha 846295c3e7da
+  //   columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number
+  //   [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0
+  //   [1] 212, "0BTBFw6f90Nfh9rP1dlXr$", "Kitchen", "IFCSPACE", "Level 1", 0
+  //   [2] 355, "0BTBFw6f90Nfh9rP1dlXru", "Bathroom 1", "IFCSPACE", "Level 1", 0
+sequence = bim.buildSequence@1(table: elements.table, levelColumn: "Level", elevationColumn: "Elevation", column: "Category", start: "2027-01-04", daysPerTask: "10", trades: "Structure,Envelope,MEP,Finishes");
+  // Ok
+  //   warn bim.buildSequence: 21 of 239 rows have no storey or no trade and are not scheduled.
+  //   tasks: table 10 rows x 9 cols  sha 6204d5af75c4
+  //     columns Task:Text, Storey:Text, Trade:Text, Start:Text, End:Text, DurationDays:Integer, FinishWeek:Integer, ElementCount:Integer, Synthetic:Boolean
+  //     [0] "T/FDN - Structure", "T/FDN", "Structure", "2027-01-04", "2027-01-14", 10, 2, 7, true
+  //     [1] "Level 1 - Structure", "Level 1", "Structure", "2027-01-14", "2027-01-24", 10, 3, 22, true
+  //     [2] "T/FDN - Envelope", "T/FDN", "Envelope", "2027-01-14", "2027-01-24", 10, 3, 7, true
+  //   elements: table 239 rows x 11 cols  sha 69356f709339
+  //     columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number, Task:Text, Trade:Text, Finish:Text, FinishWeek:Integer, Synthetic:Boolean
+  //     [0] 67, "0BTBFw6f90Nfh9rP1dlXr2", "Living Room", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+  //     [1] 212, "0BTBFw6f90Nfh9rP1dlXr$", "Kitchen", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+  //     [2] 355, "0BTBFw6f90Nfh9rP1dlXru", "Bathroom 1", "IFCSPACE", "Level 1", 0, null, null, null, null, null
+scheduled = table.filter@1(table: sequence.elements, expr: "not isnull(FinishWeek)");
+  // Ok  table 218 rows x 11 cols  sha 846047be5fff
+  //   columns StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, Elevation:Number, Task:Text, Trade:Text, Finish:Text, FinishWeek:Integer, Synthetic:Boolean
+  //   [0] 3797, "2O2Fr$t4X7Zf8NOew3FNtn", "Basic Wall:Exterior - Brick on Block:138062", "IFCWALLSTANDARDCASE", "Level 1", 0, "Level 1 - Envelope", "Envelope", "2027-02-03", 5, true
+  //   [1] 3999, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", "Level 1", 0, "Level 1 - Envelope", "Envelope", "2027-02-03", 5, true
+  //   [2] 4043, "2O2Fr$t4X7Zf8NOew3FNr2", "Basic Wall:Exterior - Brick on Block:138237", "IFCWALLSTANDARDCASE", "Level 1", 0, "Level 1 - Envelope", "Envelope", "2027-02-03", 5, true
+finished = table.aggregate@1(table: scheduled.table, groupBy: "FinishWeek, Trade", aggregates: "count(*) as Elements");
+  // Ok  table 10 rows x 3 cols  sha 6f8f7e45cd24
+  //   columns FinishWeek:Integer, Trade:Text, Elements:Integer
+  //   [0] 2, "Structure", 7
+  //   [1] 3, "Envelope", 7
+  //   [2] 3, "Structure", 22
+cumulative = sql.query@1(t1: finished.table, sql: "WITH weeks AS (SELECT UNNEST(generate_series(1, (SELECT MAX(FinishWeek) FROM t1))) AS FinishWeek), trades AS (SELECT DISTINCT Trade FROM t1) SELECT CAST(w.FinishWeek AS INTEGER) AS FinishWeek, t.Trade, CAST(COALESCE(f.Elements, 0) AS INTEGER) AS Elements, CAST(SUM(COALESCE(f.Elements, 0)) OVER (PARTITION BY t.Trade ORDER BY w.FinishWeek) AS INTEGER) AS Cumulative FROM weeks w CROSS JOIN trades t LEFT JOIN t1 f ON f.FinishWeek = w.FinishWeek AND f.Trade = t.Trade ORDER BY w.FinishWeek, t.Trade");
+  // Ok  table 24 rows x 4 cols  sha 9b707bac4d8d
+  //   columns FinishWeek:Integer, Trade:Text, Elements:Integer, Cumulative:Integer
+  //   [0] 1, "Envelope", 0, 0
+  //   [1] 1, "Finishes", 0, 0
+  //   [2] 1, "Structure", 0, 0
+progress = table.pivot@1(table: cumulative.table, groupBy: "FinishWeek", nameColumn: "Trade", valueColumn: "Cumulative", aggregate: "sum");
+  // Ok  table 8 rows x 4 cols  sha 95802ed89709
+  //   columns FinishWeek:Integer, Envelope:Integer, Finishes:Integer, Structure:Integer
+  //   [0] 1, 0, 0, 0
+  //   [1] 2, 0, 0, 7
+  //   [2] 3, 7, 0, 29
+synthetic = table.derive@1(table: progress.table, name: "Synthetic", expr: "true");
+  // Ok  table 8 rows x 5 cols  sha 260259471b27
+  //   columns FinishWeek:Integer, Envelope:Integer, Finishes:Integer, Structure:Integer, Synthetic:Boolean
+  //   [0] 1, 0, 0, 0, true
+  //   [1] 2, 0, 0, 7, true
+  //   [2] 3, 7, 0, 29, true
+answer = view.table@1(table: synthetic.table, title: "Cumulative elements finished per trade, by week (synthetic)", columns: "FinishWeek,Structure,Envelope,Finishes,Synthetic");
+  // Ok  table 8 rows x 5 cols  sha ab08e1dcc488
+  //   columns FinishWeek:Integer, Structure:Integer, Envelope:Integer, Finishes:Integer, Synthetic:Boolean
+  //   [0] 1, 0, 0, 0, true
+  //   [1] 2, 7, 0, 0, true
+  //   [2] 3, 29, 7, 0, true
+chart = chart.line@1(table: synthetic.table, xColumn: "FinishWeek", yColumns: "Structure, Envelope, Finishes", title: "Cumulative elements finished per trade (synthetic schedule)");
+  // Ok  table 8 rows x 4 cols  sha 11aef1ac7629
+  //   columns FinishWeek:Integer, Structure:Integer, Envelope:Integer, Finishes:Integer
+  //   chart 8 categories x 3 series: "Structure", "Envelope", "Finishes"
+  //   1: 0, 0, 0
+  //   2: 7, 0, 0
+  //   3: 29, 7, 0
+  //   4: 29, 7, 0
+  //   5: 43, 32, 0
+  //   6: 44, 75, 56
+  //   7: 44, 75, 56
+  //   8: 44, 82, 92
+weekly = table.pivot@1(table: cumulative.table, groupBy: "FinishWeek", nameColumn: "Trade", valueColumn: "Elements", aggregate: "sum");
+  // Ok  table 8 rows x 4 cols  sha 526d88cedab9
+  //   columns FinishWeek:Integer, Envelope:Integer, Finishes:Integer, Structure:Integer
+  //   [0] 1, 0, 0, 0
+  //   [1] 2, 0, 0, 7
+  //   [2] 3, 7, 0, 22
+weeklyChart = chart.bar@1(table: weekly.table, labelColumn: "FinishWeek", valueColumns: "Structure, Envelope, Finishes", title: "Elements finished per week, by trade (synthetic)", layout: "stacked", colorBy: "series");
+  // Ok
+  //   table: table 8 rows x 4 cols  sha 695dafe00ae3
+  //     columns FinishWeek:Integer, Structure:Integer, Envelope:Integer, Finishes:Integer
+  //     chart 8 categories x 3 series: "Structure", "Envelope", "Finishes"
+  //     1: 0, 0, 0
+  //     2: 7, 0, 0
+  //     3: 22, 7, 0
+  //     4: 0, 0, 0
+  //     5: 14, 25, 0
+  //     6: 1, 43, 56
+  //     7: 0, 0, 0
+  //     8: 0, 7, 36
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty

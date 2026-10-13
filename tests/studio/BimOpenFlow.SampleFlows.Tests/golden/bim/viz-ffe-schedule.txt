@@ -1,0 +1,65 @@
+dfg 0.1.0;
+// viz-ffe-schedule   graph d23466921b42
+about = view.note@1(text: "Facility manager at handover: how many pieces of furniture and fixtures of each family must be tagged, and on which floor are they? One row per IfcFurnishingElement, its Revit family read from the first part of the name (M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm, with the metric prefix M_ dropped) and its size from the second; the storey is the nearest IfcBuildingStorey that contains it. The chart ranks the families by count as horizontal bars in the single accent colour: colour would say nothing a rank does not, so colorBy is none. The table pivots the same items by storey, one column per storey, with the total. The counts for the Duplex are in samples/viz-analyses/README.md.");
+  // Ok
+database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
+  // Ok  Database
+items = duck.query@1(path: database.source, sql: "SELECT e.GlobalId, e.Name, regexp_replace(split_part(e.Name, ':', 1), '^M_', '') AS Family, split_part(e.Name, ':', 2) AS Size, s.Storey, t.Value AS Tag FROM EntityText e LEFT JOIN (SELECT EntityIndex, arg_min(StoreyName, Depth) AS Storey FROM StoreyOfElement GROUP BY EntityIndex) s ON s.EntityIndex = e.EntityIndex LEFT JOIN ParameterText t ON t.EntityIndex = e.EntityIndex AND t.Name = 'Ifc:Tag' WHERE e.Category = 'IFCFURNISHINGELEMENT' ORDER BY e.GlobalId");
+  // Ok  table 61 rows x 6 cols  sha 02f4677e961d
+  //   columns GlobalId:Text, Name:Text, Family:Text, Size:Text, Storey:Text, Tag:Text
+  //   [0] "0iEHWY1$XA8eQeeULq4ien", "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:1"..., "Upper Cabinet-Double Door-Wall", "1000mm", "Level 1", "192610"
+  //   [1] "0iEHWY1$XA8eQeeULq4j7w", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm"..., "Upper Cabinet-Double Door-Wall", "1000 mm", "Level 1", "191401"
+  //   [2] "0iEHWY1$XA8eQeeULq4jJA", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm"..., "Upper Cabinet-Double Door-Wall", "1000 mm", "Level 1", "192153"
+byFamily = table.aggregate@1(table: items.table, groupBy: "Family", aggregates: "count(*) as Items");
+  // Ok  table 9 rows x 2 cols  sha 792501c24819
+  //   columns Family:Text, Items:Integer
+  //   [0] "Base Cabinet-Double Door & 2 Drawer", 16
+  //   [1] "Bed-Standard", 4
+  //   [2] "Counter Top", 4
+byStorey = table.pivot@1(table: items.table, groupBy: "Family", nameColumn: "Storey", valueColumn: "GlobalId", aggregate: "count");
+  // Ok  table 9 rows x 3 cols  sha 560a2b5e35c4
+  //   columns Family:Text, Level 1:Integer, Level 2:Integer
+  //   [0] "Base Cabinet-Double Door & 2 Drawer", 16, 0
+  //   [1] "Bed-Standard", 0, 4
+  //   [2] "Counter Top", 4, 0
+ranked = table.sort@1(table: byFamily.table, A: "Items", B: "Family", descendingA: "true");
+  // Ok  table 9 rows x 2 cols  sha e4924a66dae9
+  //   columns Family:Text, Items:Integer
+  //   [0] "Base Cabinet-Double Door & 2 Drawer", 16
+  //   [1] "Table-Coffee", 10
+  //   [2] "Tall Cabinet-Single Door(2)", 8
+chart = chart.bar@1(table: ranked.table, labelColumn: "Family", valueColumns: "Items", title: "Furniture and fixtures to tag, per family", layout: "horizontal", colorBy: "none");
+  // Ok
+  //   table: table 9 rows x 2 cols  sha e4924a66dae9
+  //     columns Family:Text, Items:Integer
+  //     chart 9 categories x 1 series: "Items"
+  //     "Base Cabinet-Double Door & 2 Drawer": 16
+  //     "Table-Coffee": 10
+  //     "Tall Cabinet-Single Door(2)": 8
+  //     "Upper Cabinet-Double Door-Wall": 8
+  //     "Vanity Cabinet-Double Door Sink Unit": 5
+  //     "Bed-Standard": 4
+  //     "Counter Top": 4
+  //     "Sofa": 4
+  //     "Counter Top w Sink Hole": 2
+  //   legend: table 0 rows x 9 cols  sha b47d2a37380c
+  //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
+  //     legend empty
+withTotal = table.join@1(a: byStorey.table, b: byFamily.table, aKey: "Family", mode: "left");
+  // Ok  table 9 rows x 4 cols  sha 38d3acb7ad99
+  //   columns Family:Text, Level 1:Integer, Level 2:Integer, Items:Integer
+  //   [0] "Base Cabinet-Double Door & 2 Drawer", 16, 0, 16
+  //   [1] "Bed-Standard", 0, 4, 4
+  //   [2] "Counter Top", 4, 0, 4
+sorted = table.sort@1(table: withTotal.table, A: "Items", B: "Family", descendingA: "true");
+  // Ok  table 9 rows x 4 cols  sha 3b22b2ba3380
+  //   columns Family:Text, Level 1:Integer, Level 2:Integer, Items:Integer
+  //   [0] "Base Cabinet-Double Door & 2 Drawer", 16, 0, 16
+  //   [1] "Table-Coffee", 6, 4, 10
+  //   [2] "Tall Cabinet-Single Door(2)", 0, 8, 8
+answer = view.table@1(table: sorted.table, title: "FF&E schedule per family and storey", columns: "Family,Level 1,Level 2,Items");
+  // Ok  table 9 rows x 4 cols  sha 3b22b2ba3380
+  //   columns Family:Text, Level 1:Integer, Level 2:Integer, Items:Integer
+  //   [0] "Base Cabinet-Double Door & 2 Drawer", 16, 0, 16
+  //   [1] "Table-Coffee", 6, 4, 10
+  //   [2] "Tall Cabinet-Single Door(2)", 0, 8, 8

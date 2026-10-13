@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// viz-storey-stacking   graph 062ef8ad0c7a
+// viz-storey-stacking   graph 0e6e81ad63ff
 about = view.note@1(text: """
 Role: a BIM manager walking a client through how the Duplex is built up. Question: how many elements sit on each storey, and of which classes, from the foundation to the roof?
 How to read it: 'chart' has one bar per storey, ordered by elevation, coloured on the viridis scale ('scale') the 3D view ('colored') uses to paint every element by its storey's elevation: purple is the foundation, yellow the roof. 'byClass' splits each storey into one series per element class (stacked in specs/viz-storey-stacking.vl.json).
@@ -100,7 +100,7 @@ stackingSorted = table.sort@1(table: stacking.table, A: "Elevation", B: "Storey"
   //   [0] "T/FDN", -1.25, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7, 0
   //   [1] "Level 1", 0, 4, 5, 6, 0, 41, 4, 4, 0, 10, 4, 21, 4
   //   [2] "Level 2", 3.1, 4, 8, 8, 0, 20, 0, 0, 0, 10, 0, 25, 18
-byClass = chart.bar@1(table: stackingSorted.table, labelColumn: "Storey", valueColumns: "Beam, Covering, Door, Footing, Furniture, Member, Railing, Roof, Slab, Stair, Wall, Window", title: "Elements per storey, by class");
+byClass = chart.bar@1(table: stackingSorted.table, labelColumn: "Storey", valueColumns: "Beam, Covering, Door, Footing, Furniture, Member, Railing, Roof, Slab, Stair, Wall, Window", title: "Elements per storey, by class", layout: "stacked", colorBy: "series");
   // Ok
   //   table: table 4 rows x 13 cols  sha b3039b7fa21d
   //     columns Storey:Text, Beam:Integer, Covering:Integer, Door:Integer, Footing:Integer, Furniture:Integer, Member:Integer, Railing:Integer, Roof:Integer, Slab:Integer, Stair:Integer, Wall:Integer, Window:Integer
