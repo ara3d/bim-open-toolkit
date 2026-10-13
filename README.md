@@ -79,6 +79,18 @@ the design in detail. [docs/OVERVIEW.md](docs/OVERVIEW.md) is the one-page versi
 Run `node scripts/preflight.mjs` to check these, plus a .NET SDK and the private
 Snowdon model the 3D and DuckDB demos need, before following the steps below.
 
+### Platonic packages
+
+Every .NET project in `deps/bim-open-data` references `Platonic.Core` and `Platonic.Analyzers` 0.1.0. They are not on nuget.org yet (TKT-293 will publish them and make this step unnecessary), so a fresh clone fails restore with NU1101. Until then, clone [cdiggins/Platonic.CSharp](https://github.com/cdiggins/Platonic.CSharp) as a sibling of the toolkit's parent folder (`Platonic.props` looks three levels up from `deps/bim-open-data`; with the toolkit at `~/git/bim-open-toolkit`, that is `~/git/Platonic.CSharp`) and pack both projects into its `artifacts` folder:
+
+```bash
+git clone https://github.com/cdiggins/Platonic.CSharp ../Platonic.CSharp
+dotnet pack ../Platonic.CSharp/src/Platonic.Core -c Release -o ../Platonic.CSharp/artifacts
+dotnet pack ../Platonic.CSharp/src/Platonic.Analyzers -c Release -o ../Platonic.CSharp/artifacts
+```
+
+To keep the clone elsewhere, pass its path as `-p:PlatonicRoot=<clone>` to `dotnet build`.
+
 ## Start here
 
 [docs/START.md](docs/START.md) is the one-page first run: a preflight check and

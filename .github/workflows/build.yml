@@ -18,6 +18,12 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
+      # Platonic.Core and Platonic.Analyzers 0.1.0 are not on nuget.org yet
+      # (TKT-293). Platonic.props restores them from a sibling Platonic.CSharp/artifacts.
+      - run: |
+          git clone https://github.com/cdiggins/Platonic.CSharp ../Platonic.CSharp
+          dotnet pack ../Platonic.CSharp/src/Platonic.Core -c Release -o ../Platonic.CSharp/artifacts
+          dotnet pack ../Platonic.CSharp/src/Platonic.Analyzers -c Release -o ../Platonic.CSharp/artifacts
       - run: dotnet build BimOpenToolkit.sln -c Release
       # Tests that need the IFC Test Kit are skipped in CI until a public
       # fixture download source exists (data is not committed to this repo).
