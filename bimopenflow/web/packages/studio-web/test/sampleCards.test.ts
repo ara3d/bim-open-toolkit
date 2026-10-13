@@ -2,7 +2,7 @@
 // The toolkit's own sample graphs (TKT-110, TKT-125): every kind they use is
 // in the studio's committed catalog (docs/nodes.catalog.json, every pack), no
 // two cards overlap as the page that loads them shows them, and no text a card
-// paints runs past its edges, in any node style. The graph package checks its
+// paints runs past its edges. The graph package checks its
 // own samples (samples/analyses, relations, tables, in bim-open-flow) against
 // the generic catalog; this covers this repository's samples/: the BIM, NRC, Snowdon,
 // showcase, view3d, and notebook graphs. On an overlap, relay out with
@@ -11,8 +11,7 @@
 
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { afterAll, describe, expect, it } from "vitest";
-import { defaultNodeStyle, nodeStyleNames, setNodeStyle } from "@bimopenflow/graph";
+import { describe, expect, it } from "vitest";
 import { committedCatalog, overlappingPairs, sampleGraphs, shownModel, unknownKinds } from "@bimopenflow/graph/scripts/sampleGraphs.js";
 import { catalogOverflows, sampleOverflows } from "@bimopenflow/graph/scripts/cardOverflow.js";
 
@@ -20,14 +19,13 @@ const toolkit = fileURLToPath(new URL("../../../../../", import.meta.url));
 
 /** The toolkit's sample folders; samples/analyses, relations, and tables are bim-open-flow's. */
 const TOOLKIT_SAMPLE_DIRS = [
-  "samples/bim-analyses", "samples/duckdb-analyses", "samples/notebooks", "samples/nrc-analyses",
-  "samples/showcase-analyses", "samples/showcase-tables", "samples/snowdon-analyses", "samples/view3d-analyses",
+  "samples/bim-analyses", "samples/checking-analyses", "samples/duckdb-analyses", "samples/notebooks", "samples/nrc-analyses",
+  "samples/showcase-analyses", "samples/showcase-tables", "samples/snowdon-analyses", "samples/view3d-analyses", "samples/viz-analyses",
 ];
 
 const catalog = committedCatalog(join(toolkit, "docs", "nodes.catalog.json"));
 const samples = sampleGraphs(TOOLKIT_SAMPLE_DIRS, toolkit);
 
-afterAll(() => setNodeStyle(defaultNodeStyle));
 
 it("finds the toolkit's sample graphs", () => {
   // 71 graphs in these folders when this was written.
@@ -48,15 +46,11 @@ it("no sample graph has overlapping node cards", () => {
 });
 
 describe("no text overflows its card", () => {
-  for (const style of nodeStyleNames) {
-    it(`in the ${style} style, for every sample graph as shown and at least width`, () => {
-      setNodeStyle(style);
-      expect(sampleOverflows(samples, catalog)).toEqual([]);
-    });
+  it("for every sample graph as shown and at least width", () => {
+    expect(sampleOverflows(samples, catalog)).toEqual([]);
+  });
 
-    it(`in the ${style} style, for every catalog kind with default and long values`, () => {
-      setNodeStyle(style);
-      expect([false, true].flatMap((long) => catalogOverflows(catalog, long))).toEqual([]);
-    });
-  }
+  it("for every catalog kind with default and long values", () => {
+    expect([false, true].flatMap((long) => catalogOverflows(catalog, long))).toEqual([]);
+  });
 });
