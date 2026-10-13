@@ -35,3 +35,5 @@ Reported 2026-10-12 by the Studio 2.5 colleague from a clone on Windows 11 with 
 ```
 bim-open-flow: pinned at ac694ac, pushed
 ```
+
+2026-10-13, session a2a91874: CI still failed at dotnet build after the clone-and-pack step. Reproduced with the .NET 8.0.425 SDK on a clean copy with the Platonic packages removed from the global NuGet cache: NU1101 in every toolkit project that reaches bim-open-data, and in bim-open-data's Ara3D.Ids and BimOpenMcp.Ifc, because the restore source lived only in Platonic.props and the transitive consumers never import it. Fixed by setting PlatonicRoot and RestoreAdditionalProjectSources in both Directory.Build.props files (bim-open-data 26d3d02, pinned here). Clean copy, empty cache, 8.0 SDK: 0 errors.
