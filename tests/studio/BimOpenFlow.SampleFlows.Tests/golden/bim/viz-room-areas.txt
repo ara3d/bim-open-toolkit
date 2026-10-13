@@ -10,12 +10,12 @@ inst = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 load = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos");
   // Ok
-  //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
+  //   entities: table 4721 rows x 6 cols  sha 8dd61d621f11
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18551 rows x 6 cols  sha 61628ffa56f3
+  //   parameters: table 18553 rows x 6 cols  sha 01d959ee5fa2
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
   //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
   //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"

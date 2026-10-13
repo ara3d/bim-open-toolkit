@@ -7,12 +7,12 @@ model = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/duplex-enriched.bos"
 bos = bos.load@1(path: model.path, harmonize: "false");
   // Ok
-  //   entities: table 4721 rows x 6 cols  sha 96afba73d5cb
+  //   entities: table 4721 rows x 6 cols  sha 8dd61d621f11
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18551 rows x 6 cols  sha 61628ffa56f3
+  //   parameters: table 18553 rows x 6 cols  sha 01d959ee5fa2
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
   //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
   //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
@@ -23,8 +23,8 @@ bos = bos.load@1(path: model.path, harmonize: "false");
   //     [1] 134, "Level 2", 4705, null, "MemberOf"
   //     [2] 135, "T/FDN", 4705, null, "MemberOf"
 entities = rel.fromTable@1(table: bos.entities, name: "entities");
-  // Ok  relation plan aff8f6fcc81f
-  //   "(inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\")"
+  // Ok  relation plan bc4629f2010f
+  //   "(inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\")"
 relations = rel.fromTable@1(table: bos.relations, name: "relations");
   // Ok  relation plan 535940f766d2
   //   "(inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\")"
@@ -32,14 +32,14 @@ contained = rel.filter@1(input: relations.relation, expr: "RelationType == 'Cont
   // Ok  relation plan 732e00456f50
   //   "(filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\") \"([RelationType] == 'ContainedIn')\")"
 elements = rel.join@1(left: entities.relation, right: contained.relation, leftKey: "EntityIndex", rightKey: "EntityIndexA", kind: "semi");
-  // Ok  relation plan baa0cf14bb55
-  //   "(join Semi (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\") \"([Rel"...
+  // Ok  relation plan 9afa65a1b2ef
+  //   "(join Semi (inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\") \"([Rel"...
 byCategory = rel.aggregate@1(input: elements.relation, groupBy: "Category", aggregates: "count(*) as Elements");
-  // Ok  relation plan 84205b0e3061
-  //   "(aggregate (join Semi (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c12"...
+  // Ok  relation plan cdc65043fe10
+  //   "(aggregate (join Semi (inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c12"...
 ranked = rel.sort@1(input: byCategory.relation, by: "Elements desc, Category");
-  // Ok  relation plan 333a8a043787
-  //   "(sort (aggregate (join Semi (inline \"entities\" \"644eb44febe2b6ae88bec11a19ff671af8418c30c872756b88fb80a0cd99f1d8\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905"...
+  // Ok  relation plan 3e3649d850b4
+  //   "(sort (aggregate (join Semi (inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905"...
 rows = rel.materialize@1(input: ranked.relation, limit: "0");
   // Ok  table 11 rows x 2 cols  sha a0c00097af76
   //   columns Category:Text, Elements:Integer
