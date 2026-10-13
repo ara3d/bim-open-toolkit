@@ -1,0 +1,70 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Duplex trade progress",
+    "subtitle": "cumulative elements finished per trade, by week; synthetic schedule"
+  },
+  "width": 360,
+  "height": 240,
+  "transform": [
+    {
+      "fold": [
+        "Structure",
+        "Envelope",
+        "Finishes"
+      ],
+      "as": [
+        "Trade",
+        "Cumulative"
+      ]
+    }
+  ],
+  "mark": {
+    "type": "line",
+    "point": true
+  },
+  "encoding": {
+    "x": {
+      "field": "FinishWeek",
+      "type": "quantitative",
+      "title": "Week",
+      "axis": {
+        "tickMinStep": 1
+      }
+    },
+    "y": {
+      "field": "Cumulative",
+      "type": "quantitative",
+      "title": "Elements finished (cumulative)"
+    },
+    "color": {
+      "field": "Trade",
+      "type": "nominal",
+      "sort": [
+        "Structure",
+        "Envelope",
+        "Finishes"
+      ],
+      "title": "Trade"
+    },
+    "tooltip": [
+      {
+        "field": "FinishWeek",
+        "type": "quantitative",
+        "title": "Week"
+      },
+      {
+        "field": "Trade",
+        "type": "nominal"
+      },
+      {
+        "field": "Cumulative",
+        "type": "quantitative"
+      },
+      {
+        "field": "Synthetic",
+        "type": "nominal"
+      }
+    ]
+  }
+}

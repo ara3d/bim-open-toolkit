@@ -1,0 +1,220 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 224
+    },
+    "database": {
+      "x": 40,
+      "y": 330
+    },
+    "walls": {
+      "x": 370,
+      "y": 330
+    },
+    "byType": {
+      "x": 700,
+      "y": 330
+    },
+    "ranked": {
+      "x": 1030,
+      "y": 330
+    },
+    "answer": {
+      "x": 1360,
+      "y": 330
+    },
+    "scale": {
+      "x": 1690,
+      "y": 330
+    },
+    "chart": {
+      "x": 2020,
+      "y": 330
+    },
+    "model": {
+      "x": 2350,
+      "y": 330
+    },
+    "inst": {
+      "x": 40,
+      "y": 514
+    },
+    "colored": {
+      "x": 370,
+      "y": 514
+    },
+    "ghosted": {
+      "x": 700,
+      "y": 514
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "database.source",
+        "to": "walls.path"
+      },
+      {
+        "from": "walls.table",
+        "to": "byType.table"
+      },
+      {
+        "from": "byType.table",
+        "to": "ranked.table"
+      },
+      {
+        "from": "ranked.table",
+        "to": "answer.table"
+      },
+      {
+        "from": "ranked.table",
+        "to": "scale.values"
+      },
+      {
+        "from": "ranked.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "scale.legend",
+        "to": "chart.scale"
+      },
+      {
+        "from": "model.path",
+        "to": "inst.path"
+      },
+      {
+        "from": "inst.instances",
+        "to": "colored.instances"
+      },
+      {
+        "from": "walls.table",
+        "to": "colored.values"
+      },
+      {
+        "from": "scale.legend",
+        "to": "colored.scale"
+      },
+      {
+        "from": "colored.instances",
+        "to": "ghosted.instances"
+      },
+      {
+        "from": "walls.table",
+        "to": "ghosted.ids"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
+        "version": 1
+      },
+      {
+        "id": "walls",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "byType",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "ranked",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "scale",
+        "kind": "view.colormap",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "inst",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "colored",
+        "kind": "view3d.color",
+        "version": 1
+      },
+      {
+        "id": "ghosted",
+        "kind": "view3d.opacity",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Estimator: how much wall of each type is there, and where is it? One row per wall from the DuckDB export, with the Revit type read from the second part of the name (Basic Wall:Exterior - Brick on Block:138062) and Length, Area and Volume from the PSet_Revit_Dimensions parameters (metres, m2, m3, as exported); a wall without a dimension keeps it missing, so a type's total is the sum of what was declared. The chart ranks the types by area as horizontal bars, so the long type names read left to right, and colours each type from the view.colormap scale the 3D view uses: a bar and the walls it counts are the same colour. Everything that is not a wall is ghosted. The totals for the Duplex are in samples/viz-analyses/README.md."
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb"
+    },
+    "walls": {
+      "sql": "SELECT e.GlobalId, e.Name, split_part(e.Name, ':', 2) AS WallType, s.Storey, TRY_CAST(l.Value AS DOUBLE) AS Length_m, TRY_CAST(a.Value AS DOUBLE) AS Area_m2, TRY_CAST(v.Value AS DOUBLE) AS Volume_m3 FROM EntityText e LEFT JOIN (SELECT EntityIndex, arg_min(StoreyName, Depth) AS Storey FROM StoreyOfElement GROUP BY EntityIndex) s ON s.EntityIndex = e.EntityIndex LEFT JOIN ParameterText l ON l.EntityIndex = e.EntityIndex AND l.ParameterGroup = 'PSet_Revit_Dimensions' AND l.Name = 'Length' LEFT JOIN ParameterText a ON a.EntityIndex = e.EntityIndex AND a.ParameterGroup = 'PSet_Revit_Dimensions' AND a.Name = 'Area' LEFT JOIN ParameterText v ON v.EntityIndex = e.EntityIndex AND v.ParameterGroup = 'PSet_Revit_Dimensions' AND v.Name = 'Volume' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE') ORDER BY e.GlobalId"
+    },
+    "byType": {
+      "groupBy": "WallType",
+      "aggregates": "count(*) as Walls, sum(Length_m) as Length_m, sum(Area_m2) as Area_m2, sum(Volume_m3) as Volume_m3"
+    },
+    "ranked": {
+      "A": "Area_m2",
+      "descendingA": "true"
+    },
+    "answer": {
+      "title": "Wall takeoff by type (m, m2, m3)",
+      "columns": "WallType,Walls,Length_m,Area_m2,Volume_m3"
+    },
+    "scale": {
+      "valueColumn": "WallType",
+      "colorMap": "category10"
+    },
+    "chart": {
+      "labelColumn": "WallType",
+      "valueColumns": "Area_m2",
+      "title": "Wall area by type (m2), ranked",
+      "layout": "horizontal",
+      "colorBy": "category"
+    },
+    "model": {
+      "path": "{SAMPLES}/duplex-enriched.ifc"
+    },
+    "colored": {
+      "joinColumn": "GlobalId",
+      "valueColumn": "WallType",
+      "colorMap": "category10"
+    },
+    "ghosted": {
+      "alpha": "0.12",
+      "joinColumn": "GlobalId",
+      "scope": "others"
+    }
+  }
+}

@@ -30,6 +30,11 @@ A demo whose numbers are synthetic (a schedule, unit rates) says so in its note 
 | `viz-clash-matrix` | Coordinator: which pairs of classes have the most overlapping bounding boxes (candidates, not clashes)? | Class-by-class heatmap and matrix table; 3D coloured by each element's candidate count |
 | `viz-parameter-completeness` | BIM manager at handover: which classes miss the fields a handover needs? | Heatmap of fill rate, class by parameter, blank where a class never has the field; worst classes ranked; 3D by element completeness |
 | `viz-room-areas` | Space planner: how big is each room, and how much area does each room type take per storey? | Area histogram by room type; per-room bars and 3D rooms on one area scale; totals per type per storey |
+| `viz-wall-type-takeoff` | Estimator: how much wall of each type is there, and where is it? | Horizontal bars of wall area per Revit type, ranked, one colour per type on the scale the 3D view shares; walls coloured by type in 3D, the rest ghosted |
+| `viz-assembly-buildup` | Architect or specification writer: how thick is each wall, floor, roof and ceiling assembly, and what makes up its thickness? | Stacked bars of layer thickness per assembly, one series and colour per material, ranked by total; table of elements, materials and total per assembly |
+| `viz-declared-vs-measured-volume` | Model auditor: do the volumes the model declares agree with its geometry? (uses `view3d.measures`) | Grouped bars of declared against measured m3 per class, coloured by series; a second chart of the gap per class, coloured by class; classes with no declared volume keep it missing |
+| `viz-trade-progress` | Project manager: how many elements does each trade finish per week, and how far along is each trade? Synthetic dates (uses `bim.buildSequence`) | Multi-series line of cumulative elements per trade over the weeks; stacked bars of the same weeks by trade |
+| `viz-ffe-schedule` | Facility manager at handover: how many pieces of furniture and fixtures of each family must be tagged, and on which floor? | Horizontal ranked bars in the single accent colour (colorBy none); table of items per family and storey |
 
 ## Numbers on the Duplex
 

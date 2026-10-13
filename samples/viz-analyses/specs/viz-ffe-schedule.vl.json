@@ -1,0 +1,65 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Duplex furniture and fixtures to tag",
+    "subtitle": "items per Revit family, ranked; one colour, since the rank says it all"
+  },
+  "width": 360,
+  "height": 260,
+  "layer": [
+    {
+      "mark": {
+        "type": "bar"
+      },
+      "encoding": {
+        "y": {
+          "field": "Family",
+          "type": "nominal",
+          "sort": "-x",
+          "title": null
+        },
+        "x": {
+          "field": "Items",
+          "type": "quantitative",
+          "title": "Items",
+          "axis": {
+            "tickMinStep": 1
+          }
+        },
+        "tooltip": [
+          {
+            "field": "Family",
+            "type": "nominal"
+          },
+          {
+            "field": "Items",
+            "type": "quantitative"
+          }
+        ]
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "middle",
+        "dx": 4
+      },
+      "encoding": {
+        "y": {
+          "field": "Family",
+          "type": "nominal",
+          "sort": "-x"
+        },
+        "x": {
+          "field": "Items",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "Items",
+          "type": "quantitative"
+        }
+      }
+    }
+  ]
+}

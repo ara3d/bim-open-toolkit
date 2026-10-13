@@ -1,0 +1,87 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Duplex wall takeoff by type",
+    "subtitle": "wall area (m2) per Revit wall type, ranked; one colour per type, shared with the 3D view"
+  },
+  "width": 360,
+  "height": 240,
+  "layer": [
+    {
+      "mark": {
+        "type": "bar"
+      },
+      "encoding": {
+        "y": {
+          "field": "WallType",
+          "type": "nominal",
+          "sort": "-x",
+          "title": null
+        },
+        "x": {
+          "field": "Area_m2",
+          "type": "quantitative",
+          "title": "Wall area (m2)"
+        },
+        "color": {
+          "field": "WallType",
+          "type": "nominal",
+          "legend": null
+        },
+        "tooltip": [
+          {
+            "field": "WallType",
+            "type": "nominal",
+            "title": "Type"
+          },
+          {
+            "field": "Walls",
+            "type": "quantitative"
+          },
+          {
+            "field": "Length_m",
+            "type": "quantitative",
+            "format": ".1f",
+            "title": "Length (m)"
+          },
+          {
+            "field": "Area_m2",
+            "type": "quantitative",
+            "format": ".1f",
+            "title": "Area (m2)"
+          },
+          {
+            "field": "Volume_m3",
+            "type": "quantitative",
+            "format": ".2f",
+            "title": "Volume (m3)"
+          }
+        ]
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "middle",
+        "dx": 4
+      },
+      "encoding": {
+        "y": {
+          "field": "WallType",
+          "type": "nominal",
+          "sort": "-x"
+        },
+        "x": {
+          "field": "Area_m2",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "Area_m2",
+          "type": "quantitative",
+          "format": ".0f"
+        }
+      }
+    }
+  ]
+}

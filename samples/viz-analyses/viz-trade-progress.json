@@ -1,0 +1,235 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 245
+    },
+    "database": {
+      "x": 40,
+      "y": 330
+    },
+    "elements": {
+      "x": 370,
+      "y": 330
+    },
+    "sequence": {
+      "x": 700,
+      "y": 330
+    },
+    "scheduled": {
+      "x": 1030,
+      "y": 330
+    },
+    "finished": {
+      "x": 1360,
+      "y": 330
+    },
+    "cumulative": {
+      "x": 1690,
+      "y": 330
+    },
+    "weekly": {
+      "x": 2020,
+      "y": 330
+    },
+    "progress": {
+      "x": 2350,
+      "y": 330
+    },
+    "synthetic": {
+      "x": 40,
+      "y": 514
+    },
+    "answer": {
+      "x": 370,
+      "y": 514
+    },
+    "chart": {
+      "x": 700,
+      "y": 514
+    },
+    "weeklyChart": {
+      "x": 1030,
+      "y": 514
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "database.source",
+        "to": "elements.path"
+      },
+      {
+        "from": "elements.table",
+        "to": "sequence.table"
+      },
+      {
+        "from": "sequence.elements",
+        "to": "scheduled.table"
+      },
+      {
+        "from": "scheduled.table",
+        "to": "finished.table"
+      },
+      {
+        "from": "finished.table",
+        "to": "cumulative.t1"
+      },
+      {
+        "from": "cumulative.table",
+        "to": "weekly.table"
+      },
+      {
+        "from": "cumulative.table",
+        "to": "progress.table"
+      },
+      {
+        "from": "progress.table",
+        "to": "synthetic.table"
+      },
+      {
+        "from": "synthetic.table",
+        "to": "answer.table"
+      },
+      {
+        "from": "synthetic.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "weekly.table",
+        "to": "weeklyChart.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
+        "version": 1
+      },
+      {
+        "id": "elements",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "sequence",
+        "kind": "bim.buildSequence",
+        "version": 1
+      },
+      {
+        "id": "scheduled",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "finished",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "cumulative",
+        "kind": "sql.query",
+        "version": 1
+      },
+      {
+        "id": "weekly",
+        "kind": "table.pivot",
+        "version": 1
+      },
+      {
+        "id": "progress",
+        "kind": "table.pivot",
+        "version": 1
+      },
+      {
+        "id": "synthetic",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.line",
+        "version": 1
+      },
+      {
+        "id": "weeklyChart",
+        "kind": "chart.bar",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Project manager: how many elements does each trade finish per week, and how far along is each trade? The dates are synthetic: bim.buildSequence invents a floor-by-floor cycle (storeys bottom-up; Structure, Envelope, MEP, Finishes; 10 calendar days per task from 2027-01-04) and reads no real programme; the Duplex has no MEP elements, so that trade never appears. Elements are counted by the week their task finishes; the SQL node lays the counts on a full week-by-trade grid, so a week in which a trade finishes nothing is a zero, and runs a cumulative sum per trade. The line chart draws one line per trade over the weeks; the bar chart stacks the same weeks by trade, one colour per trade in both. Rows with no storey or no trade (spaces, the site) stay unscheduled and are not counted. The schedule for the Duplex is in samples/viz-analyses/README.md."
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb"
+    },
+    "elements": {
+      "sql": "SELECT e.StepId, e.GlobalId, e.Name, e.Category, s.StoreyName AS Level, CAST(p.Value AS DOUBLE) AS Elevation FROM (SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex, arg_min(StoreyName, Depth) AS StoreyName FROM StoreyOfElement GROUP BY EntityIndex) s JOIN EntityText e USING (EntityIndex) LEFT JOIN ParameterText p ON p.EntityIndex = s.StoreyIndex AND p.Name = 'Ifc:Elevation' ORDER BY e.StepId"
+    },
+    "sequence": {
+      "levelColumn": "Level",
+      "elevationColumn": "Elevation",
+      "column": "Category",
+      "start": "2027-01-04",
+      "daysPerTask": "10",
+      "trades": "Structure,Envelope,MEP,Finishes"
+    },
+    "scheduled": {
+      "expr": "not isnull(FinishWeek)"
+    },
+    "finished": {
+      "groupBy": "FinishWeek, Trade",
+      "aggregates": "count(*) as Elements"
+    },
+    "cumulative": {
+      "sql": "WITH weeks AS (SELECT UNNEST(generate_series(1, (SELECT MAX(FinishWeek) FROM t1))) AS FinishWeek), trades AS (SELECT DISTINCT Trade FROM t1) SELECT CAST(w.FinishWeek AS INTEGER) AS FinishWeek, t.Trade, CAST(COALESCE(f.Elements, 0) AS INTEGER) AS Elements, CAST(SUM(COALESCE(f.Elements, 0)) OVER (PARTITION BY t.Trade ORDER BY w.FinishWeek) AS INTEGER) AS Cumulative FROM weeks w CROSS JOIN trades t LEFT JOIN t1 f ON f.FinishWeek = w.FinishWeek AND f.Trade = t.Trade ORDER BY w.FinishWeek, t.Trade"
+    },
+    "weekly": {
+      "groupBy": "FinishWeek",
+      "nameColumn": "Trade",
+      "valueColumn": "Elements",
+      "aggregate": "sum"
+    },
+    "progress": {
+      "groupBy": "FinishWeek",
+      "nameColumn": "Trade",
+      "valueColumn": "Cumulative",
+      "aggregate": "sum"
+    },
+    "synthetic": {
+      "name": "Synthetic",
+      "expr": "true"
+    },
+    "answer": {
+      "title": "Cumulative elements finished per trade, by week (synthetic)",
+      "columns": "FinishWeek,Structure,Envelope,Finishes,Synthetic"
+    },
+    "chart": {
+      "xColumn": "FinishWeek",
+      "yColumns": "Structure, Envelope, Finishes",
+      "title": "Cumulative elements finished per trade (synthetic schedule)"
+    },
+    "weeklyChart": {
+      "labelColumn": "FinishWeek",
+      "valueColumns": "Structure, Envelope, Finishes",
+      "title": "Elements finished per week, by trade (synthetic)",
+      "layout": "stacked",
+      "colorBy": "series"
+    }
+  }
+}

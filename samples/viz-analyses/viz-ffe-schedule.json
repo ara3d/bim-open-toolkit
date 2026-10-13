@@ -1,0 +1,185 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 224
+    },
+    "database": {
+      "x": 40,
+      "y": 330
+    },
+    "items": {
+      "x": 370,
+      "y": 330
+    },
+    "byFamily": {
+      "x": 700,
+      "y": 330
+    },
+    "ranked": {
+      "x": 1030,
+      "y": 330
+    },
+    "chart": {
+      "x": 1360,
+      "y": 330
+    },
+    "byStorey": {
+      "x": 1690,
+      "y": 330
+    },
+    "withTotal": {
+      "x": 2020,
+      "y": 330
+    },
+    "sorted": {
+      "x": 2350,
+      "y": 330
+    },
+    "answer": {
+      "x": 40,
+      "y": 514
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "database.source",
+        "to": "items.path"
+      },
+      {
+        "from": "items.table",
+        "to": "byFamily.table"
+      },
+      {
+        "from": "byFamily.table",
+        "to": "ranked.table"
+      },
+      {
+        "from": "ranked.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "items.table",
+        "to": "byStorey.table"
+      },
+      {
+        "from": "byStorey.table",
+        "to": "withTotal.a"
+      },
+      {
+        "from": "byFamily.table",
+        "to": "withTotal.b"
+      },
+      {
+        "from": "withTotal.table",
+        "to": "sorted.table"
+      },
+      {
+        "from": "sorted.table",
+        "to": "answer.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
+        "version": 1
+      },
+      {
+        "id": "items",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "byFamily",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "ranked",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "byStorey",
+        "kind": "table.pivot",
+        "version": 1
+      },
+      {
+        "id": "withTotal",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "sorted",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Facility manager at handover: how many pieces of furniture and fixtures of each family must be tagged, and on which floor are they? One row per IfcFurnishingElement, its Revit family read from the first part of the name (M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm, with the metric prefix M_ dropped) and its size from the second; the storey is the nearest IfcBuildingStorey that contains it. The chart ranks the families by count as horizontal bars in the single accent colour: colour would say nothing a rank does not, so colorBy is none. The table pivots the same items by storey, one column per storey, with the total. The counts for the Duplex are in samples/viz-analyses/README.md."
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb"
+    },
+    "items": {
+      "sql": "SELECT e.GlobalId, e.Name, regexp_replace(split_part(e.Name, ':', 1), '^M_', '') AS Family, split_part(e.Name, ':', 2) AS Size, s.Storey, t.Value AS Tag FROM EntityText e LEFT JOIN (SELECT EntityIndex, arg_min(StoreyName, Depth) AS Storey FROM StoreyOfElement GROUP BY EntityIndex) s ON s.EntityIndex = e.EntityIndex LEFT JOIN ParameterText t ON t.EntityIndex = e.EntityIndex AND t.Name = 'Ifc:Tag' WHERE e.Category = 'IFCFURNISHINGELEMENT' ORDER BY e.GlobalId"
+    },
+    "byFamily": {
+      "groupBy": "Family",
+      "aggregates": "count(*) as Items"
+    },
+    "ranked": {
+      "A": "Items",
+      "B": "Family",
+      "descendingA": "true"
+    },
+    "chart": {
+      "labelColumn": "Family",
+      "valueColumns": "Items",
+      "title": "Furniture and fixtures to tag, per family",
+      "layout": "horizontal",
+      "colorBy": "none"
+    },
+    "byStorey": {
+      "groupBy": "Family",
+      "nameColumn": "Storey",
+      "valueColumn": "GlobalId",
+      "aggregate": "count"
+    },
+    "withTotal": {
+      "aKey": "Family",
+      "mode": "left"
+    },
+    "sorted": {
+      "A": "Items",
+      "B": "Family",
+      "descendingA": "true"
+    },
+    "answer": {
+      "title": "FF&E schedule per family and storey",
+      "columns": "Family,Level 1,Level 2,Items"
+    }
+  }
+}

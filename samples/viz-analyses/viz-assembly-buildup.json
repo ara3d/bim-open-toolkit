@@ -1,0 +1,183 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 266
+    },
+    "database": {
+      "x": 40,
+      "y": 330
+    },
+    "layers": {
+      "x": 370,
+      "y": 330
+    },
+    "perAssembly": {
+      "x": 700,
+      "y": 330
+    },
+    "wide": {
+      "x": 1030,
+      "y": 330
+    },
+    "totals": {
+      "x": 1360,
+      "y": 330
+    },
+    "joined": {
+      "x": 1690,
+      "y": 330
+    },
+    "ranked": {
+      "x": 2020,
+      "y": 330
+    },
+    "answer": {
+      "x": 2350,
+      "y": 330
+    },
+    "chart": {
+      "x": 40,
+      "y": 514
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "database.source",
+        "to": "layers.path"
+      },
+      {
+        "from": "layers.table",
+        "to": "perAssembly.table"
+      },
+      {
+        "from": "perAssembly.table",
+        "to": "wide.table"
+      },
+      {
+        "from": "perAssembly.table",
+        "to": "totals.table"
+      },
+      {
+        "from": "wide.table",
+        "to": "joined.a"
+      },
+      {
+        "from": "totals.table",
+        "to": "joined.b"
+      },
+      {
+        "from": "joined.table",
+        "to": "ranked.table"
+      },
+      {
+        "from": "ranked.table",
+        "to": "answer.table"
+      },
+      {
+        "from": "ranked.table",
+        "to": "chart.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
+        "version": 1
+      },
+      {
+        "id": "layers",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "perAssembly",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "wide",
+        "kind": "table.pivot",
+        "version": 1
+      },
+      {
+        "id": "totals",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "joined",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "ranked",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Architect or specification writer: how thick is each wall, floor, roof and ceiling assembly, and what makes up its thickness? Every layered element (IfcWall, IfcSlab, IfcRoof, IfcCovering) reaches its IfcMaterialLayer rows through the HasLayer relation and each layer its material through HasMaterial; the export repeats those relations, so the query takes them DISTINCT. Thickness is Ifc:LayerThickness in millimetres, summed per element and material (a partition has plasterboard on both faces), then taken per assembly as the largest value over its elements, since every element of a type carries the same layers. The chart stacks one bar per assembly from its materials, one colour per material, ranked by total thickness; the table gives each assembly's element count, number of materials and total. An air space is a layer with a thickness and stays in the stack. The totals for the Duplex are in samples/viz-analyses/README.md."
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb"
+    },
+    "layers": {
+      "sql": "WITH lay AS (SELECT DISTINCT w.GlobalId, w.Category, split_part(w.Name, ':', 1) AS Kind, split_part(w.Name, ':', 2) AS Assembly, r.EntityIndexB AS LayerIndex, m.NameB AS Material, TRY_CAST(t.Value AS DOUBLE) * 1000 AS Thickness_mm FROM EntityText w JOIN RelationText r ON r.EntityIndexA = w.EntityIndex AND r.RelationType = 'HasLayer' JOIN RelationText m ON m.EntityIndexA = r.EntityIndexB AND m.RelationType = 'HasMaterial' LEFT JOIN ParameterText t ON t.EntityIndex = r.EntityIndexB AND t.Name = 'Ifc:LayerThickness' WHERE w.GlobalId IS NOT NULL) SELECT GlobalId, Category, Kind, Assembly, Material, SUM(Thickness_mm) AS Thickness_mm FROM lay GROUP BY GlobalId, Category, Kind, Assembly, Material ORDER BY GlobalId, Material"
+    },
+    "perAssembly": {
+      "groupBy": "Kind, Assembly, Material",
+      "aggregates": "max(Thickness_mm) as Thickness_mm, count(*) as Elements"
+    },
+    "wide": {
+      "groupBy": "Kind, Assembly",
+      "nameColumn": "Material",
+      "valueColumn": "Thickness_mm",
+      "aggregate": "sum"
+    },
+    "totals": {
+      "groupBy": "Assembly",
+      "aggregates": "sum(Thickness_mm) as Total_mm, count(*) as Materials, max(Elements) as Elements"
+    },
+    "joined": {
+      "aKey": "Assembly",
+      "mode": "left"
+    },
+    "ranked": {
+      "A": "Total_mm",
+      "descendingA": "true"
+    },
+    "answer": {
+      "title": "Assembly build-ups: elements, materials and total thickness (mm)",
+      "columns": "Kind,Assembly,Elements,Materials,Total_mm"
+    },
+    "chart": {
+      "labelColumn": "Assembly",
+      "valueColumns": "Ceramic Tile, Concrete, Concrete - Cast In Situ, Insulation / Thermal Barriers - Rigid insulation, Insulation / Thermal Barriers - Semi-rigid insulation, Masonry - Brick, Masonry - Concrete Block, Masonry - Grout, Metal - Stud Layer, Misc. Air Layers - Air Space, Plasterboard, Roofing - Barrier, Roofing - EPDM Membrane, Site - Grass, Wood - Dimensional Lumber, Wood - Flooring, Wood - Sheathing - plywood",
+      "title": "Build-up thickness by material (mm), per assembly",
+      "layout": "stacked",
+      "colorBy": "series"
+    }
+  }
+}

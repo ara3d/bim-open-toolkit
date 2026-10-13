@@ -1,0 +1,91 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Duplex assembly build-ups",
+    "subtitle": "layer thickness (mm) per assembly, stacked by material; ranked by total"
+  },
+  "width": 420,
+  "height": 260,
+  "transform": [
+    {
+      "fold": [
+        "Ceramic Tile",
+        "Concrete",
+        "Concrete - Cast In Situ",
+        "Insulation / Thermal Barriers - Rigid insulation",
+        "Insulation / Thermal Barriers - Semi-rigid insulation",
+        "Masonry - Brick",
+        "Masonry - Concrete Block",
+        "Masonry - Grout",
+        "Metal - Stud Layer",
+        "Misc. Air Layers - Air Space",
+        "Plasterboard",
+        "Roofing - Barrier",
+        "Roofing - EPDM Membrane",
+        "Site - Grass",
+        "Wood - Dimensional Lumber",
+        "Wood - Flooring",
+        "Wood - Sheathing - plywood"
+      ],
+      "as": [
+        "Material",
+        "Thickness_mm"
+      ]
+    },
+    {
+      "filter": "isValid(datum.Thickness_mm)"
+    }
+  ],
+  "mark": {
+    "type": "bar"
+  },
+  "encoding": {
+    "x": {
+      "field": "Assembly",
+      "type": "nominal",
+      "sort": {
+        "field": "Total_mm",
+        "order": "descending"
+      },
+      "title": null,
+      "axis": {
+        "labelAngle": -35
+      }
+    },
+    "y": {
+      "field": "Thickness_mm",
+      "type": "quantitative",
+      "aggregate": "sum",
+      "title": "Thickness (mm)"
+    },
+    "color": {
+      "field": "Material",
+      "type": "nominal",
+      "title": "Material"
+    },
+    "tooltip": [
+      {
+        "field": "Kind",
+        "type": "nominal"
+      },
+      {
+        "field": "Assembly",
+        "type": "nominal"
+      },
+      {
+        "field": "Material",
+        "type": "nominal"
+      },
+      {
+        "field": "Thickness_mm",
+        "type": "quantitative",
+        "title": "Layer (mm)"
+      },
+      {
+        "field": "Total_mm",
+        "type": "quantitative",
+        "title": "Total (mm)"
+      }
+    ]
+  }
+}

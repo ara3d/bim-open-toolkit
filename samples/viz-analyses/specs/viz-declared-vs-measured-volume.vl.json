@@ -1,0 +1,87 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "Duplex declared against measured volume",
+    "subtitle": "Revit Volume parameter against enclosed mesh volume, per class (m3)"
+  },
+  "width": 360,
+  "height": 240,
+  "transform": [
+    {
+      "fold": [
+        "Declared_m3",
+        "Measured_m3"
+      ],
+      "as": [
+        "Source",
+        "Volume_m3"
+      ]
+    }
+  ],
+  "mark": {
+    "type": "bar"
+  },
+  "encoding": {
+    "x": {
+      "field": "Class",
+      "type": "nominal",
+      "sort": {
+        "field": "Declared_m3",
+        "order": "descending"
+      },
+      "title": null
+    },
+    "xOffset": {
+      "field": "Source",
+      "type": "nominal",
+      "sort": [
+        "Declared_m3",
+        "Measured_m3"
+      ]
+    },
+    "y": {
+      "field": "Volume_m3",
+      "type": "quantitative",
+      "title": "Volume (m3)"
+    },
+    "color": {
+      "field": "Source",
+      "type": "nominal",
+      "title": null,
+      "sort": [
+        "Declared_m3",
+        "Measured_m3"
+      ]
+    },
+    "tooltip": [
+      {
+        "field": "Class",
+        "type": "nominal"
+      },
+      {
+        "field": "Source",
+        "type": "nominal"
+      },
+      {
+        "field": "Volume_m3",
+        "type": "quantitative",
+        "format": ".2f",
+        "title": "Volume (m3)"
+      },
+      {
+        "field": "WithDeclared",
+        "type": "quantitative",
+        "title": "Elements with a declared volume"
+      },
+      {
+        "field": "Elements",
+        "type": "quantitative"
+      },
+      {
+        "field": "Gap_pct",
+        "type": "quantitative",
+        "title": "Gap (%)"
+      }
+    ]
+  }
+}

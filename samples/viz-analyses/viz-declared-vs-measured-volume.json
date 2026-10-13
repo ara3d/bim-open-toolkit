@@ -1,0 +1,276 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 287
+    },
+    "database": {
+      "x": 40,
+      "y": 330
+    },
+    "declared": {
+      "x": 370,
+      "y": 330
+    },
+    "classes": {
+      "x": 700,
+      "y": 330
+    },
+    "classed": {
+      "x": 1030,
+      "y": 330
+    },
+    "model": {
+      "x": 1360,
+      "y": 330
+    },
+    "measures": {
+      "x": 1690,
+      "y": 330
+    },
+    "perElement": {
+      "x": 2020,
+      "y": 330
+    },
+    "joined": {
+      "x": 2350,
+      "y": 330
+    },
+    "byClass": {
+      "x": 40,
+      "y": 514
+    },
+    "gap": {
+      "x": 370,
+      "y": 514
+    },
+    "ranked": {
+      "x": 700,
+      "y": 514
+    },
+    "answer": {
+      "x": 1030,
+      "y": 514
+    },
+    "comparable": {
+      "x": 1360,
+      "y": 514
+    },
+    "chart": {
+      "x": 1690,
+      "y": 514
+    },
+    "gapChart": {
+      "x": 2020,
+      "y": 514
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "database.source",
+        "to": "declared.path"
+      },
+      {
+        "from": "declared.table",
+        "to": "classed.a"
+      },
+      {
+        "from": "classes.table",
+        "to": "classed.b"
+      },
+      {
+        "from": "model.path",
+        "to": "measures.path"
+      },
+      {
+        "from": "measures.measures",
+        "to": "perElement.table"
+      },
+      {
+        "from": "classed.table",
+        "to": "joined.a"
+      },
+      {
+        "from": "perElement.table",
+        "to": "joined.b"
+      },
+      {
+        "from": "joined.table",
+        "to": "byClass.table"
+      },
+      {
+        "from": "byClass.table",
+        "to": "gap.table"
+      },
+      {
+        "from": "gap.table",
+        "to": "ranked.table"
+      },
+      {
+        "from": "ranked.table",
+        "to": "answer.table"
+      },
+      {
+        "from": "ranked.table",
+        "to": "comparable.table"
+      },
+      {
+        "from": "comparable.table",
+        "to": "chart.table"
+      },
+      {
+        "from": "comparable.table",
+        "to": "gapChart.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "database",
+        "kind": "duck.source",
+        "version": 1
+      },
+      {
+        "id": "declared",
+        "kind": "duck.query",
+        "version": 1
+      },
+      {
+        "id": "classes",
+        "kind": "table.inline",
+        "version": 1
+      },
+      {
+        "id": "classed",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "measures",
+        "kind": "view3d.measures",
+        "version": 1
+      },
+      {
+        "id": "perElement",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "joined",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "byClass",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "gap",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "ranked",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "comparable",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "chart",
+        "kind": "chart.bar",
+        "version": 1
+      },
+      {
+        "id": "gapChart",
+        "kind": "chart.bar",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Model auditor or quantity surveyor: do the volumes the model declares agree with its geometry? Declared is the Revit Volume parameter (PSet_Revit_Dimensions, m3) per element from the DuckDB export; Measured is the enclosed mesh volume from view3d.measures, summed over an element's meshes, exact only for closed meshes. Both are summed per class; a class's Declared total covers only the elements that declare one (WithDeclared against Elements in the table), and a class with none keeps it missing: doors, windows, furniture, stairs and railings declare no volume here, and so does the roof's slab. Gap_pct is measured minus declared as a percentage of declared. The grouped chart draws the two totals side by side per class that declares a volume, one colour per series; the second chart draws the gap, one colour per class. A large gap is a question for the model, not an error: the Duplex carries its roof twice (IfcRoof and an IfcSlab with the same name). The numbers are in samples/viz-analyses/README.md."
+    },
+    "database": {
+      "path": "{SAMPLES}/duplex-enriched.duckdb"
+    },
+    "declared": {
+      "sql": "SELECT e.GlobalId, e.Name, e.Category AS IfcClass, TRY_CAST(v.Value AS DOUBLE) AS Declared_m3 FROM EntityText e LEFT JOIN ParameterText v ON v.EntityIndex = e.EntityIndex AND v.ParameterGroup = 'PSet_Revit_Dimensions' AND v.Name = 'Volume' WHERE e.Category IN ('IFCWALL', 'IFCWALLSTANDARDCASE', 'IFCSLAB', 'IFCROOF', 'IFCFOOTING', 'IFCBEAM', 'IFCMEMBER', 'IFCDOOR', 'IFCWINDOW', 'IFCCOVERING', 'IFCSTAIR', 'IFCRAILING', 'IFCFURNISHINGELEMENT') ORDER BY e.GlobalId"
+    },
+    "classes": {
+      "rows": "[{\"IfcClass\":\"IFCWALL\",\"Class\":\"Wall\"},{\"IfcClass\":\"IFCWALLSTANDARDCASE\",\"Class\":\"Wall\"},{\"IfcClass\":\"IFCSLAB\",\"Class\":\"Slab\"},{\"IfcClass\":\"IFCROOF\",\"Class\":\"Roof\"},{\"IfcClass\":\"IFCFOOTING\",\"Class\":\"Footing\"},{\"IfcClass\":\"IFCBEAM\",\"Class\":\"Beam\"},{\"IfcClass\":\"IFCMEMBER\",\"Class\":\"Member\"},{\"IfcClass\":\"IFCDOOR\",\"Class\":\"Door\"},{\"IfcClass\":\"IFCWINDOW\",\"Class\":\"Window\"},{\"IfcClass\":\"IFCCOVERING\",\"Class\":\"Covering\"},{\"IfcClass\":\"IFCSTAIR\",\"Class\":\"Stair\"},{\"IfcClass\":\"IFCRAILING\",\"Class\":\"Railing\"},{\"IfcClass\":\"IFCFURNISHINGELEMENT\",\"Class\":\"Furniture\"}]"
+    },
+    "classed": {
+      "aKey": "IfcClass",
+      "mode": "inner"
+    },
+    "model": {
+      "path": "{SAMPLES}/duplex-enriched.ifc"
+    },
+    "perElement": {
+      "groupBy": "globalId",
+      "aggregates": "sum(meshVolume) as Measured_m3, count(*) as Meshes"
+    },
+    "joined": {
+      "aKey": "GlobalId",
+      "bKey": "globalId",
+      "mode": "left"
+    },
+    "byClass": {
+      "groupBy": "Class",
+      "aggregates": "count(*) as Elements, count(Declared_m3) as WithDeclared, sum(Declared_m3) as Declared_m3, sum(Measured_m3) as Measured_m3"
+    },
+    "gap": {
+      "name": "Gap_pct",
+      "expr": "round((Measured_m3 - Declared_m3) / Declared_m3 * 1000) / 10"
+    },
+    "ranked": {
+      "A": "Declared_m3",
+      "descendingA": "true"
+    },
+    "answer": {
+      "title": "Declared (Revit Volume) against measured mesh volume per class (m3)",
+      "columns": "Class,Elements,WithDeclared,Declared_m3,Measured_m3,Gap_pct"
+    },
+    "comparable": {
+      "expr": "WithDeclared > 0"
+    },
+    "chart": {
+      "labelColumn": "Class",
+      "valueColumns": "Declared_m3, Measured_m3",
+      "title": "Declared against measured volume per class (m3)",
+      "layout": "vertical",
+      "colorBy": "series"
+    },
+    "gapChart": {
+      "labelColumn": "Class",
+      "valueColumns": "Gap_pct",
+      "title": "Measured minus declared, as % of declared",
+      "layout": "vertical",
+      "colorBy": "category"
+    }
+  }
+}
