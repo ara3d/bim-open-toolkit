@@ -41,7 +41,13 @@ public sealed class GoldenTests
         var options = new GraphTextOptions
         {
             AnalysisId = id,
-            PathAliases = ModelRoots(profile).Select(r => new PathAlias(r, "{MODELS}")).ToList(),
+            PathAliases =
+            [
+                .. ModelRoots(profile).Select(r => new PathAlias(r, "{MODELS}")),
+                // bim-open-flow's samples/tables, which the showcase graphs name through {SAMPLES}:
+                // without this alias the golden would hold the checkout's absolute path (TKT-290).
+                new PathAlias(SampleSeeding.TablesDir(SampleSeeding.SamplesRoot(RepoPaths.Root) ?? RepoPaths.Root), "{SAMPLES}"),
+            ],
         };
         var text = GraphTextPrinter.Print(original, snapshot, data.Registry, options);
         var goldenPath = GoldenPath(profile, id);

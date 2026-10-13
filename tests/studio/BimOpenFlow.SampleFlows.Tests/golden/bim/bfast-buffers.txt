@@ -3,7 +3,7 @@ dfg 0.1.0;
 about = view.note@1(text: "Both chains read one file, the path in model. The top chain lists the buffers in sample.bfast (name, byte length, file order); the bottom chain reads the unitPrices buffer as float64, eight prices with 99.99 fourth. BFAST records no element types, so bfast.buffer is told the type.");
   // Ok
 model = value.path@1(path: "{SAMPLES}/sample.bfast");
-  // Ok  Text "C:/Users/cdigg/git/bim-open-toolkit/deps/bim-open-flow/samples/tables/sample.bfast"
+  // Ok  Text "{SAMPLES}/sample.bfast"
 buffers = bfast.read@1(path: model.path);
   // Ok  table 4 rows x 3 cols  sha 1022114e9325
   //   columns name:Text, byteLength:Integer, index:Integer
