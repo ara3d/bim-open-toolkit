@@ -117,3 +117,7 @@ chunk W1 lands; until then outlines may use them but cannot be generated.
 | turn | `earlier` | Optional list of `{ "request", "reply" }`, oldest first: the versions this turn had before its request was edited and resent. Text only. |
 | embed | `picture` | `path` (from the repository root, PNG or SVG, at most 400 KB), `alt`, `caption`?. Inlined as a `data:` URL, so the notebook stays one file. |
 | embed | `chart` | `node`, `port`, `caption`?, `analysisId`?: that output as a chart, with the chart options `chartPaneOptions` gives for the node's kind and parameters. |
+
+## Attribution
+
+`s10-snowdon.notebook.json`, its outline, and its graphs hold counts and names computed from Autodesk's Snowdon Towers Sample Project (CC BY-NC-SA 3.0); see `samples/snowdon-analyses/NOTICE.md`. The NRC notebooks' Duplex data is buildingSMART's (CC BY 4.0, `samples/nrc/NOTICE.md`).

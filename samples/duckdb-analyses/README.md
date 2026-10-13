@@ -10,6 +10,8 @@ web page imports the file directly for its flow picker and descriptions;
 
 ## Input
 
+The default export is Autodesk's Snowdon Towers Sample Project (CC BY-NC-SA 3.0, never committed; attribution in `samples/snowdon-analyses/NOTICE.md`). The graphs carry no model data.
+
 Every graph declares a graph input `model`, the database file, and starts from
 one `duck.source` whose `path` is `$model`, so setting `model` runs the graph on
 another building. The input's default is a placeholder, and each entry's

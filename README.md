@@ -255,4 +255,4 @@ assessment from 2026-09-08.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The sample building data keeps its own terms: the Duplex Apartment files are CC BY 4.0 from buildingSMART International ([samples/nrc/NOTICE.md](samples/nrc/NOTICE.md)); the public Schependomlaan and DigitalHub models are CC BY 4.0 and MIT (TKT-144).
+MIT, see [LICENSE](LICENSE). The sample building data keeps its own terms, listed in [NOTICE.md](NOTICE.md): the Duplex Apartment files are CC BY 4.0 from buildingSMART International ([samples/nrc/NOTICE.md](samples/nrc/NOTICE.md)); the Snowdon Towers sample is Autodesk's under CC BY-NC-SA 3.0, never committed, with the notebook and transcripts computed from it listed in [samples/snowdon-analyses/NOTICE.md](samples/snowdon-analyses/NOTICE.md); the public Schependomlaan and DigitalHub models are CC BY 4.0 and MIT (TKT-144).

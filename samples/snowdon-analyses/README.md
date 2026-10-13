@@ -1,6 +1,7 @@
 # Snowdon graphs
 
 Graphs over the private Snowdon Towers sample. The model is never committed.
+The model is Autodesk's Snowdon Towers Sample Project, CC BY-NC-SA 3.0; `NOTICE.md` in this folder carries the attribution and lists the committed files computed from it.
 
 | File | What it is | Seeded by the bim profile |
 |---|---|---|
