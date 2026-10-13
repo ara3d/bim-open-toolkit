@@ -7,6 +7,7 @@ enriched IFC is made here, by a Run of `samples/nrc-analyses/nrc-enrich-run`,
 and the paper repository copies it back. The files live here so the toolkit's
 own tests are self-contained and so a host started with `samples/nrc` as a
 model root exposes the source name `nrc`.
+The Duplex files are buildingSMART International's, CC BY 4.0; `NOTICE.md` in this folder carries the attribution.
 
 | File | Rows | What it holds |
 |---|---|---|

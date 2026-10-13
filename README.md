@@ -255,4 +255,4 @@ assessment from 2026-09-08.
 
 ## License
 
-MIT.
+MIT, see [LICENSE](LICENSE). The sample building data keeps its own terms: the Duplex Apartment files are CC BY 4.0 from buildingSMART International ([samples/nrc/NOTICE.md](samples/nrc/NOTICE.md)); the public Schependomlaan and DigitalHub models are CC BY 4.0 and MIT (TKT-144).
