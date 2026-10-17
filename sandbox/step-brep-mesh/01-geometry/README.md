@@ -21,11 +21,11 @@ files present that day.
 | `geometry-surfaces.library.plato` | surfaces | `BrepGeometrySurfaces` |
 | `geometry-scaling.library.plato` | the arena scaled about the origin: `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, `ParameterScaleFactor`, `ScaledGeometry` | `BrepGeometryScaling` |
 | `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; de Boor deferred | `BrepGeometrySplines` |
-| `geometry.laws.plato` | 84 laws, 3 oracles, their helpers | `BrepGeometryLaws` |
+| `geometry.laws.plato` | 95 laws, 3 oracles, their helpers and measures | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
 
-Counts: 18 types, 3 interfaces, 203 library functions (186 with a body, 17 deferred), 84 laws,
-42 `spec` blocks, 9 theorems and 1 conjecture.
+Counts after the fix wave: 19 types, 3 interfaces, 262 library functions (244 with a body, 18
+deferred), 95 laws, 46 `spec` blocks, 10 theorems and no conjecture.
 
 ## The objects
 
@@ -40,7 +40,7 @@ trims, pcurves and seams are written in.
 `C(t + P) = C(t)` for every real `t`, so the map factors through the circle `R / PZ`. The domain's
 range is then one fundamental window, `[0, 2 pi]` for every angle here, and any real `t` may be
 evaluated; layer 0's `Wrap` and `NearestUnwrapped` are the section and the path lifting of that
-quotient. An aperiodic domain is a closed interval, possibly the whole line (`UnboundedDomain`,
+quotient. An aperiodic domain is a closed interval, possibly the whole line (layer 0's `UnboundedDomain`,
 ends at `Number.MinValue` and `Number.MaxValue`, so `ParameterLength` is infinite).
 
 **Closure is not periodicity, and both are in the domain.** A bounded curve is *closed* when its two
@@ -389,8 +389,10 @@ a floor argument), `ParameterToleranceCap`, `IsWellFormed` (on tolerances), and 
 `Tolerances.LengthParameter` and `Tolerances.AngleParameter`. Only the types are fixed in VOCABULARY.md; the functions are layer
 0's current proposals.
 
-Gate (PLATO-PRIMER.md E.3, 2026-10-17): with this folder and a copy of `00-foundation` as the
-design folder, PASS, 0 errors, 4281 functions type-checked; the only findings are two LINT003
+Gate (PLATO-PRIMER.md E.3, 2026-10-17, after the fix wave): this folder with layer 0 at HEAD,
+PASS, 0 errors, 4410 functions type-checked; all nine live layers together, PASS, 0 errors, 6641
+functions. Before the fix wave: with this folder and a copy of `00-foundation` as the design
+folder, PASS, 0 errors, 4281 functions type-checked; the only findings are two LINT003
 infos (the linter does not see `CompositeSegment2D`'s fields read inside lambdas) and LINT014
 infos on the views' `Domain`. With this folder alone, resolution stops on the layer 0 names above,
 as expected.
@@ -482,3 +484,25 @@ Applied:
   change; lengths along unit frame axes (plane, cylinder and cone `v`) scale; angles never;
   pcurve coordinates follow their surface; `ScaledGeometry` scales a whole arena.
 - **C10, UnboundedDomain.** The stand-in is deleted; layer 0's is used.
+
+Skipped or left to other layers, with the reason:
+
+- **M3, the rest.** The reverse point-set direction and the sense test already exist here
+  (`Law_SurfaceCurveLiesOnPcurve`, `Law_SurfaceCurvePcurveSameSense`); a pcurve's surface being a
+  face's surface and the same-parameter law at an edge's discretization parameters are edge-level
+  claims for layers 2 and 4.
+- **F8, the sampling part.** The laws here are pointwise and finite for any finite sample; choosing
+  a bounded window for an unbounded direction (the edge's domain, the face's box) belongs to the
+  callers, as layer 0's `Samples` precondition now says. `PcurveRangeOver` gives the pcurve window.
+- **KernelCurve and KernelSurface provenance.** This layer builds no `Check`; layer 7's checks over
+  geometry laws choose the site.
+- **The unread `tol` of the library laws.** Kept so that layer 7's calls keep their shape; dropping
+  it is a two-layer change for after the wave.
+- **Kept as owner:** `PcurvesOf`, `Eval(g, c: Curve2DIndex, t)`, `NormalAgreesWithParameterization`
+  (layers 2 and 4 delete their copies); no change was needed beyond F3's contract.
+
+Names this layer now depends on from other layers' fixes: layer 0's `Closed`, `HasSeam`,
+`Tolerances.LengthParameter`, `Tolerances.AngleParameter`, `UnboundedDomain`, and the floor
+arguments of `ParameterToleranceAt` and `UvToleranceAt`. Layer 3 must write `ClosureMark`s into
+`GeometrySet.Closures` and fold `PlacementHandedness`; layer 2 can build `ScaledBy` on
+`ScaledGeometry` and `PcurveEdgeDomain` on `PcurveRangeOver`.
