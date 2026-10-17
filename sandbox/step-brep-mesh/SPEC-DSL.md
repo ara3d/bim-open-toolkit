@@ -241,7 +241,12 @@ IsClean      no Diagnostic at severity Error                      (the verdict)
 Severity is decided by which group the law belongs to (README, "The problem, from first
 principles"): a topological or structural law failing is an `Error`; a geometric criterion exceeded
 is a `Warning` when the exceedance is below ten times the criterion and an `Error` above; a quality
-threshold is `Info`. Each `Check_` states its severity rule in its comment.
+threshold is `Info`. A third rule, decided by layer 2 in the fix wave of 2026-10-17: a structural
+defect that the design repairs exactly (a degenerate edge contracted, a redundant vertex loop
+dropped, a pcurve on a surface that is not the face's) is a `Warning`, because the reduced model
+is well formed and the counts after reduction are exact; `Law_EdgeHasPositiveExtent`,
+`Law_NoRedundantVertexLoop` and `Law_PcurveSurfaceIsAFaceSurface` are graded so. Each `Check_`
+states its severity rule in its comment.
 
 ## 5. Rules for authors
 
