@@ -41,11 +41,15 @@ library BrepFoundationLaws
         => t.IsWellFormed;
 
     // The length tolerance is no smaller than the arithmetic resolution at the
-    // model's size, so geometric verdicts at that size are not rounding noise.
-    // Model law over the model size, Warning: the file is not at fault, the
-    // Number width is.
-    Law_LengthToleranceResolvable(t: LengthTolerance, magnitude: Number): Boolean
-        => magnitude.IsFinite ? t.IsResolvable(magnitude) : true;
+    // coordinate extent, the largest absolute coordinate of the placed model
+    // (layer 2's CoordinateExtent), so a geometric verdict about any point of
+    // the model is not rounding noise. Taken at the coordinates, not at the
+    // model size: a 1e5 mm building at survey coordinates near 5e9 mm resolves
+    // 1.8e-5 mm, not 3.6e-10, so a 1e-6 mm file tolerance fails here. Model
+    // law over the extent, Warning: the file is not at fault, the Number
+    // width or the placement is.
+    Law_LengthToleranceResolvable(t: LengthTolerance, extent: Number): Boolean
+        => extent.IsFinite ? t.IsResolvable(extent) : true;
 
     // Doubling the length tolerance and the coordinate extent doubles the
     // length-parameter floor: a length parameter scales with the model.
@@ -375,7 +379,7 @@ library BrepFoundationLaws
                 ConstraintGroup.Topological, "The length tolerance is a positive finite length."),
             ReportOf(
                 CheckWithin("Law_LengthToleranceResolvable", 2e-6, 1e-6, Provenance.Nowhere),
-                ConstraintGroup.Geometric, "The length tolerance is below the arithmetic resolution at the model's size."));
+                ConstraintGroup.Geometric, "The length tolerance is below the arithmetic resolution at the model's coordinates."));
 
     //==
     // # Helpers

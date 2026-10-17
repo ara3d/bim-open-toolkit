@@ -303,6 +303,13 @@ Law_X  ->  Check (CheckWithin, CheckExact, folded by WorseOf)  ->  ReportOf  -> 
    `ReportOf`, `Merge` and `Empty`.
 10. **No `None` constant per index**, matching the stdlib's `VertexIndex(-1)`. Thirteen one-line
     statics would repeat what `IIndex` already says.
+11. **Rounding floors are taken at the coordinate extent** (fix wave). `ResolutionAt` of a length
+    is evaluated at the largest absolute coordinate of the placed model, never at its size,
+    because rounding follows the magnitude of the numbers ("The rounding floor at the coordinate
+    extent"). The alternative the review offered, translating the model to its bounding-box centre
+    at decode and recording the offset, changes every coordinate the user reads back; it stays
+    open for layer 3 as a way to make more tolerances resolvable, and the floors stay right either
+    way because they read the extent of whatever coordinates are stored.
 
 ## Laws
 
@@ -318,7 +325,7 @@ to be at least that rounding bound.
 | `Law_LengthTolerancePositive` | a length tolerance is finite and at least the smallest normal Number | exact | model, Error |
 | `Law_AngleTolerancePositive` | likewise for an angle tolerance | exact | model, Error |
 | `Law_ParameterTolerancePositive` | likewise for a parameter tolerance | exact | model, Error |
-| `Law_LengthToleranceResolvable` | the length tolerance is at least `ResolutionAt(model size)` | rounding, model size | model, Warning |
+| `Law_LengthToleranceResolvable` | the length tolerance is at least `ResolutionAt(coordinate extent)` | rounding, the coordinate extent | model, Warning |
 | `Law_LengthParameterFloorScalesWithModel` | doubling the length tolerance and the extent doubles the length floor | exact | library, test |
 | `Law_AngleParameterFloorIgnoresScale` | doubling the length tolerance, model size and extent leaves the angle floor | exact | library, test |
 | `Law_ParameterToleranceAtNeverBelowFloor` | the derived tolerance is at least the floor | exact | library, test |
@@ -494,3 +501,7 @@ Applied:
    `ParameterTolerance`, or a `UvTolerance` holding one per direction) instead of reading one
    model-wide number. New laws `Law_LengthParameterFloorScalesWithModel` and
    `Law_AngleParameterFloorIgnoresScale` make scaling exact both ways.
+5. **F6: the rounding floor at the coordinate extent.** `Law_LengthToleranceResolvable(t,
+   extent)` and both floors take `ResolutionAt` at the largest absolute coordinate, not at the
+   model size (decision 11). Layer 2 provides `CoordinateExtent` and `ModelSize`, and layer 3
+   passes them.
