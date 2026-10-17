@@ -17,6 +17,7 @@ of scope for now; the design keeps the door open by never baking "read-only" int
 | [PLAN.md](PLAN.md) | How this design pass was run: phases, agents, their inputs and outputs, and what "done" means for a design |
 | [SPEC-DSL.md](SPEC-DSL.md) | The specification language: what is real Plato, what is invented, and the exact meaning of every invented construct |
 | [SPEC-EXECUTION.md](SPEC-EXECUTION.md) | How the specification language becomes executable: validate, prove, generate tests; the architectures weighed (new Plato syntax, a separate language, convention plus tooling) and the staged path recommended |
+| [PLATO-SPEC-EXTENSIONS.md](PLATO-SPEC-EXTENSIONS.md) | The language extension proposal distilled from SPEC-EXECUTION.md: each construct (invariants, sealing, contracts, laws, theorems, witnesses, generators, the new expression forms) with what it is, why it exists, and how the library uses it |
 | [TARGET-LANGUAGE.md](TARGET-LANGUAGE.md) | Which Plato backend to implement on first (C#, C++, TypeScript, Rust), with the state of each backend measured, and what `Number`'s width should be |
 | [VOCABULARY.md](VOCABULARY.md) | The shared contract between layers: layer order, the names each layer exports, the stdlib names reused, and the naming rules |
 | [PLATO-PRIMER.md](PLATO-PRIMER.md) | Plato as the design needs it: declaration forms, the law convention, the stdlib vocabulary to reuse, and the language limits that shape the design |
