@@ -10,6 +10,7 @@
 //
 // Sections, in order:
 //  - Typed empty arrays
+//  - Preconditions
 //  - Criteria
 //  - Triangulation and refinement
 //  - Elements of a triangulation
@@ -28,6 +29,31 @@ library FaceMeshing
     // No diagnostics.
     NoDiagnostics(_: Diagnostic): Array<Diagnostic>
         => 0.MapRange(i => Diagnostic(Severity.Info, "", "", Provenance.Nowhere, 0.0));
+
+    //==
+    // # Preconditions
+    //
+    // What MeshFace and RegionOf require of their inputs. Layer 08 evaluates IsDiscretizedFace to
+    // decide which faces it meshes, so these are definitions of this layer, not law guards.
+
+    // True when edge e has a discretization with a point and a parameter at sample k.
+    HasSample(d: EdgeDiscretizations, e: BrepEdgeIndex, k: Integer): Boolean
+        => d.ByEdge.IsValidIndex(e)
+            ? d.ByEdge[e].Points.IsValidIndex(k) && d.ByEdge[e].Parameters.IsValidIndex(k)
+            : false;
+
+    // True when bound b's loop and the geometry arena are intact (layers 02 and 01) and every
+    // edge the loop cites is intact with a discretization of at least two points: LoopToUv's
+    // precondition.
+    IsDiscretizedBound(m: BrepModel, b: FaceBound, d: EdgeDiscretizations): Boolean
+        => (m.IsLoopIntact(b.Loop) && m.Geometry.IsEveryIndexInRange)
+            ? m.LoopCoedges(b.Loop).All(c => m.IsEdgeIntact(c.Edge) && d.HasSample(c.Edge, 1))
+            : false;
+
+    // True when face f is intact and every bound of it is discretized: the precondition of
+    // RegionOf and MeshFace.
+    IsDiscretizedFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Boolean
+        => m.IsFaceIntact(f) ? m.Faces[f].Bounds.All(b => m.IsDiscretizedBound(b, d)) : false;
 
     //==
     // # Criteria

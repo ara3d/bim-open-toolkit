@@ -17,7 +17,7 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 | `uv-regions.types.plato` | `UvPointSource`, `UvLoop`, `UvRegion`, `UvSample`, `CoedgeUvRoute`, `FaceChart`, `QuadSides` |
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
-| `face-meshing.library.plato` | library `FaceMeshing`: criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
+| `face-meshing.library.plato` | library `FaceMeshing`: preconditions (`IsDiscretizedFace`), criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
 | `face-meshing.laws.plato` | library `FaceMeshingLaws`: 43 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 3 theorems |
 
@@ -341,6 +341,7 @@ knots); offset and rectangular-trimmed last.
 | theorem `ChartWindingIsFaceWinding` | dropped; `RefineToSurface` ensures `Law_ElementLiftsFacingFaceNormal`, `QuadGridIfRectangular` gives no grid when an element folds (`GridUnlessFolded`); new `ElementUvCentroid(t, k)`, `LiftedVectorArea`, `LiftsFacingFaceNormal` | The theorem is false for slivers (review H5) |
 | `IsPoleCollapsed(m, f, t, k)`, `PoleCollapsedTriangleCount`, `PoleCollapsedQuadCount`, `ShareCollapsedLine`: corners on one collapsed line | `IsCollapsedElement(t, k)`, `CollapsedTriangleCount(t)`, `CollapsedQuadCount(t)`: two corners with identified sources; `IsSurfaceEdge` compares local vertices; `ShareCollapsedLine` removed | The drop test agrees with Lift's identification (review M7) |
 | conjecture `ElementsTileRegion` | a theorem, assuming the region is simple and the two side laws; `TriangulateRegion`, `RefineToSurface`, `QuadGrid` ensure `Law_BoundarySegmentIsElementSide` and `Law_InteriorSideIsShared`; new `LoopOffset`, `LoopOfBoundaryPoint`, `NextBoundaryPoint`, `IsBoundarySegment`, `ElementHasSide`, `SideCount` | Keeping the boundary points does not make a tiling (review M5, H6); layer 08's watertightness theorem no longer rests on a conjecture |
+| `IsDiscretizedFace`, `IsDiscretizedBound`, `HasSample` in `FaceMeshingLaws` | in `FaceMeshing`, same signatures | `MeshFace`'s precondition, which layer 08 evaluates, is a definition of the layer, not a law guard (layer 08 finding 3) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -366,6 +367,8 @@ Applied:
 - M5, H6: `Law_BoundarySegmentIsElementSide` and `Law_InteriorSideIsShared` added and ensured by
   the three triangulating functions; `ElementsTileRegion` is now a theorem with them among its
   assumptions, and `DroppedTrianglesArePoleSegments` states the one it used silently.
+- Layer 08 finding 3: `IsDiscretizedFace` (with `IsDiscretizedBound` and `HasSample`, which it
+  calls) moved from the laws block into `FaceMeshing`.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 
