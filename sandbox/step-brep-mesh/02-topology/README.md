@@ -330,6 +330,8 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_VertexLoopVertexIsIsolated(m, s, v)` | a vertex-loop vertex is an end of no edge the shell cites | exact | structural, Error |
 | `Law_EulerPoincareEvenAndBounded(m, s)` | in a shell declared closed, reduced `V - E + 2F - L` is even and at most 2 | exact | structural, Error |
 | `Law_ShellIsConnected(m, s)` | the shell's faces form one class under touching at a vertex or a coinciding poly-loop point | exact | structural, Error |
+| `Law_ShellIsOrientable(m, s)` | reversing the faces `OrientationFlips` names makes every edge's two uses opposite | exact | structural, Error |
+| `Law_ReversingEveryFaceKeepsCoherence(m, s)` | reversing every face leaves the shell's coherence unchanged | exact | library, test |
 | `Law_SolidShellsAreDeclaredClosed(m, b)` | the outer and void shells of a solid are declared closed | exact | structural, Error |
 | `Law_EdgeDomainIsForward(m, e)` | the edge domain's start does not exceed its end | parameter floor | structural, Error |
 | `Law_EdgeDomainEndsAtVertices(m, e, atStart)` | the curve at the domain end assigned to a vertex reproduces the vertex | `epsL` | geometric, W/E |
@@ -355,6 +357,7 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 | `IsDegenerateEdge(m, e)` | largest distance from a point to a curve arc: closed form for lines and conics, span subdivision and Newton for splines | 1 per edge, span count for splines |
 | `ReducedCounts(m, s)` | union-find over vertices joined by degenerate edges, one pass over bounds, spatial hash for poly-loop points | coedge sites plus bounds of the shell |
 | `LinkComponentCount(m, s, v)` | union-find over edge ends at `v` | corners at `v` |
+| `OrientationFlips(m, s)` | two-colouring of the face graph by the parity of each edge's two uses | coedge sites of the shell |
 | `ShellComponentCount(m, s)` | union-find over the shell's faces joined at shared vertices and coinciding poly-loop points | coedge sites plus bounds of the shell |
 | `CornersAroundVertex(m, s, v)` | walk the link across shared ends | corners at `v` |
 | `IsPlainInParameters(m, f)` | sample coedges, `Project`, lift by continuity across periods, test closure and pole contact | coedge sites of `f` times samples |
@@ -414,9 +417,8 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
 1. **Open shells' Euler law.** ISO's `chi + B` even and at most 2 needs `B`, the number of boundary
    cycles (a walk over free edges). Not stated; `Law_OpenShellEdgesUsedAtMostTwice` is the only
    open-shell law.
-2. **Global laws.** Shell connectivity is now `Law_ShellIsConnected` (fix wave). Global
-   orientability by parity search (`Law_ShellOrientable`, which names the faces to flip) is in
-   research/VALIDATION-MATH.md 2.3.
+2. **Global laws.** Settled in the fix wave: `Law_ShellIsConnected` and `Law_ShellIsOrientable`
+   (research/VALIDATION-MATH.md 2.3), with `OrientationFlips` naming the faces to flip.
 3. **Faceted B-reps.** Edge-use and link laws see only indexed edges. A `PolyLoop`'s implicit edges
    are counted in `ReducedCounts` but no law checks their uses. Either layer 3 decodes poly loops
    into edge loops over line edges when points are shared by instance, or this layer adds poly-loop
@@ -509,4 +511,9 @@ Applied:
   `ShellComponentCount(m, s)`, with `FacesTouch`, `FaceVertices`, `FacePolyPoints`. Faces are joined
   at shared vertices (ISO's arcwise connectivity), not only at shared edges, so two cones apex to
   apex are one component and fail the link law instead.
-
+- **T3 (orientability).** `Law_ShellIsOrientable(m, s)`: reversing the faces the parity search
+  `OrientationFlips` names (deferred) makes the shell coherent (`HasCoherentOrientation`). It tells
+  a shell with faces stored inside out from a one-sided surface or a twisted seam. New with it:
+  `Reversed(face)`, `WithFacesReversed`, `WithEveryFaceReversed` (layer 8's stand-in, same
+  signature), `IsOrientable`, the library law `Law_ReversingEveryFaceKeepsCoherence`, and the
+  theorem `CoherentShellIsOrientable`.

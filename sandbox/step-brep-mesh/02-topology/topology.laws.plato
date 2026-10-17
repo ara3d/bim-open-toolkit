@@ -24,6 +24,7 @@
 //  - Vertex links
 //  - Euler-Poincare
 //  - Connectivity
+//  - Orientability
 //  - Bodies
 //  - Edge domains
 //  - Degenerate edges
@@ -163,6 +164,31 @@ library BrepTopologyLaws
     Law_ShellIsConnected(m: BrepModel, s: ShellIndex): Boolean
         => m.IsEveryIndexInRange
             ? (m.IsShellInRange(s) ? m.ShellComponentCount(s) <= 1 : true)
+            : true;
+
+    //==
+    // # Orientability
+
+    // A shell is orientable: reversing the faces the parity search names
+    // (OrientationFlips) makes every edge's two uses run opposite. Where
+    // Law_EdgeUsesHaveOppositeOrientation fails, this law tells a shell with
+    // faces stored inside out (orientable; OrientationFlips is the repair)
+    // from a one-sided surface or a twisted seam (not orientable, no repair).
+    // Structural, exact.
+    Law_ShellIsOrientable(m: BrepModel, s: ShellIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s) ? m.IsOrientable(s) : true)
+            : true;
+
+    // Reversing every face reverses every coedge's composed sense, so it keeps
+    // each edge's uses opposite or the same: coherence is unchanged (README,
+    // "Sense and orientation, composed", folding is invisible). Library,
+    // exact.
+    Law_ReversingEveryFaceKeepsCoherence(m: BrepModel, s: ShellIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s)
+                ? m.WithEveryFaceReversed.HasCoherentOrientation(s) == m.HasCoherentOrientation(s)
+                : true)
             : true;
 
     //==

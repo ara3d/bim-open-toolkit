@@ -31,6 +31,7 @@
 //  - Vertex links
 //  - Counts and Euler-Poincare
 //  - Connectivity
+//  - Orientability
 //  - Bodies
 //  - Coupling measures
 //  - Parameter-space winding
@@ -681,6 +682,65 @@ library BrepTopology
     // reference each vertex, and the faces whose poly-loop points share a cell
     // of a spatial hash and coincide.
     ShellComponentCount(m: BrepModel, s: ShellIndex): Integer;
+
+    //==
+    // # Orientability
+    //
+    // The local law Law_EdgeUsesHaveOppositeOrientation says which edges
+    // disagree; it cannot say whether reversing some faces would repair them.
+    // A parity search over the faces answers that: a shell is orientable when
+    // some set of faces, once reversed, makes every edge's two uses opposite.
+    // A Moebius band or a Klein bottle has no such set; a box with one face
+    // stored inside out has the set {that face}.
+
+    // The face with its normal turned over: SameSense and every bound's
+    // Orientation flipped. The same point set, traversed the other way
+    // (README, "Sense and orientation, composed").
+    Reversed(face: BrepFace): BrepFace
+        => BrepFace(face.Surface, face.SameSense.Not,
+            face.Bounds.Map(b => FaceBound(b.Loop, b.Orientation.Not, b.IsOuter)));
+
+    // The model with every face in faces reversed; other rows unchanged.
+    WithFacesReversed(m: BrepModel, faces: Array<BrepFaceIndex>): BrepModel
+        => BrepModel(
+            m.Geometry,
+            m.Vertices,
+            m.Edges,
+            m.Loops,
+            m.Faces.Count.MapRange(i => faces.Any(f => f.Value == i) ? m.Faces[i].Reversed : m.Faces[i]),
+            m.Shells,
+            m.Bodies,
+            m.Tolerances,
+            m.Unit);
+
+    // The model with every face reversed: each shell bounds the same region
+    // from the other side. Layer 8's metamorphic input (its copy is marked
+    // belongs-in: 02-topology and has the same signature).
+    WithEveryFaceReversed(m: BrepModel): BrepModel
+        => m.WithFacesReversed(m.Faces.Count.MapRange(i => BrepFaceIndex(i)));
+
+    // Whether every edge of shell s with two uses has them running opposite.
+    // Precondition: m.IsEveryIndexInRange.
+    HasCoherentOrientation(m: BrepModel, s: ShellIndex): Boolean
+        => m.EdgesOfShell(s).All(e => m.UsesRunOpposite(m.CoedgeSitesOfEdge(s, e)));
+
+    // The faces of shell s whose reversal makes its orientation coherent: the
+    // faces the parity search colours "flip". Empty when the shell is already
+    // coherent. When the shell is not orientable, the colouring of the search's
+    // spanning forest, which leaves at least one edge incoherent.
+    // deferred: breadth-first two-colouring of each component of the graph on
+    // the shell's faces, an edge with two uses in different faces joining them
+    // with parity "same" when its uses run opposite and "differ" otherwise; a
+    // component's first face is coloured "keep", so a coherent shell gets no
+    // flip.
+    OrientationFlips(m: BrepModel, s: ShellIndex): Array<BrepFaceIndex>;
+
+    // Whether shell s is orientable: reversing OrientationFlips makes it
+    // coherent. A seam whose two uses run the same way can never be repaired,
+    // since reversing its face flips both uses. Precondition:
+    // m.IsEveryIndexInRange.
+    IsOrientable(m: BrepModel, s: ShellIndex): Boolean
+        => m.WithFacesReversed(m.OrientationFlips(s)).HasCoherentOrientation(s);
 
     //==
     // # Bodies

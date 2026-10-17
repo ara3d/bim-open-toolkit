@@ -47,6 +47,7 @@ spec BrepModel
         forall (v: Integer) in self.Vertices.Count.Range : Law_VertexLoopVertexIsIsolated(self, ShellIndex(s), BrepVertexIndex(v));
     invariant forall (s: Integer) in self.Shells.Count.Range : Law_EulerPoincareEvenAndBounded(self, ShellIndex(s));
     invariant forall (s: Integer) in self.Shells.Count.Range : Law_ShellIsConnected(self, ShellIndex(s));
+    invariant forall (s: Integer) in self.Shells.Count.Range : Law_ShellIsOrientable(self, ShellIndex(s));
     invariant forall (b: Integer) in self.Bodies.Count.Range : Law_SolidShellsAreDeclaredClosed(self, BodyIndex(b));
     invariant forall (e: Integer) in self.Edges.Count.Range : Law_EdgeDomainIsForward(self, BrepEdgeIndex(e));
     invariant forall (e: Integer) in self.Edges.Count.Range :
@@ -169,6 +170,23 @@ spec ShellComponentCount(m: BrepModel, s: ShellIndex): Integer
     deferred "union-find over the shell's faces: one pass over every bound, uniting the faces that reference each vertex; poly-loop points keyed through a spatial hash with cells of the length tolerance, uniting the faces of coinciding points; the result is the number of classes";
 }
 
+// The repair a parity search finds: faces of the shell, each once, whose
+// reversal makes the shell coherent when any set can.
+spec OrientationFlips(m: BrepModel, s: ShellIndex): Array<BrepFaceIndex>
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsShellInRange(s);
+    ensures forall (f: BrepFaceIndex) in result : m.ShellFaces(s).Any(g => g == f);
+    ensures forall (i: Integer) in result.Count.Range :
+        forall (j: Integer) in result.Count.Range : i < j ? result[i] != result[j] : true;
+    ensures m.HasCoherentOrientation(s) ? result.Count == 0 : true;
+    ensures (exists (flips: Array<BrepFaceIndex>) : m.WithFacesReversed(flips).HasCoherentOrientation(s))
+        ? m.WithFacesReversed(result).HasCoherentOrientation(s)
+        : true;
+    measure m.CoedgeSitesOfShell(s).Count;
+    deferred "breadth-first two-colouring of each component of the face graph of the shell: an edge with uses in two different faces joins them, with parity same when its uses run opposite (CoedgeRunsForwardOnCurve differs) and differ otherwise; the first face of a component is coloured keep; the faces coloured flip are the result, in shell order; a conflict (an odd cycle, or a seam whose uses run the same way) is left as found";
+}
+
 // The faces around a vertex in order. Exists when the link is one component
 // and no edge at the vertex has more than two uses, so that the link is one
 // cycle or one path; it closes into a cycle when every edge at the vertex has
@@ -265,6 +283,18 @@ theorem EdgeDomainEndsFollowFromVertexOnCurve
     conclude Law_EdgeDomainEndsAtVertices(m, e, atStart);
     because "EdgeDomain puts at the end that SameSense assigns to a vertex either that vertex's ClosestParameter value (the first vertex along the curve, at Range.Start; the last vertex on an aperiodic open edge, at Range.End) or a value congruent to it modulo the period (the last vertex on a periodic curve, by PeriodicRepresentativeAbove; a closed edge's single vertex at first + period). Eval is periodic in a periodic parameter, so the curve point at that end is the curve point VertexCurveDeviation measures, and the assumption bounds its distance to the vertex by Tolerances.Length. The excluded case takes the aperiodic curve's own domain ends, which reproduce the vertex only when the curve closes at it.";
     tested by Law_EdgeDomainEndsAtVertices, Law_VertexCoincidesWithCurveEnd;
+}
+
+// A coherent shell is orientable: the parity search flips nothing.
+theorem CoherentShellIsOrientable
+{
+    given m: BrepModel, s: ShellIndex;
+    assume Law_IndicesInRange(m);
+    assume m.IsShellInRange(s);
+    assume forall (e: Integer) in m.Edges.Count.Range : Law_EdgeUsesHaveOppositeOrientation(m, s, BrepEdgeIndex(e));
+    conclude Law_ShellIsOrientable(m, s);
+    because "Every edge with two uses in the shell has them running opposite, which is HasCoherentOrientation(s). OrientationFlips then returns no face (its third ensures), WithFacesReversed of no face is m, and IsOrientable(s) is HasCoherentOrientation(s), true.";
+    tested by Law_ShellIsOrientable, Law_EdgeUsesHaveOppositeOrientation;
 }
 
 // A closed, orientable, manifold shell has an even Euler characteristic, on
