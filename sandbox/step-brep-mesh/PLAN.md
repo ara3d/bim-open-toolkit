@@ -127,6 +127,15 @@ Recorded as they arise; the ticket carries the same list.
   the decoder converts once; a cone's v is axial; edge ranges come from projecting the vertices;
   seams and pcurves are optional in practice; poles are never edges. Layers 7 and 8 form wave B after
   layers 0 to 6 exist, because they reference the laws by their actual names.
+- 2026-10-17 Phase 2 wave A complete: seven layers committed (foundation 45a5c0b1, geometry
+  803a6622, topology 51aaf51f, STEP reading ca580076, discretization 3ae8f2f5, face meshing
+  52da481f, mesh 5dabce18). The supervising session ran the gate driver over the 74 `.plato` files
+  of layers 0 to 6 merged into one folder, against the stdlib's three shipping tiers with the
+  `brep.*.plato` files excluded: `PASS: 0 error(s) in scope; 5326 functions type-checked (23.2s)`,
+  with only LINT003 informational notes (fields no function reads yet). Each layer's README ends
+  with a "Changes to the contract" section; the Phase 3 name review folds them into VOCABULARY.md
+  revision 3. Wave B (validation, pipeline) launched; the mathematical review of layers 0 to 6
+  launched in parallel since those laws are final.
 - 2026-10-17 Two owner-requested investigations run beside the design: `SPEC-EXECUTION.md` (how to
   make the spec DSL executable: validate, prove, generate tests; inside Plato, a separate language,
   or convention plus tooling) and `TARGET-LANGUAGE.md` (which backend to implement on first, and
