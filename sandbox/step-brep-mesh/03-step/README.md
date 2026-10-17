@@ -76,6 +76,18 @@ each smaller than its own (`Law_ChildrenPrecedeParent`). Why this shape:
 Printing (`PrintStep`) exists so the round trip can be stated. It writes reals in the shortest
 form that reads back to the same `Number`, so the round trip compares numbers exactly.
 
+### Host obligations
+
+The owner decided on 2026-10-17 (PLAN.md, "Decided by the owner during the pass") that STEP
+parsing stays in C#: the host produces the `Part21File`, and Plato decodes it. `ParseStep`,
+`PrintStep` and `NameOctetsPrecede` are therefore host obligations: bodiless declarations met
+through Plato's foreign-function interface, with the signatures above unchanged. Their contracts
+(`step.spec.plato`) and the laws of the file as data (`Law_ParsePrintParseIsIdentity`,
+`Law_ParseOkIffNoError`, `Law_ReferencesResolve`, `Law_HeaderNamesASchema`, and the
+`Part21File` invariants) stay stated here, and the host's own tests execute them: a host parser
+that breaks one is wrong, whichever language it is written in. The schema model, the decode, and
+every other law of this layer stay in Plato. The TypeScript backend will need the same service.
+
 ## The schema model
 
 `SupportedSchema` is the EXPRESS subset as data: per entity its long and short names, its ISO
@@ -520,8 +532,9 @@ default, `Law_UncertaintyDefaultExactlyWhenAbsent`.
 
 ## Implementation notes
 
-- **Parser.** A hand-written lexer and recursive-descent parser in the host language (the C#
-  backend first, TARGET-LANGUAGE.md): Part 21 is LL(1) once tokenized, and a parser generator
+- **Parser.** A host obligation (see "Host obligations"): a hand-written lexer and
+  recursive-descent parser in the host language (C# first, TARGET-LANGUAGE.md), possibly the IFC
+  reader's Part 21 code in `deps/bim-open-data` that the owner's separate agent is assessing: Part 21 is LL(1) once tokenized, and a parser generator
   would add a dependency for no gain. It runs in one pass over the text, building the arena
   children first, then sorts instances by name and checks references. Plato's `String` has
   literals and `==` only, so `ParseStep`, `PrintStep` and `NameOctetsPrecede` are host code.

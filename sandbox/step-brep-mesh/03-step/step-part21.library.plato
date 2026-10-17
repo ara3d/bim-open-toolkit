@@ -18,13 +18,16 @@ library Part21Reading
     //==
     // # Text
 
-    // deferred: a lexer for P21 5 and 6 (lenient as research/STEP-BREP-MODEL.md
-    // 1.2 lists: lower-case keywords, reals such as .5) and a recursive-descent
-    // parser for the header and one data section, then a sort of instances by
-    // name and a pass that checks references.
+    // deferred, host obligation (PLAN.md, owner decision 2026-10-17: STEP
+    // parsing stays in C#; Part21File is the boundary): a lexer for P21 5 and
+    // 6 (lenient as research/STEP-BREP-MODEL.md 1.2 lists: lower-case
+    // keywords, reals such as .5) and a recursive-descent parser for the
+    // header and one data section, then a sort of instances by name and a pass
+    // that checks references. Its contract and laws are stated here and run
+    // by the host's tests.
     ParseStep(text: String): ParsedFile;
 
-    // deferred: writes ISO-10303-21;, the header, one data section with every
+    // deferred, host obligation (as ParseStep): writes ISO-10303-21;, the header, one data section with every
     // instance in Instances order, and END-ISO-10303-21;. Reals are written in
     // the shortest form that reads back to the same Number; strings are
     // re-encoded with the P21 6.4.3 directives where they need them.
