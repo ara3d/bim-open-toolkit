@@ -13,9 +13,9 @@ body, because every body here is its own specification; nothing is deferred.
 | `foundation-domains.types.plato` | `Periodicity`, `CurveDomain`, `SurfaceDomain`, `DomainSide`, `SamplePlan` |
 | `foundation-indices.types.plato` | the 14 typed indices |
 | `foundation-diagnostics.types.plato` | `MeshVertexProvenance`, `Provenance`, `Severity`, `ConstraintGroup`, `Check`, `Diagnostic`, `Report` |
-| `foundation.library.plato` | `library BrepFoundation`: 78 functions, all with bodies |
-| `foundation.laws.plato` | `library BrepFoundationLaws`: 34 laws, 4 witnesses, 1 helper |
-| `foundation.spec.plato` | 11 type invariant blocks, 25 function contracts, 8 theorems |
+| `foundation.library.plato` | `library BrepFoundation`: 90 functions, all with bodies |
+| `foundation.laws.plato` | `library BrepFoundationLaws`: 46 laws, 5 witnesses, 1 helper |
+| `foundation.spec.plato` | 11 type invariant blocks, 31 function contracts, 8 theorems |
 
 The type files carry a `foundation-` prefix because the CLI gate of PLATO-PRIMER.md E.2 copies
 every layer's files into one flat folder, where a second `domains.types.plato` would overwrite
@@ -396,8 +396,8 @@ laws that test it.
 3. **Reading of "ten times the criterion"** in SPEC-DSL.md section 4. `SeverityOf` uses
    `worst < 10 * bound`; the other reading is `worst - bound < 10 * bound`.
 4. **A sample count in `Check`.** SPEC-EXECUTION.md 5.1 item 4 wants a vacuity rate per law. A
-   `Check` does not record how many samples it took; a `Samples: Integer` field would carry it.
-   The type is fixed in VOCABULARY.md, so it is not added here.
+   `Check` does not record how many samples it took; a `Samples: Integer` field would carry it,
+   added the way the fix wave added `Bound`. Not added: no layer asks for it yet.
 5. **The angle tolerance when the file has none** (layer 3). A default consistent with the length
    tolerance is `Length / modelSize` radians: two directions that differ by less diverge by less
    than the length tolerance across the whole model.
@@ -408,9 +408,10 @@ laws that test it.
    `StepInstance`; `ConstraintGroup.Geometric` with layer 7's `ConformanceLevel.Geometric`. Both
    compile when qualified (PLATO-PRIMER.md probes L08, L09), and SPEC-DSL.md already requires the
    qualified form.
-8. **Constructor discipline.** Phase 3 should check that every `Check_` in layers 2 to 7 builds its
-   result through `CheckWithin`, `CheckExact` or `WorseOf`, and every report through `ReportOf`,
-   `Merge` or `Empty`.
+8. **Constructor discipline** (answered in the fix wave). A search of layers 1 to 8 on 2026-10-17
+   found no direct `Check(...)` construction and one direct `Report(...)`, layer 8's `Located`,
+   which moved here and is now the fourth listed constructor. Adding the `Bound` field makes any
+   future direct `Check(...)` with four arguments a type error, so the gate enforces the rule.
 
 ## Implementation notes
 
@@ -431,12 +432,32 @@ laws that test it.
   `PASS: 0 error(s) in scope; 3937 functions type-checked`, with no lint or style findings. A
   negative control with two injected type errors failed as expected, so the driver does check
   these files.
+- Fix wave gate (this folder live, layers 1 to 8 as they stood when the wave started, with layer
+  3's `ParameterFloor` call and `StepOccurrenceIndex` stand-in patched in the scratch copy only):
+  no finding in this folder; every finding elsewhere is a call site the wave assigns to another
+  layer (the `Closed` and `Provenance` arms, reads of `.Parameter`, the four-argument `ReportOf`,
+  the old `ParameterToleranceAt` and `UvToleranceAt` calls). The function stand-ins with
+  signatures identical to this layer's tie without an error; a duplicate type does not.
 
 ## Changes to the contract
 
-Fixed names: none changed. All 13 indices, the three tolerances, `Tolerances`, `Periodicity`,
-`CurveDomain`, `SurfaceDomain`, `DomainSide`, `MeshVertexProvenance`, `Provenance`, `Severity`,
-`Check`, `Diagnostic`, `Report` are declared exactly as VOCABULARY.md states them.
+Fixed names: none renamed. The 13 indices of VOCABULARY.md, the three tolerances, `CurveDomain`,
+`SurfaceDomain`, `DomainSide`, `MeshVertexProvenance`, `Severity` and `Diagnostic` are declared as
+VOCABULARY.md states them. The fix wave changed four fixed types, as FIX-WAVE.md decided:
+`Tolerances` (`Parameter` became `LengthParameter` and `AngleParameter`), `Periodicity` (a
+`Closed(Period)` case), `Provenance` (`WholeInput`, `KernelCurve`, `KernelSurface`), and `Check`
+(a `Bound` field); and `Report` gained a fourth constructor, `Located`.
+
+Fix wave signature changes, each breaking its callers in other layers on purpose:
+
+| Before | After |
+|---|---|
+| `ParameterFloor(length, modelSize)` | `LengthParameterFloor(length: LengthTolerance, extent: Number)`, `AngleParameterFloor(length: LengthTolerance, modelSize: Number, extent: Number)` |
+| `ParameterToleranceAt(t, speed, cap)` | `ParameterToleranceAt(t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number)` |
+| `UvToleranceAt(t, speedU, speedV, d)` | `UvToleranceAt(t: Tolerances, floor: UvTolerance, speedU: Number, speedV: Number, d: SurfaceDomain)` |
+| `DiagnosticOf(c, g, bound, message)`, `ReportOf(c, g, bound, message)` | `DiagnosticOf(c: Check, g: ConstraintGroup, message: String)`, `ReportOf(c: Check, g: ConstraintGroup, message: String)` |
+| `Law_HoldingCheckIsWithinBound(c, bound)` | `Law_HoldsExactlyWhenWithinBound(c: Check)` |
+| `Law_LengthToleranceResolvable(t, magnitude)`, magnitude the model size | `Law_LengthToleranceResolvable(t, extent)`, extent the coordinate extent |
 
 Proposed names: all kept, with these signatures settled.
 
@@ -452,19 +473,23 @@ Proposed names: all kept, with these signatures settled.
 
 Meaning settled:
 
-- `Tolerances.Parameter` is the model-wide parameter **floor**, set by layer 3 with
-  `ParameterFloor`; the parameter tolerance at a point comes from `ParameterToleranceAt` or
-  `UvToleranceAt`, applied by layer 1.
+- `Tolerances.LengthParameter` and `Tolerances.AngleParameter` are the model-wide parameter
+  **floors**, one per kind of parameter, set by layer 3 with `LengthParameterFloor` and
+  `AngleParameterFloor`; the parameter tolerance at a point comes from `ParameterToleranceAt` or
+  `UvToleranceAt`, applied by layer 1 with the floor of each direction's kind.
+- Rounding floors of lengths are taken at the coordinate extent, never at the model size.
+- `Closed(Period)` is a period for every seam function and not for `IsPeriodic`.
 - A well-formed ("positive") tolerance is finite and at least the smallest normal `Number`.
 - `Diagnostic.Code` is the failed law's name, or a producing layer's code for a finding outside any
   law; `Diagnostic.Measure` and `Check.Worst` are NaN (`Number.Unmeasured`) when nothing was
   measured.
-- `Check` is built only by `CheckWithin`, `CheckExact`, `WorseOf`; `Report` only by `Empty`,
-  `Merge`, `ReportOf`.
+- `Check` is built only by `CheckWithin`, `CheckExact`, `WorseOf`, and holds exactly when
+  `Worst <= Bound`; `Report` only by `Empty`, `Merge`, `ReportOf`, `Located`.
 
 New exported names: the types `UvTolerance` and `ConstraintGroup`, and the functions
 `RoundingUnit`, `SmallestNormal`, `ResolutionAt`, `IsResolvable`, `Unmeasured`, `IsWellFormed`
-(for each tolerance, `Tolerances`, `Periodicity`, `SamplePlan`), `ParameterFloor`,
+(for each tolerance, `Tolerances`, `Periodicity`, `SamplePlan`), `ResolvableLength`,
+`LengthParameterFloor`, `AngleParameterFloor`,
 `ParameterToleranceAt`, `IsSpeedAndCap`, `ParameterToleranceCap`, `UvToleranceAt`,
 `AngleBetweenDirections`, `CanWrap`, `PeriodicDistance`, `IsPeriodic`, `PeriodOr`,
 `ParameterLength`, `IsProper`, `IsFullPeriod`, `ContainsParameter`, `ContainsPeriodic`, `IsUSide`,
@@ -474,6 +499,13 @@ New exported names: the types `UvTolerance` and `ConstraintGroup`, and the funct
 `Corresponds`. Each was checked against `stdlib/types-and-concepts.txt` and the stdlib's library
 files; the only same-named stdlib functions are `Wrap(Angle, Angle)` and `Empty` on `Bounds2D` and
 `Bounds3D`, which overload by parameter type.
+
+Added in the fix wave: the type `StepOccurrenceIndex` and the functions `HasSeam` (on
+`Periodicity` and `CurveDomain`), `IsPeriodicDomain`, `UnboundedDomain`,
+`PeriodicRepresentativeAbove`, `ResolvableLength`, `LengthParameterFloor`,
+`AngleParameterFloor`, `Exceedance`, `Located` (on `Diagnostic` and `Report`), `IsOnFace`, and
+`IntegerTotal`. None is declared by the stdlib's shipping tiers (searched 2026-10-17); layer 2's
+`HasSeam(m: BrepModel, f: BrepFaceIndex)` overloads by parameter type.
 
 ## Fix wave, 2026-10-17
 
@@ -531,3 +563,20 @@ Applied:
    `h` within the tolerance and concludes the first-order motion `speed * abs(h)`.
    `UvToleranceBoundsMotion` gains `tested by Law_ParameterToleranceAtMovesWithinLength`, applied
    per direction. The name stays, because SPEC-EXECUTION.md cites it.
+
+Skipped, with the reason:
+
+- **F12, the zero tolerances** (`ParameterTolerance(0.0)` in layer 1's `spec Eval`,
+  `LengthTolerance(0.0)` in layer 6's `DiscreteGaussBonnet`). They break this layer's invariant,
+  which stays; the fix is in those layers' specs.
+- **C8, `SamplePlan.Count`.** This layer's meaning stands: `Count` samples including both ends,
+  `Count >= 2`. Layer 4's use of it for interior samples only is layer 4's to change.
+- **F7, rounding laws judged by file tolerances, in this layer.** None found: the periodic laws
+  that take a `ParameterTolerance` require it to be resolvable (`IsResolvable`) at the magnitudes
+  they compute with, and every other numeric law states its bound with `ResolutionAt`.
+- **The `Wrap` seam law** (`Law_WrapIgnoresWholePeriods`) stays as measured, around the circle,
+  as FIX-WAVE.md asks.
+
+Names this layer now expects from other fixers: layer 2's `CoordinateExtent(m)` and
+`ModelSize(m)`, which layer 3 passes to the two floor functions; layer 1's choice of floor per
+direction kind in its `ParameterToleranceAt(g, c, t, tol)` and `UvToleranceAt(g, s, uv, tol)`.
