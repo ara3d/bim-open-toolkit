@@ -116,7 +116,11 @@ outcomes of meshing every face under the final discretizations.
 (I1). `Step` raises `Round` by exactly one (`Law_StepDecreasesMeasure`), and the loop runs only while
 the measure is positive, so it makes at most `MaxRefinementRounds` steps (theorem `LoopTerminates`).
 At exit `IsTerminal` holds (`Law_LoopEndsTerminal`): nothing is pending, or the round limit is
-reached. The loop also stops early at a fixed point of `G`: a step that changes no edge meshes no
+reached. How many rounds suffice is layer 4's theorem `CountRequestsReachTheirCount`: count requests
+settle within one round less than the edge count of the largest class of edges that structured
+faces tie to equal counts (opposite sides of a quad grid). A run whose largest class has more than
+`MaxRefinementRounds + 1` edges can end with a `QuadCountMismatch` still pending, which is advisory:
+the face keeps a triangle mesh. The loop also stops early at a fixed point of `G`: a step that changes no edge meshes no
 face again, so it leaves nothing pending.
 
 **At exit**, every chosen face without a mesh is diagnosed at the face (`FailureDiagnostics`):
@@ -141,7 +145,7 @@ assembled: `NumberMeshVertices` and `AssembleModelMesh` over the final face mesh
 | `Face.SurfaceAngular` | 15 degrees | layer 5 defines it as the normal turn along an element edge, ACIS's `SPANORMALTOL`, whose default is 15 degrees |
 | `Face.PreferQuads` | false | research 2.5: triangles are what every exchange format accepts |
 | `Level` | `Geometric` | checks every promise the options make (layer 7: structure, every toleranced law, the criteria, quality thresholds); `Oracle` adds the independent oracles and the library self-tests, which test runs want and production runs can skip |
-| `MaxRefinementRounds` | 5 | research 3.7 and recommendation 2: OpenCascade's bound; the early exit makes unused rounds free |
+| `MaxRefinementRounds` | 5 | research 3.7 and recommendation 2: OpenCascade's bound; the early exit makes unused rounds free; by layer 4's `CountRequestsReachTheirCount` it settles every count request when no class of edges tied to equal counts has more than 6 edges |
 | `Decode` | `DecodePolicy.StandardPolicy` | layer 3's defaults (millimetre, radian, 1e-6 of the model size) |
 | `Quality` | `MeshQualityThresholds.CubitAcceptable` | layer 6's "acceptable" thresholds; a missed threshold is Info, so it never changes `Ok` |
 
@@ -616,3 +620,5 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
     layer keeps its bodiless `ScaledBy` with `// belongs-in: 02-topology` until then.
 11. **Relative chordal default** (finding 8, "What is left open" item 1): `RelativeMeshingOptions(m,
     fraction)` over layer 2's `ModelSize`.
+12. **Round bound cited**: termination and the `MaxRefinementRounds` default cite layer 4's new
+    theorem `CountRequestsReachTheirCount` for how many rounds settle the count requests.
