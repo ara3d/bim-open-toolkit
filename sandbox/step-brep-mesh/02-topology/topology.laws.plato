@@ -127,6 +127,16 @@ library BrepTopologyLaws
             ? (m.IsEdgeInRange(e) ? m.UsesRunOpposite(m.CoedgeSitesOfEdgeInFace(f, e)) : true)
             : true;
 
+    // Reversing an edge (WithEdgeReversed) leaves the composed sense of every
+    // coedge that cites it unchanged: SameSense and the coedge's orientation
+    // both flip, and the product of signs is the same. Library, exact.
+    Law_EdgeReversalKeepsCoedgeSense(m: BrepModel, site: CoedgeSite): Boolean
+        => m.IsCoedgeSiteInRange(site)
+            ? (m.IsEdgeInRange(m.CoedgeAt(site).Edge)
+                ? m.WithEdgeReversed(m.CoedgeAt(site).Edge).CoedgeRunsForwardOnCurve(site) == m.CoedgeRunsForwardOnCurve(site)
+                : true)
+            : true;
+
     //==
     // # Vertex links
 
@@ -268,6 +278,18 @@ library BrepTopologyLaws
     Law_EdgeDomainEndsAtVertices(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Boolean
         => m.IsEveryIndexInRange
             ? (m.IsEdgeInRange(e) ? m.DomainEndDeviation(e, atStart) <= m.Tolerances.Length.Value : true)
+            : true;
+
+    // Reversing an edge leaves its domain unchanged, bit for bit: the vertex
+    // met first along the curve is the Start when SameSense and the End
+    // otherwise, and the reversal swaps both. Layer 4's theorem
+    // EdgeReversalInvariance assumes it. Library, exact.
+    Law_EdgeReversalKeepsEdgeDomain(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e)
+                ? (m.WithEdgeReversed(e).EdgeDomain(e).Range.Start == m.EdgeDomain(e).Range.Start
+                    && m.WithEdgeReversed(e).EdgeDomain(e).Range.End == m.EdgeDomain(e).Range.End)
+                : true)
             : true;
 
     // The edge domain runs forward: its start does not exceed its end. On an

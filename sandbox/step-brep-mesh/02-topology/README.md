@@ -356,6 +356,7 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_OpenShellEdgesUsedAtMostTwice(m, s, e)` | in a shell not declared closed, no non-degenerate edge has more than two uses | exact | structural, Error |
 | `Law_DeclaredClosedIsClosed(m, s)` | a shell declared closed has no non-degenerate edge used exactly once | exact | structural, Error |
 | `Law_EdgeUsesHaveOppositeOrientation(m, s, e)` | an edge's two uses in a shell have opposite composed senses | exact | structural, Error |
+| `Law_EdgeReversalKeepsCoedgeSense(m, site)` | reversing the coedge's edge leaves its composed sense unchanged | exact | library, test |
 | `Law_SeamUsesAreInOneFace(m, f, e)` | an edge's two uses in one face (a seam) have opposite composed senses | exact | structural, Error |
 | `Law_VertexLinkIsOneCycle(m, s, v)` | in a shell declared closed, the link of a vertex with corners has one component | exact | structural, Error |
 | `Law_VertexLoopVertexIsIsolated(m, s, v)` | a vertex-loop vertex is an end of no edge the shell cites | exact | structural, Error |
@@ -367,6 +368,7 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_ReversingEveryFaceKeepsCoherence(m, s)` | reversing every face leaves the shell's coherence unchanged | exact | library, test |
 | `Law_SolidShellsAreDeclaredClosed(m, b)` | the outer and void shells of a solid are declared closed | exact | structural, Error |
 | `Law_EdgeDomainIsForward(m, e)` | the edge domain's start does not exceed its end | parameter floor | structural, Error |
+| `Law_EdgeReversalKeepsEdgeDomain(m, e)` | reversing an edge leaves its domain unchanged, bit for bit | exact | library, test |
 | `Law_EdgeDomainEndsAtVertices(m, e, atStart)` | the curve at the domain end assigned to a vertex reproduces the vertex | `epsL` | geometric, W/E |
 | `Law_VertexCoincidesWithCurveEnd(m, e, atStart)` | a vertex lies on its edge's curve | `epsL` | geometric, W/E |
 | `Law_CoincidentEndsAreOneVertex(m, e)` | two distinct vertices of an edge coincide only if the edge is degenerate | `epsL` | structural, Error |
@@ -411,7 +413,10 @@ brief added (`Law_SeamUsesAreInOneFace`, `Law_EdgeDomainEndsAtVertices`,
 **Declared here, new** (proposed; the consumers most likely to use each in parentheses):
 `CoedgeSite`, `EdgeEnd`; `CoedgeSitesOfFace`, `CoedgeSitesOfShell`, `CoedgeSitesOfEdge`,
 `CoedgeSitesOfEdgeInFace`, `CoedgeAt`, `BoundAt`, `NextSite`, `IsCoedgeSiteInRange` (5, 7);
-`ShellFaces`, `LoopsOfFace`, `FacesOfEdge`, `EdgesOfShell`, `VerticesOfShell`, `UseCount` (6, 7);
+`ShellFaces`, `LoopsOfFace`, `FacesOfEdge(m, s, e)`, `EdgesOfShell`, `VerticesOfShell`, `UseCount` (6, 7);
+`Opposite`, `CoedgeCount`, `CitesEdge`, `LoopUsesEdge`, `FaceUsesEdge`, `FacesOfEdge(m, e)` (the
+shell-free form), `SwappedEnds`, `WithUsesFlipped`, `WithEdgeReversed` (4, 8; adopted from layer 4's
+`belongs-in: 02-topology` stand-ins with the same signatures);
 `IsSeamEdgeOf`, `HasSeam`, `PcurvesOnFace`, `PcurveEdgeDomain`, `DomainEndParameter`,
 `FirstVertexAlongCurve`, `LastVertexAlongCurve`, `IsClosedEdge`, `IsOnPeriodicCurve` (4, 5);
 `CornersAtVertex`, `CornersAroundVertex`, `FacesAroundVertex`, `LinkComponentCount` (5, 7);
@@ -565,3 +570,10 @@ Applied:
   multiplying `PlacementHandedness` in here as well, which the fix-wave brief suggested, would count
   the mirror twice. New: `ParameterizationSignAt` and the library law
   `Law_ParameterizationSignIsConstantOnFace`, which test that premise on every face.
+- **Layer 4's topology queries (FIX-WAVE ownership table, review C10, layer 8 finding 1).**
+  Adopted with layer 4's signatures: `Opposite`, `CoedgeCount`, `CitesEdge`, `LoopUsesEdge`,
+  `FaceUsesEdge`, the shell-free `FacesOfEdge(m, e)`, `SwappedEnds`, `WithUsesFlipped`,
+  `WithEdgeReversed`; the bodies guard their lookups. `IsClosedEdge` and `IsDegenerateEdge` stay
+  this layer's (review C4: layer 4 renames its own meaning `IsClosedRegularEdge`). New library laws
+  `Law_EdgeReversalKeepsCoedgeSense` and `Law_EdgeReversalKeepsEdgeDomain`, the second being the
+  assumption of layer 4's theorem `EdgeReversalInvariance`.

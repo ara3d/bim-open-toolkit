@@ -75,6 +75,21 @@ library BrepTopology
             PolyLoop(points) => Coedge.NoCoedges;
         };
 
+    // The other orientation.
+    Opposite(o: EdgeOrientation): EdgeOrientation
+        => match (o) {
+            Forward => EdgeOrientation.Reversed;
+            Reversed => EdgeOrientation.Forward;
+        };
+
+    // The number of coedges of a loop; 0 for a vertex loop or a poly loop.
+    CoedgeCount(l: BrepLoop): Integer
+        => l.CoedgesOf.Count;
+
+    // Whether the loop cites edge e: some coedge of an edge loop names it.
+    CitesEdge(l: BrepLoop, e: BrepEdgeIndex): Boolean
+        => l.CoedgesOf.Any(c => c.Edge == e);
+
     // An empty coedge array, for the branches that have none.
     NoCoedges(_: Coedge): Array<Coedge>
         => 0.MapRange(k => Coedge(BrepEdgeIndex(k), EdgeOrientation.Forward));
@@ -292,6 +307,22 @@ library BrepTopology
             i.Range.All(j => sites[j].Face != sites[i].Face)
                 ? [sites[i].Face]
                 : 0.MapRange(k => BrepFaceIndex(k)));
+
+    // Whether the loop at index l cites edge e; false when l is out of range.
+    LoopUsesEdge(m: BrepModel, l: BrepLoopIndex, e: BrepEdgeIndex): Boolean
+        => m.IsLoopInRange(l) ? m.Loops[l].CitesEdge(e) : false;
+
+    // Whether a bound of face f cites edge e; false when f is out of range.
+    FaceUsesEdge(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
+        => m.IsFaceInRange(f) ? m.Faces[f].Bounds.Any(b => m.LoopUsesEdge(b.Loop, e)) : false;
+
+    // The faces of the model whose bounds cite edge e, each once, in face
+    // order, whatever shell they belong to: layer 4's question, which faces'
+    // parameter planes the edge's discretization must serve. Quadratic as
+    // written; an implementation builds an edge-to-face table once.
+    FacesOfEdge(m: BrepModel, e: BrepEdgeIndex): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f =>
+            m.FaceUsesEdge(f, e) ? [f] : 0.MapRange(k => BrepFaceIndex(k)));
 
     // The faces of a shell that use edge e, each once: two for an edge between
     // faces, one for a seam or a boundary edge.
@@ -797,6 +828,38 @@ library BrepTopology
     // belongs-in: 02-topology and has the same signature).
     WithEveryFaceReversed(m: BrepModel): BrepModel
         => m.WithFacesReversed(m.Faces.Count.MapRange(i => BrepFaceIndex(i)));
+
+    // The same edge traversed the other way: ends swapped and the sense
+    // flipped, so it runs over the same curve points in the opposite direction.
+    SwappedEnds(edge: BrepEdge): BrepEdge
+        => BrepEdge(edge.End, edge.Start, edge.Curve, edge.SameSense.Not);
+
+    // The loop with every citation of edge e flipped.
+    WithUsesFlipped(l: BrepLoop, e: BrepEdgeIndex): BrepLoop
+        => match (l) {
+            EdgeLoop(coedges) => BrepLoop.EdgeLoop(
+                coedges.Map(c => c.Edge == e ? Coedge(c.Edge, c.Orientation.Opposite) : c));
+            VertexLoop(vertex) => l;
+            PolyLoop(points) => l;
+        };
+
+    // The model with edge e reversed: its ends swapped, its sense flipped, and
+    // every citation of it flipped. The same solid with the same faces: every
+    // coedge's composed sense and the edge domain are unchanged
+    // (Law_EdgeReversalKeepsCoedgeSense, Law_EdgeReversalKeepsEdgeDomain); the
+    // metamorphic input of the edge-reversal laws of layers 4 and 8
+    // (research/VALIDATION-MATH.md 6.4).
+    WithEdgeReversed(m: BrepModel, e: BrepEdgeIndex): BrepModel
+        => BrepModel(
+            m.Geometry,
+            m.Vertices,
+            m.Edges.Count.MapRange(i => i == e.Value ? m.Edges[i].SwappedEnds : m.Edges[i]),
+            m.Loops.Map(l => l.WithUsesFlipped(e)),
+            m.Faces,
+            m.Shells,
+            m.Bodies,
+            m.Tolerances,
+            m.Unit);
 
     // Whether every edge of shell s with two uses has them running opposite.
     // Precondition: m.IsEveryIndexInRange.
