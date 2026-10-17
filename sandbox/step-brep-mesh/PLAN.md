@@ -103,4 +103,32 @@ Recorded as they arise; the ticket carries the same list.
 
 ## Phase log
 
-- 2026-10-17 Phase 0 complete: contract documents written, TKT-299 filed.
+- 2026-10-17 Phase 0 complete: contract documents written, TKT-299 filed (commit 02c2aacf).
+- 2026-10-17 Phase 1: four of five research documents in (`PLATO-PRIMER.md`,
+  `research/MESHING-REQUIREMENTS.md`, `research/VALIDATION-MATH.md`,
+  `research/EXISTING-MESHER-LESSONS.md`); the STEP entity model still running. Findings that changed
+  the contract are logged at the end of `VOCABULARY.md` (revision 2). Facts established with
+  evidence: `Number` is a 32-bit float in the C# backend (`src/Plato.Intrinsics/Number.cs`),
+  64-bit in the Rust and TypeScript backends; a type may not contain itself directly but may through
+  `Array<T>`; an interface-typed field boxes and dispatches at run time; the law runner skips laws
+  whose parameters are arrays, sums, zero-field types or interfaces, so this design's laws run over
+  witnesses; the stdlib's law-runner script passes a `--scalar=float` flag the CLI now rejects.
+  A type-check gate driver (parse, resolve, lint, types, sums, style, over the stdlib tiers plus one
+  design folder, excluding the stdlib's `brep.*.plato`) was built and runs in about 15 seconds;
+  its source is kept in `tools/PlatoGate/` and its use is in `PLATO-PRIMER.md` section E.3.
+- 2026-10-17 Phase 2 wave A launched for layers 0, 4, 6 (independent of the STEP document); layers
+  1, 2, 3, 5 wait for `research/STEP-BREP-MODEL.md`; layers 7 and 8 form wave B after layers 0 to 6
+  exist, because they reference the laws by their actual names.
+- 2026-10-17 Two owner-requested investigations run beside the design: `SPEC-EXECUTION.md` (how to
+  make the spec DSL executable: validate, prove, generate tests; inside Plato, a separate language,
+  or convention plus tooling) and `TARGET-LANGUAGE.md` (which backend to implement on first, and
+  what `Number`'s width should be).
+
+## Additional open questions from Phase 1
+
+5. **Law discovery.** The conformance runner looks for `Law_` members as instance methods on
+   generated types; library functions are emitted as static classes. Whether the runner finds the
+   sandbox's laws at all is unverified (PLATO-PRIMER.md, open questions). A task in TASKS.md.
+6. **Where the gate driver lives.** `tools/PlatoGate/` here, or `tools/` in the Plato repository.
+7. **The v1 B-rep files.** The gate excludes them so v2 can reuse the names. When the library moves
+   into the stdlib, v1 is replaced; until then nothing compiles both at once.
