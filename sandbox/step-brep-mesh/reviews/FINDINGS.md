@@ -71,3 +71,29 @@ session accepts them.
   `ParsedFile`. The same literals are the expected values of the adapter test spec (chunk E),
   written first under `adapter/` while the layer 3 fixer owns `03-step`.
 - **Status** open, carried by `TASKS.md` chunk D.
+
+## F-46: what writing the adapter test spec showed about layer 3 and the C# parser
+
+- **Raised** 2026-10-17 by the agent that wrote `adapter/ADAPTER-SPEC.md` and its fixtures.
+- **Where** `03-step` (diagnostics, invariants, equality), `07-validation` (witness units),
+  `deps/ara3d-sdk/src/Ara3D.IO.StepParser/StepHeader.cs` (the parser session's code).
+- **Problems and fixes**, one line each:
+  1. The C# parser's header keeps three strings and drops `OriginatingSystem` and
+     `PreprocessorVersion`, which the decoder's repairs key on; the adapter re-reads the header
+     section itself (spec, fifth row). Reported to the parser session.
+  2. No diagnostic code fits "the parse stopped at an unknown place": `SyntaxError` must name an
+     instance (`Law_ParseFindingsPointAtTheirSubject`). The accepted first step uses
+     `NotPart21File` at `WholeInput`. Layer 3 should add a code or relax the subject for this case.
+  3. Layer 3 has `IsSameFile` but no equality for `Diagnostic` or `Provenance`; the tests compare
+     field by field. Layer 0 should own `IsSameDiagnostic`.
+  4. The `Part21File` invariants exist only as quantifiers in `step.spec.plato`; the spec wrote
+     them as folds (`SatisfiesFileInvariants`). Layer 3 should own that function.
+  5. Layer 3 fixes neither the count nor the order of diagnostics; the spec fixes one
+     dangling-reference Warning per instance, whole-input findings first, then by instance id.
+     Layer 3 should state it as a law.
+  6. The fixtures are in millimetres, `Witness_UnitBox` in metres; chunk D's decode-equals-witness
+     law compares against the witness scaled by 1000 through layer 2's `ScaledBy`.
+  7. The Plato literal `"André Lefort"` (a decoded `\X2\` escape) passes the front end; whether the
+     C# code generator keeps it intact is untested. A language note, not a design defect.
+- **Status** 1 reported to the parser session; 2 to 6 assigned to `TASKS.md` chunk D; 7 noted
+  for `TARGET-LANGUAGE.md`.

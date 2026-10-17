@@ -116,13 +116,18 @@ mesh.
 
 ### Chunk D: decode from hand-built files (M3)
 
-Layer 3 has no `Part21File` witness today (finding F-45 in `reviews/FINDINGS.md`). This chunk
-adds `Witness_Part21UnitBox`, `Witness_Part21Cylinder`, `Witness_Part21Assembly` (one part placed
-twice), `Witness_Part21Degrees` (plane angle in degrees), `Witness_Part21Complex` (one complex
-instance, the AP214 unit combination), `Witness_Part21NoShape`, `Witness_Part21DanglingReference`,
-each a `Part21File` literal written in Plato with the arena indices by hand, and the law that
-decoding `Witness_Part21UnitBox` gives a model that `IsSameModel` as `Witness_UnitBox` up to
-tolerance. Bodies: `InstancePosition`, `DecodeBrepWith`, `ClassificationDiagnostics`,
+Layer 3 had no `Part21File` witness (finding F-45 in `reviews/FINDINGS.md`). The adapter spec
+agent wrote the first ones in `adapter/part21-witnesses.laws.plato` (library `Part21Witnesses`):
+`Witness_Part21UnitBox` (142 instances, 588 arena values), `Witness_Part21UnitBoxNoShape`,
+`Witness_Part21UnitBoxDangling`, `Witness_Part21UnitBoxTruncatedPrefix`, `Witness_Part21TwoCubes`,
+generated with their text fixtures by `adapter/tools/gen_adapter.py`. This chunk moves that file
+into `03-step` (the name review decides the home), adds `Witness_Part21Cylinder` and
+`Witness_Part21Degrees` (plane angle in degrees) to the generator, and adds the law that decoding
+`Witness_Part21UnitBox` gives a model that `IsSameModel` as `Witness_UnitBox.ScaledBy(1000)` up to
+tolerance (the fixtures are in millimetres, the witness in metres, finding F-46.6). It also
+closes F-46.2 to F-46.5 in layer 3: a diagnostic code for a parse that stopped at an unknown
+place, `IsSameDiagnostic` (layer 0), `SatisfiesFileInvariants` as layer 3's executable form of the
+`Part21File` invariants, and a law fixing the count and order of parse diagnostics. Bodies: `InstancePosition`, `DecodeBrepWith`, `ClassificationDiagnostics`,
 `ResolveContexts`, `FindOccurrences`, `FlatRecord`, `SlotOf`, `ConformsTo`, `KernelOf`. Laws:
 every decode, schema, units and WHERE law of layer 3; `Law_DecodeErrorMeansNotOk`,
 `Law_NoFacesMeansNoMesh`, `Law_NoFacesMeansNotOk` through a `MeshParsedFile` entry in layer 8
@@ -140,11 +145,12 @@ decoded strings (the `\X2\`, `\S\`, `\P\` rules); and it throws on malformed inp
 `ParsedFile` wants `Ok` false with the parsed prefix. The adapter is a C# function
 `StepDocument -> ParsedFile`; who writes it waits on the owner's answer to TKT-306.
 
-This chunk's deliverable from the design side is the **adapter test spec**, `03-step/ADAPTER-SPEC.md`:
-the five text fixtures of MP as files, the expected `Part21File` for each stated as the chunk D
-literal it must equal under `IsSameFile`, the expected diagnostics for the truncated and dangling
-cases, and the file laws the adapter output must satisfy. Whoever builds the adapter implements
-against it. Then `Law_MeshStepTextIsDeterministic`, `Law_StepTextOkExactlyWhenClean`,
+The design side's deliverable, the **adapter test spec**, exists: `adapter/ADAPTER-SPEC.md`, the
+five text fixtures under `adapter/fixtures/`, the expected `Part21File` for each as the literal it
+must equal under `IsSameFile`, the expected `Ok` and diagnostics, and the file laws the output must
+satisfy. A fifth difference surfaced while writing it: the C# `StepHeader.Parse` keeps three
+strings and drops `OriginatingSystem` and `PreprocessorVersion`, so the adapter re-reads the header
+section (finding F-46.1). Whoever builds the adapter implements against the spec. Then `Law_MeshStepTextIsDeterministic`, `Law_StepTextOkExactlyWhenClean`,
 `Law_EveryStepTextDiagnosticIsLocated`, `Law_ParseErrorMeansNotOk` run through `MeshStepText`.
 `Law_ParsePrintParseIsIdentity` runs once `PrintStep` exists on either side; until then it is
 stated and not executed.
