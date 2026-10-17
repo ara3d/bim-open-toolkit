@@ -200,6 +200,12 @@ exist.
   f48f62b); the four invariant differences above; no printer; throws on malformed input; nothing in
   its tickets writes the adapter (TKT-305 meshes from generated C# types over `StepDocument`
   directly); it asks this side for the test spec; ownership of the adapter waits on TKT-306.
+- 2026-10-17, later: the spec's two parser-side asks are TKT-310, with a builder on it: the parser
+  reports a malformed or truncated file as a diagnostic with a byte offset and keeps the parsed
+  prefix, and `StepHeader` keeps all ten header fields. Its acceptance test is
+  `adapter/fixtures/unit-cube-truncated.stp`, copied into the ara3d-sdk tests. The parser session
+  will send the diagnostic type's shape when it lands; chunk E's adapter maps it to
+  `ParsedFile.Diagnostics`. The spec's "accepted first step" clause and its fifth row then lapse.
 - Open for the owner: TKT-306 (how the C# reader relates to this design). The design's answer is
   in chunk E: the adapter is small, the boundary stays, and the two meshing paths (TKT-305's and
   this one's) can share the adapter spec's fixtures as their common test set.
