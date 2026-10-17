@@ -1,876 +1,1494 @@
-# Making the specification DSL executable
+# Specification and verification in Plato
 
-Written 2026-10-17 for TKT-299 (the STEP B-rep to mesh design sandbox). It answers one question for
-the owner of Plato and of this sandbox: how to turn the specification DSL of
-[SPEC-DSL.md](SPEC-DSL.md) into something that **validates** specifications, **proves** what can be
-proved, and **generates executable tests**, and whether that machinery belongs in Plato, in a
-separate language, or in tooling over Plato as it is. It ends with ranked use cases, further
-improvements, and open questions.
+Written 2026-10-17 for TKT-299 (the STEP B-rep to mesh design in this sandbox); second version. It
+answers one question for the owner of Plato: which specification and verification system makes
+**creating and validating** a large pure-functional geometry library most efficient once code
+generation works well, and what Plato must become to support it. The library is this sandbox's
+design first and the Plato stdlib after it.
+
+The first version asked how to make the sandbox's spec DSL executable with the least change, and
+recommended leaving Plato alone: a tool would rewrite spec clauses into `Law_` functions, and syntax
+would move into the language after a cycle. The owner rejected that framing (PLAN.md, "Decided by the
+owner during the pass"). Plato, its parser (`parakeet`), its elaborator, checker, writers, intrinsics
+and law runner are the owner's, so every gap is work to schedule. A second correction followed: assume
+the trivial compiler, writer and runner defects fixed, list them once (section 9.2), and judge each
+construct as language design (coherence with Plato's model, expressiveness, how a reader understands
+a spec, how an author and an agent work with it, what the compiler can check) rather than by what it
+costs to build. This version is written to both corrections. The measured facts of the first version
+are kept in section 9; its prior-art survey, its classification of what is provable, and its test
+generation measures are kept and extended.
 
 Evidence tags. **[R]** read in a file named in the text. **[M]** counted or measured during this
-research (the method is described). **[W]** from an external source, numbered in "Sources". **[J]**
-my judgement, with the reasons given. Plato paths are relative to `C:\Users\cdigg\git\plato` at
-commit `f6e02cf0`; sandbox paths are relative to this folder.
+research; the method is stated. **[W]** an external source, numbered in "Sources". **[J]** my
+judgement, with reasons. Plato paths are relative to `C:\Users\cdigg\git\plato` at commit
+`f6e02cf0`; sandbox paths are relative to this folder. Code marked *illustrative* shows the shape of
+an output that does not exist yet; its numbers are invented for the example.
 
 Terms used throughout:
 
-- **Law, witness, oracle, check**: as in SPEC-DSL.md section 2. A *law* is a `Law_` Boolean function
-  read as a universally quantified statement; a *witness* builds a well-formed example value; an
-  *oracle* computes a quantity by an independent route; a *check* is a law evaluated over one value.
-- **Lowering**: rewriting a construct into simpler constructs with the same meaning, here a spec
-  clause into an ordinary Plato function.
-- **Vacuous pass**: a law of the form `pre ? claim : true` that returned `true` because `pre` was
-  false, so the claim was never tested.
-- **SMT solver** (satisfiability modulo theories): a program such as Z3 or cvc5 that decides
-  formulas over theories. **LIA**, **LRA**, **NRA**: linear integer, linear real, and nonlinear real
-  arithmetic.
-- **Shrinking**: reducing a failing test input to a smaller one that fails the same way.
-- **Metamorphic relation**: a rule relating the outputs of two runs on related inputs (rotate the
-  input, the output rotates), used where no oracle gives the expected output.
-- **Mutation testing**: changing the code under test in small ways and counting which changes the
-  tests detect; an undetected change marks a weak test.
+- **Statement**: anything the system checks. Five kinds, distinguished in section 2.2: a
+  *predicate* (a Boolean function over data), a *contract clause* (`requires` or `ensures` on a
+  function), a *type invariant*, a *law* (a universally quantified property of the library's
+  functions), and a *theorem* or *conjecture* (a law with a justification, or flagged as open).
+- **Obligation**, or **verification condition (VC)**: a formula that must be valid for a statement to
+  hold at one place, such as "at this construction site the new value satisfies the type's
+  invariant". To **discharge** an obligation is to show it valid by some engine.
+- **Engine**: one way of discharging obligations: the type checker, evaluation, an SMT solver, a
+  proof assistant, or generated tests.
+- **SMT solver** (satisfiability modulo theories): a program such as Z3, cvc5 or Bitwuzla that
+  decides formulas over theories: **Int** (integers), **Seq** (sequences), datatypes, **Real**, and
+  **FP** (IEEE floating point, bit-precise, the SMT-LIB FloatingPoint theory [W27]).
 - **TIR**: Plato's typed intermediate representation, produced by the elaborator once overloads are
-  resolved (`docs/compiler-pipeline.md`).
-- **Rung**: one level of the seven-level verification ladder in `stdlib/VERIFICATION.md`; rung 6
-  executes the laws.
+  resolved and conversions made explicit (`docs/compiler-pipeline.md`).
+- **Evaluator**: an interpreter over TIR inside the compiler. It does not exist today (section 9.1);
+  section 2.1 argues for it.
+- **Profile**: how a compilation or an evaluation represents `Number`: *binary64* (the default on
+  CPU backends), *binary32* (GPU), *reference* (a wider format used only by the verifier, such as
+  double-double with about 106 significand bits), *interval* (an enclosure of the exact value).
+- **Checked build**: a compilation that checks contracts and invariants at run time. **Release
+  build**: one that checks nothing. **Verification build**: one that also contains the laws,
+  witnesses and generators and a small harness the verifier drives.
+- **Witness**: a named, well-formed example value of a type. **Generator**: a function that builds
+  values of a type from random choices. **Choice sequence**: the list of integers a generator
+  consumed; replaying it rebuilds the value. **Shrinking**: reducing a failing case to a smaller one
+  that fails the same way.
+- **Vacuity rate**: the share of generated cases a law's guards rejected, so its claim was never
+  evaluated. **Margin**: a tolerance comparison's measure divided by its bound; above 1 fails.
+- **Metamorphic relation**: a rule relating the outputs of two runs on related inputs (rotate the
+  input, the output rotates). **Mutation testing**: changing the code under test in small ways and
+  counting the changes the statements detect.
+- **Blame**: which function a contract failure is charged to (Findler and Felleisen [W28]).
 
 ## 0. The answer in brief
 
-**Recommendation [J].** Keep Plato unchanged for now. Keep the spec text as the single source, in
-the DSL the sandbox already uses. Build a small tool that parses spec blocks, **lowers every clause
-into an ordinary Plato function** with a fixed name prefix in a generated file, and writes a manifest
-recording what each generated function means (invariant, precondition, postcondition, theorem) and
-where it came from. The real Plato front end then binds and type-checks the generated functions, and
-an extended law runner executes them. This is option C (convention plus tooling) for semantics, with
-a thin option B (a separate front end) for syntax. Promote a stable subset into Plato (option A) only
-after one implementation cycle has shown which constructs earn compiler support, as SPARK did when
-its comment annotations became Ada 2012 aspects [W1].
+**Put the specification language into Plato**, as clauses and declarations that the same front end
+parses, binds and type-checks as code, and build **one verifier**, `plato verify` (the Plato.Verify
+engine that `tracker/issues/plato-390.md` proposes), which discharges each statement by the strongest
+engine that can and reports every statement's status: proved, solved, exhausted, tested, stated,
+blocked, or failed. The first version's architecture question (new syntax, a separate language, or
+convention plus tooling) is settled for option A, new syntax inside Plato, because the owner controls
+every part of the toolchain and the language-level form is the one a compiler can check (section 10).
 
-| Stage | When | What it delivers | Rough cost [J] |
+The language additions:
+
+1. **On types**: `invariant e` clauses, and `sealed by F, G`, which permits only the named functions
+   to construct the type.
+2. **On functions**: `requires e`, `ensures e` (with `result`), `decreases e`, `cost e`, and
+   `deferred "<algorithm family>"` in place of a body, distinct from a bodiless intrinsic.
+3. **Declarations** inside `library` and `interface` blocks: `law`, `theorem` and `conjecture`, all
+   shaped like functions (parameters universally quantified, `requires` as guards, the body as the
+   claim), with `because`, `tested by`, and a claimed proof route (`by exhaustion`, `by smt`,
+   `proof "<file>"`); `witness` and `generator`, with a `draw` expression in generator bodies.
+4. **Expressions**: `&&` and `||` short-circuit on `Boolean`; `a implies b`; bounded quantifiers
+   `all x in D: e` and `any x in D: e`; `a === b`, bitwise identity derived for every type; tolerance
+   comparisons `measure <= tol` typed by a stdlib interface `ITolerance<M>`, and `a ~= b within tol`.
+5. **Law parameters** may name a domain (`e: BrepEdgeIndex in m.EdgeIndices`) or a generator
+   (`m: BrepModel from ArcEdgeModels`).
+
+The machinery behind them:
+
+- a **TIR evaluator** in the compiler: the definitional semantics, the inner loop's backend (no code
+  generation or host build between an edit and a verdict), compile-time evaluation of witnesses and
+  constant construction sites, explanation traces, and the reference and interval profiles;
+- **checked and verification builds** in every writer, driven through one small JSON protocol;
+- an **SMT translator** with a content-hash cache, and a **Lean 4 translator** for theorems;
+- an **orchestrator**: witness pools, generators over choice sequences, shrinking, vacuity and margin
+  accounting, three-valued verdicts, cross-backend comparison, mutation testing, and one report,
+  exposed as a CLI and as an MCP tool `plato_verify` beside `plato_check`.
+
+Three judgements shape the design [J]:
+
+- **Obligations are discharged outside the type checker.** Type checking stays nominal, decidable and
+  fast enough for an edit loop; there are no refinement types and no SMT solver inside it. This is the
+  Ada 2012 and SPARK model (contracts in the language, proofs by a separate tool) rather than the
+  Liquid Haskell model (section 2.13).
+- **Plato's purity makes this unusually cheap to get right.** There is no `old()`, no frame
+  condition, no aliasing; a VC for an expression body is a substitution; and an invariant established
+  at construction holds for the value's lifetime, because values never change.
+- **Test first, prove where it pays.** Most of this library's statements are geometric and stay
+  empirical. The system makes empirical evidence as strong and as fast as it can (generators that
+  respect constraints, shrinking, worst-case search, verdicts aware of rounding, agreement across
+  backends, mutation scores), and proves the combinatorial core.
+
+**First end-to-end milestone** (section 7.4): `00-foundation` rewritten into the new syntax;
+`plato check` clean in under 2 s warm; `plato verify` reports a status for every statement, from the
+evaluator, C# and TypeScript; the two subnormal failures the layer's author found with a hand-written
+C# fuzzer of 300,000 draws are rediscovered automatically and shrunk once the guard that fixed them is
+removed; and one theorem is proved in Lean.
+
+The fixes this design assumes are listed once, in section 9.2.
+
+## 1. The target experience
+
+This section is the specification the rest of the document serves. Times are budgets for a warm
+session on the owner's machine; section 9.1 gives today's measurements they are set against.
+
+### 1.1 An author writes a type, a function and a law
+
+A person or an agent adds a function with its contract and a law to `foundation.library.plato` and
+`foundation.laws.plato`.
+
+1. **Save, then check: at most 2 s.** The editor, or the agent through `plato_check`, runs the front
+   end over the changed declarations and their dependents. In one list, at source locations: names
+   bind; types agree; each `requires` makes the indexing after it total; `result` has the declared
+   type; the measure in `PeriodicDistance(...) <= Rounding(...)` is a `Number` and the bound a
+   tolerance over `Number`; every law parameter has a domain or a generator; no literal epsilon
+   appears in a comparison. Spec mistakes such as the 14 uses of the undeclared `UpTo` in
+   `discretization.spec.plato` [M] surface here.
+2. **Verify what changed: at most 10 s.** `plato verify --changed` (MCP: `plato_verify` with scope
+   `changed`) finds the statements whose TIR closure changed, discharges what it can statically
+   (finite enumeration; cached SMT results), then runs the rest on the evaluator over every witness
+   and 200 generated cases each, shrinks the first counterexample, and returns.
+
+   *Illustrative output*, after an edit that dropped `Wrap`'s second correction step:
+
+   ```
+   plato verify --changed     00-foundation, backend eval, 6.1 s
+     Wrap ensures 1                       FAILED     eval, case 7 of 200
+       t = -1.0e-300, period = 1.0                        shrunk from 23 choices in 38 steps
+       result = 1.0; (result < period) = false
+       Wrap: t / period = -1.0e-300; Floor = -1.0; r = t + 1.0 = 1.0 (rounded); s = r; returned s
+       replay: plato verify --replay f3a91c --explain
+     law WrapLandsInPeriod                FAILED     the same case; blame: Wrap
+     law WrapIgnoresWholePeriods          tested     200 cases, vacuity 22 %, worst margin 0.31
+     ShortestDifference ensures 2         solved     SMT FP64, 0.4 s (cache miss)
+   ```
+3. **Fix and repeat.** The replay command reruns exactly that case on any backend, with an
+   explanation trace: the value of every subexpression of the failing clause, in the manner of power
+   assertions [W29].
+
+### 1.2 A reviewer reads a spec
+
+A reviewer opens `04-discretization/discretization.library.plato`. Each function's contract sits
+between its signature and its body; there is no second file to cross-reference. Hovering over a
+clause (Navigation, fed by the last report) shows its status and evidence. The layer's README carries
+a generated table between markers, refreshed by `plato doc`:
+
+*Illustrative:*
+
+| Statement | Kind | Status | Evidence |
 |---|---|---|---|
-| 0 | now | A recipe that stages the stdlib plus the sandbox's real Plato files and runs `Plato.CLI lint`; a script that lists every identifier in the spec files that Navigation cannot find | hours |
-| 1 | during Phases 2 and 3 of [PLAN.md](PLAN.md) | `spec check`: parse spec blocks, lower them to `Inv_`, `Pre_`, `Post_`, `Law_Theorem_` functions, type-check those with the real checker, map findings back to spec lines; lints for the SPEC-DSL authoring rules; a traceability report and generated law tables | 2 to 4 days |
-| 2 | once law and validator bodies compile to C# | laws run on witnesses before any algorithm exists; a contract harness around each deferred function; vacuity rates; tolerance-aware verdicts; counterexample reports | 1 to 2 weeks |
-| 3 | during implementation | shrinking of parameterized witnesses, minimal failing STEP files, metamorphic transform families, mutation scores per law, a coverage report | weeks, in pieces |
-| 4 | optional, per theorem | bounded consistency checks of the combinatorial laws with an SMT solver; Dafny proofs of the index-level theorems (watertightness, vertex layout) | days per theorem |
+| `Reversed` ensures 1 to 5 | contract | solved | SMT Seq, 0.6 s |
+| `law ReversedIsInvolution` | law | solved | SMT Seq; also tested, 600 cases, 4 backends |
+| `theorem SharedPolylineClosesEveryEdge` | theorem | proved | Lean, `Number` opaque, `proofs/Discretization.lean` |
+| `Discretize` ensures 12 (sagitta) | contract | tested | 3,100 calls, 9 generators, worst margin 0.97, 0.4 % within rounding |
+| `law TighterChordalNeverFewerPoints` | law | blocked | by `Discretize`, deferred |
+| `theorem DiscretizeTerminates` | theorem | stated | no proof; not executable as written, since it assumes a bound over every discretization of the edge |
 
-**Why [J].** First, the DSL's own definition already says every construct reduces to Plato
-functions (SPEC-DSL.md section 3, "Reduction"), so lowering is the semantics the owner wrote down,
-not a new one, and the real type checker then checks spec expressions at no extra cost. Second, the
-executable half (rung 6) is the expensive and fragile part of Plato today, and options A and B do
-not make it cheaper; option C uses it as it is. Third, Plato's parser lives in the `parakeet`
-submodule, which Plato's `AGENTS.md` assigns to another repository, and the compiler is edited by
-several sessions at once; a DSL that is still changing does not belong there yet.
+What is proven, what is tested and on what, and what is merely stated is answered by the table, not by
+the reader's reconstruction.
 
-**Main risk [J].** Everything executable depends on generating and compiling C# for the sandbox's
-declaration closure with a 64-bit `Number`. Today `Number` wraps a 32-bit `float`
-(`src/Plato.Intrinsics/Number.cs:21`), and at building coordinates in millimetres a 32-bit value
-cannot resolve the model tolerance, so every geometric law would fail on rounding. Stage 1 is
-designed to be useful without execution for that reason.
+### 1.3 An implementing agent fills in a deferred function
 
-## 1. What the DSL must express
+The agent's task from TASKS.md is "implement `Discretize`". Its loop:
 
-Restated from SPEC-DSL.md, with the formal reading of each statement and what a checker needs to
-handle it. "Binding" is resolving names to declarations; "typing" is checking that the expression
-is a well-typed `Boolean`.
+1. `plato_check`, at most 2 s.
+2. `plato_verify` with `function: "Discretize"`, at most 10 s on the evaluator: every pooled
+   `BrepModel` value with every edge index in range, criteria drawn from their generators;
+   `Discretize` is called; the result's type invariants, then each `ensures` clause in order, are
+   checked; the first failing case is shrunk; the failure is charged by blame (a failing `requires` of
+   a callee inside `Discretize` blames `Discretize`; a failing `ensures` of a callee blames the
+   callee, so the agent does not debug the wrong layer).
+3. The tool result carries the counterexample as data (*illustrative*):
 
-| # | Statement | Sandbox form | Formal reading | A checker needs |
-|---|---|---|---|---|
-| 1 | Type invariant | `spec T { invariant P; }` | every value of `T` the program can produce satisfies `P(self)` | binding of `self`; typing; a totality check (no unguarded index) |
-| 2 | Constructor list | `constructor F;` | no function other than a listed `F` builds a fresh `T` | every construction site of `T` in the whole program, including implicit tuple-to-struct coercions (SEMANTICS.md section 6) |
-| 3 | Precondition | `requires P;` | the caller owes `P(args)`; behaviour is unspecified otherwise | binding of parameters; typing |
-| 4 | Postcondition | `ensures Q;` | for all arguments, all `requires` together imply `Q(args, f(args))` | binding of `result`; typing; an evaluation order (the result's invariants before clauses that index it) |
-| 5 | Measure | `measure M;` | cost is proportional to `M`, or `M` decreases across recursion | typing as a number; no semantic check, only a growth test |
-| 6 | Deferred marker | `deferred "...";` | the body is still to be written | a match with a bodiless declaration |
-| 7 | Law | `Law_X(a: A, ...): Boolean => pre ? claim : true;` | for all `a`, `pre(a)` implies `claim(a)` | the leading guard separated from the claim, for vacuity counting; a sampling plan for continuous parameters; generators that respect the guard |
-| 8 | Theorem, conjecture | `given`, `assume`, `conclude`, `because`, `tested by` | for all givens, the conjunction of the assumptions implies the conclusion; `because` is prose | binding of givens; typing; `tested by` names that resolve to laws |
-| 9 | Quantifier | `forall (x: T) in D : E`, `exists ...` | as in logic; `D` is a finite range or a continuous domain | a domain to enumerate or sample; for `exists`, a term that produces the witness |
-| 10 | Witness | `Witness_X(_: T, ...): T` | a constructive proof that `T`'s invariants can be satisfied | the invariants of `T` evaluated on the result |
-| 11 | Oracle | `Oracle_X(...)` | an independent computation of a quantity | a call-graph check that it never reaches the code it checks |
-| 12 | Approximate equality | `Coincident(a, b, tol)` | `|a - b| <= tol`, with `tol` a named parameter | lints: no numeric literal in a comparison; exact `==` only on `Integer`, `Boolean`, typed indices, and sum tags; a verdict policy for rounding |
-| 13 | Check | `Check_X(...): Check` | the evidence form of one law: held, worst measure, where | agreement with the law it names |
+   ```json
+   { "status": "failed", "backend": "eval",
+     "statement": "Discretize ensures 12 (04-discretization/discretization.library.plato:233)",
+     "clause": "all i in result.SegmentCount.Range: SagittaWithinChordal(m, result, c, SamplePlan.DiscretizationPlan, i)",
+     "blame": "Discretize",
+     "case": { "id": "c7f3e0", "generator": "ArcEdgeModels", "choices": [3, 0, 17, 2],
+               "shrunk_from_choices": 412,
+               "inputs": { "m": "ArcEdgeModels(radius = 10.0, sweep = 0.75 turn, motion = identity)",
+                           "e": 0, "c": "Chordal 0.01, Angular 0.5 rad, MinLength 0.001" } },
+     "explain": { "i": 0, "SampledSagitta(m, result, plan, 0)": 0.0148,
+                  "EffectiveChordal(c, m.Tolerances) + m.Tolerances.Length": 0.010001,
+                  "IsAtLengthFloor(m, result, c, 0)": false },
+     "margin": 1.48, "verdict": "fails",
+     "replay": "plato verify --replay c7f3e0 --explain" }
+   ```
+4. Once the evaluator is green, `plato_verify` with `backends: ["cs"]` confirms on compiled C# in at
+   most 30 s for one layer. The report also lists **surviving mutants** of the new body (section 4.6),
+   which tell the agent where the contract is too weak to notice a change.
 
-Facts about Plato that shape every option [R, `docs/SEMANTICS.md`]:
+### 1.4 Continuous integration and release
 
-- There are no exceptions, so a violated contract cannot abort a call inside the language. Contract
-  checks live in a test harness, or return diagnostics as data (the sandbox's decision D8).
-- `&&` and `||` evaluate both operands, so every generated guard must use `? :` (SEMANTICS.md
-  section 6).
-- One global namespace: generated names need a prefix no author uses.
-- Sum types emit to C# only; the TypeScript and Rust writers reject them (CHK320). The sandbox uses
-  sums for all geometry, so execution goes through C#.
-- A bodiless function is an intrinsic obligation to the compiler. The sandbox overloads it to mean
-  "deferred", which only the spec tooling can tell apart.
+- **Every push**: `plato verify --all --backends eval,cs` over the stdlib and every layer, at most 10
+  minutes; SMT and Lean results come from the cache unless their inputs changed. The report is
+  compared with the last committed one, and any statement whose status fell (solved to tested,
+  tested to failed) fails the build: a ratchet.
+- **Nightly**: adds TypeScript, Rust and C++, mutation testing, and targeted worst-case search.
+- **Release**: `plato verify --release`: every law, contract and invariant on every backend over the
+  same cases, results compared (section 5), the pipeline run end to end on the witness corpus and the
+  public STEP files, and the report committed beside the release.
 
-## 2. Where the pieces stand today
+| Loop | Budget | Engine |
+|---|---|---|
+| Spec and code check of changed declarations | 2 s | front end, warm and incremental |
+| Changed statements, one layer | 10 s | evaluator; SMT and Lean from cache, new obligations solved in parallel and streamed into the report |
+| Confirmation on compiled C#, one layer | 30 s | verification build |
+| Every statement, two backends | 10 min | CI |
+| Every statement, five backends, mutation | hours | nightly, release |
 
-Findings that any implementation starts from.
+## 2. The specification language as part of Plato
 
-**The law runner** (`tests/conformance/Plato.ForwardConformanceTests/LawTests.cs` and
-`ConformanceSupport.cs`) [R]. It discovers `Law_` members by reflection over generated C#, builds 25
-pseudorandom instances per law (`ValueGen.N`), draws `Number` from a ten-value special set 30% of the
-time and otherwise uniformly from [-10, 10], draws `Integer` from [-8, 8], seeds from a hash of the
-law's name, and marks a law *ignored* when a parameter type cannot be built. It has no witnesses (no
-`Witness_` function exists in `stdlib/tests` [M, by search]), no vacuity count, no shrinking, and no
-dependent generation (an index is drawn without regard to the model it indexes); it reports failures
-through `ToString()`.
+### 2.1 What Plato's model decides
 
-**Array-holding types may never run** [R, not confirmed by execution]. `ValueGen.CanCreate` rejects
-interface types, and the generated C# in the working tree declares an `Array<T>` field as
-`IReadOnlyList<T>` (`Generated/_Polygon2D.g.cs:28`, dated 2026-08-02). If both hold at run time, a
-law over any type with an array field, which includes every `BrepModel` law, is reported as ignored.
-Running `regen-forward-conformance.ps1 -Test` and reading the skip list would settle it.
-
-**Rung 6 is not routine** [R]. `docs/gate-log.md` holds one conformance row, 2026-07-31: 44 passed,
-0 failed, 3 skipped. The packet now declares 148 `Law_` functions [M]. `stdlib/VERIFICATION.md` says
-the generated C# for tiers above `foundation` does not compile, and that the working route is a
-subset build of one library's declaration closure (`tools/regen-triangulation.ps1`). That route's
-recorded timings on 2026-08-03 were 14 to 24 s to resolve the subset, 11 to 16 s to generate C#,
-and 14 to 26 s to build and test [M, `%LOCALAPPDATA%\ara3d\gate-timings.csv`]: about a minute per
-iteration.
-
-**Name binding exists outside the compiler; typing does not** [R]. `src/Plato.Navigation` binds names
-with the compiler's own binder and rebuilds in under a second when warm, but it does not resolve
-overloads or compute types (its README, "Known limitations"). `plato_check` runs rungs 0 to 4 warm.
-So a separate spec language can learn from Navigation whether a name exists, but must hand its
-expressions to the compiler to learn whether they are well typed.
-
-**The grammar** (`parakeet/Parakeet.Grammars/PlatoGrammar.cs`, 241 lines) [R]. It is a PEG grammar
-written as C# properties. `StartRule` is overridable; the expression rules (`LeafExpression`,
-`InnerExpression`) are plain properties. A subclass can reuse `Expression`, `TypeExpr`, and
-`FunctionParameterList` as they are, but adding an expression form such as `forall` needs a change
-inside `parakeet`.
-
-**The cost of a language feature** [R]. Sum types: the design and the core implementation were filed
-and closed on one day (`tracker/issues/plato-232.md`, 2026-07-27); comparing two sum values needed a
-second fix six days later (`tracker/issues/stdlib-402.md`); TypeScript and Rust emission are still
-missing. The five backend writers are 1,181 (GLSL) to 7,516 (C#) lines [M], and the elaborator is 382.
-
-**Hazards for any gate over this sandbox** [R]:
-
-1. The spec files are named `*.spec.plato`. `Plato.CLI lint` and `plato_check` read every `.plato`
-   file in a folder, and the Plato grammar has no `spec` declaration, so the Phase 3
-   parse-and-resolve gate in PLAN.md will fail on them unless they are excluded or renamed.
-2. `stdlib/geometry/brep.types.plato` declares `BrepCurve`, `BrepEdge`, `BrepLoop`, `BrepSurface`,
-   `BrepFace`, and `BrepValidation`, which the sandbox redeclares (VOCABULARY.md). One global
-   namespace makes a plain merge fail. The staged stdlib needs those declarations removed while
-   keeping `BrepEdgeUse` and `EdgeOrientation`, which the sandbox reuses.
-
-**Defects a checker would already report** in the example text of SPEC-DSL.md [R]. They are small,
-and they show what stage 1 buys:
-
-- Section 3.2 writes `m.EdgeDomain(e).Start`, but VOCABULARY.md gives `EdgeDomain(m, e): CurveDomain`
-  and `CurveDomain { Range; Periodicity }`; unless a layer declares `Start(CurveDomain)`, the clause
-  does not type-check.
-- Section 3.2 calls `Law_PointsLieOnCurve(m, result, m.Tolerances)`; the catalogue in
-  `research/VALIDATION-MATH.md` section 8 gives that law the parameters `(m, d, i)`, pointwise in `i`.
-- Section 3.2 compares `Number`s with `==` (`result.Parameters[0] == ...`), against the rule in
-  section 2. VALIDATION-MATH.md wants exactly that comparison (`Law_DiscretizationEndsAtVertices`,
-  "exact (bitwise)"), so the rule needs a written escape rather than a silent exception.
-- Section 3.4 writes `in 0.UpTo(n)`; the stdlib's range is `n.Range`
-  (`stdlib/foundation/primitives.library.plato:359`), and no `UpTo` exists.
-- Section 3.3 cites `MeshModel` and `Law_MeshIsClosed`, which VOCABULARY.md does not export.
-
-## 3. Three architectures
-
-### 3.1 A: new syntax inside Plato
-
-`spec`, `theorem`, `requires`, `ensures`, `invariant`, `forall`, and `exists` become Plato syntax. The
-parser (in `parakeet`), the AST, the binder (`self`, `result`, bound variables), the constraint
-generator and elaborator (Boolean typing), every pass that walks expressions (the normalizer, the
-monomorphizer, four optimizer passes, five writers) and Navigation must accept or strip the new
-forms, and SEMANTICS.md must say what they mean.
-
-- *Validate*: the best possible. Spec expressions are checked by the same passes as code, with exact
-  locations.
-- *Prove*: nothing by itself. A compiler that owns `requires` still cannot discharge it without a
-  prover; adding one is the scale of Whiley or Dafny [W3, W4], languages designed around one.
-- *Tests*: the compiler could emit checks into generated C#, but Plato has no exceptions, so an
-  emitted check is either a C# `Debug.Assert` (whose Debug and Release divergence is an open Plato
-  issue, `tracker/issues/plato-292.md`) or a change to the function's return type. A quantifier over
-  a continuous domain has no run-time meaning except sampling, which is a test concept, not a
-  language one.
-- *Language change*: survives best, because one compiler owns everything.
-- *Cost*: the core in days, by the sum-types precedent; the tail in weeks; work in two repositories
-  (`parakeet` and Plato), in a compiler that other sessions edit concurrently.
-- *Agents*: one kind of file and errors in place; but Plato's documents (SEMANTICS.md,
-  `plato-for-agents.md`, the stdlib guides) must teach the constructs.
-- *Risks*: freezing an unproven DSL into the language; language surface that only test tooling gives
-  meaning to; every backend inherits forms it must ignore.
-
-### 3.2 B: a separate specification language
-
-Spec files get their own small parser and refer to Plato declarations through `Plato.Navigation`.
-
-- *Validate*: names, through Navigation. Types only if the tool reimplements overload resolution and
-  type inference, or hands the expressions to the compiler, at which point it has become option C.
-- *Prove*: a separate language can target a prover directly (Creusot's Pearlite targets Why3 [W8];
-  ACSL in Frama-C targets Why3 and SMT solvers [W6]); the cost is a translation of Plato's meaning,
-  which exists only in the compiler.
-- *Tests*: generated host-language tests (C#) from the spec file; the spec language needs its own
-  evaluator or a translation to C#.
-- *Language change*: a second expression grammar drifts from Plato's unless it reuses Plato's rules;
-  a renamed Plato declaration shows up as an unresolved name, which is loud and therefore good.
-- *Cost*: a parser and binder for the block structure is days; a type checker is weeks, and a second
-  copy of Plato's semantics.
-- *Agents*: two languages to learn, with different error messages.
-- *Risks*: two grammars; two type systems that disagree on overloads and implicit conversions. ACSL
-  [W6] and JML [W7] show that the approach works only with a large, sustained tool investment.
-
-### 3.3 C: convention plus tooling over unchanged Plato
-
-Statements are Plato functions with fixed prefixes (`Law_`, `Witness_`, `Oracle_`, `Check_`, and new
-ones: `Inv_`, `Pre_`, `Post_`). Spec blocks either disappear (authors write the prefixed functions by
-hand) or are kept as source text that a tool lowers to prefixed functions.
-
-- *Validate*: names and types by the real front end, because the lowered output is ordinary Plato;
-  the status of each statement (invariant, precondition) from the manifest or the prefix; authoring
-  rules by lints over the parsed files and the compilation.
-- *Prove*: nothing directly; the lowered functions are the input to any later translation.
-- *Tests*: the law runner already executes `Law_` functions, so a theorem lowered to
-  `Law_Theorem_<Name>` runs with no new machinery; `Pre_` and `Post_` need a harness.
-- *Language change*: the lowering emits only function declarations, `? :`, calls, and `Boolean`, the
-  most stable part of Plato.
-- *Cost*: hand-written prefixed functions cost nothing to build; a lowering tool takes days.
-- *Agents*: they write Plato, which they already know; errors point at generated code unless the tool
-  maps them back to spec lines.
-- *Risks*: with hand-written prefixes, a misspelled prefix silently drops a contract, and a
-  contract's status lives in a name. With a lowering tool, generated code can be edited by mistake;
-  mark it, and regenerate in the gate.
-
-### 3.4 Comparison
-
-| Criterion | A: in Plato | B: separate language | C: convention + tool |
-|---|---|---|---|
-| Names resolve | yes | yes (Navigation) | yes (compiler) |
-| Types agree | yes | only by reimplementing the checker | yes (compiler) |
-| Authoring rules (no literal epsilon, `? :` guards) | as compiler lints | its own linter | lints over Plato files |
-| Constructor lists enforced | a compiler rule | needs whole-program TIR | a lint over TIR |
-| Executable tests | needs a lowering anyway | needs an evaluator or a C# translation | lowered functions run in the existing runner |
-| Proofs | needs a prover in or beside the compiler | a translation to a prover | a translation from the lowered functions or the TIR |
-| Survives Plato change | best | worst (second grammar) | good (minimal output syntax) |
-| Cost to first use | weeks | days for names, weeks for types | hours (hand prefixes) to days (tool) |
-| Reversible | hard | easy | easy |
-
-### 3.5 What prior systems chose
-
-| System | Where specifications live | How obligations are discharged | Floating point | Lesson for this choice |
-|---|---|---|---|---|
-| Eiffel [W2] | in the language from the start | run-time checks; AutoTest uses contracts as oracles for random tests [W2b] | run-time only | contracts plus random inputs found real faults with no hand-written oracle |
-| SPARK and Ada [W1] | `--#` comment annotations through SPARK 2005; Ada 2012 aspects (`Pre`, `Post`) from SPARK 2014 | GNATprove, through Why3 and SMT solvers | IEEE semantics; proofs of bounds rather than equalities | comments first, language later, once the forms had settled |
-| Dafny [W3] | in the language | Boogie and Z3, with user lemmas; test generation from the verifier [W3b] | mathematical `real`; I found no IEEE floating-point type in its documentation | strong for index and sequence reasoning; geometry must be axiomatized over `real` |
-| Whiley [W4] | in the language | a verifying compiler | limited | designing for verification shapes the whole language |
-| Frama-C ACSL, E-ACSL [W6] | `/*@ ... */` comments in C | the WP plug-in to provers; E-ACSL turns annotations into run-time checks | distinguishes mathematical reals from floats | a comment language with a large tool behind it; the executable subset is separate |
-| JML [W7] | `//@` comments in Java | run-time checks, extended static checking, OpenJML | limited | lived for decades without being promoted into Java |
-| Code Contracts for .NET [W5] | library calls plus a post-compile rewriter | the rewriter for run-time checks; abstract interpretation | none | the rewriter fell behind the compiler; unsupported on .NET 5 and later |
-| Kani, Prusti, Creusot for Rust [W8, W9] | attributes (`#[requires]`, `#[ensures]`); Pearlite as an embedded spec language | bounded model checking (Kani), Viper (Prusti), Why3 (Creusot); Kani can replace a verified function by its contract (`stub_verified`) | Kani, built on a bit-precise model checker, can model IEEE arithmetic, which keeps it to small kernels [J] | attributes over an unchanged language are practical; the host compiler's evolution is the main maintenance cost |
-| Liquid Haskell, F* [W10] | refinement types | SMT inside the type checker | Liquid Haskell reasons about floating types as reals, as I understand it, which ignores rounding | needs an SMT solver in the type checker, out of reach for Plato's unification checker |
-
-The pattern [J]: systems that started as annotations over an unchanged language (SPARK 2005, ACSL,
-JML, the Rust verifiers) lasted while a team maintained the tool; the one that rewrote compiled
-output (Code Contracts) died when the compiler moved on. Option C's generated output is source, not
-rewritten binaries, which avoids that failure.
-
-### 3.6 Recommendation and the lowering
-
-The recommendation is the hybrid of section 0: the spec text stays as written, a tool lowers it, the
-compiler checks the result. The lowering rules:
-
-| Spec construct | Generated Plato (in `<stem>.spec.g.plato`, library `<LibraryBlock>Spec`) |
+| Property of Plato | Consequence for the specification language |
 |---|---|
-| k-th `invariant E` in `spec T` | `Inv_T_k(self: T): Boolean => E;` |
-| k-th `requires E` in `spec F(params): R` | `Pre_F_k(params): Boolean => E;` |
-| k-th `ensures E` | `Post_F_k(params, result: R): Boolean => E;` |
-| `ensures forall (x: X) in D : E` | `Post_F_k_At(params, result: R, x: X): Boolean => E;` and `Post_F_k_Domain(params, result: R)` returning `D` |
-| `measure M` | `Measure_F(params, result: R): Number => M;` |
-| `theorem N` with givens `g` | `Law_Theorem_N(g): Boolean => A1 ? (A2 ? (... ? C : true) : true) : true;` |
-| `conjecture N` | `Law_Conjecture_N(g)`, the same shape, reported separately |
-| `exists (x: X) by W : E` | `E` with `x` replaced by the witness term `W`; without `by`, documentation only |
+| Every value is immutable; every function is pure | Contracts refer to parameters directly; nothing needs `old()`, frame conditions, or alias reasoning. An invariant established when a value is constructed holds as long as the value exists, so checking at construction is complete. Specifications may call any function, so there is no separate ghost language as in Dafny or SPARK. |
+| No exceptions (SEMANTICS.md section 8) | A contract violation is a defect in the program, not a value of the program: a checked build stops through the host with a structured report, a release build checks nothing. Bad *data* remains a diagnostic (the sandbox's decision "Diagnostics, never exceptions"); a decoder never relies on a `requires` to reject a malformed file. |
+| Nominal typing, no subtyping | A constrained set of values is a named type with invariants, never a refinement subtype; a stronger promise is a new nominal type. Tolerance types give dimension checking by name. |
+| Interfaces are type classes; generic code is monomorphized | Laws belong in interfaces as type-class laws and are stamped onto every implementing type, which the stdlib's law runner already does by convention (`stdlib/tests/foundation.laws.plato`, preamble). A `Number` profile is just another compilation. |
+| One global namespace; no modules or visibility | Restricting construction names functions (`sealed by`), not a module boundary. |
+| Bounds sit between signature and body (`where`) | Contract clauses take the same slot. SEMANTICS.md section 5 already calls a function's `where` bound "a precondition on inference, checked where inference happens"; `requires` is its value-level twin. The grammar's comments insist that type, interface and function declarations read alike (`PlatoGrammar.cs`, `ConstraintList`), so type invariants take the same slot too. |
+| `match` lowers to a chain of conditionals with no new TIR node (`Elaborator.ElaborateMatch`) | `implies`, short-circuit `&&` and `||`, and bounded quantifiers lower the same way; only the constructs that tools must see (tolerance comparisons, contract lists, generator draws) need TIR of their own. |
+| The host intrinsic kernel is meant to shrink (`plato-378`) | An evaluator needs only that kernel; mathematics implemented in Plato gives every backend the same bits (section 5). |
 
-The output for the contract and the theorem in SPEC-DSL.md, once the defects of section 2 are
-corrected, would read:
+**Why an evaluator** [J]. Plato has no interpreter today: every execution goes through a writer and a
+host compiler (searched `src/` and `writers/` for interpreter or evaluator classes, none found [M]). A
+TIR evaluator removes code generation and the host build from the inner loop, which today cost 10.3 to
+11.6 s for the foundation tier alone in C# (TARGET-LANGUAGE.md 2.2). It also gives the language a
+definitional semantics that each backend is compared against, evaluates witnesses and constant
+construction sites at compile time, produces explanation traces by recording subexpression values,
+and hosts the reference and interval profiles without any writer knowing about them. Compiled
+backends remain the evidence for performance and for agreement across languages; the evaluator is
+where an author or agent learns, in seconds, whether a statement holds.
+
+### 2.2 Five kinds of statement
+
+The sandbox writes four different things as `Law_` functions, and the convention cannot tell them
+apart. Section 4.1 of the first version saw this ("model laws are predicates on user data"); counting
+it shows how much it matters.
+
+| Kind | What it says | Example | Run by the verifier as |
+|---|---|---|---|
+| Predicate | a property a given value may or may not have | `PointLiesOnCurve(m, d, i)` | never on its own; evaluated where a contract, invariant or validator cites it |
+| Contract clause | the caller's obligation (`requires`) or the function's (`ensures`) | `Discretize` ensures the sagitta predicate on every segment | at every call in checked builds; by the contract harness on generated arguments |
+| Type invariant | a property of every value of a type | a `Check` with an unmeasured `Worst` does not hold | at every construction |
+| Law | a property of the library's functions for all parameter values meeting its guards | `ReversedIsInvolution` | over pooled witnesses and generated cases, or proved |
+| Theorem, conjecture | a law with a justification and possibly a proof; or an open claim | `SharedPolylineClosesEveryEdge` | as a law until proved; a failing conjecture is a finding |
+
+[M], from the layer READMEs' law tables. In `04-discretization`, 25 of the 35 `Law_` functions are
+predicates over data (severity Error, W/E or Info), and 10 are laws (severity "test"). In
+`00-foundation`, of 34: 4 are "model" laws (three are one-line wrappers of `IsWellFormed`, one is a
+predicate over a magnitude), 3 are "convention" laws (properties of values built by the layer's own
+constructors), and 27 are library laws. A runner that treats every `Law_` as universally quantified
+would run the 25 predicates over arbitrary discretizations, where they are false by design (an
+arbitrary polyline does not lie on the curve): either false failures, or, behind guards, vacuous
+passes that look like evidence.
+
+So in the language: a predicate is an ordinary `Boolean` function, which may carry `requires`; a
+convention law becomes an invariant of a sealed type or an `ensures` of its constructors; a library
+law becomes a `law`. Laws are not callable from code; a property that is reused as a hypothesis is a
+predicate.
+
+### 2.3 Expression forms
+
+**Short-circuit `&&` and `||` on `Boolean`.** Today both are calls to `And` and `Or` and evaluate
+both operands (SEMANTICS.md section 6, in capitals). The cost in this sandbox, at 13:48 on
+2026-10-17 [M]: 187 guard tails of the form `pre ? claim : true` across the laws files; three laws in
+layer 4 that build dummy arrays so that an unguarded index cannot fault
+(`Law_ImagePointReevaluates`: `var uvs = ok ? m.ImagePoints(d, img) : 0.MapRange(j => UvCoordinate(0.0, 0.0));`);
+and nested `if`s in `stdlib/geometry/triangulation.library.plato` whose comment says "The nesting is
+load-bearing". In a pure language, the only observable difference between strict and short-circuit
+evaluation is a fault or the time taken; short-circuit evaluation is defined on strictly more
+programs. **Recommendation**: on `Boolean`, the elaborator lowers `a && b` to `a ? b : false` and
+`a || b` to `a ? true : b`. On any other `IBooleanAlgebra` type they stay calls to `And` and `Or`,
+since only a `Boolean` can be branched on. All five target languages short-circuit their native `&&`,
+GLSL included.
+
+**`a implies b`**, sugar for `a ? b : true`, with the lowest precedence of the binary operators. It
+names the pattern behind those 187 guards.
+
+**Bounded quantifiers.** `all x in D: e` and `any x in D: e`, short-circuit, where `D` is an array,
+an integer range (`n.Range`), or any finite collection; lowered to a loop that stops at the first
+decisive element. Over a continuous domain (a `NumberInterval`, an angle interval, a box in parameter
+space), a quantifier is allowed only in specifications: checked and verification builds sample it by
+a fixed plan (both ends, the midpoint, then pseudorandom points), and the interval profile can bound
+it soundly by subdivision; in ordinary code it is a compile error. Unbounded quantification is not an
+expression at all; it is a law's parameter list. The sandbox wrote 207 `forall` [M]; 110 have no
+domain and rely on the cited law's guard to bound an index, and 24 lines nest one quantifier inside
+another. Section 7.3 says how those become explicit domains.
+
+**Identity, `a === b`.** Derived for every type: bitwise on `Number` (a NaN is identical to a NaN
+with the same bits; +0 and -0 differ), element by element on arrays, tag and payload on sums. It is
+the executable form of "exact by construction" (SPEC-DSL.md section 2) and replaces the foundation's
+hand-written `Identical` (17 uses) and layer 4's `SameDiscretization`. In specifications, `==` on
+`Number` or on a type containing one is a warning that asks for `===` (the value is a copy) or a
+tolerance comparison (the value is computed).
+
+**Tolerance comparisons.** A comparison `m <= tol` or `m < tol` in which `tol`'s type implements the
+stdlib interface `ITolerance<M>` and `m` has type `M` is a tolerance comparison, and `a ~= b within tol`
+is `Distance(a, b) <= tol` through `IMetricSpace`. Section 2.9 gives the semantics.
+
+**`draw`**, only inside generator bodies (section 2.8).
+
+### 2.4 Type invariants and sealed construction
+
+Syntax: clauses after the `implements` list and before the body, for products and sums alike.
 
 ```plato
-// GENERATED from 04-discretization/discretization.spec by spec-lower. Do not edit.
-library EdgeDiscretizingSpec
+// The largest distance, in the model's length unit, at which two points count as the same
+// point: the STEP file's uncertainty_measure_with_unit for length.
+type LengthTolerance
+    implements IValue, ITolerance<Number>
+    invariant self.Value.IsFinite
+    invariant self.Value >= Number.SmallestNormal
 {
-    // spec Discretize, requires 1 (discretization.spec:12)
-    Pre_Discretize_1(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Boolean
-        => m.IsEdgeInRange(e);
-
-    // spec Discretize, ensures 4 (discretization.spec:17): a prenex forall over a finite range
-    Post_Discretize_4_At(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria,
-                         result: EdgeDiscretization, i: Integer): Boolean
-        => Law_PointsLieOnCurve(m, result, i);
-    Post_Discretize_4_Domain(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria,
-                             result: EdgeDiscretization): Array<Integer>
-        => result.Points.Count.Range;
-}
-
-// GENERATED from 08-pipeline/pipeline.spec by spec-lower. Do not edit.
-library StepToMeshSpec
-{
-    // theorem WatertightByConstruction (pipeline.spec:3)
-    Law_Theorem_WatertightByConstruction(m: BrepModel, o: MeshingOptions): Boolean
-        => Law_IndicesInRange(m)
-            ? (Law_EveryEdgeUsedTwiceWithOppositeOrientation(m)
-                ? (Law_LoopsChainEndToStart(m) ? Law_MeshIsClosed(MeshModel(m, o).Mesh) : true)
-                : true)
-            : true;
+    Value: Number;
 }
 ```
 
-Beside it, one manifest entry per generated function:
+**Meaning.** Every value of the type satisfies every invariant; clauses are read in order, and a
+later clause may assume the earlier ones. Values never change, and every value comes from a
+construction: the derived constructor, a tuple converted at a typed boundary, a sum-case factory, a
+derived setter, or host code calling the generated constructor. So the obligation is exactly: at
+each construction site, the new value satisfies the invariants.
 
-```json
-{ "function": "Post_Discretize_4_At", "kind": "ensures", "subject": "Discretize", "clause": 4,
-  "source": "04-discretization/discretization.spec:17", "bound": ["i: Integer"],
-  "domain": "Post_Discretize_4_Domain", "cites": ["Law_PointsLieOnCurve"] }
+**Three ways a language can treat construction** [J]:
+
+| Option | Precedent | Verdict for Plato |
+|---|---|---|
+| Smart constructors only: construction restricted to a few functions | Haskell's module exports, Ada private types | Cannot state a property of a value on its own; needs a module boundary Plato does not have. Useful as an addition, below. |
+| Proof-carrying values: the type checker proves every site | Liquid Haskell, F* refinement types [W10] | Needs an SMT solver inside the type checker and a subtyping relation between a type and its refinements, which a nominal, monomorphized checker with tiered overload resolution does not have; and Liquid Haskell reasons about floats as reals, which is wrong for this library. |
+| Checked construction sites: each construction is an obligation, discharged statically where possible and checked at run time in a checked build | Eiffel class invariants [W2], Ada 2012 `Type_Invariant` and `Dynamic_Predicate` [W30] | **Chosen.** Fits a pure language exactly, since there is no mutation after construction. |
+
+**`sealed by`**, opt-in, names the only functions whose bodies may construct the type; anywhere else,
+a construction, tuple conversion, setter or `default` of the type is a compile error. It buys three
+things that an invariant cannot:
+
+1. Properties that relate a value to the arguments it was built from. The foundation author wanted
+   "`Holds` is exactly `Worst <= bound`", but `bound` is not a field of `Check`, so no invariant can
+   say it; the spec file fell back to a constructor list and a comment (`foundation.spec.plato`,
+   `spec Check`).
+2. Induction over constructors. If every sealed constructor establishes a property, given that
+   property of any argument of the same type, then every value has it. The foundation's three
+   "convention laws" become theorems with a mechanical proof shape, and the README's open question 8
+   ("Phase 3 should check that every `Check_` builds through `CheckWithin`, `CheckExact` or
+   `WorseOf`") becomes a compile error.
+3. A generator for free: random compositions of the sealed constructors (section 2.8).
+
+```plato
+// One law evaluated over one value. Built only by CheckWithin, CheckExact and WorseOf, whose
+// contracts make Holds exactly "Worst <= bound" for the bound each was given.
+type Check
+    sealed by CheckWithin, CheckExact, WorseOf
+    invariant self.Worst.IsNaN implies !self.Holds
+{
+    Law: String;
+    Holds: Boolean;
+    Worst: Number;
+    Where: Provenance;
+}
+
+// The checks and diagnostics of one validation; every failed check has a diagnostic.
+type Report
+    sealed by Empty, Merge, ReportOf
+    invariant all k in self.Checks.Count.Range:
+        self.Checks[k].Holds || self.Diagnostics.Any(d => d.Code == self.Checks[k].Law)
+{
+    Checks: Array<Check>;
+    Diagnostics: Array<Diagnostic>;
+}
 ```
 
-Three details matter [J]:
+**A derived precondition for construction.** Each type with invariants gets a static
+`T.CanConstruct(fields...)` that evaluates the invariants on would-be fields. It makes official the
+stdlib's existing convention for partial operations ("`CanInvert: Boolean` alongside `Invert`",
+SEMANTICS.md section 8). The STEP decoder writes
+`LengthTolerance.CanConstruct(v) ? ... : <diagnostic>`, so a malformed file yields a diagnostic, and
+the guard discharges the construction obligation syntactically.
 
-- **Quantifiers in prenex position only, at first.** A universal quantifier at the head of a clause
-  lowers to a pointwise function, which is SPEC-DSL's own convention for laws. A quantifier nested
-  inside an expression, or an `exists` without a witness term, has no executable reading, and would
-  also need an expression-level grammar change in `parakeet` (section 2). Narrowing the DSL to
-  clause-level `forall` and `exists ... by` loses none of the examples written so far.
-- **The parser can be small.** Since the compiler checks the expressions, the tool needs only their
-  extents: a subclass of `PlatoGrammar` that overrides `StartRule` with block rules and reuses
-  `Expression`, `TypeExpr`, and `FunctionParameterList`, then copies expression text into the
-  generated file and records line offsets for mapping findings back.
-- **The spec repeats each function's signature.** That duplicates the declaration, but it also
-  disambiguates overloads (VOCABULARY.md has two `Domain` and two `Eval` functions). Keep it, and
-  have the checker require that it matches exactly one declaration.
+**New promises are new nominal types.** The layer 4 author had to weaken `EdgeDiscretization`'s
+invariant from "strictly increasing" to "strictly monotone", because `Reversed` builds the decreasing
+direction, and to repeat "canonical" as an `ensures` on four functions and an invariant of
+`EdgeDiscretizations` (README, "Changes to the contract"). In a nominal language the canonical form
+can be its own type, `CanonicalDiscretization { Value: EdgeDiscretization; }` with
+`invariant self.Value.RunsAlongCurve`, which `Discretize` returns and `EdgeDiscretizations` stores. The
+promise then lives in one place, and a function that needs canonical input says so in its signature.
 
-### 3.7 The staged path in detail
+**Other rules.** `default` of a type with invariants is rejected unless the zero value satisfies them,
+which the evaluator decides at compile time. An invariant may not construct a value of its own type,
+directly or through calls, since checking it would recurse. Invariants of interfaces are not proposed:
+an interface is a constraint, not a set of values.
 
-**Stage 0, hours.** Stage a copy of the stdlib without the colliding B-rep declarations, add the
-sandbox's real `.plato` files (not the spec files), and run `Plato.CLI lint` naming every layer
-folder (`lint` does not recurse, VERIFICATION.md rung 0). For the spec files, a script extracts
-identifiers and asks Navigation (`plato_search_symbols`) for each; unknown names are findings. This
-already catches the `UpTo`, `MeshModel`, and `Law_MeshIsClosed` cases of section 2.
+### 2.5 Function contracts
 
-**Stage 1, two to four days.** The lowering tool and `spec check`:
+Syntax: clauses after the return type and any `where` bound, before the body.
 
-- lower spec files to `*.spec.g.plato` plus the manifest; compile the staged corpus; map diagnostics
-  back to spec lines;
-- structural findings: a bodiless function in a `.library.plato` file with no `spec` block or no
-  `deferred`; a `spec F(...)` header that matches no declaration, or several; a `tested by` or
-  `constructor` naming nothing; a theorem with no `tested by`; a `Check_` whose comment names no law;
-- authoring lints from SPEC-DSL.md section 5, over the real files: a numeric literal in a comparison
-  inside a `Law_`; `==` or `!=` on operands of type `Number`, a point, or a vector (with an explicit
-  escape such as a `SameBits(a, b)` helper, as the owner decides); `&&` or `||` with an operand that
-  indexes or divides; a law body whose top level, after the guard chain, is a conjunction ("one
-  statement per law"); a `Witness_` whose first parameter is not `_: T` with return type `T`;
-- a traceability report, and law tables generated into each layer README between markers (section
-  7.4).
+```plato
+// The representative of t modulo period in [0, period): t - period floor(t / period), corrected
+// once on each side (README, "A periodic domain as a quotient").
+Wrap(t: Number, period: Number): Number
+    requires t.CanWrap(period)
+    ensures result >= 0.0 && result < period
+    ensures PeriodicDistance(result, t, period) <= Rounding(t.Abs + period)
+{
+    var r = t - period * (t / period).Floor;
+    var s = r < 0.0 ? r + period : r;
+    return s >= period ? s - period : s;
+}
 
-Expose the same check as a command and later as an MCP tool beside `plato_check`, so an authoring
-agent runs it in its edit loop.
-
-**Stage 2, one to two weeks, after the validators compile.** Execution, in the order that is useful
-before any algorithm exists: laws on witnesses, oracles against closed forms, negative witnesses,
-calibration pairs, then the contract harness. Section 5 gives the details.
-
-**Stage 3, weeks, during implementation.** Shrinking, minimal STEP files, metamorphic families,
-mutation, coverage. Sections 5 and 7.
-
-**Stage 4, optional.** Bounded consistency checks and Dafny proofs. Section 4.
-
-**Promotion to Plato (option A)** becomes worth discussing when three facts hold: the constructs
-used across all nine layers are known, none changed shape during one implementation cycle, and some
-benefit needs the compiler (for example, enforcing `constructor` lists at every call site without a
-separate lint). Until then the lowered form is the cheaper home.
-
-## 4. Proof: what is realistically provable
-
-### 4.1 Three kinds of statement
-
-"Prove" means something different for each of the three kinds of statement in the sandbox [J]:
-
-- **Model laws** (VALIDATION-MATH.md section 8, kind "model") are predicates on user data: a STEP
-  file either satisfies `Law_EulerPoincare` or it does not. There is nothing to prove about a model
-  law itself. What can be proved is that the laws are consistent (some model satisfies all of them),
-  that one implies another, and that a validator computes the predicate it names.
-- **Library laws** (kind "library, test") are properties of the library's functions: determinism,
-  or that reversing an edge leaves the mesh unchanged. They can be proved only about a body, and only
-  once the body is translated into a prover's language.
-- **Theorems** relate the two: model laws on the input, through the contracts of deferred functions,
-  imply laws on the output. These are where a proof pays, because a counterexample would be a silent
-  defect in every mesh.
-
-### 4.2 The 71 catalogued laws by provability
-
-[M] from the table in VALIDATION-MATH.md section 8. The layers are not yet written, so this is the
-catalogue the authors start from.
-
-| Class | Count | Examples | What a proof can do |
-|---|---|---|---|
-| Combinatorial: integers, indices, tags | 21 | `Law_IndicesInRange`, `Law_LoopsChainEndToStart`, `Law_EdgeUsedTwiceInClosedShell`, `Law_EdgeUsesRunOpposite`, `Law_ShellOrientable`, `Law_EulerPoincare`, the mesh edge and Euler laws, `Law_MeshEulerMatchesBrep` | decidable at any fixed size; consistency and implication can be checked by SMT or SAT at small sizes; statements over every size need induction |
-| Exact statements about computed floats: signs, bitwise copies, determinism, exact symmetries | 17 | `Law_FaceWindingMatchesSameSense`, `Law_DiscretizationEndsAtVertices`, `Law_PowerOfTwoScalingCommutes`, `Law_MeshingIsDeterministic`, `Law_BezierSagittaBoundedByControlHull` | they hold of a particular floating-point computation; a few have real-number versions provable in a proof assistant (the Bezier hull bound); the rest are tested |
-| Tolerance laws | 33 | `Law_PointsLieOnCurve`, `Law_SagittaWithinChordal`, `Law_ElementDeviationWithinChordal`, `Law_AngleDefectSumIdentity`, `Law_SolidVolumeWithinTube` | empirical over floats; their exact-arithmetic versions split into identities (provable) and modelling bounds (provable for analytic cases only) |
-
-The tolerance class splits in a way that changes how each law should be tested (section 5.9):
-
-- **Rounding-only laws** state an identity that is exact over the reals: the angles of a flat
-  triangle sum to pi, the angle defects of a closed mesh sum to 2 pi chi, the vector area of a closed
-  mesh vanishes. Their tolerance absorbs rounding, so it should come from an error bound for the
-  computation, not from the model's tolerance.
-- **Modelling-tolerance laws** compare against `epsL` or a meshing criterion: points on curves,
-  chordal deviation, normal deviation, area envelopes.
-
-### 4.3 Decidable after translation
-
-These need no induction and fit an SMT solver's decidable fragments [J, with W11 for the
-fragments]:
-
-- **Euler-Poincare arithmetic.** `chi = V - E + 2F - L` equals `V - E + F - R` given `R = L - F`:
-  trivial LIA. Its parity and bound for one model are a computation, not a proof.
-- **Orientation parity.** `Law_EdgeUsesRunOpposite` states that two effective directions in
-  {-1, +1} sum to zero; implications between such laws are LIA.
-- **Vertex layout injectivity.** `VertexLayout` numbers model vertices first, then edge interiors by
-  edge, then face interiors by face (VOCABULARY.md, `06-mesh`). That two different (edge, k) pairs
-  never receive the same index, given that `EdgeInteriorStart` is a prefix sum of interior counts, is
-  linear arithmetic over arrays with one universally quantified index, inside the array property
-  fragment that Bradley, Manna, and Sipma showed decidable [W11].
-- **The discrete Gauss-Bonnet identity, symbolically.** With pi as an uninterpreted positive
-  constant, "each triangle's angles sum to pi" as a hypothesis, and `3T = 2E`, the identity
-  `sum of defects = 2 pi (V - E + T)` is LRA once the sums are named.
-- **Bounded consistency of the combinatorial laws.** Encode a model with at most, say, 16 vertices,
-  24 edges, and 12 faces as bounded integer arrays, conjoin the 21 combinatorial laws, and ask for a
-  model. A satisfying model is a witness; an unsatisfiable core names laws that contradict each
-  other. Asking for `B and C and not A` checks whether law `A` follows from `B` and `C` at that size.
-  PLAN.md's done condition 5 ("no law in one layer that contradicts a law in another") becomes a
-  mechanical check for this class. The small-scope hypothesis behind Alloy [W12] is the argument
-  that small bounds find most specification errors.
-
-### 4.4 Needs induction or a proof assistant
-
-- **`WatertightByConstruction` over an arbitrary model.** The conclusion quantifies over every mesh
-  edge of a model of any size, so it needs induction over faces and edges, or a counting argument
-  over finite sets. It is combinatorial: closedness is defined on vertex indices, so positions and
-  floating point never enter. That makes it provable in Dafny or Lean with the geometry left
-  abstract.
-- **Euler-Poincare parity as a theorem** (every valid closed shell has an even reduced `chi` of at
-  most 2) is the genus theorem for combinatorial surfaces. Dufourd proved it for hypermaps in Coq,
-  together with Euler's formula, and the development is a published package [W13]. A B-rep's coedge
-  structure is a combinatorial map, so that library is the nearest reusable formalization.
-- **Counting under refinement** (VALIDATION-MATH.md 4.4: an edge cut into `k` segments contributes
-  `k` mesh edges and `k - 1` interior vertices, net -1, as the edge alone does) is a sum over all
-  edges, which SMT solvers handle poorly and an inductive lemma handles easily.
-- **Real-analysis lemmas**: the quad defect lemma of VALIDATION-MATH.md 4.5, the Bezier hull bound,
-  the sphere bracketing inequalities. Lean with mathlib has real trigonometry and inner-product
-  geometry. MetiTarski proves universally quantified inequalities over sin, cos, exp, and sqrt by
-  replacing those functions with rational bounds [W14]; the circle sagitta bound
-  `R (1 - cos(theta / 2)) <= d` for every segment angle `theta` at most `2 acos(1 - d / R)` is a
-  one-line problem for it.
-
-Flyspeck, the formal proof of the Kepler conjecture, is the precedent for the split this sandbox
-needs: combinatorial and analytic facts proved in a proof assistant, numeric inequalities discharged
-by verified interval arithmetic [W15].
-
-### 4.5 Inherently empirical
-
-Every tolerance law over floating-point evaluation of curves and surfaces stays empirical [J]:
-
-- The SMT theory of floating point covers `+ - * / sqrt` and rounding modes by encoding them as bit
-  operations, at a cost that grows quickly with expression size, and has no `sin` or `cos`. cvc5
-  supports transcendental functions over the reals by incremental linearization, which is incomplete
-  [W16]; dReal decides formulas with transcendental functions up to a chosen numerical slack [W17].
-  None of them reasons about the platform's floating-point `sin`.
-- Lean's `Float` is opaque to the logic: the kernel cannot reason about it without extra axioms
-  [W18]. Proofs are about real numbers, and the gap to the implementation is covered by tests.
-
-The honest tool for this class is the combination the sandbox already plans: witnesses with
-closed-form oracles and sampling of continuous parameters, plus interval enclosures where a guarantee
-is wanted (section 5.9).
-
-### 4.6 Translating a theorem
-
-A Dafny statement of `WatertightByConstruction`, as a translation of the spec block would emit it.
-The proof body is the hard part, written by a person or an agent:
-
-```dafny
-datatype Use = Use(edge: int, forward: bool)
-datatype Model = Model(vertexCount: int, edgeCount: int, loops: seq<seq<Use>>,
-                       faces: seq<seq<int>>, interiorPoints: seq<int>)
-predicate IndicesInRange(m: Model) { ... }               // translated from the Plato law
-predicate EdgeUsedTwiceOpposite(m: Model) { ... }
-predicate LoopsChainEndToStart(m: Model) { ... }
-function Layout(m: Model): seq<int> { ... }              // VertexLayout: concrete prefix sums
-// The deferred function: no body; its spec contract becomes an axiom.
-function TriangulateRegion(boundary: seq<int>, interior: seq<int>): seq<Tri>
-  ensures BoundarySegmentsUsedOnceInLoopDirection(boundary, TriangulateRegion(boundary, interior))
-  ensures InteriorEdgesSharedTwiceOpposite(boundary, TriangulateRegion(boundary, interior))
-predicate MeshIsClosed(t: seq<Tri>) { forall e :: e in EdgesOf(t) ==> IncidentOpposite(t, e) }
-lemma WatertightByConstruction(m: Model, o: Options)
-  requires IndicesInRange(m) && EdgeUsedTwiceOpposite(m) && LoopsChainEndToStart(m)
-  ensures MeshIsClosed(MeshModel(m, o))
+// The check of a measured law over its samples: it holds exactly when worst <= bound.
+CheckWithin(law: String, worst: Number, bound: Number, where: Provenance): Check
+    ensures result.Holds == (worst <= bound)
+    ensures result.Law == law
+    ensures result.Worst === worst
+    => Check(law, worst <= bound, worst, where);
 ```
 
-What has to be axiomatized, in Dafny or in Lean:
+| Clause | Meaning | Checked build |
+|---|---|---|
+| `requires e` | the caller's obligation; clauses in order, each may assume the earlier | at entry; a failure blames the caller |
+| `ensures e` | the function's obligation whenever every `requires` held; may name `result` | at exit; a failure blames the function |
+| `decreases e` | on a recursive function or a `while` loop (`while (c) decreases e { ... }`): a non-negative quantity that strictly decreases at each recursive call or iteration | at each call or iteration; a hang becomes a located failure |
+| `cost e` | the size the work grows with (the sandbox's `measure`, renamed so it is not mistaken for termination) | none; used by growth tests |
+| `deferred "<family>"` | in place of a body: the algorithm is still to be written in Plato | traps with "deferred", or runs a `reference` body |
 
-1. **`Number` as a real number.** The proof then holds for exact arithmetic. For this theorem it
-   makes no difference, because no position appears in it.
-2. **Every deferred function, by its contract.** The spec block's `ensures` clauses become axioms.
-   The proof is only as good as those clauses, which is where the attempt pays (section 4.7).
-3. **Intrinsics** (the stdlib's bodiless functions), by whatever the proof uses of them.
-4. **Plato bodies, translated or restated.** Plato is pure and has no exceptions, so translating its
-   functions into Dafny functions is straightforward in principle. The source should be the TIR,
-   where overloads are resolved and conversions are explicit, not the source text. Judged by the
-   existing writers (1,181 to 2,639 lines for GLSL, Rust, and TypeScript [M]), a Dafny writer for the
-   subset that index-level code uses (product types, sums as datatypes, `Array` as `seq`, `Map` and
-   `Reduce`, `? :`, `match`) is one to three thousand lines.
+**`deferred` is not `intrinsic`.** Today a bodiless function is an intrinsic obligation that the host
+fulfils (SEMANTICS.md section 3), and the sandbox overloads it to mean "not written yet"; such a
+function passes every gate and degrades at code generation into a throwing member or a self-calling
+stub (PLATO-PRIMER.md D.7). With `deferred` the two separate. A release build that reaches a deferred
+function is an error naming it. In checked and verification builds, every statement whose closure
+reaches a deferred function is reported **blocked by** it. That report is a progress meter for
+TASKS.md: implementing `Discretize` unblocks a known list of statements.
 
-In Lean the same statement is a theorem over structures with `Finset` cardinalities, where mathlib's
-finite sums and double counting help. Lean is the better choice for the analytic lemmas of 4.4, and
-Dafny for the index-level theorems, whose proofs are mostly sequence and quantifier bookkeeping that
-Z3 automates. Language models now write Dafny proofs with measurable success (DafnyBench, Loughridge
-and others, 2024), which makes an agent-written proof plausible, not assured.
+**`reference` bodies** (optional). A function may carry, beside its real body or instead of it, a
+slow and evidently correct `reference => ...` body, checked against the same contract. Before the real
+body exists, the reference stands in for it, so the layers above can be tested; this is Kani's
+"stub by a verified contract" idea [W8] with a body rather than a contract. Where the result is unique
+(an exact sagitta, a closed-form area), the reference is also a differential oracle for the optimized
+body.
 
-### 4.7 What a proof attempt is worth here
+**Contracts on interface members** apply to every implementing function, checked on each
+monomorphized instance; an implementation's own `requires`, if it has any, must follow from the
+interface's (a VC).
 
-The value of attempting `WatertightByConstruction` lies less in the proof than in the missing
-assumptions it forces into the spec [J]. Reading the statement against VALIDATION-MATH.md suggests
-two:
+The largest contract in the sandbox, merged onto its declaration. Predicates lose the `Law_` prefix
+(section 2.2), and the quantifier domains are explicit (`SegmentCount.Range`, and
+`InteriorPointIndices`, a helper the layer would declare for the indices 1 to count - 2):
 
-- **Degenerate sides.** At a sphere's pole or a cone's apex, several parameter-space boundary points
-  map to one model vertex (VALIDATION-MATH.md 1.3 and 5.3). If `VertexLayout` gives each its own
-  index, the mesh has coincident vertices; if they share one, triangles along that side degenerate.
-  The theorem's `assume` list says nothing about degenerate edges or vertex loops, so either an
-  assumption is missing (`Law_EdgeHasPositiveExtent`, or a stated rule for poles) or the conclusion
-  needs a case.
-- **The strength of `TriangulateRegion`'s contract.** The proof needs "each boundary segment is used
-  by exactly one triangle, in the loop's direction" and "each interior edge by exactly two, in
-  opposite directions". If the face-meshing author writes a weaker `ensures`, for example only that
-  the triangles cover the region, the theorem does not follow, and tests on a box would not show it.
+```plato
+// The canonical discretization of one edge.
+Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization
+    requires m.CanDiscretize(e, c)
+    ensures result.Edge == e
+    ensures result.RunsAlongCurve
+    ensures result.Parameters.First === m.EdgeDomain(e).Range.Start
+    ensures result.Parameters.Last === m.EdgeDomain(e).Range.End
+    ensures result.Points.First === m.Vertices[m.DomainStartVertex(e)].Point
+    ensures result.Points.Last === m.Vertices[m.DomainEndVertex(e)].Point
+    ensures all i in result.Points.Count.Range: PointLiesOnCurve(m, result, i)
+    ensures all s in m.EdgeSeeds(e): result.ContainsParameter(s)
+    ensures m.IsDegenerateEdge(e) implies result.SegmentCount == 1
+    ensures m.IsClosedEdge(e) implies result.SegmentCount >= c.ClosedEdgeMinimum
+    ensures result.SegmentCount >= m.MinimumSegmentCount(e, c, floors)
+    ensures all i in result.SegmentCount.Range: SagittaWithinChordal(m, result, c, SamplePlan.DiscretizationPlan, i)
+    ensures all i in result.SegmentCount.Range: TangentDeviationWithinHalfAngular(m, result, c, SamplePlan.DiscretizationPlan, i)
+    ensures all i in result.InteriorPointIndices: TurningAngleWithinAngular(m, result, c, i)
+    ensures all i in result.SegmentCount.Range: SegmentWithinMaxLength(m, result, c, i)
+    ensures all i in result.SegmentCount.Range: ShortSegmentIsForced(m, result, c, floors, i)
+    ensures all img in m.EdgeImages(e): all i in result.SegmentCount.Range:
+        ImageChordWithinChordal(m, result, c, img, SamplePlan.DiscretizationPlan, i)
+    cost result.Parameters.Count
+    deferred "seeds; a closed-form uniform count for conics, raised until the image criteria hold; adaptive bisection at parameter midpoints with three-sample tests for other curves; then the count floors";
 
-These are readings of the design, not verified defects; the layer files do not exist yet.
+// Point i lies on the edge's curve at parameter i, within the model's length tolerance.
+PointLiesOnCurve(m: BrepModel, d: EdgeDiscretization, i: Integer): Boolean
+    requires m.IsEvaluable(d)
+    requires d.Points.IsValidIndex(i)
+    => d.Points[i] ~= m.PointOnEdge(d.Edge, d.Parameters[i]) within m.Tolerances.Length;
+```
 
-## 5. Tests: what to generate
+The predicate's guards are now `requires`: calling it out of range is a defect the checked build
+reports, rather than a silent `true` that a vacuity count must later detect.
 
-### 5.1 From each law, a property test
+### 2.6 Laws
 
-The runner already turns a `Law_` into a property test (section 2). For this sandbox it needs five
-changes [J]:
+```plato
+// Adding a period does not change the wrapped value, measured around the circle.
+law WrapIgnoresWholePeriods(t: Number, period: Number, tol: ParameterTolerance)
+    requires t.CanWrap(period)
+    requires (t + period).CanWrap(period)
+    requires tol.IsResolvable(t.Abs + period)
+    => PeriodicDistance((t + period).Wrap(period), t.Wrap(period), period) <= tol;
 
-1. **Witness-driven inputs.** Run a law whose first parameter is `BrepModel` on every `Witness_`
-   that returns `BrepModel`, and on each witness under each transform of section 5.7. Pseudorandom
-   models are useless: VALIDATION-MATH.md 7.1 measured that random 12-vertex polygons are simple
-   0.03% of the time.
-2. **Dependent generation.** A typed index parameter that follows a model parameter ranges over that
-   model's table: enumerate every index for small witnesses, plus -1 and the count, to exercise the
-   guard. A continuous parameter samples its domain: both ends, the period seam, B-spline knots
-   (where derivatives jump), midpoints, then random points.
-3. **Tolerance parameters are never random.** `Tolerances` comes from the witness; criteria such as
-   the chordal deviation `d` are drawn log-uniformly from a range relative to the witness's size.
-   The current runner would hand a law a negative tolerance, since it draws from [-10, 10].
-4. **Vacuity.** The tool splits each law's leading guard chain (the `? :` whose else branches are
-   `true`, a shape SPEC-DSL fixes) into a generated `Guard_Law_X`. The runner reports, per law, how
-   many inputs passed the guard, and fails a law whose rate is zero, as VALIDATION-MATH.md 7.1
-   requires.
-5. **Counterexamples as data**: the law, the witness's name and parameters, the transform, the
-   values of bound variables, the measure against the tolerance, the provenance, and a command that
-   reruns exactly that case.
+// Reversing twice gives back the same discretization, bit for bit.
+law ReversedIsInvolution(d: EdgeDiscretization)
+    => d.Reversed.Reversed === d
+    by smt;
 
-### 5.2 From each contract, a harness around the function
+// A tighter chordal bound never yields fewer points, the other criteria and the floors fixed.
+law TighterChordalNeverFewerPoints(m: BrepModel, e: BrepEdgeIndex in m.EdgeIndices,
+        c: DiscretizationCriteria, floors: SegmentFloors, chordal: Number in NumberInterval(0.0, c.Chordal))
+    requires m.CanDiscretize(e, c)
+    requires chordal > 0.0
+    => m.Discretize(e, c.WithChordal(chordal), floors).Parameters.Count
+        >= m.Discretize(e, c, floors).Parameters.Count;
+```
 
-For each `spec F`, a generated test calls `F` on every witness input that satisfies all `Pre_F_k`,
-then evaluates every `Inv_` of the result type, then every `Post_F_k` (and every `Post_F_k_At` over
-its domain), in that order, so later clauses may index what earlier ones bound. A `Pre_` that fails
-on a witness is a witness defect, reported separately. The first failing clause is reported by its
-spec line, not by its generated name.
+**Meaning.** For every combination of parameter values drawn from their domains that satisfies the
+`requires` clauses in order, the claim holds. The old `tol.IsWellFormed` guard disappears: the
+`ParameterTolerance` type's invariant guarantees it.
 
-Two uses before all bodies exist:
+**Parameter domains.** Without an annotation, a parameter of type `T` is drawn from `T`'s **pool**:
+every witness and every generator declared for `T`, plus a derived generator when `T`'s structure
+allows one (section 2.8). `p: T in e` draws from a domain evaluated after the earlier parameters,
+which is how dependent generation is written (an edge index of the model just drawn; a chordal bound
+below the criteria's). `p: T from G` names one generator or witness. Finite domains with few elements
+(a payload-free sum, `Boolean`, a short range) are enumerated rather than sampled, as SmallCheck does
+[W31].
 
-- **Contracts as stubs.** A layer can be tested against a stand-in for a lower layer that satisfies
-  the lower layer's contract trivially (for `Discretize`, dense uniform sampling). Kani's
-  `stub_verified` does this for verified functions [W8].
-- **Blame at layer boundaries.** In integration tests, check each callee's `ensures` at the call. A
-  face-meshing failure caused by a discretization that broke its contract is then reported against
-  `Discretize`, which keeps an agent from debugging the wrong layer. This is the blame assignment of
-  higher-order contracts (Findler and Felleisen, ICFP 2002).
+**Guards and vacuity.** The verifier counts, per law, how many cases passed every `requires`, fails a
+law that never evaluated its claim, and warns when more than nine cases in ten were discarded ("give a
+domain or a generator"). The foundation README's open question 4 (a sample count in `Check`, for a
+vacuity rate) is answered without changing the type: the verifier counts.
 
-### 5.3 From invariant lists, a validator per type and a constructor obligation
+**Tolerance parameters** are drawn from their type's pool, which by the invariants above contains only
+positive, finite, normal values, spread over magnitudes. Today's runner draws every `Number` from
+[-10, 10], so about half its tolerance draws fail the guards (00-foundation README, "Laws").
 
-- `Validate_T(self): Array<Check>`, generated from the `Inv_T_k`, used by the harness and available
-  to the pipeline's validation levels.
-- **The constructor obligation**, in two parts: every function in the `constructor` list has an
-  `ensures` covering each invariant (a manifest check), and no other function builds a `T` (a lint
-  over the TIR, where constructor calls and tuple-to-struct coercions are explicit).
-- Optionally, a generic product type `Checked<T> { Value: T; Checks: Array<Check> }` and generated
-  wrappers `Checked_F(params): Checked<R>` that evaluate pre- and postconditions as data. Plato
-  forbids generic sums, not generic products (SEMANTICS.md sections 2 and 8), so this works today and
-  keeps decision D8, diagnostics rather than exceptions.
+**Interface laws.** A `law` inside an `interface` is a type-class law: it is stamped onto every
+implementing type, and each (type, law) pair is reported. The stdlib already writes generic laws over
+interfaces in `stdlib/tests/foundation.laws.plato`; inside the interface, the law travels with the
+obligation it constrains.
 
-### 5.4 From theorems, lowered laws and a cross-reference
+```plato
+interface IMetricSpace
+{
+    Distance(a: Self, b: Self): Number
+        ensures result >= 0.0 || result.IsNaN;
 
-`Law_Theorem_N` runs as a law over witnesses. The checker fails a theorem with no `tested by`, a
-`tested by` that names a missing law, and a theorem whose lowered law is vacuous on every witness
-(no witness satisfies its assumptions). A `conjecture` that fails is a finding, not a test failure.
+    // The order of the arguments does not change the distance, bit for bit.
+    law DistanceIsSymmetric(a: Self, b: Self)
+        => Distance(a, b) === Distance(b, a);
+}
+```
 
-### 5.5 From witnesses, a corpus with known answers
+For `Point3D`, `a - b` and `b - a` differ only in sign, so the computed distance is symmetric exactly,
+and the foundation's `Law_CoincidentIsSymmetric` becomes a consequence rather than a separate law.
 
-Each `Witness_` is stored with the facts VALIDATION-MATH.md 7.2 tabulates (V, E, F, L, R, S, G, chi,
-area, volume) as data. Generated tests then check, before any mesher exists, that every positive
-witness satisfies every model law, that every negative witness fails exactly the laws it was built
-to break and no others (a discrimination matrix of witnesses by laws), and that every oracle agrees
-with its closed form. Lesson 10 of research/EXISTING-MESHER-LESSONS.md, a guard that never fired, is
-the argument for the negative half.
+**Examples.** A law with no parameters is a unit test with a known answer:
+`law UnitBoxEulerCharacteristic => BrepModel.UnitBox.EulerCharacteristic == 2;`.
 
-### 5.6 Shrinking
+**Style.** "One statement per law" (SPEC-DSL.md section 2) stays, as a lint on a top-level `&&` in a
+claim.
 
-Shrinking a B-rep by deleting parts breaks closedness, so the precondition fails and the smaller
-model is rejected. Two approaches work [J]:
+### 2.7 Theorems and conjectures
 
-- **Shrink the generator, not the model.** For parameterized witnesses
-  (`Witness_ExtrudedStar(seed, n, height)`, `Witness_Torus(R, r)`) and transform stacks, shrink the
-  parameters: fewer star points, rounder radii, height 1, rotation to the identity, scale exponent
-  to 0. Every candidate is valid by construction. This is Hypothesis's integrated shrinking [W19];
-  in C#, CsCheck and FsCheck provide generators with shrinking [W20], which argues for replacing the
-  hand-written `ValueGen` rather than extending it.
-- **Shrink by locality.** Most laws are per face, per edge, or per pair of faces. The smallest
-  reproducer of a per-face failure is that face alone, as an open shell with its loops, edges, and
-  surfaces. Section 7.2 extends this to STEP files.
+A theorem is shaped like a law: its parameters are the `given` variables, its `requires` are the
+assumptions (predicates), its body is the conclusion. It adds `because "<proof sketch>"`,
+`tested by <laws>`, and optionally a claimed route: `by exhaustion`, `by smt`, or
+`proof "<file.lean>"`. A conjecture has no `because`, and its failure is reported as a finding, not
+as a failed build.
 
-A shrunk case must fail **the same law with the same diagnostic code**, or reduction drifts to an
-unrelated failure, a known trap in test-case reduction (C-Reduce, Regehr and others, PLDI 2012).
+```plato
+// The sharing principle: the two faces of an edge meet point for point.
+theorem SharedPolylineClosesEveryEdge(m: BrepModel, ds: EdgeDiscretizations,
+        b1: FaceBound, c1: Coedge, b2: FaceBound, c2: Coedge, k: Integer)
+    requires DiscretizationsCoverEdges(m, ds)
+    requires m.IsEvaluable(ds.ByEdge[c1.Edge])
+    requires c1.Edge == c2.Edge
+    requires m.CoedgeRunsForwardOnCurve(b1, c1) != m.CoedgeRunsForwardOnCurve(b2, c2)
+    requires ds.ByEdge[c1.Edge].Points.IsValidIndex(k)
+    => m.AlongCoedge(ds.ByEdge[c1.Edge], b1, c1).Points[k]
+        === m.AlongCoedge(ds.ByEdge[c1.Edge], b2, c2).Points[ds.ByEdge[c1.Edge].Points.Count - 1 - k]
+    because "AlongCoedge returns the stored discretization when the coedge runs with the curve and
+             its reversal otherwise; the two coedges run opposite ways, and Reversed copies without
+             arithmetic, so point k of one is point count - 1 - k of the other."
+    tested by ReversedReversesPoints
+    by smt;
+```
 
-### 5.7 Metamorphic tests
+- **A theorem runs as a law** whenever its assumptions and conclusion are computable. Of the 13
+  theorems in layers 0 and 4, 10 are [M, by reading]; once rewritten with its witness,
+  `CoincidenceIsNotTransitive` is the eleventh. The other two assume a property of every value of a
+  type (`TurningAngleBoundedByTangentDeviation` over every `SamplePlan`, `DiscretizeTerminates` over
+  every discretization of the edge), which no test can establish; they stay stated until proved, and
+  their `tested by` laws carry the evidence. Until a proof is checked, a runnable theorem is at least
+  tested. `tested by` names other laws that exercise it by a different route; the checker requires
+  that they resolve.
+- **Existentials are stated by exhibiting the witness.** `CoincidenceIsNotTransitive` becomes a
+  theorem over `t: LengthTolerance` whose body builds the points at 0, 0.75 t and 1.5 t and states the
+  three comparisons. An existential over a continuous domain without a witness term (the sandbox has
+  one, in `Sagitta`'s contract) has no executable meaning; it is restated as a bound against a sampled
+  or certified quantity.
+- **A claimed route is checked.** `by smt` fails the build if the solver does not discharge the
+  statement; `proof` fails it if the Lean file does not check against the generated statement. An
+  unclaimed statement gets the best status any engine reaches, reported but not enforced.
 
-VALIDATION-MATH.md 6.4 lists twelve relations and marks nine of them as laws (cube rotations, `2^k`
-scaling, edge reversal, face reversal, shell reversal, the negative test of a lone `SameSense` flip,
-the trimmed-curve sense flip, renumbering, determinism). Each becomes one law over a witness and a transform, with the
-transform as a sum type
-(`CubeRotation(Index: Integer) | PowerOfTwoScale(K: Integer) | EdgeReversal(Edge: BrepEdgeIndex) | ...`)
-so the runner can enumerate the 24 rotations and sample the rest. One family should be added: **far
-from the origin**, a translation by up to 10^5 model units, which is where the existing mesher's
-single-precision defect hid (EXISTING-MESHER-LESSONS.md, lesson 1). Metamorphic testing is the
-standard answer to missing oracles in numerical software [W21].
+### 2.8 Witnesses and generators
 
-### 5.8 Coverage reports
+**Witness.** A named value, or a family of values with parameters:
 
-Per layer: deferred functions without a contract; invariants with no constructor; laws cited by no
-spec, theorem, or check; laws that never ran (no input type could be built); the vacuity rate per
-law; laws no mutant falsifies (section 7.5); oracles whose call graph reaches the layer they check
-(SPEC-DSL: "An oracle never calls the code it is checking"), found from Navigation's references or
-from the TIR call graph.
+```plato
+// The domain of a full circle: [0, 2 pi] with period 2 pi.
+witness FullCircleDomain: CurveDomain
+    => CurveDomain(NumberInterval(0.0, Number.Tau), Periodicity.Periodic(Number.Tau));
 
-### 5.9 Floating-point tolerances in generated tests
+// A torus of major radius R and minor radius r, as a closed B-rep. (Layer 7, not yet written.)
+witness Torus(R: Number in Magnitudes(1e-2, 1e4), r: Number in NumberInterval(1e-3 * R, 0.9 * R)): BrepModel
+    => ...;
+```
 
-The aim is a generated test that neither passes vacuously nor fails on rounding. Five measures [J]:
+A closed witness is evaluated at compile time and its invariants checked, so a malformed witness is a
+`plato check` finding. A parameterized witness's parameters are drawn and shrunk exactly like a law's.
+A **negative witness** names the predicates it must fail, `witness BoxMissingFace: BrepModel
+violates EveryEdgeUsedTwice => ...;`, and the verifier checks that it fails exactly those among the
+predicates over its type. That gives the discrimination matrix of witnesses by predicates that the
+first version proposed, from declarations.
 
-1. **Margin by tolerance scaling.** For a tolerance law, the runner reruns the law with its
-   tolerance parameter scaled and finds by bisection the smallest scale `s` at which it holds. `s`
-   is the measure divided by the tolerance, obtained without any new convention in the law. Report
-   its distribution per law. A law whose `s` stays below 10^-3 on every witness may not be testing
-   its tolerance; a law whose verdict is not monotone in the scale is itself a finding.
-2. **Three-valued verdicts.** Evaluate at `tol - slack` and at `tol + slack`, where `slack` is a
-   rounding bound: machine epsilon, times the magnitude of the coordinates involved, times a small
-   factor calibrated once per law (or derived with an error analyser such as FPTaylor [W22]). Equal
-   results give Holds or Fails; different results give **Indeterminate**, and the runner reports the
-   indeterminate rate. With a 32-bit `Number` and coordinates of 10^5 mm, the slack is near 0.1 mm,
-   larger than a typical model tolerance, so most geometric verdicts would be indeterminate: the
-   precision problem shows up as a number instead of as flaky failures.
-3. **Calibration pairs per law.** Perturb a correct result by twice the tolerance (move one
-   discretization point off its curve along the normal): the law must fail. Perturb it by a quarter
-   of the tolerance: the law must hold. These test the law, not the implementation, and run on
-   oracle-built data before any algorithm exists.
-4. **Rounding-only laws get rounding tolerances.** The identities of section 4.2 take their bound
-   from an error analysis of the computation, never from the model's `epsL`; comparing an angle sum
-   to `epsL` passes vacuously or fails depending on the length unit.
-5. **Interval enclosures where a guarantee is wanted.** Sampling cannot bound a deviation between
-   samples. Interval evaluation of a surface over a parameter box, refined by bisection, gives a
-   sound upper bound on the deviation of an analytic surface (IEEE 1788 [W23]). Plato's interfaces
-   are type classes, so a measure function written generically over a real-number interface could be
-   instantiated at an interval type. Two obstacles are known: `? :` needs a two-valued `Boolean`,
-   which an interval comparison does not give, and the open defect `plato-374` (interface-generic
-   law bodies mix an interface's default with a type's override). This is stage 4 research.
+**Generator.** A block body with `draw` expressions, for constructions where later choices depend on
+earlier ones:
 
-## 6. Use cases, ranked by value to this project
+```plato
+// A model with one circular edge of drawn radius and sweep, moved by a drawn rigid motion; valid by
+// construction. ArcStripModel and Transformed are layer-7 and layer-2 builders (not yet written).
+generator ArcEdgeModels: BrepModel
+{
+    var radius = draw Magnitudes(1e-3, 1e5);
+    var sweep = draw AngleInterval(0.001.Turns, 1.0.Turns);
+    var motion = draw RigidMotions;
+    return ArcStripModel(radius, sweep).Transformed(motion);
+}
+```
 
-Ranked by value now, while parallel agents write the design and before implementation starts [J].
+**Semantics: choice sequences.** The elaborator threads an implicit sequence of choices through the
+generator's `var` statements; each `draw` consumes some, and a domain maps them to a value. This is
+the design of Hypothesis [W19, W32]. It has four consequences that matter here:
 
-| Rank | Use case | Artifact | Used by | Needs |
+1. A generator is a pure Plato function of its choices, so it compiles into every backend, and the
+   same choices give the same value everywhere, provided domains map choices to values with exact
+   operations only (integer arithmetic, `ScaleB`, integer-to-float conversion; never `Log` or `Exp`).
+2. Shrinking works on the choice sequence, generically: shorter sequences and smaller choices first.
+   Every candidate goes back through the generator, so **every shrunk value is valid by construction**.
+   The first version's advice, "shrink the generator, not the model", becomes the only way shrinking
+   happens.
+3. A counterexample is a generator name and a choice sequence: small, backend-neutral, replayable.
+4. Domains decide what "simpler" means: an integer range shrinks toward its start, an array toward
+   fewer elements, `OneOf` toward its first alternative. Authors list the simplest alternative first.
+
+A domain is any value whose type implements a stdlib interface `IDomain<T>`; the stdlib supplies
+integer ranges, closed intervals that draw their ends first, `Magnitudes(lo, hi)` (logarithmically
+spread, built from an exponent and a mantissa draw), `OneOf`, `ArrayOf`, and every type and generator.
+
+**Composition for constrained types.** Random B-reps are useless because almost none are well formed
+(VALIDATION-MATH.md 7.1: random 12-vertex polygons are simple 0.03 % of the time). The rule is
+*construct, don't filter*, from three sources that compose:
+
+1. **Parameterized witnesses** (VALIDATION-MATH.md 7.3: extruded star polygons, which are simple by
+   construction; tori; spheres with poles; revolved profiles), with **transform generators** (the 24
+   cube rotations, scaling by powers of two, translation up to 10^8 model units) composed onto any of
+   them.
+2. **Sealed constructors.** A random composition of a sealed type's constructors yields only values
+   the library itself could build: for `EdgeDiscretization`, `Discretize`, `RefineEdge`, `Reversed`
+   and `AlongCoedge` applied to pooled models.
+3. **SMT model finding** for laws that depend only on topology: the combinatorial predicates,
+   conjoined and bounded, handed to a solver, return models nobody thought to write (section 4.4).
+
+**Derived generators.** For a product of generable fields, a sum (a case, then its payload), and an
+array (a length, then the elements), the compiler derives a generator. Invariants that bound a field
+(`>= c`, `< c`, `IsFinite`) are folded into that field's domain; other invariants are enforced by
+rejection, with the discard rate reported.
+
+**Generator soundness.** Every generated value is checked against its type's invariants; a violation
+is reported as a defect of the generator, not as a law failure.
+
+### 2.9 Tolerances, approximate equality, identity, and three-valued verdicts
+
+**Tolerance types.** A stdlib interface `ITolerance<M>` with one member, `Value(t: Self): M`, which a
+field named `Value` discharges (PLATO-PRIMER.md A.3). `LengthTolerance` and `ParameterTolerance`
+implement `ITolerance<Number>`; `AngleTolerance`, whose `Value` is an `Angle`, implements
+`ITolerance<Angle>`. So comparing a `Number` measure with an `AngleTolerance` is a type error:
+dimension checking by name, as far as the stdlib's quantity types reach. A new stdlib type,
+`RoundingTolerance` (built by `Rounding(magnitude)`, `Value` = `ResolutionAt(magnitude)`), marks
+bounds that absorb rounding only. Criteria such as layer 4's `Chordal` become tolerance-typed fields so
+their comparisons are recognized.
+
+**The comparison** `m <= tol` elaborates to a TIR node that records the measure, the bound and the
+tolerance's type. In release builds it is an ordinary comparison. In the evaluator and verification
+builds, every evaluation is logged, which gives, without a line in the law:
+
+- the **margin** distribution per statement, and a flag on statements whose margin never exceeds
+  0.001 ("may not test its tolerance");
+- **targeted search**: maximizing the margin over choice sequences, which finds worst cases rather
+  than typical ones (targeted property-based testing [W19b]);
+- the **three-valued verdict** below.
+
+In specifications, a numeric literal as a bound is an error. The stdlib's own `LawEq` helper
+(`stdlib/tests/foundation.laws.plato`: `|a - b| <= max(|a|, |b|) * 1e-4 + 1e-4`) is the pattern this
+removes.
+
+**Three-valued verdicts.** Each tolerance comparison in a case is judged twice: as computed in
+binary64, and with the statement's own computation re-evaluated in the reference profile.
+
+| binary64 | reference | Verdict |
+|---|---|---|
+| holds | holds | **holds** |
+| fails | fails | **fails** |
+| differ | differ | **within rounding**: the binary64 verdict was decided by rounding |
+
+Which values are re-evaluated matters. A statement's **inputs** (a law's parameters; a contract's
+arguments and its `result`) are converted exactly into the reference format, since widening loses
+nothing; everything the statement **computes** is re-evaluated. So a contract on `Discretize` judges
+the binary64 polyline against a more exact curve, which is the question that matters. Comparisons
+against a `RoundingTolerance` are the exception: they are claims about binary64 rounding itself
+(`PeriodicDistance(Wrap(t), t) <= Rounding(...)` says that `Wrap` errs by little), so they are judged
+in the primary profile only, since re-evaluating `Wrap` exactly would erase what is being measured.
+The type of the tolerance carries that distinction, which is one more reason tolerances are typed.
+
+**Branch stability.** During re-evaluation, a conditional whose condition differs between the two
+profiles is reported with its location: a decision taken within rounding. TARGET-LANGUAGE.md 4.3 asked
+that "decisions that choose topology use only + − × ÷ √ and comparisons, or a robust predicate"; this
+report finds the decisions that do not.
+
+### 2.10 What the front end checks
+
+All of this runs in the edit loop, in seconds, before anything executes.
+
+| Construct | Checked by the front end | Handed to the verifier as obligations |
+|---|---|---|
+| `invariant` | `Boolean`; names only `self` and functions; total under its earlier clauses; no construction of its own type | at each construction site, the invariant of the new value |
+| `sealed by` | names functions returning the type; no construction, tuple conversion, setter or `default` elsewhere | each listed function establishes the invariants |
+| `requires` | `Boolean` over parameters; total under earlier clauses | at each call site, the callee's `requires` under the caller's assumptions |
+| `ensures` | `Boolean`; `result` typed; total under the `requires` | the body establishes it |
+| `decreases` | numeric; only on recursion or a loop | decrease and bound at each call or iteration |
+| `cost` | numeric | none |
+| `deferred` | no body; a description present | release build: error; elsewhere, statements reaching it are "blocked" |
+| `law` | every parameter has a non-empty domain; guards and claim `Boolean` and total; not called from code | the claim over the domains, under the guards |
+| `theorem`, `conjecture` | as a law; `tested by` names laws; a claimed `proof` file exists | as a law, plus the claimed route |
+| `witness` | type; parameter domains; `violates` names predicates over the type | invariants, at compile time when closed |
+| `generator` | `draw` only inside generators; domain types match | generated values satisfy the type's invariants |
+| tolerance comparison | measure type matches the tolerance's `M`; no literal bound in specifications | none |
+| `===` | both sides of one type | none |
+| `==` on `Number`-bearing types in specifications | warning: use `===` or a tolerance | none |
+| `all`, `any` | finite domain in code; continuous only in specifications | none |
+
+"Total" is a dominance check: every array index, integer division and sum projection inside a
+specification sits under a guard that makes it defined: an earlier `requires`, the left operand of a
+short-circuit `&&`, an `implies` antecedent, a quantifier's domain, or a conditional's test. It is the
+SPEC-DSL rule "a law is total; guards do that work", now enforced.
+
+### 2.11 What is emitted
+
+| Construct | Release build | Checked build | Verification build | SMT and Lean |
 |---|---|---|---|---|
-| 1 | Validate the design as it is written: names, types, signatures, authoring rules | `spec check` findings with spec-file lines; the stage 0 recipe | the nine layer authors, the Phase 3 reviewers, then CI | stages 0 and 1 |
-| 2 | Run the validators before any algorithm exists: witnesses satisfy the model laws, negative witnesses fail exactly their laws, oracles match closed forms, calibration pairs behave | a discrimination matrix and an oracle table per layer | the design reviewers; the owner deciding whether the design is sound | stage 2; law and validator bodies compiling to C# with a 64-bit `Number` |
-| 3 | A contract harness for the implementing agent | a harness per function; counterexample JSON naming the spec line, witness, parameters, measure, and a rerun command | the agent implementing a deferred function, at about one minute per loop (section 2) | stage 2 |
-| 4 | Traceability and generated law tables | law tables in each layer README; a coverage report | readers, reviewers, the author of TASKS.md | stage 1 |
-| 5 | Theorems as executable laws on witnesses | `Law_Theorem_` results with vacuity rates | CI; the owner | stage 1 lowering, stage 2 runner |
-| 6 | Shrunk counterexamples and minimal STEP files | shrunk witness parameters; `.stp` files in a regression corpus, named by law | implementing agents; regression CI | stage 3 |
-| 7 | A mutation score per law | a matrix of laws by mutants of library bodies | the owner, judging how strong the laws are | stage 3 and bodies |
-| 8 | Bounded consistency of the combinatorial laws | satisfying models, unsatisfiable cores, a list of redundant laws | design reviewers (PLAN.md done condition 5) | stage 4 |
-| 9 | Proofs of the index-level theorems | generated `.dfy` statements with written proofs | the owner | stage 4 |
-| 10 | Differential testing against Open CASCADE | a per-face comparison report | CI before a release | stage 3 and an external dependency |
+| `invariant` | nothing | a check in the generated constructor; a failure blames the constructing function | same, and the invariant as a callable predicate | obligations; axioms of the type |
+| `requires`, `ensures` | nothing | entry and exit checks with blame | same; the harness calls the function on generated arguments | VCs |
+| `decreases` | nothing | a check per call or iteration | same | termination argument |
+| `deferred` | build error | the `reference` body, or a trap | same, and "blocked" statuses | an opaque function with its `ensures` as axioms |
+| `law`, `theorem` | nothing | nothing | a function and a manifest entry | a VC, or a Lean `theorem` |
+| `witness`, `generator` | nothing | nothing | functions and manifest entries | (model finding runs the other way) |
+| tolerance comparison | a comparison | a comparison | a comparison that logs measure and bound | a comparison in Real or FP |
 
-## 7. How executable specs could improve the project further
+A checked-build failure leaves through the host with a structured report: the clause, its source span,
+the blamed function, and the arguments serialized as JSON. In C# it is an exception type of the
+runtime, in TypeScript a thrown object, in Rust a panic payload, in C++ an exception or an abort with
+the report printed. The GPU profile has no checked build. The checked build is an explicit profile, not
+C#'s Debug configuration: `tracker/issues/plato-292.md` shows what goes wrong when Debug and Release
+disagree about what is checked.
 
-Each item says what it needs.
+### 2.12 The sandbox's files once this exists
 
-### 7.1 Witnesses generated from invariants
+The `*.spec.plato` files merge back into the declaration files: invariants and `sealed by` into
+`*.types.plato`, contracts onto their functions in `*.library.plato`, theorems into `*.laws.plato`
+beside the laws, witnesses and generators. Reasons:
 
-- **Topology from predicates.** Korat generates every non-isomorphic structure up to a size bound
-  that satisfies a Boolean predicate, pruning the search by watching which fields the predicate reads
-  [W24]. The 21 combinatorial laws, conjoined, are such a predicate over flat integer tables. An SMT
-  encoding (section 4.3) does the same by model finding and reaches cases authors do not think of: a
-  seam edge used twice in one loop, a vertex loop, a face with two inner bounds that touch.
-  QuickChick derives generators from inductive relations, with proofs that they are sound [W25]; the
-  flat-table design makes the simpler Korat or SMT route enough. Needs: the combinatorial laws in a
-  form the generator can evaluate (generated C#) or translate (SMT).
-- **Geometry stays constructive.** Giving a solver-built topology planar geometry is not always
-  possible (Steinitz's theorem says which genus-zero graphs are convex polyhedra; higher genus has no
-  such guarantee), and laws over transcendental surfaces are outside what solvers decide. So
-  solver-built models serve the topology-only laws, and the parameterized witnesses of
-  VALIDATION-MATH.md 7.3 serve the geometric ones.
+- **One declaration, one place** (PRINCIPLES.md 4). Today every one of the 25 contracts in
+  `foundation.spec.plato` repeats its function's signature, and a contract that drifts from its
+  declaration is caught only by a reader. The first version kept the repetition to disambiguate
+  overloads; on the declaration there is nothing to disambiguate.
+- **A reviewer reads the contract beside the signature**, and an agent editing a body sees the
+  promise it must keep in the same view.
+- **The gate hazard disappears**: spec files had to be excluded from every front-end run because the
+  parser could not read them (PLATO-PRIMER.md E.1).
 
-### 7.2 Minimal failing STEP files
+The file kinds become: `*.types.plato` (types with their invariants), `*.concepts.plato` (interfaces
+with their contracts and laws), `*.library.plato` (functions with contracts, and predicates),
+`*.laws.plato` (one library of laws, theorems, conjectures, witnesses and generators),
+`proofs/*.lean` (hand-written proofs against generated statements). STY005 (one kind of declaration
+per file) still holds, since laws, theorems, witnesses and generators are library members.
 
-Needs: the provenance map from kernel indices back to STEP instance numbers (`ProvenanceMap`,
-`03-step`) and a reducer that works on Part 21 instances.
+### 2.13 Designs considered and rejected
 
-1. Cut by locality: keep the failing face, edge, or pair of faces and everything it references (the
-   reference closure of its STEP instances), and wrap it in a minimal shell and product context.
-2. Delta debugging over the remaining instances (Zeller and Hildebrandt, TSE 2002): remove a set,
-   restore the reference closure, and keep the removal if the file still parses and fails the same
-   law with the same diagnostic code.
-3. Simplify the numbers: round coordinates and parameters while the failure persists.
-4. Commit the result to a corpus folder named after the law, as a regression witness.
+- **Refinement types checked by the type checker.** Rejected above (2.4): an SMT solver in the type
+  checker, subtyping in a nominal checker, slower and less predictable edit loops, error messages that
+  are hard for agents, and floats treated as reals.
+- **A separate specification language or front end** (the first version's interim choice). With the
+  parser in the owner's hands it buys nothing and costs a second grammar and a second binder.
+- **Specifications in comments**, as JML and ACSL do [W6, W7]: the compiler cannot check them, and the
+  history in section 10 shows such layers drift.
+- **Contracts that change return types** (`Checked<T>` wrappers returning diagnostics). They make every
+  signature lie about what the function computes. Diagnostics-as-data stays the pattern for bad input
+  data, where it belongs.
+- **Exceptions in the language** for contract failures. The language stays exception-free; the
+  checked build is a host-level instrument.
+- **Unbounded quantifiers inside expressions**: no executable meaning; a law's parameters say it.
+- **Bounded integer types** (an index type that knows its table's length): that is dependent typing,
+  far from Plato's nominal model. Index safety stays an obligation (section 4.2).
+- **Laws callable as predicates**: reintroduces the conflation of section 2.2.
 
-The ABC dataset (about a million STEP files, VALIDATION-MATH.md 7.4) is the input that makes this
-worth building.
+## 3. Dependency order
 
-### 7.3 The implementing agent's inner loop
+What must exist before what. Effort notes, where kept, are in Appendix A.
 
-Edit a Plato body; run `plato_check` for rungs 0 to 4 in seconds; run `spec test F` to build the
-subset and the harness, about a minute by the triangulation timings; read the counterexample JSON;
-rerun the one failing case by its command. Running only the laws that cite `F` (known from the
-manifest) and building only the subset keep the loop fast; blame (section 5.2) and shrinking
-(section 5.6) keep it accurate. Needs: stage 2, and the subset script generalized from
-`regen-triangulation.ps1`.
+```
+D1  grammar, AST and binding of every new form                          (parakeet, Plato.AST, binder)
+ └─ D2  checking: spec typing, totality, units, domains, sealing, lints  (checker, linter)
+     │    -> spec errors in seconds; the sandbox and stdlib/tests can migrate
+     ├─ D11 documentation tables and editor hover (statuses need D5)     (Navigation)
+     └─ D3  elaboration: contract lists on TirFunction, the tolerance-comparison node,
+         │   lowering of implies, short-circuit && and ||, quantifiers and draw,
+         │   invariants as synthesized functions, construction-site obligations
+         ├─ D4  TIR evaluator, binary64 profile; compile-time evaluation
+         │   ├─ D5  orchestrator: pools, derived generators, choice sequences, shrinking,
+         │   │       vacuity, margins, blame, explanation traces, report, CLI and MCP
+         │   │       -> milestone M1 on the evaluator
+         │   └─ D6  reference and interval profiles -> three-valued verdicts, branch stability
+         ├─ D7  checked and verification builds per writer, harness protocol
+         │       (C#, then TypeScript, Rust, C++; each needs its fixes of 9.2) -> cross-backend, with D5
+         ├─ D8  SMT translator and cache (model replay needs D4; model finding feeds D5's pools)
+         ├─ D9  Lean translator and proof checking
+         └─ D10 mutation of TIR (needs D5 to run statements against mutants)
+```
 
-### 7.4 Documentation driven by the specification
+Two orderings follow from it. The library gains as soon as D2 lands, because nine authors writing in
+parallel get spec errors in seconds. Execution starts with D4 and D5, not D7, because the evaluator
+needs no writer and no host build.
 
-Generate each layer README's table of laws from the files: the name, the first sentence of its
-comment, the parameters, the tolerance parameter, the kind and severity, the specs citing it, the
-tests covering it, and the last run's status, vacuity rate, and mutation score. SPEC-DSL.md section 5
-says a README never carries a rule that is not in a `.plato` file; generating the table makes that
-checkable. Needs: Navigation's declaration spans, and the source text above them for comments.
+## 4. Verification: proof, solving and testing as one system
 
-### 7.5 Mutation testing of laws
+### 4.1 Obligations, engines and statuses
 
-Mutate library bodies in the AST or TIR (swap `<` and `<=`, add or remove `- 1` in index arithmetic,
-swap the branches of a `? :`, drop a term from a sum, reverse an orientation flag) and record which
-laws fail. A law that fails for no mutant is redundant or vacuous; a function with surviving mutants
-is under-specified. Mutating Plato rather than the generated C# keeps the mutants meaningful, though
-Stryker.NET [W26] on the C# could serve as a first approximation. Needs: bodies and the stage 2
-runner.
+Every statement yields obligations: one per construction site per invariant, one per call site per
+`requires`, one per function per `ensures`, one per law or theorem. The verifier tries engines in order
+of strength and cost and records the strongest result:
 
-### 7.6 Differential testing against a reference kernel
+| Status | Meaning | Engine |
+|---|---|---|
+| **proved** | a Lean proof checks against the generated statement; marked "for any `Number`" or "over the reals" (4.5) | Lean 4 |
+| **solved** | the negated VC is unsatisfiable; marked with the theory (Int and Seq, FP bit-precise, Real) | SMT |
+| **exhausted** | evaluated on every value of a finite domain | evaluator |
+| **tested** | evaluated on N cases from M sources on K backends; with vacuity, margins, mutants killed | evaluator and compiled backends |
+| **within rounding** | no case fails; some cases are decided by rounding | reference profile |
+| **stated** | not evaluated: no domain, or a proof route claimed and not achieved | none |
+| **blocked by F** | its closure reaches the deferred function F | none |
+| **failed** | a counterexample, shrunk, replayable | any |
 
-VALIDATION-MATH.md 7.4 describes the comparison with Open CASCADE. The specs contribute the laws
-that make it a test (`Law_HausdorffToReferenceWithinSum`) and the report format; lesson 9 of the
-existing mesher is the warning that agreement is evidence of parity, not of correctness. Needs: an
-Open CASCADE build on the test machine, and faces matched by STEP instance number.
+Statements that involve `Number` arithmetic are tested even when proved over the reals, since a proof
+over the reals says nothing about rounding. Statements proved for any `Number`, or solved over
+integers and sequences, are still run on a few cases: a failure there exposes a translation defect.
 
-### 7.7 Totality of the decoder
+### 4.2 The type checker
 
-Plato has no exceptions, but generated C# throws on an index out of range. For every function in
-`03-step` and `08-pipeline`, generate the property "returns without throwing" over the corpus, a
-grammar-based fuzzer of Part 21 text, and the shrunk failures. Decision D8 (diagnostics, never
-exceptions) then has a test. Needs: stage 2.
+It discharges, outright and in the edit loop:
 
-### 7.8 Measures as growth tests
+- **exhaustiveness** of every `match` (CHK300 to CHK303 exist today);
+- **totality** of specifications by guard dominance (2.10);
+- **units** of every tolerance comparison;
+- **sealing**: no construction of a sealed type outside its list;
+- **runnability**: every law parameter has a domain;
+- **trivial call-site obligations**: a callee's `requires` that appears verbatim among the caller's
+  `requires`, or that holds of literal arguments by evaluation.
 
-A `measure` clause names the quantity that cost is proportional to. Running a parameterized witness
-over a range of criteria and fitting the slope of `log measure` against `log d` checks the
-prediction of VALIDATION-MATH.md 6.1 (vertex count grows as `d^(-1/2)` per curved direction), as an
-Info-level check. Needs: stage 2 and the witness family.
+Index ranges in general are not the type checker's to prove. Plato's typed indices
+(`BrepEdgeIndex { Value: Integer }`) know their table only by convention, and making them know it
+would be dependent typing (2.13). Each index is a VC, and the totality check guarantees that every
+index in a specification is at least guarded.
+
+### 4.3 Evaluation: constants and finite domains
+
+The evaluator evaluates closed terms at compile time: constant witnesses (`FullCircleDomain`,
+`Witness_Tolerances`'s `LengthTolerance(1e-6)`) and construction sites whose arguments are literals,
+with their invariants. It **proves by exhaustion** any statement whose parameters all range over
+finite types: `OppositeSideIsInvolution` over the four `DomainSide` cases, `IsError` over three
+`Severity` cases. Exhaustion is a proof for all values, not a sample.
+
+### 4.4 SMT
+
+**VC generation is modular.** For a function with a contract and a body, the VC is
+`requires(x) ⇒ ensures(x, body(x))`, with each call in the body replaced by a fresh value satisfying
+the callee's `ensures` when the callee has a contract, inlined when it has none and does not recurse,
+and left uninterpreted otherwise. Plato's purity makes this a substitution; there is no weakest
+precondition over state. Editing a body re-solves only that function's VCs, because callers see its
+contract.
+
+**Encodings.** `Integer` as Int, with a separate overflow obligation; `Boolean` as Bool; products and
+sums as datatypes; `Array<T>` as `Seq T` (`Count` is `seq.len`, `At` is `seq.nth`, `Concatenate` is
+`seq.++`), with `MapRange` given by the axioms "length is `n` for `n >= 0`" and "element `i` is
+`f(i)` for `0 <= i < n`"; bounded quantifiers as guarded quantifiers; `Reduce` uninterpreted, unrolled
+when the length is a small constant. `Number` two ways: **FP** (binary64, bit-precise, including NaN
+and signed zero) when the statement uses comparisons, NaN tests and a few basic operations;
+**Real**, labeled "over the reals", otherwise. Transcendental functions are uninterpreted.
+
+*Sketch of a generated query (illustrative):*
+
+```smt2
+; law SamplesHaveRequestedCount (00-foundation); Number as Real; only the count is used
+(declare-datatype NumberInterval ((mk (Start Real) (End Real))))
+(declare-fun Samples (NumberInterval Int) (Seq Real))
+; Samples' body is count.MapRange(...); the MapRange axiom, specialized:
+(assert (forall ((r NumberInterval) (n Int)) (=> (>= n 0) (= (seq.len (Samples r n)) n))))
+(declare-const range NumberInterval)
+(declare-const count Int)
+(assert (>= count 2))                                     ; requires
+(assert (not (= (seq.len (Samples range count)) count)))  ; negated claim
+(check-sat)                                               ; expected: unsat, so solved
+```
+
+**Cache.** Results are keyed by a hash of the VC text, the solver and its version and options, and
+stored with the time taken and the model or the unsatisfiable core. A per-VC timeout (5 s by default)
+keeps the solver off the edit loop's critical path; results stream into the report.
+
+**Counterexamples are replayed.** A model of a negated VC becomes a concrete case run on the
+evaluator. If the statement fails there, it is a real counterexample, shrunk and reported like any
+other. If it holds there, the model was spurious (typically a Real model of a float statement) and is
+labeled so.
+
+**Model finding and consistency.** The combinatorial predicates of layers 2 and 6, conjoined at a small
+bound (say 16 vertices, 24 edges, 12 faces), handed to the solver, return models: topology witnesses
+for the pools. An unsatisfiable conjunction returns a core naming predicates that contradict each
+other, which makes PLAN.md's done condition 5 ("no law in one layer that contradicts a law in
+another") a mechanical check, at small scope, as Alloy argues [W12].
+
+**Equivalent mutants.** A mutant whose equivalence to the original solves is excluded from mutation
+scores (4.6).
+
+Solvers: Z3 and cvc5 for Int, Seq and datatypes [W11, W33]; Bitwuzla for FP [W34].
+
+### 4.5 Lean 4
+
+**Why Lean** [J]. Plato is a pure functional language, and so is Lean 4 [W35]: types, sums, arrays,
+pure functions and conditionals translate almost one to one, where a translation to Dafny targets an
+imperative verifier. Mathlib covers the real analysis the geometric lemmas need. The proof
+automation that recommends Dafny for index bookkeeping comes here from the SMT layer instead (4.4),
+and from Lean's own decision procedures and SMT bridges [W36]. Machine-learning provers have
+concentrated on Lean (PutnamBench and similar benchmarks [W37]), which matters when agents write
+proofs. Dafny remains a viable choice; open question 3 names the spike that settles it.
+
+**Translation**, from TIR:
+
+| Plato | Lean |
+|---|---|
+| product type, sum type | `structure`, `inductive` |
+| `Array<T>`, `Integer`, `Boolean` | `Array T`, `Int` (overflow is a separate obligation), `Bool` |
+| `Number` | either an opaque type `PNum` with no axioms, or `ℝ`; a proof that goes through with `PNum` holds for every `Number` semantics, binary32 and binary64 included |
+| function | `def`; recursion and loops through `termination_by` from `decreases` |
+| `deferred` function | `opaque` constant with its `ensures` as an `axiom` |
+| intrinsic | `opaque`, with axioms only where the stdlib states a contract for it |
+| law, theorem | `theorem` with the proof `sorry`, regenerated on every build |
+
+The proof lives in a hand-written file that imports the generated module; `lake build` checks it,
+cached by the hash of both files. A change in Plato that changes a statement breaks its proof loudly
+rather than silently.
+
+*Illustrative, the milestone's theorem:*
+
+```lean
+-- Generated from 00-foundation (Number opaque). Do not edit.
+opaque PNum : Type
+inductive Severity | error | warning | info
+def Severity.IsError : Severity → Bool
+  | .error => true | .warning => false | .info => false
+structure Diagnostic where
+  severity : Severity
+  code : String
+  message : String
+  where_ : Provenance
+  measure : PNum
+structure Report where
+  checks : Array Check
+  diagnostics : Array Diagnostic
+def Merge (a b : Report) : Report := ⟨a.checks ++ b.checks, a.diagnostics ++ b.diagnostics⟩
+def IsClean (r : Report) : Bool := !(r.diagnostics.any fun d => d.severity.IsError)
+theorem IsCleanIsAMonoidHomomorphism (a b : Report) :
+    IsClean (Merge a b) = (IsClean a && IsClean b) := by
+  sorry  -- proved in proofs/Foundation.lean from the library lemma that `any` distributes over `++`
+```
+
+**`WatertightByConstruction`** (layer 8) is the theorem a proof pays for. Closedness is defined on
+vertex indices, so the proof runs with `Number` opaque and holds for every precision. Its axioms are
+the contracts of `TriangulateRegion`, `Discretize`, `AlongCoedge` and the vertex numbering, and the
+attempt is valuable mostly for the assumptions it forces into those contracts. The first version
+named two candidates, both still open: several parameter-space points mapping to one vertex at a pole
+or a cone apex, and whether `TriangulateRegion` promises "each boundary segment used once in the
+loop's direction, each interior edge twice in opposite directions" or something weaker.
+
+### 4.6 Empirical statements: the strongest honest tooling
+
+Every tolerance statement over evaluated curves and surfaces stays empirical: SMT floating-point
+theories have no `sin`, and Lean's `Float` is opaque to its logic [W16, W18]. For these the system
+offers, in order of value:
+
+1. **Generators that respect constraints, with integrated shrinking** (2.8), over pooled witnesses,
+   transforms and sealed constructors, with dependent domains and exhaustive small domains.
+2. **Targeted search** for the worst margin over choice sequences [W19b], so a criterion is tested
+   where it is tightest, not where cases are typical.
+3. **Three-valued verdicts and branch stability** from the reference profile (2.9).
+4. **Sound bounds from the interval profile** where sampling cannot see between samples: a sagitta
+   over a parameter interval, a deviation over a surface patch. The evaluator runs the measure with
+   `Number` as an interval [W23]; a conditional whose test is undecided evaluates both branches and
+   joins numeric results, or reports "undecided" otherwise; subdivision tightens the enclosure. This
+   turns "sampled at three points" into "bounded on the whole span" for the analytic cases.
+5. **Closed forms as zero-parameter laws** on witnesses with known measures: areas, lengths, Euler
+   characteristics (VALIDATION-MATH.md 7.2).
+6. **Metamorphic laws** over transform parameters (cube rotations, scaling by powers of two, which is
+   exact and so compared with `===`; translation far from the origin; edge and face reversal;
+   renumbering) [W21].
+7. **Agreement across backends** (section 5).
+8. **Mutation testing on TIR.** Operators: swap `<` and `<=`, add or remove `- 1` in index arithmetic,
+   swap the branches of a conditional, drop a term of a sum, flip an orientation flag, remove a
+   correction step (`Wrap`'s second line). Each mutant is emitted through the same writers, so one
+   implementation serves every backend. The report gives a kill matrix of statements by mutants, a
+   score per function, and the surviving mutants, each of which is a place where the specification
+   does not notice a change [W26, W38].
+9. **Branch coverage** of library code by the statement suite, from the checked build.
+
+### 4.7 Where the statements of 00 and 04 land
+
+Expected classes [J], from reading the statements; the verifier decides.
+
+| Engine | 00-foundation | 04-discretization |
+|---|---|---|
+| Type checker | exhaustiveness on `Periodicity`, `Severity`, `ConstraintGroup`, `Provenance`, `MeshVertexProvenance`, `DomainSide`; units of every tolerance comparison; construction of `Check` and `Report` only through their sealed constructors | exhaustiveness on `Limit`, `RefinementReason`; construction of `EdgeDiscretization` only through its sealed constructors |
+| Evaluation, exhaustion | `OppositeSideIsInvolution`; laws over `Severity`; closed witnesses | none |
+| SMT, Int and Seq | `SamplesHaveRequestedCount`, `SamplesStartAtRangeStart`, `SamplesEndAtRangeEnd` (copies), `MergeIsAssociative`, both identity laws, `IsNoneExactlyWhenNegative`, the count `ensures` of `ReportOf` and `Merge`, `Report`'s invariant by induction over its three constructors | `ReversedIsInvolution`, `ReversedReversesParameters`, `ReversedReversesPoints`, `Reversed`'s and `AlongCoedge`'s `ensures`, `DiscretizeAll`'s indexing `ensures`, `SharedPolylineClosesEveryEdge` from those contracts |
+| SMT, FP bit-precise | `CheckWithin` and `CheckExact` `ensures`; `Check`'s invariant at its constructors; `WorseOfHoldsExactlyWhenBothHold`; `WorseOfIsAssociative` (its preorder tests NaN, which a Real model gets wrong); `ShortestDifferenceAtMostHalfPeriod` and `WrapLandsInPeriod` within a time budget | none expected |
+| Lean, `Number` opaque | `IsCleanIsAMonoidHomomorphism`, `ReportsFormAMonoid`, `WorseOfFoldIsWellDefined` | `SharedPolylineClosesEveryEdge` if SMT fails; `EdgeReversalInvariance` (a frame argument: `Discretize` reads nothing that `WithEdgeReversed` changes); `ChordalRefinementIsMonotone` (induction over the bisection tree); `DiscretizeTerminates` (counting) |
+| Lean, `Number` as ℝ | `ParameterToleranceBoundsMotion` to first order; `UvToleranceBoundsMotion` (triangle inequality); `CoincidenceChainBound` without its rounding term | `TurningAngleBoundedByTangentDeviation` (triangle inequality for angles); the circle sagitta behind `ArcSegmentCount` (MetiTarski also fits [W14]) |
+| Empirical | the rounding laws (`WrapStaysInClass`, both `NearestUnwrapped` laws, `CoincidenceComposesWithSummedTolerance`), `DomainContainsItsSamples`, `SamplesStrictlyIncreasing` | every geometric predicate in the contracts of `Discretize`, `RefineEdge` and `ImagePoints`; `TighterChordalNeverFewerPoints`; the `Refine` laws; `ArcCriteriaCountMeetsChordal`, with an interval bound |
+
+### 4.8 One command, one report
+
+`plato verify` runs, in order and incrementally (every stage keyed by content hashes of the TIR
+closures it reads):
+
+1. the front end (D2), stopping on errors;
+2. exhaustion and compile-time evaluation;
+3. SMT on obligations whose VC changed, in parallel, with the cache;
+4. `lake build` on proof files whose inputs changed;
+5. the evaluator over every statement not proved, solved or exhausted, plus a light sanity run over
+   those that are; shrinking; reference re-evaluation for tolerance comparisons;
+6. compiled backends named by `--backends`, with the same cases, and comparison (section 5);
+7. mutation testing and targeted search, when asked for (`--mutation`, `--search`);
+8. the report: JSON for tools, Markdown for each layer README between markers, and a diff against
+   the last committed report that fails on any status that fell.
+
+Selection flags: `--changed`, `--layer`, `--function F` (its contract and every statement that
+cites it), `--law L`, `--replay <case>` with `--explain`. The MCP tool `plato_verify` takes the same
+arguments and returns the same JSON, so an agent's tool result and a person's terminal show one
+truth.
+
+## 5. Cross-backend validation
+
+**One orchestrator, thin kernels.** Each backend's verification build is a small program that answers
+JSON requests on standard input: `manifest` (its statements, parameters, domains, clause identifiers);
+`run` (one statement on one case, given as a witness name or a generator and its choice sequence),
+returning the verdict, every logged measure and bound, and a hash of the branch trace; and `call` (one
+function on given arguments), returning the result. Generation policy, shrinking, comparison and
+reporting live once, in Plato.Verify. TARGET-LANGUAGE.md 3.8 reached the same shape: do not port the
+reflection runner; make the harness data-driven.
+
+**Same inputs everywhere.** Generators are Plato code compiled into every backend, and domains map
+choices to values with exact operations only, so one choice sequence yields bit-identical inputs on
+every backend.
+
+**What is compared:**
+
+- verdicts, on every case;
+- integers, Booleans, tags and indices, bitwise;
+- `Number`s: bitwise under the portable mathematics profile below; otherwise within an envelope
+  stated per transcendental function and accumulated along the path;
+- on disagreement, the first TIR node whose value differs, found by comparing the evaluator's trace
+  with the backend's by node identifier.
+
+**What the compiler must guarantee** for a comparison to mean something:
+
+1. **One `Number` width per compilation**: binary64 on CPU backends, binary32 only in a GPU profile
+   (TARGET-LANGUAGE.md 5.4).
+2. **No contraction and no reassociation.** Writers emit the flags that forbid fused multiply-add
+   (`/fp:precise`, `-ffp-contract=off`, `nvcc --fmad=false`) and keep Plato's left-to-right
+   association. C# and Node were measured not to contract (TARGET-LANGUAGE.md 3.6).
+3. **IEEE round-to-nearest-even** for + − × ÷ √ and conversions.
+4. **One meaning for every intrinsic**: `Round`, `Epsilon` (they differ across backends today), the
+   signs of integer division and modulo, `Min` and `Max` with NaN, `Integer` width (64-bit
+   recommended), and overflow, which traps in checked builds.
+5. **Transcendental functions in two profiles.** *Portable*: the stdlib implements `Sin`, `Cos`,
+   `Atan2`, `Exp`, `Log` and `Pow` in Plato with fixed algorithms, correctly rounded where published
+   algorithms allow [W39], so every backend computes the same bits. *Host*: the platform's library,
+   faster, compared within an envelope. Recommendation: portable for verification and release
+   conformance; host allowed in production builds once conformance shows agreement within the
+   envelope. This is the direction of `plato-378` (shrink the host intrinsic kernel).
+6. **Exact serialization**: JSON numbers round-trip bitwise (hexadecimal floats or 17 significant
+   digits), with explicit encodings for NaN, the infinities and -0.
+7. **No capacity limits** on arrays or strings in any writer.
+
+**At release**, every law, contract and invariant runs on every backend over the same cases, and the
+pipeline runs end to end on the witness corpus and the public STEP files, comparing mesh integer
+arrays bitwise and positions bitwise under the portable profile.
+
+## 6. Use cases, ranked by value
+
+Ranked by what each does for the efficiency of creating and validating the library once code
+generation works [J].
+
+| Rank | Use case | Made possible by | Used by |
+|---|---|---|---|
+| 1 | The implementing agent's loop: a counterexample in the tool result, shrunk, explained, blamed, replayable, in seconds | D3 to D5 | implementing agents |
+| 2 | Spec checking while writing: names, types, units, totality, runnability, in the edit loop | D1, D2 | the nine layer authors, reviewers |
+| 3 | Inputs for constrained types: pooled witnesses, composed generators, sealed constructors, SMT-found topologies; laws over `BrepModel` run at all | D5, D8 | everyone |
+| 4 | Contracts at layer boundaries with blame, in checked builds | D3, D4, D7 | agents integrating layers |
+| 5 | Static discharge of the combinatorial core; consistency of the predicates at small scope | D4, D8 | design reviewers (PLAN.md done condition 5), the owner |
+| 6 | Statement status in documentation and the editor, and "blocked by" as a progress meter | D5, D11 | reviewers, the owner, TASKS.md |
+| 7 | Three-valued verdicts and branch-stability reports | D6 | agents tuning tolerances; robustness of topology decisions |
+| 8 | Minimal failing STEP files: Part 21 reduction that keeps the failing statement and diagnostic code [W40] | D5 and layer 3's provenance map | implementing agents, the regression corpus |
+| 9 | Release conformance across C#, TypeScript, Rust and C++ | D7 and section 5 | the owner, at release |
+| 10 | Mutation scores and surviving mutants per function | D10 | the owner judging specification strength; agents strengthening it |
+| 11 | Lean proofs of the index-level theorems | D9 | the owner |
+| 12 | Growth tests from `cost` clauses (vertex count against chordal bound, VALIDATION-MATH.md 6.1) | D5 | the owner |
+
+## 7. Plan
+
+### 7.1 Compiler work, in order
+
+1. **D1 and D2**, with short-circuit `&&` and `||`, `implies`, `===`, `all` and `any`, tolerance
+   comparison typing, and `ITolerance`, `RoundingTolerance` and `IDomain` in stdlib `foundation`;
+   SEMANTICS.md gains a section on specifications in the same change, as its last paragraph requires
+   of language changes. The library gains at once: every layer's specifications are checked.
+2. **D3**: elaboration of every form, with construction-site obligations.
+3. **D4 and D5**: the evaluator and the orchestrator with pools, derived generators, choice sequences,
+   shrinking, vacuity, blame, explanation traces, the JSON report, and `plato_verify`. This is the
+   inner loop, and milestone M1's core.
+4. **D6**: reference and interval profiles.
+5. **D7**: checked and verification builds, C# first; TypeScript second, since it is the second
+   target (TARGET-LANGUAGE.md 4.1); then Rust; C++ when a consumer needs native code.
+6. **D8**: SMT, Int and Seq first, FP second, with the cache and model replay.
+7. **D9**: the Lean translator and proof checking.
+8. **D10 and D11**: mutation, documentation tables, editor hover.
+
+### 7.2 Tooling, in order
+
+1. **A rewrite tool** that turns the sandbox's spec files and the stdlib's `stdlib/tests/*.laws.plato`
+   into the new syntax (rules in 7.3), using Navigation to rename references; it runs once per folder.
+2. `plato_check` extended to the new forms (it reports what D2 reports).
+3. `plato verify` as CLI and `plato_verify` as an MCP tool in the same server.
+4. The report renderer: layer README tables, the gate log.
+5. Navigation hover with statuses.
+6. The STEP reducer, with layer 3.
+7. The release pipeline: all backends, mutation, committed report.
+
+### 7.3 What the sandbox does now
+
+Write the current spec files so the rewrite is mechanical. Each rule names the rewrite it enables.
+
+1. **Classify every `Law_` by kind in its comment**: `model` (a predicate over data), `library` (a law),
+   or `convention` (holds for values built by this layer). The foundation README's table already
+   does; layer 4 uses severity ("test" means library). Rewrite: model to predicate, library to `law`,
+   convention to invariant or constructor `ensures`.
+2. **Every quantifier names its domain with `in`**, using names that exist (`n.Range`, an array, a
+   layer helper such as `m.EdgeIndices`). No `UpTo` (14 uses in `discretization.spec.plato`, declared
+   nowhere). The 110 domain-less `forall` that cite a guarded law can stay only when the law's guard
+   is one of `xs.IsValidIndex(i)`, `i >= 0 && i < n`, or `i >= 0 && i + 1 < n`, from which the
+   rewrite infers the domain.
+3. **Guards only in the leading form** `pre ? claim : true`, nested for several preconditions. Rewrite:
+   each condition to a `requires`. No `||` guards and no dummy-array guards in new laws.
+4. **Copies compare with `Identical`**, never `==` with a comment. Rewrite: `===`.
+5. **Tolerance comparisons as `measure <= tol.Value`**, with `tol` of a tolerance type. Rewrite:
+   `measure <= tol`. Criteria fields compared this way are recorded as candidates for tolerance types.
+6. **`constructor` lists stay as they are.** Rewrite: `sealed by`.
+7. **`measure` stays.** Rewrite: `cost`; a `measure` in a recursive function becomes `decreases`.
+8. **One `deferred` string per function**, not a comment as well. Rewrite: the `deferred` clause.
+9. **Theorems keep `given`, `assume`, `conclude`.** Rewrite: parameters, `requires`, body.
+10. **Witnesses keep the `Witness_X(_: T): T` form**, and parameterized witnesses take their
+    parameters as ordinary parameters with a comment giving each one's range. Rewrite: `witness`,
+    with the ranges as `in` domains.
+11. **An existential states its witness** in the conclusion, or is marked for restatement (5 cases).
+12. **Each spec header matches exactly one declaration**, which it does today; the rewrite moves the
+    clauses onto it and deletes the spec file.
+
+### 7.4 First milestone: the whole loop on `00-foundation`
+
+Done when all of the following hold:
+
+1. `00-foundation` is in the new syntax: `foundation.spec.plato` deleted, its invariants and seals in
+   the type files, its 25 contracts on their functions, its 27 library laws as `law`, the 4 model laws
+   folded into invariants and predicates, the 3 convention laws into invariants and `ensures`, its 8
+   theorems in `foundation.laws.plato`, its 4 witnesses as `witness`.
+2. `plato check` over the stdlib tiers and the layer reports no error, in under 2 s warm after an edit
+   to one function.
+3. `plato verify 00-foundation --backends eval,cs,ts` reports a status for every statement. Expected:
+   `OppositeSideIsInvolution` exhausted; at least the Int and Seq row of 4.7 solved; the FP row
+   attempted; every other law tested on at least 600 cases with vacuity reported; the invariants of the
+   tolerance and domain types checked at every construction during the run; `Check` and `Report`
+   values generated from their sealed constructors; C# and TypeScript agree bitwise on every law whose
+   closure uses basic operations only, which by reading is every one except those through
+   `AngleBetweenDirections` (`atan2`).
+4. **Rediscovery.** With the `SmallestNormal` floor removed (from `ResolutionAt`, and from the
+   tolerance types' invariants, which state it directly in the new syntax), the verifier finds both
+   failures the layer author's hand-written C# fuzzer found (README, "Arithmetic resolution"):
+   `SamplesStrictlyIncreasing` on a range of about 4e-323, and
+   `ParameterToleranceAtMovesWithinLength` with a length tolerance of about 3e-316. Each is shrunk and
+   reported with a replay command, within the inner-loop budget. The author needed 300,000 draws per
+   width and a C# mirror of the bodies to find them; the milestone shows the language finds them from
+   the declarations alone.
+5. **A planted defect.** With `Wrap`'s second correction removed, `Wrap`'s first `ensures` and
+   `WrapLandsInPeriod` fail on a shrunk case (a tiny negative `t`, for which `t - period * Floor(t /
+   period)` rounds to `period`), and mutation testing reports which statements kill which of the
+   layer's mutants.
+6. **A proof.** `IsCleanIsAMonoidHomomorphism` proved in Lean against the generated module, status
+   "proved, for any `Number`".
+7. The layer README's law table generated from the report.
+
+Milestone M2 is `04-discretization` with `Discretize` implemented: the agent's loop of 1.3 on
+generators from layers 1 to 3 and 7, blame across layers, the interval bound for sagitta, and the
+reference profile's within-rounding rate. Milestone M3 is release conformance on four backends for
+layers 0 to 6.
 
 ## 8. Open questions for the owner
 
 Each with the fact that would settle it.
 
-1. **`Number` width.** The design needs 64 bits; `src/Plato.Intrinsics/Number.cs` wraps a 32-bit
-   `float`, while `stdlib/foundation/primitives.plato` says 64-bit. Settled by choosing between
-   widening `Number` and adding a `Double` primitive, before any geometric law is executed.
-2. **Where the tool lives**: Plato's repository (as `src/Plato.Spec`), this sandbox, or a repository
-   of its own. Settled by whether the stdlib will write `spec` blocks too; if it will, Plato's
-   repository, beside Navigation and the law runner.
-3. **Prenex quantifiers and `exists ... by`.** Narrow SPEC-DSL.md section 3.4 to clause-level
-   quantifiers and witnessed existentials? Settled by counting, after Phase 2, whether any layer
-   author wrote a nested quantifier or an `exists` without a witness term.
-4. **The spec file extension.** Rename `*.spec.plato` so Plato tools do not read the files as Plato?
-   Settled by the Phase 3 gate: if it lints whole folders, as PLAN.md says, renaming is the cheaper
-   fix.
-5. **Exact equality on `Number`.** `Law_DiscretizationEndsAtVertices` needs bitwise equality, which
-   SPEC-DSL.md section 2 forbids. An explicit helper (`SameBits`), a marker, or a listed exception?
-   Settled by how many laws need it once the layers are written.
-6. **The `deferred` string and the `// deferred:` comment** say the same thing twice. Keep both and
-   check that they agree, or keep one? Settled by whether anything other than a person reads the
-   comment.
-7. **The law runner.** Extend `Plato.ForwardConformanceTests` (witnesses, dependent generation,
-   vacuity, shrinking) for every Plato user, or give the sandbox its own harness? Settled by running
-   `regen-forward-conformance.ps1 -Test` now and seeing whether laws over array-holding types run or
-   are ignored (section 2).
-8. **A property-testing library.** Replace `ValueGen` with CsCheck or FsCheck for generation and
-   shrinking? Settled by a half-day spike that ports one law and one parameterized witness to each.
-9. **How much proof.** Is any theorem worth a Dafny proof at a few days each? Settled by whether the
-   first implementation cycle produces a defect that a missing theorem assumption explains (the
-   candidates in section 4.7).
-10. **Promotion into Plato.** Which constructs, if any, become Plato syntax, and when? Settled after
-    one implementation cycle, by which constructs all nine layers used and whether any changed shape.
-11. **Open CASCADE as a test dependency.** Acceptable on the test machine, given its LGPL licence and
-    its build cost? Settled by the owner. **Decided 2026-10-17: no.** Use case 10 (differential
-    testing against Open CASCADE) is withdrawn; differential testing uses the design's own oracles,
-    witnesses with known measures, and public files with published properties.
+1. **Short-circuit `&&` and `||` on `Boolean`.** Recommended. Settled by whether any backend or
+   stdlib body needs both operands evaluated: none of the five target languages does (each
+   short-circuits its native `&&`), so the remaining fact is a search of the stdlib and the demos for a
+   Boolean `&&` whose right operand is relied on to run.
+2. **How strict `sealed by` is.** Forbid every other construction site, or allow them with an
+   obligation? Settled by counting constructions of `Check`, `Report` and `EdgeDiscretization`
+   outside their lists once layers 2 to 7 exist (the foundation README's question 8 asks for that
+   count).
+3. **Lean 4 or Dafny.** Settled by a spike: translate the foundation's `Check` and `Report` and layer
+   4's `Reversed` and `AlongCoedge` into both, and have an agent prove `IsCleanIsAMonoidHomomorphism`
+   and `SharedPolylineClosesEveryEdge` in each; compare success and time.
+4. **Portable or host transcendental functions** for verification. Settled by whether meshes become
+   hashed run evidence (TARGET-LANGUAGE.md question 3) and by the speed of a Plato `Sin` against the
+   host's in C#.
+5. **A checked-build failure stops, or collects and continues?** Settled by whether any pipeline stage
+   is meant to carry on past a defect in the program; the sandbox's "diagnostics, never exceptions"
+   covers bad data, not defects.
+6. **Laws inside interfaces.** Move the stdlib's generic laws (27 in `stdlib/tests/foundation.laws.plato`)
+   into the interfaces they test? Settled by whether implementers should inherit the obligations, and
+   by how many of those laws have a single interface as their receiver.
+7. **Laws without the `Law_` prefix.** Settled by the number of name collisions the rewrite finds when
+   it drops the prefix in the stdlib and the sandbox (one global namespace).
+8. **Claimed routes as hard gates.** Should `by smt` and `proof` fail the build when not achieved, or
+   only report? Settled by how often a solver upgrade or a timeout changes a status in the first month.
+9. **Criteria as tolerance types.** Make `DiscretizationCriteria.Chordal` and its siblings
+   tolerance-typed, so their comparisons are recognized and reported apart from model tolerances?
+   Settled by whether the severity rule of SPEC-DSL.md section 4 is to be computed from the report.
+10. **Derived evidence.** Derive a `Check` (worst measure and where) from a predicate of the form
+    `all i in D: measure(i) <= tol`, removing hand-written `Check_` functions that must agree with
+    their laws? Settled by how many of layer 7's `Check_` functions have exactly that form once
+    written.
+11. **The reference profile's mathematics library**: double-double in C#, or a binding to MPFR.
+    Settled by the accuracy the verdicts need: at least 20 bits beyond binary64 in every function the
+    library calls; double-double gives about 50.
+12. **`Integer` width and overflow**: 64-bit everywhere, trapping on overflow in checked builds?
+    Settled by the largest index or STEP instance number the corpus needs (TARGET-LANGUAGE.md question
+    4) and by whether any stdlib body relies on wrap-around.
+
+## 9. The current state and the gap
+
+### 9.1 Measured facts
+
+Plato at `f6e02cf0`; times on the owner's machine, 2026-10-17, unless dated otherwise.
+
+**Parser and compiler** [R]
+
+- The grammar is a PEG written as C# properties in `parakeet/Parakeet.Grammars/PlatoGrammar.cs`
+  (241 lines). `parakeet` is a submodule (`github.com/ara3d/parakeet`) whose commits Plato records
+  separately (Plato `AGENTS.md`). `MethodDeclaration` is name, parameters, return type,
+  `ConstraintList`, body; `Type` is the optional `unique`, `type` or `primitive`, name, type
+  parameters, `ConstraintList`, `ImplementsList`, body. Both have the slot between signature and body
+  that section 2 uses.
+- The elaborator (`src/Plato.Compiler/Checking/Elaborator.cs`) is 382 lines; a statement form is in
+  the language exactly when `ElaborateStatement` has a case for it (SEMANTICS.md). `match` lowers to
+  a chain of `TirConditional`s with no new node.
+- `Tir.cs` (404 lines) defines 20 node classes. `TirFunction` holds the definition, parameters, return
+  type and body, and nothing for contracts. `TirTypeVerifier` checks TIR consistency (rules R1 to R6)
+  and is a precedent for TIR-level checks.
+- Declaration-level checkers exist as precedents for invariant and sealing checks:
+  `TypeConstraintChecker`, `SumTypeChecker`, `ExistentialConceptChecker`.
+- No interpreter or evaluator exists in `src/` or `writers/` [M, by search].
+- Writers: C# 7,516 lines, C++ 3,290, TypeScript 2,639, Rust 2,165, GLSL 1,181 [M].
+- `&&` and `||` evaluate both operands. Bodiless functions pass every gate and become, in C#, a member
+  that throws `NotImplementedException` or a self-calling stub (PLATO-PRIMER.md D.7). Per-field
+  setters are not derived, although SEMANTICS.md says they are. `==` on arrays is CHK201, and generated
+  record equality compares array fields by reference (PLATO-PRIMER.md D.6).
+
+**Numbers and backends** [R, M; TARGET-LANGUAGE.md]
+
+- `Number` is binary32 in C# (`src/Plato.Intrinsics/Number.cs:21`), C++, CUDA and GLSL; binary64 in
+  TypeScript and Rust. SEMANTICS.md says 32-bit everywhere; `primitives.plato` says 64-bit.
+- Sum types and `match` are emitted only by C#; TypeScript and Rust emit a CHK320 comment; C++ calls a
+  type with a sum field "not representable".
+- C#: the foundation tier's loop (generate, build, run laws) took 10.3 to 11.6 s; foundation plus
+  geometry generated in 16.0 s and compiled in 4.6 s once four defects were worked around.
+  TypeScript: about 22 s for three tiers, with 2,476 type errors hidden by `@ts-nocheck`. C++: the
+  foundation tier stopped at 100 errors after 92.7 s. Rust: 3,347 errors from `cargo check` in 10.5 s.
+- `Round(digits)` and `Number.Epsilon` mean different things in C#, C++ and TypeScript;
+  `Number.Epsilon` is the smallest subnormal, not the machine epsilon. `Integer` is a 32-bit `int` in
+  C# (`src/Plato.Intrinsics/Integer.cs:19`), 64-bit in Rust, and a binary64 value in TypeScript.
+- Neither C# nor Node contracts `a * b + c` into a fused multiply-add (measured); transcendental
+  functions differ by platform.
+
+**Laws and the runner** [R; PLATO-PRIMER.md B.2]
+
+- `tests/conformance/Plato.ForwardConformanceTests` finds `Law_` members by reflection, builds 25
+  seeded pseudorandom instances per law, draws `Number` from a ten-value special set 30 % of the time
+  and otherwise from [-10, 10], and `Integer` from [-8, 8]. It skips, rather than fails, any law over
+  a type holding an array, a sum, an interface, no fields, or itself. It has no witnesses, no
+  shrinking, no vacuity count.
+- Its driver script passes `--scalar=float`, which the CLI now rejects. Driven directly, 35 law cases
+  over foundation passed. `docs/gate-log.md` has one conformance row, 2026-07-31: 44 passed, 0 failed,
+  3 skipped. `stdlib/VERIFICATION.md`: "Until rung 6 is routinely green, every behavioural claim about
+  `stdlib/` ... is backed by human inspection, not by a test."
+- The triangulation subset route took about a minute per iteration on 2026-08-03 (14 to 24 s to
+  resolve, 11 to 16 s to generate, 14 to 26 s to build and test).
+
+**Front-end gates** [M; PLATO-PRIMER.md E]
+
+- The gate driver over the three stdlib tiers plus one design folder: 12 to 15 s cold, about 3,850
+  functions type-checked; `00-foundation` passed with 3,937 functions. Navigation rebuilds warm in
+  under a second but does not resolve overloads or compute types.
+- The spec files cannot be parsed, so every front-end run must exclude them; the stdlib's three
+  `brep.*.plato` files must be excluded too, because the sandbox redeclares their names in Plato's one
+  namespace.
+- The first version found five defects in SPEC-DSL.md's examples that a checker would report (an
+  undeclared `UpTo`, `EdgeDomain(e).Start` where the field is `Range`, a law cited with the wrong
+  parameters, two names no layer exports); layer 4's author has since corrected the `Range` one.
+
+**The sandbox's specifications** [M, at 13:48 on 2026-10-17; layers 01, 02, 03, 05 and 06 were still
+being written, so whole-sandbox counts will move]
+
+- Whole sandbox: 201 `Law_` declarations; 187 guard tails `: true` in laws files; 8 `Witness_`
+  declarations; in spec files 207 `forall` (110 without a domain, 24 lines nesting two), 5 `exists`,
+  14 `UpTo` (declared nowhere), 78 `invariant`, 97 `requires`, 240 `ensures`, 39 `measure`, 19
+  `constructor`, 26 `theorem`, 0 `conjecture`, 27 `deferred`, 23 `tested by`; 25 comments
+  "exact by construction".
+- `00-foundation`: 34 laws (4 model, 3 convention, 27 library), 4 witnesses, 17 uses of `Identical`;
+  `foundation.spec.plato` is 425 lines with 11 invariant blocks, 25 contracts and 8 theorems. The
+  author's scratch fuzzer mirrored the bodies in C# and made 300,000 adversarial draws in each of
+  `double` and `float`; it found two failures on subnormal values, and a 2,000,000-draw run found worst
+  errors of 2 unit roundoffs for `Wrap` and 3.9 for `NearestUnwrapped`.
+- `04-discretization`: 35 laws (25 predicates by severity, 10 library), no witnesses, 53 `forall` (36
+  without a domain), 3 laws with dummy-array guards; `discretization.spec.plato` is 307 lines.
+
+### 9.2 Fixes assumed
+
+Assumed done before execution starts, and not weighed in this design:
+
+- `Number` binary64 in C# (`plato-370`), one width per compilation, binary32 only in a GPU profile;
+  SEMANTICS.md and `primitives.plato` agreeing.
+- Sum types and `match` emitted by the TypeScript, Rust and C++ writers; C++ with heap-backed arrays,
+  unbounded strings and the `List` and `Buffer` builders.
+- The geometry tier's C# compiles (the unescaped `base` parameter, two CS1929, one CS0117).
+- TypeScript output type-checks without `@ts-nocheck`; Rust's foundation tier compiles; C++'s
+  foundation tier compiles.
+- Per-field setters derived as SEMANTICS.md says; `==` on arrays structural; record equality comparing
+  arrays element by element.
+- The law runner's dead `--scalar=float` flag; laws over arrays, sums and zero-field types
+  constructible.
+- One meaning for `Round` and `Number.Epsilon` in every writer.
+- Navigation models sum types (`plato-364`); `plato_check` is tier-aware (`plato-389`);
+  interface-generic law bodies use the right override (`plato-374`); functions with a builder as first
+  parameter are emitted (`plato-416`); `default` resolves.
+
+## 10. Prior art
+
+| System | Where specifications live | How obligations are discharged | Floating point | Lesson for Plato |
+|---|---|---|---|---|
+| Eiffel [W2, W2b] | class invariants, `require`, `ensure` in the language | run-time checks; AutoTest uses contracts as test oracles | run-time only | contracts plus generated inputs find real faults without hand-written oracles |
+| Ada 2012 and SPARK 2014 [W1, W30] | aspects: `Pre`, `Post`, `Type_Invariant`, `Dynamic_Predicate`; ghost code | run-time checks under an assertion policy; GNATprove through Why3 and SMT | IEEE semantics; proofs of bounds | contracts in the language, proofs by a separate tool; SPARK began as comments and moved into the language once the forms settled |
+| Dafny [W3, W3b] | in the language | Boogie and Z3, user lemmas; test generation from the verifier | mathematical `real` | strong for sequences and indices |
+| Whiley [W4] | in the language | a verifying compiler | limited | designing for verification shapes the whole language |
+| Frama-C ACSL, JML [W6, W7] | comments | provers; run-time checking of an executable subset | ACSL separates reals from floats | annotation layers over another's language need sustained separate investment |
+| Code Contracts [W5] | library calls and a binary rewriter | rewriter; abstract interpretation | none | the rewriter fell behind the compiler and died |
+| Kani, Prusti, Creusot [W8, W9] | attributes; Pearlite | bounded model checking; Viper; Why3 | Kani models IEEE bit-precisely | contracts can stand in for verified functions (`stub_verified`) |
+| Liquid Haskell, F* [W10] | refinement types | SMT inside the type checker | floats as reals | rejected for Plato (2.4) |
+| QuickCheck, SmallCheck [W31, W41] | properties as functions | random and exhaustive small-scope testing | none | properties as ordinary code; exhaustive small domains |
+| Hypothesis [W19, W32] | properties and strategies | generation over choice sequences; integrated shrinking; targeted search | float strategies with special values | the model for 2.8: shrinking that stays inside the generator's constraints |
+| QuickChick, Luck, Korat [W24, W25, W42] | generators derived from predicates or relations | derivation; constraint-guided generation | none | generators for constrained structures can be derived or guided |
+| Lean 4 and mathlib [W35, W36] | a pure functional language with proofs | the kernel; tactics; SMT bridges | `Float` opaque to the logic | the translation target closest to Plato |
+
+The pattern, for an owner who controls the language [J]: systems whose language team owned the
+specification syntax and the tools (Eiffel, Ada with SPARK 2014, Dafny, Whiley) kept them coherent;
+annotation layers over a language someone else controlled (JML, ACSL, Code Contracts) depended on a
+separate team keeping pace, and one died when it did not. Plato is in the first position.
 
 ## Sources
 
-- [W1] AdaCore, SPARK user's guide (contracts as Ada 2012 aspects; SPARK 2005 and earlier used `--#`
-  annotations): https://docs.adacore.com/spark2014-docs/html/ug/
+- [W1] AdaCore, SPARK user's guide: https://docs.adacore.com/spark2014-docs/html/ug/
 - [W2] Eiffel, Design by Contract: https://www.eiffel.org/doc/solutions/Design_by_Contract_and_Assertions
-- [W2b] Wei and others, "Stateful testing: finding more errors in code and contracts" (AutoTest,
-  with contracts as oracles): https://arxiv.org/abs/1108.1068
+- [W2b] Wei and others, "Stateful testing: finding more errors in code and contracts" (AutoTest):
+  https://arxiv.org/abs/1108.1068
 - [W3] Dafny: https://dafny.org/
-- [W3b] Dafny test generation (Dafny workshop at POPL 2024):
+- [W3b] Dafny test generation, Dafny workshop at POPL 2024:
   https://popl24.sigplan.org/details/dafny-2024-papers/7/Dafny-Test-Generation
 - [W4] Whiley: https://whiley.org/
 - [W5] Microsoft, Code Contracts (.NET Framework only):
   https://learn.microsoft.com/en-us/dotnet/framework/debug-trace-profile/code-contracts
-- [W6] Frama-C, ACSL and the E-ACSL manual: https://frama-c.com/html/acsl.html and
-  https://www.frama-c.com/download/e-acsl/e-acsl-manual.pdf
-- [W7] OpenJML (tools for JML): https://www.openjml.org/
-- [W8] Kani function contracts and `stub_verified`:
-  https://rust-training.ferrous-systems.com/latest/book/kani; Creusot and Pearlite:
-  https://github.com/creusot-rs/creusot/blob/master/ARCHITECTURE.md
+- [W6] Frama-C, ACSL and E-ACSL: https://frama-c.com/html/acsl.html
+- [W7] OpenJML: https://www.openjml.org/
+- [W8] Kani function contracts and `stub_verified`: https://rust-training.ferrous-systems.com/latest/book/kani;
+  Creusot: https://github.com/creusot-rs/creusot
 - [W9] Prusti: https://github.com/viperproject/prusti-dev
 - [W10] Liquid Haskell: https://ucsd-progsys.github.io/liquidhaskell/; F*: https://fstar-lang.org/
-- [W11] Bradley, Manna, Sipma, "What's decidable about arrays?", VMCAI 2006; Z3:
-  https://github.com/Z3Prover/z3
+- [W11] Z3: https://github.com/Z3Prover/z3; Bradley, Manna, Sipma, "What's decidable about arrays?",
+  VMCAI 2006
 - [W12] Alloy and the small-scope hypothesis: https://alloytools.org/
-- [W13] Dufourd, hypermaps, the genus theorem, and Euler's formula in Coq:
-  https://rocq-prover.org/p/coq-euler-formula and https://arxiv.org/abs/0802.2853
 - [W14] MetiTarski: https://www.cl.cam.ac.uk/~lp15/papers/Arith/
-- [W15] Hales and others, "A formal proof of the Kepler conjecture" (Flyspeck):
-  https://arxiv.org/abs/1501.02155
 - [W16] Cimatti and others, "Satisfiability modulo transcendental functions via incremental
-  linearization" (the method cvc5 implements): https://arxiv.org/abs/1801.08723
-- [W17] dReal, delta-complete decision procedures: https://dreal.github.io/
+  linearization": https://arxiv.org/abs/1801.08723
 - [W18] Lean language reference, floating-point numbers:
   https://lean-lang.org/doc/reference/4.30.0/Basic-Types/Floating-Point-Numbers/
-- [W19] Hypothesis: https://hypothesis.readthedocs.io/; Löscher and Sagonas, "Targeted
-  property-based testing", ISSTA 2017
-- [W20] CsCheck: https://github.com/AnthonyLloyd/CsCheck; FsCheck: https://fscheck.github.io/FsCheck/
+- [W19] Hypothesis: https://hypothesis.readthedocs.io/
+- [W19b] Löscher and Sagonas, "Targeted property-based testing", ISSTA 2017
 - [W21] Chen and others, "Metamorphic testing: a review of challenges and opportunities", ACM
   Computing Surveys 51(1), 2018
-- [W22] Solovyev and others, FPTaylor, round-off bounds by symbolic Taylor expansions:
-  https://users.cs.utah.edu/docs/techreports/2015/pdf/UUCS-15-001.pdf
 - [W23] IEEE 1788-2015, the standard for interval arithmetic
-- [W24] Boyapati, Khurshid, Marinov, "Korat: automated testing based on Java predicates", ISSTA 2002:
-  https://web.cs.ucla.edu/~harryxu/research/papers/korat.pdf
+- [W24] Boyapati, Khurshid, Marinov, "Korat: automated testing based on Java predicates", ISSTA 2002
 - [W25] Lampropoulos, Paraskevopoulou, Pierce, "Generating good generators for inductive relations",
-  POPL 2018:
-  https://popl18.sigplan.org/details/POPL-2018-papers/11/Generating-Good-Generators-for-Inductive-Relations
-- [W26] Stryker.NET: https://stryker-mutator.io/
+  POPL 2018
+- [W26] Stryker mutation testing: https://stryker-mutator.io/
+- [W27] Brain, Tinelli, Rümmer, Wahl, "An automatable formal semantics for IEEE-754 floating-point
+  arithmetic", ARITH 2015 (the SMT-LIB FloatingPoint theory)
+- [W28] Findler and Felleisen, "Contracts for higher-order functions", ICFP 2002
+- [W29] Spock framework, power assertions: https://spockframework.org/spock/docs/
+- [W30] Ada 2012 Reference Manual, 7.3.2 "Type invariants" and 3.2.4 "Subtype predicates":
+  http://www.ada-auth.org/standards/12rm/html/RM-7-3-2.html
+- [W31] Runciman, Naylor, Lindblad, "SmallCheck and Lazy SmallCheck", Haskell Symposium 2008
+- [W32] MacIver and Donaldson, "Test-case reduction via test-case generation: insights from the
+  Hypothesis reducer", ECOOP 2020
+- [W33] Barbosa and others, "cvc5: a versatile and industrial-strength SMT solver", TACAS 2022
+- [W34] Niemetz and Preiner, "Bitwuzla", CAV 2023
+- [W35] de Moura and Ullrich, "The Lean 4 theorem prover and programming language", CADE 2021;
+  mathlib: https://github.com/leanprover-community/mathlib4
+- [W36] lean-smt, an SMT tactic for Lean: https://github.com/ufmg-smite/lean-smt
+- [W37] Tsoukalas and others, "PutnamBench", NeurIPS 2024 Datasets and Benchmarks; Loughridge and
+  others, "DafnyBench", 2024
+- [W38] DeMillo, Lipton, Sayward, "Hints on test data selection: help for the practicing
+  programmer", IEEE Computer 11(4), 1978
+- [W39] Sibidanov, Zimmermann, Glondu, "The CORE-MATH project", ARITH 2022 (correctly rounded
+  mathematical functions)
+- [W40] Zeller and Hildebrandt, "Simplifying and isolating failure-inducing input", IEEE TSE 2002;
+  Regehr and others, "Test-case reduction for C compiler bugs" (C-Reduce), PLDI 2012
+- [W41] Claessen and Hughes, "QuickCheck: a lightweight tool for random testing of Haskell
+  programs", ICFP 2000
+- [W42] Lampropoulos and others, "Beginner's Luck: a language for property-based generators",
+  POPL 2017
+
+## Appendix A. Effort notes
+
+Notes only; nothing above is ordered or weighed by them.
+
+- **The sum-type precedent.** `tracker/issues/plato-232.md`: design, specification and test corpus
+  filed and closed on 2026-07-27; the grammar landed as parakeet `12aad78`, the AST and front end in
+  Plato commits `1d3ed84` and `507de64`. Comparing two sum values needed a second fix six days later
+  (`stdlib-402`). TypeScript and Rust emission are still missing at `f6e02cf0`. A language feature's
+  core lands in days; its tail across writers and tools takes longer.
+- **Sizes for calibration**: elaborator 382 lines; `Tir.cs` 404; writers 1,181 to 7,516 lines; the
+  gate driver that runs every front-end check, 94 lines over the compiler's assemblies.
+- **The first version's estimates**, made for a lowering tool over unchanged Plato: two to four days
+  for parsing and checking spec blocks; one to two weeks for runner extensions (witnesses, dependent
+  generation, vacuity, counterexamples); a few days per theorem proved in Dafny.
+- **TARGET-LANGUAGE.md**: backing C# `Number` with `double` is about a day, about 25 code sites.
