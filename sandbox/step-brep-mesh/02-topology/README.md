@@ -511,8 +511,10 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
    `ReducedCounts`, and connectivity sees coinciding poly-loop points. Rewriting poly loops into edge
    loops at decode would remove a case of `BrepLoop` that five layers match on.
 4. **The rest of the pcurve laws.** Settled in the fix wave (review M3): see "Pcurves".
-5. **Parameter-space loop laws**: simplicity and nesting (`Law_LoopSimpleInParameterSpace`,
-   `Law_InnerBoundInsideOuter`) belong to layer 5's region, or to this layer for plain faces.
+5. **Parameter-space loop laws.** Settled in the fix wave: simplicity and nesting
+   (`Law_LoopSimpleInParameterSpace`, `Law_InnerBoundInsideOuter`) are layer 5's region laws, for
+   plain faces too. A second copy here for plain faces would judge the same polygons twice, built by
+   a different unwrapping (`IsPlainInParameters`) that could disagree with layer 5's.
 6. **The parameter tolerance for curve parameters.** Settled in the fix wave: layer 1's
    `ParameterToleranceAt(g, c, t, tol)` at the range's start (review T8).
 7. **Caching edge domains.** Settled in the fix wave (review T9): not stored. `EdgeDomain` and
@@ -521,8 +523,10 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
    which every layer constructs, and a law saying the table equals the function, which is the
    function again.
 8. **Severity of a repaired defect.** Settled in the fix wave: a Warning (decision 12).
-9. **Cross-shell pinches.** Per-shell link laws do not see two shells of a `ShellSet`, or two solids,
-   touching at a vertex. That is legal for separate solids and suspect for one shell set.
+9. **Cross-shell pinches.** Settled in the fix wave: legal, no law. Two shells of a `ShellSet`, or
+   two solids, touching at a vertex or sharing an edge are separate surfaces that meet; each is
+   judged on its own by the per-shell laws (decision 6), and nothing in a shell set says its shells
+   must be apart. A pinch inside one shell is still caught by the link laws.
 
 ## Implementation notes
 
@@ -655,6 +659,8 @@ Applied:
 - **Poly loops (open item 3).** Decided: the laws see poly loops directly.
   `Law_PolyLoopEdgesPairUp` over the deferred `PolyEdgeUseDefects` (implicit edges identified by
   coincidence, as `ReducedCounts` does), and `Law_PolyLoopHasThreePoints`.
+- **Open items 5 and 9 (decided, no code).** Parameter-space loop simplicity and nesting are layer
+  5's; shells that touch each other are legal.
 
 Skipped:
 
