@@ -221,7 +221,7 @@ Only these two, in `Ara3D.IO.StepParser`:
 ## Regenerating the fixtures and witnesses
 
 `tools/gen_adapter.py <adapter folder>` writes the five fixtures, parses them back with its own
-small Part 21 reader (not the C# one), builds every witness arena from `tools/witness_template.plato`,
+small Part 21 reader (not the C# one), builds every witness arena from `tools/witness_template.plato.txt`,
 asserts the hand-verification facts above (loops close, loop normals match the planes' outward
 axes, each edge is used once forward and once reversed, every reference resolves, each variant's
 arena is a prefix of the cube's), and rewrites `part21-witnesses.laws.plato`. Edit the generator,

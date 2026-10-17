@@ -378,7 +378,7 @@ for h, d, n in ((h_cube, "unit cube for the Part21File adapter tests", "unit-cub
                 (h_asm, "two placements of the unit cube for the Part21File adapter tests", "two-cubes-assembly.stp")):
     exp = dict(COMMON, Description=[d], Name=n); assert h == exp, (h, exp)
 def ix_comment(): return ""
-plato = open(os.path.join(os.path.dirname(__file__), "witness_template.plato")).read()
+plato = open(os.path.join(os.path.dirname(__file__), "witness_template.plato.txt")).read()
 plato = (plato.replace("@CUBE_INSTANCES@", pinstances(cube_rows))
               .replace("@CUBE_ARENA@", parena(cube_arena, cube_rows))
               
