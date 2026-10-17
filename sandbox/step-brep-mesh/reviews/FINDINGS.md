@@ -32,4 +32,6 @@ session accepts them.
   entities), ask for a Plato or tool feature that resolves a string literal against the schema
   table rather than design around its absence.
 - **Ticket** [TKT-300](../../../tickets/TKT-300-step-typed-entities.md).
-- **Status** open; nothing in `03-step` changed yet.
+- **Status** recorded only. The owner said on 2026-10-17 that TKT-300 is **not to be tackled**;
+  it stays as the record of the finding and leaves the ready list until the owner promotes it.
+  Nothing in `03-step` changed.
