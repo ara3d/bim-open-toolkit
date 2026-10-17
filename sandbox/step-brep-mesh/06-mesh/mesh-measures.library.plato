@@ -19,24 +19,57 @@ library ModelMeshMeasures
     //==
     // # Area
 
-    // The area of element e: a triangle's, or the sum of the two triangles of a quad's A-C split.
+    // The sum of an array of numbers by Neumaier's compensated summation (Higham, "Accuracy and
+    // Stability of Numerical Algorithms", 4.3): the computed sum differs from the exact one by at
+    // most about 2u |sum| + 2n u^2 (sum of |x|), u the unit roundoff, n the count, whatever the
+    // order. A plain left fold errs by up to (n - 1) u (sum of |x|), which grows with the mesh. Every
+    // total of this layer that a law compares with another total (area, signed volume, angle sums)
+    // is summed this way, so the law's bound is a constant number of roundings of the total.
+    CompensatedSum(values: Array<Number>): Number
+    {
+        var acc = values.Reduce(Vector2D(0.0, 0.0), (a, x) => a.NeumaierStep(x));
+        return acc.X + acc.Y;
+    }
+
+    // One step of Neumaier's summation: X is the running sum, Y the running compensation, the
+    // rounding error of each addition recovered exactly from the larger operand.
+    NeumaierStep(acc: Vector2D, x: Number): Vector2D
+    {
+        var t = acc.X + x;
+        var lost = acc.X.Abs >= x.Abs ? (acc.X - t) + x : (x - t) + acc.X;
+        return Vector2D(t, acc.Y + lost);
+    }
+
+    // Whether two compensated totals of the same terms, grouped or ordered differently, agree: they
+    // differ by at most ResolutionAt of the larger total's magnitude (00-foundation, 32 unit
+    // roundoffs). Sound for totals of non-negative terms such as areas, where the sum of |x| is the
+    // total: each side errs by at most about 2u times it, nested sums add 2u per level, and the
+    // bound leaves a factor of more than 4 for up to 1e14 terms.
+    TotalsAgree(a: Number, b: Number): Boolean
+        => (a - b).Abs <= ResolutionAt(a.Abs.Max(b.Abs));
+
+    // The area of element e: a triangle's, or the sum of the two triangles of a quad's A-C split
+    // (bitwise the stdlib's Area(Quad3D), which adds the same two triangle areas in the same order).
     ElementArea(mesh: ModelMesh, e: ElementIndex): Number
         => mesh.ElementTriangles(e).Map(t => t.Area).SumOf;
 
-    // The total area of the mesh, element by element in element order.
+    // The total area of the mesh, element by element in element order, compensated.
     Area(mesh: ModelMesh): Number
-        => mesh.ElementCount.MapRange(k => mesh.ElementArea(ElementIndex(k))).SumOf;
+        => mesh.ElementCount.MapRange(k => mesh.ElementArea(ElementIndex(k))).CompensatedSum;
 
     // The 3D position of parameter-space point i of a face mesh: the position of its local vertex.
     FaceMeshPoint(fm: FaceMesh, i: VertexIndex): Point3D
         => fm.Positions[fm.LocalVertex[i]];
 
-    // The area of a face mesh's elements in 3D, quads split along A-C. Named apart from Area so that
+    // The area of a face mesh's elements in 3D, quads split along A-C, compensated. Named apart from Area so that
     // it cannot collide with an Area over FaceMesh that 05-face-meshing may declare.
     FaceMeshArea(fm: FaceMesh): Number
-        => fm.Triangles.Map(t => Triangle3D(fm.FaceMeshPoint(t.A), fm.FaceMeshPoint(t.B), fm.FaceMeshPoint(t.C)).Area).SumOf
-            + fm.Quads.Map(q => Quad3D(fm.FaceMeshPoint(q.A), fm.FaceMeshPoint(q.B), fm.FaceMeshPoint(q.C),
-                fm.FaceMeshPoint(q.D)).Area).SumOf;
+        => (fm.Triangles.Count + fm.Quads.Count).MapRange(k => k < fm.Triangles.Count
+                ? Triangle3D(fm.FaceMeshPoint(fm.Triangles[k].A), fm.FaceMeshPoint(fm.Triangles[k].B),
+                    fm.FaceMeshPoint(fm.Triangles[k].C)).Area
+                : Quad3D(fm.FaceMeshPoint(fm.Quads[k - fm.Triangles.Count].A), fm.FaceMeshPoint(fm.Quads[k - fm.Triangles.Count].B),
+                    fm.FaceMeshPoint(fm.Quads[k - fm.Triangles.Count].C), fm.FaceMeshPoint(fm.Quads[k - fm.Triangles.Count].D)).Area)
+            .CompensatedSum;
 
     //==
     // # Signed volume

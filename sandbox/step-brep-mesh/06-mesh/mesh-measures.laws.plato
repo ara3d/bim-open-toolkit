@@ -16,15 +16,15 @@ library ModelMeshMeasuresLaws
     //==
     // # Area and volume
 
-    // The assembled mesh's area is the sum of its face meshes' areas. Exact by construction: the
-    // assembly copies every position and keeps every element, so the element areas are the same
-    // numbers and only the order of the sum differs. Tolerance: tol.Value squared per element, far
-    // above that rounding in 64-bit arithmetic (not in 32-bit; README, Number precision).
-    Law_AreaIsSumOfFaceMeshAreas(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering,
-        tol: LengthTolerance): Boolean
+    // Library law: the assembled mesh's area is the sum of its face meshes' areas. The assembly
+    // copies every position and keeps every element, so the element areas are the same numbers
+    // bitwise and only the grouping of the sum differs; with both totals compensated
+    // (CompensatedSum) they agree within ResolutionAt of the total (TotalsAgree), for meshes of any
+    // size. A model tolerance would be the wrong yardstick: this is a law about rounding
+    // (reviews/MATH-REVIEW-layers-0-6.md F7).
+    Law_AreaIsSumOfFaceMeshAreas(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Boolean
         => (m.CanAssemble(faceMeshes, n) ? m.AssembleModelMesh(faceMeshes, n).HasAllValidCorners : false)
-            ? (m.AssembleModelMesh(faceMeshes, n).Area - faceMeshes.Map(fm => fm.FaceMeshArea).SumOf).Abs
-                <= tol.Value * tol.Value * m.AssembleModelMesh(faceMeshes, n).ElementCount.ToNumber
+            ? TotalsAgree(m.AssembleModelMesh(faceMeshes, n).Area, faceMeshes.Map(fm => fm.FaceMeshArea).CompensatedSum)
             : true;
 
     // Reversing every element changes the sign of the signed volume. Each tetrahedron's volume is

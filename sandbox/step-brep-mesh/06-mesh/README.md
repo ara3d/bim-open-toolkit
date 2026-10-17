@@ -239,7 +239,7 @@ outside its range makes it vacuously true, and the range is another law's statem
 
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
-| `Law_AreaIsSumOfFaceMeshAreas` | the assembled area is the sum of the face mesh areas (exact by construction, only the summation order differs) | `LengthTolerance` squared per element | test |
+| `Law_AreaIsSumOfFaceMeshAreas` | the assembled area is the sum of the face mesh areas (the element areas are bitwise equal, only the grouping of the compensated sums differs) | `ResolutionAt` of the total (`TotalsAgree`) | test |
 | `Law_ReversalNegatesSignedVolume` | reversing every element negates the signed volume | `LengthTolerance` times the area | test |
 | `Law_OutwardTetrahedronHasPositiveVolume` | the outward-wound unit tetrahedron has positive signed volume | exact sign | test |
 | `Law_TriangleAngleSumIsPi` | a triangle's angles sum to pi | `AngleTolerance` | Error |
@@ -298,13 +298,13 @@ degrees, chosen here).
 | `Law_TriangleMeshKeepsPositions` | `ToTriangleMesh3D` positions are the mesh's | exact by construction | test |
 | `Law_TriangleMeshSplitsEachQuadInTwo` | T + 2Q triangles | exact | test |
 | `Law_TriangulatedCornerNamesTheTriangleCorner` | triangle k slot s is model corner `TriangulatedCorner(k, s)` | exact | test |
-| `Law_TriangleMeshKeepsArea` | same total area | `LengthTolerance` squared per element | test |
+| `Law_TriangleMeshKeepsArea` | same total area | `ResolutionAt` of the total (`TotalsAgree`) | test |
 | `Law_QuadMeshIsOkExactlyWithoutTriangles` | `Ok` exactly when there are no triangles | exact | test |
 | `Law_QuadMeshKeepsPositions` | `ToQuadMesh3D` positions are the mesh's | exact by construction | test |
-| `Law_QuadMeshKeepsAreaWhenOk` | same total area when `Ok` | `LengthTolerance` squared per element | test |
+| `Law_QuadMeshKeepsAreaWhenOk` | same total area when `Ok` | `ResolutionAt` of the total (`TotalsAgree`) | test |
 | `Law_PolygonMeshKeepsPositions` | `ToPolygonMesh3D` positions are the mesh's | exact by construction | test |
 | `Law_PolygonMeshHasOneFacePerElement` | one face row per element | exact | test |
-| `Law_PolygonMeshKeepsArea` | same total area through the stdlib's fan triangulation | `LengthTolerance` squared per element | test |
+| `Law_PolygonMeshKeepsArea` | same total area through the stdlib's fan triangulation | `ResolutionAt` of the total (`TotalsAgree`) | test |
 | `Law_SplitHasAtLeastAsManyVertices` | at least as many vertices, when every vertex is referenced | exact | test |
 | `Law_SplitSplitsEachQuadInTwo` | the same T + 2Q elements | exact | test |
 | `Law_SplitHasOneNormalPerVertex` | one normal per split vertex | exact | test |
@@ -365,10 +365,12 @@ Readings of those names this layer depends on, for the owning authors to confirm
 
 ## Implementation notes
 
-- **64-bit `Number` is assumed** by the area and volume laws (README, "Number precision"). Sum areas,
-  volumes, and angle defects with compensated (Neumaier) summation: the error is then about 2u times
-  the total rather than n u times it, which keeps `Law_AreaIsSumOfFaceMeshAreas` (tolerance
-  `LengthTolerance` squared per element) true for meshes of any size.
+- **Totals are compensated.** `CompensatedSum` (Neumaier) sums areas, volumes, and angle sums, so
+  each total errs by about 2u times the sum of its terms' magnitudes rather than n u times it, and
+  the laws comparing two totals are judged by `ResolutionAt` (32 u) of that magnitude whatever the
+  mesh size. A plain fold (`SumOf`) would make those laws false on large meshes (the review's F7: 50
+  element areas totalling 9.8e5 mm^2 already differ by 7e-10 between two orders). With a 32-bit
+  `Number` the same laws hold, since `ResolutionAt` scales with the unit roundoff.
 - **The edge table's sort key** must not be `min * V + max` in a 32-bit `Integer` (it overflows above
   46,341 vertices); sort pairs, or use a 64-bit key. The coincident-vertex hash has the same hazard
   (research/EXISTING-MESHER-LESSONS.md lesson 1).
@@ -410,6 +412,8 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `TriangleQuality`, `QuadQuality` functions unnamed | `TriangleQualityOf(Triangle3D)`, `QuadQualityOf(Quad3D)`, `TriangleQualityAt`, `QuadQualityAt`, `MeshQualityThresholds` with `CubitAcceptable` | metrics on stdlib shapes so identity laws run on random triangles |
 | (none) | `Reversed(mesh)`, `WindingNumber`, `CoincidentVertexPairs`, `DegenerateElements`, `ElementsWithRepeatedCorners`, `IsPinchedVertex`, `Witness_UnitTetrahedron` | the reversal, outward-orientation, detection, and witness the laws need |
 | research catalogue names for layer 6 | `Law_MeshEdgeAtMostTwoElements` is `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides`; `Law_MeshEdgeExactlyTwoElements` is `Law_ClosedMeansEveryEdgeHasTwoSides`; `Law_MeshEdgeOppositeTraversal` is `Law_OrientedExactlyWhenNoEdgeIsMisoriented`; `Law_MeshVertexLinkIsSingleCycle` is `Law_ClosedMeshHasNoPinchedVertex`; `Law_MeshNoCoincidentVertices` is `Law_VerticesOfOneComponentAreApart`; `Law_MeshElementNotDegenerate` is `Law_ElementIsNotDegenerate`; `Law_MeshComponentEulerEvenAtMostTwo` is `Law_ClosedOrientedSurfaceHasGenus`; `Law_AngleDefectSumIdentity` is `Law_AngleDefectSumIsTwoPiTimesEuler`; `Law_QuadAngleDefectWithinTolerance` is `Law_QuadAngleDefectMeetsThreshold` | names that say the statement; the catalogue's were proposals, not fixed names |
+| (none) | `CompensatedSum(values)`, `TotalsAgree(a, b)` | the summation and the yardstick of every law comparing two totals |
+| `Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n, tol)`, `Law_TriangleMeshKeepsArea(mesh, tol)`, `Law_QuadMeshKeepsAreaWhenOk(mesh, tol)`, `Law_PolygonMeshKeepsArea(mesh, tol)` | the same without `tol` | rounding laws judged by `ResolutionAt`, not by the model's length tolerance; 07-validation's four `Check_` calls drop the argument |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -422,3 +426,6 @@ Applied:
 
 - **`SameConnectivity` by numbering** (FIX-WAVE ownership table; 07 finding 1). Declared once here
   with a body; layers 7 and 8 delete their copies.
+- **Area-sum and conversion area laws by `ResolutionAt`** (review F7). `CompensatedSum` and
+  `TotalsAgree` added; `Area` and `FaceMeshArea` are compensated; the four area laws lose their
+  `LengthTolerance` parameter. The README's "true for meshes of any size" now holds.

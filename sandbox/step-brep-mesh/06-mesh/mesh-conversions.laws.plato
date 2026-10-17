@@ -2,8 +2,8 @@
 // # Conversions to the stdlib mesh types: laws
 //
 // Every conversion keeps the positions (copied, so compared exactly), keeps the elements (split
-// quads counted as two), and keeps the total area (the same element areas summed in another
-// order, so within tol.Value squared per element). The split mesh has its own laws: at least as
+// quads counted as two), and keeps the total area (the same triangle areas summed in another
+// grouping, both compensated, so within ResolutionAt of the total: TotalsAgree). The split mesh has its own laws: at least as
 // many vertices, the triangulation's connectivity under SourceVertex, each corner's attributes,
 // and no needless split.
 //
@@ -34,11 +34,10 @@ library ModelMeshConversionsLaws
             ? mesh.ToTriangleMesh3D.Faces[k].At(s).Value == mesh.CornerVertex(mesh.TriangulatedCorner(k, s)).Value
             : true;
 
-    // ToTriangleMesh3D keeps the total area, within tol.Value squared per element.
-    Law_TriangleMeshKeepsArea(mesh: ModelMesh, tol: LengthTolerance): Boolean
+    // ToTriangleMesh3D keeps the total area, within the rounding of the two totals (TotalsAgree).
+    Law_TriangleMeshKeepsArea(mesh: ModelMesh): Boolean
         => mesh.HasAllValidCorners
-            ? (mesh.ToTriangleMesh3D.Primitives.Map(t => t.Area).SumOf - mesh.Area).Abs
-                <= tol.Value * tol.Value * mesh.ElementCount.ToNumber
+            ? TotalsAgree(mesh.ToTriangleMesh3D.Primitives.Map(t => t.Area).CompensatedSum, mesh.Area)
             : true;
 
     //==
@@ -52,11 +51,10 @@ library ModelMeshConversionsLaws
     Law_QuadMeshKeepsPositions(mesh: ModelMesh): Boolean
         => IsSamePoints(mesh.ToQuadMesh3D.Mesh.Positions, mesh.Positions);
 
-    // When ToQuadMesh3D succeeds it keeps the total area, within tol.Value squared per element.
-    Law_QuadMeshKeepsAreaWhenOk(mesh: ModelMesh, tol: LengthTolerance): Boolean
+    // When ToQuadMesh3D succeeds it keeps the total area, within the rounding of the two totals.
+    Law_QuadMeshKeepsAreaWhenOk(mesh: ModelMesh): Boolean
         => (mesh.ToQuadMesh3D.Ok ? mesh.HasAllValidCorners : false)
-            ? (mesh.ToQuadMesh3D.Mesh.Primitives.Map(q => q.Area).SumOf - mesh.Area).Abs
-                <= tol.Value * tol.Value * mesh.ElementCount.ToNumber
+            ? TotalsAgree(mesh.ToQuadMesh3D.Mesh.Primitives.Map(q => q.Area).CompensatedSum, mesh.Area)
             : true;
 
     //==
@@ -71,11 +69,10 @@ library ModelMeshConversionsLaws
         => mesh.ToPolygonMesh3D.Faces.RowCount == mesh.ElementCount;
 
     // ToPolygonMesh3D keeps the total area, measured through the stdlib's fan triangulation, which
-    // splits a quad along A-C as this layer does; within tol.Value squared per element.
-    Law_PolygonMeshKeepsArea(mesh: ModelMesh, tol: LengthTolerance): Boolean
+    // splits a quad along A-C as this layer does; within the rounding of the two totals.
+    Law_PolygonMeshKeepsArea(mesh: ModelMesh): Boolean
         => mesh.HasAllValidCorners
-            ? (mesh.ToPolygonMesh3D.ToTriangleMesh.Primitives.Map(t => t.Area).SumOf - mesh.Area).Abs
-                <= tol.Value * tol.Value * mesh.ElementCount.ToNumber
+            ? TotalsAgree(mesh.ToPolygonMesh3D.ToTriangleMesh.Primitives.Map(t => t.Area).CompensatedSum, mesh.Area)
             : true;
 
     //==
