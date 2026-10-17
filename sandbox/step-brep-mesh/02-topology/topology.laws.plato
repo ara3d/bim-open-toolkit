@@ -244,6 +244,21 @@ library BrepTopologyLaws
     Law_SolidShellsAreDeclaredClosed(m: BrepModel, b: BodyIndex): Boolean
         => m.IsBodyIntact(b) ? m.HasDeclaredClosedShells(m.Bodies[b]) : true;
 
+    // The sign FaceNormalSign takes from the surface, epsilon, is the sign of
+    // N . (PartialU x PartialV) at every resolvable point of the face: sampled
+    // at the projections of its coedges' curve points. It tests the premise of
+    // FaceNormalSign, one epsilon per surface, on the faces of the model, which
+    // a mirrored placement or a spindle torus broke before the fix wave
+    // (review F2, F3). Library, exact sign.
+    Law_ParameterizationSignIsConstantOnFace(m: BrepModel, site: CoedgeSite, t: Number): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsCoedgeSiteInRange(site)
+                ? (m.ParameterizationSignAt(site, t) == 0
+                    ? true
+                    : (m.ParameterizationSignAt(site, t) == 1) == m.Geometry.NormalAgreesWithParameterization(m.Faces[site.Face].Surface))
+                : true)
+            : true;
+
     //==
     // # Edge domains
 

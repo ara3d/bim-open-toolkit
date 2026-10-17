@@ -4,8 +4,7 @@
 // Layer 2 of the STEP B-rep to mesh design (README.md beside this file). The
 // invented constructs of SPEC-DSL.md section 3 for this layer: the invariants
 // of a valid model and of its counts, the contract of EdgeDomain, the contracts
-// of the deferred functions, the contract this layer expects of the function it
-// declares on behalf of 01-geometry, and three theorems. Read, not run: the
+// of the deferred functions, and the theorems. Read, not run: the
 // gate skips this file. Every invariant and ensures cites a Law_ or a
 // predicate of topology.library.plato, so deleting this file loses no rule,
 // only the knowledge of which rules are promises.
@@ -14,7 +13,6 @@
 //  - Types
 //  - Edge domains
 //  - Deferred algorithms
-//  - Owed by 01-geometry
 //  - Theorems
 
 //==
@@ -252,25 +250,6 @@ spec SignedParameterArea(m: BrepModel, f: BrepFaceIndex): Number
     ensures result.IsFinite;
     measure m.CoedgeSitesOfFace(f).Count;
     deferred "the shoelace sum over the lifted polygons IsPlainInParameters builds, each bound traversed as the face uses it, with samples added until the sign no longer changes";
-}
-
-//==
-// # Owed by 01-geometry
-//
-// The contract this layer expects of the one function it declares for
-// 01-geometry. That layer owns the final contract.
-
-// The sign epsilon of research/STEP-BREP-MODEL.md 4.2: whether ISO's normal N
-// is the direction of PartialU x PartialV wherever that product is non-zero.
-spec NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean
-{
-    requires g.Surfaces.IsValidIndex(s);
-    ensures forall (uv: UvCoordinate) in g.Domain(s) :
-        g.AreaElement(s, uv) > 0.0
-            ? (g.NormalOr(s, uv, Direction3D(Vector3D.UnitZ)).Vector.Dot(g.PartialU(s, uv).Cross(g.PartialV(s, uv))) > 0.0) == result
-            : true;
-    measure 1;
-    deferred "a match over BrepSurface: false only for the Lemon part of a degenerate torus, and for RectangularTrimmed and Offset over such a basis";
 }
 
 //==

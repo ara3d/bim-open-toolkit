@@ -96,6 +96,16 @@ FaceNormalSign(f) = sigma(face.SameSense) * epsilon(surface)
         epsilon = -1 only for the inner (lemon) part of a degenerate torus.
 ```
 
+`epsilon` is one sign per surface because layer 1 states ISO's normal as
+`N = epsilon <PartialU x PartialV>` on placements of either handedness and on a plain toroidal
+surface with `major < minor`, whose normal turns over inside the axis together with the cross
+product (layer 1 decisions 6 and 17). A mirrored placement enters through `SameSense` alone: layer 3
+folds the transform's determinant (layer 1's `PlacementHandedness`) into it. Multiplying the
+handedness into `FaceNormalSign` as well would count the mirror twice: a mirrored sphere would get
+`+1 * -1 * -1`, an inward normal. `Law_ParameterizationSignIsConstantOnFace` samples
+`N . (PartialU x PartialV)` at the projections of a face's coedge points and checks it against
+`epsilon`, so a surface that breaks the premise is caught at the faces that use it.
+
 `CoedgeRunsForwardOnCurve` computes `kappa` in Boolean form:
 `(SameSense == IsForward) == bound.Orientation`. XNOR on Booleans is multiplication on signs, so
 the formula is exact and needs no tolerance. A pcurve has the sense of its 3D curve, so the same
@@ -105,8 +115,8 @@ In the parameter plane, with `u` turned a quarter turn counter-clockwise onto `v
 interior lies to the left of every coedge traversed in direction `kappa` when
 `FaceNormalSign = +1`, and to the right when it is `-1`. A region whose bounds close in `(u, v)`
 then has positive signed area exactly when `FaceNormalSign = +1`; that is
-`Law_LoopWindingMatchesSameSense`. `epsilon` belongs to the surface, so this layer declares
-`NormalAgreesWithParameterization(g, s)` on behalf of layer 1.
+`Law_LoopWindingMatchesSameSense`. `epsilon` belongs to the surface: layer 1's
+`NormalAgreesWithParameterization(g, s)`.
 
 Folding is invisible to these rules. Reversing a face negates `sigma(SameSense)` and every
 `sigma(bound.Orientation)`. Every `kappa` of the face flips, so the face runs each coedge the other
@@ -365,6 +375,7 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_DegenerateEdgeStaysAtStart(m, e, t)` | a degenerate edge's curve at fraction `t` lies at its start vertex | `epsL` | library, test |
 | `Law_EdgeLiesOnAdjacentSurfaces(m, site, t)` | the edge's curve at fraction `t` lies on the surface of the face citing it | `epsL` | geometric, W/E |
 | `Law_PcurveAgreesWithCurve(m, e, k, t)` | the `k`-th pcurve's point at fraction `t` of its edge range lies on the 3D curve | `epsL` | geometric, W/E |
+| `Law_ParameterizationSignIsConstantOnFace(m, site, t)` | at the projection of a coedge point, `N . (PartialU x PartialV)` has the sign `epsilon` says, where resolvable | exact sign | library, test |
 | `Law_LoopWindingMatchesSameSense(m, f)` | a plain face's parameter-space region has the sign `FaceNormalSign` says | exact sign | structural, Error |
 
 The pointwise laws take a fraction `t`, clamp it into `[0, 1]`, and map it onto the domain. Layer 7's
@@ -429,8 +440,8 @@ is called; `PcurvesOf` returns at most two pcurves; a pcurve has the sense of it
 
 **Declared here on behalf of lower layers** (`// belongs-in:`), to be deleted once the owner
 declares them: for 00-foundation, `PeriodicRepresentativeAbove(t, reference, period)` and
-`IsPeriodicDomain(d)`; for 01-geometry, `NormalAgreesWithParameterization(g, s)`, the sign
-`epsilon`, which layer 1's `Lemon` torus case makes necessary.
+`IsPeriodicDomain(d)`. `NormalAgreesWithParameterization(g, s)`, the sign `epsilon`, was declared
+here for layer 1 and is now layer 1's alone (fix wave).
 
 **Obligations on 03-step**: fold `oriented_face`, `oriented_closed_shell` and void orientation into
 `SameSense` and `FaceBound.Orientation`; merge two distinct vertex instances at one point of a
@@ -547,3 +558,10 @@ Applied:
   unrepaired case as an Error; the use-count laws and `FreeEdgeCount` exempt degenerate edges
   (`CountsAsEdge`), so sphere C is no longer reported as an open shell; `IsRedundantVertexLoop`
   and `KeptBounds` give face meshing the reduction's rule 2 (review C6).
+- **F2, F3, C3 (`FaceNormalSign`).** The stand-in `NormalAgreesWithParameterization` and its spec
+  are deleted; layer 1 owns it (FIX-WAVE ownership table). `FaceNormalSign` keeps
+  `sigma(SameSense) * epsilon`: layer 1 now states `N = epsilon <PartialU x PartialV>` on mirrored
+  frames and on a plain spindle torus, and layer 3 folds the determinant into `SameSense`, so
+  multiplying `PlacementHandedness` in here as well, which the fix-wave brief suggested, would count
+  the mirror twice. New: `ParameterizationSignAt` and the library law
+  `Law_ParameterizationSignIsConstantOnFace`, which test that premise on every face.

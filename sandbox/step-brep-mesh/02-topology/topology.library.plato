@@ -37,7 +37,6 @@
 //  - Parameter-space winding
 //  - Units
 //  - Owed by 00-foundation
-//  - Owed by 01-geometry
 
 library BrepTopology
 {
@@ -450,13 +449,35 @@ library BrepTopology
 
     // The sign relating face f's topological normal to its surface's parameter
     // orientation: +1 when the normal points along PartialU x PartialV, -1 when
-    // against it. It is sigma(SameSense) * epsilon, with epsilon = -1 only for the
-    // inner part of a degenerate torus (NormalAgreesWithParameterization). With
-    // +1 the face lies to the left of every coedge traversed in its composed
+    // against it. It is sigma(SameSense) * epsilon, with epsilon = -1 only on
+    // the Lemon part of a degenerate torus (layer 1's
+    // NormalAgreesWithParameterization). Layer 1 states N = epsilon <PartialU x
+    // PartialV> on placements of either handedness and on a Full torus with
+    // major below minor (its decisions 6 and 17), so epsilon is one sign per
+    // surface. A mirrored placement is not multiplied in here: layer 3 folds
+    // the transform's determinant (layer 1's PlacementHandedness) into
+    // SameSense, and multiplying again would count the mirror twice. With +1
+    // the face lies to the left of every coedge traversed in its composed
     // direction in the (u, v) plane, and a region that closes in (u, v) has
     // positive signed area. Precondition: m.IsFaceIntact(f).
     FaceNormalSign(m: BrepModel, f: BrepFaceIndex): Integer
         => (m.Faces[f].SameSense == m.Geometry.NormalAgreesWithParameterization(m.Faces[f].Surface)) ? 1 : -1;
+
+    // The sign of N . (PartialU x PartialV) on face f's surface at the
+    // projection of the curve point at fraction t of the coedge at site: +1,
+    // -1, or 0 where the area element there is below the arithmetic resolution
+    // of the partials, so that the sign is not rounding noise. Precondition:
+    // m.IsEveryIndexInRange and m.IsCoedgeSiteInRange(site).
+    ParameterizationSignAt(m: BrepModel, site: CoedgeSite, t: Number): Integer
+    {
+        var s = m.Faces[site.Face].Surface;
+        var uv = m.Geometry.Project(s, m.CurvePointAt(m.CoedgeAt(site).Edge, t));
+        var du = m.Geometry.PartialU(s, uv);
+        var dv = m.Geometry.PartialV(s, uv);
+        var cross = du.Cross(dv);
+        var product = m.Geometry.NormalOr(s, uv, Direction3D(Vector3D.UnitZ)).Vector.Dot(cross);
+        return cross.Length <= ResolutionAt(du.Length * dv.Length) ? 0 : (product > 0.0 ? 1 : -1);
+    }
 
     //==
     // # Edge domains
@@ -936,19 +957,4 @@ library BrepTopology
         return reduced > 0.0 ? reference + reduced : reference + period;
     }
 
-    //==
-    // # Owed by 01-geometry
-    //
-    // The one operation this layer needs from the geometry arena that neither
-    // VOCABULARY.md nor 01-geometry's files declare. The pcurve operations
-    // (PcurvesOf; Domain, Eval and ClosestParameter over PcurveIndex) and the
-    // arena's IsEveryIndexInRange are 01-geometry's own declarations.
-
-    // belongs-in: 01-geometry
-    // Whether the surface's normal N, as ISO 10303-42 defines it, points along
-    // PartialU x PartialV: the sign epsilon of research/STEP-BREP-MODEL.md 4.2.
-    // False only for the inner (lemon) part of a degenerate torus and for
-    // surfaces built on one.
-    // deferred: a match over BrepSurface.
-    NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean;
 }
