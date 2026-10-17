@@ -56,16 +56,8 @@ library StepToMeshLaws
             && a.Requests.Corresponds(b.Requests, (x, y) => x == y)
             && a.Diagnostics.Corresponds(b.Diagnostics, (x, y) => x.Identical(y));
 
-    // Two model meshes have the same connectivity: the same elements over the
-    // same vertex indices, each approximating the same face, under the same
-    // numbering. Positions, parameters, and normals are not compared.
-    SameConnectivity(a: ModelMesh, b: ModelMesh): Boolean
-        => a.Triangles.Corresponds(b.Triangles, (x, y) => x == y)
-            && a.Quads.Corresponds(b.Quads, (x, y) => x == y)
-            && a.ElementFace.Corresponds(b.ElementFace, (x, y) => x == y)
-            && IsSameNumbering(a.Numbering, b.Numbering);
-
-    // Two model meshes are the same value: the same connectivity, and every
+    // Two model meshes are the same value: the same connectivity (layer 6's
+    // SameConnectivity), and every
     // position, corner normal, corner parameter, and vertex provenance equal.
     // Exact by design, as SameFaceMesh.
     SameModelMesh(a: ModelMesh, b: ModelMesh): Boolean

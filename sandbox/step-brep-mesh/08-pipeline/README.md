@@ -533,6 +533,7 @@ Recorded here, not fixed there.
 | Old | New | Reason |
 |---|---|---|
 | `DiscretizeUsable(m, c)`, `Undiscretized(e)` (fix wave) | deleted; layer 4's `DiscretizeAll(m, c, NoFloors)` and `Undiscretized(e)` | `DiscretizeAll` now takes the usability guard itself |
+| `SameConnectivity(ModelMesh, ModelMesh)` (fix wave) | deleted; layer 6's, which compares numberings as this layer's did | one declaration, in the mesh layer |
 | `ParseOutcome { Ok; File; Diagnostics }` | not declared; layer 3's `ParsedFile` | identical fields; layer 3's proposal accepted (decision 1) |
 | `DecodeOutcome { Ok; Model; Map; Diagnostics }` | not declared; layer 3's `DecodedModel` | decoding is total and does not stop the run; a stored `Ok` would be a computable flag (decision 2) |
 | `MeshingOptions { Face; Level; MaxRefinementRounds }` | adds `Decode: DecodePolicy` | the decode defaults pass through to `DecodeBrepWith` |
@@ -599,3 +600,5 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
 7. **`Step`'s preconditions simplified** (finding 2, first half): `Step` requires layer 4's
    `IsRefinable` over its pending requests, which subsumes the coverage requirement; `InitialState`
    and `Step` ensure it of their result; new invariant I7, `Law_PendingRequestsAreRefinable`.
+8. **`SameConnectivity` deleted**: layer 6 declares it with this layer's meaning (numberings
+   compared).
