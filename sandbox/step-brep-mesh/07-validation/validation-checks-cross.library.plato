@@ -1,0 +1,385 @@
+//==
+// # BrepCrossChecking
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
+// checks that compare a mesh with the model it approximates, each by a route
+// independent of the code that made the mesh. The mesh of one shell is the
+// model mesh restricted to the elements of the shell's faces (RestrictedToShell);
+// its Euler characteristic is compared with the B-rep's on reduced counts,
+// its angle-defect sum with 2 pi times that, its closedness with the shell's,
+// its signed volume's sign with the shell's role (outer positive, void
+// negative). Every vertex is re-evaluated from its provenance; every face's
+// mesh area is compared with Oracle_FaceAreaByGreen within the envelope the
+// criteria imply (FaceAreaTolerance); every element normal and corner normal
+// with the surface normal under it. The measures are defined here once and
+// used by the laws (validation.laws.plato) and by the checks, so each check
+// agrees with its law by construction.
+//
+// Sections, in order:
+//  - The mesh of one shell
+//  - Measures
+//  - Checks: topology against the B-rep (structure)
+//  - Checks: geometry against the B-rep (geometry)
+//  - Checks: oracles (oracle)
+//  - Reports
+
+library BrepCrossChecking
+{
+    //==
+    // # The mesh of one shell
+
+    // True when element k of the mesh approximates a face of shell s.
+    IsShellElement(m: BrepModel, mesh: ModelMesh, s: ShellIndex, k: Integer): Boolean
+        => mesh.ElementFace.IsValidIndex(k) ? m.ShellFaces(s).Any(f => f == mesh.ElementFace[k]) : false;
+
+    // The mesh restricted to the elements of shell s's faces: every position
+    // kept (so vertex indices, provenance and numbering are unchanged), the
+    // shell's triangles and quads in their order with their element faces,
+    // and the corner attributes left empty, since no measure of the
+    // restriction reads them (README, "Cross checks").
+    RestrictedToShell(m: BrepModel, mesh: ModelMesh, s: ShellIndex): ModelMesh
+        => ModelMesh(
+            mesh.Positions,
+            mesh.Triangles.Count.Range.FlatMap(k => m.IsShellElement(mesh, s, k) ? [mesh.Triangles[k]] : []),
+            mesh.Quads.Count.Range.FlatMap(q => m.IsShellElement(mesh, s, mesh.Triangles.Count + q) ? [mesh.Quads[q]] : []),
+            [],
+            [],
+            mesh.ElementCount.Range.FlatMap(k => m.IsShellElement(mesh, s, k) ? [mesh.ElementFace[k]] : []),
+            mesh.VertexProvenance,
+            mesh.Numbering);
+
+    // The Euler characteristic V - E + F of the shell's mesh counting only
+    // the vertices its elements reference.
+    ShellMeshEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Integer
+        => m.RestrictedToShell(mesh, s).EulerCharacteristic - m.RestrictedToShell(mesh, s).ComponentsOf.UnreferencedVertexCount;
+
+    // The outer shell of a solid body; none for a shell set.
+    OuterShellOf(body: BrepBody): ShellIndex
+        => match (body)
+        {
+            ManifoldSolid(outer) => outer;
+            SolidWithVoids(outer, voids) => outer;
+            ShellSet(shells) => ShellIndex(-1);
+        };
+
+    // The void shells of a body; none unless it is a solid with voids.
+    VoidShellsOf(body: BrepBody): Array<ShellIndex>
+        => match (body)
+        {
+            ManifoldSolid(outer) => [];
+            SolidWithVoids(outer, voids) => voids;
+            ShellSet(shells) => [];
+        };
+
+    //==
+    // # Measures
+
+    // The point of the model a mesh vertex's provenance names: the model
+    // vertex's point, the edge's curve at the parameter, or the face's
+    // surface at the parameters. Precondition: the provenance names a cell of
+    // the model (ProvenanceInModel).
+    ProvenancePoint(m: BrepModel, p: MeshVertexProvenance): Point3D
+        => match (p)
+        {
+            OnVertex(vertex) => m.Vertices[vertex].Point;
+            OnEdge(edge, parameter) => m.Geometry.Eval(m.Edges[edge].Curve, parameter);
+            OnFace(face, uv) => m.Geometry.Eval(m.Faces[face].Surface, uv);
+        };
+
+    // True when the provenance names a vertex, edge or face of the model.
+    ProvenanceInModel(m: BrepModel, p: MeshVertexProvenance): Boolean
+        => match (p)
+        {
+            OnVertex(vertex) => m.IsVertexInRange(vertex);
+            OnEdge(edge, parameter) => m.IsEdgeInRange(edge);
+            OnFace(face, uv) => m.IsFaceInRange(face);
+        };
+
+    // The distance from mesh vertex v's position to the model point its
+    // provenance names, behind Law_VertexReevaluatesFromProvenance's guard (0
+    // where the law is vacuous).
+    ReevaluationDeviation(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Number
+        => (mesh.Positions.IsValidIndex(v) && mesh.VertexProvenance.IsValidIndex(v) && m.IsEveryIndexInRange && m.Geometry.IsWellFormed)
+            ? (m.ProvenanceInModel(mesh.VertexProvenance[v])
+                ? mesh.Positions[v].Distance(m.ProvenancePoint(mesh.VertexProvenance[v]))
+                : 0.0)
+            : 0.0;
+
+    // The area of the mesh's elements that approximate face f, quads by their
+    // A-C split (layer 6's ElementArea).
+    MeshFaceArea(mesh: ModelMesh, f: BrepFaceIndex): Number
+        => mesh.ElementCount.Range.Map(k =>
+            (mesh.ElementFace.IsValidIndex(k) ? (mesh.ElementFace[k] == f ? mesh.HasValidCorners(ElementIndex(k)) : false) : false)
+                ? mesh.ElementArea(ElementIndex(k))
+                : 0.0).SumOf;
+
+    // |mesh area of face f - Oracle_FaceAreaByGreen|, behind
+    // Law_FaceAreaMatchesOracle's guard (0 where the oracle has no number).
+    FaceAreaGap(m: BrepModel, mesh: ModelMesh, f: BrepFaceIndex): Number
+        => m.Oracle_FaceAreaByGreen(f).IsFinite ? (mesh.MeshFaceArea(f) - m.Oracle_FaceAreaByGreen(f)).Abs : 0.0;
+
+    // The face normal of face f at parameters uv: the surface's normal times
+    // the face's sense, or fallback where the surface has none.
+    FaceNormalOf(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate, fallback: Direction3D): Direction3D
+        => Direction3D(m.Geometry.NormalOr(m.Faces[f].Surface, uv, fallback).Vector * (m.Faces[f].SameSense ? 1.0 : -1.0));
+
+    // True when uv lies on a collapsed line of face f's surface in either
+    // parameter, within the parameter floor: where the surface normal is a
+    // limit, which no normal law judges.
+    IsOnAnyCollapse(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate): Boolean
+        => m.Geometry.CollapsedAt(m.Faces[f].Surface, SurfaceParameter.ParameterV, m.Tolerances)
+                .Any(c => m.Geometry.Domain(m.Faces[f].Surface).V.SameParameter(uv.V, c, m.Tolerances.Parameter))
+            || m.Geometry.CollapsedAt(m.Faces[f].Surface, SurfaceParameter.ParameterU, m.Tolerances)
+                .Any(c => m.Geometry.Domain(m.Faces[f].Surface).U.SameParameter(uv.U, c, m.Tolerances.Parameter));
+
+    // True when element e of the mesh can be compared with its face: valid
+    // corners and corner attributes, its face a face of the model, and the
+    // model's indices in range.
+    CanCompareElement(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Boolean
+        => (mesh.HasValidCorners(e) && mesh.HasValidCornerAttributes(e) && mesh.ElementFace.IsValidIndex(e) && m.IsEveryIndexInRange)
+            ? (m.IsFaceInRange(mesh.ElementFace[e]) ? m.Geometry.IsWellFormed : false)
+            : false;
+
+    // The mean of element e's corner parameters: its parameter centroid, all
+    // corners read on the same copy of a seam (corner attributes).
+    CornerUvCentroid(mesh: ModelMesh, e: ElementIndex): UvCoordinate
+        => UvCoordinate(
+            mesh.ElementArity(e).MapRange(s => mesh.CornerUvAt(e, s).U).SumOf / mesh.ElementArity(e).ToNumber,
+            mesh.ElementArity(e).MapRange(s => mesh.CornerUvAt(e, s).V).SumOf / mesh.ElementArity(e).ToNumber);
+
+    // The angle in radians between element e's normal (layer 6's
+    // ElementNormalVector, from its positions) and the face normal at its
+    // corner-parameter centroid (from the surface), behind
+    // Law_ElementNormalAgreesWithFaceNormal's guard and exemption (0 on an
+    // element with a corner on a collapsed line).
+    ElementNormalGap(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Number
+        => m.CanCompareElement(mesh, e)
+            ? (mesh.ElementArity(e).Range.Any(s => m.IsOnAnyCollapse(mesh.ElementFace[e], mesh.CornerUvAt(e, s)))
+                ? 0.0
+                : AngleBetweenDirections(
+                    Direction3D(mesh.ElementNormalVector(e)),
+                    m.FaceNormalOf(mesh.ElementFace[e], mesh.CornerUvCentroid(e), Direction3D(mesh.ElementNormalVector(e)))).Radians)
+            : 0.0;
+
+    // The angle in radians between the normal stored at corner slot of
+    // element e and the face normal at the corner's parameters, behind
+    // Law_CornerNormalIsFaceNormal's guard and exemption (0 at a corner on a
+    // collapsed line, where the stored normal is a limit).
+    CornerNormalGap(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Number
+        => (m.CanCompareElement(mesh, e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
+            ? (m.IsOnAnyCollapse(mesh.ElementFace[e], mesh.CornerUvAt(e, slot))
+                ? 0.0
+                : AngleBetweenDirections(mesh.CornerNormalAt(e, slot),
+                    m.FaceNormalOf(mesh.ElementFace[e], mesh.CornerUvAt(e, slot), mesh.CornerNormalAt(e, slot))).Radians)
+            : 0.0;
+
+    // The signed volume of the mesh of shell s (layer 6's SignedVolume of the
+    // restriction, about the centre of the whole mesh's bounding box).
+    ShellMeshVolume(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Number
+        => m.RestrictedToShell(mesh, s).SignedVolume;
+
+    // The rounding bound of a signed volume: ResolutionAt of the sum of the
+    // absolute volumes of the tetrahedra summed, the magnitude of the terms.
+    VolumeRoundoff(mesh: ModelMesh): Number
+        => ResolutionAt(mesh.ElementCount.Range.Map(k => mesh.HasValidCorners(ElementIndex(k))
+            ? mesh.ElementTriangles(ElementIndex(k)).Map(t => Tetrahedron(mesh.VolumeOrigin, t.A, t.B, t.C).SignedVolume.Abs).SumOf
+            : 0.0).SumOf);
+
+    // True when shell s's mesh and shell t's mesh share no referenced vertex.
+    ShareNoVertex(m: BrepModel, mesh: ModelMesh, s: ShellIndex, t: ShellIndex): Boolean
+    {
+        var a = m.RestrictedToShell(mesh, s).ComponentsOf.VertexComponent;
+        var b = m.RestrictedToShell(mesh, t).ComponentsOf.VertexComponent;
+        return a.Count == b.Count ? a.Count.Range.All(v => a[v].Value < 0 || b[v].Value < 0) : false;
+    }
+
+    // The deviation bound d of a mesh made under criteria c, in the model's
+    // length unit: the larger of the surface and the effective edge chordal
+    // criteria, plus the length tolerance.
+    MeshDeviationBound(m: BrepModel, c: FaceMeshingCriteria): Number
+        => c.SurfaceChordal.Max(c.Discretization.EffectiveChordal(m.Tolerances)) + m.Tolerances.Length.Value;
+
+    // The volume of the tube of radius d about the boundary of body b, by
+    // Weyl's formula: 2 d A + (4 pi / 3) |chi| d^3, A the oracle area of the
+    // body's faces and chi the sum of its shells' Euler characteristics
+    // (research/VALIDATION-MATH.md 6.2): how far a mesh within d of the
+    // boundary may differ from the body in volume while d is below the reach.
+    TubeVolume(m: BrepModel, b: BodyIndex, c: FaceMeshingCriteria): Number
+    {
+        var d = m.MeshDeviationBound(c);
+        var area = m.BodyShells(b).Map(s => m.ShellFaces(s).Map(f => m.Oracle_FaceAreaByGreen(f)).SumOf).SumOf;
+        var chi = m.BodyShells(b).Reduce(0, (n, s) => n + m.ShellEulerPoincare(s)).Abs;
+        return 2.0 * d * area + 2.0 * Number.Tau / 3.0 * chi.ToNumber * d * d * d;
+    }
+
+    // The signed volume of body b's mesh: the sum over its shells.
+    BodyMeshVolume(m: BrepModel, mesh: ModelMesh, b: BodyIndex): Number
+        => m.BodyShells(b).Map(s => m.ShellMeshVolume(mesh, s)).SumOf;
+
+    // The area of shell s's faces by the oracle.
+    ShellOracleArea(m: BrepModel, s: ShellIndex): Number
+        => m.ShellFaces(s).Map(f => m.Oracle_FaceAreaByGreen(f)).SumOf;
+
+    //==
+    // # Checks: topology against the B-rep (structure)
+
+    // Law_MeshEulerEqualsBrepEuler at every shell. Structure: Error.
+    Check_MeshEulerEqualsBrepEuler(m: BrepModel, mesh: ModelMesh): Check
+        => m.CheckShells("Law_MeshEulerEqualsBrepEuler", s => Law_MeshEulerEqualsBrepEuler(m, mesh, s));
+
+    // Law_MeshClosedExactlyWhenShellClosed at every shell. Structure: Error.
+    Check_MeshClosedExactlyWhenShellClosed(m: BrepModel, mesh: ModelMesh): Check
+        => m.CheckShells("Law_MeshClosedExactlyWhenShellClosed", s => Law_MeshClosedExactlyWhenShellClosed(m, mesh, s));
+
+    // Law_ProvenanceNamesModelCell at every mesh vertex. Structure: Error.
+    Check_ProvenanceNamesModelCell(m: BrepModel, mesh: ModelMesh): Check
+        => mesh.CheckMeshVertices("Law_ProvenanceNamesModelCell", v => Law_ProvenanceNamesModelCell(m, mesh, v));
+
+    // Law_SolidShellMeshesShareNoVertex at every body and void. Structure:
+    // Error.
+    Check_SolidShellMeshesShareNoVertex(m: BrepModel, mesh: ModelMesh): Check
+        => CheckGrid("Law_SolidShellMeshesShareNoVertex", m.Bodies.Count, m.MostVoids,
+            (b, k) => Law_SolidShellMeshesShareNoVertex(m, mesh, BodyIndex(b), k), (b, k) => AtBody(b));
+
+    // Law_OuterShellVolumePositive at every body. Structure (a sign): Error.
+    Check_OuterShellVolumePositive(m: BrepModel, mesh: ModelMesh): Check
+        => m.CheckBodies("Law_OuterShellVolumePositive", b => Law_OuterShellVolumePositive(m, mesh, b));
+
+    // Law_VoidShellVolumeNegative at every body and void. Structure (a sign):
+    // Error.
+    Check_VoidShellVolumeNegative(m: BrepModel, mesh: ModelMesh): Check
+        => CheckGrid("Law_VoidShellVolumeNegative", m.Bodies.Count, m.MostVoids,
+            (b, k) => Law_VoidShellVolumeNegative(m, mesh, BodyIndex(b), k), (b, k) => AtBody(b));
+
+    //==
+    // # Checks: geometry against the B-rep (geometry)
+
+    // Law_VertexReevaluatesFromProvenance at every mesh vertex, measured by
+    // ReevaluationDeviation against Tolerances.Length. Geometry: Warning below
+    // ten times the tolerance, Error above.
+    Check_VertexReevaluatesFromProvenance(m: BrepModel, mesh: ModelMesh): Check
+        => CheckAllWithin("Law_VertexReevaluatesFromProvenance", mesh.Positions.Count,
+            v => m.ReevaluationDeviation(mesh, VertexIndex(v)), m.Tolerances.Length.Value, v => AtMeshVertex(v));
+
+    // Law_CornerNormalIsFaceNormal at every element and corner slot, measured
+    // by CornerNormalGap against Tolerances.Angle. Geometry: W/E.
+    Check_CornerNormalIsFaceNormal(m: BrepModel, mesh: ModelMesh): Check
+        => CheckGridWithin("Law_CornerNormalIsFaceNormal", mesh.ElementCount, 4,
+            (e, s) => m.CornerNormalGap(mesh, ElementIndex(e), s), m.Tolerances.Angle.Value.Radians, (e, s) => AtElement(e));
+
+    // Law_ElementNormalAgreesWithFaceNormal at every element, measured by
+    // ElementNormalGap against SurfaceAngular. Geometry: W/E.
+    Check_ElementNormalAgreesWithFaceNormal(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
+        => CheckAllWithin("Law_ElementNormalAgreesWithFaceNormal", mesh.ElementCount,
+            e => m.ElementNormalGap(mesh, ElementIndex(e)), c.SurfaceAngular.Radians, e => AtElement(e));
+
+    //==
+    // # Checks: oracles (oracle)
+
+    // Law_FaceAreaMatchesOracle at every face, the law's Boolean folded: each
+    // face has its own bound (FaceAreaTolerance), so no one bound grades the
+    // excess ten times over. Oracle family: Error.
+    Check_FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
+        => m.CheckFaces("Law_FaceAreaMatchesOracle", f => Law_FaceAreaMatchesOracle(m, mesh, c, f));
+
+    // Law_AngleDefectMatchesBrepEuler at every shell. Oracle family,
+    // structure: Error.
+    Check_AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh): Check
+        => m.CheckShells("Law_AngleDefectMatchesBrepEuler", s => Law_AngleDefectMatchesBrepEuler(m, mesh, s));
+
+    // Law_SolidVolumeWithinTube at every body. Oracle family: Error.
+    Check_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
+        => m.CheckBodies("Law_SolidVolumeWithinTube", b => Law_SolidVolumeWithinTube(m, mesh, c, b));
+
+    // Law_ReducedEulerMatchesOracle at every shell. Oracle family, structure:
+    // Error.
+    Check_ReducedEulerMatchesOracle(m: BrepModel): Check
+        => m.CheckShells("Law_ReducedEulerMatchesOracle", s => Law_ReducedEulerMatchesOracle(m, s));
+
+    // Law_OuterShellExactVolumePositive at every body. Oracle family: Error.
+    Check_OuterShellExactVolumePositive(m: BrepModel): Check
+        => m.CheckBodies("Law_OuterShellExactVolumePositive", b => Law_OuterShellExactVolumePositive(m, b));
+
+    // Law_VoidShellExactVolumeNegative at every body and void. Oracle family:
+    // Error.
+    Check_VoidShellExactVolumeNegative(m: BrepModel): Check
+        => CheckGrid("Law_VoidShellExactVolumeNegative", m.Bodies.Count, m.MostVoids,
+            (b, k) => Law_VoidShellExactVolumeNegative(m, BodyIndex(b), k), (b, k) => AtBody(b));
+
+    // Law_PlanarFaceAreaMatchesGreen at every face. Oracle family, a
+    // self-test of the two oracles against each other: Error.
+    Check_PlanarFaceAreaMatchesGreen(m: BrepModel): Check
+        => m.CheckFaces("Law_PlanarFaceAreaMatchesGreen", f => Law_PlanarFaceAreaMatchesGreen(m, f));
+
+    // The largest void count of any body: the extent of the per-void grids.
+    MostVoids(m: BrepModel): Integer
+        => m.Bodies.Reduce(0, (n, body) => n.Max(body.VoidShellsOf.Count));
+
+    //==
+    // # Reports
+
+    // The cross checks of a model and its mesh that need no meshing
+    // criteria, in one family.
+    CrossReport(m: BrepModel, mesh: ModelMesh, family: CheckFamily): Report
+        => match (family)
+        {
+            StructureChecks => MergeAll([
+                ExactReport(m.Check_MeshEulerEqualsBrepEuler(mesh),
+                    "The mesh of a shell has a different Euler characteristic from the shell's reduced counts."),
+                ExactReport(m.Check_MeshClosedExactlyWhenShellClosed(mesh),
+                    "The mesh of a shell is closed when the shell is not, or open when it is."),
+                ExactReport(m.Check_ProvenanceNamesModelCell(mesh),
+                    "A mesh vertex's provenance names no vertex, edge or face of the model."),
+                ExactReport(m.Check_SolidShellMeshesShareNoVertex(mesh),
+                    "The mesh of a solid's outer shell shares a vertex with the mesh of one of its voids."),
+                ExactReport(m.Check_OuterShellVolumePositive(mesh),
+                    "The mesh of a solid's outer shell does not enclose a positive volume: its elements face inwards."),
+                ExactReport(m.Check_VoidShellVolumeNegative(mesh),
+                    "The mesh of a void shell does not enclose a negative volume: its elements face out of the void.")]);
+            GeometryChecks => MergeAll([
+                MeasuredReport(m.Check_VertexReevaluatesFromProvenance(mesh), m.Tolerances.Length.Value,
+                    "A mesh vertex is farther than the length tolerance from the model point its provenance names."),
+                MeasuredReport(m.Check_CornerNormalIsFaceNormal(mesh), m.Tolerances.Angle.Value.Radians,
+                    "A corner normal differs from the face normal at the corner's parameters by more than the angle tolerance.")]);
+            QualityChecks => Report.Empty;
+            OracleChecks => ExactReport(m.Check_AngleDefectMatchesBrepEuler(mesh),
+                "The angle defects of a shell's mesh do not sum to 2 pi times the shell's Euler characteristic.");
+            SelfTestChecks => Report.Empty;
+        };
+
+    // The oracle checks of the model alone, with no mesh, in one family:
+    // ValidateBrep runs them at the Oracle level.
+    ModelOracleReport(m: BrepModel, family: CheckFamily): Report
+        => match (family)
+        {
+            StructureChecks => Report.Empty;
+            GeometryChecks => Report.Empty;
+            QualityChecks => Report.Empty;
+            OracleChecks => MergeAll([
+                ExactReport(m.Check_ReducedEulerMatchesOracle,
+                    "Layer 2's reduced Euler characteristic of a shell differs from the oracle's count."),
+                ExactReport(m.Check_OuterShellExactVolumePositive,
+                    "The exact faces of a solid's outer shell do not enclose a positive volume."),
+                ExactReport(m.Check_VoidShellExactVolumeNegative,
+                    "The exact faces of a void shell do not enclose a negative volume."),
+                ExactReport(m.Check_PlanarFaceAreaMatchesGreen,
+                    "The exact area of a planar face differs from its Green's-theorem area beyond the oracle's allowance.")]);
+            SelfTestChecks => Report.Empty;
+        };
+
+    // The cross checks that need the meshing criteria, in one family.
+    CrossReport(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, family: CheckFamily): Report
+        => match (family)
+        {
+            StructureChecks => Report.Empty;
+            GeometryChecks => MeasuredReport(m.Check_ElementNormalAgreesWithFaceNormal(mesh, c), c.SurfaceAngular.Radians,
+                "An element's normal differs from the surface normal at its parameter centroid by more than the surface angular criterion.");
+            QualityChecks => Report.Empty;
+            OracleChecks => MergeAll([
+                ExactReport(m.Check_FaceAreaMatchesOracle(mesh, c),
+                    "A face's mesh area differs from its Green's-theorem area by more than the criteria allow."),
+                ExactReport(m.Check_SolidVolumeWithinTube(mesh, c),
+                    "A solid's mesh volume differs from its divergence-theorem volume by more than the tube the criteria allow.")]);
+            SelfTestChecks => Report.Empty;
+        };
+}

@@ -1,0 +1,191 @@
+//==
+// # Validation: types
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file). The
+// conformance levels a validation runs at, the families of checks each level
+// requires, the facts a witness model is built to have, and the public test
+// corpus as data. Checks, diagnostics and reports themselves are layer 0's
+// (Check, Diagnostic, Report); this layer adds no second report type.
+//
+// Sections, in order:
+//  - Conformance levels
+//  - The Green's-theorem oracle
+//  - Witness facts
+//  - The public corpus
+
+//==
+// # Conformance levels
+
+// How much a validation runs. Structural: the exact laws (indices, counts,
+// chaining, edge uses, vertex links, Euler-Poincare, mesh numbering,
+// closedness, orientation parity); cheap and decisive. Geometric: Structural
+// and every sampled law with a tolerance (vertex on curve, edge on surface,
+// edge and face criteria, re-evaluation from provenance, normals) and the
+// quality thresholds. Oracle: Geometric and every comparison with an
+// independent oracle (Green's-theorem areas, divergence volumes, angle-defect
+// sums against the B-rep's Euler characteristic, signed-volume signs) and the
+// library self-tests. The families each level requires are data
+// (FamiliesOf). The case names Structural and Geometric are always written
+// qualified: layer 0's ConstraintGroup also has a case Geometric.
+type ConformanceLevel
+    = Structural
+    | Geometric
+    | Oracle;
+
+// One family of checks. StructureChecks: exact laws whose failure is an
+// Error. GeometryChecks: laws with a length or angle tolerance or a meshing
+// criterion; Warning below ten times the bound, Error above. QualityChecks:
+// element-quality thresholds; Info. OracleChecks: comparisons of the result
+// with a route that shares no code with the code that produced it.
+// SelfTestChecks: library laws of layers 1 to 6 evaluated on the value in
+// hand; a failure is a defect of this library, reported as an Error.
+type CheckFamily
+    = StructureChecks
+    | GeometryChecks
+    | QualityChecks
+    | OracleChecks
+    | SelfTestChecks;
+
+//==
+// # The Green's-theorem oracle
+
+// One straight segment of a face's boundary in its surface's natural
+// parameter plane, From to To, in the direction the face's bounds run. The
+// oracle integrates P du along it (README, "The Green's-theorem oracle").
+type GreenSegment
+    implements IValue
+{
+    From: UvCoordinate;
+    To: UvCoordinate;
+}
+
+// One bound of a face lifted into the parameter plane by the oracle: its
+// points in order (coedge samples, then the pole sides at collapsed lines),
+// whether the lifted polygon closes in the plane, and, when it does not, how
+// many periods it winds in u and in v (a band's circle winds once in u).
+type GreenPath
+    implements IValue
+{
+    Points: Array<UvCoordinate>;
+    Closed: Boolean;
+    WindingU: Integer;
+    WindingV: Integer;
+}
+
+// A function of u of the form Constant + Cosine cos u + Sine sin u, at one
+// value of v: the shape every elementary surface's volume potential takes,
+// which integrates in closed form along a segment of constant v.
+type TrigCoefficients
+    implements IValue
+{
+    Constant: Number;
+    Cosine: Number;
+    Sine: Number;
+}
+
+//==
+// # Witness facts
+
+// What a witness model is known to be, independently of every function that
+// will be run on it: the reduced cell counts of each shell (02-topology's
+// ShellCounts, in shell order), the genus of each shell, the exact area of
+// each face (in face order; NaN where only a quadrature gives it, with the
+// bracket stated in the witness's spec), and the signed volume each shell
+// encloses (positive for an outer shell, negative for a void, so the solid's
+// volume is the sum). Written by hand from closed forms, never computed by
+// the code under test.
+type WitnessFacts
+{
+    Shells: Array<ShellCounts>;
+    Genera: Array<Integer>;
+    FaceAreas: Array<Number>;
+    ShellVolumes: Array<Number>;
+}
+
+//==
+// # The public corpus
+
+// A published quantity of a corpus file, if one exists. Unpublished: nothing
+// states it, so no check compares against it (no number stands in for an
+// absent one). InFileValidationProperties: the file carries the quantity as
+// an AP242 geometric validation property, read at test time (NIST's test
+// cases; unconfirmed per file). Published: a value stated by the file's
+// publisher or measured by the survey of research/STEP-BREP-MODEL.md 6.1, in
+// the file's length unit, with the absolute tolerance it is good to.
+type ExpectedMeasure
+    = Unpublished
+    | InFileValidationProperties
+    | Published(Value: Number, Tolerance: Number);
+
+// One convention, defect, or size property a corpus file is known to
+// exercise (research/STEP-BREP-MODEL.md sections 6 and 8): the selector a
+// test uses to pick the files that cover a law.
+type CorpusFeature
+    = PlanarFaces
+    | SeamEdges
+    | CylinderBands
+    | SplitPeriodicFaces
+    | PoleAsLoopVertex
+    | PoleVertexLoop
+    | PoleInsideWrappingLoop
+    | ApexVertexLoop
+    | Tori
+    | SpindleTorusAsFullTorus
+    | Cones
+    | Spheres
+    | SurfacesOfRevolution
+    | LinearExtrusions
+    | BSplineFaces
+    | RationalBSplines
+    | Pcurves
+    | SeamCurveEntity
+    | MasterSecondPcurve
+    | IntersectionCurveOnBarePlanes
+    | Voids
+    | ClosedShellsWithFreeEdges
+    | TwoOuterBounds
+    | NoOuterBounds
+    | FacetedPolyLoops
+    | ContextAssembly
+    | MappedItemAssembly
+    | DegreeUnits
+    | InchUnits
+    | MetreUnits
+    | ShortNames
+    | TinyUncertainty
+    | CoarseUncertainty
+    | NonUnitDirections
+    | LinesWithLargeMagnitude
+    | ComplexUnitsOutOfOrder
+    | LineBreaksInStrings
+    | PlacementsWithoutRefDirection
+    | LargeModel;
+
+// One count a corpus file is known to have, measured by the survey of
+// research/STEP-BREP-MODEL.md 6.1 or published with the file. A test decodes
+// the file and compares the decoded count with it exactly.
+type CorpusCount
+    = FaceCount(Value: Integer)
+    | PcurveCount(Value: Integer)
+    | OccurrenceCount(Value: Integer)
+    | SurfaceModelCount(Value: Integer)
+    | SeamLoopCount(Value: Integer)
+    | SphereFacesWithPoleVertex(Value: Integer)
+    | VoidBodyCount(Value: Integer);
+
+// One public STEP file of the corpus: its name (a path for the u-blox
+// library), the collection it comes from (a URL; the file is Name within
+// it), the exporter that wrote it, the features it exercises, and the
+// quantities it can be checked against.
+// ExpectedVolume and ExpectedArea are the solid volume and the total face
+// area; Counts are exact counts.
+type CorpusEntry
+{
+    Name: String;
+    Source: String;
+    Exporter: String;
+    Exercises: Array<CorpusFeature>;
+    ExpectedVolume: ExpectedMeasure;
+    ExpectedArea: ExpectedMeasure;
+    Counts: Array<CorpusCount>;
+}

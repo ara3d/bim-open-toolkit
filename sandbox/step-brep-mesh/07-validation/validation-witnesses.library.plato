@@ -1,0 +1,705 @@
+//==
+// # BrepWitnesses
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
+// third source of truth. A witness is a BrepModel written out as a value,
+// with the facts it is built to have (cell counts per shell, genus, the area
+// of each face, the volume each shell encloses) written beside it from
+// closed forms, never computed by the code under test. Every witness obeys
+// layer 3's folding convention: each face's normal points out of the
+// material, every bound runs counter-clockwise about it, a void shell's faces
+// are stored reversed. Every witness uses layer 0's Witness_Tolerances and
+// the metre. WitnessAt picks a witness from an Integer, so a law over all
+// witnesses takes an Integer the random runner can supply.
+//
+// Sections, in order:
+//  - Frames, lines, faces
+//  - The unit box, written out
+//  - Boxes from tables
+//  - Cylinders
+//  - Spheres
+//  - The torus
+//  - The cone
+//  - Genus one, voids, a B-spline face
+//  - Negative witnesses
+//  - Facts
+//  - Choosing a witness
+
+library BrepWitnesses
+{
+    //==
+    // # Frames, lines, faces
+
+    // A frame from an origin and three axis vectors, taken as given (every
+    // caller passes an orthonormal right-handed triple).
+    FrameAt(o: Point3D, x: Vector3D, y: Vector3D, z: Vector3D): Frame3D
+        => Frame3D(o, Direction3D(x), Direction3D(y), Direction3D(z));
+
+    // The world axes at o.
+    WorldFrameAt(o: Point3D): Frame3D
+        => FrameAt(o, Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0));
+
+    // The frame of the plane of box face k at o, its Z axis the face's
+    // outward normal and X x Y = Z: k = 0 bottom (-z), 1 top (+z), 2 front
+    // (-y), 3 right (+x), 4 back (+y), 5 left (-x).
+    PlaneFacing(o: Point3D, k: Integer): Frame3D
+        => k == 0 ? FrameAt(o, Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, -1.0, 0.0), Vector3D(0.0, 0.0, -1.0))
+            : (k == 1 ? FrameAt(o, Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0))
+            : (k == 2 ? FrameAt(o, Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, -1.0, 0.0))
+            : (k == 3 ? FrameAt(o, Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0))
+            : (k == 4 ? FrameAt(o, Vector3D(-1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0))
+            : FrameAt(o, Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0), Vector3D(-1.0, 0.0, 0.0))))));
+
+    // The line from a (parameter 0) to b (parameter 1).
+    LineBetween(a: Point3D, b: Point3D): BrepCurve
+        => BrepCurve.Line(a, b - a);
+
+    // A coedge citing edge e forwards or backwards.
+    CoedgeOf(e: Integer, forward: Boolean): Coedge
+        => Coedge(BrepEdgeIndex(e), forward ? EdgeOrientation.Forward : EdgeOrientation.Reversed);
+
+    // A face on surface s bounded by loop l alone. Outward: the face normal is
+    // the surface normal and the loop runs as stored; otherwise both are
+    // reversed, as the decoder folds a void shell's faces.
+    SingleLoopFace(s: Integer, l: Integer, outward: Boolean): BrepFace
+        => BrepFace(SurfaceIndex(s), outward, [FaceBound(BrepLoopIndex(l), outward, true)]);
+
+    // One closed shell of the given faces.
+    ClosedShellOf(faces: Array<Integer>): BrepShell
+        => BrepShell(faces.Map(f => BrepFaceIndex(f)), true);
+
+    //==
+    // # The unit box, written out
+
+    // The unit cube [0, 1]^3 written out value by value: 8 vertices; 12 line
+    // edges, bottom square V0 V1 V2 V3, top square V4 V5 V6 V7, verticals
+    // V0V4 V1V5 V2V6 V3V7, each from its first vertex (parameter 0) to its
+    // second (parameter 1), same sense; 6 planes whose Z axes are the outward
+    // normals; 6 loops, each counter-clockwise about its face's normal; 6
+    // faces with their surface's sense; one closed shell; one manifold solid.
+    // V = 8, E = 12, F = 6, L = 6, chi = 2, genus 0, area 6, volume 1. The
+    // table-driven Witness_Box(1, 1, 1) must equal it
+    // (Law_UnitBoxIsTheUnitWitnessBox), so each checks the other.
+    Witness_UnitBox(_: BrepModel): BrepModel
+        => BrepModel(
+            GeometrySet(
+                [BrepCurve.Line(Point3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0)),
+                 BrepCurve.Line(Point3D(1.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0)),
+                 BrepCurve.Line(Point3D(1.0, 1.0, 0.0), Vector3D(-1.0, 0.0, 0.0)),
+                 BrepCurve.Line(Point3D(0.0, 1.0, 0.0), Vector3D(0.0, -1.0, 0.0)),
+                 BrepCurve.Line(Point3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0)),
+                 BrepCurve.Line(Point3D(1.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0)),
+                 BrepCurve.Line(Point3D(1.0, 1.0, 1.0), Vector3D(-1.0, 0.0, 0.0)),
+                 BrepCurve.Line(Point3D(0.0, 1.0, 1.0), Vector3D(0.0, -1.0, 0.0)),
+                 BrepCurve.Line(Point3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0)),
+                 BrepCurve.Line(Point3D(1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0)),
+                 BrepCurve.Line(Point3D(1.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0)),
+                 BrepCurve.Line(Point3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0))],
+                [],
+                [],
+                [BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, -1.0, 0.0), Vector3D(0.0, 0.0, -1.0))),
+                 BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0))),
+                 BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, -1.0, 0.0))),
+                 BrepSurface.Plane(FrameAt(Point3D(1.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0))),
+                 BrepSurface.Plane(FrameAt(Point3D(0.0, 1.0, 0.0), Vector3D(-1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0))),
+                 BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0), Vector3D(-1.0, 0.0, 0.0)))]),
+            [BrepVertex(Point3D(0.0, 0.0, 0.0)), BrepVertex(Point3D(1.0, 0.0, 0.0)), BrepVertex(Point3D(1.0, 1.0, 0.0)), BrepVertex(Point3D(0.0, 1.0, 0.0)),
+             BrepVertex(Point3D(0.0, 0.0, 1.0)), BrepVertex(Point3D(1.0, 0.0, 1.0)), BrepVertex(Point3D(1.0, 1.0, 1.0)), BrepVertex(Point3D(0.0, 1.0, 1.0))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true),
+             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(2), CurveIndex(1), true),
+             BrepEdge(BrepVertexIndex(2), BrepVertexIndex(3), CurveIndex(2), true),
+             BrepEdge(BrepVertexIndex(3), BrepVertexIndex(0), CurveIndex(3), true),
+             BrepEdge(BrepVertexIndex(4), BrepVertexIndex(5), CurveIndex(4), true),
+             BrepEdge(BrepVertexIndex(5), BrepVertexIndex(6), CurveIndex(5), true),
+             BrepEdge(BrepVertexIndex(6), BrepVertexIndex(7), CurveIndex(6), true),
+             BrepEdge(BrepVertexIndex(7), BrepVertexIndex(4), CurveIndex(7), true),
+             BrepEdge(BrepVertexIndex(0), BrepVertexIndex(4), CurveIndex(8), true),
+             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(5), CurveIndex(9), true),
+             BrepEdge(BrepVertexIndex(2), BrepVertexIndex(6), CurveIndex(10), true),
+             BrepEdge(BrepVertexIndex(3), BrepVertexIndex(7), CurveIndex(11), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(3, false), CoedgeOf(2, false), CoedgeOf(1, false), CoedgeOf(0, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(4, true), CoedgeOf(5, true), CoedgeOf(6, true), CoedgeOf(7, true)]),
+             BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(9, true), CoedgeOf(4, false), CoedgeOf(8, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(1, true), CoedgeOf(10, true), CoedgeOf(5, false), CoedgeOf(9, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(2, true), CoedgeOf(11, true), CoedgeOf(6, false), CoedgeOf(10, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(3, true), CoedgeOf(8, true), CoedgeOf(7, false), CoedgeOf(11, false)])],
+            [SingleLoopFace(0, 0, true), SingleLoopFace(1, 1, true), SingleLoopFace(2, 2, true),
+             SingleLoopFace(3, 3, true), SingleLoopFace(4, 4, true), SingleLoopFace(5, 5, true)],
+            [ClosedShellOf([0, 1, 2, 3, 4, 5])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    //==
+    // # Boxes from tables
+    //
+    // The unit box's tables with the sizes and origin as parameters, used by
+    // every witness built from boxes. Corner k of a box is BoxCorners[k];
+    // edge k runs from corner BoxEdgeEnds[2k] to corner BoxEdgeEnds[2k + 1];
+    // coedge j of face k's loop cites edge BoxLoopEdges[4k + j], forwards when
+    // BoxLoopForward[4k + j].
+
+    // The corners of the box [o, o + (w, d, h)]: the bottom counter-clockwise
+    // from o seen from above, then the top above them.
+    BoxCorners(o: Point3D, w: Number, d: Number, h: Number): Array<Point3D>
+        => [o, o + Vector3D(w, 0.0, 0.0), o + Vector3D(w, d, 0.0), o + Vector3D(0.0, d, 0.0),
+            o + Vector3D(0.0, 0.0, h), o + Vector3D(w, 0.0, h), o + Vector3D(w, d, h), o + Vector3D(0.0, d, h)];
+
+    // The corner pairs of a box's twelve edges.
+    BoxEdgeEnds(_: Integer): Array<Integer>
+        => [0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7];
+
+    // The edges of a box's six loops, four per face.
+    BoxLoopEdges(_: Integer): Array<Integer>
+        => [3, 2, 1, 0, 4, 5, 6, 7, 0, 9, 4, 8, 1, 10, 5, 9, 2, 11, 6, 10, 3, 8, 7, 11];
+
+    // Whether each coedge of a box's loops cites its edge forwards.
+    BoxLoopForward(_: Integer): Array<Boolean>
+        => [false, false, false, false, true, true, true, true, true, true, false, false,
+            true, true, false, false, true, true, false, false, true, true, false, false];
+
+    // The twelve line curves of a box with the given corner points.
+    BoxCurves(corners: Array<Point3D>): Array<BrepCurve>
+        => 12.MapRange(k => LineBetween(corners[Integer.BoxEdgeEnds[2 * k]], corners[Integer.BoxEdgeEnds[2 * k + 1]]));
+
+    // The twelve edges of a box whose corners are the model vertices
+    // `corners` and whose curves start at curveBase.
+    BoxEdges(corners: Array<Integer>, curveBase: Integer): Array<BrepEdge>
+        => 12.MapRange(k => BrepEdge(
+            BrepVertexIndex(corners[Integer.BoxEdgeEnds[2 * k]]),
+            BrepVertexIndex(corners[Integer.BoxEdgeEnds[2 * k + 1]]),
+            CurveIndex(curveBase + k),
+            true));
+
+    // Box face k's edge loop over the box's twelve model edges `edges`.
+    BoxLoop(edges: Array<Integer>, k: Integer): BrepLoop
+        => BrepLoop.EdgeLoop(4.MapRange(j => CoedgeOf(edges[Integer.BoxLoopEdges[4 * k + j]], Integer.BoxLoopForward[4 * k + j])));
+
+    // The planes of a box's six faces, each Z axis the outward normal.
+    BoxPlanes(o: Point3D, w: Number, d: Number, h: Number): Array<BrepSurface>
+        => 6.MapRange(k => BrepSurface.Plane(PlaneFacing(BoxFaceOrigin(o, w, d, h, k), k)));
+
+    // A point of box face k's plane: the top face's at height h, the right
+    // face's at x = w, the back face's at y = d, o for the others.
+    BoxFaceOrigin(o: Point3D, w: Number, d: Number, h: Number, k: Integer): Point3D
+        => k == 1 ? o + Vector3D(0.0, 0.0, h) : (k == 3 ? o + Vector3D(w, 0.0, 0.0) : (k == 4 ? o + Vector3D(0.0, d, 0.0) : o));
+
+    // The box [0, w] x [0, d] x [0, h] from the tables: the unit box's
+    // structure. V = 8, E = 12, F = 6, L = 6, chi = 2, genus 0, area
+    // 2 (wd + dh + hw), volume w d h. Positive sizes.
+    Witness_Box(_: BrepModel, w: Number, d: Number, h: Number): BrepModel
+        => BrepModel(
+            GeometrySet(BoxCurves(BoxCorners(Point3D(0.0, 0.0, 0.0), w, d, h)), [], [], BoxPlanes(Point3D(0.0, 0.0, 0.0), w, d, h)),
+            BoxCorners(Point3D(0.0, 0.0, 0.0), w, d, h).Map(p => BrepVertex(p)),
+            BoxEdges(8.Range, 0),
+            6.MapRange(k => BoxLoop(12.Range, k)),
+            6.MapRange(k => SingleLoopFace(k, k, true)),
+            [ClosedShellOf(6.Range)],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    //==
+    // # Cylinders
+
+    // A solid cylinder of radius r and height h about the z axis, base at
+    // z = 0, one seam, written out. Vertices P0 = (r, 0, 0), P1 = (r, 0, h);
+    // curves: the bottom circle (world frame), the top circle (at height h),
+    // the seam line P0 to P1; edges: E0 the bottom circle closed at P0, E1 the
+    // top circle closed at P1, E2 the seam P0 to P1, all same sense; surfaces:
+    // the cylinder (world frame), the bottom plane (normal -z), the top plane
+    // (normal +z); loops: the side [E0+, E2+, E1-, E2-] (in (u, v) the
+    // rectangle (0,0) (2pi,0) (2pi,h) (0,h), counter-clockwise), the bottom
+    // [E0-], the top [E1+]. V = 2, E = 3, F = 3, L = 3, chi = 2, genus 0,
+    // area 2 pi r (r + h), volume pi r^2 h (02-topology's worked example).
+    CylinderSolid(r: Number, h: Number): BrepModel
+        => BrepModel(
+            GeometrySet(
+                [BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+                 BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, h)), r),
+                 LineBetween(Point3D(r, 0.0, 0.0), Point3D(r, 0.0, h))],
+                [],
+                [],
+                [BrepSurface.Cylinder(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 0)),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, h), 1))]),
+            [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(r, 0.0, h))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
+             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(1), CurveIndex(1), true),
+             BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(2), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(2, true), CoedgeOf(1, false), CoedgeOf(2, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(0, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(1, true)])],
+            [SingleLoopFace(0, 0, true), SingleLoopFace(1, 1, true), SingleLoopFace(2, 2, true)],
+            [ClosedShellOf([0, 1, 2])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // A sector of the solid cylinder over u in [0, sweep], 0 < sweep < 2 pi:
+    // prism topology. Vertices A0 (0,0,0), B0 (r,0,0), C0 (r cos s, r sin s, 0)
+    // and A1, B1, C1 above them at height h; edges e0 A0B0, e1 the bottom arc
+    // B0C0, e2 C0A0, e3 A1B1, e4 the top arc B1C1, e5 C1A1, e6 A0A1, e7 B0B1,
+    // e8 C0C1; faces: the bottom [e2-, e1-, e0-], the top [e3+, e4+, e5+], the
+    // cylinder patch [e1+, e8+, e4-, e7-], the radial plane at angle 0
+    // [e0+, e7+, e3-, e6-], the radial plane at angle sweep [e2+, e6+, e5-,
+    // e8-]. V = 6, E = 9, F = 5, L = 5, chi = 2, genus 0, area
+    // sweep r^2 + sweep r h + 2 r h, volume sweep r^2 h / 2.
+    CylinderSector(r: Number, h: Number, sweep: Angle): BrepModel
+    {
+        var c0 = Point3D(r * sweep.Cos, r * sweep.Sin, 0.0);
+        var c1 = Point3D(r * sweep.Cos, r * sweep.Sin, h);
+        return BrepModel(
+            GeometrySet(
+                [LineBetween(Point3D(0.0, 0.0, 0.0), Point3D(r, 0.0, 0.0)),
+                 BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+                 LineBetween(c0, Point3D(0.0, 0.0, 0.0)),
+                 LineBetween(Point3D(0.0, 0.0, h), Point3D(r, 0.0, h)),
+                 BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, h)), r),
+                 LineBetween(c1, Point3D(0.0, 0.0, h)),
+                 LineBetween(Point3D(0.0, 0.0, 0.0), Point3D(0.0, 0.0, h)),
+                 LineBetween(Point3D(r, 0.0, 0.0), Point3D(r, 0.0, h)),
+                 LineBetween(c0, c1)],
+                [],
+                [],
+                [BrepSurface.Cylinder(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 0)),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, h), 1)),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 2)),
+                 BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(sweep.Cos, sweep.Sin, 0.0),
+                    Vector3D(0.0, 0.0, -1.0), Vector3D(0.0 - sweep.Sin, sweep.Cos, 0.0)))]),
+            [BrepVertex(Point3D(0.0, 0.0, 0.0)), BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(c0),
+             BrepVertex(Point3D(0.0, 0.0, h)), BrepVertex(Point3D(r, 0.0, h)), BrepVertex(c1)],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true),
+             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(2), CurveIndex(1), true),
+             BrepEdge(BrepVertexIndex(2), BrepVertexIndex(0), CurveIndex(2), true),
+             BrepEdge(BrepVertexIndex(3), BrepVertexIndex(4), CurveIndex(3), true),
+             BrepEdge(BrepVertexIndex(4), BrepVertexIndex(5), CurveIndex(4), true),
+             BrepEdge(BrepVertexIndex(5), BrepVertexIndex(3), CurveIndex(5), true),
+             BrepEdge(BrepVertexIndex(0), BrepVertexIndex(3), CurveIndex(6), true),
+             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(4), CurveIndex(7), true),
+             BrepEdge(BrepVertexIndex(2), BrepVertexIndex(5), CurveIndex(8), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(2, false), CoedgeOf(1, false), CoedgeOf(0, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(3, true), CoedgeOf(4, true), CoedgeOf(5, true)]),
+             BrepLoop.EdgeLoop([CoedgeOf(1, true), CoedgeOf(8, true), CoedgeOf(4, false), CoedgeOf(7, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(7, true), CoedgeOf(3, false), CoedgeOf(6, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(2, true), CoedgeOf(6, true), CoedgeOf(5, false), CoedgeOf(8, false)])],
+            [SingleLoopFace(1, 0, true), SingleLoopFace(2, 1, true), SingleLoopFace(0, 2, true),
+             SingleLoopFace(3, 3, true), SingleLoopFace(4, 4, true)],
+            [ClosedShellOf([0, 1, 2, 3, 4])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+    }
+
+    // The cylinder of radius r and height h over the sweep: the seamed solid
+    // cylinder (CylinderSolid) when the sweep is a whole turn or more, the
+    // sector (CylinderSector) otherwise. Positive r and h, sweep in
+    // (0, 2 pi]; the two are different topologies with one family of laws.
+    Witness_Cylinder(_: BrepModel, r: Number, h: Number, sweep: Angle): BrepModel
+        => sweep.Radians >= Number.Tau ? CylinderSolid(r, h) : CylinderSector(r, h, sweep);
+
+    // The unit solid cylinder: radius 1, height 1, one seam.
+    Witness_Cylinder(_: BrepModel): BrepModel
+        => BrepModel.Witness_Cylinder(1.0, 1.0, Angle(Number.Tau));
+
+    //==
+    // # Spheres
+
+    // The meridian half-circle of a sphere of radius r about the origin at
+    // u = 0: a circle in the xz plane (X along x, Y along z), from the south
+    // pole (its parameter 3 pi / 2) through (r, 0, 0) (2 pi) to the north
+    // pole (5 pi / 2), the edge domain layer 2 derives.
+    MeridianOf(r: Number): BrepCurve
+        => BrepCurve.Circle(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, -1.0, 0.0)), r);
+
+    // A solid sphere of radius r about the origin, as a careful exporter
+    // writes it: one seam from pole to pole, the poles its end vertices.
+    // Vertices S (0, 0, -r) and N (0, 0, r); the seam E0 from S to N on the
+    // meridian at u = 0; one face on the sphere with the loop [E0+, E0-]. In
+    // (u, v) the loop runs up the seam at one copy and down the other; the
+    // two pole sides v = -pi/2 and v = pi/2 carry the whole area
+    // (research/VALIDATION-MATH.md 5.2). V = 2, E = 1, F = 1, L = 1, chi = 2,
+    // genus 0, area 4 pi r^2, volume 4 pi r^3 / 3.
+    Witness_Sphere(_: BrepModel, r: Number): BrepModel
+        => BrepModel(
+            GeometrySet([MeridianOf(r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)]),
+            [BrepVertex(Point3D(0.0, 0.0, 0.0 - r)), BrepVertex(Point3D(0.0, 0.0, r))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(0, false)])],
+            [SingleLoopFace(0, 0, true)],
+            [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The unit sphere.
+    Witness_Sphere(_: BrepModel): BrepModel
+        => BrepModel.Witness_Sphere(1.0);
+
+    // A solid sphere of radius r with no edge: one face bounded by two vertex
+    // loops, at the north and the south pole, neither marked outer (an open
+    // annulus in (u, v) whose two pole sides are the vertex loops; face
+    // meshing must cut a seam itself). V = 2, E = 0, F = 1, L = 2, chi = 2,
+    // genus 0, area 4 pi r^2, volume 4 pi r^3 / 3.
+    Witness_SphereByPoleLoops(_: BrepModel, r: Number): BrepModel
+        => BrepModel(
+            GeometrySet([], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)]),
+            [BrepVertex(Point3D(0.0, 0.0, r)), BrepVertex(Point3D(0.0, 0.0, 0.0 - r))],
+            [],
+            [BrepLoop.VertexLoop(BrepVertexIndex(0)), BrepLoop.VertexLoop(BrepVertexIndex(1))],
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, false), FaceBound(BrepLoopIndex(1), true, false)])],
+            [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    //==
+    // # The torus
+
+    // A solid ring torus of major radius R and minor radius r < R about the z
+    // axis, with two seams crossing at one vertex P = (R + r, 0, 0): the
+    // meridian a at u = 0 (a circle about (R, 0, 0) in the xz plane, its
+    // parameter the torus's v) and the parallel b at v = 0 (a circle of
+    // radius R + r about the axis, its parameter the torus's u), both closed
+    // at P. One face with the loop [b+, a+, b-, a-], which in (u, v) is the
+    // boundary of the square [0, 2pi]^2 counter-clockwise. V = 1, E = 2,
+    // F = 1, L = 1, chi = 0, genus 1, area 4 pi^2 R r, volume 2 pi^2 R r^2.
+    Witness_Torus(_: BrepModel, major: Number, minor: Number): BrepModel
+        => BrepModel(
+            GeometrySet(
+                [BrepCurve.Circle(FrameAt(Point3D(major, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, -1.0, 0.0)), minor),
+                 BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major + minor)],
+                [],
+                [],
+                [BrepSurface.Torus(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major, minor, TorusPart.Full)]),
+            [BrepVertex(Point3D(major + minor, 0.0, 0.0))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
+             BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(1), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(1, true), CoedgeOf(0, true), CoedgeOf(1, false), CoedgeOf(0, false)])],
+            [SingleLoopFace(0, 0, true)],
+            [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The torus of major radius 2 and minor radius 1/2.
+    Witness_Torus(_: BrepModel): BrepModel
+        => BrepModel.Witness_Torus(2.0, 0.5);
+
+    //==
+    // # The cone
+
+    // A solid right circular cone standing on its apex: base circle of
+    // radius r at z = 0 (the cone's location, its radius r there), apex at
+    // (0, 0, -h), semi-angle atan(r / h), so the apex is the collapsed line
+    // v = -h. Vertices P0 = (r, 0, 0) and A = the apex; edges E0 the base
+    // circle closed at P0 and E1 the seam line from P0 to A; faces: the
+    // conical side with the loop [E1-, E0-, E1+] (up the seam, back along the
+    // base circle, down the seam, then the pole side at the apex) and the
+    // base disk (normal +z) with [E0+]. V = 2, E = 2, F = 2, L = 2, chi = 2,
+    // genus 0, area pi r (r + s) with s = sqrt(r^2 + h^2), volume pi r^2 h / 3.
+    Witness_Cone(_: BrepModel, r: Number, h: Number): BrepModel
+        => BrepModel(
+            GeometrySet(
+                [BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+                 LineBetween(Point3D(r, 0.0, 0.0), Point3D(0.0, 0.0, 0.0 - h))],
+                [],
+                [],
+                [BrepSurface.Cone(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r, (r / h).Atan),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 1))]),
+            [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(0.0, 0.0, 0.0 - h))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
+             BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(1), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(1, false), CoedgeOf(0, false), CoedgeOf(1, true)]),
+             BrepLoop.EdgeLoop([CoedgeOf(0, true)])],
+            [SingleLoopFace(0, 0, true), SingleLoopFace(1, 1, true)],
+            [ClosedShellOf([0, 1])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The cone of base radius 1 and height 1 (semi-angle pi/4).
+    Witness_Cone(_: BrepModel): BrepModel
+        => BrepModel.Witness_Cone(1.0, 1.0);
+
+    //==
+    // # Genus one, voids, a B-spline face
+
+    // A block a x a x c with a square through hole of side w (0 < w < a)
+    // along z, centred: the outer box's tables (vertices 0 to 7, edges and
+    // lines 0 to 11, planes 0 to 5, loops 0 to 5) and the hole's box (corners
+    // 8 to 15 at the hole, edges and lines 12 to 23, loops 6 to 11, of which
+    // loops 6 and 7 are the inner bounds of the bottom and top faces, run
+    // backwards, and loops 8 to 11 bound the four walls). The walls lie on the
+    // hole box's side planes (surfaces 6 to 9) with their sense reversed, so
+    // their normals point into the hole, out of the material. V = 16, E = 24,
+    // F = 10, L = 12, chi = 0, genus 1, area 2 a^2 - 2 w^2 + 4 a c + 4 w c,
+    // volume (a^2 - w^2) c.
+    Witness_BlockWithThroughHole(_: BrepModel, a: Number, c: Number, w: Number): BrepModel
+    {
+        var o = Point3D(0.0, 0.0, 0.0);
+        var hole = Point3D((a - w) * 0.5, (a - w) * 0.5, 0.0);
+        return BrepModel(
+            GeometrySet(
+                BoxCurves(BoxCorners(o, a, a, c)).Concatenate(BoxCurves(BoxCorners(hole, w, w, c))),
+                [],
+                [],
+                BoxPlanes(o, a, a, c).Concatenate(BoxPlanes(hole, w, w, c).Skip(2))),
+            BoxCorners(o, a, a, c).Concatenate(BoxCorners(hole, w, w, c)).Map(p => BrepVertex(p)),
+            BoxEdges(8.Range, 0).Concatenate(BoxEdges(8.MapRange(k => k + 8), 12)),
+            6.MapRange(k => BoxLoop(12.Range, k)).Concatenate(6.MapRange(k => BoxLoop(12.MapRange(e => e + 12), k))),
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, true), FaceBound(BrepLoopIndex(6), false, false)]),
+             BrepFace(SurfaceIndex(1), true, [FaceBound(BrepLoopIndex(1), true, true), FaceBound(BrepLoopIndex(7), false, false)])]
+                .Concatenate(4.MapRange(k => SingleLoopFace(k + 2, k + 2, true)))
+                .Concatenate(4.MapRange(k => SingleLoopFace(k + 6, k + 8, false))),
+            [ClosedShellOf(10.Range)],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+    }
+
+    // The block 3 x 3 x 1 with a unit square hole.
+    Witness_BlockWithThroughHole(_: BrepModel): BrepModel
+        => BrepModel.Witness_BlockWithThroughHole(3.0, 1.0, 1.0);
+
+    // A cube of side a with a centred cubic void of side b (0 < b < a): the
+    // outer box's tables (shell 0) and the void's box (corners 8 to 15, edges
+    // and lines 12 to 23, planes 6 to 11, loops 6 to 11, faces 6 to 11, shell
+    // 1) with every void face stored reversed, so its normal points into the
+    // void, out of the material. Per shell V = 8, E = 12, F = 6, L = 6,
+    // chi = 2, genus 0; area 6 a^2 + 6 b^2; volume a^3 - b^3 (the outer shell
+    // encloses +a^3, the void -b^3).
+    Witness_HollowBox(_: BrepModel, a: Number, b: Number): BrepModel
+    {
+        var o = Point3D(0.0, 0.0, 0.0);
+        var inner = Point3D((a - b) * 0.5, (a - b) * 0.5, (a - b) * 0.5);
+        return BrepModel(
+            GeometrySet(
+                BoxCurves(BoxCorners(o, a, a, a)).Concatenate(BoxCurves(BoxCorners(inner, b, b, b))),
+                [],
+                [],
+                BoxPlanes(o, a, a, a).Concatenate(BoxPlanes(inner, b, b, b))),
+            BoxCorners(o, a, a, a).Concatenate(BoxCorners(inner, b, b, b)).Map(p => BrepVertex(p)),
+            BoxEdges(8.Range, 0).Concatenate(BoxEdges(8.MapRange(k => k + 8), 12)),
+            6.MapRange(k => BoxLoop(12.Range, k)).Concatenate(6.MapRange(k => BoxLoop(12.MapRange(e => e + 12), k))),
+            6.MapRange(k => SingleLoopFace(k, k, true)).Concatenate(6.MapRange(k => SingleLoopFace(k + 6, k + 6, false))),
+            [ClosedShellOf(6.Range), ClosedShellOf(6.MapRange(k => k + 6))],
+            [BrepBody.SolidWithVoids(ShellIndex(0), [ShellIndex(1)])],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+    }
+
+    // The cube of side 2 with a unit cubic void: volume 7.
+    Witness_HollowBox(_: BrepModel): BrepModel
+        => BrepModel.Witness_HollowBox(2.0, 1.0);
+
+    // The unit box with its top face on a biquadratic Bezier surface, written
+    // out: knots [0, 0, 0, 1, 1, 1] in u and v, control points
+    // P_ij = (i/2, j/2, z_ij) at the Greville abscissae, so x = u and y = v
+    // (linear precision), z_ij = 1 except z_11 = 1 + bump, weights 1. Then
+    // z(u, v) = 1 + 4 bump u (1 - u) v (1 - v): the top's boundary is the
+    // unit square at height 1, so the four sides stay unit squares and the top
+    // edges stay lines. V = 8, E = 12, F = 6, L = 6, chi = 2, genus 0; volume
+    // the sum of z_ij w_i w_j with w_i = 1/3 (research/VALIDATION-MATH.md 5.6),
+    // 1 + bump / 9; the five planar faces have area 1 each; the top's area
+    // lies in [1, 1 + 16 bump^2 / 45] (sqrt(1 + x) <= 1 + x / 2) and is known
+    // only by quadrature.
+    Witness_BSplinePatchSolid(_: BrepModel, bump: Number): BrepModel
+        => BrepModel(
+            GeometrySet(
+                BoxCurves(BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0)),
+                [],
+                [],
+                BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Take(1)
+                    .Concatenate([BrepSurface.BSpline(BSplineSurfaceData(
+                        SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
+                        SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
+                        MakeArray2D(3, 3, (i, j) => Point3D(i.ToNumber * 0.5, j.ToNumber * 0.5, i == 1 && j == 1 ? 1.0 + bump : 1.0)),
+                        MakeArray2D(3, 3, (i, j) => 1.0)))])
+                    .Concatenate(BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Skip(2))),
+            BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Map(p => BrepVertex(p)),
+            BoxEdges(8.Range, 0),
+            6.MapRange(k => BoxLoop(12.Range, k)),
+            6.MapRange(k => SingleLoopFace(k, k, true)),
+            [ClosedShellOf(6.Range)],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The B-spline patch solid with a bump of 1/2: volume 19/18.
+    Witness_BSplinePatchSolid(_: BrepModel): BrepModel
+        => BrepModel.Witness_BSplinePatchSolid(0.5);
+
+    //==
+    // # Negative witnesses
+    //
+    // Models with one known defect each: a validation must report exactly
+    // the laws named, at Error (research/VALIDATION-MATH.md 7.2).
+
+    // The sphere with a seam and, besides, vertex loops at both poles (sphere
+    // B of research/VALIDATION-MATH.md 1.5). Raw counts V = 2, E = 1, F = 1,
+    // L = 3 give chi = 0; reduced counts drop both vertex loops (they sit on
+    // the seam loop's vertices) and give 2, 1, 1, 1 and chi = 2. Fails
+    // Law_FaceBoundsShareNoVertex and Law_VertexLoopVertexIsIsolated, and no
+    // other law of layer 2.
+    Witness_SphereWithRedundantPoleLoops(_: BrepModel, r: Number): BrepModel
+        => BrepModel(
+            GeometrySet([MeridianOf(r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)]),
+            [BrepVertex(Point3D(0.0, 0.0, 0.0 - r)), BrepVertex(Point3D(0.0, 0.0, r))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(0, false)]),
+             BrepLoop.VertexLoop(BrepVertexIndex(0)),
+             BrepLoop.VertexLoop(BrepVertexIndex(1))],
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, true), FaceBound(BrepLoopIndex(1), true, false),
+                FaceBound(BrepLoopIndex(2), true, false)])],
+            [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The unit box with its bottom face's sense flipped and nothing else:
+    // every edge use stays opposite (sense does not enter a coedge's
+    // direction), so only Law_LoopWindingMatchesSameSense fails, at face 0;
+    // meshed, the face points into the solid and the signed volume falls.
+    Witness_BoxWithFlippedFace(_: BrepModel): BrepModel
+        => BrepModel(
+            BrepModel.Witness_UnitBox.Geometry,
+            BrepModel.Witness_UnitBox.Vertices,
+            BrepModel.Witness_UnitBox.Edges,
+            BrepModel.Witness_UnitBox.Loops,
+            [BrepFace(SurfaceIndex(0), false, [FaceBound(BrepLoopIndex(0), true, true)])].Concatenate(BrepModel.Witness_UnitBox.Faces.Skip(1)),
+            BrepModel.Witness_UnitBox.Shells,
+            BrepModel.Witness_UnitBox.Bodies,
+            BrepModel.Witness_UnitBox.Tolerances,
+            BrepModel.Witness_UnitBox.Unit);
+
+    // Two unit boxes touching at one corner, (1, 1, 1), in one shell declared
+    // closed: the second box's corner 0 is the first box's vertex 6, its
+    // other corners vertices 8 to 14. V = 15, E = 24, F = 12, L = 12,
+    // chi = 3: fails Law_EulerPoincareEvenAndBounded (odd) and
+    // Law_VertexLinkIsOneCycle at vertex 6 (two cycles), and no other law of
+    // layer 2.
+    Witness_TwoBoxesSharingCorner(_: BrepModel): BrepModel
+    {
+        var second = [6, 8, 9, 10, 11, 12, 13, 14];
+        return BrepModel(
+            GeometrySet(
+                BoxCurves(BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0)).Concatenate(BoxCurves(BoxCorners(Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0))),
+                [],
+                [],
+                BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Concatenate(BoxPlanes(Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0))),
+            BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Concatenate(BoxCorners(Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0).Skip(1))
+                .Map(p => BrepVertex(p)),
+            BoxEdges(8.Range, 0).Concatenate(BoxEdges(second, 12)),
+            6.MapRange(k => BoxLoop(12.Range, k)).Concatenate(6.MapRange(k => BoxLoop(12.MapRange(e => e + 12), k))),
+            12.MapRange(k => SingleLoopFace(k, k, true)),
+            [ClosedShellOf(12.Range)],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+    }
+
+    //==
+    // # Facts
+    //
+    // Each from closed forms, in the witness's face and shell order.
+
+    // The counts of one shell as a record.
+    CountsOf(v: Integer, e: Integer, f: Integer, l: Integer): ShellCounts
+        => ShellCounts(v, e, f, l);
+
+    // The facts of the box w x d x h: faces bottom, top, front, right, back,
+    // left.
+    BoxFacts(w: Number, d: Number, h: Number): WitnessFacts
+        => WitnessFacts([CountsOf(8, 12, 6, 6)], [0], [w * d, w * d, w * h, d * h, w * h, d * h], [w * d * h]);
+
+    // The facts of the cylinder witness: the seamed solid (faces side,
+    // bottom, top) for a whole turn, the sector (faces bottom, top, side,
+    // radial at 0, radial at the sweep) otherwise.
+    CylinderFacts(r: Number, h: Number, sweep: Angle): WitnessFacts
+        => sweep.Radians >= Number.Tau
+            ? WitnessFacts([CountsOf(2, 3, 3, 3)], [0], [Number.Tau * r * h, Number.Pi * r * r, Number.Pi * r * r], [Number.Pi * r * r * h])
+            : WitnessFacts([CountsOf(6, 9, 5, 5)], [0],
+                [sweep.Radians * r * r * 0.5, sweep.Radians * r * r * 0.5, sweep.Radians * r * h, r * h, r * h],
+                [sweep.Radians * r * r * h * 0.5]);
+
+    // The facts of the sphere witness of radius r.
+    SphereFacts(r: Number): WitnessFacts
+        => WitnessFacts([CountsOf(2, 1, 1, 1)], [0], [2.0 * Number.Tau * r * r], [2.0 * Number.Tau * r * r * r / 3.0]);
+
+    // The facts of the sphere bounded by two pole vertex loops.
+    SphereByPoleLoopsFacts(r: Number): WitnessFacts
+        => WitnessFacts([CountsOf(2, 0, 1, 2)], [0], [2.0 * Number.Tau * r * r], [2.0 * Number.Tau * r * r * r / 3.0]);
+
+    // The facts of the torus witness.
+    TorusFacts(major: Number, minor: Number): WitnessFacts
+        => WitnessFacts([CountsOf(1, 2, 1, 1)], [1], [Number.Tau * Number.Tau * major * minor], [Number.Pi * Number.Tau * major * minor * minor]);
+
+    // The facts of the cone witness: faces side, base.
+    ConeFacts(r: Number, h: Number): WitnessFacts
+        => WitnessFacts([CountsOf(2, 2, 2, 2)], [0], [Number.Pi * r * (r * r + h * h).Sqrt, Number.Pi * r * r], [Number.Pi * r * r * h / 3.0]);
+
+    // The facts of the block with a square through hole: faces bottom, top,
+    // the four outer sides, the four walls.
+    BlockWithThroughHoleFacts(a: Number, c: Number, w: Number): WitnessFacts
+        => WitnessFacts([CountsOf(16, 24, 10, 12)], [1],
+            [a * a - w * w, a * a - w * w, a * c, a * c, a * c, a * c, w * c, w * c, w * c, w * c],
+            [(a * a - w * w) * c]);
+
+    // The facts of the hollow box: the outer shell's faces then the void's.
+    HollowBoxFacts(a: Number, b: Number): WitnessFacts
+        => WitnessFacts([CountsOf(8, 12, 6, 6), CountsOf(8, 12, 6, 6)], [0, 0],
+            6.MapRange(k => a * a).Concatenate(6.MapRange(k => b * b)),
+            [a * a * a, 0.0 - b * b * b]);
+
+    // The facts of the B-spline patch solid; the top's area is NaN (bracket
+    // in Witness_BSplinePatchSolid's comment).
+    BSplinePatchSolidFacts(bump: Number): WitnessFacts
+        => WitnessFacts([CountsOf(8, 12, 6, 6)], [0], [1.0, Number.Unmeasured, 1.0, 1.0, 1.0, 1.0], [1.0 + bump / 9.0]);
+
+    //==
+    // # Choosing a witness
+    //
+    // The positive witnesses in a fixed order, so a law can quantify over
+    // them with an Integer: 0 unit box, 1 unit cylinder, 2 unit sphere,
+    // 3 torus (2, 1/2), 4 cone (1, 1), 5 block with hole (3, 1, 1),
+    // 6 hollow box (2, 1), 7 B-spline patch solid (1/2), 8 a quarter
+    // cylinder sector (1, 1, pi/2), 9 the sphere bounded by pole loops.
+
+    // The number of positive witnesses.
+    WitnessCount(_: BrepModel): Integer
+        => 10;
+
+    // Witness k modulo the count (k may be negative, as the runner draws it).
+    WitnessAt(_: BrepModel, k: Integer): BrepModel
+    {
+        var i = ((k % 10) + 10) % 10;
+        return i == 0 ? BrepModel.Witness_UnitBox
+            : (i == 1 ? BrepModel.Witness_Cylinder
+            : (i == 2 ? BrepModel.Witness_Sphere
+            : (i == 3 ? BrepModel.Witness_Torus
+            : (i == 4 ? BrepModel.Witness_Cone
+            : (i == 5 ? BrepModel.Witness_BlockWithThroughHole
+            : (i == 6 ? BrepModel.Witness_HollowBox
+            : (i == 7 ? BrepModel.Witness_BSplinePatchSolid
+            : (i == 8 ? BrepModel.Witness_Cylinder(1.0, 1.0, Angle(Number.HalfPi))
+            : BrepModel.Witness_SphereByPoleLoops(1.0)))))))));
+    }
+
+    // The facts of witness k, in WitnessAt's order.
+    FactsAt(_: WitnessFacts, k: Integer): WitnessFacts
+    {
+        var i = ((k % 10) + 10) % 10;
+        return i == 0 ? BoxFacts(1.0, 1.0, 1.0)
+            : (i == 1 ? CylinderFacts(1.0, 1.0, Angle(Number.Tau))
+            : (i == 2 ? SphereFacts(1.0)
+            : (i == 3 ? TorusFacts(2.0, 0.5)
+            : (i == 4 ? ConeFacts(1.0, 1.0)
+            : (i == 5 ? BlockWithThroughHoleFacts(3.0, 1.0, 1.0)
+            : (i == 6 ? HollowBoxFacts(2.0, 1.0)
+            : (i == 7 ? BSplinePatchSolidFacts(0.5)
+            : (i == 8 ? CylinderFacts(1.0, 1.0, Angle(Number.HalfPi))
+            : SphereByPoleLoopsFacts(1.0)))))))));
+    }
+}

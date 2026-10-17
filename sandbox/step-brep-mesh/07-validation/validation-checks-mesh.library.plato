@@ -1,0 +1,642 @@
+//==
+// # BrepCheckingMesh
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): one
+// Check_ per law of 06-mesh, each the law evaluated over every element,
+// corner, vertex, component, edge-table entry, or face mesh point it
+// quantifies over. Four kinds of value are checked: the assembled ModelMesh
+// alone; the mesh with the model's tolerances and the quality thresholds; the
+// mesh against its model (array lengths of the numbering, element faces); and
+// the inputs of the assembly (the face meshes and the numbering). The
+// library laws of layer 6 are self-tests on the same values; laws over a
+// stdlib Triangle3D or a constant are run on every triangle of the mesh or
+// once. Every comment names the Law_, its family, and its severity rule.
+//
+// Sections, in order:
+//  - Array lengths, ranges, provenance (structure)
+//  - Numbering (structure)
+//  - Topology and genus (structure)
+//  - Angles, degeneracy, folds (structure)
+//  - Quality thresholds (quality)
+//  - Against the model (structure)
+//  - Assembly inputs (structure)
+//  - Self-tests: reversal, numbering, edge table, components
+//  - Self-tests: measures and metrics
+//  - Self-tests: assembly
+//  - Self-tests: conversions
+//  - Helpers
+
+library BrepCheckingMesh
+{
+    //==
+    // # Array lengths, ranges, provenance (structure)
+
+    // Law_ElementFaceHasOneEntryPerElement. Structure: Error.
+    Check_ElementFaceHasOneEntryPerElement(mesh: ModelMesh): Check
+        => CheckOnce("Law_ElementFaceHasOneEntryPerElement", Law_ElementFaceHasOneEntryPerElement(mesh));
+
+    // Law_CornerNormalsHaveOneEntryPerCorner. Structure: Error.
+    Check_CornerNormalsHaveOneEntryPerCorner(mesh: ModelMesh): Check
+        => CheckOnce("Law_CornerNormalsHaveOneEntryPerCorner", Law_CornerNormalsHaveOneEntryPerCorner(mesh));
+
+    // Law_CornerUvsHaveOneEntryPerCorner. Structure: Error.
+    Check_CornerUvsHaveOneEntryPerCorner(mesh: ModelMesh): Check
+        => CheckOnce("Law_CornerUvsHaveOneEntryPerCorner", Law_CornerUvsHaveOneEntryPerCorner(mesh));
+
+    // Law_VertexProvenanceHasOneEntryPerVertex. Structure: Error.
+    Check_VertexProvenanceHasOneEntryPerVertex(mesh: ModelMesh): Check
+        => CheckOnce("Law_VertexProvenanceHasOneEntryPerVertex", Law_VertexProvenanceHasOneEntryPerVertex(mesh));
+
+    // Law_ElementCornersInRange at every element. Structure: Error.
+    Check_ElementCornersInRange(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ElementCornersInRange", e => Law_ElementCornersInRange(mesh, e));
+
+    // Law_VertexProvenanceMatchesNumbering at every vertex. Structure: Error.
+    Check_VertexProvenanceMatchesNumbering(mesh: ModelMesh): Check
+        => mesh.CheckMeshVertices("Law_VertexProvenanceMatchesNumbering", v => Law_VertexProvenanceMatchesNumbering(mesh, v));
+
+    //==
+    // # Numbering (structure)
+
+    // Law_EdgeRunsFollowModelVertices on the mesh's numbering. Structure:
+    // Error.
+    Check_EdgeRunsFollowModelVertices(mesh: ModelMesh): Check
+        => CheckOnce("Law_EdgeRunsFollowModelVertices", Law_EdgeRunsFollowModelVertices(mesh.Numbering));
+
+    // Law_FaceRunsFollowEdgeRuns on the mesh's numbering. Structure: Error.
+    Check_FaceRunsFollowEdgeRuns(mesh: ModelMesh): Check
+        => CheckOnce("Law_FaceRunsFollowEdgeRuns", Law_FaceRunsFollowEdgeRuns(mesh.Numbering));
+
+    // Law_EdgeRunHasNonNegativeLength at every edge run. Structure: Error.
+    Check_EdgeRunHasNonNegativeLength(mesh: ModelMesh): Check
+        => CheckAll("Law_EdgeRunHasNonNegativeLength", mesh.Numbering.EdgeInteriorStart.Count,
+            e => Law_EdgeRunHasNonNegativeLength(mesh.Numbering, BrepEdgeIndex(e)), e => AtEdge(e));
+
+    // Law_FaceRunHasNonNegativeLength at every face run. Structure: Error.
+    Check_FaceRunHasNonNegativeLength(mesh: ModelMesh): Check
+        => CheckAll("Law_FaceRunHasNonNegativeLength", mesh.Numbering.FaceInteriorStart.Count,
+            f => Law_FaceRunHasNonNegativeLength(mesh.Numbering, BrepFaceIndex(f)), f => AtFace(f));
+
+    // Law_NumberingCoversPositions. Structure: Error.
+    Check_NumberingCoversPositions(mesh: ModelMesh): Check
+        => CheckOnce("Law_NumberingCoversPositions", Law_NumberingCoversPositions(mesh));
+
+    //==
+    // # Topology and genus (structure)
+
+    // Law_ClosedMeshHasNoPinchedVertex at every vertex. Structure: Error.
+    Check_ClosedMeshHasNoPinchedVertex(mesh: ModelMesh): Check
+        => mesh.CheckMeshVertices("Law_ClosedMeshHasNoPinchedVertex", v => Law_ClosedMeshHasNoPinchedVertex(mesh, v));
+
+    // Law_ClosedOrientedSurfaceHasGenus at every component. Structure: Error.
+    Check_ClosedOrientedSurfaceHasGenus(mesh: ModelMesh): Check
+        => mesh.CheckComponents("Law_ClosedOrientedSurfaceHasGenus", c => Law_ClosedOrientedSurfaceHasGenus(mesh, c));
+
+    //==
+    // # Angles, degeneracy, folds (structure)
+
+    // Law_ElementHasNoRepeatedCorner at every element. Structure: Error.
+    Check_ElementHasNoRepeatedCorner(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ElementHasNoRepeatedCorner", e => Law_ElementHasNoRepeatedCorner(mesh, e));
+
+    // Law_ElementIsNotFolded at every element. Structure (an exact sign):
+    // Error.
+    Check_ElementIsNotFolded(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ElementIsNotFolded", e => Law_ElementIsNotFolded(mesh, e));
+
+    // Law_QuadIsConvex at every element. Structure (an exact sign): Error.
+    Check_QuadIsConvex(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_QuadIsConvex", e => Law_QuadIsConvex(mesh, e));
+
+    // Law_TriangleAngleSumIsPi at every element, with the model's angle
+    // tolerance. Structure: Error.
+    Check_TriangleAngleSumIsPi(mesh: ModelMesh, t: Tolerances): Check
+        => mesh.CheckMeshElements("Law_TriangleAngleSumIsPi", e => Law_TriangleAngleSumIsPi(mesh, e, t.Angle));
+
+    // Law_AngleDefectSumIsTwoPiTimesEuler at every component, with the
+    // model's angle tolerance. Structure: Error.
+    Check_AngleDefectSumIsTwoPiTimesEuler(mesh: ModelMesh, t: Tolerances): Check
+        => mesh.CheckComponents("Law_AngleDefectSumIsTwoPiTimesEuler", c => Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c, t.Angle));
+
+    // Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects at every component.
+    // Structure: Error.
+    Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh: ModelMesh, t: Tolerances): Check
+        => mesh.CheckComponents("Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects", c => Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c, t.Angle));
+
+    // Law_ElementIsNotDegenerate at every element, with the model's length
+    // tolerance. Structure: Error.
+    Check_ElementIsNotDegenerate(mesh: ModelMesh, t: Tolerances): Check
+        => mesh.CheckMeshElements("Law_ElementIsNotDegenerate", e => Law_ElementIsNotDegenerate(mesh, e, t.Length));
+
+    // Law_VerticesOfOneComponentAreApart at every pair CoincidentVertexPairs
+    // reports. The check samples those pairs only, so it agrees with the law
+    // over all pairs exactly when the report is complete
+    // (Law_CoincidentPairIsReported, a self-test below). Structure: Error.
+    Check_VerticesOfOneComponentAreApart(mesh: ModelMesh, t: Tolerances): Check
+        => CheckAll("Law_VerticesOfOneComponentAreApart", mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length).Count,
+            k => Law_VerticesOfOneComponentAreApart(mesh,
+                mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length)[k].A,
+                mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length)[k].B, t.Length),
+            k => AtMeshVertex(mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length)[k].A.Value));
+
+    //==
+    // # Quality thresholds (quality)
+    //
+    // Info on failure; the thresholds are normally CubitAcceptable.
+
+    // Law_TriangleMinAngleMeetsThreshold at every element.
+    Check_TriangleMinAngleMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_TriangleMinAngleMeetsThreshold", e => Law_TriangleMinAngleMeetsThreshold(mesh, e, th));
+
+    // Law_TriangleMaxAngleMeetsThreshold at every element.
+    Check_TriangleMaxAngleMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_TriangleMaxAngleMeetsThreshold", e => Law_TriangleMaxAngleMeetsThreshold(mesh, e, th));
+
+    // Law_TriangleRadiusRatioMeetsThreshold at every element.
+    Check_TriangleRadiusRatioMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_TriangleRadiusRatioMeetsThreshold", e => Law_TriangleRadiusRatioMeetsThreshold(mesh, e, th));
+
+    // Law_TriangleAspectRatioMeetsThreshold at every element.
+    Check_TriangleAspectRatioMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_TriangleAspectRatioMeetsThreshold", e => Law_TriangleAspectRatioMeetsThreshold(mesh, e, th));
+
+    // Law_QuadSkewMeetsThreshold at every element.
+    Check_QuadSkewMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_QuadSkewMeetsThreshold", e => Law_QuadSkewMeetsThreshold(mesh, e, th));
+
+    // Law_QuadWarpMeetsThreshold at every element.
+    Check_QuadWarpMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_QuadWarpMeetsThreshold", e => Law_QuadWarpMeetsThreshold(mesh, e, th));
+
+    // Law_QuadAngleDefectMeetsThreshold at every element.
+    Check_QuadAngleDefectMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_QuadAngleDefectMeetsThreshold", e => Law_QuadAngleDefectMeetsThreshold(mesh, e, th));
+
+    // Law_QuadScaledJacobianMeetsThreshold at every element.
+    Check_QuadScaledJacobianMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
+        => mesh.CheckMeshElements("Law_QuadScaledJacobianMeetsThreshold", e => Law_QuadScaledJacobianMeetsThreshold(mesh, e, th));
+
+    //==
+    // # Against the model (structure)
+
+    // Law_ElementFaceIsModelFace at every element. Structure: Error.
+    Check_ElementFaceIsModelFace(m: BrepModel, mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ElementFaceIsModelFace", e => Law_ElementFaceIsModelFace(m, mesh, e));
+
+    // Law_NumberingHasOneEdgeRunPerEdge on the mesh's numbering. Structure:
+    // Error.
+    Check_NumberingHasOneEdgeRunPerEdge(m: BrepModel, mesh: ModelMesh): Check
+        => CheckOnce("Law_NumberingHasOneEdgeRunPerEdge", Law_NumberingHasOneEdgeRunPerEdge(m, mesh.Numbering));
+
+    // Law_NumberingHasOneFaceRunPerFace on the mesh's numbering. Structure:
+    // Error.
+    Check_NumberingHasOneFaceRunPerFace(m: BrepModel, mesh: ModelMesh): Check
+        => CheckOnce("Law_NumberingHasOneFaceRunPerFace", Law_NumberingHasOneFaceRunPerFace(m, mesh.Numbering));
+
+    // Law_NumberingCountsEveryModelVertex on the mesh's numbering. Structure:
+    // Error.
+    Check_NumberingCountsEveryModelVertex(m: BrepModel, mesh: ModelMesh): Check
+        => CheckOnce("Law_NumberingCountsEveryModelVertex", Law_NumberingCountsEveryModelVertex(m, mesh.Numbering));
+
+    //==
+    // # Assembly inputs (structure)
+    //
+    // Laws over the face meshes a mesh was assembled from and its numbering.
+    // Findings are located at the face of the face mesh.
+
+    // Law_FaceMeshesAgreeOnSharedSites at every pair of points of every pair
+    // of face meshes (quadratic as written; an implementation hashes points
+    // by site). Structure (copied, exact): Error.
+    Check_FaceMeshesAgreeOnSharedSites(faceMeshes: Array<FaceMesh>): Check
+        => CheckGrid("Law_FaceMeshesAgreeOnSharedSites", faceMeshes.Count * faceMeshes.Count, faceMeshes.MostFaceMeshPoints * faceMeshes.MostFaceMeshPoints,
+            (ab, ij) => Law_FaceMeshesAgreeOnSharedSites(faceMeshes[ab / faceMeshes.Count], faceMeshes[ab % faceMeshes.Count],
+                VertexIndex(ij / faceMeshes.MostFaceMeshPoints), VertexIndex(ij % faceMeshes.MostFaceMeshPoints)),
+            (ab, ij) => Provenance.KernelFace(faceMeshes[ab / faceMeshes.Count].Face));
+
+    // Law_FaceMeshModelVertexIsModelPoint at every point of every face mesh.
+    // Structure (copied, exact): Error.
+    Check_FaceMeshModelVertexIsModelPoint(m: BrepModel, faceMeshes: Array<FaceMesh>): Check
+        => faceMeshes.CheckFaceMeshPoints("Law_FaceMeshModelVertexIsModelPoint", (fm, i) => Law_FaceMeshModelVertexIsModelPoint(m, fm, i));
+
+    // Law_FaceMeshPointHasNumberedSite at every point of every face mesh.
+    // Structure: Error.
+    Check_FaceMeshPointHasNumberedSite(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
+        => faceMeshes.CheckFaceMeshPoints("Law_FaceMeshPointHasNumberedSite", (fm, i) => Law_FaceMeshPointHasNumberedSite(n, fm, i));
+
+    // Law_FaceMeshSourceAgreesWithProvenance at every point of every face
+    // mesh. Structure: Error.
+    Check_FaceMeshSourceAgreesWithProvenance(faceMeshes: Array<FaceMesh>): Check
+        => faceMeshes.CheckFaceMeshPoints("Law_FaceMeshSourceAgreesWithProvenance", (fm, i) => Law_FaceMeshSourceAgreesWithProvenance(fm, i));
+
+    // Law_SeamCopiesShareOneGlobalVertex at every pair of points of every face
+    // mesh. Structure: Error.
+    Check_SeamCopiesShareOneGlobalVertex(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
+        => faceMeshes.CheckFaceMeshPointPairs("Law_SeamCopiesShareOneGlobalVertex", (fm, i, j) => Law_SeamCopiesShareOneGlobalVertex(n, fm, i, j));
+
+    // Law_DistinctLocalVerticesHaveDistinctGlobalVertices at every pair of
+    // points of every face mesh. Structure: Error.
+    Check_DistinctLocalVerticesHaveDistinctGlobalVertices(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
+        => faceMeshes.CheckFaceMeshPointPairs("Law_DistinctLocalVerticesHaveDistinctGlobalVertices", (fm, i, j) => Law_DistinctLocalVerticesHaveDistinctGlobalVertices(n, fm, i, j));
+
+    //==
+    // # Self-tests: reversal, numbering, edge table, components
+    //
+    // Library laws of layer 6 evaluated on the mesh in hand. Self-test: Error.
+
+    // Law_ReversalPermutesCorners at every element and corner slot.
+    Check_ReversalPermutesCorners(mesh: ModelMesh): Check
+        => mesh.CheckMeshCorners("Law_ReversalPermutesCorners", (e, s) => Law_ReversalPermutesCorners(mesh, e, s));
+
+    // Law_ReversalMovesCornerUvWithCorner at every element and corner slot.
+    Check_ReversalMovesCornerUvWithCorner(mesh: ModelMesh): Check
+        => mesh.CheckMeshCorners("Law_ReversalMovesCornerUvWithCorner", (e, s) => Law_ReversalMovesCornerUvWithCorner(mesh, e, s));
+
+    // Law_IndexOfSiteIsInRange at the site of every vertex index.
+    Check_IndexOfSiteIsInRange(mesh: ModelMesh): Check
+        => mesh.CheckMeshVertices("Law_IndexOfSiteIsInRange", v => Law_IndexOfSiteIsInRange(mesh.Numbering, mesh.Numbering.SiteAt(v)));
+
+    // Law_SiteAtInvertsIndexOfSite at the site of every vertex index.
+    Check_SiteAtInvertsIndexOfSite(mesh: ModelMesh): Check
+        => mesh.CheckMeshVertices("Law_SiteAtInvertsIndexOfSite", v => Law_SiteAtInvertsIndexOfSite(mesh.Numbering, mesh.Numbering.SiteAt(v)));
+
+    // Law_IndexOfSiteInvertsSiteAt at every vertex index.
+    Check_IndexOfSiteInvertsSiteAt(mesh: ModelMesh): Check
+        => mesh.CheckMeshVertices("Law_IndexOfSiteInvertsSiteAt", v => Law_IndexOfSiteInvertsSiteAt(mesh.Numbering, v));
+
+    // Law_ModelVertexKeepsItsIndex at every model vertex of the numbering.
+    Check_ModelVertexKeepsItsIndex(mesh: ModelMesh): Check
+        => CheckAll("Law_ModelVertexKeepsItsIndex", mesh.Numbering.ModelVertexCount,
+            v => Law_ModelVertexKeepsItsIndex(mesh.Numbering, BrepVertexIndex(v)), v => AtVertex(v));
+
+    // Law_EdgeTableHasOneCountPerEdge on the mesh's edge table.
+    Check_EdgeTableHasOneCountPerEdge(mesh: ModelMesh): Check
+        => CheckOnce("Law_EdgeTableHasOneCountPerEdge", Law_EdgeTableHasOneCountPerEdge(mesh.EdgeTableOf));
+
+    // Law_EdgeTableHasOneDirectionSumPerEdge on the mesh's edge table.
+    Check_EdgeTableHasOneDirectionSumPerEdge(mesh: ModelMesh): Check
+        => CheckOnce("Law_EdgeTableHasOneDirectionSumPerEdge", Law_EdgeTableHasOneDirectionSumPerEdge(mesh.EdgeTableOf));
+
+    // Law_EdgeTableEdgeIsCanonical at every listed edge.
+    Check_EdgeTableEdgeIsCanonical(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_EdgeTableEdgeIsCanonical", k => Law_EdgeTableEdgeIsCanonical(mesh.EdgeTableOf, k));
+
+    // Law_EdgeTableIsStrictlySorted at every listed edge.
+    Check_EdgeTableIsStrictlySorted(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_EdgeTableIsStrictlySorted", k => Law_EdgeTableIsStrictlySorted(mesh.EdgeTableOf, k));
+
+    // Law_EdgeTableListsOnlyUsedEdges at every listed edge.
+    Check_EdgeTableListsOnlyUsedEdges(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_EdgeTableListsOnlyUsedEdges", k => Law_EdgeTableListsOnlyUsedEdges(mesh.EdgeTableOf, k));
+
+    // Law_EdgeTableCountsEveryProperSide.
+    Check_EdgeTableCountsEveryProperSide(mesh: ModelMesh): Check
+        => CheckOnce("Law_EdgeTableCountsEveryProperSide", Law_EdgeTableCountsEveryProperSide(mesh));
+
+    // Law_EdgeTableListsEveryProperSide at every element and corner slot.
+    Check_EdgeTableListsEveryProperSide(mesh: ModelMesh): Check
+        => mesh.CheckMeshCorners("Law_EdgeTableListsEveryProperSide", (e, s) => Law_EdgeTableListsEveryProperSide(mesh, e, s));
+
+    // Law_EdgeTableCountMatchesItsSides at every listed edge.
+    Check_EdgeTableCountMatchesItsSides(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_EdgeTableCountMatchesItsSides", k => Law_EdgeTableCountMatchesItsSides(mesh, k));
+
+    // Law_EdgeTableDirectionSumMatchesItsSides at every listed edge.
+    Check_EdgeTableDirectionSumMatchesItsSides(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_EdgeTableDirectionSumMatchesItsSides", k => Law_EdgeTableDirectionSumMatchesItsSides(mesh, k));
+
+    // Law_DirectionSumIsBoundedByCount at every listed edge.
+    Check_DirectionSumIsBoundedByCount(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_DirectionSumIsBoundedByCount", k => Law_DirectionSumIsBoundedByCount(mesh.EdgeTableOf, k));
+
+    // Law_DirectionSumHasTheParityOfCount at every listed edge.
+    Check_DirectionSumHasTheParityOfCount(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_DirectionSumHasTheParityOfCount", k => Law_DirectionSumHasTheParityOfCount(mesh.EdgeTableOf, k));
+
+    // Law_ReversalNegatesEveryDirectionSum at every listed edge.
+    Check_ReversalNegatesEveryDirectionSum(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_ReversalNegatesEveryDirectionSum", k => Law_ReversalNegatesEveryDirectionSum(mesh, k));
+
+    // Law_ClosedMeansEveryEdgeHasTwoSides at every listed edge.
+    Check_ClosedMeansEveryEdgeHasTwoSides(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_ClosedMeansEveryEdgeHasTwoSides", k => Law_ClosedMeansEveryEdgeHasTwoSides(mesh.EdgeTableOf, k));
+
+    // Law_ManifoldMeansNoEdgeHasMoreThanTwoSides at every listed edge.
+    Check_ManifoldMeansNoEdgeHasMoreThanTwoSides(mesh: ModelMesh): Check
+        => mesh.CheckTableEdges("Law_ManifoldMeansNoEdgeHasMoreThanTwoSides", k => Law_ManifoldMeansNoEdgeHasMoreThanTwoSides(mesh.EdgeTableOf, k));
+
+    // Law_OrientedExactlyWhenNoEdgeIsMisoriented on the mesh's edge table.
+    Check_OrientedExactlyWhenNoEdgeIsMisoriented(mesh: ModelMesh): Check
+        => CheckOnce("Law_OrientedExactlyWhenNoEdgeIsMisoriented", Law_OrientedExactlyWhenNoEdgeIsMisoriented(mesh.EdgeTableOf));
+
+    // Law_ElementCornersShareItsComponent at every element and corner slot.
+    Check_ElementCornersShareItsComponent(mesh: ModelMesh): Check
+        => mesh.CheckMeshCorners("Law_ElementCornersShareItsComponent", (e, s) => Law_ElementCornersShareItsComponent(mesh, e, s));
+
+    // Law_ComponentEulerCharacteristicsAddUp.
+    Check_ComponentEulerCharacteristicsAddUp(mesh: ModelMesh): Check
+        => CheckOnce("Law_ComponentEulerCharacteristicsAddUp", Law_ComponentEulerCharacteristicsAddUp(mesh));
+
+    // Law_ClosedComponentEulerIsTwoMinusTwiceGenus at every component's
+    // counts.
+    Check_ClosedComponentEulerIsTwoMinusTwiceGenus(mesh: ModelMesh): Check
+        => mesh.CheckComponents("Law_ClosedComponentEulerIsTwoMinusTwiceGenus", c => Law_ClosedComponentEulerIsTwoMinusTwiceGenus(mesh.CountsOf(c)));
+
+    //==
+    // # Self-tests: measures and metrics
+
+    // Law_ReversalNegatesSignedVolume with the model's length tolerance.
+    Check_ReversalNegatesSignedVolume(mesh: ModelMesh, t: Tolerances): Check
+        => CheckOnce("Law_ReversalNegatesSignedVolume", Law_ReversalNegatesSignedVolume(mesh, t.Length));
+
+    // Law_OutwardTetrahedronHasPositiveVolume, on its constant witness.
+    Check_OutwardTetrahedronHasPositiveVolume(_: ModelMesh): Check
+        => CheckOnce("Law_OutwardTetrahedronHasPositiveVolume", Law_OutwardTetrahedronHasPositiveVolume(ModelMesh.Witness_UnitTetrahedron));
+
+    // Law_QuadAngleDefectIsNotNegative at every element.
+    Check_QuadAngleDefectIsNotNegative(mesh: ModelMesh, t: Tolerances): Check
+        => mesh.CheckMeshElements("Law_QuadAngleDefectIsNotNegative", e => Law_QuadAngleDefectIsNotNegative(mesh, e, t.Angle));
+
+    // Law_ReportedPairIsCoincident at every reported pair.
+    Check_ReportedPairIsCoincident(mesh: ModelMesh, t: Tolerances): Check
+        => CheckAll("Law_ReportedPairIsCoincident", mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length).Count,
+            k => Law_ReportedPairIsCoincident(mesh, k, t.Length), k => Provenance.Nowhere);
+
+    // Law_CoincidentPairIsReported at every pair of corners of one element
+    // (the pairs nearest to each other; all pairs is quadratic).
+    Check_CoincidentPairIsReported(mesh: ModelMesh, t: Tolerances): Check
+        => mesh.CheckMeshCorners("Law_CoincidentPairIsReported", (e, s) =>
+            Law_CoincidentPairIsReported(mesh, mesh.ElementCorner(e, s), mesh.ElementCorner(e, (s + 1) % mesh.ElementArity(e).Max(1)), t.Length));
+
+    // Law_RadiusRatioIsAtLeastOne at every triangle of the mesh, with the
+    // rounding comparison.
+    Check_RadiusRatioIsAtLeastOne(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_RadiusRatioIsAtLeastOne", e =>
+            (mesh.IsTriangle(e) ? mesh.HasValidCorners(e) : false)
+                ? Law_RadiusRatioIsAtLeastOne(mesh.TriangleShapeAt(e), ComparisonTolerance.RoundingComparison)
+                : true);
+
+    // Law_AspectRatioIsAtLeastOne at every triangle of the mesh.
+    Check_AspectRatioIsAtLeastOne(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_AspectRatioIsAtLeastOne", e =>
+            (mesh.IsTriangle(e) ? mesh.HasValidCorners(e) : false)
+                ? Law_AspectRatioIsAtLeastOne(mesh.TriangleShapeAt(e), ComparisonTolerance.RoundingComparison)
+                : true);
+
+    // Law_EquilateralTriangleHasUnitRadiusRatio, on its constant witness.
+    Check_EquilateralTriangleHasUnitRadiusRatio(_: ModelMesh): Check
+        => CheckOnce("Law_EquilateralTriangleHasUnitRadiusRatio", Law_EquilateralTriangleHasUnitRadiusRatio(ComparisonTolerance.RoundingComparison));
+
+    // Law_EquilateralTriangleHasUnitAspectRatio, on its constant witness.
+    Check_EquilateralTriangleHasUnitAspectRatio(_: ModelMesh): Check
+        => CheckOnce("Law_EquilateralTriangleHasUnitAspectRatio", Law_EquilateralTriangleHasUnitAspectRatio(ComparisonTolerance.RoundingComparison));
+
+    // Law_UnitSquareHasZeroSkew, on its constant witness.
+    Check_UnitSquareHasZeroSkew(_: ModelMesh): Check
+        => CheckOnce("Law_UnitSquareHasZeroSkew", Law_UnitSquareHasZeroSkew(ComparisonTolerance.RoundingComparison));
+
+    // Law_UnitSquareHasUnitScaledJacobian, on its constant witness.
+    Check_UnitSquareHasUnitScaledJacobian(_: ModelMesh): Check
+        => CheckOnce("Law_UnitSquareHasUnitScaledJacobian", Law_UnitSquareHasUnitScaledJacobian(ComparisonTolerance.RoundingComparison));
+
+    // Law_DartQuadIsNotConvex, on its constant witness.
+    Check_DartQuadIsNotConvex(_: ModelMesh): Check
+        => CheckOnce("Law_DartQuadIsNotConvex", Law_DartQuadIsNotConvex(Quad3D.Witness_DartQuad));
+
+    //==
+    // # Self-tests: assembly
+
+    // Law_AssemblyKeepsTheNumbering for the face meshes and numbering given.
+    Check_AssemblyKeepsTheNumbering(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => CheckOnce("Law_AssemblyKeepsTheNumbering", Law_AssemblyKeepsTheNumbering(m, faceMeshes, n));
+
+    // Law_AssemblyKeepsEveryTriangle.
+    Check_AssemblyKeepsEveryTriangle(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => CheckOnce("Law_AssemblyKeepsEveryTriangle", Law_AssemblyKeepsEveryTriangle(m, faceMeshes, n));
+
+    // Law_AssemblyKeepsEveryQuad.
+    Check_AssemblyKeepsEveryQuad(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => CheckOnce("Law_AssemblyKeepsEveryQuad", Law_AssemblyKeepsEveryQuad(m, faceMeshes, n));
+
+    // Law_AssembledModelVertexIsModelPoint at every model vertex.
+    Check_AssembledModelVertexIsModelPoint(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => m.CheckVertices("Law_AssembledModelVertexIsModelPoint", v => Law_AssembledModelVertexIsModelPoint(m, faceMeshes, n, v));
+
+    // Law_AssembledPositionIsFaceMeshPosition at every point of every face
+    // mesh.
+    Check_AssembledPositionIsFaceMeshPosition(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => CheckGrid("Law_AssembledPositionIsFaceMeshPosition", faceMeshes.Count, faceMeshes.MostFaceMeshPoints,
+            (f, i) => Law_AssembledPositionIsFaceMeshPosition(m, faceMeshes, n, BrepFaceIndex(f), VertexIndex(i)),
+            (f, i) => AtFace(f));
+
+    // Law_AssembledCornerIsGlobalVertexOfFaceMeshCorner at every corner of
+    // every face mesh element.
+    Check_AssembledCornerIsGlobalVertexOfFaceMeshCorner(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => faceMeshes.CheckFaceMeshCorners("Law_AssembledCornerIsGlobalVertexOfFaceMeshCorner",
+            (f, e, s) => Law_AssembledCornerIsGlobalVertexOfFaceMeshCorner(m, faceMeshes, n, f, e, s));
+
+    // Law_AssembledElementRemembersItsFace at every face mesh element.
+    Check_AssembledElementRemembersItsFace(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => faceMeshes.CheckFaceMeshCorners("Law_AssembledElementRemembersItsFace",
+            (f, e, s) => s == 0 ? Law_AssembledElementRemembersItsFace(m, faceMeshes, n, f, e) : true);
+
+    // Law_AssembledCornerUvIsCopied at every corner of every face mesh
+    // element.
+    Check_AssembledCornerUvIsCopied(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => faceMeshes.CheckFaceMeshCorners("Law_AssembledCornerUvIsCopied",
+            (f, e, s) => Law_AssembledCornerUvIsCopied(m, faceMeshes, n, f, e, s));
+
+    // Law_AssembledCornerNormalIsCopied at every corner of every face mesh
+    // element.
+    Check_AssembledCornerNormalIsCopied(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => faceMeshes.CheckFaceMeshCorners("Law_AssembledCornerNormalIsCopied",
+            (f, e, s) => Law_AssembledCornerNormalIsCopied(m, faceMeshes, n, f, e, s));
+
+    // Law_AssembledSharedBoundaryCornersCoincide at every pair of corners of
+    // face mesh elements (quadratic as written).
+    Check_AssembledSharedBoundaryCornersCoincide(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => CheckGrid("Law_AssembledSharedBoundaryCornersCoincide", faceMeshes.FaceMeshCornerCount, faceMeshes.FaceMeshCornerCount,
+            (a, b) => Law_AssembledSharedBoundaryCornersCoincide(m, faceMeshes, n,
+                BrepFaceIndex(faceMeshes.CornerFace(a)), ElementIndex(faceMeshes.CornerElement(a)), faceMeshes.CornerSlot(a),
+                BrepFaceIndex(faceMeshes.CornerFace(b)), ElementIndex(faceMeshes.CornerElement(b)), faceMeshes.CornerSlot(b)),
+            (a, b) => AtFace(faceMeshes.CornerFace(a)));
+
+    // Law_NumberingCountsCitedEdgeInteriors at every edge.
+    Check_NumberingCountsCitedEdgeInteriors(m: BrepModel, d: EdgeDiscretizations, faceMeshes: Array<FaceMesh>): Check
+        => m.CheckEdges("Law_NumberingCountsCitedEdgeInteriors", e => Law_NumberingCountsCitedEdgeInteriors(m, d, faceMeshes, e));
+
+    // Law_SharedBoundarySampleHasOneGlobalVertex at every pair of points of
+    // every pair of face meshes (quadratic as written).
+    Check_SharedBoundarySampleHasOneGlobalVertex(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
+        => CheckGrid("Law_SharedBoundarySampleHasOneGlobalVertex", faceMeshes.Count * faceMeshes.Count, faceMeshes.MostFaceMeshPoints * faceMeshes.MostFaceMeshPoints,
+            (ab, ij) => Law_SharedBoundarySampleHasOneGlobalVertex(n, faceMeshes[ab / faceMeshes.Count], faceMeshes[ab % faceMeshes.Count],
+                VertexIndex(ij / faceMeshes.MostFaceMeshPoints), VertexIndex(ij % faceMeshes.MostFaceMeshPoints)),
+            (ab, ij) => Provenance.KernelFace(faceMeshes[ab / faceMeshes.Count].Face));
+
+    // Law_AreaIsSumOfFaceMeshAreas with the model's length tolerance.
+    Check_AreaIsSumOfFaceMeshAreas(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
+        => CheckOnce("Law_AreaIsSumOfFaceMeshAreas", Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n, m.Tolerances.Length));
+
+    //==
+    // # Self-tests: conversions
+
+    // Law_TriangleMeshKeepsPositions.
+    Check_TriangleMeshKeepsPositions(mesh: ModelMesh): Check
+        => CheckOnce("Law_TriangleMeshKeepsPositions", Law_TriangleMeshKeepsPositions(mesh));
+
+    // Law_TriangleMeshSplitsEachQuadInTwo.
+    Check_TriangleMeshSplitsEachQuadInTwo(mesh: ModelMesh): Check
+        => CheckOnce("Law_TriangleMeshSplitsEachQuadInTwo", Law_TriangleMeshSplitsEachQuadInTwo(mesh));
+
+    // Law_TriangulatedCornerNamesTheTriangleCorner at every triangle of the
+    // conversion and slot.
+    Check_TriangulatedCornerNamesTheTriangleCorner(mesh: ModelMesh): Check
+        => CheckGrid("Law_TriangulatedCornerNamesTheTriangleCorner", mesh.ToTriangleMesh3D.Faces.Count, 3,
+            (k, s) => Law_TriangulatedCornerNamesTheTriangleCorner(mesh, k, s), (k, s) => Provenance.Nowhere);
+
+    // Law_TriangleMeshKeepsArea with the given length tolerance.
+    Check_TriangleMeshKeepsArea(mesh: ModelMesh, t: Tolerances): Check
+        => CheckOnce("Law_TriangleMeshKeepsArea", Law_TriangleMeshKeepsArea(mesh, t.Length));
+
+    // Law_QuadMeshIsOkExactlyWithoutTriangles.
+    Check_QuadMeshIsOkExactlyWithoutTriangles(mesh: ModelMesh): Check
+        => CheckOnce("Law_QuadMeshIsOkExactlyWithoutTriangles", Law_QuadMeshIsOkExactlyWithoutTriangles(mesh));
+
+    // Law_QuadMeshKeepsPositions.
+    Check_QuadMeshKeepsPositions(mesh: ModelMesh): Check
+        => CheckOnce("Law_QuadMeshKeepsPositions", Law_QuadMeshKeepsPositions(mesh));
+
+    // Law_QuadMeshKeepsAreaWhenOk with the given length tolerance.
+    Check_QuadMeshKeepsAreaWhenOk(mesh: ModelMesh, t: Tolerances): Check
+        => CheckOnce("Law_QuadMeshKeepsAreaWhenOk", Law_QuadMeshKeepsAreaWhenOk(mesh, t.Length));
+
+    // Law_PolygonMeshKeepsPositions.
+    Check_PolygonMeshKeepsPositions(mesh: ModelMesh): Check
+        => CheckOnce("Law_PolygonMeshKeepsPositions", Law_PolygonMeshKeepsPositions(mesh));
+
+    // Law_PolygonMeshHasOneFacePerElement.
+    Check_PolygonMeshHasOneFacePerElement(mesh: ModelMesh): Check
+        => CheckOnce("Law_PolygonMeshHasOneFacePerElement", Law_PolygonMeshHasOneFacePerElement(mesh));
+
+    // Law_PolygonMeshKeepsArea with the given length tolerance.
+    Check_PolygonMeshKeepsArea(mesh: ModelMesh, t: Tolerances): Check
+        => CheckOnce("Law_PolygonMeshKeepsArea", Law_PolygonMeshKeepsArea(mesh, t.Length));
+
+    // Law_SplitHasAtLeastAsManyVertices.
+    Check_SplitHasAtLeastAsManyVertices(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasAtLeastAsManyVertices", Law_SplitHasAtLeastAsManyVertices(mesh));
+
+    // Law_SplitSplitsEachQuadInTwo.
+    Check_SplitSplitsEachQuadInTwo(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitSplitsEachQuadInTwo", Law_SplitSplitsEachQuadInTwo(mesh));
+
+    // Law_SplitHasOneNormalPerVertex.
+    Check_SplitHasOneNormalPerVertex(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasOneNormalPerVertex", Law_SplitHasOneNormalPerVertex(mesh));
+
+    // Law_SplitHasOneUvPerVertex.
+    Check_SplitHasOneUvPerVertex(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasOneUvPerVertex", Law_SplitHasOneUvPerVertex(mesh));
+
+    // Law_SplitHasOneSourcePerVertex.
+    Check_SplitHasOneSourcePerVertex(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasOneSourcePerVertex", Law_SplitHasOneSourcePerVertex(mesh));
+
+    // Law_SplitVertexKeepsItsSourcePosition at every split vertex.
+    Check_SplitVertexKeepsItsSourcePosition(mesh: ModelMesh): Check
+        => CheckAll("Law_SplitVertexKeepsItsSourcePosition", mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count,
+            v => Law_SplitVertexKeepsItsSourcePosition(mesh, VertexIndex(v)), v => Provenance.Nowhere);
+
+    // Law_SplitFollowsTheTriangulation at every split triangle and slot.
+    Check_SplitFollowsTheTriangulation(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitFollowsTheTriangulation", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
+            (k, s) => Law_SplitFollowsTheTriangulation(mesh, k, s), (k, s) => Provenance.Nowhere);
+
+    // Law_SplitVertexCarriesItsCornerNormal at every split triangle and slot.
+    Check_SplitVertexCarriesItsCornerNormal(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitVertexCarriesItsCornerNormal", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
+            (k, s) => Law_SplitVertexCarriesItsCornerNormal(mesh, k, s), (k, s) => Provenance.Nowhere);
+
+    // Law_SplitVertexCarriesItsCornerUv at every split triangle and slot.
+    Check_SplitVertexCarriesItsCornerUv(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitVertexCarriesItsCornerUv", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
+            (k, s) => Law_SplitVertexCarriesItsCornerUv(mesh, k, s), (k, s) => Provenance.Nowhere);
+
+    // Law_SplitVerticesDiffer at every pair of split vertices (quadratic as
+    // written).
+    Check_SplitVerticesDiffer(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitVerticesDiffer", mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count, mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count,
+            (a, b) => Law_SplitVerticesDiffer(mesh, VertexIndex(a), VertexIndex(b)), (a, b) => Provenance.Nowhere);
+
+    //==
+    // # Helpers
+
+    // An exact law at every element of a mesh, reported at the element.
+    CheckMeshElements(mesh: ModelMesh, law: String, holds: Function1<ElementIndex, Boolean>): Check
+        => CheckAll(law, mesh.ElementCount, e => holds(ElementIndex(e)), e => AtElement(e));
+
+    // An exact law at every element and corner slot (0 to 3; slots past a
+    // triangle's third are vacuous in every law), reported at the element.
+    CheckMeshCorners(mesh: ModelMesh, law: String, holds: Function2<ElementIndex, Integer, Boolean>): Check
+        => CheckGrid(law, mesh.ElementCount, 4, (e, s) => holds(ElementIndex(e), s), (e, s) => AtElement(e));
+
+    // An exact law at every vertex of a mesh, reported at the vertex.
+    CheckMeshVertices(mesh: ModelMesh, law: String, holds: Function1<VertexIndex, Boolean>): Check
+        => CheckAll(law, mesh.Positions.Count, v => holds(VertexIndex(v)), v => AtMeshVertex(v));
+
+    // An exact law at every connected component of a mesh.
+    CheckComponents(mesh: ModelMesh, law: String, holds: Function1<MeshComponentIndex, Boolean>): Check
+        => CheckAll(law, mesh.ComponentsOf.ComponentCount, c => holds(MeshComponentIndex(c)), c => Provenance.Nowhere);
+
+    // An exact law at every edge of the mesh's edge table.
+    CheckTableEdges(mesh: ModelMesh, law: String, holds: Function1<UndirectedEdgeIndex, Boolean>): Check
+        => CheckAll(law, mesh.EdgeTableOf.CountEdges, k => holds(UndirectedEdgeIndex(k)), k => Provenance.Nowhere);
+
+    // The largest point count of any face mesh.
+    MostFaceMeshPoints(faceMeshes: Array<FaceMesh>): Integer
+        => faceMeshes.Reduce(0, (n, fm) => n.Max(fm.UvPoints.Count));
+
+    // An exact law at every point of every face mesh, reported at the face.
+    CheckFaceMeshPoints(faceMeshes: Array<FaceMesh>, law: String, holds: Function2<FaceMesh, VertexIndex, Boolean>): Check
+        => CheckGrid(law, faceMeshes.Count, faceMeshes.MostFaceMeshPoints,
+            (f, i) => holds(faceMeshes[f], VertexIndex(i)), (f, i) => Provenance.KernelFace(faceMeshes[f].Face));
+
+    // An exact law at every pair of points of every face mesh.
+    CheckFaceMeshPointPairs(faceMeshes: Array<FaceMesh>, law: String, holds: Function3<FaceMesh, VertexIndex, VertexIndex, Boolean>): Check
+        => CheckGrid(law, faceMeshes.Count, faceMeshes.MostFaceMeshPoints * faceMeshes.MostFaceMeshPoints,
+            (f, ij) => holds(faceMeshes[f], VertexIndex(ij / faceMeshes.MostFaceMeshPoints), VertexIndex(ij % faceMeshes.MostFaceMeshPoints)),
+            (f, ij) => Provenance.KernelFace(faceMeshes[f].Face));
+
+    // The largest element count of any face mesh.
+    MostFaceMeshElements(faceMeshes: Array<FaceMesh>): Integer
+        => faceMeshes.Reduce(0, (n, fm) => n.Max(fm.Triangles.Count + fm.Quads.Count));
+
+    // An exact law at every face mesh, element, and corner slot (0 to 3),
+    // reported at the face.
+    CheckFaceMeshCorners(faceMeshes: Array<FaceMesh>, law: String, holds: Function3<BrepFaceIndex, ElementIndex, Integer, Boolean>): Check
+        => CheckGrid(law, faceMeshes.Count, 4 * faceMeshes.MostFaceMeshElements,
+            (f, j) => holds(BrepFaceIndex(f), ElementIndex(j / 4), j % 4), (f, j) => AtFace(f));
+
+    // The number of (face mesh, element, slot) corner positions the corner
+    // grids range over: face meshes times four times the largest element
+    // count.
+    FaceMeshCornerCount(faceMeshes: Array<FaceMesh>): Integer
+        => faceMeshes.Count * 4 * faceMeshes.MostFaceMeshElements;
+
+    // The face mesh position of corner position a of the corner grid.
+    CornerFace(faceMeshes: Array<FaceMesh>, a: Integer): Integer
+        => a / (4 * faceMeshes.MostFaceMeshElements.Max(1));
+
+    // The element of corner position a of the corner grid.
+    CornerElement(faceMeshes: Array<FaceMesh>, a: Integer): Integer
+        => (a % (4 * faceMeshes.MostFaceMeshElements.Max(1))) / 4;
+
+    // The slot of corner position a of the corner grid.
+    CornerSlot(faceMeshes: Array<FaceMesh>, a: Integer): Integer
+        => a % 4;
+
+    // The comparison the scalar metric identities are run with: an absolute
+    // part of the smallest normal Number and a relative part of 32 unit
+    // roundoffs, layer 0's rounding bound (ResolutionAt).
+    RoundingComparison(_: ComparisonTolerance): ComparisonTolerance
+        => ComparisonTolerance(Number.SmallestNormal, Number.RoundingUnit * 32.0);
+}

@@ -1,0 +1,338 @@
+//==
+// # BrepCheckingCommon
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
+// machinery every Check_ is built from. A Check_ evaluates one Law_ over one
+// value at a deterministic set of samples, one layer 0 Check per sample built
+// by CheckExact (an exact law) or CheckWithin (a measured law), and folds them
+// with layer 0's WorseOf from a holding seed. So a Check_ holds exactly when
+// its law holds at every sample, and a failing Check_ carries the provenance
+// of a sample at which the law fails: the first one for an exact law, the one
+// with the largest measure for a measured law (theorem
+// SampledCheckAgreesWithLaw in validation.spec.plato). The report builders
+// turn a check into a report with the severity of its constraint group.
+//
+// Sections, in order:
+//  - Folding samples into one check
+//  - Sample plans
+//  - Reports
+//  - Provenance of model cells
+//  - Model samplers
+//  - Geometry arena samplers
+//  - STEP file samplers
+
+library BrepCheckingCommon
+{
+    //==
+    // # Folding samples into one check
+
+    // The check of no sample: it holds, its Worst is 0, it is about nothing.
+    // The seed of every fold, so a check over no samples holds vacuously.
+    NoSampleCheck(law: String): Check
+        => CheckExact(law, true, Provenance.Nowhere);
+
+    // The worst of the given checks of one law, folded left by WorseOf from
+    // the vacuous check. It fails exactly when one of them fails; ties keep
+    // the earlier one.
+    WorstOf(law: String, checks: Array<Check>): Check
+        => checks.Reduce(NoSampleCheck(law), (a, b) => WorseOf(a, b));
+
+    // An exact law at each index 0 to n - 1: holds(i) is the law at sample i,
+    // where(i) the cell the sample is about.
+    CheckAll(law: String, n: Integer, holds: Function1<Integer, Boolean>, where: Function1<Integer, Provenance>): Check
+        => WorstOf(law, n.MapRange(i => CheckExact(law, holds(i), where(i))));
+
+    // A measured law at each index 0 to n - 1: the law holds at sample i
+    // exactly when measure(i) <= bound. A sample outside the law's hypotheses
+    // measures 0, the seed's measure, so it never outranks a measured one; a
+    // measure that could not be taken is NaN and fails.
+    CheckAllWithin(law: String, n: Integer, measure: Function1<Integer, Number>, bound: Number, where: Function1<Integer, Provenance>): Check
+        => WorstOf(law, n.MapRange(i => CheckWithin(law, measure(i), bound, where(i))));
+
+    // An exact law on an n by k grid of samples: sample j is the pair
+    // (j / k, j % k), the first index varying slowest.
+    CheckGrid(law: String, n: Integer, k: Integer, holds: Function2<Integer, Integer, Boolean>, where: Function2<Integer, Integer, Provenance>): Check
+        => WorstOf(law, (n * k).MapRange(j => CheckExact(law, holds(j / k, j % k), where(j / k, j % k))));
+
+    // A measured law on an n by k grid of samples, as CheckAllWithin.
+    CheckGridWithin(law: String, n: Integer, k: Integer, measure: Function2<Integer, Integer, Number>, bound: Number, where: Function2<Integer, Integer, Provenance>): Check
+        => WorstOf(law, (n * k).MapRange(j => CheckWithin(law, measure(j / k, j % k), bound, where(j / k, j % k))));
+
+    // An exact law that takes no sample: one CheckExact.
+    CheckOnce(law: String, holds: Boolean): Check
+        => CheckExact(law, holds, Provenance.Nowhere);
+
+    //==
+    // # Sample plans
+
+    // The plan the Check_ functions use unless told otherwise: five samples
+    // along each parameter, ends included (0, 1/4, 1/2, 3/4, 1 of a
+    // fraction). Sampling gives a lower bound on a worst deviation, never a
+    // proof (research/VALIDATION-MATH.md 3.2); the plan is a cost knob.
+    CheckPlan(_: SamplePlan): SamplePlan
+        => SamplePlan(5);
+
+    // The sample fractions of a plan: plan.Count values from 0 to 1, both
+    // ends included, as layer 2's pointwise laws take them.
+    PlanFractions(plan: SamplePlan): Array<Number>
+        => NumberInterval(0.0, 1.0).Samples(plan.Count);
+
+    // The range a check samples a parameter of a curve or surface over: the
+    // domain's range when it is bounded, [-1, 1] when it is not (a line, a
+    // plane), since a law that holds for every parameter value holds there.
+    BoundedSampleRange(d: CurveDomain): NumberInterval
+        => d.ParameterLength.IsFinite ? d.Range : NumberInterval(-1.0, 1.0);
+
+    // A surface domain with each unbounded direction replaced by [-1, 1].
+    BoundedSampleDomain(d: SurfaceDomain): SurfaceDomain
+        => SurfaceDomain(
+            CurveDomain(d.U.BoundedSampleRange, d.U.Periodicity),
+            CurveDomain(d.V.BoundedSampleRange, d.V.Periodicity));
+
+    //==
+    // # Reports
+
+    // The reports of a validation merged in order: the monoid product of
+    // layer 0's Merge, Empty its identity, so the result is clean exactly when
+    // every part is (Law_MergeAllIsCleanExactlyWhenEveryPartIsClean).
+    MergeAll(reports: Array<Report>): Report
+        => reports.Reduce(Report.Empty, (a, b) => Merge(a, b));
+
+    // The report of an exact law: Topological group, bound 0, so a failure is
+    // an Error. Also used for library self-tests and for geometric laws whose
+    // layer exposes no measure (01-geometry's file laws), which are then
+    // Errors without the ten-times grading.
+    ExactReport(c: Check, message: String): Report
+        => ReportOf(c, ConstraintGroup.Topological, 0.0, message);
+
+    // The report of a measured geometric law against its bound: a failure is
+    // a Warning while Worst stays below ten times the bound and an Error from
+    // there, or when Worst is NaN (layer 0's SeverityOf).
+    MeasuredReport(c: Check, bound: Number, message: String): Report
+        => ReportOf(c, ConstraintGroup.Geometric, bound, message);
+
+    // The report of a quality threshold: a failure is Info.
+    QualityReport(c: Check, bound: Number, message: String): Report
+        => ReportOf(c, ConstraintGroup.Quality, bound, message);
+
+    //==
+    // # Provenance of model cells
+
+    // Model vertex i as a provenance.
+    AtVertex(i: Integer): Provenance
+        => Provenance.KernelVertex(BrepVertexIndex(i));
+
+    // Model edge i as a provenance.
+    AtEdge(i: Integer): Provenance
+        => Provenance.KernelEdge(BrepEdgeIndex(i));
+
+    // Model loop i as a provenance.
+    AtLoop(i: Integer): Provenance
+        => Provenance.KernelLoop(BrepLoopIndex(i));
+
+    // Model face i as a provenance.
+    AtFace(i: Integer): Provenance
+        => Provenance.KernelFace(BrepFaceIndex(i));
+
+    // Model shell i as a provenance.
+    AtShell(i: Integer): Provenance
+        => Provenance.KernelShell(ShellIndex(i));
+
+    // Model body i as a provenance.
+    AtBody(i: Integer): Provenance
+        => Provenance.KernelBody(BodyIndex(i));
+
+    // Mesh vertex i as a provenance.
+    AtMeshVertex(i: Integer): Provenance
+        => Provenance.MeshVertex(VertexIndex(i));
+
+    // Mesh element i as a provenance.
+    AtElement(i: Integer): Provenance
+        => Provenance.MeshElement(ElementIndex(i));
+
+    // The cell a finding about curve c of the arena is reported at: the
+    // first edge whose curve it is, or nothing when no edge cites it (a basis
+    // or profile curve). Provenance has no geometry case (README, findings).
+    CurveSite(m: BrepModel, c: CurveIndex): Provenance
+        => m.Edges.Count.Range.Reduce(Provenance.Nowhere, (p, e) =>
+            p == Provenance.Nowhere ? (m.Edges[e].Curve == c ? AtEdge(e) : p) : p);
+
+    // The cell a finding about surface s is reported at: the first face on
+    // it, or nothing.
+    SurfaceSite(m: BrepModel, s: SurfaceIndex): Provenance
+        => m.Faces.Count.Range.Reduce(Provenance.Nowhere, (p, f) =>
+            p == Provenance.Nowhere ? (m.Faces[f].Surface == s ? AtFace(f) : p) : p);
+
+    // The cell a finding about pcurve p is reported at: the first edge whose
+    // curve carries it, or nothing.
+    PcurveSite(m: BrepModel, p: PcurveIndex): Provenance
+        => m.Edges.Count.Range.Reduce(Provenance.Nowhere, (q, e) =>
+            q == Provenance.Nowhere
+                ? (m.Geometry.IsCurveInRange(m.Edges[e].Curve)
+                    ? (m.Geometry.PcurvesOf(m.Edges[e].Curve).Any(x => x == p) ? AtEdge(e) : q)
+                    : q)
+                : q);
+
+    //==
+    // # Model samplers
+    //
+    // Each runs one law over every row of one table of a model, reporting a
+    // failure at the row.
+
+    // An exact law at every vertex.
+    CheckVertices(m: BrepModel, law: String, holds: Function1<BrepVertexIndex, Boolean>): Check
+        => CheckAll(law, m.Vertices.Count, i => holds(BrepVertexIndex(i)), i => AtVertex(i));
+
+    // An exact law at every edge.
+    CheckEdges(m: BrepModel, law: String, holds: Function1<BrepEdgeIndex, Boolean>): Check
+        => CheckAll(law, m.Edges.Count, i => holds(BrepEdgeIndex(i)), i => AtEdge(i));
+
+    // A measured law at every edge.
+    CheckEdgesWithin(m: BrepModel, law: String, measure: Function1<BrepEdgeIndex, Number>, bound: Number): Check
+        => CheckAllWithin(law, m.Edges.Count, i => measure(BrepEdgeIndex(i)), bound, i => AtEdge(i));
+
+    // An exact law at every loop.
+    CheckLoops(m: BrepModel, law: String, holds: Function1<BrepLoopIndex, Boolean>): Check
+        => CheckAll(law, m.Loops.Count, i => holds(BrepLoopIndex(i)), i => AtLoop(i));
+
+    // An exact law at every face.
+    CheckFaces(m: BrepModel, law: String, holds: Function1<BrepFaceIndex, Boolean>): Check
+        => CheckAll(law, m.Faces.Count, i => holds(BrepFaceIndex(i)), i => AtFace(i));
+
+    // An exact law at every shell.
+    CheckShells(m: BrepModel, law: String, holds: Function1<ShellIndex, Boolean>): Check
+        => CheckAll(law, m.Shells.Count, i => holds(ShellIndex(i)), i => AtShell(i));
+
+    // An exact law at every body.
+    CheckBodies(m: BrepModel, law: String, holds: Function1<BodyIndex, Boolean>): Check
+        => CheckAll(law, m.Bodies.Count, i => holds(BodyIndex(i)), i => AtBody(i));
+
+    // An exact law at every pair of a shell and an edge, reported at the edge.
+    CheckShellEdges(m: BrepModel, law: String, holds: Function2<ShellIndex, BrepEdgeIndex, Boolean>): Check
+        => CheckGrid(law, m.Shells.Count, m.Edges.Count, (s, e) => holds(ShellIndex(s), BrepEdgeIndex(e)), (s, e) => AtEdge(e));
+
+    // An exact law at every pair of a shell and a vertex, reported at the
+    // vertex.
+    CheckShellVertices(m: BrepModel, law: String, holds: Function2<ShellIndex, BrepVertexIndex, Boolean>): Check
+        => CheckGrid(law, m.Shells.Count, m.Vertices.Count, (s, v) => holds(ShellIndex(s), BrepVertexIndex(v)), (s, v) => AtVertex(v));
+
+    // An exact law at every pair of a face and an edge, reported at the face.
+    CheckFaceEdges(m: BrepModel, law: String, holds: Function2<BrepFaceIndex, BrepEdgeIndex, Boolean>): Check
+        => CheckGrid(law, m.Faces.Count, m.Edges.Count, (f, e) => holds(BrepFaceIndex(f), BrepEdgeIndex(e)), (f, e) => AtFace(f));
+
+    // Every coedge site of the model, face by face.
+    AllCoedgeSites(m: BrepModel): Array<CoedgeSite>
+        => m.Faces.Count.Range.FlatMap(f => m.CoedgeSitesOfFace(BrepFaceIndex(f)));
+
+    //==
+    // # Geometry arena samplers
+    //
+    // Each runs one law of 01-geometry over every entry of one arena table,
+    // at the plan's samples where the law is pointwise, reporting a failure
+    // at the edge or face that uses the entry. A sample is computed only
+    // where the entry can be evaluated (CanEvaluate); elsewhere the law is
+    // vacuous and so is the sample.
+
+    // The plan's samples of curve c's parameter: equally spaced over its
+    // bounded sample range, or zeros when c cannot be evaluated.
+    CurveSamples(m: BrepModel, c: CurveIndex, plan: SamplePlan): Array<Number>
+        => m.Geometry.CanEvaluate(c)
+            ? m.Geometry.Domain(c).BoundedSampleRange.Samples(plan.Count)
+            : plan.Count.MapRange(i => 0.0);
+
+    // The plan's samples of parameter-plane curve c's parameter.
+    Curve2DSamples(m: BrepModel, c: Curve2DIndex, plan: SamplePlan): Array<Number>
+        => m.Geometry.CanEvaluate(c)
+            ? m.Geometry.Domain(c).BoundedSampleRange.Samples(plan.Count)
+            : plan.Count.MapRange(i => 0.0);
+
+    // The plan's samples of pcurve p's parameter.
+    PcurveSamples(m: BrepModel, p: PcurveIndex, plan: SamplePlan): Array<Number>
+        => m.Geometry.CanEvaluate(p)
+            ? m.Geometry.Domain(p).BoundedSampleRange.Samples(plan.Count)
+            : plan.Count.MapRange(i => 0.0);
+
+    // The plan's grid of samples of surface s's parameters, plan.Count
+    // squared points, u varying fastest.
+    SurfaceSamples(m: BrepModel, s: SurfaceIndex, plan: SamplePlan): Array<UvCoordinate>
+        => m.Geometry.CanEvaluate(s)
+            ? m.Geometry.Domain(s).BoundedSampleDomain.Samples(plan)
+            : (plan.Count * plan.Count).MapRange(i => UvCoordinate(0.0, 0.0));
+
+    // An exact law at every curve of the arena.
+    CheckCurves(m: BrepModel, law: String, holds: Function1<CurveIndex, Boolean>): Check
+        => CheckAll(law, m.Geometry.Curves.Count, i => holds(CurveIndex(i)), i => m.CurveSite(CurveIndex(i)));
+
+    // An exact law at every parameter-plane curve.
+    CheckCurves2D(m: BrepModel, law: String, holds: Function1<Curve2DIndex, Boolean>): Check
+        => CheckAll(law, m.Geometry.Curves2D.Count, i => holds(Curve2DIndex(i)), i => Provenance.Nowhere);
+
+    // An exact law at every pcurve.
+    CheckPcurves(m: BrepModel, law: String, holds: Function1<PcurveIndex, Boolean>): Check
+        => CheckAll(law, m.Geometry.Pcurves.Count, i => holds(PcurveIndex(i)), i => m.PcurveSite(PcurveIndex(i)));
+
+    // An exact law at every surface.
+    CheckSurfaces(m: BrepModel, law: String, holds: Function1<SurfaceIndex, Boolean>): Check
+        => CheckAll(law, m.Geometry.Surfaces.Count, i => holds(SurfaceIndex(i)), i => m.SurfaceSite(SurfaceIndex(i)));
+
+    // An exact law at every surface and each of its two parameters.
+    CheckSurfaceParameters(m: BrepModel, law: String, holds: Function2<SurfaceIndex, SurfaceParameter, Boolean>): Check
+        => CheckGrid(law, m.Geometry.Surfaces.Count, 2,
+            (s, k) => holds(SurfaceIndex(s), k == 0 ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV),
+            (s, k) => m.SurfaceSite(SurfaceIndex(s)));
+
+    // A pointwise law at every curve and every sample of its parameter.
+    CheckCurveSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<CurveIndex, Number, Boolean>): Check
+        => CheckGrid(law, m.Geometry.Curves.Count, plan.Count,
+            (c, j) => holds(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j]),
+            (c, j) => m.CurveSite(CurveIndex(c)));
+
+    // A pointwise law at every parameter-plane curve and every sample.
+    CheckCurve2DSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<Curve2DIndex, Number, Boolean>): Check
+        => CheckGrid(law, m.Geometry.Curves2D.Count, plan.Count,
+            (c, j) => holds(Curve2DIndex(c), m.Curve2DSamples(Curve2DIndex(c), plan)[j]),
+            (c, j) => Provenance.Nowhere);
+
+    // A pointwise law at every pcurve and every sample.
+    CheckPcurveSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<PcurveIndex, Number, Boolean>): Check
+        => CheckGrid(law, m.Geometry.Pcurves.Count, plan.Count,
+            (p, j) => holds(PcurveIndex(p), m.PcurveSamples(PcurveIndex(p), plan)[j]),
+            (p, j) => m.PcurveSite(PcurveIndex(p)));
+
+    // A pointwise law at every curve, every sample, and each of a surface
+    // curve's two supports k = 0, 1.
+    CheckCurveSupportSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function3<CurveIndex, Number, Integer, Boolean>): Check
+        => CheckGrid(law, m.Geometry.Curves.Count, 2 * plan.Count,
+            (c, j) => holds(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count),
+            (c, j) => m.CurveSite(CurveIndex(c)));
+
+    // A pointwise law at every surface and every point of the plan's grid.
+    CheckSurfaceSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<SurfaceIndex, UvCoordinate, Boolean>): Check
+        => CheckGrid(law, m.Geometry.Surfaces.Count, plan.Count * plan.Count,
+            (s, j) => holds(SurfaceIndex(s), m.SurfaceSamples(SurfaceIndex(s), plan)[j]),
+            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+
+    // A pointwise law at every surface, every point of the grid, and each of
+    // the surface's two parameters.
+    CheckSurfaceParameterSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function3<SurfaceIndex, UvCoordinate, SurfaceParameter, Boolean>): Check
+        => CheckGrid(law, m.Geometry.Surfaces.Count, 2 * plan.Count * plan.Count,
+            (s, j) => holds(SurfaceIndex(s), m.SurfaceSamples(SurfaceIndex(s), plan)[j % (plan.Count * plan.Count)],
+                j < plan.Count * plan.Count ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV),
+            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+
+    //==
+    // # STEP file samplers
+
+    // Instance position i of a file as a provenance: its instance name.
+    // Precondition: i is a position of f.Instances.
+    AtInstance(f: Part21File, i: Integer): Provenance
+        => Provenance.StepInstance(f.IdAt(i));
+
+    // An exact law at every instance position of a file.
+    CheckInstances(f: Part21File, law: String, holds: Function1<Integer, Boolean>): Check
+        => CheckAll(law, f.Instances.Count, holds, i => f.AtInstance(i));
+
+    // An exact law at every attribute position of a file's arena.
+    CheckAttributes(f: Part21File, law: String, holds: Function1<Integer, Boolean>): Check
+        => CheckAll(law, f.Attributes.Count, holds, a => Provenance.Nowhere);
+}

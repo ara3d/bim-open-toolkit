@@ -1,0 +1,160 @@
+//==
+// # BrepChecking
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
+// validation entry points. Each is a merge of the per-layer reports of
+// BrepCheckingReports and BrepCrossChecking over the check families its
+// conformance level requires. The one-argument forms are the contract layer 8
+// calls (VOCABULARY.md, "7. 07-validation"); the longer forms take the
+// criteria, thresholds and level the one-argument forms fix.
+//
+// Levels, as data (README, "Conformance levels"):
+//  - Structural: StructureChecks
+//  - Geometric: StructureChecks, GeometryChecks, QualityChecks
+//  - Oracle: every family, the oracles and the library self-tests too
+
+library BrepChecking
+{
+    //==
+    // # Levels and families
+
+    // The rank of a level: Structural 0, Geometric 1, Oracle 2.
+    LevelRank(level: ConformanceLevel): Integer
+        => match (level)
+        {
+            Structural => 0;
+            Geometric => 1;
+            Oracle => 2;
+        };
+
+    // The lowest level's rank that runs a family: structure at every level,
+    // geometry and quality from Geometric, oracles and self-tests at Oracle.
+    FamilyRank(family: CheckFamily): Integer
+        => match (family)
+        {
+            StructureChecks => 0;
+            GeometryChecks => 1;
+            QualityChecks => 1;
+            OracleChecks => 2;
+            SelfTestChecks => 2;
+        };
+
+    // True when a level runs the family's checks.
+    Requires(level: ConformanceLevel, family: CheckFamily): Boolean
+        => family.FamilyRank <= level.LevelRank;
+
+    // Every check family, in report order.
+    AllFamilies(_: CheckFamily): Array<CheckFamily>
+        => [CheckFamily.StructureChecks, CheckFamily.GeometryChecks, CheckFamily.QualityChecks,
+            CheckFamily.OracleChecks, CheckFamily.SelfTestChecks];
+
+    // The merge of a per-family report over the families the level runs, in
+    // report order: the one place a level becomes a set of checks.
+    ForLevel(level: ConformanceLevel, report: Function1<CheckFamily, Report>): Report
+        => MergeAll(CheckFamily.AllFamilies.Map(x => level.Requires(x) ? report(x) : Report.Empty));
+
+    //==
+    // # Defaults the short forms fix
+
+    // Criteria under which only the shape laws of layer 4 bind: no chordal,
+    // angular or length bound, and one segment per closed edge, so a
+    // structural check of a discretization needs no criteria from the caller.
+    StructuralCriteria(_: DiscretizationCriteria): DiscretizationCriteria
+        => (Number.MaxValue, Angle(Number.Pi), Limit.Unlimited, 0.0, 1);
+
+    // The face criteria with the structural edge criteria and no surface
+    // bound.
+    StructuralFaceCriteria(_: FaceMeshingCriteria): FaceMeshingCriteria
+        => (DiscretizationCriteria.StructuralCriteria, Number.MaxValue, Angle(Number.Pi), false);
+
+    // Tolerances at sixteen times the floating-point resolution of a mesh's
+    // size, for checking a mesh that arrives without its model's tolerances.
+    ResolutionTolerances(mesh: ModelMesh): Tolerances
+        => Tolerances(
+            LengthTolerance(16.0 * ResolutionAt(mesh.Positions.ModelSize)),
+            AngleTolerance(Angle(16.0 * ResolutionAt(Number.Tau))),
+            ParameterTolerance(16.0 * ResolutionAt(mesh.Positions.ModelSize)));
+
+    //==
+    // # The file and the model
+
+    // The checks of a Part 21 file at the Geometric level.
+    ValidateStep(file: Part21File): Report
+        => file.ValidateStep(ConformanceLevel.Geometric);
+
+    // The checks of a Part 21 file at a level: the file as data, against the
+    // schema table, every WHERE rule, and at Oracle the decode self-tests.
+    ValidateStep(file: Part21File, level: ConformanceLevel): Report
+        => level.ForLevel(x => file.StepFileReport(x));
+
+    // The checks of a model at the Geometric level.
+    ValidateBrep(m: BrepModel): Report
+        => m.ValidateBrep(ConformanceLevel.Geometric);
+
+    // The checks of a model at a level: layer 0's tolerances, layer 2's
+    // topology, layer 1's geometry arena, and at Oracle the model's oracles.
+    ValidateBrep(m: BrepModel, level: ConformanceLevel): Report
+        => level.ForLevel(x => m.TopologyReport(SamplePlan.CheckPlan, x)
+            .Merge(m.GeometryArenaReport(SamplePlan.CheckPlan, x))
+            .Merge(m.ModelOracleReport(x)));
+
+    //==
+    // # Discretizations and face meshes
+
+    // The structural checks of a model's edge discretizations.
+    ValidateDiscretizations(m: BrepModel, d: EdgeDiscretizations): Report
+        => m.ValidateDiscretizations(d, DiscretizationCriteria.StructuralCriteria, SegmentFloors.NoFloors, ConformanceLevel.Structural);
+
+    // The checks of a model's edge discretizations against the criteria and
+    // floors they were made for, at a level.
+    ValidateDiscretizations(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, floors: SegmentFloors, level: ConformanceLevel): Report
+        => level.ForLevel(x => m.DiscretizationReport(d, c, floors, SamplePlan.CheckPlan, x));
+
+    // The structural checks of one face mesh that need nothing but the model.
+    ValidateFaceMesh(m: BrepModel, fm: FaceMesh): Report
+        => ConformanceLevel.Structural.ForLevel(x => m.FaceMeshOwnReport(fm, FaceMeshingCriteria.StructuralFaceCriteria, x));
+
+    // The checks of one face mesh against the discretizations it was built
+    // on and the criteria it was made for, at a level.
+    ValidateFaceMesh(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, level: ConformanceLevel): Report
+        => level.ForLevel(x => m.FaceMeshOwnReport(fm, c, x).Merge(m.FaceMeshAgainstEdgesReport(d, fm, c, x)));
+
+    // The checks of one face's meshing outcome.
+    ValidateFaceMeshOutcome(o: FaceMeshOutcome): Report
+        => ConformanceLevel.Structural.ForLevel(x => o.FaceMeshOutcomeReport(x));
+
+    //==
+    // # The model mesh
+
+    // The structural checks of a model mesh, with tolerances at its own
+    // floating-point resolution.
+    ValidateModelMesh(mesh: ModelMesh): Report
+        => mesh.ValidateModelMesh(mesh.ResolutionTolerances, MeshQualityThresholds.CubitAcceptable, ConformanceLevel.Structural);
+
+    // The checks of a model mesh with its model's tolerances and the quality
+    // thresholds, at a level.
+    ValidateModelMesh(mesh: ModelMesh, t: Tolerances, th: MeshQualityThresholds, level: ConformanceLevel): Report
+        => level.ForLevel(x => mesh.ModelMeshReport(t, th, x));
+
+    // The checks of the assembly's inputs, the face meshes and the vertex
+    // numbering the mesh carries, at a level.
+    ValidateAssembly(m: BrepModel, d: EdgeDiscretizations, faceMeshes: Array<FaceMesh>, mesh: ModelMesh, level: ConformanceLevel): Report
+        => level.ForLevel(x => m.AssemblyReport(d, faceMeshes, mesh.Numbering, x));
+
+    //==
+    // # Cross checks
+
+    // The checks of a mesh against its model that need no meshing criteria,
+    // at a level: layer 6's laws against the model, then this layer's cross
+    // checks (Euler, closure, provenance, volume signs, and at Oracle the
+    // angle defects).
+    CrossCheck(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel): Report
+        => level.ForLevel(x => m.MeshAgainstModelReport(mesh, x).Merge(m.CrossReport(mesh, x)));
+
+    // CrossCheck with the criteria the mesh was made for: adds element
+    // normals against the exact surface, and at Oracle the face areas and
+    // solid volumes against the oracles within the envelopes the criteria
+    // imply.
+    CrossCheck(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel, c: FaceMeshingCriteria): Report
+        => m.CrossCheck(mesh, level).Merge(level.ForLevel(x => m.CrossReport(mesh, c, x)));
+}

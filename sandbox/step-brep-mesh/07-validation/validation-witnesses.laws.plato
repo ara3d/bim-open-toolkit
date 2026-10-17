@@ -1,0 +1,285 @@
+//==
+// # BrepWitnessesLaws
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
+// laws the witness models satisfy, the laws the negative witnesses break, and
+// the metamorphic relations of meshing over the witnesses. A witness is
+// chosen by an Integer through WitnessAt, so a law quantifies over all ten
+// positive witnesses (k modulo 10), and its facts come from FactsAt in the
+// same order. Every approximate comparison names its bound: an oracle's own
+// allowance (GreenAllowance, DivergenceAllowance), the model's length
+// tolerance, or ResolutionAt for rounding.
+//
+// Sections, in order:
+//  - Positive witnesses: counts, Euler characteristic, clean reports
+//  - Positive witnesses: areas and volumes
+//  - Positive witnesses: meshed
+//  - Negative witnesses
+//  - Metamorphic relations
+
+library BrepWitnessesLaws
+{
+    //==
+    // # Positive witnesses: counts, Euler characteristic, clean reports
+
+    // The raw counts of shell s of witness k are its stated counts.
+    Law_WitnessHasStatedCounts(k: Integer, s: Integer): Boolean
+        => WitnessFacts.FactsAt(k).Shells.IsValidIndex(s)
+            ? BrepModel.WitnessAt(k).RawCounts(ShellIndex(s)) == WitnessFacts.FactsAt(k).Shells[s]
+            : true;
+
+    // The stated counts of shell s of witness k imply its stated genus: the
+    // facts table is consistent with itself.
+    Law_WitnessStatedCountsImplyStatedGenus(k: Integer, s: Integer): Boolean
+        => WitnessFacts.FactsAt(k).Shells.IsValidIndex(s)
+            ? WitnessFacts.FactsAt(k).Shells[s].ImpliedGenus == WitnessFacts.FactsAt(k).Genera[s]
+            : true;
+
+    // Shell s of witness k has the reduced Euler characteristic 2 - 2 g of its
+    // stated genus: 2 for a sphere-like shell, 0 for the torus and the block
+    // with a through hole.
+    Law_WitnessEulerIsTwoMinusTwiceGenus(k: Integer, s: Integer): Boolean
+        => WitnessFacts.FactsAt(k).Shells.IsValidIndex(s)
+            ? BrepModel.WitnessAt(k).ShellEulerPoincare(ShellIndex(s)) == 2 - 2 * WitnessFacts.FactsAt(k).Genera[s]
+            : true;
+
+    // The oracle's Euler characteristic of shell s of witness k is its
+    // layer 2 one: two routes to the reduced count agree on every witness.
+    Law_WitnessOracleEulerMatchesLayerTwo(k: Integer, s: Integer): Boolean
+        => WitnessFacts.FactsAt(k).Shells.IsValidIndex(s)
+            ? BrepModel.WitnessAt(k).Oracle_EulerCharacteristic(ShellIndex(s)) == BrepModel.WitnessAt(k).ShellEulerPoincare(ShellIndex(s))
+            : true;
+
+    // Witness k has as many shells as its facts state.
+    Law_WitnessHasStatedShellCount(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).Shells.Count == WitnessFacts.FactsAt(k).Shells.Count;
+
+    // Witness k passes every structural check: every layer 2 law, every
+    // layer 1 record law, layer 0's tolerances.
+    Law_WitnessIsStructurallyClean(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).ValidateBrep(ConformanceLevel.Structural).IsClean;
+
+    // Witness k passes ValidateBrep at its default (Geometric) level.
+    Law_WitnessValidatesClean(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).ValidateBrep.IsClean;
+
+    // Witness k passes ValidateBrep at the Oracle level: the model's oracles
+    // and the library self-tests too.
+    Law_WitnessIsOracleClean(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).ValidateBrep(ConformanceLevel.Oracle).IsClean;
+
+    // The unit box written out in full is the parameterized box at 1 x 1 x 1,
+    // table for table.
+    Law_UnitBoxIsBoxOfOnes(_: BrepModel): Boolean
+        => BrepModel.Witness_UnitBox.SameModel(BrepModel.Witness_Box(1.0, 1.0, 1.0));
+
+    // Every box w x d x h has the box's stated raw counts.
+    Law_BoxHasStatedCounts(w: Number, d: Number, h: Number): Boolean
+        => (w > 0.0 && d > 0.0 && h > 0.0 && w.IsFinite && d.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_Box(w, d, h).RawCounts(ShellIndex(0)) == BoxFacts(w, d, h).Shells[0]
+            : true;
+
+    // Every box w x d x h passes ValidateBrep.
+    Law_BoxValidatesClean(w: Number, d: Number, h: Number): Boolean
+        => (w > 0.0 && d > 0.0 && h > 0.0 && w.IsFinite && d.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_Box(w, d, h).ValidateBrep.IsClean
+            : true;
+
+    // Every cylinder of radius r, height h and sweep in (0, 2 pi] passes
+    // ValidateBrep, seamed or a sector.
+    Law_CylinderValidatesClean(r: Number, h: Number, sweep: Number): Boolean
+        => (r > 0.0 && h > 0.0 && sweep > 0.0 && sweep <= Number.Tau && r.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_Cylinder(r, h, Angle(sweep)).ValidateBrep.IsClean
+            : true;
+
+    // Every cylinder has its stated raw counts.
+    Law_CylinderHasStatedCounts(r: Number, h: Number, sweep: Number): Boolean
+        => (r > 0.0 && h > 0.0 && sweep > 0.0 && sweep <= Number.Tau && r.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_Cylinder(r, h, Angle(sweep)).RawCounts(ShellIndex(0)) == CylinderFacts(r, h, Angle(sweep)).Shells[0]
+            : true;
+
+    //==
+    // # Positive witnesses: areas and volumes
+
+    // The Green area of face f of witness k is its stated area within the
+    // oracle's allowance; vacuous where the facts give no closed form (the
+    // B-spline top).
+    Law_WitnessGreenAreaMatchesFacts(k: Integer, f: Integer): Boolean
+        => (WitnessFacts.FactsAt(k).FaceAreas.IsValidIndex(f) ? WitnessFacts.FactsAt(k).FaceAreas[f].IsFinite : false)
+            ? (BrepModel.WitnessAt(k).Oracle_FaceAreaByGreen(BrepFaceIndex(f)) - WitnessFacts.FactsAt(k).FaceAreas[f]).Abs
+                <= BrepModel.WitnessAt(k).GreenAllowance(BrepFaceIndex(f))
+            : true;
+
+    // Witness k has as many faces as its facts give areas.
+    Law_WitnessHasStatedFaceCount(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).Faces.Count == WitnessFacts.FactsAt(k).FaceAreas.Count;
+
+    // The divergence-theorem volume of shell s of witness k is its stated
+    // signed volume within the oracle's allowance: positive for an outer
+    // shell, negative for the hollow box's void.
+    Law_WitnessDivergenceVolumeMatchesFacts(k: Integer, s: Integer): Boolean
+        => (WitnessFacts.FactsAt(k).ShellVolumes.IsValidIndex(s)
+                ? BrepModel.WitnessAt(k).Oracle_DivergenceVolume(ShellIndex(s)).IsFinite
+                : false)
+            ? (BrepModel.WitnessAt(k).Oracle_DivergenceVolume(ShellIndex(s)) - WitnessFacts.FactsAt(k).ShellVolumes[s]).Abs
+                <= BrepModel.WitnessAt(k).DivergenceAllowance(ShellIndex(s))
+            : true;
+
+    // The B-spline top's Green area lies in its bracket [1, 1 + 16 bump^2 / 45]
+    // (the graph's area between the flat square and the first two terms of
+    // the area integrand's series), widened by the oracle's allowance.
+    Law_BSplineTopAreaInBracket(bump: Number): Boolean
+        => (bump > 0.0 && bump < 1.0)
+            ? (BrepModel.Witness_BSplinePatchSolid(bump).Oracle_FaceAreaByGreen(BrepFaceIndex(1))
+                    >= 1.0 - BrepModel.Witness_BSplinePatchSolid(bump).GreenAllowance(BrepFaceIndex(1))
+                && BrepModel.Witness_BSplinePatchSolid(bump).Oracle_FaceAreaByGreen(BrepFaceIndex(1))
+                    <= 1.0 + 16.0 * bump * bump / 45.0 + BrepModel.Witness_BSplinePatchSolid(bump).GreenAllowance(BrepFaceIndex(1)))
+            : true;
+
+    //==
+    // # Positive witnesses: meshed
+    //
+    // Meshed once with the witness criteria (MeshOnce, WitnessCriteria):
+    // layers 4 to 6 with no refinement loop. Layer 8's MeshModel adds the loop
+    // and the same laws hold of its mesh (README, "Open items").
+
+    // The mesh of witness k passes CrossCheck at the Oracle level with the
+    // criteria it was made with.
+    Law_WitnessMeshCrossChecksClean(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).CrossCheck(
+                BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria),
+                ConformanceLevel.Oracle,
+                FaceMeshingCriteria.WitnessCriteria)
+            .IsClean;
+
+    // The mesh of witness k passes ValidateModelMesh.
+    Law_WitnessMeshValidatesClean(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria).ValidateModelMesh.IsClean;
+
+    // After meshing the hollow box a x a x a around a void b x b x b, the
+    // void's mesh encloses a negative volume beyond its rounding.
+    Law_HollowBoxVoidMeshVolumeNegative(a: Number, b: Number): Boolean
+        => (b > 0.0 && a > b && a.IsFinite)
+            ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(
+                    BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria), ShellIndex(1))
+                < 0.0 - BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria).VolumeRoundoff
+            : true;
+
+    // After meshing the hollow box, the outer shell's mesh encloses a
+    // positive volume beyond its rounding.
+    Law_HollowBoxOuterMeshVolumePositive(a: Number, b: Number): Boolean
+        => (b > 0.0 && a > b && a.IsFinite)
+            ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(
+                    BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria), ShellIndex(0))
+                > BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria).VolumeRoundoff
+            : true;
+
+    // The hollow box's meshed solid volume is a^3 - b^3: every face is
+    // planar and bounded by lines, so the mesh is exact up to rounding.
+    Law_HollowBoxMeshVolumeIsDifference(a: Number, b: Number): Boolean
+        => (b > 0.0 && a > b && a.IsFinite)
+            ? (BrepModel.Witness_HollowBox(a, b).BodyMeshVolume(
+                    BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria), BodyIndex(0))
+                    - (a * a * a - b * b * b)).Abs
+                <= 2.0 * BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria).VolumeRoundoff
+            : true;
+
+    //==
+    // # Negative witnesses
+    //
+    // Each breaks exactly the laws its comment names: each named check fails,
+    // and the structure family of TopologyReport has exactly as many
+    // diagnostics as named laws.
+
+    // The sphere with redundant pole loops fails Law_FaceBoundsShareNoVertex.
+    Law_RedundantPoleLoopsShareAVertex(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite) ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).Check_FaceBoundsShareNoVertex.Holds.Not : true;
+
+    // The sphere with redundant pole loops fails Law_VertexLoopVertexIsIsolated.
+    Law_RedundantPoleLoopVertexIsNotIsolated(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite) ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).Check_VertexLoopVertexIsIsolated.Holds.Not : true;
+
+    // The sphere with redundant pole loops fails no other structural law.
+    Law_RedundantPoleLoopsFailExactlyTwoLaws(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite)
+            ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 2
+            : true;
+
+    // The sphere with redundant pole loops still has the reduced Euler
+    // characteristic 2: the reduction drops both vertex loops.
+    Law_RedundantPoleLoopsReduceToSphere(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite) ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).ShellEulerPoincare(ShellIndex(0)) == 2 : true;
+
+    // The box with a flipped face fails Law_LoopWindingMatchesSameSense.
+    Law_FlippedFaceBreaksWinding(_: BrepModel): Boolean
+        => BrepModel.Witness_BoxWithFlippedFace.Check_LoopWindingMatchesSameSense.Holds.Not;
+
+    // The box with a flipped face fails no other structural law.
+    Law_FlippedFaceFailsExactlyOneLaw(_: BrepModel): Boolean
+        => BrepModel.Witness_BoxWithFlippedFace.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 1;
+
+    // Two boxes sharing a corner fail Law_EulerPoincareEvenAndBounded.
+    Law_SharedCornerBreaksEuler(_: BrepModel): Boolean
+        => BrepModel.Witness_TwoBoxesSharingCorner.Check_EulerPoincareEvenAndBounded.Holds.Not;
+
+    // Two boxes sharing a corner fail Law_VertexLinkIsOneCycle.
+    Law_SharedCornerBreaksVertexLink(_: BrepModel): Boolean
+        => BrepModel.Witness_TwoBoxesSharingCorner.Check_VertexLinkIsOneCycle.Holds.Not;
+
+    // Two boxes sharing a corner fail no other structural law.
+    Law_SharedCornerFailsExactlyTwoLaws(_: BrepModel): Boolean
+        => BrepModel.Witness_TwoBoxesSharingCorner.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 2;
+
+    //==
+    // # Metamorphic relations
+    //
+    // Over the witnesses, meshed once with the witness criteria. A rigid
+    // motion is a frame orthonormal within 1e-12 radians; a scaling is a
+    // power of two, which is exact in binary floating point, so every
+    // decision the mesher makes on a scaled model compares the same
+    // mantissas.
+
+    // Moving witness k rigidly by frame f leaves its mesh's connectivity
+    // unchanged: elements, element faces and vertex count.
+    Law_RigidMotionKeepsConnectivity(k: Integer, f: Frame3D): Boolean
+        => f.IsOrthonormalWithin(AngleTolerance(Angle(1e-12)))
+            ? BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria)
+                .SameConnectivity(BrepModel.WitnessAt(k).MovedBy(f).MeshOnce(FaceMeshingCriteria.WitnessCriteria))
+            : true;
+
+    // Moving witness k rigidly by frame f moves each mesh vertex by f, within
+    // the witness's length tolerance.
+    Law_RigidMotionMovesMesh(k: Integer, f: Frame3D, v: Integer): Boolean
+        => (f.IsOrthonormalWithin(AngleTolerance(Angle(1e-12)))
+                ? (BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions.IsValidIndex(v)
+                    && BrepModel.WitnessAt(k).MovedBy(f).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions.IsValidIndex(v))
+                : false)
+            ? BrepModel.WitnessAt(k).MovedBy(f).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions[v]
+                .Distance(f.MovedPoint(BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions[v]))
+                <= BrepModel.WitnessAt(k).Tolerances.Length.Value
+            : true;
+
+    // Scaling witness k and the length criteria by 2^e, e in [-8, 8], leaves
+    // its mesh's connectivity unchanged.
+    Law_PowerOfTwoScalingKeepsConnectivity(k: Integer, e: Integer): Boolean
+        => (e >= -8 && e <= 8)
+            ? BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria)
+                .SameConnectivity(BrepModel.WitnessAt(k).ScaledBy(2.0.Pow(e.ToNumber))
+                    .MeshOnce(FaceMeshingCriteria.WitnessCriteria.ScaledCriteria(2.0.Pow(e.ToNumber))))
+            : true;
+
+    // On a witness whose curves are lines and circles, a tighter chordal
+    // bound, all else equal, never increases the largest sagitta of any edge
+    // segment: a circle's closed-form split count is non-increasing in the
+    // bound, and a line's sagitta is 0. Rounding allowed at the model size.
+    Law_TighterChordalNeverIncreasesSagitta(k: Integer, chordal: Number, tighter: Number): Boolean
+        => ((tighter > 0.0 && tighter <= chordal && chordal.IsFinite) ? BrepModel.WitnessAt(k).HasOnlyLinesAndCircles : false)
+            ? BrepModel.WitnessAt(k).MaxEdgeSagitta(
+                    BrepModel.WitnessAt(k).DiscretizeAll(DefaultCriteria(chordal).WithChordal(tighter), SegmentFloors.NoFloors),
+                    SamplePlan.CheckPlan)
+                <= BrepModel.WitnessAt(k).MaxEdgeSagitta(
+                    BrepModel.WitnessAt(k).DiscretizeAll(DefaultCriteria(chordal), SegmentFloors.NoFloors),
+                    SamplePlan.CheckPlan)
+                    + ResolutionAt(BrepModel.WitnessAt(k).ModelSizeOf)
+            : true;
+}

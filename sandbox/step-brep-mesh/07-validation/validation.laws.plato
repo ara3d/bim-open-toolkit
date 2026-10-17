@@ -1,0 +1,565 @@
+//==
+// # BrepCheckingLaws
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
+// laws of validation itself. A Law_ returns Boolean and states one property
+// for all values of its parameters; a leading guard written with the
+// conditional makes it vacuous outside its hypotheses, so it never indexes
+// out of range. Every approximate comparison names its bound: the model's
+// length or angle tolerance, a meshing criterion, an envelope derived in the
+// README, or layer 0's ResolutionAt for rounding.
+//
+// Sections, in order:
+//  - Cross checks: topology
+//  - Cross checks: geometry
+//  - Cross checks: oracles
+//  - Oracles against the closed forms
+//  - Agreement of checks and laws: the samplers
+//  - Agreement of checks and laws: measured checks of layers 0 to 6
+//  - Agreement of checks and laws: cross checks
+//  - Reports and levels
+//  - The corpus
+//  - Helpers
+
+library BrepCheckingLaws
+{
+    //==
+    // # Cross checks: topology
+
+    // The mesh of shell s has the Euler characteristic of the shell's
+    // reduced counts (research/VALIDATION-MATH.md 4.4): the mesh refines the
+    // cell decomposition term by term. Exact. Error.
+    Law_MeshEulerEqualsBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
+            ? m.ShellMeshEuler(mesh, s) == m.ShellEulerPoincare(s)
+            : true;
+
+    // The mesh of shell s is closed exactly when the shell is: when no edge
+    // of the shell is used once (layer 2's FreeEdgeCount). Exact. Error.
+    Law_MeshClosedExactlyWhenShellClosed(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
+            ? (m.ShellFaces(s).Count > 0 ? m.RestrictedToShell(mesh, s).IsClosed == (m.FreeEdgeCount(s) == 0) : true)
+            : true;
+
+    // Every mesh vertex's provenance names a vertex, edge or face of the
+    // model. Exact. Error.
+    Law_ProvenanceNamesModelCell(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
+        => mesh.VertexProvenance.IsValidIndex(v) ? m.ProvenanceInModel(mesh.VertexProvenance[v]) : true;
+
+    // The mesh of a solid's outer shell and the mesh of its void k share no
+    // vertex (brep_with_voids IP1: the shells are disjoint). Exact. Error.
+    Law_SolidShellMeshesShareNoVertex(m: BrepModel, mesh: ModelMesh, b: BodyIndex, k: Integer): Boolean
+        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
+            ? (m.Bodies[b].VoidShellsOf.IsValidIndex(k)
+                ? m.ShareNoVertex(mesh, m.Bodies[b].OuterShellOf, m.Bodies[b].VoidShellsOf[k])
+                : true)
+            : true;
+
+    // The closed, consistently oriented mesh of a solid's outer shell encloses
+    // a positive volume beyond its rounding bound: its elements face out of the
+    // material (the divergence theorem, research/VALIDATION-MATH.md 4.7). A
+    // sign, against VolumeRoundoff. Error.
+    Law_OuterShellVolumePositive(m: BrepModel, mesh: ModelMesh, b: BodyIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
+            ? (m.IsShellInRange(m.Bodies[b].OuterShellOf)
+                ? (m.IsClosedAndOrientedShellMesh(mesh, m.Bodies[b].OuterShellOf)
+                    ? m.ShellMeshVolume(mesh, m.Bodies[b].OuterShellOf) > mesh.VolumeRoundoff
+                    : true)
+                : true)
+            : true;
+
+    // The closed, consistently oriented mesh of a void shell encloses a
+    // negative volume beyond its rounding bound: the void's faces point into
+    // the void, out of the material (layer 3's folding). A sign, against
+    // VolumeRoundoff. Error.
+    Law_VoidShellVolumeNegative(m: BrepModel, mesh: ModelMesh, b: BodyIndex, k: Integer): Boolean
+        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
+            ? (m.Bodies[b].VoidShellsOf.IsValidIndex(k)
+                ? (m.IsClosedAndOrientedShellMesh(mesh, m.Bodies[b].VoidShellsOf[k])
+                    ? m.ShellMeshVolume(mesh, m.Bodies[b].VoidShellsOf[k]) < 0.0 - mesh.VolumeRoundoff
+                    : true)
+                : true)
+            : true;
+
+    //==
+    // # Cross checks: geometry
+
+    // Every mesh vertex re-evaluates from its provenance to its position:
+    // the model point its provenance names is within the length tolerance
+    // (ReevaluationDeviation, 0 outside the hypotheses). Geometric, bound
+    // Tolerances.Length: Warning below ten times it, Error above.
+    Law_VertexReevaluatesFromProvenance(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
+        => m.ReevaluationDeviation(mesh, v) <= m.Tolerances.Length.Value;
+
+    // The normal stored at corner slot of element e is the face normal at the
+    // corner's parameters within the model's angle tolerance, off collapsed
+    // lines (CornerNormalGap). Geometric, bound Tolerances.Angle: W/E.
+    Law_CornerNormalIsFaceNormal(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+        => m.CornerNormalGap(mesh, e, slot) <= m.Tolerances.Angle.Value.Radians;
+
+    // Element e's normal, from its positions, is within SurfaceAngular of the
+    // surface normal at its corner-parameter centroid, from the exact
+    // surface, off collapsed lines (ElementNormalGap). Geometric, bound
+    // SurfaceAngular: W/E.
+    Law_ElementNormalAgreesWithFaceNormal(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, e: ElementIndex): Boolean
+        => m.ElementNormalGap(mesh, e) <= c.SurfaceAngular.Radians;
+
+    //==
+    // # Cross checks: oracles
+
+    // The mesh area of face f equals Oracle_FaceAreaByGreen within
+    // FaceAreaTolerance, the envelope the criteria imply
+    // (A ((1 + kappa d)^2 / cos(2 SurfaceAngular) - 1) + d_e P + the oracle's
+    // allowance; README, "The area tolerance"). Vacuous where the oracle has
+    // no number. Oracle family, Error.
+    Law_FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, f: BrepFaceIndex): Boolean
+        => m.IsFaceInRange(f)
+            ? (m.Oracle_FaceAreaByGreen(f).IsFinite ? m.FaceAreaGap(mesh, f) <= m.FaceAreaTolerance(f, c) : true)
+            : true;
+
+    // On a closed mesh of shell s, the angle defects less the quads' own
+    // defects sum to 2 pi times the shell's reduced Euler characteristic
+    // (discrete Gauss-Bonnet against the B-rep, research/VALIDATION-MATH.md
+    // 4.5), within the angle tolerance per referenced vertex and quad.
+    // Oracle family, Error.
+    Law_AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
+            ? (m.IsClosedAndOrientedShellMesh(mesh, s)
+                ? (m.RestrictedToShell(mesh, s).Oracle_AngleDefectSum - m.RestrictedToShell(mesh, s).Oracle_QuadDefectSum
+                        - Number.Tau * m.ShellEulerPoincare(s).ToNumber).Abs
+                    <= m.Tolerances.Angle.Value.Radians
+                        * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber
+                : true)
+            : true;
+
+    // The mesh volume of solid b is its divergence-theorem volume within the
+    // tube of radius d about its boundary (TubeVolume, Weyl's formula; valid
+    // while d is below the reach). Vacuous for a shell set and where the
+    // oracle has no number. Oracle family, Error.
+    Law_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
+            ? ((m.IsShellInRange(m.Bodies[b].OuterShellOf) ? m.Oracle_BodyVolume(b).IsFinite : false)
+                ? (m.BodyMeshVolume(mesh, b) - m.Oracle_BodyVolume(b)).Abs <= m.TubeVolume(b, c)
+                : true)
+            : true;
+
+    // Layer 2's reduced Euler characteristic of shell s (union-find over the
+    // reduction rule) equals the oracle's (raw counts plus the reduction's
+    // corrections). Exact. Oracle family, Error.
+    Law_ReducedEulerMatchesOracle(m: BrepModel, s: ShellIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
+            ? m.ShellEulerPoincare(s) == m.Oracle_EulerCharacteristic(s)
+            : true;
+
+    // The exact faces of a solid's outer shell enclose a positive volume
+    // larger than 2 Length A (A the shell's area): a thinner volume could be
+    // the file's own tolerance (research/VALIDATION-MATH.md 8). Oracle family,
+    // Error.
+    Law_OuterShellExactVolumePositive(m: BrepModel, b: BodyIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
+            ? ((m.IsShellInRange(m.Bodies[b].OuterShellOf) ? m.Oracle_DivergenceVolume(m.Bodies[b].OuterShellOf).IsFinite : false)
+                ? m.Oracle_DivergenceVolume(m.Bodies[b].OuterShellOf)
+                    > 2.0 * m.Tolerances.Length.Value * m.ShellOracleArea(m.Bodies[b].OuterShellOf)
+                : true)
+            : true;
+
+    // The exact faces of void k of a solid enclose a negative volume beyond
+    // 2 Length A. Oracle family, Error.
+    Law_VoidShellExactVolumeNegative(m: BrepModel, b: BodyIndex, k: Integer): Boolean
+        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
+            ? ((m.Bodies[b].VoidShellsOf.IsValidIndex(k) ? m.Oracle_DivergenceVolume(m.Bodies[b].VoidShellsOf[k]).IsFinite : false)
+                ? m.Oracle_DivergenceVolume(m.Bodies[b].VoidShellsOf[k])
+                    < 0.0 - 2.0 * m.Tolerances.Length.Value * m.ShellOracleArea(m.Bodies[b].VoidShellsOf[k])
+                : true)
+            : true;
+
+    // On a planar face bounded by lines and conics, the exact area
+    // (Oracle_PlanarFaceArea) and the Green's-theorem area agree within the
+    // Green oracle's allowance: two routes to one number. Oracle family,
+    // a self-test, Error.
+    Law_PlanarFaceAreaMatchesGreen(m: BrepModel, f: BrepFaceIndex): Boolean
+        => (m.Oracle_PlanarFaceArea(f).IsFinite ? m.Oracle_FaceAreaByGreen(f).IsFinite : false)
+            ? (m.Oracle_PlanarFaceArea(f) - m.Oracle_FaceAreaByGreen(f)).Abs <= m.GreenAllowance(f)
+            : true;
+
+    //==
+    // # Oracles against the closed forms
+    //
+    // Each runs the Green oracle on a face of a parameterized witness whose
+    // loops are straight in (u, v) (iso-lines and pole sides), where it is
+    // exact up to rounding, and compares it with the closed form. The bound
+    // is GreenAllowance, which on such a face is the rounding of the sum
+    // (ResolutionAt of the area times the segment count) plus a Richardson
+    // correction that is itself rounding. Guards keep the sizes positive and
+    // finite.
+
+    // The side of the solid cylinder of radius r and height h: 2 pi r h.
+    Law_GreenEqualsCylinderPatchArea(r: Number, h: Number): Boolean
+        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
+            ? (BrepModel.Witness_Cylinder(r, h, Angle(Number.Tau)).Oracle_FaceAreaByGreen(BrepFaceIndex(0))
+                    - Oracle_CylinderPatchArea(r, Angle(Number.Tau), h)).Abs
+                <= BrepModel.Witness_Cylinder(r, h, Angle(Number.Tau)).GreenAllowance(BrepFaceIndex(0))
+            : true;
+
+    // The side of the cylinder sector of radius r, height h and the given
+    // sweep: sweep r h.
+    Law_GreenEqualsCylinderSectorPatchArea(r: Number, h: Number, sweep: Number): Boolean
+        => (r > 0.0 && h > 0.0 && sweep > 0.0 && sweep < Number.Tau && r.IsFinite && h.IsFinite)
+            ? (BrepModel.Witness_Cylinder(r, h, Angle(sweep)).Oracle_FaceAreaByGreen(BrepFaceIndex(2))
+                    - Oracle_CylinderPatchArea(r, Angle(sweep), h)).Abs
+                <= BrepModel.Witness_Cylinder(r, h, Angle(sweep)).GreenAllowance(BrepFaceIndex(2))
+            : true;
+
+    // The sphere of radius r, seam and two pole sides: 4 pi r^2.
+    Law_GreenEqualsSphereArea(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite)
+            ? (BrepModel.Witness_Sphere(r).Oracle_FaceAreaByGreen(BrepFaceIndex(0)) - Oracle_SphereArea(r)).Abs
+                <= BrepModel.Witness_Sphere(r).GreenAllowance(BrepFaceIndex(0))
+            : true;
+
+    // The sphere of radius r bounded by two pole vertex loops: 4 pi r^2,
+    // carried entirely by the vertex loops' pole sides.
+    Law_GreenEqualsSphereAreaByPoleLoops(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite)
+            ? (BrepModel.Witness_SphereByPoleLoops(r).Oracle_FaceAreaByGreen(BrepFaceIndex(0)) - Oracle_SphereArea(r)).Abs
+                <= BrepModel.Witness_SphereByPoleLoops(r).GreenAllowance(BrepFaceIndex(0))
+            : true;
+
+    // The ring torus of radii major > minor > 0, two seams: 4 pi^2 R r.
+    Law_GreenEqualsTorusArea(major: Number, minor: Number): Boolean
+        => (minor > 0.0 && major > minor && major.IsFinite)
+            ? (BrepModel.Witness_Torus(major, minor).Oracle_FaceAreaByGreen(BrepFaceIndex(0)) - Oracle_TorusArea(major, minor)).Abs
+                <= BrepModel.Witness_Torus(major, minor).GreenAllowance(BrepFaceIndex(0))
+            : true;
+
+    // The side of the cone of base radius r and height h, v from the apex
+    // -h to the base 0: pi r sqrt(r^2 + h^2), the whole of it carried by the
+    // apex's pole side.
+    Law_GreenEqualsConePatchArea(r: Number, h: Number): Boolean
+        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
+            ? (BrepModel.Witness_Cone(r, h).Oracle_FaceAreaByGreen(BrepFaceIndex(0))
+                    - Oracle_ConePatchArea(r, (r / h).Atan, Angle(Number.Tau), 0.0 - h, 0.0)).Abs
+                <= BrepModel.Witness_Cone(r, h).GreenAllowance(BrepFaceIndex(0))
+            : true;
+
+    // Face k of the box w x d x h: the rectangle's area from BoxFacts.
+    Law_GreenEqualsBoxFaceArea(w: Number, d: Number, h: Number, k: Integer): Boolean
+        => (w > 0.0 && d > 0.0 && h > 0.0 && w.IsFinite && d.IsFinite && h.IsFinite && k >= 0 && k < 6)
+            ? (BrepModel.Witness_Box(w, d, h).Oracle_FaceAreaByGreen(BrepFaceIndex(k)) - BoxFacts(w, d, h).FaceAreas[k]).Abs
+                <= BrepModel.Witness_Box(w, d, h).GreenAllowance(BrepFaceIndex(k))
+            : true;
+
+    // The base disk of the cone of radius r: its circle is curved in the
+    // plane's (u, v), so the Green polygon errs by the inscribed polygon's
+    // defect; after Richardson the remainder is at most
+    // r^2 (2 pi)^5 / (960 n^4) (ArcResidual), and the exact planar oracle
+    // gives pi r^2.
+    Law_PlanarOracleEqualsDiskArea(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite)
+            ? (BrepModel.Witness_Cone(r, 1.0).Oracle_PlanarFaceArea(BrepFaceIndex(1)) - Number.Pi * r * r).Abs
+                <= ResolutionAt(Number.Pi * r * r * 64.0)
+            : true;
+
+    // The Green area of the cone's base disk is within ArcResidual of pi r^2.
+    Law_GreenDiskAreaWithinArcResidual(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite)
+            ? (BrepModel.Witness_Cone(r, 1.0).Oracle_FaceAreaByGreen(BrepFaceIndex(1)) - Number.Pi * r * r).Abs
+                <= ArcResidual(r, Number.Tau, Integer.GreenChords) + ResolutionAt(Number.Pi * r * r * 256.0)
+            : true;
+
+    //==
+    // # Agreement of checks and laws: the samplers
+    //
+    // Every Check_ is built by one of the samplers of BrepCheckingCommon from
+    // its law's Boolean (exact laws) or from the measure its law compares
+    // (measured laws). These laws state, once for all of them, that a sampled
+    // check holds exactly when its law holds at every sample, and that a
+    // failing one names a sample where the law fails. They take function
+    // parameters, so only their instances run.
+
+    // CheckAll holds exactly when the law holds at every index.
+    Law_CheckAllHoldsExactlyWhenEverySampleHolds(law: String, n: Integer, holds: Function1<Integer, Boolean>, where: Function1<Integer, Provenance>): Boolean
+        => CheckAll(law, n, holds, where).Holds == n.Range.All(i => holds(i));
+
+    // A failing CheckAll names, in Where, a sample at which the law fails.
+    Law_FailingCheckAllNamesAFailingSample(law: String, n: Integer, holds: Function1<Integer, Boolean>, where: Function1<Integer, Provenance>): Boolean
+        => CheckAll(law, n, holds, where).Holds
+            ? true
+            : n.Range.Any(i => holds(i).Not && where(i) == CheckAll(law, n, holds, where).Where);
+
+    // CheckAllWithin holds exactly when every measure is within the bound.
+    Law_CheckAllWithinHoldsExactlyWhenEveryMeasureIsWithin(law: String, n: Integer, measure: Function1<Integer, Number>, bound: Number, where: Function1<Integer, Provenance>): Boolean
+        => CheckAllWithin(law, n, measure, bound, where).Holds == n.Range.All(i => measure(i) <= bound);
+
+    // A failing CheckAllWithin names a sample whose measure exceeds the bound
+    // (or is NaN), and carries the worst measure.
+    Law_FailingCheckAllWithinNamesAFailingSample(law: String, n: Integer, measure: Function1<Integer, Number>, bound: Number, where: Function1<Integer, Provenance>): Boolean
+        => CheckAllWithin(law, n, measure, bound, where).Holds
+            ? true
+            : n.Range.Any(i => (measure(i) <= bound).Not && where(i) == CheckAllWithin(law, n, measure, bound, where).Where);
+
+    // CheckGrid holds exactly when the law holds at every pair of the grid.
+    Law_CheckGridHoldsExactlyWhenEverySampleHolds(law: String, n: Integer, k: Integer, holds: Function2<Integer, Integer, Boolean>, where: Function2<Integer, Integer, Provenance>): Boolean
+        => CheckGrid(law, n, k, holds, where).Holds == (n * k).Range.All(j => holds(j / k, j % k));
+
+    // CheckGridWithin holds exactly when every measure of the grid is within
+    // the bound.
+    Law_CheckGridWithinHoldsExactlyWhenEveryMeasureIsWithin(law: String, n: Integer, k: Integer, measure: Function2<Integer, Integer, Number>, bound: Number, where: Function2<Integer, Integer, Provenance>): Boolean
+        => CheckGridWithin(law, n, k, measure, bound, where).Holds == (n * k).Range.All(j => measure(j / k, j % k) <= bound);
+
+    //==
+    // # Agreement of checks and laws: measured checks of layers 0 to 6
+    //
+    // A measured check folds a measure written beside the law, not the law's
+    // own Boolean, so its agreement with the law is a claim worth stating:
+    // when the check holds, the law holds at every sample it took. Each is
+    // guarded by well-formed tolerances, the hypothesis under which the
+    // measure's 0 outside the law's guard is within the bound.
+
+    // Check_LengthToleranceResolvable agrees with Law_LengthToleranceResolvable
+    // at the model's size.
+    Law_LengthToleranceResolvableCheckAgrees(m: BrepModel): Boolean
+        => (m.Tolerances.IsWellFormed ? m.Check_LengthToleranceResolvable.Holds : false)
+            ? Law_LengthToleranceResolvable(m.Tolerances.Length, m.ModelSizeOf)
+            : true;
+
+    // Check_EdgeDomainEndsAtVertices agrees with its law at edge e, end atStart.
+    Law_EdgeDomainEndsCheckAgrees(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Boolean
+        => (m.Tolerances.IsWellFormed ? m.Check_EdgeDomainEndsAtVertices.Holds : false)
+            ? Law_EdgeDomainEndsAtVertices(m, e, atStart)
+            : true;
+
+    // Check_VertexCoincidesWithCurveEnd agrees with its law at edge e, end
+    // atStart.
+    Law_VertexOnCurveCheckAgrees(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Boolean
+        => (m.Tolerances.IsWellFormed ? m.Check_VertexCoincidesWithCurveEnd.Holds : false)
+            ? Law_VertexCoincidesWithCurveEnd(m, e, atStart)
+            : true;
+
+    // Check_DegenerateEdgeStaysAtStart agrees with its law at edge e and
+    // sample j of the plan.
+    Law_DegenerateEdgeCheckAgrees(m: BrepModel, plan: SamplePlan, e: BrepEdgeIndex, j: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? plan.PlanFractions.IsValidIndex(j) : false) ? m.Check_DegenerateEdgeStaysAtStart(plan).Holds : false)
+            ? Law_DegenerateEdgeStaysAtStart(m, e, plan.PlanFractions[j])
+            : true;
+
+    // Check_EdgeLiesOnAdjacentSurfaces agrees with its law at coedge site k
+    // of AllCoedgeSites and sample j.
+    Law_EdgeOnSurfaceCheckAgrees(m: BrepModel, plan: SamplePlan, k: Integer, j: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? (m.AllCoedgeSites.IsValidIndex(k) && plan.PlanFractions.IsValidIndex(j)) : false)
+                ? m.Check_EdgeLiesOnAdjacentSurfaces(plan).Holds
+                : false)
+            ? Law_EdgeLiesOnAdjacentSurfaces(m, m.AllCoedgeSites[k], plan.PlanFractions[j])
+            : true;
+
+    // Check_PcurveAgreesWithCurve agrees with its law at edge e, pcurve k and
+    // sample j.
+    Law_PcurveCheckAgrees(m: BrepModel, plan: SamplePlan, e: BrepEdgeIndex, k: Integer, j: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? (plan.PlanFractions.IsValidIndex(j) && k >= 0 && k < 2) : false)
+                ? m.Check_PcurveAgreesWithCurve(plan).Holds
+                : false)
+            ? Law_PcurveAgreesWithCurve(m, e, k, plan.PlanFractions[j])
+            : true;
+
+    // Check_PointsLieOnCurve agrees with its law at entry k and point i.
+    Law_PointsOnCurveCheckAgrees(m: BrepModel, d: EdgeDiscretizations, k: Integer, i: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_PointsLieOnCurve(d).Holds : false)
+            ? Law_PointsLieOnCurve(m, d.ByEdge[k], i)
+            : true;
+
+    // Check_SagittaWithinChordal agrees with its law at entry k and segment i.
+    Law_SagittaCheckAgrees(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, plan: SamplePlan, k: Integer, i: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_SagittaWithinChordal(d, c, plan).Holds : false)
+            ? Law_SagittaWithinChordal(m, d.ByEdge[k], c, plan, i)
+            : true;
+
+    // Check_TangentDeviationWithinHalfAngular agrees with its law at entry k
+    // and segment i.
+    Law_TangentDeviationCheckAgrees(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, plan: SamplePlan, k: Integer, i: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_TangentDeviationWithinHalfAngular(d, c, plan).Holds : false)
+            ? Law_TangentDeviationWithinHalfAngular(m, d.ByEdge[k], c, plan, i)
+            : true;
+
+    // Check_TurningAngleWithinAngular agrees with its law at entry k and
+    // point i.
+    Law_TurningAngleCheckAgrees(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, k: Integer, i: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_TurningAngleWithinAngular(d, c).Holds : false)
+            ? Law_TurningAngleWithinAngular(m, d.ByEdge[k], c, i)
+            : true;
+
+    // Check_SegmentWithinMaxLength agrees with its law at entry k and
+    // segment i.
+    Law_MaxLengthCheckAgrees(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, k: Integer, i: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_SegmentWithinMaxLength(d, c).Holds : false)
+            ? Law_SegmentWithinMaxLength(m, d.ByEdge[k], c, i)
+            : true;
+
+    // Check_ImageFollowsPcurve agrees with its law at entry k, image j and
+    // point i.
+    Law_ImageFollowsPcurveCheckAgrees(m: BrepModel, d: EdgeDiscretizations, k: Integer, j: Integer, i: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_ImageFollowsPcurve(d).Holds : false)
+            ? m.ImageAt(d.ByEdge[k], j, img => Law_ImageFollowsPcurve(m, d.ByEdge[k], img, i))
+            : true;
+
+    // Check_ImageChordWithinChordal agrees with its law at entry k, image j
+    // and segment i.
+    Law_ImageChordCheckAgrees(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, plan: SamplePlan, k: Integer, j: Integer, i: Integer): Boolean
+        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_ImageChordWithinChordal(d, c, plan).Holds : false)
+            ? m.ImageAt(d.ByEdge[k], j, img => Law_ImageChordWithinChordal(m, d.ByEdge[k], c, img, plan, i))
+            : true;
+
+    // Check_ElementNormalAgreesWithSurface agrees with its law at element k
+    // of the face mesh.
+    Law_FaceElementNormalCheckAgrees(m: BrepModel, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
+        => (c.SurfaceAngular.Radians >= 0.0 ? m.Check_ElementNormalAgreesWithSurface(fm, c).Holds : false)
+            ? Law_ElementNormalAgreesWithSurface(m, fm, c, k)
+            : true;
+
+    // Check_SurfaceEdgeNormalTurnWithinSurfaceAngular agrees with its law at
+    // element k and edge j.
+    Law_NormalTurnCheckAgrees(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex, j: Integer): Boolean
+        => ((c.SurfaceAngular.Radians >= 0.0 && j >= 0 && j < 4) ? m.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(d, fm, c).Holds : false)
+            ? Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(m, d, fm, c, k, j)
+            : true;
+
+    // Check_ElementDeviationWithinSurfaceChordal agrees with its law at
+    // element k.
+    Law_ElementDeviationCheckAgrees(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
+        => ((c.SurfaceChordal >= 0.0 && m.Tolerances.IsWellFormed) ? m.Check_ElementDeviationWithinSurfaceChordal(d, fm, c).Holds : false)
+            ? Law_ElementDeviationWithinSurfaceChordal(m, d, fm, c, k)
+            : true;
+
+    // Check_QuadPlanarWithinSurfaceChordal agrees with its law at quad q.
+    Law_QuadPlanarCheckAgrees(fm: FaceMesh, c: FaceMeshingCriteria, q: FaceIndex): Boolean
+        => (c.SurfaceChordal >= 0.0 ? fm.Check_QuadPlanarWithinSurfaceChordal(c).Holds : false)
+            ? Law_QuadPlanarWithinSurfaceChordal(fm, c, q)
+            : true;
+
+    //==
+    // # Agreement of checks and laws: cross checks
+    //
+    // Both directions: a holding check makes the law hold at every vertex or
+    // element it sampled, and a failing check names one where it fails.
+
+    // Check_VertexReevaluatesFromProvenance holds, so the law holds at v.
+    Law_ReevaluationCheckAgrees(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
+        => m.Check_VertexReevaluatesFromProvenance(mesh).Holds ? Law_VertexReevaluatesFromProvenance(m, mesh, v) : true;
+
+    // A failing Check_VertexReevaluatesFromProvenance names a vertex at which
+    // the law fails.
+    Law_FailingReevaluationCheckNamesAVertex(m: BrepModel, mesh: ModelMesh): Boolean
+        => m.Check_VertexReevaluatesFromProvenance(mesh).Holds
+            ? true
+            : Law_VertexReevaluatesFromProvenance(m, mesh, m.Check_VertexReevaluatesFromProvenance(mesh).Where.MeshVertexOf).Not;
+
+    // Check_CornerNormalIsFaceNormal holds, so the law holds at every corner.
+    Law_CornerNormalCheckAgrees(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+        => (m.Tolerances.IsWellFormed ? m.Check_CornerNormalIsFaceNormal(mesh).Holds : false)
+            ? Law_CornerNormalIsFaceNormal(m, mesh, e, slot)
+            : true;
+
+    // Check_ElementNormalAgreesWithFaceNormal holds, so the law holds at e.
+    Law_ElementNormalCheckAgrees(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, e: ElementIndex): Boolean
+        => (c.SurfaceAngular.Radians >= 0.0 ? m.Check_ElementNormalAgreesWithFaceNormal(mesh, c).Holds : false)
+            ? Law_ElementNormalAgreesWithFaceNormal(m, mesh, c, e)
+            : true;
+
+    // A failing Check_ElementNormalAgreesWithFaceNormal names an element at
+    // which the law fails.
+    Law_FailingElementNormalCheckNamesAnElement(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Boolean
+        => m.Check_ElementNormalAgreesWithFaceNormal(mesh, c).Holds
+            ? true
+            : Law_ElementNormalAgreesWithFaceNormal(m, mesh, c, m.Check_ElementNormalAgreesWithFaceNormal(mesh, c).Where.MeshElementOf).Not;
+
+    //==
+    // # Reports and levels
+
+    // A merged report is clean exactly when every part is (IsClean is a
+    // monoid homomorphism, layer 0's ReportsFormAMonoid). Exact.
+    Law_MergeAllIsCleanExactlyWhenEveryPartIsClean(reports: Array<Report>): Boolean
+        => MergeAll(reports).IsClean == reports.All(r => r.IsClean);
+
+    // Every family the Structural level requires, Geometric requires too.
+    Law_GeometricRequiresWhatStructuralRequires(family: CheckFamily): Boolean
+        => ConformanceLevel.Structural.Requires(family) ? ConformanceLevel.Geometric.Requires(family) : true;
+
+    // Every family the Geometric level requires, Oracle requires too.
+    Law_OracleRequiresWhatGeometricRequires(family: CheckFamily): Boolean
+        => ConformanceLevel.Geometric.Requires(family) ? ConformanceLevel.Oracle.Requires(family) : true;
+
+    //==
+    // # The corpus
+
+    // No two corpus entries share a name.
+    Law_CorpusNamesUnique(i: Integer, j: Integer): Boolean
+        => (CorpusEntry.Corpus.IsValidIndex(i) && CorpusEntry.Corpus.IsValidIndex(j) && i != j)
+            ? CorpusEntry.Corpus[i].Name != CorpusEntry.Corpus[j].Name
+            : true;
+
+    // Every published volume or area of corpus entry i is positive and
+    // finite, with a positive finite tolerance.
+    Law_CorpusMeasuresSensible(i: Integer): Boolean
+        => CorpusEntry.Corpus.IsValidIndex(i)
+            ? CorpusEntry.Corpus[i].ExpectedVolume.IsSensibleMeasure && CorpusEntry.Corpus[i].ExpectedArea.IsSensibleMeasure
+            : true;
+
+    // Every count of corpus entry i is positive: a count of zero would say
+    // the file does not exercise the feature it was chosen for.
+    Law_CorpusCountsPositive(i: Integer, k: Integer): Boolean
+        => (CorpusEntry.Corpus.IsValidIndex(i) ? CorpusEntry.Corpus[i].Counts.IsValidIndex(k) : false)
+            ? CorpusEntry.Corpus[i].Counts[k].CountValue > 0
+            : true;
+
+    // Every corpus entry exercises at least one feature.
+    Law_CorpusEntryExercisesAFeature(i: Integer): Boolean
+        => CorpusEntry.Corpus.IsValidIndex(i) ? CorpusEntry.Corpus[i].Exercises.Count > 0 : true;
+
+    //==
+    // # Helpers
+
+    // True when the mesh of shell s is closed and consistently oriented: the
+    // hypothesis under which its signed volume's sign and its angle defects
+    // mean what the laws say.
+    IsClosedAndOrientedShellMesh(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+        => m.RestrictedToShell(mesh, s).IsClosed ? m.RestrictedToShell(mesh, s).IsConsistentlyOriented : false;
+
+    // The mesh vertex a provenance names; none for every other provenance.
+    MeshVertexOf(p: Provenance): VertexIndex
+        => match (p)
+        {
+            Nowhere => VertexIndex(-1);
+            StepInstance(id) => VertexIndex(-1);
+            KernelVertex(index) => VertexIndex(-1);
+            KernelEdge(index) => VertexIndex(-1);
+            KernelLoop(index) => VertexIndex(-1);
+            KernelFace(index) => VertexIndex(-1);
+            KernelShell(index) => VertexIndex(-1);
+            KernelBody(index) => VertexIndex(-1);
+            MeshVertex(index) => index;
+            MeshElement(index) => VertexIndex(-1);
+        };
+
+    // The mesh element a provenance names; none for every other provenance.
+    MeshElementOf(p: Provenance): ElementIndex
+        => match (p)
+        {
+            Nowhere => ElementIndex(-1);
+            StepInstance(id) => ElementIndex(-1);
+            KernelVertex(index) => ElementIndex(-1);
+            KernelEdge(index) => ElementIndex(-1);
+            KernelLoop(index) => ElementIndex(-1);
+            KernelFace(index) => ElementIndex(-1);
+            KernelShell(index) => ElementIndex(-1);
+            KernelBody(index) => ElementIndex(-1);
+            MeshVertex(index) => ElementIndex(-1);
+            MeshElement(index) => index;
+        };
+
+    // The area the Green oracle's polygon may still miss on a circular arc of
+    // radius r and sweep T after Richardson extrapolation at n and 2n chords:
+    // the inscribed polygon misses (r^2 / 2)(T - n sin(T/n)), whose series is
+    // r^2 T^3 / (12 n^2) - r^2 T^5 / (240 n^4) + ...; the extrapolation
+    // cancels the first term and leaves r^2 T^5 / (960 n^4).
+    ArcResidual(r: Number, sweep: Number, n: Integer): Number
+        => r * r * sweep.Pow(5.0) / (960.0 * n.ToNumber.Pow(4.0));
+}

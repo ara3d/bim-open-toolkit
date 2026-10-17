@@ -1,0 +1,374 @@
+//==
+// # BrepCheckingFaceMeshing
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): one
+// Check_ per law of 05-face-meshing. Three kinds of value are checked.
+//  - A FaceMesh as delivered: the laws over its points, local vertices,
+//    elements, normals and positions, and the laws over its own
+//    parameter-space triangulation (its UvPoints, Sources, Triangles and Quads
+//    read as a UvTriangulation, FaceMeshTriangulation), which survive lifting.
+//  - The intermediate values of meshing one face (its loops in parameter
+//    space, its region, its refined triangulation), recomputed with layer 5's
+//    own functions from the model, the discretizations and the criteria: the
+//    region and triangulation laws are self-tests of that recomputation.
+//  - A FaceMeshOutcome: the outcome laws.
+// Findings are located at the face. Where layer 5 exports the measure a
+// criterion compares (ElementNormalDeviation, EdgeNormalTurn,
+// ElementDeviation, QuadWarp) the check folds it with CheckWithin against the
+// criterion, so a failure is a Warning below ten times the criterion and an
+// Error above; elsewhere the law's Boolean is folded and a failure is an
+// Error. Every comment names the Law_, its family, and its severity rule.
+//
+// Sections, in order:
+//  - The face mesh: identification and provenance (structure)
+//  - The face mesh: geometry (geometry)
+//  - The face mesh's parameter-space triangulation (structure)
+//  - Loops and region, recomputed (self-tests)
+//  - Triangulation and lifting, recomputed (self-tests)
+//  - Outcomes (structure)
+//  - Helpers and measures
+
+library BrepCheckingFaceMeshing
+{
+    //==
+    // # The face mesh: identification and provenance (structure)
+
+    // Law_LocalVertexInRange at every parameter-space point. Structure: Error.
+    Check_LocalVertexInRange(fm: FaceMesh): Check
+        => fm.CheckPoints("Law_LocalVertexInRange", i => Law_LocalVertexInRange(fm, i));
+
+    // Law_LocalVertexSurjective at every local vertex. Structure: Error.
+    Check_LocalVertexSurjective(fm: FaceMesh): Check
+        => CheckAll("Law_LocalVertexSurjective", fm.Positions.Count, v => Law_LocalVertexSurjective(fm, VertexIndex(v)), v => Provenance.KernelFace(fm.Face));
+
+    // Law_LocalVertexFibresAreIdentifications at every pair of
+    // parameter-space points (quadratic as written; an implementation groups
+    // the points by local vertex and by source in one pass). Structure: Error.
+    Check_LocalVertexFibresAreIdentifications(fm: FaceMesh): Check
+        => CheckGrid("Law_LocalVertexFibresAreIdentifications", fm.UvPoints.Count, fm.UvPoints.Count,
+            (i, j) => Law_LocalVertexFibresAreIdentifications(fm, VertexIndex(i), VertexIndex(j)),
+            (i, j) => Provenance.KernelFace(fm.Face));
+
+    // Law_SharedPositionIsCopied at every parameter-space point. Structure
+    // (copied, exact): Error.
+    Check_SharedPositionIsCopied(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh): Check
+        => fm.CheckPoints("Law_SharedPositionIsCopied", i => Law_SharedPositionIsCopied(m, d, fm, i));
+
+    // Law_ProvenanceMatchesSource at every parameter-space point. Structure
+    // (copied, exact): Error.
+    Check_ProvenanceMatchesSource(d: EdgeDiscretizations, fm: FaceMesh): Check
+        => fm.CheckPoints("Law_ProvenanceMatchesSource", i => Law_ProvenanceMatchesSource(d, fm, i));
+
+    // Law_ElementFacesFaceNormal at every element. Structure (an exact sign:
+    // zero or negative is a fold): Error.
+    Check_ElementFacesFaceNormal(m: BrepModel, fm: FaceMesh): Check
+        => fm.CheckElements("Law_ElementFacesFaceNormal", k => Law_ElementFacesFaceNormal(m, fm, k));
+
+    // Law_QuadConvex at every quad. Structure (an exact sign): Error.
+    Check_QuadConvex(fm: FaceMesh): Check
+        => CheckAll("Law_QuadConvex", fm.Quads.Count, q => Law_QuadConvex(fm, FaceIndex(q)), q => Provenance.KernelFace(fm.Face));
+
+    //==
+    // # The face mesh: geometry (geometry)
+
+    // Law_PointNormalIsFaceNormal at every parameter-space point. Geometry,
+    // bound Tolerances.Angle; no measure exported by layer 5: Error.
+    Check_PointNormalIsFaceNormal(m: BrepModel, fm: FaceMesh): Check
+        => fm.CheckPoints("Law_PointNormalIsFaceNormal", i => Law_PointNormalIsFaceNormal(m, fm, i));
+
+    // Law_ElementNormalAgreesWithSurface at every element, measured by
+    // ElementNormalDeviation in radians (0 on an element touching a collapsed
+    // line, where the law is vacuous) against SurfaceAngular. Geometry: W/E.
+    Check_ElementNormalAgreesWithSurface(m: BrepModel, fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckAllWithin("Law_ElementNormalAgreesWithSurface", fm.ElementCount,
+            k => m.ElementNormalExcess(fm, ElementIndex(k)),
+            c.SurfaceAngular.Radians,
+            k => Provenance.KernelFace(fm.Face));
+
+    // Law_SurfaceEdgeNormalTurnWithinSurfaceAngular at every element and
+    // corner slot, measured by EdgeNormalTurn in radians on surface edges (0
+    // on model-edge segments and collapsed lines) against SurfaceAngular.
+    // Geometry: W/E.
+    Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckGridWithin("Law_SurfaceEdgeNormalTurnWithinSurfaceAngular", fm.ElementCount, 4,
+            (k, j) => m.NormalTurnExcess(d, fm, ElementIndex(k), j),
+            c.SurfaceAngular.Radians,
+            (k, j) => Provenance.KernelFace(fm.Face));
+
+    // Law_ElementDeviationWithinSurfaceChordal at every element, measured by
+    // ElementDeviation against SurfaceChordal plus Tolerances.Length.
+    // Geometry: W/E.
+    Check_ElementDeviationWithinSurfaceChordal(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckAllWithin("Law_ElementDeviationWithinSurfaceChordal", fm.ElementCount,
+            k => m.DeviationExcess(d, fm, ElementIndex(k)),
+            c.SurfaceChordal + m.Tolerances.Length.Value,
+            k => Provenance.KernelFace(fm.Face));
+
+    // Law_QuadPlanarWithinSurfaceChordal at every quad, measured by QuadWarp
+    // against SurfaceChordal. Geometry: W/E.
+    Check_QuadPlanarWithinSurfaceChordal(fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckAllWithin("Law_QuadPlanarWithinSurfaceChordal", fm.Quads.Count,
+            q => fm.IsMeasurableQuad(FaceIndex(q)) ? fm.QuadWarp(FaceIndex(q)) : 0.0,
+            c.SurfaceChordal,
+            q => Provenance.KernelFace(fm.Face));
+
+    //==
+    // # The face mesh's parameter-space triangulation (structure)
+
+    // Law_TriangulationCornersInRange on the face mesh's own triangulation, at
+    // every element. Structure: Error.
+    Check_TriangulationCornersInRange(fm: FaceMesh): Check
+        => fm.CheckElements("Law_TriangulationCornersInRange", k => Law_TriangulationCornersInRange(fm.FaceMeshTriangulation, k));
+
+    // Law_ElementPositiveInChart on the face mesh's own triangulation, at
+    // every element. Structure (an exact sign): Error.
+    Check_ElementPositiveInChart(m: BrepModel, fm: FaceMesh): Check
+        => fm.CheckElements("Law_ElementPositiveInChart", k => Law_ElementPositiveInChart(m, fm.Face, fm.FaceMeshTriangulation, k));
+
+    // Law_ElementSpansBelowHalfPeriod on the face mesh's own triangulation,
+    // at every element. Structure: Error.
+    Check_ElementSpansBelowHalfPeriod(m: BrepModel, fm: FaceMesh): Check
+        => fm.CheckElements("Law_ElementSpansBelowHalfPeriod", k => Law_ElementSpansBelowHalfPeriod(m, fm.Face, fm.FaceMeshTriangulation, k));
+
+    //==
+    // # Loops and region, recomputed (self-tests)
+    //
+    // Face f's loops (LoopToUv of each bound), its region (RegionOf) and its
+    // triangulation (as MeshedOutcome builds it) recomputed from the model,
+    // the discretizations, and the criteria. Self-test: Error, except where
+    // layer 5 grades the law a model law (marked).
+
+    // Law_LoopPointLiftsToSharedPoint at every point of every loop of face f.
+    // A model law (W/E in layer 5); no measure exported: Error.
+    Check_LoopPointLiftsToSharedPoint(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
+        => CheckGrid("Law_LoopPointLiftsToSharedPoint", m.FaceBoundCount(f), m.MostLoopPoints(f, d),
+            (b, i) => Law_LoopPointLiftsToSharedPoint(m, f, d, m.FaceLoopAt(f, d, b), i),
+            (b, i) => Provenance.KernelFace(f));
+
+    // Law_LoopToUvCountMatchesDiscretization at every bound of face f.
+    Check_LoopToUvCountMatchesDiscretization(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
+        => CheckAll("Law_LoopToUvCountMatchesDiscretization", m.FaceBoundCount(f),
+            b => Law_LoopToUvCountMatchesDiscretization(m, f, m.Faces[f].Bounds[b], d),
+            b => Provenance.KernelFace(f));
+
+    // Law_PcurveAgreesWithProjection at every edge of face f and every sample
+    // of its discretization. A model law (W/E in layer 5); no measure: Error.
+    Check_PcurveAgreesWithProjection(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
+        => CheckGrid("Law_PcurveAgreesWithProjection", m.Edges.Count, d.MostPoints,
+            (e, k) => m.FaceUsesEdgeAt(f, BrepEdgeIndex(e)) ? Law_PcurveAgreesWithProjection(m, f, d, BrepEdgeIndex(e), k) : true,
+            (e, k) => AtEdge(e));
+
+    // Law_UnwrapKeepsSources at every point of every loop of face f.
+    Check_UnwrapKeepsSources(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
+        => CheckGrid("Law_UnwrapKeepsSources", m.FaceBoundCount(f), m.MostLoopPoints(f, d),
+            (b, i) => Law_UnwrapKeepsSources(m, f, m.FaceLoopAt(f, d, b), i),
+            (b, i) => Provenance.KernelFace(f));
+
+    // Law_UnwrapMovesByWholePeriods at every point of every loop of face f.
+    Check_UnwrapMovesByWholePeriods(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
+        => CheckGrid("Law_UnwrapMovesByWholePeriods", m.FaceBoundCount(f), m.MostLoopPoints(f, d),
+            (b, i) => Law_UnwrapMovesByWholePeriods(m, f, m.FaceLoopAt(f, d, b), i),
+            (b, i) => Provenance.KernelFace(f));
+
+    // Law_UnwrappedStepBelowHalfPeriod at every point of every loop of face
+    // f. A model law: Error.
+    Check_UnwrappedStepBelowHalfPeriod(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
+        => CheckGrid("Law_UnwrappedStepBelowHalfPeriod", m.FaceBoundCount(f), m.MostLoopPoints(f, d),
+            (b, i) => Law_UnwrappedStepBelowHalfPeriod(m, f, m.FaceLoopAt(f, d, b), i),
+            (b, i) => Provenance.KernelFace(f));
+
+    // Law_RegionLoopClosesInPlane at every loop of face f's region. A model
+    // law: Error.
+    Check_RegionLoopClosesInPlane(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_RegionLoopClosesInPlane", m.RegionOf(f, d, c).NumberOfLoops,
+            k => Law_RegionLoopClosesInPlane(m, f, m.RegionOf(f, d, c), k),
+            k => Provenance.KernelFace(f));
+
+    // Law_UvRegionWindingPositive on face f's region. A model law (an exact
+    // sign): Error.
+    Check_UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckExact("Law_UvRegionWindingPositive", Law_UvRegionWindingPositive(m, f, m.RegionOf(f, d, c)), Provenance.KernelFace(f));
+
+    // Law_UvHoleWindingNegative at every hole of face f's region. A model law
+    // (an exact sign): Error.
+    Check_UvHoleWindingNegative(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_UvHoleWindingNegative", m.RegionOf(f, d, c).Holes.Count,
+            h => Law_UvHoleWindingNegative(m, f, m.RegionOf(f, d, c), h),
+            h => Provenance.KernelFace(f));
+
+    // Law_RegionSegmentsSeparated at every pair of boundary segments of face
+    // f's region (quadratic as written; a sweep is the implementation). A
+    // model law: Error.
+    Check_RegionSegmentsSeparated(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckGrid("Law_RegionSegmentsSeparated", m.RegionOf(f, d, c).BoundaryCount, m.RegionOf(f, d, c).BoundaryCount,
+            (a, b) => Law_RegionSegmentsSeparated(m, f, m.RegionOf(f, d, c),
+                m.RegionOf(f, d, c).LoopOfBoundaryPoint(a), m.RegionOf(f, d, c).SlotOfBoundaryPoint(a),
+                m.RegionOf(f, d, c).LoopOfBoundaryPoint(b), m.RegionOf(f, d, c).SlotOfBoundaryPoint(b)),
+            (a, b) => Provenance.KernelFace(f));
+
+    // Law_HoleInsideOuter at every hole of face f's region. A model law:
+    // Error.
+    Check_HoleInsideOuter(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_HoleInsideOuter", m.RegionOf(f, d, c).Holes.Count,
+            h => Law_HoleInsideOuter(m, f, m.RegionOf(f, d, c), h),
+            h => Provenance.KernelFace(f));
+
+    // Law_SeamCutCopiesRunOpposite at every outer-loop point of face f's
+    // region. A model law: Error.
+    Check_SeamCutCopiesRunOpposite(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_SeamCutCopiesRunOpposite", m.RegionOf(f, d, c).Outer.Sources.Count,
+            i => Law_SeamCutCopiesRunOpposite(m.RegionOf(f, d, c), i),
+            i => Provenance.KernelFace(f));
+
+    // Law_MeshedFaceHasSimpleRegion on face f.
+    Check_MeshedFaceHasSimpleRegion(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckExact("Law_MeshedFaceHasSimpleRegion", Law_MeshedFaceHasSimpleRegion(m, f, d, c), Provenance.KernelFace(f));
+
+    //==
+    // # Triangulation and lifting, recomputed (self-tests)
+
+    // Law_TriangulationKeepsBoundary at every boundary point of face f's
+    // region, against the recomputed triangulation.
+    Check_TriangulationKeepsBoundary(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_TriangulationKeepsBoundary", m.RegionOf(f, d, c).BoundaryCount,
+            i => Law_TriangulationKeepsBoundary(m.RegionOf(f, d, c), m.FaceTriangulation(f, d, c), i),
+            i => Provenance.KernelFace(f));
+
+    // Law_TriangulationAddsOnlyInteriorPoints at every point of the
+    // recomputed triangulation.
+    Check_TriangulationAddsOnlyInteriorPoints(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_TriangulationAddsOnlyInteriorPoints", m.FaceTriangulation(f, d, c).Points.Count,
+            i => Law_TriangulationAddsOnlyInteriorPoints(m, f, m.RegionOf(f, d, c), m.FaceTriangulation(f, d, c), i),
+            i => Provenance.KernelFace(f));
+
+    // Law_EveryPointIsACorner at every point of the recomputed triangulation.
+    Check_EveryPointIsACorner(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_EveryPointIsACorner", m.FaceTriangulation(f, d, c).Points.Count,
+            i => Law_EveryPointIsACorner(m.FaceTriangulation(f, d, c), i),
+            i => Provenance.KernelFace(f));
+
+    // Law_ElementAreasSumToRegionArea for the recomputed triangulation.
+    Check_ElementAreasSumToRegionArea(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckExact("Law_ElementAreasSumToRegionArea",
+            Law_ElementAreasSumToRegionArea(m, f, m.RegionOf(f, d, c), m.FaceTriangulation(f, d, c)), Provenance.KernelFace(f));
+
+    // Law_LiftKeepsPoints at every point of the recomputed triangulation,
+    // against the delivered face mesh.
+    Check_LiftKeepsPoints(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_LiftKeepsPoints", m.FaceTriangulation(fm.Face, d, c).Points.Count,
+            i => Law_LiftKeepsPoints(m.FaceTriangulation(fm.Face, d, c), fm, i),
+            i => Provenance.KernelFace(fm.Face));
+
+    // Law_DroppedElementsArePoleCollapsed for the recomputed triangulation
+    // and the delivered face mesh.
+    Check_DroppedElementsArePoleCollapsed(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckExact("Law_DroppedElementsArePoleCollapsed",
+            Law_DroppedElementsArePoleCollapsed(m, fm.Face, m.FaceTriangulation(fm.Face, d, c), fm), Provenance.KernelFace(fm.Face));
+
+    // Law_CollapsedQuadsBecomeTriangles for the recomputed triangulation and
+    // the delivered face mesh.
+    Check_CollapsedQuadsBecomeTriangles(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckExact("Law_CollapsedQuadsBecomeTriangles",
+            Law_CollapsedQuadsBecomeTriangles(m, fm.Face, m.FaceTriangulation(fm.Face, d, c), fm), Provenance.KernelFace(fm.Face));
+
+    // Law_NoQuadsUnlessPreferred on face f.
+    Check_NoQuadsUnlessPreferred(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckExact("Law_NoQuadsUnlessPreferred", Law_NoQuadsUnlessPreferred(m, f, d, c), Provenance.KernelFace(f));
+
+    //==
+    // # Outcomes (structure)
+
+    // Law_BlockingRequestMeansEmptyMesh on an outcome. Structure: Error.
+    Check_BlockingRequestMeansEmptyMesh(o: FaceMeshOutcome): Check
+        => CheckExact("Law_BlockingRequestMeansEmptyMesh", Law_BlockingRequestMeansEmptyMesh(o), Provenance.KernelFace(o.Mesh.Face));
+
+    // Law_RequestHasDiagnostic on an outcome. Structure: Error.
+    Check_RequestHasDiagnostic(o: FaceMeshOutcome): Check
+        => CheckExact("Law_RequestHasDiagnostic", Law_RequestHasDiagnostic(o), Provenance.KernelFace(o.Mesh.Face));
+
+    // Law_EmptyMeshIsExplained on an outcome. Structure: Error.
+    Check_EmptyMeshIsExplained(o: FaceMeshOutcome): Check
+        => CheckExact("Law_EmptyMeshIsExplained", Law_EmptyMeshIsExplained(o), Provenance.KernelFace(o.Mesh.Face));
+
+    //==
+    // # Helpers and measures
+
+    // An exact law at every parameter-space point of a face mesh.
+    CheckPoints(fm: FaceMesh, law: String, holds: Function1<VertexIndex, Boolean>): Check
+        => CheckAll(law, fm.UvPoints.Count, i => holds(VertexIndex(i)), i => Provenance.KernelFace(fm.Face));
+
+    // An exact law at every element of a face mesh.
+    CheckElements(fm: FaceMesh, law: String, holds: Function1<ElementIndex, Boolean>): Check
+        => CheckAll(law, fm.ElementCount, k => holds(ElementIndex(k)), k => Provenance.KernelFace(fm.Face));
+
+    // The face mesh's own parameter-space triangulation: its points, their
+    // sources, and its elements, which lifting kept in parameter-space point
+    // indices.
+    FaceMeshTriangulation(fm: FaceMesh): UvTriangulation
+        => UvTriangulation(fm.UvPoints, fm.Sources, fm.Triangles, fm.Quads);
+
+    // The number of bounds of face f; 0 when f is out of range.
+    FaceBoundCount(m: BrepModel, f: BrepFaceIndex): Integer
+        => m.IsFaceInRange(f) ? m.Faces[f].Bounds.Count : 0;
+
+    // Bound b of face f mapped into parameter space (LoopToUv), or an empty
+    // loop when the bound is not discretized.
+    FaceLoopAt(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, b: Integer): UvLoop
+        => m.IsDiscretizedBound(m.Faces[f].Bounds[b], d)
+            ? m.LoopToUv(f, m.Faces[f].Bounds[b], d)
+            : UvLoop([], []);
+
+    // The largest point count of any loop of face f: the extent of the
+    // per-point grids over its loops.
+    MostLoopPoints(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Integer
+        => m.FaceBoundCount(f).Range.Reduce(0, (n, b) => n.Max(m.FaceLoopAt(f, d, b).Points.Count));
+
+    // True when some bound of face f cites edge e.
+    FaceUsesEdgeAt(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
+        => m.CoedgeSitesOfEdgeInFace(f, e).Count > 0;
+
+    // Face f's triangulation as MeshedOutcome builds it before lifting: the
+    // quad grid when PreferQuads finds one, else the refined constrained
+    // triangulation of the region.
+    FaceTriangulation(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvTriangulation
+    {
+        var r = m.RegionOf(f, d, c);
+        var chart = m.ChartOf(f, r);
+        var grid = c.PreferQuads ? m.QuadGridIfRectangular(f, d, r, c) : QuadGridOutcome.NoGrid;
+        return m.GridOrTriangles(f, r, chart, grid, c);
+    }
+
+    // The loop index (0 the outer loop, k the hole k - 1) of boundary point
+    // a of the region, in BoundaryPoints order.
+    LoopOfBoundaryPoint(r: UvRegion, a: Integer): Integer
+        => r.NumberOfLoops.Range.Reduce(0, (k, q) => a >= r.LoopStart(q) ? q : k);
+
+    // The position, inside its loop, of boundary point a of the region.
+    SlotOfBoundaryPoint(r: UvRegion, a: Integer): Integer
+        => a - r.LoopStart(r.LoopOfBoundaryPoint(a));
+
+    // The position in BoundaryPoints of loop q's first point.
+    LoopStart(r: UvRegion, q: Integer): Integer
+        => q.Range.Reduce(0, (n, k) => n + r.LoopAt(k).Points.Count);
+
+    // ElementNormalDeviation in radians behind
+    // Law_ElementNormalAgreesWithSurface's guard and exemption.
+    ElementNormalExcess(m: BrepModel, fm: FaceMesh, k: ElementIndex): Number
+        => m.CanMeasure(fm, k) ? (m.TouchesCollapsedLine(fm, k) ? 0.0 : m.ElementNormalDeviation(fm, k).Radians) : 0.0;
+
+    // EdgeNormalTurn in radians behind
+    // Law_SurfaceEdgeNormalTurnWithinSurfaceAngular's guard and exemption.
+    NormalTurnExcess(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex, j: Integer): Number
+        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))
+            ? ((j >= 0 && j < fm.ElementCorners(k).Count)
+                ? (m.IsSurfaceEdge(d, fm, fm.ElementCorners(k)[j], fm.ElementCorners(k).AtModulo(j + 1))
+                    ? fm.EdgeNormalTurn(k, j).Radians
+                    : 0.0)
+                : 0.0)
+            : 0.0;
+
+    // ElementDeviation behind Law_ElementDeviationWithinSurfaceChordal's
+    // guard.
+    DeviationExcess(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex): Number
+        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d)) ? m.ElementDeviation(d, fm, k) : 0.0;
+}
