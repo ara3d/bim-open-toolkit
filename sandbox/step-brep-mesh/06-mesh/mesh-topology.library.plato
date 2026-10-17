@@ -1,14 +1,16 @@
 //==
 // # Model mesh topology: functions
 //
-// The edge table, the components, the per-component counts, and the vertex-link test are deferred
-// (sorting, union-find, one counting pass, a small graph walk per vertex). The predicates over them
-// are written out, because each is the definition of the property it names.
+// The edge table, the components, and the per-component counts are deferred (sorting, union-find,
+// one counting pass). The predicates over them, and the vertex-link test with the piece count of a
+// small graph it rests on, are written out, because each is the definition of the property it
+// names.
 //
 // Sections, in order:
 //  - The edge table
 //  - Manifold, closed, consistently oriented
 //  - Components
+//  - Pieces of a small graph
 //  - Euler characteristic and genus of a component
 
 library ModelMeshTopology
@@ -200,11 +202,16 @@ library ModelMeshTopology
             .Map(w => mesh.LinkEdges(v).Map(q => q.A.Value == w.Value || q.B.Value == w.Value).CountTrue)
             .Reduce(0, (a, b) => a.Max(b));
 
-    // deferred: walk the link of v (LinkEdges): v is pinched when the link is not one cycle (v
-    // interior) and not one path (v on the boundary), that is, when some link vertex has degree
-    // above 2 or the link falls into more than one piece. An unreferenced vertex is not pinched.
-    // Linear in the elements at v once vertex-to-element incidence is built.
-    IsPinchedVertex(mesh: ModelMesh, v: VertexIndex): Boolean;
+    // Whether v is pinched: its link (LinkEdges) is neither one cycle (v interior) nor one path (v
+    // on the boundary). A connected graph whose vertices all have degree at most 2 is a path or a
+    // cycle, so v is pinched exactly when some link vertex has degree above 2 or the link falls into
+    // more than one piece. An unreferenced vertex, whose link is empty, is not pinched. Total for
+    // every v: a v that names no vertex has an empty link. The implementation walks the link from
+    // one vertex in time linear in the elements at v; this body is the reference.
+    IsPinchedVertex(mesh: ModelMesh, v: VertexIndex): Boolean
+        => mesh.LinkEdges(v).IsEmpty
+            ? false
+            : (mesh.LinkMaxDegree(v) > 2 || mesh.LinkEdges(v).PieceCount != 1);
 
     // deferred: one pass over vertices (counting Vertices and PinchedVertices per component), over
     // the edge table (an edge's component is that of its first vertex; counting Edges and the three
@@ -221,6 +228,51 @@ library ModelMeshTopology
     {
         var counts = mesh.ComponentCountsOf(mesh.EdgeTableOf, mesh.ComponentsOf);
         return counts.IsValidIndex(c) ? counts[c] : MeshComponentCounts.NoCells;
+    }
+
+    //==
+    // # Pieces of a small graph
+    //
+    // The number of connected pieces of a graph given by its edge list, by label propagation: a
+    // reference definition, cubic in the number of vertices, for the small graphs it serves (the
+    // link of one vertex) and for stating the contracts of the deferred one-pass counts.
+
+    // The position of the first entry of xs equal to v; xs.Count when there is none.
+    FirstPositionOf(xs: Array<VertexIndex>, v: VertexIndex): Integer
+        => xs.Count.MapRange(i => i).Reduce(xs.Count, (best, i) => (i < best && xs[i].Value == v.Value) ? i : best);
+
+    // The distinct ends of a list of pairs, in order of first appearance: the vertices of the
+    // graph the pairs are the edges of.
+    DistinctEnds(edges: Array<VertexPair>): Array<VertexIndex>
+    {
+        var ends = edges.FlatMap(p => [p.A, p.B]);
+        return ends.Count.MapRange(i => i).FlatMap(i => ends.FirstPositionOf(ends[i]) == i ? [ends[i]] : []);
+    }
+
+    // One round of label propagation: vertex i (position i of ends) takes the smallest label among
+    // its own and its neighbours'. Precondition: ends is edges.DistinctEnds and labels has one
+    // entry per end.
+    PieceLabelRound(edges: Array<VertexPair>, ends: Array<VertexIndex>, labels: Array<Integer>): Array<Integer>
+        => ends.Count.MapRange(i => edges
+            .Map(p => p.A.Value == ends[i].Value
+                ? labels[ends.FirstPositionOf(p.B)]
+                : (p.B.Value == ends[i].Value ? labels[ends.FirstPositionOf(p.A)] : labels[i]))
+            .Reduce(labels[i], (a, b) => a.Min(b)));
+
+    // The labels after the given number of propagation rounds.
+    PieceLabels(edges: Array<VertexPair>, ends: Array<VertexIndex>, labels: Array<Integer>, rounds: Integer): Array<Integer>
+        => rounds <= 0 ? labels : PieceLabels(edges, ends, PieceLabelRound(edges, ends, labels), rounds - 1);
+
+    // The number of connected pieces of the graph whose edges are given (its vertices are the
+    // edges' ends, so it has no isolated vertex; a pair with equal ends is a loop). Starting from
+    // each vertex's own position, one round per vertex carries every piece's smallest position to
+    // all of its vertices, since no path is longer; the vertices that keep their own position are
+    // one per piece.
+    PieceCount(edges: Array<VertexPair>): Integer
+    {
+        var ends = edges.DistinctEnds;
+        var labels = PieceLabels(edges, ends, ends.Count.MapRange(i => i), ends.Count);
+        return ends.Count.MapRange(i => labels[i] == i).CountTrue;
     }
 
     //==

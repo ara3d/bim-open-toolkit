@@ -355,8 +355,6 @@ Readings of those names this layer depends on, for the owning authors to confirm
 
 - **The genus of a component with boundary** needs its boundary cycle count (chi = 2 - 2g - B);
   `Genus` returns its fallback for such components.
-- **Partial contracts.** `IsPinchedVertex` pins the empty link and a link degree above 2, not the
-  disconnected link.
 - **The quad volume convention** (A-C split here, averaged splits in research 4.7) is the owner's to
   confirm.
 - **The 5 degree quad angle-defect threshold** has no source.
@@ -381,13 +379,14 @@ Readings of those names this layer depends on, for the owning authors to confirm
   46,341 vertices); sort pairs, or use a 64-bit key. The coincident-vertex hash has the same hazard
   (research/EXISTING-MESHER-LESSONS.md lesson 1).
 - **Reference bodies are quadratic** where clarity won: `NumberMeshVertices` (through `CitesEdge`),
-  `FaceInteriorRank`, `SideCountOf`, `DirectionSumOf`, `LinkEdges`, `CountsOf`. They are the oracles
+  `FaceInteriorRank`, `SideCountOf`, `DirectionSumOf`, `LinkEdges`, `CountsOf`, and `PieceCount`
+  (cubic, by label propagation; `IsPinchedVertex` uses it on one link). They are the oracles
   the table laws compare against; the implementation replaces them with one-pass versions and keeps
   these for the tests.
 - **`GlobalVertexOf` per face mesh** is best precomputed once as a table from parameter-space point
   to global index; assembly and every corner law then read it.
-- **The seven deferred functions** (`AssembleModelMesh`, `EdgeTableOf`, `ComponentsOf`,
-  `ComponentCountsOf`, `IsPinchedVertex`, `CoincidentVertexPairs`, `ToSplitTriangleMesh3D`) compile to
+- **The six deferred functions** (`AssembleModelMesh`, `EdgeTableOf`, `ComponentsOf`,
+  `ComponentCountsOf`, `CoincidentVertexPairs`, `ToSplitTriangleMesh3D`) compile to
   `NotImplementedException` stubs in C# today (PLATO-PRIMER.md D.7).
 - **`ToSplitTriangleMesh3D` compares attributes bitwise**, as the decision above says; compare the bit
   patterns, so that negative zero and NaN do not split or merge by accident.
@@ -422,6 +421,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n, tol)`, `Law_TriangleMeshKeepsArea(mesh, tol)`, `Law_QuadMeshKeepsAreaWhenOk(mesh, tol)`, `Law_PolygonMeshKeepsArea(mesh, tol)` | the same without `tol` | rounding laws judged by `ResolutionAt`, not by the model's length tolerance; 07-validation's four `Check_` calls drop the argument |
 | `Law_ReversalNegatesSignedVolume(mesh, tol)`, `Law_TriangleAngleSumIsPi(mesh, e, tol)`, `Law_QuadAngleDefectIsNotNegative(mesh, e, tol)`, `Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c, tol)`, `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c, tol)` | the same without `tol`; `VolumeRoundingMagnitude`, `AngleSumResolution`, `DefectSumResolution` added | rounding laws judged by `ResolutionAt`; 07-validation's five `Check_` calls drop the argument |
 | `MeshComponents { ElementComponent; VertexComponent; ComponentCount }`, `ComponentsOf` contract partial | adds `ElementParent`, `ElementDepth` (a spanning forest rooted at each component's lowest element); `ElementParentOf`, `ElementDepthOf`, `IsComponentRoot`, `RootsBelow`, `RootCount`, `SharesAVertex` | the certificate makes the contract exact without a reachability form |
+| `IsPinchedVertex` deferred, contract partial | written out over `PieceCount` (with `FirstPositionOf`, `DistinctEnds`, `PieceLabelRound`, `PieceLabels`) | the definition is a degree test and a piece count; the body is total and exact |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -451,3 +451,6 @@ Applied:
   connected, so elements joined by no chain cannot share a component; theorem
   `ComponentsAreTheChainClasses` states it. The old "first appearance" ensures is replaced by the
   root numbering laws.
+- **`IsPinchedVertex` total and exact** (FIX-WAVE layer 6; README "Left open"). It has a body: a link
+  degree above 2, or a link of more than one piece (`PieceCount`, label propagation), so the
+  disconnected link is now pinned as well.

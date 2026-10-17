@@ -1,8 +1,8 @@
 //==
 // # Model mesh topology: specification
 //
-// The contracts of the four deferred topology functions, the invariants of the edge table and the
-// components, and the theorem the genus rests on.
+// The contracts of the three deferred topology functions, the invariants of the edge table and the
+// components, and the theorems the components and the genus rest on.
 //
 // Sections, in order:
 //  - The edge table
@@ -84,19 +84,6 @@ spec ComponentsOf(mesh: ModelMesh): MeshComponents
     ensures Law_ComponentCountIsRootCount(mesh);
     measure mesh.CornerCount;
     deferred "union-find over element-vertex incidence, roots numbered by first element, then a breadth-first spanning forest per component";
-}
-
-// Whether a vertex is pinched: its link is neither one cycle nor one path. The contract is
-// partial: it pins the two cases the link's degrees decide, and the deferred note gives the
-// connectivity case, which needs a walk of the link.
-spec IsPinchedVertex(mesh: ModelMesh, v: VertexIndex): Boolean
-{
-    requires mesh.Positions.IsValidIndex(v);
-    requires forall (e: ElementIndex) : Law_ElementCornersInRange(mesh, e);
-    ensures mesh.LinkEdges(v).IsEmpty ? result == false : true;
-    ensures mesh.LinkMaxDegree(v) > 2 ? result : true;
-    measure mesh.LinkEdges(v).Count;
-    deferred "walk the link graph from one vertex; pinched when a degree exceeds 2 or the walk misses a link edge";
 }
 
 // The counts of each component, one entry per component.
