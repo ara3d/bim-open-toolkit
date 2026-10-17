@@ -277,17 +277,19 @@ which is layer 08's `Law_ShellReversalNegatesVolume`.
 
 Beyond the fixed contract, the layer calls these, as declared on 2026-10-17:
 
-- Layer 00: `UvTolerance`, `UvToleranceAt(t, speedU, speedV, d)`, `SameParameter` (curve-domain and
-  surface-domain forms), `IsUSide`, `OppositeSide`, `SamplePlan`.
-- Layer 01: `PcurvesOf` (through layer 02), `ClosestParameter(g, PcurveIndex, Point3D)`,
-  `Eval(g, Curve2DIndex, t)`, `CollapsedAt`, `UvToleranceAt(g, s, uv, tol)`, `SurfaceParameter`,
+- Layer 00: `UvTolerance`, `UvToleranceAt(t, floor, speedU, speedV, d)`, `SameParameter` (curve-domain
+  and surface-domain forms), `IsUSide`, `OppositeSide`, `SamplePlan`, `Periodicity.Closed`,
+  `IsOnFace(p, f)`, `AngleBetweenDirections`, `ResolutionAt`, `Identical(Diagnostic, Diagnostic)`.
+- Layer 01: `UvFloorOf(g, s, tol)`, `PcurvesOf` (through layer 02),
+  `CollapsedAt`, `UvToleranceAt(g, s, uv, tol)`, `SurfaceParameter`,
   `DomainAlong`, `Coordinate`, `Along`, `IsEveryIndexInRange`, `LimitNormal(g, s, uv)` (named in
   `Lift`'s contract).
 - Layer 02: `FaceNormalSign`, `FirstVertexAlongCurve`, `LastVertexAlongCurve`, `IsSeamEdgeOf`,
   `PcurvesOnFace(m, e, f)`, `LoopCoedges`, `VertexLoopVertexOf`, `IsPolyLoop`, `IsFaceIntact`,
   `IsLoopIntact`, `IsEdgeIntact`, `IsVertexInRange`, `IsEdgeInRange`, `CoedgeRunsForwardOnCurve`.
 - Layer 04: `Sagitta`, `UvChordDeviation`, `DiscretizationPlan`, `IsWellFormed(DiscretizationCriteria)`,
-  and `EdgeRefinementRequest.Segments`.
+  `EdgeRefinementRequest.Segments`, `EdgeImage`, `ImagePoints`, `SameDiscretization`.
+- The stdlib: `UnsignedDistanceToTriangle`, `ShoelaceArea`, `Corresponds`.
 
 `DegenerateSides` is not used (see "Poles come from collapsed lines").
 
@@ -307,11 +309,12 @@ Beyond the fixed contract, the layer calls these, as declared on 2026-10-17:
    tolerance would be exact and costs a surface derivative per segment.
 4. **Exact predicates.** The orientation laws compare floating shoelace areas with zero. The
    triangulator must use robust predicates; whether the laws should too is a question for layer 07.
-5. **Seeded projection.** `LoopToUv` is defined with `Project`; an implementation seeds each sample
-   from its predecessor (layer 01's `ProjectNear`). Both satisfy the contract, but may pick different
-   roots on a self-overlapping surface.
-6. **Who builds `SegmentFloors`.** Count requests carry `Segments`; layer 04's `Refine` or layer 08
-   must turn them into floors. `MatchingFloors` gives the counts per edge if layer 08 prefers to ask.
+5. **Seeded projection.** `LoopToUv` takes its points from layer 04's `ImagePoints`, which seeds each
+   projection or pcurve inversion from the previous point; on a self-overlapping surface a seeded and
+   an unseeded inversion may pick different roots.
+6. **Who builds `SegmentFloors`.** Layer 08 does: its `RaisedFloors` turns count requests into floors
+   for layer 04's `Discretize`. The convergence statement of review C11 (counts reach the maximum of
+   each equality class within the number of edges in it) belongs there, beside `MaxRefinementRounds`.
 7. **Poly loops**, above.
 8. **Witnesses.** The laws run over layer 07's witnesses (cylinder with one seam, sphere with two
    poles, torus with two seams, cone with an apex); this layer defines none.
@@ -412,6 +415,19 @@ Applied:
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 
+Skipped, with reasons:
+
+- T5 (`ProjectNear` keeps the seed's coordinate at a pole): layer 01's function. If it lands, the
+  free-parameter rules in `Unwrap` and `ImagePoints` can go; nothing here depends on it.
+- T7 (exact deviation oracles on planes, cylinders, spheres): `ElementDeviation` by projection is
+  already an upper bound, so the law is sound; closed forms are an implementation choice and layer
+  07's oracles.
+- C11's convergence theorem: the floors are raised by layer 08 (`RaisedFloors`), so the theorem is
+  layer 08's (open item 6 now names the owner).
+- F2's removal of the sign epsilon from this layer: layers 01 to 03 kept `FaceNormalSign` as the one
+  sign (layer 02 rests it on layer 01's epsilon and the placement's handedness); this layer reads it
+  unchanged, and only `FaceChart`'s comment was wrong (fixed with H5).
+
 ## Gate
 
 PLATO-PRIMER.md section E.3, run 2026-10-17 from the scratch copy of `tools/PlatoGate`:
@@ -422,3 +438,6 @@ PLATO-PRIMER.md section E.3, run 2026-10-17 from the scratch copy of `tools/Plat
   on `UvSample.Point` and `UvSample.Source`, which are read inside lambdas the linter does not follow.
 - This folder with layers 00 to 04 as they stood, and again with 03 and 06 added: PASS, 0 errors in
   scope.
+- Fix wave, 2026-10-17, after the last layer-5 change: the nine layer folders from `origin/main`
+  with this folder live, `PASS: 0 error(s) in scope; 6600 functions type-checked`. Each finding was
+  gated before its commit, against the other layers as committed at the time.
