@@ -319,7 +319,7 @@ library BrepWitnessesLaws
     // On a witness whose curves are lines and circles, a tighter chordal
     // bound, all else equal, never increases the largest sagitta of any edge
     // segment: a circle's closed-form split count is non-increasing in the
-    // bound, and a line's sagitta is 0. Rounding allowed at the model size.
+    // bound, and a line's sagitta is 0. Rounding allowed at the coordinate extent.
     Law_TighterChordalNeverIncreasesSagitta(k: Integer, chordal: Number, tighter: Number): Boolean
         => ((tighter > 0.0 && tighter <= chordal && chordal.IsFinite) ? BrepModel.WitnessAt(k).HasOnlyLinesAndCircles : false)
             ? BrepModel.WitnessAt(k).MaxEdgeSagitta(
@@ -328,6 +328,6 @@ library BrepWitnessesLaws
                 <= BrepModel.WitnessAt(k).MaxEdgeSagitta(
                     BrepModel.WitnessAt(k).DiscretizeAll(DefaultCriteria(chordal), SegmentFloors.NoFloors),
                     SamplePlan.CheckPlan)
-                    + ResolutionAt(BrepModel.WitnessAt(k).ModelSizeOf)
+                    + ResolutionAt(BrepModel.WitnessAt(k).CoordinateExtent)
             : true;
 }

@@ -65,9 +65,10 @@ library BrepCheckingCommon
     CheckGridWithin(law: String, n: Integer, k: Integer, measure: Function2<Integer, Integer, Number>, bound: Number, where: Function2<Integer, Integer, Provenance>): Check
         => WorstOf(law, (n * k).MapRange(j => CheckWithin(law, measure(j / k, j % k), bound, where(j / k, j % k))));
 
-    // An exact law that takes no sample: one CheckExact.
+    // An exact law that takes no sample: one CheckExact, about the input as
+    // a whole (layer 0's WholeInput), so its finding is located.
     CheckOnce(law: String, holds: Boolean): Check
-        => CheckExact(law, holds, Provenance.Nowhere);
+        => CheckExact(law, holds, Provenance.WholeInput);
 
     //==
     // # Sample plans
@@ -172,28 +173,54 @@ library BrepCheckingCommon
     AtElement(i: Integer): Provenance
         => Provenance.MeshElement(ElementIndex(i));
 
-    // The cell a finding about curve c of the arena is reported at: the
-    // first edge whose curve it is, or nothing when no edge cites it (a basis
-    // or profile curve). Provenance has no geometry case (README, findings).
+    // The record a finding about curve c of the arena is reported at: the
+    // curve itself (layer 0's KernelCurve), since the defect is in the
+    // geometry record whichever edges cite it, a basis or profile curve that
+    // no edge cites included; layer 3's map takes it to its STEP instance.
     CurveSite(m: BrepModel, c: CurveIndex): Provenance
-        => m.Edges.Count.Range.Reduce(Provenance.Nowhere, (p, e) =>
-            p == Provenance.Nowhere ? (m.Edges[e].Curve == c ? AtEdge(e) : p) : p);
+        => Provenance.KernelCurve(c);
 
-    // The cell a finding about surface s is reported at: the first face on
-    // it, or nothing.
+    // The record a finding about surface s is reported at: the surface
+    // itself (KernelSurface).
     SurfaceSite(m: BrepModel, s: SurfaceIndex): Provenance
-        => m.Faces.Count.Range.Reduce(Provenance.Nowhere, (p, f) =>
-            p == Provenance.Nowhere ? (m.Faces[f].Surface == s ? AtFace(f) : p) : p);
+        => Provenance.KernelSurface(s);
 
     // The cell a finding about pcurve p is reported at: the first edge whose
-    // curve carries it, or nothing.
+    // curve carries it, or its surface when no edge does. Provenance has no
+    // pcurve case; the edge names the curve the pcurve couples.
     PcurveSite(m: BrepModel, p: PcurveIndex): Provenance
-        => m.Edges.Count.Range.Reduce(Provenance.Nowhere, (q, e) =>
-            q == Provenance.Nowhere
-                ? (m.Geometry.IsCurveInRange(m.Edges[e].Curve)
+        => m.Edges.Count.Range.Reduce(Provenance.KernelSurface(m.Geometry.Pcurves[p].Surface), (q, e) =>
+            q.IsEdgeProvenance
+                ? q
+                : (m.Geometry.IsCurveInRange(m.Edges[e].Curve)
                     ? (m.Geometry.PcurvesOf(m.Edges[e].Curve).Any(x => x == p) ? AtEdge(e) : q)
-                    : q)
-                : q);
+                    : q));
+
+    // True for a KernelEdge provenance.
+    IsEdgeProvenance(p: Provenance): Boolean
+        => match (p)
+        {
+            Nowhere => false;
+            WholeInput => false;
+            StepInstance(id) => false;
+            KernelCurve(index) => false;
+            KernelSurface(index) => false;
+            KernelVertex(index) => false;
+            KernelEdge(index) => true;
+            KernelLoop(index) => false;
+            KernelFace(index) => false;
+            KernelShell(index) => false;
+            KernelBody(index) => false;
+            MeshVertex(index) => false;
+            MeshElement(index) => false;
+        };
+
+    // The record a finding about parameter-plane curve c is reported at: the
+    // site of the first pcurve whose 2D curve it is, or the whole input when
+    // no pcurve uses it.
+    Curve2DSite(m: BrepModel, c: Curve2DIndex): Provenance
+        => m.Geometry.Pcurves.Count.Range.Reduce(Provenance.WholeInput, (q, k) =>
+            q == Provenance.WholeInput ? (m.Geometry.Pcurves[k].Curve == c ? m.PcurveSite(PcurveIndex(k)) : q) : q);
 
     //==
     // # Model samplers
@@ -287,7 +314,7 @@ library BrepCheckingCommon
 
     // An exact law at every parameter-plane curve.
     CheckCurves2D(m: BrepModel, law: String, holds: Function1<Curve2DIndex, Boolean>): Check
-        => CheckAll(law, m.Geometry.Curves2D.Count, i => holds(Curve2DIndex(i)), i => Provenance.Nowhere);
+        => CheckAll(law, m.Geometry.Curves2D.Count, i => holds(Curve2DIndex(i)), i => m.Curve2DSite(Curve2DIndex(i)));
 
     // An exact law at every pcurve.
     CheckPcurves(m: BrepModel, law: String, holds: Function1<PcurveIndex, Boolean>): Check
@@ -313,7 +340,7 @@ library BrepCheckingCommon
     CheckCurve2DSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<Curve2DIndex, Number, Boolean>): Check
         => CheckGrid(law, m.Geometry.Curves2D.Count, plan.Count,
             (c, j) => holds(Curve2DIndex(c), m.Curve2DSamples(Curve2DIndex(c), plan)[j]),
-            (c, j) => Provenance.Nowhere);
+            (c, j) => m.Curve2DSite(Curve2DIndex(c)));
 
     // A pointwise law at every pcurve and every sample.
     CheckPcurveSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<PcurveIndex, Number, Boolean>): Check
@@ -356,5 +383,5 @@ library BrepCheckingCommon
 
     // An exact law at every attribute position of a file's arena.
     CheckAttributes(f: Part21File, law: String, holds: Function1<Integer, Boolean>): Check
-        => CheckAll(law, f.Attributes.Count, holds, a => Provenance.Nowhere);
+        => CheckAll(law, f.Attributes.Count, holds, a => Provenance.WholeInput);
 }

@@ -80,7 +80,7 @@ library BrepChecking
             length,
             AngleTolerance(Angle(16.0 * ResolutionAt(Number.Tau))),
             LengthParameterFloor(length, extent),
-            AngleParameterFloor(length, mesh.Positions.ModelSize, extent));
+            AngleParameterFloor(length, mesh.Positions.BoundingDiagonal, extent));
     }
 
     // The largest absolute coordinate of the points, 0 for none: the extent

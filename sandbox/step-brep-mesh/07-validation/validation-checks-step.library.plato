@@ -48,7 +48,7 @@ library BrepCheckingStep
     Check_InstancePositionIsExact(f: Part21File): Check
         => CheckAll("Law_InstancePositionIsExact", f.Instances.Count + 1,
             i => Law_InstancePositionIsExact(f, i < f.Instances.Count ? f.IdAt(i) : StepInstanceId(f.LargestInstanceId + 1)),
-            i => Provenance.Nowhere);
+            i => Provenance.WholeInput);
 
     // Law_RecordIndicesInRange at every instance, record, and attribute.
     // Structure: Error.
@@ -59,7 +59,7 @@ library BrepCheckingStep
     // Error.
     Check_ChildrenPrecedeParent(f: Part21File): Check
         => CheckGrid("Law_ChildrenPrecedeParent", f.Attributes.Count, f.MostChildren,
-            (a, k) => Law_ChildrenPrecedeParent(f, a, k), (a, k) => Provenance.Nowhere);
+            (a, k) => Law_ChildrenPrecedeParent(f, a, k), (a, k) => Provenance.WholeInput);
 
     // Law_ReferencesResolve at every attribute. Structure; layer 3 grades a
     // dangling reference a Warning (an Error where a decoded instance needs
@@ -117,7 +117,7 @@ library BrepCheckingStep
 
     // Law_RepairsAreDiagnosed at every repair.
     Check_RepairsAreDiagnosed(f: Part21File): Check
-        => CheckAll("Law_RepairsAreDiagnosed", f.DecodeBrep.Map.Repairs.Count, r => Law_RepairsAreDiagnosed(f, r), r => Provenance.Nowhere);
+        => CheckAll("Law_RepairsAreDiagnosed", f.DecodeBrep.Map.Repairs.Count, r => Law_RepairsAreDiagnosed(f, r), r => Provenance.WholeInput);
 
     // Law_ProvenanceCoversModel.
     Check_ProvenanceCoversModel(f: Part21File): Check
@@ -127,25 +127,25 @@ library BrepCheckingStep
     // written; the sorted ByInstance table makes it a scan of neighbours).
     Check_ProvenanceSourcesDistinct(f: Part21File): Check
         => CheckGrid("Law_ProvenanceSourcesDistinct", f.SourceCount, f.SourceCount,
-            (a, b) => Law_ProvenanceSourcesDistinct(f, a, b), (a, b) => Provenance.Nowhere);
+            (a, b) => Law_ProvenanceSourcesDistinct(f, a, b), (a, b) => Provenance.WholeInput);
 
     // Law_ProvenanceLookupInvertsSources at every source.
     Check_ProvenanceLookupInvertsSources(f: Part21File): Check
-        => CheckAll("Law_ProvenanceLookupInvertsSources", f.SourceCount, a => Law_ProvenanceLookupInvertsSources(f, a), a => Provenance.Nowhere);
+        => CheckAll("Law_ProvenanceLookupInvertsSources", f.SourceCount, a => Law_ProvenanceLookupInvertsSources(f, a), a => Provenance.WholeInput);
 
     // Law_SourceKindMatchesTable at every source.
     Check_SourceKindMatchesTable(f: Part21File): Check
-        => CheckAll("Law_SourceKindMatchesTable", f.SourceCount, a => Law_SourceKindMatchesTable(f, a), a => Provenance.Nowhere);
+        => CheckAll("Law_SourceKindMatchesTable", f.SourceCount, a => Law_SourceKindMatchesTable(f, a), a => Provenance.WholeInput);
 
     // Law_RepairedSourcesAreUnmapped at every repair.
     Check_RepairedSourcesAreUnmapped(f: Part21File): Check
-        => CheckAll("Law_RepairedSourcesAreUnmapped", f.DecodeBrep.Map.Repairs.Count, r => Law_RepairedSourcesAreUnmapped(f, r), r => Provenance.Nowhere);
+        => CheckAll("Law_RepairedSourcesAreUnmapped", f.DecodeBrep.Map.Repairs.Count, r => Law_RepairedSourcesAreUnmapped(f, r), r => Provenance.WholeInput);
 
     // Law_ReachedInstancesAreAccountedFor at every occurrence and every
     // instance position (the reached list of an occurrence is never longer).
     Check_ReachedInstancesAreAccountedFor(f: Part21File): Check
         => CheckGrid("Law_ReachedInstancesAreAccountedFor", f.DecodeBrep.Map.Occurrences.Count, f.Instances.Count,
-            (o, k) => Law_ReachedInstancesAreAccountedFor(f, o, k), (o, k) => Provenance.Nowhere);
+            (o, k) => Law_ReachedInstancesAreAccountedFor(f, o, k), (o, k) => Provenance.WholeInput);
 
     // Law_VertexCountMatchesInstances.
     Check_VertexCountMatchesInstances(f: Part21File): Check
@@ -190,12 +190,12 @@ library BrepCheckingStep
     // model's angle parameter floor (a circle's parameter is an angle).
     Check_CirclePeriodIsTwoPi(f: Part21File): Check
         => CheckAll("Law_CirclePeriodIsTwoPi", f.DecodeBrep.Model.Geometry.Curves.Count,
-            k => Law_CirclePeriodIsTwoPi(f, k, f.DecodeBrep.Model.Tolerances.AngleParameter), k => Provenance.Nowhere);
+            k => Law_CirclePeriodIsTwoPi(f, k, f.DecodeBrep.Model.Tolerances.AngleParameter), k => Provenance.KernelCurve(CurveIndex(k)));
 
     // Law_AngleUnitIsReported at every context of the file (a position past
     // the used contexts is vacuous).
     Check_AngleUnitIsReported(f: Part21File): Check
-        => CheckAll("Law_AngleUnitIsReported", f.Instances.Count, c => Law_AngleUnitIsReported(f, c), c => Provenance.Nowhere);
+        => CheckAll("Law_AngleUnitIsReported", f.Instances.Count, c => Law_AngleUnitIsReported(f, c), c => f.AtInstance(c));
 
     // Law_UncertaintyDefaultExactlyWhenAbsent.
     Check_UncertaintyDefaultExactlyWhenAbsent(f: Part21File): Check
@@ -203,7 +203,7 @@ library BrepCheckingStep
 
     // Law_ToleranceCoversStatedUncertainties at every context position.
     Check_ToleranceCoversStatedUncertainties(f: Part21File): Check
-        => CheckAll("Law_ToleranceCoversStatedUncertainties", f.Instances.Count, c => Law_ToleranceCoversStatedUncertainties(f, c), c => Provenance.Nowhere);
+        => CheckAll("Law_ToleranceCoversStatedUncertainties", f.Instances.Count, c => Law_ToleranceCoversStatedUncertainties(f, c), c => f.AtInstance(c));
 
     // Law_ModelUnitIsRootUnit.
     Check_ModelUnitIsRootUnit(f: Part21File): Check
@@ -215,7 +215,7 @@ library BrepCheckingStep
 
     // Law_PcurvesComeFromPcurveInstances at every decoded pcurve.
     Check_PcurvesComeFromPcurveInstances(f: Part21File): Check
-        => CheckAll("Law_PcurvesComeFromPcurveInstances", f.DecodeBrep.Model.Geometry.Pcurves.Count, k => Law_PcurvesComeFromPcurveInstances(f, k), k => Provenance.Nowhere);
+        => CheckAll("Law_PcurvesComeFromPcurveInstances", f.DecodeBrep.Model.Geometry.Pcurves.Count, k => Law_PcurvesComeFromPcurveInstances(f, k), k => Provenance.WholeInput);
 
     // Law_DeclaredClosedCopied at every decoded shell.
     Check_DeclaredClosedCopied(f: Part21File): Check
@@ -232,7 +232,7 @@ library BrepCheckingStep
 
     // Law_MergedVerticesCoincide at every repair.
     Check_MergedVerticesCoincide(f: Part21File): Check
-        => CheckAll("Law_MergedVerticesCoincide", f.DecodeBrep.Map.Repairs.Count, r => Law_MergedVerticesCoincide(f, r), r => Provenance.Nowhere);
+        => CheckAll("Law_MergedVerticesCoincide", f.DecodeBrep.Map.Repairs.Count, r => Law_MergedVerticesCoincide(f, r), r => Provenance.WholeInput);
 
     // Law_FoldPreservesInteriorSide at every decoded face and bound.
     Check_FoldPreservesInteriorSide(f: Part21File): Check
@@ -245,7 +245,7 @@ library BrepCheckingStep
 
     // Law_FoldRecordsNameFalseFlags at every fold record.
     Check_FoldRecordsNameFalseFlags(f: Part21File): Check
-        => CheckAll("Law_FoldRecordsNameFalseFlags", f.DecodeBrep.Map.Folds.Count, r => Law_FoldRecordsNameFalseFlags(f, r), r => Provenance.Nowhere);
+        => CheckAll("Law_FoldRecordsNameFalseFlags", f.DecodeBrep.Map.Folds.Count, r => Law_FoldRecordsNameFalseFlags(f, r), r => Provenance.WholeInput);
 
     //==
     // # The schema table and the text round trip (self-tests)
@@ -253,29 +253,29 @@ library BrepCheckingStep
     // Law_SchemaNamesUnique at every pair of table positions.
     Check_SchemaNamesUnique(_: Part21File): Check
         => CheckGrid("Law_SchemaNamesUnique", Part21File.SchemaSize, Part21File.SchemaSize,
-            (a, b) => Law_SchemaNamesUnique(a, b), (a, b) => Provenance.Nowhere);
+            (a, b) => Law_SchemaNamesUnique(a, b), (a, b) => Provenance.WholeInput);
 
     // Law_SchemaShortNamesUnique at every pair of table positions.
     Check_SchemaShortNamesUnique(_: Part21File): Check
         => CheckGrid("Law_SchemaShortNamesUnique", Part21File.SchemaSize, Part21File.SchemaSize,
-            (a, b) => Law_SchemaShortNamesUnique(a, b), (a, b) => Provenance.Nowhere);
+            (a, b) => Law_SchemaShortNamesUnique(a, b), (a, b) => Provenance.WholeInput);
 
     // Law_SchemaShortNameIsNoOtherLongName at every pair of table positions.
     Check_SchemaShortNameIsNoOtherLongName(_: Part21File): Check
         => CheckGrid("Law_SchemaShortNameIsNoOtherLongName", Part21File.SchemaSize, Part21File.SchemaSize,
-            (a, b) => Law_SchemaShortNameIsNoOtherLongName(a, b), (a, b) => Provenance.Nowhere);
+            (a, b) => Law_SchemaShortNameIsNoOtherLongName(a, b), (a, b) => Provenance.WholeInput);
 
     // Law_SchemaSupertypesPrecede at every table position and its first
     // eight supertypes (no entity of the table names more).
     Check_SchemaSupertypesPrecede(_: Part21File): Check
         => CheckGrid("Law_SchemaSupertypesPrecede", Part21File.SchemaSize, 8,
-            (a, k) => Law_SchemaSupertypesPrecede(a, k), (a, k) => Provenance.Nowhere);
+            (a, k) => Law_SchemaSupertypesPrecede(a, k), (a, k) => Provenance.WholeInput);
 
     // Law_SchemaDerivesAreInherited at every table position and its first
     // eight derived names.
     Check_SchemaDerivesAreInherited(_: Part21File): Check
         => CheckGrid("Law_SchemaDerivesAreInherited", Part21File.SchemaSize, 8,
-            (a, k) => Law_SchemaDerivesAreInherited(a, k), (a, k) => Provenance.Nowhere);
+            (a, k) => Law_SchemaDerivesAreInherited(a, k), (a, k) => Provenance.WholeInput);
 
     // Law_ParsePrintParseIsIdentity on the file's own print.
     Check_ParsePrintParseIsIdentity(f: Part21File): Check

@@ -340,10 +340,10 @@ library BrepCheckingLaws
     // measure's 0 outside the law's guard is within the bound.
 
     // Check_LengthToleranceResolvable agrees with Law_LengthToleranceResolvable
-    // at the model's size.
+    // at the model's coordinate extent.
     Law_LengthToleranceResolvableCheckAgrees(m: BrepModel): Boolean
         => (m.Tolerances.IsWellFormed ? m.Check_LengthToleranceResolvable.Holds : false)
-            ? Law_LengthToleranceResolvable(m.Tolerances.Length, m.ModelSizeOf)
+            ? Law_LengthToleranceResolvable(m.Tolerances.Length, m.CoordinateExtent)
             : true;
 
     // Check_EdgeDomainEndsAtVertices agrees with its law at edge e, end atStart.

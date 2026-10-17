@@ -322,7 +322,7 @@ Exact.
 | `Law_WitnessRigidMotionMovesPositions` | layer 8's `Law_RigidMotionMovesPositions` on each witness | Length |
 | `Law_WitnessPowerOfTwoScalingKeepsConnectivity`, `...ScalesPositions` | layer 8's scaling laws on each witness | exact |
 | `Law_WitnessEdgeReversalPreservesMesh`, `Law_WitnessShellReversalNegatesVolume` | layer 8's reversal laws on each witness | exact; Length times area |
-| `Law_TighterChordalNeverIncreasesSagitta` | on line-and-circle witnesses, a tighter chordal never raises the largest sagitta | `ResolutionAt(size)` |
+| `Law_TighterChordalNeverIncreasesSagitta` | on line-and-circle witnesses, a tighter chordal never raises the largest sagitta | `ResolutionAt(extent)` |
 
 Theorems in `validation.spec.plato`: `SampledCheckAgreesWithLaw`, `HigherLevelCleanImpliesLowerClean`,
 `GreenAreaExactOnStraightLoops`, `MeshAreaWithinEnvelope`, `MeshEulerEqualsBrepEulerByConstruction`,
@@ -394,10 +394,10 @@ library was added). Over layers 00 to 08: PASS, 0 errors, 6,357 functions.
    compares numberings where this one compares vertex counts. One of each pair should go.
 2. **Near-synonyms.** `IsOnFace` (layer 6) and `IsFaceInteriorProvenance` (layer 5) mean the same;
    `FacesOfEdge(m, e)` (layer 4) and `FacesOfEdge(m, s, e)` (layer 2) differ only by the shell.
-3. **`Provenance` has no geometry case** (layer 0). A defect in a curve or surface record is reported
-   at the edge or face that cites it; a `KernelCurve` and `KernelSurface` case would name it.
-4. **`Check` has no `Bound`** (layer 0). Reports repeat each measured check's bound (layer 0's open
-   question 4 is related).
+3. **`Provenance` has no geometry case** (layer 0). Resolved in the fix wave: layer 0 added
+   `KernelCurve`, `KernelSurface` and `WholeInput`, and this layer uses them.
+4. **`Check` has no `Bound`** (layer 0). Resolved in the fix wave: `Check.Bound`; layer 0 has no
+   Warning grade for an exact law, so `AsWarning` restates one as Worst 2 against bound 1.
 5. **Layer 1 exports Booleans only** for its file-geometry laws (placement orthonormality and the
    like), so they are graded as exact Errors here; exporting the measure would allow the ten-times
    Warning grading.
@@ -436,3 +436,19 @@ one commit each.
 These five landed in one commit: each alone fails the gate against the refreshed snapshot, since
 the reports file calls every layer's checks.
 | Layer 6's `RestrictedToFaces` (coordinator; review section 6, condition 1) | `RestrictedToShell` is `mesh.RestrictedToFaces(m.ShellFaces(s))`, a valid `ModelMesh` (the hand-built one had empty corner arrays), and `ShellMeshEuler` reads layer 6's `ReferencedEulerCharacteristic`; `IsShellElement` deleted |
+| `WholeInput` for whole-file findings, `KernelCurve` and `KernelSurface` where a geometry record is at fault; no finding left at `Nowhere` (layer 8's request) | `CurveSite` and `SurfaceSite` are the records themselves; `PcurveSite` falls back to the pcurve's surface; parameter-plane curves report at the pcurve that uses them (`Curve2DSite`); `CheckOnce`, attribute samplers, decode-map, schema-table and mesh-wide self-tests report at `WholeInput`; the unit and uncertainty laws at their instance. Only the holding seed of a fold (`NoSampleCheck`) keeps `Nowhere`, and it never becomes a finding |
+| `ModelSize(points)` is a forwarder to be deleted (layer 3); the resolvability floor at the coordinate extent (review F6) | `ModelSizeOf` deleted; `Check_LengthToleranceResolvable` and its agreement law evaluate at layer 2's `CoordinateExtent(m)`, the sagitta law's rounding too; `ResolutionTolerances` reads layer 2's `BoundingDiagonal` |
+
+These two landed in one commit, since both edit the topology checks.
+
+### Answers to layer 8
+
+- **Do the short entry points take a level?** No: `ValidateBrep(m)` and `ValidateModelMesh(mesh)`
+  keep the signatures VOCABULARY.md fixes, at `Geometric` and `Structural`. Each has a long form that
+  takes one, `ValidateBrep(m, level)` and `ValidateModelMesh(mesh, t, th, level)`, and
+  `CrossCheck(m, mesh, level, c)` takes the criteria; layer 8's decision 10 calls the long forms, which
+  is what this layer intends. A Structural run pays only for the structure family.
+- **Is any finding left at `Nowhere`?** No. Every `Check_` names the cell, record, instance, mesh
+  vertex or element it sampled, or `WholeInput` for a finding about the input as a whole. The holding
+  seed of a fold keeps `Nowhere` and never becomes a diagnostic, since `ReportOf` builds one only for a
+  failed check, and a failed fold keeps a failed sample's provenance.

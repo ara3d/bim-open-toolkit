@@ -46,19 +46,21 @@ library BrepCheckingTopology
     Check_ParameterTolerancePositive(m: BrepModel): Check
         => CheckAll("Law_ParameterTolerancePositive", 2,
             k => Law_ParameterTolerancePositive(k == 0 ? m.Tolerances.LengthParameter : m.Tolerances.AngleParameter),
-            k => Provenance.Nowhere);
+            k => Provenance.WholeInput);
 
-    // Law_LengthToleranceResolvable at the model's size (the diagonal of the
-    // bounding box of its vertex points): Worst is the arithmetic resolution
+    // Law_LengthToleranceResolvable at the model's coordinate extent (layer
+    // 2's CoordinateExtent, the largest absolute coordinate: rounding depends
+    // on how large the coordinates are, not on how large the model is, review
+    // F6): Worst is the arithmetic resolution
     // there, the bound the length tolerance, so the check holds exactly when
     // the law does. Geometric group: Warning while the resolution is below ten
     // times the tolerance, Error above (the verdicts at that size are then
     // rounding noise).
     Check_LengthToleranceResolvable(m: BrepModel): Check
         => CheckWithin("Law_LengthToleranceResolvable",
-            m.ModelSizeOf.IsFinite ? ResolutionAt(m.ModelSizeOf) : 0.0,
+            m.CoordinateExtent.IsFinite ? ResolutionAt(m.CoordinateExtent) : 0.0,
             m.Tolerances.Length.Value,
-            Provenance.Nowhere);
+            Provenance.WholeInput);
 
     //==
     // # Indices, loops and bounds
@@ -219,11 +221,6 @@ library BrepCheckingTopology
     // own guard, and 0 where the guard makes the law vacuous, so the check
     // that folds it agrees with the law.
 
-    // The diagonal of the bounding box of the model's vertex points: the
-    // magnitude Law_LengthToleranceResolvable is evaluated at (layer 3's
-    // ModelSize, which the decoder also uses).
-    ModelSizeOf(m: BrepModel): Number
-        => m.Vertices.Map(v => v.Point).ModelSize;
 
     // DomainEndDeviation behind Law_EdgeDomainEndsAtVertices's guard.
     EndDeviation(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Number
