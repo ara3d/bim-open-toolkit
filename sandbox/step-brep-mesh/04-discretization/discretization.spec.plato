@@ -1,0 +1,307 @@
+//==
+// # Edge discretization: specifications
+//
+// Type invariants, function contracts, and theorems for the declarations of
+// discretization.types.plato and discretization.library.plato, in the constructs of SPEC-DSL.md
+// section 3 only. Every `ensures` is a `Law_` of discretization.laws.plato, or a short expression
+// whose `Law_` form would be a one-line wrapper. `0.UpTo(n)` is the half-open range [0, n).
+//
+// Sections, in order:
+//  - Types
+//  - Deferred functions
+//  - Lower-layer declarations made here
+//  - Functions with bodies that construct a discretization
+//  - Theorems
+
+//==
+// Types
+
+// Every value, in either direction. Model-relative properties (points on the curve, end points
+// at the vertices) are promised by each constructor's `ensures`, since `self` carries no model.
+spec EdgeDiscretization
+{
+    invariant Law_ParameterCountEqualsPointCount(self);
+    invariant Law_AtLeastTwoParameters(self);
+    invariant forall (i: Integer) : Law_ParametersStrictlyMonotone(self, i);
+    constructor Discretize;
+    constructor RefineEdge;
+    constructor Reversed;
+    constructor AlongCoedge;
+}
+
+// One canonical discretization per edge, entry i for edge i.
+spec EdgeDiscretizations
+{
+    invariant forall (i: Integer) : Law_DiscretizationsIndexedByEdge(self, i);
+    invariant forall (i: Integer) in 0.UpTo(self.ByEdge.Count) : forall (j: Integer) : Law_ParametersStrictlyIncreasing(self.ByEdge[i], j);
+    constructor DiscretizeAll;
+    constructor Refine;
+}
+
+// Plain data: a validator checks it; no constructor is privileged.
+spec SegmentFloors
+{
+    invariant forall (i: Integer) in 0.UpTo(self.ByEdge.Count) : self.ByEdge[i] >= 0;
+}
+
+// Plain data made by face meshing.
+spec EdgeRefinementRequest
+{
+    invariant self.Chordal > 0.0;
+    invariant self.Segments >= 0;
+}
+
+//==
+// Deferred functions
+
+// The canonical discretization of one edge.
+spec Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization
+{
+    requires m.CanDiscretize(e, c);
+    ensures result.Edge == e;
+    ensures forall (i: Integer) : Law_ParametersStrictlyIncreasing(result, i);
+    ensures Law_LowestParameterIsDomainStart(m, result);
+    ensures Law_HighestParameterIsDomainEnd(m, result);
+    ensures forall (i: Integer) : Law_PointsLieOnCurve(m, result, i);
+    ensures Law_DomainStartPointIsVertex(m, result);
+    ensures Law_DomainEndPointIsVertex(m, result);
+    ensures forall (k: Integer) : Law_SeedsAreSampled(m, result, k);
+    ensures Law_DegenerateEdgeHasOneSegment(m, result);
+    ensures Law_ClosedEdgeHasMinSegments(m, result, c);
+    ensures Law_SegmentFloorMet(m, result, c, floors);
+    ensures forall (i: Integer) : Law_SagittaWithinChordal(m, result, c, SamplePlan.DiscretizationPlan, i);
+    ensures forall (i: Integer) : Law_TangentDeviationWithinHalfAngular(m, result, c, SamplePlan.DiscretizationPlan, i);
+    ensures forall (i: Integer) : Law_TurningAngleWithinAngular(m, result, c, i);
+    ensures forall (i: Integer) : Law_SegmentWithinMaxLength(m, result, c, i);
+    ensures forall (i: Integer) : Law_ShortSegmentIsForced(m, result, c, floors, i);
+    ensures forall (img: EdgeImage) in m.EdgeImages(e) : forall (i: Integer) : Law_ImageChordWithinChordal(m, result, c, img, SamplePlan.DiscretizationPlan, i);
+    measure result.Parameters.Count;
+    deferred "seeds; a closed-form uniform count for conics, raised until the image criteria hold; adaptive bisection at parameter midpoints with three-sample tests for other curves; then the count floors";
+}
+
+// A canonical discretization refined under tighter criteria or to a higher count.
+spec RefineEdge(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, segments: Integer): EdgeDiscretization
+{
+    requires m.CanDiscretize(d.Edge, c);
+    requires m.IsEvaluable(d);
+    requires d.RunsAlongCurve;
+    requires segments >= 0;
+    ensures result.Edge == d.Edge;
+    ensures forall (i: Integer) : Law_ParametersStrictlyIncreasing(result, i);
+    ensures forall (k: Integer) in 0.UpTo(d.Parameters.Count) : result.ContainsParameter(d.Parameters[k]);
+    ensures m.IsDegenerateEdge(d.Edge) ? result.SegmentCount == 1 : result.SegmentCount >= segments;
+    ensures Law_LowestParameterIsDomainStart(m, result);
+    ensures Law_HighestParameterIsDomainEnd(m, result);
+    ensures forall (i: Integer) : Law_PointsLieOnCurve(m, result, i);
+    ensures Law_DomainStartPointIsVertex(m, result);
+    ensures Law_DomainEndPointIsVertex(m, result);
+    ensures forall (i: Integer) : Law_SagittaWithinChordal(m, result, c, SamplePlan.DiscretizationPlan, i);
+    ensures forall (i: Integer) : Law_TangentDeviationWithinHalfAngular(m, result, c, SamplePlan.DiscretizationPlan, i);
+    ensures forall (i: Integer) : Law_TurningAngleWithinAngular(m, result, c, i);
+    ensures forall (i: Integer) : Law_SegmentWithinMaxLength(m, result, c, i);
+    ensures forall (img: EdgeImage) in m.EdgeImages(d.Edge) : forall (i: Integer) : Law_ImageChordWithinChordal(m, result, c, img, SamplePlan.DiscretizationPlan, i);
+    measure result.Parameters.Count - d.Parameters.Count;
+    deferred "bisection continued from d's partition by the tests of Discretize; then the segment longest in parameter halved one at a time until the count is reached";
+}
+
+// The exact sagitta of the arc between two parameters: its Hausdorff distance from its chord.
+spec Sagitta(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number
+{
+    requires m.IsEdgeEvaluable(e);
+    requires m.EdgeDomain(e).Range.Contains(t0);
+    requires m.EdgeDomain(e).Range.Contains(t1);
+    ensures result >= 0.0;
+    ensures forall (f: Number) in NumberInterval(0.0, 1.0) : DistanceToSegment(m.PointOnEdge(e, t0), m.PointOnEdge(e, t1), m.PointOnEdge(e, t0 + (t1 - t0) * f)) <= result + m.Tolerances.Length.Value;
+    ensures exists (f: Number) in NumberInterval(0.0, 1.0) : DistanceToSegment(m.PointOnEdge(e, t0), m.PointOnEdge(e, t1), m.PointOnEdge(e, t0 + (t1 - t0) * f)) >= result - m.Tolerances.Length.Value;
+    measure m.EdgeSeeds(e).Count;
+    deferred "closed form for line, circle, and ellipse; control-hull bound per polynomial Bezier span; dense sampling for rational spans";
+}
+
+// The parameters every discretization of the edge samples.
+spec EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>
+{
+    requires m.IsEdgeEvaluable(e);
+    requires m.EdgeDomain(e).Range.Start < m.EdgeDomain(e).Range.End;
+    ensures result.Count >= 2;
+    ensures result[0] == m.EdgeDomain(e).Range.Start;
+    ensures result[result.Count - 1] == m.EdgeDomain(e).Range.End;
+    ensures forall (k: Integer) in 0.UpTo(result.Count - 1) : result[k] < result[k + 1];
+    ensures forall (k: Integer) in 1.UpTo(result.Count - 1) : result[k] - result[k - 1] > m.Tolerances.Parameter.Value;
+    ensures forall (k: Integer) in 1.UpTo(result.Count - 1) : result[k + 1] - result[k] > m.Tolerances.Parameter.Value;
+    ensures forall (k: Integer) in 0.UpTo(result.Count) : m.WithEdgeReversed(e).EdgeSeeds(e)[k] == result[k];
+    measure result.Count;
+    deferred "polyline vertices, composite joints, and distinct knots read from the curve, clipped to the domain, merged within the parameter tolerance";
+}
+
+// The total turning of the curve's tangent over the edge domain, tangent jumps at seeds included.
+spec TotalTurning(m: BrepModel, e: BrepEdgeIndex): Angle
+{
+    requires m.IsEdgeEvaluable(e);
+    ensures result.Radians >= 0.0;
+    ensures forall (d: EdgeDiscretization) : (d.Edge == e && m.IsEvaluable(d)) ? SumOf((d.Points.Count - 2).MapRange(j => d.TurningAngle(j + 1).Radians)) <= result.Radians + m.Tolerances.Angle.Value.Radians * d.Points.Count.ToNumber : true;
+    measure m.EdgeSeeds(e).Count;
+    deferred "the swept angle for a circle, the angle between the end tangents for a convex ellipse arc, quadrature of curvature per seed span plus the tangent jump at each seed otherwise";
+}
+
+// The edge's polyline drawn in one of its parameter-space images.
+spec ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvCoordinate>
+{
+    requires m.IsEvaluable(d);
+    requires m.IsImageEvaluable(img);
+    requires m.FaceUsesEdge(img.Face, d.Edge);
+    ensures Law_ImageHasOnePointPerPoint(m, d, img);
+    ensures img.Pcurve.IsNone ? true : forall (i: Integer) in 0.UpTo(result.Count) : result[i] == m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, d.Parameters[i]);
+    ensures img.Pcurve.IsNone ? forall (i: Integer) in 0.UpTo(result.Count) : m.Geometry.Eval(m.ImageSurface(img), result[i]).Distance(d.Points[i]) <= m.Tolerances.Length.Value : true;
+    ensures forall (i: Integer) : Law_ImageFollowsPcurve(m, d, img, i);
+    ensures forall (i: Integer) : Law_ImagePointReevaluates(m, d, img, i);
+    ensures forall (i: Integer) : Law_ImageStepsAreUnwrapped(m, d, img, i);
+    ensures forall (i: Integer) in 0.UpTo(result.Count) : m.Geometry.Domain(m.ImageSurface(img)).UvGap(m.ImagePoints(d.Reversed, img)[result.Count - 1 - i], result[i]) <= m.Tolerances.Parameter.Value;
+    measure d.Points.Count;
+    deferred "pcurve evaluation; otherwise Project seeded by the previous point's parameters, unwrapped, with a pole's free parameter taken from its neighbour";
+}
+
+//==
+// Lower-layer declarations made here
+
+// belongs-in: 02-topology
+spec IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
+{
+    requires m.IsEdgeEvaluable(e);
+    ensures result == forall (t: Number) in m.EdgeDomain(e).Range : m.PointOnEdge(e, t).Distance(m.PointOnEdge(e, m.EdgeDomain(e).Range.Start)) <= m.Tolerances.Length.Value;
+    measure m.EdgeSeeds(e).Count;
+    deferred "radius or extent below the length tolerance for analytic curves; every control point within the tolerance of the first for B-splines";
+}
+
+// belongs-in: 01-geometry
+spec PcurvesOf(g: GeometrySet, c: CurveIndex): Array<PcurveIndex>
+{
+    requires g.Curves.IsValidIndex(c);
+    ensures forall (k: Integer) in 0.UpTo(result.Count) : g.Pcurves.IsValidIndex(result[k]);
+    measure result.Count;
+    deferred "the OnSurface case's associated pcurves; empty for every other case";
+}
+
+// belongs-in: 01-geometry
+spec Eval(g: GeometrySet, c: Curve2DIndex, t: Number): UvCoordinate
+{
+    requires g.Curves2D.IsValidIndex(c);
+    requires t.IsFinite;
+    ensures result.U.IsFinite && result.V.IsFinite;
+    measure 1;
+    deferred "one formula per BrepCurve2D case, as Eval over CurveIndex in 3D";
+}
+
+//==
+// Functions with bodies that construct a discretization
+
+// Every edge, independently.
+spec DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
+{
+    requires forall (i: Integer) in 0.UpTo(m.Edges.Count) : m.CanDiscretize(BrepEdgeIndex(i), c);
+    ensures Law_DiscretizationsCoverEdges(m, result);
+    ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
+    ensures forall (i: Integer) in 0.UpTo(m.Edges.Count) : result.ByEdge[i].SameDiscretization(m.Discretize(BrepEdgeIndex(i), c, floors));
+    measure m.Edges.Count;
+}
+
+// The other direction, by copying.
+spec Reversed(d: EdgeDiscretization): EdgeDiscretization
+{
+    ensures result.Edge == d.Edge;
+    ensures Law_ParameterCountEqualsPointCount(result);
+    ensures Law_AtLeastTwoParameters(result);
+    ensures forall (i: Integer) : Law_ParametersStrictlyMonotone(result, i);
+    ensures result.RunsAlongCurve != d.RunsAlongCurve;
+    ensures Law_ReversedIsInvolution(d);
+    ensures forall (i: Integer) : Law_ReversedReversesParameters(d, i);
+    ensures forall (i: Integer) : Law_ReversedReversesPoints(d, i);
+    measure d.Parameters.Count;
+}
+
+// The direction a coedge consumes.
+spec AlongCoedge(m: BrepModel, d: EdgeDiscretization, bound: FaceBound, coedge: Coedge): EdgeDiscretization
+{
+    requires m.IsEvaluable(d);
+    requires coedge.Edge == d.Edge;
+    ensures result.RunsAlongCurve == m.CoedgeRunsForwardOnCurve(bound, coedge);
+    ensures result.SameDiscretization(d) || result.SameDiscretization(d.Reversed);
+    measure d.Parameters.Count;
+}
+
+// Only the requested edges change, and none gets coarser.
+spec Refine(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): EdgeDiscretizations
+{
+    requires Law_IndicesInRange(m);
+    requires c.IsWellFormed;
+    requires m.IsRefinable(d);
+    ensures Law_DiscretizationsCoverEdges(m, result);
+    ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
+    ensures forall (e: BrepEdgeIndex) : Law_RefineKeepsUnrequestedEdges(m, d, requests, c, e);
+    ensures forall (e: BrepEdgeIndex) : forall (k: Integer) : Law_RefineNeverCoarsens(m, d, requests, c, e, k);
+    ensures forall (e: BrepEdgeIndex) : Law_RefineMeetsRequestedSegments(m, d, requests, c, e);
+    measure requests.Count;
+}
+
+//==
+// Theorems
+
+// The sharing principle: the two faces of an edge meet point for point.
+theorem SharedPolylineClosesEveryEdge
+{
+    given m: BrepModel, ds: EdgeDiscretizations, b1: FaceBound, c1: Coedge, b2: FaceBound, c2: Coedge;
+    assume Law_DiscretizationsCoverEdges(m, ds);
+    assume m.IsEvaluable(ds.ByEdge[c1.Edge]);
+    assume c1.Edge == c2.Edge;
+    assume m.CoedgeRunsForwardOnCurve(b1, c1) != m.CoedgeRunsForwardOnCurve(b2, c2);
+    conclude forall (k: Integer) : Law_OppositeUsesSeeReversedPoints(m, ds.ByEdge[c1.Edge], b1, c1, b2, c2, k);
+    because "AlongCoedge returns the stored discretization when the coedge runs with the curve and its reversal otherwise. The two coedges run opposite ways, so one gets the stored arrays and the other their reversal, and Reversed copies without arithmetic. Point k of one is therefore bit-identical to point count - 1 - k of the other. Layer 6 numbers an edge's mesh vertices by (edge, index in the stored arrays), so both faces emit their boundary segments along this edge over the same vertex pairs in opposite directions: no gap, no T-junction, no duplicate vertex.";
+    tested by Law_OppositeUsesSeeReversedPoints, Law_ReversedReversesPoints;
+}
+
+// Why the turning-angle law needs no separate refinement test at smooth joints.
+theorem TurningAngleBoundedByTangentDeviation
+{
+    given m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, i: Integer;
+    assume m.IsEvaluable(d);
+    assume i >= 1 && i + 1 < d.Points.Count;
+    assume !m.IsSeedParameter(d.Edge, d.Parameters[i]);
+    assume forall (plan: SamplePlan) : Law_TangentDeviationWithinHalfAngular(m, d, c, plan, i - 1);
+    assume forall (plan: SamplePlan) : Law_TangentDeviationWithinHalfAngular(m, d, c, plan, i);
+    assume !m.IsAtLengthFloor(d, c, i - 1) && !m.IsAtLengthFloor(d, c, i);
+    conclude d.TurningAngle(i) <= c.EffectiveAngular + m.Tolerances.Angle.Value * 2.0;
+    because "Over every plan, the sampled tangent deviation of a segment tends to the supremum over its open parameter interval of the angle between its chord and the tangent, and the one-sided tangents at its ends are limits of interior tangents, so each chord is within half the angular bound (plus the angle tolerance) of the tangent at each of its ends. Point i is not a seed, so the curve is tangent-continuous there (every possible corner is a seed) and the left and right tangents coincide, the curve being regular. The triangle inequality for angles then gives turning(i) <= dev(i - 1) + dev(i) <= Angular + 2 AngleTolerance.";
+    tested by Law_TurningAngleWithinAngular, Law_TangentDeviationWithinHalfAngular;
+}
+
+// Every discretization terminates, with a count bounded by the curve's length over the floor.
+theorem DiscretizeTerminates
+{
+    given m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors, length: Number;
+    assume m.CanDiscretize(e, c);
+    assume forall (d: EdgeDiscretization) : (d.Edge == e && m.IsEvaluable(d)) ? SumOf(d.SegmentCount.MapRange(i => d.SegmentLength(i))) <= length : true;
+    conclude m.Discretize(e, c, floors).Parameters.Count.ToNumber <= length / c.EffectiveMinLength(m.Tolerances) + (m.EdgeSeeds(e).Count + m.MinimumSegmentCount(e, c, floors) + 1).ToNumber;
+    because "`length` bounds every inscribed polyline, so it is at least the arc length. A criterion splits a segment only when both halves are at least the effective minimum length, so every segment made by a criterion split has a chord at least that long, and there are at most length / MinLength of them. The other segments are unsplit seed spans (fewer than the seed count) and the segments added by count-floor splits (fewer than the minimum segment count). The conic path never exceeds the larger of its floor and its length cap, whose chords are at least MinLength each. Each bisection step adds one point, so the number of steps is bounded and the algorithm stops.";
+    tested by Law_ShortSegmentIsForced;
+}
+
+// Tightening the chordal bound never removes points.
+theorem ChordalRefinementIsMonotone
+{
+    given m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors, chordal: Number;
+    assume m.CanDiscretize(e, c);
+    assume chordal > 0.0 && chordal <= c.Chordal;
+    conclude m.Discretize(e, c.WithChordal(chordal), floors).Parameters.Count >= m.Discretize(e, c, floors).Parameters.Count;
+    because "Bisection path: the seeds do not depend on the chordal bound, every test fails at the tighter bound when it fails at the looser one, and the minimum-length rule is the same, so by induction over the bisection tree every split made at the looser bound is made at the tighter one; the criteria partitions nest, and the count floor then gives max(floor, k') >= max(floor, k). Conic path: the closed-form count is monotone in the bound, and the final count is the least count, at or above the closed-form count and at most the length cap, for which the image criteria hold (or the cap); the tighter search starts no lower, so it ends no lower.";
+    tested by Law_TighterChordalNeverFewerPoints;
+}
+
+// Symmetry: reversing an edge does not change its discretization.
+theorem EdgeReversalInvariance
+{
+    given m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors;
+    assume m.CanDiscretize(e, c);
+    assume m.WithEdgeReversed(e).EdgeDomain(e) == m.EdgeDomain(e);
+    conclude m.WithEdgeReversed(e).Discretize(e, c, floors).SameDiscretization(m.Discretize(e, c, floors));
+    because "Discretize reads the edge's curve, its domain in the curve's parameter, its seeds, its minimum segment count (closedness, degeneracy, the loops it is in, the floors, the total turning), and its parameter-space images (the faces that use it, the pcurves of its curve). WithEdgeReversed swaps the vertices, flips SameSense, and flips the citations; it changes none of those, given that layer 2 derives the edge domain in the curve's parameter independently of the sense (the second assumption). The end points are the domain-start and domain-end vertices, which the reversal swaps together with the sense, so they are the same two points. The algorithm is deterministic, so the arrays are bit-identical. Exactness does not rest on rounding symmetry, because the computation runs in the same direction both times.";
+    tested by Law_EdgeReversalLeavesDiscretization;
+}

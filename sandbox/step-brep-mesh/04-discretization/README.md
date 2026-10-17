@@ -1,0 +1,294 @@
+# Layer 4: edge discretization
+
+Library block `EdgeDiscretizing`, laws in `EdgeDiscretizingLaws`. Written 2026-10-17 against
+[VOCABULARY.md](../VOCABULARY.md) revision 2, while layers 0 to 2 were being written; the names this
+layer uses from them are listed at the end.
+
+This layer turns every model edge into one polyline, under chordal, angular, and length criteria,
+and states the rules both faces of the edge rely on when they consume it. It owns one principle:
+**one discretization per model edge, consumed by both adjacent faces**, one of them through
+`Reversed`, so the mesh is closed along every edge by construction rather than by welding.
+
+| File | Holds |
+|---|---|
+| `discretization.types.plato` | `Limit`, `DiscretizationCriteria`, `SegmentFloors`, `EdgeDiscretization`, `EdgeDiscretizations`, `EdgeImage`, `RefinementReason`, `EdgeRefinementRequest` |
+| `discretization.library.plato` | criteria, edge facts, count floors, closed forms for arcs, segment measures, parameter-space images, `Discretize`, `DiscretizeAll`, `Reversed`, `AlongCoedge`, `Refine` |
+| `discretization.laws.plato` | 35 laws: shape, agreement with the model, criteria, counts, images, reversal and sharing, monotonicity and refinement, arcs |
+| `discretization.spec.plato` | type invariants, contracts of the 9 deferred functions and 4 constructors, 5 theorems |
+
+## The objects
+
+**Edge domain and canonical direction.** An edge `e` has a curve `C` and a domain `[a, b]` in the
+curve's own parameter (`EdgeDomain(m, e).Range`), with `a < b`. A closed edge spans a full period;
+a degenerate edge is one whose image `C([a, b])` lies within the model's `LengthTolerance` of one
+point (a pole, a cone apex). The canonical direction is the curve's increasing parameter, whatever
+the edge's `SameSense`; the vertex at `a` is `DomainStartVertex` (the edge's `Start` when
+`SameSense`, its `End` otherwise).
+
+**Discretization.** A discretization of `e` is a partition `a = t_0 < t_1 < ... < t_n = b` of the
+domain together with its image `P_i`, where `P_i = C(t_i)` for `0 < i < n` and `P_0`, `P_n` are
+the vertex points, copied (a vertex may sit up to `LengthTolerance` from the curve's end, so the
+end points are the vertices and not evaluations). Segment `i` is the chord `[P_i, P_{i+1}]` together
+with the arc `C([t_i, t_{i+1}])` it replaces. `Reversed` lists the same data backwards; a value is
+canonical when its parameters increase (`RunsAlongCurve`). Every value has strictly monotone
+parameters and equal counts; every stored or freshly computed value is canonical.
+
+**Seeds.** `EdgeSeeds(m, e)` are the parameters every discretization must contain: the domain ends,
+and every polyline vertex, composite-segment joint, and distinct B-spline knot inside the domain,
+merged within the `ParameterTolerance`. Every point where the curve may fail to be tangent-continuous
+is a seed, so between consecutive seeds the curve is smooth.
+
+**Sagitta.** The sagitta of segment `i` is the Hausdorff distance between the chord and the arc. For
+a convex arc turning less than half a turn it equals the largest distance from the arc to the
+chord's line, `R (1 - cos(theta / 2))` on a circle of radius `R` with central angle `theta`.
+`Sagitta(m, e, t0, t1)` is the exact quantity (closed form for lines, circles, ellipses; a
+control-hull bound per polynomial Bezier span). `SampledSagitta(m, d, plan, i)` evaluates the curve
+at the plan's interior samples `t_i + f (t_{i+1} - t_i)`, `f = j / (k + 1)`, and takes the largest
+distance to the chord: a lower bound of the exact sagitta, exact on circles at the midpoint. Three
+samples (the quarter points and the midpoint, `DiscretizationPlan`) catch the inflection that a
+midpoint-only test misses (research/MESHING-REQUIREMENTS.md 3.5).
+
+**Angles.** Two quantities, equal to the central angle `theta` per segment on a uniformly split
+circle, which is what OpenCascade's `Angle`, Parasolid's `curve_chord_ang`, and gmsh's curvature
+sizing all reduce to:
+
+- the *turning angle* `tau_i` at interior point `i`, the angle between consecutive chords
+  (`TurningAngle(d, i)`);
+- the *tangent deviation* `delta_i` of segment `i`, the largest angle between its chord and the
+  curve's tangent over the open interval `(t_i, t_{i+1})` (`TangentDeviation`, sampled at interior
+  points only, so never at a seed, where the tangent may jump). It is `theta / 2` on a circle.
+
+`Angular` bounds `tau` at every joint that is not a seed, and `2 delta` on every segment. The second
+bound is what gives a single-segment edge, and the end segments of any edge, an angular criterion at
+all. At a joint that is not a seed the curve is tangent-continuous, so `tau_i <= delta_{i-1} +
+delta_i` by the triangle inequality for angles: the turning-angle law follows from the
+tangent-deviation law (theorem `TurningAngleBoundedByTangentDeviation`) and is checked anyway.
+
+**Parameter-space image.** Each face that uses the edge draws the polyline in its surface's natural
+parameters (`EdgeImage`: the face and the pcurve of the edge on its surface, or none). The image
+points are the pcurve evaluated at `t_i` when the curve is `OnSurface` with a pcurve there, and
+otherwise `Project(g, s, P_i)`, unwrapped to within half a period of the previous point, with a pole
+point's free parameter taken from its neighbour (`ImagePoints`). The face joins consecutive image
+points by straight segments; the *image deviation* of segment `i` is the largest distance from the
+3D chord to the surface evaluated along that straight parameter-space segment (`UvChordDeviation`,
+OpenCascade's test, research/MESHING-REQUIREMENTS.md 3.7).
+
+**Floors.** Two different kinds. The *length floor* `MinLength` stops refinement: a segment is split
+for a criterion only when both halves would be at least `MinLength` long, and a segment that cannot
+be split that way is *at the floor* (`IsAtLengthFloor`), which exempts it from the criteria and is
+reported. *Count floors* (`MinimumSegmentCount`) are structural and beat `MinLength`: the caller's
+`SegmentFloors`, `max(3, MinSegments)` for a closed edge, 2 for an edge in a two-edge loop (else the
+loop is a digon), and `ceil(TotalTurning / (2 pi / 3))` so that no chord spans a third of a turn,
+where an element of a periodic face could fold. A degenerate edge has exactly one segment.
+
+**Effective criteria.** The criteria record is model-independent; the model enters once:
+`EffectiveChordal = max(Chordal, LengthTolerance)`, `EffectiveMinLength = max(MinLength,
+LengthTolerance)`, `EffectiveAngular = min(Angular, a third of a turn)`.
+
+## Decisions and their reasons
+
+1. **One polyline per edge, oriented in exactly one place.** `DiscretizeAll` stores the canonical
+   polyline of every edge; `AlongCoedge(m, d, bound, coedge)` is the only function that orients one
+   for a face, returning `d` or `Reversed(d)` by `CoedgeRunsForwardOnCurve`. Two uses that run in
+   opposite directions therefore read bit-identical points in opposite orders
+   (`Law_OppositeUsesSeeReversedPoints`, theorem `SharedPolylineClosesEveryEdge`). The existing IFC
+   mesher let each face re-sample its edges and cracked along shared edges
+   (research/EXISTING-MESHER-LESSONS.md lesson 11); here that cannot happen.
+
+2. **Symmetry by a canonical direction, not by rounding.** Discretizing an edge and reversing the
+   arrays must equal discretizing the reversed edge exactly. Three mechanisms, in order of strength:
+   - *A canonical direction.* Discretization always runs in the curve's increasing parameter.
+     Reversing an edge (ends swapped, `SameSense` flipped, citations flipped: `WithEdgeReversed`)
+     changes nothing `Discretize` reads, so the arrays are bit-identical
+     (`Law_EdgeReversalLeavesDiscretization`). Faces get the other direction only by `Reversed`,
+     which copies.
+   - *Subdivision at parameter midpoints*, and uniform splits computed from one end, so the result
+     is a function of the partition, not of a marching direction (curvature marching, OpenCascade's
+     `GCPnts_TangentialDeflection`, depends on its direction).
+   - *Criteria evaluated symmetrically.* The sample fractions `j / (k + 1)` are symmetric about one
+     half, the sagitta is a distance to the unoriented chord, the turning angle depends on points
+     only, and the tangent deviation orients the tangent with the segment. So a curve whose
+     parameterization is reflected (a duplicated edge from another exporter) yields the same point
+     set up to rounding. That case is not exact and no law claims it.
+
+3. **The two-space criterion.** The criteria are met along the 3D curve and along each image:
+   `Discretize` reads the edge's faces and pcurves (layers 1 and 2, allowed by the dependency rule)
+   and refines until the mapped straight image segment stays within the chordal bound of the 3D
+   chord (`Law_ImageChordWithinChordal`). The test is measured in 3D, against the same `Chordal`,
+   because a parameter-space length means nothing across surfaces whose metrics differ by orders of
+   magnitude (a cylinder of radius 500 mm has `u` in radians and `v` in millimetres). The image
+   points themselves lie on the pcurve within the `ParameterTolerance` (`Law_ImageFollowsPcurve`)
+   and on the surface at the polyline points within twice the `LengthTolerance`
+   (`Law_ImagePointReevaluates`). Faces whose loops still cross after this return requests, and
+   `Refine` answers them (decision 7).
+
+4. **What `Angular` means.** The turning angle between consecutive segments, as the brief and
+   OpenCascade define it, made to cover end segments and single-segment edges through the tangent
+   deviation (`Angular / 2` per segment). On circles both agree with every kernel studied. Capped at
+   a third of a turn.
+
+5. **Termination.** Every split made for a criterion leaves two chords of at least `MinLength`; the
+   chords of an inscribed polyline sum to at most the arc length `L`; so there are at most
+   `L / MinLength` such segments, plus fewer than the seed count of unsplit seed spans, plus fewer
+   than the count floor of floor splits (theorem `DiscretizeTerminates`). The conic path never goes
+   past its length cap or its floor. Without `MinLength`, refinement near a pole, a cusp, or nearly
+   coincident knots need not stop.
+
+6. **Every criterion is widened by the model's own tolerance.** A criterion exceeded by less than
+   the file's uncertainty is met: `Chordal + LengthTolerance` (which also covers end points that sit
+   up to the tolerance off the curve, research/MESHING-REQUIREMENTS.md 3.9), `Angular +
+   AngleTolerance`, `MaxLength + LengthTolerance`, `MinLength - LengthTolerance`. The image laws
+   allow twice the `LengthTolerance`: once for the pcurve's agreement with the curve, once for an end
+   point's distance from the curve. No literal epsilon appears in a law.
+
+7. **Exact equality only on copies.** End points (copied from vertices), seeds (copied into the
+   parameters), reversal, and refinement (old parameters kept) are compared with `==`. Every computed
+   comparison names a tolerance.
+
+8. **Refinement continues; it does not restart.** `RefineEdge` keeps every old parameter and bisects
+   further, so `Refine` never coarsens an edge (`Law_RefineNeverCoarsens`) and leaves unrequested
+   edges bit-identical (`Law_RefineKeepsUnrequestedEdges`). Requests on one edge combine: the
+   smallest `Chordal`, the largest `Segments`. A degenerate edge keeps its one segment.
+
+9. **Monotonicity in the chordal bound.** On the bisection path the seeds do not depend on the
+   bound and every test that fails at a looser bound fails at a tighter one, so the partitions nest
+   (research/VALIDATION-MATH.md 6.3). On the conic path the count is the least count at or above the
+   closed form for which the image criteria hold; a tighter bound starts the search no lower, so it
+   ends no lower, even though uniform partitions of different counts do not nest. Hence
+   `Law_TighterChordalNeverFewerPoints`, stated for the point count.
+
+10. **Model laws and library laws.** As in research/VALIDATION-MATH.md section 8: model laws take a
+    discretization as data, so validation can check any polyline against the criteria it claims;
+    `Discretize` promises them for its results. Library laws call this layer's functions and run on
+    witnesses. Laws over `BrepModel` or a discretization are never reached by the random-instance
+    runner (PLATO-PRIMER.md B.2); `Law_ArcCriteriaCountMeetsChordal` is the one over scalars and
+    small records, though it still takes a `DiscretizationCriteria`, whose `Limit` field the runner
+    cannot construct.
+
+## Laws
+
+Severity per SPEC-DSL.md section 4: Error for structural laws, W/E for a geometric criterion
+(Warning below ten times the criterion, Error above), Info for quality, "test" for a library law.
+"Floor" means the law is exempt on a segment the refinement floor stopped.
+
+| Law | Statement | Tolerance | Severity |
+|---|---|---|---|
+| `Law_ParameterCountEqualsPointCount` | one parameter per point | exact | Error |
+| `Law_AtLeastTwoParameters` | at least two samples | exact | Error |
+| `Law_ParametersStrictlyMonotone` | consecutive parameters move in the array's direction | exact | Error |
+| `Law_ParametersStrictlyIncreasing` | consecutive parameters increase (canonical values) | exact | Error |
+| `Law_LowestParameterIsDomainStart` | the lowest parameter is the domain start | exact (copied) | Error |
+| `Law_HighestParameterIsDomainEnd` | the highest parameter is the domain end | exact (copied) | Error |
+| `Law_PointsLieOnCurve` | `P_i` is within the tolerance of `C(t_i)` | `LengthTolerance` | Error |
+| `Law_DomainStartPointIsVertex` | the point at the domain start is the domain-start vertex | exact (copied) | Error |
+| `Law_DomainEndPointIsVertex` | the point at the domain end is the domain-end vertex | exact (copied) | Error |
+| `Law_SeedsAreSampled` | every seed is a parameter | exact (copied) | Error |
+| `Law_DegenerateEdgeHasOneSegment` | a degenerate edge has two parameters | exact | Error |
+| `Law_SagittaWithinChordal` | sampled sagitta at most the effective chordal bound, or floor | `Chordal + LengthTolerance` | W/E |
+| `Law_TangentDeviationWithinHalfAngular` | chord within half the angular bound of every sampled tangent, or floor | `Angular / 2 + AngleTolerance` | W/E |
+| `Law_TurningAngleWithinAngular` | turning angle at a non-seed joint at most the angular bound, or floor | `Angular + AngleTolerance` | W/E |
+| `Law_SegmentWithinMaxLength` | every chord within the length limit, or floor | `MaxLength + LengthTolerance` | W/E |
+| `Law_ShortSegmentIsForced` | a chord under `MinLength` is a whole seed span or the count is at its floor | `MinLength - LengthTolerance` | Info |
+| `Law_ClosedEdgeHasMinSegments` | a closed edge has at least `max(3, MinSegments)` segments | exact | Error |
+| `Law_SegmentFloorMet` | the count is at least `MinimumSegmentCount` | exact | Error |
+| `Law_ImageHasOnePointPerPoint` | an image has one point per polyline point | exact | Error |
+| `Law_ImageFollowsPcurve` | image point `i` is the pcurve at `t_i`, modulo periods | `ParameterTolerance` | W/E |
+| `Law_ImagePointReevaluates` | the surface at image point `i` is `P_i` | `2 LengthTolerance` | W/E |
+| `Law_ImageStepsAreUnwrapped` | consecutive image points are within half a period | exact | Error |
+| `Law_ImageChordWithinChordal` | the mapped straight image segment is within the chordal bound of the chord, or floor | `Chordal + 2 LengthTolerance` | W/E |
+| `Law_ReversedIsInvolution` | reversing twice gives the same arrays | exact | test |
+| `Law_ReversedReversesParameters` | parameter `i` becomes parameter `n - i` | exact | test |
+| `Law_ReversedReversesPoints` | point `i` becomes point `n - i` | exact | test |
+| `Law_OppositeUsesSeeReversedPoints` | opposite uses of an edge read the same points in opposite orders | exact | test |
+| `Law_EdgeReversalLeavesDiscretization` | reversing the edge in the model leaves its discretization bit-identical | exact | test |
+| `Law_TighterChordalNeverFewerPoints` | a tighter chordal bound never gives fewer points | exact | test |
+| `Law_RefineKeepsUnrequestedEdges` | unrequested edges are bit-identical after `Refine` | exact | test |
+| `Law_RefineNeverCoarsens` | every old parameter of a requested edge survives `Refine` | exact | test |
+| `Law_RefineMeetsRequestedSegments` | a requested count is met (degenerate edges excepted) | exact | test |
+| `Law_DiscretizationsIndexedByEdge` | entry `i` is the discretization of edge `i` | exact | Error |
+| `Law_DiscretizationsCoverEdges` | one entry per edge | exact | Error |
+| `Law_ArcCriteriaCountMeetsChordal` | the closed-form arc count meets the chordal bound | `Chordal + LengthTolerance` | test |
+
+## Left open
+
+- **Simplicity of a face's parameter-space polygon.** The image criterion bounds how far each
+  straight image segment strays, measured in 3D; it does not prove that a face whose exact loops are
+  simple gets a simple polygon, because the surface metric can collapse (poles) or the loops can
+  pass closer than the chordal bound. The feedback loop (`LoopSelfIntersects` requests, `Refine`,
+  a bounded number of rounds in layer 8) handles what remains. Layer 5 owns the region types and
+  can state the conjecture with its own predicates.
+- **Parameter tolerance.** The image laws use the model-wide `Tolerances.Parameter`. Near a pole one
+  number cannot match the length tolerance (research/VALIDATION-MATH.md open question 5); if layer 0
+  derives a per-surface or per-point parameter tolerance, `Law_ImageFollowsPcurve` should use it.
+- **Pcurves that do not share the curve's parameter.** `ImagePoints` evaluates the pcurve at the
+  edge curve's parameter. STEP does not guarantee that; layer 2 or 3 must detect a pcurve that fails
+  `Law_PcurveAgreesWithCurve` at shared parameters, and such an edge should be imaged by projection.
+- **Irregular parameterizations.** A zero derivative inside a span (coincident B-spline control
+  points) makes a sampled tangent deviation read 0 there (`AngleOrZero`). The turning-angle theorem
+  assumes a regular curve.
+- **Rational B-spline spans** have no certificate; their sagitta is sampled only, and the measured
+  maximum is what validation reports.
+- **Distinct-point floor for loops.** Only two-edge loops get a structural floor. A loop of three
+  edges one of which is degenerate can still have two distinct 3D points; no case is known in STEP
+  practice, but none is ruled out.
+- **Edges with an empty domain** fail `CanDiscretize`. `DiscretizeAll` requires every edge to pass;
+  the pipeline must diagnose and exclude such edges before calling it.
+- **`SamplePlan.Count`** is read here as the number of interior samples. `SamplePlan` is a proposed
+  layer-0 name; if layer 0 defines the count to include the end points, `InteriorFractions` changes.
+
+## Implementation notes
+
+- **Algorithm family.** Seeds first. Lines, circles, and ellipses: closed-form uniform split
+  (`ArcSegmentCount`; for an ellipse with semi-axes `a > b`, radius `a` for the chordal and length
+  bounds, the angular bound scaled by `b / a`, radius `b` for the length cap: the worst points of a
+  uniform split in its parameter are the ends of the major axis), then raised one segment at a time
+  until the image criteria hold. Everything else: adaptive bisection at parameter midpoints inside
+  each seed span, with the three-sample test, replaced by Wang's bound or the control-hull test on
+  polynomial Bezier spans (both are certificates, research/MESHING-REQUIREMENTS.md 3.2); then the
+  image test on each segment; then count-floor splits of the segment longest in parameter. Never
+  curvature marching (decision 2).
+- **Cost.** A curved edge of sweep `T` and radius `R` gets about `T sqrt(R / (8 d))` segments for
+  chordal bound `d`: the count grows as `d^(-1/2)` (research/VALIDATION-MATH.md 6.1), and as
+  `T / Angular` for small radii. Each candidate segment costs `k` curve evaluations (`k = 3`), plus
+  `k` surface evaluations per image (two images for an ordinary edge), plus one `Project` per point
+  for an image without a pcurve. Edges are independent, so `DiscretizeAll` parallelizes without
+  coordination. `FacesOfEdge` and `IsInTwoEdgeLoop` are quadratic as written; an implementation
+  builds the edge-to-face and edge-to-loop-size tables once per model.
+- **The angular criterion is not optional.** Area converges only when normals do (the Schwarz
+  lantern, research/VALIDATION-MATH.md 6.2); a chordal bound alone lets boundary chords of small
+  features turn through large angles.
+
+## Names used from layers 0 to 2
+
+Fixed names: `Tolerances` (`Length`, `Angle`, `Parameter` and their `Value`), `Periodicity`
+(`Aperiodic`, `Periodic`), `CurveDomain` (`Range`, `Periodicity`), `SurfaceDomain` (`U`, `V`),
+`CurveIndex`, `Curve2DIndex`, `PcurveIndex`, `SurfaceIndex`, `BrepVertexIndex`, `BrepEdgeIndex`,
+`BrepLoopIndex`, `BrepFaceIndex`; `GeometrySet` (`Curves`, `Curves2D`, `Pcurves`, `Surfaces`),
+`Pcurve` (`Surface`, `Curve`), `Domain(g, s)`, `Eval(g, c, t)`, `Eval(g, s, uv)`, `Derivative(g, c,
+t)`, `Project(g, s, p)` (in the spec); `BrepModel` and all nine fields, `BrepEdge`, `BrepVertex`,
+`BrepLoop` (`EdgeLoop`, `VertexLoop`, `PolyLoop`), `BrepFace` (`Surface`, `Bounds`), `FaceBound`
+(`Loop`), `Coedge`, `EdgeOrientation`, `IsVertexInRange`, `IsEdgeInRange`, `IsFaceInRange`,
+`EdgeDomain`, `CoedgeRunsForwardOnCurve(m, bound: FaceBound, coedge: Coedge)`, `Law_IndicesInRange(m)`.
+Proposed name: `SamplePlan { Count }`.
+
+Assumed of layer 2: `EdgeDomain(m, e).Range` is increasing in the curve's parameter and does not
+depend on the edge's `SameSense` (the edge-reversal laws rely on it).
+
+## Changes to the contract
+
+| Old | New | Reason |
+|---|---|---|
+| `EdgeRefinementRequest { Edge; Reason; Chordal }` | adds `Segments: Integer` (0 when not about counts) | a `QuadCountMismatch` request must carry the count it needs, and `Refine` takes no floors |
+| `EdgeDiscretization`: parameters strictly increasing | every value strictly monotone; canonical values (results of `Discretize`, entries of `EdgeDiscretizations`) strictly increasing | `Reversed` reverses both arrays, so its result decreases; SPEC-DSL.md's example spec lists `Reversed` as a constructor beside the increasing invariant, which cannot both hold |
+| `Sagitta(m, e, t0, t1)` | kept as the exact Hausdorff sagitta (deferred); new `SampledSagitta(m, d, plan, i)` for the laws | the brief asks for a sampled law with a sample plan; the exact value has no general closed form |
+| `TurningAngle(...)` | `TurningAngle(d, i): Angle`; new `TangentDeviation(m, d, plan, i): Angle` | fixes the signature; the second covers end segments and single-segment edges |
+| `Angular` (unspecified) | the turning angle at non-seed joints, and twice the tangent deviation per segment, capped at a third of a turn | research/MESHING-REQUIREMENTS.md finding 3 and recommendation 3; one meaning that agrees with every kernel on circles |
+| (new) | `EdgeImage { Face; Pcurve }`, `EdgeImages`, `ImagePoints`, `UvChordDeviation` | the two-space criterion needs a named parameter space per face and pcurve |
+| (new) | `SegmentCount`, `SegmentLength(d, i)`, `MinimumSegmentCount`, `ArcSegmentCount`, `EdgeSeeds`, `TotalTurning`, `CanDiscretize`, `RefineEdge`, `AlongCoedge`, `WithChordal`, `NoFloors`, `DefaultCriteria` | helpers the laws and the pipeline need |
+| (lower layers lack them) | declared here with `// belongs-in: 02-topology`: `IsClosedEdge`, `IsDegenerateEdge`, `CoedgeCount`, `CitesEdge`, `LoopUsesEdge`, `FaceUsesEdge`, `FacesOfEdge`, `Opposite`, `SwappedEnds`, `WithUsesFlipped`, `WithEdgeReversed`; with `// belongs-in: 01-geometry`: `PcurvesOf(g, c)`, `Eval(g, c: Curve2DIndex, t): UvCoordinate` | the contract fixes no topology queries over loops, no pcurve accessor on a curve, and no 2D curve evaluation |
+
+Two corrections to the shared documents, found while gating: PLATO-PRIMER.md A.2 says the compiler
+derives per-field setters (`c.WithRadius(2.0)`); the front end does not (`Could not find symbol
+WithStart`), and the stdlib declares its setters by hand (`WithNext` in
+`triangulation.library.plato`). And SPEC-DSL.md's example writes `m.EdgeDomain(e).Start`, where
+`CurveDomain` has the field `Range`, so the fixed spelling is `m.EdgeDomain(e).Range.Start`.

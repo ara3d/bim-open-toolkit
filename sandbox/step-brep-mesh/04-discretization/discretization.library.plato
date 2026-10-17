@@ -1,0 +1,624 @@
+//==
+// # Edge discretization
+//
+// Sections, in order:
+//  - Criteria
+//  - Edge facts
+//  - Lower-layer declarations the contract lacks
+//  - Segment-count floors
+//  - Circular arcs in closed form
+//  - Segment measures
+//  - Parameter-space images
+//  - Discretizing and orienting
+//  - Refinement
+
+library EdgeDiscretizing
+{
+    //==
+    // # Criteria
+    //
+    // The criteria record is model-independent. The model's own tolerances enter here, once: a
+    // chordal bound or a minimum length below the file's `LengthTolerance` is meaningless, and an
+    // angular bound above a third of a turn would let one chord span a third of a periodic face.
+
+    // The recommended criteria for a chordal bound (research/MESHING-REQUIREMENTS.md 2.5): 15
+    // degrees, no length limit, a minimum length of a tenth of the chordal bound, and 3 segments
+    // per closed edge.
+    DefaultCriteria(chordal: Number): DiscretizationCriteria
+        => (chordal, 15.0.Degrees, Limit.Unlimited, 0.1 * chordal, 3);
+
+    // The criteria can be met by some discretization: positive bounds, at least one segment per
+    // closed edge, and room to halve a segment at the length limit without going under the
+    // minimum length.
+    IsWellFormed(c: DiscretizationCriteria): Boolean
+        => c.Chordal > 0.0
+            && c.Angular.Radians > 0.0
+            && c.MinLength > 0.0
+            && c.MinSegments >= 1
+            && c.MaxLength.IsAtLeastTwice(c.MinLength);
+
+    // True when `x` respects the limit.
+    IsWithinLimit(x: Number, l: Limit): Boolean
+        => match (l)
+        {
+            Unlimited => true;
+            AtMost(v) => x <= v;
+        };
+
+    // True when the limit is at least twice `x`, so a chord at the limit can be halved into
+    // pieces no shorter than `x`.
+    IsAtLeastTwice(l: Limit, x: Number): Boolean
+        => match (l)
+        {
+            Unlimited => true;
+            AtMost(v) => v >= 2.0 * x;
+        };
+
+    // The same criteria with another chordal bound.
+    WithChordal(c: DiscretizationCriteria, chordal: Number): DiscretizationCriteria
+        => (chordal, c.Angular, c.MaxLength, c.MinLength, c.MinSegments);
+
+    // The chordal bound actually applied: never below the model's length tolerance.
+    EffectiveChordal(c: DiscretizationCriteria, t: Tolerances): Number
+        => c.Chordal.Max(t.Length.Value);
+
+    // The refinement floor actually applied: never below the model's length tolerance, so no
+    // refinement makes two polyline points coincide.
+    EffectiveMinLength(c: DiscretizationCriteria, t: Tolerances): Number
+        => c.MinLength.Max(t.Length.Value);
+
+    // The angular bound actually applied: never above a third of a turn, so no segment of a
+    // closed curve turns through more than a third of it.
+    EffectiveAngular(c: DiscretizationCriteria): Angle
+        => c.Angular.Radians <= Number.Tau / 3.0 ? c.Angular : Angle(Number.Tau / 3.0);
+
+    // The least segment count of a closed edge: `MinSegments`, and never below 3, since a closed
+    // polyline of one or two segments encloses no area.
+    ClosedEdgeMinimum(c: DiscretizationCriteria): Integer
+        => c.MinSegments.Max(3);
+
+    //==
+    // # Edge facts
+    //
+    // Small compositions over the model that the laws and the algorithm share. The canonical
+    // direction is the edge curve's increasing parameter, whatever the edge's `SameSense`.
+
+    // The edge, its two vertices, and its curve are all in range, so the edge can be evaluated.
+    IsEdgeEvaluable(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEdgeInRange(e)
+            ? (m.IsVertexInRange(m.Edges[e].Start)
+                && m.IsVertexInRange(m.Edges[e].End)
+                && m.Geometry.Curves.IsValidIndex(m.Edges[e].Curve))
+            : false;
+
+    // The discretization can be evaluated against the model: its edge is evaluable, its arrays
+    // have one entry per sample and at least two, and every parameter lies in the edge domain.
+    IsEvaluable(m: BrepModel, d: EdgeDiscretization): Boolean
+        => m.IsEdgeEvaluable(d.Edge)
+            ? (d.Parameters.Count == d.Points.Count
+                && d.Parameters.Count >= 2
+                && d.Parameters.All(t => m.EdgeDomain(d.Edge).Range.Contains(t)))
+            : false;
+
+    // The point of the edge's curve at parameter t.
+    PointOnEdge(m: BrepModel, e: BrepEdgeIndex, t: Number): Point3D
+        => m.Geometry.Eval(m.Edges[e].Curve, t);
+
+    // The derivative of the edge's curve at parameter t, pointing towards increasing t.
+    TangentOnEdge(m: BrepModel, e: BrepEdgeIndex, t: Number): Vector3D
+        => m.Geometry.Derivative(m.Edges[e].Curve, t);
+
+    // The vertex at the start of the edge domain in the curve's parameter: the edge's `Start`
+    // when the edge runs with its curve, its `End` otherwise.
+    DomainStartVertex(m: BrepModel, e: BrepEdgeIndex): BrepVertexIndex
+        => m.Edges[e].SameSense ? m.Edges[e].Start : m.Edges[e].End;
+
+    // The vertex at the end of the edge domain in the curve's parameter.
+    DomainEndVertex(m: BrepModel, e: BrepEdgeIndex): BrepVertexIndex
+        => m.Edges[e].SameSense ? m.Edges[e].End : m.Edges[e].Start;
+
+    // deferred: the parameters at which every discretization of the edge must sample, sorted
+    // increasing: the domain start, every polyline vertex, composite-segment joint, and distinct
+    // B-spline knot strictly inside the domain, and the domain end. Interior seeds closer than the
+    // `ParameterTolerance` to a neighbour are dropped. Depends on the curve and the domain only.
+    EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>;
+
+    // True when t is one of the edge's seeds. Exact equality: a seed is copied into the
+    // discretization, never recomputed.
+    IsSeedParameter(m: BrepModel, e: BrepEdgeIndex, t: Number): Boolean
+        => m.EdgeSeeds(e).Any(s => s == t);
+
+    // deferred: the total turning of the curve's tangent over the edge domain (the integral of
+    // curvature with respect to arc length): the swept angle for a circle, the angle between the
+    // end tangents for a convex ellipse arc, zero for a line, a quadrature over the seed spans
+    // otherwise.
+    TotalTurning(m: BrepModel, e: BrepEdgeIndex): Angle;
+
+    // True when the edge is used by an edge loop of exactly two coedges. Two single-segment
+    // edges would make that loop a digon of zero area, so each such edge gets two segments.
+    IsInTwoEdgeLoop(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.Loops.Any(l => l.CoedgeCount == 2 && l.CitesEdge(e));
+
+    //==
+    // # Lower-layer declarations the contract lacks
+    //
+    // Each is needed here and belongs in a lower layer; the supervising session moves it, or
+    // replaces it with that layer's own declaration, when the layers are merged.
+
+    // belongs-in: 02-topology
+    // A closed edge: one vertex at both ends and a curve that is not collapsed to a point. Its
+    // domain spans the curve's full period.
+    IsClosedEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.Edges[e].Start == m.Edges[e].End ? !m.IsDegenerateEdge(e) : false;
+
+    // belongs-in: 02-topology
+    // deferred: a degenerate edge: its curve's image over the edge domain lies within the
+    // `LengthTolerance` of one point (a pole, a cone apex); closed form for analytic curves, a
+    // control-hull bound for B-splines.
+    IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean;
+
+    // belongs-in: 02-topology
+    // The number of coedges of a loop; 0 for a vertex loop or a poly loop.
+    CoedgeCount(l: BrepLoop): Integer
+        => match (l)
+        {
+            EdgeLoop(coedges) => coedges.Count;
+            VertexLoop(vertex) => 0;
+            PolyLoop(points) => 0;
+        };
+
+    // belongs-in: 02-topology
+    // True when the loop cites the edge.
+    CitesEdge(l: BrepLoop, e: BrepEdgeIndex): Boolean
+        => match (l)
+        {
+            EdgeLoop(coedges) => coedges.Any(c => c.Edge == e);
+            VertexLoop(vertex) => false;
+            PolyLoop(points) => false;
+        };
+
+    // belongs-in: 02-topology
+    // True when the loop at index l cites the edge.
+    LoopUsesEdge(m: BrepModel, l: BrepLoopIndex, e: BrepEdgeIndex): Boolean
+        => m.Loops[l].CitesEdge(e);
+
+    // belongs-in: 02-topology
+    // True when one of the face's bounds cites the edge.
+    FaceUsesEdge(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
+        => m.Faces[f].Bounds.Any(b => m.LoopUsesEdge(b.Loop, e));
+
+    // belongs-in: 02-topology
+    // The faces whose bounds cite the edge, each once, in face order. Quadratic as written; an
+    // implementation builds an edge-to-face table once per model.
+    FacesOfEdge(m: BrepModel, e: BrepEdgeIndex): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(i => BrepFaceIndex(i))
+            .FlatMap(f => Repeat(m.FaceUsesEdge(f, e) ? 1 : 0, f));
+
+    // belongs-in: 02-topology
+    // The other orientation.
+    Opposite(o: EdgeOrientation): EdgeOrientation
+        => match (o)
+        {
+            Forward => EdgeOrientation.Reversed;
+            Reversed => EdgeOrientation.Forward;
+        };
+
+    // belongs-in: 02-topology
+    // The same edge traversed the other way: ends swapped and the sense flipped, so it runs over
+    // the same curve points in the opposite direction.
+    SwappedEnds(edge: BrepEdge): BrepEdge
+        => BrepEdge(edge.End, edge.Start, edge.Curve, !edge.SameSense);
+
+    // belongs-in: 02-topology
+    // The loop with every citation of the edge flipped.
+    WithUsesFlipped(l: BrepLoop, e: BrepEdgeIndex): BrepLoop
+        => match (l)
+        {
+            EdgeLoop(coedges) => BrepLoop.EdgeLoop(
+                coedges.Map(c => c.Edge == e ? Coedge(c.Edge, c.Orientation.Opposite) : c));
+            VertexLoop(vertex) => l;
+            PolyLoop(points) => l;
+        };
+
+    // belongs-in: 02-topology
+    // The model with one edge reversed: its ends swapped, its sense flipped, and every citation
+    // of it flipped. The same solid with the same faces; the metamorphic input of the
+    // edge-reversal laws (research/VALIDATION-MATH.md 6.4).
+    WithEdgeReversed(m: BrepModel, e: BrepEdgeIndex): BrepModel
+        => BrepModel(
+            m.Geometry,
+            m.Vertices,
+            m.Edges.Count.MapRange(i => i == e.Value ? m.Edges[i].SwappedEnds : m.Edges[i]),
+            m.Loops.Map(l => l.WithUsesFlipped(e)),
+            m.Faces,
+            m.Shells,
+            m.Bodies,
+            m.Tolerances,
+            m.Unit);
+
+    // belongs-in: 01-geometry
+    // deferred: the pcurves a curve carries: the associated pcurves of the `OnSurface` case
+    // (STEP `surface_curve`, `seam_curve`), empty for every other case.
+    PcurvesOf(g: GeometrySet, c: CurveIndex): Array<PcurveIndex>;
+
+    // belongs-in: 01-geometry
+    // deferred: a 2D curve of the arena evaluated at parameter t, as natural surface parameters.
+    Eval(g: GeometrySet, c: Curve2DIndex, t: Number): UvCoordinate;
+
+    //==
+    // # Segment-count floors
+    //
+    // Counts the criteria cannot lower and `MinLength` cannot override: what the caller asks for,
+    // what a closed edge needs, what a two-edge loop needs, and a third of a turn per segment.
+
+    // No floors: the default.
+    NoFloors(_: SegmentFloors): SegmentFloors
+        => SegmentFloors(0.MapRange(i => 0));
+
+    // The caller's floor for one edge; 0 when the array does not reach it.
+    FloorOf(floors: SegmentFloors, e: BrepEdgeIndex): Integer
+        => floors.ByEdge.IsValidIndex(e) ? floors.ByEdge[e] : 0;
+
+    // Enough segments that none spans more than a third of the curve's total turning
+    // (research/MESHING-REQUIREMENTS.md 3.6): an element of a periodic face then never spans half
+    // a period, where it could fold.
+    TurnFloor(m: BrepModel, e: BrepEdgeIndex): Integer
+        => (m.TotalTurning(e).Radians / (Number.Tau / 3.0)).Ceiling.ToInteger.Max(1);
+
+    // The least segment count of the edge: exactly 1 for a degenerate edge, otherwise the largest
+    // of the caller's floor, the closed-edge minimum, 2 inside a two-edge loop, and the turn floor.
+    MinimumSegmentCount(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Integer
+        => m.IsDegenerateEdge(e)
+            ? 1
+            : floors.FloorOf(e)
+                .Max(m.IsClosedEdge(e) ? c.ClosedEdgeMinimum : 1)
+                .Max(m.IsInTwoEdgeLoop(e) ? 2 : 1)
+                .Max(m.TurnFloor(e));
+
+    //==
+    // # Circular arcs in closed form
+    //
+    // On a circle of radius R a chord spanning central angle theta has sagitta R (1 - cos(theta/2))
+    // and length 2 R sin(theta/2); each of the three criteria is monotone in theta, so the uniform
+    // count is a ceiling of the sweep over the smallest admissible angle (research/
+    // MESHING-REQUIREMENTS.md 3.1). The same counts size the columns of analytic face grids.
+
+    // The sagitta of a chord of a circle of the given radius spanning the given central angle.
+    ArcSagitta(radius: Number, theta: Angle): Number
+        => radius * (1.0 - (theta * 0.5).Cos);
+
+    // The largest central angle whose chord has sagitta at most `chordal`: 2 acos(1 - d/R), or a
+    // full turn when `chordal` reaches the diameter.
+    ChordalArcAngle(radius: Number, chordal: Number): Angle
+        => chordal < 2.0 * radius ? (1.0 - chordal / radius).Acos * 2.0 : Angle(Number.Tau);
+
+    // The central angle whose chord has the given length: 2 asin(L / 2R), a half turn when the
+    // length reaches the diameter.
+    LengthArcAngle(radius: Number, length: Number): Angle
+        => (length / (2.0 * radius)).Min(1.0).Asin * 2.0;
+
+    // The largest central angle whose chord respects the limit.
+    LimitArcAngle(radius: Number, l: Limit): Angle
+        => match (l)
+        {
+            Unlimited => Angle(Number.Tau);
+            AtMost(v) => radius.LengthArcAngle(v);
+        };
+
+    // The uniform segment count the criteria ask for on an arc of the given sweep.
+    ArcCriteriaCount(radius: Number, sweep: Angle, c: DiscretizationCriteria, t: Tolerances): Integer
+    {
+        var step = radius.ChordalArcAngle(c.EffectiveChordal(t)).Radians
+            .Min(c.EffectiveAngular.Radians)
+            .Min(radius.LimitArcAngle(c.MaxLength).Radians);
+        return (sweep.Radians / step).Ceiling.ToInteger.Max(1);
+    }
+
+    // The largest uniform segment count whose chords are no shorter than the effective minimum
+    // length; 1 when even one chord would be shorter.
+    ArcLengthCap(radius: Number, sweep: Angle, c: DiscretizationCriteria, t: Tolerances): Integer
+    {
+        var shortest = c.EffectiveMinLength(t);
+        return shortest < 2.0 * radius
+            ? (sweep.Radians / radius.LengthArcAngle(shortest).Radians).Floor.ToInteger.Max(1)
+            : 1;
+    }
+
+    // The segment count of a circular arc: what the criteria ask for, capped by the minimum
+    // length, and never below `least` (the edge's `MinimumSegmentCount`).
+    ArcSegmentCount(radius: Number, sweep: Angle, c: DiscretizationCriteria, t: Tolerances, least: Integer): Integer
+        => least.Max(radius.ArcCriteriaCount(sweep, c, t).Min(radius.ArcLengthCap(sweep, c, t)));
+
+    //==
+    // # Segment measures
+    //
+    // Segment i joins Points[i] to Points[i + 1]. Each measure is defined for either direction of
+    // the arrays. The sampled measures use the plan's interior samples only, so they never
+    // evaluate a tangent at a seed, where the curve may have a corner.
+
+    // The number of segments.
+    SegmentCount(d: EdgeDiscretization): Integer
+        => d.Parameters.Count - 1;
+
+    // The length of segment i's chord.
+    SegmentLength(d: EdgeDiscretization, i: Integer): Number
+        => d.Points[i].Distance(d.Points[i + 1]);
+
+    // The plan's sample positions strictly inside a segment, as fractions j / (k + 1) for
+    // j = 1 .. k, k the plan's count (at least 1). Symmetric about one half; a plan of 3 gives the
+    // quarter points and the midpoint (research/MESHING-REQUIREMENTS.md 3.5).
+    InteriorFractions(plan: SamplePlan): Array<Number>
+        => plan.Count.Max(1).MapRange(j => (j + 1).ToNumber / (plan.Count.Max(1) + 1).ToNumber);
+
+    // The plan the discretizer tests every candidate segment with: three interior samples.
+    DiscretizationPlan(_: SamplePlan): SamplePlan
+        => SamplePlan(3);
+
+    // deferred: the Hausdorff distance between the chord from C(t0) to C(t1) and the arc
+    // C([t0, t1]) of the edge's curve. For a convex arc turning less than half a turn it is the
+    // largest distance from the arc to the chord's line. Closed form for a line (0), a circle
+    // (R (1 - cos(dt / 2))), and an ellipse (the distance of the parametric midpoint from the
+    // chord's line, an affine image of the circle case); a control-hull bound per polynomial
+    // Bezier span; sampled for rational spans.
+    Sagitta(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number;
+
+    // The largest distance from the curve, at the plan's interior samples of segment i, to the
+    // segment's chord. A lower bound on the segment's sagitta, exact on circles at the midpoint.
+    SampledSagitta(m: BrepModel, d: EdgeDiscretization, plan: SamplePlan, i: Integer): Number
+    {
+        var t0 = d.Parameters[i];
+        var t1 = d.Parameters[i + 1];
+        return plan.InteriorFractions.Reduce(0.0, (worst, f) =>
+            worst.Max(DistanceToSegment(d.Points[i], d.Points[i + 1], m.PointOnEdge(d.Edge, t0 + (t1 - t0) * f))));
+    }
+
+    // The angle between two vectors, 0 when either is zero.
+    AngleOrZero(u: Vector3D, v: Vector3D): Angle
+        => u.LengthSquared * v.LengthSquared > 0.0 ? u.AngleBetween(v) : Angle(0.0);
+
+    // The largest angle between segment i's chord and the curve's tangent at the plan's interior
+    // samples, the tangent oriented with the segment. On a circle it tends to half the central
+    // angle as the plan grows.
+    TangentDeviation(m: BrepModel, d: EdgeDiscretization, plan: SamplePlan, i: Integer): Angle
+    {
+        var t0 = d.Parameters[i];
+        var t1 = d.Parameters[i + 1];
+        var chord = d.Points[i + 1] - d.Points[i];
+        return Angle(plan.InteriorFractions.Reduce(0.0, (worst, f) =>
+            worst.Max(chord.AngleOrZero(m.TangentOnEdge(d.Edge, t0 + (t1 - t0) * f) * (t1 - t0)).Radians)));
+    }
+
+    // The turning angle at interior point i (1 <= i <= count - 2): the angle between the chords of
+    // segments i - 1 and i. Equal to the central angle per segment on a uniformly split circle.
+    TurningAngle(d: EdgeDiscretization, i: Integer): Angle
+        => (d.Points[i] - d.Points[i - 1]).AngleOrZero(d.Points[i + 1] - d.Points[i]);
+
+    // True when halving segment i at its parameter midpoint would leave a piece shorter than the
+    // effective minimum length: the refinement floor has stopped this segment.
+    IsAtLengthFloor(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, i: Integer): Boolean
+    {
+        var middle = m.PointOnEdge(d.Edge, (d.Parameters[i] + d.Parameters[i + 1]) * 0.5);
+        var shortest = c.EffectiveMinLength(m.Tolerances);
+        return d.Points[i].Distance(middle) < shortest || middle.Distance(d.Points[i + 1]) < shortest;
+    }
+
+    // True when both ends of segment i are seeds: the segment is a whole seed span.
+    IsSeedSegment(m: BrepModel, d: EdgeDiscretization, i: Integer): Boolean
+        => m.IsSeedParameter(d.Edge, d.Parameters[i]) && m.IsSeedParameter(d.Edge, d.Parameters[i + 1]);
+
+    //==
+    // # Parameter-space images
+    //
+    // A face joins consecutive boundary samples by straight segments in its parameter space. The
+    // 3D chord is the same for both faces, so watertightness does not depend on the image; the
+    // validity of each face's parameter-space polygon does. So the criteria are also met on the
+    // image: the straight image segment, mapped onto the surface, stays within the chordal bound of
+    // the 3D chord (the test of research/MESHING-REQUIREMENTS.md 3.7).
+
+    // The parameter spaces the edge is drawn in: for every face that uses it, one image per
+    // pcurve of the edge on that face's surface, or one image through `Project` when there is none.
+    EdgeImages(m: BrepModel, e: BrepEdgeIndex): Array<EdgeImage>
+        => m.FacesOfEdge(e).FlatMap(f => m.ImagesOnFace(e, f));
+
+    // The images of the edge on one face.
+    ImagesOnFace(m: BrepModel, e: BrepEdgeIndex, f: BrepFaceIndex): Array<EdgeImage>
+    {
+        var s = m.Faces[f].Surface;
+        var pcurves = m.Geometry.PcurvesOf(m.Edges[e].Curve)
+            .FlatMap(p => Repeat(m.Geometry.Pcurves[p].Surface == s ? 1 : 0, p));
+        return pcurves.Count == 0
+            ? [EdgeImage(f, PcurveIndex(-1))]
+            : pcurves.Map(p => EdgeImage(f, p));
+    }
+
+    // The surface an image lives on: its face's surface.
+    ImageSurface(m: BrepModel, img: EdgeImage): SurfaceIndex
+        => m.Faces[img.Face].Surface;
+
+    // The image's face, surface, and pcurve (when present) are in range.
+    IsImageEvaluable(m: BrepModel, img: EdgeImage): Boolean
+        => m.IsFaceInRange(img.Face)
+            ? (m.Geometry.Surfaces.IsValidIndex(m.Faces[img.Face].Surface)
+                ? (img.Pcurve.IsNone
+                    ? true
+                    : (m.Geometry.Pcurves.IsValidIndex(img.Pcurve)
+                        ? m.Geometry.Curves2D.IsValidIndex(m.Geometry.Pcurves[img.Pcurve].Curve)
+                        : false))
+                : false)
+            : false;
+
+    // deferred: the polyline's points drawn in the image's parameter space, one per point. With a
+    // pcurve: the pcurve evaluated at each parameter (the pcurve shares the edge curve's
+    // parameter). Without: `Project` of each point onto the surface, each result unwrapped to
+    // within half a period of its predecessor, and a point on a degenerate side of the surface (a
+    // pole) given the `U` (or `V`) of its neighbour along the polyline, since `Project` leaves it
+    // arbitrary there.
+    ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvCoordinate>;
+
+    // A parameter difference reduced to the shortest equivalent one in a periodic direction:
+    // unchanged when aperiodic, otherwise within half a period of zero.
+    PeriodicGap(x: Number, p: Periodicity): Number
+        => match (p)
+        {
+            Aperiodic => x;
+            Periodic(period) => x - period * (x / period).Round(0);
+        };
+
+    // The distance between two points of a parameter space, each periodic direction taken modulo
+    // its period.
+    UvGap(dom: SurfaceDomain, a: UvCoordinate, b: UvCoordinate): Number
+        => Vector2D((a.U - b.U).PeriodicGap(dom.U.Periodicity), (a.V - b.V).PeriodicGap(dom.V.Periodicity)).Length;
+
+    // True when the step from a to b is unwrapped: in each periodic direction it is at most half
+    // a period long.
+    IsUnwrappedStep(dom: SurfaceDomain, a: UvCoordinate, b: UvCoordinate): Boolean
+        => (b.U - a.U).IsUnwrappedIn(dom.U.Periodicity) && (b.V - a.V).IsUnwrappedIn(dom.V.Periodicity);
+
+    // True when a parameter difference is at most half a period long, or the direction is
+    // aperiodic.
+    IsUnwrappedIn(x: Number, p: Periodicity): Boolean
+        => match (p)
+        {
+            Aperiodic => true;
+            Periodic(period) => 2.0 * x.Abs <= period;
+        };
+
+    // A parameter clamped into an aperiodic domain direction; unchanged in a periodic one.
+    ClampInto(cd: CurveDomain, x: Number): Number
+        => match (cd.Periodicity)
+        {
+            Aperiodic => cd.Range.Clamp(x);
+            Periodic(period) => x;
+        };
+
+    // A parameter-space point clamped into the surface's domain, so a law never evaluates the
+    // surface outside it.
+    ClampToDomain(dom: SurfaceDomain, uv: UvCoordinate): UvCoordinate
+        => UvCoordinate(dom.U.ClampInto(uv.U), dom.V.ClampInto(uv.V));
+
+    // The largest distance from the 3D chord [a, b] to the surface evaluated along the straight
+    // parameter-space segment [ua, ub], at the plan's interior samples.
+    UvChordDeviation(m: BrepModel, s: SurfaceIndex, a: Point3D, b: Point3D, ua: UvCoordinate, ub: UvCoordinate, plan: SamplePlan): Number
+    {
+        var dom = m.Geometry.Domain(s);
+        return plan.InteriorFractions.Reduce(0.0, (worst, f) =>
+            worst.Max(DistanceToSegment(a, b, m.Geometry.Eval(s, dom.ClampToDomain(ua.Lerp(ub, f))))));
+    }
+
+    // `UvChordDeviation` for every segment of the polyline in one image; empty when the image
+    // does not have one point per polyline point.
+    ImageChordDeviations(m: BrepModel, d: EdgeDiscretization, img: EdgeImage, plan: SamplePlan): Array<Number>
+    {
+        var uvs = m.ImagePoints(d, img);
+        var s = m.ImageSurface(img);
+        return uvs.Count == d.Points.Count
+            ? d.SegmentCount.MapRange(i => m.UvChordDeviation(s, d.Points[i], d.Points[i + 1], uvs[i], uvs[i + 1], plan))
+            : 0.MapRange(i => 0.0);
+    }
+
+    // The parameter-space distance between image point i and the pcurve at parameter i; 0 when
+    // the image has no pcurve or no point i.
+    PcurveGap(m: BrepModel, d: EdgeDiscretization, img: EdgeImage, i: Integer): Number
+    {
+        var uvs = m.ImagePoints(d, img);
+        return img.Pcurve.IsNone || !uvs.IsValidIndex(i)
+            ? 0.0
+            : m.Geometry.Domain(m.ImageSurface(img))
+                .UvGap(uvs[i], m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, d.Parameters[i]));
+    }
+
+    //==
+    // # Discretizing and orienting
+    //
+    // Discretization always runs in the canonical direction, the curve's increasing parameter; a
+    // face gets the other direction only by `Reversed`, never by recomputing. That is the whole
+    // symmetry argument: an edge and its reversal have the same curve, domain, seeds, floors, and
+    // images, so they get the same arrays bit for bit.
+
+    // The preconditions of `Discretize`: the model's indices are in range, the criteria are well
+    // formed, and the edge is evaluable with a domain of positive extent.
+    CanDiscretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Boolean
+        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsEdgeEvaluable(e))
+            ? m.EdgeDomain(e).Range.Start < m.EdgeDomain(e).Range.End
+            : false;
+
+    // deferred: the canonical discretization of one edge. Seeds first (`EdgeSeeds`). A line,
+    // circle, or ellipse is split uniformly in its parameter into a closed-form count
+    // (`ArcSegmentCount`; for an ellipse with semi-axes a > b, the circle formulas at its worst
+    // points: radius a for the chordal and length bounds, the angular bound scaled by b / a, radius
+    // b for the length cap), raised one at a time until every image criterion holds or the length
+    // cap is reached. Every other curve is bisected at parameter midpoints, seed span by
+    // seed span, while a criterion fails on a segment (sampled with `DiscretizationPlan`, or
+    // certified by a control-hull bound on polynomial spans) and both halves would be at least the
+    // effective minimum length; then the segment longest in parameter is halved, one at a time,
+    // until `MinimumSegmentCount` is reached. A degenerate edge gets its two domain ends and its
+    // vertex point twice.
+    Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization;
+
+    // The canonical discretization of every edge, indexed by edge. Each edge is independent of the
+    // others, so this is a map and parallel without coordination.
+    DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
+        => EdgeDiscretizations(m.Edges.Count.MapRange(i => m.Discretize(BrepEdgeIndex(i), c, floors)));
+
+    // True when the parameters increase along the arrays: the canonical direction. Precondition:
+    // at least one parameter.
+    RunsAlongCurve(d: EdgeDiscretization): Boolean
+        => d.Parameters.First < d.Parameters.Last;
+
+    // True when t is one of the parameters. Exact equality: for parameters copied from elsewhere
+    // (a seed, the partition before a refinement).
+    ContainsParameter(d: EdgeDiscretization, t: Number): Boolean
+        => d.Parameters.Any(x => x == t);
+
+    // The same polyline traversed the other way: both arrays reversed, the edge kept. An
+    // involution; copies only, so a reversed point is bit-identical to its original.
+    Reversed(d: EdgeDiscretization): EdgeDiscretization
+        => EdgeDiscretization(
+            d.Edge,
+            d.Parameters.Count.MapRange(i => d.Parameters[d.Parameters.Count - 1 - i]),
+            d.Points.Count.MapRange(i => d.Points[d.Points.Count - 1 - i]));
+
+    // The polyline a coedge consumes inside a face bound: the discretization in the direction the
+    // coedge runs on the curve. The one place the sharing principle is applied: the two uses of an
+    // edge read the same arrays, one of them reversed.
+    AlongCoedge(m: BrepModel, d: EdgeDiscretization, bound: FaceBound, coedge: Coedge): EdgeDiscretization
+        => m.CoedgeRunsForwardOnCurve(bound, coedge) == d.RunsAlongCurve ? d : d.Reversed;
+
+    //==
+    // # Refinement
+    //
+    // Face meshing may find that an edge's polyline is still too coarse for one of its faces (a
+    // loop crosses itself in parameter space, a structured grid needs a higher count). It returns
+    // requests; the pipeline refines those edges and re-meshes their faces, a bounded number of
+    // times. Refinement continues from the existing polyline, so it only ever adds points, and the
+    // edge still has exactly one discretization at every moment.
+
+    // True when some request names the edge.
+    IsRequested(requests: Array<EdgeRefinementRequest>, e: BrepEdgeIndex): Boolean
+        => requests.Any(r => r.Edge == e);
+
+    // The smallest chordal bound requested for the edge, or `current` when none is smaller.
+    RequestedChordal(requests: Array<EdgeRefinementRequest>, e: BrepEdgeIndex, current: Number): Number
+        => requests.Reduce(current, (x, r) => r.Edge == e ? x.Min(r.Chordal) : x);
+
+    // The largest segment count requested for the edge, 0 when none.
+    RequestedSegments(requests: Array<EdgeRefinementRequest>, e: BrepEdgeIndex): Integer
+        => requests.Reduce(0, (x, r) => r.Edge == e ? x.Max(r.Segments) : x);
+
+    // deferred: the canonical discretization `d` refined under criteria `c`: bisection continued
+    // from d's partition at parameter midpoints, by the same tests and the same minimum-length
+    // rule as `Discretize`; then the segment longest in parameter halved, one at a time, until the
+    // count reaches `segments`. Every parameter of d is kept.
+    RefineEdge(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, segments: Integer): EdgeDiscretization;
+
+    // The discretizations with every requested edge refined to the smallest requested chordal
+    // bound and the largest requested count, and every other edge left as it is.
+    Refine(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): EdgeDiscretizations
+        => EdgeDiscretizations(d.ByEdge.Map(old =>
+            requests.IsRequested(old.Edge)
+                ? m.RefineEdge(
+                    old,
+                    c.WithChordal(requests.RequestedChordal(old.Edge, c.Chordal)),
+                    requests.RequestedSegments(old.Edge))
+                : old));
+}
