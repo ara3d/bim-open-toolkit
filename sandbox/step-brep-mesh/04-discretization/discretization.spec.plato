@@ -9,7 +9,6 @@
 // Sections, in order:
 //  - Types
 //  - Deferred functions
-//  - Lower-layer declarations made here
 //  - Functions with bodies that construct a discretization
 //  - Theorems
 
@@ -158,18 +157,6 @@ spec ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvC
     ensures forall (i: Integer) in 0.UpTo(result.Count) : m.Geometry.Domain(m.ImageSurface(img)).UvGap(m.ImagePoints(d.Reversed, img)[result.Count - 1 - i], result[i]) <= m.Tolerances.Parameter.Value;
     measure d.Points.Count;
     deferred "pcurve evaluation; otherwise Project seeded by the previous point's parameters, unwrapped, with a pole's free parameter taken from its neighbour";
-}
-
-//==
-// Lower-layer declarations made here
-
-// belongs-in: 02-topology
-spec IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
-{
-    requires m.IsEdgeEvaluable(e);
-    ensures result == forall (t: Number) in m.EdgeDomain(e).Range : m.PointOnEdge(e, t).Distance(m.PointOnEdge(e, m.EdgeDomain(e).Range.Start)) <= m.Tolerances.Length.Value;
-    measure m.EdgeSeeds(e).Count;
-    deferred "radius or extent below the length tolerance for analytic curves; every control point within the tolerance of the first for B-splines";
 }
 
 //==

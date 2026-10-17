@@ -134,6 +134,13 @@ library EdgeDiscretizing
     // otherwise.
     TotalTurning(m: BrepModel, e: BrepEdgeIndex): Angle;
 
+    // A closed edge that is not degenerate: one vertex at both ends (layer 2's `IsClosedEdge`)
+    // and a curve that does not collapse to that vertex (layer 2's `IsDegenerateEdge`). Its domain
+    // spans the curve's full period, and it needs the closed-edge minimum count; a degenerate
+    // closed edge (a pole) keeps one segment.
+    IsClosedRegularEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsClosedEdge(e) ? !m.IsDegenerateEdge(e) : false;
+
     // True when the edge is used by an edge loop of exactly two coedges. Two single-segment
     // edges would make that loop a digon of zero area, so each such edge gets two segments.
     IsInTwoEdgeLoop(m: BrepModel, e: BrepEdgeIndex): Boolean
@@ -144,18 +151,6 @@ library EdgeDiscretizing
     //
     // Each is needed here and belongs in a lower layer; the supervising session moves it, or
     // replaces it with that layer's own declaration, when the layers are merged.
-
-    // belongs-in: 02-topology
-    // A closed edge: one vertex at both ends and a curve that is not collapsed to a point. Its
-    // domain spans the curve's full period.
-    IsClosedEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
-        => m.Edges[e].Start == m.Edges[e].End ? !m.IsDegenerateEdge(e) : false;
-
-    // belongs-in: 02-topology
-    // deferred: a degenerate edge: its curve's image over the edge domain lies within the
-    // `LengthTolerance` of one point (a pole, a cone apex); closed form for analytic curves, a
-    // control-hull bound for B-splines.
-    IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean;
 
     // belongs-in: 02-topology
     // The number of coedges of a loop; 0 for a vertex loop or a poly loop.
@@ -262,7 +257,7 @@ library EdgeDiscretizing
         => m.IsDegenerateEdge(e)
             ? 1
             : floors.FloorOf(e)
-                .Max(m.IsClosedEdge(e) ? c.ClosedEdgeMinimum : 1)
+                .Max(m.IsClosedRegularEdge(e) ? c.ClosedEdgeMinimum : 1)
                 .Max(m.IsInTwoEdgeLoop(e) ? 2 : 1)
                 .Max(m.TurnFloor(e));
 

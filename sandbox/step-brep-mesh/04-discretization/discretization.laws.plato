@@ -192,10 +192,10 @@ library EdgeDiscretizingLaws
     //
     // Structural: exact; a failure is an Error.
 
-    // A closed edge has at least `MinSegments` segments, and at least 3.
+    // A closed edge that is not degenerate has at least `MinSegments` segments, and at least 3.
     Law_ClosedEdgeHasMinSegments(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
         => m.IsEdgeEvaluable(d.Edge)
-            ? (m.IsClosedEdge(d.Edge) ? d.SegmentCount >= c.ClosedEdgeMinimum : true)
+            ? (m.IsClosedRegularEdge(d.Edge) ? d.SegmentCount >= c.ClosedEdgeMinimum : true)
             : true;
 
     // A non-degenerate edge has at least its minimum segment count: the caller's floor, the
