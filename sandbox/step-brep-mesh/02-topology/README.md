@@ -325,6 +325,17 @@ radius outside the defining points' box (a full circle with one vertex), and tha
 the size, so the true extent is at most `CoordinateExtent + ModelSize`. `DefiningPoints` over
 `BrepCurve` and `BrepSurface` is layer 1's knowledge and is marked `belongs-in: 01-geometry`.
 
+## Model transforms
+
+`RigidlyMoved(m, motion)` and `ScaledBy(m, factor)` are the metamorphic inputs of
+research/VALIDATION-MATH.md 6.4, declared here once for layers 7 and 8 (FIX-WAVE.md ownership
+table). `RigidlyMoved` moves every point of the arena, every vertex and every poly-loop point by
+`motion.PointInFrame`, turns every frame, direction and vector, and keeps every parameter, so the 2D
+curves and pcurves are unchanged; the topology rows are copied, so indices, senses and edge-domain
+structure carry over. `ScaledPoint(p, factor)` scales about the origin. The arena parts (`Moved`
+over `BrepCurve` and `BrepSurface`, `MovedFrame`, `MovedDirection`, `MovedVector`) are layer 1's
+knowledge and are marked `belongs-in: 01-geometry`.
+
 ## Decisions
 
 1. **Coedges are addressed by site.** A `Coedge` value does not say which face and bound use it,
@@ -424,6 +435,7 @@ layer 1's `ParameterToleranceAt`.
 | `Law_PcurveSurfaceIsAFaceSurface(m, e, k)` | the pcurve's surface is that of a face citing the edge | exact | structural, Warning (ignored) |
 | `Law_ParameterizationSignIsConstantOnFace(m, site, t)` | at the projection of a coedge point, `N . (PartialU x PartialV)` has the sign `epsilon` says, where resolvable | exact sign | library, test |
 | `Law_ModelSizeWithinExtent(m)` | the model size is at most `2 sqrt(3)` times the coordinate extent | `ResolutionAt(size)` | library, test |
+| `Law_RigidMotionKeepsCoedgeSense(m, motion, site)` | a rigid motion leaves every coedge's composed sense unchanged | exact | library, test |
 | `Law_LoopWindingMatchesSameSense(m, f)` | a plain face's parameter-space region has the sign `FaceNormalSign` says | exact sign | structural, Error |
 
 The pointwise laws take a fraction `t`, clamp it into `[0, 1]`, and map it onto the domain. Layer 7's
@@ -661,6 +673,11 @@ Applied:
   coincidence, as `ReducedCounts` does), and `Law_PolyLoopHasThreePoints`.
 - **Open items 5 and 9 (decided, no code).** Parameter-space loop simplicity and nesting are layer
   5's; shells that touch each other are legal.
+- **Model transforms, part 1 (FIX-WAVE ownership table, layer 7 finding 1).** `RigidlyMoved(m,
+  motion)` and `ScaledPoint(p, factor)` with bodies, the signatures layers 7 and 8 declared; the arena
+  part `Moved(curve | surface, motion)`, `MovedFrame`, `MovedDirection`, `MovedVector` (marked
+  `belongs-in: 01-geometry`), and `Moved(loop, motion)` for poly-loop points; library law
+  `Law_RigidMotionKeepsCoedgeSense`.
 
 Skipped:
 

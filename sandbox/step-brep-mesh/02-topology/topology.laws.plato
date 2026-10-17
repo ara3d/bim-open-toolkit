@@ -442,6 +442,17 @@ library BrepTopologyLaws
     Law_ModelSizeWithinExtent(m: BrepModel): Boolean
         => m.ModelSize <= m.CoordinateExtent * 2.0 * 3.0.Sqrt + ResolutionAt(m.ModelSize);
 
+    // A rigid motion carries every vertex to motion.PointInFrame of it and
+    // keeps every topology row, so every coedge's composed sense, and with it
+    // every law of this layer that reads only the tables, is unchanged.
+    // Library, exact.
+    Law_RigidMotionKeepsCoedgeSense(m: BrepModel, motion: Frame3D, site: CoedgeSite): Boolean
+        => m.IsCoedgeSiteInRange(site)
+            ? (m.IsEdgeInRange(m.CoedgeAt(site).Edge)
+                ? m.RigidlyMoved(motion).CoedgeRunsForwardOnCurve(site) == m.CoedgeRunsForwardOnCurve(site)
+                : true)
+            : true;
+
     //==
     // # Parameter-space winding
 

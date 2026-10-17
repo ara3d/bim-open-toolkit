@@ -37,6 +37,7 @@
 //  - Coupling measures
 //  - Parameter-space winding
 //  - Size and extent
+//  - Model transforms
 //  - Units
 //  - Owed by 00-foundation
 
@@ -1201,6 +1202,105 @@ library BrepTopology
     // README, decision 11).
     CoordinateExtent(m: BrepModel): Number
         => m.ModelPoints.LargestAbsoluteCoordinate;
+
+    //==
+    // # Model transforms
+    //
+    // The metamorphic inputs of research/VALIDATION-MATH.md 6.4 that layers 7
+    // and 8 compare runs over: a rigid motion and a uniform scaling of the
+    // whole model. Each maps every table and keeps the topology rows as they
+    // are, so every index, every coedge sense and every edge domain's
+    // structure carry over.
+
+    // The point with every coordinate multiplied by factor: scaling about the
+    // origin. Exact when factor is a power of two.
+    ScaledPoint(p: Point3D, factor: Number): Point3D
+        => Point3D(p.X * factor, p.Y * factor, p.Z * factor);
+
+    // The vector v of the frame motion's rotation: its components taken along
+    // motion's axes.
+    // belongs-in: 01-geometry
+    MovedVector(v: Vector3D, motion: Frame3D): Vector3D
+        => motion.FrameVector(v.X, v.Y, v.Z);
+
+    // The direction d turned by motion's rotation.
+    // belongs-in: 01-geometry
+    MovedDirection(d: Direction3D, motion: Frame3D): Direction3D
+        => Direction3D(d.Vector.MovedVector(motion));
+
+    // The frame f carried by motion: its origin moved, its axes turned.
+    // belongs-in: 01-geometry
+    MovedFrame(f: Frame3D, motion: Frame3D): Frame3D
+        => Frame3D(motion.PointInFrame(f.Origin), f.XAxis.MovedDirection(motion),
+            f.YAxis.MovedDirection(motion), f.ZAxis.MovedDirection(motion));
+
+    // A curve carried by the rigid motion: every point, frame, direction and
+    // vector it stores moved; radii, weights, knots and parameters kept. A
+    // curve built on others by index moves through them.
+    // belongs-in: 01-geometry
+    Moved(curve: BrepCurve, motion: Frame3D): BrepCurve
+        => match (curve) {
+            Line(origin, velocity) => BrepCurve.Line(motion.PointInFrame(origin), velocity.MovedVector(motion));
+            Circle(placement, radius) => BrepCurve.Circle(placement.MovedFrame(motion), radius);
+            Ellipse(placement, semiAxis1, semiAxis2) => BrepCurve.Ellipse(placement.MovedFrame(motion), semiAxis1, semiAxis2);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => BrepCurve.Hyperbola(placement.MovedFrame(motion), semiAxis, semiImaginaryAxis);
+            Parabola(placement, focalDistance) => BrepCurve.Parabola(placement.MovedFrame(motion), focalDistance);
+            Polyline(points) => BrepCurve.Polyline(points.Map(p => motion.PointInFrame(p)));
+            BSpline(data) => BrepCurve.BSpline(BSplineCurveData(data.Basis, data.ControlPoints.Map(p => motion.PointInFrame(p)), data.Weights));
+            Trimmed(basis, range, sameSense) => curve;
+            Composite(segments) => curve;
+            Offset(basis, distance, reference) => BrepCurve.Offset(basis, distance, reference.MovedDirection(motion));
+            OnSurface(spaceCurve, supports, master) => curve;
+        };
+
+    // A surface carried by the rigid motion, as for curves. Parameters are
+    // kept, so parameter-plane curves and pcurves need no change.
+    // belongs-in: 01-geometry
+    Moved(surface: BrepSurface, motion: Frame3D): BrepSurface
+        => match (surface) {
+            Plane(placement) => BrepSurface.Plane(placement.MovedFrame(motion));
+            Cylinder(placement, radius) => BrepSurface.Cylinder(placement.MovedFrame(motion), radius);
+            Cone(placement, radius, semiAngle) => BrepSurface.Cone(placement.MovedFrame(motion), radius, semiAngle);
+            Sphere(placement, radius) => BrepSurface.Sphere(placement.MovedFrame(motion), radius);
+            Torus(placement, major, minor, part) => BrepSurface.Torus(placement.MovedFrame(motion), major, minor, part);
+            Revolution(profile, axis) => BrepSurface.Revolution(profile,
+                InfiniteLine3D(motion.PointInFrame(axis.Origin), axis.Direction.MovedDirection(motion)));
+            LinearExtrusion(profile, extrusion) => BrepSurface.LinearExtrusion(profile, extrusion.MovedVector(motion));
+            BSpline(data) => BrepSurface.BSpline(BSplineSurfaceData(data.U, data.V,
+                MakeArray2D(data.ControlPoints.ColumnCount, data.ControlPoints.RowCount,
+                    (i, j) => motion.PointInFrame(data.ControlPoints.At(i, j))),
+                data.Weights));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => surface;
+            Offset(basis, distance) => surface;
+        };
+
+    // The model carried by a rigid motion: every point of the arena and every
+    // vertex goes to motion.PointInFrame(p), every frame, direction and vector
+    // turns with motion's axes, B-spline control points move as points;
+    // weights, knots, every parameter (so every 2D curve and pcurve), the
+    // topology, the tolerances and the unit are kept. motion is an orthonormal
+    // right-handed frame (layer 8 checks it with IsOrthonormalWithin).
+    RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel
+        => BrepModel(
+            GeometrySet(m.Geometry.Curves.Map(c => c.Moved(motion)), m.Geometry.Curves2D, m.Geometry.Pcurves,
+                m.Geometry.Surfaces.Map(s => s.Moved(motion))),
+            m.Vertices.Map(v => BrepVertex(motion.PointInFrame(v.Point))),
+            m.Edges,
+            m.Loops.Map(l => l.Moved(motion)),
+            m.Faces,
+            m.Shells,
+            m.Bodies,
+            m.Tolerances,
+            m.Unit);
+
+    // A loop carried by the rigid motion: a poly loop's points move; edge and
+    // vertex loops hold only indices.
+    Moved(loop: BrepLoop, motion: Frame3D): BrepLoop
+        => match (loop) {
+            EdgeLoop(coedges) => loop;
+            VertexLoop(vertex) => loop;
+            PolyLoop(points) => BrepLoop.PolyLoop(points.Map(p => motion.PointInFrame(p)));
+        };
 
     //==
     // # Units
