@@ -134,6 +134,13 @@ Recorded as they arise; the ticket carries the same list.
 
 ## Decided by the owner during the pass
 
+- 2026-10-17: **Plato can change; optimize for the long run.** The first versions of
+  `SPEC-EXECUTION.md` and `TARGET-LANGUAGE.md` recommended the least-effort path (leave the compiler
+  unchanged, convention plus tooling, the one backend that works today). The owner rejected that
+  framing: most compiler and backend gaps are solvable without significant effort, and the question
+  that matters is what makes the creation and validation of the library efficient once code
+  generation works. Both reports were revised under that premise; the measured facts about the
+  current state stay as the gap to close, not as the constraint.
 - 2026-10-17: **no OpenCascade dependency**, in the library or its tests. This settles
   `TARGET-LANGUAGE.md` open question 6 (which OpenCascade-based oracle) and `SPEC-EXECUTION.md`
   open question 11 (OpenCascade as a test dependency): neither. Differential testing, where wanted,
