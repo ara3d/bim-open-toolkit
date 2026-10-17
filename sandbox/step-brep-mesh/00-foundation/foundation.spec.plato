@@ -254,6 +254,7 @@ spec Samples(range: NumberInterval, count: Integer): Array<Number>
     requires count >= 2;
     requires range.Start.IsFinite;
     requires range.End.IsFinite;
+    requires (range.End - range.Start).IsFinite;
     ensures Law_SamplesHaveRequestedCount(range, count);
     ensures Law_SamplesStartAtRangeStart(range, count);
     ensures Law_SamplesEndAtRangeEnd(range, count);
@@ -266,6 +267,7 @@ spec Samples(d: CurveDomain, plan: SamplePlan): Array<Number>
     requires plan.IsWellFormed;
     requires d.Range.Start.IsFinite;
     requires d.Range.End.IsFinite;
+    requires d.ParameterLength.IsFinite;
     ensures result.Count == plan.Count;
     ensures forall (k: Integer) in plan.Count.Range : Law_DomainContainsItsSamples(d, plan, k, ParameterTolerance(ResolutionAt(d.Range.Start.Abs + d.Range.End.Abs + d.Periodicity.PeriodOr(0.0))));
     measure plan.Count;
@@ -276,8 +278,10 @@ spec Samples(d: SurfaceDomain, plan: SamplePlan): Array<UvCoordinate>
     requires plan.IsWellFormed;
     requires d.U.Range.Start.IsFinite;
     requires d.U.Range.End.IsFinite;
+    requires d.U.ParameterLength.IsFinite;
     requires d.V.Range.Start.IsFinite;
     requires d.V.Range.End.IsFinite;
+    requires d.V.ParameterLength.IsFinite;
     ensures result.Count == plan.Count * plan.Count;
     measure plan.Count * plan.Count;
 }

@@ -287,7 +287,8 @@ Law_X  ->  Check (CheckWithin, CheckExact, folded by WorseOf)  ->  ReportOf  -> 
 5. **`Samples` copies its ends and computes each interior value from its index**, never by
    accumulating a step, so `Law_SamplesStartAtRangeStart` and `Law_SamplesEndAtRangeEnd` hold
    bitwise and the error does not grow along the array. Strict increase needs each step above the
-   resolution (`StepsAreResolvable`); 1e-20 split into 10 steps at magnitude 1 is not resolvable.
+   resolution and a finite length (`StepsAreResolvable`); 1e-20 split into 10 steps at magnitude 1
+   is not resolvable, and neither is `[-MaxValue, MaxValue]`, whose length overflows.
 6. **Severity comes from the constraint group.** `ConstraintGroup` (`Topological`, `Geometric`,
    `Quality`) is the front README's three groups. `SeverityOf` reads SPEC-DSL.md's "Warning when
    the exceedance is below ten times the criterion" as `worst < 10 * bound`; an unmeasured
@@ -505,3 +506,8 @@ Applied:
    extent)` and both floors take `ResolutionAt` at the largest absolute coordinate, not at the
    model size (decision 11). Layer 2 provides `CoordinateExtent` and `ModelSize`, and layer 3
    passes them.
+6. **F8: `Samples` on an unbounded range.** On `[-MaxValue, MaxValue]` (layer 1's
+   `UnboundedDomain`) `End - Start` overflows, the interior samples are infinite, and
+   `StepsAreResolvable` still held, so `Law_SamplesStrictlyIncreasing` failed. `StepsAreResolvable`
+   now requires a finite length, and the `Samples` contracts require it; a law over an unbounded
+   direction samples a bounded window (the edge domain or the face's parameter box).

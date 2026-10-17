@@ -557,7 +557,10 @@ library BrepFoundation
     // included and copied, not computed: element i is Start + (End - Start) *
     // i / (count - 1), computed from i and never by accumulating a step, so
     // the error does not grow along the array. Samples((0, 1), 5) is [0,
-    // 0.25, 0.5, 0.75, 1]. Precondition: count >= 2, both ends finite.
+    // 0.25, 0.5, 0.75, 1]. Precondition: count >= 2, both ends finite, and
+    // End - Start finite: on [-MaxValue, MaxValue], the range layer 1 gives an
+    // unbounded direction, End - Start overflows and every interior sample is
+    // infinite.
     Samples(range: NumberInterval, count: Integer): Array<Number>
         => count.MapRange(i =>
             i == 0
@@ -566,18 +569,23 @@ library BrepFoundation
                     ? range.End
                     : range.Start + (range.End - range.Start) * (i.ToNumber / (count - 1).ToNumber)));
 
-    // True when each of the count - 1 equal steps of range exceeds the
-    // arithmetic resolution at its ends; then Samples(range, count) is
-    // strictly increasing.
+    // True when the range's length is finite and each of the count - 1 equal
+    // steps of range exceeds the arithmetic resolution at its ends; then
+    // Samples(range, count) is strictly increasing. False on an unbounded
+    // range, whose length overflows.
     StepsAreResolvable(range: NumberInterval, count: Integer): Boolean
         => count >= 2
             ? range.Start.IsFinite
                 && range.End.IsFinite
+                && (range.End - range.Start).IsFinite
                 && (range.End - range.Start) / (count - 1).ToNumber > ResolutionAt(range.Start.Abs.Max(range.End.Abs))
             : false;
 
     // plan.Count samples of the domain's range, ends included. On a full
     // periodic domain the two ends are the same point, sampled twice.
+    // Precondition: d.ParameterLength is finite. A law over an unbounded
+    // direction (a line, a plane, the v of a cylinder) samples a bounded
+    // window instead: the edge's domain, or the face's parameter box.
     Samples(d: CurveDomain, plan: SamplePlan): Array<Number>
         => d.Range.Samples(plan.Count);
 
