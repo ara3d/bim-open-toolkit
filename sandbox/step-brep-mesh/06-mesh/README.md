@@ -345,7 +345,8 @@ degrees, chosen here).
 
 All fixed in VOCABULARY.md revision 2: from `00-foundation` `LengthTolerance`, `AngleTolerance`,
 `ElementIndex`, `BrepVertexIndex`, `BrepEdgeIndex`, `BrepFaceIndex`, `MeshVertexProvenance` (cases
-`OnVertex`, `OnEdge`, `OnFace`); from `02-topology` `BrepModel` (fields `Vertices`, `Edges`, `Faces`,
+`OnVertex`, `OnEdge`, `OnFace`), and, since the fix wave, `IntegerTotal`, `IsOnFace`, `Corresponds`,
+and `ResolutionAt`; from `02-topology` `BrepModel` (fields `Vertices`, `Edges`, `Faces`,
 `Tolerances`) and `BrepVertex.Point`; from `04-discretization` `EdgeDiscretizations.ByEdge` and
 `EdgeDiscretization.Points`; from `05-face-meshing` `FaceMesh` (all nine fields) and `UvPointSource`
 (all five cases). Nothing is declared on another layer's behalf.
@@ -483,3 +484,6 @@ Applied:
 - **`Law_VectorAreaVanishes` stated** (review M11). The vector area of a closed, consistently
   oriented component, summed compensated, is within `ResolutionAt` of the sum of |b - a| |c - a|
   over its triangles.
+- **`IntegerTotal` and `IsOnFace` deleted** (review C10; FIX-WAVE first table). Both are now layer
+  0's, with the same signatures and meaning (commit c09a121b); this layer calls them. Gated
+  against the committed layer 0 on main (see "Gate").

@@ -19,12 +19,8 @@ library ModelMeshNumbering
     // # Runs of an offset array
     //
     // Run k of an offset array holds the indices from starts[k] up to, not including,
-    // starts[k + 1]. An array of n + 1 starts has n runs. The two integer folds below serve
-    // every counting function of the layer.
-
-    // The sum of an array of integers; 0 for an empty array.
-    IntegerTotal(xs: Array<Integer>): Integer
-        => xs.Reduce(0, (a, b) => a + b);
+    // starts[k + 1]. An array of n + 1 starts has n runs. CountTrue and 00-foundation's
+    // IntegerTotal serve every counting function of the layer.
 
     // The number of true entries.
     CountTrue(flags: Array<Boolean>): Integer
@@ -164,14 +160,6 @@ library ModelMeshNumbering
                OnVertex(w) => false;
                OnEdge(edge, t) => edge.Value == e.Value;
                OnFace(f, uv) => false;
-           };
-
-    // Whether a provenance lies in the interior of face f.
-    IsOnFace(p: MeshVertexProvenance, f: BrepFaceIndex): Boolean
-        => match (p) {
-               OnVertex(w) => false;
-               OnEdge(e, t) => false;
-               OnFace(face, uv) => face.Value == f.Value;
            };
 
     // Whether a provenance names a point of the closure of face f: the face itself, an edge its
