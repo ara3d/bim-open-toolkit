@@ -434,11 +434,15 @@ library EdgeDiscretizing
             : false;
 
     // deferred: the polyline's points drawn in the image's parameter space, one per point. With a
-    // pcurve: the pcurve evaluated at each parameter (the pcurve shares the edge curve's
-    // parameter). Without: `Project` of each point onto the surface, each result unwrapped to
+    // pcurve: the pcurve's 2D curve at the pcurve's own parameter nearest the point
+    // (`ClosestParameter(g, p, P_i)`, seeded by the previous point's), since STEP lets a pcurve
+    // agree with its curve only as a point set (layer 1 decision 8); when the pcurve does share
+    // the curve's parameter that parameter is t_i. Without: `Project` of each point onto the
+    // surface, each result unwrapped to
     // within half a period of its predecessor, and a point on a degenerate side of the surface (a
     // pole) given the `U` (or `V`) of its neighbour along the polyline, since `Project` leaves it
-    // arbitrary there. Always computed over the canonical (increasing-parameter) order of the
+    // arbitrary there. This is the one image function: face meshing draws its loops with it, so
+    // the image this layer certifies is the polygon face meshing triangulates. Always computed over the canonical (increasing-parameter) order of the
     // points and listed in d's order, so the image of `Reversed(d)` is this image reversed, bit
     // for bit: the same canonical-direction symmetry as `Discretize`.
     ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvCoordinate>;
