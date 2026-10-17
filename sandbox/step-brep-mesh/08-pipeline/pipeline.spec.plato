@@ -69,17 +69,6 @@ spec StepMeshOutcome
 //==
 // # Contracts: the refinement loop
 
-// Every usable edge discretized by layer 4, every other edge empty.
-spec DiscretizeUsable(m: BrepModel, c: DiscretizationCriteria): EdgeDiscretizations
-{
-    requires Law_IndicesInRange(m);
-    requires c.IsWellFormed;
-    ensures Law_DiscretizationsCoverEdges(m, result);
-    ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
-    ensures forall (i: Integer) in m.Edges.Count.Range : m.CanDiscretize(BrepEdgeIndex(i), c) ? result.ByEdge[i].SameDiscretization(m.Discretize(BrepEdgeIndex(i), c, SegmentFloors.NoFloors)) : result.ByEdge[i].Parameters.Count == 0;
-    measure m.Edges.Count;
-}
-
 // MeshFace where its precondition holds, a located error otherwise.
 spec FaceOutcome(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, o: MeshingOptions, chosen: Array<Boolean>): FaceMeshOutcome
 {
@@ -320,7 +309,7 @@ theorem FailureIsIsolated
     assume forall (e: BrepEdgeIndex) in m.FaceEdges(f) : m.FinalState(o, m.AllFaces).Discretizations.ByEdge[e].SameDiscretization(m.InitialState(o, m.AllFaces).Discretizations.ByEdge[e]);
     assume forall (k: Integer) : forall (h: BrepFaceIndex) : forall (q: Integer) : Law_RequestsNameEdgesOfTheirFace(m, o, k, h, q);
     conclude m.FinalState(o, m.AllFaces).Outcomes[g].Mesh.SameFaceMesh(m.FinalState(o, m.AllFaces.Excluding(f)).Outcomes[g].Mesh);
-    because "Call A the run over every face and B the run without f. Refinement only adds parameters (Law_RefinementNeverCoarsens), so an edge that ends equal to its initial discretization was never changed; f cites only such edges, so FacesTouching never marks f, and f's outcome in A is its round-0 outcome, which is its final one and holds no request. Induction over rounds: both runs start from the same discretizations (DiscretizeUsable does not read the choice) and give every face but f the same round-0 outcome (FaceOutcome reads only f, d, and the options). If the two runs agree on the discretizations and on every outcome but f's after round r, their pending requests agree, since f contributes none in A and its excluded outcome in B holds none; so Refine gives the same discretizations, ChangedEdges the same marks, FacesTouching the same faces apart from f (never marked in A, not chosen in B), and FaceOutcome the same outcomes for them. Both runs also stop in the same round. So g's final outcome, and its mesh, are the same in both. Law_RequestsNameEdgesOfTheirFace is what makes 'f contributes no request' mean 'f changes no edge of another face' in general; here f contributes none at all. When f does ask for refinement, its influence is confined to the faces that share a refined edge with it and, through their own requests, to their neighbours: Law_OnlyFacesOfChangedEdgesAreRemeshed.";
+    because "Call A the run over every face and B the run without f. Refinement only adds parameters (Law_RefinementNeverCoarsens), so an edge that ends equal to its initial discretization was never changed; f cites only such edges, so FacesTouching never marks f, and f's outcome in A is its round-0 outcome, which is its final one and holds no request. Induction over rounds: both runs start from the same discretizations (layer 4's DiscretizeAll does not read the choice) and give every face but f the same round-0 outcome (FaceOutcome reads only f, d, and the options). If the two runs agree on the discretizations and on every outcome but f's after round r, their pending requests agree, since f contributes none in A and its excluded outcome in B holds none; so Refine gives the same discretizations, ChangedEdges the same marks, FacesTouching the same faces apart from f (never marked in A, not chosen in B), and FaceOutcome the same outcomes for them. Both runs also stop in the same round. So g's final outcome, and its mesh, are the same in both. Law_RequestsNameEdgesOfTheirFace is what makes 'f contributes no request' mean 'f changes no edge of another face' in general; here f contributes none at all. When f does ask for refinement, its influence is confined to the faces that share a refined edge with it and, through their own requests, to their neighbours: Law_OnlyFacesOfChangedEdgesAreRemeshed.";
     tested by Law_FailedFaceLeavesOthersUnchanged, Law_OnlyFacesOfChangedEdgesAreRemeshed, Law_OutcomesAreCurrent, Law_RequestsNameEdgesOfTheirFace, Law_RefinementNeverCoarsens;
 }
 

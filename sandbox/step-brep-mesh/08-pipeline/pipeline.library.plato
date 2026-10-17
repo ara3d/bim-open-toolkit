@@ -164,23 +164,8 @@ library StepToMesh
     //==
     // # Edges
 
-    // An edge with no discretization: no parameters and no points. It keeps
-    // the discretization table at one entry per edge for an edge that
-    // CanDiscretize rejects; no face citing it is meshed (layer 5's
-    // IsDiscretizedFace fails on it), so no point is ever read from it.
-    Undiscretized(e: BrepEdgeIndex): EdgeDiscretization
-        => EdgeDiscretization(e, [], []);
-
-    // The canonical discretization of every edge that can be discretized
-    // under c, with no floors, and Undiscretized for every other edge: layer
-    // 4's DiscretizeAll with its precondition turned into a guard per edge.
-    DiscretizeUsable(m: BrepModel, c: DiscretizationCriteria): EdgeDiscretizations
-        => EdgeDiscretizations(m.Edges.Count.MapRange(i =>
-            m.CanDiscretize(BrepEdgeIndex(i), c)
-                ? m.Discretize(BrepEdgeIndex(i), c, SegmentFloors.NoFloors)
-                : Undiscretized(BrepEdgeIndex(i))));
-
-    // Every edge Undiscretized: the table of a refused run.
+    // Every edge Undiscretized (layer 4's empty entry): the table of a
+    // refused run.
     NoDiscretizations(m: BrepModel): EdgeDiscretizations
         => EdgeDiscretizations(m.Edges.Count.MapRange(i => Undiscretized(BrepEdgeIndex(i))));
 
@@ -290,7 +275,7 @@ library StepToMesh
     // chosen faces pending.
     InitialState(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): PipelineState
     {
-        var d = m.DiscretizeUsable(o.Face.Discretization);
+        var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
         var outcomes = m.Faces.Count.MapRange(k => m.FaceOutcome(BrepFaceIndex(k), d, o, chosen));
         return PipelineState(0, d, SegmentFloors.NoFloors, outcomes, outcomes.RequestsOf(chosen));
     }

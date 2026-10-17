@@ -47,7 +47,7 @@ type MeshingOptions
 // Step (and the loops StateAfter and FinalState over them).
 //   Discretizations: one entry per model edge, indexed by BrepEdgeIndex: the
 //     edge's single polyline, or no points at all for an edge that layer 4's
-//     CanDiscretize rejects (Undiscretized); no face citing such an edge is
+//     CanDiscretize rejects (layer 4's Undiscretized); no face citing such an edge is
 //     meshed.
 //   Floors: per edge, the largest segment count any request has asked for so
 //     far; the record against which layer 4's Law_SegmentFloorMet checks the

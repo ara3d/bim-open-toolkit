@@ -76,8 +76,8 @@ five rounds. Layer 4 made the hook (`EdgeRefinementRequest`, `Refine`), layer 5 
 one polyline per edge (empty for an edge outside **E**), the largest segment count requested per
 edge so far, one face outcome per face, and the requests of the faces meshed in the latest round.
 
-**Start.** `InitialState`: `DiscretizeUsable` (layer 4's `Discretize` on every edge of **E**, no
-floors), every face given `FaceOutcome`, the requests of the chosen faces pending, `Round` 0.
+**Start.** `InitialState`: layer 4's `DiscretizeAll` with no floors (`Discretize` on every edge of
+**E**, `Undiscretized` on every other), every face given `FaceOutcome`, the requests of the chosen faces pending, `Round` 0.
 
 **Step.** `Step(s)`:
 
@@ -99,7 +99,7 @@ floors), every face given `FaceOutcome`, the requests of the chosen faces pendin
 | | Invariant | Law |
 |---|---|---|
 | I1 | `0 <= Round <= MaxRefinementRounds` | `Law_MeasureIsNeverNegative`, spec `PipelineState` |
-| I2 | one discretization per edge, entry i of edge i; empty exactly for edges outside **E** | layer 4's `Law_DiscretizationsIndexedByEdge`, `Law_EmptyDiscretizationExactlyWhenEdgeUnusable` |
+| I2 | one discretization per edge, entry i of edge i; empty exactly for edges outside **E** | layer 4's `Law_DiscretizationsIndexedByEdge` and `Law_UndiscretizedExactlyWhenUnusable` (round 0), `Law_EmptyDiscretizationExactlyWhenEdgeUnusable` (every round) |
 | I3 | every outcome is current: `Outcomes[f]` is `FaceOutcome(m, f, Discretizations)` | `Law_OutcomesAreCurrent`, `Law_OutcomeIsOfItsFace` |
 | I4 | every pending request is a request of some outcome, and names an edge of that face | `Law_PendingRequestIsInSomeOutcome`, `Law_RequestsNameEdgesOfTheirFace` |
 | I5 | no edge coarsens: every parameter of round r is a parameter of round r + 1 | `Law_RefinementNeverCoarsens` |
@@ -208,7 +208,7 @@ The pipeline's own findings, all Errors because each means part of the model has
    projection of it.
 4. **`MeshModel` is total.** Outside **R** it returns a refused outcome whose mesh holds the model's
    vertices and no element, so the numbering laws of layer 6 still hold of it.
-5. **An edge outside E keeps an empty entry** (`Undiscretized`) instead of being dropped: edge
+5. **An edge outside E keeps an empty entry** (layer 4's `Undiscretized`) instead of being dropped: edge
    indices stay stable, `NumberMeshVertices` gives it an empty run, and layer 5's
    `IsDiscretizedFace` keeps every face citing it out of `MeshFace`.
 6. **Faces of changed edges are meshed again, not faces of requested edges.** A request `Refine`
@@ -384,7 +384,7 @@ The research file is kept as written; these two corrections hold for this design
 - **Cost.** Round 0 discretizes every edge and meshes every face. Each later round refines only the
   requested edges and meshes only the faces of changed edges, so a run costs at most
   `MaxRefinementRounds + 1` full meshings and usually little more than one. Edges are independent in
-  `DiscretizeUsable`, faces are independent within a round, and both parallelize without
+  `DiscretizeAll`, faces are independent within a round, and both parallelize without
   coordination as long as results are written by index (determinism).
 - **Quadratic reference bodies.** `FacesTouching` calls `FaceEdges` per face and `ChangedEdges`
   compares whole arrays. An implementation builds the edge-to-face table once, and can detect a
@@ -537,6 +537,7 @@ Recorded here, not fixed there.
 
 | Old | New | Reason |
 |---|---|---|
+| `DiscretizeUsable(m, c)`, `Undiscretized(e)` (fix wave) | deleted; layer 4's `DiscretizeAll(m, c, NoFloors)` and `Undiscretized(e)` | `DiscretizeAll` now takes the usability guard itself |
 | `ParseOutcome { Ok; File; Diagnostics }` | not declared; layer 3's `ParsedFile` | identical fields; layer 3's proposal accepted (decision 1) |
 | `DecodeOutcome { Ok; Model; Map; Diagnostics }` | not declared; layer 3's `DecodedModel` | decoding is total and does not stop the run; a stored `Ok` would be a computable flag (decision 2) |
 | `MeshingOptions { Face; Level; MaxRefinementRounds }` | adds `Decode: DecodePolicy` | the decode defaults pass through to `DecodeBrepWith` |
@@ -546,7 +547,7 @@ Recorded here, not fixed there.
 | `MeshOutcome { Ok; Mesh; Report; Rounds }` | unchanged; `Ok` is `Report.IsClean`, set only by `MeshOutcomeOf` | |
 | `MeshStepText(text, options): MeshOutcome` | unchanged, now the projection of `MeshStepTextTraced(text, options): StepMeshOutcome { Decoded; Meshed }` | tracing kernel provenance to the file needs the map (decision 3) |
 | `MeshModel(m, o)` | unchanged, now `MeshChosenFaces(m, o, AllFaces(m))` | the failure isolation law compares two choices of faces |
-| (new) | `PipelineState`, `InitialState`, `Step`, `StateAfter`, `FinalState`, `IsTerminal`, `FaceOutcome`, `DiscretizeUsable`, `Undiscretized`, `ChangedEdges`, `RaisedFloors`, `FacesTouching`, `RequestsOf`, `IsRunnable`, `RefusedOutcome`, `RunOutcome`, `MeshOutcomeOf`, `Validated`, `DefaultMeshingOptions`, `IsWellFormed(MeshingOptions)`, `WithChordal(MeshingOptions)`, `ChordalBound`, `ScaledBy(MeshingOptions)` | the loop as an explicit state and step, and the options' defaults |
+| (new) | `PipelineState`, `InitialState`, `Step`, `StateAfter`, `FinalState`, `IsTerminal`, `FaceOutcome`, `ChangedEdges`, `RaisedFloors`, `FacesTouching`, `RequestsOf`, `IsRunnable`, `RefusedOutcome`, `RunOutcome`, `MeshOutcomeOf`, `Validated`, `DefaultMeshingOptions`, `IsWellFormed(MeshingOptions)`, `WithChordal(MeshingOptions)`, `ChordalBound`, `ScaledBy(MeshingOptions)` | the loop as an explicit state and step, and the options' defaults |
 | (new, `belongs-in: 00-foundation`) | `WholeInput(_: Provenance)`, `Located(Diagnostic, Provenance)`, `Located(Report, Provenance)`; `Located` joins `Empty`, `Merge`, `ReportOf` as a constructor of `Report` | every finding located (finding 5) |
 | (new, `belongs-in: 02-topology`) | `RigidlyMoved(m, motion: Frame3D)`, `ScaledBy(m, factor)` (both deferred), `WithEveryFaceReversed(m)` | the metamorphic laws; the arena parts belong in 01-geometry |
 | (new, `belongs-in: 04-discretization`) | `ScaledBy(DiscretizationCriteria, factor)`, `ScaledBy(Limit, factor)` | scaling the criteria with the model |
@@ -590,3 +591,6 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
 3. **The host-parser decision** in the pipeline description: `ParseStep` is a host obligation,
    `Part21File` the boundary, and the first chunk's parser is C#; the implementation order's layer 3
    row says so.
+4. **`DiscretizeUsable` dropped** (finding 2, second half): `InitialState` calls layer 4's
+   `DiscretizeAll`, which now takes the usability guard; this layer's `Undiscretized` is deleted in
+   favour of layer 4's.
