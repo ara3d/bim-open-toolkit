@@ -297,7 +297,7 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_ProjectRecoversParameter` | on surfaces injective by construction, `Project(Eval(uv))` is `uv` modulo the period | `UvToleranceAt(uv)` | Library |
 | `Law_ProjectNearRecoversParameter` | `ProjectNear(Eval(uv), seed uv)` is `uv`, on every surface | `UvToleranceAt(uv)` | Library |
 | `Law_CollapsedLineIsOnePoint` | each `CollapsedAt` line is one point | Length | Library (spline, revolution: File, 10x) |
-| `Law_TangentialPartialVanishesOnDegenerateSide` | along a degenerate side, the partial along it times the side's length is within the tolerance | Length | Library (spline, revolution: File, 10x) |
+| `Law_TangentialPartialVanishesOnDegenerateSide` | along a degenerate side of a surface that collapses it by formula, the partial along it times the side's length is within rounding; vacuous for spline and revolution sides (review F10) | `ResolutionAt(EvaluationMagnitude)` | Library |
 
 Every toleranced File law exports its measure, so layer 7 can grade it Warning below ten times
 the tolerance: `PlacementDeviation` (radians), `TrimExcess` and `TrimBoxExcess` (the basis's
@@ -398,6 +398,7 @@ as expected.
 | `TrimInsideBasis`, `HoldsRange`, `SegmentsChainAt`, `ReferenceTransverse`, `IsTransverseTo`, `LiesOn`, `PcurveLiesOnCurve`, `CurveLiesOnPcurve`, `TrimBoxInsideBasis`, `ExtrusionTransverse` (Boolean claims) | the measures `TrimExcess`, `RangeExcess`, `SegmentGap`, `OffsetReferenceAngle`, `AngleFromParallel`, `GapTo`, `SupportGap`, `PcurveToCurveGap`, `CurveToPcurveGap`, `PcurveDomainExcess`, `TrimBoxExcess`, `ExtrusionProfileAngle`, `CollapsedLineSpread` | layer 7 grades file laws by their measure (layer 7 finding 5) |
 | `ClosestParameter(g, p: PcurveIndex, q)` minimizer over the domain | the bounded representative: in `[0, T)` with a parameter period `T`, else of least magnitude | an unbounded line pcurve has a minimizer in every period (fix wave, F4) |
 | (new) | `PcurveParameterPeriod(g, p)`, `PcurveRangeOver(g, p, c, r)`, `PcurveSampleFor`, `Law_PcurveClosestParameterIsBounded` | pcurve ranges from the space curve and the surface periods (fix wave, F4) |
+| (new) | `CollapsesByFormula(g, s)` | the guard of `Law_TangentialPartialVanishesOnDegenerateSide` (fix wave, F10) |
 
 ## Fix wave, 2026-10-17
 
@@ -422,3 +423,6 @@ Applied:
 - **F4 (the layer 1 part).** `ClosestParameter` on a pcurve returns a bounded representative;
   `PcurveRangeOver` derives a pcurve range from the space curve's range and the parameter period;
   `Law_SurfaceCurvePcurveLiesOnCurve` samples that range, so a bounded curve with a line pcurve passes.
+- **F10.** `Law_TangentialPartialVanishesOnDegenerateSide` holds by formula only (sphere, torus
+  parts, their trims and offsets), bounded by rounding; spline and revolution sides are left to
+  `Law_CollapsedLineIsOnePoint`.

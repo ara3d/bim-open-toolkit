@@ -1364,21 +1364,50 @@ library BrepGeometryLaws
             UvCoordinate(c, g.Domain(s).V.SampleIn(along)),
             UvCoordinate(g.Domain(s).U.SampleIn(along), c));
 
-    // Along the k-th degenerate side, the partial in the side's own direction
-    // vanishes: its length times the side's parameter length is at most the
-    // length tolerance, so the whole side stays within the tolerance of one
-    // point. The transverse partial does not vanish (on a sphere's pole
-    // PartialV is -R e_r).
+    // Along the k-th degenerate side of a surface that collapses it by its
+    // formula (CollapsesByFormula: the sphere's poles, the axis points of the
+    // spindle torus parts), the partial in the side's own direction vanishes:
+    // its length times the side's parameter length is within the rounding of
+    // the evaluation. The transverse partial does not vanish (on a sphere's
+    // pole PartialV is -R e_r). A spline or revolution side that collapses
+    // only within the length tolerance is not covered: its speed along the
+    // side need not be small (review F10: a degree-1 row of 10 spans
+    // alternating between two points the tolerance apart has speed 10 times
+    // it), and Law_CollapsedLineIsOnePoint already says what holds there.
     Law_TangentialPartialVanishesOnDegenerateSide(g: GeometrySet, s: SurfaceIndex, k: Integer, a: Number, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
-            ? (g.DegenerateSides(s, tol).IsValidIndex(k) ? g.SidePartialVanishes(s, g.DegenerateSides(s, tol)[k], a, tol.Length) : true)
+            ? (g.CollapsesByFormula(s) && g.DegenerateSides(s, tol).IsValidIndex(k)
+                ? g.SidePartialVanishes(s, g.DegenerateSides(s, tol)[k], a)
+                : true)
             : true;
 
     // The claim of Law_TangentialPartialVanishesOnDegenerateSide on one side.
-    SidePartialVanishes(g: GeometrySet, s: SurfaceIndex, side: DomainSide, a: Number, tol: LengthTolerance): Boolean
+    SidePartialVanishes(g: GeometrySet, s: SurfaceIndex, side: DomainSide, a: Number): Boolean
         => g.Partial(s, g.Domain(s).SidePoint(side, g.Domain(s).DomainAlong(side.AlongParameter).SampleIn(a)), side.AlongParameter).Length
             * g.Domain(s).DomainAlong(side.AlongParameter).ParameterLength
-            <= tol.Value;
+            <= ResolutionAt(g.EvaluationMagnitude(s, g.Domain(s).SidePoint(side, g.Domain(s).DomainAlong(side.AlongParameter).SampleIn(a))));
+
+    // True when every collapsed line of the surface is one point by its
+    // formula, not within a tolerance: the elementary surfaces, and a trim or
+    // an offset of one.
+    CollapsesByFormula(g: GeometrySet, s: SurfaceIndex): Boolean
+        => g.SurfaceAt(s).CollapsesByFormula(g);
+
+    // CollapsesByFormula for one record of the arena g, which holds the entries it references.
+    CollapsesByFormula(surface: BrepSurface, g: GeometrySet): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => true;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => true;
+            Revolution(profile, axis) => false;
+            LinearExtrusion(profile, extrusion) => false;
+            BSpline(data) => false;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.CollapsesByFormula(basis);
+            Offset(basis, distance) => g.CollapsesByFormula(basis);
+        };
 
     // The parameter that varies along a side: v on UMin and UMax.
     AlongParameter(side: DomainSide): SurfaceParameter
