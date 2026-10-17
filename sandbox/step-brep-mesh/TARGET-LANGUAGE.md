@@ -420,6 +420,10 @@ Two checks belong in the host harness, because one Plato compilation cannot expr
 6. **Which oracle for layer 1?** occt-import-js returns meshes only; pythonocc evaluates surfaces at
    (u, v). Settled by whether the closed-form oracles of `07-validation` cover the surfaces the corpus
    uses, or whether B-spline and offset surfaces need a reference evaluator.
+   **Decided by the owner, 2026-10-17: neither; no OpenCascade dependency in the library or its
+   tests.** B-spline and offset surfaces are checked by quadrature against the mesh at two
+   refinement levels (`research/VALIDATION-MATH.md` section 5) and by the re-evaluation law, not by
+   a reference evaluator.
 7. **When should TypeScript become the second target?** Settled by whether STEP meshing on the public
    pages (workflow 1) comes before a C++ consumer. If it does, sum emission in the TypeScript writer
    moves ahead of the C++ work of section 3.8.

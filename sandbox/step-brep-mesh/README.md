@@ -123,6 +123,11 @@ README that owns it; this list exists so a reader can see the shape at once.
   array of diagnostics, each carrying a provenance (a STEP instance number, a kernel index, a mesh
   element). A STEP file that uses an entity the design does not cover produces a diagnostic and
   the rest of the model is still meshed.
+- **No OpenCascade, in the library or its tests** (owner, 2026-10-17). The STEP reader is this
+  library's own, and validation rests on the mathematical oracles (closed-form and Green's-theorem
+  areas, Euler-Poincare, signed volume, re-evaluation from provenance), on witnesses with known
+  counts and measures, and on public files with published properties. The research documents cite
+  OpenCascade's reader and mesher only as information about how an existing importer behaves.
 
 ## Relation to the Plato stdlib
 

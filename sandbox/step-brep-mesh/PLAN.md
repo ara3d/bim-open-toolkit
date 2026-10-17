@@ -121,12 +121,24 @@ Recorded as they arise; the ticket carries the same list.
   design folder, excluding the stdlib's `brep.*.plato`) was built and runs in about 15 seconds;
   its source is kept in `tools/PlatoGate/` and its use is in `PLATO-PRIMER.md` section E.3.
 - 2026-10-17 Phase 2 wave A launched for layers 0, 4, 6 (independent of the STEP document); layers
-  1, 2, 3, 5 wait for `research/STEP-BREP-MODEL.md`; layers 7 and 8 form wave B after layers 0 to 6
-  exist, because they reference the laws by their actual names.
+  1, 2, 3, 5 followed once `research/STEP-BREP-MODEL.md` landed (commit fead8f9f; 1,933 lines from
+  the ISO texts, the three AP long-form schemas, the OpenCascade reader, and a survey of 103 files
+  from 13 exporters). Its facts that bind the layers: angles arrive in the file's plane-angle unit and
+  the decoder converts once; a cone's v is axial; edge ranges come from projecting the vertices;
+  seams and pcurves are optional in practice; poles are never edges. Layers 7 and 8 form wave B after
+  layers 0 to 6 exist, because they reference the laws by their actual names.
 - 2026-10-17 Two owner-requested investigations run beside the design: `SPEC-EXECUTION.md` (how to
   make the spec DSL executable: validate, prove, generate tests; inside Plato, a separate language,
   or convention plus tooling) and `TARGET-LANGUAGE.md` (which backend to implement on first, and
   what `Number`'s width should be).
+
+## Decided by the owner during the pass
+
+- 2026-10-17: **no OpenCascade dependency**, in the library or its tests. This settles
+  `TARGET-LANGUAGE.md` open question 6 (which OpenCascade-based oracle) and `SPEC-EXECUTION.md`
+  open question 11 (OpenCascade as a test dependency): neither. Differential testing, where wanted,
+  uses the design's own oracles, witnesses with known measures, and public files with published
+  properties; the validation layer and `TASKS.md` are written to that.
 
 ## Additional open questions from Phase 1
 

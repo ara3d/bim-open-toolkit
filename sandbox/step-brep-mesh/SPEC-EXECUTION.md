@@ -822,7 +822,9 @@ Each with the fact that would settle it.
 10. **Promotion into Plato.** Which constructs, if any, become Plato syntax, and when? Settled after
     one implementation cycle, by which constructs all nine layers used and whether any changed shape.
 11. **Open CASCADE as a test dependency.** Acceptable on the test machine, given its LGPL licence and
-    its build cost? Settled by the owner.
+    its build cost? Settled by the owner. **Decided 2026-10-17: no.** Use case 10 (differential
+    testing against Open CASCADE) is withdrawn; differential testing uses the design's own oracles,
+    witnesses with known measures, and public files with published properties.
 
 ## Sources
 
