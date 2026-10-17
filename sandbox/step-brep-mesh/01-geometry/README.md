@@ -468,3 +468,4 @@ Applied:
 - **T1, continued (layer 3's request).** Closure decided at decode is stored as `ClosureMark`s in
   the arena, for any bounded aperiodic curve, 2D curve or surface direction; the exact-coincidence
   reading of the previous commit is removed.
+- **Theorem ConeAreaElement.** States its hypothesis `|a| < pi/2`, which `1 / cos a` needs.

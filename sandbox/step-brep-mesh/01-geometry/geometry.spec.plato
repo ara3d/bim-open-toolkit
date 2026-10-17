@@ -596,6 +596,7 @@ theorem ConeAreaElement
     assume g.CanEvaluate(s);
     assume g.SurfaceAt(s) == BrepSurface.Cone(f, radius, a);
     assume forall (tol: AngleTolerance) : f.IsOrthonormalWithin(tol);
+    assume a.Radians.Abs < Number.HalfPi;
     conclude g.PartialU(s, uv).Cross(g.PartialV(s, uv)).Length == (radius + uv.V * a.Tan).Abs / a.Cos;
     because "With rho = R + v tan a, S_u = rho e_u and S_v = tan a e_r + z. Since e_u x e_r = -z and e_u x z = e_r,
              S_u x S_v = rho (e_r - tan a z), of length |rho| sqrt(1 + tan^2 a) = |rho| / cos a for |a| < pi/2.
