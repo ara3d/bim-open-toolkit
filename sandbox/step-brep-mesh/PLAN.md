@@ -136,6 +136,16 @@ Recorded as they arise; the ticket carries the same list.
   with a "Changes to the contract" section; the Phase 3 name review folds them into VOCABULARY.md
   revision 3. Wave B (validation, pipeline) launched; the mathematical review of layers 0 to 6
   launched in parallel since those laws are final.
+- 2026-10-17 Phase 2 wave B complete: validation (0fc198ec; 472 checks, 15 oracles, 20 witnesses
+  as values) and pipeline (7bb5f53f). Gate over all nine layers merged: `PASS: 0 error(s) in scope;
+  6357 functions type-checked`. The mathematical review of layers 0 to 6 (4023d412) found 12 false or
+  imprecise laws, 11 missing, 11 cross-layer inconsistencies, 9 timid choices, 4 false theorems;
+  layers 7 and 8 recorded further findings in lower layers. Phase 3 fix wave launched: nine fixers,
+  one per layer, under `reviews/FIX-WAVE.md` (the cross-layer decisions: a `Closed(Period)`
+  periodicity case, `Check.Bound`, `Provenance` gains curve, surface and whole-input cases,
+  per-dimension parameter floors, the rounding floor at the coordinate extent, and the owner of each
+  duplicated declaration), one commit per finding. The name-and-dependency review and vocabulary
+  revision 3 follow the wave, then the gate, then `TASKS.md`.
 - 2026-10-17 Two owner-requested investigations run beside the design: `SPEC-EXECUTION.md` (how to
   make the spec DSL executable: validate, prove, generate tests; inside Plato, a separate language,
   or convention plus tooling) and `TARGET-LANGUAGE.md` (which backend to implement on first, and
