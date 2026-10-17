@@ -454,7 +454,8 @@ library EdgeDiscretizing
     // cap is reached. Every other curve is bisected at parameter midpoints, seed span by
     // seed span, while a criterion fails on a segment (the sagitta by `Sagitta`'s certificate,
     // polynomial or rational; the angles with `DiscretizationPlan`; the image chords) and both
-    // halves would be at least the effective minimum length; then the segment longest in parameter is halved, one at a time,
+    // halves would be at least the effective minimum length, a rule every split obeys, the image
+    // criterion's included, which is what makes `DiscretizeTerminates` hold; then the segment longest in parameter is halved, one at a time,
     // until `MinimumSegmentCount` is reached. A degenerate edge gets its two domain ends and its
     // vertex point twice.
     Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization;

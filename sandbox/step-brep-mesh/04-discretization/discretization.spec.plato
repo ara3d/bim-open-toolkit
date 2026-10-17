@@ -77,7 +77,7 @@ spec Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floor
     ensures forall (i: Integer) : Law_ShortSegmentIsForced(m, result, c, floors, i);
     ensures forall (img: EdgeImage) in m.EdgeImages(e) : forall (i: Integer) : Law_ImageChordWithinChordal(m, result, c, img, SamplePlan.DiscretizationPlan, i);
     measure result.Parameters.Count;
-    deferred "seeds; a closed-form uniform count for conics, raised until the image criteria hold; adaptive bisection at parameter midpoints for other curves, the sagitta tested by Sagitta's certificate and the angles by the plan's samples; then the count floors";
+    deferred "seeds; a closed-form uniform count for conics, raised until the image criteria hold; adaptive bisection at parameter midpoints for other curves, the sagitta tested by Sagitta's certificate and the angles by the plan's samples, every split (the image criterion's too) leaving both halves at least the effective minimum length; then the count floors";
 }
 
 // A canonical discretization refined under tighter criteria or to a higher count.
@@ -256,7 +256,7 @@ theorem DiscretizeTerminates
     assume m.CanDiscretize(e, c);
     assume forall (d: EdgeDiscretization) : (d.Edge == e && m.IsEvaluable(d)) ? SumOf(d.SegmentCount.MapRange(i => d.SegmentLength(i))) <= length : true;
     conclude m.Discretize(e, c, floors).Parameters.Count.ToNumber <= length / c.EffectiveMinLength(m.Tolerances) + (m.EdgeSeeds(e).Count + m.MinimumSegmentCount(e, c, floors) + 1).ToNumber;
-    because "`length` bounds every inscribed polyline, so it is at least the arc length. A criterion splits a segment only when both halves are at least the effective minimum length, so every segment made by a criterion split has a chord at least that long, and there are at most length / MinLength of them. The other segments are unsplit seed spans (fewer than the seed count) and the segments added by count-floor splits (fewer than the minimum segment count). The conic path never exceeds the larger of its floor and its length cap, whose chords are at least MinLength each. Each bisection step adds one point, so the number of steps is bounded and the algorithm stops.";
+    because "`length` bounds every inscribed polyline, so it is at least the arc length. A criterion, the image criterion included, splits a segment only when both halves are at least the effective minimum length (Discretize's algorithm states this for every split), so every segment made by a criterion split has a chord at least that long, and there are at most length / MinLength of them. The other segments are unsplit seed spans (fewer than the seed count) and the segments added by count-floor splits (fewer than the minimum segment count). The conic path never exceeds the larger of its floor and its length cap, whose chords are at least MinLength each. Each bisection step adds one point, so the number of steps is bounded and the algorithm stops.";
     tested by Law_ShortSegmentIsForced;
 }
 
