@@ -114,6 +114,15 @@ type StepAttributeIndex
     Value: Integer;
 }
 
+// An occurrence of a STEP instance in the decoded assembly tree: a position
+// in layer 3's ProvenanceMap.Occurrences. -1 means none (the parent of a root
+// occurrence).
+type StepOccurrenceIndex
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}
+
 //==
 // # Mesh
 

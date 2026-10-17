@@ -20,6 +20,7 @@
 //  - Checks
 //  - Diagnostics and reports
 //  - Identity of copied values
+//  - Integer folds
 
 library BrepFoundation
 {
@@ -379,6 +380,17 @@ library BrepFoundation
     NearestUnwrapped(t: Number, reference: Number, period: Number): Number
         => reference + ShortestDifference(reference, t, period);
 
+    // The copy of t in (reference, reference + period]: the end of a range
+    // that starts at reference and runs forward around the circle to t. A t
+    // congruent to reference gives a full period, reference + period. Layer
+    // 2's edge domains use it. PeriodicRepresentativeAbove(0.5, 5.5, 2 pi)
+    // is 6.7831.... Precondition: CanWrap(t - reference, period).
+    PeriodicRepresentativeAbove(t: Number, reference: Number, period: Number): Number
+    {
+        var w = (t - reference).Wrap(period);
+        return w > 0.0 ? reference + w : reference + period;
+    }
+
     //==
     // # Curve domains
 
@@ -411,6 +423,25 @@ library BrepFoundation
             Periodic(period) => (d.ParameterLength - period).Abs <= t.Value;
             Closed(period) => (d.ParameterLength - period).Abs <= t.Value;
         };
+
+    // True when the domain's formula wraps: its periodicity is Periodic, not
+    // Closed and not Aperiodic. The CurveDomain form of IsPeriodic, a match on
+    // d.Periodicity itself for the reason HasSeam(d) gives.
+    IsPeriodicDomain(d: CurveDomain): Boolean
+        => match (d.Periodicity)
+        {
+            Aperiodic => false;
+            Periodic(period) => true;
+            Closed(period) => false;
+        };
+
+    // The domain of an unbounded aperiodic parameter, the whole real line,
+    // with the largest finite Numbers as its ends, the stdlib's convention for
+    // an unbounded box (Bounds3D.Empty): a line, a plane, the v of a cylinder.
+    // ParameterLength is infinite on it, so IsProper rejects it and Samples
+    // does not take it.
+    UnboundedDomain(_: CurveDomain): CurveDomain
+        => CurveDomain(NumberInterval(Number.MinValue, Number.MaxValue), Periodicity.Aperiodic);
 
     // True when the domain has a seam: its periodicity is Periodic or Closed.
     // A match on d.Periodicity itself, for callers whose match subject the
@@ -615,6 +646,17 @@ library BrepFoundation
             OnFace(face, uv) => Provenance.KernelFace(face);
         };
 
+    // True when the mesh vertex lies in the interior of face f: its carrier
+    // is f itself, not one of f's edges or vertices. Layers 5 and 6 test the
+    // provenance of face-interior points with it.
+    IsOnFace(p: MeshVertexProvenance, f: BrepFaceIndex): Boolean
+        => match (p)
+        {
+            OnVertex(vertex) => false;
+            OnEdge(edge, parameter) => false;
+            OnFace(face, uv) => face == f;
+        };
+
     // The dimension of the cell a mesh vertex sits on: 0 for a model vertex,
     // 1 for an edge interior, 2 for a face interior. The global mesh vertex
     // numbering (layer 6) orders vertices by it.
@@ -783,4 +825,12 @@ library BrepFoundation
     // every i. The count is compared first, so no index is out of range.
     Corresponds(xs: Array<$T>, ys: Array<$T>, same: Function2<$T, $T, Boolean>): Boolean
         => xs.Count == ys.Count ? xs.Count.Range.All(i => same(xs[i], ys[i])) : false;
+
+    //==
+    // # Integer folds
+
+    // The sum of an array of integers; 0 for an empty array. Counting
+    // functions in layers 3 and 6 fold with it.
+    IntegerTotal(xs: Array<Integer>): Integer
+        => xs.Reduce(0, (a, b) => a + b);
 }

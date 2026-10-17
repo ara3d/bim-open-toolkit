@@ -11,7 +11,7 @@ body, because every body here is its own specification; nothing is deferred.
 |---|---|
 | `foundation-tolerances.types.plato` | `LengthTolerance`, `AngleTolerance`, `ParameterTolerance`, `UvTolerance`, `Tolerances` |
 | `foundation-domains.types.plato` | `Periodicity`, `CurveDomain`, `SurfaceDomain`, `DomainSide`, `SamplePlan` |
-| `foundation-indices.types.plato` | the 13 typed indices |
+| `foundation-indices.types.plato` | the 14 typed indices |
 | `foundation-diagnostics.types.plato` | `MeshVertexProvenance`, `Provenance`, `Severity`, `ConstraintGroup`, `Check`, `Diagnostic`, `Report` |
 | `foundation.library.plato` | `library BrepFoundation`: 78 functions, all with bodies |
 | `foundation.laws.plato` | `library BrepFoundationLaws`: 34 laws, 4 witnesses, 1 helper |
@@ -365,6 +365,10 @@ to be at least that rounding bound.
 | `Law_LocatedKeepsFindings` | `Located` keeps each diagnostic's code and severity and fills only `Nowhere` | exact | library, test |
 | `Law_IsNoneExactlyWhenNegative` | `IsNone` exactly when `Value < 0`, for every `IIndex` type | exact | library, test |
 | `Law_OppositeSideIsInvolution` | the opposite of the opposite side is the side | exact | library, test |
+| `Law_PeriodicRepresentativeAboveInPeriod` | `PeriodicRepresentativeAbove(t, ref, p)` is in `(ref, ref + p]` and is `t` on the circle | rounding, `abs(t) + abs(ref) + p` | library, test |
+| `Law_UnboundedDomainIsNotSampled` | `UnboundedDomain` has infinite length, is not proper, and is not sampled | exact | library, test |
+| `Law_IsOnFaceHasDimensionTwo` | a vertex on a face's interior has carrier dimension 2 | exact | library, test |
+| `Law_IntegerTotalAddsOverConcatenation` | the total of joined arrays is the sum of the totals | exact | library, test |
 
 The laws over numbers, tolerance records, points, directions, intervals and indices are reachable
 by the stdlib's random runner (PLATO-PRIMER.md B.2). Those over `CurveDomain` (it holds a sum),
@@ -511,3 +515,14 @@ Applied:
    `StepsAreResolvable` still held, so `Law_SamplesStrictlyIncreasing` failed. `StepsAreResolvable`
    now requires a finite length, and the `Samples` contracts require it; a law over an unbounded
    direction samples a bounded window (the edge domain or the face's parameter box).
+7. **C10 and the FIX-WAVE ownership table: stand-ins moved into layer 0.** With the signatures
+   the other layers' stand-ins had, so each call site binds once they delete their copies:
+   `IntegerTotal(xs: Array<Integer>): Integer` (layers 3 and 6), `IsOnFace(p:
+   MeshVertexProvenance, f: BrepFaceIndex): Boolean` (layer 6's `IsOnFace` and layer 5's
+   `IsFaceInteriorProvenance`), `UnboundedDomain(_: CurveDomain): CurveDomain` (layer 1),
+   `PeriodicRepresentativeAbove(t: Number, reference: Number, period: Number): Number` and
+   `IsPeriodicDomain(d: CurveDomain): Boolean` (layer 2), and the type `StepOccurrenceIndex`
+   (layer 3). `PeriodicRepresentativeAbove` now reduces through `Wrap`, so it inherits `Wrap`'s
+   rounding corrections; `IsPeriodicDomain` is false for `Closed` (it is `IsPeriodic` on a
+   domain; seam reasoning calls `HasSeam(d)`). `Located` and `WholeInput` moved in item 3.
+   Four laws state them.

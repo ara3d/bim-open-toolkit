@@ -205,6 +205,27 @@ library BrepFoundationLaws
             : true;
     }
 
+    // The representative above the reference lies in (reference, reference +
+    // period], up to rounding at the reference, and names t on the circle.
+    // Library law, within the rounding at |t| + |reference| + period.
+    Law_PeriodicRepresentativeAboveInPeriod(t: Number, reference: Number, period: Number): Boolean
+    {
+        var r = PeriodicRepresentativeAbove(t, reference, period);
+        var slack = ResolutionAt(t.Abs + reference.Abs + period);
+        return (t - reference).CanWrap(period) && (r - t).CanWrap(period)
+            ? r >= reference
+                && r - reference <= period + slack
+                && PeriodicDistance(r, t, period) <= slack
+            : true;
+    }
+
+    // An unbounded domain has an infinite length, so IsProper rejects it and
+    // StepsAreResolvable refuses to sample it. Library law, exact.
+    Law_UnboundedDomainIsNotSampled(tol: ParameterTolerance, count: Integer): Boolean
+        => !CurveDomain.UnboundedDomain.ParameterLength.IsFinite
+            && !CurveDomain.UnboundedDomain.IsProper(tol)
+            && !CurveDomain.UnboundedDomain.Range.StepsAreResolvable(count);
+
     //==
     // # Domains and sampling
 
@@ -327,6 +348,16 @@ library BrepFoundationLaws
                     ? r.Located(where).Diagnostics[k].Where == where
                     : r.Located(where).Diagnostics[k].Where == r.Diagnostics[k].Where)
             : true;
+
+    // A mesh vertex on a face's interior has carrier dimension 2. Library
+    // law, exact.
+    Law_IsOnFaceHasDimensionTwo(p: MeshVertexProvenance, f: BrepFaceIndex): Boolean
+        => p.IsOnFace(f) ? p.CarrierDimension == 2 : true;
+
+    // IntegerTotal of two arrays joined is the sum of their totals. Library
+    // law, exact: Integer addition is associative even when it wraps.
+    Law_IntegerTotalAddsOverConcatenation(xs: Array<Integer>, ys: Array<Integer>): Boolean
+        => IntegerTotal(xs.Concatenate(ys)) == IntegerTotal(xs) + IntegerTotal(ys);
 
     //==
     // # Indices and sides

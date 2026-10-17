@@ -204,6 +204,24 @@ spec NearestUnwrapped(t: Number, reference: Number, period: Number): Number
     ensures PeriodicDistance(result, t, period) <= ResolutionAt(t.Abs + reference.Abs + period);
 }
 
+spec PeriodicRepresentativeAbove(t: Number, reference: Number, period: Number): Number
+{
+    requires (t - reference).CanWrap(period);
+    ensures Law_PeriodicRepresentativeAboveInPeriod(t, reference, period);
+    ensures (t - reference).Wrap(period) == 0.0 ? result == reference + period : true;   // exact by construction
+}
+
+spec UnboundedDomain(_: CurveDomain): CurveDomain
+{
+    ensures !result.ParameterLength.IsFinite;
+    ensures !result.Periodicity.HasSeam;
+}
+
+spec IsPeriodicDomain(d: CurveDomain): Boolean
+{
+    ensures result == d.Periodicity.IsPeriodic;
+}
+
 spec Wrap(d: CurveDomain, t: Number): Number
 {
     requires d.CanWrap(t);
