@@ -150,6 +150,15 @@ Recorded as they arise; the ticket carries the same list.
   that matters is what makes the creation and validation of the library efficient once code
   generation works. Both reports were revised under that premise; the measured facts about the
   current state stay as the gap to close, not as the constraint.
+- 2026-10-17: **STEP parsing stays in C#, for now.** The owner started a separate agent to see
+  whether the existing IFC parsing code (`deps/bim-open-data`, `Ara3D.IfcTypes` and its
+  EXPRESS-driven generator) can read STEP Part 21 files, so that Plato concentrates on extraction
+  of properties, relationships and B-reps, geometry, meshing and validation. The boundary is the
+  `Part21File` value of layer 3: the host produces it, Plato decodes it. `ParseStep` and printing
+  become host obligations (bodiless declarations, Plato's FFI); the schema model, decoding, and
+  layer 3's laws stay in Plato, with the parse-print-parse and reference laws checked by the host's
+  tests. Layers 0 to 2 and 4 to 8 are unaffected. The TypeScript backend will later need the same
+  host service in TypeScript. Finding F-1 (`reviews/FINDINGS.md`) stays on hold as decided.
 - 2026-10-17: **no OpenCascade dependency**, in the library or its tests. This settles
   `TARGET-LANGUAGE.md` open question 6 (which OpenCascade-based oracle) and `SPEC-EXECUTION.md`
   open question 11 (OpenCascade as a test dependency): neither. Differential testing, where wanted,
