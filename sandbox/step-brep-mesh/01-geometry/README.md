@@ -448,3 +448,7 @@ Applied:
 - **F11, and F7 for this layer.** The normal, area-element, oracle and period laws are library
   laws and take rounding bounds (`NormalAngleBound`, `ResolutionAt(EvaluationMagnitude)`), not
   the model's angle or length tolerance; the floor-sized exclusion zone is gone.
+- **F12 (the layer 1 items).** `spec Eval` on a surface states containment without a zero tolerance;
+  `spec ProjectNear` states nearness to the seed within half a period plus rounding instead of an
+  exact `==` on computed values; `spec LimitNormal` likewise compares directions within
+  `NormalAngleBound`.

@@ -376,7 +376,8 @@ spec Domain(g: GeometrySet, s: SurfaceIndex): SurfaceDomain
 spec Eval(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Point3D
 {
     requires g.CanEvaluate(s);
-    requires g.Domain(s).ContainsParameter(uv, UvTolerance(ParameterTolerance(0.0), ParameterTolerance(0.0)));
+    requires g.Domain(s).U.Periodicity.IsPeriodic || g.Domain(s).U.Range.Contains(uv.U);
+    requires g.Domain(s).V.Periodicity.IsPeriodic || g.Domain(s).V.Range.Contains(uv.V);
     ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_SurfaceRepeatsWithPeriod(g, s, uv, which, tol);
     ensures forall (tol: Tolerances) : Law_BSplineSurfaceMatchesBasisSum(g, s, uv, tol);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
@@ -440,7 +441,9 @@ spec Project(g: GeometrySet, s: SurfaceIndex, p: Point3D): UvCoordinate
 spec ProjectNear(g: GeometrySet, s: SurfaceIndex, p: Point3D, seed: UvCoordinate): UvCoordinate
 {
     requires g.CanEvaluate(s);
-    ensures result == g.Domain(s).NearestUnwrapped(result, seed);
+    ensures forall (which: SurfaceParameter) : (result.Coordinate(which) - seed.Coordinate(which)).Abs
+        <= g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(Number.MaxValue) * 0.5
+            + ResolutionAt(seed.Coordinate(which).Abs + g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(0.0));
     ensures forall (tol: Tolerances) : g.Eval(s, seed).Coincident(p, tol.Length)
         ? g.Domain(s).SameParameter(result, seed, g.UvToleranceAt(s, seed, tol))
         : true;
@@ -498,7 +501,7 @@ spec OffsetPartial(g: GeometrySet, basis: SurfaceIndex, distance: Number, uv: Uv
 spec LimitNormal(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D
 {
     requires g.CanEvaluate(s);
-    ensures g.AreaElement(s, uv) > 0.0 ? result == g.NormalOr(s, uv, result) : true;
+    ensures g.AreaElement(s, uv) > 0.0 ? result.AngleBetweenDirections(g.NormalOr(s, uv, result)).Radians <= g.NormalAngleBound(s, uv) : true;
     ensures forall (tol: Tolerances) : result.IsUnitWithin(tol.Angle);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
     deferred "NormalOr where regular; on a collapsed line, the limit along the transverse parameter";
