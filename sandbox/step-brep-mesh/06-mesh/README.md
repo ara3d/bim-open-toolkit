@@ -400,12 +400,17 @@ Readings of those names this layer depends on, for the owning authors to confirm
 
 Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 
-- Over this folder alone: every file parses; resolution stops on the lower-layer names listed above
-  (layers 0, 2, 4, 5 not yet written), as expected.
-- Over this folder plus scratch-only stub declarations of exactly those names: PASS, 0 errors,
-  4,098 functions type-checked. Remaining Info findings: LINT003 (fields no function reads yet) and
-  two LINT014 on `EulerCharacteristic`, a name VOCABULARY.md fixes that the stdlib's `TopologySummary`
-  also uses as a field.
+- Before the fix wave, over all nine layers: PASS, 0 errors, 6,357 functions type-checked.
+- Fix wave, after each commit, this folder live with the other layers as of the wave's start
+  (commit 9099f8e8), and 07-validation's calls to the nine rounding laws adjusted in the scratch
+  copy only, without the tolerance argument: PASS, 0 errors (6,399 functions at the end).
+- Fix wave, last: this folder live against main at c42213a2 (layer 0 committed): no finding in
+  this folder. The 15 errors are all in 05-face-meshing and 07-validation and are the predicted
+  mid-wave follow-ups (the `Tolerances.Parameter` split, `ReportOf` with `Check.Bound`, the new
+  `Provenance` arms), plus two layer 4 names layer 7 still calls, stubbed in scratch.
+- Remaining Info findings: LINT003 (fields no function reads yet) and two LINT014 on
+  `EulerCharacteristic`, a name VOCABULARY.md fixes that the stdlib's `TopologySummary` also uses
+  as a field.
 
 ## Changes to the contract
 
@@ -487,3 +492,28 @@ Applied:
 - **`IntegerTotal` and `IsOnFace` deleted** (review C10; FIX-WAVE first table). Both are now layer
   0's, with the same signatures and meaning (commit c09a121b); this layer calls them. Gated
   against the committed layer 0 on main (see "Gate").
+
+Checked, nothing to change:
+
+- **`Periodicity.Closed`** (FIX-WAVE first table). No layer 6 code reads `Periodicity` or matches on
+  it; seams reach this layer only as face mesh points, already numbered by site.
+- **`Tolerances.Parameter` split.** No layer 6 code reads `.Parameter`.
+- **New `Provenance` cases.** No layer 6 code matches on `Provenance`.
+- **Section 6 of the review, conditions 2 and 3** (C6; F1 and C1) are layer 5's.
+- **07-validation finding 7** (`Law_AngleDefectMatchesBrepEuler`): this layer's comment already
+  names it as 07-validation's.
+
+Skipped:
+
+- **M7** (pole collapse decided by combinatorics) names `Lift`, layer 5's; C7 says layers 5 and 6
+  agree on the pole segment, so nothing here changes.
+
+Follow-ups owed by other layers: 07-validation drops the tolerance argument from its nine
+`Check_` calls of `Law_AreaIsSumOfFaceMeshAreas`, `Law_TriangleMeshKeepsArea`,
+`Law_QuadMeshKeepsAreaWhenOk`, `Law_PolygonMeshKeepsArea`, `Law_ReversalNegatesSignedVolume`,
+`Law_TriangleAngleSumIsPi`, `Law_QuadAngleDefectIsNotNegative`,
+`Law_AngleDefectSumIsTwoPiTimesEuler`, and `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects`;
+layers 7 and 8 delete their `SameConnectivity`; layer 7's `RestrictedToShell` becomes
+`RestrictedToFaces`, and it may add `Check_`s for `Law_CornerProvenanceIsOnItsElementFace`,
+`Law_VectorAreaVanishes`, and `Law_OrientedSurfaceWithBoundaryHasGenus`. `CompensatedSum` could
+move to layer 0 if a second layer needs it.
