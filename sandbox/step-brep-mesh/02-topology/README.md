@@ -332,9 +332,17 @@ research/VALIDATION-MATH.md 6.4, declared here once for layers 7 and 8 (FIX-WAVE
 table). `RigidlyMoved` moves every point of the arena, every vertex and every poly-loop point by
 `motion.PointInFrame`, turns every frame, direction and vector, and keeps every parameter, so the 2D
 curves and pcurves are unchanged; the topology rows are copied, so indices, senses and edge-domain
-structure carry over. `ScaledPoint(p, factor)` scales about the origin. The arena parts (`Moved`
-over `BrepCurve` and `BrepSurface`, `MovedFrame`, `MovedDirection`, `MovedVector`) are layer 1's
-knowledge and are marked `belongs-in: 01-geometry`.
+structure carry over. `ScaledBy` scales the arena through layer 1's `ScaledGeometry` (positions,
+radii and speed vectors by the factor, so curve parameters stay; a length along a unit frame axis,
+the plane's `u` and `v` and the cylinder's and cone's `v`, scales, and every pcurve's 2D curve is
+rescaled for its surface; the first version of this transform in layer 7 left pcurves as they were),
+every vertex and poly-loop point by `ScaledPoint`, and the tolerances as a re-decode of the scaled
+file would set them (`ScaledTolerances`: the length tolerance and the length parameter floor scale,
+the angle tolerance and the angle floor stay). With the per-kind floors of layer 0, scaling by a
+power of two is exact in both directions. The arena parts of the rigid motion (`MovedGeometry`,
+`Moved` over `BrepCurve` and `BrepSurface`, `MovedFrame`, `MovedDirection`, `MovedVector`) are
+layer 1's knowledge and are marked `belongs-in: 01-geometry`; `ScaledTolerances` is marked
+`belongs-in: 00-foundation`.
 
 ## Decisions
 
@@ -436,6 +444,7 @@ layer 1's `ParameterToleranceAt`.
 | `Law_ParameterizationSignIsConstantOnFace(m, site, t)` | at the projection of a coedge point, `N . (PartialU x PartialV)` has the sign `epsilon` says, where resolvable | exact sign | library, test |
 | `Law_ModelSizeWithinExtent(m)` | the model size is at most `2 sqrt(3)` times the coordinate extent | `ResolutionAt(size)` | library, test |
 | `Law_RigidMotionKeepsCoedgeSense(m, motion, site)` | a rigid motion leaves every coedge's composed sense unchanged | exact | library, test |
+| `Law_ScalingScalesExtent(m, factor)` | scaling by a positive factor scales the coordinate extent by it | `ResolutionAt(scaled extent)` | library, test |
 | `Law_LoopWindingMatchesSameSense(m, f)` | a plain face's parameter-space region has the sign `FaceNormalSign` says | exact sign | structural, Error |
 
 The pointwise laws take a fraction `t`, clamp it into `[0, 1]`, and map it onto the domain. Layer 7's
@@ -678,6 +687,11 @@ Applied:
   part `Moved(curve | surface, motion)`, `MovedFrame`, `MovedDirection`, `MovedVector` (marked
   `belongs-in: 01-geometry`), and `Moved(loop, motion)` for poly-loop points; library law
   `Law_RigidMotionKeepsCoedgeSense`.
+- **Model transforms, part 2.** `ScaledBy(m, factor)` with a body through layer 1's
+  `ScaledGeometry` (pcurves included), `ScaledTolerances` (`belongs-in: 00-foundation`) and
+  `Scaled(loop)`; `RigidlyMoved` now builds its arena through `MovedGeometry` (`belongs-in:
+  01-geometry`), so it follows `GeometrySet`'s new `Closures` field. Library law
+  `Law_ScalingScalesExtent`.
 
 Skipped:
 

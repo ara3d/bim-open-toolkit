@@ -1282,8 +1282,7 @@ library BrepTopology
     // right-handed frame (layer 8 checks it with IsOrthonormalWithin).
     RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel
         => BrepModel(
-            GeometrySet(m.Geometry.Curves.Map(c => c.Moved(motion)), m.Geometry.Curves2D, m.Geometry.Pcurves,
-                m.Geometry.Surfaces.Map(s => s.Moved(motion))),
+            m.Geometry.MovedGeometry(motion),
             m.Vertices.Map(v => BrepVertex(motion.PointInFrame(v.Point))),
             m.Edges,
             m.Loops.Map(l => l.Moved(motion)),
@@ -1292,6 +1291,56 @@ library BrepTopology
             m.Bodies,
             m.Tolerances,
             m.Unit);
+
+    // The arena carried by the rigid motion: every curve and surface moved,
+    // the 2D curves, pcurve records and closure marks kept (parameters and
+    // indices).
+    // belongs-in: 01-geometry
+    MovedGeometry(g: GeometrySet, motion: Frame3D): GeometrySet
+        => GeometrySet(g.Curves.Map(c => c.Moved(motion)), g.Curves2D, g.Pcurves,
+            g.Surfaces.Map(s => s.Moved(motion)), g.Closures);
+
+    // The model scaled about the origin by factor > 0: the arena through
+    // layer 1's ScaledGeometry (curves and surfaces scaled with their
+    // parameters kept, except a length along a unit frame axis, which scales,
+    // and every pcurve's 2D curve rescaled for its surface's directions), every
+    // vertex and poly-loop point scaled, the topology rows and the unit kept,
+    // and the tolerances scaled as a re-decode of the scaled file would set
+    // them (ScaledTolerances). Exact when factor is a power of two: then
+    // meshing commutes with scaling both up and down, since each parameter
+    // floor follows its own kind (layer 8 finding 6).
+    ScaledBy(m: BrepModel, factor: Number): BrepModel
+        => BrepModel(
+            m.Geometry.ScaledGeometry(factor),
+            m.Vertices.Map(v => BrepVertex(v.Point.ScaledPoint(factor))),
+            m.Edges,
+            m.Loops.Map(l => l.Scaled(factor)),
+            m.Faces,
+            m.Shells,
+            m.Bodies,
+            m.Tolerances.ScaledTolerances(factor),
+            m.Unit);
+
+    // The tolerances of a model scaled by factor: the length tolerance and the
+    // length parameter floor scaled (layer 0's LengthParameterFloor doubles
+    // when the length and the extent double), the angle tolerance and the
+    // angle parameter floor kept (AngleParameterFloor ignores scale).
+    // belongs-in: 00-foundation
+    ScaledTolerances(t: Tolerances, factor: Number): Tolerances
+        => Tolerances(
+            LengthTolerance(t.Length.Value * factor),
+            t.Angle,
+            ParameterTolerance(t.LengthParameter.Value * factor),
+            t.AngleParameter);
+
+    // A loop scaled about the origin: a poly loop's points scale; edge and
+    // vertex loops hold only indices.
+    Scaled(loop: BrepLoop, factor: Number): BrepLoop
+        => match (loop) {
+            EdgeLoop(coedges) => loop;
+            VertexLoop(vertex) => loop;
+            PolyLoop(points) => BrepLoop.PolyLoop(points.Map(p => p.ScaledPoint(factor)));
+        };
 
     // A loop carried by the rigid motion: a poly loop's points move; edge and
     // vertex loops hold only indices.

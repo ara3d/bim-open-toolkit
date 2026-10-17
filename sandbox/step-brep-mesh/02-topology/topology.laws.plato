@@ -453,6 +453,16 @@ library BrepTopologyLaws
                 : true)
             : true;
 
+    // Scaling the model by a positive factor scales its coordinate extent by
+    // the factor, within the rounding of the products: every defining point is
+    // scaled, so the largest absolute coordinate is too. Exact for a power of
+    // two. Library, ResolutionAt of the scaled extent.
+    Law_ScalingScalesExtent(m: BrepModel, factor: Number): Boolean
+        => (factor > 0.0 && factor.IsFinite)
+            ? (m.ScaledBy(factor).CoordinateExtent - m.CoordinateExtent * factor).Abs
+                <= ResolutionAt(m.CoordinateExtent * factor)
+            : true;
+
     //==
     // # Parameter-space winding
 
