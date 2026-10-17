@@ -35,7 +35,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
 | `step.laws.plato` | laws | `StepReadingLaws` | the decode |
 | `step.spec.plato` | spec | | type invariants, a contract for each of the 19 deferred functions and for `DecodeBrep`, 3 theorems |
 
-Counts: 31 types; 185 library functions, 166 with bodies and 19 deferred; 171 laws; 26 `spec`
+Counts: 31 types; 191 library functions, 172 with bodies and 19 deferred; 172 laws; 26 `spec`
 blocks (6 on types, 20 on functions) and 3 theorems. The library was split from the
 `step.library.plato` the brief names into six blocks because the schema table and the WHERE
 helpers are subjects of their own; the laws follow the same split.
@@ -259,10 +259,15 @@ diagnostic with the gap as its measure: `ClosedFlagWithoutClosure` (Warning: the
 mesh, and the gap says whether the tolerance is too tight) and `ClosureWithoutClosedFlag`
 (Info). `.U.` never disagrees.
 
-**Where the decision is stored** is layer 1's: the aperiodic record cases (B-spline, polyline,
-trimmed, composite, and their surface forms) carry the closure the decoder decided, and `Domain`
-reports it. Pcurves' 2D curves are not decided: a pcurve's range follows from its edge's (review
-F4b), and its closure from its surface's periodicity.
+**Where the decision is stored.** Layer 1's `GeometrySet` holds `Closures: Array<ClosureMark>`,
+and its `Domain` turns a marked bounded aperiodic direction into `Closed(range length)`
+(`WithClosure`). The decoder decides on each record's natural domain, which ignores marks
+(`DecidesClosed`), and writes the decisions as the last step of the geometry:
+`WithClosures(g, ClosureMarks(g, tolerances))`, an empty array when nothing closes.
+`Law_ClosureMarksAreTheDecisions` says the marks are exactly the decisions, and the two closure
+laws say a direction is `Closed` in `Domain` exactly when the decoder decided it. Parameter-plane
+curves get no `ClosedCurve2D` mark: a pcurve's range follows from its edge's (review F4b), and
+its closure from its surface's periodicity.
 
 ## Assemblies
 
@@ -547,8 +552,9 @@ are about this layer's code.
 | `Law_PcurveCountMatchesInstances` | One Pcurve per reached pcurve: the file's pcurves are kept, and none is invented (Law_PcurvesComeFromPcurveInstances). | exact | Error |
 | `Law_SurfaceCountMatchesInstances` | One BrepSurface per reached surface. | exact | Error |
 | `Law_CirclePeriodIsTwoPi` | Angles are radians after decoding, whatever the file's plane-angle unit: a kernel curve decoded from a circle has period 2 pi within tol, in a file whose angle unit is the degree as in any other. | `ParameterTolerance` (parameter; the contract passes `Tolerances.AngleParameter`) | Error |
-| `Law_CurveClosureDecidedByEnds` | A decoded curve whose formula does not wrap is Closed exactly when its range is bounded and its ends coincide within the length tolerance. | `Tolerances.Length` of the model | Error |
-| `Law_SurfaceClosureDecidedBySides` | A decoded surface direction whose formula does not wrap is Closed exactly when it is bounded and its opposite sides coincide within the length tolerance (SidesCoincide). | `Tolerances.Length` of the model | Error |
+| `Law_CurveClosureDecidedByEnds` | A decoded curve is Closed in layer 1's Domain exactly when the decode decided it: natural domain bounded and not wrapping, ends coincident within the length tolerance. | `Tolerances.Length` of the model | Error |
+| `Law_ClosureMarksAreTheDecisions` | The arena's closure marks are exactly ClosureMarks of the decoded arena at the model's tolerances: one per closed curve or surface direction, none otherwise. | exact | Error |
+| `Law_SurfaceClosureDecidedBySides` | A decoded surface direction is Closed in layer 1's Domain exactly when the decode decided it: natural domain bounded and not wrapping, opposite sides coincident (SidesCoincide). | `Tolerances` of the model | Error |
 | `Law_AngleUnitIsReported` | Every used context's plane-angle unit is reported at Info: found, or defaulted by the policy. | exact | Error |
 | `Law_UncertaintyDefaultExactlyWhenAbsent` | The uncertainty default is applied exactly when no used context states a length uncertainty. | exact | Error |
 | `Law_ToleranceCoversStatedUncertainties` | The model's length tolerance is at least every stated uncertainty of a used context, converted to the model unit (within the policy's unit-match tolerance, the rounding of the conversion). | `DecodePolicy.UnitMatch` (relative 1e-9) | Error |
@@ -671,6 +677,11 @@ Applied, one commit each (TKT-299, `reviews/FIX-WAVE.md`):
 - **C10.** `IntegerTotal` and `StepOccurrenceIndex` deleted; layer 0 declares both.
 - **F7 (this layer's case).** `axis2_placement_3d` WR4 and the orthogonality practice law use
   `AngleBetweenDirections`; the arc cosine cannot resolve the policy's 1e-9 rad.
+- **Closure marks (coordinator follow-up).** The decode writes its decisions into layer 1's
+  `GeometrySet.Closures` (`DecidesClosed`, `ClosureMarks`, `WithClosures`); the closure laws now
+  say a direction is `Closed` in `Domain` exactly when the decoder decided it, and
+  `Law_ClosureMarksAreTheDecisions` says the marks are the decisions. The mirror fold reads
+  layer 1's `PlacementHandedness` (`Law_LeftHandedSurfacesAreFolded`).
 - **Owner decision.** `ParseStep`, `PrintStep`, `NameOctetsPrecede` are host obligations
   ("Host obligations").
 
@@ -700,7 +711,7 @@ Skipped, with reasons:
 | `FaceBound.IsOuter` "records that the file wrote face_outer_bound" (layer 2's comment) | as written, except false on every bound of a face that has two or more | a contradictory hint is dropped so `Law_AtMostOneOuterBound` holds after decode |
 | layer 8 `ParseOutcome { Ok; File; Diagnostics }` | proposal: layer 8 reuses `ParsedFile`, which has the same fields | one declaration of one shape |
 | (none) | `IntegerTotal`, layer 0's (moved there in the fix wave; this layer's and layer 6's copies deleted) | two identical overloads are ambiguous once both layers compile together |
-| names used from lower layers beyond the fixed list | layer 0: `ResolutionAt`, `ResolvableLength`, `LengthParameterFloor`, `AngleParameterFloor`, `Law_LengthToleranceResolvable`, `Coincident`, `IsWellFormed`, `IsError`, `IsPeriodic`, `HasSeam`, `PeriodOr`, `Corresponds`, `Identical`, `Unmeasured`, `AngleBetweenDirections`, `IntegerTotal`, `StepOccurrenceIndex`, `WholeInput`, `KernelCurve`, `KernelSurface`; layer 1: `PlacementHandedness`, `SidesCoincide`, `DomainAlong`; layer 2: `ScaleToMetres`, `ModelSize(m)`, `CoordinateExtent(m)`, `BoundingDiagonal` | these should become fixed names, or this layer breaks when they are renamed |
+| names used from lower layers beyond the fixed list | layer 0: `ResolutionAt`, `ResolvableLength`, `LengthParameterFloor`, `AngleParameterFloor`, `Law_LengthToleranceResolvable`, `Coincident`, `IsWellFormed`, `IsError`, `IsPeriodic`, `HasSeam`, `PeriodOr`, `Corresponds`, `Identical`, `Unmeasured`, `AngleBetweenDirections`, `IntegerTotal`, `StepOccurrenceIndex`, `WholeInput`, `KernelCurve`, `KernelSurface`; layer 1: `PlacementHandedness`, `SidesCoincide`, `DomainAlong`, `ClosureMark`, `GeometrySet.Closures`, `CurveAt`, `SurfaceAt`; layer 2: `ScaleToMetres`, `ModelSize(m)`, `CoordinateExtent(m)`, `BoundingDiagonal` | these should become fixed names, or this layer breaks when they are renamed |
 | `Tolerances(length, angle, ParameterFloor(length, size))` | `Tolerances(length, angle, LengthParameterFloor(length, extent), AngleParameterFloor(length, size, extent))`; `ModelLengthTolerance` and `ModelTolerances` take the extent | per-dimension floors (C2) and the rounding floor at the coordinate extent (F6) |
 | `DecodedModel { Model; Map; Diagnostics }` | adds `ModelSize`, `CoordinateExtent` | layer 8's relative chordal default and layer 7's resolvability check need the numbers the decoder used |
 | `ModelSize(points)`: the decoder's size | forwards to layer 2's `BoundingDiagonal`; the decoder reads layer 2's `ModelSize(m)` | one owner of the bounding-box size; kept only for layer 7's callers |

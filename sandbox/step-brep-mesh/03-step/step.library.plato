@@ -13,6 +13,7 @@
 //  - Entry points
 //  - Policy
 //  - Units and tolerance
+//  - Closure
 //  - Occurrences
 //  - The provenance map
 //  - Reached instances
@@ -33,11 +34,15 @@ library StepReading
     // find the occurrences (FindOccurrences); decode each occurrence's
     // reachable instances into the kernel tables, folding orientation flags
     // and making the local repairs of StepRepair, with placements and unit
-    // conversion applied to every point, frame and length; set the tolerances
+    // conversion applied to every point, frame and length (a mirroring
+    // placement leaves each placed frame left-handed, so layer 1's
+    // PlacementHandedness of the surface is the determinant's sign, and the
+    // face and its bounds are folded by it); set the tolerances
     // (ModelTolerances, from layer 2's ModelSize and CoordinateExtent of the
-    // decoded model, both exported in the result); decide the closure of every curve and surface
-    // direction whose formula does not wrap from its ends at the length
-    // tolerance (README, "Closure at decode"); build the provenance map.
+    // decoded model, both exported in the result); decide closure and write
+    // it into the arena (WithClosures(g, ClosureMarks(g, tolerances)), the
+    // empty array when nothing closes; README, "Closure at decode"); build
+    // the provenance map.
     DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel;
 
     // deferred: a census by keyword. One EntityTypeIgnored Info per ignored
@@ -167,6 +172,57 @@ library StepReading
     // The units of the context named id; fallback when contexts has none.
     ContextUnitsOf(contexts: Array<ContextUnits>, id: StepInstanceId, fallback: ContextUnits): ContextUnits
         => contexts.Reduce(fallback, (found, c) => c.Context == id ? c : found);
+
+    //==
+    // # Closure
+    //
+    // README, "Closure at decode". The decision is made on the record's own
+    // (natural) domain, which ignores the arena's closure marks, and written
+    // into the arena as layer 1's ClosureMarks; layer 1's Domain then reports
+    // a marked direction as Closed(range length) (WithClosure).
+
+    // True when the natural domain can be closed by a mark: it neither wraps
+    // nor has a seam already, and its range is bounded.
+    IsClosable(d: CurveDomain): Boolean
+        => !d.Periodicity.HasSeam && d.ParameterLength.IsFinite;
+
+    // The decode's decision for curve c: its natural domain is closable and
+    // its two ends coincide within the length tolerance.
+    DecidesClosed(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
+    {
+        var d = g.CurveAt(c).Domain(g);
+        return d.IsClosable ? g.Eval(c, d.Range.Start).Coincident(g.Eval(c, d.Range.End), tol) : false;
+    }
+
+    // The decode's decision for surface s in one parameter: the natural
+    // domain in that parameter is closable and the two opposite sides are the
+    // same curve within the tolerances (layer 1's SidesCoincide, which reads
+    // the geometry, never the marks).
+    DecidesClosed(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
+        => g.SurfaceAt(s).Domain(g).DomainAlong(which).IsClosable ? g.SidesCoincide(s, which, tol) : false;
+
+    // Every closure the decode decides for the arena g, as layer 1's marks:
+    // one ClosedCurve per curve decided closed, then one ClosedSurface per
+    // surface decided closed in u, then in v, each in index order; the empty
+    // array when nothing closes. Parameter-plane curves get none: a pcurve's
+    // range follows from its edge's and its surface's periodicity (review
+    // F4b).
+    ClosureMarks(g: GeometrySet, tol: Tolerances): Array<ClosureMark>
+        => g.Curves.Count.Range
+                .FlatMap(k => g.DecidesClosed(CurveIndex(k), tol.Length) ? [ClosureMark.ClosedCurve(CurveIndex(k))] : ClosureMark.NoMarks)
+            .Concatenate(g.Surfaces.Count.Range
+                .FlatMap(k => g.DecidesClosed(SurfaceIndex(k), SurfaceParameter.ParameterU, tol) ? [ClosureMark.ClosedSurface(SurfaceIndex(k), SurfaceParameter.ParameterU)] : ClosureMark.NoMarks))
+            .Concatenate(g.Surfaces.Count.Range
+                .FlatMap(k => g.DecidesClosed(SurfaceIndex(k), SurfaceParameter.ParameterV, tol) ? [ClosureMark.ClosedSurface(SurfaceIndex(k), SurfaceParameter.ParameterV)] : ClosureMark.NoMarks));
+
+    // No marks: the typed empty array.
+    NoMarks(_: ClosureMark): Array<ClosureMark>
+        => [ClosureMark.ClosedCurve(CurveIndex(0))].Take(0);
+
+    // The arena g with its closure marks replaced by marks: the last step of
+    // the decode's geometry, after the tolerances are set.
+    WithClosures(g: GeometrySet, marks: Array<ClosureMark>): GeometrySet
+        => GeometrySet(g.Curves, g.Curves2D, g.Pcurves, g.Surfaces, marks);
 
     //==
     // # Occurrences

@@ -256,6 +256,7 @@ spec DecodeBrep(file: Part21File): DecodedModel
     ensures Law_PcurveCountMatchesInstances(file);
     ensures Law_SurfaceCountMatchesInstances(file);
     ensures forall (k: Integer) : Law_CirclePeriodIsTwoPi(file, k, result.Model.Tolerances.AngleParameter);
+    ensures Law_ClosureMarksAreTheDecisions(file);
     ensures forall (k: Integer) : Law_CurveClosureDecidedByEnds(file, k);
     ensures forall (k: Integer) : Law_SurfaceClosureDecidedBySides(file, k, SurfaceParameter.ParameterU);
     ensures forall (k: Integer) : Law_SurfaceClosureDecidedBySides(file, k, SurfaceParameter.ParameterV);
