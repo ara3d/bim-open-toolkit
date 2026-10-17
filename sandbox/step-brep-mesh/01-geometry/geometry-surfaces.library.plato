@@ -149,14 +149,19 @@ library BrepGeometrySurfaces
     //==
     // # Normal and area element
 
-    // The unit normal at uv as ISO 10303-42 states it, or fallback where it
-    // has none. Closed forms for the elementary surfaces, which extend by
-    // continuity to a sphere's poles; the fallback is taken only at a cone's
-    // apex and where the cross product of the partials is exactly zero. The
-    // normal is <PartialU x PartialV> except on the part of a torus inside its
-    // axis, where ISO's normal is the opposite (the Lemon part, 4.5.64 NOTE 1;
-    // NormalAgreesWithParameterization). A rectangular trimmed surface's normal
-    // turns over when exactly one of its senses is reversed.
+    // The unit normal at uv, or fallback where it has none: eps <PartialU x
+    // PartialV>, with eps = -1 exactly where NormalAgreesWithParameterization
+    // is false (the Lemon part of a torus, where ISO states the opposite,
+    // 4.5.64 NOTE 1) and +1 elsewhere, on placements of either handedness.
+    // Closed forms for the elementary surfaces, which extend by continuity to
+    // a sphere's poles; each is multiplied by its frame's Handedness, because
+    // on a mirrored frame PartialU x PartialV turns over while the frame's
+    // axes do not. The fallback is taken only at a cone's apex and where the
+    // cross product of the partials is exactly zero. A rectangular trimmed
+    // surface's normal turns over when exactly one of its senses is reversed.
+    // Mirroring a surface therefore turns its kernel normal for every case
+    // alike, and layer 3 folds the transform's determinant into the face's
+    // sense (research/STEP-BREP-MODEL.md 4.2).
     NormalOr(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, fallback: Direction3D): Direction3D
         => g.SurfaceAt(s).NormalOr(g, uv, fallback);
 
@@ -164,11 +169,11 @@ library BrepGeometrySurfaces
     NormalOr(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, fallback: Direction3D): Direction3D
         => match (surface)
         {
-            Plane(placement) => placement.ZAxis;
-            Cylinder(placement, radius) => Direction3D(placement.FrameVector(uv.U.Cos, uv.U.Sin, 0.0));
+            Plane(placement) => Direction3D(placement.ZAxis.Vector * placement.Handedness);
+            Cylinder(placement, radius) => Direction3D(placement.FrameVector(uv.U.Cos, uv.U.Sin, 0.0) * placement.Handedness);
             Cone(placement, radius, semiAngle) => ConeNormalOr(placement, radius, semiAngle, uv, fallback);
-            Sphere(placement, radius) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin));
-            Torus(placement, major, minor, part) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin));
+            Sphere(placement, radius) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin) * placement.Handedness);
+            Torus(placement, major, minor, part) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin) * placement.Handedness);
             Revolution(profile, axis) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
             LinearExtrusion(profile, extrusion) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
             BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
@@ -180,9 +185,9 @@ library BrepGeometrySurfaces
 
     // True when the surface's stated normal is <PartialU x PartialV> wherever
     // that is defined, false when it is the opposite. False only for the Lemon
-    // part of a torus and surfaces built on one; a Full torus with major below
-    // minor (a self-intersecting deviation layer 3 reports) is answered for its
-    // outer part. Layer 2 composes it with a face's SameSense.
+    // part of a torus and surfaces built on one. It does not depend on the
+    // placement's handedness (NormalOr). Layer 2 composes it with a face's
+    // SameSense.
     NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean
         => g.SurfaceAt(s).NormalAgreesWithParameterization(g);
 
@@ -510,14 +515,39 @@ library BrepGeometrySurfaces
         => w * u.Cos + a.Cross(w) * u.Sin + a * (a.Dot(w) * (1.0 - u.Cos));
 
     // The cone's normal: (cos a e_r - sin a z) on the nappe where
-    // R + v tan a > 0, its negation on the other, which is <S_u x S_v> on both
-    // (ISO 10303-42 4.5.61); fallback at the apex, where no normal exists.
-    // The apex test is exact: the formula is right arbitrarily close to it.
+    // R + v tan a > 0, its negation on the other, times the frame's
+    // Handedness, which is <S_u x S_v> on both (ISO 10303-42 4.5.61); fallback
+    // at the apex, where no normal exists. The apex test is exact: the
+    // formula is right arbitrarily close to it.
     ConeNormalOr(f: Frame3D, radius: Number, semiAngle: Angle, uv: UvCoordinate, fallback: Direction3D): Direction3D
         => radius + uv.V * semiAngle.Tan == 0.0
             ? fallback
             : Direction3D(f.FrameVector(semiAngle.Cos * uv.U.Cos, semiAngle.Cos * uv.U.Sin, -semiAngle.Sin)
-                * (radius + uv.V * semiAngle.Tan).Sign.ToNumber);
+                * ((radius + uv.V * semiAngle.Tan).Sign.ToNumber * f.Handedness));
+
+    // The Handedness of the surface's placement: its frame's for the
+    // placement-based cases, its basis's for a trim or an offset, and +1 for
+    // the swept and spline cases, whose normal is the cross product of their
+    // partials and so needs no correction. Exported for layers 2 and 3, which
+    // fold a mirroring into a face's sense.
+    PlacementHandedness(g: GeometrySet, s: SurfaceIndex): Number
+        => g.SurfaceAt(s).PlacementHandedness(g);
+
+    // PlacementHandedness for one record of the arena g, which holds the entries it references.
+    PlacementHandedness(surface: BrepSurface, g: GeometrySet): Number
+        => match (surface)
+        {
+            Plane(placement) => placement.Handedness;
+            Cylinder(placement, radius) => placement.Handedness;
+            Cone(placement, radius, semiAngle) => placement.Handedness;
+            Sphere(placement, radius) => placement.Handedness;
+            Torus(placement, major, minor, part) => placement.Handedness;
+            Revolution(profile, axis) => 1.0;
+            LinearExtrusion(profile, extrusion) => 1.0;
+            BSpline(data) => 1.0;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.PlacementHandedness(basis);
+            Offset(basis, distance) => g.PlacementHandedness(basis);
+        };
 
     // The cone's closest parameters to p. In the meridian plane through p
     // (radial coordinate r >= 0 toward p, axial z), the rulings at u and at

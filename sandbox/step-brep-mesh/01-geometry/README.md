@@ -217,6 +217,16 @@ for the axial `v`.
     `ArenaCurve2D`, `ArenaSurface` pair the arena with an index and implement `INaturalCurve3D`,
     `INaturalCurve2D`, `INaturalSurface` by delegation; a non-STEP geometry can implement them
     directly.
+17. **Mirrored placements are legal, and the kernel normal follows the parameterization.** A
+    `cartesian_transformation_operator` with a negative determinant gives a left-handed frame
+    (research/STEP-BREP-MODEL.md 4.2). The placement laws accept either handedness, and
+    `Handedness(f)` and `PlacementHandedness(g, s)` export the sign. On a mirrored frame
+    `S_u x S_v` turns over while the frame's axes do not, so the closed-form normals multiply by
+    the handedness: `NormalOr` is `eps <S_u x S_v>` on every surface and frame, `eps` from
+    `NormalAgreesWithParameterization`. Mirroring then turns the kernel normal of a plane and of a
+    B-spline alike, and layer 3's fold of the transform's determinant into the face's sense is right
+    for both (review F2). `IsOrthonormalWithin(Frame3D)` stays right-handed: it is the test layers 7
+    and 8 apply to rigid motions.
 
 ## How to read the contracts
 
@@ -247,7 +257,7 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_CurveReferencesInRange`, `..2D..`, `Law_PcurveReferencesInRange`, `Law_SurfaceReferencesInRange` | every index a record holds names an arena entry | exact | Error |
 | `Law_CurveReferencesAcyclic`, `..2D..`, `Law_SurfaceReferencesAcyclic` | no reference chain from the entry repeats an entry | exact | Error |
 | `Law_CurveHasEvaluableShape`, `..2D..`, `Law_SurfaceHasEvaluableShape` | the record's arrays have the sizes its formula reads | exact | Error |
-| `Law_CurvePlacementOrthonormal`, `..2D..`, `Law_SurfacePlacementOrthonormal` | placement frames orthonormal and right-handed; offset reference and revolution axis unit | Angle | File, 10x |
+| `Law_CurvePlacementOrthonormal`, `..2D..`, `Law_SurfacePlacementOrthonormal` | placement frames orthonormal of either handedness (plane frames counter-clockwise); offset reference and revolution axis unit; measure `PlacementDeviation` | Angle | File, 10x |
 | `Law_BSplineCurve{DegreePositive, KnotCount, KnotsNonDecreasing, KnotMultiplicityBounded, DomainNonEmpty, WeightCount, WeightsPositive}`, the same seven for `Curve2D` | ISO 4.6.11 and 4.5.39 WR1, WR2, one rule each | exact | Error |
 | `Law_BSplineSurface{DegreePositive, KnotCount, KnotsNonDecreasing, KnotMultiplicityBounded, DomainNonEmpty}(d, which)`, `..NetConsistent`, `..WeightGridMatchesNet`, `..WeightsPositive` | the same per parameter, and the grids' shapes | exact | Error |
 | `Law_BSplineCurveDomainIsKnotSpan`, `..2D..`, `Law_BSplineSurfaceDomainIsKnotSpan` | the domain is `[Knots[Degree], Knots[Count - Degree - 1]]`, aperiodic | exact by construction | Library |
@@ -366,6 +376,8 @@ as expected.
 | (new, `belongs-in: 00-foundation`) | `UnboundedDomain(_: CurveDomain)` | layer 0 allows unbounded domains but has no constructor for one |
 | `IsBreakKnot(b, i)`, `CompositeBreakpoints` | `IsBreakKnot(b, i, order)`, `CompositeBreaks(g, segments, order)` | breaks of any derivative order (fix wave, F5) |
 | (new) | `Breaks(g, c, order)` on curves, parameter-plane curves and surfaces; `SplineBreaks(b, order)`; `EvaluationMagnitude` on curves, parameter-plane curves, pcurves and surfaces | the derivative laws' exclusions and rounding bound (fix wave, F5) |
+| `IsOrthonormalWithin(Frame3D)` used by the placement laws | `OrthonormalityDeviation(f)` (either handedness) in the placement laws; `IsOrthonormalWithin` stays right-handed for rigid motions | mirrored placements are legal (fix wave, F2; decision 17) |
+| (new) | `Handedness(f: Frame3D)`, `PlacementHandedness(g, s)`, `PlacementDeviation(g, c | s)` | the determinant sign for layers 2 and 3; the placement laws' measure for layer 7 (fix wave, F2) |
 
 ## Fix wave, 2026-10-17
 
@@ -379,3 +391,6 @@ Applied:
   step from the shortest smooth piece, bound by Richardson's estimate plus
   `ResolutionAt(EvaluationMagnitude) / h`; the refuted conjecture is replaced by theorem
   `RichardsonBoundsTheDifferenceError` with its hypothesis (`|C^(5)| <= 6e14 M / s^5`).
+- **F2.** Placement laws accept mirrored frames and export `PlacementDeviation`; `Handedness` and
+  `PlacementHandedness` export the determinant sign; the closed-form normals multiply by it, so
+  `NormalOr = eps <S_u x S_v>` holds on mirrored placements (decision 17).

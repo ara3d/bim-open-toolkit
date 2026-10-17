@@ -167,68 +167,88 @@ library BrepGeometryLaws
     //==
     // # Placements
 
-    // Curve c's placement is orthonormal and right-handed within the angle
-    // tolerance, and an offset curve's reference direction is a unit vector.
+    // Curve c's placement is orthonormal, of either handedness, within the
+    // angle tolerance, and an offset curve's reference direction is a unit
+    // vector: PlacementDeviation is at most the tolerance in radians. A
+    // mirrored placement (Handedness -1) is legal STEP: a
+    // cartesian_transformation_operator may carry a negative determinant.
     Law_CurvePlacementOrthonormal(g: GeometrySet, c: CurveIndex, tol: Tolerances): Boolean
-        => g.IsCurveInRange(c) ? g.CurveAt(c).PlacementIsOrthonormal(tol.Angle) : true;
+        => g.IsCurveInRange(c) ? g.PlacementDeviation(c) <= tol.Angle.Value.Radians : true;
 
-    // Parameter-plane curve c's placement is orthonormal and counter-clockwise.
+    // Parameter-plane curve c's placement is orthonormal and counter-clockwise
+    // within the angle tolerance.
     Law_Curve2DPlacementOrthonormal(g: GeometrySet, c: Curve2DIndex, tol: Tolerances): Boolean
-        => g.IsCurve2DInRange(c) ? g.Curve2DAt(c).PlacementIsOrthonormal(tol.Angle) : true;
+        => g.IsCurve2DInRange(c) ? g.PlacementDeviation(c) <= tol.Angle.Value.Radians : true;
 
-    // Surface s's placement is orthonormal and right-handed, and a surface of
-    // revolution's axis is a unit vector, within the angle tolerance.
+    // Surface s's placement is orthonormal, of either handedness, and a
+    // surface of revolution's axis is a unit vector, within the angle
+    // tolerance.
     Law_SurfacePlacementOrthonormal(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Boolean
-        => g.IsSurfaceInRange(s) ? g.SurfaceAt(s).PlacementIsOrthonormal(tol.Angle) : true;
+        => g.IsSurfaceInRange(s) ? g.PlacementDeviation(s) <= tol.Angle.Value.Radians : true;
 
-    // The placement claim of each curve case: conics have a frame; the rest
+    // The measure of Law_CurvePlacementOrthonormal, in radians, for layer 7
+    // to grade against the angle tolerance: OrthonormalityDeviation of a
+    // conic's frame, the offset reference's relative length error, 0 for
+    // cases without a frame. Precondition: c in range.
+    PlacementDeviation(g: GeometrySet, c: CurveIndex): Number
+        => g.CurveAt(c).PlacementDeviation;
+
+    // The measure of Law_Curve2DPlacementOrthonormal, in radians.
+    PlacementDeviation(g: GeometrySet, c: Curve2DIndex): Number
+        => g.Curve2DAt(c).PlacementDeviation;
+
+    // The measure of Law_SurfacePlacementOrthonormal, in radians.
+    PlacementDeviation(g: GeometrySet, s: SurfaceIndex): Number
+        => g.SurfaceAt(s).PlacementDeviation;
+
+    // PlacementDeviation of each curve case: conics have a frame; the rest
     // have none, except the offset's reference direction.
-    PlacementIsOrthonormal(curve: BrepCurve, tol: AngleTolerance): Boolean
+    PlacementDeviation(curve: BrepCurve): Number
         => match (curve)
         {
-            Line(origin, velocity) => true;
-            Circle(placement, radius) => placement.IsOrthonormalWithin(tol);
-            Ellipse(placement, semiAxis1, semiAxis2) => placement.IsOrthonormalWithin(tol);
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.IsOrthonormalWithin(tol);
-            Parabola(placement, focalDistance) => placement.IsOrthonormalWithin(tol);
-            Polyline(points) => true;
-            BSpline(data) => true;
-            Trimmed(basis, range, sameSense) => true;
-            Composite(segments) => true;
-            Offset(basis, distance, reference) => reference.IsUnitWithin(tol);
-            OnSurface(spaceCurve, supports, master) => true;
+            Line(origin, velocity) => 0.0;
+            Circle(placement, radius) => placement.OrthonormalityDeviation;
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.OrthonormalityDeviation;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.OrthonormalityDeviation;
+            Parabola(placement, focalDistance) => placement.OrthonormalityDeviation;
+            Polyline(points) => 0.0;
+            BSpline(data) => 0.0;
+            Trimmed(basis, range, sameSense) => 0.0;
+            Composite(segments) => 0.0;
+            Offset(basis, distance, reference) => (reference.Vector.Length - 1.0).Abs;
+            OnSurface(spaceCurve, supports, master) => 0.0;
         };
 
-    // The placement claim of each parameter-plane curve case.
-    PlacementIsOrthonormal(curve: BrepCurve2D, tol: AngleTolerance): Boolean
+    // PlacementDeviation of each parameter-plane curve case.
+    PlacementDeviation(curve: BrepCurve2D): Number
         => match (curve)
         {
-            Line(origin, velocity) => true;
-            Circle(placement, radius) => placement.IsOrthonormalWithin(tol);
-            Ellipse(placement, semiAxis1, semiAxis2) => placement.IsOrthonormalWithin(tol);
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.IsOrthonormalWithin(tol);
-            Parabola(placement, focalDistance) => placement.IsOrthonormalWithin(tol);
-            Polyline(points) => true;
-            BSpline(data) => true;
-            Trimmed(basis, range, sameSense) => true;
-            Composite(segments) => true;
-            Offset(basis, distance) => true;
+            Line(origin, velocity) => 0.0;
+            Circle(placement, radius) => placement.OrthonormalityDeviation;
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.OrthonormalityDeviation;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.OrthonormalityDeviation;
+            Parabola(placement, focalDistance) => placement.OrthonormalityDeviation;
+            Polyline(points) => 0.0;
+            BSpline(data) => 0.0;
+            Trimmed(basis, range, sameSense) => 0.0;
+            Composite(segments) => 0.0;
+            Offset(basis, distance) => 0.0;
         };
 
-    // The placement claim of each surface case.
-    PlacementIsOrthonormal(surface: BrepSurface, tol: AngleTolerance): Boolean
+    // PlacementDeviation of each surface case.
+    PlacementDeviation(surface: BrepSurface): Number
         => match (surface)
         {
-            Plane(placement) => placement.IsOrthonormalWithin(tol);
-            Cylinder(placement, radius) => placement.IsOrthonormalWithin(tol);
-            Cone(placement, radius, semiAngle) => placement.IsOrthonormalWithin(tol);
-            Sphere(placement, radius) => placement.IsOrthonormalWithin(tol);
-            Torus(placement, major, minor, part) => placement.IsOrthonormalWithin(tol);
-            Revolution(profile, axis) => axis.Direction.IsUnitWithin(tol);
-            LinearExtrusion(profile, extrusion) => true;
-            BSpline(data) => true;
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => true;
-            Offset(basis, distance) => true;
+            Plane(placement) => placement.OrthonormalityDeviation;
+            Cylinder(placement, radius) => placement.OrthonormalityDeviation;
+            Cone(placement, radius, semiAngle) => placement.OrthonormalityDeviation;
+            Sphere(placement, radius) => placement.OrthonormalityDeviation;
+            Torus(placement, major, minor, part) => placement.OrthonormalityDeviation;
+            Revolution(profile, axis) => (axis.Direction.Vector.Length - 1.0).Abs;
+            LinearExtrusion(profile, extrusion) => 0.0;
+            BSpline(data) => 0.0;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => 0.0;
+            Offset(basis, distance) => 0.0;
         };
 
     //==

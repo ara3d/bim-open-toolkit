@@ -406,22 +406,47 @@ library BrepGeometry
     IsUnitWithin(d: Direction2D, tol: AngleTolerance): Boolean
         => (d.Vector.Length - 1.0).Abs <= tol.Value.Radians;
 
+    // The sign of the frame's orientation: +1 when X x Y points along Z (a
+    // right-handed frame, which every axis2_placement_3d is), -1 when against
+    // it (a placement mirrored by a cartesian_transformation_operator of
+    // negative determinant; research/STEP-BREP-MODEL.md 4.2, "Mirroring
+    // instances"). An exact sign; a degenerate frame counts as right-handed.
+    // Layer 3 folds the sign of a mirroring transform into the face's sense;
+    // the closed-form normals multiply by it (NormalOr).
+    Handedness(f: Frame3D): Number
+        => f.XAxis.Vector.Cross(f.YAxis.Vector).Dot(f.ZAxis.Vector) >= 0.0 ? 1.0 : -1.0;
+
+    // How far the frame is from orthonormal, of either handedness, in
+    // radians: the largest of each axis's relative length error, |X . Y| (the
+    // cosine of their angle, which is their angle's distance from a right
+    // angle to first order), and the angle between <X x Y> and the nearer of
+    // Z and -Z.
+    OrthonormalityDeviation(f: Frame3D): Number
+        => (f.XAxis.Vector.Length - 1.0).Abs
+            .Max((f.YAxis.Vector.Length - 1.0).Abs)
+            .Max((f.ZAxis.Vector.Length - 1.0).Abs)
+            .Max(f.XAxis.Vector.Dot(f.YAxis.Vector).Abs)
+            .Max(Direction3D(f.XAxis.Vector.Cross(f.YAxis.Vector)).AngleBetweenDirections(Direction3D(f.ZAxis.Vector * f.Handedness)).Radians);
+
     // True when the frame is orthonormal and right-handed within the angle
-    // tolerance: unit axes, X and Y perpendicular, and X x Y along Z. Y and Z
-    // perpendicular to X follow from the last two to first order.
+    // tolerance: the frame of a rigid motion. A placement may be mirrored and
+    // is judged by OrthonormalityDeviation alone.
     IsOrthonormalWithin(f: Frame3D, tol: AngleTolerance): Boolean
-        => f.XAxis.IsUnitWithin(tol)
-            && f.YAxis.IsUnitWithin(tol)
-            && f.ZAxis.IsUnitWithin(tol)
-            && f.XAxis.Vector.Dot(f.YAxis.Vector).Abs <= tol.Value.Sin
-            && Direction3D(f.XAxis.Vector.Cross(f.YAxis.Vector)).SameDirection(f.ZAxis, tol);
+        => f.OrthonormalityDeviation <= tol.Value.Radians && f.Handedness > 0.0;
+
+    // How far the plane frame is from orthonormal and counter-clockwise, in
+    // radians: the axes' relative length errors and |Y - quarter-turn of X|.
+    // An axis2_placement_2d derives Y from X, so a plane frame is never
+    // mirrored.
+    OrthonormalityDeviation(f: Frame2D): Number
+        => (f.XAxis.Vector.Length - 1.0).Abs
+            .Max((f.YAxis.Vector.Length - 1.0).Abs)
+            .Max((f.YAxis.Vector - f.XAxis.Vector.Perp).Length);
 
     // True when the plane frame is orthonormal and counter-clockwise within the
     // angle tolerance: unit axes and Y the quarter-turn of X.
     IsOrthonormalWithin(f: Frame2D, tol: AngleTolerance): Boolean
-        => f.XAxis.IsUnitWithin(tol)
-            && f.YAxis.IsUnitWithin(tol)
-            && (f.YAxis.Vector - f.XAxis.Vector.Perp).Length <= tol.Value.Sin;
+        => f.OrthonormalityDeviation <= tol.Value.Radians;
 
     //==
     // # Pieces laid end to end
