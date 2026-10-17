@@ -197,12 +197,13 @@ spec AlongCoedge(m: BrepModel, d: EdgeDiscretization, bound: FaceBound, coedge: 
     measure d.Parameters.Count;
 }
 
-// Only the requested edges change, and none gets coarser.
+// Only the requested edges change, and none gets coarser. Only requested entries are read, so
+// only they must be discretizable, evaluable, and canonical.
 spec Refine(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): EdgeDiscretizations
 {
     requires Law_IndicesInRange(m);
     requires c.IsWellFormed;
-    requires m.IsRefinable(d);
+    requires m.IsRefinable(d, requests, c);
     ensures Law_DiscretizationsCoverEdges(m, result);
     ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
     ensures forall (e: BrepEdgeIndex) : Law_RefineKeepsUnrequestedEdges(m, d, requests, c, e);

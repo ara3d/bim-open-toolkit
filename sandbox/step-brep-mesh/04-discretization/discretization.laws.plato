@@ -48,12 +48,16 @@ library EdgeDiscretizingLaws
     IsEvaluableSegment(m: BrepModel, d: EdgeDiscretization, i: Integer): Boolean
         => m.IsEvaluable(d) && d.IsSegmentIndex(i);
 
-    // The precondition of `Refine` on its discretizations: one canonical, evaluable entry per edge
-    // of the model, entry i for edge i.
-    IsRefinable(m: BrepModel, ds: EdgeDiscretizations): Boolean
+    // The precondition of `Refine`: one entry per edge of the model, entry i for edge i, and every
+    // entry a request names discretizable under the criteria, evaluable, and canonical. Entries
+    // no request names are never read, so nothing is asked of them: an `Undiscretized` entry may
+    // stay as long as no face asks for its edge.
+    IsRefinable(m: BrepModel, ds: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): Boolean
         => m.Law_DiscretizationsCoverEdges(ds)
             && ds.ByEdge.Count.MapRange(i => ds.Law_DiscretizationsIndexedByEdge(i)).All(x => x)
-            && ds.ByEdge.All(x => m.IsEvaluable(x) ? x.RunsAlongCurve : false);
+            && ds.ByEdge.All(x => requests.IsRequested(x.Edge)
+                ? (m.CanDiscretize(x.Edge, c) ? (m.IsEvaluable(x) ? x.RunsAlongCurve : false) : false)
+                : true);
 
     //==
     // # Shape
@@ -320,7 +324,7 @@ library EdgeDiscretizingLaws
 
     // An edge no request names comes out of `Refine` bit-identical.
     Law_RefineKeepsUnrequestedEdges(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria, e: BrepEdgeIndex): Boolean
-        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsRefinable(d) && d.ByEdge.IsValidIndex(e))
+        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsRefinable(d, requests, c) && d.ByEdge.IsValidIndex(e))
             ? (requests.IsRequested(e)
                 ? true
                 : m.Refine(d, requests, c).ByEdge[e].SameDiscretization(d.ByEdge[e]))
@@ -329,7 +333,7 @@ library EdgeDiscretizingLaws
     // `Refine` never coarsens: every parameter a requested edge had before is still a parameter
     // after, so the new partition refines the old one.
     Law_RefineNeverCoarsens(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria, e: BrepEdgeIndex, k: Integer): Boolean
-        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsRefinable(d) && d.ByEdge.IsValidIndex(e))
+        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsRefinable(d, requests, c) && d.ByEdge.IsValidIndex(e))
             ? (d.ByEdge[e].Parameters.IsValidIndex(k)
                 ? m.Refine(d, requests, c).ByEdge[e].ContainsParameter(d.ByEdge[e].Parameters[k])
                 : true)
@@ -338,7 +342,7 @@ library EdgeDiscretizingLaws
     // A requested count is met on every edge that is not degenerate (a degenerate edge keeps its
     // one segment; face meshing places points on a pole side itself).
     Law_RefineMeetsRequestedSegments(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria, e: BrepEdgeIndex): Boolean
-        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsRefinable(d) && d.ByEdge.IsValidIndex(e) && m.IsEdgeEvaluable(e))
+        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsRefinable(d, requests, c) && d.ByEdge.IsValidIndex(e) && m.IsEdgeEvaluable(e))
             ? (m.IsDegenerateEdge(e)
                 ? true
                 : m.Refine(d, requests, c).ByEdge[e].SegmentCount >= requests.RequestedSegments(e))
