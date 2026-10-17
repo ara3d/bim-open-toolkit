@@ -172,25 +172,6 @@ spec IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
     deferred "radius or extent below the length tolerance for analytic curves; every control point within the tolerance of the first for B-splines";
 }
 
-// belongs-in: 01-geometry
-spec PcurvesOf(g: GeometrySet, c: CurveIndex): Array<PcurveIndex>
-{
-    requires g.Curves.IsValidIndex(c);
-    ensures forall (k: Integer) in 0.UpTo(result.Count) : g.Pcurves.IsValidIndex(result[k]);
-    measure result.Count;
-    deferred "the OnSurface case's associated pcurves; empty for every other case";
-}
-
-// belongs-in: 01-geometry
-spec Eval(g: GeometrySet, c: Curve2DIndex, t: Number): UvCoordinate
-{
-    requires g.Curves2D.IsValidIndex(c);
-    requires t.IsFinite;
-    ensures result.U.IsFinite && result.V.IsFinite;
-    measure 1;
-    deferred "one formula per BrepCurve2D case, as Eval over CurveIndex in 3D";
-}
-
 //==
 // Functions with bodies that construct a discretization
 

@@ -236,15 +236,6 @@ library EdgeDiscretizing
             m.Tolerances,
             m.Unit);
 
-    // belongs-in: 01-geometry
-    // deferred: the pcurves a curve carries: the associated pcurves of the `OnSurface` case
-    // (STEP `surface_curve`, `seam_curve`), empty for every other case.
-    PcurvesOf(g: GeometrySet, c: CurveIndex): Array<PcurveIndex>;
-
-    // belongs-in: 01-geometry
-    // deferred: a 2D curve of the arena evaluated at parameter t, as natural surface parameters.
-    Eval(g: GeometrySet, c: Curve2DIndex, t: Number): UvCoordinate;
-
     //==
     // # Segment-count floors
     //
