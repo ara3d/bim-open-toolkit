@@ -200,7 +200,7 @@ Negative witnesses, each failing exactly the named laws of layer 2 (research/VAL
 
 | Witness | Raw counts | Fails |
 |---|---|---|
-| `Witness_SphereWithRedundantPoleLoops(r)` | 2, 1, 1, 3 (chi raw 0, reduced 2) | `Law_FaceBoundsShareNoVertex`, `Law_VertexLoopVertexIsIsolated` |
+| `Witness_SphereWithRedundantPoleLoops(r)` | 2, 1, 1, 3 (chi raw 0, reduced 2) | `Law_NoRedundantVertexLoop` (Warning), `Law_VertexLoopVertexIsIsolated` |
 | `Witness_BoxWithFlippedFace` | 8, 12, 6, 6 | `Law_LoopWindingMatchesSameSense` at face 0 |
 | `Witness_TwoBoxesSharingCorner` | 15, 24, 12, 12 (chi 3) | `Law_EulerPoincareEvenAndBounded`, `Law_VertexLinkIsOneCycle` at vertex 6 |
 
@@ -452,3 +452,7 @@ These two landed in one commit, since both edit the topology checks.
   vertex or element it sampled, or `WholeInput` for a finding about the input as a whole. The holding
   seed of a fold keeps `Nowhere` and never becomes a diagnostic, since `ReportOf` builds one only for a
   failed check, and a failed fold keeps a failed sample's provenance.
+| Layer 2's new laws and grades | checks added for `Law_NoRedundantVertexLoop` and `Law_PcurveSurfaceIsAFaceSurface` (Warnings), `Law_PolyLoopHasThreePoints`, `Law_PolyLoopEdgesPairUp`, `Law_OpenShellVertexLinkIsCycleOrPath`, `Law_OpenShellEulerEvenAndBounded`, `Law_ShellIsConnected` (review M1), `Law_ShellIsOrientable`, `Law_PcurveRunsWithCurve`, `Law_CurveAgreesWithPcurve` (measured), and as self-tests `Law_EdgeReversalKeepsCoedgeSense`, `Law_EdgeReversalKeepsEdgeDomain`, `Law_ParameterizationSignIsConstantOnFace`, `Law_ReversingEveryFaceKeepsCoherence`, `Law_ModelSizeWithinExtent`; `Check_EdgeHasPositiveExtent` reported as a Warning. Not checked: `Law_RigidMotionKeepsCoedgeSense`, which takes an arbitrary frame, a harness input. The redundant-pole-loop witness now fails `Law_NoRedundantVertexLoop` (Warning) and `Law_VertexLoopVertexIsIsolated`, since `Law_FaceBoundsShareNoVertex` leaves redundant loops out |
+| Layer 1's `GeometrySet.Closures` | every witness's arena gains an empty closure table; `SameModel` compares it |
+| Layer 4's `Law_CertifiedSagittaWithinChordal` | `Check_CertifiedSagittaWithinChordal`, measured by layer 4's exact `Sagitta`, a self-test |
+| Layer 5's new laws | `Check_SurfaceWithinSurfaceChordalOfElement` (measured, review M6), and as self-tests `Check_SeamUsesOnOppositeCopies` (review M8), `Check_BoundarySegmentIsElementSide` (review M5), `Check_InteriorSideIsShared`, `Check_ElementLiftsFacingFaceNormal` (review H5), `Check_RequestsNameFaceEdges`; `Check_PointNormalIsFaceNormal`'s comment names the bound `ResolutionAt(1)`. Not checked: `Law_MeshFaceReadsOnlyFaceEdges`, which takes a second discretization set; layer 8's `Law_OutcomesAreCurrent` runs it over the loop's states |

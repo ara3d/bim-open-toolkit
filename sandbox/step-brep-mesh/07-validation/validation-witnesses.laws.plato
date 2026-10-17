@@ -195,15 +195,19 @@ library BrepWitnessesLaws
     // and the structure family of TopologyReport has exactly as many
     // diagnostics as named laws.
 
-    // The sphere with redundant pole loops fails Law_FaceBoundsShareNoVertex.
-    Law_RedundantPoleLoopsShareAVertex(r: Number): Boolean
-        => (r > 0.0 && r.IsFinite) ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).Check_FaceBoundsShareNoVertex.Holds.Not : true;
+    // The sphere with redundant pole loops fails Law_NoRedundantVertexLoop, a
+    // Warning since layer 2's fix wave (Law_FaceBoundsShareNoVertex now
+    // leaves redundant vertex loops out).
+    Law_RedundantPoleLoopsAreRedundant(r: Number): Boolean
+        => (r > 0.0 && r.IsFinite) ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).Check_NoRedundantVertexLoop.Holds.Not : true;
 
     // The sphere with redundant pole loops fails Law_VertexLoopVertexIsIsolated.
     Law_RedundantPoleLoopVertexIsNotIsolated(r: Number): Boolean
         => (r > 0.0 && r.IsFinite) ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).Check_VertexLoopVertexIsIsolated.Holds.Not : true;
 
-    // The sphere with redundant pole loops fails no other structural law.
+    // The sphere with redundant pole loops fails no other structural law: two
+    // findings, the Error of Law_VertexLoopVertexIsIsolated and the Warning
+    // of Law_NoRedundantVertexLoop.
     Law_RedundantPoleLoopsFailExactlyTwoLaws(r: Number): Boolean
         => (r > 0.0 && r.IsFinite)
             ? BrepModel.Witness_SphereWithRedundantPoleLoops(r).TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 2

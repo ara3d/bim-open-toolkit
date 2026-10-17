@@ -41,6 +41,7 @@ library BrepComparisons
     SameModel(a: BrepModel, b: BrepModel): Boolean
         => a.Geometry.Curves.Corresponds(b.Geometry.Curves, (x, y) => x == y)
             && a.Geometry.Surfaces.Corresponds(b.Geometry.Surfaces, (x, y) => x == y)
+            && a.Geometry.Closures.Corresponds(b.Geometry.Closures, (x, y) => x == y)
             && a.Vertices.Corresponds(b.Vertices, (x, y) => x == y)
             && a.Edges.Corresponds(b.Edges, (x, y) => x == y)
             && a.Loops.Corresponds(b.Loops, (x, y) => x.CoedgesOf.Corresponds(y.CoedgesOf, (p, q) => p == q)

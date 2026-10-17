@@ -72,7 +72,9 @@ library BrepCheckingFaceMeshing
     // # The face mesh: geometry (geometry)
 
     // Law_PointNormalIsFaceNormal at every parameter-space point. Geometry,
-    // bound Tolerances.Angle; no measure exported by layer 5: Error.
+    // bound ResolutionAt(1), the library's own rounding of a unit vector, not
+    // the file's angle tolerance (review F7); no measure exported by layer 5:
+    // Error.
     Check_PointNormalIsFaceNormal(m: BrepModel, fm: FaceMesh): Check
         => fm.CheckPoints("Law_PointNormalIsFaceNormal", i => Law_PointNormalIsFaceNormal(m, fm, i));
 
@@ -130,6 +132,15 @@ library BrepCheckingFaceMeshing
     Check_ElementSpansBelowHalfPeriod(m: BrepModel, fm: FaceMesh): Check
         => fm.CheckElements("Law_ElementSpansBelowHalfPeriod", k => Law_ElementSpansBelowHalfPeriod(m, fm.Face, fm.FaceMeshTriangulation, k));
 
+    // Law_SurfaceWithinSurfaceChordalOfElement at every element, measured by
+    // ElementCoverageGap (surface to mesh, review M6) against SurfaceChordal
+    // plus Tolerances.Length; 0 where the law is vacuous. Geometry: W/E.
+    Check_SurfaceWithinSurfaceChordalOfElement(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
+        => CheckAllWithin("Law_SurfaceWithinSurfaceChordalOfElement", fm.ElementCount,
+            k => (m.CanMeasure(fm, ElementIndex(k)) && m.IsDiscretizedFace(fm.Face, d)) ? m.ElementCoverageGap(d, fm, ElementIndex(k)) : 0.0,
+            c.SurfaceChordal + m.Tolerances.Length.Value,
+            k => Provenance.KernelFace(fm.Face));
+
     //==
     // # Loops and region, recomputed (self-tests)
     //
@@ -157,6 +168,18 @@ library BrepCheckingFaceMeshing
         => CheckGrid("Law_PcurveAgreesWithProjection", m.Edges.Count, d.MostPoints,
             (e, k) => m.FaceUsesEdgeAt(f, BrepEdgeIndex(e)) ? Law_PcurveAgreesWithProjection(m, f, d, BrepEdgeIndex(e), k) : true,
             (e, k) => AtEdge(e));
+
+    // Law_SeamUsesOnOppositeCopies at every loop of face f, edge of the face,
+    // and pair of loop steps (review M8, the left rule). Quadratic in a loop's
+    // length. Self-test: Error.
+    Check_SeamUsesOnOppositeCopies(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
+        => CheckGrid("Law_SeamUsesOnOppositeCopies", m.FaceBoundCount(f) * m.FaceEdges(f).Count.Max(1),
+            m.MostLoopPoints(f, d) * m.MostLoopPoints(f, d),
+            (be, ij) => m.FaceEdges(f).Count > 0
+                ? Law_SeamUsesOnOppositeCopies(m, f, m.FaceLoopAt(f, d, be / m.FaceEdges(f).Count),
+                    m.FaceEdges(f)[be % m.FaceEdges(f).Count], ij / m.MostLoopPoints(f, d), ij % m.MostLoopPoints(f, d))
+                : true,
+            (be, ij) => Provenance.KernelFace(f));
 
     // Law_UnwrapKeepsSources at every point of every loop of face f.
     Check_UnwrapKeepsSources(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Check
@@ -233,6 +256,37 @@ library BrepCheckingFaceMeshing
         => CheckAll("Law_TriangulationKeepsBoundary", m.RegionOf(f, d, c).BoundaryCount,
             i => Law_TriangulationKeepsBoundary(m.RegionOf(f, d, c), m.FaceTriangulation(f, d, c), i),
             i => Provenance.KernelFace(f));
+
+    // Law_BoundarySegmentIsElementSide at every loop and segment of face f's
+    // region, against the recomputed triangulation (review M5). Self-test:
+    // Error.
+    Check_BoundarySegmentIsElementSide(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckGrid("Law_BoundarySegmentIsElementSide", m.RegionOf(f, d, c).NumberOfLoops, m.RegionOf(f, d, c).BoundaryCount,
+            (k, i) => Law_BoundarySegmentIsElementSide(m.RegionOf(f, d, c), m.FaceTriangulation(f, d, c), k, i),
+            (k, i) => Provenance.KernelFace(f));
+
+    // Law_InteriorSideIsShared at every element and side of the recomputed
+    // triangulation. Self-test: Error.
+    Check_InteriorSideIsShared(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckGrid("Law_InteriorSideIsShared", m.FaceTriangulation(f, d, c).ElementCount, 4,
+            (k, j) => Law_InteriorSideIsShared(m.RegionOf(f, d, c), m.FaceTriangulation(f, d, c), ElementIndex(k), j),
+            (k, j) => Provenance.KernelFace(f));
+
+    // Law_ElementLiftsFacingFaceNormal at every element of the recomputed
+    // triangulation (review H5: the sign is enforced, not derived).
+    // Self-test: Error.
+    Check_ElementLiftsFacingFaceNormal(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_ElementLiftsFacingFaceNormal", m.FaceTriangulation(f, d, c).ElementCount,
+            k => Law_ElementLiftsFacingFaceNormal(m, f, m.FaceTriangulation(f, d, c), ElementIndex(k)),
+            k => Provenance.KernelFace(f));
+
+    // Law_RequestsNameFaceEdges at every request of face f's outcome.
+    // Self-test: Error.
+    Check_RequestsNameFaceEdges(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
+        => CheckAll("Law_RequestsNameFaceEdges",
+            m.IsDiscretizedFace(f, d) ? m.MeshFace(f, d, c).Requests.Count : 0,
+            q => Law_RequestsNameFaceEdges(m, f, d, c, q),
+            q => Provenance.KernelFace(f));
 
     // Law_TriangulationAddsOnlyInteriorPoints at every point of the
     // recomputed triangulation.

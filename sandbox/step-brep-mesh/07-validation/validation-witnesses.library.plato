@@ -102,7 +102,7 @@ library BrepWitnesses
                  BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, -1.0, 0.0))),
                  BrepSurface.Plane(FrameAt(Point3D(1.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0))),
                  BrepSurface.Plane(FrameAt(Point3D(0.0, 1.0, 0.0), Vector3D(-1.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0))),
-                 BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0), Vector3D(-1.0, 0.0, 0.0)))]),
+                 BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(0.0, 1.0, 0.0), Vector3D(-1.0, 0.0, 0.0)))], []),
             [BrepVertex(Point3D(0.0, 0.0, 0.0)), BrepVertex(Point3D(1.0, 0.0, 0.0)), BrepVertex(Point3D(1.0, 1.0, 0.0)), BrepVertex(Point3D(0.0, 1.0, 0.0)),
              BrepVertex(Point3D(0.0, 0.0, 1.0)), BrepVertex(Point3D(1.0, 0.0, 1.0)), BrepVertex(Point3D(1.0, 1.0, 1.0)), BrepVertex(Point3D(0.0, 1.0, 1.0))],
             [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true),
@@ -189,7 +189,7 @@ library BrepWitnesses
     // 2 (wd + dh + hw), volume w d h. Positive sizes.
     Witness_Box(_: BrepModel, w: Number, d: Number, h: Number): BrepModel
         => BrepModel(
-            GeometrySet(BoxCurves(BoxCorners(Point3D(0.0, 0.0, 0.0), w, d, h)), [], [], BoxPlanes(Point3D(0.0, 0.0, 0.0), w, d, h)),
+            GeometrySet(BoxCurves(BoxCorners(Point3D(0.0, 0.0, 0.0), w, d, h)), [], [], BoxPlanes(Point3D(0.0, 0.0, 0.0), w, d, h), []),
             BoxCorners(Point3D(0.0, 0.0, 0.0), w, d, h).Map(p => BrepVertex(p)),
             BoxEdges(8.Range, 0),
             6.MapRange(k => BoxLoop(12.Range, k)),
@@ -222,7 +222,7 @@ library BrepWitnesses
                 [],
                 [BrepSurface.Cylinder(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
                  BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 0)),
-                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, h), 1))]),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, h), 1))], []),
             [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(r, 0.0, h))],
             [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
              BrepEdge(BrepVertexIndex(1), BrepVertexIndex(1), CurveIndex(1), true),
@@ -267,7 +267,7 @@ library BrepWitnesses
                  BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, h), 1)),
                  BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 2)),
                  BrepSurface.Plane(FrameAt(Point3D(0.0, 0.0, 0.0), Vector3D(sweep.Cos, sweep.Sin, 0.0),
-                    Vector3D(0.0, 0.0, -1.0), Vector3D(0.0 - sweep.Sin, sweep.Cos, 0.0)))]),
+                    Vector3D(0.0, 0.0, -1.0), Vector3D(0.0 - sweep.Sin, sweep.Cos, 0.0)))], []),
             [BrepVertex(Point3D(0.0, 0.0, 0.0)), BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(c0),
              BrepVertex(Point3D(0.0, 0.0, h)), BrepVertex(Point3D(r, 0.0, h)), BrepVertex(c1)],
             [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true),
@@ -323,7 +323,7 @@ library BrepWitnesses
     // genus 0, area 4 pi r^2, volume 4 pi r^3 / 3.
     Witness_Sphere(_: BrepModel, r: Number): BrepModel
         => BrepModel(
-            GeometrySet([MeridianOf(r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)]),
+            GeometrySet([MeridianOf(r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], []),
             [BrepVertex(Point3D(0.0, 0.0, 0.0 - r)), BrepVertex(Point3D(0.0, 0.0, r))],
             [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true)],
             [BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(0, false)])],
@@ -344,7 +344,7 @@ library BrepWitnesses
     // genus 0, area 4 pi r^2, volume 4 pi r^3 / 3.
     Witness_SphereByPoleLoops(_: BrepModel, r: Number): BrepModel
         => BrepModel(
-            GeometrySet([], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)]),
+            GeometrySet([], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], []),
             [BrepVertex(Point3D(0.0, 0.0, r)), BrepVertex(Point3D(0.0, 0.0, 0.0 - r))],
             [],
             [BrepLoop.VertexLoop(BrepVertexIndex(0)), BrepLoop.VertexLoop(BrepVertexIndex(1))],
@@ -372,7 +372,7 @@ library BrepWitnesses
                  BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major + minor)],
                 [],
                 [],
-                [BrepSurface.Torus(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major, minor, TorusPart.Full)]),
+                [BrepSurface.Torus(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major, minor, TorusPart.Full)], []),
             [BrepVertex(Point3D(major + minor, 0.0, 0.0))],
             [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
              BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(1), true)],
@@ -407,7 +407,7 @@ library BrepWitnesses
                 [],
                 [],
                 [BrepSurface.Cone(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r, (r / h).Atan),
-                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 1))]),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 1))], []),
             [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(0.0, 0.0, 0.0 - h))],
             [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
              BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(1), true)],
@@ -445,7 +445,7 @@ library BrepWitnesses
                 BoxCurves(BoxCorners(o, a, a, c)).Concatenate(BoxCurves(BoxCorners(hole, w, w, c))),
                 [],
                 [],
-                BoxPlanes(o, a, a, c).Concatenate(BoxPlanes(hole, w, w, c).Skip(2))),
+                BoxPlanes(o, a, a, c).Concatenate(BoxPlanes(hole, w, w, c).Skip(2)), []),
             BoxCorners(o, a, a, c).Concatenate(BoxCorners(hole, w, w, c)).Map(p => BrepVertex(p)),
             BoxEdges(8.Range, 0).Concatenate(BoxEdges(8.MapRange(k => k + 8), 12)),
             6.MapRange(k => BoxLoop(12.Range, k)).Concatenate(6.MapRange(k => BoxLoop(12.MapRange(e => e + 12), k))),
@@ -479,7 +479,7 @@ library BrepWitnesses
                 BoxCurves(BoxCorners(o, a, a, a)).Concatenate(BoxCurves(BoxCorners(inner, b, b, b))),
                 [],
                 [],
-                BoxPlanes(o, a, a, a).Concatenate(BoxPlanes(inner, b, b, b))),
+                BoxPlanes(o, a, a, a).Concatenate(BoxPlanes(inner, b, b, b)), []),
             BoxCorners(o, a, a, a).Concatenate(BoxCorners(inner, b, b, b)).Map(p => BrepVertex(p)),
             BoxEdges(8.Range, 0).Concatenate(BoxEdges(8.MapRange(k => k + 8), 12)),
             6.MapRange(k => BoxLoop(12.Range, k)).Concatenate(6.MapRange(k => BoxLoop(12.MapRange(e => e + 12), k))),
@@ -517,7 +517,7 @@ library BrepWitnesses
                         SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
                         MakeArray2D(3, 3, (i, j) => Point3D(i.ToNumber * 0.5, j.ToNumber * 0.5, i == 1 && j == 1 ? 1.0 + bump : 1.0)),
                         MakeArray2D(3, 3, (i, j) => 1.0)))])
-                    .Concatenate(BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Skip(2))),
+                    .Concatenate(BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Skip(2)), []),
             BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Map(p => BrepVertex(p)),
             BoxEdges(8.Range, 0),
             6.MapRange(k => BoxLoop(12.Range, k)),
@@ -541,11 +541,11 @@ library BrepWitnesses
     // B of research/VALIDATION-MATH.md 1.5). Raw counts V = 2, E = 1, F = 1,
     // L = 3 give chi = 0; reduced counts drop both vertex loops (they sit on
     // the seam loop's vertices) and give 2, 1, 1, 1 and chi = 2. Fails
-    // Law_FaceBoundsShareNoVertex and Law_VertexLoopVertexIsIsolated, and no
-    // other law of layer 2.
+    // Law_NoRedundantVertexLoop (a Warning) and Law_VertexLoopVertexIsIsolated
+    // (an Error), and no other law of layer 2.
     Witness_SphereWithRedundantPoleLoops(_: BrepModel, r: Number): BrepModel
         => BrepModel(
-            GeometrySet([MeridianOf(r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)]),
+            GeometrySet([MeridianOf(r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], []),
             [BrepVertex(Point3D(0.0, 0.0, 0.0 - r)), BrepVertex(Point3D(0.0, 0.0, r))],
             [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true)],
             [BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(0, false)]),
@@ -588,7 +588,7 @@ library BrepWitnesses
                 BoxCurves(BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0)).Concatenate(BoxCurves(BoxCorners(Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0))),
                 [],
                 [],
-                BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Concatenate(BoxPlanes(Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0))),
+                BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Concatenate(BoxPlanes(Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0)), []),
             BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Concatenate(BoxCorners(Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0).Skip(1))
                 .Map(p => BrepVertex(p)),
             BoxEdges(8.Range, 0).Concatenate(BoxEdges(second, 12)),
@@ -619,7 +619,7 @@ library BrepWitnesses
         var box = BrepModel.Witness_UnitBox;
         return BrepModel(
             GeometrySet(box.Geometry.Curves, box.Geometry.Curves2D, box.Geometry.Pcurves,
-                box.Geometry.Surfaces.Concatenate([BrepSurface.Plane(WorldFrameAt(Point3D(0.0, 0.0, 3.0)))])),
+                box.Geometry.Surfaces.Concatenate([BrepSurface.Plane(WorldFrameAt(Point3D(0.0, 0.0, 3.0)))]), box.Geometry.Closures),
             box.Vertices,
             box.Edges,
             box.Loops.Concatenate([BrepLoop.PolyLoop([Point3D(0.0, 0.0, 3.0), Point3D(1.0, 0.0, 3.0), Point3D(0.0, 1.0, 3.0)])]),

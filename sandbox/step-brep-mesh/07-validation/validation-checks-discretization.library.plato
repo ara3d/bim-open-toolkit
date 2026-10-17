@@ -106,6 +106,17 @@ library BrepCheckingDiscretization
             c.EffectiveChordal(m.Tolerances) + m.Tolerances.Length.Value,
             (k, i) => AtEdge(k));
 
+    // Law_CertifiedSagittaWithinChordal at every entry and segment, measured
+    // by layer 4's exact Sagitta of the segment's arc (0 at the length floor)
+    // against the effective chordal bound plus Tolerances.Length: what
+    // Discretize promises, which the sampled check above can miss between its
+    // samples. A library law, self-test: Error.
+    Check_CertifiedSagittaWithinChordal(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria): Check
+        => CheckGridWithin("Law_CertifiedSagittaWithinChordal", d.ByEdge.Count, d.MostPoints,
+            (k, i) => m.CertifiedSagittaAt(d.ByEdge[k], c, i),
+            c.EffectiveChordal(m.Tolerances) + m.Tolerances.Length.Value,
+            (k, i) => AtEdge(k));
+
     // Law_TangentDeviationWithinHalfAngular at every entry and segment,
     // measured by TangentDeviation in radians (0 at the length floor) against
     // half the effective angular bound plus Tolerances.Angle. Geometry: W/E.
@@ -310,6 +321,15 @@ library BrepCheckingDiscretization
             ? ((m.IsSeedParameter(x.Edge, x.Parameters[i]) || m.IsAtLengthFloor(x, c, i - 1) || m.IsAtLengthFloor(x, c, i))
                 ? 0.0
                 : x.TurningAngle(i).Radians)
+            : 0.0;
+
+    // Layer 4's exact Sagitta of segment i's arc behind
+    // Law_CertifiedSagittaWithinChordal's guard and exemption.
+    CertifiedSagittaAt(m: BrepModel, x: EdgeDiscretization, c: DiscretizationCriteria, i: Integer): Number
+        => m.IsEvaluableSegment(x, i)
+            ? (m.IsAtLengthFloor(x, c, i)
+                ? 0.0
+                : m.Sagitta(x.Edge, x.Parameters[i].Min(x.Parameters[i + 1]), x.Parameters[i].Max(x.Parameters[i + 1])))
             : 0.0;
 
     // Segment i's chord length less Tolerances.Length behind

@@ -81,11 +81,20 @@ library BrepCheckingTopology
     Check_AtLeastOneBound(m: BrepModel): Check
         => m.CheckFaces("Law_AtLeastOneBound", f => Law_AtLeastOneBound(m, f));
 
-    // Law_FaceBoundsShareNoVertex at every face. Topological group: Error,
-    // although the reduced counts repair the defect (02-topology, open
-    // question 8).
+    // Law_FaceBoundsShareNoVertex at every face, the redundant vertex loops
+    // left out (layer 2 reports those by Law_NoRedundantVertexLoop).
+    // Topological group: Error.
     Check_FaceBoundsShareNoVertex(m: BrepModel): Check
         => m.CheckFaces("Law_FaceBoundsShareNoVertex", f => Law_FaceBoundsShareNoVertex(m, f));
+
+    // Law_NoRedundantVertexLoop at every face. Structure, a defect the
+    // reduction repairs exactly: Warning (layer 2, decision 12).
+    Check_NoRedundantVertexLoop(m: BrepModel): Check
+        => m.CheckFaces("Law_NoRedundantVertexLoop", f => Law_NoRedundantVertexLoop(m, f));
+
+    // Law_PolyLoopHasThreePoints at every loop. Structure: Error.
+    Check_PolyLoopHasThreePoints(m: BrepModel): Check
+        => m.CheckLoops("Law_PolyLoopHasThreePoints", l => Law_PolyLoopHasThreePoints(m, l));
 
     //==
     // # Edge uses and vertex links
@@ -119,6 +128,15 @@ library BrepCheckingTopology
     Check_VertexLinkIsOneCycle(m: BrepModel): Check
         => m.CheckShellVertices("Law_VertexLinkIsOneCycle", (s, v) => Law_VertexLinkIsOneCycle(m, s, v));
 
+    // Law_OpenShellVertexLinkIsCycleOrPath at every shell and vertex.
+    // Structure: Error.
+    Check_OpenShellVertexLinkIsCycleOrPath(m: BrepModel): Check
+        => m.CheckShellVertices("Law_OpenShellVertexLinkIsCycleOrPath", (s, v) => Law_OpenShellVertexLinkIsCycleOrPath(m, s, v));
+
+    // Law_PolyLoopEdgesPairUp at every shell. Structure: Error.
+    Check_PolyLoopEdgesPairUp(m: BrepModel): Check
+        => m.CheckShells("Law_PolyLoopEdgesPairUp", s => Law_PolyLoopEdgesPairUp(m, s));
+
     // Law_VertexLoopVertexIsIsolated at every shell and vertex. Topological
     // group: Error.
     Check_VertexLoopVertexIsIsolated(m: BrepModel): Check
@@ -131,6 +149,19 @@ library BrepCheckingTopology
     // Error.
     Check_EulerPoincareEvenAndBounded(m: BrepModel): Check
         => m.CheckShells("Law_EulerPoincareEvenAndBounded", s => Law_EulerPoincareEvenAndBounded(m, s));
+
+    // Law_OpenShellEulerEvenAndBounded at every shell. Structure: Error.
+    Check_OpenShellEulerEvenAndBounded(m: BrepModel): Check
+        => m.CheckShells("Law_OpenShellEulerEvenAndBounded", s => Law_OpenShellEulerEvenAndBounded(m, s));
+
+    // Law_ShellIsConnected at every shell (review M1: a sphere and a torus
+    // in one shell pass every other law). Structure: Error.
+    Check_ShellIsConnected(m: BrepModel): Check
+        => m.CheckShells("Law_ShellIsConnected", s => Law_ShellIsConnected(m, s));
+
+    // Law_ShellIsOrientable at every shell. Structure: Error.
+    Check_ShellIsOrientable(m: BrepModel): Check
+        => m.CheckShells("Law_ShellIsOrientable", s => Law_ShellIsOrientable(m, s));
 
     // Law_SolidShellsAreDeclaredClosed at every body. Topological group:
     // Error.
@@ -149,7 +180,8 @@ library BrepCheckingTopology
     Check_CoincidentEndsAreOneVertex(m: BrepModel): Check
         => m.CheckEdges("Law_CoincidentEndsAreOneVertex", e => Law_CoincidentEndsAreOneVertex(m, e));
 
-    // Law_EdgeHasPositiveExtent at every edge. Topological group: Error.
+    // Law_EdgeHasPositiveExtent at every edge. Structure, a defect the
+    // reduction repairs exactly: Warning (layer 2, decision 12).
     Check_EdgeHasPositiveExtent(m: BrepModel): Check
         => m.CheckEdges("Law_EdgeHasPositiveExtent", e => Law_EdgeHasPositiveExtent(m, e));
 
@@ -206,6 +238,57 @@ library BrepCheckingTopology
             m.Tolerances.Length.Value,
             (e, j) => AtEdge(e));
 
+    // Law_CurveAgreesWithPcurve at every edge, each of its pcurves k = 0, 1,
+    // and every fraction of the plan, measured by CurvePcurveDeviationAt
+    // (review M3, curve to pcurve). Geometric group, bound Tolerances.Length.
+    Check_CurveAgreesWithPcurve(m: BrepModel, plan: SamplePlan): Check
+        => CheckGridWithin("Law_CurveAgreesWithPcurve", m.Edges.Count, 2 * plan.Count,
+            (e, j) => m.CurvePcurveDeviation(BrepEdgeIndex(e), j / plan.Count, plan.PlanFractions[j % plan.Count]),
+            m.Tolerances.Length.Value,
+            (e, j) => AtEdge(e));
+
+    // Law_PcurveRunsWithCurve at every edge, pcurve and fraction of the plan.
+    // Structure (an exact sign): Error.
+    Check_PcurveRunsWithCurve(m: BrepModel, plan: SamplePlan): Check
+        => CheckGrid("Law_PcurveRunsWithCurve", m.Edges.Count, 2 * plan.Count,
+            (e, j) => Law_PcurveRunsWithCurve(m, BrepEdgeIndex(e), j / plan.Count, plan.PlanFractions[j % plan.Count]),
+            (e, j) => AtEdge(e));
+
+    // Law_PcurveSurfaceIsAFaceSurface at every edge and pcurve. Structure, an
+    // ignored pcurve: Warning.
+    Check_PcurveSurfaceIsAFaceSurface(m: BrepModel): Check
+        => CheckGrid("Law_PcurveSurfaceIsAFaceSurface", m.Edges.Count, 2,
+            (e, k) => Law_PcurveSurfaceIsAFaceSurface(m, BrepEdgeIndex(e), k), (e, k) => AtEdge(e));
+
+    //==
+    // # Self-tests
+
+    // Law_EdgeReversalKeepsCoedgeSense at every coedge site. Self-test:
+    // Error.
+    Check_EdgeReversalKeepsCoedgeSense(m: BrepModel): Check
+        => CheckAll("Law_EdgeReversalKeepsCoedgeSense", m.AllCoedgeSites.Count,
+            k => Law_EdgeReversalKeepsCoedgeSense(m, m.AllCoedgeSites[k]),
+            k => Provenance.KernelFace(m.AllCoedgeSites[k].Face));
+
+    // Law_EdgeReversalKeepsEdgeDomain at every edge. Self-test: Error.
+    Check_EdgeReversalKeepsEdgeDomain(m: BrepModel): Check
+        => m.CheckEdges("Law_EdgeReversalKeepsEdgeDomain", e => Law_EdgeReversalKeepsEdgeDomain(m, e));
+
+    // Law_ParameterizationSignIsConstantOnFace at every coedge site and
+    // fraction of the plan. Self-test: Error.
+    Check_ParameterizationSignIsConstantOnFace(m: BrepModel, plan: SamplePlan): Check
+        => CheckGrid("Law_ParameterizationSignIsConstantOnFace", m.AllCoedgeSites.Count, plan.Count,
+            (k, j) => Law_ParameterizationSignIsConstantOnFace(m, m.AllCoedgeSites[k], plan.PlanFractions[j]),
+            (k, j) => Provenance.KernelFace(m.AllCoedgeSites[k].Face));
+
+    // Law_ReversingEveryFaceKeepsCoherence at every shell. Self-test: Error.
+    Check_ReversingEveryFaceKeepsCoherence(m: BrepModel): Check
+        => m.CheckShells("Law_ReversingEveryFaceKeepsCoherence", s => Law_ReversingEveryFaceKeepsCoherence(m, s));
+
+    // Law_ModelSizeWithinExtent over the whole model. Self-test: Error.
+    Check_ModelSizeWithinExtent(m: BrepModel): Check
+        => CheckOnce("Law_ModelSizeWithinExtent", Law_ModelSizeWithinExtent(m));
+
     //==
     // # Parameter-space winding
 
@@ -239,6 +322,12 @@ library BrepCheckingTopology
     // SurfaceDeviationAt behind Law_EdgeLiesOnAdjacentSurfaces's guard.
     SiteSurfaceDeviation(m: BrepModel, site: CoedgeSite, t: Number): Number
         => m.IsEveryIndexInRange ? (m.IsCoedgeSiteInRange(site) ? m.SurfaceDeviationAt(site, t) : 0.0) : 0.0;
+
+    // CurvePcurveDeviationAt behind Law_CurveAgreesWithPcurve's guard.
+    CurvePcurveDeviation(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e) ? (m.HasPcurve(e, k) ? m.CurvePcurveDeviationAt(e, k, t) : 0.0) : 0.0)
+            : 0.0;
 
     // PcurveDeviationAt behind Law_PcurveAgreesWithCurve's guard.
     PcurveCurveDeviation(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number

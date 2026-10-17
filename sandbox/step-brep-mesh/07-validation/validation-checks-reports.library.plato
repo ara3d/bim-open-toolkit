@@ -37,6 +37,24 @@ library BrepCheckingReports
                     "At least one bound does not hold."),
                 ExactReport(m.Check_FaceBoundsShareNoVertex,
                     "Face bounds share no vertex does not hold."),
+                WarningReport(m.Check_NoRedundantVertexLoop,
+                    "A face has a redundant vertex loop; the reduction drops it."),
+                ExactReport(m.Check_PolyLoopHasThreePoints,
+                    "Poly loop has three points does not hold."),
+                ExactReport(m.Check_OpenShellVertexLinkIsCycleOrPath,
+                    "Open shell vertex link is cycle or path does not hold."),
+                ExactReport(m.Check_PolyLoopEdgesPairUp,
+                    "Poly loop edges pair up does not hold."),
+                ExactReport(m.Check_OpenShellEulerEvenAndBounded,
+                    "Open shell Euler even and bounded does not hold."),
+                ExactReport(m.Check_ShellIsConnected,
+                    "Shell is connected does not hold."),
+                ExactReport(m.Check_ShellIsOrientable,
+                    "Shell is orientable does not hold."),
+                ExactReport(m.Check_PcurveRunsWithCurve(plan),
+                    "Pcurve runs with curve does not hold."),
+                WarningReport(m.Check_PcurveSurfaceIsAFaceSurface,
+                    "A pcurve lies on no surface of a face citing its edge; it is ignored."),
                 ExactReport(m.Check_EveryEdgeUsedTwiceInClosedShell,
                     "Every edge used twice in closed shell does not hold."),
                 ExactReport(m.Check_OpenShellEdgesUsedAtMostTwice,
@@ -59,8 +77,8 @@ library BrepCheckingReports
                     "Edge domain is forward does not hold."),
                 ExactReport(m.Check_CoincidentEndsAreOneVertex,
                     "Coincident ends are one vertex does not hold."),
-                ExactReport(m.Check_EdgeHasPositiveExtent,
-                    "Edge has positive extent does not hold."),
+                WarningReport(m.Check_EdgeHasPositiveExtent,
+                    "Edge has positive extent does not hold; the reduction contracts it."),
                 ExactReport(m.Check_DegenerateEdgeHasCoincidentVertices,
                     "Degenerate edge has coincident vertices does not hold."),
                 ExactReport(m.Check_LoopWindingMatchesSameSense,
@@ -77,10 +95,22 @@ library BrepCheckingReports
                 MeasuredReport(m.Check_EdgeLiesOnAdjacentSurfaces(plan),
                     "Edge lies on adjacent surfaces does not hold."),
                 MeasuredReport(m.Check_PcurveAgreesWithCurve(plan),
-                    "Pcurve agrees with curve does not hold.")]);
+                    "Pcurve agrees with curve does not hold."),
+                MeasuredReport(m.Check_CurveAgreesWithPcurve(plan),
+                    "Curve agrees with pcurve does not hold.")]);
             QualityChecks => Report.Empty;
             OracleChecks => Report.Empty;
-            SelfTestChecks => Report.Empty;
+            SelfTestChecks => MergeAll([
+                ExactReport(m.Check_EdgeReversalKeepsCoedgeSense,
+                    "Edge reversal keeps coedge sense does not hold."),
+                ExactReport(m.Check_EdgeReversalKeepsEdgeDomain,
+                    "Edge reversal keeps edge domain does not hold."),
+                ExactReport(m.Check_ParameterizationSignIsConstantOnFace(plan),
+                    "Parameterization sign is constant on face does not hold."),
+                ExactReport(m.Check_ReversingEveryFaceKeepsCoherence,
+                    "Reversing every face keeps coherence does not hold."),
+                ExactReport(m.Check_ModelSizeWithinExtent,
+                    "Model size within extent does not hold.")]);
         };
 
     // The checks of layer 1's laws over the model's geometry arena, in one
@@ -324,6 +354,8 @@ library BrepCheckingReports
                     "Short segment is forced does not hold.");
             OracleChecks => Report.Empty;
             SelfTestChecks => MergeAll([
+                ExactReport(m.Check_CertifiedSagittaWithinChordal(d, c),
+                    "A segment's exact sagitta exceeds the chordal bound Discretize promises."),
                 ExactReport(d.Check_ReversedIsInvolution,
                     "Reversed is involution does not hold."),
                 ExactReport(d.Check_ReversedReversesParameters,
@@ -395,7 +427,9 @@ library BrepCheckingReports
                 MeasuredReport(m.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(d, fm, c),
                     "Surface edge normal turn within surface angular does not hold."),
                 MeasuredReport(m.Check_ElementDeviationWithinSurfaceChordal(d, fm, c),
-                    "Element deviation within surface chordal does not hold.")]);
+                    "Element deviation within surface chordal does not hold."),
+                MeasuredReport(m.Check_SurfaceWithinSurfaceChordalOfElement(d, fm, c),
+                    "The surface under an element lies farther from it than the surface chordal criterion.")]);
             QualityChecks => Report.Empty;
             OracleChecks => Report.Empty;
             SelfTestChecks => MergeAll([
@@ -405,6 +439,8 @@ library BrepCheckingReports
                     "Loop to uv count matches discretization does not hold."),
                 ExactReport(m.Check_PcurveAgreesWithProjection(fm.Face, d),
                     "Pcurve agrees with projection does not hold."),
+                ExactReport(m.Check_SeamUsesOnOppositeCopies(fm.Face, d),
+                    "The two uses of a seam do not lie on opposite copies by the left rule."),
                 ExactReport(m.Check_UnwrapKeepsSources(fm.Face, d),
                     "Unwrap keeps sources does not hold."),
                 ExactReport(m.Check_UnwrapMovesByWholePeriods(fm.Face, d),
@@ -429,6 +465,14 @@ library BrepCheckingReports
                     "Triangulation keeps boundary does not hold."),
                 ExactReport(m.Check_TriangulationAddsOnlyInteriorPoints(fm.Face, d, c),
                     "Triangulation adds only interior points does not hold."),
+                ExactReport(m.Check_BoundarySegmentIsElementSide(fm.Face, d, c),
+                    "A boundary segment of the region is not the side of exactly one element."),
+                ExactReport(m.Check_InteriorSideIsShared(fm.Face, d, c),
+                    "An interior element side is not shared by exactly two elements running opposite ways."),
+                ExactReport(m.Check_ElementLiftsFacingFaceNormal(fm.Face, d, c),
+                    "An element lifts facing away from the face normal."),
+                ExactReport(m.Check_RequestsNameFaceEdges(fm.Face, d, c),
+                    "A refinement request names an edge the face does not cite."),
                 ExactReport(m.Check_EveryPointIsACorner(fm.Face, d, c),
                     "Every point is a corner does not hold."),
                 ExactReport(m.Check_ElementAreasSumToRegionArea(fm.Face, d, c),

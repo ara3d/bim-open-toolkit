@@ -353,12 +353,12 @@ spec Witness_BSplinePatchSolid(_: BrepModel): BrepModel
 // # Negative witnesses
 
 // The seamed sphere with redundant pole loops besides: fails exactly
-// Law_FaceBoundsShareNoVertex and Law_VertexLoopVertexIsIsolated.
+// Law_NoRedundantVertexLoop (a Warning) and Law_VertexLoopVertexIsIsolated.
 spec Witness_SphereWithRedundantPoleLoops(_: BrepModel, r: Number): BrepModel
 {
     requires r > 0.0;
     ensures result.RawCounts(ShellIndex(0)) == ShellCounts(2, 1, 1, 3);
-    ensures Law_RedundantPoleLoopsShareAVertex(r);
+    ensures Law_RedundantPoleLoopsAreRedundant(r);
     ensures Law_RedundantPoleLoopVertexIsNotIsolated(r);
     ensures Law_RedundantPoleLoopsFailExactlyTwoLaws(r);
     ensures Law_RedundantPoleLoopsReduceToSphere(r);
