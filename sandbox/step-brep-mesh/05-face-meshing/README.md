@@ -18,7 +18,7 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: preconditions (`IsDiscretizedFace`), criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
-| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 45 laws and their guards |
+| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 46 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 3 theorems |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
@@ -249,6 +249,7 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_ElementNormalAgreesWithSurface` | element normal within `SurfaceAngular` of the face normal at its parameter centroid, off collapsed lines | `SurfaceAngular` | W/E |
 | `Law_SurfaceEdgeNormalTurnWithinSurfaceAngular` | the normal turns by at most `SurfaceAngular` along every surface edge | `SurfaceAngular` | W/E |
 | `Law_ElementDeviationWithinSurfaceChordal` | surface-edge midpoints and the corner mean lie within the bound of the surface | `SurfaceChordal + Tolerances.Length` | W/E |
+| `Law_SurfaceWithinSurfaceChordalOfElement` | the surface points at an element's parameter centroid and surface-edge parameter midpoints lie within the bound of the flat element | `SurfaceChordal + Tolerances.Length` | W/E |
 | `Law_QuadPlanarWithinSurfaceChordal` | no quad corner lies farther than the bound from its mid-plane | `SurfaceChordal` | W/E |
 | `Law_QuadConvex` | every quad is strictly convex | exact sign | E |
 | `Law_NoQuadsUnlessPreferred` | `PreferQuads` false gives no quads | exact | test |
@@ -357,6 +358,7 @@ knots); offset and rectangular-trimmed last.
 | `StepBelowHalfPeriod`, `Winding`: Aperiodic and Periodic | a `Closed` arm, treated as `Periodic` | Layer 00's new periodicity case (review C1, T1) |
 | `MeshFace` ensures | also `Law_RequestsNameFaceEdges` and `Law_MeshFaceReadsOnlyFaceEdges`; new `AgreeOnFaceEdges`, `SameFaceMesh`, `SameFaceMeshOutcome` (layer 08 declared the last two with the same bodies; they belong with the types here, and layer 08's copies should go) | Layer 08's refinement loop rests on both properties (layer 08 finding 4) |
 | `RegionTolerance`: one model-wide parameter floor | the floor of each direction's kind, from layer 01's `UvFloorOf`, passed to layer 00's `UvToleranceAt` | Layer 00 split `Tolerances.Parameter` into `LengthParameter` and `AngleParameter` (review C2) |
+| `MeshFace` ensures chordal from mesh to surface only | also from surface to mesh: `Law_SurfaceWithinSurfaceChordalOfElement`, with `FlatElementDistance` and `ElementCoverageGap` | The other half of the Hausdorff distance (review M6) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -396,6 +398,8 @@ Applied:
   (`UvFloorOf`) to layer 00's `UvToleranceAt`; `PointTolerance` inherits them through layer 01.
 - F7: `Law_PointNormalIsFaceNormal` measures with `AngleBetweenDirections` against the rounding
   bound `ResolutionAt(1)`, not the arc cosine against the file's angle tolerance.
+- M6: coverage from the surface to the mesh, `Law_SurfaceWithinSurfaceChordalOfElement`, ensured by
+  `MeshFace` with the same `MinLength` escape as the other surface criteria.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 

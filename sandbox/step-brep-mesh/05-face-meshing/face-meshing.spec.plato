@@ -319,6 +319,9 @@ spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
         Law_ElementDeviationWithinSurfaceChordal(m, d, result.Mesh, c, ElementIndex(k))
         || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
     ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
+        Law_SurfaceWithinSurfaceChordalOfElement(m, d, result.Mesh, c, ElementIndex(k))
+        || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
+    ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
         forall (j: Integer) in 4.Range:
             Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(m, d, result.Mesh, c, ElementIndex(k), j)
             || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;

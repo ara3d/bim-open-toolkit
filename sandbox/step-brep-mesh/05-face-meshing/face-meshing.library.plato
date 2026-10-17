@@ -77,7 +77,8 @@ library FaceMeshing
     // columns at the closed-form step on spheres and tori, knot lines on B-splines), then insert,
     // by Delaunay insertion in the chart, the parameters of the sample point (Project of an
     // interior edge midpoint or of the corner mean) of the element that most exceeds
-    // SurfaceChordal or SurfaceAngular (the turn along a surface edge, or the element normal
+    // SurfaceChordal (from the mesh to the surface, or from the surface to the mesh) or
+    // SurfaceAngular (the turn along a surface edge, or the element normal
     // against the face normal at its centroid), or that folds when lifted (LiftsFacingFaceNormal),
     // until none does or the new point would lie closer than MinLength in 3D to an existing one.
     // Boundary points are never added, moved or removed.
@@ -347,6 +348,30 @@ library FaceMeshing
         return cs.Count.Range.Reduce(m.SurfaceDistance(fm.Face, ps.AverageOfPoints), (worst, j) =>
             m.IsSurfaceEdge(d, fm, cs[j], cs.AtModulo(j + 1))
                 ? worst.Max(m.SurfaceDistance(fm.Face, ps[j].HalfwayPoint(ps.AtModulo(j + 1))))
+                : worst);
+    }
+
+    // The distance from p to element k's flat face: its triangle, or for a quad the nearer of the
+    // two triangles on the diagonal from corner 0 (a kept quad is planar within SurfaceChordal).
+    FlatElementDistance(fm: FaceMesh, k: ElementIndex, p: Point3D): Number
+    {
+        var ps = fm.ElementPositions(k);
+        return ps.Count == 3
+            ? UnsignedDistanceToTriangle(p, ps[0], ps[1], ps[2])
+            : UnsignedDistanceToTriangle(p, ps[0], ps[1], ps[2]).Min(UnsignedDistanceToTriangle(p, ps[0], ps[2], ps[3]));
+    }
+
+    // How far the surface strays from element k, the other half of the Hausdorff distance to
+    // ElementDeviation's: the largest distance from the surface point at a parameter sample of
+    // the element (its parameter centroid, and the parameter midpoint of each surface edge) to
+    // the flat element. Exact point-to-triangle distances, one surface evaluation per sample.
+    ElementCoverageGap(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex): Number
+    {
+        var cs = fm.ElementCorners(k);
+        var s = m.SurfaceOf(fm.Face);
+        return cs.Count.Range.Reduce(fm.FlatElementDistance(k, m.Geometry.Eval(s, fm.ElementUvCentroid(k))), (worst, j) =>
+            m.IsSurfaceEdge(d, fm, cs[j], cs.AtModulo(j + 1))
+                ? worst.Max(fm.FlatElementDistance(k, m.Geometry.Eval(s, fm.UvPoints[cs[j]].UvMidpoint(fm.UvPoints[cs.AtModulo(j + 1)]))))
                 : worst);
     }
 
