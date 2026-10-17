@@ -134,11 +134,16 @@ spec EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>
 }
 
 // The total turning of the curve's tangent over the edge domain, tangent jumps at seeds included.
+// A polyline inscribed in the curve turns no more than the curve does (Milnor). The slack at a
+// joint is how far its two chords can turn when a point moves: an end point is a vertex up to
+// the length tolerance off the curve, and every point carries rounding at its magnitude; a
+// point moved by delta turns a chord of length l by at most about delta / l. The angle
+// tolerance, which the old bound used, measures neither.
 spec TotalTurning(m: BrepModel, e: BrepEdgeIndex): Angle
 {
     requires m.IsEdgeEvaluable(e);
     ensures result.Radians >= 0.0;
-    ensures forall (d: EdgeDiscretization) : (d.Edge == e && m.IsEvaluable(d)) ? SumOf((d.Points.Count - 2).MapRange(j => d.TurningAngle(j + 1).Radians)) <= result.Radians + m.Tolerances.Angle.Value.Radians * d.Points.Count.ToNumber : true;
+    ensures forall (d: EdgeDiscretization) : (d.Edge == e && m.IsEvaluable(d)) ? SumOf((d.Points.Count - 2).MapRange(j => d.TurningAngle(j + 1).Radians)) <= result.Radians + SumOf((d.Points.Count - 2).MapRange(j => (2.0 * m.Tolerances.Length.Value + ResolutionAt(d.Points[j + 1].Vector.Length)) * 2.0 / d.SegmentLength(j).Min(d.SegmentLength(j + 1)))) : true;
     measure m.EdgeSeeds(e).Count;
     deferred "the swept angle for a circle, the angle between the end tangents for a convex ellipse arc, quadrature of curvature per seed span plus the tangent jump at each seed otherwise";
 }

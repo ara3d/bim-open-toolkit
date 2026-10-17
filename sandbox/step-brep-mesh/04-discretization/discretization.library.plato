@@ -279,9 +279,12 @@ library EdgeDiscretizing
             worst.Max(DistanceToSegment(d.Points[i], d.Points[i + 1], m.PointOnEdge(d.Edge, t0 + (t1 - t0) * f))));
     }
 
-    // The angle between two vectors, 0 when either is zero.
+    // The angle between two vectors in [0, pi], 0 when either is zero: atan2(|u x v|, u . v),
+    // which keeps its relative precision for small angles, where the arc cosine of the dot
+    // product cannot resolve less than about 1.5e-8 rad and reads up to 3e-8 for parallel
+    // vectors (review F7; layer 0's `AngleBetweenDirections` is the same formula).
     AngleOrZero(u: Vector3D, v: Vector3D): Angle
-        => u.LengthSquared * v.LengthSquared > 0.0 ? u.AngleBetween(v) : Angle(0.0);
+        => u.LengthSquared * v.LengthSquared > 0.0 ? u.Cross(v).Length.Atan2(u.Dot(v)) : Angle(0.0);
 
     // The largest angle between segment i's chord and the curve's tangent at the plan's interior
     // samples, the tangent oriented with the segment. On a circle it tends to half the central
