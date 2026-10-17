@@ -54,8 +54,10 @@ The VOCABULARY.md field counts fit under STY002: `BrepModel` has 9 fields, `Mode
 ### A.2 `type`: products and sums
 
 A product type declares fields and nothing else. From the field list the compiler derives a
-constructor taking the fields in order, conversion from a same-shape tuple, deconstruction, and
-per-field setters (`c.WithRadius(2.0)` returns a new value). Real examples:
+constructor taking the fields in order, conversion from a same-shape tuple, and deconstruction.
+`docs/SEMANTICS.md` also promises per-field setters (`c.WithRadius(2.0)`); **they are not derived**
+(the layer 4 author probed it against the gate on 2026-10-17). To change one field, write the
+constructor out with every field in declaration order. Real examples:
 
 ```plato
 // A position in 3D Cartesian space.
