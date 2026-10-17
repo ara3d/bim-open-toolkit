@@ -28,25 +28,12 @@ library BrepCrossChecking
     //==
     // # The mesh of one shell
 
-    // True when element k of the mesh approximates a face of shell s.
-    IsShellElement(m: BrepModel, mesh: ModelMesh, s: ShellIndex, k: Integer): Boolean
-        => mesh.ElementFace.IsValidIndex(k) ? m.ShellFaces(s).Any(f => f == mesh.ElementFace[k]) : false;
-
-    // The mesh restricted to the elements of shell s's faces: every position
-    // kept (so vertex indices, provenance and numbering are unchanged), the
-    // shell's triangles and quads in their order with their element faces,
-    // and the corner attributes left empty, since no measure of the
-    // restriction reads them (README, "Cross checks").
+    // The mesh restricted to the elements of shell s's faces: layer 6's
+    // RestrictedToFaces, a valid ModelMesh with every position kept (so
+    // vertex indices, provenance and numbering are unchanged) and the shell's
+    // elements with their corner attributes.
     RestrictedToShell(m: BrepModel, mesh: ModelMesh, s: ShellIndex): ModelMesh
-        => ModelMesh(
-            mesh.Positions,
-            mesh.Triangles.Count.Range.FlatMap(k => m.IsShellElement(mesh, s, k) ? [mesh.Triangles[k]] : []),
-            mesh.Quads.Count.Range.FlatMap(q => m.IsShellElement(mesh, s, mesh.Triangles.Count + q) ? [mesh.Quads[q]] : []),
-            [],
-            [],
-            mesh.ElementCount.Range.FlatMap(k => m.IsShellElement(mesh, s, k) ? [mesh.ElementFace[k]] : []),
-            mesh.VertexProvenance,
-            mesh.Numbering);
+        => mesh.RestrictedToFaces(m.ShellFaces(s));
 
     // True when face f has at least one element in the mesh. A face of
     // positive area always has one; a face the mesher refused (a poly loop, a
@@ -64,9 +51,10 @@ library BrepCrossChecking
         => m.ShellFaces(s).All(f => mesh.HasMeshElements(f));
 
     // The Euler characteristic V - E + F of the shell's mesh counting only
-    // the vertices its elements reference.
+    // the vertices its elements reference (layer 6's
+    // ReferencedEulerCharacteristic).
     ShellMeshEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Integer
-        => m.RestrictedToShell(mesh, s).EulerCharacteristic - m.RestrictedToShell(mesh, s).ComponentsOf.UnreferencedVertexCount;
+        => m.RestrictedToShell(mesh, s).ReferencedEulerCharacteristic;
 
     // The outer shell of a solid body; none for a shell set.
     OuterShellOf(body: BrepBody): ShellIndex

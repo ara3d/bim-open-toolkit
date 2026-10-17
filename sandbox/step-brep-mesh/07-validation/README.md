@@ -435,3 +435,4 @@ one commit each.
 
 These five landed in one commit: each alone fails the gate against the refreshed snapshot, since
 the reports file calls every layer's checks.
+| Layer 6's `RestrictedToFaces` (coordinator; review section 6, condition 1) | `RestrictedToShell` is `mesh.RestrictedToFaces(m.ShellFaces(s))`, a valid `ModelMesh` (the hand-built one had empty corner arrays), and `ShellMeshEuler` reads layer 6's `ReferencedEulerCharacteristic`; `IsShellElement` deleted |
