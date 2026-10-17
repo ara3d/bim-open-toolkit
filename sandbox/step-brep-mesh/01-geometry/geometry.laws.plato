@@ -32,6 +32,7 @@
 //  - Surfaces: inverse evaluation
 //  - Surfaces: collapsed lines and degenerate sides
 //  - Surfaces, case by case
+//  - Scaling
 //  - Oracles
 
 library BrepGeometryLaws
@@ -1662,6 +1663,38 @@ library BrepGeometryLaws
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => Number.HalfPi;
             Offset(basis, distance) => Number.HalfPi;
         };
+
+    //==
+    // # Scaling
+
+    // Scaling the arena by k > 0 scales every curve's points and keeps its
+    // parameter: Eval of curve c in ScaledGeometry(g, k) at t is k Eval(c, t),
+    // within the rounding of the scaled evaluation.
+    Law_ScaledCurvePointIsScaled(g: GeometrySet, c: CurveIndex, t: Number, k: Number): Boolean
+        => g.CanEvaluate(c) && k > 0.0 && k.IsFinite
+            ? g.ScaledGeometry(k).Eval(c, g.Domain(c).SampleIn(t)).Distance((g.Eval(c, g.Domain(c).SampleIn(t)).PositionVector * k).ToPoint)
+                <= ResolutionAt(g.EvaluationMagnitude(c, g.Domain(c).SampleIn(t)) * k)
+            : true;
+
+    // Scaling the arena by k > 0 scales every surface's points, reached at
+    // the parameters multiplied by ParameterScaleFactor.
+    Law_ScaledSurfacePointIsScaled(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, k: Number): Boolean
+        => g.CanEvaluate(s) && k > 0.0 && k.IsFinite
+            ? g.ScaledGeometry(k).Eval(s, UvCoordinate(
+                    g.Domain(s).SampleIn(uv).U * g.ParameterScaleFactor(s, SurfaceParameter.ParameterU, k),
+                    g.Domain(s).SampleIn(uv).V * g.ParameterScaleFactor(s, SurfaceParameter.ParameterV, k)))
+                .Distance((g.Eval(s, g.Domain(s).SampleIn(uv)).PositionVector * k).ToPoint)
+                <= ResolutionAt(g.EvaluationMagnitude(s, g.Domain(s).SampleIn(uv)) * k)
+            : true;
+
+    // Scaling the arena by k > 0 scales every pcurve's space points and keeps
+    // its parameter: the rescaled 2D curve lands on the scaled surface where
+    // the old one landed on the old surface.
+    Law_ScaledPcurvePointIsScaled(g: GeometrySet, p: PcurveIndex, t: Number, k: Number): Boolean
+        => g.CanEvaluate(p) && k > 0.0 && k.IsFinite
+            ? g.ScaledGeometry(k).Eval(p, g.Domain(p).SampleIn(t)).Distance((g.Eval(p, g.Domain(p).SampleIn(t)).PositionVector * k).ToPoint)
+                <= ResolutionAt(g.EvaluationMagnitude(p, g.Domain(p).SampleIn(t)) * k)
+            : true;
 
     //==
     // # Oracles

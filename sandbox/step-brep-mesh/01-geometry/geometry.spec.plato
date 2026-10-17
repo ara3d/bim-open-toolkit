@@ -23,6 +23,7 @@
 //  - Curves: deferred
 //  - Surfaces
 //  - Surfaces: deferred
+//  - Scaling
 //  - Theorems
 
 //==
@@ -536,6 +537,32 @@ spec ProjectNearBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D, seed:
         : true;
     measure 1;
     deferred "Newton from the seed on the two normal equations, trust region a quarter period, no wrapping";
+}
+
+//==
+// # Scaling
+
+spec ScaledGeometry(g: GeometrySet, k: Number): GeometrySet
+{
+    requires g.IsWellFormed;
+    requires k > 0.0 && k.IsFinite;
+    ensures result.IsWellFormed;
+    ensures result.Curves.Count == g.Curves.Count && result.Curves2D.Count == g.Curves2D.Count;
+    ensures result.Pcurves.Count == g.Pcurves.Count && result.Surfaces.Count == g.Surfaces.Count;
+    ensures forall (c: Integer) in g.Curves.Count.Range : forall (t: Number) : Law_ScaledCurvePointIsScaled(g, CurveIndex(c), t, k);
+    ensures forall (s: Integer) in g.Surfaces.Count.Range : forall (uv: UvCoordinate) : Law_ScaledSurfacePointIsScaled(g, SurfaceIndex(s), uv, k);
+    ensures forall (p: Integer) in g.Pcurves.Count.Range : forall (t: Number) : Law_ScaledPcurvePointIsScaled(g, PcurveIndex(p), t, k);
+    measure g.ReferenceFuel;
+}
+
+spec AnisotropicConic(curve: BrepCurve2D, fu: Number, fv: Number): BrepCurve2D
+{
+    requires fu > 0.0 && fv > 0.0;
+    ensures forall (t: Number) in curve.Domain(GeometrySet([], [curve], [], [], [])).Range :
+        exists (s: Number) : result.Eval(GeometrySet([], [result], [], [], []), s).U == curve.Eval(GeometrySet([], [curve], [], [], []), t).U * fu
+            && result.Eval(GeometrySet([], [result], [], [], []), s).V == curve.Eval(GeometrySet([], [curve], [], [], []), t).V * fv;
+    measure 4;
+    deferred "the conic as rational quadratic arcs of at most a quarter turn, control points mapped, weights kept (Piegl and Tiller 7.5)";
 }
 
 //==

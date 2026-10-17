@@ -19,6 +19,7 @@ files present that day.
 | `geometry.library.plato` | the arena: index ranges, accessors, reference graph, well-formedness, placements, piece arithmetic, views | `BrepGeometry` |
 | `geometry-curves.library.plato` | space curves, parameter-plane curves, pcurves | `BrepGeometryCurves` |
 | `geometry-surfaces.library.plato` | surfaces | `BrepGeometrySurfaces` |
+| `geometry-scaling.library.plato` | the arena scaled about the origin: `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, `ParameterScaleFactor`, `ScaledGeometry` | `BrepGeometryScaling` |
 | `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; de Boor deferred | `BrepGeometrySplines` |
 | `geometry.laws.plato` | 84 laws, 3 oracles, their helpers | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
@@ -286,6 +287,7 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_ClosestParameterIsStationary`, `Law_ProjectIsStationary` | at an interior minimizer the offset is orthogonal to the tangent or each partial | rounding | Library |
 | `Law_ClosestParameterIsCanonical`, `Law_ProjectIsCanonical` | the result is in the canonical window | Parameter | Library |
 | `Law_PcurveClosestParameterIsBounded` | a pcurve's closest parameter is finite, and in `[0, T]` with a parameter period `T` | Parameter | Library |
+| `Law_ScaledCurvePointIsScaled`, `Law_ScaledSurfacePointIsScaled`, `Law_ScaledPcurvePointIsScaled` | `ScaledGeometry(g, k)` scales every point by `k`; curves keep their parameter, surfaces reach it at `ParameterScaleFactor` times theirs, pcurves follow | `ResolutionAt(k M)` | Library |
 | `Law_TrimmedRangeInsideBasis`, `Law_RectangularTrimmedInsideBasis` | the trim lies in the basis domain (at most one period on a periodic basis) | Parameter | File, 10x |
 | `Law_TrimmedRangeIsForward`, `Law_RectangularTrimmedRangeIsForward` | the stored range runs forward and is not a point | Parameter | Error |
 | `Law_TrimmedStartsAtSensedEnd` | a trimmed curve starts at the basis point its sense names | Length | Library |
@@ -349,6 +351,10 @@ nothing of the free coordinate there.
    of ISO's `orthogonal_complement`; the clause of `offset_curve_2d` was not read.
 8. **A `Witness_` per case.** Layer 7 owns the model witnesses (`Witness_Cylinder`, ...); small
    arena witnesses, one per case, would let these laws run before layer 7 exists.
+9. **Offset pcurves under unequal scaling.** `ScaledPcurve` has no exact image for a 2D offset
+   curve on a surface whose two parameters scale differently (a cylinder, a cone): the image of an
+   offset is not an offset. Its precondition excludes the case; a fitted spline would need the
+   model's tolerance.
 
 ## Implementation notes
 
@@ -419,6 +425,7 @@ as expected.
 | (new) | `Law_ClosestParameterNoWorseThanSample`, `Law_ClosestParameterIsStationary`, `Law_ProjectNoWorseThanSample`, `Law_ProjectIsStationary`, `IsInteriorParameter` | inverse evaluation tested at points off the geometry (fix wave, M4) |
 | (new) | `KeepSeedWhereFree`, `NearSeedOffset`, `NearbySeed`, `Law_ProjectNearRecoversFromNearbySeed`; theorem `ProjectNearIsLocalInverse` restated with a seed in a stated neighbourhood | the local inverse keeps the seed's free coordinate (fix wave, T5) |
 | `GeometrySet { Curves; Curves2D; Pcurves; Surfaces }`; closure read from exact end coincidence (previous row) | `GeometrySet` gains `Closures: Array<ClosureMark>` (`ClosedCurve`, `ClosedCurve2D`, `ClosedSurface(s, which)`); `Domain` applies them (`WithClosure`, `IsMarkedClosed`); laws `Law_ClosureMarkInRange`, `Law_ClosureMarkNamesBoundedAperiodic` | layer 3 decides closure with its tolerance and must store it for every aperiodic record, composites and trims included; every `GeometrySet(...)` construction gains a fifth argument, `[]` when nothing is closed (layer 7's witnesses) |
+| (new) | `ScaledCurve(curve, k)`, `ScaledSurface(surface, g, k)`, `ScaledPcurve(curve2D, g, s, k)`, `ParameterScaleFactor(g, s, which, k)`, `ScaledGeometry(g, k)`, `SurfaceOf(g, c, fuel)`, `AnisotropicConic` (deferred); laws `Law_Scaled{Curve,Surface,Pcurve}PointIsScaled` | the scaling layer 2's `ScaledBy` and layer 7's metamorphic laws build on (FIX-WAVE ownership table) |
 
 ## Fix wave, 2026-10-17
 
@@ -469,3 +476,7 @@ Applied:
   the arena, for any bounded aperiodic curve, 2D curve or surface direction; the exact-coincidence
   reading of the previous commit is removed.
 - **Theorem ConeAreaElement.** States its hypothesis `|a| < pi/2`, which `1 / cos a` needs.
+- **ScaledCurve, ScaledSurface, ScaledPcurve (FIX-WAVE ownership).** New file
+  `geometry-scaling.library.plato`: speed vectors scale with positions so curve parameters never
+  change; lengths along unit frame axes (plane, cylinder and cone `v`) scale; angles never;
+  pcurve coordinates follow their surface; `ScaledGeometry` scales a whole arena.
