@@ -20,12 +20,13 @@
 spec EdgeDiscretization
 {
     invariant Law_ParameterCountEqualsPointCount(self);
-    invariant Law_AtLeastTwoParameters(self);
+    invariant Law_EmptyOrAtLeastTwoParameters(self);
     invariant forall (i: Integer) : Law_ParametersStrictlyMonotone(self, i);
     constructor Discretize;
     constructor RefineEdge;
     constructor Reversed;
     constructor AlongCoedge;
+    constructor Undiscretized;
 }
 
 // One canonical discretization per edge, entry i for edge i.
@@ -162,13 +163,13 @@ spec ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvC
 //==
 // Functions with bodies that construct a discretization
 
-// Every edge, independently.
+// Every edge, independently; an edge `CanDiscretize` rejects gets the empty entry.
 spec DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
 {
-    requires forall (i: Integer) in 0.UpTo(m.Edges.Count) : m.CanDiscretize(BrepEdgeIndex(i), c);
     ensures Law_DiscretizationsCoverEdges(m, result);
     ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
-    ensures forall (i: Integer) in 0.UpTo(m.Edges.Count) : result.ByEdge[i].SameDiscretization(m.Discretize(BrepEdgeIndex(i), c, floors));
+    ensures forall (i: Integer) : Law_UndiscretizedExactlyWhenUnusable(m, result, c, i);
+    ensures forall (i: Integer) in 0.UpTo(m.Edges.Count) : m.CanDiscretize(BrepEdgeIndex(i), c) ? result.ByEdge[i].SameDiscretization(m.Discretize(BrepEdgeIndex(i), c, floors)) : result.ByEdge[i].SameDiscretization(Undiscretized(BrepEdgeIndex(i)));
     measure m.Edges.Count;
 }
 
@@ -177,9 +178,9 @@ spec Reversed(d: EdgeDiscretization): EdgeDiscretization
 {
     ensures result.Edge == d.Edge;
     ensures Law_ParameterCountEqualsPointCount(result);
-    ensures Law_AtLeastTwoParameters(result);
+    ensures Law_EmptyOrAtLeastTwoParameters(result);
     ensures forall (i: Integer) : Law_ParametersStrictlyMonotone(result, i);
-    ensures result.RunsAlongCurve != d.RunsAlongCurve;
+    ensures d.IsDiscretized ? result.RunsAlongCurve != d.RunsAlongCurve : result.SameDiscretization(d);
     ensures Law_ReversedIsInvolution(d);
     ensures forall (i: Integer) : Law_ReversedReversesParameters(d, i);
     ensures forall (i: Integer) : Law_ReversedReversesPoints(d, i);

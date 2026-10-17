@@ -64,9 +64,17 @@ library EdgeDiscretizingLaws
     Law_ParameterCountEqualsPointCount(d: EdgeDiscretization): Boolean
         => d.Parameters.Count == d.Points.Count;
 
-    // There are at least two samples, so at least one segment.
-    Law_AtLeastTwoParameters(d: EdgeDiscretization): Boolean
-        => d.Parameters.Count >= 2;
+    // There are at least two samples, so at least one segment, or none at all (`Undiscretized`,
+    // the entry of an edge `CanDiscretize` rejects).
+    Law_EmptyOrAtLeastTwoParameters(d: EdgeDiscretization): Boolean
+        => d.Parameters.Count == 0 || d.Parameters.Count >= 2;
+
+    // An entry of `DiscretizeAll` is empty exactly when `CanDiscretize` rejects its edge.
+    // Structural: exact.
+    Law_UndiscretizedExactlyWhenUnusable(m: BrepModel, ds: EdgeDiscretizations, c: DiscretizationCriteria, i: Integer): Boolean
+        => ds.ByEdge.IsValidIndex(i)
+            ? ds.ByEdge[i].IsDiscretized == m.CanDiscretize(BrepEdgeIndex(i), c)
+            : true;
 
     // Consecutive parameters move in the direction of the whole array: strictly increasing in a
     // canonical value, strictly decreasing in a reversed one.

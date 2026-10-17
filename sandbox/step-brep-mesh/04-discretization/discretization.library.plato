@@ -541,15 +541,30 @@ library EdgeDiscretizing
     // vertex point twice.
     Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization;
 
-    // The canonical discretization of every edge, indexed by edge. Each edge is independent of the
-    // others, so this is a map and parallel without coordination.
-    DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
-        => EdgeDiscretizations(m.Edges.Count.MapRange(i => m.Discretize(BrepEdgeIndex(i), c, floors)));
+    // The entry of an edge that `CanDiscretize` rejects: no parameters and no points. It keeps the
+    // table at one entry per edge; every law is vacuous on it (`IsEvaluable` needs two samples),
+    // and no face citing the edge is meshed.
+    Undiscretized(e: BrepEdgeIndex): EdgeDiscretization
+        => EdgeDiscretization(e, 0.MapRange(i => 0.0), 0.MapRange(i => Point3D(0.0, 0.0, 0.0)));
 
-    // True when the parameters increase along the arrays: the canonical direction. Precondition:
-    // at least one parameter.
+    // True when the value holds a polyline: at least two samples. False for `Undiscretized`.
+    IsDiscretized(d: EdgeDiscretization): Boolean
+        => d.Parameters.Count >= 2;
+
+    // The canonical discretization of every edge `CanDiscretize` accepts, and `Undiscretized` for
+    // every other, indexed by edge. Total: the usability guard is taken here, once, so no caller
+    // repeats it. Each edge is independent of the others, so this is a map and parallel without
+    // coordination.
+    DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
+        => EdgeDiscretizations(m.Edges.Count.MapRange(i =>
+            m.CanDiscretize(BrepEdgeIndex(i), c)
+                ? m.Discretize(BrepEdgeIndex(i), c, floors)
+                : Undiscretized(BrepEdgeIndex(i))));
+
+    // True when the parameters increase along the arrays: the canonical direction. True for a
+    // value with fewer than two parameters, which has no direction.
     RunsAlongCurve(d: EdgeDiscretization): Boolean
-        => d.Parameters.First < d.Parameters.Last;
+        => d.IsDiscretized ? d.Parameters.First < d.Parameters.Last : true;
 
     // True when t is one of the parameters. Exact equality: for parameters copied from elsewhere
     // (a seed, the partition before a refinement).

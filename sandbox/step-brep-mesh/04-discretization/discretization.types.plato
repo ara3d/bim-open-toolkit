@@ -55,6 +55,8 @@ type SegmentFloors
 // of `Discretize` and every entry of `EdgeDiscretizations`) runs from the edge domain's start to
 // its end, parameters strictly increasing; `Reversed` produces the other direction, which exists
 // only while a face consumes it. A degenerate edge has two parameters and one repeated point.
+// An edge that `CanDiscretize` rejects gets the empty value (`Undiscretized`): no parameters and
+// no points, so the table keeps one entry per edge and no face citing that edge is meshed.
 type EdgeDiscretization
 {
     Edge: BrepEdgeIndex;
