@@ -881,7 +881,12 @@ library BrepGeometryLaws
 
     // The measure of Law_SurfaceCurvePcurveLiesOnCurve, a length: the
     // distance from the k-th pcurve's point at sample t to the space curve; 0
-    // when there is no k-th pcurve. Precondition: g.CanEvaluate(c).
+    // when there is no k-th pcurve. The pcurve is sampled over the range that
+    // covers the space curve (PcurveSampleFor), not over its own domain: a
+    // bounded curve with a line pcurve would otherwise be compared with
+    // points of the line beyond the curve's ends, and an unbounded pcurve
+    // domain gives no finite samples (review F4). Precondition:
+    // g.CanEvaluate(c).
     PcurveToCurveGap(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Number
         => g.PcurveToCurveGap(g.CurveAt(c).SpaceCurveOf, g.CurveAt(c).SupportsOf, t, k);
 
@@ -890,9 +895,20 @@ library BrepGeometryLaws
         => supports.IsValidIndex(k)
             ? (supports[k].PcurveOrNone.IsNone || spaceCurve.IsNone
                 ? 0.0
-                : g.Eval(spaceCurve, g.ClosestParameter(spaceCurve, g.Eval(supports[k].PcurveOrNone, g.Domain(supports[k].PcurveOrNone).SampleIn(t))))
-                    .Distance(g.Eval(supports[k].PcurveOrNone, g.Domain(supports[k].PcurveOrNone).SampleIn(t))))
+                : g.Eval(spaceCurve, g.ClosestParameter(spaceCurve, g.Eval(supports[k].PcurveOrNone, g.PcurveSampleFor(supports[k].PcurveOrNone, spaceCurve, t))))
+                    .Distance(g.Eval(supports[k].PcurveOrNone, g.PcurveSampleFor(supports[k].PcurveOrNone, spaceCurve, t))))
             : 0.0;
+
+    // The pcurve parameter that sample t of space curve c stands for: when
+    // c's domain is bounded, t moved into it and carried by proportion onto
+    // PcurveRangeOver(p, c, domain), so a sampling of c's domain samples the
+    // matching stretch of the pcurve evenly; when it is unbounded (a line
+    // with a line pcurve), t moved into the pcurve's own domain, where every
+    // finite parameter's point lies on the line.
+    PcurveSampleFor(g: GeometrySet, p: PcurveIndex, c: CurveIndex, t: Number): Number
+        => g.Domain(c).ParameterLength.IsFinite && g.Domain(c).ParameterLength > 0.0
+            ? g.PcurveRangeOver(p, c, g.Domain(c).Range).Lerp((g.Domain(c).SampleIn(t) - g.Domain(c).Range.Start) / g.Domain(c).ParameterLength)
+            : g.Domain(p).SampleIn(t);
 
     // Every point of a surface curve's space curve lies on its k-th pcurve
     // within the length tolerance: the second half of the point-set
@@ -1062,6 +1078,18 @@ library BrepGeometryLaws
             : WithinRichardson(g.CentralDifferenceOfDerivative(p, x, h), g.CentralDifferenceOfDerivative(p, x, h * 0.5),
                 g.SecondDerivative(p, x), g.PcurveRounding(p, x) / (scale * h));
     }
+
+    // ClosestParameter on a pcurve returns its bounded representative: on a
+    // pcurve whose space point repeats with parameter period T, a value in
+    // [0, T] within the parameter floor; on any pcurve, a finite value.
+    Law_PcurveClosestParameterIsBounded(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
+        => g.CanEvaluate(p)
+            ? g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))).IsFinite
+                && (g.PcurveParameterPeriod(p) > 0.0
+                    ? g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) >= -tol.Parameter.Value
+                        && g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) <= g.PcurveParameterPeriod(p) + tol.Parameter.Value
+                    : true)
+            : true;
 
     // A pcurve stays inside its surface's domain, within the parameter floor
     // (periodic directions contain every value). Measure PcurveDomainExcess,

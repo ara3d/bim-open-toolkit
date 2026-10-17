@@ -654,8 +654,67 @@ library BrepGeometryCurves
     // deferred: ClosestParameterBySearch over the pcurve as a space curve:
     // the parameter of the pcurve's point nearest to q. Seeding from
     // Project(surface, q) and a closest parameter of that uv on the 2D curve
-    // is the fast path when the surface is injective near q.
+    // is the fast path when the surface is injective near q. The
+    // representative is bounded: when the pcurve's space point repeats with
+    // a parameter period T (PcurveParameterPeriod), the minimizer in [0, T);
+    // otherwise the minimizer of smallest magnitude, ties to the smaller.
+    // A 2D line along a periodic direction (the bottom circle of a cylinder,
+    // v = 0) has the minimizers t + k T for every integer k, so without this
+    // rule the answer is not determined on its unbounded domain (review F4).
     ClosestParameter(g: GeometrySet, p: PcurveIndex, q: Point3D): Number;
+
+    // The shift of the pcurve's parameter after which its space point
+    // repeats, or 0 when it never does: the 2D curve's own period when its
+    // domain is periodic; on a 2D line whose velocity lies along a periodic
+    // direction of the surface, that period over the velocity's component
+    // (the velocity is copied from the file, so the zero test of the other
+    // component is exact by construction); 0 for every other case.
+    PcurveParameterPeriod(g: GeometrySet, p: PcurveIndex): Number
+        => g.Domain(p).Periodicity.IsPeriodic
+            ? g.Domain(p).Periodicity.PeriodOr(0.0)
+            : g.Curve2DAt(g.PcurveAt(p).Curve).ParameterPeriodOn(g.Domain(g.PcurveAt(p).Surface));
+
+    // The parameter period of a 2D curve lying in a surface of domain d: for
+    // a line along u or v, that direction's period over the speed in it; 0
+    // otherwise.
+    ParameterPeriodOn(curve: BrepCurve2D, d: SurfaceDomain): Number
+        => match (curve)
+        {
+            Line(origin, velocity) => velocity.Y == 0.0 && velocity.X != 0.0
+                ? d.U.Periodicity.PeriodOr(0.0) / velocity.X.Abs
+                : (velocity.X == 0.0 && velocity.Y != 0.0 ? d.V.Periodicity.PeriodOr(0.0) / velocity.Y.Abs : 0.0);
+            Circle(placement, radius) => 0.0;
+            Ellipse(placement, semiAxis1, semiAxis2) => 0.0;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => 0.0;
+            Parabola(placement, focalDistance) => 0.0;
+            Polyline(points) => 0.0;
+            BSpline(data) => 0.0;
+            Trimmed(basis, range, sameSense) => 0.0;
+            Composite(segments) => 0.0;
+            Offset(basis, distance) => 0.0;
+        };
+
+    // The range of pcurve p that covers the points of space curve c over its
+    // range r (an edge's range, or the curve's whole bounded domain): from
+    // the pcurve's parameter a of c's point at r.Start to its parameter b of
+    // c's point at r.End. Pcurve and curve run the same way (ISO 10303-42
+    // 4.5.49 IP2), so the range runs forward: with a parameter period T, b is
+    // moved to a + (b - a) wrapped into [0, T), and to a + T when r is not a
+    // point but its two ends are the same point (a closed curve run once);
+    // without one, [min(a, b), max(a, b)]. Derived from the space curve's
+    // range and the surface's periods, never from the pcurve's own domain,
+    // which is unbounded for the commonest pcurve (review F4).
+    PcurveRangeOver(g: GeometrySet, p: PcurveIndex, c: CurveIndex, r: NumberInterval): NumberInterval
+    {
+        var a = g.ClosestParameter(p, g.Eval(c, r.Start));
+        var b = g.ClosestParameter(p, g.Eval(c, r.End));
+        var period = g.PcurveParameterPeriod(p);
+        var closedRun = r.End > r.Start
+            && g.Eval(c, r.Start).Distance(g.Eval(c, r.End)) <= ResolutionAt(g.EvaluationMagnitude(c, r.Start));
+        return period > 0.0
+            ? NumberInterval(a, closedRun ? a + period : a + (b - a).Wrap(period))
+            : NumberInterval(a.Min(b), a.Max(b));
+    }
 
     // A bound on the size of the terms the pcurve's space point at t sums:
     // its surface's at the 2D curve's point.

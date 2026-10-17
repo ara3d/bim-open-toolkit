@@ -332,15 +332,34 @@ spec SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D
     deferred "the chain rule to second order over the surface's second partials";
 }
 
+// The representative is bounded even where the pcurve's domain is not
+// (review F4): a 2D line along a periodic direction has a minimizer in every
+// parameter period.
 spec ClosestParameter(g: GeometrySet, p: PcurveIndex, q: Point3D): Number
 {
     requires g.CanEvaluate(p);
     ensures forall (tol: Tolerances) : forall (s: Number) in g.Domain(p).Range :
         g.Eval(p, result).Distance(q) <= g.Eval(p, s).Distance(q) + tol.Length.Value;
+    ensures result.IsFinite;
     ensures result >= g.Domain(p).Range.Start;
     ensures result <= g.Domain(p).Range.Start + g.Domain(p).Periodicity.PeriodOr(g.Domain(p).ParameterLength);
+    ensures g.PcurveParameterPeriod(p) > 0.0 && !g.Domain(p).Periodicity.IsPeriodic
+        ? result >= 0.0 && result < g.PcurveParameterPeriod(p)
+        : true;
+    ensures forall (tol: Tolerances) : forall (t: Number) : Law_PcurveClosestParameterIsBounded(g, p, t, tol);
     measure g.Breakpoints(g.PcurveAt(p).Curve).Count + 1;
-    deferred "the curve search over the pcurve as a space curve, seeded from Project on its surface";
+    deferred "the curve search over the pcurve as a space curve, seeded from Project on its surface; the minimizer in [0, T) or of least magnitude";
+}
+
+spec PcurveRangeOver(g: GeometrySet, p: PcurveIndex, c: CurveIndex, r: NumberInterval): NumberInterval
+{
+    requires g.CanEvaluate(p);
+    requires g.CanEvaluate(c);
+    requires r.Start <= r.End;
+    ensures result.Start <= result.End;
+    ensures result.Start.IsFinite && result.End.IsFinite;
+    ensures g.PcurveParameterPeriod(p) > 0.0 ? result.End - result.Start <= g.PcurveParameterPeriod(p) : true;
+    measure 2;
 }
 
 //==

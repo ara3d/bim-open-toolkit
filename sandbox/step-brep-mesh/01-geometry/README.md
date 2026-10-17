@@ -194,7 +194,12 @@ for the axial `v`.
     curve; `Range.Start` when a closed aperiodic curve's join is nearest (both ends map there);
     `0` on a circle's axis, where every parameter is equally near. Layer 2 must therefore take the
     end parameter of an edge ending at a closed curve's join as `Range.End`, and add a period on a
-    periodic curve when the end parameter is not past the start.
+    periodic curve when the end parameter is not past the start. On a pcurve the representative is
+    bounded even where the domain is not: with a parameter period `T` (`PcurveParameterPeriod`: a
+    2D line along a periodic direction, `P / |V|`), the minimizer in `[0, T)`; otherwise the one of
+    least magnitude. A pcurve's range over a stretch of its space curve is `PcurveRangeOver`, built
+    from the space curve's range and `T`, never from the pcurve's own domain (review F4); layer 2's
+    `PcurveEdgeDomain` can use it.
 12. **`Project`'s representative and poles.** Each periodic coordinate is in the window. Where the
     point determines no value of one coordinate (on the axis of a surface of revolution, at a pole
     or apex) that coordinate is the window's start, `0`, exactly on the axis and arbitrary within
@@ -271,6 +276,7 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_SecondDerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveSecondDerivativeMatchesCentralDifference` | the same for the central difference of the first derivative | as above, rounding over the piece scale | Library |
 | `Law_ClosestParameterRecoversPoint` | the point at `ClosestParameter(Eval(t))` is `Eval(t)` | Length | Library |
 | `Law_ClosestParameterIsCanonical`, `Law_ProjectIsCanonical` | the result is in the canonical window | Parameter | Library |
+| `Law_PcurveClosestParameterIsBounded` | a pcurve's closest parameter is finite, and in `[0, T]` with a parameter period `T` | Parameter | Library |
 | `Law_TrimmedRangeInsideBasis`, `Law_RectangularTrimmedInsideBasis` | the trim lies in the basis domain (at most one period on a periodic basis) | Parameter | File, 10x |
 | `Law_TrimmedRangeIsForward`, `Law_RectangularTrimmedRangeIsForward` | the stored range runs forward and is not a point | Parameter | Error |
 | `Law_TrimmedStartsAtSensedEnd` | a trimmed curve starts at the basis point its sense names | Length | Library |
@@ -278,7 +284,7 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_CompositeSegmentsChain` | segment `i` ends where segment `i + 1` starts | Length | File, 10x |
 | `Law_OffsetReferenceNotTangent`, `Law_ExtrusionProfileTransverse` | the reference or extrusion is never along the tangent | Angle | File, 10x |
 | `Law_SurfaceCurveLiesOnSupport` | a surface curve lies on each support's surface | Length | File, 10x |
-| `Law_SurfaceCurvePcurveLiesOnCurve`, `Law_SurfaceCurveLiesOnPcurve` | pcurve and space curve agree as point sets, both ways | Length | File, 10x |
+| `Law_SurfaceCurvePcurveLiesOnCurve`, `Law_SurfaceCurveLiesOnPcurve` | pcurve and space curve agree as point sets, both ways; the pcurve sampled over `PcurveRangeOver` the space curve's bounded domain | Length | File, 10x |
 | `Law_SurfaceCurvePcurveSameSense` | pcurve and space curve run the same way | exact sign | Error |
 | `Law_PcurveWithinSurfaceDomain` | a pcurve stays in its surface's domain | Parameter | File, 10x |
 | `Law_NormalIsUnit` | `NormalOr` is unit away from collapsed lines | Angle (relative) | Library |
@@ -390,6 +396,8 @@ as expected.
 | (new) | `Handedness(f: Frame3D)`, `PlacementHandedness(g, s)`, `PlacementDeviation(g, c | s)` | the determinant sign for layers 2 and 3; the placement laws' measure for layer 7 (fix wave, F2) |
 | (new) | `TorusNormalOr`; a contract for `NormalAgreesWithParameterization` (one sign over the domain) | the Full spindle torus normal follows `S_u x S_v` (fix wave, F3, C3) |
 | `TrimInsideBasis`, `HoldsRange`, `SegmentsChainAt`, `ReferenceTransverse`, `IsTransverseTo`, `LiesOn`, `PcurveLiesOnCurve`, `CurveLiesOnPcurve`, `TrimBoxInsideBasis`, `ExtrusionTransverse` (Boolean claims) | the measures `TrimExcess`, `RangeExcess`, `SegmentGap`, `OffsetReferenceAngle`, `AngleFromParallel`, `GapTo`, `SupportGap`, `PcurveToCurveGap`, `CurveToPcurveGap`, `PcurveDomainExcess`, `TrimBoxExcess`, `ExtrusionProfileAngle`, `CollapsedLineSpread` | layer 7 grades file laws by their measure (layer 7 finding 5) |
+| `ClosestParameter(g, p: PcurveIndex, q)` minimizer over the domain | the bounded representative: in `[0, T)` with a parameter period `T`, else of least magnitude | an unbounded line pcurve has a minimizer in every period (fix wave, F4) |
+| (new) | `PcurveParameterPeriod(g, p)`, `PcurveRangeOver(g, p, c, r)`, `PcurveSampleFor`, `Law_PcurveClosestParameterIsBounded` | pcurve ranges from the space curve and the surface periods (fix wave, F4) |
 
 ## Fix wave, 2026-10-17
 
@@ -411,3 +419,6 @@ Applied:
   and Lemon keep the closed form, which is `eps <S_u x S_v>` on both.
 - **Layer 7 finding 5.** Every toleranced File law is its exported measure compared with the
   tolerance; the Boolean claim helpers are gone.
+- **F4 (the layer 1 part).** `ClosestParameter` on a pcurve returns a bounded representative;
+  `PcurveRangeOver` derives a pcurve range from the space curve's range and the parameter period;
+  `Law_SurfaceCurvePcurveLiesOnCurve` samples that range, so a bounded curve with a line pcurve passes.
