@@ -153,6 +153,29 @@ library BrepGeometryLaws
     Law_SurfaceReferencesAcyclic(g: GeometrySet, s: SurfaceIndex): Boolean
         => g.IsSurfaceInRange(s) ? g.IsAcyclicFrom(s) : true;
 
+    // The k-th closure mark names an entry of the arena.
+    Law_ClosureMarkInRange(g: GeometrySet, k: Integer): Boolean
+        => g.Closures.IsValidIndex(k) ? g.ReferencesInRange(g.Closures[k]) : true;
+
+    // The k-th closure mark names a record whose natural domain in that
+    // direction is bounded and aperiodic, the only kind a mark changes.
+    Law_ClosureMarkNamesBoundedAperiodic(g: GeometrySet, k: Integer): Boolean
+        => g.Closures.IsValidIndex(k) ? (g.ReferencesInRange(g.Closures[k]) ? g.MarkIsMeaningful(g.Closures[k]) : true) : true;
+
+    // The claim of Law_ClosureMarkNamesBoundedAperiodic for one mark.
+    // Precondition: the mark is in range.
+    MarkIsMeaningful(g: GeometrySet, mark: ClosureMark): Boolean
+        => match (mark)
+        {
+            ClosedCurve(curve) => g.CurveAt(curve).Domain(g).IsBoundedAperiodic;
+            ClosedCurve2D(curve) => g.Curve2DAt(curve).Domain(g).IsBoundedAperiodic;
+            ClosedSurface(surface, direction) => g.SurfaceAt(surface).Domain(g).DomainAlong(direction).IsBoundedAperiodic;
+        };
+
+    // True when the domain neither wraps nor is unbounded.
+    IsBoundedAperiodic(d: CurveDomain): Boolean
+        => !d.HasSeam && d.ParameterLength.IsFinite;
+
     // Curve c's arrays have the sizes its formula reads.
     Law_CurveHasEvaluableShape(g: GeometrySet, c: CurveIndex): Boolean
         => g.IsCurveInRange(c) ? g.CurveAt(c).HasEvaluableShape : true;

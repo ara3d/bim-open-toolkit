@@ -79,6 +79,8 @@ spec GeometrySet
     invariant forall (i: Integer) in self.Curves.Count.Range : Law_CurveHasEvaluableShape(self, CurveIndex(i));
     invariant forall (i: Integer) in self.Curves2D.Count.Range : Law_Curve2DHasEvaluableShape(self, Curve2DIndex(i));
     invariant forall (i: Integer) in self.Surfaces.Count.Range : Law_SurfaceHasEvaluableShape(self, SurfaceIndex(i));
+    invariant forall (k: Integer) in self.Closures.Count.Range : Law_ClosureMarkInRange(self, k);
+    invariant forall (k: Integer) in self.Closures.Count.Range : Law_ClosureMarkNamesBoundedAperiodic(self, k);
 }
 
 spec IsWellFormed(g: GeometrySet): Boolean
@@ -111,10 +113,10 @@ spec BSplineDerivative(d: BSplineCurveData, t: Number, order: Integer): Vector3D
     requires d.Basis.SplineDomain.Contains(t);
     requires order >= 1 && order <= 2;
     ensures order == 1
-        ? forall (tol: Tolerances) : Law_DerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], []), CurveIndex(0), t, tol)
+        ? forall (tol: Tolerances) : Law_DerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], [], []), CurveIndex(0), t, tol)
         : true;
     ensures order == 2
-        ? forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], []), CurveIndex(0), t, tol)
+        ? forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], [], []), CurveIndex(0), t, tol)
         : true;
     measure d.Basis.Degree * d.Basis.Degree * order;
     deferred "derivatives of the homogeneous curve by de Boor, then the quotient rule (Piegl and Tiller A3.2, A4.2)";
@@ -135,10 +137,10 @@ spec BSplineDerivative(d: BSplineCurve2DData, t: Number, order: Integer): Vector
     requires d.Basis.SplineDomain.Contains(t);
     requires order >= 1 && order <= 2;
     ensures order == 1
-        ? forall (tol: Tolerances) : Law_Curve2DDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], []), Curve2DIndex(0), t, tol)
+        ? forall (tol: Tolerances) : Law_Curve2DDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], [], []), Curve2DIndex(0), t, tol)
         : true;
     ensures order == 2
-        ? forall (tol: Tolerances) : Law_Curve2DSecondDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], []), Curve2DIndex(0), t, tol)
+        ? forall (tol: Tolerances) : Law_Curve2DSecondDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], [], []), Curve2DIndex(0), t, tol)
         : true;
     measure d.Basis.Degree * d.Basis.Degree * order;
     deferred "derivatives of the homogeneous parameter-plane curve, then the quotient rule";
@@ -159,10 +161,10 @@ spec BSplinePartial(d: BSplineSurfaceData, uv: UvCoordinate, uOrder: Integer, vO
     requires d.U.SplineDomain.Contains(uv.U) && d.V.SplineDomain.Contains(uv.V);
     requires uOrder >= 0 && vOrder >= 0 && uOrder + vOrder >= 1 && uOrder + vOrder <= 2;
     ensures uOrder == 1 && vOrder == 0
-        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)]), SurfaceIndex(0), uv, SurfaceParameter.ParameterU, tol)
+        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)], []), SurfaceIndex(0), uv, SurfaceParameter.ParameterU, tol)
         : true;
     ensures uOrder == 0 && vOrder == 1
-        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)]), SurfaceIndex(0), uv, SurfaceParameter.ParameterV, tol)
+        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)], []), SurfaceIndex(0), uv, SurfaceParameter.ParameterV, tol)
         : true;
     measure d.U.Degree * d.V.Degree * (d.U.Degree + d.V.Degree) * (uOrder + vOrder);
     deferred "mixed partials of the rational tensor-product surface (Piegl and Tiller A4.4)";

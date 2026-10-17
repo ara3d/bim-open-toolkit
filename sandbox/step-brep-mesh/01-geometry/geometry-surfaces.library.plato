@@ -30,11 +30,15 @@ library BrepGeometrySurfaces
     //==
     // # Domain and point
 
-    // The surface's natural domain (README, "Natural parameterizations"). The
+    // The surface's domain: its record's natural domain (README, "Natural
+    // parameterizations"), each direction made Closed when layer 3 marked it
+    // (GeometrySet.Closures, WithClosure). The
     // cone's v covers both nappes, so its apex is an interior collapsed line
     // (CollapsedAt), not a side.
     Domain(g: GeometrySet, s: SurfaceIndex): SurfaceDomain
-        => g.SurfaceAt(s).Domain(g);
+        => SurfaceDomain(
+            g.SurfaceAt(s).Domain(g).U.WithClosure(g.IsMarkedClosed(s, SurfaceParameter.ParameterU)),
+            g.SurfaceAt(s).Domain(g).V.WithClosure(g.IsMarkedClosed(s, SurfaceParameter.ParameterV)));
 
     // Domain for one record of the arena g, which holds the entries it references.
     Domain(surface: BrepSurface, g: GeometrySet): SurfaceDomain
@@ -47,8 +51,7 @@ library BrepGeometrySurfaces
             Torus(placement, major, minor, part) => SurfaceDomain(CurveDomain.FullTurnDomain, part.TorusVDomain(major, minor));
             Revolution(profile, axis) => SurfaceDomain(CurveDomain.FullTurnDomain, g.Domain(profile));
             LinearExtrusion(profile, extrusion) => SurfaceDomain(g.Domain(profile), CurveDomain.UnboundedDomain);
-            BSpline(data) => SurfaceDomain(data.U.SplineDomainOf(data.IsClosedSpline(SurfaceParameter.ParameterU)),
-                data.V.SplineDomainOf(data.IsClosedSpline(SurfaceParameter.ParameterV)));
+            BSpline(data) => SurfaceDomain(BoundedDomain(data.U.SplineDomain), BoundedDomain(data.V.SplineDomain));
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => SurfaceDomain(
                 BoundedDomain(NumberInterval(0.0, uRange.End - uRange.Start)),
                 BoundedDomain(NumberInterval(0.0, vRange.End - vRange.Start)));

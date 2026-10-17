@@ -32,14 +32,16 @@ library BrepGeometryCurves
     //==
     // # Space curves: domain and point
 
-    // The curve's natural domain (README, "Natural parameterizations"): the
+    // The curve's domain: its record's natural domain (README, "Natural
+    // parameterizations"), made Closed when layer 3 marked the curve closed
+    // (GeometrySet.Closures, WithClosure). The record's natural domain is: the
     // whole line for lines, hyperbolas and parabolas; one turn, periodic, for
     // circles and ellipses; [0, n - 1] for a polyline; the knot span for a
     // spline; [0, b - a] for a trimmed curve; [0, total parametric length] for
     // a composite; the basis's for an offset; the master representation's for
     // a surface curve.
     Domain(g: GeometrySet, c: CurveIndex): CurveDomain
-        => g.CurveAt(c).Domain(g);
+        => g.CurveAt(c).Domain(g).WithClosure(g.IsMarkedClosed(c));
 
     // Domain for one record of the arena g, which holds the entries it references.
     Domain(curve: BrepCurve, g: GeometrySet): CurveDomain
@@ -50,8 +52,8 @@ library BrepGeometryCurves
             Ellipse(placement, semiAxis1, semiAxis2) => CurveDomain.FullTurnDomain;
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveDomain.UnboundedDomain;
             Parabola(placement, focalDistance) => CurveDomain.UnboundedDomain;
-            Polyline(points) => PolylineDomain(points.Count, points[0].SameExactly(points[points.Count - 1]));
-            BSpline(data) => data.Basis.SplineDomainOf(data.IsClosedSpline);
+            Polyline(points) => BoundedDomain(NumberInterval(0.0, (points.Count - 1).ToNumber));
+            BSpline(data) => BoundedDomain(data.Basis.SplineDomain);
             Trimmed(basis, range, sameSense) => BoundedDomain(NumberInterval(0.0, range.End - range.Start));
             Composite(segments) => BoundedDomain(NumberInterval(0.0, g.CompositeExtents(segments).SumOf));
             Offset(basis, distance, reference) => g.Domain(basis);
@@ -59,14 +61,6 @@ library BrepGeometryCurves
                 ? g.Domain(spaceCurve)
                 : g.Domain(supports.MasterPcurve(master));
         };
-
-    // The domain of an n-point polyline, [0, n - 1]: Closed with period
-    // n - 1 when its first and last points are the same point exactly
-    // (closed), Aperiodic otherwise.
-    PolylineDomain(count: Integer, closed: Boolean): CurveDomain
-        => closed
-            ? CurveDomain(NumberInterval(0.0, (count - 1).ToNumber), Periodicity.Closed((count - 1).ToNumber))
-            : BoundedDomain(NumberInterval(0.0, (count - 1).ToNumber));
 
     // The basis's parameter of a trimmed piece's parameter t, wrapped into
     // the basis's range when the basis is closed but not periodic: a trim may
@@ -551,7 +545,7 @@ library BrepGeometryCurves
 
     // The parameter-plane curve's natural domain.
     Domain(g: GeometrySet, c: Curve2DIndex): CurveDomain
-        => g.Curve2DAt(c).Domain(g);
+        => g.Curve2DAt(c).Domain(g).WithClosure(g.IsMarkedClosed(c));
 
     // Domain for one record of the arena g, which holds the entries it references.
     Domain(curve: BrepCurve2D, g: GeometrySet): CurveDomain
@@ -562,8 +556,8 @@ library BrepGeometryCurves
             Ellipse(placement, semiAxis1, semiAxis2) => CurveDomain.FullTurnDomain;
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveDomain.UnboundedDomain;
             Parabola(placement, focalDistance) => CurveDomain.UnboundedDomain;
-            Polyline(points) => PolylineDomain(points.Count, points[0].SameExactly(points[points.Count - 1]));
-            BSpline(data) => data.Basis.SplineDomainOf(data.IsClosedSpline);
+            Polyline(points) => BoundedDomain(NumberInterval(0.0, (points.Count - 1).ToNumber));
+            BSpline(data) => BoundedDomain(data.Basis.SplineDomain);
             Trimmed(basis, range, sameSense) => BoundedDomain(NumberInterval(0.0, range.End - range.Start));
             Composite(segments) => BoundedDomain(NumberInterval(0.0, g.CompositeExtents(segments).SumOf));
             Offset(basis, distance) => g.Domain(basis);

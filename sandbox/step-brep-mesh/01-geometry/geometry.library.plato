@@ -149,14 +149,80 @@ library BrepGeometry
             SurfaceOnly(surface) => g.IsSurfaceInRange(surface);
         };
 
+    // True when the closure mark names an entry of the arena.
+    ReferencesInRange(g: GeometrySet, mark: ClosureMark): Boolean
+        => match (mark)
+        {
+            ClosedCurve(curve) => g.IsCurveInRange(curve);
+            ClosedCurve2D(curve) => g.IsCurve2DInRange(curve);
+            ClosedSurface(surface, direction) => g.IsSurfaceInRange(surface);
+        };
+
     // True when every index anywhere in the arena is in range: basis curves
     // and surfaces, composite segments, surface-curve supports, each pcurve's
-    // surface and 2D curve. The first condition of IsWellFormed.
+    // surface and 2D curve, every closure mark. The first condition of
+    // IsWellFormed.
     IsEveryIndexInRange(g: GeometrySet): Boolean
         => g.Curves.All(curve => g.ReferencesInRange(curve))
             && g.Curves2D.All(curve => g.ReferencesInRange(curve))
             && g.Pcurves.All(p => g.ReferencesInRange(p))
-            && g.Surfaces.All(surface => g.ReferencesInRange(surface));
+            && g.Surfaces.All(surface => g.ReferencesInRange(surface))
+            && g.Closures.All(mark => g.ReferencesInRange(mark));
+
+    //==
+    // # Closures decided at decode
+
+    // True when layer 3 marked curve c closed.
+    IsMarkedClosed(g: GeometrySet, c: CurveIndex): Boolean
+        => g.Closures.Any(mark => mark.MarksCurve(c));
+
+    // True when layer 3 marked parameter-plane curve c closed.
+    IsMarkedClosed(g: GeometrySet, c: Curve2DIndex): Boolean
+        => g.Closures.Any(mark => mark.MarksCurve(c));
+
+    // True when layer 3 marked surface s closed in the given parameter.
+    IsMarkedClosed(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Boolean
+        => g.Closures.Any(mark => mark.MarksSurface(s, which));
+
+    // True when the mark names curve c.
+    MarksCurve(mark: ClosureMark, c: CurveIndex): Boolean
+        => match (mark)
+        {
+            ClosedCurve(curve) => curve == c;
+            ClosedCurve2D(curve) => false;
+            ClosedSurface(surface, direction) => false;
+        };
+
+    // True when the mark names parameter-plane curve c.
+    MarksCurve(mark: ClosureMark, c: Curve2DIndex): Boolean
+        => match (mark)
+        {
+            ClosedCurve(curve) => false;
+            ClosedCurve2D(curve) => curve == c;
+            ClosedSurface(surface, direction) => false;
+        };
+
+    // True when the mark names surface s in the given parameter.
+    MarksSurface(mark: ClosureMark, s: SurfaceIndex, which: SurfaceParameter): Boolean
+        => match (mark)
+        {
+            ClosedCurve(curve) => false;
+            ClosedCurve2D(curve) => false;
+            ClosedSurface(surface, direction) => surface == s && direction == which;
+        };
+
+    // The domain d made Closed, with its range's length as the period, when
+    // closed is true and d is a bounded aperiodic domain; d itself otherwise:
+    // a periodic domain already wraps, and an unbounded one has no ends.
+    WithClosure(d: CurveDomain, closed: Boolean): CurveDomain
+        => match (d.Periodicity)
+        {
+            Aperiodic => closed && d.ParameterLength.IsFinite
+                ? CurveDomain(d.Range, Periodicity.Closed(d.ParameterLength))
+                : d;
+            Periodic(period) => d;
+            Closed(period) => d;
+        };
 
     //==
     // # Record shapes

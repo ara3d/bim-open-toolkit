@@ -47,13 +47,13 @@ ends coincide. Periodic implies closed. Closed does not imply periodic: a clampe
 first and last control points coincide is closed, yet its derivative may jump at the join, and
 evaluation outside its knot span is undefined (ISO 10303-42 4.5.34). Layer 0's `Periodicity` has
 three cases: `Periodic` (the formula wraps: conics and every angle parameter), `Closed` (the point
-set wraps, the formula does not: a clamped spline or a polyline whose first and last control
-points are the same point exactly), and `Aperiodic`. `HasSeam` is true for the first two, and every
+set wraps, the formula does not: a closed clamped spline, a polyline back at its start, a
+composite that closes), and `Aperiodic`. `HasSeam` is true for the first two, and every
 seam, unwrapping, winding and edge-domain decision above this layer reads it (review C1, T1).
-Layer 3 decides closure at decode, from `closed_curve`, `u_closed`, `v_closed` or end coincidence
-within the length tolerance, and writes the decision into the record by snapping the last control
-point (row) onto the first and clamping an unclamped closed spline by knot insertion; `Domain`
-then reads it exactly. A surface is closed in a parameter (`IsClosedIn`) when its domain has a seam
+Layer 3 decides closure at decode, from end coincidence within the length tolerance, and records
+each decision as a `ClosureMark` in `GeometrySet.Closures` (a curve, a parameter-plane curve, or
+one direction of a surface); `Domain` reads the record's natural domain and makes a marked bounded
+aperiodic direction `Closed` (`WithClosure`), without a tolerance. A surface is closed in a parameter (`IsClosedIn`) when its domain has a seam
 in it or its two opposite sides are the same curve within tolerance. A closed direction has no
 degenerate sides; a trim across a closed basis's join is wrapped into the basis's range
 (`BasisParameter`, `TrimmedToBasis`) before it is evaluated.
@@ -88,7 +88,7 @@ and most exporters write no pcurves, so both are on the main path, not fallbacks
 is the local inverse from a seed, which face meshing uses along an edge so that continuity picks
 the root and no unwrapping is needed.
 
-**The arena.** `GeometrySet` holds four tables; a case built on another curve or surface names it
+**The arena.** `GeometrySet` holds four tables and the closure marks; a case built on another curve or surface names it
 by index. The references form a graph; evaluation recurses along it and terminates because a
 well-formed arena's graph has no cycle (`IsWellFormed`, theorem `EvaluationTerminates`).
 
@@ -159,7 +159,7 @@ for the axial `v`.
 5. **Closure and periodicity are separate (above).** A closed, clamped B-spline is `Closed`, not
    `Periodic`: making it periodic, as OpenCascade does, would let `Eval` wrap into a region where
    the formula is not periodic in its derivatives. The decision needs a tolerance, which `Domain`
-   has none of, so layer 3 makes it and records it by an exact coincidence (fix wave, T1).
+   has none of, so layer 3 makes it and records it in the arena (`ClosureMark`; fix wave, T1).
 6. **`select_outer` lives in the torus payload as `TorusPart`.** The three parts share one
    formula, so the choice is a domain, not a case: `Full` (STEP `toroidal_surface`, any radii),
    `Apple` and `Lemon` (STEP `degenerate_toroidal_surface` with `select_outer` true and false).
@@ -418,6 +418,7 @@ as expected.
 | `IsNearCollapsed` (parameter-floor zone) | `IsOnCollapsedLine` (rounding), `NormalAngleBound`, `DirectionScale`; `AreaElementIs` drops its tolerance | normal and area-element laws bounded by rounding (fix wave, F11, F7) |
 | (new) | `Law_ClosestParameterNoWorseThanSample`, `Law_ClosestParameterIsStationary`, `Law_ProjectNoWorseThanSample`, `Law_ProjectIsStationary`, `IsInteriorParameter` | inverse evaluation tested at points off the geometry (fix wave, M4) |
 | (new) | `KeepSeedWhereFree`, `NearSeedOffset`, `NearbySeed`, `Law_ProjectNearRecoversFromNearbySeed`; theorem `ProjectNearIsLocalInverse` restated with a seed in a stated neighbourhood | the local inverse keeps the seed's free coordinate (fix wave, T5) |
+| `GeometrySet { Curves; Curves2D; Pcurves; Surfaces }`; closure read from exact end coincidence (previous row) | `GeometrySet` gains `Closures: Array<ClosureMark>` (`ClosedCurve`, `ClosedCurve2D`, `ClosedSurface(s, which)`); `Domain` applies them (`WithClosure`, `IsMarkedClosed`); laws `Law_ClosureMarkInRange`, `Law_ClosureMarkNamesBoundedAperiodic` | layer 3 decides closure with its tolerance and must store it for every aperiodic record, composites and trims included; every `GeometrySet(...)` construction gains a fifth argument, `[]` when nothing is closed (layer 7's witnesses) |
 
 ## Fix wave, 2026-10-17
 
@@ -464,3 +465,6 @@ Applied:
 - **T5, and theorem ProjectNearIsLocalInverse.** `ProjectNear` keeps the seed's free coordinate at a
   pole, apex or axis; the theorem is restated for a seed in a neighbourhood the inverse function
   theorem provides, and a new law seeds near the answer, not at it.
+- **T1, continued (layer 3's request).** Closure decided at decode is stored as `ClosureMark`s in
+  the arena, for any bounded aperiodic curve, 2D curve or surface direction; the exact-coincidence
+  reading of the previous commit is removed.
