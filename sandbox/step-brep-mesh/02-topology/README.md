@@ -392,6 +392,8 @@ layer 1's `ParameterToleranceAt`.
 | `Law_AtLeastOneBound(m, f)` | at least one bound | exact | structural, Error |
 | `Law_FaceBoundsShareNoVertex(m, f)` | distinct bounds of a face share no vertex, redundant vertex loops left out | exact | structural, Error |
 | `Law_NoRedundantVertexLoop(m, f)` | no bound is a vertex loop on another bound's vertex or repeating an earlier vertex loop | exact | structural, Warning (repaired) |
+| `Law_PolyLoopHasThreePoints(m, l)` | a poly loop has at least three points | exact | structural, Error |
+| `Law_PolyLoopEdgesPairUp(m, s)` | a faceted shell's implicit edges obey the edge-use rules after identification | `epsL` | structural, Error |
 | `Law_EveryEdgeUsedTwiceInClosedShell(m, s, e)` | in a shell declared closed, a non-degenerate edge it uses has exactly two uses | exact | structural, Error |
 | `Law_OpenShellEdgesUsedAtMostTwice(m, s, e)` | in a shell not declared closed, no non-degenerate edge has more than two uses | exact | structural, Error |
 | `Law_DeclaredClosedIsClosed(m, s)` | a shell declared closed has no non-degenerate edge used exactly once | exact | structural, Error |
@@ -437,6 +439,7 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 | `IsDegenerateEdge(m, e)` | largest distance from a point to a curve arc: closed form for lines and conics, span subdivision and Newton for splines | 1 per edge, span count for splines |
 | `ReducedCounts(m, s)` | union-find over vertices joined by degenerate edges, one pass over bounds, spatial hash for poly-loop points | coedge sites plus bounds of the shell |
 | `LinkComponentCount(m, s, v)` | union-find over edge ends at `v` | corners at `v` |
+| `PolyEdgeUseDefects(m, s)` | spatial hash and union-find over poly-loop points, one pass over directed implicit edges | faces plus bounds of the shell |
 | `BoundaryCycleCount(m, s)` | walk the free edges, crossing each vertex's link path | free edges of the shell |
 | `OrientationFlips(m, s)` | two-colouring of the face graph by the parity of each edge's two uses | coedge sites of the shell |
 | `ShellComponentCount(m, s)` | union-find over the shell's faces joined at shared vertices and coinciding poly-loop points | coedge sites plus bounds of the shell |
@@ -503,10 +506,10 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
    deferred walk `BoundaryCycleCount`, and `Law_OpenShellVertexLinkIsCycleOrPath`.
 2. **Global laws.** Settled in the fix wave: `Law_ShellIsConnected` and `Law_ShellIsOrientable`
    (research/VALIDATION-MATH.md 2.3), with `OrientationFlips` naming the faces to flip.
-3. **Faceted B-reps.** Edge-use and link laws see only indexed edges. A `PolyLoop`'s implicit edges
-   are counted in `ReducedCounts` but no law checks their uses. Either layer 3 decodes poly loops
-   into edge loops over line edges when points are shared by instance, or this layer adds poly-loop
-   versions of the edge-use laws. The owner or layer 3's author decides.
+3. **Faceted B-reps.** Settled in the fix wave: this layer checks poly loops directly
+   (`Law_PolyLoopEdgesPairUp`, `Law_PolyLoopHasThreePoints`) through the same identification as
+   `ReducedCounts`, and connectivity sees coinciding poly-loop points. Rewriting poly loops into edge
+   loops at decode would remove a case of `BrepLoop` that five layers match on.
 4. **The rest of the pcurve laws.** Settled in the fix wave (review M3): see "Pcurves".
 5. **Parameter-space loop laws**: simplicity and nesting (`Law_LoopSimpleInParameterSpace`,
    `Law_InnerBoundInsideOuter`) belong to layer 5's region, or to this layer for plain faces.
@@ -649,3 +652,6 @@ Applied:
   01-geometry`). Layer 3's `ModelSize(points)` computes the same diagonal over the decoder's points;
   it can call `BoundingDiagonal` or these two on the decoded model. Library law
   `Law_ModelSizeWithinExtent`.
+- **Poly loops (open item 3).** Decided: the laws see poly loops directly.
+  `Law_PolyLoopEdgesPairUp` over the deferred `PolyEdgeUseDefects` (implicit edges identified by
+  coincidence, as `ReducedCounts` does), and `Law_PolyLoopHasThreePoints`.

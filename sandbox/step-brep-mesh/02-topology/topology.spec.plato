@@ -26,6 +26,8 @@ spec BrepModel
 {
     invariant Law_IndicesInRange(self);
     invariant forall (l: Integer) in self.Loops.Count.Range : Law_LoopsChainEndToStart(self, BrepLoopIndex(l));
+    invariant forall (l: Integer) in self.Loops.Count.Range : Law_PolyLoopHasThreePoints(self, BrepLoopIndex(l));
+    invariant forall (s: Integer) in self.Shells.Count.Range : Law_PolyLoopEdgesPairUp(self, ShellIndex(s));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_AtLeastOneBound(self, BrepFaceIndex(f));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_AtMostOneOuterBound(self, BrepFaceIndex(f));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_FaceBoundsShareNoVertex(self, BrepFaceIndex(f));
@@ -193,6 +195,17 @@ spec BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
     ensures m.FreeEdgeCount(s) == 0 ? result == 0 : result >= 1;
     measure m.FreeEdgeCount(s);
     deferred "mark the shell's free edges that are not degenerate; from each unmarked-visited one, walk forward: at its end vertex take the link path (CornersAroundVertex), cross to the free edge at the path's other end, and continue until the walk returns to its first edge; the result is the number of walks";
+}
+
+// The defects of a faceted shell's implicit edges.
+spec PolyEdgeUseDefects(m: BrepModel, s: ShellIndex): Integer
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsShellInRange(s);
+    ensures result >= 0;
+    ensures m.ShellHasPolyLoop(s) ? true : result == 0;
+    measure m.ShellFaces(s).Count + m.RawCounts(s).Loops;
+    deferred "hash every poly-loop point of the shell into cells of the length tolerance and unite coinciding points across neighbouring cells; key each implicit edge by its unordered pair of classes and record each use's direction; count the keys whose use count and directions break the rule for the shell's declared closedness";
 }
 
 // The number of components of the link of v: the graph on the edge ends at v

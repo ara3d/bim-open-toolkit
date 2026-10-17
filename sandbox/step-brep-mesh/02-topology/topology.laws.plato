@@ -79,6 +79,11 @@ library BrepTopologyLaws
             ? m.Faces[f].Bounds.Count.Range.All(b => m.IsRedundantVertexLoop(f, b).Not)
             : true;
 
+    // A poly loop has at least three points (STEP poly_loop, LIST [3:?]):
+    // fewer bound no area. Structural, exact.
+    Law_PolyLoopHasThreePoints(m: BrepModel, l: BrepLoopIndex): Boolean
+        => m.IsLoopInRange(l) ? m.Loops[l].HasThreePointsIfPoly : true;
+
     //==
     // # Edge uses
 
@@ -116,6 +121,17 @@ library BrepTopologyLaws
     Law_EdgeUsesHaveOppositeOrientation(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Boolean
         => m.IsShellInRange(s)
             ? (m.IsEdgeInRange(e) ? m.UsesRunOpposite(m.CoedgeSitesOfEdge(s, e)) : true)
+            : true;
+
+    // The implicit edges of a faceted shell obey the edge-use rules of indexed
+    // edges: used exactly twice in opposite directions in a shell declared
+    // closed, at most twice and never twice the same way in an open one.
+    // Settles the layer's open item 3: the laws see poly loops directly,
+    // rather than layer 3 rewriting them into edge loops. Structural, exact
+    // after identification within Tolerances.Length.
+    Law_PolyLoopEdgesPairUp(m: BrepModel, s: ShellIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s) ? m.PolyEdgeUseDefects(s) == 0 : true)
             : true;
 
     // When an edge has exactly two uses in one face, a seam, they run in opposite

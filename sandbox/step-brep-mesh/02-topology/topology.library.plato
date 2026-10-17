@@ -30,6 +30,7 @@
 //  - Degenerate edges
 //  - Vertex links
 //  - Counts and Euler-Poincare
+//  - Faceted bounds
 //  - Connectivity
 //  - Orientability
 //  - Bodies
@@ -808,6 +809,36 @@ library BrepTopology
     // Whether an Euler characteristic is even and at most 2 (ISO 10303-42 eq. 9).
     IsEvenAndAtMostTwo(chi: Integer): Boolean
         => chi % 2 == 0 && chi <= 2;
+
+    //==
+    // # Faceted bounds
+    //
+    // A poly loop's edges are implicit: consecutive points, the last back to
+    // the first, matched across faces by coincidence within the length
+    // tolerance, never by index. The edge-use rules apply to them as to
+    // indexed edges, through the identification ReducedCounts makes.
+
+    // Whether the loop, if a poly loop, has at least three points (STEP
+    // poly_loop, LIST [3:?]); true for other loops.
+    HasThreePointsIfPoly(loop: BrepLoop): Boolean
+        => match (loop) {
+            EdgeLoop(coedges) => true;
+            VertexLoop(vertex) => true;
+            PolyLoop(points) => points.Count >= 3;
+        };
+
+    // The number of implicit edges of shell s's poly loops whose uses break
+    // the edge-use rules: in a shell declared closed, an implicit edge not used
+    // exactly twice in opposite directions; in an open shell, one used more
+    // than twice or twice in the same direction. Implicit edges are the
+    // unordered pairs of consecutive poly-loop points after identifying the
+    // points by coincidence (the transitive closure, as ReducedCounts takes
+    // it), each use directed as its face runs its bound. Zero for a shell with
+    // no poly loop.
+    // deferred: identify the poly-loop points through a spatial hash and
+    // union-find, then count each directed implicit edge per unordered pair in
+    // one pass.
+    PolyEdgeUseDefects(m: BrepModel, s: ShellIndex): Integer;
 
     //==
     // # Connectivity
