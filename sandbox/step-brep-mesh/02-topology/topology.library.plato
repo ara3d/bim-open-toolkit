@@ -35,6 +35,7 @@
 //  - Bodies
 //  - Coupling measures
 //  - Parameter-space winding
+//  - Size and extent
 //  - Units
 //  - Owed by 00-foundation
 
@@ -1081,6 +1082,94 @@ library BrepTopology
     // Precondition: m.IsPlainInParameters(f).
     WindingAgreesWithNormal(m: BrepModel, f: BrepFaceIndex): Boolean
         => m.FaceNormalSign(f) == 1 ? m.SignedParameterArea(f) > 0.0 : m.SignedParameterArea(f) < 0.0;
+
+    //==
+    // # Size and extent
+    //
+    // Two magnitudes of a model that layer 0's floors read and layer 3 exports
+    // in DecodedModel (layer 0 README, "The rounding floor at the coordinate
+    // extent"). The model size, the diagonal of the bounding box, bounds a
+    // radius, so it divides the angle parameter floor. The coordinate extent,
+    // the largest absolute coordinate, sets the rounding: a building in
+    // millimetres at survey coordinates near 5e9 has a size near 1e5 and an
+    // extent near 5e9, and ResolutionAt(5e9) = 1.8e-5 mm against
+    // ResolutionAt(1e5) = 3.6e-10. Both are taken over the model's defining
+    // points: vertices, poly-loop points, and every point, placement origin
+    // and control point the arena stores. Every point of a face lies within
+    // the box of those points widened by the largest radius, and a radius of
+    // a conic or elementary surface that a vertex lies on is at most the size,
+    // so the true extent is at most CoordinateExtent + ModelSize.
+
+    // The points that define curve c's shape and position: its placement
+    // origin, a line's origin, a polyline's points, a B-spline's control
+    // points; none for a curve built on others by index, whose basis
+    // contributes its own.
+    // belongs-in: 01-geometry
+    DefiningPoints(curve: BrepCurve): Array<Point3D>
+        => match (curve) {
+            Line(origin, velocity) => [origin];
+            Circle(placement, radius) => [placement.Origin];
+            Ellipse(placement, semiAxis1, semiAxis2) => [placement.Origin];
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => [placement.Origin];
+            Parabola(placement, focalDistance) => [placement.Origin];
+            Polyline(points) => points;
+            BSpline(data) => data.ControlPoints;
+            Trimmed(basis, range, sameSense) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            Composite(segments) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            Offset(basis, distance, reference) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            OnSurface(spaceCurve, supports, master) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+        };
+
+    // The points that define surface s's shape and position: its placement
+    // origin, a revolution axis's origin, a B-spline's control points; none
+    // for a surface built on another by index or on a profile curve.
+    // belongs-in: 01-geometry
+    DefiningPoints(surface: BrepSurface): Array<Point3D>
+        => match (surface) {
+            Plane(placement) => [placement.Origin];
+            Cylinder(placement, radius) => [placement.Origin];
+            Cone(placement, radius, semiAngle) => [placement.Origin];
+            Sphere(placement, radius) => [placement.Origin];
+            Torus(placement, major, minor, part) => [placement.Origin];
+            Revolution(profile, axis) => [axis.Origin];
+            LinearExtrusion(profile, extrusion) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            BSpline(data) => data.ControlPoints.ColumnCount.Range.FlatMap(i =>
+                data.ControlPoints.RowCount.Range.Map(j => data.ControlPoints.At(i, j)));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            Offset(basis, distance) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+        };
+
+    // Every defining point of the model: vertex points, poly-loop points, and
+    // the defining points of every curve and surface of the arena.
+    ModelPoints(m: BrepModel): Array<Point3D>
+        => m.Vertices.Map(v => v.Point)
+            .Concatenate(m.Loops.FlatMap(l => l.PolyLoopPointsOf))
+            .Concatenate(m.Geometry.Curves.FlatMap(c => c.DefiningPoints))
+            .Concatenate(m.Geometry.Surfaces.FlatMap(s => s.DefiningPoints));
+
+    // The diagonal of the axis-aligned bounding box of the points; 0 for none.
+    BoundingDiagonal(points: Array<Point3D>): Number
+        => points.Count == 0
+            ? 0.0
+            : points.Reduce(points[0], (a, p) => Point3D(a.X.Min(p.X), a.Y.Min(p.Y), a.Z.Min(p.Z)))
+                .Distance(points.Reduce(points[0], (a, p) => Point3D(a.X.Max(p.X), a.Y.Max(p.Y), a.Z.Max(p.Z))));
+
+    // The largest absolute coordinate of the points; 0 for none.
+    LargestAbsoluteCoordinate(points: Array<Point3D>): Number
+        => points.Reduce(0.0, (x, p) => x.Max(p.X.Abs).Max(p.Y.Abs).Max(p.Z.Abs));
+
+    // The model size: the diagonal of the bounding box of the model's defining
+    // points, in model units. The bound on a radius, and the divisor of layer
+    // 0's angle parameter floor.
+    ModelSize(m: BrepModel): Number
+        => m.ModelPoints.BoundingDiagonal;
+
+    // The coordinate extent: the largest absolute coordinate of the model's
+    // defining points, in model units. Every rounding floor on a coordinate, a
+    // length tolerance, or a length parameter is ResolutionAt of it (layer 0
+    // README, decision 11).
+    CoordinateExtent(m: BrepModel): Number
+        => m.ModelPoints.LargestAbsoluteCoordinate;
 
     //==
     // # Units

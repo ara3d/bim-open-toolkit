@@ -413,6 +413,16 @@ library BrepTopologyLaws
             : true;
 
     //==
+    // # Size and extent
+
+    // The coordinate extent bounds the half-diagonal of the box from the origin
+    // side: ModelSize is at most 2 * sqrt(3) times CoordinateExtent, because
+    // every defining point lies in the cube of half-width CoordinateExtent
+    // about the origin. Library, rounding: ResolutionAt of the size.
+    Law_ModelSizeWithinExtent(m: BrepModel): Boolean
+        => m.ModelSize <= m.CoordinateExtent * 2.0 * 3.0.Sqrt + ResolutionAt(m.ModelSize);
+
+    //==
     // # Parameter-space winding
 
     // For a face whose bounds close in its parameter plane without seam or pole

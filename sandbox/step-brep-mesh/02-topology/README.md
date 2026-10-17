@@ -312,6 +312,19 @@ cones apex to apex give two cycles at the shared apex and fail the law; their re
 `chi = 3`, which fails the Euler law too. A vertex loop's vertex has no corners, so
 `Law_VertexLoopVertexIsIsolated` requires that no edge of the shell touches it.
 
+## Size and extent
+
+`ModelSize(m)` is the diagonal of the bounding box of the model's defining points (vertex points,
+poly-loop points, and every point, placement origin and control point of the arena), and
+`CoordinateExtent(m)` their largest absolute coordinate. Layer 0 divides the angle parameter floor
+by the size, which bounds a radius, and takes every rounding floor at the extent, because rounding
+follows the magnitude of the coordinates: a building in millimetres at survey coordinates near
+`5e9` mm has a size near `1e5` and `ResolutionAt(5e9) = 1.8e-5` mm, where `ResolutionAt(1e5)` would
+claim `3.6e-10` (review F6). Layer 3 exports both in `DecodedModel`. A face's points can lie up to a
+radius outside the defining points' box (a full circle with one vertex), and that radius is at most
+the size, so the true extent is at most `CoordinateExtent + ModelSize`. `DefiningPoints` over
+`BrepCurve` and `BrepSurface` is layer 1's knowledge and is marked `belongs-in: 01-geometry`.
+
 ## Decisions
 
 1. **Coedges are addressed by site.** A `Coedge` value does not say which face and bound use it,
@@ -408,6 +421,7 @@ layer 1's `ParameterToleranceAt`.
 | `Law_PcurveRunsWithCurve(m, e, k, t)` | the pcurve's and the curve's tangents do not point apart | exact sign beyond rounding | structural, Error |
 | `Law_PcurveSurfaceIsAFaceSurface(m, e, k)` | the pcurve's surface is that of a face citing the edge | exact | structural, Warning (ignored) |
 | `Law_ParameterizationSignIsConstantOnFace(m, site, t)` | at the projection of a coedge point, `N . (PartialU x PartialV)` has the sign `epsilon` says, where resolvable | exact sign | library, test |
+| `Law_ModelSizeWithinExtent(m)` | the model size is at most `2 sqrt(3)` times the coordinate extent | `ResolutionAt(size)` | library, test |
 | `Law_LoopWindingMatchesSameSense(m, f)` | a plain face's parameter-space region has the sign `FaceNormalSign` says | exact sign | structural, Error |
 
 The pointwise laws take a fraction `t`, clamp it into `[0, 1]`, and map it onto the domain. Layer 7's
@@ -629,3 +643,9 @@ Applied:
   `EdgeParameterAt`, `CurveTangentAt`, `IsPcurveOnAdjacentFace`. Same parameterization is the
   deferred predicate `SharesCurveParameter`, not a law, since STEP does not promise it; it is the
   route choice review C5 asks layers 4 and 5 to share.
+- **`CoordinateExtent(m)`, `ModelSize(m)` (FIX-WAVE layer 0 table, review F6, layer 8 finding 8).**
+  Both over `ModelPoints`, the model's defining points; helpers `BoundingDiagonal`,
+  `LargestAbsoluteCoordinate`, and `DefiningPoints` over curves and surfaces (`belongs-in:
+  01-geometry`). Layer 3's `ModelSize(points)` computes the same diagonal over the decoder's points;
+  it can call `BoundingDiagonal` or these two on the decoded model. Library law
+  `Law_ModelSizeWithinExtent`.
