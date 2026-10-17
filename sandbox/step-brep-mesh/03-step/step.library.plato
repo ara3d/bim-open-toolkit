@@ -34,7 +34,9 @@ library StepReading
     // reachable instances into the kernel tables, folding orientation flags
     // and making the local repairs of StepRepair, with placements and unit
     // conversion applied to every point, frame and length; set the tolerances
-    // (ModelTolerances); build the provenance map.
+    // (ModelTolerances); decide the closure of every curve and surface
+    // direction whose formula does not wrap from its ends at the length
+    // tolerance (README, "Closure at decode"); build the provenance map.
     DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel;
 
     // deferred: a census by keyword. One EntityTypeIgnored Info per ignored

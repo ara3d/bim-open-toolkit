@@ -252,6 +252,9 @@ spec DecodeBrep(file: Part21File): DecodedModel
     ensures Law_PcurveCountMatchesInstances(file);
     ensures Law_SurfaceCountMatchesInstances(file);
     ensures forall (k: Integer) : Law_CirclePeriodIsTwoPi(file, k, result.Model.Tolerances.Parameter);
+    ensures forall (k: Integer) : Law_CurveClosureDecidedByEnds(file, k);
+    ensures forall (k: Integer) : Law_SurfaceClosureDecidedBySides(file, k, SurfaceParameter.ParameterU);
+    ensures forall (k: Integer) : Law_SurfaceClosureDecidedBySides(file, k, SurfaceParameter.ParameterV);
     ensures forall (c: Integer) : Law_AngleUnitIsReported(file, c);
     ensures Law_UncertaintyDefaultExactlyWhenAbsent(file);
     ensures forall (c: Integer) : Law_ToleranceCoversStatedUncertainties(file, c);
@@ -280,7 +283,7 @@ spec DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel
     ensures result.Map.Occurrences.Count == 0 ? result.Diagnostics.HasCode(StepDiagnosticCode.NoShapeFound) : true;
     ensures forall (d: Integer) in file.ClassificationDiagnostics.Count.Range : result.Diagnostics.Any(x => x.Code == file.ClassificationDiagnostics[d].Code && x.Where == file.ClassificationDiagnostics[d].Where);
     measure file.Instances.Count + file.Attributes.Count + result.Map.Occurrences.Count * file.Instances.Count;
-    deferred "classify; resolve contexts; find occurrences; decode each occurrence's reachable instances into the kernel tables, folding orientation and making the local repairs; set tolerances; build the map";
+    deferred "classify; resolve contexts; find occurrences; decode each occurrence's reachable instances into the kernel tables, folding orientation and making the local repairs; set tolerances; decide closure from the ends at the length tolerance; build the map";
 }
 
 spec ClassificationDiagnostics(file: Part21File): Array<Diagnostic>

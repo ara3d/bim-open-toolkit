@@ -14,6 +14,7 @@
 //  - The provenance map
 //  - Counts
 //  - Units and tolerance
+//  - Closure
 //  - Copied flags and repairs
 //  - Orientation folding
 
@@ -245,6 +246,56 @@ library StepReadingLaws
         return d.Map.Occurrences.Count == 0
             ? true
             : d.Model.Unit == f.ResolveContexts(policy).ContextUnitsOf(d.Map.Occurrences[0].Context, fallback).Length;
+    }
+
+    //==
+    // # Closure
+    //
+    // README, "Closure at decode": a direction whose formula does not wrap
+    // gets Closed(range length) exactly when its two ends are one point set
+    // within the model's length tolerance, and Aperiodic otherwise. The file's
+    // closed_curve, u_closed and v_closed flags are information only (P42
+    // 4.5.34 NOTE 10) and never decide; a disagreement is a diagnostic.
+
+    // A decoded curve whose formula does not wrap has a seam (Closed) exactly
+    // when its range is bounded and its two ends coincide within the model's
+    // length tolerance: a clamped B-spline whose first and last control points
+    // coincide, a polyline back at its start, a composite curve that closes,
+    // a trim spanning a whole circle.
+    Law_CurveClosureDecidedByEnds(f: Part21File, k: Integer): Boolean
+    {
+        var m = f.DecodeBrep.Model;
+        if (k < 0 || k >= m.Geometry.Curves.Count)
+        {
+            return true;
+        }
+        var d = m.Geometry.Domain(CurveIndex(k));
+        return d.Periodicity.IsPeriodic
+            ? true
+            : (d.ParameterLength.IsFinite
+                ? d.Periodicity.HasSeam == m.Geometry.Eval(CurveIndex(k), d.Range.Start).Coincident(m.Geometry.Eval(CurveIndex(k), d.Range.End), m.Tolerances.Length)
+                : !d.Periodicity.HasSeam);
+    }
+
+    // A decoded surface direction whose formula does not wrap has a seam
+    // (Closed) exactly when it is bounded and its two opposite sides are the
+    // same curve within the model's length tolerance (layer 1's
+    // SidesCoincide, which reads the geometry, never the stored periodicity):
+    // a clamped B-spline surface closed in u, a revolution of a closed
+    // profile, an extrusion of a closed curve.
+    Law_SurfaceClosureDecidedBySides(f: Part21File, k: Integer, which: SurfaceParameter): Boolean
+    {
+        var m = f.DecodeBrep.Model;
+        if (k < 0 || k >= m.Geometry.Surfaces.Count)
+        {
+            return true;
+        }
+        var d = m.Geometry.Domain(SurfaceIndex(k)).DomainAlong(which);
+        return d.Periodicity.IsPeriodic
+            ? true
+            : (d.ParameterLength.IsFinite
+                ? d.Periodicity.HasSeam == m.Geometry.SidesCoincide(SurfaceIndex(k), which, m.Tolerances)
+                : !d.Periodicity.HasSeam);
     }
 
     //==

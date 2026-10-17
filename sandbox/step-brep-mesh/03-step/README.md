@@ -223,6 +223,34 @@ surveyed file states an angle uncertainty); `Tolerances.Parameter` is layer 0's
 `ParameterFloor(length, model size)`. Uncertainties from 1e-13 mm to 0.67 mm are accepted as
 written; the meshing tolerances stay separate (research 6.5).
 
+## Closure at decode
+
+Layer 0's `Periodicity` has a third case, `Closed(Period)`: the formula does not wrap, but the two
+ends of the range are one point, so seam reasoning (wrap, unwrap, winding, edge domains) treats the
+direction like a periodic one with the range's length as the period. Layer 1 decided not to
+decide closure because `Domain` has no tolerance; this layer has one, so it decides here, once.
+
+**The rule.** After the tolerances are set, every decoded curve whose formula does not wrap
+(`IsPeriodic` false) and whose range is bounded gets `Closed(End - Start)` exactly when
+`Eval(Start)` and `Eval(End)` coincide within `Tolerances.Length`, and stays `Aperiodic`
+otherwise; every surface direction likewise, with the two opposite sides compared by layer 1's
+`SidesCoincide`. An unbounded direction is never closed. Conics and angle parameters keep
+`Periodic`. The laws are `Law_CurveClosureDecidedByEnds` and `Law_SurfaceClosureDecidedBySides`;
+layer 0's `Law_ClosedPeriodIsRangeLength` holds by construction.
+
+**The file's flags do not decide.** `closed_curve`, `u_closed` and `v_closed` are information
+only (P42 4.5.34 NOTE 10). Taking a `.T.` at its word would wrap a curve whose ends are apart, and
+every loop unwrapped across that seam would carry a jump the size of the gap; ignoring a `.F.`
+on ends that coincide is what lets a closed B-spline face get its seam. A disagreement is a
+diagnostic with the gap as its measure: `ClosedFlagWithoutClosure` (Warning: the face may not
+mesh, and the gap says whether the tolerance is too tight) and `ClosureWithoutClosedFlag`
+(Info). `.U.` never disagrees.
+
+**Where the decision is stored** is layer 1's: the aperiodic record cases (B-spline, polyline,
+trimmed, composite, and their surface forms) carry the closure the decoder decided, and `Domain`
+reports it. Pcurves' 2D curves are not decided: a pcurve's range follows from its edge's (review
+F4b), and its closure from its surface's periodicity.
+
 ## Assemblies
 
 **Decision: one `BrepModel` per file, in the root occurrence's units, every placed copy of a
@@ -478,6 +506,8 @@ are about this layer's code.
 | `Law_PcurveCountMatchesInstances` | One Pcurve per reached pcurve: the file's pcurves are kept, and none is invented (Law_PcurvesComeFromPcurveInstances). | exact | Error |
 | `Law_SurfaceCountMatchesInstances` | One BrepSurface per reached surface. | exact | Error |
 | `Law_CirclePeriodIsTwoPi` | Angles are radians after decoding, whatever the file's plane-angle unit: a kernel curve decoded from a circle has period 2 pi within tol, in a file whose angle unit is the degree as in any other. | `ParameterTolerance` (parameter) | Error |
+| `Law_CurveClosureDecidedByEnds` | A decoded curve whose formula does not wrap is Closed exactly when its range is bounded and its ends coincide within the length tolerance. | `Tolerances.Length` of the model | Error |
+| `Law_SurfaceClosureDecidedBySides` | A decoded surface direction whose formula does not wrap is Closed exactly when it is bounded and its opposite sides coincide within the length tolerance (SidesCoincide). | `Tolerances.Length` of the model | Error |
 | `Law_AngleUnitIsReported` | Every used context's plane-angle unit is reported at Info: found, or defaulted by the policy. | exact | Error |
 | `Law_UncertaintyDefaultExactlyWhenAbsent` | The uncertainty default is applied exactly when no used context states a length uncertainty. | exact | Error |
 | `Law_ToleranceCoversStatedUncertainties` | The model's length tolerance is at least every stated uncertainty of a used context, converted to the model unit (within the policy's unit-match tolerance, the rounding of the conversion). | `DecodePolicy.UnitMatch` (relative 1e-9) | Error |

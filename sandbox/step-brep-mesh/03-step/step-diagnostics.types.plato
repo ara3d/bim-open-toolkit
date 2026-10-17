@@ -54,6 +54,8 @@ type StepDiagnosticCode
     | ParallelPlacementAxes
     | NonOrthogonalPlacement
     | KnotsRepaired
+    | ClosedFlagWithoutClosure
+    | ClosureWithoutClosedFlag
     | NegativeTorusMajorRadius
     | TorusMajorBelowMinor
     | MissingCurve3D
