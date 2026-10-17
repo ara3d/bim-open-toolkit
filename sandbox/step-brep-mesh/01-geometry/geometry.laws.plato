@@ -454,7 +454,7 @@ library BrepGeometryLaws
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
             Parabola(placement, focalDistance) => true;
             Polyline(points) => true;
-            BSpline(data) => data.BSplinePoint(t).Coincident(Oracle_BSplineCurvePoint(data, t), tol.Length);
+            BSpline(data) => data.BSplinePoint(t).Distance(Oracle_BSplineCurvePoint(data, t)) <= ResolutionAt(curve.EvaluationMagnitude(g, t));
             Trimmed(basis, range, sameSense) => true;
             Composite(segments) => true;
             Offset(basis, distance, reference) => true;
@@ -477,7 +477,8 @@ library BrepGeometryLaws
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
             Parabola(placement, focalDistance) => true;
             Polyline(points) => true;
-            BSpline(data) => data.BSplinePoint(t).SameParameter(Oracle_BSplineCurve2DPoint(data, t), tol.FinerParameterFloor);
+            BSpline(data) => (data.BSplinePoint(t) - Oracle_BSplineCurve2DPoint(data, t)).Length
+                <= ResolutionAt(data.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.UvMagnitude)) * data.Weights.WeightRatio);
             Trimmed(basis, range, sameSense) => true;
             Composite(segments) => true;
             Offset(basis, distance) => true;
@@ -503,7 +504,7 @@ library BrepGeometryLaws
             Torus(placement, major, minor, part) => true;
             Revolution(profile, axis) => true;
             LinearExtrusion(profile, extrusion) => true;
-            BSpline(data) => data.BSplinePoint(uv).Coincident(Oracle_BSplineSurfacePoint(data, uv), tol.Length);
+            BSpline(data) => data.BSplinePoint(uv).Distance(Oracle_BSplineSurfacePoint(data, uv)) <= ResolutionAt(surface.EvaluationMagnitude(g, uv));
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => true;
             Offset(basis, distance) => true;
         };
@@ -526,13 +527,15 @@ library BrepGeometryLaws
                 : true)
             : true;
 
-    // A periodic curve repeats: Eval(t + period) is Eval(t) within the length
-    // tolerance.
+    // A periodic curve repeats: Eval(t + period) is Eval(t) within rounding,
+    // the evaluation's own and that of the argument t + period carried by the
+    // speed. A library law: tol is not read.
     Law_CurveRepeatsWithPeriod(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
         => g.CanEvaluate(c)
             ? (g.Domain(c).Periodicity.IsPeriodic
-                ? g.Eval(c, g.Domain(c).SampleIn(t)).Coincident(
-                    g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0)), tol.Length)
+                ? g.Eval(c, g.Domain(c).SampleIn(t)).Distance(g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0)))
+                    <= ResolutionAt(g.EvaluationMagnitude(c, g.Domain(c).SampleIn(t)))
+                        + g.Derivative(c, g.Domain(c).SampleIn(t)).Length * ResolutionAt(g.Domain(c).SampleIn(t).Abs + g.Domain(c).Periodicity.PeriodOr(0.0))
                 : true)
             : true;
 
@@ -953,12 +956,14 @@ library BrepGeometryLaws
     //==
     // # Parameter-plane curves and pcurves
 
-    // A periodic parameter-plane curve repeats within the parameter floor.
+    // A periodic parameter-plane curve repeats within rounding, as
+    // Law_CurveRepeatsWithPeriod. tol is not read.
     Law_Curve2DRepeatsWithPeriod(g: GeometrySet, c: Curve2DIndex, t: Number, tol: Tolerances): Boolean
         => g.CanEvaluate(c)
             ? (g.Domain(c).Periodicity.IsPeriodic
-                ? g.Eval(c, g.Domain(c).SampleIn(t)).SameParameter(
-                    g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0)), tol.FinerParameterFloor)
+                ? (g.Eval(c, g.Domain(c).SampleIn(t)) - g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0))).Length
+                    <= ResolutionAt(g.EvaluationMagnitude(c, g.Domain(c).SampleIn(t)))
+                        + g.Derivative(c, g.Domain(c).SampleIn(t)).Length * ResolutionAt(g.Domain(c).SampleIn(t).Abs + g.Domain(c).Periodicity.PeriodOr(0.0))
                 : true)
             : true;
 
@@ -1123,12 +1128,15 @@ library BrepGeometryLaws
             : true;
 
     // A surface periodic in the given parameter repeats with its period in
-    // it, within the length tolerance.
+    // it, within rounding, as Law_CurveRepeatsWithPeriod. tol is not read.
     Law_SurfaceRepeatsWithPeriod(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
             ? (g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic
-                ? g.Eval(s, g.Domain(s).SampleIn(uv)).Coincident(g.Eval(s, g.Domain(s).SampleIn(uv).WithCoordinate(which,
-                    g.Domain(s).SampleIn(uv).Coordinate(which) + g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(0.0))), tol.Length)
+                ? g.Eval(s, g.Domain(s).SampleIn(uv)).Distance(g.Eval(s, g.Domain(s).SampleIn(uv).WithCoordinate(which,
+                    g.Domain(s).SampleIn(uv).Coordinate(which) + g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(0.0))))
+                    <= ResolutionAt(g.EvaluationMagnitude(s, g.Domain(s).SampleIn(uv)))
+                        + g.Partial(s, g.Domain(s).SampleIn(uv), which).Length
+                            * ResolutionAt(g.Domain(s).SampleIn(uv).Coordinate(which).Abs + g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(0.0))
                 : true)
             : true;
 
@@ -1160,38 +1168,63 @@ library BrepGeometryLaws
                 ResolutionAt(g.EvaluationMagnitude(s, w)) / h);
     }
 
-    // True when uv is within the parameter floor of a collapsed line of the
-    // surface, in either parameter, measured around the circle when periodic.
-    IsNearCollapsed(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CollapsedAt(s, SurfaceParameter.ParameterU, tol).Any(c => g.Domain(s).U.SameParameter(uv.U, c, g.ParameterFloorAlong(s, SurfaceParameter.ParameterU, tol)))
-            || g.CollapsedAt(s, SurfaceParameter.ParameterV, tol).Any(c => g.Domain(s).V.SameParameter(uv.V, c, g.ParameterFloorAlong(s, SurfaceParameter.ParameterV, tol)));
+    // True when uv lies on a collapsed line of the surface to within the
+    // rounding of its coordinate, in either parameter, measured around the
+    // loop when the direction has a seam: where the area element may be
+    // exactly zero. Not a tolerance zone: next to a collapsed line the metric
+    // degenerates, and a zone the size of the parameter floor would excuse
+    // the laws exactly where they need a rounding bound instead (review F11).
+    IsOnCollapsedLine(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
+        => g.CollapsedAt(s, SurfaceParameter.ParameterU, tol).Any(c =>
+                g.Domain(s).U.SameParameter(uv.U, c, ParameterTolerance(ResolutionAt(c.Abs + g.Domain(s).U.ParameterScale(uv.U)))))
+            || g.CollapsedAt(s, SurfaceParameter.ParameterV, tol).Any(c =>
+                g.Domain(s).V.SameParameter(uv.V, c, ParameterTolerance(ResolutionAt(c.Abs + g.Domain(s).V.ParameterScale(uv.V)))));
 
-    // NormalOr is a unit vector away from collapsed lines, within the angle
-    // tolerance read as a relative length error.
+    // The scale of surface s's given parameter at uv: the PieceScale of the
+    // direction, over which a partial's rounding is that of Eval divided by
+    // it.
+    DirectionScale(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, which: SurfaceParameter): Number
+        => surface.Domain(g).DomainAlong(which).PieceScale(surface.Breaks(g, which, Integer.DifferenceOrder), uv.Coordinate(which));
+
+    // A bound, in radians, on the rounding of the direction of NormalOr at uv:
+    // the unit-vector rounding plus the relative rounding of the smaller
+    // partial, ResolutionAt(M) / (|S_x| s_x) with s_x the direction's scale
+    // (review F11). It grows without limit toward a collapsed line, where the
+    // smaller partial vanishes; the largest Number when a partial is zero.
+    NormalAngleBound(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Number
+    {
+        var surface = g.SurfaceAt(s);
+        var smaller = (surface.PartialU(g, uv).Length * surface.DirectionScale(g, uv, SurfaceParameter.ParameterU))
+            .Min(surface.PartialV(g, uv).Length * surface.DirectionScale(g, uv, SurfaceParameter.ParameterV));
+        return smaller > 0.0 ? ResolutionAt(1.0) + ResolutionAt(surface.EvaluationMagnitude(g, uv)) / smaller : Number.MaxValue;
+    }
+
+    // NormalOr is a unit vector within the rounding of a normalization,
+    // everywhere: the closed forms are unit by construction, the cross
+    // products are normalized, and the fallback is unit. A library law: tol
+    // is not read.
     Law_NormalIsUnit(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
-            ? (g.IsNearCollapsed(s, g.Domain(s).SampleIn(uv), tol)
-                ? true
-                : (g.NormalOr(s, g.Domain(s).SampleIn(uv), Direction3D(Vector3D.UnitZ)).Vector.Length - 1.0).Abs <= tol.Angle.Value.Radians)
+            ? (g.NormalOr(s, g.Domain(s).SampleIn(uv), Direction3D(Vector3D.UnitZ)).Vector.Length - 1.0).Abs <= ResolutionAt(1.0)
             : true;
 
-    // NormalOr is orthogonal to the partial in the given parameter away from
-    // collapsed lines: the angle between them is a right angle within the
-    // angle tolerance.
+    // NormalOr is orthogonal to the partial in the given parameter: |N . S_x|
+    // is at most |S_x| times NormalAngleBound, which vanishes to rounding away
+    // from collapsed lines and grows toward them. A library law: tol is not
+    // read.
     Law_NormalOrthogonalToPartial(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
-            ? (g.IsNearCollapsed(s, g.Domain(s).SampleIn(uv), tol)
-                ? true
-                : g.NormalOr(s, g.Domain(s).SampleIn(uv), Direction3D(Vector3D.UnitZ)).Vector.Dot(g.Partial(s, g.Domain(s).SampleIn(uv), which)).Abs
-                    <= g.Partial(s, g.Domain(s).SampleIn(uv), which).Length * tol.Angle.Value.Sin)
+            ? g.NormalOr(s, g.Domain(s).SampleIn(uv), Direction3D(Vector3D.UnitZ)).Vector.Dot(g.Partial(s, g.Domain(s).SampleIn(uv), which)).Abs
+                <= g.Partial(s, g.Domain(s).SampleIn(uv), which).Length * g.NormalAngleBound(s, g.Domain(s).SampleIn(uv))
             : true;
 
     // NormalOr points along PartialU x PartialV where
-    // NormalAgreesWithParameterization says so and against it elsewhere,
-    // away from collapsed lines: an exact sign test.
+    // NormalAgreesWithParameterization says so and against it elsewhere: an
+    // exact sign test wherever the rounding of the normal's direction is
+    // below a radian, so the sign is determined.
     Law_NormalSenseMatchesParameterization(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
-            ? (g.IsNearCollapsed(s, g.Domain(s).SampleIn(uv), tol)
+            ? (g.NormalAngleBound(s, g.Domain(s).SampleIn(uv)) >= 1.0
                 ? true
                 : (g.NormalOr(s, g.Domain(s).SampleIn(uv), Direction3D(Vector3D.UnitZ)).Vector
                     .Dot(g.PartialU(s, g.Domain(s).SampleIn(uv)).Cross(g.PartialV(s, g.Domain(s).SampleIn(uv)))) > 0.0)
@@ -1199,22 +1232,26 @@ library BrepGeometryLaws
             : true;
 
     // AreaElement equals |PartialU x PartialV|, computed from the partials,
-    // within the area of a parallelogram of the partials' lengths whose angle
-    // is off by the angle tolerance.
+    // within rounding. A library law: tol is not read.
     Law_AreaElementMatchesCrossProduct(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.SurfaceAt(s).AreaElementIs(g, g.Domain(s).SampleIn(uv), g.AreaElement(s, g.Domain(s).SampleIn(uv)), tol) : true;
+        => g.CanEvaluate(s) ? g.SurfaceAt(s).AreaElementIs(g, g.Domain(s).SampleIn(uv), g.AreaElement(s, g.Domain(s).SampleIn(uv))) : true;
 
-    // True when h is the cross-product area element at uv within the angle
-    // tolerance's share of |PartialU| |PartialV|.
-    AreaElementIs(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, h: Number, tol: Tolerances): Boolean
+    // True when h is the cross-product area element at uv within rounding:
+    // |S_u| |S_v| ResolutionAt(1) for the product, plus each partial's
+    // rounding, ResolutionAt(M) over its direction's scale, times the other
+    // partial.
+    AreaElementIs(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, h: Number): Boolean
         => (surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length - h).Abs
-            <= surface.PartialU(g, uv).Length * surface.PartialV(g, uv).Length * tol.Angle.Value.Sin;
+            <= surface.PartialU(g, uv).Length * surface.PartialV(g, uv).Length * ResolutionAt(1.0)
+                + ResolutionAt(surface.EvaluationMagnitude(g, uv))
+                    * (surface.PartialU(g, uv).Length / surface.DirectionScale(g, uv, SurfaceParameter.ParameterV)
+                        + surface.PartialV(g, uv).Length / surface.DirectionScale(g, uv, SurfaceParameter.ParameterU));
 
-    // AreaElement is positive away from collapsed lines: the surface is
-    // regular wherever it does not collapse an iso-line.
+    // AreaElement is positive off collapsed lines: the surface is regular
+    // wherever it does not collapse an iso-line.
     Law_AreaElementPositiveAwayFromCollapse(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
-            ? (g.IsNearCollapsed(s, g.Domain(s).SampleIn(uv), tol) ? true : g.AreaElement(s, g.Domain(s).SampleIn(uv)) > 0.0)
+            ? (g.IsOnCollapsedLine(s, g.Domain(s).SampleIn(uv), tol) ? true : g.AreaElement(s, g.Domain(s).SampleIn(uv)) > 0.0)
             : true;
 
     //==
@@ -1238,7 +1275,7 @@ library BrepGeometryLaws
         {
             Plane(placement) => true;
             Cylinder(placement, radius) => true;
-            Cone(placement, radius, semiAngle) => surface.AreaElementIs(g, uv, (radius + uv.V * semiAngle.Tan).Abs / semiAngle.Cos, tol);
+            Cone(placement, radius, semiAngle) => surface.AreaElementIs(g, uv, (radius + uv.V * semiAngle.Tan).Abs / semiAngle.Cos);
             Sphere(placement, radius) => true;
             Torus(placement, major, minor, part) => true;
             Revolution(profile, axis) => true;
@@ -1264,7 +1301,7 @@ library BrepGeometryLaws
             Plane(placement) => true;
             Cylinder(placement, radius) => true;
             Cone(placement, radius, semiAngle) => true;
-            Sphere(placement, radius) => surface.AreaElementIs(g, uv, radius * radius * uv.V.Cos, tol);
+            Sphere(placement, radius) => surface.AreaElementIs(g, uv, radius * radius * uv.V.Cos);
             Torus(placement, major, minor, part) => true;
             Revolution(profile, axis) => true;
             LinearExtrusion(profile, extrusion) => true;
@@ -1290,7 +1327,7 @@ library BrepGeometryLaws
             Cylinder(placement, radius) => true;
             Cone(placement, radius, semiAngle) => true;
             Sphere(placement, radius) => true;
-            Torus(placement, major, minor, part) => surface.AreaElementIs(g, uv, minor * (major + minor * uv.V.Cos).Abs, tol);
+            Torus(placement, major, minor, part) => surface.AreaElementIs(g, uv, minor * (major + minor * uv.V.Cos).Abs);
             Revolution(profile, axis) => true;
             LinearExtrusion(profile, extrusion) => true;
             BSpline(data) => true;

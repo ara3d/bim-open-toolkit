@@ -253,7 +253,7 @@ for the axial `v`.
   (`ParameterFloorOf`, `ParameterFloorAlong`, `UvFloorOf`: layer 0's `AngleParameter` for an
   angle, `LengthParameter` otherwise), where a strict parameter comparison is meant (a range inside another, a side on a collapsed line); the per-point
   `ParameterToleranceAt` and `UvToleranceAt` where a parameter is recovered from a point;
-  `Angle` for frames, transversality, the normal, and as the relative error of an area element;
+  `Angle` for frames and transversality;
   layer 0's `ResolutionAt` at an `EvaluationMagnitude` (the size of the terms an evaluation sums,
   not of its result) for every law about this layer's own arithmetic.
 
@@ -273,10 +273,10 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_BSplineCurve{DegreePositive, KnotCount, KnotsNonDecreasing, KnotMultiplicityBounded, DomainNonEmpty, WeightCount, WeightsPositive}`, the same seven for `Curve2D` | ISO 4.6.11 and 4.5.39 WR1, WR2, one rule each | exact | Error |
 | `Law_BSplineSurface{DegreePositive, KnotCount, KnotsNonDecreasing, KnotMultiplicityBounded, DomainNonEmpty}(d, which)`, `..NetConsistent`, `..WeightGridMatchesNet`, `..WeightsPositive` | the same per parameter, and the grids' shapes | exact | Error |
 | `Law_BSplineCurveDomainIsKnotSpan`, `..2D..`, `Law_BSplineSurfaceDomainIsKnotSpan` | the domain is `[Knots[Degree], Knots[Count - Degree - 1]]`, aperiodic | exact by construction | Library |
-| `Law_BSplineCurveMatchesBasisSum`, `..2D..`, `Law_BSplineSurfaceMatchesBasisSum` | de Boor agrees with the Cox-de Boor oracle | Length (Parameter in 2D) | Library |
+| `Law_BSplineCurveMatchesBasisSum`, `..2D..`, `Law_BSplineSurfaceMatchesBasisSum` | de Boor agrees with the Cox-de Boor oracle | `ResolutionAt(EvaluationMagnitude)` | Library |
 | `Law_PeriodicCurveSpansOnePeriod`, `Law_PeriodicSurfaceSpansOnePeriod` | a periodic domain is one period long | Parameter | Library |
 | `Law_PeriodicCurveIsClosed` | a periodic curve meets itself at its domain's ends | Length | Library |
-| `Law_CurveRepeatsWithPeriod`, `Law_Curve2DRepeatsWithPeriod`, `Law_SurfaceRepeatsWithPeriod` | `Eval(t + P)` is `Eval(t)` | Length (Parameter in 2D) | Library |
+| `Law_CurveRepeatsWithPeriod`, `Law_Curve2DRepeatsWithPeriod`, `Law_SurfaceRepeatsWithPeriod` | `Eval(t + P)` is `Eval(t)` | `ResolutionAt(M)` plus speed times `ResolutionAt(|t| + P)` | Library |
 | `Law_DerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveDerivativeMatchesCentralDifference`, `Law_PartialMatchesCentralDifference` | `|D(h/2) - C'| <= 4/3 |D(h) - D(h/2)|` plus rounding, `D` the central difference, `h = cbrt(u)` times the shortest smooth piece; samples within `h` of a break of order 6 (every distinct knot) excluded | Richardson's estimate plus `ResolutionAt(EvaluationMagnitude) / h`; `tol` not read | Library |
 | `Law_SecondDerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveSecondDerivativeMatchesCentralDifference` | the same for the central difference of the first derivative | as above, rounding over the piece scale | Library |
 | `Law_ClosestParameterRecoversPoint` | the point at `ClosestParameter(Eval(t))` is `Eval(t)` | Length | Library |
@@ -292,12 +292,12 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_SurfaceCurvePcurveLiesOnCurve`, `Law_SurfaceCurveLiesOnPcurve` | pcurve and space curve agree as point sets, both ways; the pcurve sampled over `PcurveRangeOver` the space curve's bounded domain | Length | File, 10x |
 | `Law_SurfaceCurvePcurveSameSense` | pcurve and space curve run the same way | exact sign | Error |
 | `Law_PcurveWithinSurfaceDomain` | a pcurve stays in its surface's domain | Parameter | File, 10x |
-| `Law_NormalIsUnit` | `NormalOr` is unit away from collapsed lines | Angle (relative) | Library |
-| `Law_NormalOrthogonalToPartial` | `NormalOr` is orthogonal to each partial away from collapsed lines | Angle | Library |
-| `Law_NormalSenseMatchesParameterization` | `NormalOr . (S_u x S_v) > 0` exactly where `NormalAgreesWithParameterization` | exact sign | Library |
-| `Law_AreaElementMatchesCrossProduct` | `AreaElement` is `|S_u x S_v|` | Angle times `|S_u| |S_v|` | Library |
-| `Law_AreaElementPositiveAwayFromCollapse` | the surface is regular off its collapsed lines | exact sign | File: Error |
-| `Law_ConeAreaElement`, `Law_SphereAreaElement`, `Law_TorusAreaElement` | `|S_u x S_v|` equals `|R + v tan a| / cos a`, `R^2 cos v`, `r |R + r cos v|` | Angle times `|S_u| |S_v|` | Library |
+| `Law_NormalIsUnit` | `NormalOr` is unit, everywhere | `ResolutionAt(1)` | Library |
+| `Law_NormalOrthogonalToPartial` | `|N . S_x| <= |S_x| NormalAngleBound`, the bound growing toward collapsed lines | `ResolutionAt(1) + ResolutionAt(M) / min(|S_x| s_x)` | Library |
+| `Law_NormalSenseMatchesParameterization` | `NormalOr . (S_u x S_v) > 0` exactly where `NormalAgreesWithParameterization`, wherever `NormalAngleBound < 1` | exact sign | Library |
+| `Law_AreaElementMatchesCrossProduct` | `AreaElement` is `|S_u x S_v|` | rounding of the product and of each partial | Library |
+| `Law_AreaElementPositiveAwayFromCollapse` | the surface is regular off its collapsed lines (`IsOnCollapsedLine`, to rounding) | exact sign | File: Error |
+| `Law_ConeAreaElement`, `Law_SphereAreaElement`, `Law_TorusAreaElement` | `|S_u x S_v|` equals `|R + v tan a| / cos a`, `R^2 cos v`, `r |R + r cos v|` | as `Law_AreaElementMatchesCrossProduct` | Library |
 | `Law_ProjectRecoversPoint` | `Eval(Project(Eval(uv)))` is `Eval(uv)`, on degenerate sides too | Length | Library |
 | `Law_ProjectRecoversParameter` | on surfaces injective by construction, `Project(Eval(uv))` is `uv` modulo the period | `UvToleranceAt(uv)` | Library |
 | `Law_ProjectNearRecoversParameter` | `ProjectNear(Eval(uv), seed uv)` is `uv`, on every surface | `UvToleranceAt(uv)` | Library |
@@ -315,9 +315,11 @@ cannot disagree.
 The brief asked that "both partials vanish along a degenerate side"; only the partial along the
 side does, so the law states that, and theorem `TangentialPartialVanishesOnCollapsedLine` gives the
 counterexample for the other. "Away from degenerate sides" is made precise two ways: laws about
-the normal and the area element exclude samples within the parameter floor of a collapsed line;
-laws recovering a parameter use the per-point tolerance, which reaches its cap on a collapsed
-line and so says nothing of the free coordinate there.
+the normal carry `NormalAngleBound`, the rounding of the normal's direction, which grows as the
+smaller partial vanishes, and only the positivity law skips points on a collapsed line to rounding
+(review F11 replaced an exclusion zone the size of the parameter floor); laws recovering a
+parameter use the per-point tolerance, which reaches its cap on a collapsed line and so says
+nothing of the free coordinate there.
 
 ## Left open
 
@@ -408,6 +410,7 @@ as expected.
 | `tol.Parameter` (one floor) | `ParameterFloorOf(g, c | p, tol)`, `ParameterFloorAlong(g, s, which, tol)`, `UvFloorOf(g, s, tol)`, `FinerParameterFloor(tol)`, and `IsAngleParameter` on curves, parameter-plane curves and surface parameters | layer 0 split the floor by kind; this layer knows the kind (fix wave, C2) |
 | `Domain` of a closed spline or polyline: `Aperiodic` | `Closed(range length)` when clamped with first and last control points (rows) the same point exactly; `IsClosed`, `IsClosedIn`, `DegenerateSides`, the period laws read `HasSeam` | closure decided once at decode and seen by every layer (fix wave, T1, C1) |
 | (new) | `IsClamped`, `SplineDomainOf`, `SameExactly`, `IsClosedSpline`, `EndRowsCoincide`, `PolylineDomain`, `BasisParameter`, `IntoRange`; `TrimmedToBasis` takes the arena and the basis | closed domains, and trims across a closed join | 
+| `IsNearCollapsed` (parameter-floor zone) | `IsOnCollapsedLine` (rounding), `NormalAngleBound`, `DirectionScale`; `AreaElementIs` drops its tolerance | normal and area-element laws bounded by rounding (fix wave, F11, F7) |
 
 ## Fix wave, 2026-10-17
 
@@ -442,3 +445,6 @@ Applied:
 - **T1, C1 (the layer 1 part).** Splines and polylines whose ends are the same point exactly get a
   `Closed` domain; `IsClosed` and `IsClosedIn` report it; closed directions have no sides; trims
   across a closed join wrap. Layer 3 records its decision by snapping and clamping (above).
+- **F11, and F7 for this layer.** The normal, area-element, oracle and period laws are library
+  laws and take rounding bounds (`NormalAngleBound`, `ResolutionAt(EvaluationMagnitude)`), not
+  the model's angle or length tolerance; the floor-sized exclusion zone is gone.
