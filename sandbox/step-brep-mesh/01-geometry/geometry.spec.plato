@@ -248,6 +248,8 @@ spec ClosestParameter(g: GeometrySet, c: CurveIndex, p: Point3D): Number
     ensures result >= g.Domain(c).Range.Start;
     ensures result <= g.Domain(c).Range.Start + g.Domain(c).Periodicity.PeriodOr(g.Domain(c).ParameterLength);
     ensures forall (tol: Tolerances) : forall (t: Number) : Law_ClosestParameterRecoversPoint(g, c, t, tol);
+    ensures forall (tol: Tolerances) : forall (s: Number) : Law_ClosestParameterNoWorseThanSample(g, c, p, s, tol);
+    ensures forall (tol: Tolerances) : Law_ClosestParameterIsStationary(g, c, p, tol);
     measure g.Breakpoints(c).Count + 1;
 }
 
@@ -435,6 +437,8 @@ spec Project(g: GeometrySet, s: SurfaceIndex, p: Point3D): UvCoordinate
     ensures forall (tol: Tolerances) : g.Domain(s).IsCanonical(result, g.UvFloorOf(s, tol));
     ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversPoint(g, s, uv, tol);
     ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversParameter(g, s, uv, tol);
+    ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectNoWorseThanSample(g, s, p, uv, tol);
+    ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_ProjectIsStationary(g, s, p, which, tol);
     measure g.Breakpoints(s, SurfaceParameter.ParameterU).Count * g.Breakpoints(s, SurfaceParameter.ParameterV).Count + 1;
 }
 

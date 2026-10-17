@@ -280,6 +280,8 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_DerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveDerivativeMatchesCentralDifference`, `Law_PartialMatchesCentralDifference` | `|D(h/2) - C'| <= 4/3 |D(h) - D(h/2)|` plus rounding, `D` the central difference, `h = cbrt(u)` times the shortest smooth piece; samples within `h` of a break of order 6 (every distinct knot) excluded | Richardson's estimate plus `ResolutionAt(EvaluationMagnitude) / h`; `tol` not read | Library |
 | `Law_SecondDerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveSecondDerivativeMatchesCentralDifference` | the same for the central difference of the first derivative | as above, rounding over the piece scale | Library |
 | `Law_ClosestParameterRecoversPoint` | the point at `ClosestParameter(Eval(t))` is `Eval(t)` | Length | Library |
+| `Law_ClosestParameterNoWorseThanSample`, `Law_ProjectNoWorseThanSample` | for any point, on or off the curve or surface, the result is no farther than any sample (review M4) | rounding at the evaluation magnitudes | Library |
+| `Law_ClosestParameterIsStationary`, `Law_ProjectIsStationary` | at an interior minimizer the offset is orthogonal to the tangent or each partial | rounding | Library |
 | `Law_ClosestParameterIsCanonical`, `Law_ProjectIsCanonical` | the result is in the canonical window | Parameter | Library |
 | `Law_PcurveClosestParameterIsBounded` | a pcurve's closest parameter is finite, and in `[0, T]` with a parameter period `T` | Parameter | Library |
 | `Law_TrimmedRangeInsideBasis`, `Law_RectangularTrimmedInsideBasis` | the trim lies in the basis domain (at most one period on a periodic basis) | Parameter | File, 10x |
@@ -411,6 +413,7 @@ as expected.
 | `Domain` of a closed spline or polyline: `Aperiodic` | `Closed(range length)` when clamped with first and last control points (rows) the same point exactly; `IsClosed`, `IsClosedIn`, `DegenerateSides`, the period laws read `HasSeam` | closure decided once at decode and seen by every layer (fix wave, T1, C1) |
 | (new) | `IsClamped`, `SplineDomainOf`, `SameExactly`, `IsClosedSpline`, `EndRowsCoincide`, `PolylineDomain`, `BasisParameter`, `IntoRange`; `TrimmedToBasis` takes the arena and the basis | closed domains, and trims across a closed join | 
 | `IsNearCollapsed` (parameter-floor zone) | `IsOnCollapsedLine` (rounding), `NormalAngleBound`, `DirectionScale`; `AreaElementIs` drops its tolerance | normal and area-element laws bounded by rounding (fix wave, F11, F7) |
+| (new) | `Law_ClosestParameterNoWorseThanSample`, `Law_ClosestParameterIsStationary`, `Law_ProjectNoWorseThanSample`, `Law_ProjectIsStationary`, `IsInteriorParameter` | inverse evaluation tested at points off the geometry (fix wave, M4) |
 
 ## Fix wave, 2026-10-17
 
@@ -452,3 +455,5 @@ Applied:
   `spec ProjectNear` states nearness to the seed within half a period plus rounding instead of an
   exact `==` on computed values; `spec LimitNormal` likewise compares directions within
   `NormalAngleBound`.
+- **M4.** Inverse evaluation is tested at any point: no worse than any sample, and stationary at
+  an interior minimizer, on curves and surfaces.

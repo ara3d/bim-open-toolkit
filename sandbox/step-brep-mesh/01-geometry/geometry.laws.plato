@@ -615,6 +615,46 @@ library BrepGeometryLaws
             ? g.Domain(c).IsCanonical(g.ClosestParameter(c, g.Eval(c, g.Domain(c).SampleIn(t))), g.ParameterFloorOf(c, tol))
             : true;
 
+    // ClosestParameter is no worse than any sample, for any point p, on the
+    // curve or off it: |C(t*) - p| <= |C(s) - p| plus the rounding of the two
+    // evaluations. The recovery laws test only points on the curve, the easy
+    // case; vertices and edge samples sit up to the length tolerance off it,
+    // which is the path the pipeline takes (review M4). A library law: tol
+    // is not read.
+    Law_ClosestParameterNoWorseThanSample(g: GeometrySet, c: CurveIndex, p: Point3D, s: Number, tol: Tolerances): Boolean
+        => g.CanEvaluate(c) ? g.NoWorseThan(c, p, g.ClosestParameter(c, p), g.Domain(c).SampleIn(s)) : true;
+
+    // The claim of Law_ClosestParameterNoWorseThanSample with the minimizer
+    // found as best and the sample as s.
+    NoWorseThan(g: GeometrySet, c: CurveIndex, p: Point3D, best: Number, s: Number): Boolean
+        => g.Eval(c, best).Distance(p)
+            <= g.Eval(c, s).Distance(p)
+                + ResolutionAt(g.EvaluationMagnitude(c, best) + g.EvaluationMagnitude(c, s) + p.PositionVector.Length);
+
+    // At a minimizer inside a smooth piece, the offset from p is orthogonal to
+    // the tangent: |(C(t*) - p) . <C'(t*)>| is within the rounding of the
+    // terms and of t* itself. A minimizer at a domain end or a break need not
+    // be stationary and is skipped. A library law: tol is not read.
+    Law_ClosestParameterIsStationary(g: GeometrySet, c: CurveIndex, p: Point3D, tol: Tolerances): Boolean
+        => g.CanEvaluate(c) ? g.StationaryAt(c, p, g.ClosestParameter(c, p)) : true;
+
+    // The claim of Law_ClosestParameterIsStationary at t.
+    StationaryAt(g: GeometrySet, c: CurveIndex, p: Point3D, t: Number): Boolean
+        => !g.Domain(c).IsInteriorParameter(g.Breaks(c, 1), t) || g.Derivative(c, t).Length == 0.0
+            ? true
+            : (g.Eval(c, t) - p).Dot(g.Derivative(c, t) * (1.0 / g.Derivative(c, t).Length)).Abs
+                <= ResolutionAt(g.EvaluationMagnitude(c, t) + p.PositionVector.Length)
+                    + g.Derivative(c, t).Length * ResolutionAt(t.Abs + g.Domain(c).ParameterScale(t));
+
+    // True when t lies inside the domain and off every break by more than its
+    // rounding: always inside when the formula wraps; strictly inside the
+    // range otherwise, a closed domain's join included as an end.
+    IsInteriorParameter(d: CurveDomain, breaks: Array<Number>, t: Number): Boolean
+        => !breaks.Any(b => (b - t).Abs <= ResolutionAt(b.Abs + t.Abs))
+            && (d.Periodicity.IsPeriodic
+                ? true
+                : t - d.Range.Start > ResolutionAt(t.Abs + d.Range.Start.Abs) && d.Range.End - t > ResolutionAt(t.Abs + d.Range.End.Abs));
+
     // True when r is the canonical representative of a parameter of d within
     // tol: in the window [Start, Start + period] when periodic, in the range
     // otherwise.
@@ -1378,6 +1418,32 @@ library BrepGeometryLaws
     // each within its own floor.
     IsCanonical(d: SurfaceDomain, uv: UvCoordinate, tol: UvTolerance): Boolean
         => d.U.IsCanonical(uv.U, tol.U) && d.V.IsCanonical(uv.V, tol.V);
+
+    // Project is no worse than any sample, for any point p, as
+    // Law_ClosestParameterNoWorseThanSample on curves (review M4). A library
+    // law: tol is not read.
+    Law_ProjectNoWorseThanSample(g: GeometrySet, s: SurfaceIndex, p: Point3D, uv: UvCoordinate, tol: Tolerances): Boolean
+        => g.CanEvaluate(s)
+            ? g.Eval(s, g.Project(s, p)).Distance(p)
+                <= g.Eval(s, g.Domain(s).SampleIn(uv)).Distance(p)
+                    + ResolutionAt(g.EvaluationMagnitude(s, g.Project(s, p)) + g.EvaluationMagnitude(s, g.Domain(s).SampleIn(uv)) + p.PositionVector.Length)
+            : true;
+
+    // At a minimizer inside a smooth patch and off collapsed lines, the
+    // offset from p is orthogonal to both partials, within rounding, as
+    // Law_ClosestParameterIsStationary. A library law: tol is not read.
+    Law_ProjectIsStationary(g: GeometrySet, s: SurfaceIndex, p: Point3D, which: SurfaceParameter, tol: Tolerances): Boolean
+        => g.CanEvaluate(s) ? g.ProjectStationaryAt(s, p, g.Project(s, p), which) : true;
+
+    // The claim of Law_ProjectIsStationary at uv in the given parameter.
+    ProjectStationaryAt(g: GeometrySet, s: SurfaceIndex, p: Point3D, uv: UvCoordinate, which: SurfaceParameter): Boolean
+        => !g.Domain(s).U.IsInteriorParameter(g.Breaks(s, SurfaceParameter.ParameterU, 1), uv.U)
+                || !g.Domain(s).V.IsInteriorParameter(g.Breaks(s, SurfaceParameter.ParameterV, 1), uv.V)
+                || g.NormalAngleBound(s, uv) >= 1.0
+            ? true
+            : (g.Eval(s, uv) - p).Dot(g.Partial(s, uv, which) * (1.0 / g.Partial(s, uv, which).Length)).Abs
+                <= ResolutionAt(g.EvaluationMagnitude(s, uv) + p.PositionVector.Length)
+                    + g.Partial(s, uv, which).Length * ResolutionAt(uv.Coordinate(which).Abs + g.Domain(s).DomainAlong(which).ParameterScale(uv.Coordinate(which)));
 
     //==
     // # Surfaces: collapsed lines and degenerate sides
