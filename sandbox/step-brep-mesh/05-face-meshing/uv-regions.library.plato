@@ -171,9 +171,9 @@ library UvRegions
         var points = d.ByEdge[c.Edge].Points;
         var n = points.Count;
         var forward = m.CoedgeRunsForwardOnCurve(b, c);
-        var route = m.ChooseUvRoute(f, c.Edge);
+        var uvs = m.ImagePoints(d.ByEdge[c.Edge], m.ImageInFace(f, c.Edge));
         return (n - 1).MapRange(j => UvSample(
-            m.UvOfPoint(f, route, points[SampleAtStep(forward, n, j)]),
+            uvs[SampleAtStep(forward, n, j)],
             m.SampleSource(c.Edge, n, SampleAtStep(forward, n, j))));
     }
 
@@ -186,30 +186,21 @@ library UvRegions
     // seam of the face. A seam's two pcurves lie on one surface and the file does not say which
     // use takes which; the seam is projected, and Unwrap assigns its two uses to the two copies
     // by the left rule (section "Seam uses and the left rule").
-    // Law_PcurveAgreesWithProjection checks a pcurve against the projection wherever the rule
-    // reads the pcurve.
+    // The points themselves come from layer 04's ImagePoints, the one image function: the image
+    // layer 04 certifies (its image-chord criterion) is then the polygon this layer triangulates
+    // (review C5). On a pcurve image ImagePoints takes the pcurve's own nearest parameter (layer
+    // 01's ClosestParameter on the pcurve lifted through its surface), robust where surface
+    // projection is not; otherwise it projects. Law_PcurveAgreesWithProjection checks a pcurve
+    // against the projection wherever the rule reads the pcurve.
 
-    // The rule: ByPcurve when edge e's curve carries exactly one pcurve on face f's surface and e
-    // is not a seam of f; ByProjection otherwise.
-    ChooseUvRoute(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): CoedgeUvRoute
+    // The image of edge e that face f draws its loops with: its one pcurve on f's surface when
+    // the edge's curve carries exactly one and e is not a seam of f; otherwise the projection
+    // image (Pcurve none).
+    ImageInFace(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): EdgeImage
     {
         var onFace = m.PcurvesOnFace(e, f);
-        return onFace.Count == 1 && m.IsSeamEdgeOf(f, e).Not
-            ? CoedgeUvRoute.ByPcurve(onFace[0])
-            : CoedgeUvRoute.ByProjection;
+        return EdgeImage(f, (onFace.Count == 1 && m.IsSeamEdgeOf(f, e).Not) ? onFace[0] : PcurveIndex(-1));
     }
-
-    // The point of pcurve k nearest p: the 2D curve evaluated at the parameter layer 01's
-    // ClosestParameter finds on the pcurve lifted through its surface.
-    PcurveUv(g: GeometrySet, k: PcurveIndex, p: Point3D): UvCoordinate
-        => g.Eval(g.Pcurves[k].Curve, g.ClosestParameter(k, p));
-
-    // The parameters of the 3D sample p of a coedge of face f, by the coedge's route.
-    UvOfPoint(m: BrepModel, f: BrepFaceIndex, route: CoedgeUvRoute, p: Point3D): UvCoordinate
-        => match (route) {
-            ByProjection => m.Geometry.Project(m.SurfaceOf(f), p);
-            ByPcurve(k) => m.Geometry.PcurveUv(k, p);
-        };
 
     //==
     // # Loops into parameter space

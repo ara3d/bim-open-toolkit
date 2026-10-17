@@ -71,18 +71,6 @@ type UvSample
 }
 
 //==
-// # How a coedge reaches parameter space
-
-// How the samples of one coedge reach a face's parameter plane; ChooseUvRoute is the rule.
-//   ByProjection: inverse evaluation (layer 01's Project) of each 3D sample on the face's surface.
-//   ByPcurve: the point of the edge's pcurve on this face's surface nearest each 3D sample, found
-//     by inverse evaluation on the pcurve lifted through the surface (one-dimensional, so robust
-//     where surface projection is not).
-type CoedgeUvRoute
-    = ByProjection
-    | ByPcurve(Pcurve: PcurveIndex);
-
-//==
 // # The chart a region is oriented and triangulated in
 
 // The chart of one face: (u, v) maps to (s * ScaleU * u, ScaleV * v), with s = -1 when Mirrored

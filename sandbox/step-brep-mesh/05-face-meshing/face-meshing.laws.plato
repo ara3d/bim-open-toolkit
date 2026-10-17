@@ -80,18 +80,19 @@ library FaceMeshingLaws
     // free, nothing is claimed.
     Law_PcurveAgreesWithProjection(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, e: BrepEdgeIndex, k: Integer): Boolean
         => (m.IsFaceIntact(f) && m.IsEdgeIntact(e) && m.Geometry.IsEveryIndexInRange && d.HasSample(e, k))
-            ? m.RoutesAgree(f, m.ChooseUvRoute(f, e), d.ByEdge[e].Points[k])
+            ? m.ImageAgreesWithProjection(f, m.ImageInFace(f, e), d.ByEdge[e], k)
             : true;
 
-    // The claim of Law_PcurveAgreesWithProjection for the 3D sample p under a route.
-    RoutesAgree(m: BrepModel, f: BrepFaceIndex, route: CoedgeUvRoute, p: Point3D): Boolean
-        => match (route) {
-            ByProjection => true;
-            ByPcurve(k) => m.IsOnCollapsedLine(f, m.Geometry.Project(m.SurfaceOf(f), p))
+    // The claim of Law_PcurveAgreesWithProjection for sample k of discretization de drawn in
+    // image img: nothing to check for a projection image or off the image's points.
+    ImageAgreesWithProjection(m: BrepModel, f: BrepFaceIndex, img: EdgeImage, de: EdgeDiscretization, k: Integer): Boolean
+        => (img.Pcurve.IsNone || m.ImagePoints(de, img).IsValidIndex(k).Not)
+            ? true
+            : (m.IsOnCollapsedLine(f, m.Geometry.Project(m.SurfaceOf(f), de.Points[k]))
                 ? true
-                : m.SurfaceDomainOf(f).SameParameter(m.Geometry.PcurveUv(k, p),
-                    m.Geometry.Project(m.SurfaceOf(f), p), m.PointTolerance(f, m.Geometry.Project(m.SurfaceOf(f), p)));
-        };
+                : m.SurfaceDomainOf(f).SameParameter(m.ImagePoints(de, img)[k],
+                    m.Geometry.Project(m.SurfaceOf(f), de.Points[k]),
+                    m.PointTolerance(f, m.Geometry.Project(m.SurfaceOf(f), de.Points[k]))));
 
     // Unwrap keeps every point's source, in order.
     Law_UnwrapKeepsSources(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean

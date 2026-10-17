@@ -14,7 +14,7 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 
 | File | Holds |
 |---|---|
-| `uv-regions.types.plato` | `UvPointSource`, `UvLoop`, `UvRegion`, `UvSample`, `CoedgeUvRoute`, `FaceChart`, `QuadSides` |
+| `uv-regions.types.plato` | `UvPointSource`, `UvLoop`, `UvRegion`, `UvSample`, `FaceChart`, `QuadSides` |
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: preconditions (`IsDiscretizedFace`), criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
@@ -106,7 +106,9 @@ lifted (`Law_ElementLiftsFacingFaceNormal`), a quad grid with a folded element i
 ## Decisions and reasons
 
 **Projection first, a pcurve only when unambiguous.** Pcurves are absent from most files
-(research/STEP-BREP-MODEL.md section 6.4). `ChooseUvRoute` reads an edge's samples from a pcurve
+(research/STEP-BREP-MODEL.md section 6.4). The points of a coedge are layer 04's `ImagePoints` of
+the edge in the image `ImageInFace` chooses, so the polygon layer 04 certifies is the one this layer
+triangulates. `ImageInFace` reads an edge's samples from a pcurve
 when the edge's curve carries exactly one pcurve on the face's surface (layer 02's `PcurvesOnFace`)
 and the edge is not a seam of the face; otherwise it projects. A seam's two pcurves lie on the same
 surface, and the file does not record which use takes which; the left rule in `Unwrap` assigns the
@@ -359,6 +361,7 @@ knots); offset and rectangular-trimmed last.
 | `MeshFace` ensures | also `Law_RequestsNameFaceEdges` and `Law_MeshFaceReadsOnlyFaceEdges`; new `AgreeOnFaceEdges`, `SameFaceMesh`, `SameFaceMeshOutcome` (layer 08 declared the last two with the same bodies; they belong with the types here, and layer 08's copies should go) | Layer 08's refinement loop rests on both properties (layer 08 finding 4) |
 | `RegionTolerance`: one model-wide parameter floor | the floor of each direction's kind, from layer 01's `UvFloorOf`, passed to layer 00's `UvToleranceAt` | Layer 00 split `Tolerances.Parameter` into `LengthParameter` and `AngleParameter` (review C2) |
 | `MeshFace` ensures chordal from mesh to surface only | also from surface to mesh: `Law_SurfaceWithinSurfaceChordalOfElement`, with `FlatElementDistance` and `ElementCoverageGap` | The other half of the Hausdorff distance (review M6) |
+| type `CoedgeUvRoute`, `ChooseUvRoute`, `PcurveUv`, `UvOfPoint` | deleted; `ImageInFace(m, f, e): EdgeImage` (layer 04's type) and layer 04's `ImagePoints` draw every coedge; `RoutesAgree` becomes `ImageAgreesWithProjection` | One image function for layers 04 and 05 (review C5) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -400,6 +403,8 @@ Applied:
   bound `ResolutionAt(1)`, not the arc cosine against the file's angle tolerance.
 - M6: coverage from the surface to the mesh, `Law_SurfaceWithinSurfaceChordalOfElement`, ensured by
   `MeshFace` with the same `MinLength` escape as the other surface criteria.
+- C5: coedge points come from layer 04's `ImagePoints` (the one image function), in the image
+  `ImageInFace` chooses; `CoedgeUvRoute` and its functions are deleted.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 
