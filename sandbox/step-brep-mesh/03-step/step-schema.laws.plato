@@ -1,0 +1,140 @@
+//==
+// # StepSchemaModelLaws
+//
+// Layer 3 of the STEP B-rep to mesh design. Laws of the schema table and of a
+// file's conformance to it. The table laws take two positions in
+// SupportedSchema, plain Integers, so the law runner can run them with random
+// arguments; the conformance laws are validity laws over a Part21File, run on
+// witnesses and real files. Every law is total.
+//
+// Sections, in order:
+//  - The table
+//  - Instances against the table
+
+library StepSchemaModelLaws
+{
+    //==
+    // # The table
+
+    // No two entities of the table share a long name.
+    Law_SchemaNamesUnique(a: Integer, b: Integer): Boolean
+    {
+        var s = Part21File.SupportedSchema;
+        return a >= 0 && a < s.Count && b >= 0 && b < s.Count && a != b ? !(s[a].Name == s[b].Name) : true;
+    }
+
+    // No two entities share a short name (P21 12.2.11); "" means none known.
+    Law_SchemaShortNamesUnique(a: Integer, b: Integer): Boolean
+    {
+        var s = Part21File.SupportedSchema;
+        return a >= 0 && a < s.Count && b >= 0 && b < s.Count && a != b ? (s[a].ShortName == "" ? true : !(s[a].ShortName == s[b].ShortName)) : true;
+    }
+
+    // No entity's short name is another entity's long name, so a keyword
+    // names one entity whichever form the file uses.
+    Law_SchemaShortNameIsNoOtherLongName(a: Integer, b: Integer): Boolean
+    {
+        var s = Part21File.SupportedSchema;
+        return a >= 0 && a < s.Count && b >= 0 && b < s.Count && a != b ? !(s[a].ShortName == s[b].Name) : true;
+    }
+
+    // Every supertype an entity names is in the table at an earlier position,
+    // so the supertype graph is acyclic and IsKindOf terminates.
+    Law_SchemaSupertypesPrecede(a: Integer, k: Integer): Boolean
+    {
+        var s = Part21File.SupportedSchema;
+        if (a < 0 || a >= s.Count)
+        {
+            return true;
+        }
+        var supertypes = s[a].Supertypes;
+        return k >= 0 && k < supertypes.Count ? s.EntityPosition(supertypes[k]).IsBetween(0, a - 1) : true;
+    }
+
+    // Every name an entity derives (writes as *) is an explicit attribute of
+    // one of its supertypes' records (P21 12.2.6).
+    Law_SchemaDerivesAreInherited(a: Integer, k: Integer): Boolean
+    {
+        var s = Part21File.SupportedSchema;
+        if (a < 0 || a >= s.Count)
+        {
+            return true;
+        }
+        var derives = s[a].Derives;
+        return k >= 0 && k < derives.Count ? s[a].Supertypes.Any(t => s.FlatRecord(t).Any(slot => slot.Attribute.Name == derives[k])) : true;
+    }
+
+    //==
+    // # Instances against the table
+
+    // Every record of a decoded instance has as many attributes as its schema
+    // definition: the flat record for a simple instance, the entity's own
+    // attributes for a part of a complex one (P21 12.2.5).
+    Law_AttributeCountMatchesSchema(f: Part21File, i: Integer, r: Integer): Boolean
+    {
+        var records = f.RecordsAt(i);
+        if (!f.IsDecodedAt(i) || r < 0 || r >= records.Count)
+        {
+            return true;
+        }
+        return records[r].Attributes.Count == f.ExpectedSlots(i, r).Count;
+    }
+
+    // Every attribute value of a decoded instance conforms to its slot's
+    // kind, optionality, and derivation.
+    Law_AttributeKindsMatchSchema(f: Part21File, i: Integer, r: Integer, k: Integer): Boolean
+    {
+        var records = f.RecordsAt(i);
+        if (!f.IsDecodedAt(i) || r < 0 || r >= records.Count)
+        {
+            return true;
+        }
+        var slots = f.ExpectedSlots(i, r);
+        var values = records[r].Attributes;
+        return k >= 0 && k < slots.Count && k < values.Count ? f.ConformsTo(values[k], slots[k]) : true;
+    }
+
+    // Every aggregate value of a decoded instance has an item count within
+    // its declared bounds at every level, and no repeated reference where the
+    // level is UNIQUE or a SET.
+    Law_AggregateBoundsHold(f: Part21File, i: Integer, r: Integer, k: Integer): Boolean
+    {
+        var records = f.RecordsAt(i);
+        if (!f.IsDecodedAt(i) || r < 0 || r >= records.Count)
+        {
+            return true;
+        }
+        var slots = f.ExpectedSlots(i, r);
+        var values = records[r].Attributes;
+        return k >= 0 && k < slots.Count && k < values.Count ? f.SatisfiesBounds(values[k], slots[k].Attribute.Aggregates) : true;
+    }
+
+    // Every value of a decoded instance satisfies the WHERE rule of its
+    // defined type: a positive_length_measure is positive (P41), a
+    // dimension_count positive (P42 4.4.5).
+    Law_DefinedTypeRulesHold(f: Part21File, i: Integer, r: Integer, k: Integer): Boolean
+    {
+        var records = f.RecordsAt(i);
+        if (!f.IsDecodedAt(i) || r < 0 || r >= records.Count)
+        {
+            return true;
+        }
+        var slots = f.ExpectedSlots(i, r);
+        var values = records[r].Attributes;
+        return k >= 0 && k < slots.Count && k < values.Count ? f.SatisfiesRule(values[k], slots[k].Attribute.Rule) : true;
+    }
+
+    // The parts of a complex instance are in ascending order of long name,
+    // octet by octet (P21 12.2.5.3). Spatial files break this; the decoder
+    // matches parts by name and reports ComplexPartsOutOfOrder.
+    Law_ComplexPartsInStandardOrder(f: Part21File, i: Integer, r: Integer): Boolean
+    {
+        var records = f.RecordsAt(i);
+        if (!f.IsComplexAt(i) || r < 0 || r + 1 >= records.Count)
+        {
+            return true;
+        }
+        var s = f.SupportedSchema;
+        return NameOctetsPrecede(s.LongNameOf(records[r].TypeName), s.LongNameOf(records[r + 1].TypeName));
+    }
+}

@@ -1,0 +1,215 @@
+//==
+// # Decoding: occurrences, provenance, units, policy, result
+//
+// Layer 3 of the STEP B-rep to mesh design. What DecodeBrep produces besides
+// the BrepModel: the occurrences (each a placed copy of one B-rep-bearing
+// representation), the provenance map between (occurrence, instance) pairs and
+// kernel elements, the record of every orientation flag folded and every
+// repair made, the units found per geometric context, and the policy that
+// fills what the file leaves out.
+//
+// Sections, in order:
+//  - Occurrences and sources
+//  - The provenance map
+//  - Units
+//  - Policy and result
+
+//==
+// # Occurrences and sources
+
+// belongs-in: 00-foundation
+// An occurrence: a position in ProvenanceMap.Occurrences. -1 means none (the
+// parent of a root occurrence).
+type StepOccurrenceIndex
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}
+
+// One decoded STEP instance as it appears in one occurrence: the key of the
+// provenance map. A part placed twice in an assembly is decoded twice, so the
+// instance alone is not a key.
+type StepSource
+    implements IValue
+{
+    Occurrence: StepOccurrenceIndex;
+    Instance: StepInstanceId;
+}
+
+// One placed copy of a representation that holds B-rep items
+// (manifold_solid_brep and its subtypes, shell_based_surface_model).
+// Representation is that representation (after following
+// shape_representation_relationships without a transformation); Context is
+// its geometric_representation_context; Parent is the occurrence it is placed
+// in, none for a root; Via is the instance that placed it (the
+// context_dependent_shape_representation of an assembly occurrence, or the
+// mapped_item), none for a root; Placement maps the representation's own
+// coordinates, in its own length unit, to the model's coordinates in the
+// model's length unit: rigid motions composed down the assembly, times the
+// unit conversion, and for a cartesian_transformation_operator target a scale
+// or mirror (P43 4.4.10, 4.4.11; P42 4.5.20).
+type StepOccurrence
+{
+    Representation: StepInstanceId;
+    Context: StepInstanceId;
+    Parent: StepOccurrenceIndex;
+    Via: StepInstanceId;
+    Placement: AffineTransform3D;
+}
+
+// The source of every kernel element, one array per kernel table, indexed by
+// the kernel index: Faces[k] is the source of BrepModel.Faces[k]. Ten tables:
+// the six of the topology and the four of the geometry arena.
+type KernelSources
+{
+    Vertices: Array<StepSource>;
+    Edges: Array<StepSource>;
+    Loops: Array<StepSource>;
+    Faces: Array<StepSource>;
+    Shells: Array<StepSource>;
+    Bodies: Array<StepSource>;
+    Curves: Array<StepSource>;
+    Curves2D: Array<StepSource>;
+    Pcurves: Array<StepSource>;
+    Surfaces: Array<StepSource>;
+}
+
+// A kernel element of any table: what a StepSource decoded to, or NoElement
+// when it decoded to none (consumed into a field of another element, merged,
+// dropped, or skipped).
+type KernelElement
+    = NoElement
+    | VertexElement(Index: BrepVertexIndex)
+    | EdgeElement(Index: BrepEdgeIndex)
+    | LoopElement(Index: BrepLoopIndex)
+    | FaceElement(Index: BrepFaceIndex)
+    | ShellElement(Index: ShellIndex)
+    | BodyElement(Index: BodyIndex)
+    | CurveElement(Index: CurveIndex)
+    | Curve2DElement(Index: Curve2DIndex)
+    | PcurveElement(Index: PcurveIndex)
+    | SurfaceElement(Index: SurfaceIndex);
+
+//==
+// # The provenance map
+
+// Why a face's flags were flipped at decode: an oriented_face with
+// orientation .F. (P42 5.5.21), an oriented_closed_shell or
+// oriented_open_shell with orientation .F. (5.5.27, 5.5.29; every void of a
+// brep_with_voids), or a placement whose linear part has a negative
+// determinant (P42 4.5.20; research/STEP-BREP-MODEL.md 4.2, "Mirroring
+// instances").
+type FoldCause
+    = OrientedFace
+    | OrientedShell
+    | MirroredPlacement;
+
+// One flip folded into a kernel face: the face, the cause, and the instance
+// that carried the flag (the oriented_face, the oriented shell, or the
+// mapped_item or context_dependent_shape_representation of the mirroring
+// placement) in its occurrence. A face whose flags differ from the file's has
+// an odd number of records (Law_FoldFlipsExactlyRecorded).
+type FoldRecord
+{
+    Face: BrepFaceIndex;
+    Cause: FoldCause;
+    Via: StepSource;
+}
+
+// A local repair the decoder made in place of a kernel element.
+// MergedInto: a vertex_point within the length tolerance of another vertex of
+// the same edge or of the same loop's head-to-tail joint, merged into that
+// one (research/STEP-BREP-MODEL.md 6.6). DroppedZeroLengthEdge: an edge_curve
+// whose vertices coincide on an open curve, removed from its loops.
+// Skipped: an instance that could not be decoded (wrong arity or kinds, a
+// dangling reference, a direction of zero length); a diagnostic names it.
+type StepRepair
+    = MergedInto(Vertex: BrepVertexIndex)
+    | DroppedZeroLengthEdge
+    | Skipped;
+
+// One repair: the source that has no kernel element of its own, and why.
+type RepairRecord
+{
+    Source: StepSource;
+    Repair: StepRepair;
+}
+
+// The map between decoded STEP instances and kernel elements, both ways, for
+// one decode. Occurrences lists every placed copy, roots first; Sources gives
+// each kernel element's source; ByInstance lists the positions of
+// AllSources(Sources) in ascending (occurrence, instance id) order, so the
+// reverse lookup KernelOf is a binary search; Folds records every orientation
+// flag folded into a face; Repairs every reached instance that has no kernel
+// element of its own. The map is a bijection between the sources it lists and
+// the kernel elements (Law_ProvenanceSourcesDistinct,
+// Law_ProvenanceLookupInvertsSources).
+type ProvenanceMap
+{
+    Occurrences: Array<StepOccurrence>;
+    Sources: KernelSources;
+    ByInstance: Array<Integer>;
+    Folds: Array<FoldRecord>;
+    Repairs: Array<RepairRecord>;
+}
+
+//==
+// # Units
+
+// The length uncertainty of one geometric context, if the context states one
+// (uncertainty_measure_with_unit, P43 4.4.23): the largest of its length
+// uncertainties converted to the context's length unit, and how many it lists.
+// NoUncertainty when the context lists none; no number stands in for it.
+type ContextUncertainty
+    = StatedUncertainty(Value: Number, Count: Integer)
+    | NoUncertainty;
+
+// What the decoder found in one 3D geometric_representation_context (P41,
+// P42 4.5.1, P43 4.4.9): the length unit and whether the file stated it or
+// the policy default was used, the plane-angle unit as radians per file unit
+// (pi / 180 for degrees, snapped) and whether the file stated it, and the
+// length uncertainty.
+type ContextUnits
+{
+    Context: StepInstanceId;
+    Length: LengthUnit;
+    LengthStated: Boolean;
+    RadiansPerAngleUnit: Number;
+    AngleStated: Boolean;
+    Uncertainty: ContextUncertainty;
+}
+
+//==
+// # Policy and result
+
+// The values the decoder uses where the file is silent, and the comparison
+// tolerances of unit recognition. DefaultLength: the length unit of a context
+// that names none. DefaultRadiansPerAngleUnit: the plane-angle unit of a
+// context that names none (1.0, radians: README, "Units and uncertainty").
+// DefaultRelativeUncertainty: the length tolerance, as a fraction of the model
+// size, when no used context states an uncertainty. FallbackUncertaintyMetres:
+// the length tolerance when the model size is zero (a model of one point).
+// UnitMatch: how near a conversion factor must be to 1, 1e-3, 1e-2, 0.0254 or
+// 0.3048 metres to be named. DegreeSnap: how near a plane-angle factor must be
+// to pi / 180 to be snapped to it. AngleCoincidence: Tolerances.Angle, which
+// no surveyed file states.
+type DecodePolicy
+{
+    DefaultLength: LengthUnit;
+    DefaultRadiansPerAngleUnit: Number;
+    DefaultRelativeUncertainty: Number;
+    FallbackUncertaintyMetres: Number;
+    UnitMatch: ComparisonTolerance;
+    DegreeSnap: ComparisonTolerance;
+    AngleCoincidence: AngleTolerance;
+}
+
+// The result of DecodeBrep: one kernel model for the whole file, in the root
+// occurrence's length unit, every angle in radians; the provenance map; and
+// every diagnostic, decoding never stops on a bad instance.
+type DecodedModel
+{
+    Model: BrepModel;
+    Map: ProvenanceMap;
+    Diagnostics: Array<Diagnostic>;
+}

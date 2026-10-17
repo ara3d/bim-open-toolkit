@@ -1,0 +1,88 @@
+//==
+// # StepDiagnostics
+//
+// Layer 3 of the STEP B-rep to mesh design. The one table of every finding the
+// parser and decoder emit: its severity, its code, and its fixed message
+// (Plato strings cannot be composed, so numbers go in Measure). Severity
+// follows SPEC-DSL.md section 4: Error when the file is invalid in a way that
+// changes the model or loses part of it, Warning when the decoder repaired or
+// assumed something a user should know, Info for a fact about the file.
+//
+// Sections, in order:
+//  - The table
+//  - Queries
+
+library StepDiagnostics
+{
+    //==
+    // # The table
+
+    // The diagnostic for code c, about where, with measure (Number.Unmeasured
+    // when the finding has none).
+    Diagnose(c: StepDiagnosticCode, where: Provenance, measure: Number): Diagnostic
+        => match (c) {
+            NotPart21File => Diagnostic(Severity.Error, "P21-NOT-A-FILE", "The text lacks ISO-10303-21;, a header, or a data section; nothing was read.", where, measure);
+            SyntaxError => Diagnostic(Severity.Error, "P21-SYNTAX", "An entity instance could not be parsed and was skipped.", where, measure);
+            DuplicateInstanceId => Diagnostic(Severity.Error, "P21-DUPLICATE-ID", "An instance name is used twice; the later instance was dropped.", where, measure);
+            DanglingReference => Diagnostic(Severity.Warning, "P21-DANGLING-REFERENCE", "A reference names no instance of the file; it is kept as written.", where, measure);
+            UnsupportedSection => Diagnostic(Severity.Warning, "P21-UNSUPPORTED-SECTION", "An edition 3 section (anchor, reference, signature, or a second data section) was skipped.", where, measure);
+            LenientToken => Diagnostic(Severity.Info, "P21-LENIENT-TOKEN", "Tokens outside the strict grammar (lower-case keywords, reals without a leading digit) were accepted; Measure is their count.", where, measure);
+            HeaderIncomplete => Diagnostic(Severity.Warning, "P21-HEADER-INCOMPLETE", "A header entity is missing or out of order; its fields were left empty.", where, measure);
+            SchemaUnrecognised => Diagnostic(Severity.Warning, "STEP-SCHEMA-UNRECOGNISED", "FILE_SCHEMA names no AP203, AP214 or AP242 schema; the supported subset was decoded anyway.", where, measure);
+            ShortNamesUsed => Diagnostic(Severity.Info, "STEP-SHORT-NAMES", "The file uses entity short names; they were mapped to long names.", where, measure);
+            ComplexPartsOutOfOrder => Diagnostic(Severity.Info, "STEP-COMPLEX-ORDER", "Complex instances list their records out of the standard order; records were matched by name. Measure is their count.", where, measure);
+            ValueWhereDerived => Diagnostic(Severity.Info, "STEP-VALUE-FOR-DERIVED", "Values appear where the schema derives the attribute (*); they were ignored. Measure is their count.", where, measure);
+            AttributeCountMismatch => Diagnostic(Severity.Error, "STEP-ATTRIBUTE-COUNT", "A record's attribute count differs from its schema definition; the instance was skipped.", where, measure);
+            AttributeKindMismatch => Diagnostic(Severity.Error, "STEP-ATTRIBUTE-KIND", "An attribute value does not match its schema kind; the instance was skipped.", where, measure);
+            EntityTypeIgnored => Diagnostic(Severity.Info, "STEP-IGNORED-TYPE", "Instances of an entity type outside the geometry (product data, presentation, PMI) were not read. Measure is their count.", where, measure);
+            EntityTypeUnsupported => Diagnostic(Severity.Warning, "STEP-UNSUPPORTED-TYPE", "Instances of an entity type this decoder does not cover were not read. Measure is their count.", where, measure);
+            InstancesUnreferenced => Diagnostic(Severity.Info, "STEP-UNREFERENCED", "Instances of a decodable type are reachable from no shape representation and were not decoded. Measure is their count.", where, measure);
+            LengthUnitFound => Diagnostic(Severity.Info, "STEP-LENGTH-UNIT", "Length unit of a geometric context. Measure is metres per unit.", where, measure);
+            LengthUnitDefaulted => Diagnostic(Severity.Warning, "STEP-LENGTH-UNIT-DEFAULT", "A geometric context names no length unit; the policy default was used. Measure is metres per unit.", where, measure);
+            LengthUnitsAmbiguous => Diagnostic(Severity.Warning, "STEP-LENGTH-UNITS-AMBIGUOUS", "A geometric context names more than one length unit; the first was used. Measure is their count.", where, measure);
+            AngleUnitFound => Diagnostic(Severity.Info, "STEP-ANGLE-UNIT", "Plane-angle unit of a geometric context; every angle was converted to radians. Measure is radians per unit.", where, measure);
+            AngleUnitDefaulted => Diagnostic(Severity.Info, "STEP-ANGLE-UNIT-DEFAULT", "A geometric context names no plane-angle unit; the policy default was used. Measure is radians per unit.", where, measure);
+            DegreeFactorSnapped => Diagnostic(Severity.Info, "STEP-DEGREE-SNAPPED", "A plane-angle factor within the policy's tolerance of pi / 180 was taken as pi / 180. Measure is the factor as written.", where, measure);
+            UncertaintyFound => Diagnostic(Severity.Info, "STEP-UNCERTAINTY", "Length uncertainty of a geometric context. Measure is its value in model units.", where, measure);
+            UncertaintyDefaulted => Diagnostic(Severity.Warning, "STEP-UNCERTAINTY-DEFAULT", "No used geometric context states a length uncertainty; the tolerance is the policy fraction of the model size. Measure is the value applied.", where, measure);
+            UncertaintyClamped => Diagnostic(Severity.Warning, "STEP-UNCERTAINTY-CLAMPED", "The length tolerance was below the arithmetic resolution at the model size and was raised to it. Measure is the value applied.", where, measure);
+            UncertaintiesDiffer => Diagnostic(Severity.Warning, "STEP-UNCERTAINTIES-DIFFER", "Used geometric contexts state different length uncertainties; the largest was used. Measure is largest over smallest.", where, measure);
+            UnitsConverted => Diagnostic(Severity.Info, "STEP-UNITS-CONVERTED", "An occurrence in another length unit was scaled to the model unit. Measure is the scale factor.", where, measure);
+            RootUnitsDisagree => Diagnostic(Severity.Info, "STEP-ROOT-UNITS-DISAGREE", "Root representations use different length units; the first root's unit is the model unit.", where, measure);
+            NoShapeFound => Diagnostic(Severity.Error, "STEP-NO-SHAPE", "No representation holds a solid or a shell-based surface model; the model is empty.", where, measure);
+            AssemblyCycle => Diagnostic(Severity.Error, "STEP-ASSEMBLY-CYCLE", "A representation places itself through mapped items or assembly links; the cycle was cut.", where, measure);
+            PlacementItemsSwapped => Diagnostic(Severity.Info, "STEP-PLACEMENT-SWAPPED", "An item_defined_transformation names its placements in the other order; the direction was taken from membership.", where, measure);
+            MirroredPlacementFolded => Diagnostic(Severity.Info, "STEP-MIRRORED-PLACEMENT", "An occurrence is mirrored; its faces' orientation flags were folded so normals still point out of the material.", where, measure);
+            ZeroDirection => Diagnostic(Severity.Error, "STEP-ZERO-DIRECTION", "A direction has no non-zero ratio, or is too short to normalize; the instance was skipped.", where, measure);
+            ParallelPlacementAxes => Diagnostic(Severity.Error, "STEP-PARALLEL-AXES", "An axis2_placement_3d has its axis and ref_direction parallel (WR4); ISO's default reference direction was used.", where, measure);
+            NonOrthogonalPlacement => Diagnostic(Severity.Warning, "STEP-NON-ORTHOGONAL", "An axis2_placement_3d has its axis and ref_direction not orthogonal; the reference direction was projected. Measure is the deviation in radians.", where, measure);
+            KnotsRepaired => Diagnostic(Severity.Warning, "STEP-KNOTS-REPAIRED", "Equal knots were merged or an end multiplicity above degree + 1 was cut.", where, measure);
+            NegativeTorusMajorRadius => Diagnostic(Severity.Warning, "STEP-TORUS-NEGATIVE-MAJOR", "A toroidal_surface has a negative major radius; it was decoded as written.", where, measure);
+            TorusMajorBelowMinor => Diagnostic(Severity.Warning, "STEP-TORUS-MAJOR-BELOW-MINOR", "A toroidal_surface has its major radius below its minor radius, so it self-intersects; it was decoded as written.", where, measure);
+            MissingCurve3D => Diagnostic(Severity.Error, "STEP-MISSING-CURVE-3D", "A surface_curve has no curve_3d; its first pcurve was made the master representation.", where, measure);
+            DuplicateVertexMerged => Diagnostic(Severity.Warning, "STEP-VERTEX-MERGED", "Two vertex_points of one loop joint or one edge coincide within the length tolerance and were merged. Measure is their distance.", where, measure);
+            ClosedEdgeVerticesMerged => Diagnostic(Severity.Warning, "STEP-CLOSED-EDGE-VERTICES", "An edge on a closed curve has two distinct vertices at one point; they were merged. Measure is their distance.", where, measure);
+            ZeroLengthEdgeDropped => Diagnostic(Severity.Warning, "STEP-ZERO-LENGTH-EDGE", "An edge on an open curve has coincident vertices; it was removed from its loops and its vertices merged.", where, measure);
+            NestedOrientedEdge => Diagnostic(Severity.Warning, "STEP-NESTED-ORIENTED-EDGE", "An oriented_edge names another oriented_edge (WR1); the senses were composed.", where, measure);
+            TwoOuterBounds => Diagnostic(Severity.Warning, "STEP-TWO-OUTER-BOUNDS", "A face has more than one face_outer_bound (face WR2); no bound of it is marked outer.", where, measure);
+            ClosedShellHasFreeEdges => Diagnostic(Severity.Warning, "STEP-OPEN-CLOSED-SHELL", "A closed_shell has edges used once; it is kept as declared closed. Measure is the count of such edges.", where, measure);
+            OrientationFolded => Diagnostic(Severity.Info, "STEP-ORIENTATION-FOLDED", "An oriented_face or oriented shell with orientation .F. was folded into its faces' flags.", where, measure);
+            FaceCitedTwice => Diagnostic(Severity.Warning, "STEP-FACE-CITED-TWICE", "A face is cited twice in one occurrence; the second citation reuses the first kernel face and its orientation.", where, measure);
+            InstanceSkipped => Diagnostic(Severity.Error, "STEP-INSTANCE-SKIPPED", "A reached instance could not be decoded and has no kernel element.", where, measure);
+        };
+
+    //==
+    // # Queries
+
+    // The code text of c, as Diagnose writes it.
+    CodeOf(c: StepDiagnosticCode): String
+        => c.Diagnose(Provenance.Nowhere, Number.Unmeasured).Code;
+
+    // True when ds holds a diagnostic with c's code.
+    HasCode(ds: Array<Diagnostic>, c: StepDiagnosticCode): Boolean
+        => ds.Any(d => d.Code == c.CodeOf);
+
+    // True when ds holds a diagnostic with c's code about instance id.
+    HasCodeAt(ds: Array<Diagnostic>, c: StepDiagnosticCode, id: StepInstanceId): Boolean
+        => ds.Any(d => d.Code == c.CodeOf && d.Where == Provenance.StepInstance(id));
+}

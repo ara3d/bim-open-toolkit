@@ -1,0 +1,395 @@
+//==
+// # StepReading
+//
+// Layer 3 of the STEP B-rep to mesh design. Decoding a Part21File into one
+// BrepModel: the entry points, the policy for what the file leaves out, unit
+// and tolerance resolution (every angle to radians here, once), occurrences
+// (where each B-rep-bearing representation sits in the model), the
+// provenance map's queries, and the file-side views the decode laws compare
+// against. The decode itself is deferred; its contract is in step.spec.plato
+// and its laws in step.laws.plato.
+//
+// Sections, in order:
+//  - Entry points
+//  - Policy
+//  - Units and tolerance
+//  - Occurrences
+//  - The provenance map
+//  - Reached instances
+//  - The file as the decode laws read it
+
+library StepReading
+{
+    //==
+    // # Entry points
+
+    // Decodes a parsed file with the standard policy. Total: every file gives
+    // a model, possibly empty, and every problem is a diagnostic.
+    DecodeBrep(file: Part21File): DecodedModel
+        => file.DecodeBrepWith(DecodePolicy.StandardPolicy);
+
+    // deferred: the decode, in order: classify every instance
+    // (ClassificationDiagnostics); resolve every 3D context (ResolveContexts);
+    // find the occurrences (FindOccurrences); decode each occurrence's
+    // reachable instances into the kernel tables, folding orientation flags
+    // and making the local repairs of StepRepair, with placements and unit
+    // conversion applied to every point, frame and length; set the tolerances
+    // (ModelTolerances); build the provenance map.
+    DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel;
+
+    // deferred: a census by keyword. One EntityTypeIgnored Info per ignored
+    // type and one EntityTypeUnsupported Warning per unsupported type or
+    // unknown keyword, each about the first instance of the type with Measure
+    // the instance count; plus ShortNamesUsed, ComplexPartsOutOfOrder,
+    // ValueWhereDerived and SchemaUnrecognised where they apply.
+    ClassificationDiagnostics(file: Part21File): Array<Diagnostic>;
+
+    //==
+    // # Policy
+
+    // The standard policy. Millimetre when a context names no length unit
+    // (the unit of most surveyed CAD exports); radians when it names no
+    // plane-angle unit (the SI unit; OpenCascade assumes degrees, a choice the
+    // research could not confirm from the standard); a length tolerance of
+    // 1e-6 of the model size when no context states one (1e-4 mm for a 100 mm
+    // part, OpenCascade's absolute default at that size); 1e-7 m for a
+    // model of one point; unit factors named within a relative 1e-9; a
+    // plane-angle factor within a relative 1e-8 of pi / 180 snapped to it
+    // (the 10-digit factors files write are 7e-9 off over a turn); an angle
+    // tolerance of 1e-9 rad, below the 1e-9 cosine the survey saw between
+    // nominally orthogonal axes.
+    StandardPolicy(_: DecodePolicy): DecodePolicy
+        => DecodePolicy(
+            LengthUnit.Millimetre,
+            1.0,
+            1e-6,
+            1e-7,
+            ComparisonTolerance(0.0, 1e-9),
+            ComparisonTolerance(0.0, 1e-8),
+            AngleTolerance(Angle(1e-9)));
+
+    //==
+    // # Units and tolerance
+
+    // The length unit with this many metres per unit: a named unit when the
+    // factor matches one within the tolerance (research/STEP-BREP-MODEL.md
+    // 3.1), Scaled otherwise.
+    ClassifyLengthUnit(metresPerUnit: Number, tolerance: ComparisonTolerance): LengthUnit
+        => metresPerUnit.AlmostEqual(1.0, tolerance) ? LengthUnit.Metre
+            : (metresPerUnit.AlmostEqual(0.001, tolerance) ? LengthUnit.Millimetre
+            : (metresPerUnit.AlmostEqual(0.01, tolerance) ? LengthUnit.Centimetre
+            : (metresPerUnit.AlmostEqual(0.0254, tolerance) ? LengthUnit.Inch
+            : (metresPerUnit.AlmostEqual(0.3048, tolerance) ? LengthUnit.Foot
+            : LengthUnit.Scaled(metresPerUnit)))));
+
+    // A length in unit from, expressed in unit to (ScaleToMetres, layer 2).
+    ConvertLength(value: Number, from: LengthUnit, to: LengthUnit): Number
+        => value * from.ScaleToMetres / to.ScaleToMetres;
+
+    // A plane-angle factor (radians per file unit) with the degree factor
+    // snapped to pi / 180 when within the tolerance.
+    SnapAngleFactor(radiansPerUnit: Number, snap: ComparisonTolerance): Number
+        => radiansPerUnit.AlmostEqual(Number.Pi / 180.0, snap) ? Number.Pi / 180.0 : radiansPerUnit;
+
+    // The one place a file angle becomes an Angle: the value times the
+    // context's radians per unit. Every angular parameter, trim on a conic,
+    // cone semi-angle, and pcurve coordinate on an angular surface direction
+    // passes through it (research/STEP-BREP-MODEL.md 5.1).
+    ToRadians(value: Number, radiansPerUnit: Number): Angle
+        => Angle(value * radiansPerUnit);
+
+    // deferred: for each 3D geometric_representation_context, read its
+    // global_unit_assigned_context units (the length and plane-angle named
+    // units, factors computed through conversion_based_unit recursively and
+    // si_unit prefixes) and its global_uncertainty_assigned_context length
+    // uncertainties (converted through each uncertainty's own unit, not the
+    // context's); apply the policy where the context is silent. One entry per
+    // context instance, ascending by id.
+    ResolveContexts(file: Part21File, policy: DecodePolicy): Array<ContextUnits>;
+
+    // True when the context states a length uncertainty.
+    HasStatedUncertainty(c: ContextUnits): Boolean
+        => match (c.Uncertainty) {
+            StatedUncertainty(value, count) => true;
+            NoUncertainty => false;
+        };
+
+    // The context's stated uncertainty in unit, as a list of none or one.
+    StatedUncertaintyIn(c: ContextUnits, unit: LengthUnit): Array<Number>
+        => match (c.Uncertainty) {
+            StatedUncertainty(value, count) => [value.ConvertLength(c.Length, unit)];
+            NoUncertainty => [];
+        };
+
+    // The model's length tolerance: the largest stated uncertainty of the used
+    // contexts converted to the model unit, which honours every exporter's own
+    // claim of coincidence; or, when none states one, the policy fraction of
+    // the model size (the fallback when the size is zero); never below the
+    // arithmetic resolution at the model size (ResolutionAt, layer 0), which a
+    // 1e-13 mm uncertainty is.
+    ModelLengthTolerance(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, policy: DecodePolicy): LengthTolerance
+    {
+        var stated = used.FlatMap(c => c.StatedUncertaintyIn(unit));
+        var fallback = modelSize > 0.0 ? policy.DefaultRelativeUncertainty * modelSize : ConvertLength(policy.FallbackUncertaintyMetres, LengthUnit.Metre, unit);
+        var value = stated.Count == 0 ? fallback : stated.Reduce(0.0, (a, b) => a.Max(b));
+        return LengthTolerance(value.Max(ResolutionAt(modelSize)));
+    }
+
+    // The model's tolerances: the length tolerance above, the policy's angle
+    // tolerance, and the parameter floor layer 0 derives from them
+    // (ParameterFloor).
+    ModelTolerances(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, policy: DecodePolicy): Tolerances
+    {
+        var length = ModelLengthTolerance(used, unit, modelSize, policy);
+        return Tolerances(length, policy.AngleCoincidence, ParameterFloor(length, modelSize));
+    }
+
+    // The model size: the diagonal of the bounding box of the points, 0 for
+    // none. The decoder passes every cartesian_point reached from an
+    // occurrence, placed (vertices, control points, placement origins), so a
+    // sphere bounded by one vertex loop still has its radius in the box.
+    ModelSize(points: Array<Point3D>): Number
+    {
+        if (points.Count == 0)
+        {
+            return 0.0;
+        }
+        var lo = points.Reduce(points[0], (a, p) => Point3D(a.X.Min(p.X), a.Y.Min(p.Y), a.Z.Min(p.Z)));
+        var hi = points.Reduce(points[0], (a, p) => Point3D(a.X.Max(p.X), a.Y.Max(p.Y), a.Z.Max(p.Z)));
+        return lo.Distance(hi);
+    }
+
+    // The contexts some occurrence uses.
+    UsedContexts(contexts: Array<ContextUnits>, map: ProvenanceMap): Array<ContextUnits>
+        => contexts.FlatMap(c => map.Occurrences.Any(o => o.Context == c.Context) ? [c] : contexts.Take(0));
+
+    // The units of the context named id; fallback when contexts has none.
+    ContextUnitsOf(contexts: Array<ContextUnits>, id: StepInstanceId, fallback: ContextUnits): ContextUnits
+        => contexts.Reduce(fallback, (found, c) => c.Context == id ? c : found);
+
+    //==
+    // # Occurrences
+
+    // deferred: the resolution of research/STEP-BREP-MODEL.md 3.8. Collect the
+    // representations holding B-rep items; follow
+    // shape_definition_representation and shape_representation_relationships
+    // without a transformation to them; for each next_assembly_usage_occurrence
+    // place the component through its context_dependent_shape_representation,
+    // deciding which side is the component from the NAUO and which
+    // placement is which from membership, never from attribute position; for
+    // each mapped_item compose origin-to-target; cut cycles. Roots first,
+    // the first root in ascending id order being occurrence 0, whose length
+    // unit is the model unit; each placement includes the conversion from its
+    // context's unit.
+    FindOccurrences(file: Part21File, contexts: Array<ContextUnits>, policy: DecodePolicy): Array<StepOccurrence>;
+
+    // True when the occurrence is a root (placed by nothing).
+    IsRoot(o: StepOccurrence): Boolean
+        => o.Parent.IsNone;
+
+    // The determinant of the linear part of an affine map (its rows 1 to 3).
+    LinearDeterminant(t: AffineTransform3D): Number
+    {
+        var x = Vector3D(t.Matrix.Row1.X, t.Matrix.Row1.Y, t.Matrix.Row1.Z);
+        var y = Vector3D(t.Matrix.Row2.X, t.Matrix.Row2.Y, t.Matrix.Row2.Z);
+        var z = Vector3D(t.Matrix.Row3.X, t.Matrix.Row3.Y, t.Matrix.Row3.Z);
+        return x.Dot(y.Cross(z));
+    }
+
+    // True when the map reverses handedness: faces placed by it have their
+    // orientation flags folded (FoldCause.MirroredPlacement). A placement's
+    // determinant is plus or minus a cube of a positive scale, never near
+    // zero, so the sign test needs no tolerance.
+    IsMirrored(t: AffineTransform3D): Boolean
+        => t.LinearDeterminant < 0.0;
+
+    //==
+    // # The provenance map
+
+    // The source of no element: what lookups return out of range.
+    NoSource(_: StepSource): StepSource
+        => StepSource(StepOccurrenceIndex(-1), StepInstanceId(-1));
+
+    // Every source of the map, table after table in KernelSources order.
+    AllSources(s: KernelSources): Array<StepSource>
+        => s.Vertices
+            .Concatenate(s.Edges)
+            .Concatenate(s.Loops)
+            .Concatenate(s.Faces)
+            .Concatenate(s.Shells)
+            .Concatenate(s.Bodies)
+            .Concatenate(s.Curves)
+            .Concatenate(s.Curves2D)
+            .Concatenate(s.Pcurves)
+            .Concatenate(s.Surfaces);
+
+    // The kernel element whose source sits at position p of AllSources.
+    ElementAt(s: KernelSources, p: Integer): KernelElement
+    {
+        var vertices = s.Vertices.Count;
+        var edges = vertices + s.Edges.Count;
+        var loops = edges + s.Loops.Count;
+        var faces = loops + s.Faces.Count;
+        var shells = faces + s.Shells.Count;
+        var bodies = shells + s.Bodies.Count;
+        var curves = bodies + s.Curves.Count;
+        var curves2D = curves + s.Curves2D.Count;
+        var pcurves = curves2D + s.Pcurves.Count;
+        var surfaces = pcurves + s.Surfaces.Count;
+        return p < 0 ? KernelElement.NoElement
+            : (p < vertices ? KernelElement.VertexElement(BrepVertexIndex(p))
+            : (p < edges ? KernelElement.EdgeElement(BrepEdgeIndex(p - vertices))
+            : (p < loops ? KernelElement.LoopElement(BrepLoopIndex(p - edges))
+            : (p < faces ? KernelElement.FaceElement(BrepFaceIndex(p - loops))
+            : (p < shells ? KernelElement.ShellElement(ShellIndex(p - faces))
+            : (p < bodies ? KernelElement.BodyElement(BodyIndex(p - shells))
+            : (p < curves ? KernelElement.CurveElement(CurveIndex(p - bodies))
+            : (p < curves2D ? KernelElement.Curve2DElement(Curve2DIndex(p - curves))
+            : (p < pcurves ? KernelElement.PcurveElement(PcurveIndex(p - curves2D))
+            : (p < surfaces ? KernelElement.SurfaceElement(SurfaceIndex(p - pcurves))
+            : KernelElement.NoElement))))))))));
+    }
+
+    // deferred: binary search of ByInstance by (occurrence, instance id). The
+    // kernel element decoded from s; NoElement when s is not a source of the
+    // map.
+    KernelOf(map: ProvenanceMap, s: StepSource): KernelElement;
+
+    // True when s decoded to a kernel element of its own.
+    IsMapped(map: ProvenanceMap, s: StepSource): Boolean
+        => !(map.KernelOf(s) == KernelElement.NoElement);
+
+    // True when the map lists a repair for s.
+    IsRepaired(map: ProvenanceMap, s: StepSource): Boolean
+        => map.Repairs.Any(r => r.Source == s);
+
+    // True when every table of the map is as long as the model's table: each
+    // kernel element has exactly one source.
+    CoversModel(map: ProvenanceMap, m: BrepModel): Boolean
+        => map.Sources.Vertices.Count == m.Vertices.Count
+            && map.Sources.Edges.Count == m.Edges.Count
+            && map.Sources.Loops.Count == m.Loops.Count
+            && map.Sources.Faces.Count == m.Faces.Count
+            && map.Sources.Shells.Count == m.Shells.Count
+            && map.Sources.Bodies.Count == m.Bodies.Count
+            && map.Sources.Curves.Count == m.Geometry.Curves.Count
+            && map.Sources.Curves2D.Count == m.Geometry.Curves2D.Count
+            && map.Sources.Pcurves.Count == m.Geometry.Pcurves.Count
+            && map.Sources.Surfaces.Count == m.Geometry.Surfaces.Count;
+
+    // How many fold records name face k.
+    FoldCount(map: ProvenanceMap, k: BrepFaceIndex): Integer
+        => map.Folds.Reduce(0, (n, r) => r.Face == k ? n + 1 : n);
+
+    // True when face k's flags were flipped at decode: an odd number of folds.
+    IsFolded(map: ProvenanceMap, k: BrepFaceIndex): Boolean
+        => map.FoldCount(k) % 2 == 1;
+
+    // The entity kinds an instance must have to be the source of an element
+    // of e's table; none for NoElement.
+    TableKinds(e: KernelElement): Array<String>
+        => match (e) {
+            NoElement => [];
+            VertexElement(index) => ["VERTEX_POINT"];
+            EdgeElement(index) => ["EDGE_CURVE"];
+            LoopElement(index) => ["LOOP"];
+            FaceElement(index) => ["FACE_SURFACE"];
+            ShellElement(index) => ["CLOSED_SHELL", "OPEN_SHELL"];
+            BodyElement(index) => ["MANIFOLD_SOLID_BREP", "SHELL_BASED_SURFACE_MODEL"];
+            CurveElement(index) => ["CURVE"];
+            Curve2DElement(index) => ["CURVE"];
+            PcurveElement(index) => ["PCURVE"];
+            SurfaceElement(index) => ["SURFACE"];
+        };
+
+    // The vertex a repair merged its instance into; none for other repairs.
+    MergedVertexOf(r: StepRepair): BrepVertexIndex
+        => match (r) {
+            MergedInto(v) => v;
+            DroppedZeroLengthEdge => BrepVertexIndex(-1);
+            Skipped => BrepVertexIndex(-1);
+        };
+
+    // True when a fold record names an instance that carries the flip: an
+    // oriented_face or oriented shell whose orientation is .F., or an
+    // occurrence whose placement is mirrored.
+    IsJustifiedFold(f: Part21File, map: ProvenanceMap, fold: FoldRecord): Boolean
+    {
+        var p = f.InstancePosition(fold.Via.Instance);
+        return match (fold.Cause) {
+            OrientedFace => f.InstanceIsA(p, "ORIENTED_FACE") && !f.FieldIsTrue(p, "ORIENTED_FACE", "orientation");
+            OrientedShell => (f.InstanceIsA(p, "ORIENTED_CLOSED_SHELL") && !f.FieldIsTrue(p, "ORIENTED_CLOSED_SHELL", "orientation"))
+                || (f.InstanceIsA(p, "ORIENTED_OPEN_SHELL") && !f.FieldIsTrue(p, "ORIENTED_OPEN_SHELL", "orientation"));
+            MirroredPlacement => map.Occurrences.IsValidIndex(fold.Via.Occurrence) ? map.Occurrences[fold.Via.Occurrence.Value].Placement.IsMirrored : false;
+        };
+    }
+
+    // The source of kernel face k; NoSource when k is out of range.
+    FaceSource(map: ProvenanceMap, k: BrepFaceIndex): StepSource
+        => map.Sources.Faces.IsValidIndex(k) ? map.Sources.Faces[k] : StepSource.NoSource;
+
+    //==
+    // # Reached instances
+
+    // The position of the representation an occurrence places.
+    RepresentationPosition(f: Part21File, o: StepOccurrence): Integer
+        => f.InstancePosition(o.Representation);
+
+    // How many (occurrence, instance) pairs of kind the occurrences reach: the
+    // instance count each kernel table is held to (the counts laws).
+    ReachedCount(f: Part21File, map: ProvenanceMap, kind: String): Integer
+        => map.Occurrences.Map(o => f.ReachableOfKind(f.RepresentationPosition(o), kind).Count).Reduce(0, (a, b) => a + b);
+
+    // How many repairs name an instance of kind: sources reached that have no
+    // kernel element of their own.
+    RemovedCount(map: ProvenanceMap, f: Part21File, kind: String): Integer
+        => map.Repairs.Reduce(0, (n, r) => f.IsA(r.Source.Instance, kind) ? n + 1 : n);
+
+    // True when an instance at position p decodes to a kernel element of its
+    // own: a vertex_point, edge_curve, loop, face_surface, non-oriented shell,
+    // manifold solid, shell-based surface model, curve (pcurves included), or
+    // surface. Oriented edges, faces and shells are folded, not decoded on
+    // their own.
+    ProducesKernelElement(f: Part21File, p: Integer): Boolean
+        => f.InstanceIsA(p, "VERTEX_POINT")
+            || f.InstanceIsA(p, "EDGE_CURVE")
+            || f.InstanceIsA(p, "LOOP")
+            || f.InstanceIsA(p, "FACE_SURFACE")
+            || (f.InstanceIsA(p, "CONNECTED_FACE_SET") && !f.InstanceIsA(p, "ORIENTED_CLOSED_SHELL") && !f.InstanceIsA(p, "ORIENTED_OPEN_SHELL"))
+            || f.InstanceIsA(p, "MANIFOLD_SOLID_BREP")
+            || f.InstanceIsA(p, "SHELL_BASED_SURFACE_MODEL")
+            || f.InstanceIsA(p, "CURVE")
+            || f.InstanceIsA(p, "SURFACE");
+
+    //==
+    // # The file as the decode laws read it
+
+    // The same_sense of the face_surface a kernel face was decoded from, as
+    // the file writes it.
+    FileFaceSameSense(f: Part21File, s: StepSource): Boolean
+        => f.FieldIsTrue(f.InstancePosition(s.Instance), "FACE_SURFACE", "same_sense");
+
+    // The orientation of the j-th face_bound of the face s names, as the file
+    // writes it; true when there is no such bound.
+    FileBoundOrientation(f: Part21File, s: StepSource, j: Integer): Boolean
+    {
+        var bounds = f.FaceBounds(f.InstancePosition(s.Instance));
+        return j >= 0 && j < bounds.Count ? f.FieldIsTrue(f.InstancePosition(bounds[j]), "FACE_BOUND", "orientation") : true;
+    }
+
+    // The same_sense of the edge_curve s names, as the file writes it.
+    FileEdgeSameSense(f: Part21File, s: StepSource): Boolean
+        => f.FieldIsTrue(f.InstancePosition(s.Instance), "EDGE_CURVE", "same_sense");
+
+    // The point of the vertex_point s names, placed by its occurrence into
+    // model coordinates and units; NaN coordinates (Number.Unmeasured) when
+    // the vertex has no three-coordinate cartesian_point, so a law built on it
+    // fails rather than passes.
+    PlacedVertexPoint(f: Part21File, map: ProvenanceMap, s: StepSource): Point3D
+    {
+        var geometry = f.FieldReference(f.InstancePosition(s.Instance), "VERTEX_POINT", "vertex_geometry");
+        var c = f.FieldReals(f.InstancePosition(geometry), "CARTESIAN_POINT", "coordinates", Number.Unmeasured);
+        var local = c.Count == 3 ? Point3D(c[0], c[1], c[2]) : Point3D(Number.Unmeasured, Number.Unmeasured, Number.Unmeasured);
+        return map.Occurrences.IsValidIndex(s.Occurrence) ? map.Occurrences[s.Occurrence.Value].Placement * local : local;
+    }
+}

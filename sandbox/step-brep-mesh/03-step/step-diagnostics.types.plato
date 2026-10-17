@@ -1,0 +1,68 @@
+//==
+// # The diagnostics this layer emits
+//
+// Layer 3 of the STEP B-rep to mesh design. Every finding the parser and the
+// decoder can report, as one closed sum, so the code, severity, and message of
+// each live in one place (Diagnose, step-diagnostics.library.plato) and a
+// law can ask whether a decode reported one (HasCode).
+//
+// Sections, in order:
+//  - Codes
+
+//==
+// # Codes
+
+// A finding of ParseStep or DecodeBrep. The groups, in order: the Part 21
+// text; schema and classification; units and uncertainty; shapes and
+// assemblies; geometry; topology and orientation. Severity, code text, and
+// message are fixed by Diagnose; Measure, when a finding has one, is named in
+// the message.
+type StepDiagnosticCode
+    = NotPart21File
+    | SyntaxError
+    | DuplicateInstanceId
+    | DanglingReference
+    | UnsupportedSection
+    | LenientToken
+    | HeaderIncomplete
+    | SchemaUnrecognised
+    | ShortNamesUsed
+    | ComplexPartsOutOfOrder
+    | ValueWhereDerived
+    | AttributeCountMismatch
+    | AttributeKindMismatch
+    | EntityTypeIgnored
+    | EntityTypeUnsupported
+    | InstancesUnreferenced
+    | LengthUnitFound
+    | LengthUnitDefaulted
+    | LengthUnitsAmbiguous
+    | AngleUnitFound
+    | AngleUnitDefaulted
+    | DegreeFactorSnapped
+    | UncertaintyFound
+    | UncertaintyDefaulted
+    | UncertaintyClamped
+    | UncertaintiesDiffer
+    | UnitsConverted
+    | RootUnitsDisagree
+    | NoShapeFound
+    | AssemblyCycle
+    | PlacementItemsSwapped
+    | MirroredPlacementFolded
+    | ZeroDirection
+    | ParallelPlacementAxes
+    | NonOrthogonalPlacement
+    | KnotsRepaired
+    | NegativeTorusMajorRadius
+    | TorusMajorBelowMinor
+    | MissingCurve3D
+    | DuplicateVertexMerged
+    | ClosedEdgeVerticesMerged
+    | ZeroLengthEdgeDropped
+    | NestedOrientedEdge
+    | TwoOuterBounds
+    | ClosedShellHasFreeEdges
+    | OrientationFolded
+    | FaceCitedTwice
+    | InstanceSkipped;

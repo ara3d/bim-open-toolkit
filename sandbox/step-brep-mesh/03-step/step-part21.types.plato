@@ -1,0 +1,124 @@
+//==
+// # The Part 21 file as data
+//
+// Layer 3 of the STEP B-rep to mesh design (README.md beside this file). The
+// clear-text encoding of ISO 10303-21 (P21) as a value: a header, a flat arena
+// of entity instances, and a second flat arena of attribute values in which
+// lists and typed parameters nest by index instead of by recursion. Nothing
+// here knows any entity; the schema model (step-schema.types.plato) does.
+//
+// Sections, in order:
+//  - Header
+//  - Attribute values
+//  - Instances and records
+//  - The file and the parse result
+
+//==
+// # Header
+
+// The three header entities of P21 8.2.2 to 8.2.4, flattened, in file order.
+// FILE_DESCRIPTION gives Description and ImplementationLevel; FILE_NAME gives
+// Name, TimeStamp, Author, Organization, PreprocessorVersion,
+// OriginatingSystem, Authorization; FILE_SCHEMA gives Schema. Strings hold
+// decoded text: escape directives (\X2\, \S\ and the rest, P21 6.4.3)
+// resolved, line breaks dropped (P21 5.6). Only Name and TimeStamp have
+// defined content; OriginatingSystem and PreprocessorVersion name the
+// exporter, which some repairs key on. A field the file omits is "" or empty.
+type StepHeader
+{
+    Description: Array<String>;
+    ImplementationLevel: String;
+    Name: String;
+    TimeStamp: String;
+    Author: Array<String>;
+    Organization: Array<String>;
+    PreprocessorVersion: String;
+    OriginatingSystem: String;
+    Authorization: String;
+    Schema: Array<String>;
+}
+
+//==
+// # Attribute values
+
+// One parameter of a record (P21 6.4, 7.1, 12.1, 12.2). IntegerValue 6.4.1;
+// RealValue 6.4.2; StringValue 6.4.3, decoded text; EnumValue 6.4.5, the name
+// between the dots, so .T. is EnumValue("T"); BinaryValue 6.4.6, the hex
+// digits as written; Reference 6.4.4.3, the n of #n; Typed 12.1.8, a SELECT
+// value written KEYWORD(value), such as LENGTH_MEASURE(1.E-07); ListValue
+// 12.1.2 to 12.1.5, a LIST, SET, BAG or ARRAY; Unset 12.2.2, written $;
+// Derived 12.2.6, written *. Nested values (Typed.Inner, ListValue.Items) are
+// indices into Part21File.Attributes, and each is smaller than the index of
+// the value that holds it (Law_ChildrenPrecedeParent), so the arena is a
+// forest stored children first and every traversal terminates. Keywords
+// (TypeName, EnumValue.Name) are stored in upper case.
+type StepAttribute
+    = IntegerValue(Value: Integer)
+    | RealValue(Value: Number)
+    | StringValue(Value: String)
+    | EnumValue(Name: String)
+    | BinaryValue(Bits: String)
+    | Reference(Id: StepInstanceId)
+    | Typed(TypeName: String, Inner: StepAttributeIndex)
+    | ListValue(Items: Array<StepAttributeIndex>)
+    | Unset
+    | Derived;
+
+//==
+// # Instances and records
+
+// One entity record: a keyword, upper case, long or short name as written
+// (P21 12.2.11), and its parameters in file order.
+type StepSimpleRecord
+{
+    TypeName: String;
+    Attributes: Array<StepAttributeIndex>;
+}
+
+// The body of an instance. Simple: the internal mapping of P21 12.2.5.1, one
+// record named after the leaf entity, holding every explicit attribute of the
+// entity and its supertypes, supertypes first (12.2.5.2). Complex: the
+// external mapping of P21 12.2.5.3, one record per entity type of the
+// instance, each holding only the attributes its own entity declares. The
+// standard orders complex parts by long name; the parts are kept in file
+// order because exporters break the rule (Law_ComplexPartsInStandardOrder
+// states it; the decoder matches parts by name).
+type StepInstanceBody
+    = Simple(TypeName: String, Attributes: Array<StepAttributeIndex>)
+    | Complex(Parts: Array<StepSimpleRecord>);
+
+// One entity instance of the data section: its name (the n of #n, P21 11.2)
+// and its body.
+type StepInstance
+{
+    Id: StepInstanceId;
+    Body: StepInstanceBody;
+}
+
+//==
+// # The file and the parse result
+
+// A Part 21 file as data: the header, every instance of the single data
+// section in ascending Id order (an instance name is unique and order in the
+// data section carries no meaning, P21 11.2), and the attribute arena that
+// the records index. Invariants, ensured by ParseStep and listed in
+// step.spec.plato: ids positive, unique and ascending; every attribute index
+// in range; children before parents. A Reference may name an absent
+// instance: that is a defect of the file, kept as written and diagnosed.
+type Part21File
+{
+    Header: StepHeader;
+    Instances: Array<StepInstance>;
+    Attributes: Array<StepAttribute>;
+}
+
+// The result of ParseStep. Ok is false exactly when Diagnostics holds an
+// Error (Law_ParseOkIffNoError); File is still the part of the text that
+// parsed, so decoding can go on and say more (Principle 6 of the brief:
+// warn, never block).
+type ParsedFile
+{
+    Ok: Boolean;
+    File: Part21File;
+    Diagnostics: Array<Diagnostic>;
+}

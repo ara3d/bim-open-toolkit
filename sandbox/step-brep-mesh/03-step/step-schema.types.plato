@@ -1,0 +1,138 @@
+//==
+// # The schema model
+//
+// Layer 3 of the STEP B-rep to mesh design. The subset of EXPRESS (ISO
+// 10303-11) a decoder needs, as data: for each entity, its supertypes, the
+// explicit attributes it declares with their kinds, the inherited attributes
+// it redeclares as DERIVE, and how the decoder treats it. The flattened record
+// of a simple instance is computed from these (FlatRecord), so the record
+// order of P21 12.2.5.2 has one source. The table itself is
+// step-schema-table.library.plato.
+//
+// Sections, in order:
+//  - Attribute kinds
+//  - Attributes and entities
+//  - Views used by WHERE rules
+
+//==
+// # Attribute kinds
+
+// The aggregation forms of EXPRESS: LIST, SET, BAG, ARRAY. All are written
+// ( ... ) in a file (P21 12.1.2 to 12.1.5); a SET's order carries no meaning,
+// a LIST's does.
+type AggregateForm
+    = ListOf
+    | SetOf
+    | BagOf
+    | ArrayOf;
+
+// One level of aggregation of an attribute: Form [Lower:Upper] OF ..., with
+// Upper -1 for the unbounded '?'. Unique is the EXPRESS UNIQUE keyword: no
+// two elements refer to the same instance.
+type AggregateBound
+{
+    Form: AggregateForm;
+    Lower: Integer;
+    Upper: Integer;
+    Unique: Boolean;
+}
+
+// The kind of a single value, after every aggregation level is peeled off.
+// BooleanKind is .T./.F.; LogicalKind adds .U.; EnumerationKind lists the
+// permitted names in upper case; EntityKind lists the entity types a reference
+// may name (an instance of a subtype also qualifies); SelectKind is an EXPRESS
+// SELECT: a reference to one of Entities, or a typed parameter whose keyword
+// is one of TypedNames (P21 12.1.8).
+type AttributeKind
+    = IntegerKind
+    | RealKind
+    | BooleanKind
+    | LogicalKind
+    | StringKind
+    | BinaryKind
+    | EnumerationKind(Values: Array<String>)
+    | EntityKind(Allowed: Array<String>)
+    | SelectKind(Entities: Array<String>, TypedNames: Array<String>);
+
+// The WHERE rule of the defined type an attribute is declared with, when it
+// has one: positive_length_measure and dimension_count are PositiveValue (P41,
+// P42 4.4.5). Rules that belong to an entity rather than a type are laws of
+// their own (step-where.laws.plato).
+type ValueRule
+    = AnyValue
+    | PositiveValue
+    | NonNegativeValue
+    | NonZeroValue;
+
+//==
+// # Attributes and entities
+
+// One explicit attribute as its entity declares it: the EXPRESS name in lower
+// case, the element kind, the aggregation levels outermost first (empty for a
+// single value), whether it is OPTIONAL (written $ when absent), and the
+// defined type's rule.
+type AttributeDefinition
+{
+    Name: String;
+    Kind: AttributeKind;
+    Aggregates: Array<AggregateBound>;
+    Optional: Boolean;
+    Rule: ValueRule;
+}
+
+// How the decoder treats instances of an entity type. Decoded: read, either
+// into a kernel element or into a field of one (units, placements, contexts,
+// coedges, product structure that places shapes). Ignored: skipped with one
+// Info diagnostic per type (product data not needed for geometry,
+// presentation, PMI, configuration management). Unsupported: skipped with one
+// Warning per type (tessellated geometry, catalogue entities with no kernel
+// counterpart, and every name the table does not list).
+type EntityTreatment
+    = Decoded
+    | Ignored
+    | Unsupported;
+
+// One EXPRESS entity of the supported subset. Name is the long name in upper
+// case; ShortName the ISO short name (P21 12.2.11; the short-names table of
+// research/STEP-BREP-MODEL.md 3.9) or "" when none is known; Clause the
+// clause of ISO 10303 that defines it; Supertypes in SUBTYPE OF order;
+// Explicit the attributes this entity declares itself, in declaration order;
+// Derives the names of inherited explicit attributes this entity redeclares as
+// DERIVE, written * in its records (P21 12.2.6). Ignored and Unsupported
+// entities carry no attributes: nothing reads them.
+type EntityDefinition
+{
+    Name: String;
+    ShortName: String;
+    Clause: String;
+    Supertypes: Array<String>;
+    Explicit: Array<AttributeDefinition>;
+    Derives: Array<String>;
+    Treatment: EntityTreatment;
+}
+
+// One parameter position of a record: the attribute, the entity that declares
+// it (two attributes of one flattened record can share a name, as the two
+// 'name's of cartesian_transformation_operator_3d do), and whether the
+// position is always * because a subtype in the record derives it.
+type RecordSlot
+{
+    Owner: String;
+    Attribute: AttributeDefinition;
+    Derived: Boolean;
+}
+
+//==
+// # Views used by WHERE rules
+
+// The arguments of the EXPRESS function constraints_param_b_spline (P42
+// 4.6.11) for one parameter direction of a B-spline: the degree, the upper
+// index on control points (their count minus one), and the knot
+// multiplicities and distinct knot values as the file lists them.
+type StepKnotSpec
+{
+    Degree: Integer;
+    UpperIndexOnControlPoints: Integer;
+    Multiplicities: Array<Integer>;
+    Knots: Array<Number>;
+}

@@ -1,0 +1,377 @@
+//==
+// # StepReadingLaws
+//
+// Layer 3 of the STEP B-rep to mesh design. Laws of DecodeBrep, stated for
+// every Part21File: totality, the provenance map as a bijection, counts per
+// kind, units and tolerance, the faithful copying of flags, and orientation
+// folding. Each law decodes the file it is given with the standard policy; the
+// law runner runs them over witness files and the corpus (README, "Test
+// files"), since a random Part21File holds arrays and cannot be generated
+// (PLATO-PRIMER.md B.2). Every law is total.
+//
+// Sections, in order:
+//  - Totality
+//  - The provenance map
+//  - Counts
+//  - Units and tolerance
+//  - Copied flags and repairs
+//  - Orientation folding
+
+library StepReadingLaws
+{
+    //==
+    // # Totality
+
+    // Whatever the file, every index of the decoded model is in range (layer
+    // 2's Law_IndicesInRange): no instance makes decoding fail; whatever
+    // cannot be decoded is left out and diagnosed.
+    Law_DecodeIsTotal(f: Part21File): Boolean
+        => f.DecodeBrep.Model.Law_IndicesInRange;
+
+    // Whatever the file, the decoded tolerances are positive and finite.
+    Law_DecodedTolerancesWellFormed(f: Part21File): Boolean
+        => f.DecodeBrep.Model.Tolerances.IsWellFormed;
+
+    // Every repair has a diagnostic about its instance.
+    Law_RepairsAreDiagnosed(f: Part21File, r: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        return r >= 0 && r < d.Map.Repairs.Count ? d.Diagnostics.Any(x => x.Where == Provenance.StepInstance(d.Map.Repairs[r].Source.Instance)) : true;
+    }
+
+    //==
+    // # The provenance map
+
+    // Every kernel element has exactly one source: each table of the map is
+    // as long as the model's.
+    Law_ProvenanceCoversModel(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.Map.CoversModel(d.Model);
+    }
+
+    // No two kernel elements share a source: the map is injective.
+    Law_ProvenanceSourcesDistinct(f: Part21File, a: Integer, b: Integer): Boolean
+    {
+        var all = f.DecodeBrep.Map.Sources.AllSources;
+        return a >= 0 && a < all.Count && b >= 0 && b < all.Count && a != b ? !(all[a] == all[b]) : true;
+    }
+
+    // Looking a source up gives back the kernel element it is the source of:
+    // KernelOf inverts the map's forward tables.
+    Law_ProvenanceLookupInvertsSources(f: Part21File, a: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        var all = d.Map.Sources.AllSources;
+        return a >= 0 && a < all.Count ? d.Map.KernelOf(all[a]) == d.Map.Sources.ElementAt(a) : true;
+    }
+
+    // The source of every kernel element is an instance of that table's
+    // kind: a vertex comes from a vertex_point, a face from a face_surface,
+    // a pcurve from a pcurve, and so on (TableKinds).
+    Law_SourceKindMatchesTable(f: Part21File, a: Integer): Boolean
+    {
+        var sources = f.DecodeBrep.Map.Sources;
+        var all = sources.AllSources;
+        return a >= 0 && a < all.Count ? f.IsAnyOf(all[a].Instance, sources.ElementAt(a).TableKinds) : true;
+    }
+
+    // A repaired source has no kernel element of its own.
+    Law_RepairedSourcesAreUnmapped(f: Part21File, r: Integer): Boolean
+    {
+        var map = f.DecodeBrep.Map;
+        return r >= 0 && r < map.Repairs.Count ? !map.IsMapped(map.Repairs[r].Source) : true;
+    }
+
+    // Every instance an occurrence reaches that decodes to a kernel element of
+    // its own (ProducesKernelElement) is mapped or repaired: the map covers
+    // every decoded instance, so it is a bijection between them and the
+    // kernel elements.
+    Law_ReachedInstancesAreAccountedFor(f: Part21File, o: Integer, k: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (o < 0 || o >= d.Map.Occurrences.Count)
+        {
+            return true;
+        }
+        var reached = f.ReachableOfKind(f.RepresentationPosition(d.Map.Occurrences[o]), "REPRESENTATION_ITEM");
+        if (k < 0 || k >= reached.Count || !f.ProducesKernelElement(reached[k]))
+        {
+            return true;
+        }
+        var source = StepSource(StepOccurrenceIndex(o), f.IdAt(reached[k]));
+        return d.Map.IsMapped(source) || d.Map.IsRepaired(source);
+    }
+
+    //==
+    // # Counts
+    //
+    // One kernel element per reached (occurrence, instance) pair of the kind,
+    // less the pairs repaired away. A face reached through an oriented_face is
+    // one face; an oriented shell is folded into the shell it wraps.
+
+    // One BrepVertex per reached vertex_point not merged into another.
+    Law_VertexCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.Model.Vertices.Count + d.Map.RemovedCount(f, "VERTEX_POINT") == f.ReachedCount(d.Map, "VERTEX_POINT");
+    }
+
+    // One BrepEdge per reached edge_curve not dropped.
+    Law_EdgeCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.Model.Edges.Count + d.Map.RemovedCount(f, "EDGE_CURVE") == f.ReachedCount(d.Map, "EDGE_CURVE");
+    }
+
+    // One BrepLoop per reached edge_loop, vertex_loop or poly_loop.
+    Law_LoopCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.Model.Loops.Count + d.Map.RemovedCount(f, "LOOP") == f.ReachedCount(d.Map, "LOOP");
+    }
+
+    // One BrepFace per reached face_surface (advanced_face included).
+    Law_FaceCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.Model.Faces.Count + d.Map.RemovedCount(f, "FACE_SURFACE") == f.ReachedCount(d.Map, "FACE_SURFACE");
+    }
+
+    // One BrepShell per reached closed_shell or open_shell that is not an
+    // oriented shell.
+    Law_ShellCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        var removed = d.Map.RemovedCount(f, "CONNECTED_FACE_SET") - d.Map.RemovedCount(f, "ORIENTED_CLOSED_SHELL") - d.Map.RemovedCount(f, "ORIENTED_OPEN_SHELL");
+        var reached = f.ReachedCount(d.Map, "CONNECTED_FACE_SET") - f.ReachedCount(d.Map, "ORIENTED_CLOSED_SHELL") - f.ReachedCount(d.Map, "ORIENTED_OPEN_SHELL");
+        return d.Model.Shells.Count + removed == reached;
+    }
+
+    // One BrepBody per reached manifold solid B-rep (brep_with_voids and
+    // faceted_brep included) or shell-based surface model.
+    Law_BodyCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        var removed = d.Map.RemovedCount(f, "MANIFOLD_SOLID_BREP") + d.Map.RemovedCount(f, "SHELL_BASED_SURFACE_MODEL");
+        var reached = f.ReachedCount(d.Map, "MANIFOLD_SOLID_BREP") + f.ReachedCount(d.Map, "SHELL_BASED_SURFACE_MODEL");
+        return d.Model.Bodies.Count + removed == reached;
+    }
+
+    // One BrepCurve or BrepCurve2D per reached curve that is not a pcurve:
+    // basis curves, composite segments' curves, and the 2D curves inside
+    // pcurve definitions each get their own entry, never nested.
+    Law_CurveCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        var removed = d.Map.RemovedCount(f, "CURVE") - d.Map.RemovedCount(f, "PCURVE");
+        var reached = f.ReachedCount(d.Map, "CURVE") - f.ReachedCount(d.Map, "PCURVE");
+        return d.Model.Geometry.Curves.Count + d.Model.Geometry.Curves2D.Count + removed == reached;
+    }
+
+    // One Pcurve per reached pcurve: the file's pcurves are kept, and none is
+    // invented (Law_PcurvesComeFromPcurveInstances).
+    Law_PcurveCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.Model.Geometry.Pcurves.Count + d.Map.RemovedCount(f, "PCURVE") == f.ReachedCount(d.Map, "PCURVE");
+    }
+
+    // One BrepSurface per reached surface.
+    Law_SurfaceCountMatchesInstances(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.Model.Geometry.Surfaces.Count + d.Map.RemovedCount(f, "SURFACE") == f.ReachedCount(d.Map, "SURFACE");
+    }
+
+    //==
+    // # Units and tolerance
+
+    // Angles are radians after decoding, whatever the file's plane-angle
+    // unit: a kernel curve decoded from a circle has period 2 pi within tol,
+    // in a file whose angle unit is the degree as in any other.
+    Law_CirclePeriodIsTwoPi(f: Part21File, k: Integer, tol: ParameterTolerance): Boolean
+    {
+        var d = f.DecodeBrep;
+        var sources = d.Map.Sources.Curves;
+        if (k < 0 || k >= sources.Count || k >= d.Model.Geometry.Curves.Count || !f.IsA(sources[k].Instance, "CIRCLE"))
+        {
+            return true;
+        }
+        var periodicity = d.Model.Geometry.Domain(CurveIndex(k)).Periodicity;
+        return periodicity.IsPeriodic ? (periodicity.PeriodOr(Number.Unmeasured) - Number.Tau).Abs <= tol.Value : false;
+    }
+
+    // Every used context's plane-angle unit is reported at Info: found, or
+    // defaulted by the policy.
+    Law_AngleUnitIsReported(f: Part21File, c: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        var used = f.ResolveContexts(DecodePolicy.StandardPolicy).UsedContexts(d.Map);
+        return c >= 0 && c < used.Count
+            ? d.Diagnostics.HasCodeAt(used[c].AngleStated ? StepDiagnosticCode.AngleUnitFound : StepDiagnosticCode.AngleUnitDefaulted, used[c].Context)
+            : true;
+    }
+
+    // The uncertainty default is applied exactly when no used context states
+    // a length uncertainty.
+    Law_UncertaintyDefaultExactlyWhenAbsent(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        var used = f.ResolveContexts(DecodePolicy.StandardPolicy).UsedContexts(d.Map);
+        return used.Any(c => c.HasStatedUncertainty) == !d.Diagnostics.HasCode(StepDiagnosticCode.UncertaintyDefaulted);
+    }
+
+    // The model's length tolerance is at least every stated uncertainty of a
+    // used context, converted to the model unit (within the policy's
+    // unit-match tolerance, the rounding of the conversion).
+    Law_ToleranceCoversStatedUncertainties(f: Part21File, c: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        var used = f.ResolveContexts(DecodePolicy.StandardPolicy).UsedContexts(d.Map);
+        var tolerance = d.Model.Tolerances.Length.Value;
+        return c >= 0 && c < used.Count
+            ? used[c].StatedUncertaintyIn(d.Model.Unit).All(u => u <= tolerance || u.AlmostEqual(tolerance, DecodePolicy.StandardPolicy.UnitMatch))
+            : true;
+    }
+
+    // The model's length unit is that of the first root occurrence's context;
+    // every other occurrence is converted to it.
+    Law_ModelUnitIsRootUnit(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        var policy = DecodePolicy.StandardPolicy;
+        var fallback = ContextUnits(StepInstanceId(-1), policy.DefaultLength, false, policy.DefaultRadiansPerAngleUnit, false, ContextUncertainty.NoUncertainty);
+        return d.Map.Occurrences.Count == 0
+            ? true
+            : d.Model.Unit == f.ResolveContexts(policy).ContextUnitsOf(d.Map.Occurrences[0].Context, fallback).Length;
+    }
+
+    //==
+    // # Copied flags and repairs
+
+    // An edge keeps the same_sense of its edge_curve; its parameter range is
+    // not in the file and layer 2 derives it (EdgeDomain).
+    Law_EdgeSenseCopied(f: Part21File, e: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        return e >= 0 && e < d.Model.Edges.Count && e < d.Map.Sources.Edges.Count
+            ? d.Model.Edges[e].SameSense == f.FileEdgeSameSense(d.Map.Sources.Edges[e])
+            : true;
+    }
+
+    // Every kernel pcurve comes from a pcurve instance of the file: the
+    // decoder invents none (seams and poles are face meshing's).
+    Law_PcurvesComeFromPcurveInstances(f: Part21File, k: Integer): Boolean
+    {
+        var sources = f.DecodeBrep.Map.Sources.Pcurves;
+        return k >= 0 && k < sources.Count ? f.IsA(sources[k].Instance, "PCURVE") : true;
+    }
+
+    // A shell is declared closed exactly when the file wrote a closed_shell;
+    // whether it is closed is layer 2's Law_DeclaredClosedIsClosed.
+    Law_DeclaredClosedCopied(f: Part21File, s: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        return s >= 0 && s < d.Model.Shells.Count && s < d.Map.Sources.Shells.Count
+            ? d.Model.Shells[s].DeclaredClosed == f.IsA(d.Map.Sources.Shells[s].Instance, "CLOSED_SHELL")
+            : true;
+    }
+
+    // A face with two or more face_outer_bounds (face WR2 broken) has no bound
+    // marked outer: the flag is a hint, and a contradictory hint is dropped.
+    Law_OuterFlagClearedWhenDoubled(f: Part21File, k: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        return f.OuterBoundCount(f.InstancePosition(d.Map.Sources.Faces[k].Instance)) > 1
+            ? d.Model.Faces[k].Bounds.All(b => !b.IsOuter)
+            : true;
+    }
+
+    // On a face with at most one face_outer_bound, bound j is marked outer
+    // exactly when the file wrote it as a face_outer_bound.
+    Law_OuterFlagCopiedWhenSingle(f: Part21File, k: Integer, j: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        var p = f.InstancePosition(d.Map.Sources.Faces[k].Instance);
+        var bounds = f.FaceBounds(p);
+        var kernel = d.Model.Faces[k].Bounds;
+        return f.OuterBoundCount(p) <= 1 && j >= 0 && j < bounds.Count && j < kernel.Count
+            ? kernel[j].IsOuter == f.IsA(bounds[j], "FACE_OUTER_BOUND")
+            : true;
+    }
+
+    // A merged vertex lies within the length tolerance of the vertex it was
+    // merged into.
+    Law_MergedVerticesCoincide(f: Part21File, r: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (r < 0 || r >= d.Map.Repairs.Count)
+        {
+            return true;
+        }
+        var repair = d.Map.Repairs[r];
+        var v = repair.Repair.MergedVertexOf;
+        return v.IsNone ? true
+            : (d.Model.Vertices.IsValidIndex(v) ? f.PlacedVertexPoint(d.Map, repair.Source).Coincident(d.Model.Vertices[v.Value].Point, d.Model.Tolerances.Length) : false);
+    }
+
+    //==
+    // # Orientation folding
+    //
+    // README, "Orientation folding": the decoder multiplies a face's
+    // same_sense and every bound's orientation by the signs of the
+    // oriented_face, oriented shell, and mirroring placement above it, so the
+    // kernel needs no oriented types.
+
+    // Folding preserves the point set of every face: for every bound, the
+    // product of the face's and the bound's signs is the file's. That product
+    // decides on which side of each loop the face lies
+    // (research/STEP-BREP-MODEL.md 4.2), so the region cut out of the surface
+    // is unchanged.
+    Law_FoldPreservesInteriorSide(f: Part21File, k: Integer, j: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        var face = d.Model.Faces[k];
+        var source = d.Map.Sources.Faces[k];
+        return j >= 0 && j < face.Bounds.Count
+            ? (face.SameSense == face.Bounds[j].Orientation) == (f.FileFaceSameSense(source) == f.FileBoundOrientation(source, j))
+            : true;
+    }
+
+    // Folding flips exactly the recorded faces: a face's same_sense differs
+    // from the file's exactly when the map records an odd number of folds
+    // for it.
+    Law_FoldFlipsExactlyRecorded(f: Part21File, k: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        return k >= 0 && k < d.Model.Faces.Count && k < d.Map.Sources.Faces.Count
+            ? (d.Model.Faces[k].SameSense == f.FileFaceSameSense(d.Map.Sources.Faces[k])) == !d.Map.IsFolded(BrepFaceIndex(k))
+            : true;
+    }
+
+    // Every fold record names an instance that carries the flip: an
+    // oriented_face or oriented shell whose orientation is .F., or an
+    // occurrence whose placement is mirrored.
+    Law_FoldRecordsNameFalseFlags(f: Part21File, r: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (r < 0 || r >= d.Map.Folds.Count)
+        {
+            return true;
+        }
+        return f.IsJustifiedFold(d.Map, d.Map.Folds[r]);
+    }
+}
