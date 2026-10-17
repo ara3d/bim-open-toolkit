@@ -15,12 +15,22 @@
 //==
 // # Periodicity
 
-// Whether a parameter is periodic. Periodic(Period): t and t + k * Period name
-// the same point for every integer k (a circle's angle, Period = 2 pi).
-// Invariant: Period is positive and finite (IsWellFormed).
+// Whether a parameter wraps, and how. Periodic(Period): the formula wraps, so
+// t and t + k * Period name the same point for every integer k and the curve
+// can be evaluated at any t (a circle's angle, Period = 2 pi). Closed(Period):
+// the formula does not wrap, but the two ends of the range are the same point,
+// so the point set is a loop with a seam at the ends while the derivatives
+// need not agree there (a clamped B-spline whose first and last control points
+// coincide); Period is the range's length, and a parameter is moved into the
+// range (Wrap) before evaluation. Layer 3 decides Closed at decode. Seam
+// reasoning (wrap, unwrap, winding, edge domains) treats Closed like Periodic;
+// IsPeriodic, which says the formula wraps, is false for it. Invariant: Period
+// is positive and finite (IsWellFormed), and for Closed it is the range's
+// length (Law_ClosedPeriodIsRangeLength).
 type Periodicity
     = Aperiodic
-    | Periodic(Period: Number);
+    | Periodic(Period: Number)
+    | Closed(Period: Number);
 
 //==
 // # Curve and surface domains

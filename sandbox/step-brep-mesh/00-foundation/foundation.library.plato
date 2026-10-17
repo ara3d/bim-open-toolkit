@@ -155,14 +155,15 @@ library BrepFoundation
         => speed.IsFinite && speed >= 0.0 && cap.IsFinite && cap > 0.0;
 
     // The largest parameter tolerance a direction admits: half the period for
-    // a periodic direction (no two parameters of a circle are farther apart),
-    // the range's length for a bounded aperiodic one, and the largest Number
-    // for an unbounded one.
+    // a periodic or closed direction (no two parameters of a loop are farther
+    // apart around it), the range's length for a bounded aperiodic one, and
+    // the largest Number for an unbounded one.
     ParameterToleranceCap(d: CurveDomain): Number
         => match (d.Periodicity)
         {
             Aperiodic => d.ParameterLength.IsFinite ? d.ParameterLength : Number.MaxValue;
             Periodic(period) => period * 0.5;
+            Closed(period) => period * 0.5;
         };
 
     // The parameter tolerance in each direction of a surface at a point where
@@ -221,14 +222,16 @@ library BrepFoundation
         => (a - b).Abs <= t.Value;
 
     // True when a and b are the same parameter of the domain d within t,
-    // measured around the circle when d is periodic: 0.01 and 6.28 are the
-    // same angle within 0.01 on a circle. Precondition: CanWrap(b - a, period)
-    // when d is periodic.
+    // measured around the loop when d is periodic or closed: 0.01 and 6.28 are
+    // the same angle within 0.01 on a circle, and the two ends of a closed
+    // B-spline's range are the same parameter. Precondition: CanWrap(b - a,
+    // period) when d has a seam.
     SameParameter(d: CurveDomain, a: Number, b: Number, t: ParameterTolerance): Boolean
         => match (d.Periodicity)
         {
             Aperiodic => a.SameParameter(b, t);
             Periodic(period) => PeriodicDistance(a, b, period) <= t.Value;
+            Closed(period) => PeriodicDistance(a, b, period) <= t.Value;
         };
 
     // True when two parameter-space points are within t.U in u and within t.V
@@ -242,7 +245,7 @@ library BrepFoundation
         => a.SameParameter(b, UvTolerance(t, t));
 
     // True when a and b are the same point of the surface domain d within t,
-    // measured around the circle in each periodic direction.
+    // measured around the loop in each periodic or closed direction.
     SameParameter(d: SurfaceDomain, a: UvCoordinate, b: UvCoordinate, t: UvTolerance): Boolean
         => d.U.SameParameter(a.U, b.U, t.U) && d.V.SameParameter(a.V, b.V, t.V);
 
@@ -253,6 +256,14 @@ library BrepFoundation
     // representative in [0, period); ShortestDifference is the signed step
     // along the shorter arc; NearestUnwrapped lifts a value next to a
     // reference, which is how a loop of parameters is unwrapped.
+    //
+    // A Closed direction's point set is the same circle, so every function
+    // that reasons about seams sees its Period as a period: HasSeam, PeriodOr,
+    // ParameterToleranceCap, SameParameter, IsFullPeriod, CanWrap, Wrap,
+    // NearestUnwrapped and ContainsParameter on a CurveDomain, and their
+    // SurfaceDomain forms. Only IsPeriodic, which says the formula itself
+    // wraps, is false for it: a closed B-spline is evaluated only inside its
+    // range, so a caller wraps (Wrap) before it evaluates.
 
     // True when the parameter's period is well formed: aperiodic, or a
     // positive finite period.
@@ -261,22 +272,38 @@ library BrepFoundation
         {
             Aperiodic => true;
             Periodic(period) => period.IsFinite && period > 0.0;
+            Closed(period) => period.IsFinite && period > 0.0;
         };
 
-    // True when the parameter is periodic.
+    // True when the formula wraps: the curve or surface can be evaluated at
+    // any parameter, t + Period giving the point of t. False for Closed.
     IsPeriodic(p: Periodicity): Boolean
         => match (p)
         {
             Aperiodic => false;
             Periodic(period) => true;
+            Closed(period) => false;
         };
 
-    // The period, or fallback when the parameter is aperiodic.
+    // True when the point set wraps, so the two ends of one period are one
+    // seam: Periodic or Closed. The test every seam, unwrapping, winding, and
+    // edge-domain decision reads.
+    HasSeam(p: Periodicity): Boolean
+        => match (p)
+        {
+            Aperiodic => false;
+            Periodic(period) => true;
+            Closed(period) => true;
+        };
+
+    // The period of a periodic or closed parameter, or fallback when the
+    // parameter is aperiodic.
     PeriodOr(p: Periodicity, fallback: Number): Number
         => match (p)
         {
             Aperiodic => fallback;
             Periodic(period) => period;
+            Closed(period) => period;
         };
 
     // True when Wrap(t, period) is computable to within rounding: t and the
@@ -344,47 +371,67 @@ library BrepFoundation
             && d.Periodicity.IsWellFormed
             && d.ParameterLength <= d.Periodicity.PeriodOr(d.ParameterLength) + t.Value;
 
-    // True when the domain is periodic and spans one whole period within t: a
-    // closed curve, or an edge that goes all the way round.
+    // True when the domain has a seam (periodic or closed) and spans one
+    // whole period within t: a closed curve, or an edge that goes all the way
+    // round.
     IsFullPeriod(d: CurveDomain, t: ParameterTolerance): Boolean
         => match (d.Periodicity)
         {
             Aperiodic => false;
             Periodic(period) => (d.ParameterLength - period).Abs <= t.Value;
+            Closed(period) => (d.ParameterLength - period).Abs <= t.Value;
+        };
+
+    // True when the domain has a seam: its periodicity is Periodic or Closed.
+    // A match on d.Periodicity itself, for callers whose match subject the
+    // sum checker cannot type through an overloaded chain (CHK304).
+    HasSeam(d: CurveDomain): Boolean
+        => match (d.Periodicity)
+        {
+            Aperiodic => false;
+            Periodic(period) => true;
+            Closed(period) => true;
         };
 
     // The domain form of Wrap's precondition: t is finite, and when the
-    // domain is periodic its period is resolvable at t's offset from the range
+    // domain has a seam its period is resolvable at t's offset from the range
     // start.
     CanWrap(d: CurveDomain, t: Number): Boolean
         => match (d.Periodicity)
         {
             Aperiodic => t.IsFinite;
             Periodic(period) => (t - d.Range.Start).CanWrap(period);
+            Closed(period) => (t - d.Range.Start).CanWrap(period);
         };
 
     // t moved by whole periods into [Range.Start, Range.Start + period) when
-    // the domain is periodic; t itself when it is not. Precondition:
-    // d.CanWrap(t).
+    // the domain has a seam; t itself when it does not. On a closed domain the
+    // result lies in the range within rounding
+    // (Law_WrapOnClosedDomainStaysInRange), so it can be evaluated.
+    // Precondition: d.CanWrap(t).
     Wrap(d: CurveDomain, t: Number): Number
         => match (d.Periodicity)
         {
             Aperiodic => t;
             Periodic(period) => d.Range.Start + (t - d.Range.Start).Wrap(period);
+            Closed(period) => d.Range.Start + (t - d.Range.Start).Wrap(period);
         };
 
-    // The copy of t nearest to reference when the domain is periodic; t itself
-    // when it is not. Precondition: CanWrap(t - reference, period) when
-    // periodic.
+    // The copy of t nearest to reference when the domain has a seam; t itself
+    // when it does not. On a closed domain the copy may lie outside the range:
+    // it is a coordinate for unwrapping, and is wrapped before it is
+    // evaluated. Precondition: CanWrap(t - reference, period) when the domain
+    // has a seam.
     NearestUnwrapped(d: CurveDomain, t: Number, reference: Number): Number
         => match (d.Periodicity)
         {
             Aperiodic => t;
             Periodic(period) => t.NearestUnwrapped(reference, period);
+            Closed(period) => t.NearestUnwrapped(reference, period);
         };
 
     // True when t lies in the domain within the tolerance: in [Start - tol,
-    // End + tol], or, when the domain is periodic, some copy t + k * period
+    // End + tol], or, when the domain has a seam, some copy t + k * period
     // does. On the edge domain [5.5, 7.0] of a circle, 0.5 is contained (as
     // 6.783...). Precondition: d.CanWrap(t).
     ContainsParameter(d: CurveDomain, t: Number, tol: ParameterTolerance): Boolean
@@ -392,6 +439,7 @@ library BrepFoundation
         {
             Aperiodic => d.Range.Start - tol.Value <= t && t <= d.Range.End + tol.Value;
             Periodic(period) => d.Range.ContainsPeriodic(t, period, tol);
+            Closed(period) => d.Range.ContainsPeriodic(t, period, tol);
         };
 
     // The periodic case of ContainsParameter: the copy w of t in [Start, Start
@@ -414,19 +462,19 @@ library BrepFoundation
     CanWrap(d: SurfaceDomain, uv: UvCoordinate): Boolean
         => d.U.CanWrap(uv.U) && d.V.CanWrap(uv.V);
 
-    // uv with each periodic coordinate wrapped into its direction's
+    // uv with each periodic or closed coordinate wrapped into its direction's
     // fundamental interval. Precondition: d.CanWrap(uv).
     Wrap(d: SurfaceDomain, uv: UvCoordinate): UvCoordinate
         => UvCoordinate(d.U.Wrap(uv.U), d.V.Wrap(uv.V));
 
-    // uv with each periodic coordinate replaced by its copy nearest to the
-    // reference's: the step that unwraps a loop of parameter-space points
-    // across a seam.
+    // uv with each periodic or closed coordinate replaced by its copy nearest
+    // to the reference's: the step that unwraps a loop of parameter-space
+    // points across a seam.
     NearestUnwrapped(d: SurfaceDomain, uv: UvCoordinate, reference: UvCoordinate): UvCoordinate
         => UvCoordinate(d.U.NearestUnwrapped(uv.U, reference.U), d.V.NearestUnwrapped(uv.V, reference.V));
 
     // True when uv lies in the surface domain within the tolerance, around the
-    // circle in each periodic direction. Precondition: d.CanWrap(uv).
+    // loop in each periodic or closed direction. Precondition: d.CanWrap(uv).
     ContainsParameter(d: SurfaceDomain, uv: UvCoordinate, t: UvTolerance): Boolean
         => d.U.ContainsParameter(uv.U, t.U) && d.V.ContainsParameter(uv.V, t.V);
 

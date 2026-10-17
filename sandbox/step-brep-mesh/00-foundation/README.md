@@ -150,6 +150,23 @@ difference: next to the seam one side can land just below `p` and the other just
 `Wrap(2)` is 0. `Law_WrapIgnoresWholePeriods` therefore measures the difference around the circle,
 with `PeriodicDistance`.
 
+### Closed directions
+
+A clamped B-spline whose first and last control points coincide is a loop as a point set, but
+its formula does not wrap: it is defined only on `[k_start, k_end]`, and its derivatives need not
+agree at the join. STEP has no periodic B-spline surface, so every B-spline face that a CAD system
+wraps into a cylinder is of this kind. `Periodicity.Closed(Period)` records it, with `Period` the
+range's length (`Law_ClosedPeriodIsRangeLength`); layer 3 decides it at decode.
+
+Seam reasoning sees `Closed` as a period. These functions treat `Closed(p)` exactly as
+`Periodic(p)`: `HasSeam`, `PeriodOr`, `ParameterToleranceCap`, `SameParameter`, `IsFullPeriod`,
+`CanWrap`, `Wrap`, `NearestUnwrapped` and `ContainsParameter` on a `CurveDomain`, and the
+`SurfaceDomain` forms built from them. One function does not: `IsPeriodic`, which says the
+formula wraps, is false for `Closed`, so layer 1 never evaluates a closed curve outside its
+range. A caller that holds an unwrapped coordinate wraps it with `Wrap(d, t)` before it
+evaluates; on a closed domain the result is in the range within rounding
+(`Law_WrapOnClosedDomainStaysInRange`).
+
 ### Curve and surface domains, sides, seams, poles
 
 A `CurveDomain` is a closed interval of natural parameter values with a periodicity. For a
@@ -272,6 +289,8 @@ to be at least that rounding bound.
 | `Law_ShortestDifferenceAtMostHalfPeriod` | `2 abs(d) <= p` | exact | library, test |
 | `Law_NearestUnwrappedWithinHalfPeriodOfReference` | `abs(n - ref) <= p / 2` | tolerance, resolvable at `abs(ref) + p` | library, test |
 | `Law_NearestUnwrappedIsSameParameter` | `n` is `t` on the circle | tolerance, resolvable at `abs(t) + abs(ref) + p` | library, test |
+| `Law_ClosedPeriodIsRangeLength` | a `Closed` direction's period is its range's length | exact by construction | convention, test |
+| `Law_WrapOnClosedDomainStaysInRange` | `Wrap(d, t)` on a closed domain lies in the range | rounding, the range's ends | library, test |
 | `Law_DomainContainsItsSamples` | every sample of a proper domain is contained in it | tolerance, resolvable at the ends and period | library, test |
 | `Law_SamplesHaveRequestedCount` | `Samples(range, n)` has `n` values | exact | library, test |
 | `Law_SamplesStartAtRangeStart` | the first sample is `range.Start` | exact by construction | library, test |
@@ -293,7 +312,8 @@ to be at least that rounding bound.
 The laws over numbers, tolerance records, points, directions, intervals and indices are reachable
 by the stdlib's random runner (PLATO-PRIMER.md B.2). Those over `CurveDomain` (it holds a sum),
 `Check`, `Report` and `DomainSide` need witnesses: `Witness_Tolerances`,
-`Witness_FullCircleDomain`, `Witness_SphereDomain`, `Witness_MixedReport`. The runner draws
+`Witness_FullCircleDomain`, `Witness_SphereDomain`, `Witness_ClosedSplineDomain`,
+`Witness_MixedReport`. The runner draws
 tolerances from [-10, 10], so about half its tolerance draws fail the well-formedness guards and
 count as vacuous.
 
@@ -393,3 +413,17 @@ New exported names: the types `UvTolerance` and `ConstraintGroup`, and the funct
 `Corresponds`. Each was checked against `stdlib/types-and-concepts.txt` and the stdlib's library
 files; the only same-named stdlib functions are `Wrap(Angle, Angle)` and `Empty` on `Bounds2D` and
 `Bounds3D`, which overload by parameter type.
+
+## Fix wave, 2026-10-17
+
+Findings from [../reviews/MATH-REVIEW-layers-0-6.md](../reviews/MATH-REVIEW-layers-0-6.md), the
+"Findings in lower layers" of layers 7 and 8, and [../reviews/FIX-WAVE.md](../reviews/FIX-WAVE.md),
+one commit each (TKT-299).
+
+Applied:
+
+1. **T1, C1: `Periodicity.Closed(Period)`.** A third case for a direction whose point set wraps and
+   whose formula does not; every seam function sees it as a period, `IsPeriodic` does not
+   ("Closed directions" above). New: `HasSeam` (on `Periodicity` and `CurveDomain`),
+   `Law_ClosedPeriodIsRangeLength`, `Law_WrapOnClosedDomainStaysInRange`,
+   `Witness_ClosedSplineDomain`.

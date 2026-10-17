@@ -148,6 +148,28 @@ library BrepFoundationLaws
             ? PeriodicDistance(t.NearestUnwrapped(reference, period), t, period) <= tol.Value
             : true;
 
+    // A closed direction's period is its range's length: the decoder builds
+    // Closed(End - Start), so the two are the same Number. Convention law,
+    // exact by construction.
+    Law_ClosedPeriodIsRangeLength(d: CurveDomain): Boolean
+        => match (d.Periodicity)
+        {
+            Aperiodic => true;
+            Periodic(period) => true;
+            Closed(period) => period.Identical(d.ParameterLength);
+        };
+
+    // Wrapping a parameter on a closed domain lands in the range, so the
+    // wrapped value can be evaluated. Library law, within the rounding at the
+    // range's ends: Start + Wrap(t - Start, period) may round past End.
+    Law_WrapOnClosedDomainStaysInRange(d: CurveDomain, t: Number): Boolean
+    {
+        var slack = ResolutionAt(d.Range.Start.Abs + d.Range.End.Abs);
+        return d.HasSeam && !d.Periodicity.IsPeriodic && d.CanWrap(t)
+            ? d.Range.Start - slack <= d.Wrap(t) && d.Wrap(t) <= d.Range.End + slack
+            : true;
+    }
+
     //==
     // # Domains and sampling
 
@@ -274,6 +296,11 @@ library BrepFoundationLaws
         => SurfaceDomain(
             CurveDomain.Witness_FullCircleDomain,
             CurveDomain(NumberInterval(Number.Pi * -0.5, Number.Pi * 0.5), Periodicity.Aperiodic));
+
+    // The domain of a clamped closed B-spline over knots [0, 3]: aperiodic in
+    // its formula, closed with period 3.
+    Witness_ClosedSplineDomain(_: CurveDomain): CurveDomain
+        => CurveDomain(NumberInterval(0.0, 3.0), Periodicity.Closed(3.0));
 
     // A report with one passing exact check and one failing measured check
     // with its Warning: a 1e-6 tolerance against a resolution of 2e-6.

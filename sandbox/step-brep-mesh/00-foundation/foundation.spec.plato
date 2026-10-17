@@ -57,6 +57,7 @@ spec CurveDomain
 {
     invariant self.Periodicity.IsWellFormed;
     invariant self.Range.Start <= self.Range.End;
+    invariant Law_ClosedPeriodIsRangeLength(self);
 }
 
 spec SurfaceDomain
@@ -186,12 +187,19 @@ spec NearestUnwrapped(t: Number, reference: Number, period: Number): Number
 spec Wrap(d: CurveDomain, t: Number): Number
 {
     requires d.CanWrap(t);
-    ensures d.Periodicity.IsPeriodic ? result >= d.Range.Start : result == t;   // exact by construction when aperiodic
+    ensures d.HasSeam ? result >= d.Range.Start : result == t;   // exact by construction without a seam
+    ensures Law_WrapOnClosedDomainStaysInRange(d, t);
 }
 
 spec NearestUnwrapped(d: CurveDomain, t: Number, reference: Number): Number
 {
-    requires d.Periodicity.IsPeriodic ? (t - reference).CanWrap(d.Periodicity.PeriodOr(0.0)) : t.IsFinite;
+    requires d.HasSeam ? (t - reference).CanWrap(d.Periodicity.PeriodOr(0.0)) : t.IsFinite;
+}
+
+// Periodic and Closed differ only here: the formula wraps for the first.
+spec IsPeriodic(p: Periodicity): Boolean
+{
+    ensures result ? p.HasSeam : true;
 }
 
 spec ContainsParameter(d: CurveDomain, t: Number, tol: ParameterTolerance): Boolean
@@ -202,7 +210,7 @@ spec ContainsParameter(d: CurveDomain, t: Number, tol: ParameterTolerance): Bool
 
 spec SameParameter(d: CurveDomain, a: Number, b: Number, t: ParameterTolerance): Boolean
 {
-    requires d.Periodicity.IsPeriodic ? (b - a).CanWrap(d.Periodicity.PeriodOr(0.0)) : true;
+    requires d.HasSeam ? (b - a).CanWrap(d.Periodicity.PeriodOr(0.0)) : true;
     requires Law_ParameterTolerancePositive(t);
 }
 
