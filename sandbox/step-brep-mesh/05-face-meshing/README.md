@@ -19,7 +19,7 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
 | `face-meshing.laws.plato` | library `FaceMeshingLaws`: 41 laws and their guards |
-| `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 3 theorems, 2 conjectures |
+| `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 2 theorems, 1 conjecture |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
 the region half has its own block, `UvRegions`; `FaceMeshing` keeps the contract's name and the entry
@@ -132,12 +132,12 @@ This layer adopts that definition: for every *surface edge* of an element, the a
 face normals stored at its two ends is at most `SurfaceAngular`
 (`Law_SurfaceEdgeNormalTurnWithinSurfaceAngular`, `EdgeNormalTurn`). A surface edge is an element edge
 that is not a segment of a model edge's discretization (layer 04's angular criterion bounds those,
-and the boundary is locked) and does not lie along one collapsed line. Relation to the
-element-normal test that the root README states: for a small element, the element normal and the
-face normal at the parameter centroid both lie in the cone spanned by the corner normals, so they
-differ by at most the turn, to first order. `Law_ElementNormalAgreesWithSurface` keeps that test with
-the same tolerance, because it also catches folds above 90 degrees; the implication is the conjecture
-`NormalTurnBoundsCentroidDeviation`. Against the per-corner definition of
+and the boundary is locked) and does not lie along one collapsed line. The turn does not bound the
+element-normal test that the root README states: the flat normal of a sliver need not lie in the cone
+of its corner normals. The unit-sphere sliver `(0, 0.5)`, `(0.2, 0.5)`, `(0.1, 0.5001)` turns by at
+most 0.175 rad along its edges, yet its flat normal is 2.05 rad from the face normal at its centroid,
+and it lies 3.8e-3 from the sphere. So `Law_ElementNormalAgreesWithSurface` is a second criterion with
+the same tolerance, not a consequence, and refinement enforces both. Against the per-corner definition of
 research/MESHING-REQUIREMENTS.md section 2.3 (element normal against surface normal at a corner),
 the turn is about `sqrt(3)` times larger for equilateral triangles on a sphere and exactly twice for a
 cylinder strip, so a value copied from OpenCascade or ACIS means the same here. Parasolid's
@@ -244,8 +244,8 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 
 Theorems in the spec: `SharedEdgePositionsAgree` (two faces hold bitwise equal positions for a shared sample, so
 assembly needs no welding), `DroppedTrianglesArePoleSegments` (the dropped count equals the number of
-boundary segments on collapsed lines). Conjectures: `ElementsTileRegion`,
-`NormalTurnBoundsCentroidDeviation`.
+boundary segments on collapsed lines). Conjecture: `ElementsTileRegion`. The conjecture
+`NormalTurnBoundsCentroidDeviation` was dropped as false (the sliver above is its counterexample).
 
 The catalogue entry `Law_FaceFlipReversesWinding` (research/VALIDATION-MATH.md section 8) is not
 adopted: on a sphere or torus, flipping `SameSense` without reversing the loops selects the other
@@ -350,6 +350,9 @@ Applied:
   is enforced by refinement and by the quad grid's fold check (`Law_ElementLiftsFacingFaceNormal`).
   The review's alternative, a shape hypothesis such as `kappa_max * l_max < sin(theta_min)`, was
   not taken: it needs a curvature bound no layer computes, and its constant is unproven.
+- H7: conjecture `NormalTurnBoundsCentroidDeviation` dropped as refuted; the unit-sphere sliver
+  (turns at most 0.175 rad, flat normal 2.05 rad off) is recorded as its counterexample in the spec
+  and in "SurfaceAngular is the normal turn"; refinement enforces the centroid test on its own.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 

@@ -51,7 +51,8 @@ library FaceMeshing
     // columns at the closed-form step on spheres and tori, knot lines on B-splines), then insert,
     // by Delaunay insertion in the chart, the parameters of the sample point (Project of an
     // interior edge midpoint or of the corner mean) of the element that most exceeds
-    // SurfaceChordal or SurfaceAngular, or that folds when lifted (LiftsFacingFaceNormal false),
+    // SurfaceChordal or SurfaceAngular (the turn along a surface edge, or the element normal
+    // against the face normal at its centroid), or that folds when lifted (LiftsFacingFaceNormal),
     // until none does or the new point would lie closer than MinLength in 3D to an existing one.
     // Boundary points are never added, moved or removed.
     RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation;
@@ -272,10 +273,10 @@ library FaceMeshing
     // no length in 3D). SurfaceAngular is defined as kernels define the normal tolerance, the turn
     // of the surface normal along an element edge: the angle between the face normals at its two
     // ends (OpenCascade AngleInterior, ACIS SPANORMALTOL). For a small element whose surface
-    // edges turn by at most a, the element normal and the face normal at its parameter centroid
-    // both lie in the cone of the corner normals, so they differ by at most about a; the
-    // centroid test with the same tolerance is therefore implied, and it is kept as a law because
-    // it also detects folds. Converted to the corner test of research/MESHING-REQUIREMENTS.md
+    // edges turn by at most a, the flat normal need not stay within a of the face normal: on a
+    // sliver it can fold over (the counterexample in face-meshing.spec.plato), so the centroid
+    // test is a separate criterion with the same tolerance, which refinement enforces too.
+    // Converted to the corner test of research/MESHING-REQUIREMENTS.md
     // section 2.3 (element normal against surface normal at a corner), a is about sqrt(3) times
     // that angle for equilateral triangles on a sphere and 2 times it for a cylinder strip.
 

@@ -373,14 +373,11 @@ conjecture ElementsTileRegion
     tested by Law_ElementAreasSumToRegionArea, Law_ElementPositiveInChart;
 }
 
-// SurfaceAngular as kernels define it bounds the centroid test.
-conjecture NormalTurnBoundsCentroidDeviation
-{
-    given m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex;
-    assume m.CanMeasure(fm, k);
-    assume m.TouchesCollapsedLine(fm, k) == false;
-    assume forall (j: Integer) in fm.ElementCorners(k).Count.Range:
-        fm.EdgeNormalTurn(k, j) <= c.SurfaceAngular;
-    conclude Law_ElementNormalAgreesWithSurface(m, fm, c, k);
-    tested by Law_ElementNormalAgreesWithSurface, Law_SurfaceEdgeNormalTurnWithinSurfaceAngular;
-}
+// The former conjecture NormalTurnBoundsCentroidDeviation (an element whose surface edges turn by
+// at most SurfaceAngular has its flat normal within SurfaceAngular of the face normal at its
+// parameter centroid) is dropped as false (review H7). Counterexample: on the unit sphere the
+// parameter triangle (0, 0.5), (0.2, 0.5), (0.1, 0.5001) turns by 0.175, 0.088 and 0.088 rad
+// along its edges, yet its flat normal is 2.05 rad from the face normal at its centroid, and its
+// largest distance from the sphere is 3.8e-3. The flat normal of a sliver does not lie in the cone
+// of its corner normals. Law_ElementNormalAgreesWithSurface is therefore its own criterion, which
+// RefineToSurface enforces.

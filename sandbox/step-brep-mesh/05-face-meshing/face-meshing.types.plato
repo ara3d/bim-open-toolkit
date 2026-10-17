@@ -21,8 +21,9 @@
 //     surface (ElementDeviation).
 //   SurfaceAngular: the largest angle between the face normals at the two ends of an element edge
 //     that is not a model-edge segment: the normal turn across an element, as OpenCascade
-//     AngleInterior and ACIS SPANORMALTOL define it (InteriorEdgeNormalTurn). It also bounds the
-//     angle between an element's normal and the face normal at its parameter centroid.
+//     AngleInterior and ACIS SPANORMALTOL define it (EdgeNormalTurn). The same value separately
+//     bounds the angle between an element's normal and the face normal at its parameter centroid;
+//     the turn does not imply that bound (a sliver can fold).
 //   PreferQuads: emit a structured quad grid where QuadGridIfRectangular builds one.
 type FaceMeshingCriteria
     implements IValue
