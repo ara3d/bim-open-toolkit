@@ -47,25 +47,56 @@ library BrepFoundationLaws
     Law_LengthToleranceResolvable(t: LengthTolerance, magnitude: Number): Boolean
         => magnitude.IsFinite ? t.IsResolvable(magnitude) : true;
 
+    // Doubling the length tolerance and the coordinate extent doubles the
+    // length-parameter floor: a length parameter scales with the model.
+    // Library law, exact, because doubling a normal Number is exact; guarded
+    // to the range where ResolutionAt scales (above the smallest normal) and
+    // nothing overflows.
+    Law_LengthParameterFloorScalesWithModel(length: LengthTolerance, extent: Number): Boolean
+        => length.IsWellFormed
+            && extent.IsFinite
+            && (extent * 2.0).IsFinite
+            && (length.Value * 2.0).IsFinite
+            && extent.Abs * Number.RoundingUnit >= Number.SmallestNormal
+            ? LengthTolerance(length.Value * 2.0).LengthParameterFloor(extent * 2.0).Value
+                .Identical(length.LengthParameterFloor(extent).Value * 2.0)
+            : true;
+
+    // Doubling the length tolerance, the model size and the coordinate extent
+    // leaves the angle-parameter floor unchanged: an angle does not scale.
+    // Library law, exact, because the quotient of two doubled Numbers is the
+    // quotient of the originals; guarded as above.
+    Law_AngleParameterFloorIgnoresScale(length: LengthTolerance, modelSize: Number, extent: Number): Boolean
+        => length.IsWellFormed
+            && extent.IsFinite
+            && (extent * 2.0).IsFinite
+            && modelSize.IsFinite
+            && (modelSize * 2.0).IsFinite
+            && (length.Value * 2.0).IsFinite
+            && extent.Abs * Number.RoundingUnit >= Number.SmallestNormal
+            ? LengthTolerance(length.Value * 2.0).AngleParameterFloor(modelSize * 2.0, extent * 2.0).Value
+                .Identical(length.AngleParameterFloor(modelSize, extent).Value)
+            : true;
+
     //==
     // # Parameter tolerance at a point
 
-    // The derived parameter tolerance is never below the model's floor.
+    // The derived parameter tolerance is never below the direction's floor.
     // Library law, exact.
-    Law_ParameterToleranceAtNeverBelowFloor(t: Tolerances, speed: Number, cap: Number): Boolean
-        => t.IsWellFormed && IsSpeedAndCap(speed, cap)
-            ? t.ParameterToleranceAt(speed, cap).Value >= t.Parameter.Value
+    Law_ParameterToleranceAtNeverBelowFloor(t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number): Boolean
+        => t.IsWellFormed && floor.IsWellFormed && IsSpeedAndCap(speed, cap)
+            ? t.ParameterToleranceAt(floor, speed, cap).Value >= floor.Value
             : true;
 
     // A parameter step within the derived tolerance moves the point by at most
     // the length tolerance at the given speed, to first order, unless the floor
     // binds, when it moves it by at most speed times the floor. Library law,
     // within the rounding at that length.
-    Law_ParameterToleranceAtMovesWithinLength(t: Tolerances, speed: Number, cap: Number): Boolean
+    Law_ParameterToleranceAtMovesWithinLength(t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number): Boolean
     {
-        var reach = t.Length.Value.Max(speed * t.Parameter.Value);
-        return t.IsWellFormed && IsSpeedAndCap(speed, cap)
-            ? speed * t.ParameterToleranceAt(speed, cap).Value <= reach + ResolutionAt(reach)
+        var reach = t.Length.Value.Max(speed * floor.Value);
+        return t.IsWellFormed && floor.IsWellFormed && IsSpeedAndCap(speed, cap)
+            ? speed * t.ParameterToleranceAt(floor, speed, cap).Value <= reach + ResolutionAt(reach)
             : true;
     }
 
@@ -308,11 +339,15 @@ library BrepFoundationLaws
     //==
     // # Witnesses
 
-    // Tolerances for a model in millimetres about a metre across: 1e-6 mm
-    // length, 1e-8 rad angle, and the parameter floor of a 1000 mm model,
-    // 1e-9.
+    // Tolerances for a model in millimetres about a metre across, with
+    // coordinates within 1000 mm: 1e-6 mm length, 1e-8 rad angle, the length
+    // parameter floor 1e-6 mm and the angle parameter floor 1e-9 rad.
     Witness_Tolerances(_: Tolerances): Tolerances
-        => Tolerances(LengthTolerance(1e-6), AngleTolerance(Angle(1e-8)), LengthTolerance(1e-6).ParameterFloor(1000.0));
+        => Tolerances(
+            LengthTolerance(1e-6),
+            AngleTolerance(Angle(1e-8)),
+            LengthTolerance(1e-6).LengthParameterFloor(1000.0),
+            LengthTolerance(1e-6).AngleParameterFloor(1000.0, 1000.0));
 
     // The domain of a full circle: [0, 2 pi] with period 2 pi.
     Witness_FullCircleDomain(_: CurveDomain): CurveDomain

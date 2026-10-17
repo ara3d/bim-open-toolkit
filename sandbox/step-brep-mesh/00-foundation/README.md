@@ -87,7 +87,7 @@ moves the point by `R cos(v) du`. With `R = 100` and a length tolerance of 1e-3,
 moves the point by the length tolerance is 1e-5 rad at the equator, 5.7e-3 rad at latitude 89.9
 degrees, and unbounded at the pole, where every longitude is the same point.
 
-The rule, in `ParameterToleranceAt(t, speed, cap)`:
+The rule, in `ParameterToleranceAt(t, floor, speed, cap)`:
 
 ```
 tau(x) = max( floor, min( Length / speed(x), cap ) )
@@ -99,17 +99,47 @@ tau(x) = max( floor, min( Length / speed(x), cap ) )
 - `cap` is `ParameterToleranceCap(domain)`: half the period for a periodic direction (no two
   points of a circle are farther apart), the range's length for a bounded aperiodic direction,
   `Number.MaxValue` for an unbounded one. At a pole the speed is zero and the tolerance is the cap.
-- `floor` is the model-wide `Tolerances.Parameter`. It keeps the tolerance from collapsing where
-  the speed is huge (a B-spline span between nearly coincident knots) and from dropping below the
-  arithmetic resolution. **`Tolerances.Parameter` is this floor, never the tolerance at a point.**
-  The decoder sets it with `ParameterFloor(length, modelSize)`:
-  `max(Length / max(modelSize, 1), ResolutionAt(max(modelSize, 4 pi)))`. The first term is the
-  derived tolerance at the largest speed an analytic parameterization of the model reaches (1 for
-  a unit-speed length parameter, the radius, at most the model size, for an angle); the second is
-  the resolution of parameter values, which reach the model size or two turns. 1e-6 mm over a
-  1000 mm model gives 1e-9.
+- `floor` is the model-wide floor for the direction's kind of parameter, chosen by layer 1:
+  `Tolerances.LengthParameter` for a length parameter (a line, a cylinder's height, an
+  extrusion), `Tolerances.AngleParameter` for an angle (a circle, a sphere's two directions). It
+  keeps the tolerance from collapsing where the speed is huge (a B-spline span between nearly
+  coincident knots) and from dropping below what the arithmetic resolves. **The two fields are
+  floors, never the tolerance at a point.**
 
-For a surface, `UvToleranceAt(t, speedU, speedV, domain)` returns a `UvTolerance`, one tolerance
+There are two floors because the two kinds carry different units, and one number cannot be right
+for both: the old single floor, `max(Length / max(modelSize, 1), ...)`, was dimensionless for an
+angle and a length for a length parameter, and the `max(., 1)` made it depend on the length unit,
+so meshing commuted with scaling only for factors of at least 1. Each floor is the resolvable
+length over the largest speed its kind reaches. The resolvable length is
+`ResolvableLength(Length, extent) = max(Length, ResolutionAt(extent))`, with `extent` the
+coordinate extent (next section). Then:
+
+| Floor (r = `ResolvableLength`) | Formula | Speed bound | Under scaling by `2^k` | 1e-6 mm, model and coordinates within 1000 mm |
+|---|---|---|---|---|
+| `LengthParameterFloor(length, extent)` | `r` | 1, a unit-speed length parameter | multiplied by `2^k` (`Law_LengthParameterFloorScalesWithModel`) | 1e-6 mm |
+| `AngleParameterFloor(length, modelSize, extent)` | `max(r / max(modelSize, r), ResolutionAt(4 pi))` | the largest radius, at most the model size | unchanged (`Law_AngleParameterFloorIgnoresScale`) | 1e-9 rad |
+
+A length direction faster than unit speed (a STEP `line` whose `vector` has magnitude 1000, a
+B-spline whose knots are not arc length) meets its floor at `Length / speed < Length`; the
+floor then binds and a step within it moves the point by `speed * floor`, which
+`Law_ParameterToleranceAtMovesWithinLength` allows. Layer 1 decides the kind of each direction,
+and may give a B-spline a floor of its own from its largest speed.
+
+### The rounding floor at the coordinate extent
+
+Rounding depends on how large the coordinates are, not on how large the model is. A building in
+millimetres placed in survey coordinates near `5e9` mm has a spacing of adjacent Numbers of
+`9.5e-7` mm there, and `ResolutionAt(5e9) = 1.8e-5` mm, while its size (the diagonal of its
+bounding box) may be `1e5` mm, where `ResolutionAt(1e5)` is only `3.6e-10`. So every rounding
+floor that bounds a coordinate, a length tolerance, or a length parameter is taken at the
+**coordinate extent**, the largest absolute coordinate of the placed model (layer 2's
+`CoordinateExtent`), never at the model size: `Law_LengthToleranceResolvable(length, extent)`
+warns when the file's tolerance is below `ResolutionAt(extent)`, and `ResolvableLength` raises the
+floors to it. The model size stays the bound on a radius, so it is the divisor of the angle
+floor. Layer 2 computes both numbers; layer 3 exports them in `DecodedModel` and calls the two
+floor functions.
+
+For a surface, `UvToleranceAt(t, floor, speedU, speedV, domain)` returns a `UvTolerance`, one tolerance
 per direction, each computed for twice the partial's length. A displacement within both moves the
 point by at most `|S_u||du| + |S_v||dv| <= Length / 2 + Length / 2` by the triangle inequality,
 whatever the angle between the partials (theorem `UvToleranceBoundsMotion`). The box is
@@ -118,13 +148,14 @@ and needs no `F` term.
 
 Who applies it: **layer 1** (geometry), which alone evaluates derivatives, should expose the
 per-point forms, for example a curve form `ParameterToleranceAt(g, c, t, tol)` and a surface form
-`UvToleranceAt(g, s, uv, tol)` that call these with `|Derivative|`, `|PartialU|`, `|PartialV|`.
+`UvToleranceAt(g, s, uv, tol)` that call these with `|Derivative|`, `|PartialU|`, `|PartialV|`
+and the floor of each direction's kind.
 **Layers 2, 4 and 5** consume them: `Law_LoopSimpleInParameterSpace`, `Law_InnerBoundInsideOuter`
 and `Law_EdgeDomainWithinPeriod` (VALIDATION-MATH.md section 8, tolerance "Parameter"), seam and
 pole snapping in face meshing, and the parameter-space criteria of `Discretize`. Where one number
-must serve a whole face, the floor is the conservative choice for a "separated by more than"
-test, and the cap for a "same point" test. `SameParameter` has deliberately no overload taking
-`Tolerances`, so a caller cannot use the floor by accident.
+must serve a whole face, the floor of the direction's kind is the conservative choice for a
+"separated by more than" test, and the cap for a "same point" test. `SameParameter` has
+deliberately no overload taking `Tolerances`, so a caller cannot use a floor by accident.
 
 ### A periodic domain as a quotient
 
@@ -288,6 +319,8 @@ to be at least that rounding bound.
 | `Law_AngleTolerancePositive` | likewise for an angle tolerance | exact | model, Error |
 | `Law_ParameterTolerancePositive` | likewise for a parameter tolerance | exact | model, Error |
 | `Law_LengthToleranceResolvable` | the length tolerance is at least `ResolutionAt(model size)` | rounding, model size | model, Warning |
+| `Law_LengthParameterFloorScalesWithModel` | doubling the length tolerance and the extent doubles the length floor | exact | library, test |
+| `Law_AngleParameterFloorIgnoresScale` | doubling the length tolerance, model size and extent leaves the angle floor | exact | library, test |
 | `Law_ParameterToleranceAtNeverBelowFloor` | the derived tolerance is at least the floor | exact | library, test |
 | `Law_ParameterToleranceAtMovesWithinLength` | `speed * tau <= max(Length, speed * floor)` | rounding, that maximum | library, test |
 | `Law_CoincidentIsReflexive` | a finite point coincides with itself | exact | library, test |
@@ -343,11 +376,11 @@ The theorems in `foundation.spec.plato`: `CoincidenceIsNotTransitive`, `Coincide
 1. **`Number` width.** The layer works in both widths, and `Law_LengthToleranceResolvable` shows
    the cost: 0.19 model units of resolution at 1e5 in 32 bits. The decision stays with the owner
    (PLAN.md question 1, TARGET-LANGUAGE.md).
-2. **The reference speed in `ParameterFloor`.** The `max(modelSize, 1)` assumes length parameters
+2. **The reference speed of the length floor.** `LengthParameterFloor` assumes length parameters
    have unit speed. A STEP `line` whose `vector` has magnitude 1000, or a B-spline with a short knot
    span, moves faster; there the floor binds and the tolerance is looser than `Length / speed` by
-   `speed / max(modelSize, 1)`. Layer 1 could instead compute a floor per curve from its largest
-   speed.
+   the factor `speed`. Layer 1 could compute a floor per curve from its largest speed, with the
+   same formula and that speed as the bound.
 3. **Reading of "ten times the criterion"** in SPEC-DSL.md section 4. `SeverityOf` uses
    `worst < 10 * bound`; the other reading is `worst - bound < 10 * bound`.
 4. **A sample count in `Check`.** SPEC-EXECUTION.md 5.1 item 4 wants a vacuity rate per law. A
@@ -454,3 +487,10 @@ Applied:
    `KernelCurve(Index: CurveIndex)`, `KernelSurface(Index: SurfaceIndex)`; `Located(d: Diagnostic,
    where)` and `Located(r: Report, where)`, moved from layer 8 and listed as a constructor of
    `Report`. New laws `Law_LocatedKeepsVerdict`, `Law_LocatedKeepsFindings`.
+4. **C2, layer 8 finding 6: per-dimension parameter floors.** `Tolerances.Parameter` splits into
+   `LengthParameter` and `AngleParameter`; `ParameterFloor` becomes `LengthParameterFloor(length,
+   extent)` and `AngleParameterFloor(length, modelSize, extent)`, with `ResolvableLength` their
+   common numerator. `ParameterToleranceAt` and `UvToleranceAt` take the floor (a
+   `ParameterTolerance`, or a `UvTolerance` holding one per direction) instead of reading one
+   model-wide number. New laws `Law_LengthParameterFloorScalesWithModel` and
+   `Law_AngleParameterFloorIgnoresScale` make scaling exact both ways.

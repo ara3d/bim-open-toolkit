@@ -114,20 +114,46 @@ library BrepFoundation
     IsWellFormed(t: UvTolerance): Boolean
         => t.U.IsWellFormed && t.V.IsWellFormed;
 
-    // True when all three of a model's tolerances are well formed.
+    // True when all of a model's tolerances, both parameter floors included,
+    // are well formed.
     IsWellFormed(t: Tolerances): Boolean
-        => t.Length.IsWellFormed && t.Angle.IsWellFormed && t.Parameter.IsWellFormed;
+        => t.Length.IsWellFormed
+            && t.Angle.IsWellFormed
+            && t.LengthParameter.IsWellFormed
+            && t.AngleParameter.IsWellFormed;
 
-    // The model-wide parameter floor, Tolerances.Parameter, which the decoder
-    // (layer 3) sets from the length tolerance and the model size (the
-    // diagonal of the bounding box of the model's points, in model units). The
-    // larger of two numbers: the length tolerance over the largest speed an
-    // analytic parameterization of the model reaches (1 for a unit-speed
-    // length parameter; the radius, at most the model size, for an angle), and
-    // the arithmetic resolution of parameter values, which reach the model size
-    // or two turns. Example: 1e-6 mm over a 1000 mm model gives 1e-9.
-    ParameterFloor(length: LengthTolerance, modelSize: Number): ParameterTolerance
-        => ParameterTolerance((length.Value / modelSize.Max(1.0)).Max(ResolutionAt(modelSize.Max(Number.Tau * 2.0))));
+    // The smallest length this model can tell apart from zero at its
+    // coordinates: the length tolerance, raised to the arithmetic resolution
+    // at the coordinate extent (the largest absolute coordinate) when the
+    // file's tolerance is finer than the Numbers can resolve there. Both
+    // parameter floors divide it by a speed.
+    ResolvableLength(length: LengthTolerance, extent: Number): Number
+        => length.Value.Max(ResolutionAt(extent));
+
+    // The parameter floor of a length parameter (a line's, a cylinder's
+    // height, an extrusion's depth), Tolerances.LengthParameter: the
+    // resolvable length over the speed of a unit-speed parameterization, 1.
+    // extent is the coordinate extent (layer 2's CoordinateExtent). Scales
+    // with the model: doubling the length tolerance and the extent doubles it
+    // (Law_LengthParameterFloorScalesWithModel). Example: 1e-6 mm at
+    // coordinates within 1000 mm gives 1e-6 mm; at survey coordinates of 5e9
+    // mm it gives the resolution there, 1.8e-5 mm.
+    LengthParameterFloor(length: LengthTolerance, extent: Number): ParameterTolerance
+        => ParameterTolerance(length.ResolvableLength(extent));
+
+    // The parameter floor of an angle parameter (a circle's, a sphere's
+    // longitude and latitude), Tolerances.AngleParameter, in radians: the
+    // resolvable length over the largest radius an analytic surface of the
+    // model has, at most the model size (layer 2's ModelSize, the diagonal of
+    // the bounding box), and never below the resolution of angle values,
+    // which reach two turns. Dimensionless, so scaling the model leaves it
+    // unchanged (Law_AngleParameterFloorIgnoresScale). Example: 1e-6 mm over
+    // a 1000 mm model gives 1e-9 rad.
+    AngleParameterFloor(length: LengthTolerance, modelSize: Number, extent: Number): ParameterTolerance
+    {
+        var r = length.ResolvableLength(extent);
+        return ParameterTolerance((r / modelSize.Max(r)).Max(ResolutionAt(Number.Tau * 2.0)));
+    }
 
     //==
     // # Parameter tolerance at a point
@@ -143,11 +169,13 @@ library BrepFoundation
     // surface): Length / speed, so that a parameter step within it moves the
     // point by at most the length tolerance to first order; lowered to `cap`
     // where that quotient would exceed it (at a pole the speed is zero and
-    // every parameter value is the same point); raised to the model's floor.
-    // A sphere of radius 100 with Length 1e-3 gets 1e-5 rad in u at the
-    // equator, 5.7e-3 rad at latitude 89.9 degrees, and the cap pi at the pole.
-    ParameterToleranceAt(t: Tolerances, speed: Number, cap: Number): ParameterTolerance
-        => ParameterTolerance((speed * cap > t.Length.Value ? t.Length.Value / speed : cap).Max(t.Parameter.Value));
+    // every parameter value is the same point); raised to `floor`, the model's
+    // floor for this direction's kind (t.LengthParameter or t.AngleParameter,
+    // chosen by layer 1). A sphere of radius 100 with Length 1e-3 gets 1e-5
+    // rad in u at the equator, 5.7e-3 rad at latitude 89.9 degrees, and the
+    // cap pi at the pole.
+    ParameterToleranceAt(t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number): ParameterTolerance
+        => ParameterTolerance((speed * cap > t.Length.Value ? t.Length.Value / speed : cap).Max(floor.Value));
 
     // True when speed is a finite non-negative speed and cap a finite positive
     // cap: ParameterToleranceAt's precondition on its two numbers.
@@ -167,14 +195,16 @@ library BrepFoundation
         };
 
     // The parameter tolerance in each direction of a surface at a point where
-    // dS/du has length speedU and dS/dv has length speedV. Each direction gets
-    // half the length tolerance, so a displacement within both moves the point
-    // by at most |dS/du| |du| + |dS/dv| |dv| <= Length to first order, by the
-    // triangle inequality, whatever the angle between the two partials.
-    UvToleranceAt(t: Tolerances, speedU: Number, speedV: Number, d: SurfaceDomain): UvTolerance
+    // dS/du has length speedU and dS/dv has length speedV, with floor.U and
+    // floor.V the floors of the two directions' kinds (a cylinder: the angle
+    // floor in u, the length floor in v). Each direction gets half the length
+    // tolerance, so a displacement within both moves the point by at most
+    // |dS/du| |du| + |dS/dv| |dv| <= Length to first order, by the triangle
+    // inequality, whatever the angle between the two partials.
+    UvToleranceAt(t: Tolerances, floor: UvTolerance, speedU: Number, speedV: Number, d: SurfaceDomain): UvTolerance
         => UvTolerance(
-            t.ParameterToleranceAt(speedU * 2.0, d.U.ParameterToleranceCap),
-            t.ParameterToleranceAt(speedV * 2.0, d.V.ParameterToleranceCap));
+            t.ParameterToleranceAt(floor.U, speedU * 2.0, d.U.ParameterToleranceCap),
+            t.ParameterToleranceAt(floor.V, speedV * 2.0, d.V.ParameterToleranceCap));
 
     //==
     // # Approximate equality
@@ -217,7 +247,7 @@ library BrepFoundation
     // True when two values of one aperiodic parameter are the same within t.
     // For a periodic parameter use the CurveDomain form, which measures around
     // the circle. There is deliberately no form taking Tolerances: the model's
-    // Parameter field is a floor, not the tolerance at a point.
+    // parameter fields are floors, not the tolerance at a point.
     SameParameter(a: Number, b: Number, t: ParameterTolerance): Boolean
         => (a - b).Abs <= t.Value;
 

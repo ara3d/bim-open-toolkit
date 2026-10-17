@@ -45,7 +45,8 @@ spec Tolerances
 {
     invariant Law_LengthTolerancePositive(self.Length);
     invariant Law_AngleTolerancePositive(self.Angle);
-    invariant Law_ParameterTolerancePositive(self.Parameter);
+    invariant Law_ParameterTolerancePositive(self.LengthParameter);
+    invariant Law_ParameterTolerancePositive(self.AngleParameter);
 }
 
 spec Periodicity
@@ -118,29 +119,46 @@ spec ResolutionAt(magnitude: Number): Number
     ensures magnitude.IsNaN ? true : result >= magnitude.Abs * Number.RoundingUnit * 32.0;
 }
 
-spec ParameterFloor(length: LengthTolerance, modelSize: Number): ParameterTolerance
+spec LengthParameterFloor(length: LengthTolerance, extent: Number): ParameterTolerance
+{
+    requires Law_LengthTolerancePositive(length);
+    requires extent.IsFinite;
+    ensures Law_ParameterTolerancePositive(result);
+    ensures result.Value >= length.Value;
+    ensures result.Value >= ResolutionAt(extent);
+    ensures Law_LengthParameterFloorScalesWithModel(length, extent);
+}
+
+spec AngleParameterFloor(length: LengthTolerance, modelSize: Number, extent: Number): ParameterTolerance
 {
     requires Law_LengthTolerancePositive(length);
     requires modelSize.IsFinite;
     requires modelSize >= 0.0;
+    requires extent.IsFinite;
     ensures Law_ParameterTolerancePositive(result);
-    ensures result.Value >= ResolutionAt(modelSize.Max(Number.Tau * 2.0));
-    ensures result.Value >= length.Value / modelSize.Max(1.0);
+    ensures result.Value >= ResolutionAt(Number.Tau * 2.0);
+    ensures result.Value <= 1.0 + ResolutionAt(1.0);   // at most one radian: the quotient's divisor is at least its dividend
+    ensures modelSize >= length.ResolvableLength(extent)
+        ? result.Value * modelSize >= length.ResolvableLength(extent) * (1.0 - ResolutionAt(1.0))
+        : true;
+    ensures Law_AngleParameterFloorIgnoresScale(length, modelSize, extent);
 }
 
-spec ParameterToleranceAt(t: Tolerances, speed: Number, cap: Number): ParameterTolerance
+spec ParameterToleranceAt(t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number): ParameterTolerance
 {
     requires t.IsWellFormed;
+    requires Law_ParameterTolerancePositive(floor);
     requires IsSpeedAndCap(speed, cap);
     ensures Law_ParameterTolerancePositive(result);
-    ensures Law_ParameterToleranceAtNeverBelowFloor(t, speed, cap);
-    ensures Law_ParameterToleranceAtMovesWithinLength(t, speed, cap);
-    ensures result.Value <= cap.Max(t.Parameter.Value);
+    ensures Law_ParameterToleranceAtNeverBelowFloor(t, floor, speed, cap);
+    ensures Law_ParameterToleranceAtMovesWithinLength(t, floor, speed, cap);
+    ensures result.Value <= cap.Max(floor.Value);
 }
 
-spec UvToleranceAt(t: Tolerances, speedU: Number, speedV: Number, d: SurfaceDomain): UvTolerance
+spec UvToleranceAt(t: Tolerances, floor: UvTolerance, speedU: Number, speedV: Number, d: SurfaceDomain): UvTolerance
 {
     requires t.IsWellFormed;
+    requires floor.IsWellFormed;
     requires speedU.IsFinite;
     requires speedU >= 0.0;
     requires speedV.IsFinite;
@@ -148,8 +166,8 @@ spec UvToleranceAt(t: Tolerances, speedU: Number, speedV: Number, d: SurfaceDoma
     requires d.U.ParameterToleranceCap > 0.0;
     requires d.V.ParameterToleranceCap > 0.0;
     ensures result.IsWellFormed;
-    ensures Law_ParameterToleranceAtMovesWithinLength(t, speedU * 2.0, d.U.ParameterToleranceCap);
-    ensures Law_ParameterToleranceAtMovesWithinLength(t, speedV * 2.0, d.V.ParameterToleranceCap);
+    ensures Law_ParameterToleranceAtMovesWithinLength(t, floor.U, speedU * 2.0, d.U.ParameterToleranceCap);
+    ensures Law_ParameterToleranceAtMovesWithinLength(t, floor.V, speedV * 2.0, d.V.ParameterToleranceCap);
 }
 
 //==
@@ -376,11 +394,12 @@ theorem WrapIsTheCanonicalRepresentative
 
 theorem ParameterToleranceBoundsMotion
 {
-    given t: Tolerances, speed: Number, cap: Number;
+    given t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number;
     assume t.IsWellFormed;
+    assume Law_ParameterTolerancePositive(floor);
     assume IsSpeedAndCap(speed, cap);
-    conclude speed * t.ParameterToleranceAt(speed, cap).Value
-        <= t.Length.Value.Max(speed * t.Parameter.Value) + ResolutionAt(t.Length.Value.Max(speed * t.Parameter.Value));
+    conclude speed * t.ParameterToleranceAt(floor, speed, cap).Value
+        <= t.Length.Value.Max(speed * floor.Value) + ResolutionAt(t.Length.Value.Max(speed * floor.Value));
     because "For a C2 curve c with |c'(t0)| = speed, c(t0 + h) - c(t0) = h c'(t0) + O(h^2), so a
              step |h| <= Length / speed moves the point by at most Length to first order. The cap
              only lowers the tolerance, and where it binds speed * cap <= Length. The floor raises
@@ -393,14 +412,15 @@ theorem ParameterToleranceBoundsMotion
 
 theorem UvToleranceBoundsMotion
 {
-    given t: Tolerances, speedU: Number, speedV: Number, d: SurfaceDomain, du: Number, dv: Number;
+    given t: Tolerances, floor: UvTolerance, speedU: Number, speedV: Number, d: SurfaceDomain, du: Number, dv: Number;
     assume t.IsWellFormed;
+    assume floor.IsWellFormed;
     assume IsSpeedAndCap(speedU, d.U.ParameterToleranceCap);
     assume IsSpeedAndCap(speedV, d.V.ParameterToleranceCap);
-    assume speedU * 2.0 * t.Parameter.Value <= t.Length.Value;
-    assume speedV * 2.0 * t.Parameter.Value <= t.Length.Value;
-    assume du.Abs <= t.UvToleranceAt(speedU, speedV, d).U.Value;
-    assume dv.Abs <= t.UvToleranceAt(speedU, speedV, d).V.Value;
+    assume speedU * 2.0 * floor.U.Value <= t.Length.Value;
+    assume speedV * 2.0 * floor.V.Value <= t.Length.Value;
+    assume du.Abs <= t.UvToleranceAt(floor, speedU, speedV, d).U.Value;
+    assume dv.Abs <= t.UvToleranceAt(floor, speedU, speedV, d).V.Value;
     conclude speedU * du.Abs + speedV * dv.Abs <= t.Length.Value + ResolutionAt(t.Length.Value);
     because "UvToleranceAt gives each direction the tolerance of a speed twice the partial's
              length, so speedU |du| <= Length / 2 when the floor does not bind (the two speed
