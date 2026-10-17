@@ -31,9 +31,10 @@ STEP reader look nearly line for line like the IFC one.
    supertype in EXPRESS order rather than from one base class.
 3. **Complex instances.** `#10=(BOUNDED_SURFACE()B_SPLINE_SURFACE(...)B_SPLINE_SURFACE_WITH_KNOTS(...)RATIONAL_B_SPLINE_SURFACE(...)...);`
    carries every rational B-spline and every unit (`(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))`).
-   `StepTokenizer.AdvanceToAndTokenizeDefinition` reads one name then one group; read in the code, not yet run, it
-   keeps the first partial entity and drops the rest. `StepDefinition` needs a list of partial entities, and a
-   descriptor addresses an attribute as (partial entity, index within it).
+   `StepTokenizer.AdvanceToAndTokenizeDefinition` reads one name then one group and throws "Expected the beginning
+   of a group" on the first complex instance, so `StepDocument` opens no STEP file that has one: 0 of 88 in the
+   spike (build log, 2026-10-17). `StepDefinition` needs a list of partial entities, and a descriptor addresses an
+   attribute as (partial entity, index within it).
 4. **The `name` offset.** Every STEP `representation_item` begins with a `name` string that IFC dropped, so every
    index differs by one and the IFC readers cannot be pointed at STEP data. Generation handles it; the readers are new.
 
@@ -68,3 +69,30 @@ STEP reader look nearly line for line like the IFC one.
 ## Build log
 
 - 2026-10-17: plan and tickets written.
+- 2026-10-17, TKT-301 spike, tokenizer half. Corpus: the 88 files of the u-blox 3D-Step-Models-Library
+  (`3d-format-shootout/data/submodules/3D-Step-Models-Library`, outside this repository): 82 `AUTOMOTIVE_DESIGN`
+  (AP214), 6 `CONFIG_CONTROL_DESIGN` (AP203). A throwaway console program over `Ara3D.IO.StepParser` (ara3d-sdk
+  pin of this date) opened none: all 88 throw "Expected the beginning of a group" at the first complex instance.
+  Every file has complex instances, because units and the geometric representation context are always written as
+  one. Only 11 distinct combinations occur in all 88 files, counted by a regex over `#n=(...)` lines:
+
+  | Instances | Files | Partial entities |
+  |---|---|---|
+  | 70,085 | 88 | LENGTH_UNIT NAMED_UNIT SI_UNIT |
+  | 69,919 | 88 | GEOMETRIC_REPRESENTATION_CONTEXT GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT GLOBAL_UNIT_ASSIGNED_CONTEXT REPRESENTATION_CONTEXT |
+  | 69,918 | 88 | NAMED_UNIT SI_UNIT SOLID_ANGLE_UNIT |
+  | 69,918 | 88 | NAMED_UNIT PLANE_ANGLE_UNIT SI_UNIT |
+  | 15,129 | 81 | REPRESENTATION_RELATIONSHIP REPRESENTATION_RELATIONSHIP_WITH_TRANSFORMATION SHAPE_REPRESENTATION_RELATIONSHIP |
+  | 9,818 | 2 | GEOMETRIC_REPRESENTATION_CONTEXT PARAMETRIC_REPRESENTATION_CONTEXT REPRESENTATION_CONTEXT |
+  | 1,683 | 35 | BOUNDED_CURVE B_SPLINE_CURVE B_SPLINE_CURVE_WITH_KNOTS CURVE GEOMETRIC_REPRESENTATION_ITEM RATIONAL_B_SPLINE_CURVE REPRESENTATION_ITEM |
+  | 650 | 19 | CONVERSION_BASED_UNIT LENGTH_UNIT NAMED_UNIT |
+  | 434 | 24 | BOUNDED_SURFACE B_SPLINE_SURFACE B_SPLINE_SURFACE_WITH_KNOTS GEOMETRIC_REPRESENTATION_ITEM RATIONAL_B_SPLINE_SURFACE REPRESENTATION_ITEM SURFACE |
+  | 44 | 1 | CONVERSION_BASED_UNIT NAMED_UNIT PLANE_ANGLE_UNIT |
+  | 1 | 1 | MASS_UNIT NAMED_UNIT SI_UNIT |
+
+  The set is small and closed, so TKT-304 can generate one accessor per combination as well as the general
+  (partial entity, index) descriptor. The assembly placements (`SHAPE_REPRESENTATION_RELATIONSHIP` with
+  transformation, 81 files) are complex instances too, so TKT-305's assembly tree depends on TKT-302.
+  The schema half waits for the AP242 long form: `ap242ed3_mim_lf_v1.152.zip` from the MBx-IF EXPRESS schema page
+  (<https://www.mbx-if.org/home/?p=613>), which states no licence; AP214 edition 3 and AP203 edition 2 are on the
+  same page.

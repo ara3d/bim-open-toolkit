@@ -1,14 +1,16 @@
 ---
 id: TKT-301
 title: Spike: measure how far ExpressGrammar parses the AP242 long form and how the STEP tokenizer handles complex instances
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 10b9c9c6
+session: 10b9c9c6-0052-40f3-a1c2-c12f2f8861d7
 fence: [docs/plans/step-reader.md]
 workflow: [W3, W4]
 related: [TKT-299]
 confidence: high
 created: 2026-10-17
+claimed: 2026-10-17
 ---
 
 ## Acceptance criteria
