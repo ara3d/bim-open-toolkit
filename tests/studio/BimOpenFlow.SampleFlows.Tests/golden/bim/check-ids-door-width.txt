@@ -7,21 +7,21 @@ modelPath = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/duplex-enriched.bos"
 model = bos.load@1(path: modelPath.path, harmonize: "false");
   // Ok
-  //   entities: table 4721 rows x 6 cols  sha 8dd61d621f11
+  //   entities: table 4726 rows x 6 cols  sha 077aa964710f
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18553 rows x 6 cols  sha 6fbda96872e9
+  //   parameters: table 18581 rows x 6 cols  sha fcb6d2202473
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
-  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     [0] 116, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 121, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 121, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 969 rows x 5 cols  sha df3cff65516a
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 133, "Level 1", 4705, null, "MemberOf"
-  //     [1] 134, "Level 2", 4705, null, "MemberOf"
-  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+  //     [0] 134, "Level 1", 4706, null, "MemberOf"
+  //     [1] 135, "Level 2", 4706, null, "MemberOf"
+  //     [2] 136, "T/FDN", 4706, null, "MemberOf"
 scenePath = value.path@1(path: "$geometry");
   // Ok  Text "{MODELS}/duplex-enriched.ifc"
 scene = view3d.instances@1(path: scenePath.path);
@@ -32,7 +32,7 @@ scene = view3d.instances@1(path: scenePath.path);
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, ids: "{SAMPLES}/ids/dc-w1.ids");
   // Ok
-  //   verdicts: table 14 rows x 7 cols  sha caa3504fd62e
+  //   verdicts: table 14 rows x 7 cols  sha c43257714002
   //     columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
   //     verdicts "DC-W1": Fail 6, Pass 8
   //   summary: table 1 rows x 6 cols  sha d86c82a6e34d
@@ -50,7 +50,7 @@ coloured = view3d.color@1(instances: scene.instances, values: verdicts.verdicts,
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend "Verdict" categorical: category "Fail" 6, category "Pass" 8
 named = table.join@1(a: verdicts.verdicts, b: model.entities, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 14 rows x 12 cols  sha 4e2290b8ff95
+  // Ok  table 14 rows x 12 cols  sha d3b345d4cffd
   //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text, StepId:Integer, GlobalId_b:Text, Name:Text, Category:Text, Type:Text
   //   verdicts "DC-W1": Fail 6, Pass 8
 perVerdict = table.aggregate@1(table: verdicts.verdicts, groupBy: "Verdict", aggregates: "count(*) as Doors");
@@ -69,7 +69,7 @@ chart = chart.bar@1(table: perVerdict.table, labelColumn: "Verdict", valueColumn
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
 sorted = table.sort@1(table: named.table, A: "Verdict", B: "Name");
-  // Ok  table 14 rows x 12 cols  sha 85e265fdec2f
+  // Ok  table 14 rows x 12 cols  sha f472749afe0e
   //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text, StepId:Integer, GlobalId_b:Text, Name:Text, Category:Text, Type:Text
   //   verdicts "DC-W1": Fail 6, Pass 8
 answer = view.table@1(table: sorted.table, title: "DC-W1 door width verdicts", columns: "Name, Verdict, Reason, GlobalId");

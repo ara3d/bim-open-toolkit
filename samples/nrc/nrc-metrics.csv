@@ -9,6 +9,11 @@ NRC.EC.A1A3.TOTAL,storey,NRC_StoreySummary,TotalEmbodiedCarbon_A1A3_kgCO2e,Real,
 NRC.EC.A1A5.TOTAL,storey,NRC_StoreySummary,TotalEmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,sum,Sum of element A1-A5 embodied carbon on the storey,1
 NRC.OC.ANNUAL,storey,NRC_StoreySummary,TotalOperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,sum,Sum of element operational carbon on the storey,1
 NRC.EUI.ANNUAL,storey,NRC_StoreySummary,MeanEnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,mean,Mean of element energy use intensity on the storey (element-count mean; synthetic data has no areas),2
+NRC.COUNT.SPACES,zone,NRC_ZoneSummary,SpaceCount,Integer,count,,count,Conditioned spaces in the zone,0
+NRC.AREA.FLOOR,zone,NRC_ZoneSummary,TotalFloorArea_m2,Real,m2,,sum,Sum of the zone's space floor areas (GSA BIM Area quantity of each IfcSpace),1
+NRC.ENERGY.ANNUAL,zone,NRC_ZoneSummary,TotalOperationalEnergy_kWh_per_year,Real,kWh/yr,B6,sum,Sum of the zone's space annual operational energy (synthetic),1
+NRC.OC.ANNUAL,zone,NRC_ZoneSummary,TotalOperationalCarbon_kgCO2e_per_year,Real,kgCO2e/yr,B6,sum,Sum of the zone's space annual operational carbon: energy times the grid emission factor (synthetic),1
+NRC.EUI.ANNUAL,zone,NRC_ZoneSummary,ZoneEnergyUseIntensity_kWh_per_m2_year,Real,kWh/m2/yr,B6,ratio:NRC.ENERGY.ANNUAL/NRC.AREA.FLOOR,Zone energy divided by the zone's floor area (area-weighted; synthetic),2
 NRC.COUNT.ELEMENTS,building,NRC_BuildingSummary,ElementCount,Integer,count,,count,Analysed elements in the building,0
 NRC.EC.A1A3.TOTAL,building,NRC_BuildingSummary,TotalEmbodiedCarbon_A1A3_kgCO2e,Real,kgCO2e,A1-A3,sum,Sum of element A1-A3 embodied carbon in the building,1
 NRC.EC.A1A5.TOTAL,building,NRC_BuildingSummary,TotalEmbodiedCarbon_A1A5_kgCO2e,Real,kgCO2e,A1-A5,sum,Sum of element A1-A5 embodied carbon in the building,1

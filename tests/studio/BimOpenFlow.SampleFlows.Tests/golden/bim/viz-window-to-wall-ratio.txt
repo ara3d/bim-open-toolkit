@@ -23,29 +23,29 @@ inst = view3d.instances@1(path: "{SAMPLES}/duplex-base.ifc");
   //   no colour columns
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 orient = bim.orientation@1(path: "{SAMPLES}/duplex-enriched.bos", categories: "IFCWALL,IFCWALLSTANDARDCASE,IFCWINDOW");
-  // Ok  table 81 rows x 13 cols  sha 48150513dc0b
+  // Ok  table 81 rows x 13 cols  sha 9bf7b31f97d6
   //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number
-  //   [0] 1391, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01
-  //   [1] 1414, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74
-  //   [2] 1436, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74
+  //   [0] 1392, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01
+  //   [1] 1415, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74
+  //   [2] 1437, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74
 joined = table.join@1(a: orient.table, b: attrs.table, aKey: "GlobalId", mode: "inner");
-  // Ok  table 81 rows x 15 cols  sha 27d830feab52
+  // Ok  table 81 rows x 15 cols  sha 00dcc2a8a513
   //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean
-  //   [0] 1391, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01, "Level 1", false
-  //   [1] 1414, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74, "Level 1", true
-  //   [2] 1436, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74, "Level 1", true
+  //   [0] 1392, "2O2Fr$t4X7Zf8NOew3FNld", "Basic Wall:Interior - Partition (92mm Stud):1385"..., "IFCWALLSTANDARDCASE", null, 2.538, -2.208, 344.5, 0, "N", 6.946, "W", 10.01, "Level 1", false
+  //   [1] 1415, "2O2Fr$t4X7Zf8NOew3FNbT", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 6.282, -7.828, 60.35, 1, "NE", 2.166, "N", 11.74, "Level 1", true
+  //   [2] 1437, "2O2Fr$t4X7Zf8NOew3FKRi", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., "IFCWALLSTANDARDCASE", null, 2.517, -9.972, 240.4, 5, "SW", 2.166, "S", 11.74, "Level 1", true
 facade = table.filter@1(table: joined.table, expr: "IsExternal and Storey != 'T/FDN' and not contains(Name, 'Party Wall')");
-  // Ok  table 34 rows x 15 cols  sha 32899654e134
+  // Ok  table 34 rows x 15 cols  sha e553388a8127
   //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean
-  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true
-  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true
-  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true
+  //   [0] 1761, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true
+  //   [1] 1767, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true
+  //   [2] 1804, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true
 kind = table.derive@1(table: facade.table, name: "Element", expr: "Category == 'IFCWINDOW' ? 'Window' : 'Wall'");
-  // Ok  table 34 rows x 16 cols  sha 2172a2939484
+  // Ok  table 34 rows x 16 cols  sha 8b30a54d1adb
   //   columns EntityIndex:Integer, GlobalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean, Element:Text
-  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true, "Window"
-  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true, "Window"
-  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true, "Wall"
+  //   [0] 1761, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true, "Window"
+  //   [1] 1767, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true, "Window"
+  //   [2] 1804, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true, "Wall"
 byFacing = table.pivot@1(table: kind.table, groupBy: "Facing", nameColumn: "Element", valueColumn: "FacingArea", aggregate: "sum");
   // Ok  table 4 rows x 3 cols  sha da01eeed56e0
   //   columns Facing:Text, Wall:Number, Window:Number
@@ -59,11 +59,11 @@ framed = table.join@1(a: facings.table, b: byFacing.table, aKey: "Facing", mode:
   //   [1] 1, "E", 116.1, 11.91
   //   [2] 2, "S", 56.61, 20.31
 keyed = table.rename@1(table: kind.table, renames: "GlobalId=globalId");
-  // Ok  table 34 rows x 16 cols  sha 70550bab4e68
+  // Ok  table 34 rows x 16 cols  sha 561799879a93
   //   columns EntityIndex:Integer, globalId:Text, Name:Text, Category:Text, Level:Text, CenterX:Number, CenterY:Number, Bearing:Number, Sector:Integer, Direction:Text, Distance:Number, Facing:Text, FacingArea:Number, Storey:Text, IsExternal:Boolean, Element:Text
-  //   [0] 1760, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true, "Window"
-  //   [1] 1766, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true, "Window"
-  //   [2] 1803, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true, "Wall"
+  //   [0] 1761, "1hOSvn6df7F8_7GcBWlR72", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:145788", "IFCWINDOW", null, 5.965, -0.2085, 10.21, 0, "N", 8.831, "N", 11.7, "Level 1", true, "Window"
+  //   [1] 1767, "1hOSvn6df7F8_7GcBWlRBU", "M_Fixed:4835mm x 2420mm:4835mm x 2420mm:146016", "IFCWINDOW", null, 2.835, -17.59, 190.2, 4, "S", 8.831, "S", 11.7, "Level 1", true, "Window"
+  //   [2] 1804, "2O2Fr$t4X7Zf8NOew3FNqI", "Basic Wall:Exterior - Brick on Block:138157", "IFCWALLSTANDARDCASE", null, 8.592, -9.108, 92.85, 2, "E", 4.197, "E", 53.89, "Level 1", true, "Wall"
 ratio = table.derive@1(table: framed.table, name: "WWR", expr: "coalesce(Window, 0) / Wall");
   // Ok  table 4 rows x 5 cols  sha 419a28530ce1
   //   columns Order:Integer, Facing:Text, Wall:Number, Window:Number, WWR:Number

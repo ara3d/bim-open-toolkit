@@ -1600,15 +1600,17 @@ Effect: runs only inside a Run. Writes the table into a DuckDB database file —
 
 ### `sink.writePsets` (v1) — Effect
 
-Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten).
+Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Optional input zones (zoneName, spaceId) appends one IfcZone per name grouping those spaces; optional input zonePsets (zoneName, psetName, paramName, paramValue, optional valueType) attaches property sets to the zones by name. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten, zonesWritten).
 
-Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`, `paramValue`) are grouped by (entityId, psetName) in first-appearance order; each group becomes one IfcPropertySet attached to the entity, appended to a byte-exact copy of the source file. An entity id not present in the source file is an error. v1 limitation: every value is written as IFCTEXT; typed measures come later.
+Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`, `paramValue`) are grouped by (entityId, psetName) in first-appearance order; each group becomes one IfcPropertySet attached to the entity, appended to a byte-exact copy of the source file. An entity id not present in the source file is an error. v1 limitation: every value is written as IFCTEXT; typed measures come later. The optional `zones` input (`zoneName`, `spaceId`) appends one IfcZone per name grouping those spaces through IfcRelAssignsToGroup, and the optional `zonePsets` input (`zoneName`, `psetName`, `paramName`, `paramValue`) attaches property sets to those zones by name, since a zone's id exists only once the Run allocates it.
 
 **Inputs**
 
 | Name | Type | Required |
 |---|---|---|
 | `in` | Table | required |
+| `zones` | Table | optional |
+| `zonePsets` | Table | optional |
 
 **Outputs**
 

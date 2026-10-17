@@ -15,9 +15,10 @@ The Duplex files are buildingSMART International's, CC BY 4.0; `NOTICE.md` in th
 | `nrc_analytics_long.csv` | 870 | the same numbers in long form: one row per (element, metric) |
 | `nrc_analytics_storeys.csv` | 5 | per-storey rollups plus a `Building` total row, as the generator computed them; a reference the tests compare the `nrc-rollup` graph against, not an input |
 | `door_verdicts.csv` | 56 | door rule verdicts with evidence and citation text |
-| `duplex-enriched.ifc` | — | `duplex-base.ifc` plus 659 property sets holding 2,441 values, written by a Run of `nrc-enrich-run`; a test asserts a fresh Run reproduces it byte for byte |
+| `duplex-enriched.ifc` | — | `duplex-base.ifc` plus 663 property sets holding 2,469 values and four `IfcZone` groups (one `NRC_ZoneSummary` set each), written by a Run of `nrc-enrich-run`; a test asserts a fresh Run reproduces it byte for byte |
 | `duplex-base.ifc` | — | the unenriched Duplex, byte-identical to `nrc-ifc-llm/IFC-Test-Kit/duplex.ifc` (SHA-256 `b347a2c8…06ed`); the source the enrichment graphs write into |
-| `nrc-metrics.csv` | 15 | the metric dictionary: one row per metric and level, naming the property set, property, value type, unit, stage, rollup rule, and the decimals a rolled-up value is rounded to (TKT-48) |
+| `nrc-metrics.csv` | 20 | the metric dictionary: one row per metric and level, naming the property set, property, value type, unit, stage, rollup rule, and the decimals a rolled-up value is rounded to (TKT-48) |
+| `nrc_analytics_spaces.csv` | 60 | the synthetic per-space values of the 20 conditioned spaces: floor area (a copy of the model's `GSA BIM Area`, rounded to 0.01 m2), annual operational energy, and annual operational carbon; made by `make-zone-data.mjs`; no zone total is supplied |
 | `nrc-zones.csv` | 20 | the Duplex zoning, synthetic: one zone per dwelling per floor (Unit A Level 1, Unit A Level 2, Unit B Level 1, Unit B Level 2) over the 20 conditioned spaces, the unconditioned roof space left out; made by `node samples/nrc/make-zone-data.mjs` from the spaces of `duplex-base.ifc`; the model has no zones, so `nrc-enrich-run` writes this table back as `IfcZone` groups |
 | `nrc-run.csv` | 12 | run-level facts written once: run id, scenario, grid emission factor, and the provenance fields |
 
@@ -50,9 +51,22 @@ place the fields of `nrc-run.csv` as follows:
 
 | Field | Written to |
 |---|---|
-| `AnalysisRunId`, `ScenarioName` | every NRC set: the three element sets, `NRC_StoreySummary`, `NRC_BuildingSummary`, and the provenance set |
+| `AnalysisRunId`, `ScenarioName` | every NRC set: the three element sets, `NRC_StoreySummary`, `NRC_BuildingSummary`, `NRC_ZoneSummary`, and the provenance set |
 | `GridEmissionFactor_kgCO2e_per_kWh` | each element's `NRC_OperationalCarbon`, because `nrc-metrics.csv` lists it there as `NRC.GRID.FACTOR` with no value in the long table; also the provenance set |
 | every field | the project's `NRC_AnalyticsProvenance`, one property per row, with the row's `ValueType` |
 
 `MetricDictionaryURI` names `nrc-metrics.csv` relative to the enriched IFC, so
 an agent that finds the provenance set can find the dictionary beside the file.
+
+## The zone level
+
+The Duplex has no zones. `nrc-zones.csv` is the zoning, supplied as analytics-contract data (an energy
+model would supply it): one zone per dwelling per floor, over the 20 conditioned spaces, the
+unconditioned roof space left out. `nrc-enrich-run` writes it back as four `IfcZone` groups, each
+assigned its spaces through `IfcRelAssignsToGroup`, and attaches one `NRC_ZoneSummary` set to each.
+The set's values are computed by `nrc-rollup` from the space values of `nrc_analytics_spaces.csv`:
+counts and sums by the dictionary's `count` and `sum` rules, and the zone intensity by the
+`ratio:NRC.ENERGY.ANNUAL/NRC.AREA.FLOOR` rule, zone energy divided by the sum of the zone's floor areas
+in kWh/m2/yr. Element values are unchanged, so the answers to questions 1 to 8 do not move. `ZoneOfSpace`
+reads the zoning back from the enriched file. All zone and space values are synthetic.
+

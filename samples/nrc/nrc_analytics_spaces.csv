@@ -1,0 +1,61 @@
+AnalysisRunId,GlobalId,IfcClass,MetricId,MetricName,Value,Unit,LifecycleStage,Scenario,Source,Confidence,ComputationMethod
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrr,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,17.94,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrr,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,986.7,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrr,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,108.5,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXr2,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,30.14,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXr2,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1959.1,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXr2,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,215.5,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXr$,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,13.90,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXr$,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1668.0,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXr$,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,183.5,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXru,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,4.00,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXru,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,360.0,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXru,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,39.6,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,10mjSDZJj9gPS2PrQaxa3z,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,4.92,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,10mjSDZJj9gPS2PrQaxa3z,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,196.8,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,10mjSDZJj9gPS2PrQaxa3z,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,21.6,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXri,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,7.80,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXri,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,351.0,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXri,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,38.6,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrc,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,26.12,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrc,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1567.2,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrc,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,172.4,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrb,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,26.18,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrb,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1570.8,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXrb,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,172.8,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXre,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,5.42,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXre,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,487.8,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dlXre,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,53.7,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,2gRXFgjRn2HPE$YoDLX3FV,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,1.75,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,2gRXFgjRn2HPE$YoDLX3FV,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,122.5,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,2gRXFgjRn2HPE$YoDLX3FV,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,13.5,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3Q,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,17.94,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3Q,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1045.9,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3Q,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,115.0,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_CZ,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,30.14,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_CZ,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,2076.6,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_CZ,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,228.4,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3S,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,13.90,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3S,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1768.1,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3S,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,194.5,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3P,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,4.00,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3P,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,381.6,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3P,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,42.0,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,10mjSDZJj9gPS2PrQaxa4o,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,4.92,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,10mjSDZJj9gPS2PrQaxa4o,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,260.8,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,10mjSDZJj9gPS2PrQaxa4o,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,28.7,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3G,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,7.80,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3G,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,372.1,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3G,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,40.9,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3A,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,26.12,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3A,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1661.2,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3A,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,182.7,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_39,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,26.18,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_39,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,1665.0,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_39,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,183.2,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3C,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,5.44,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3C,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,519.0,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,0BTBFw6f90Nfh9rP1dl_3C,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,57.1,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor
+run-2026-09-17-01,2gRXFgjRn2HPE$YoDLX3FC,IFCSPACE,NRC.AREA.FLOOR,FloorArea_m2,1.73,m2,,Baseline,model:GSA BIM Area,0.5,model-quantity-rounded-0.01
+run-2026-09-17-01,2gRXFgjRn2HPE$YoDLX3FC,IFCSPACE,NRC.ENERGY.ANNUAL,OperationalEnergy_kWh_per_year,128.4,kWh/yr,B6,Baseline,synthetic-generator-v1,0.5,area-x-room-type-intensity
+run-2026-09-17-01,2gRXFgjRn2HPE$YoDLX3FC,IFCSPACE,NRC.OC.ANNUAL,OperationalCarbon_kgCO2e_per_year,14.1,kgCO2e/yr,B6,Baseline,synthetic-generator-v1,0.5,energy-x-grid-factor

@@ -1,6 +1,6 @@
 dfg 0.1.0;
-// nrc-enrich-run   graph 919410db3447
-about = view.note@1(text: "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,441 values on 224 entities. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, so every Run writes the same bytes.");
+// nrc-enrich-run   graph 9d17cdea31f1
+about = view.note@1(text: "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,469 values on 228 entities, including four IfcZone groups (nrc-zones.csv) with an NRC_ZoneSummary set each. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, and zoneMembers and zoneRowsTable feed the writer its zones and their sets, so every Run writes the same bytes.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
   // Ok  relation plan fbac43cf5e83
@@ -99,5 +99,59 @@ table = rel.materialize@1(input: rows.relation, limit: "0");
   //   [0] 34, "NRC_AnalyticsProvenance", "AnalysisRunId", "Identifier", "run-2026-09-17-01"
   //   [1] 34, "NRC_AnalyticsProvenance", "ComputedAt", "Label", "2026-09-17T00:00:00Z"
   //   [2] 34, "NRC_AnalyticsProvenance", "ComputedBy", "Label", "Ara 3D"
-answer = sink.writePsets@1(in: table.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{ARTIFACTS}/nrc/duplex-enriched-out.ifc");
+zoneSpaces = rel.csv@1(source: "nrc", path: "nrc_analytics_spaces.csv");
+  // Ok  relation plan b23c695a3274
+  //   "(csv \"nrc\" \"nrc_analytics_spaces.csv\")"
+zoneTable = rel.csv@1(source: "nrc", path: "nrc-zones.csv");
+  // Ok  relation plan 42b9fdb2233f
+  //   "(csv \"nrc\" \"nrc-zones.csv\")"
+zoneInputs = rel.sql@1(t1: zoneSpaces.relation, t2: zoneTable.relation, sql: """
+SELECT z.ZoneName AS zoneName, 'zone' AS Level, v.GlobalId, v.MetricId, v.Value
+FROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId
+""");
+  // Ok  relation plan 30e49a7cc0f5
+  //   "(sql \"SELECT z.ZoneName AS zoneName, 'zone' AS Level, v.GlobalId, v.MetricId, v.Value\nFROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId\" [(csv \"nrc\" \"nrc_analytics_spaces.csv\") (csv \"nrc\" \"nrc-zones"...
+zoneAnswer = rel.sql@1(t1: zoneInputs.relation, t2: metrics.relation, t3: run.relation, sql: """
+SELECT p.zoneName, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,
+       CASE WHEN m.Rollup = 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+            WHEN m.Rollup = 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+            WHEN m.Rollup = 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)
+            WHEN m.Rollup LIKE 'ratio:%' THEN CAST(round(
+                sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 1) THEN p.Value END)
+                / sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 2) THEN p.Value END),
+                CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+       END AS paramValue
+FROM t1 p
+JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'
+         AND (m.Rollup = 'count' OR m.Rollup LIKE 'ratio:%' OR m.MetricId = p.MetricId)
+GROUP BY p.zoneName, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals
+UNION
+SELECT p.zoneName, m.PropertySet, r.Field, r.ValueType, r.Value
+FROM (SELECT DISTINCT zoneName, Level FROM t1) p
+JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'
+JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
+ORDER BY zoneName, psetName, paramName
+""");
+  // Ok  relation plan 19bdfac0a40b
+  //   "(sql \"SELECT p.zoneName, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE WHEN m.Rollup = 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) "...
+zoneMembers = rel.sql@1(t1: zoneTable.relation, t2: entities.relation, sql: """
+SELECT z.ZoneName AS zoneName, e.StepId AS spaceId
+FROM t1 z JOIN t2 e ON e.GlobalId = z.SpaceGlobalId
+ORDER BY z.ZoneName, e.StepId
+""");
+  // Ok  relation plan 53ab8bb19960
+  //   "(sql \"SELECT z.ZoneName AS zoneName, e.StepId AS spaceId\nFROM t1 z JOIN t2 e ON e.GlobalId = z.SpaceGlobalId\nORDER BY z.ZoneName, e.StepId\" [(csv \"nrc\" \"nrc-zones.csv\") (table \"duplex-base\" \"EntityTex"...
+zoneMembersTable = rel.materialize@1(input: zoneMembers.relation, limit: "0");
+  // Ok  table 20 rows x 2 cols  sha 27f977ed01c1
+  //   columns zoneName:Text, spaceId:Integer
+  //   [0] "Unit A Level 1", 67
+  //   [1] "Unit A Level 1", 212
+  //   [2] "Unit A Level 1", 355
+zoneRowsTable = rel.materialize@1(input: zoneAnswer.relation, limit: "0");
+  // Ok  table 28 rows x 5 cols  sha 8f3b4b1741fe
+  //   columns zoneName:Text, psetName:Text, paramName:Text, valueType:Text, paramValue:Text
+  //   [0] "Unit A Level 1", "NRC_ZoneSummary", "AnalysisRunId", "Identifier", "run-2026-09-17-01"
+  //   [1] "Unit A Level 1", "NRC_ZoneSummary", "ScenarioName", "Label", "Baseline"
+  //   [2] "Unit A Level 1", "NRC_ZoneSummary", "SpaceCount", "Integer", "5"
+answer = sink.writePsets@1(in: table.table, zones: zoneMembersTable.table, zonePsets: zoneRowsTable.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{ARTIFACTS}/nrc/duplex-enriched-out.ifc");
   // EffectPending  not executed outside a Run

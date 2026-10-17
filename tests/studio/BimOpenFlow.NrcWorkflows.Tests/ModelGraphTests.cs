@@ -60,12 +60,12 @@ public sealed class ModelGraphTests
         => pendingEffects.Contains(nodeId) ? NodeStatus.EffectPending : NodeStatus.Ok;
 
     /// <summary>The rows of the answer node, whether it carries a Relation or an ordinary Table.</summary>
-    internal static IDataTable AnswerRows(EvalSnapshot snapshot, RelationRuntime runtime)
-        => snapshot.Results["answer"].Outputs[0] switch
+    internal static IDataTable AnswerRows(EvalSnapshot snapshot, RelationRuntime runtime, string node = "answer")
+        => snapshot.Results[node].Outputs[0] switch
         {
             RelationValue relation => runtime.Materialize((Plan)relation.Payload!),
             TableValue table => table.Table,
-            var other => throw new InvalidOperationException($"answer carries a {other.GetType().Name}"),
+            var other => throw new InvalidOperationException($"{node} carries a {other.GetType().Name}"),
         };
 
     private static double Number(IDataTable table, string column, int row)

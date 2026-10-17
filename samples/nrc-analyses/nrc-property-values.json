@@ -13,23 +13,23 @@
     },
     "entities": {
       "x": 385,
-      "y": 480
+      "y": 494
     },
     "nrcOnly": {
       "x": 389,
       "y": 202
     },
     "withStepId": {
-      "x": 820,
-      "y": 329
+      "x": 790,
+      "y": 336
     },
     "columns": {
-      "x": 1169,
-      "y": 329
+      "x": 1139,
+      "y": 336
     },
     "answer": {
-      "x": 1778,
-      "y": 329
+      "x": 1748,
+      "y": 336
     }
   },
   "structure": {
@@ -95,7 +95,7 @@
   },
   "values": {
     "about": {
-      "text": "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the NRC_ sets and withStepId adds each entity's STEP id: 2,441 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names."
+      "text": "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the NRC_ sets and withStepId adds each entity's STEP id: 2,469 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names."
     },
     "parameters": {
       "source": "duplex-enriched",

@@ -10,27 +10,27 @@ inst = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 load = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos");
   // Ok
-  //   entities: table 4721 rows x 6 cols  sha 8dd61d621f11
+  //   entities: table 4726 rows x 6 cols  sha 077aa964710f
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18553 rows x 6 cols  sha 6fbda96872e9
+  //   parameters: table 18581 rows x 6 cols  sha fcb6d2202473
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
-  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     [0] 116, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 121, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 121, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 969 rows x 5 cols  sha df3cff65516a
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 133, "Level 1", 4705, null, "MemberOf"
-  //     [1] 134, "Level 2", 4705, null, "MemberOf"
-  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+  //     [0] 134, "Level 1", 4706, null, "MemberOf"
+  //     [1] 135, "Level 2", 4706, null, "MemberOf"
+  //     [2] 136, "T/FDN", 4706, null, "MemberOf"
 elements = sql.query@1(t1: load.entities, sql: "SELECT EntityIndex, GlobalId, StepId, Name, Category AS Class FROM t WHERE coalesce(GlobalId, '') <> '' AND Category NOT IN ('IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 'IFCOPENINGELEMENT') AND NOT regexp_matches(Category, '(TYPE|STYLE|PROPERTIES)$') ORDER BY EntityIndex");
-  // Ok  table 239 rows x 5 cols  sha 92a1006cac96
+  // Ok  table 243 rows x 5 cols  sha f6b3f86bf6e6
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Name:Text, Class:Text
-  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE"
-  //   [1] 351, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE"
-  //   [2] 717, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE"
+  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE"
+  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE"
+  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE"
 required = table.inline@1(rows: "[{\"Parameter\":\"Reference\",\"Field\":\"Type reference\"},{\"Parameter\":\"Mark\",\"Field\":\"Instance mark\"},{\"Parameter\":\"Type Mark\",\"Field\":\"Type mark\"},{\"Parameter\":\"Manufacturer\",\"Field\":\"Manufacturer\"},{\"Parameter\":\"AssetIdentifier\",\"Field\":\"Asset identifier\"},{\"Parameter\":\"SerialNumber\",\"Field\":\"Serial number\"},{\"Parameter\":\"BarCode\",\"Field\":\"Barcode\"},{\"Parameter\":\"InstallationDate\",\"Field\":\"Installation date\"},{\"Parameter\":\"WarrantyStartDate\",\"Field\":\"Warranty start\"},{\"Parameter\":\"Assembly Code\",\"Field\":\"Uniformat code\"},{\"Parameter\":\"OmniClass Number\",\"Field\":\"OmniClass code\"},{\"Parameter\":\"FireRating\",\"Field\":\"Fire rating\"},{\"Parameter\":\"IsExternal\",\"Field\":\"External\"},{\"Parameter\":\"LoadBearing\",\"Field\":\"Load bearing\"}]");
   // Ok  table 14 rows x 2 cols  sha 579e5c3c9567
   //   columns Parameter:Text, Field:Text
@@ -38,23 +38,24 @@ required = table.inline@1(rows: "[{\"Parameter\":\"Reference\",\"Field\":\"Type 
   //   [1] "Mark", "Instance mark"
   //   [2] "Type Mark", "Type mark"
 storeys = sql.query@1(t1: load.entities, t2: load.relations, sql: "WITH RECURSIVE up(EntityIndex, Parent, Depth) AS (SELECT EntityIndexA, EntityIndexB, 1 FROM t2 WHERE RelationType IN ('ContainedIn', 'MemberOf') UNION ALL SELECT up.EntityIndex, r.EntityIndexB, up.Depth + 1 FROM up JOIN t2 r ON r.EntityIndexA = up.Parent AND r.RelationType IN ('ContainedIn', 'MemberOf') WHERE up.Depth < 4) SELECT up.EntityIndex, arg_min(s.Name, up.Depth) AS Storey FROM up JOIN t1 s ON s.EntityIndex = up.Parent AND s.Category = 'IFCBUILDINGSTOREY' GROUP BY up.EntityIndex ORDER BY up.EntityIndex");
-  // Ok  table 239 rows x 2 cols  sha ed1771253551
+  // Ok  table 239 rows x 2 cols  sha dca1272a9d4e
   //   columns EntityIndex:Integer, Storey:Text
-  //   [0] 275, "Level 1"
-  //   [1] 351, "Level 2"
-  //   [2] 717, "Level 1"
+  //   [0] 276, "Level 1"
+  //   [1] 352, "Level 2"
+  //   [2] 718, "Level 1"
 placed = table.join@1(a: elements.table, b: storeys.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 239 rows x 6 cols  sha b7f2f5017a18
+  // Ok  table 243 rows x 6 cols  sha 1099d180e084
+  //   warn table.join: 4 of 243 rows unmatched
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text
-  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1"
-  //   [1] 351, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2"
-  //   [2] 717, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1"
+  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1"
+  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2"
+  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1"
 cells = sql.query@1(t1: placed.table, t2: load.parameters, t3: required.table, sql: "WITH carried AS (SELECT p.EntityIndex, p.Name AS Parameter, max(CASE WHEN trim(coalesce(p.Value, '')) <> '' AND lower(replace(p.Value, ' ', '')) <> lower(replace(p.Name, ' ', '')) THEN 1 ELSE 0 END) AS Filled FROM t2 p JOIN t3 r ON r.Parameter = p.Name GROUP BY p.EntityIndex, p.Name), applicable AS (SELECT DISTINCT e.Class, c.Parameter FROM carried c JOIN t1 e ON e.EntityIndex = c.EntityIndex) SELECT e.EntityIndex, e.GlobalId, e.Class, e.Storey, a.Parameter, coalesce(c.Filled, 0) AS Filled FROM t1 e JOIN applicable a ON a.Class = e.Class LEFT JOIN carried c ON c.EntityIndex = e.EntityIndex AND c.Parameter = a.Parameter ORDER BY e.EntityIndex, a.Parameter");
-  // Ok  table 2157 rows x 6 cols  sha cfd55f2ad2dc
+  // Ok  table 2157 rows x 6 cols  sha 28593f95957e
   //   columns EntityIndex:Integer, GlobalId:Text, Class:Text, Storey:Text, Parameter:Text, Filled:Integer
-  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", "Level 1", "Reference", 0
-  //   [1] 351, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", "Level 2", "Reference", 0
-  //   [2] 717, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", "Level 1", "Reference", 0
+  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", "Level 1", "Reference", 0
+  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", "Level 2", "Reference", 0
+  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", "Level 1", "Reference", 0
 coverage = table.aggregate@1(table: cells.table, groupBy: "Class, Parameter", aggregates: "count(*) as Elements, sum(Filled) as FilledElements, avg(Filled) as FillRate");
   // Ok  table 121 rows x 5 cols  sha c150cd8834ad
   //   columns Class:Text, Parameter:Text, Elements:Integer, FilledElements:Integer, FillRate:Number
@@ -88,39 +89,39 @@ placeholderTable = view.table@1(table: placeholders.table, title: "Template plac
   //   [1] "BarCode", "BarCode", 211
   //   [2] "FireRating", "Fire Rating", 14
 scores = table.aggregate@1(table: cells.table, groupBy: "EntityIndex", aggregates: "count(*) as Applicable, sum(Filled) as FilledFields, avg(Filled) as Completeness");
-  // Ok  table 235 rows x 4 cols  sha 53ae781a55ac
+  // Ok  table 235 rows x 4 cols  sha f2ed109da471
   //   columns EntityIndex:Integer, Applicable:Integer, FilledFields:Integer, Completeness:Number
-  //   [0] 275, 1, 0, 0
-  //   [1] 351, 1, 0, 0
-  //   [2] 717, 1, 0, 0
+  //   [0] 276, 1, 0, 0
+  //   [1] 352, 1, 0, 0
+  //   [2] 718, 1, 0, 0
 perElement = table.join@1(a: placed.table, b: scores.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 239 rows x 9 cols  sha f408635513fc
-  //   warn table.join: 4 of 239 rows unmatched
+  // Ok  table 243 rows x 9 cols  sha 0edcecdec00c
+  //   warn table.join: 8 of 243 rows unmatched
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text, Applicable:Integer, FilledFields:Integer, Completeness:Number
-  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1", 1, 0, 0
-  //   [1] 351, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2", 1, 0, 0
-  //   [2] 717, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1", 1, 0, 0
+  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1", 1, 0, 0
+  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2", 1, 0, 0
+  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1", 1, 0, 0
 byClass = table.aggregate@1(table: perElement.table, groupBy: "Class", aggregates: "count(*) as Elements, avg(Completeness) as Completeness");
-  // Ok  table 15 rows x 3 cols  sha 7a9c66ae45dc
+  // Ok  table 16 rows x 3 cols  sha da05a067bc95
   //   columns Class:Text, Elements:Integer, Completeness:Number
   //   [0] "IFCBEAM", 8, 0.3636
   //   [1] "IFCCOVERING", 13, 0.125
   //   [2] "IFCDOOR", 14, 0.3846
 ranked = table.sort@1(table: byClass.table, A: "Completeness", B: "Class");
-  // Ok  table 15 rows x 3 cols  sha aedfd817819e
+  // Ok  table 16 rows x 3 cols  sha 0ac407a7076a
   //   columns Class:Text, Elements:Integer, Completeness:Number
   //   [0] "IFCFOOTING", 7, 0
   //   [1] "IFCSPACE", 21, 0
   //   [2] "IFCFURNISHINGELEMENT", 61, 0.1111
 scale = view.colormap@1(values: perElement.table, valueColumn: "Completeness", colorMap: "redgreen", auto: "false", min: "0", max: "1");
-  // Ok  table 4 rows x 9 cols  sha f5a5852505a8
+  // Ok  table 4 rows x 9 cols  sha 0cb8b49190d5
   //   columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //   legend "Completeness" manual: 0, 0.5, 1, missing "no value" 4
+  //   legend "Completeness" manual: 0, 0.5, 1, missing "no value" 8
 classChart = chart.bar@1(table: ranked.table, scale: scale.legend, labelColumn: "Class", valueColumns: "Completeness", title: "Mean handover completeness per class, worst first");
   // Ok
-  //   table: table 15 rows x 5 cols  sha 550e2e8d6f16
+  //   table: table 16 rows x 5 cols  sha 36bdfbea3318
   //     columns Class:Text, Completeness:Number, r:Number, g:Number, b:Number
-  //     chart 15 categories x 1 series: "Completeness"
+  //     chart 16 categories x 1 series: "Completeness"
   //     "IFCFOOTING": 0
   //     "IFCSPACE": 0
   //     "IFCFURNISHINGELEMENT": 0.1111
@@ -136,9 +137,10 @@ classChart = chart.bar@1(table: ranked.table, scale: scale.legend, labelColumn: 
   //     "IFCWINDOW": 0.3846
   //     "IFCSTAIRFLIGHT": 1
   //     "IFCMEMBER": null
-  //   legend: table 4 rows x 9 cols  sha f5a5852505a8
+  //     "IFCZONE": null
+  //   legend: table 4 rows x 9 cols  sha 0cb8b49190d5
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //     legend "Completeness" manual: 0, 0.5, 1, missing "no value" 4
+  //     legend "Completeness" manual: 0, 0.5, 1, missing "no value" 8
 colored = view3d.color@1(instances: inst.instances, values: perElement.table, scale: scale.legend, joinColumn: "GlobalId");
   // Ok
   //   instances: table 714 rows x 15 cols  sha 178451180081
@@ -147,9 +149,9 @@ colored = view3d.color@1(instances: inst.instances, values: perElement.table, sc
   //     710 coloured in 8 colours, 4 grey
   //     legend "Completeness" manual 0 to 1: bins 648 / 62
   //     bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
-  //   legend: table 4 rows x 9 cols  sha f5a5852505a8
+  //   legend: table 4 rows x 9 cols  sha 0cb8b49190d5
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
-  //     legend "Completeness" manual: 0, 0.5, 1, missing "no value" 4
+  //     legend "Completeness" manual: 0, 0.5, 1, missing "no value" 8
 wide = table.pivot@1(table: coverage.table, groupBy: "Class", nameColumn: "Parameter", valueColumn: "FillRate", aggregate: "first");
   // Ok  table 14 rows x 15 cols  sha 726c920152b2
   //   columns Class:Text, Assembly Code:Number, AssetIdentifier:Number, BarCode:Number, FireRating:Number, InstallationDate:Number, IsExternal:Number, LoadBearing:Number, Manufacturer:Number, Mark:Number, OmniClass Number:Number, Reference:Number, SerialNumber:Number, Type Mark:Number, WarrantyStartDate:Number

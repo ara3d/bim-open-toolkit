@@ -1,6 +1,6 @@
 dfg 0.1.0;
-// nrc-property-values   graph 6fd8ec7f7d6c
-about = view.note@1(text: "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the NRC_ sets and withStepId adds each entity's STEP id: 2,441 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names.");
+// nrc-property-values   graph 79f431df9010
+about = view.note@1(text: "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the NRC_ sets and withStepId adds each entity's STEP id: 2,469 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names.");
   // Ok
 entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
   // Ok  relation plan 9a8be9f3b5d5

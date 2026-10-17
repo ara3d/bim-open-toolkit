@@ -46,6 +46,22 @@
     "answer": {
       "x": 1956,
       "y": 927
+    },
+    "zoneSpaces": {
+      "x": 40,
+      "y": 1400
+    },
+    "zoneTable": {
+      "x": 40,
+      "y": 1700
+    },
+    "zoneInputs": {
+      "x": 389,
+      "y": 1500
+    },
+    "zoneAnswer": {
+      "x": 1347,
+      "y": 1500
     }
   },
   "structure": {
@@ -93,6 +109,26 @@
       {
         "from": "provenance.relation",
         "to": "answer.t2"
+      },
+      {
+        "from": "zoneSpaces.relation",
+        "to": "zoneInputs.t1"
+      },
+      {
+        "from": "zoneTable.relation",
+        "to": "zoneInputs.t2"
+      },
+      {
+        "from": "zoneInputs.relation",
+        "to": "zoneAnswer.t1"
+      },
+      {
+        "from": "metrics.relation",
+        "to": "zoneAnswer.t2"
+      },
+      {
+        "from": "run.relation",
+        "to": "zoneAnswer.t3"
       }
     ],
     "nodes": [
@@ -150,12 +186,32 @@
         "id": "answer",
         "kind": "rel.sql",
         "version": 1
+      },
+      {
+        "id": "zoneSpaces",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "zoneTable",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "zoneInputs",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "zoneAnswer",
+        "kind": "rel.sql",
+        "version": 1
       }
     ]
   },
   "values": {
     "about": {
-      "text": "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows."
+      "text": "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows. zoneAnswer is a second output: the zone summary rows (zoneName instead of entityId, 28 values on the four zones of nrc-zones.csv), computed from the space values of nrc_analytics_spaces.csv by each metric's Rollup, the ratio rule dividing zone energy by zone floor area. nrc-enrich-run writes them on the IfcZone groups it creates."
     },
     "values": {
       "path": "nrc_analytics_long.csv",
@@ -193,6 +249,20 @@
     },
     "answer": {
       "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"
+    },
+    "zoneSpaces": {
+      "path": "nrc_analytics_spaces.csv",
+      "source": "nrc"
+    },
+    "zoneTable": {
+      "path": "nrc-zones.csv",
+      "source": "nrc"
+    },
+    "zoneInputs": {
+      "sql": "SELECT z.ZoneName AS zoneName, 'zone' AS Level, v.GlobalId, v.MetricId, v.Value\nFROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId"
+    },
+    "zoneAnswer": {
+      "sql": "SELECT p.zoneName, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE WHEN m.Rollup = 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n            WHEN m.Rollup = 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n            WHEN m.Rollup = 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)\n            WHEN m.Rollup LIKE 'ratio:%' THEN CAST(round(\n                sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 1) THEN p.Value END)\n                / sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 2) THEN p.Value END),\n                CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n       END AS paramValue\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'\n         AND (m.Rollup = 'count' OR m.Rollup LIKE 'ratio:%' OR m.MetricId = p.MetricId)\nGROUP BY p.zoneName, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals\nUNION\nSELECT p.zoneName, m.PropertySet, r.Field, r.ValueType, r.Value\nFROM (SELECT DISTINCT zoneName, Level FROM t1) p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'\nJOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\nORDER BY zoneName, psetName, paramName"
     }
   }
 }

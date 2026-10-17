@@ -7,39 +7,39 @@ model = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/duplex-enriched.bos"
 bos = bos.load@1(path: model.path, harmonize: "false");
   // Ok
-  //   entities: table 4721 rows x 6 cols  sha 8dd61d621f11
+  //   entities: table 4726 rows x 6 cols  sha 077aa964710f
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18553 rows x 6 cols  sha 6fbda96872e9
+  //   parameters: table 18581 rows x 6 cols  sha fcb6d2202473
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
-  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     [0] 116, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 121, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 121, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 969 rows x 5 cols  sha df3cff65516a
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 133, "Level 1", 4705, null, "MemberOf"
-  //     [1] 134, "Level 2", 4705, null, "MemberOf"
-  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+  //     [0] 134, "Level 1", 4706, null, "MemberOf"
+  //     [1] 135, "Level 2", 4706, null, "MemberOf"
+  //     [2] 136, "T/FDN", 4706, null, "MemberOf"
 entities = rel.fromTable@1(table: bos.entities, name: "entities");
-  // Ok  relation plan bc4629f2010f
-  //   "(inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\")"
+  // Ok  relation plan f348b98d793b
+  //   "(inline \"entities\" \"02cf6d95139364ffc71c5faf37e65021e47a82d24a1d8500f2abb11992836b7e\")"
 relations = rel.fromTable@1(table: bos.relations, name: "relations");
-  // Ok  relation plan 535940f766d2
-  //   "(inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\")"
+  // Ok  relation plan c96da38e9005
+  //   "(inline \"relations\" \"7a80e7354e2924b9ab361959e1a73f19621570238ae8248f3dc63dc4e17fb218\")"
 contained = rel.filter@1(input: relations.relation, expr: "RelationType == 'ContainedIn'");
-  // Ok  relation plan 732e00456f50
-  //   "(filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\") \"([RelationType] == 'ContainedIn')\")"
+  // Ok  relation plan 162e8140cfdd
+  //   "(filter (inline \"relations\" \"7a80e7354e2924b9ab361959e1a73f19621570238ae8248f3dc63dc4e17fb218\") \"([RelationType] == 'ContainedIn')\")"
 elements = rel.join@1(left: entities.relation, right: contained.relation, leftKey: "EntityIndex", rightKey: "EntityIndexA", kind: "semi");
-  // Ok  relation plan 9afa65a1b2ef
-  //   "(join Semi (inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c121a\") \"([Rel"...
+  // Ok  relation plan fd61b0f4ef7a
+  //   "(join Semi (inline \"entities\" \"02cf6d95139364ffc71c5faf37e65021e47a82d24a1d8500f2abb11992836b7e\") (filter (inline \"relations\" \"7a80e7354e2924b9ab361959e1a73f19621570238ae8248f3dc63dc4e17fb218\") \"([Rel"...
 byCategory = rel.aggregate@1(input: elements.relation, groupBy: "Category", aggregates: "count(*) as Elements");
-  // Ok  relation plan cdc65043fe10
-  //   "(aggregate (join Semi (inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905b35c12"...
+  // Ok  relation plan f50680e50613
+  //   "(aggregate (join Semi (inline \"entities\" \"02cf6d95139364ffc71c5faf37e65021e47a82d24a1d8500f2abb11992836b7e\") (filter (inline \"relations\" \"7a80e7354e2924b9ab361959e1a73f19621570238ae8248f3dc63dc4e17fb2"...
 ranked = rel.sort@1(input: byCategory.relation, by: "Elements desc, Category");
-  // Ok  relation plan 3e3649d850b4
-  //   "(sort (aggregate (join Semi (inline \"entities\" \"ec53e685d99bdef1673a877d12e98b4b6eeeccbac9fa9c0ded1df10012bcd175\") (filter (inline \"relations\" \"376e4c88492e78980d99f4f09bdaf5a3cf425cb97ea741d32f9d9905"...
+  // Ok  relation plan e6c1ebb49eb7
+  //   "(sort (aggregate (join Semi (inline \"entities\" \"02cf6d95139364ffc71c5faf37e65021e47a82d24a1d8500f2abb11992836b7e\") (filter (inline \"relations\" \"7a80e7354e2924b9ab361959e1a73f19621570238ae8248f3dc63dc4"...
 rows = rel.materialize@1(input: ranked.relation, limit: "0");
   // Ok  table 11 rows x 2 cols  sha a0c00097af76
   //   columns Category:Text, Elements:Integer

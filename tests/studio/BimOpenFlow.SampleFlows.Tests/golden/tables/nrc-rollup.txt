@@ -1,6 +1,6 @@
 dfg 0.1.0;
-// nrc-rollup   graph 5b1fa9f5b0e7
-about = view.note@1(text: "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows.");
+// nrc-rollup   graph 37e3039e3b50
+about = view.note@1(text: "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows. zoneAnswer is a second output: the zone summary rows (zoneName instead of entityId, 28 values on the four zones of nrc-zones.csv), computed from the space values of nrc_analytics_spaces.csv by each metric's Rollup, the ratio rule dividing zone energy by zone floor area. nrc-enrich-run writes them on the IfcZone groups it creates.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
   // Ok  relation plan fbac43cf5e83
@@ -65,3 +65,38 @@ ORDER BY entityId, psetName, paramName
 answer = rel.sql@1(t1: summaries.relation, t2: provenance.relation, sql: "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName");
   // Ok  relation plan 49951ca7baa4
   //   "(sql \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n  "...
+zoneSpaces = rel.csv@1(source: "nrc", path: "nrc_analytics_spaces.csv");
+  // Ok  relation plan b23c695a3274
+  //   "(csv \"nrc\" \"nrc_analytics_spaces.csv\")"
+zoneTable = rel.csv@1(source: "nrc", path: "nrc-zones.csv");
+  // Ok  relation plan 42b9fdb2233f
+  //   "(csv \"nrc\" \"nrc-zones.csv\")"
+zoneInputs = rel.sql@1(t1: zoneSpaces.relation, t2: zoneTable.relation, sql: """
+SELECT z.ZoneName AS zoneName, 'zone' AS Level, v.GlobalId, v.MetricId, v.Value
+FROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId
+""");
+  // Ok  relation plan 30e49a7cc0f5
+  //   "(sql \"SELECT z.ZoneName AS zoneName, 'zone' AS Level, v.GlobalId, v.MetricId, v.Value\nFROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId\" [(csv \"nrc\" \"nrc_analytics_spaces.csv\") (csv \"nrc\" \"nrc-zones"...
+zoneAnswer = rel.sql@1(t1: zoneInputs.relation, t2: metrics.relation, t3: run.relation, sql: """
+SELECT p.zoneName, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,
+       CASE WHEN m.Rollup = 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+            WHEN m.Rollup = 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+            WHEN m.Rollup = 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)
+            WHEN m.Rollup LIKE 'ratio:%' THEN CAST(round(
+                sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 1) THEN p.Value END)
+                / sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 2) THEN p.Value END),
+                CAST(m.Decimals AS INTEGER)) AS VARCHAR)
+       END AS paramValue
+FROM t1 p
+JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'
+         AND (m.Rollup = 'count' OR m.Rollup LIKE 'ratio:%' OR m.MetricId = p.MetricId)
+GROUP BY p.zoneName, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals
+UNION
+SELECT p.zoneName, m.PropertySet, r.Field, r.ValueType, r.Value
+FROM (SELECT DISTINCT zoneName, Level FROM t1) p
+JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'
+JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
+ORDER BY zoneName, psetName, paramName
+""");
+  // Ok  relation plan 19bdfac0a40b
+  //   "(sql \"SELECT p.zoneName, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE WHEN m.Rollup = 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) "...

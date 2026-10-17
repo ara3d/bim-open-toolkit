@@ -10,45 +10,45 @@ inst = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 load = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos");
   // Ok
-  //   entities: table 4721 rows x 6 cols  sha 8dd61d621f11
+  //   entities: table 4726 rows x 6 cols  sha 077aa964710f
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18553 rows x 6 cols  sha 6fbda96872e9
+  //   parameters: table 18581 rows x 6 cols  sha fcb6d2202473
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
-  //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //     [2] 120, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //   relations: table 949 rows x 5 cols  sha 05186f5e12e0
+  //     [0] 116, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 121, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 121, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 969 rows x 5 cols  sha df3cff65516a
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 133, "Level 1", 4705, null, "MemberOf"
-  //     [1] 134, "Level 2", 4705, null, "MemberOf"
-  //     [2] 135, "T/FDN", 4705, null, "MemberOf"
+  //     [0] 134, "Level 1", 4706, null, "MemberOf"
+  //     [1] 135, "Level 2", 4706, null, "MemberOf"
+  //     [2] 136, "T/FDN", 4706, null, "MemberOf"
 spaces = sql.query@1(t1: load.entities, t2: load.parameters, sql: "SELECT e.EntityIndex, e.GlobalId, e.StepId, num.Value AS Number, e.Name, TRY_CAST(area.Value AS DOUBLE) AS Area FROM t1 e LEFT JOIN t2 num ON num.EntityIndex = e.EntityIndex AND num.Name = 'Number' AND num.ParameterGroup = 'PSet_Revit_Identity Data' LEFT JOIN t2 area ON area.EntityIndex = e.EntityIndex AND area.Name = 'GSA BIM Area' WHERE e.Category = 'IFCSPACE' ORDER BY Number");
-  // Ok  table 21 rows x 6 cols  sha df6dafdee72c
+  // Ok  table 21 rows x 6 cols  sha 2ce9b77420e9
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Number:Text, Name:Text, Area:Number
-  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94
-  //   [1] 3029, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14
-  //   [2] 3684, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9
+  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94
+  //   [1] 3030, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14
+  //   [2] 3685, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9
 storeys = sql.query@1(t1: load.entities, t2: load.relations, sql: "WITH RECURSIVE up(EntityIndex, Parent, Depth) AS (SELECT EntityIndexA, EntityIndexB, 1 FROM t2 WHERE RelationType IN ('ContainedIn', 'MemberOf') UNION ALL SELECT up.EntityIndex, r.EntityIndexB, up.Depth + 1 FROM up JOIN t2 r ON r.EntityIndexA = up.Parent AND r.RelationType IN ('ContainedIn', 'MemberOf') WHERE up.Depth < 4) SELECT up.EntityIndex, arg_min(s.Name, up.Depth) AS Storey FROM up JOIN t1 s ON s.EntityIndex = up.Parent AND s.Category = 'IFCBUILDINGSTOREY' GROUP BY up.EntityIndex ORDER BY up.EntityIndex");
-  // Ok  table 239 rows x 2 cols  sha ed1771253551
+  // Ok  table 239 rows x 2 cols  sha dca1272a9d4e
   //   columns EntityIndex:Integer, Storey:Text
-  //   [0] 275, "Level 1"
-  //   [1] 351, "Level 2"
-  //   [2] 717, "Level 1"
+  //   [0] 276, "Level 1"
+  //   [1] 352, "Level 2"
+  //   [2] 718, "Level 1"
 located = table.join@1(a: spaces.table, b: storeys.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 21 rows x 7 cols  sha f72b340a00d1
+  // Ok  table 21 rows x 7 cols  sha 6c5c28329435
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Number:Text, Name:Text, Area:Number, Storey:Text
-  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94, "Level 1"
-  //   [1] 3029, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14, "Level 1"
-  //   [2] 3684, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9, "Level 1"
+  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94, "Level 1"
+  //   [1] 3030, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14, "Level 1"
+  //   [2] 3685, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9, "Level 1"
 rooms = bim.classifyRooms@1(table: located.table, column: "Name", as: "RoomType");
-  // Ok  table 21 rows x 8 cols  sha 636c08e945ee
+  // Ok  table 21 rows x 8 cols  sha 088b9c0d96c4
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Number:Text, Name:Text, Area:Number, Storey:Text, RoomType:Text
-  //   [0] 275, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94, "Level 1", "Circulation"
-  //   [1] 3029, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14, "Level 1", "Residential"
-  //   [2] 3684, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9, "Level 1", "Kitchen"
+  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "A101", "Foyer", 17.94, "Level 1", "Circulation"
+  //   [1] 3030, "0BTBFw6f90Nfh9rP1dlXr2", 67, "A102", "Living Room", 30.14, "Level 1", "Residential"
+  //   [2] 3685, "0BTBFw6f90Nfh9rP1dlXr$", 212, "A103", "Kitchen", 13.9, "Level 1", "Kitchen"
 byType = table.aggregate@1(table: rooms.table, groupBy: "Storey, RoomType", aggregates: "sum(Area) as TotalArea, count(*) as Rooms");
   // Ok  table 11 rows x 4 cols  sha bd702ba9be0c
   //   columns Storey:Text, RoomType:Text, TotalArea:Number, Rooms:Integer

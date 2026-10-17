@@ -54,7 +54,7 @@ public sealed partial class ZoneTableTests
         try
         {
             var start = new ProcessStartInfo("node") { RedirectStandardOutput = true, RedirectStandardError = true };
-            foreach (var arg in new[] { script, "--out", output })
+            foreach (var arg in new[] { script, "--zones-out", output })
                 start.ArgumentList.Add(arg);
             using var node = Process.Start(start) ?? throw new InvalidOperationException("node did not start; it is on PATH wherever deps.mjs ran");
             var stderr = node.StandardError.ReadToEndAsync();

@@ -54,7 +54,7 @@ const DUPLEX_CAPTURES = [
   ["nrc-storey-carbon-chart", "answer", "table", "figure-3-storey-carbon-table.png",
     "Figure 3. The same aggregates in the Table tab."],
   ["nrc-property-values", "answer", "table", "figure-4-property-values-table.png",
-    "Figure 4. The 2,441 property values the byte-exact writer added to the Duplex, read back from duplex-enriched.ifc: element sets, storey and building summaries, and the provenance set."],
+    "Figure 4. The 2,469 property values the byte-exact writer added to the Duplex, read back from duplex-enriched.ifc: element sets, storey, building and zone summaries, and the provenance set."],
   // TKT-93 merged nrc-color-category and nrc-color-embodied-carbon into nrc-color-operational-
   // carbon (one "colour by an analytics column" flow); each figure sets answer's valueColumn
   // and colorMap through the host API before capture, as a user would from the param panel.

@@ -156,12 +156,14 @@ public sealed class RollupGraphTests
         var summary = ((TableValue)ModelGraphTests.RunGreen(doc, EnrichGraph, Fixture.Registry(Runtime), "answer")
             .Results["answer"].Outputs[0]).Table;
 
-        // 2,441 values over 224 entities: the 2,394 element values on 218 elements, 7 on each of the
-        // 4 storeys and the building, and the 12 fields of nrc-run.csv on the project.
+        // 2,469 values over 228 entities: the 2,394 element values on 218 elements, 7 on each of the
+        // 4 storeys and the building, the 12 fields of nrc-run.csv on the project, and 7 on each of
+        // the 4 zones the run creates.
         Assert.Multiple(() =>
         {
-            Assert.That(summary.Cell("entitiesTouched", 0), Is.EqualTo(224L));
-            Assert.That(summary.Cell("valuesWritten", 0), Is.EqualTo(2441L));
+            Assert.That(summary.Cell("entitiesTouched", 0), Is.EqualTo(228L));
+            Assert.That(summary.Cell("valuesWritten", 0), Is.EqualTo(2469L));
+            Assert.That(summary.Cell("zonesWritten", 0), Is.EqualTo(4L));
             Assert.That(summary.Cell("targetPath", 0), Is.EqualTo(target));
         });
         Assert.That(File.ReadAllBytes(target), Is.EqualTo(File.ReadAllBytes(NrcPaths.Ifc)),
@@ -180,7 +182,8 @@ public sealed class RollupGraphTests
         var added = diff.Added.Select(id => after.GetSpan(id)!.Value.TypeName.ToUpperInvariant())
             .GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count());
 
-        // 653 element sets (217 embodied, 218 operational, 218 energy), 4 storey, 1 building, 1 provenance.
+        // 653 element sets (217 embodied, 218 operational, 218 energy), 4 storey, 1 building, 1 provenance,
+        // and 4 zone sets, each with the zone and the relationship that assigns its spaces.
         Assert.Multiple(() =>
         {
             Assert.That(diff.Deleted, Is.Empty);
@@ -188,9 +191,11 @@ public sealed class RollupGraphTests
             Assert.That(diff.Added, Has.All.GreaterThan(before.MaxId));
             Assert.That(added, Is.EquivalentTo(new Dictionary<string, int>
             {
-                ["IFCPROPERTYSET"] = 659,
-                ["IFCRELDEFINESBYPROPERTIES"] = 659,
-                ["IFCPROPERTYSINGLEVALUE"] = 2441,
+                ["IFCPROPERTYSET"] = 663,
+                ["IFCRELDEFINESBYPROPERTIES"] = 663,
+                ["IFCPROPERTYSINGLEVALUE"] = 2469,
+                ["IFCZONE"] = 4,
+                ["IFCRELASSIGNSTOGROUP"] = 4,
             }));
         });
     }

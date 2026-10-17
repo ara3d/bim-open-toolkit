@@ -27,7 +27,7 @@ conversion and meshing, which the host does once and caches.
 
 | Claim (paper section) | Shown by | Guarded by |
 |---|---|---|
-| Analytics are stored in IFC property sets and travel with the file (3) | `samples/nrc/duplex-enriched.ifc`: 659 sets, 2,441 typed values, written byte-exactly into `duplex-base.ifc` by a Run of `nrc-enrich-run`; Figure 4 reads them back | `Ara3D.Ifc.Tests`, `NrcWorkflows.Tests/RollupGraphTests` |
+| Analytics are stored in IFC property sets and travel with the file (3) | `samples/nrc/duplex-enriched.ifc`: 663 sets, 2,469 typed values, and four `IfcZone` groups, written byte-exactly into `duplex-base.ifc` by a Run of `nrc-enrich-run`; Figure 4 reads them back | `Ara3D.Ifc.Tests`, `NrcWorkflows.Tests/RollupGraphTests` |
 | Aggregates are stored apart from element values (3, Appendix A) | storey and building totals are computed by the `nrc-rollup` graph from `nrc-metrics.csv` and written as `NRC_StoreySummary` and `NRC_BuildingSummary` under their own names; summing an element property over every entity that carries it gives the element total | `NrcWorkflows.Tests/RollupGraphTests` |
 | The external table is referenced from the project (3.4) | `IfcDocumentReferenceBuilder` writes `IfcDocumentInformation`, `IfcDocumentReference`, `IfcRelAssociatesDocument` | `Ara3D.Ifc.Tests/DocumentReferenceTests` |
 | Values are displayed on geometry from the same tables (4) | Figures 5 to 8: three colourings and the DC-W1 verdicts on the Duplex model | `NrcWorkflows.Tests/FigureGraphTests` |
@@ -52,7 +52,7 @@ the graph per figure:
 |---|---|---|
 | 2 | `nrc-storey-carbon-chart`, answer, Chart | embodied and operational carbon per storey |
 | 3 | same, Table | the same rows as a table |
-| 4 | `nrc-property-values`, answer, Table | the 2,441 property values, read back from the enriched file |
+| 4 | `nrc-property-values`, answer, Table | the 2,469 property values, read back from the enriched file |
 | 5 | `nrc-color-operational-carbon`, answer, 3D (`valueColumn: OperationalCarbon_kgCO2e_per_year`, `colorMap: viridis`) | viridis gradient, unmatched grey |
 | 6 | same graph, answer, 3D (`valueColumn: EmbodiedCarbon_A1A3_kgCO2e`, `colorMap: viridis`) | the roof has no value and stays grey |
 | 7 | same graph, answer, 3D (`valueColumn: Category`, `colorMap: category10`) | nine categories, one colour each |

@@ -142,11 +142,14 @@ public sealed class FigureGraphTests
         var values = RollupGraphTests.PsetRow.All(ModelGraphTests.AnswerRows(
             ModelGraphTests.EvaluateGreen(ModelGraphTests.Document(id), id, Fixture.Registry(runtime)), runtime));
         var written = RollupGraphTests.Answer("nrc-element-psets").Concat(RollupGraphTests.Answer("nrc-rollup"));
+        var zoneValues = values.Where(r => r.PsetName == "NRC_ZoneSummary").ToList();
+        var others = values.Where(r => r.PsetName != "NRC_ZoneSummary").ToList();
         Assert.Multiple(() =>
         {
-            Assert.That(values, Has.Count.EqualTo(2441), "2,441 property values were written");
-            Assert.That(values.Select(r => (r.EntityId, r.PsetName, r.ParamName)),
+            Assert.That(others, Has.Count.EqualTo(2441), "2,441 element, storey, building and project values");
+            Assert.That(others.Select(r => (r.EntityId, r.PsetName, r.ParamName)),
                 Is.EquivalentTo(written.Select(r => (r.EntityId, r.PsetName, r.ParamName))));
+            Assert.That(zoneValues, Has.Count.EqualTo(28), "7 values on each of the 4 zones");
         });
     }
 }

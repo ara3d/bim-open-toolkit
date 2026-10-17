@@ -4,8 +4,8 @@
     "about": { "x": 40, "y": 40, "w": 560, "h": 122 },
     "elements": { "x": 40, "y": 202 },
     "doors": { "x": 389, "y": 202 },
-    "columns": { "x": 898, "y": 202 },
-    "answer": { "x": 1478, "y": 202 }
+    "columns": { "x": 805, "y": 202 },
+    "answer": { "x": 1385, "y": 202 }
   },
   "structure": {
     "edges": [

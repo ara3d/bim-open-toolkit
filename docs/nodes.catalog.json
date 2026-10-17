@@ -3762,6 +3762,16 @@
           "name": "in",
           "type": "Table",
           "optional": false
+        },
+        {
+          "name": "zones",
+          "type": "Table",
+          "optional": true
+        },
+        {
+          "name": "zonePsets",
+          "type": "Table",
+          "optional": true
         }
       ],
       "outputs": [
@@ -3787,7 +3797,7 @@
           "default": ""
         }
       ],
-      "description": "Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten)."
+      "description": "Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Optional input zones (zoneName, spaceId) appends one IfcZone per name grouping those spaces; optional input zonePsets (zoneName, psetName, paramName, paramValue, optional valueType) attaches property sets to the zones by name. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten, zonesWritten)."
     },
     {
       "kind": "spatial.contains",

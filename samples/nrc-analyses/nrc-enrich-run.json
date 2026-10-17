@@ -74,6 +74,34 @@
     "answer": {
       "x": 3523,
       "y": 877
+    },
+    "zoneSpaces": {
+      "x": 40,
+      "y": 2000
+    },
+    "zoneTable": {
+      "x": 40,
+      "y": 2300
+    },
+    "zoneInputs": {
+      "x": 389,
+      "y": 2100
+    },
+    "zoneAnswer": {
+      "x": 1347,
+      "y": 2100
+    },
+    "zoneMembers": {
+      "x": 738,
+      "y": 2400
+    },
+    "zoneMembersTable": {
+      "x": 2565,
+      "y": 2300
+    },
+    "zoneRowsTable": {
+      "x": 2565,
+      "y": 2100
     }
   },
   "structure": {
@@ -181,6 +209,50 @@
       {
         "from": "table.table",
         "to": "answer.in"
+      },
+      {
+        "from": "zoneSpaces.relation",
+        "to": "zoneInputs.t1"
+      },
+      {
+        "from": "zoneTable.relation",
+        "to": "zoneInputs.t2"
+      },
+      {
+        "from": "zoneInputs.relation",
+        "to": "zoneAnswer.t1"
+      },
+      {
+        "from": "metrics.relation",
+        "to": "zoneAnswer.t2"
+      },
+      {
+        "from": "run.relation",
+        "to": "zoneAnswer.t3"
+      },
+      {
+        "from": "zoneTable.relation",
+        "to": "zoneMembers.t1"
+      },
+      {
+        "from": "entities.relation",
+        "to": "zoneMembers.t2"
+      },
+      {
+        "from": "zoneMembers.relation",
+        "to": "zoneMembersTable.input"
+      },
+      {
+        "from": "zoneAnswer.relation",
+        "to": "zoneRowsTable.input"
+      },
+      {
+        "from": "zoneMembersTable.table",
+        "to": "answer.zones"
+      },
+      {
+        "from": "zoneRowsTable.table",
+        "to": "answer.zonePsets"
       }
     ],
     "nodes": [
@@ -273,12 +345,47 @@
         "id": "answer",
         "kind": "sink.writePsets",
         "version": 1
+      },
+      {
+        "id": "zoneSpaces",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "zoneTable",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "zoneInputs",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "zoneAnswer",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "zoneMembers",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "zoneMembersTable",
+        "kind": "rel.materialize",
+        "version": 1
+      },
+      {
+        "id": "zoneRowsTable",
+        "kind": "rel.materialize",
+        "version": 1
       }
     ]
   },
   "values": {
     "about": {
-      "text": "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,441 values on 224 entities. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, so every Run writes the same bytes."
+      "text": "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,469 values on 228 entities, including four IfcZone groups (nrc-zones.csv) with an NRC_ZoneSummary set each. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, and zoneMembers and zoneRowsTable feed the writer its zones and their sets, so every Run writes the same bytes."
     },
     "values": {
       "path": "nrc_analytics_long.csv",
@@ -340,6 +447,29 @@
     "answer": {
       "sourcePath": "{SAMPLES}/duplex-base.ifc",
       "targetPath": "{ARTIFACTS}/nrc/duplex-enriched-out.ifc"
+    },
+    "zoneSpaces": {
+      "path": "nrc_analytics_spaces.csv",
+      "source": "nrc"
+    },
+    "zoneTable": {
+      "path": "nrc-zones.csv",
+      "source": "nrc"
+    },
+    "zoneInputs": {
+      "sql": "SELECT z.ZoneName AS zoneName, 'zone' AS Level, v.GlobalId, v.MetricId, v.Value\nFROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId"
+    },
+    "zoneAnswer": {
+      "sql": "SELECT p.zoneName, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE WHEN m.Rollup = 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n            WHEN m.Rollup = 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n            WHEN m.Rollup = 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)\n            WHEN m.Rollup LIKE 'ratio:%' THEN CAST(round(\n                sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 1) THEN p.Value END)\n                / sum(CASE WHEN p.MetricId = split_part(split_part(m.Rollup, ':', 2), '/', 2) THEN p.Value END),\n                CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n       END AS paramValue\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'\n         AND (m.Rollup = 'count' OR m.Rollup LIKE 'ratio:%' OR m.MetricId = p.MetricId)\nGROUP BY p.zoneName, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals\nUNION\nSELECT p.zoneName, m.PropertySet, r.Field, r.ValueType, r.Value\nFROM (SELECT DISTINCT zoneName, Level FROM t1) p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'\nJOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\nORDER BY zoneName, psetName, paramName"
+    },
+    "zoneMembers": {
+      "sql": "SELECT z.ZoneName AS zoneName, e.StepId AS spaceId\nFROM t1 z JOIN t2 e ON e.GlobalId = z.SpaceGlobalId\nORDER BY z.ZoneName, e.StepId"
+    },
+    "zoneMembersTable": {
+      "limit": "0"
+    },
+    "zoneRowsTable": {
+      "limit": "0"
     }
   }
 }
