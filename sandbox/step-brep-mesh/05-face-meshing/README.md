@@ -18,7 +18,7 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
-| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 40 laws and their guards |
+| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 41 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 3 theorems, 2 conjectures |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
@@ -83,9 +83,14 @@ corner goes to its 3D vertex, the elements become flat triangles and quads, and 
 
 **Orientation.** Work in the chart `chi(u, v) = (s u, v)` with `s` = layer 02's `FaceNormalSign`,
 the sign of the face normal against `PartialU x PartialV` (the face's `SameSense`, times -1 on the
-inner part of a degenerate torus). Then a triangle positive in `chi` lifts to a triangle whose normal
-`(b - a) x (c - a)` is a positive multiple of the face normal, to first order. Elements keep their
-corner order from parameter space to space, and the theorem `ChartWindingIsFaceWinding` states it.
+inner part of a degenerate torus). Then a small triangle positive in `chi` lifts to a triangle whose
+normal `(b - a) x (c - a)` is a positive multiple of the face normal, to first order, and elements
+keep their corner order from parameter space to space. First order is not enough for a sliver: on
+the unit sphere the parameter triangle `(0, 0.5)`, `(0.2, 0.5)`, `(0.1, 0.5001)` is positive in the
+chart, yet lifts 117 degrees off the face normal, because its height is below the sagitta of its long
+edge. So the lifted sign is enforced, not derived: refinement splits an element that folds when
+lifted (`Law_ElementLiftsFacingFaceNormal`), a quad grid with a folded element is not used
+(`GridUnlessFolded`), and `MeshFace` ensures `Law_ElementFacesFaceNormal`.
 
 ## Decisions and reasons
 
@@ -215,6 +220,7 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_EveryPointIsACorner` | every point is a corner of some element | exact | E |
 | `Law_ElementPositiveInChart` | every element has positive signed area in the chart | exact sign | E |
 | `Law_ElementAreasSumToRegionArea` | element areas sum to the region's area | `AreaTolerance` of the region tolerance | E |
+| `Law_ElementLiftsFacingFaceNormal` | every element not collapsed at a pole, lifted through the surface, winds counter-clockwise about the face normal | exact sign | E |
 | `Law_ElementSpansBelowHalfPeriod` | no element spans half a period | exact | E |
 | `Law_LiftKeepsPoints` | `Lift` keeps the parameter points and sources | exact by construction | E |
 | `Law_LocalVertexInRange` | every point's local vertex exists | exact | E |
@@ -236,8 +242,7 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_RequestHasDiagnostic` | a request comes with at least one diagnostic | exact | E |
 | `Law_EmptyMeshIsExplained` | an empty mesh with no request comes with an error diagnostic | exact | E |
 
-Theorems in the spec: `ChartWindingIsFaceWinding` (lifting keeps corner order and gives the face's
-winding), `SharedEdgePositionsAgree` (two faces hold bitwise equal positions for a shared sample, so
+Theorems in the spec: `SharedEdgePositionsAgree` (two faces hold bitwise equal positions for a shared sample, so
 assembly needs no welding), `DroppedTrianglesArePoleSegments` (the dropped count equals the number of
 boundary segments on collapsed lines). Conjectures: `ElementsTileRegion`,
 `NormalTurnBoundsCentroidDeviation`.
@@ -327,6 +332,7 @@ knots); offset and rectangular-trimmed last.
 | `Unwrap`: every point by continuity | the second use of every seam segment by the left rule, every other point by continuity; ensures `Law_SeamUsesOnOppositeCopies` | Continuity puts both uses on one copy when they meet at a pole or an apex (review F1) |
 | `AddMissingSeamsAndPoles`: requires every step below half a period | requires `IsUnwrappedStep` (a step touching a collapsed line may jump) and the left rule; ensures the left rule on its loops; pole segments run from the arriving to the leaving free parameter, windings counted after | The free parameter at a pole passes from one seam copy to the other |
 | `AddMissingSeamsAndPoles(m, f, loops, c)`: one loop per bound | one loop per bound of `MeshedBounds(m, f)` | Layer 02's vertex-loop reduction (review C6) |
+| theorem `ChartWindingIsFaceWinding` | dropped; `RefineToSurface` ensures `Law_ElementLiftsFacingFaceNormal`, `QuadGridIfRectangular` gives no grid when an element folds (`GridUnlessFolded`); new `ElementUvCentroid(t, k)`, `LiftedVectorArea`, `LiftsFacingFaceNormal` | The theorem is false for slivers (review H5) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -340,6 +346,10 @@ Applied:
   `Law_SeamUsesOnOppositeCopies`; a step touching a collapsed line is exempt from the half-period
   law; pole segments from the arriving to the leaving free parameter. The seamed sphere and the
   seamed cone now close in the plane.
+- H5: `ChartWindingIsFaceWinding` dropped as false (the unit-sphere sliver above); its conclusion
+  is enforced by refinement and by the quad grid's fold check (`Law_ElementLiftsFacingFaceNormal`).
+  The review's alternative, a shape hypothesis such as `kappa_max * l_max < sin(theta_min)`, was
+  not taken: it needs a curvature bound no layer computes, and its constant is unproven.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 

@@ -86,8 +86,9 @@ type CoedgeUvRoute
 // # The chart a region is oriented and triangulated in
 
 // The chart of one face: (u, v) maps to (s * ScaleU * u, ScaleV * v), with s = -1 when Mirrored
-// and +1 otherwise. Mirrored is true exactly when the face's SameSense is false, so that
-// du x dv in the chart lifts to a positive multiple of the face normal. ScaleU and ScaleV are
+// and +1 otherwise. Mirrored is true exactly when layer 02's FaceNormalSign is -1 (the face
+// normal points against PartialU x PartialV), so that du x dv in the chart maps to a positive
+// multiple of the face normal at each point. ScaleU and ScaleV are
 // positive: the mean speeds |PartialU| and |PartialV| over the face, so a length in the chart
 // approximates a length on the surface (exact on planes and cylinders). The triangulator and the
 // refinement's Delaunay decisions work in this chart; every law measures in 3D or by sign.

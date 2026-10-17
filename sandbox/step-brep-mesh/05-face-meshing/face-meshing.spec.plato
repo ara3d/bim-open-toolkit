@@ -236,10 +236,11 @@ spec RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceCha
     ensures forall (i: Integer) in result.Points.Count.Range: Law_TriangulationAddsOnlyInteriorPoints(m, f, r, result, i);
     ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementPositiveInChart(m, f, result, ElementIndex(k));
     ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementSpansBelowHalfPeriod(m, f, result, ElementIndex(k));
+    ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementLiftsFacingFaceNormal(m, f, result, ElementIndex(k));
     ensures Law_ElementAreasSumToRegionArea(m, f, r, result);
     ensures result.Quads.Count == t.Quads.Count;
     measure result.Points.Count;
-    deferred "Delaunay refinement with the boundary locked: insert the worst surface sample point of an element exceeding SurfaceChordal or SurfaceAngular, stop at MinLength";
+    deferred "Delaunay refinement with the boundary locked: insert the worst surface sample point of an element exceeding SurfaceChordal or SurfaceAngular or folding when lifted, stop at MinLength";
 }
 
 spec QuadGrid(m: BrepModel, f: BrepFaceIndex, r: UvRegion, corners: Array<VertexIndex>, c: FaceMeshingCriteria): UvTriangulation
@@ -319,18 +320,15 @@ spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
 //==
 // # Theorems and conjectures
 
-// Lifting keeps a triangle's corner order and gives it the face's winding.
-theorem ChartWindingIsFaceWinding
-{
-    given m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation, k: ElementIndex;
-    assume m.IsDiscretizedFace(f, d);
-    assume Law_ElementPositiveInChart(m, f, t, k);
-    assume Law_ElementSpansBelowHalfPeriod(m, f, t, k);
-    assume m.PoleCollapsedTriangleCount(f, t) == 0;
-    conclude Law_ElementFacesFaceNormal(m, m.Lift(f, d, t), k);
-    because "For a small parameter triangle (a, b, c), (S(b) - S(a)) x (S(c) - S(a)) = A_uv (PartialU x PartialV) + O(h^3), A_uv its natural signed area. In the chart u is negated exactly when FaceNormalSign is -1, so the chart area is FaceNormalSign * A_uv > 0, and the 3D vector area is a positive multiple of FaceNormalSign * (PartialU x PartialV), which is the face normal (layer 02's FaceNormalSign is sigma(SameSense) times epsilon, and NormalOr is epsilon <PartialU x PartialV>). No corner reordering is needed. The half-period bound keeps the triangle inside one sheet of the parameterization. With no pole-collapsed triangle, Lift drops nothing, so element k of the face mesh is element k of the triangulation.";
-    tested by Law_ElementFacesFaceNormal, Law_ElementPositiveInChart;
-}
+// The former theorem ChartWindingIsFaceWinding (a triangle positive in the chart lifts facing
+// the face normal) is dropped as false (review H5): the O(h^3) term of
+// (S(b) - S(a)) x (S(c) - S(a)) = A_uv (PartialU x PartialV) + O(h^3) dominates on a sliver. On
+// the unit sphere the parameter triangle (0, 0.5), (0.2, 0.5), (0.1, 0.5001) has chart area
+// +1e-5, spans 0.2 rad, and touches no pole, yet its flat normal is 2.05 rad (117 degrees) from
+// the face normal: its height (1e-4) is below the sagitta of its long edge (3.8e-3). The
+// conclusion is now a postcondition: RefineToSurface splits folded elements
+// (Law_ElementLiftsFacingFaceNormal), QuadGridIfRectangular drops a grid with one
+// (GridUnlessFolded), and MeshFace ensures Law_ElementFacesFaceNormal.
 
 // Both faces of an edge hold bitwise the same boundary positions, so the assembled mesh is
 // watertight along model edges with no welding.

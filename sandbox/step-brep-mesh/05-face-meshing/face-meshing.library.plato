@@ -51,8 +51,9 @@ library FaceMeshing
     // columns at the closed-form step on spheres and tori, knot lines on B-splines), then insert,
     // by Delaunay insertion in the chart, the parameters of the sample point (Project of an
     // interior edge midpoint or of the corner mean) of the element that most exceeds
-    // SurfaceChordal or SurfaceAngular, until none does or the new point would lie closer than
-    // MinLength in 3D to an existing one. Boundary points are never added, moved or removed.
+    // SurfaceChordal or SurfaceAngular, or that folds when lifted (LiftsFacingFaceNormal false),
+    // until none does or the new point would lie closer than MinLength in 3D to an existing one.
+    // Boundary points are never added, moved or removed.
     RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation;
 
     // The region's constrained triangulation, refined against the surface.
@@ -112,6 +113,28 @@ library FaceMeshing
         return cs.Count.Range.Any(i => cs.Count.Range.Any(j =>
             j > i ? m.ShareCollapsedLine(f, t.Points[cs[i]], t.Points[cs[j]]) : false));
     }
+
+    // The mean of element k's corner parameters: its parameter centroid. Precondition: corners
+    // in range.
+    ElementUvCentroid(t: UvTriangulation, k: ElementIndex): UvCoordinate
+    {
+        var mean = t.ElementCorners(k).Map(v => t.Points[v].ToPoint2D).AverageOfPoints;
+        return UvCoordinate(mean.X, mean.Y);
+    }
+
+    // The vector area (Newell) of element k of t lifted through face f's surface: its corners
+    // evaluated on the surface. Precondition: corners in range.
+    LiftedVectorArea(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Vector3D
+        => t.ElementCorners(k).Map(v => m.Geometry.Eval(m.SurfaceOf(f), t.Points[v])).VectorArea;
+
+    // True when element k of t, lifted through face f's surface, winds counter-clockwise about
+    // the face normal at its parameter centroid: an exact sign. A positive chart area does not
+    // imply it (a sliver whose height is below the sagitta of its long edge folds; see
+    // Law_ElementLiftsFacingFaceNormal), so refinement enforces it. Precondition: corners in
+    // range.
+    LiftsFacingFaceNormal(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean
+        => m.LiftedVectorArea(f, t, k).Dot(
+            m.FaceNormalAt(f, t.ElementUvCentroid(k), m.LiftedVectorArea(f, t, k))) > 0.0;
 
     // How many triangles collapse at a pole: the triangles Lift drops.
     PoleCollapsedTriangleCount(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation): Integer
@@ -342,9 +365,18 @@ library FaceMeshing
         => match (sides) {
             NotFourSided => QuadGridOutcome.NoGrid;
             FourSided(corners) => r.OppositeCountsMatch(corners)
-                ? QuadGridOutcome.Grid(m.QuadGrid(f, r, corners, c))
+                ? m.GridUnlessFolded(f, m.QuadGrid(f, r, corners, c))
                 : QuadGridOutcome.CountsDiffer(m.MatchingFloors(f, d, r, corners));
         };
+
+    // The grid, unless some element of it that does not collapse at a pole folds when lifted
+    // (LiftsFacingFaceNormal false); then no grid, and the face gets the refined triangulation,
+    // which splits folds.
+    GridUnlessFolded(m: BrepModel, f: BrepFaceIndex, g: UvTriangulation): QuadGridOutcome
+        => g.ElementCount.Range.All(k =>
+            m.IsPoleCollapsed(f, g, ElementIndex(k)) ? true : m.LiftsFacingFaceNormal(f, g, ElementIndex(k)))
+            ? QuadGridOutcome.Grid(g)
+            : QuadGridOutcome.NoGrid;
 
     // deferred: transfinite (Coons) interpolation in parameter space between the four sides,
     // whose points are the region's boundary points unchanged (the boundary prefix); rows that

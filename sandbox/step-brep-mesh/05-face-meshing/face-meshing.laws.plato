@@ -254,6 +254,19 @@ library FaceMeshingLaws
                 <= r.AreaTolerance(m.RegionToleranceOf(f, r))
             : true;
 
+    // Every element of a triangulation of face f that does not collapse at a pole, lifted through
+    // the surface, winds counter-clockwise about the face normal at its parameter centroid (an
+    // exact sign). Positive chart area does not imply it: on the unit sphere the parameter
+    // triangle (0, 0.5), (0.2, 0.5), (0.1, 0.5001) has chart area +1e-5 and touches no pole, yet
+    // its flat normal is 2.05 rad from the face normal, because its height (1e-4) is below the
+    // sagitta of its long edge (3.8e-3). So refinement enforces the sign (review H5).
+    Law_ElementLiftsFacingFaceNormal(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean
+        => (m.IsFaceIntact(f) && t.HasElement(k))
+            ? (t.ElementCornersInRange(k)
+                ? (m.IsPoleCollapsed(f, t, k) ? true : m.LiftsFacingFaceNormal(f, t, k))
+                : true)
+            : true;
+
     // No element of a triangulation of face f spans half a period or more in a periodic
     // direction, so none wraps around the surface or folds across a seam.
     Law_ElementSpansBelowHalfPeriod(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean
@@ -358,8 +371,9 @@ library FaceMeshingLaws
 
     // Every element turns counter-clockwise about the face normal: its vector area points to the
     // side of the face normal at its parameter centroid (an exact sign; zero or negative is a
-    // fold). The 3D winding rule: the chart is mirrored exactly when SameSense is false, so an
-    // element positive in the chart keeps its corner order when lifted.
+    // fold). Elements keep their corner order from the chart, which is mirrored exactly when
+    // FaceNormalSign is -1; refinement splits the elements that fold when lifted
+    // (Law_ElementLiftsFacingFaceNormal), since a positive chart area alone does not prevent it.
     Law_ElementFacesFaceNormal(m: BrepModel, fm: FaceMesh, k: ElementIndex): Boolean
         => m.CanMeasure(fm, k) ? m.FacesFaceNormal(fm, k) : true;
 
