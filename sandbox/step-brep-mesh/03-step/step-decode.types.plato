@@ -16,15 +16,8 @@
 
 //==
 // # Occurrences and sources
-
-// belongs-in: 00-foundation
-// An occurrence: a position in ProvenanceMap.Occurrences. -1 means none (the
-// parent of a root occurrence).
-type StepOccurrenceIndex
-    implements IValue, IHashable, IComparable, IIndex
-{
-    Value: Integer;
-}
+//
+// An occurrence's typed index, StepOccurrenceIndex, is layer 0's.
 
 // One decoded STEP instance as it appears in one occurrence: the key of the
 // provenance map. A part placed twice in an assembly is decoded twice, so the

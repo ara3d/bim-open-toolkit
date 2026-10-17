@@ -107,12 +107,6 @@ library StepWhereRules
             f.FieldReals(i, "B_SPLINE_SURFACE_WITH_KNOTS", "v_knots", Number.Unmeasured));
     }
 
-    // belongs-in: 00-foundation
-    // The sum of a list of integers; 0 for none. Layer 6 declares the same
-    // function (mesh-numbering.library.plato); one copy belongs in layer 0.
-    IntegerTotal(xs: Array<Integer>): Integer
-        => xs.Reduce(0, (a, b) => a + b);
-
     // True when lo <= x <= hi.
     IsBetween(x: Integer, lo: Integer, hi: Integer): Boolean
         => x >= lo && x <= hi;

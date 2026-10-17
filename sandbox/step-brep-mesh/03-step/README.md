@@ -21,7 +21,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
 |---|---|---|---|
 | `step-part21.types.plato` | types | | `StepHeader`, `StepAttribute`, `StepSimpleRecord`, `StepInstanceBody`, `StepInstance`, `Part21File`, `ParsedFile` |
 | `step-schema.types.plato` | types | | `AggregateForm`, `AggregateBound`, `AttributeKind`, `ValueRule`, `AttributeDefinition`, `EntityTreatment`, `EntityDefinition`, `RecordSlot`, `StepKnotSpec` |
-| `step-decode.types.plato` | types | | `StepOccurrenceIndex`, `StepSource`, `StepOccurrence`, `KernelSources`, `KernelElement`, `FoldCause`, `FoldRecord`, `StepRepair`, `RepairRecord`, `ProvenanceMap`, `ContextUncertainty`, `ContextUnits`, `DecodePolicy`, `DecodedModel` |
+| `step-decode.types.plato` | types | | `StepSource`, `StepOccurrence`, `KernelSources`, `KernelElement`, `FoldCause`, `FoldRecord`, `StepRepair`, `RepairRecord`, `ProvenanceMap`, `ContextUncertainty`, `ContextUnits`, `DecodePolicy`, `DecodedModel` |
 | `step-diagnostics.types.plato` | types | | `StepDiagnosticCode`: every finding the layer emits |
 | `step-part21.library.plato` | library | `Part21Reading` | `ParseStep`, `PrintStep`, `InstancePosition`, total attribute readers, structural equality `IsSameFile` |
 | `step-schema.library.plato` | library | `StepSchemaModel` | table builders, entity lookup, `IsKindOf`, `FlatRecord`, `SlotOf`, field readers, conformance, `ReachableOfKind` |
@@ -650,7 +650,7 @@ From research section 8, the corpus starts with:
 | Old | New | Reason |
 |---|---|---|
 | `ProvenanceMap`: "`StepInstanceId` to kernel index and back" | keyed by `StepSource` (occurrence, instance); fields `Occurrences`, `Sources: KernelSources`, `ByInstance`, `Folds: Array<FoldRecord>`, `Repairs: Array<RepairRecord>`; reverse lookup `KernelOf` returns a `KernelElement` | a part placed twice in an assembly is decoded twice, so the instance alone is not a key; repairs (merged vertices, dropped edges, skips) are needed for the counts to be exact |
-| (none) | `StepOccurrenceIndex`, declared here with `// belongs-in: 00-foundation` | the typed index of an occurrence; every other typed index is layer 0's |
+| (none) | `StepOccurrenceIndex`, layer 0's (moved there in the fix wave; this layer's stand-in deleted) | the typed index of an occurrence; every other typed index is layer 0's |
 | `StepHeader { Description; Name; Schema; ... }` | ten fields: `Description`, `ImplementationLevel`, `Name`, `TimeStamp`, `Author`, `Organization`, `PreprocessorVersion`, `OriginatingSystem`, `Authorization`, `Schema` | completed from P21 8.2.2 to 8.2.4 as the contract asked |
 | `Part21File` | adds the invariant that `Instances` are in ascending `Id` order | binary-search lookup and a canonical form for the round trip |
 | `AttributeKind` | the element kind only; aggregation levels are `AttributeDefinition.Aggregates: Array<AggregateBound>`; new `AggregateForm`, `AggregateBound`, `ValueRule`, `EntityTreatment`, `RecordSlot`, `StepKnotSpec`; `EntityDefinition` gains `ShortName`, `Clause`, `Supertypes`, `Derives`, `Treatment` | no recursive kind (PLATO-PRIMER.md D.2); the treatment column is the decode's domain as data |
@@ -660,5 +660,5 @@ From research section 8, the corpus starts with:
 | (none) | `StepDiagnosticCode`, `Diagnose`, `CodeOf`, `HasCode` | one table for every code this layer writes into `Diagnostic.Code` |
 | `FaceBound.IsOuter` "records that the file wrote face_outer_bound" (layer 2's comment) | as written, except false on every bound of a face that has two or more | a contradictory hint is dropped so `Law_AtMostOneOuterBound` holds after decode |
 | layer 8 `ParseOutcome { Ok; File; Diagnostics }` | proposal: layer 8 reuses `ParsedFile`, which has the same fields | one declaration of one shape |
-| (none) | `IntegerTotal`, declared here with `// belongs-in: 00-foundation` | layer 6 declares the same function; two identical overloads are ambiguous once both layers compile together |
+| (none) | `IntegerTotal`, layer 0's (moved there in the fix wave; this layer's and layer 6's copies deleted) | two identical overloads are ambiguous once both layers compile together |
 | names used from lower layers beyond the fixed list | layer 0: `ResolutionAt`, `ParameterFloor`, `Coincident`, `IsWellFormed`, `IsError`, `IsPeriodic`, `PeriodOr`, `Corresponds`, `Identical`, `Unmeasured`; layer 2: `ScaleToMetres` | these should become fixed names, or this layer breaks when they are renamed |
