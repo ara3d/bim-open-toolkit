@@ -385,10 +385,34 @@ library UvRegions
             r.Outer.WithChartSign(m.IsChartMirrored(f), true),
             r.Holes.Map(h => h.WithChartSign(m.IsChartMirrored(f), false)));
 
-    // Face f's loops mapped to parameter space, unwrapped, and completed with synthetic seams and
-    // poles, in the traversal the file gives.
+    // True when bound k of face f is a vertex loop that layer 02's ReducedCounts drops: its vertex
+    // is an end of a coedge of another bound of the face, or an earlier vertex loop of the face
+    // has the same vertex. Its point is already a boundary point of the region, and expanding it
+    // at a pole would lay a second pole segment over the one the other bound gives (sphere B of
+    // research/VALIDATION-MATH.md 1.5), so the region would never be simple.
+    // Precondition: k indexes the face's bounds, and every bound's loop is intact.
+    IsRedundantVertexLoop(m: BrepModel, f: BrepFaceIndex, k: Integer): Boolean
+    {
+        var bounds = m.Faces[f].Bounds;
+        return m.Loops[bounds[k].Loop].VertexLoopVertexOf.Any(v => bounds.Count.Range.Any(j =>
+            j == k
+                ? false
+                : (m.LoopCoedges(bounds[j].Loop).Any(c => m.StartVertex(c) == v || m.EndVertex(c) == v)
+                    || (j < k ? m.Loops[bounds[j].Loop].VertexLoopVertexOf.Any(w => w == v) : false))));
+    }
+
+    // The bounds of face f the region is built from: every bound except the redundant vertex
+    // loops, in the file's order.
+    MeshedBounds(m: BrepModel, f: BrepFaceIndex): Array<FaceBound>
+    {
+        var bounds = m.Faces[f].Bounds;
+        return bounds.Count.Range.FlatMap(k => m.IsRedundantVertexLoop(f, k) ? bounds.Take(0) : [bounds[k]]);
+    }
+
+    // Face f's meshed bounds mapped to parameter space, unwrapped, and completed with synthetic
+    // seams and poles, in the traversal the file gives.
     UnorientedRegionOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvRegion
-        => m.AddMissingSeamsAndPoles(f, m.Faces[f].Bounds.Map(b => m.Unwrap(f, m.LoopToUv(f, b, d))), c);
+        => m.AddMissingSeamsAndPoles(f, m.MeshedBounds(f).Map(b => m.Unwrap(f, m.LoopToUv(f, b, d))), c);
 
     // Face f's region: UnorientedRegionOf, oriented.
     RegionOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvRegion

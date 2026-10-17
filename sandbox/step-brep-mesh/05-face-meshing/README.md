@@ -171,6 +171,10 @@ On a sphere or torus the loop direction is what chooses which side of a winding 
 **A vertex loop inside a face is a point hole.** It removes no area and becomes a corner of every
 triangulation (`Law_EveryPointIsACorner`), so the model vertex appears in the mesh and the Euler
 characteristic is unchanged. A vertex loop on a collapsed line becomes the pole segment instead.
+A vertex loop whose vertex another bound of the face already reaches, or that repeats an earlier
+vertex loop, is skipped (`MeshedBounds`, `IsRedundantVertexLoop`), as layer 02's `ReducedCounts`
+drops it: on a sphere whose seam runs between two poles that also carry vertex loops, expanding them
+would lay a second pole segment over the seam loop's own, and the region would never be simple.
 
 **Quads are optional.** `PreferQuads` false gives triangles only (`Law_NoQuadsUnlessPreferred`).
 With it true, `QuadGridIfRectangular` builds a structured grid when the outer loop is four-sided
@@ -322,6 +326,7 @@ knots); offset and rectangular-trimmed last.
 | layer 06 `IsOnFace(p: MeshVertexProvenance, f)` | this layer's `IsFaceInteriorProvenance` has the same meaning | Both belong in layer 00 beside `MeshVertexProvenance`; renamed here to avoid a duplicate signature until they merge |
 | `Unwrap`: every point by continuity | the second use of every seam segment by the left rule, every other point by continuity; ensures `Law_SeamUsesOnOppositeCopies` | Continuity puts both uses on one copy when they meet at a pole or an apex (review F1) |
 | `AddMissingSeamsAndPoles`: requires every step below half a period | requires `IsUnwrappedStep` (a step touching a collapsed line may jump) and the left rule; ensures the left rule on its loops; pole segments run from the arriving to the leaving free parameter, windings counted after | The free parameter at a pole passes from one seam copy to the other |
+| `AddMissingSeamsAndPoles(m, f, loops, c)`: one loop per bound | one loop per bound of `MeshedBounds(m, f)` | Layer 02's vertex-loop reduction (review C6) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -335,6 +340,8 @@ Applied:
   `Law_SeamUsesOnOppositeCopies`; a step touching a collapsed line is exempt from the half-period
   law; pole segments from the arriving to the leaving free parameter. The seamed sphere and the
   seamed cone now close in the plane.
+- C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
+  sphere B meshes.
 
 ## Gate
 

@@ -139,7 +139,7 @@ spec AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop
 {
     requires m.IsFaceIntact(f);
     requires c.IsWellFormed;
-    requires loops.Count == m.Faces[f].Bounds.Count;
+    requires loops.Count == m.MeshedBounds(f).Count;
     requires forall (k: Integer) in loops.Count.Range:
         forall (i: Integer) in loops[k].Points.Count.Range: m.IsUnwrappedStep(f, loops[k], i);
     requires forall (k: Integer) in loops.Count.Range:
