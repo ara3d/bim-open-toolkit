@@ -1,0 +1,418 @@
+//==
+// # Face meshing laws
+//
+// The laws of layer 05, one statement each. Every law is total: lookups are guarded with the
+// conditional, so a law over a missing face, an out-of-range index, or an undiscretized edge is
+// vacuously true. Laws whose parameters hold arrays or sums run over witnesses
+// (PLATO-PRIMER.md B.2); the index parameters (i, k, h, j, q) are the sample points a Check_
+// walks. Every approximate comparison names its tolerance: the model's Tolerances (Length,
+// Angle, Parameter) or the criteria (SurfaceChordal, SurfaceAngular). Severities are in
+// README.md, "Laws".
+//
+// Sections, in order:
+//  - Guards
+//  - Loops into parameter space
+//  - The region
+//  - Triangulations
+//  - Lifting and identification
+//  - Geometry of the face mesh
+//  - Quads
+//  - Outcomes
+
+library FaceMeshingLaws
+{
+    //==
+    // # Guards
+
+    // True when loop l has a point and a source at position i.
+    HasLoopPoint(l: UvLoop, i: Integer): Boolean
+        => l.Points.IsValidIndex(i) && l.Sources.IsValidIndex(i);
+
+    // True when edge e has a discretization with a point and a parameter at sample k.
+    HasSample(d: EdgeDiscretizations, e: BrepEdgeIndex, k: Integer): Boolean
+        => d.ByEdge.IsValidIndex(e)
+            ? d.ByEdge[e].Points.IsValidIndex(k) && d.ByEdge[e].Parameters.IsValidIndex(k)
+            : false;
+
+    // True when bound b's loop and the geometry arena are intact (layers 02 and 01) and every
+    // edge the loop cites is intact with a discretization of at least two points: LoopToUv's
+    // precondition.
+    IsDiscretizedBound(m: BrepModel, b: FaceBound, d: EdgeDiscretizations): Boolean
+        => (m.IsLoopIntact(b.Loop) && m.Geometry.IsEveryIndexInRange)
+            ? m.LoopCoedges(b.Loop).All(c => m.IsEdgeIntact(c.Edge) && d.HasSample(c.Edge, 1))
+            : false;
+
+    // True when face f is intact and every bound of it is discretized: the precondition of
+    // RegionOf and MeshFace.
+    IsDiscretizedFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Boolean
+        => m.IsFaceIntact(f) ? m.Faces[f].Bounds.All(b => m.IsDiscretizedBound(b, d)) : false;
+
+    // The parameter tolerance of region r of face f, from the face's chart.
+    RegionToleranceOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): UvTolerance
+        => m.RegionTolerance(f, m.ChartOf(f, r));
+
+    // True when a and b hold identical parameters; used only where one is a copy of the other.
+    SameParameters(a: UvCoordinate, b: UvCoordinate): Boolean
+        => a.U == b.U && a.V == b.V;   // exact by construction
+
+    // True when a and b have identical coordinates; used only where one is a copy of the other.
+    SameCoordinates(a: Point3D, b: Point3D): Boolean
+        => a.X == b.X && a.Y == b.Y && a.Z == b.Z;   // exact by construction
+
+    //==
+    // # Loops into parameter space
+
+    // Every point of a loop of face f whose source is a model vertex or an edge sample lifts,
+    // through the face's surface, to within the length tolerance of that vertex's point or that
+    // sample's point: the shared discretization.
+    Law_LoopPointLiftsToSharedPoint(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, l: UvLoop, i: Integer): Boolean
+        => (m.IsFaceIntact(f) && l.HasLoopPoint(i))
+            ? m.LiftsToSharedPoint(f, d, l.Points[i], l.Sources[i])
+            : true;
+
+    // The claim of Law_LoopPointLiftsToSharedPoint for one point; synthetic and interior points
+    // have no shared point.
+    LiftsToSharedPoint(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, uv: UvCoordinate, s: UvPointSource): Boolean
+        => match (s) {
+            FromVertex(v) => m.IsVertexInRange(v) ? m.LiftsNear(f, uv, m.Vertices[v].Point) : true;
+            FromEdge(e, k) => d.HasSample(e, k) ? m.LiftsNear(f, uv, d.ByEdge[e].Points[k]) : true;
+            SeamCut(side, k) => true;
+            Pole(side, k) => true;
+            Interior => true;
+        };
+
+    // True when the surface point at uv is within the length tolerance of p.
+    LiftsNear(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate, p: Point3D): Boolean
+        => m.Geometry.Eval(m.SurfaceOf(f), uv).Distance(p) <= m.Tolerances.Length.Value;
+
+    // LoopToUv gives exactly ExpectedLoopPointCount points for a bound of face f: over the
+    // coedges of an edge loop, each edge's discretization count minus one (a coedge's end vertex
+    // is the next coedge's start); one for a vertex loop.
+    Law_LoopToUvCountMatchesDiscretization(m: BrepModel, f: BrepFaceIndex, b: FaceBound, d: EdgeDiscretizations): Boolean
+        => (m.IsFaceIntact(f) && m.IsDiscretizedBound(b, d))
+            ? m.LoopToUv(f, b, d).Points.Count == m.ExpectedLoopPointCount(b, d)
+            : true;
+
+    // Where the rule reads edge e's samples in face f from a pcurve, the pcurve's point for 3D
+    // sample k and the projection of that sample are the same parameters up to whole periods,
+    // within the parameter tolerance at that point. On a collapsed line, where one parameter is
+    // free, nothing is claimed.
+    Law_PcurveAgreesWithProjection(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, e: BrepEdgeIndex, k: Integer): Boolean
+        => (m.IsFaceIntact(f) && m.IsEdgeIntact(e) && m.Geometry.IsEveryIndexInRange && d.HasSample(e, k))
+            ? m.RoutesAgree(f, m.ChooseUvRoute(f, e), d.ByEdge[e].Points[k])
+            : true;
+
+    // The claim of Law_PcurveAgreesWithProjection for the 3D sample p under a route.
+    RoutesAgree(m: BrepModel, f: BrepFaceIndex, route: CoedgeUvRoute, p: Point3D): Boolean
+        => match (route) {
+            ByProjection => true;
+            ByPcurve(k) => m.IsOnCollapsedLine(f, m.Geometry.Project(m.SurfaceOf(f), p))
+                ? true
+                : m.SurfaceDomainOf(f).SameParameter(m.Geometry.PcurveUv(k, p),
+                    m.Geometry.Project(m.SurfaceOf(f), p), m.PointTolerance(f, m.Geometry.Project(m.SurfaceOf(f), p)));
+        };
+
+    // Unwrap keeps every point's source, in order.
+    Law_UnwrapKeepsSources(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean
+        => (m.IsFaceIntact(f) && l.HasLoopPoint(i))
+            ? m.Unwrap(f, l).SourceAtIs(i, l.Sources[i])
+            : true;
+
+    // True when loop l has source s at position i.
+    SourceAtIs(l: UvLoop, i: Integer, s: UvPointSource): Boolean
+        => l.Sources.IsValidIndex(i) ? l.Sources[i] == s : false;
+
+    // Unwrap moves every point that is not on a collapsed line by whole periods only, within the
+    // parameter tolerance at that point: the unwrapped loop lifts to the same 3D points.
+    Law_UnwrapMovesByWholePeriods(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean
+        => (m.IsFaceIntact(f) && l.HasLoopPoint(i))
+            ? (m.IsOnCollapsedLine(f, l.Points[i]) ? true : m.MovedByWholePeriods(f, l.Points[i], m.Unwrap(f, l), i))
+            : true;
+
+    // The claim of Law_UnwrapMovesByWholePeriods at position i, before being the point there.
+    MovedByWholePeriods(m: BrepModel, f: BrepFaceIndex, before: UvCoordinate, after: UvLoop, i: Integer): Boolean
+        => after.Points.IsValidIndex(i)
+            ? m.SurfaceDomainOf(f).SameParameter(before, after.Points[i], m.PointTolerance(f, before))
+            : false;
+
+    // After Unwrap, consecutive points of a loop are closer than half a period in every periodic
+    // direction of face f's surface. The closing step from the last point to the first is not
+    // claimed: for a loop that winds it is a whole number of periods off.
+    Law_UnwrappedStepBelowHalfPeriod(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean
+        => m.IsFaceIntact(f) ? m.Unwrap(f, l).StepBelowHalfPeriodAt(m.SurfaceDomainOf(f), i) : true;
+
+    // True when the step from point i to point i + 1 is below half a period, or there is none.
+    StepBelowHalfPeriodAt(l: UvLoop, dom: SurfaceDomain, i: Integer): Boolean
+        => (i >= 0 && i + 1 < l.Points.Count) ? dom.StepBelowHalfPeriod(l.Points[i], l.Points[i + 1]) : true;
+
+    //==
+    // # The region
+
+    // Every loop of face f's region closes in the plane: it winds zero times in u and in v.
+    Law_RegionLoopClosesInPlane(m: BrepModel, f: BrepFaceIndex, r: UvRegion, k: Integer): Boolean
+        => (m.IsFaceIntact(f) && k >= 0 && k < r.NumberOfLoops)
+            ? m.UWinding(f, r.LoopAt(k)) == 0 && m.VWinding(f, r.LoopAt(k)) == 0
+            : true;
+
+    // The outer loop of face f's region has positive signed area in the face's chart: it runs
+    // counter-clockwise about the face normal.
+    Law_UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, r: UvRegion): Boolean
+        => m.IsFaceIntact(f) ? r.Outer.ChartSignedArea(m.IsChartMirrored(f)) > 0.0 : true;
+
+    // Every hole of face f's region that is not a point hole has negative signed area in the
+    // face's chart.
+    Law_UvHoleWindingNegative(m: BrepModel, f: BrepFaceIndex, r: UvRegion, h: Integer): Boolean
+        => (m.IsFaceIntact(f) && r.Holes.IsValidIndex(h))
+            ? (r.Holes[h].Points.Count < 3 ? true : r.Holes[h].ChartSignedArea(m.IsChartMirrored(f)) < 0.0)
+            : true;
+
+    // Any two boundary segments of face f's region are farther apart than the region's parameter
+    // tolerance, and consecutive ones do not fold back onto each other: every loop is simple and
+    // no two loops meet.
+    Law_RegionSegmentsSeparated(m: BrepModel, f: BrepFaceIndex, r: UvRegion, k: Integer, i: Integer, q: Integer, j: Integer): Boolean
+        => (m.IsFaceIntact(f) && r.HasSegment(k, i) && r.HasSegment(q, j))
+            ? r.SegmentsSeparated(m.RegionToleranceOf(f, r), k, i, q, j)
+            : true;
+
+    // Every hole of a simple region of face f lies inside its outer loop.
+    Law_HoleInsideOuter(m: BrepModel, f: BrepFaceIndex, r: UvRegion, h: Integer): Boolean
+        => (m.IsFaceIntact(f) && r.Holes.IsValidIndex(h))
+            ? (r.Holes[h].Points.IsEmpty
+                ? true
+                : (r.IsSimpleRegion(m.RegionToleranceOf(f, r)) ? r.HoleInsideOuter(h) : true))
+            : true;
+
+    // The two copies of a seam cut run in opposite directions along the outer loop: where the
+    // loop steps from SeamCut(side, k) to SeamCut(side, j), it also steps from
+    // SeamCut(opposite side, j) to SeamCut(opposite side, k).
+    Law_SeamCutCopiesRunOpposite(r: UvRegion, i: Integer): Boolean
+        => r.Outer.Sources.IsValidIndex(i) ? r.SeamCutStepIsMirrored(i) : true;
+
+    // A face that MeshFace meshes (a non-empty mesh) has a simple region; a face whose region is
+    // not simple gets requests or an error and no mesh.
+    Law_MeshedFaceHasSimpleRegion(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => (m.IsDiscretizedFace(f, d) && c.IsWellFormed)
+            ? (m.MeshFace(f, d, c).Mesh.IsEmptyFaceMesh ? true : m.IsSimpleFaceRegion(f, m.RegionOf(f, d, c)))
+            : true;
+
+    // True when region r of face f is simple under its own tolerance.
+    IsSimpleFaceRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): Boolean
+        => r.IsSimpleRegion(m.RegionToleranceOf(f, r));
+
+    //==
+    // # Triangulations
+
+    // Every corner of every element of a triangulation names one of its points.
+    Law_TriangulationCornersInRange(t: UvTriangulation, k: ElementIndex): Boolean
+        => t.HasElement(k) ? t.ElementCornersInRange(k) : true;
+
+    // The first BoundaryCount(r) points of a triangulation of region r are the region's boundary
+    // points with their sources, unchanged: no boundary point is added, moved, or removed.
+    Law_TriangulationKeepsBoundary(r: UvRegion, t: UvTriangulation, i: Integer): Boolean
+        => (r.IsIndexedRegion && i >= 0 && i < r.BoundaryCount)
+            ? ((t.Points.IsValidIndex(i) && t.Sources.IsValidIndex(i))
+                ? r.BoundaryPoints[i].SameParameters(t.Points[i]) && r.BoundarySources[i] == t.Sources[i]
+                : false)
+            : true;
+
+    // Every point of a triangulation of region r of face f after the boundary points has source
+    // Interior and lies strictly inside r, farther than the region's parameter tolerance from its
+    // boundary.
+    Law_TriangulationAddsOnlyInteriorPoints(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation, i: Integer): Boolean
+        => (m.IsFaceIntact(f) && i >= r.BoundaryCount && t.Points.IsValidIndex(i) && t.Sources.IsValidIndex(i))
+            ? t.Sources[i] == UvPointSource.Interior && r.IsStrictlyInside(t.Points[i], m.RegionToleranceOf(f, r))
+            : true;
+
+    // Every point of a triangulation is a corner of some element, point holes included.
+    Law_EveryPointIsACorner(t: UvTriangulation, i: Integer): Boolean
+        => t.Points.IsValidIndex(i)
+            ? t.Triangles.Any(e => e.HasVertex(VertexIndex(i))) || t.Quads.Any(e => e.HasVertex(VertexIndex(i)))
+            : true;
+
+    // Every element of a triangulation of face f has positive signed area in the face's chart
+    // (an exact sign test).
+    Law_ElementPositiveInChart(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean
+        => (m.IsFaceIntact(f) && t.HasElement(k))
+            ? (t.ElementCornersInRange(k) ? t.ElementChartArea(k, m.IsChartMirrored(f)) > 0.0 : true)
+            : true;
+
+    // The elements of a triangulation of region r of face f tile it: their chart areas sum to the
+    // region's chart area within the area its boundary can sweep inside the region's parameter
+    // tolerance (AreaTolerance).
+    Law_ElementAreasSumToRegionArea(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation): Boolean
+        => (m.IsFaceIntact(f) && t.CornersInRange)
+            ? (t.TotalChartArea(m.IsChartMirrored(f)) - r.ChartSignedArea(m.IsChartMirrored(f))).Abs
+                <= r.AreaTolerance(m.RegionToleranceOf(f, r))
+            : true;
+
+    // No element of a triangulation of face f spans half a period or more in a periodic
+    // direction, so none wraps around the surface or folds across a seam.
+    Law_ElementSpansBelowHalfPeriod(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean
+        => (m.IsFaceIntact(f) && t.HasElement(k))
+            ? (t.ElementCornersInRange(k) ? m.SpansBelowHalfPeriod(f, t, k) : true)
+            : true;
+
+    //==
+    // # Lifting and identification
+
+    // Lift keeps the triangulation's parameter-space points and their sources, in order.
+    Law_LiftKeepsPoints(t: UvTriangulation, fm: FaceMesh, i: Integer): Boolean
+        => (t.Points.IsValidIndex(i) && t.Sources.IsValidIndex(i))
+            ? ((fm.UvPoints.IsValidIndex(i) && fm.Sources.IsValidIndex(i))
+                ? fm.UvPoints[i].SameParameters(t.Points[i]) && fm.Sources[i] == t.Sources[i]
+                : false)
+            : true;
+
+    // The local vertex of every parameter-space point exists.
+    Law_LocalVertexInRange(fm: FaceMesh, i: VertexIndex): Boolean
+        => fm.LocalVertex.IsValidIndex(i) ? fm.Positions.IsValidIndex(fm.LocalVertex[i]) : true;
+
+    // Every local 3D vertex is the local vertex of some parameter-space point.
+    Law_LocalVertexSurjective(fm: FaceMesh, v: VertexIndex): Boolean
+        => fm.Positions.IsValidIndex(v) ? fm.LocalVertex.Any(w => w == v) : true;
+
+    // Two distinct parameter-space points share a local 3D vertex exactly when their sources are
+    // identified: the seam and pole identifications, and nothing else.
+    Law_LocalVertexFibresAreIdentifications(fm: FaceMesh, i: VertexIndex, j: VertexIndex): Boolean
+        => (fm.LocalVertex.IsValidIndex(i) && fm.LocalVertex.IsValidIndex(j)
+            && fm.Sources.IsValidIndex(i) && fm.Sources.IsValidIndex(j) && i != j)
+            ? (fm.LocalVertex[i] == fm.LocalVertex[j]) == IdentifiedSources(fm.Sources[i], fm.Sources[j])
+            : true;
+
+    // A point whose source is a model vertex or an edge sample sits exactly at that vertex's
+    // point or that sample's point, copied, so both faces of an edge hold the same positions.
+    Law_SharedPositionIsCopied(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, i: VertexIndex): Boolean
+        => fm.IsLiftedPoint(i) ? m.PositionIsCopied(d, fm.Sources[i], fm.PositionOf(i)) : true;
+
+    // The claim of Law_SharedPositionIsCopied for one point.
+    PositionIsCopied(m: BrepModel, d: EdgeDiscretizations, s: UvPointSource, p: Point3D): Boolean
+        => match (s) {
+            FromVertex(v) => m.IsVertexInRange(v) ? p.SameCoordinates(m.Vertices[v].Point) : true;
+            FromEdge(e, k) => d.HasSample(e, k) ? p.SameCoordinates(d.ByEdge[e].Points[k]) : true;
+            SeamCut(side, k) => true;
+            Pole(side, k) => true;
+            Interior => true;
+        };
+
+    // The provenance of the local vertex of every point agrees with the point's source: the model
+    // vertex; the edge with the sample's curve parameter, copied; or the face itself.
+    Law_ProvenanceMatchesSource(d: EdgeDiscretizations, fm: FaceMesh, i: VertexIndex): Boolean
+        => fm.IsLiftedPoint(i)
+            ? d.ProvenanceAgrees(fm.Face, fm.Sources[i], fm.Provenance[fm.LocalVertex[i]])
+            : true;
+
+    // The claim of Law_ProvenanceMatchesSource for one point.
+    ProvenanceAgrees(d: EdgeDiscretizations, f: BrepFaceIndex, s: UvPointSource, p: MeshVertexProvenance): Boolean
+        => match (s) {
+            FromVertex(v) => p == MeshVertexProvenance.OnVertex(v);
+            FromEdge(e, k) => d.HasSample(e, k)
+                ? p == MeshVertexProvenance.OnEdge(e, d.ByEdge[e].Parameters[k])   // exact by construction
+                : true;
+            SeamCut(side, k) => p.IsFaceInteriorProvenance(f);
+            Pole(side, k) => p.IsFaceInteriorProvenance(f);
+            Interior => p.IsFaceInteriorProvenance(f);
+        };
+
+    // True when the provenance is a point of face f's interior.
+    IsFaceInteriorProvenance(p: MeshVertexProvenance, f: BrepFaceIndex): Boolean
+        => match (p) {
+            OnVertex(v) => false;
+            OnEdge(e, t) => false;
+            OnFace(g, uv) => g == f;
+        };
+
+    // The normal stored for a parameter-space point off the collapsed lines is the face normal
+    // there, within the model's angle tolerance.
+    Law_PointNormalIsFaceNormal(m: BrepModel, fm: FaceMesh, i: VertexIndex): Boolean
+        => (m.IsFaceIntact(fm.Face) && fm.IsLiftedPoint(i))
+            ? (m.IsOnCollapsedLine(fm.Face, fm.UvPoints[i])
+                ? true
+                : fm.Normals[i].Vector.AngleBetween(m.FaceNormalAt(fm.Face, fm.UvPoints[i], fm.Normals[i].Vector))
+                    <= m.Tolerances.Angle.Value)
+            : true;
+
+    // Lift drops exactly the triangles with two corners on one collapsed line: the face mesh has
+    // that many fewer elements than the triangulation it was lifted from.
+    Law_DroppedElementsArePoleCollapsed(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, fm: FaceMesh): Boolean
+        => (m.IsFaceIntact(f) && t.CornersInRange)
+            ? t.ElementCount - fm.ElementCount == m.PoleCollapsedTriangleCount(f, t)
+            : true;
+
+    // Lift turns exactly the quads with two corners on one collapsed line into triangles.
+    Law_CollapsedQuadsBecomeTriangles(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, fm: FaceMesh): Boolean
+        => (m.IsFaceIntact(f) && t.CornersInRange)
+            ? t.Quads.Count - fm.Quads.Count == m.PoleCollapsedQuadCount(f, t)
+            : true;
+
+    //==
+    // # Geometry of the face mesh
+
+    // Every element turns counter-clockwise about the face normal: its vector area points to the
+    // side of the face normal at its parameter centroid (an exact sign; zero or negative is a
+    // fold). The 3D winding rule: the chart is mirrored exactly when SameSense is false, so an
+    // element positive in the chart keeps its corner order when lifted.
+    Law_ElementFacesFaceNormal(m: BrepModel, fm: FaceMesh, k: ElementIndex): Boolean
+        => m.CanMeasure(fm, k) ? m.FacesFaceNormal(fm, k) : true;
+
+    // Every element that touches no collapsed line has its normal within SurfaceAngular of the
+    // face normal at its parameter centroid.
+    Law_ElementNormalAgreesWithSurface(m: BrepModel, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
+        => m.CanMeasure(fm, k)
+            ? (m.TouchesCollapsedLine(fm, k) ? true : m.ElementNormalDeviation(fm, k) <= c.SurfaceAngular)
+            : true;
+
+    // The face normal turns by at most SurfaceAngular along every surface edge of every element
+    // (edge j of element k): the definition of SurfaceAngular.
+    Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex, j: Integer): Boolean
+        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))
+            ? ((j >= 0 && j < fm.ElementCorners(k).Count)
+                ? (m.IsSurfaceEdge(d, fm, fm.ElementCorners(k)[j], fm.ElementCorners(k).AtModulo(j + 1))
+                    ? fm.EdgeNormalTurn(k, j) <= c.SurfaceAngular
+                    : true)
+                : true)
+            : true;
+
+    // Every element's deviation from the surface, over the midpoints of its surface edges and the
+    // mean of its corners, is at most SurfaceChordal plus the length tolerance (the corners
+    // themselves may lie that far from the surface).
+    Law_ElementDeviationWithinSurfaceChordal(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
+        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))
+            ? m.ElementDeviation(d, fm, k) <= c.SurfaceChordal + m.Tolerances.Length.Value
+            : true;
+
+    //==
+    // # Quads
+
+    // Every quad of a face mesh is planar within SurfaceChordal: no corner lies farther than that
+    // from its mid-plane.
+    Law_QuadPlanarWithinSurfaceChordal(fm: FaceMesh, c: FaceMeshingCriteria, q: FaceIndex): Boolean
+        => fm.IsMeasurableQuad(q) ? fm.QuadWarp(q) <= c.SurfaceChordal : true;
+
+    // Every quad of a face mesh is strictly convex.
+    Law_QuadConvex(fm: FaceMesh, q: FaceIndex): Boolean
+        => fm.IsMeasurableQuad(q) ? fm.IsConvexQuad(q) : true;
+
+    //==
+    // # Outcomes
+
+    // MeshFace with PreferQuads false produces no quads.
+    Law_NoQuadsUnlessPreferred(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => c.PreferQuads
+            ? true
+            : (m.IsDiscretizedFace(f, d) ? m.MeshFace(f, d, c).Mesh.Quads.Count == 0 : true);
+
+    // An outcome with a blocking request has an empty mesh.
+    Law_BlockingRequestMeansEmptyMesh(o: FaceMeshOutcome): Boolean
+        => o.Requests.Any(q => q.Reason.IsBlocking) ? o.Mesh.IsEmptyFaceMesh : true;
+
+    // An outcome with a request has at least one diagnostic.
+    Law_RequestHasDiagnostic(o: FaceMeshOutcome): Boolean
+        => o.Requests.IsEmpty ? true : o.Diagnostics.Count > 0;
+
+    // An outcome with an empty mesh and no request carries an error diagnostic: a face is never
+    // left unmeshed without a word.
+    Law_EmptyMeshIsExplained(o: FaceMeshOutcome): Boolean
+        => (o.Mesh.IsEmptyFaceMesh && o.Requests.IsEmpty)
+            ? o.Diagnostics.Any(x => x.Severity == Severity.Error)
+            : true;
+}

@@ -1,0 +1,731 @@
+//==
+// # Parameter-space regions
+//
+// The first half of layer 05: from a face's bounds to its oriented region in the surface's
+// natural parameters, with the chart it is judged in. A body is given where the body is the
+// definition (sample bookkeeping, the choice rules, signed areas, windings, distances, the
+// requests); the algorithms (unwrapping, completing seams and poles, mean speeds, finding four
+// sides) are deferred, with contracts in face-meshing.spec.plato.
+//
+// Sections, in order:
+//  - Typed empty arrays
+//  - Sources
+//  - Samples of a coedge
+//  - The projection-versus-pcurve rule
+//  - Loops into parameter space
+//  - The chart, tolerances, and signed areas
+//  - Orientation and the region
+//  - Periodic directions
+//  - Collapsed lines
+//  - Boundary segments, simplicity, containment
+//  - Seam cuts
+//  - Discretization segments
+//  - Requests from the region
+//  - Four-sided regions
+
+library UvRegions
+{
+    //==
+    // # Typed empty arrays
+    //
+    // `MapRange` over zero never evaluates its body; the body only fixes the element type (the
+    // stdlib's `NoFaces` idiom).
+
+    // No samples.
+    NoSamples(_: UvSample): Array<UvSample>
+        => 0.MapRange(i => UvSample(UvCoordinate(0.0, 0.0), UvPointSource.Interior));
+
+    // No edges.
+    NoEdges(_: BrepEdgeIndex): Array<BrepEdgeIndex>
+        => 0.MapRange(i => BrepEdgeIndex(i));
+
+    // No refinement requests.
+    NoRequests(_: EdgeRefinementRequest): Array<EdgeRefinementRequest>
+        => 0.MapRange(i => EdgeRefinementRequest(BrepEdgeIndex(i), RefinementReason.LoopSelfIntersects, 0.0, 0));
+
+    //==
+    // # Sources
+
+    // True when s is the model vertex v.
+    IsVertexSource(s: UvPointSource, v: BrepVertexIndex): Boolean
+        => match (s) {
+            FromVertex(w) => w == v;
+            FromEdge(e, k) => false;
+            SeamCut(side, k) => false;
+            Pole(side, k) => false;
+            Interior => false;
+        };
+
+    // True when s is sample k of edge e.
+    IsEdgeSample(s: UvPointSource, e: BrepEdgeIndex, k: Integer): Boolean
+        => match (s) {
+            FromVertex(w) => false;
+            FromEdge(e2, k2) => e2 == e && k2 == k;
+            SeamCut(side, j) => false;
+            Pole(side, j) => false;
+            Interior => false;
+        };
+
+    // True when s is some interior sample of edge e.
+    IsSampleOfEdge(s: UvPointSource, e: BrepEdgeIndex): Boolean
+        => match (s) {
+            FromVertex(w) => false;
+            FromEdge(e2, k) => e2 == e;
+            SeamCut(side, k) => false;
+            Pole(side, k) => false;
+            Interior => false;
+        };
+
+    // The discretization index of an edge sample; -1 for every other source.
+    SampleIndex(s: UvPointSource): Integer
+        => match (s) {
+            FromVertex(w) => -1;
+            FromEdge(e, k) => k;
+            SeamCut(side, k) => -1;
+            Pole(side, k) => -1;
+            Interior => -1;
+        };
+
+    // True when s is point k of a copy of the seam cut across the same direction as `side`:
+    // UMin and UMax are the two copies of one cut, VMin and VMax of another.
+    IsSeamCutPoint(s: UvPointSource, side: DomainSide, k: Integer): Boolean
+        => match (s) {
+            FromVertex(w) => false;
+            FromEdge(e, j) => false;
+            SeamCut(side2, k2) => k2 == k && side2.IsUSide == side.IsUSide;
+            Pole(side2, j) => false;
+            Interior => false;
+        };
+
+    // True when s is a point of the pole segment along `side`.
+    IsPoleOn(s: UvPointSource, side: DomainSide): Boolean
+        => match (s) {
+            FromVertex(w) => false;
+            FromEdge(e, k) => false;
+            SeamCut(side2, k) => false;
+            Pole(side2, k) => side2 == side;
+            Interior => false;
+        };
+
+    // True when s is a point of a pole segment at a pole that is not a model vertex.
+    IsPolePoint(s: UvPointSource): Boolean
+        => match (s) {
+            FromVertex(w) => false;
+            FromEdge(e, k) => false;
+            SeamCut(side, k) => false;
+            Pole(side, k) => true;
+            Interior => false;
+        };
+
+    // True when two parameter-space points with sources a and b are one 3D vertex: the same model
+    // vertex; the same edge sample (the two copies of a seam-edge sample); the same index on the
+    // two copies of one synthetic seam cut; or two points of one pole segment at a pole that is
+    // not a model vertex. An interior point is identified with no other point.
+    IdentifiedSources(a: UvPointSource, b: UvPointSource): Boolean
+        => match (a) {
+            FromVertex(v) => b.IsVertexSource(v);
+            FromEdge(e, k) => b.IsEdgeSample(e, k);
+            SeamCut(side, k) => b.IsSeamCutPoint(side, k);
+            Pole(side, k) => b.IsPoleOn(side);
+            Interior => false;
+        };
+
+    //==
+    // # Samples of a coedge
+    //
+    // A coedge's samples are its edge's discretization points, visited forwards when the coedge
+    // runs forward on its curve (layer 02's composed sense) and backwards otherwise. A coedge
+    // contributes its start vertex and its interior samples; its end vertex is the next coedge's
+    // start. A coedge whose discretization has n points therefore contributes exactly n - 1.
+
+    // Face f's surface.
+    SurfaceOf(m: BrepModel, f: BrepFaceIndex): SurfaceIndex
+        => m.Faces[f].Surface;
+
+    // Face f's surface domain.
+    SurfaceDomainOf(m: BrepModel, f: BrepFaceIndex): SurfaceDomain
+        => m.Geometry.Domain(m.SurfaceOf(f));
+
+    // The coedges of an edge loop in the order the face traverses them: as stored when the
+    // bound's Orientation is true, reversed otherwise.
+    TraversedCoedges(coedges: Array<Coedge>, b: FaceBound): Array<Coedge>
+        => b.Orientation ? coedges : coedges.Count.MapRange(i => coedges[coedges.Count - 1 - i]);
+
+    // The discretization sample visited at step j (0 <= j < n) of a coedge over n samples.
+    SampleAtStep(forward: Boolean, n: Integer, j: Integer): Integer
+        => forward ? j : n - 1 - j;
+
+    // The source of sample k of edge e, whose discretization has n samples: the vertex at either
+    // end (discretizations run in increasing curve parameter, so sample 0 is the vertex met first
+    // along the curve), the edge sample between.
+    SampleSource(m: BrepModel, e: BrepEdgeIndex, n: Integer, k: Integer): UvPointSource
+        => k == 0
+            ? UvPointSource.FromVertex(m.FirstVertexAlongCurve(e))
+            : (k == n - 1 ? UvPointSource.FromVertex(m.LastVertexAlongCurve(e)) : UvPointSource.FromEdge(e, k));
+
+    // The samples coedge c contributes to bound b of face f, in traversal order: n - 1 of them
+    // for a discretization of n points. Precondition: n >= 2.
+    CoedgeSamples(m: BrepModel, f: BrepFaceIndex, b: FaceBound, c: Coedge, d: EdgeDiscretizations): Array<UvSample>
+    {
+        var points = d.ByEdge[c.Edge].Points;
+        var n = points.Count;
+        var forward = m.CoedgeRunsForwardOnCurve(b, c);
+        var route = m.ChooseUvRoute(f, c.Edge);
+        return (n - 1).MapRange(j => UvSample(
+            m.UvOfPoint(f, route, points[SampleAtStep(forward, n, j)]),
+            m.SampleSource(c.Edge, n, SampleAtStep(forward, n, j))));
+    }
+
+    //==
+    // # The projection-versus-pcurve rule
+    //
+    // Most STEP files carry no pcurves (research/STEP-BREP-MODEL.md section 6.4), so projection is
+    // the main path. A pcurve is used only when it is unambiguous: the edge's curve carries
+    // exactly one pcurve on the face's surface (layer 02's PcurvesOnFace), and the edge is not a
+    // seam of the face. A seam's two pcurves lie on one surface and the file does not say which
+    // use takes which; continuity in Unwrap assigns the two copies instead.
+    // Law_PcurveAgreesWithProjection checks a pcurve against the projection wherever the rule
+    // reads the pcurve.
+
+    // The rule: ByPcurve when edge e's curve carries exactly one pcurve on face f's surface and e
+    // is not a seam of f; ByProjection otherwise.
+    ChooseUvRoute(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): CoedgeUvRoute
+    {
+        var onFace = m.PcurvesOnFace(e, f);
+        return onFace.Count == 1 && m.IsSeamEdgeOf(f, e).Not
+            ? CoedgeUvRoute.ByPcurve(onFace[0])
+            : CoedgeUvRoute.ByProjection;
+    }
+
+    // The point of pcurve k nearest p: the 2D curve evaluated at the parameter layer 01's
+    // ClosestParameter finds on the pcurve lifted through its surface.
+    PcurveUv(g: GeometrySet, k: PcurveIndex, p: Point3D): UvCoordinate
+        => g.Eval(g.Pcurves[k].Curve, g.ClosestParameter(k, p));
+
+    // The parameters of the 3D sample p of a coedge of face f, by the coedge's route.
+    UvOfPoint(m: BrepModel, f: BrepFaceIndex, route: CoedgeUvRoute, p: Point3D): UvCoordinate
+        => match (route) {
+            ByProjection => m.Geometry.Project(m.SurfaceOf(f), p);
+            ByPcurve(k) => m.Geometry.PcurveUv(k, p);
+        };
+
+    //==
+    // # Loops into parameter space
+
+    // The bound's loop in face f's natural parameters, before unwrapping. An edge loop gives its
+    // coedges' samples in traversal order; a vertex loop gives its vertex, projected; a poly loop
+    // gives nothing (version 1 does not mesh poly loops, and MeshFace diagnoses them).
+    LoopToUv(m: BrepModel, f: BrepFaceIndex, b: FaceBound, d: EdgeDiscretizations): UvLoop
+        => m.SamplesOfLoop(f, b, d, m.Loops[b.Loop]).ToUvLoop;
+
+    // The samples of `loop`, which is bound b's loop.
+    SamplesOfLoop(m: BrepModel, f: BrepFaceIndex, b: FaceBound, d: EdgeDiscretizations, loop: BrepLoop): Array<UvSample>
+        => match (loop) {
+            EdgeLoop(coedges) => coedges.TraversedCoedges(b).FlatMap(c => m.CoedgeSamples(f, b, c, d));
+            VertexLoop(v) => [UvSample(m.Geometry.Project(m.SurfaceOf(f), m.Vertices[v].Point), UvPointSource.FromVertex(v))];
+            PolyLoop(points) => UvSample.NoSamples;
+        };
+
+    // The loop made of the samples, in order.
+    ToUvLoop(samples: Array<UvSample>): UvLoop
+        => UvLoop(samples.Map(s => s.Point), samples.Map(s => s.Source));
+
+    // The number of points LoopToUv gives for bound b: over the coedges of an edge loop, the sum
+    // of each edge's discretization count minus one; one for a vertex loop; none for a poly loop.
+    ExpectedLoopPointCount(m: BrepModel, b: FaceBound, d: EdgeDiscretizations): Integer
+        => m.LoopCoedges(b.Loop).Reduce(m.Loops[b.Loop].VertexLoopVertexOf.Count,
+            (total, c) => total + d.ByEdge[c.Edge].Points.Count - 1);
+
+    // True when some bound of face f is a poly loop.
+    HasPolyLoop(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.Faces[f].Bounds.Any(b => m.Loops[b.Loop].IsPolyLoop);
+
+    // The coedges of face f's edge loops, in bound order.
+    FaceCoedges(m: BrepModel, f: BrepFaceIndex): Array<Coedge>
+        => m.Faces[f].Bounds.FlatMap(b => m.LoopCoedges(b.Loop));
+
+    // The edges face f cites, each once, in order of first citation.
+    FaceEdges(m: BrepModel, f: BrepFaceIndex): Array<BrepEdgeIndex>
+    {
+        var cs = m.FaceCoedges(f);
+        return cs.Count.Range.FlatMap(i =>
+            cs.Take(i).Any(c => c.Edge == cs[i].Edge) ? BrepEdgeIndex.NoEdges : [cs[i].Edge]);
+    }
+
+    // deferred: one scan along the loop. The first point is wrapped into the domain's window in
+    // each periodic direction (layer 00's Wrap); each later point is replaced by its copy nearest
+    // its predecessor (layer 00's NearestUnwrapped); a point on a collapsed line takes the free
+    // parameter (u at a sphere pole) from its predecessor, or from its successor when it is the
+    // first point.
+    Unwrap(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvLoop;
+
+    // deferred: completes the face's unwrapped loops into closed ones
+    // (research/MESHING-REQUIREMENTS.md sections 4.3, 4.4). Shifts whole loops by periods into one
+    // window. Replaces each loop point on a collapsed line by the pole segment from the arriving
+    // to the leaving free parameter, its points FromVertex (the pole is that model vertex). Adds
+    // the whole pole segment where loops wind around a collapsed line no loop reaches (Pole
+    // points). Expands a vertex loop on a collapsed line into that segment. Cuts one synthetic
+    // seam per periodic direction in which loops wind, joining two winding loops, or a winding
+    // loop and a pole segment, by a straight parameter segment sampled under the criteria
+    // (SeamCut points, the same Index on both copies). Chooses as outer the loop the others lie
+    // inside, whatever the file marks. Which side of a winding loop the face lies on is read from
+    // the loop's direction (the face is on its left about the face normal). A face with no edges
+    // (a whole sphere or torus) gets every side here.
+    AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion;
+
+    //==
+    // # The chart, tolerances, and signed areas
+    //
+    // Orientation is decided in the chart (u, v) -> (s u, v), s = layer 02's FaceNormalSign: the
+    // sign of the face normal against PartialU x PartialV (SameSense composed with the surface's
+    // NormalAgreesWithParameterization). So a triangle counter-clockwise in this chart lifts to
+    // one counter-clockwise about the face normal. Anisotropy is met by the chart's scales, the
+    // face's mean surface speeds: chart lengths approximate lengths on the surface, so the
+    // triangulator's Delaunay decisions and the region's tolerance are made in near-3D units.
+
+    // True when face f's chart negates u: exactly when the face normal points against
+    // PartialU x PartialV.
+    IsChartMirrored(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.FaceNormalSign(f) < 0;
+
+    // Face f's chart for region r: mirrored by FaceNormalSign, scaled by the mean speeds.
+    ChartOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): FaceChart
+        => FaceChart(m.IsChartMirrored(f), m.MeanSpeed(f, r, SurfaceParameter.ParameterU), m.MeanSpeed(f, r, SurfaceParameter.ParameterV));
+
+    // deferred: the mean of |PartialU| (ParameterU) or |PartialV| over three iso-lines of twenty
+    // steps across the region's parameter box (OpenCascade's sampling), skipping samples on a
+    // collapsed line, never below the model's length tolerance over the box's extent in that
+    // parameter.
+    MeanSpeed(m: BrepModel, f: BrepFaceIndex, r: UvRegion, which: SurfaceParameter): Number;
+
+    // The parameter tolerance of face f's region: layer 00's UvToleranceAt at the chart's mean
+    // speeds, so a boundary displacement within it moves the surface point by about the length
+    // tolerance.
+    RegionTolerance(m: BrepModel, f: BrepFaceIndex, chart: FaceChart): UvTolerance
+        => m.Tolerances.UvToleranceAt(chart.ScaleU, chart.ScaleV, m.SurfaceDomainOf(f));
+
+    // The parameter tolerance at the point uv of face f's surface (layer 01's UvToleranceAt).
+    PointTolerance(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate): UvTolerance
+        => m.Geometry.UvToleranceAt(m.SurfaceOf(f), uv, m.Tolerances);
+
+    // The natural parameters as a stdlib plane point, coordinates unchanged.
+    ToPoint2D(uv: UvCoordinate): Point2D
+        => Point2D(uv.U, uv.V);
+
+    // The parameters measured in tolerance units: each divided by its direction's tolerance, so
+    // a distance of one is the tolerance.
+    InToleranceUnits(uv: UvCoordinate, tol: UvTolerance): Point2D
+        => Point2D(uv.U / tol.U.Value, uv.V / tol.V.Value);
+
+    // The parameters in the orientation of the chart: u negated when the chart is mirrored.
+    OrientedPoint(uv: UvCoordinate, mirrored: Boolean): Point2D
+        => mirrored ? Point2D(-uv.U, uv.V) : Point2D(uv.U, uv.V);
+
+    // The parameters in a face chart, scales included: where the triangulator works.
+    ChartPoint(chart: FaceChart, uv: UvCoordinate): Point2D
+        => Point2D((chart.Mirrored ? -chart.ScaleU : chart.ScaleU) * uv.U, chart.ScaleV * uv.V);
+
+    // The midpoint of two parameter points.
+    UvMidpoint(a: UvCoordinate, b: UvCoordinate): UvCoordinate
+        => UvCoordinate((a.U + b.U) * 0.5, (a.V + b.V) * 0.5);
+
+    // The signed area of the closed loop in the oriented chart, in natural units: positive when
+    // the loop runs counter-clockwise there.
+    ChartSignedArea(l: UvLoop, mirrored: Boolean): Number
+        => l.Points.Map(p => p.OrientedPoint(mirrored)).ShoelaceArea;
+
+    // The signed area of the region in the oriented chart: the outer loop's plus every hole's.
+    ChartSignedArea(r: UvRegion, mirrored: Boolean): Number
+        => r.Outer.ChartSignedArea(mirrored) + SumOf(r.Holes.Map(h => h.ChartSignedArea(mirrored)));
+
+    // The most the loop's signed area can change when each of its points moves within the
+    // tolerance: a segment (du, dv) whose ends move by at most (tu, tv) sweeps at most
+    // |du| tv + |dv| tu.
+    AreaTolerance(l: UvLoop, tol: UvTolerance): Number
+        => SumOf(l.Points.Count.MapRange(i =>
+            (l.Points.AtModulo(i + 1).U - l.Points[i].U).Abs * tol.V.Value
+            + (l.Points.AtModulo(i + 1).V - l.Points[i].V).Abs * tol.U.Value));
+
+    // The most the region's signed area can change when its boundary points move within the
+    // tolerance: the loops' area tolerances added.
+    AreaTolerance(r: UvRegion, tol: UvTolerance): Number
+        => r.Outer.AreaTolerance(tol) + SumOf(r.Holes.Map(h => h.AreaTolerance(tol)));
+
+    //==
+    // # Orientation and the region
+
+    // The loop traversed so that its signed area in the chart has the wanted sign: reversed when
+    // it has the other sign, kept when it is zero (a point hole).
+    WithChartSign(l: UvLoop, mirrored: Boolean, positive: Boolean): UvLoop
+        => (positive ? l.ChartSignedArea(mirrored) < 0.0 : l.ChartSignedArea(mirrored) > 0.0)
+            ? l.ReversedLoop
+            : l;
+
+    // The loop traversed the other way round.
+    ReversedLoop(l: UvLoop): UvLoop
+        => UvLoop(
+            l.Points.Count.MapRange(i => l.Points[l.Points.Count - 1 - i]),
+            l.Sources.Count.MapRange(i => l.Sources[l.Sources.Count - 1 - i]));
+
+    // The region with its outer loop counter-clockwise and every hole clockwise in face f's
+    // chart. The point set does not change, only the traversal. On a valid file the loops
+    // already run this way (layer 02's WindingAgreesWithNormal), so a reversal marks a defect,
+    // which MeshFace reports.
+    OrientRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): UvRegion
+        => UvRegion(
+            r.Outer.WithChartSign(m.IsChartMirrored(f), true),
+            r.Holes.Map(h => h.WithChartSign(m.IsChartMirrored(f), false)));
+
+    // Face f's loops mapped to parameter space, unwrapped, and completed with synthetic seams and
+    // poles, in the traversal the file gives.
+    UnorientedRegionOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvRegion
+        => m.AddMissingSeamsAndPoles(f, m.Faces[f].Bounds.Map(b => m.Unwrap(f, m.LoopToUv(f, b, d))), c);
+
+    // Face f's region: UnorientedRegionOf, oriented.
+    RegionOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvRegion
+        => m.OrientRegion(f, m.UnorientedRegionOf(f, d, c));
+
+    //==
+    // # Periodic directions
+
+    // True when the step from a to b is shorter than half the period along a periodic direction;
+    // always true along an aperiodic one.
+    StepBelowHalfPeriod(dom: CurveDomain, a: Number, b: Number): Boolean
+        => match (dom.Periodicity) {
+            Aperiodic => true;
+            Periodic(period) => (b - a).Abs < 0.5 * period;
+        };
+
+    // True when the step from a to b is shorter than half a period in every periodic direction.
+    StepBelowHalfPeriod(dom: SurfaceDomain, a: UvCoordinate, b: UvCoordinate): Boolean
+        => dom.U.StepBelowHalfPeriod(a.U, b.U) && dom.V.StepBelowHalfPeriod(a.V, b.V);
+
+    // The whole number of periods a closed loop winds along one direction, from its first and
+    // last parameter values. The loop's total displacement is (last - first) plus a closing step
+    // shorter than half a period, and equals the winding times the period, so rounding
+    // (last - first) / period gives the winding. Zero along an aperiodic direction. Exact when
+    // every step of the loop is below half a period.
+    Winding(dom: CurveDomain, first: Number, last: Number): Integer
+        => match (dom.Periodicity) {
+            Aperiodic => 0;
+            Periodic(period) => ((last - first) / period + 0.5).Floor.ToInteger;
+        };
+
+    // How many periods loop l winds in u, in face f's surface domain.
+    UWinding(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Integer
+        => l.Points.IsEmpty ? 0 : m.SurfaceDomainOf(f).U.Winding(l.Points.First.U, l.Points.Last.U);
+
+    // How many periods loop l winds in v, in face f's surface domain.
+    VWinding(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Integer
+        => l.Points.IsEmpty ? 0 : m.SurfaceDomainOf(f).V.Winding(l.Points.First.V, l.Points.Last.V);
+
+    //==
+    // # Collapsed lines
+    //
+    // A pole or an apex is an iso-line that the surface collapses to one point (layer 01's
+    // CollapsedAt): v = +-pi/2 on a sphere, a side of the domain; v = -R / tan(a) on a cone,
+    // inside the domain, where it bounds the face's region. In parameter space it is a segment,
+    // not a point, and all of its points are one 3D vertex.
+
+    // True when uv lies on the iso-line where parameter `which` equals c, within the parameter
+    // tolerance at uv in that direction, measured around the circle when it is periodic.
+    IsOnLine(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate, which: SurfaceParameter, c: Number): Boolean
+        => m.SurfaceDomainOf(f).DomainAlong(which)
+            .SameParameter(uv.Coordinate(which), c, which.Along(m.PointTolerance(f, uv).U, m.PointTolerance(f, uv).V));
+
+    // The values of parameter `which` at which face f's surface collapses an iso-line.
+    CollapsedLines(m: BrepModel, f: BrepFaceIndex, which: SurfaceParameter): Array<Number>
+        => m.Geometry.CollapsedAt(m.SurfaceOf(f), which, m.Tolerances);
+
+    // True when uv lies on a collapsed line of face f's surface along parameter `which`.
+    IsOnCollapsedLineAlong(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate, which: SurfaceParameter): Boolean
+        => m.CollapsedLines(f, which).Any(c => m.IsOnLine(f, uv, which, c));
+
+    // True when uv lies on a collapsed line of face f's surface.
+    IsOnCollapsedLine(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate): Boolean
+        => m.IsOnCollapsedLineAlong(f, uv, SurfaceParameter.ParameterU)
+            || m.IsOnCollapsedLineAlong(f, uv, SurfaceParameter.ParameterV);
+
+    // True when a and b lie on one common collapsed line along parameter `which`.
+    ShareCollapsedLineAlong(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, which: SurfaceParameter): Boolean
+        => m.CollapsedLines(f, which).Any(c => m.IsOnLine(f, a, which, c) && m.IsOnLine(f, b, which, c));
+
+    // True when a and b lie on one common collapsed line: two points that lift to one 3D point.
+    ShareCollapsedLine(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate): Boolean
+        => m.ShareCollapsedLineAlong(f, a, b, SurfaceParameter.ParameterU)
+            || m.ShareCollapsedLineAlong(f, a, b, SurfaceParameter.ParameterV);
+
+    //==
+    // # Boundary segments, simplicity, containment
+    //
+    // Loop k of a region is its outer loop for k = 0 and hole k - 1 for k >= 1. Segment i of a
+    // loop runs from point i to point i + 1, the last one back to the first. Distances are
+    // measured in tolerance units (InToleranceUnits), so "farther than the tolerance" is
+    // "farther than one".
+
+    // The number of loops: the outer loop and the holes.
+    NumberOfLoops(r: UvRegion): Integer
+        => r.Holes.Count + 1;
+
+    // Loop k of the region. Precondition: 0 <= k < NumberOfLoops.
+    LoopAt(r: UvRegion, k: Integer): UvLoop
+        => k == 0 ? r.Outer : r.Holes[k - 1];
+
+    // True when loop k exists and has a segment i.
+    HasSegment(r: UvRegion, k: Integer, i: Integer): Boolean
+        => (k >= 0 && k < r.NumberOfLoops) ? r.LoopAt(k).Points.IsValidIndex(i) : false;
+
+    // The start of segment i of loop k.
+    SegmentStart(r: UvRegion, k: Integer, i: Integer): UvCoordinate
+        => r.LoopAt(k).Points[i];
+
+    // The end of segment i of loop k.
+    SegmentEnd(r: UvRegion, k: Integer, i: Integer): UvCoordinate
+        => r.LoopAt(k).Points.AtModulo(i + 1);
+
+    // The distance, in tolerance units, from p to the segment [a, b].
+    PointSegmentGap(p: UvCoordinate, a: UvCoordinate, b: UvCoordinate, tol: UvTolerance): Number
+        => DistanceToSegment(a.InToleranceUnits(tol), b.InToleranceUnits(tol), p.InToleranceUnits(tol));
+
+    // The distance, in tolerance units, between the segments [a, b] and [c, d]: zero when they
+    // meet, else the least distance from an end of one to the other.
+    SegmentGap(a: UvCoordinate, b: UvCoordinate, c: UvCoordinate, d: UvCoordinate, tol: UvTolerance): Number
+        => SegmentsIntersect(a.ToPoint2D, b.ToPoint2D, c.ToPoint2D, d.ToPoint2D)
+            ? 0.0
+            : a.PointSegmentGap(c, d, tol).Min(b.PointSegmentGap(c, d, tol))
+                .Min(c.PointSegmentGap(a, b, tol)).Min(d.PointSegmentGap(a, b, tol));
+
+    // True when segment j of loop k directly follows segment i.
+    Follows(r: UvRegion, k: Integer, i: Integer, j: Integer): Boolean
+        => (i + 1) % r.LoopAt(k).Points.Count == j;
+
+    // True when segment j, which directly follows segment i on loop k, does not fold back onto
+    // it: the start of i is farther than the tolerance from j, and the end of j from i.
+    DoesNotFold(r: UvRegion, tol: UvTolerance, k: Integer, i: Integer, j: Integer): Boolean
+        => r.SegmentStart(k, i).PointSegmentGap(r.SegmentStart(k, j), r.SegmentEnd(k, j), tol) > 1.0
+            && r.SegmentEnd(k, j).PointSegmentGap(r.SegmentStart(k, i), r.SegmentEnd(k, i), tol) > 1.0;
+
+    // True when segments (k, i) and (q, j) are as far apart as a simple region needs: a segment
+    // and itself always are; consecutive segments of one loop when neither folds back onto the
+    // other; any other pair when they are farther apart than the tolerance.
+    // Precondition: both segments exist.
+    SegmentsSeparated(r: UvRegion, tol: UvTolerance, k: Integer, i: Integer, q: Integer, j: Integer): Boolean
+        => (k == q && i == j)
+            ? true
+            : ((k == q && r.Follows(k, i, j))
+                ? r.DoesNotFold(tol, k, i, j)
+                : ((k == q && r.Follows(k, j, i))
+                    ? r.DoesNotFold(tol, k, j, i)
+                    : SegmentGap(r.SegmentStart(k, i), r.SegmentEnd(k, i),
+                        r.SegmentStart(q, j), r.SegmentEnd(q, j), tol) > 1.0));
+
+    // True when segment i of loop k comes too close to some other boundary segment.
+    SegmentCollides(r: UvRegion, tol: UvTolerance, k: Integer, i: Integer): Boolean
+        => r.NumberOfLoops.Range.Any(q => r.LoopAt(q).Points.Count.Range.Any(j =>
+            r.SegmentsSeparated(tol, k, i, q, j).Not));
+
+    // True when every loop is simple and no two loops meet: no boundary segment collides. O(n^2)
+    // as written; a sweep is the implementation.
+    IsSimpleRegion(r: UvRegion, tol: UvTolerance): Boolean
+        => r.NumberOfLoops.Range.All(k => r.LoopAt(k).Points.Count.Range.All(i =>
+            r.SegmentCollides(tol, k, i).Not));
+
+    // True when uv is inside the closed loop by the even-odd rule; false for fewer than three
+    // points.
+    LoopContains(l: UvLoop, uv: UvCoordinate): Boolean
+        => l.Points.Count < 3 ? false : l.Points.Map(p => p.ToPoint2D).PolygonContainsPoint(uv.ToPoint2D);
+
+    // The distance, in tolerance units, from uv to the nearest segment of loop l (to its point,
+    // for a point hole).
+    GapToLoop(l: UvLoop, uv: UvCoordinate, tol: UvTolerance): Number
+        => l.Points.Count.Range.Reduce(Number.MaxValue, (best, i) =>
+            best.Min(uv.PointSegmentGap(l.Points[i], l.Points.AtModulo(i + 1), tol)));
+
+    // True when uv is strictly inside the region: inside the outer loop, outside every hole, and
+    // farther than the tolerance from every boundary segment.
+    IsStrictlyInside(r: UvRegion, uv: UvCoordinate, tol: UvTolerance): Boolean
+        => r.Outer.LoopContains(uv)
+            && r.Holes.All(h => h.LoopContains(uv).Not)
+            && r.NumberOfLoops.Range.All(k => r.LoopAt(k).GapToLoop(uv, tol) > 1.0);
+
+    // True when hole h's first point lies inside the outer loop. Given separated segments no loop
+    // crosses another, so one point decides the whole hole. Precondition: the hole has a point.
+    HoleInsideOuter(r: UvRegion, h: Integer): Boolean
+        => r.Outer.LoopContains(r.Holes[h].Points.First);
+
+    // True when every loop has as many sources as points.
+    IsIndexedRegion(r: UvRegion): Boolean
+        => r.NumberOfLoops.Range.All(k => r.LoopAt(k).Points.Count == r.LoopAt(k).Sources.Count);
+
+    // The region's boundary points in triangulation order: the outer loop, then each hole.
+    BoundaryPoints(r: UvRegion): Array<UvCoordinate>
+        => r.Outer.Points.Concatenate(r.Holes.FlatMap(h => h.Points));
+
+    // The sources of the boundary points, in the same order.
+    BoundarySources(r: UvRegion): Array<UvPointSource>
+        => r.Outer.Sources.Concatenate(r.Holes.FlatMap(h => h.Sources));
+
+    // The number of boundary points.
+    BoundaryCount(r: UvRegion): Integer
+        => r.BoundaryPoints.Count;
+
+    //==
+    // # Seam cuts
+
+    // The first position of source s in loop l, or -1 when it does not occur.
+    PositionOfSource(l: UvLoop, s: UvPointSource): Integer
+        => l.Sources.Count.Range.Reduce(-1, (found, i) => found >= 0 ? found : (l.Sources[i] == s ? i : -1));
+
+    // True when sources a and b both occur in loop l and b directly follows a.
+    AreConsecutive(l: UvLoop, a: UvPointSource, b: UvPointSource): Boolean
+        => (l.PositionOfSource(a) >= 0 && l.PositionOfSource(b) >= 0)
+            ? (l.PositionOfSource(a) + 1) % l.Sources.Count == l.PositionOfSource(b)
+            : false;
+
+    // True unless the step from outer position i to i + 1 runs along one copy of a seam cut
+    // (SeamCut points of one side, indices k then j) while the other copy fails to visit the same
+    // indices in the opposite order (j then k). Precondition: i is a valid position.
+    SeamCutStepIsMirrored(r: UvRegion, i: Integer): Boolean
+        => r.SeamCutStepAt(i, r.Outer.Sources[i]);
+
+    // SeamCutStepIsMirrored, given the source `here` at position i.
+    SeamCutStepAt(r: UvRegion, i: Integer, here: UvPointSource): Boolean
+        => match (here) {
+            FromVertex(v) => true;
+            FromEdge(e, k) => true;
+            SeamCut(side, k) => r.SeamCutStepTo(side, k, r.Outer.Sources.AtModulo(i + 1));
+            Pole(side, k) => true;
+            Interior => true;
+        };
+
+    // The case of SeamCutStepIsMirrored where the step runs from SeamCut(side, k) to `next`.
+    SeamCutStepTo(r: UvRegion, side: DomainSide, k: Integer, next: UvPointSource): Boolean
+        => match (next) {
+            FromVertex(v) => true;
+            FromEdge(e, j) => true;
+            SeamCut(nextSide, j) => nextSide == side
+                ? r.Outer.AreConsecutive(
+                    UvPointSource.SeamCut(side.OppositeSide, j),
+                    UvPointSource.SeamCut(side.OppositeSide, k))
+                : true;
+            Pole(s, j) => true;
+            Interior => true;
+        };
+
+    //==
+    // # Discretization segments
+    //
+    // A segment of a model edge's discretization is a pair of consecutive samples of that edge.
+    // In a loop such pairs are boundary segments; in an element they are element edges that
+    // layer 04's criteria bound, so the surface criteria do not measure them.
+
+    // True when a and b are the two end vertices of edge e, in either order.
+    JoinsEndsOf(m: BrepModel, e: BrepEdgeIndex, a: UvPointSource, b: UvPointSource): Boolean
+        => (a.IsVertexSource(m.Edges[e].Start) && b.IsVertexSource(m.Edges[e].End))
+            || (a.IsVertexSource(m.Edges[e].End) && b.IsVertexSource(m.Edges[e].Start));
+
+    // True when edge sample k of edge e and the source v are consecutive samples: k is the second
+    // sample and v the vertex at the first, or k the second-to-last and v the vertex at the last.
+    IsEndStep(m: BrepModel, d: EdgeDiscretizations, e: BrepEdgeIndex, k: Integer, v: UvPointSource): Boolean
+        => (k == 1 && v.IsVertexSource(m.FirstVertexAlongCurve(e)))
+            || (k == d.ByEdge[e].Points.Count - 2 && v.IsVertexSource(m.LastVertexAlongCurve(e)));
+
+    // True when the points with sources a and b are consecutive samples of edge e's
+    // discretization, in either order. Precondition: e indexes m.Edges and d.ByEdge.
+    IsDiscretizationSegment(m: BrepModel, d: EdgeDiscretizations, e: BrepEdgeIndex, a: UvPointSource, b: UvPointSource): Boolean
+        => (a.IsSampleOfEdge(e) && b.IsSampleOfEdge(e))
+            ? (a.SampleIndex - b.SampleIndex).Abs == 1
+            : (a.IsSampleOfEdge(e)
+                ? m.IsEndStep(d, e, a.SampleIndex, b)
+                : (b.IsSampleOfEdge(e)
+                    ? m.IsEndStep(d, e, b.SampleIndex, a)
+                    : (d.ByEdge[e].Points.Count == 2 && m.JoinsEndsOf(e, a, b))));
+
+    // True when the points with sources a and b are consecutive samples of some edge face f cites.
+    IsModelEdgeSegment(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, a: UvPointSource, b: UvPointSource): Boolean
+        => m.FaceEdges(f).Any(e => m.IsDiscretizationSegment(d, e, a, b));
+
+    //==
+    // # Requests from the region
+    //
+    // A refinement request asks layer 04 for a finer polyline on one edge. Its Chordal is a third
+    // of the largest sagitta of the edge's current segments (OpenCascade divides by three), so
+    // each round asks for strictly finer than the last; for a straight edge it is zero, which
+    // layer 04's MinLength floor turns into "as fine as allowed". Its Segments is zero: these
+    // requests are not about counts.
+
+    // The largest sagitta among the segments of a discretization.
+    LargestSagitta(m: BrepModel, de: EdgeDiscretization): Number
+        => (de.Parameters.Count - 1).MapRange(i => m.Sagitta(de.Edge, de.Parameters[i], de.Parameters[i + 1]))
+            .Reduce(0.0, (worst, s) => worst.Max(s));
+
+    // The chordal a request for edge e asks for: a third of its current largest sagitta.
+    TighterChordal(m: BrepModel, d: EdgeDiscretizations, e: BrepEdgeIndex): Number
+        => m.LargestSagitta(d.ByEdge[e]) / 3.0;
+
+    // True when segment i of loop k is a segment of edge e's discretization.
+    IsSegmentOn(r: UvRegion, m: BrepModel, d: EdgeDiscretizations, e: BrepEdgeIndex, k: Integer, i: Integer): Boolean
+        => m.IsDiscretizationSegment(d, e, r.LoopAt(k).Sources[i], r.LoopAt(k).Sources.AtModulo(i + 1));
+
+    // True when some boundary segment on edge e collides with another boundary segment.
+    EdgeCollides(m: BrepModel, d: EdgeDiscretizations, r: UvRegion, tol: UvTolerance, e: BrepEdgeIndex): Boolean
+        => r.NumberOfLoops.Range.Any(k => r.LoopAt(k).Points.Count.Range.Any(i =>
+            r.IsSegmentOn(m, d, e, k, i) && r.SegmentCollides(tol, k, i)));
+
+    // The blocking requests for face f's region: a LoopSelfIntersects request for every edge with
+    // a colliding segment. Empty for a simple region; empty also for a region that is not simple
+    // only because synthetic segments collide, which MeshFace diagnoses as an error.
+    SelfIntersectionRequests(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, tol: UvTolerance): Array<EdgeRefinementRequest>
+        => m.FaceEdges(f).FlatMap(e => m.EdgeCollides(d, r, tol, e)
+            ? [EdgeRefinementRequest(e, RefinementReason.LoopSelfIntersects, m.TighterChordal(d, e), 0)]
+            : EdgeRefinementRequest.NoRequests);
+
+    // How far the surface, along the straight parameter segment of boundary segment i of loop k,
+    // strays from the 3D chord between the segment's shared end points: layer 04's
+    // UvChordDeviation with its own sample plan, repeated here as a backstop.
+    SegmentUvDeviation(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, k: Integer, i: Integer): Number
+        => m.UvChordDeviation(m.SurfaceOf(f),
+            m.SharedPosition(d, r.LoopAt(k).Sources[i], m.Geometry.Eval(m.SurfaceOf(f), r.SegmentStart(k, i))),
+            m.SharedPosition(d, r.LoopAt(k).Sources.AtModulo(i + 1), m.Geometry.Eval(m.SurfaceOf(f), r.SegmentEnd(k, i))),
+            r.SegmentStart(k, i), r.SegmentEnd(k, i), SamplePlan.DiscretizationPlan);
+
+    // True when some boundary segment on edge e strays from its 3D chord in face f by more than
+    // the edge chordal criterion plus the length tolerance.
+    EdgeTooCoarseInFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, c: FaceMeshingCriteria, e: BrepEdgeIndex): Boolean
+        => r.NumberOfLoops.Range.Any(k => r.LoopAt(k).Points.Count.Range.Any(i =>
+            r.IsSegmentOn(m, d, e, k, i)
+                ? m.SegmentUvDeviation(f, d, r, k, i) > c.Discretization.Chordal + m.Tolerances.Length.Value
+                : false));
+
+    // The advisory requests for face f's region: a TooCoarseInParameterSpace request for every
+    // edge with a segment that strays from its 3D chord in parameter space.
+    CoarseSegmentRequests(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, c: FaceMeshingCriteria): Array<EdgeRefinementRequest>
+        => m.FaceEdges(f).FlatMap(e => m.EdgeTooCoarseInFace(f, d, r, c, e)
+            ? [EdgeRefinementRequest(e, RefinementReason.TooCoarseInParameterSpace, m.TighterChordal(d, e), 0)]
+            : EdgeRefinementRequest.NoRequests);
+
+    //==
+    // # Four-sided regions
+
+    // deferred: walk the outer loop of a region without holes, find the points where it turns
+    // from a run along one parameter to a run along the other (within RegionTolerance), and accept
+    // exactly four such corners whose sides are each one coedge, seam use, seam cut, or pole
+    // segment.
+    QuadSidesOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): QuadSides;
+
+    // The number of corners a classification names: four for a four-sided region, none otherwise.
+    CornerCount(q: QuadSides): Integer
+        => match (q) {
+            NotFourSided => 0;
+            FourSided(corners) => corners.Count;
+        };
+
+    // The number of segments on side k (0 to 3) of a four-sided outer loop.
+    SideSegmentCount(r: UvRegion, corners: Array<VertexIndex>, k: Integer): Integer
+        => (corners[(k + 1) % 4].Value - corners[k % 4].Value + r.Outer.Points.Count) % r.Outer.Points.Count;
+
+    // True when opposite sides have equal segment counts, as a structured grid needs.
+    OppositeCountsMatch(r: UvRegion, corners: Array<VertexIndex>): Boolean
+        => r.SideSegmentCount(corners, 0) == r.SideSegmentCount(corners, 2)
+            && r.SideSegmentCount(corners, 1) == r.SideSegmentCount(corners, 3);
+}

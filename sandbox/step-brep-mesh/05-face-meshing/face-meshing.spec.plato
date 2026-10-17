@@ -1,0 +1,378 @@
+//==
+// # Face meshing: invariants, contracts, theorems
+//
+// The status of layer 05's laws (SPEC-DSL.md section 3): which are invariants of a type, which a
+// caller owes, which a function promises, and which follow as theorems. Every claim here is also
+// a Law_ in face-meshing.laws.plato or an expression over the libraries' bodies. Not compiled.
+//
+// Sections, in order:
+//  - Type invariants
+//  - Contracts: loops and regions
+//  - Contracts: triangulation, grid, lifting
+//  - Contracts: the face
+//  - Theorems and conjectures
+
+//==
+// # Type invariants
+
+// A loop pairs every point with its source.
+spec UvLoop
+{
+    invariant self.Points.Count == self.Sources.Count;
+    constructor LoopToUv;
+    constructor Unwrap;
+    constructor ToUvLoop;
+    constructor ReversedLoop;
+    constructor WithChartSign;
+}
+
+// A region's loops are indexed and non-empty, its outer loop a polygon, each hole a polygon or a
+// point hole. The face-relative invariants (loops close, outer positive and holes negative in
+// the chart, the shared-point law) are RegionOf's ensures, because they need the face.
+spec UvRegion
+{
+    invariant self.IsIndexedRegion;
+    invariant self.Outer.Points.Count >= 3;
+    invariant forall (h: Integer) in self.Holes.Count.Range:
+        self.Holes[h].Points.Count == 1 || self.Holes[h].Points.Count >= 3;
+    invariant forall (k: Integer) in self.NumberOfLoops.Range:
+        forall (i: Integer) in self.LoopAt(k).Sources.Count.Range:
+            self.LoopAt(k).Sources[i] != UvPointSource.Interior;
+    constructor AddMissingSeamsAndPoles;
+    constructor OrientRegion;
+    constructor RegionOf;
+    constructor UnorientedRegionOf;
+}
+
+// A chart's scales are positive and finite; its mirroring is the face's normal sign.
+spec FaceChart
+{
+    invariant self.ScaleU > 0.0 && self.ScaleU.IsFinite;
+    invariant self.ScaleV > 0.0 && self.ScaleV.IsFinite;
+    constructor ChartOf;
+}
+
+// The criteria a validator checks (plain data: no constructor list).
+spec FaceMeshingCriteria
+{
+    invariant self.IsWellFormed;
+}
+
+// A triangulation pairs every point with its source, every corner names a point, and every
+// point is a corner.
+spec UvTriangulation
+{
+    invariant self.Points.Count == self.Sources.Count;
+    invariant forall (k: Integer) in self.ElementCount.Range: Law_TriangulationCornersInRange(self, ElementIndex(k));
+    invariant forall (i: Integer) in self.Points.Count.Range: Law_EveryPointIsACorner(self, i);
+    constructor TriangulateRegion;
+    constructor RefineToSurface;
+    constructor RefinedTriangulation;
+    constructor QuadGrid;
+    constructor GridOrTriangles;
+}
+
+// A face mesh: per-point arrays agree in length, per-vertex arrays agree in length, LocalVertex
+// is onto the local vertices with exactly the seam and pole identifications as fibres, every
+// element names parameter-space points, and every quad is convex.
+spec FaceMesh
+{
+    invariant self.UvPoints.Count == self.Sources.Count;
+    invariant self.UvPoints.Count == self.LocalVertex.Count;
+    invariant self.UvPoints.Count == self.Normals.Count;
+    invariant self.Positions.Count == self.Provenance.Count;
+    invariant forall (i: Integer) in self.LocalVertex.Count.Range: Law_LocalVertexInRange(self, VertexIndex(i));
+    invariant forall (v: Integer) in self.Positions.Count.Range: Law_LocalVertexSurjective(self, VertexIndex(v));
+    invariant forall (i: Integer) in self.UvPoints.Count.Range:
+        forall (j: Integer) in self.UvPoints.Count.Range:
+            Law_LocalVertexFibresAreIdentifications(self, VertexIndex(i), VertexIndex(j));
+    invariant forall (k: Integer) in self.ElementCount.Range:
+        self.ElementCorners(ElementIndex(k)).All(i => self.UvPoints.IsValidIndex(i));
+    invariant forall (q: Integer) in self.Quads.Count.Range: Law_QuadConvex(self, FaceIndex(q));
+    constructor Lift;
+    constructor EmptyFaceMesh;
+}
+
+// An outcome withholds the mesh exactly for blocking requests, explains every request and every
+// empty mesh.
+spec FaceMeshOutcome
+{
+    invariant Law_BlockingRequestMeansEmptyMesh(self);
+    invariant Law_RequestHasDiagnostic(self);
+    invariant Law_EmptyMeshIsExplained(self);
+    constructor MeshFace;
+    constructor MeshRegion;
+    constructor MeshedOutcome;
+    constructor UnmeshedOutcome;
+}
+
+//==
+// # Contracts: loops and regions
+
+spec LoopToUv(m: BrepModel, f: BrepFaceIndex, b: FaceBound, d: EdgeDiscretizations): UvLoop
+{
+    requires m.IsFaceIntact(f);
+    requires m.IsDiscretizedBound(b, d);
+    ensures Law_LoopToUvCountMatchesDiscretization(m, f, b, d);
+    ensures forall (i: Integer) in result.Points.Count.Range: Law_LoopPointLiftsToSharedPoint(m, f, d, result, i);
+    ensures forall (c: Coedge) in m.LoopCoedges(b.Loop):
+        forall (k: Integer) in d.ByEdge[c.Edge].Points.Count.Range: Law_PcurveAgreesWithProjection(m, f, d, c.Edge, k);
+    measure m.ExpectedLoopPointCount(b, d);
+}
+
+spec Unwrap(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvLoop
+{
+    requires m.IsFaceIntact(f);
+    requires l.Points.Count == l.Sources.Count;
+    ensures result.Points.Count == l.Points.Count;
+    ensures forall (i: Integer) in l.Points.Count.Range: Law_UnwrapKeepsSources(m, f, l, i);
+    ensures forall (i: Integer) in l.Points.Count.Range: Law_UnwrapMovesByWholePeriods(m, f, l, i);
+    ensures forall (i: Integer) in l.Points.Count.Range: Law_UnwrappedStepBelowHalfPeriod(m, f, l, i);
+    measure l.Points.Count;
+    deferred "one scan: each point replaced by its periodic copy nearest its predecessor; free parameter on a collapsed line from the neighbour";
+}
+
+spec AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion
+{
+    requires m.IsFaceIntact(f);
+    requires c.IsWellFormed;
+    requires loops.Count == m.Faces[f].Bounds.Count;
+    requires forall (k: Integer) in loops.Count.Range:
+        forall (i: Integer) in loops[k].Points.Count.Range:
+            loops[k].StepBelowHalfPeriodAt(m.SurfaceDomainOf(f), i);
+    ensures result.IsIndexedRegion;
+    ensures forall (k: Integer) in result.NumberOfLoops.Range: Law_RegionLoopClosesInPlane(m, f, result, k);
+    ensures forall (i: Integer) in result.Outer.Points.Count.Range: Law_SeamCutCopiesRunOpposite(result, i);
+    ensures forall (k: Integer) in result.NumberOfLoops.Range:
+        forall (i: Integer) in result.LoopAt(k).Points.Count.Range:
+            result.LoopAt(k).Sources[i] != UvPointSource.Interior;
+    ensures forall (k: Integer) in result.NumberOfLoops.Range:
+        forall (i: Integer) in result.LoopAt(k).Points.Count.Range:
+            result.LoopAt(k).Sources[i].IsPolePoint ? m.IsOnCollapsedLine(f, result.LoopAt(k).Points[i]) : true;
+    measure SumOf(loops.Map(l => l.Points.Count.ToNumber));
+    deferred "seam unwrapping across loops, pole-segment insertion, synthetic seam cut between winding loops, outer loop by containment";
+}
+
+spec OrientRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): UvRegion
+{
+    requires m.IsFaceIntact(f);
+    requires r.IsIndexedRegion;
+    ensures result.NumberOfLoops == r.NumberOfLoops;
+    ensures r.Outer.ChartSignedArea(m.IsChartMirrored(f)) != 0.0 ? Law_UvRegionWindingPositive(m, f, result) : true;
+    ensures forall (h: Integer) in result.Holes.Count.Range: Law_UvHoleWindingNegative(m, f, result, h);
+    measure r.BoundaryCount;
+}
+
+spec RegionOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvRegion
+{
+    requires m.IsDiscretizedFace(f, d);
+    requires c.IsWellFormed;
+    requires m.HasPolyLoop(f) == false;
+    ensures result.IsIndexedRegion;
+    ensures forall (k: Integer) in result.NumberOfLoops.Range: Law_RegionLoopClosesInPlane(m, f, result, k);
+    ensures Law_UvRegionWindingPositive(m, f, result);
+    ensures forall (h: Integer) in result.Holes.Count.Range: Law_UvHoleWindingNegative(m, f, result, h);
+    ensures forall (k: Integer) in result.NumberOfLoops.Range:
+        forall (i: Integer) in result.LoopAt(k).Points.Count.Range:
+            Law_LoopPointLiftsToSharedPoint(m, f, d, result.LoopAt(k), i);
+    ensures forall (i: Integer) in result.Outer.Points.Count.Range: Law_SeamCutCopiesRunOpposite(result, i);
+    measure result.BoundaryCount;
+}
+
+spec MeanSpeed(m: BrepModel, f: BrepFaceIndex, r: UvRegion, which: SurfaceParameter): Number
+{
+    requires m.IsFaceIntact(f);
+    requires r.IsIndexedRegion;
+    ensures result > 0.0;
+    ensures result.IsFinite;
+    measure 60;
+    deferred "mean of |PartialU| or |PartialV| over three iso-lines of twenty steps across the region's box";
+}
+
+spec QuadSidesOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): QuadSides
+{
+    requires m.IsFaceIntact(f);
+    requires r.IsIndexedRegion;
+    ensures result.CornerCount == 0 || result.CornerCount == 4;
+    ensures result.CornerCount == 4 ? r.Holes.IsEmpty : true;
+    measure r.Outer.Points.Count;
+    deferred "one walk of the outer loop: corners where a constant-u run meets a constant-v run";
+}
+
+//==
+// # Contracts: triangulation, grid, lifting
+
+spec TriangulateRegion(r: UvRegion, chart: FaceChart): UvTriangulation
+{
+    requires r.IsIndexedRegion;
+    requires exists (tol: UvTolerance): r.IsSimpleRegion(tol);
+    ensures result.Points.Count == r.BoundaryCount;
+    ensures forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, result, i);
+    ensures forall (k: Integer) in result.ElementCount.Range: result.ElementChartArea(ElementIndex(k), chart.Mirrored) > 0.0;
+    ensures forall (i: Integer) in result.Points.Count.Range: Law_EveryPointIsACorner(result, i);
+    ensures result.Quads.Count == 0;
+    measure r.BoundaryCount;
+    deferred "constrained Delaunay triangulation in the chart (CDT, Triangle -p), even-odd hole removal, exact orientation and in-circle predicates";
+}
+
+spec RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
+{
+    requires m.IsFaceIntact(f);
+    requires c.IsWellFormed;
+    requires chart == m.ChartOf(f, r);
+    requires forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, t, i);
+    requires forall (k: Integer) in t.ElementCount.Range: Law_ElementPositiveInChart(m, f, t, ElementIndex(k));
+    ensures forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, result, i);
+    ensures forall (i: Integer) in result.Points.Count.Range: Law_TriangulationAddsOnlyInteriorPoints(m, f, r, result, i);
+    ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementPositiveInChart(m, f, result, ElementIndex(k));
+    ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementSpansBelowHalfPeriod(m, f, result, ElementIndex(k));
+    ensures Law_ElementAreasSumToRegionArea(m, f, r, result);
+    ensures result.Quads.Count == t.Quads.Count;
+    measure result.Points.Count;
+    deferred "Delaunay refinement with the boundary locked: insert the worst surface sample point of an element exceeding SurfaceChordal or SurfaceAngular, stop at MinLength";
+}
+
+spec QuadGrid(m: BrepModel, f: BrepFaceIndex, r: UvRegion, corners: Array<VertexIndex>, c: FaceMeshingCriteria): UvTriangulation
+{
+    requires m.IsFaceIntact(f);
+    requires r.Holes.IsEmpty;
+    requires corners.Count == 4;
+    requires r.OppositeCountsMatch(corners);
+    ensures forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, result, i);
+    ensures forall (i: Integer) in result.Points.Count.Range: Law_TriangulationAddsOnlyInteriorPoints(m, f, r, result, i);
+    ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementPositiveInChart(m, f, result, ElementIndex(k));
+    ensures Law_ElementAreasSumToRegionArea(m, f, r, result);
+    measure r.SideSegmentCount(corners, 0) * r.SideSegmentCount(corners, 1);
+    deferred "transfinite (Coons) interpolation between the four side polylines; split quads failing warp or convexity after lifting";
+}
+
+spec MatchingFloors(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, corners: Array<VertexIndex>): SegmentFloors
+{
+    requires m.IsDiscretizedFace(f, d);
+    requires corners.Count == 4;
+    ensures result.ByEdge.Count == m.Edges.Count;
+    ensures forall (i: Integer) in result.ByEdge.Count.Range:
+        result.ByEdge[i] == 0 || m.FaceEdges(f).Any(e => e.Value == i);
+    measure r.Outer.Points.Count;
+    deferred "per pair of opposite sides with unequal counts, the longer count on the shorter side's edge";
+}
+
+spec Lift(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation): FaceMesh
+{
+    requires m.IsDiscretizedFace(f, d);
+    requires t.CornersInRange;
+    requires t.Points.Count == t.Sources.Count;
+    ensures result.Face == f;
+    ensures result.UvPoints.Count == t.Points.Count;
+    ensures forall (i: Integer) in t.Points.Count.Range: Law_LiftKeepsPoints(t, result, i);
+    ensures forall (i: Integer) in result.UvPoints.Count.Range: Law_SharedPositionIsCopied(m, d, result, VertexIndex(i));
+    ensures forall (i: Integer) in result.UvPoints.Count.Range: Law_ProvenanceMatchesSource(d, result, VertexIndex(i));
+    ensures forall (i: Integer) in result.UvPoints.Count.Range: Law_PointNormalIsFaceNormal(m, result, VertexIndex(i));
+    ensures Law_DroppedElementsArePoleCollapsed(m, f, t, result);
+    ensures Law_CollapsedQuadsBecomeTriangles(m, f, t, result);
+    measure t.Points.Count + t.ElementCount;
+    deferred "identification classes by IdentifiedSources (union-find); copy shared positions, evaluate the rest; drop pole-collapsed triangles";
+}
+
+//==
+// # Contracts: the face
+
+// MeshFace promises the structural laws outright and the surface criteria unless refinement
+// stopped at MinLength: refinement inserts no point within MinLength of an existing one, so an
+// element it could not improve has an edge shorter than twice MinLength.
+spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
+{
+    requires m.IsDiscretizedFace(f, d);
+    requires c.IsWellFormed;
+    ensures result.Mesh.Face == f;
+    ensures Law_BlockingRequestMeansEmptyMesh(result);
+    ensures Law_RequestHasDiagnostic(result);
+    ensures Law_EmptyMeshIsExplained(result);
+    ensures Law_MeshedFaceHasSimpleRegion(m, f, d, c);
+    ensures Law_NoQuadsUnlessPreferred(m, f, d, c);
+    ensures forall (k: Integer) in result.Mesh.ElementCount.Range: Law_ElementFacesFaceNormal(m, result.Mesh, ElementIndex(k));
+    ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
+        Law_ElementDeviationWithinSurfaceChordal(m, d, result.Mesh, c, ElementIndex(k))
+        || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
+    ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
+        forall (j: Integer) in 4.Range:
+            Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(m, d, result.Mesh, c, ElementIndex(k), j)
+            || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
+    ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
+        Law_ElementNormalAgreesWithSurface(m, result.Mesh, c, ElementIndex(k))
+        || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
+    ensures forall (q: Integer) in result.Mesh.Quads.Count.Range: Law_QuadPlanarWithinSurfaceChordal(result.Mesh, c, FaceIndex(q));
+    ensures forall (q: Integer) in result.Mesh.Quads.Count.Range: Law_QuadConvex(result.Mesh, FaceIndex(q));
+    measure result.Mesh.UvPoints.Count + result.Mesh.ElementCount;
+}
+
+//==
+// # Theorems and conjectures
+
+// Lifting keeps a triangle's corner order and gives it the face's winding.
+theorem ChartWindingIsFaceWinding
+{
+    given m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation, k: ElementIndex;
+    assume m.IsDiscretizedFace(f, d);
+    assume Law_ElementPositiveInChart(m, f, t, k);
+    assume Law_ElementSpansBelowHalfPeriod(m, f, t, k);
+    assume m.PoleCollapsedTriangleCount(f, t) == 0;
+    conclude Law_ElementFacesFaceNormal(m, m.Lift(f, d, t), k);
+    because "For a small parameter triangle (a, b, c), (S(b) - S(a)) x (S(c) - S(a)) = A_uv (PartialU x PartialV) + O(h^3), A_uv its natural signed area. In the chart u is negated exactly when FaceNormalSign is -1, so the chart area is FaceNormalSign * A_uv > 0, and the 3D vector area is a positive multiple of FaceNormalSign * (PartialU x PartialV), which is the face normal (layer 02's FaceNormalSign is sigma(SameSense) times epsilon, and NormalOr is epsilon <PartialU x PartialV>). No corner reordering is needed. The half-period bound keeps the triangle inside one sheet of the parameterization. With no pole-collapsed triangle, Lift drops nothing, so element k of the face mesh is element k of the triangulation.";
+    tested by Law_ElementFacesFaceNormal, Law_ElementPositiveInChart;
+}
+
+// Both faces of an edge hold bitwise the same boundary positions, so the assembled mesh is
+// watertight along model edges with no welding.
+theorem SharedEdgePositionsAgree
+{
+    given m: BrepModel, d: EdgeDiscretizations, a: FaceMesh, b: FaceMesh, i: VertexIndex, j: VertexIndex;
+    assume Law_SharedPositionIsCopied(m, d, a, i);
+    assume Law_SharedPositionIsCopied(m, d, b, j);
+    assume a.IsLiftedPoint(i) && b.IsLiftedPoint(j);
+    assume IdentifiedSources(a.Sources[i], b.Sources[j]);
+    assume a.Sources[i] != UvPointSource.Interior;
+    conclude a.PositionOf(i).X == b.PositionOf(j).X && a.PositionOf(i).Y == b.PositionOf(j).Y && a.PositionOf(i).Z == b.PositionOf(j).Z;
+    because "Identified FromVertex and FromEdge sources name one vertex point or one discretization point, and both positions are copies of it (Law_SharedPositionIsCopied), so they are the same Number triple. Seam-cut and pole sources are face-internal and never shared by two faces.";
+    tested by Law_SharedPositionIsCopied;
+}
+
+// The dropped triangles are exactly one per pole segment.
+theorem DroppedTrianglesArePoleSegments
+{
+    given m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation, fm: FaceMesh;
+    assume forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, t, i);
+    assume forall (k: Integer) in t.ElementCount.Range: Law_ElementPositiveInChart(m, f, t, ElementIndex(k));
+    assume Law_DroppedElementsArePoleCollapsed(m, f, t, fm);
+    assume t.Quads.Count == 0;
+    conclude t.ElementCount - fm.ElementCount ==
+        r.NumberOfLoops.Range.Reduce(0, (n, k) => n + r.LoopAt(k).Points.Count.Range.Reduce(0, (s, i) =>
+            s + (m.ShareCollapsedLine(f, r.SegmentStart(k, i), r.SegmentEnd(k, i)) ? 1 : 0)));
+    because "A triangle with two corners on one collapsed line has the segment between them on that line. The line bounds the region, so the segment is a boundary segment (an interior chord along a boundary line would overlap boundary segments, which a positively oriented triangulation forbids), and each boundary segment belongs to exactly one triangle. A positive triangle cannot have three collinear corners, so no triangle has two such segments.";
+    tested by Law_DroppedElementsArePoleCollapsed;
+}
+
+// The parameter-space elements tile the region.
+conjecture ElementsTileRegion
+{
+    given m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation, uv: UvCoordinate;
+    assume forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, t, i);
+    assume forall (k: Integer) in t.ElementCount.Range: Law_ElementPositiveInChart(m, f, t, ElementIndex(k));
+    assume Law_ElementAreasSumToRegionArea(m, f, r, t);
+    assume r.IsStrictlyInside(uv, m.RegionTolerance(f, m.ChartOf(f, r)));
+    conclude exists (k: Integer) in t.ElementCount.Range:
+        t.ElementCorners(ElementIndex(k)).Map(v => t.Points[v].ToPoint2D).PolygonContainsPoint(uv.ToPoint2D);
+    tested by Law_ElementAreasSumToRegionArea, Law_ElementPositiveInChart;
+}
+
+// SurfaceAngular as kernels define it bounds the centroid test.
+conjecture NormalTurnBoundsCentroidDeviation
+{
+    given m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex;
+    assume m.CanMeasure(fm, k);
+    assume m.TouchesCollapsedLine(fm, k) == false;
+    assume forall (j: Integer) in fm.ElementCorners(k).Count.Range:
+        fm.EdgeNormalTurn(k, j) <= c.SurfaceAngular;
+    conclude Law_ElementNormalAgreesWithSurface(m, fm, c, k);
+    tested by Law_ElementNormalAgreesWithSurface, Law_SurfaceEdgeNormalTurnWithinSurfaceAngular;
+}
