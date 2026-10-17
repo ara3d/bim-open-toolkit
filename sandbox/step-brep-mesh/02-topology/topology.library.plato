@@ -1,0 +1,795 @@
+//==
+// # BrepTopology
+//
+// Layer 2 of the STEP B-rep to mesh design (README.md beside this file). The
+// functions over the topology tables: range and intactness predicates, coedge
+// sites and traversal, the composed sense of a coedge, the edge domain derived
+// from the vertices, the vertex link, the counts behind Euler-Poincare, and the
+// measures that the coupling laws compare with the model's tolerances. A body is
+// written where the body is the definition; an algorithm is bodiless with a
+// "deferred:" note, and its contract is in topology.spec.plato.
+//
+// Conventions. A function that indexes a table states its precondition; laws
+// and callers establish it with the conditional, never with && (both operands
+// of && are evaluated). Typed empty arrays are written 0.MapRange(k => X(k)),
+// whose lambda never runs. Coincidence of points is the model's
+// Tolerances.Length. Tolerances.Parameter is the model-wide parameter floor of
+// 00-foundation, the strictest parameter tolerance anywhere. Linear searches
+// are the definitions; an implementation replaces them with one pass that
+// builds incidence tables (README, "Implementation notes").
+//
+// Sections, in order:
+//  - Orientation and coedges
+//  - Range predicates
+//  - Intactness
+//  - Coedge sites
+//  - Traversal
+//  - Bounds and seams
+//  - Sense and orientation
+//  - Edge domains
+//  - Degenerate edges
+//  - Vertex links
+//  - Counts and Euler-Poincare
+//  - Bodies
+//  - Coupling measures
+//  - Parameter-space winding
+//  - Units
+//  - Owed by 00-foundation
+//  - Owed by 01-geometry
+
+library BrepTopology
+{
+    //==
+    // # Orientation and coedges
+
+    // Whether the orientation walks an edge from its Start vertex to its End vertex.
+    IsForward(o: EdgeOrientation): Boolean
+        => match (o) {
+            Forward => true;
+            Reversed => false;
+        };
+
+    // Whether the coedge, as its loop lists it, walks its edge from Start to End.
+    IsForward(c: Coedge): Boolean
+        => c.Orientation.IsForward;
+
+    // The vertex a coedge leaves, as its loop lists it: the edge's Start when the
+    // coedge is Forward, its End when Reversed. A bound whose Orientation is
+    // false runs the loop backwards, so the face reaches this vertex last.
+    // Precondition: m.IsEdgeInRange(c.Edge).
+    StartVertex(m: BrepModel, c: Coedge): BrepVertexIndex
+        => c.IsForward ? m.Edges[c.Edge].Start : m.Edges[c.Edge].End;
+
+    // The vertex a coedge reaches, as its loop lists it. Precondition:
+    // m.IsEdgeInRange(c.Edge).
+    EndVertex(m: BrepModel, c: Coedge): BrepVertexIndex
+        => c.IsForward ? m.Edges[c.Edge].End : m.Edges[c.Edge].Start;
+
+    // The coedges of a loop in order: those of an edge loop; none for a vertex
+    // loop or a poly loop, whose edges are implicit.
+    CoedgesOf(loop: BrepLoop): Array<Coedge>
+        => match (loop) {
+            EdgeLoop(coedges) => coedges;
+            VertexLoop(vertex) => Coedge.NoCoedges;
+            PolyLoop(points) => Coedge.NoCoedges;
+        };
+
+    // An empty coedge array, for the branches that have none.
+    NoCoedges(_: Coedge): Array<Coedge>
+        => 0.MapRange(k => Coedge(BrepEdgeIndex(k), EdgeOrientation.Forward));
+
+    // The vertex of a vertex loop as a one-element array; empty for other loops.
+    VertexLoopVertexOf(loop: BrepLoop): Array<BrepVertexIndex>
+        => match (loop) {
+            EdgeLoop(coedges) => 0.MapRange(k => BrepVertexIndex(k));
+            VertexLoop(vertex) => [vertex];
+            PolyLoop(points) => 0.MapRange(k => BrepVertexIndex(k));
+        };
+
+    // Whether the loop is an edge loop.
+    IsEdgeLoop(loop: BrepLoop): Boolean
+        => match (loop) {
+            EdgeLoop(coedges) => true;
+            VertexLoop(vertex) => false;
+            PolyLoop(points) => false;
+        };
+
+    // Whether the loop is a poly loop.
+    IsPolyLoop(loop: BrepLoop): Boolean
+        => match (loop) {
+            EdgeLoop(coedges) => false;
+            VertexLoop(vertex) => false;
+            PolyLoop(points) => true;
+        };
+
+    //==
+    // # Range predicates
+
+    // Whether v names a row of the vertex table.
+    IsVertexInRange(m: BrepModel, v: BrepVertexIndex): Boolean
+        => m.Vertices.IsValidIndex(v);
+
+    // Whether e names a row of the edge table.
+    IsEdgeInRange(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.Edges.IsValidIndex(e);
+
+    // Whether l names a row of the loop table.
+    IsLoopInRange(m: BrepModel, l: BrepLoopIndex): Boolean
+        => m.Loops.IsValidIndex(l);
+
+    // Whether f names a row of the face table.
+    IsFaceInRange(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.Faces.IsValidIndex(f);
+
+    // Whether s names a row of the shell table.
+    IsShellInRange(m: BrepModel, s: ShellIndex): Boolean
+        => m.Shells.IsValidIndex(s);
+
+    // Whether b names a row of the body table.
+    IsBodyInRange(m: BrepModel, b: BodyIndex): Boolean
+        => m.Bodies.IsValidIndex(b);
+
+    // Whether c names a curve of the model's geometry arena.
+    IsCurveInRange(m: BrepModel, c: CurveIndex): Boolean
+        => m.Geometry.Curves.IsValidIndex(c);
+
+    // Whether s names a surface of the model's geometry arena.
+    IsSurfaceInRange(m: BrepModel, s: SurfaceIndex): Boolean
+        => m.Geometry.Surfaces.IsValidIndex(s);
+
+    //==
+    // # Intactness
+    //
+    // A row is intact when every index it holds is in range. IsEveryIndexInRange
+    // is the whole model's form and the body of Law_IndicesInRange.
+
+    // Whether an edge's two vertices and its curve are in range.
+    IsIntact(m: BrepModel, edge: BrepEdge): Boolean
+        => m.IsVertexInRange(edge.Start) && m.IsVertexInRange(edge.End) && m.IsCurveInRange(edge.Curve);
+
+    // Whether every index a loop holds is in range: each coedge's edge, or a
+    // vertex loop's vertex. A poly loop holds none.
+    IsIntact(m: BrepModel, loop: BrepLoop): Boolean
+        => match (loop) {
+            EdgeLoop(coedges) => coedges.All(c => m.IsEdgeInRange(c.Edge));
+            VertexLoop(vertex) => m.IsVertexInRange(vertex);
+            PolyLoop(points) => true;
+        };
+
+    // Whether a face's surface is in range and each bound's loop is in range and
+    // intact.
+    IsIntact(m: BrepModel, face: BrepFace): Boolean
+        => m.IsSurfaceInRange(face.Surface) && face.Bounds.All(b => m.IsLoopIntact(b.Loop));
+
+    // Whether every face a shell lists is in range.
+    IsIntact(m: BrepModel, shell: BrepShell): Boolean
+        => shell.Faces.All(f => m.IsFaceInRange(f));
+
+    // Whether every shell a body names is in range.
+    IsIntact(m: BrepModel, body: BrepBody): Boolean
+        => match (body) {
+            ManifoldSolid(outer) => m.IsShellInRange(outer);
+            SolidWithVoids(outer, voids) => m.IsShellInRange(outer) && voids.All(v => m.IsShellInRange(v));
+            ShellSet(shells) => shells.All(s => m.IsShellInRange(s));
+        };
+
+    // Whether e is in range and its row is intact.
+    IsEdgeIntact(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEdgeInRange(e) ? m.IsIntact(m.Edges[e]) : false;
+
+    // Whether l is in range and its row is intact.
+    IsLoopIntact(m: BrepModel, l: BrepLoopIndex): Boolean
+        => m.IsLoopInRange(l) ? m.IsIntact(m.Loops[l]) : false;
+
+    // Whether f is in range and its row is intact, loops included.
+    IsFaceIntact(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.IsFaceInRange(f) ? m.IsIntact(m.Faces[f]) : false;
+
+    // Whether b is in range and its row is intact.
+    IsBodyIntact(m: BrepModel, b: BodyIndex): Boolean
+        => m.IsBodyInRange(b) ? m.IsIntact(m.Bodies[b]) : false;
+
+    // Whether every index stored anywhere in the model is in range: the
+    // geometry arena's own, and every topology row's.
+    IsEveryIndexInRange(m: BrepModel): Boolean
+        => m.Geometry.IsEveryIndexInRange
+            && m.Edges.All(e => m.IsIntact(e))
+            && m.Loops.All(l => m.IsIntact(l))
+            && m.Faces.All(f => m.IsIntact(f))
+            && m.Shells.All(s => m.IsIntact(s))
+            && m.Bodies.All(b => m.IsIntact(b));
+
+    //==
+    // # Coedge sites
+
+    // The coedges of the loop l names; none when l is out of range or is not an
+    // edge loop.
+    LoopCoedges(m: BrepModel, l: BrepLoopIndex): Array<Coedge>
+        => m.IsLoopInRange(l) ? m.Loops[l].CoedgesOf : Coedge.NoCoedges;
+
+    // Whether the site names a coedge: its face in range, its bound a position
+    // in that face's bounds, its slot a position in that bound's coedges.
+    IsCoedgeSiteInRange(m: BrepModel, site: CoedgeSite): Boolean
+        => m.IsFaceInRange(site.Face)
+            ? (m.Faces[site.Face].Bounds.IsValidIndex(site.Bound)
+                ? m.LoopCoedges(m.Faces[site.Face].Bounds[site.Bound].Loop).IsValidIndex(site.Slot)
+                : false)
+            : false;
+
+    // The face bound a site lies in. Precondition: m.IsCoedgeSiteInRange(site).
+    BoundAt(m: BrepModel, site: CoedgeSite): FaceBound
+        => m.Faces[site.Face].Bounds[site.Bound];
+
+    // The coedge a site names. Precondition: m.IsCoedgeSiteInRange(site).
+    CoedgeAt(m: BrepModel, site: CoedgeSite): Coedge
+        => m.LoopCoedges(m.BoundAt(site).Loop)[site.Slot];
+
+    // The site of the coedge after this one in its loop, as the loop lists it,
+    // the last wrapping to the first. Precondition: m.IsCoedgeSiteInRange(site).
+    NextSite(m: BrepModel, site: CoedgeSite): CoedgeSite
+        => CoedgeSite(site.Face, site.Bound, (site.Slot + 1) % m.LoopCoedges(m.BoundAt(site).Loop).Count);
+
+    //==
+    // # Traversal
+    //
+    // Every traversal skips what is out of range, so it is total; Law_IndicesInRange
+    // reports what was skipped.
+
+    // The faces of a shell that are in range, in the shell's order.
+    ShellFaces(m: BrepModel, s: ShellIndex): Array<BrepFaceIndex>
+        => m.IsShellInRange(s)
+            ? m.Shells[s].Faces.FlatMap(f => m.IsFaceInRange(f) ? [f] : 0.MapRange(k => BrepFaceIndex(k)))
+            : 0.MapRange(k => BrepFaceIndex(k));
+
+    // The loops of a face, one per bound, in the face's bound order.
+    LoopsOfFace(m: BrepModel, f: BrepFaceIndex): Array<BrepLoopIndex>
+        => m.IsFaceInRange(f)
+            ? m.Faces[f].Bounds.Map(b => b.Loop)
+            : 0.MapRange(k => BrepLoopIndex(k));
+
+    // Every coedge site of a face, bound by bound, in loop order. Vertex and
+    // poly loops contribute none.
+    CoedgeSitesOfFace(m: BrepModel, f: BrepFaceIndex): Array<CoedgeSite>
+        => m.IsFaceInRange(f)
+            ? m.Faces[f].Bounds.Count.Range.FlatMap(b =>
+                m.LoopCoedges(m.Faces[f].Bounds[b].Loop).Count.Range.Map(k => CoedgeSite(f, b, k)))
+            : 0.MapRange(k => CoedgeSite(f, k, k));
+
+    // Every coedge site of a shell, face by face.
+    CoedgeSitesOfShell(m: BrepModel, s: ShellIndex): Array<CoedgeSite>
+        => m.ShellFaces(s).FlatMap(f => m.CoedgeSitesOfFace(f));
+
+    // The sites among the given ones whose coedge cites edge e. Precondition:
+    // every site is in range.
+    SitesCiting(m: BrepModel, sites: Array<CoedgeSite>, e: BrepEdgeIndex): Array<CoedgeSite>
+        => sites.FlatMap(x => m.CoedgeAt(x).Edge == e ? [x] : sites.Take(0));
+
+    // The coedge sites in a shell that cite edge e: its uses. Two in a closed
+    // shell; both in one face for a seam.
+    CoedgeSitesOfEdge(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Array<CoedgeSite>
+        => m.SitesCiting(m.CoedgeSitesOfShell(s), e);
+
+    // The coedge sites in a face that cite edge e.
+    CoedgeSitesOfEdgeInFace(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Array<CoedgeSite>
+        => m.SitesCiting(m.CoedgeSitesOfFace(f), e);
+
+    // How many coedges of the shell cite edge e; zero when e is not in the shell.
+    UseCount(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Integer
+        => m.CoedgeSitesOfEdge(s, e).Count;
+
+    // The faces of the given sites, each once, in order of first appearance.
+    DistinctFaces(sites: Array<CoedgeSite>): Array<BrepFaceIndex>
+        => sites.Count.Range.FlatMap(i =>
+            i.Range.All(j => sites[j].Face != sites[i].Face)
+                ? [sites[i].Face]
+                : 0.MapRange(k => BrepFaceIndex(k)));
+
+    // The faces of a shell that use edge e, each once: two for an edge between
+    // faces, one for a seam or a boundary edge.
+    FacesOfEdge(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Array<BrepFaceIndex>
+        => m.CoedgeSitesOfEdge(s, e).DistinctFaces;
+
+    // The distinct edges the shell's coedges cite, in increasing index order.
+    // Poly loops' implicit edges are not indexed and not listed.
+    EdgesOfShell(m: BrepModel, s: ShellIndex): Array<BrepEdgeIndex>
+        => m.Edges.Count.MapRange(i => BrepEdgeIndex(i)).FlatMap(e =>
+            m.UseCount(s, e) > 0 ? [e] : 0.MapRange(k => BrepEdgeIndex(k)));
+
+    // Whether a coedge's edge has v as either end. False when the edge is out of
+    // range.
+    CoedgeTouchesVertex(m: BrepModel, c: Coedge, v: BrepVertexIndex): Boolean
+        => m.IsEdgeInRange(c.Edge)
+            ? (m.Edges[c.Edge].Start == v || m.Edges[c.Edge].End == v)
+            : false;
+
+    // The vertices of the vertex loops that bound face f.
+    VertexLoopVertices(m: BrepModel, f: BrepFaceIndex): Array<BrepVertexIndex>
+        => m.LoopsOfFace(f).FlatMap(l =>
+            m.IsLoopInRange(l) ? m.Loops[l].VertexLoopVertexOf : 0.MapRange(k => BrepVertexIndex(k)));
+
+    // Whether some face of the shell has a vertex loop at v.
+    IsVertexLoopVertexIn(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Boolean
+        => m.ShellFaces(s).Any(f => m.VertexLoopVertices(f).Any(w => w == v));
+
+    // Whether the shell's bounds reference vertex v: as an end of a cited edge,
+    // or as a vertex loop's vertex.
+    ShellTouchesVertex(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Boolean
+        => m.CoedgeSitesOfShell(s).Any(x => m.CoedgeTouchesVertex(m.CoedgeAt(x), v))
+            || m.IsVertexLoopVertexIn(s, v);
+
+    // The distinct vertices the shell's bounds reference, in increasing index
+    // order. Poly loop points are not indexed and not listed.
+    VerticesOfShell(m: BrepModel, s: ShellIndex): Array<BrepVertexIndex>
+        => m.Vertices.Count.MapRange(i => BrepVertexIndex(i)).FlatMap(v =>
+            m.ShellTouchesVertex(s, v) ? [v] : 0.MapRange(k => BrepVertexIndex(k)));
+
+    // Whether some bound of a face of the shell is a poly loop.
+    ShellHasPolyLoop(m: BrepModel, s: ShellIndex): Boolean
+        => m.ShellFaces(s).Any(f => m.LoopsOfFace(f).Any(l =>
+            m.IsLoopInRange(l) ? m.Loops[l].IsPolyLoop : false));
+
+    //==
+    // # Bounds and seams
+
+    // Whether a loop is a non-empty closed chain: each coedge of an edge loop
+    // ends at the vertex the next one starts from, the last wrapping to the
+    // first. Vertex and poly loops close by definition. Precondition:
+    // m.IsIntact(loop).
+    ChainsEndToStart(m: BrepModel, loop: BrepLoop): Boolean
+        => match (loop) {
+            EdgeLoop(coedges) => coedges.Count > 0
+                ? coedges.Count.Range.All(i =>
+                    m.EndVertex(coedges[i]) == m.StartVertex(coedges[(i + 1) % coedges.Count]))
+                : false;
+            VertexLoop(vertex) => true;
+            PolyLoop(points) => true;
+        };
+
+    // How many of a face's bounds the file marked outer.
+    OuterBoundCount(face: BrepFace): Integer
+        => face.Bounds.Reduce(0, (n, b) => b.IsOuter ? n + 1 : n);
+
+    // The vertices a bound references: both ends of every coedge, or a vertex
+    // loop's vertex; none for a poly loop. Precondition: m.IsLoopIntact(b.Loop).
+    BoundVertices(m: BrepModel, b: FaceBound): Array<BrepVertexIndex>
+        => m.LoopCoedges(b.Loop).FlatMap(c => [m.StartVertex(c), m.EndVertex(c)])
+            .Concatenate(m.Loops[b.Loop].VertexLoopVertexOf);
+
+    // Whether two bounds reference no common vertex. Precondition: both loops
+    // intact.
+    BoundsShareNoVertex(m: BrepModel, a: FaceBound, b: FaceBound): Boolean
+        => m.BoundVertices(a).All(v => m.BoundVertices(b).All(w => v != w));
+
+    // Whether every two distinct bounds of face f share no vertex.
+    // Precondition: m.IsFaceIntact(f).
+    HasDisjointBounds(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.Faces[f].Bounds.Count.Range.All(i =>
+            m.Faces[f].Bounds.Count.Range.All(j =>
+                i < j ? m.BoundsShareNoVertex(m.Faces[f].Bounds[i], m.Faces[f].Bounds[j]) : true));
+
+    // Whether edge e is a seam of face f: cited twice by the face's coedges.
+    IsSeamEdgeOf(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
+        => m.CoedgeSitesOfEdgeInFace(f, e).Count == 2;
+
+    // Whether face f has a seam edge.
+    HasSeam(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.CoedgeSitesOfFace(f).Any(x => m.IsSeamEdgeOf(f, m.CoedgeAt(x).Edge));
+
+    // Whether every bound of face f is an edge loop. Precondition:
+    // m.IsFaceIntact(f).
+    HasOnlyEdgeLoops(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.Faces[f].Bounds.All(b => m.Loops[b.Loop].IsEdgeLoop);
+
+    //==
+    // # Sense and orientation
+    //
+    // With sigma(x) = +1 for true and -1 for false, a coedge runs along its curve
+    // with sign sigma(SameSense) * sigma(Orientation) * sigma(bound.Orientation)
+    // (research/STEP-BREP-MODEL.md 4.2). The Boolean form below is the same
+    // product: XNOR is multiplication of signs.
+
+    // Whether the face that owns the bound traverses the coedge in the direction
+    // of increasing curve parameter: the product of the edge's SameSense, the
+    // coedge's Orientation, and the bound's Orientation, as signs. The same holds
+    // for the coedge's pcurve, which shares the curve's sense. Precondition:
+    // m.IsEdgeInRange(coedge.Edge).
+    CoedgeRunsForwardOnCurve(m: BrepModel, bound: FaceBound, coedge: Coedge): Boolean
+        => (m.Edges[coedge.Edge].SameSense == coedge.IsForward) == bound.Orientation;
+
+    // The composed sense of the coedge at a site. Precondition: the site is in
+    // range and its coedge's edge is in range.
+    CoedgeRunsForwardOnCurve(m: BrepModel, site: CoedgeSite): Boolean
+        => m.CoedgeRunsForwardOnCurve(m.BoundAt(site), m.CoedgeAt(site));
+
+    // Whether the two given uses of an edge run in opposite directions along its
+    // curve; true unless there are exactly two. Precondition: each site is in
+    // range and its coedge's edge is in range.
+    UsesRunOpposite(m: BrepModel, sites: Array<CoedgeSite>): Boolean
+        => sites.Count == 2
+            ? m.CoedgeRunsForwardOnCurve(sites[0]) != m.CoedgeRunsForwardOnCurve(sites[1])
+            : true;
+
+    // The sign relating face f's topological normal to its surface's parameter
+    // orientation: +1 when the normal points along PartialU x PartialV, -1 when
+    // against it. It is sigma(SameSense) * epsilon, with epsilon = -1 only for the
+    // inner part of a degenerate torus (NormalAgreesWithParameterization). With
+    // +1 the face lies to the left of every coedge traversed in its composed
+    // direction in the (u, v) plane, and a region that closes in (u, v) has
+    // positive signed area. Precondition: m.IsFaceIntact(f).
+    FaceNormalSign(m: BrepModel, f: BrepFaceIndex): Integer
+        => (m.Faces[f].SameSense == m.Geometry.NormalAgreesWithParameterization(m.Faces[f].Surface)) ? 1 : -1;
+
+    //==
+    // # Edge domains
+    //
+    // The file stores no parameter range for an edge. EdgeDomain derives it: the
+    // vertex met first along the curve's direction (Start when SameSense, else
+    // End) gives the range's start, the other vertex its end, each by inverse
+    // evaluation on the curve. The range always runs forward in the curve's
+    // parameter. See the README, "The edge domain".
+
+    // Whether the edge starts and ends at the same vertex index: a closed edge.
+    // Precondition: m.IsEdgeInRange(e).
+    IsClosedEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.Edges[e].Start == m.Edges[e].End;
+
+    // Whether the edge's curve is periodic. Precondition: m.IsEdgeIntact(e).
+    IsOnPeriodicCurve(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.Geometry.Domain(m.Edges[e].Curve).IsPeriodicDomain;
+
+    // The edge's Start vertex when atStart, else its End vertex. Precondition:
+    // m.IsEdgeInRange(e).
+    EdgeVertex(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): BrepVertexIndex
+        => atStart ? m.Edges[e].Start : m.Edges[e].End;
+
+    // The vertex met first when walking the curve in its increasing parameter
+    // over the edge. Precondition: m.IsEdgeInRange(e).
+    FirstVertexAlongCurve(m: BrepModel, e: BrepEdgeIndex): BrepVertexIndex
+        => m.Edges[e].SameSense ? m.Edges[e].Start : m.Edges[e].End;
+
+    // The vertex met last when walking the curve in its increasing parameter
+    // over the edge. Precondition: m.IsEdgeInRange(e).
+    LastVertexAlongCurve(m: BrepModel, e: BrepEdgeIndex): BrepVertexIndex
+        => m.Edges[e].SameSense ? m.Edges[e].End : m.Edges[e].Start;
+
+    // The parameter of vertex v on edge e's curve, by inverse evaluation.
+    // Precondition: m.IsEdgeIntact(e) and m.IsVertexInRange(v).
+    VertexParameter(m: BrepModel, e: BrepEdgeIndex, v: BrepVertexIndex): Number
+        => m.Geometry.ClosestParameter(m.Edges[e].Curve, m.Vertices[v].Point);
+
+    // The range an edge occupies on a curve with domain d, given the parameters
+    // of the first and last vertex along the curve. Aperiodic: [first, last], or
+    // the whole curve domain for a closed edge. Periodic: [first, first + w] with
+    // w in (0, period], the full period for a closed edge. The periodicity is
+    // copied from d.
+    TraversalDomain(d: CurveDomain, first: Number, last: Number, isClosed: Boolean): CurveDomain
+        => match (d.Periodicity) {
+            Aperiodic => isClosed ? d : CurveDomain(NumberInterval(first, last), d.Periodicity);
+            Periodic(period) => CurveDomain(
+                NumberInterval(first, isClosed ? first + period : last.PeriodicRepresentativeAbove(first, period)),
+                d.Periodicity);
+        };
+
+    // The parameter range edge e occupies on its curve, in increasing parameter,
+    // with the curve's periodicity. Precondition: m.IsEdgeIntact(e).
+    EdgeDomain(m: BrepModel, e: BrepEdgeIndex): CurveDomain
+        => m.Geometry.Domain(m.Edges[e].Curve).TraversalDomain(
+            m.VertexParameter(e, m.FirstVertexAlongCurve(e)),
+            m.VertexParameter(e, m.LastVertexAlongCurve(e)),
+            m.IsClosedEdge(e));
+
+    // The end of the edge domain that the edge's Start (atStart) or End vertex is
+    // assigned to: Range.Start for the vertex met first along the curve,
+    // Range.End for the other. Precondition: m.IsEdgeIntact(e).
+    DomainEndParameter(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Number
+        => (atStart == m.Edges[e].SameSense) ? m.EdgeDomain(e).Range.Start : m.EdgeDomain(e).Range.End;
+
+    // The pcurves of edge e's curve that lie on face f's surface: one for an
+    // ordinary edge, two for a seam whose curve carries both, none when the file
+    // wrote no pcurves. Which seam pcurve belongs to which use is face meshing's
+    // decision. Precondition: m.IsEveryIndexInRange, e and f in range.
+    PcurvesOnFace(m: BrepModel, e: BrepEdgeIndex, f: BrepFaceIndex): Array<PcurveIndex>
+    {
+        var all = m.Geometry.PcurvesOf(m.Edges[e].Curve);
+        return all.FlatMap(p => m.Geometry.Pcurves[p].Surface == m.Faces[f].Surface ? [p] : all.Take(0));
+    }
+
+    // The parameter range edge e occupies on pcurve p, by the same rule as
+    // EdgeDomain: a pcurve has the sense of its 3D curve, and the vertices are
+    // located on the pcurve's image in space. Precondition:
+    // m.IsEveryIndexInRange, e in range, p a pcurve of e's curve.
+    PcurveEdgeDomain(m: BrepModel, e: BrepEdgeIndex, p: PcurveIndex): CurveDomain
+        => m.Geometry.Domain(p).TraversalDomain(
+            m.Geometry.ClosestParameter(p, m.Vertices[m.FirstVertexAlongCurve(e)].Point),
+            m.Geometry.ClosestParameter(p, m.Vertices[m.LastVertexAlongCurve(e)].Point),
+            m.IsClosedEdge(e));
+
+    //==
+    // # Degenerate edges
+
+    // Whether two points coincide in the model's own sense: within its length
+    // tolerance.
+    IsCoincident(m: BrepModel, a: Point3D, b: Point3D): Boolean
+        => a.Distance(b) <= m.Tolerances.Length.Value;
+
+    // Whether edge e is degenerate: every point of its curve over EdgeDomain lies
+    // within the length tolerance of its Start vertex. STEP forbids such edges;
+    // the counts contract them.
+    // deferred: the largest distance from a point to a curve arc, closed form for
+    // lines and conics, subdivision with Newton refinement for splines.
+    IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean;
+
+    // How many distinct edges of the shell are degenerate. Precondition:
+    // m.IsEveryIndexInRange.
+    DegenerateEdgeCount(m: BrepModel, s: ShellIndex): Integer
+        => m.EdgesOfShell(s).Reduce(0, (n, e) => m.IsDegenerateEdge(e) ? n + 1 : n);
+
+    //==
+    // # Vertex links
+    //
+    // A corner at v is a pair of consecutive coedges of an edge loop where the
+    // first ends at v; it is named by the site of that first coedge. Its two
+    // nodes are the edge end the first coedge arrives through and the edge end
+    // the next coedge leaves through. The link of v is the graph on those edge
+    // ends whose links are the corners. A manifold vertex has one link component.
+
+    // Whether the coedge at a site ends at vertex v. False when its edge is out
+    // of range. Precondition: m.IsCoedgeSiteInRange(site).
+    ArrivesAt(m: BrepModel, site: CoedgeSite, v: BrepVertexIndex): Boolean
+        => m.IsEdgeInRange(m.CoedgeAt(site).Edge) ? m.EndVertex(m.CoedgeAt(site)) == v : false;
+
+    // The corners at vertex v in shell s, each named by its arriving coedge's
+    // site, in shell order.
+    CornersAtVertex(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Array<CoedgeSite>
+    {
+        var sites = m.CoedgeSitesOfShell(s);
+        return sites.FlatMap(x => m.ArrivesAt(x, v) ? [x] : sites.Take(0));
+    }
+
+    // The edge end a corner's arriving coedge comes in through: the edge's End
+    // when the coedge is Forward, its Start when Reversed. Precondition:
+    // m.IsCoedgeSiteInRange(corner).
+    ArrivingEnd(m: BrepModel, corner: CoedgeSite): EdgeEnd
+        => EdgeEnd(m.CoedgeAt(corner).Edge, m.CoedgeAt(corner).IsForward.Not);
+
+    // The edge end the next coedge after a corner goes out through: the edge's
+    // Start when that coedge is Forward, its End when Reversed. Precondition:
+    // m.IsCoedgeSiteInRange(corner).
+    LeavingEnd(m: BrepModel, corner: CoedgeSite): EdgeEnd
+        => EdgeEnd(m.CoedgeAt(m.NextSite(corner)).Edge, m.CoedgeAt(m.NextSite(corner)).IsForward);
+
+    // Whether two corners share an edge end, so that they are consecutive around
+    // the vertex. Precondition: both in range.
+    CornersShareEnd(m: BrepModel, a: CoedgeSite, b: CoedgeSite): Boolean
+        => m.ArrivingEnd(a) == m.ArrivingEnd(b)
+            || m.ArrivingEnd(a) == m.LeavingEnd(b)
+            || m.LeavingEnd(a) == m.ArrivingEnd(b)
+            || m.LeavingEnd(a) == m.LeavingEnd(b);
+
+    // The number of connected components of the link of vertex v in shell s;
+    // zero when v has no corners in s.
+    // deferred: union-find over the edge ends at v, joining the two ends of each
+    // corner.
+    LinkComponentCount(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Integer;
+
+    // The corners at v in cyclic order around the vertex when the link is one
+    // cycle, or in path order from one free end when it is one path (an open
+    // shell's boundary vertex).
+    // deferred: walk the link, from a corner across its leaving end to the other
+    // corner at that end, until the walk returns or reaches a free end.
+    CornersAroundVertex(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Array<CoedgeSite>;
+
+    // The faces around vertex v in s, one per corner, in the order of
+    // CornersAroundVertex. A face appears once per corner it has at v: the side
+    // face of a seamed cylinder twice at each of its vertices.
+    FacesAroundVertex(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Array<BrepFaceIndex>
+        => m.CornersAroundVertex(s, v).Map(c => c.Face);
+
+    //==
+    // # Counts and Euler-Poincare
+
+    // The shell's indexed cells as the file gives them: distinct vertices and
+    // edges its bounds reference, faces in range, and bounds of every kind. Poly
+    // loop points and their implicit edges are not indexed and not counted here.
+    RawCounts(m: BrepModel, s: ShellIndex): ShellCounts
+        => (m.VerticesOfShell(s).Count,
+            m.EdgesOfShell(s).Count,
+            m.ShellFaces(s).Count,
+            m.ShellFaces(s).Reduce(0, (n, f) => n + m.Faces[f].Bounds.Count));
+
+    // The counts after the reduction of research/VALIDATION-MATH.md 1.4: every
+    // degenerate edge contracted (deleted when closed, its two vertices merged
+    // otherwise), an edge loop left without coedges kept as a vertex loop on
+    // their shared vertex, each vertex loop dropped whose vertex lies on another
+    // bound of the same face or repeats another vertex loop there, and poly loop
+    // points and implicit edges identified by coincidence within the length
+    // tolerance.
+    // deferred: union-find over vertices joined by degenerate edges, then one pass
+    // over the bounds; poly loop points identified by coincidence through a
+    // spatial hash.
+    ReducedCounts(m: BrepModel, s: ShellIndex): ShellCounts;
+
+    // V - E + 2F - L of the counts: the Euler characteristic of the shell when
+    // its cells are open disks with holes, open arcs, and points.
+    EulerPoincare(c: ShellCounts): Integer
+        => c.Vertices - c.Edges + 2 * c.Faces - c.Loops;
+
+    // The genus (2 - chi) / 2 that the counts imply for a closed, connected,
+    // orientable shell. Meaningful only when EulerPoincare is even and at most 2.
+    ImpliedGenus(c: ShellCounts): Integer
+        => (2 - c.EulerPoincare) / 2;
+
+    // The Euler-Poincare value of shell s on reduced counts. Precondition:
+    // m.IsEveryIndexInRange.
+    ShellEulerPoincare(m: BrepModel, s: ShellIndex): Integer
+        => m.ReducedCounts(s).EulerPoincare;
+
+    // The genus shell s's reduced counts imply. Precondition:
+    // m.IsEveryIndexInRange.
+    ShellGenus(m: BrepModel, s: ShellIndex): Integer
+        => m.ReducedCounts(s).ImpliedGenus;
+
+    // How many distinct edges of the shell have exactly one use: its free edges.
+    FreeEdgeCount(m: BrepModel, s: ShellIndex): Integer
+        => m.EdgesOfShell(s).Reduce(0, (n, e) => m.UseCount(s, e) == 1 ? n + 1 : n);
+
+    // Whether a use count is zero or two.
+    IsZeroOrTwo(n: Integer): Boolean
+        => n == 0 || n == 2;
+
+    // Whether an Euler characteristic is even and at most 2 (ISO 10303-42 eq. 9).
+    IsEvenAndAtMostTwo(chi: Integer): Boolean
+        => chi % 2 == 0 && chi <= 2;
+
+    //==
+    // # Bodies
+
+    // Whether every shell a solid body names is declared closed; true for a
+    // shell set. Precondition: m.IsIntact(body).
+    HasDeclaredClosedShells(m: BrepModel, body: BrepBody): Boolean
+        => match (body) {
+            ManifoldSolid(outer) => m.Shells[outer].DeclaredClosed;
+            SolidWithVoids(outer, voids) => m.Shells[outer].DeclaredClosed && voids.All(v => m.Shells[v].DeclaredClosed);
+            ShellSet(shells) => true;
+        };
+
+    //==
+    // # Coupling measures
+    //
+    // The distances the coupling laws compare with Tolerances.Length. A layer 7
+    // Check_ reports the largest one it samples as its Worst. Pointwise measures
+    // take a sample fraction t, clamped into [0, 1] and mapped onto the domain.
+
+    // A sample fraction clamped into [0, 1]; 0 when it is not finite.
+    SampleFraction(t: Number): Number
+        => t.IsFinite ? t.Clamp(0.0, 1.0) : 0.0;
+
+    // The point of edge e's curve at fraction t of its edge domain.
+    // Precondition: m.IsEveryIndexInRange and m.IsEdgeInRange(e).
+    CurvePointAt(m: BrepModel, e: BrepEdgeIndex, t: Number): Point3D
+        => m.Geometry.Eval(m.Edges[e].Curve, m.EdgeDomain(e).Range.Lerp(t.SampleFraction));
+
+    // The distance from edge e's Start (atStart) or End vertex to the nearest
+    // point of its curve. Precondition: m.IsEveryIndexInRange and
+    // m.IsEdgeInRange(e).
+    VertexCurveDeviation(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Number
+        => m.Vertices[m.EdgeVertex(e, atStart)].Point.Distance(
+            m.Geometry.Eval(m.Edges[e].Curve, m.VertexParameter(e, m.EdgeVertex(e, atStart))));
+
+    // The distance from edge e's Start (atStart) or End vertex to the curve point
+    // at the end of the edge domain assigned to it. Precondition:
+    // m.IsEveryIndexInRange and m.IsEdgeInRange(e).
+    DomainEndDeviation(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Number
+        => m.Vertices[m.EdgeVertex(e, atStart)].Point.Distance(
+            m.Geometry.Eval(m.Edges[e].Curve, m.DomainEndParameter(e, atStart)));
+
+    // The distance from edge e's Start vertex to its curve point at fraction t.
+    // Precondition: m.IsEveryIndexInRange and m.IsEdgeInRange(e).
+    StartVertexDeviationAt(m: BrepModel, e: BrepEdgeIndex, t: Number): Number
+        => m.CurvePointAt(e, t).Distance(m.Vertices[m.Edges[e].Start].Point);
+
+    // The distance from the curve point at fraction t of a coedge's edge to the
+    // point the site's face surface gives at that point's projection.
+    // Precondition: m.IsEveryIndexInRange and m.IsCoedgeSiteInRange(site).
+    SurfaceDeviationAt(m: BrepModel, site: CoedgeSite, t: Number): Number
+    {
+        var p = m.CurvePointAt(m.CoedgeAt(site).Edge, t);
+        var surface = m.Faces[site.Face].Surface;
+        return m.Geometry.Eval(surface, m.Geometry.Project(surface, p)).Distance(p);
+    }
+
+    // The distance from the point of the k-th pcurve of edge e's curve, at
+    // fraction t of its edge range, to the nearest point of the 3D curve.
+    // Precondition: m.IsEveryIndexInRange, m.IsEdgeInRange(e), and k a position
+    // in PcurvesOf(e's curve).
+    PcurveDeviationAt(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number
+    {
+        var p = m.Geometry.PcurvesOf(m.Edges[e].Curve)[k];
+        var q = m.Geometry.Eval(p, m.PcurveEdgeDomain(e, p).Range.Lerp(t.SampleFraction));
+        var c = m.Edges[e].Curve;
+        return q.Distance(m.Geometry.Eval(c, m.Geometry.ClosestParameter(c, q)));
+    }
+
+    //==
+    // # Parameter-space winding
+
+    // Whether face f's image in its surface's parameter plane needs no seam or
+    // pole handling: every bound is an edge loop, no edge is a seam of f, no loop
+    // vertex lies on a degenerate side (DegenerateSides), and each bound's
+    // projected, continuity-unwrapped polygon returns to its start within the
+    // parameter tolerance, so that no bound wraps a period.
+    // deferred: sample each coedge's curve, map the samples with Project, unwrap
+    // by continuity across periods, and test closure and pole contact.
+    IsPlainInParameters(m: BrepModel, f: BrepFaceIndex): Boolean;
+
+    // The signed area of face f's region in its parameter plane: the sum over
+    // the bounds of (1/2) times the closed integral of (u dv - v du), each bound
+    // traversed as the face uses it, each coedge in its composed direction, its
+    // points mapped to (u, v) by Project. Green's theorem with unit weight: the
+    // same integral as layer 7's Oracle_FaceAreaByGreen without the area element.
+    // Precondition: m.IsPlainInParameters(f).
+    // deferred: the shoelace formula over the polygons IsPlainInParameters builds,
+    // with enough samples per coedge that the sign is settled.
+    SignedParameterArea(m: BrepModel, f: BrepFaceIndex): Number;
+
+    // Whether face f's parameter-space area has the sign its normal sign
+    // requires: positive when FaceNormalSign is +1, negative when -1.
+    // Precondition: m.IsPlainInParameters(f).
+    WindingAgreesWithNormal(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.FaceNormalSign(f) == 1 ? m.SignedParameterArea(f) > 0.0 : m.SignedParameterArea(f) < 0.0;
+
+    //==
+    // # Units
+
+    // The length of one model unit in metres.
+    ScaleToMetres(u: LengthUnit): Number
+        => match (u) {
+            Metre => 1.0;
+            Millimetre => 0.001;
+            Centimetre => 0.01;
+            Inch => 0.0254;
+            Foot => 0.3048;
+            Scaled(metresPerUnit) => metresPerUnit;
+        };
+
+    //==
+    // # Owed by 00-foundation
+
+    // belongs-in: 00-foundation
+    // Whether a curve domain is periodic. A separate function because the sum
+    // checker cannot type a match subject reached through an overloaded call
+    // chain (CHK304, found by this layer's gate run).
+    IsPeriodicDomain(d: CurveDomain): Boolean
+        => match (d.Periodicity) {
+            Aperiodic => false;
+            Periodic(period) => true;
+        };
+
+    // belongs-in: 00-foundation
+    // The value congruent to t modulo period in (reference, reference + period]:
+    // the end of a periodic range that starts at reference and runs forward to
+    // t. A t congruent to reference gives a full period. Precondition: period is
+    // positive and finite.
+    PeriodicRepresentativeAbove(t: Number, reference: Number, period: Number): Number
+    {
+        var offset = t - reference;
+        var reduced = offset - (offset / period).Floor * period;
+        return reduced > 0.0 ? reference + reduced : reference + period;
+    }
+
+    //==
+    // # Owed by 01-geometry
+    //
+    // The one operation this layer needs from the geometry arena that neither
+    // VOCABULARY.md nor 01-geometry's files declare. The pcurve operations
+    // (PcurvesOf; Domain, Eval and ClosestParameter over PcurveIndex) and the
+    // arena's IsEveryIndexInRange are 01-geometry's own declarations.
+
+    // belongs-in: 01-geometry
+    // Whether the surface's normal N, as ISO 10303-42 defines it, points along
+    // PartialU x PartialV: the sign epsilon of research/STEP-BREP-MODEL.md 4.2.
+    // False only for the inner (lemon) part of a degenerate torus and for
+    // surfaces built on one.
+    // deferred: a match over BrepSurface.
+    NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean;
+}

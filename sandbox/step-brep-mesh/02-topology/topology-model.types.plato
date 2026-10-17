@@ -1,0 +1,96 @@
+//==
+// # B-rep model, counts, and addresses
+//
+// Layer 2 of the STEP B-rep to mesh design (README.md beside this file). The
+// model as one value of flat tables, the cell counts that Euler-Poincare reads,
+// and the two small addresses the traversal functions return: a coedge's place
+// in a face, and one end of an edge.
+//
+// Sections, in order:
+//  - Units
+//  - The model
+//  - Counts
+//  - Addresses
+
+//==
+// # Units
+
+// The model's length unit, from the STEP file's length unit assignment. Every
+// coordinate, radius, and tolerance in a BrepModel is in this unit; angles are
+// always radians (the decoder converts degrees once). Scaled covers conversion
+// based units: MetresPerUnit is the length of one model unit in metres.
+type LengthUnit
+    = Metre
+    | Millimetre
+    | Centimetre
+    | Inch
+    | Foot
+    | Scaled(MetresPerUnit: Number);
+
+//==
+// # The model
+
+// A boundary representation as flat tables. Geometry is the arena of curves,
+// pcurves, and surfaces that edges and faces index; Vertices to Bodies are the
+// topology tables, each row referring to others by typed index; Tolerances are
+// the file's own (00-foundation), Unit the length unit of every coordinate.
+// Plain data: it represents files that break the rules, and the invariants in
+// topology.spec.plato are what validation checks, not what construction
+// promises.
+type BrepModel
+{
+    Geometry: GeometrySet;
+    Vertices: Array<BrepVertex>;
+    Edges: Array<BrepEdge>;
+    Loops: Array<BrepLoop>;
+    Faces: Array<BrepFace>;
+    Shells: Array<BrepShell>;
+    Bodies: Array<BrepBody>;
+    Tolerances: Tolerances;
+    Unit: LengthUnit;
+}
+
+//==
+// # Counts
+
+// The cell counts of one shell for the Euler-Poincare formula
+// V - E + 2F - L: distinct vertices, distinct edges (a seam counts once), faces,
+// and face bounds of every kind. RawCounts counts the indexed cells as the file
+// gives them; ReducedCounts first contracts degenerate edges and drops
+// redundant vertex loops. Every field is non-negative.
+type ShellCounts
+    implements IValue
+{
+    Vertices: Integer;
+    Edges: Integer;
+    Faces: Integer;
+    Loops: Integer;
+}
+
+//==
+// # Addresses
+
+// Where one coedge sits: the face, the position of the bound in Face's Bounds,
+// and the position of the coedge in that bound's edge loop. Bound and Slot are
+// positions inside one row's own array, not indices into a model table, so
+// they are Integers (VOCABULARY.md's rule for corner slots). A site in range
+// (IsCoedgeSiteInRange) names exactly one Coedge and its FaceBound, which is
+// what composing the sense of a use needs; a coedge value alone does not say
+// which face uses it.
+type CoedgeSite
+    implements IValue
+{
+    Face: BrepFaceIndex;
+    Bound: Integer;
+    Slot: Integer;
+}
+
+// One end of an edge: its Start end when IsStart, else its End end. A closed
+// edge has two distinct ends at one vertex. The ends at a vertex are the nodes
+// of the vertex's link graph (CornersAtVertex, LinkComponentCount).
+type EdgeEnd
+    implements IValue
+{
+    Edge: BrepEdgeIndex;
+    IsStart: Boolean;
+}

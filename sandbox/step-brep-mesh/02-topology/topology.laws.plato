@@ -1,0 +1,274 @@
+//==
+// # BrepTopologyLaws
+//
+// The laws of layer 2 (README.md beside this file, "Laws"). Each Law_ returns
+// Boolean and states one property for all values of its parameters. A leading
+// guard pre ? claim : true makes it vacuously true outside its hypotheses, and
+// every lookup sits behind such a guard, so no law indexes out of range. The
+// structural laws guard locally, so each reports its own defect even when other
+// rows of the model are broken. The laws that evaluate geometry or call a
+// deferred function guard with IsEveryIndexInRange, because layer 1's
+// evaluators read the arena. Pointwise laws take a sample fraction t, clamped
+// into [0, 1] and mapped onto the domain; layer 7's Check_ functions choose t
+// with layer 0's SamplePlan. Every law takes a BrepModel, so the pseudorandom
+// runner skips it and it runs over witnesses (PLATO-PRIMER.md B.2).
+//
+// Severity (SPEC-DSL.md section 4): a structural law that fails is an Error. A
+// geometric law that fails by less than ten times its tolerance is a Warning,
+// by more an Error. Each comment ends with the kind and the tolerance.
+//
+// Sections, in order:
+//  - Indices
+//  - Loops and bounds
+//  - Edge uses
+//  - Vertex links
+//  - Euler-Poincare
+//  - Bodies
+//  - Edge domains
+//  - Degenerate edges
+//  - Geometry coupling
+//  - Parameter-space winding
+
+library BrepTopologyLaws
+{
+    //==
+    // # Indices
+
+    // Every index stored in the model names an existing row: edge vertices and
+    // curves, coedge edges and vertex-loop vertices, face surfaces and bound
+    // loops, shell faces, body shells, and the geometry arena's own indices.
+    // Structural, exact.
+    Law_IndicesInRange(m: BrepModel): Boolean
+        => m.IsEveryIndexInRange;
+
+    //==
+    // # Loops and bounds
+
+    // An edge loop is a non-empty closed chain: each coedge ends at the vertex
+    // the next one starts from, the last wrapping to the first (STEP edge_loop
+    // WR1). Vertex and poly loops close by definition. Structural, exact.
+    Law_LoopsChainEndToStart(m: BrepModel, l: BrepLoopIndex): Boolean
+        => m.IsLoopIntact(l) ? m.ChainsEndToStart(m.Loops[l]) : true;
+
+    // A face has at most one bound marked outer (STEP face WR2). Structural,
+    // exact.
+    Law_AtMostOneOuterBound(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.IsFaceInRange(f) ? m.Faces[f].OuterBoundCount <= 1 : true;
+
+    // A face has at least one bound (STEP face bounds SET[1:?]). Structural,
+    // exact.
+    Law_AtLeastOneBound(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.IsFaceInRange(f) ? m.Faces[f].Bounds.Count >= 1 : true;
+
+    // Distinct bounds of a face share no vertex (STEP face IP2). A vertex loop
+    // on a vertex of another bound of the same face breaks it; ReducedCounts
+    // drops such a loop for counting, and this law still reports it.
+    // Structural, exact.
+    Law_FaceBoundsShareNoVertex(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.IsFaceIntact(f) ? m.HasDisjointBounds(f) : true;
+
+    //==
+    // # Edge uses
+
+    // In a shell declared closed, an edge the shell uses is used exactly twice:
+    // by two faces, or twice by one face as a seam (STEP closed_shell IP1).
+    // Structural, exact.
+    Law_EveryEdgeUsedTwiceInClosedShell(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Boolean
+        => m.IsShellInRange(s)
+            ? (m.Shells[s].DeclaredClosed ? m.UseCount(s, e).IsZeroOrTwo : true)
+            : true;
+
+    // In a shell not declared closed, no edge is used more than twice (STEP
+    // open_shell). Structural, exact.
+    Law_OpenShellEdgesUsedAtMostTwice(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Boolean
+        => m.IsShellInRange(s)
+            ? (m.Shells[s].DeclaredClosed ? true : m.UseCount(s, e) <= 2)
+            : true;
+
+    // A shell declared closed has no free edge, no edge used exactly once: the
+    // file's closed_shell claim is true. Structural, exact.
+    Law_DeclaredClosedIsClosed(m: BrepModel, s: ShellIndex): Boolean
+        => m.IsShellInRange(s)
+            ? (m.Shells[s].DeclaredClosed ? m.FreeEdgeCount(s) == 0 : true)
+            : true;
+
+    // When an edge has exactly two uses in a shell, they run in opposite
+    // directions along its curve once each use's three sense flags are composed
+    // (CoedgeRunsForwardOnCurve): the faces on either side agree in orientation.
+    // Structural, exact.
+    Law_EdgeUsesHaveOppositeOrientation(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Boolean
+        => m.IsShellInRange(s)
+            ? (m.IsEdgeInRange(e) ? m.UsesRunOpposite(m.CoedgeSitesOfEdge(s, e)) : true)
+            : true;
+
+    // When an edge has exactly two uses in one face, a seam, they run in opposite
+    // composed directions (STEP edge_loop IP2). A seam used twice the same way
+    // glues the face to itself with a twist, which no flag can repair.
+    // Structural, exact.
+    Law_SeamUsesAreInOneFace(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
+        => m.IsFaceInRange(f)
+            ? (m.IsEdgeInRange(e) ? m.UsesRunOpposite(m.CoedgeSitesOfEdgeInFace(f, e)) : true)
+            : true;
+
+    //==
+    // # Vertex links
+
+    // In a shell declared closed, the faces around every vertex the shell's
+    // coedges reach form one cycle: the vertex's link has one component, so the
+    // shell does not pinch there (two cones apex to apex fail). Structural,
+    // exact.
+    Law_VertexLinkIsOneCycle(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s)
+                ? (m.Shells[s].DeclaredClosed
+                    ? (m.CornersAtVertex(s, v).Count == 0 ? true : m.LinkComponentCount(s, v) == 1)
+                    : true)
+                : true)
+            : true;
+
+    // A vertex that bounds a face of the shell as a vertex loop is an end of no
+    // edge the shell cites: the face surrounds it, so nothing else may touch it.
+    // Structural, exact.
+    Law_VertexLoopVertexIsIsolated(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Boolean
+        => m.IsShellInRange(s)
+            ? (m.IsVertexLoopVertexIn(s, v)
+                ? m.CoedgeSitesOfShell(s).All(x => m.CoedgeTouchesVertex(m.CoedgeAt(x), v).Not)
+                : true)
+            : true;
+
+    //==
+    // # Euler-Poincare
+
+    // For a shell declared closed, V - E + 2F - L on reduced counts is even and
+    // at most 2 (ISO 10303-42 eq. 9); the genus is then (2 - chi) / 2.
+    // Structural, exact.
+    Law_EulerPoincareEvenAndBounded(m: BrepModel, s: ShellIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s)
+                ? (m.Shells[s].DeclaredClosed ? m.ShellEulerPoincare(s).IsEvenAndAtMostTwo : true)
+                : true)
+            : true;
+
+    //==
+    // # Bodies
+
+    // Every shell of a solid body, outer or void, is declared closed (STEP
+    // manifold_solid_brep and brep_with_voids take closed shells). Structural,
+    // exact.
+    Law_SolidShellsAreDeclaredClosed(m: BrepModel, b: BodyIndex): Boolean
+        => m.IsBodyIntact(b) ? m.HasDeclaredClosedShells(m.Bodies[b]) : true;
+
+    //==
+    // # Edge domains
+
+    // The curve evaluated at the end of the edge domain assigned to the edge's
+    // Start (atStart) or End vertex reproduces that vertex's point. Geometric,
+    // Tolerances.Length.
+    Law_EdgeDomainEndsAtVertices(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e) ? m.DomainEndDeviation(e, atStart) <= m.Tolerances.Length.Value : true)
+            : true;
+
+    // The edge domain runs forward: its start does not exceed its end. On an
+    // aperiodic curve a wrong SameSense inverts it; on a periodic curve it holds
+    // by construction. Structural, Tolerances.Parameter (the model's parameter
+    // floor).
+    Law_EdgeDomainIsForward(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e)
+                ? m.EdgeDomain(e).Range.Start <= m.EdgeDomain(e).Range.End + m.Tolerances.Parameter.Value
+                : true)
+            : true;
+
+    //==
+    // # Degenerate edges
+
+    // Two distinct vertices of an edge coincide only when the edge is
+    // degenerate: a closed curve trimmed at one point uses one vertex, not two.
+    // Structural, Tolerances.Length.
+    Law_CoincidentEndsAreOneVertex(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e)
+                ? (m.IsClosedEdge(e)
+                    ? true
+                    : (m.IsCoincident(m.Vertices[m.Edges[e].Start].Point, m.Vertices[m.Edges[e].End].Point)
+                        ? m.IsDegenerateEdge(e)
+                        : true))
+                : true)
+            : true;
+
+    // A degenerate edge's two vertices coincide, so contracting it merges two
+    // copies of one point, never two points. Structural, Tolerances.Length.
+    Law_DegenerateEdgeHasCoincidentVertices(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e)
+                ? (m.IsDegenerateEdge(e)
+                    ? m.IsCoincident(m.Vertices[m.Edges[e].Start].Point, m.Vertices[m.Edges[e].End].Point)
+                    : true)
+                : true)
+            : true;
+
+    // Every point of a degenerate edge's curve, at fraction t of its domain,
+    // lies at its Start vertex: the pointwise form of IsDegenerateEdge's
+    // contract. Geometric, Tolerances.Length.
+    Law_DegenerateEdgeStaysAtStart(m: BrepModel, e: BrepEdgeIndex, t: Number): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e)
+                ? (m.IsDegenerateEdge(e) ? m.StartVertexDeviationAt(e, t) <= m.Tolerances.Length.Value : true)
+                : true)
+            : true;
+
+    // No edge is degenerate (STEP edge_curve IP2: finite non-zero extent). The
+    // counts contract degenerate edges; this law still reports them.
+    // Structural, Tolerances.Length.
+    Law_EdgeHasPositiveExtent(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e) ? m.IsDegenerateEdge(e).Not : true)
+            : true;
+
+    //==
+    // # Geometry coupling
+
+    // An edge's Start (atStart) or End vertex lies on the edge's curve: the
+    // nearest curve point is within the length tolerance (STEP edge_curve IP7).
+    // Geometric, Tolerances.Length.
+    Law_VertexCoincidesWithCurveEnd(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e) ? m.VertexCurveDeviation(e, atStart) <= m.Tolerances.Length.Value : true)
+            : true;
+
+    // The curve point at fraction t of a coedge's edge lies on the surface of
+    // the face the coedge belongs to: projecting it with Project and evaluating
+    // there returns it (STEP face_surface IP7). Geometric, Tolerances.Length.
+    Law_EdgeLiesOnAdjacentSurfaces(m: BrepModel, site: CoedgeSite, t: Number): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsCoedgeSiteInRange(site) ? m.SurfaceDeviationAt(site, t) <= m.Tolerances.Length.Value : true)
+            : true;
+
+    // Each pcurve of an edge's curve and the 3D curve agree as point sets over
+    // the edge: the pcurve's point at fraction t of its edge range lies on the 3D
+    // curve. Geometric, Tolerances.Length.
+    Law_PcurveAgreesWithCurve(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e)
+                ? (m.Geometry.PcurvesOf(m.Edges[e].Curve).IsValidIndex(k)
+                    ? m.PcurveDeviationAt(e, k, t) <= m.Tolerances.Length.Value
+                    : true)
+                : true)
+            : true;
+
+    //==
+    // # Parameter-space winding
+
+    // For a face whose bounds close in its parameter plane without seam or pole
+    // handling, the region its bounds enclose, each traversed as the face uses
+    // it, has positive signed area exactly when FaceNormalSign is +1: the outer
+    // loop runs counter-clockwise in (u, v) when the composed signs say the face
+    // normal points along PartialU x PartialV. Structural, exact sign.
+    Law_LoopWindingMatchesSameSense(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsFaceInRange(f)
+                ? (m.IsPlainInParameters(f) ? m.WindingAgreesWithNormal(f) : true)
+                : true)
+            : true;
+}

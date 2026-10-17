@@ -1,0 +1,268 @@
+//==
+// # BrepTopology contracts
+//
+// Layer 2 of the STEP B-rep to mesh design (README.md beside this file). The
+// invented constructs of SPEC-DSL.md section 3 for this layer: the invariants
+// of a valid model and of its counts, the contract of EdgeDomain, the contracts
+// of the deferred functions, the contract this layer expects of the function it
+// declares on behalf of 01-geometry, and three theorems. Read, not run: the
+// gate skips this file. Every invariant and ensures cites a Law_ or a
+// predicate of topology.library.plato, so deleting this file loses no rule,
+// only the knowledge of which rules are promises.
+//
+// Sections, in order:
+//  - Types
+//  - Edge domains
+//  - Deferred algorithms
+//  - Owed by 01-geometry
+//  - Theorems
+
+//==
+// # Types
+
+// The invariants of a valid model. No constructor is listed: a model decoded
+// from a file may break any of them, so they are what layer 7's ValidateBrep
+// checks, not what construction promises. Quantifiers range over every row,
+// every end of an edge, and every sample fraction in [0, 1].
+spec BrepModel
+{
+    invariant Law_IndicesInRange(self);
+    invariant forall (l: Integer) in self.Loops.Count.Range : Law_LoopsChainEndToStart(self, BrepLoopIndex(l));
+    invariant forall (f: Integer) in self.Faces.Count.Range : Law_AtLeastOneBound(self, BrepFaceIndex(f));
+    invariant forall (f: Integer) in self.Faces.Count.Range : Law_AtMostOneOuterBound(self, BrepFaceIndex(f));
+    invariant forall (f: Integer) in self.Faces.Count.Range : Law_FaceBoundsShareNoVertex(self, BrepFaceIndex(f));
+    invariant forall (f: Integer) in self.Faces.Count.Range :
+        forall (e: Integer) in self.Edges.Count.Range : Law_SeamUsesAreInOneFace(self, BrepFaceIndex(f), BrepEdgeIndex(e));
+    invariant forall (f: Integer) in self.Faces.Count.Range : Law_LoopWindingMatchesSameSense(self, BrepFaceIndex(f));
+    invariant forall (s: Integer) in self.Shells.Count.Range :
+        forall (e: Integer) in self.Edges.Count.Range : Law_EveryEdgeUsedTwiceInClosedShell(self, ShellIndex(s), BrepEdgeIndex(e));
+    invariant forall (s: Integer) in self.Shells.Count.Range :
+        forall (e: Integer) in self.Edges.Count.Range : Law_OpenShellEdgesUsedAtMostTwice(self, ShellIndex(s), BrepEdgeIndex(e));
+    invariant forall (s: Integer) in self.Shells.Count.Range : Law_DeclaredClosedIsClosed(self, ShellIndex(s));
+    invariant forall (s: Integer) in self.Shells.Count.Range :
+        forall (e: Integer) in self.Edges.Count.Range : Law_EdgeUsesHaveOppositeOrientation(self, ShellIndex(s), BrepEdgeIndex(e));
+    invariant forall (s: Integer) in self.Shells.Count.Range :
+        forall (v: Integer) in self.Vertices.Count.Range : Law_VertexLinkIsOneCycle(self, ShellIndex(s), BrepVertexIndex(v));
+    invariant forall (s: Integer) in self.Shells.Count.Range :
+        forall (v: Integer) in self.Vertices.Count.Range : Law_VertexLoopVertexIsIsolated(self, ShellIndex(s), BrepVertexIndex(v));
+    invariant forall (s: Integer) in self.Shells.Count.Range : Law_EulerPoincareEvenAndBounded(self, ShellIndex(s));
+    invariant forall (b: Integer) in self.Bodies.Count.Range : Law_SolidShellsAreDeclaredClosed(self, BodyIndex(b));
+    invariant forall (e: Integer) in self.Edges.Count.Range : Law_EdgeDomainIsForward(self, BrepEdgeIndex(e));
+    invariant forall (e: Integer) in self.Edges.Count.Range :
+        forall (atStart: Boolean) : Law_EdgeDomainEndsAtVertices(self, BrepEdgeIndex(e), atStart);
+    invariant forall (e: Integer) in self.Edges.Count.Range :
+        forall (atStart: Boolean) : Law_VertexCoincidesWithCurveEnd(self, BrepEdgeIndex(e), atStart);
+    invariant forall (e: Integer) in self.Edges.Count.Range : Law_CoincidentEndsAreOneVertex(self, BrepEdgeIndex(e));
+    invariant forall (e: Integer) in self.Edges.Count.Range : Law_EdgeHasPositiveExtent(self, BrepEdgeIndex(e));
+    invariant forall (e: Integer) in self.Edges.Count.Range : Law_DegenerateEdgeHasCoincidentVertices(self, BrepEdgeIndex(e));
+    invariant forall (e: Integer) in self.Edges.Count.Range :
+        forall (t: Number) in NumberInterval(0.0, 1.0) : Law_DegenerateEdgeStaysAtStart(self, BrepEdgeIndex(e), t);
+    invariant forall (f: Integer) in self.Faces.Count.Range :
+        forall (site: CoedgeSite) in self.CoedgeSitesOfFace(BrepFaceIndex(f)) :
+            forall (t: Number) in NumberInterval(0.0, 1.0) : Law_EdgeLiesOnAdjacentSurfaces(self, site, t);
+    invariant forall (e: Integer) in self.Edges.Count.Range :
+        forall (k: Integer) :
+            forall (t: Number) in NumberInterval(0.0, 1.0) : Law_PcurveAgreesWithCurve(self, BrepEdgeIndex(e), k, t);
+}
+
+// Cell counts are never negative. Plain data: witnesses state their expected
+// counts with the tuple constructor.
+spec ShellCounts
+{
+    invariant self.Vertices >= 0;
+    invariant self.Edges >= 0;
+    invariant self.Faces >= 0;
+    invariant self.Loops >= 0;
+}
+
+//==
+// # Edge domains
+
+// The derived parameter range of an edge (README, "The edge domain"). Its
+// body is the definition; this contract states what consumers may rely on.
+// Layer 4's discretization starts and ends at Range.Start and Range.End.
+spec EdgeDomain(m: BrepModel, e: BrepEdgeIndex): CurveDomain
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsEdgeInRange(e);
+    ensures result.Periodicity == m.Geometry.Domain(m.Edges[e].Curve).Periodicity;   // exact by construction
+    ensures (m.IsClosedEdge(e) && m.IsOnPeriodicCurve(e).Not)
+        ? result.Range == m.Geometry.Domain(m.Edges[e].Curve).Range   // exact by construction
+        : result.Range.Start == m.VertexParameter(e, m.FirstVertexAlongCurve(e));   // exact by construction
+    ensures m.IsClosedEdge(e)
+        ? true
+        : match (result.Periodicity) {
+            Aperiodic => result.Range.End == m.VertexParameter(e, m.LastVertexAlongCurve(e));   // exact by construction
+            Periodic(period) => result.Range.End
+                == m.VertexParameter(e, m.LastVertexAlongCurve(e)).PeriodicRepresentativeAbove(result.Range.Start, period);   // exact by construction
+        };
+    ensures m.IsClosedEdge(e)
+        ? match (result.Periodicity) {
+            Aperiodic => true;
+            Periodic(period) => result.Range.End == result.Range.Start + period;   // exact by construction
+        }
+        : true;
+    ensures m.IsOnPeriodicCurve(e) ? Law_EdgeDomainIsForward(m, e) : true;
+    measure 1;
+}
+
+//==
+// # Deferred algorithms
+
+// Degeneracy is a property of the curve over the edge domain, not of the two
+// vertex points: a full circle has coincident ends and is not degenerate.
+spec IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsEdgeInRange(e);
+    ensures result == forall (t: Number) in m.EdgeDomain(e).Range :
+        m.IsCoincident(m.Geometry.Eval(m.Edges[e].Curve, t), m.Vertices[m.Edges[e].Start].Point);
+    ensures result ? (forall (t: Number) in NumberInterval(0.0, 1.0) : Law_DegenerateEdgeStaysAtStart(m, e, t)) : true;
+    measure 1;
+    deferred "largest distance from a point to a curve arc: closed form for lines and conics; for splines, subdivision of the span bounding boxes with Newton refinement on the squared distance, cost proportional to the span count";
+}
+
+// The reduction of research/VALIDATION-MATH.md 1.4. Faces never change; edges
+// lose exactly the degenerate ones; vertices and loops can only decrease. With
+// poly loops present, their implicit cells are added, so only Faces is pinned.
+spec ReducedCounts(m: BrepModel, s: ShellIndex): ShellCounts
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsShellInRange(s);
+    ensures result.Faces == m.RawCounts(s).Faces;
+    ensures m.ShellHasPolyLoop(s) ? true : result.Edges == m.RawCounts(s).Edges - m.DegenerateEdgeCount(s);
+    ensures m.ShellHasPolyLoop(s) ? true : result.Vertices <= m.RawCounts(s).Vertices;
+    ensures m.ShellHasPolyLoop(s) ? true : result.Loops <= m.RawCounts(s).Loops;
+    ensures result.Vertices >= 0 && result.Edges >= 0 && result.Loops >= 0;
+    measure m.CoedgeSitesOfShell(s).Count + m.RawCounts(s).Loops;
+    deferred "union-find over the shell's vertices, joining the two ends of each degenerate edge; drop degenerate edges; keep an edge loop left with no coedge as a vertex loop on its class; per face, drop each vertex loop whose class appears on another bound or on an earlier vertex loop; identify poly-loop points by coincidence through a spatial hash and their implicit edges as unordered point pairs; count classes, edges, faces, bounds";
+}
+
+// The number of components of the link of v: the graph on the edge ends at v
+// whose links are the corners (ArrivingEnd to LeavingEnd of each).
+spec LinkComponentCount(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Integer
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsShellInRange(s);
+    ensures m.CornersAtVertex(s, v).Count == 0 ? result == 0 : result >= 1;
+    ensures result <= m.CornersAtVertex(s, v).Count;
+    ensures m.CornersAtVertex(s, v).Count == 1 ? result == 1 : true;
+    measure m.CornersAtVertex(s, v).Count;
+    deferred "union-find over the edge ends ArrivingEnd(c) and LeavingEnd(c) of every corner c at v, uniting the two ends of each corner; the result is the number of classes, which equals the number of classes of corners under the transitive closure of CornersShareEnd";
+}
+
+// The faces around a vertex in order. Exists when the link is one component
+// and no edge at the vertex has more than two uses, so that the link is one
+// cycle or one path; it closes into a cycle when every edge at the vertex has
+// two uses.
+spec CornersAroundVertex(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Array<CoedgeSite>
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsShellInRange(s);
+    requires m.LinkComponentCount(s, v) == 1;
+    requires forall (c: CoedgeSite) in m.CornersAtVertex(s, v) :
+        m.UseCount(s, m.CoedgeAt(c).Edge) <= 2 && m.UseCount(s, m.CoedgeAt(m.NextSite(c)).Edge) <= 2;
+    ensures result.Count == m.CornersAtVertex(s, v).Count;
+    ensures forall (k: Integer) in result.Count.Range : m.CornersAtVertex(s, v).Any(c => c == result[k]);
+    ensures forall (i: Integer) in result.Count.Range :
+        forall (j: Integer) in result.Count.Range : i < j ? result[i] != result[j] : true;
+    ensures forall (k: Integer) in (result.Count - 1).Range : m.CornersShareEnd(result[k], result[k + 1]);
+    ensures (forall (c: CoedgeSite) in m.CornersAtVertex(s, v) :
+            m.UseCount(s, m.CoedgeAt(c).Edge) == 2 && m.UseCount(s, m.CoedgeAt(m.NextSite(c)).Edge) == 2)
+        ? m.CornersShareEnd(result[result.Count - 1], result[0])
+        : true;
+    measure m.CornersAtVertex(s, v).Count;
+    deferred "walk the link: start at a corner with a free end if there is one, else at any corner; repeatedly cross the current corner's unvisited end to the other corner at that end";
+}
+
+// The guard of Law_LoopWindingMatchesSameSense. A face it rejects is not
+// wrong; its winding is checked after face meshing inserts seams and poles
+// (layer 5's region laws).
+spec IsPlainInParameters(m: BrepModel, f: BrepFaceIndex): Boolean
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsFaceInRange(f);
+    ensures result ? m.HasOnlyEdgeLoops(f) : true;
+    ensures result ? m.HasSeam(f).Not : true;
+    ensures result ? m.Faces[f].Bounds.Count >= 1 : true;
+    measure m.CoedgeSitesOfFace(f).Count;
+    deferred "sample each coedge's curve over its edge domain in its composed direction; map every sample to (u, v) with Project; lift each value next to its predecessor by the surface's periods; reject when a bound's lifted polygon does not return to its start within the parameter tolerance, or a loop vertex lies on a side DegenerateSides names";
+}
+
+// Green's theorem with unit weight over the face's parameter-space region.
+spec SignedParameterArea(m: BrepModel, f: BrepFaceIndex): Number
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsFaceInRange(f);
+    requires m.IsPlainInParameters(f);
+    ensures result.IsFinite;
+    measure m.CoedgeSitesOfFace(f).Count;
+    deferred "the shoelace sum over the lifted polygons IsPlainInParameters builds, each bound traversed as the face uses it, with samples added until the sign no longer changes";
+}
+
+//==
+// # Owed by 01-geometry
+//
+// The contract this layer expects of the one function it declares for
+// 01-geometry. That layer owns the final contract.
+
+// The sign epsilon of research/STEP-BREP-MODEL.md 4.2: whether ISO's normal N
+// is the direction of PartialU x PartialV wherever that product is non-zero.
+spec NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean
+{
+    requires g.Surfaces.IsValidIndex(s);
+    ensures forall (uv: UvCoordinate) in g.Domain(s) :
+        g.AreaElement(s, uv) > 0.0
+            ? (g.NormalOr(s, uv, Direction3D(Vector3D.UnitZ)).Vector.Dot(g.PartialU(s, uv).Cross(g.PartialV(s, uv))) > 0.0) == result
+            : true;
+    measure 1;
+    deferred "a match over BrepSurface: false only for the Lemon part of a degenerate torus, and for RectangularTrimmed and Offset over such a basis";
+}
+
+//==
+// # Theorems
+
+// When a shell has nothing to reduce, the reduction changes nothing.
+theorem ReducedCountsEqualRawOnCleanShell
+{
+    given m: BrepModel, s: ShellIndex;
+    assume Law_IndicesInRange(m);
+    assume m.IsShellInRange(s);
+    assume m.DegenerateEdgeCount(s) == 0;
+    assume m.ShellHasPolyLoop(s).Not;
+    assume forall (f: BrepFaceIndex) in m.ShellFaces(s) : Law_FaceBoundsShareNoVertex(m, f);
+    conclude m.ReducedCounts(s) == m.RawCounts(s);
+    because "The reduction does three things: contracts degenerate edges, drops vertex loops whose vertex is on another bound of the same face or repeats another vertex loop there, and identifies poly-loop points. With no degenerate edge there is nothing to contract or merge, so vertex classes are single vertices and every edge stays. Two vertex loops at one vertex of a face, or a vertex loop on another bound's vertex, share a vertex between distinct bounds, which Law_FaceBoundsShareNoVertex excludes, so no vertex loop is dropped. With no poly loop nothing is identified. Every count is then the raw one.";
+}
+
+// The domain-end law follows from the vertex-on-curve law, except for a closed
+// edge on an aperiodic curve.
+theorem EdgeDomainEndsFollowFromVertexOnCurve
+{
+    given m: BrepModel, e: BrepEdgeIndex, atStart: Boolean;
+    assume Law_IndicesInRange(m);
+    assume m.IsEdgeInRange(e);
+    assume m.IsClosedEdge(e) ? m.IsOnPeriodicCurve(e) : true;
+    assume Law_VertexCoincidesWithCurveEnd(m, e, atStart);
+    conclude Law_EdgeDomainEndsAtVertices(m, e, atStart);
+    because "EdgeDomain puts at the end that SameSense assigns to a vertex either that vertex's ClosestParameter value (the first vertex along the curve, at Range.Start; the last vertex on an aperiodic open edge, at Range.End) or a value congruent to it modulo the period (the last vertex on a periodic curve, by PeriodicRepresentativeAbove; a closed edge's single vertex at first + period). Eval is periodic in a periodic parameter, so the curve point at that end is the curve point VertexCurveDeviation measures, and the assumption bounds its distance to the vertex by Tolerances.Length. The excluded case takes the aperiodic curve's own domain ends, which reproduce the vertex only when the curve closes at it.";
+    tested by Law_EdgeDomainEndsAtVertices, Law_VertexCoincidesWithCurveEnd;
+}
+
+// A closed, orientable, manifold shell has an even Euler characteristic, on
+// reduced counts, whatever its faces' own topology.
+theorem ClosedOrientableShellHasEvenEuler
+{
+    given m: BrepModel, s: ShellIndex;
+    assume Law_IndicesInRange(m);
+    assume m.IsShellInRange(s);
+    assume m.Shells[s].DeclaredClosed;
+    assume m.ShellHasPolyLoop(s).Not;
+    assume forall (e: Integer) in m.Edges.Count.Range : Law_EveryEdgeUsedTwiceInClosedShell(m, s, BrepEdgeIndex(e));
+    assume forall (e: Integer) in m.Edges.Count.Range : Law_EdgeUsesHaveOppositeOrientation(m, s, BrepEdgeIndex(e));
+    assume forall (v: Integer) in m.Vertices.Count.Range : Law_VertexLinkIsOneCycle(m, s, BrepVertexIndex(v));
+    assume forall (v: Integer) in m.Vertices.Count.Range : Law_VertexLoopVertexIsIsolated(m, s, BrepVertexIndex(v));
+    conclude m.ShellEulerPoincare(s) % 2 == 0;
+    because "After the reduction the counted cells partition the shell's point set: vertices are points, edges are open arcs, and each face is an open surface from which each remaining bound removes a distinct boundary circle or point. Every edge has two uses with opposite composed directions, so the faces' orientations agree across every edge; every vertex has a link of one cycle, and a vertex loop's vertex touches no edge, so every point has a disk neighbourhood. The shell is therefore a closed orientable surface, possibly disconnected, whose Euler characteristic is a sum of terms 2 - 2H, each even. The count V - E + 2F - L assumes each face is a sphere with L_f holes (chi_c = 2 - L_f); a face with h handles in k pieces has chi_c = 2k - 2h - L_f, which differs by the even number 2(k - 1) - 2h, so the parity survives faces that break ISO's no-handle rule. The bound chi <= 2 also needs a connected shell and handle-free faces, which no law of this layer checks; that is why Law_EulerPoincareEvenAndBounded is a law and not a corollary.";
+    tested by Law_EulerPoincareEvenAndBounded;
+}
