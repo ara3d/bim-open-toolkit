@@ -55,27 +55,35 @@ spec MeshComponents
         self.IsComponentInRange(self.ElementComponent[k]);
     invariant forall (k: Integer) in self.VertexComponent.Count.Range :
         self.VertexComponent[k].Value >= -1 && self.VertexComponent[k].Value < self.ComponentCount;
+    invariant self.ElementParent.Count == self.ElementComponent.Count;
+    invariant self.ElementDepth.Count == self.ElementComponent.Count;
+    invariant forall (k: Integer) in self.ElementDepth.Count.Range : self.ElementDepth[k] >= 0;
     constructor ComponentsOf;
 }
 
-// The connected components of a mesh, by shared vertices. The contract forces elements that share
-// a vertex into one component; it does not force elements joined by no chain into different ones,
-// which needs a reachability statement the specification language has no form for. The deferred
-// algorithm gives the finest labelling.
+// The connected components of a mesh, by shared vertices. The contract is exact (theorem
+// ComponentsAreTheChainClasses): elements sharing a vertex are forced into one component, and the
+// spanning forest (ElementParent, ElementDepth) certifies that each component is joined by chains,
+// so no coarser labelling satisfies it. The numbering by lowest element is pinned by the roots.
 spec ComponentsOf(mesh: ModelMesh): MeshComponents
 {
     requires forall (e: ElementIndex) : Law_ElementCornersInRange(mesh, e);
     ensures result.ElementComponent.Count == mesh.ElementCount;
     ensures result.VertexComponent.Count == mesh.Positions.Count;
+    ensures result.ElementParent.Count == mesh.ElementCount;
+    ensures result.ElementDepth.Count == mesh.ElementCount;
     ensures forall (e: ElementIndex) : forall (slot: Integer) : Law_ElementCornersShareItsComponent(mesh, e, slot);
     ensures forall (k: Integer) in mesh.Positions.Count.Range :
         (result.VertexComponent[k].Value < 0) == mesh.LinkEdges(VertexIndex(k)).IsEmpty;
-    ensures forall (k: Integer) in mesh.ElementCount.Range :
-        result.ElementComponent[k].Value <= k.Range.Map(j => result.ElementComponent[j].Value).Reduce(-1, (a, b) => a.Max(b)) + 1;
-    ensures forall (c: Integer) in result.ComponentCount.Range :
-        result.ElementComponent.Any(x => x.Value == c);
+    ensures forall (e: ElementIndex) : Law_ComponentParentIsInItsComponent(mesh, e);
+    ensures forall (e: ElementIndex) : Law_ComponentParentSharesAVertex(mesh, e);
+    ensures forall (e: ElementIndex) : Law_ComponentRootHasDepthZero(mesh, e);
+    ensures forall (e: ElementIndex) : Law_ComponentParentIsOneShallower(mesh, e);
+    ensures forall (r: ElementIndex) : forall (e: ElementIndex) : Law_ComponentRootIsItsLowestElement(mesh, r, e);
+    ensures forall (r: ElementIndex) : Law_ComponentsAreNumberedByRoot(mesh, r);
+    ensures Law_ComponentCountIsRootCount(mesh);
     measure mesh.CornerCount;
-    deferred "union-find over element-vertex incidence, roots numbered by first element";
+    deferred "union-find over element-vertex incidence, roots numbered by first element, then a breadth-first spanning forest per component";
 }
 
 // Whether a vertex is pinched: its link is neither one cycle nor one path. The contract is
@@ -131,6 +139,29 @@ spec ComponentCountsOf(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents)
 
 //==
 // # Theorems
+
+// The components are exactly the classes of elements joined by chains of elements each sharing a
+// vertex with the next.
+theorem ComponentsAreTheChainClasses
+{
+    given mesh: ModelMesh, a: ElementIndex, b: ElementIndex;
+    assume mesh.IsElementInRange(a);
+    assume mesh.IsElementInRange(b);
+    conclude (mesh.ComponentsOf.ElementComponentOf(a).Value == mesh.ComponentsOf.ElementComponentOf(b).Value)
+        == mesh.IsJoinedByAChain(a, b);
+    because "If a chain joins a and b, each step shares a vertex, and Law_ElementCornersShareItsComponent
+             puts both elements of the step in that vertex's component, so a and b share a component.
+             Conversely, follow parents from a: each step shares a vertex
+             (Law_ComponentParentSharesAVertex), stays in the component
+             (Law_ComponentParentIsInItsComponent), and lowers the depth by one
+             (Law_ComponentParentIsOneShallower), so after depth(a) steps it reaches an element of depth
+             0, a root (Law_ComponentRootHasDepthZero). Two roots r, s of one component satisfy r <= s
+             and s <= r (Law_ComponentRootIsItsLowestElement), so the root is unique, and the chain
+             from a, followed by the reversed chain from b, joins a and b. IsJoinedByAChain is the
+             mathematical predicate, not a function of this layer.";
+    tested by Law_ElementCornersShareItsComponent, Law_ComponentParentSharesAVertex,
+        Law_ComponentParentIsOneShallower, Law_ComponentRootIsItsLowestElement;
+}
 
 // A connected, closed, consistently oriented surface has an even Euler characteristic of at most
 // 2, and so a genus.

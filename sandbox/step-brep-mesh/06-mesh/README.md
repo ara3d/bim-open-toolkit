@@ -231,6 +231,13 @@ outside its range makes it vacuously true, and the range is another law's statem
 | `Law_OrientedExactlyWhenNoEdgeIsMisoriented` | consistently oriented exactly when the direction sum is 0 on every two-sided edge | exact | test |
 | `Law_ClosedMeshHasNoPinchedVertex` | in a closed mesh every vertex link is one cycle | exact | Error |
 | `Law_ElementCornersShareItsComponent` | an element's corners lie in its component | exact | test |
+| `Law_ComponentParentIsInItsComponent` | an element's spanning-forest parent is in its component | exact | test |
+| `Law_ComponentParentSharesAVertex` | a non-root element shares a vertex with its parent | exact | test |
+| `Law_ComponentRootHasDepthZero` | an element is a root exactly when its depth is 0 | exact | test |
+| `Law_ComponentParentIsOneShallower` | a non-root element is one level deeper than its parent | exact | test |
+| `Law_ComponentRootIsItsLowestElement` | a root is the lowest element of its component, so each component has one root | exact | test |
+| `Law_ComponentsAreNumberedByRoot` | the component rooted at r is the number of roots below r | exact | test |
+| `Law_ComponentCountIsRootCount` | one component per root | exact | test |
 | `Law_ComponentEulerCharacteristicsAddUp` | component Euler characteristics plus unreferenced vertices give the mesh's | exact | test |
 | `Law_ClosedOrientedSurfaceHasGenus` | a closed, oriented, manifold component has an even Euler characteristic at most 2 | exact | Error |
 | `Law_ClosedComponentEulerIsTwoMinusTwiceGenus` | Euler characteristic = 2 - 2 genus for a closed connected component with a genus | exact | test (random records) |
@@ -318,7 +325,7 @@ degrees, chosen here).
 
 ### Theorems (`*.spec.plato`)
 
-`NumberedSitesHaveDistinctIndices`, `EveryIndexHasASite`, `SharedSamplesShareAnIndex`,
+`NumberedSitesHaveDistinctIndices`, `EveryIndexHasASite`, `SharedSamplesShareAnIndex`, `ComponentsAreTheChainClasses`,
 `WatertightByNumbering`, `ClosedOrientedSurfacesHaveAGenus`, `DiscreteGaussBonnet`,
 `MixedGaussBonnet`, `SignedVolumeSignIsOrientation`, `RadiusRatioIsAtLeastOne`,
 `AspectRatioIsAtLeastOne`, each with its justification and the laws that test it.
@@ -348,9 +355,8 @@ Readings of those names this layer depends on, for the owning authors to confirm
 
 - **The genus of a component with boundary** needs its boundary cycle count (chi = 2 - 2g - B);
   `Genus` returns its fallback for such components.
-- **Partial contracts.** `ComponentsOf` forces elements sharing a vertex into one component but not
-  unconnected elements apart (no reachability form in the specification language);
-  `IsPinchedVertex` pins the empty link and a link degree above 2, not the disconnected link.
+- **Partial contracts.** `IsPinchedVertex` pins the empty link and a link degree above 2, not the
+  disconnected link.
 - **The quad volume convention** (A-C split here, averaged splits in research 4.7) is the owner's to
   confirm.
 - **The 5 degree quad angle-defect threshold** has no source.
@@ -415,6 +421,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | (none) | `CompensatedSum(values)`, `TotalsAgree(a, b)` | the summation and the yardstick of every law comparing two totals |
 | `Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n, tol)`, `Law_TriangleMeshKeepsArea(mesh, tol)`, `Law_QuadMeshKeepsAreaWhenOk(mesh, tol)`, `Law_PolygonMeshKeepsArea(mesh, tol)` | the same without `tol` | rounding laws judged by `ResolutionAt`, not by the model's length tolerance; 07-validation's four `Check_` calls drop the argument |
 | `Law_ReversalNegatesSignedVolume(mesh, tol)`, `Law_TriangleAngleSumIsPi(mesh, e, tol)`, `Law_QuadAngleDefectIsNotNegative(mesh, e, tol)`, `Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c, tol)`, `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c, tol)` | the same without `tol`; `VolumeRoundingMagnitude`, `AngleSumResolution`, `DefectSumResolution` added | rounding laws judged by `ResolutionAt`; 07-validation's five `Check_` calls drop the argument |
+| `MeshComponents { ElementComponent; VertexComponent; ComponentCount }`, `ComponentsOf` contract partial | adds `ElementParent`, `ElementDepth` (a spanning forest rooted at each component's lowest element); `ElementParentOf`, `ElementDepthOf`, `IsComponentRoot`, `RootsBelow`, `RootCount`, `SharesAVertex` | the certificate makes the contract exact without a reachability form |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -439,3 +446,8 @@ Applied:
 - **No ill-formed tolerance in the Gauss-Bonnet theorems** (review F12). `DiscreteGaussBonnet` and
   `MixedGaussBonnet` assumed `Law_ElementIsNotDegenerate` at `LengthTolerance(0.0)`, below layer 0's
   smallest well-formed tolerance; they now assume a positive smallest altitude directly.
+- **`ComponentsOf` contract exact** (FIX-WAVE layer 6; README "Left open"). `MeshComponents` carries a
+  spanning forest (`ElementParent`, `ElementDepth`) whose laws certify that each component is
+  connected, so elements joined by no chain cannot share a component; theorem
+  `ComponentsAreTheChainClasses` states it. The old "first appearance" ensures is replaced by the
+  root numbering laws.

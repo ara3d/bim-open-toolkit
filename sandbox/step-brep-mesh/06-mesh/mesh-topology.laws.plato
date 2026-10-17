@@ -113,6 +113,56 @@ library ModelMeshTopologyLaws
                 == mesh.ComponentsOf.ElementComponentOf(e).Value
             : true;
 
+    // Table law: each element's parent in the spanning forest is an element of the same component.
+    Law_ComponentParentIsInItsComponent(mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e)
+            ? (mesh.IsElementInRange(mesh.ComponentsOf.ElementParentOf(e))
+                ? mesh.ComponentsOf.ElementComponentOf(mesh.ComponentsOf.ElementParentOf(e)).Value
+                    == mesh.ComponentsOf.ElementComponentOf(e).Value
+                : false)
+            : true;
+
+    // Table law: each element that is not a root shares a vertex with its parent, so a parent
+    // chain is a chain of elements each sharing a vertex with the next.
+    Law_ComponentParentSharesAVertex(mesh: ModelMesh, e: ElementIndex): Boolean
+        => (mesh.IsElementInRange(e) ? mesh.ComponentsOf.IsComponentRoot(e).Not : false)
+            ? mesh.SharesAVertex(e, mesh.ComponentsOf.ElementParentOf(e))
+            : true;
+
+    // Table law: an element is a root exactly when its depth is 0.
+    Law_ComponentRootHasDepthZero(mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e)
+            ? mesh.ComponentsOf.IsComponentRoot(e) == (mesh.ComponentsOf.ElementDepthOf(e) == 0)
+            : true;
+
+    // Table law: a non-root element is one level deeper than its parent, so every parent chain
+    // reaches a root in at most its depth steps.
+    Law_ComponentParentIsOneShallower(mesh: ModelMesh, e: ElementIndex): Boolean
+        => (mesh.IsElementInRange(e) ? mesh.ComponentsOf.IsComponentRoot(e).Not : false)
+            ? mesh.ComponentsOf.ElementDepthOf(mesh.ComponentsOf.ElementParentOf(e)) + 1
+                == mesh.ComponentsOf.ElementDepthOf(e)
+            : true;
+
+    // Table law: a root is the lowest element of its component. Two roots of one component would
+    // each be below the other, so a component has exactly one root.
+    Law_ComponentRootIsItsLowestElement(mesh: ModelMesh, r: ElementIndex, e: ElementIndex): Boolean
+        => ((mesh.IsElementInRange(r) && mesh.IsElementInRange(e)) ? mesh.ComponentsOf.IsComponentRoot(r) : false)
+            ? (mesh.ComponentsOf.ElementComponentOf(r).Value == mesh.ComponentsOf.ElementComponentOf(e).Value
+                ? r.Value <= e.Value
+                : true)
+            : true;
+
+    // Table law: components are numbered in the order of their roots, which are their lowest
+    // elements: the component rooted at r is the number of roots below r.
+    Law_ComponentsAreNumberedByRoot(mesh: ModelMesh, r: ElementIndex): Boolean
+        => (mesh.IsElementInRange(r) ? mesh.ComponentsOf.IsComponentRoot(r) : false)
+            ? mesh.ComponentsOf.ElementComponentOf(r).Value == mesh.ComponentsOf.RootsBelow(r)
+            : true;
+
+    // Table law: there is one component per root.
+    Law_ComponentCountIsRootCount(mesh: ModelMesh): Boolean
+        => mesh.ComponentsOf.ComponentCount == mesh.ComponentsOf.RootCount;
+
     // Table law: the components' Euler characteristics, plus one for each unreferenced vertex (a
     // point is its own component), add up to the mesh's.
     Law_ComponentEulerCharacteristicsAddUp(mesh: ModelMesh): Boolean

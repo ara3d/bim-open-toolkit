@@ -51,12 +51,20 @@ type MeshComponentIndex
 // incidence, so two sheets touching at one vertex are one component with a pinched vertex).
 // Components are numbered from 0 in the order of their lowest element index. ElementComponent has
 // one entry per element, VertexComponent one per vertex, -1 for a vertex no element references.
+// ElementParent and ElementDepth are the certificate that each component is connected: a spanning
+// forest of the element graph in which each component's lowest element is the root (its own
+// parent, depth 0) and every other element's parent shares a vertex with it and is one level
+// nearer the root. With them the contract is exact: elements sharing a vertex are in one component
+// (Law_ElementCornersShareItsComponent), and elements in one component are joined by a chain (the
+// parent chains to the one root), with no reachability form needed in the specification.
 type MeshComponents
     implements IValue
 {
     ElementComponent: Array<MeshComponentIndex>;
     VertexComponent: Array<MeshComponentIndex>;
     ComponentCount: Integer;
+    ElementParent: Array<ElementIndex>;
+    ElementDepth: Array<Integer>;
 }
 
 // The cell and defect counts of one component. Vertices, Edges (distinct undirected edges),
