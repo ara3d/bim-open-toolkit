@@ -195,7 +195,8 @@ outside its range makes it vacuously true, and the range is another law's statem
 | `Law_ReversalPermutesCorners` | reversed slot s is original slot `ReversedSlot(arity, s)` | exact | test |
 | `Law_ReversalMovesCornerUvWithCorner` | a corner's uv moves with its corner under reversal | exact by construction | test |
 | `Law_RestrictionKeepsTheElementsOfTheFaces` | the restriction to a set of faces has exactly their elements | exact | test |
-| `Law_RestrictionKeepsEachElement` | element k of the restriction is the k-th kept element, corners and face | exact | test |
+| `Law_RestrictionKeepsEachCorner` | element k of the restriction has the corners of the k-th kept element | exact | test |
+| `Law_RestrictionKeepsEachElementFace` | element k of the restriction has the face of the k-th kept element | exact | test |
 | `Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic` | restricting to all faces keeps V - E + F | exact | test |
 
 ### Assembly (`mesh-assembly.laws.plato`)
