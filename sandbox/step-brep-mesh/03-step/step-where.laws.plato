@@ -102,14 +102,18 @@ library StepWhereRulesLaws
     // axis2_placement_3d WR4: axis and ref_direction, when both present, are
     // not parallel. ISO writes cross_product(...).magnitude > 0; stated here
     // as an angle between them at least tol from 0 and from pi, since a
-    // computed magnitude is never exactly zero. A zero direction fails it.
+    // computed magnitude is never exactly zero. The angle is layer 0's
+    // AngleBetweenDirections (atan2 of the cross and dot products): the arc
+    // cosine of the stdlib's AngleBetween cannot resolve angles below about
+    // 1.5e-8 rad, so a parallel pair could pass at the policy's 1e-9 rad. A
+    // zero direction gives the angle 0 and fails it.
     Law_Where_Axis2Placement3D_WR4(f: Part21File, i: Integer, tol: AngleTolerance): Boolean
     {
         if (!f.InstanceIsA(i, "AXIS2_PLACEMENT_3D") || f.FieldIsUnset(i, "AXIS2_PLACEMENT_3D", "axis") || f.FieldIsUnset(i, "AXIS2_PLACEMENT_3D", "ref_direction"))
         {
             return true;
         }
-        var angle = f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "axis")).AngleBetween(f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "ref_direction")));
+        var angle = Direction3D(f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "axis"))).AngleBetweenDirections(Direction3D(f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "ref_direction"))));
         return angle.Radians >= tol.Value.Radians && angle.Radians <= Number.Pi - tol.Value.Radians;
     }
 
@@ -124,7 +128,7 @@ library StepWhereRulesLaws
         {
             return true;
         }
-        var angle = f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "axis")).AngleBetween(f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "ref_direction")));
+        var angle = Direction3D(f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "axis"))).AngleBetweenDirections(Direction3D(f.DirectionVectorOf(f.FieldReference(i, "AXIS2_PLACEMENT_3D", "ref_direction"))));
         return (angle.Radians - Number.Pi / 2.0).Abs <= tol.Value.Radians;
     }
 
