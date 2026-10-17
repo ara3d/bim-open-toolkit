@@ -96,6 +96,14 @@ library BrepTopology
             PolyLoop(points) => false;
         };
 
+    // Whether the loop is a vertex loop.
+    IsVertexLoop(loop: BrepLoop): Boolean
+        => match (loop) {
+            EdgeLoop(coedges) => false;
+            VertexLoop(vertex) => true;
+            PolyLoop(points) => false;
+        };
+
     // Whether the loop is a poly loop.
     IsPolyLoop(loop: BrepLoop): Boolean
         => match (loop) {
@@ -362,12 +370,41 @@ library BrepTopology
     BoundsShareNoVertex(m: BrepModel, a: FaceBound, b: FaceBound): Boolean
         => m.BoundVertices(a).All(v => m.BoundVertices(b).All(w => v != w));
 
-    // Whether every two distinct bounds of face f share no vertex.
-    // Precondition: m.IsFaceIntact(f).
+    // Whether every two distinct bounds of face f share no vertex, leaving out
+    // the redundant vertex loops, which the reduction drops and
+    // Law_NoRedundantVertexLoop reports. Precondition: m.IsFaceIntact(f).
     HasDisjointBounds(m: BrepModel, f: BrepFaceIndex): Boolean
         => m.Faces[f].Bounds.Count.Range.All(i =>
             m.Faces[f].Bounds.Count.Range.All(j =>
-                i < j ? m.BoundsShareNoVertex(m.Faces[f].Bounds[i], m.Faces[f].Bounds[j]) : true));
+                i < j
+                    ? (m.IsRedundantVertexLoop(f, i) || m.IsRedundantVertexLoop(f, j)
+                        ? true
+                        : m.BoundsShareNoVertex(m.Faces[f].Bounds[i], m.Faces[f].Bounds[j]))
+                    : true));
+
+    // Whether bound b of face f is a redundant vertex loop, the one kind of
+    // bound the reduction drops (README, "Euler-Poincare and the counting
+    // rule", step 2): a vertex loop whose vertex lies on a bound of f that is
+    // not a vertex loop, or on an earlier vertex loop of f. It removes nothing
+    // from the face. Raw vertex indices; ReducedCounts applies the same rule
+    // to the classes left after contracting degenerate edges. Precondition:
+    // m.IsFaceIntact(f) and b a position in its bounds.
+    IsRedundantVertexLoop(m: BrepModel, f: BrepFaceIndex, b: Integer): Boolean
+        => m.Loops[m.Faces[f].Bounds[b].Loop].VertexLoopVertexOf.Any(v =>
+            m.Faces[f].Bounds.Count.Range.Any(j =>
+                j == b
+                    ? false
+                    : (m.Loops[m.Faces[f].Bounds[j].Loop].IsVertexLoop
+                        ? (j < b ? m.BoundVertices(m.Faces[f].Bounds[j]).Any(w => w == v) : false)
+                        : m.BoundVertices(m.Faces[f].Bounds[j]).Any(w => w == v))));
+
+    // The positions of face f's bounds that the reduction keeps: every bound
+    // but the redundant vertex loops. Face meshing builds its region from
+    // these (review C6: a sphere whose seam's pole vertices also carry vertex
+    // loops). Precondition: m.IsFaceIntact(f).
+    KeptBounds(m: BrepModel, f: BrepFaceIndex): Array<Integer>
+        => m.Faces[f].Bounds.Count.Range.FlatMap(b =>
+            m.IsRedundantVertexLoop(f, b) ? 0.MapRange(k => k) : [b]);
 
     // Whether edge e is a seam of face f: cited twice by the face's coedges.
     IsSeamEdgeOf(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
@@ -631,9 +668,20 @@ library BrepTopology
     ShellGenus(m: BrepModel, s: ShellIndex): Integer
         => m.ReducedCounts(s).ImpliedGenus;
 
-    // How many distinct edges of the shell have exactly one use: its free edges.
+    // How many distinct edges of the shell have exactly one use and are counted
+    // (CountsAsEdge): its free edges. A degenerate edge used once, such as a
+    // pole edge of a sphere written [seam+, degN, seam-, degS], is contracted
+    // by the reduction and is not free.
     FreeEdgeCount(m: BrepModel, s: ShellIndex): Integer
-        => m.EdgesOfShell(s).Reduce(0, (n, e) => m.UseCount(s, e) == 1 ? n + 1 : n);
+        => m.EdgesOfShell(s).Reduce(0, (n, e) => (m.UseCount(s, e) == 1 ? m.CountsAsEdge(e) : false) ? n + 1 : n);
+
+    // Whether edge e is a cell of the reduced complex, so that the use-count
+    // laws apply to it: true unless it is degenerate, which the reduction
+    // contracts and Law_EdgeHasPositiveExtent reports. When some index of the
+    // model is out of range, degeneracy cannot be evaluated and every edge
+    // counts. Precondition: m.IsEdgeInRange(e).
+    CountsAsEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.IsEveryIndexInRange ? m.IsDegenerateEdge(e).Not : true;
 
     // The number of boundary cycles of shell s: the closed walks into which
     // its free edges split, on the reduced cells (degenerate edges contracted,

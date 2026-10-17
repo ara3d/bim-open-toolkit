@@ -201,7 +201,9 @@ declared closed, that `chi` is even and at most 2, which is ISO's condition 9. N
 states the genus, so no law can check the full equality. Checking per shell matters: an error of
 `+1` in one shell and `-1` in another cancel in a model total. The reduction makes `chi`
 meaningful despite a defect but does not excuse it: `Law_EdgeHasPositiveExtent` and
-`Law_FaceBoundsShareNoVertex` still report the defect as an Error.
+`Law_NoRedundantVertexLoop` still report the defect, as a Warning (decision 12). The use-count laws
+judge the reduced complex: a degenerate edge is exempt from them (`CountsAsEdge`), so a sphere
+written `[seam+, degN, seam-, degS]`, whose pole edges are each used once, is not reported as open.
 
 An open shell is a compact surface with boundary. With `B` boundary circles, `chi = 2 - 2G - B`, and
 the cells counted include the boundary's, so `Law_OpenShellEulerEvenAndBounded` requires `chi + B`
@@ -315,6 +317,16 @@ cones apex to apex give two cycles at the shared apex and fail the law; their re
     `IsCoincident(m, a, b)` and `PeriodicRepresentativeAbove` itself and records the duplication
     below.
 
+12. **A defect the reduction repairs exactly is a Warning** (research/VALIDATION-MATH.md open
+    question 4, settled in the fix wave). A degenerate edge (`Law_EdgeHasPositiveExtent`) and a
+    redundant vertex loop (`Law_NoRedundantVertexLoop`) break ISO 10303-42, and real exporters write
+    both (spheres B and C, the cone with a degenerate apex edge). The reduction removes them without
+    changing the point set; the use-count laws exempt degenerate edges (`CountsAsEdge`), and face
+    meshing builds its region from `KeptBounds`. So nothing the pipeline computes depends on them,
+    and `IsClean` stays true. Two edge loops of one face touching at a vertex are not repaired and
+    stay an Error (`Law_FaceBoundsShareNoVertex`). This adds a third rule to SPEC-DSL.md section 4's
+    "structural is Error": a structural defect with an exact repair is a Warning.
+
 ## Laws
 
 Kind: structural laws are exact or tolerance-based statements about topology or about the data's
@@ -328,10 +340,11 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_LoopsChainEndToStart(m, l)` | an edge loop is a non-empty closed chain | exact | structural, Error |
 | `Law_AtMostOneOuterBound(m, f)` | at most one bound marked outer | exact | structural, Error |
 | `Law_AtLeastOneBound(m, f)` | at least one bound | exact | structural, Error |
-| `Law_FaceBoundsShareNoVertex(m, f)` | distinct bounds of a face share no vertex | exact | structural, Error |
-| `Law_EveryEdgeUsedTwiceInClosedShell(m, s, e)` | in a shell declared closed, an edge it uses has exactly two uses | exact | structural, Error |
-| `Law_OpenShellEdgesUsedAtMostTwice(m, s, e)` | in a shell not declared closed, no edge has more than two uses | exact | structural, Error |
-| `Law_DeclaredClosedIsClosed(m, s)` | a shell declared closed has no edge used exactly once | exact | structural, Error |
+| `Law_FaceBoundsShareNoVertex(m, f)` | distinct bounds of a face share no vertex, redundant vertex loops left out | exact | structural, Error |
+| `Law_NoRedundantVertexLoop(m, f)` | no bound is a vertex loop on another bound's vertex or repeating an earlier vertex loop | exact | structural, Warning (repaired) |
+| `Law_EveryEdgeUsedTwiceInClosedShell(m, s, e)` | in a shell declared closed, a non-degenerate edge it uses has exactly two uses | exact | structural, Error |
+| `Law_OpenShellEdgesUsedAtMostTwice(m, s, e)` | in a shell not declared closed, no non-degenerate edge has more than two uses | exact | structural, Error |
+| `Law_DeclaredClosedIsClosed(m, s)` | a shell declared closed has no non-degenerate edge used exactly once | exact | structural, Error |
 | `Law_EdgeUsesHaveOppositeOrientation(m, s, e)` | an edge's two uses in a shell have opposite composed senses | exact | structural, Error |
 | `Law_SeamUsesAreInOneFace(m, f, e)` | an edge's two uses in one face (a seam) have opposite composed senses | exact | structural, Error |
 | `Law_VertexLinkIsOneCycle(m, s, v)` | in a shell declared closed, the link of a vertex with corners has one component | exact | structural, Error |
@@ -347,7 +360,7 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_EdgeDomainEndsAtVertices(m, e, atStart)` | the curve at the domain end assigned to a vertex reproduces the vertex | `epsL` | geometric, W/E |
 | `Law_VertexCoincidesWithCurveEnd(m, e, atStart)` | a vertex lies on its edge's curve | `epsL` | geometric, W/E |
 | `Law_CoincidentEndsAreOneVertex(m, e)` | two distinct vertices of an edge coincide only if the edge is degenerate | `epsL` | structural, Error |
-| `Law_EdgeHasPositiveExtent(m, e)` | no edge is degenerate | `epsL` | structural, Error |
+| `Law_EdgeHasPositiveExtent(m, e)` | no edge is degenerate | `epsL` | structural, Warning (repaired) |
 | `Law_DegenerateEdgeHasCoincidentVertices(m, e)` | a degenerate edge's two vertices coincide | `epsL` | structural, Error |
 | `Law_DegenerateEdgeStaysAtStart(m, e, t)` | a degenerate edge's curve at fraction `t` lies at its start vertex | `epsL` | library, test |
 | `Law_EdgeLiesOnAdjacentSurfaces(m, site, t)` | the edge's curve at fraction `t` lies on the surface of the face citing it | `epsL` | geometric, W/E |
@@ -443,9 +456,7 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
 7. **Caching edge domains.** `EdgeDomain` recomputes two inverse evaluations on every call. Whether
    `BrepModel` gains a side table, filled by the decoder, is open (research/STEP-BREP-MODEL.md 9.5).
    It would need a law tying it to the rule.
-8. **Severity of a repaired defect** (research/VALIDATION-MATH.md open question 4). A degenerate
-   edge or a redundant vertex loop is an Error here, as SPEC-DSL.md implies. The owner may prefer
-   Warning, since the reduction makes the counts sound.
+8. **Severity of a repaired defect.** Settled in the fix wave: a Warning (decision 12).
 9. **Cross-shell pinches.** Per-shell link laws do not see two shells of a `ShellSet`, or two solids,
    touching at a vertex. That is legal for separate solids and suspect for one shell set.
 
@@ -531,3 +542,8 @@ Applied:
   with the deferred walk `BoundaryCycleCount`), and the open-shell vertex condition
   `Law_OpenShellVertexLinkIsCycleOrPath(m, s, v)` (one link component: a cycle inside, a path on the
   boundary).
+- **Repaired defects (open item 8, research open question 4).** Decided: Warning, decision 12.
+  `Law_NoRedundantVertexLoop` split out of `Law_FaceBoundsShareNoVertex`, which keeps the
+  unrepaired case as an Error; the use-count laws and `FreeEdgeCount` exempt degenerate edges
+  (`CountsAsEdge`), so sphere C is no longer reported as an open shell; `IsRedundantVertexLoop`
+  and `KeptBounds` give face meshing the reduction's rule 2 (review C6).

@@ -62,29 +62,44 @@ library BrepTopologyLaws
     Law_AtLeastOneBound(m: BrepModel, f: BrepFaceIndex): Boolean
         => m.IsFaceInRange(f) ? m.Faces[f].Bounds.Count >= 1 : true;
 
-    // Distinct bounds of a face share no vertex (STEP face IP2). A vertex loop
-    // on a vertex of another bound of the same face breaks it; ReducedCounts
-    // drops such a loop for counting, and this law still reports it.
-    // Structural, exact.
+    // Distinct bounds of a face share no vertex (STEP face IP2), the redundant
+    // vertex loops left out: two edge loops of one face touching at a vertex
+    // fail. Structural, exact.
     Law_FaceBoundsShareNoVertex(m: BrepModel, f: BrepFaceIndex): Boolean
         => m.IsFaceIntact(f) ? m.HasDisjointBounds(f) : true;
+
+    // No bound of a face is a redundant vertex loop: a vertex loop on a vertex
+    // of another bound of the face, or repeating an earlier vertex loop there
+    // (STEP face IP2). The reduction drops such a loop exactly, and face
+    // meshing builds its region from KeptBounds, so nothing downstream depends
+    // on it: a repaired defect. Structural, exact, Warning (README,
+    // "Decisions", 12).
+    Law_NoRedundantVertexLoop(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.IsFaceIntact(f)
+            ? m.Faces[f].Bounds.Count.Range.All(b => m.IsRedundantVertexLoop(f, b).Not)
+            : true;
 
     //==
     // # Edge uses
 
     // In a shell declared closed, an edge the shell uses is used exactly twice:
-    // by two faces, or twice by one face as a seam (STEP closed_shell IP1).
-    // Structural, exact.
+    // by two faces, or twice by one face as a seam (STEP closed_shell IP1). A
+    // degenerate edge is not a cell of the reduced complex (CountsAsEdge) and
+    // is exempt; Law_EdgeHasPositiveExtent reports it. Structural, exact.
     Law_EveryEdgeUsedTwiceInClosedShell(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Boolean
         => m.IsShellInRange(s)
-            ? (m.Shells[s].DeclaredClosed ? m.UseCount(s, e).IsZeroOrTwo : true)
+            ? (m.Shells[s].DeclaredClosed
+                ? (m.IsEdgeInRange(e) ? (m.CountsAsEdge(e) ? m.UseCount(s, e).IsZeroOrTwo : true) : true)
+                : true)
             : true;
 
     // In a shell not declared closed, no edge is used more than twice (STEP
-    // open_shell). Structural, exact.
+    // open_shell); degenerate edges exempt as above. Structural, exact.
     Law_OpenShellEdgesUsedAtMostTwice(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex): Boolean
         => m.IsShellInRange(s)
-            ? (m.Shells[s].DeclaredClosed ? true : m.UseCount(s, e) <= 2)
+            ? (m.Shells[s].DeclaredClosed
+                ? true
+                : (m.IsEdgeInRange(e) ? (m.CountsAsEdge(e) ? m.UseCount(s, e) <= 2 : true) : true))
             : true;
 
     // A shell declared closed has no free edge, no edge used exactly once: the
@@ -290,8 +305,9 @@ library BrepTopologyLaws
             : true;
 
     // No edge is degenerate (STEP edge_curve IP2: finite non-zero extent). The
-    // counts contract degenerate edges; this law still reports them.
-    // Structural, Tolerances.Length.
+    // reduction contracts a degenerate edge exactly and the use-count laws
+    // exempt it, so this law reports a repaired defect. Structural,
+    // Tolerances.Length, Warning (README, "Decisions", 12).
     Law_EdgeHasPositiveExtent(m: BrepModel, e: BrepEdgeIndex): Boolean
         => m.IsEveryIndexInRange
             ? (m.IsEdgeInRange(e) ? m.IsDegenerateEdge(e).Not : true)

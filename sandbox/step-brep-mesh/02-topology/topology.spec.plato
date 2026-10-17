@@ -31,6 +31,7 @@ spec BrepModel
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_AtLeastOneBound(self, BrepFaceIndex(f));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_AtMostOneOuterBound(self, BrepFaceIndex(f));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_FaceBoundsShareNoVertex(self, BrepFaceIndex(f));
+    invariant forall (f: Integer) in self.Faces.Count.Range : Law_NoRedundantVertexLoop(self, BrepFaceIndex(f));
     invariant forall (f: Integer) in self.Faces.Count.Range :
         forall (e: Integer) in self.Edges.Count.Range : Law_SeamUsesAreInOneFace(self, BrepFaceIndex(f), BrepEdgeIndex(e));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_LoopWindingMatchesSameSense(self, BrepFaceIndex(f));
@@ -152,7 +153,7 @@ spec BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
     requires forall (v: Integer) in m.Vertices.Count.Range : Law_OpenShellVertexLinkIsCycleOrPath(m, s, BrepVertexIndex(v));
     ensures result >= 0;
     ensures result <= m.FreeEdgeCount(s);
-    ensures m.FreeEdgeCount(s) - m.DegenerateEdgeCount(s) <= 0 ? result == 0 : result >= 1;
+    ensures m.FreeEdgeCount(s) == 0 ? result == 0 : result >= 1;
     measure m.FreeEdgeCount(s);
     deferred "mark the shell's free edges that are not degenerate; from each unmarked-visited one, walk forward: at its end vertex take the link path (CornersAroundVertex), cross to the free edge at the path's other end, and continue until the walk returns to its first edge; the result is the number of walks";
 }
@@ -284,8 +285,9 @@ theorem ReducedCountsEqualRawOnCleanShell
     assume m.DegenerateEdgeCount(s) == 0;
     assume m.ShellHasPolyLoop(s).Not;
     assume forall (f: BrepFaceIndex) in m.ShellFaces(s) : Law_FaceBoundsShareNoVertex(m, f);
+    assume forall (f: BrepFaceIndex) in m.ShellFaces(s) : Law_NoRedundantVertexLoop(m, f);
     conclude m.ReducedCounts(s) == m.RawCounts(s);
-    because "The reduction does three things: contracts degenerate edges, drops vertex loops whose vertex is on another bound of the same face or repeats another vertex loop there, and identifies poly-loop points. With no degenerate edge there is nothing to contract or merge, so vertex classes are single vertices and every edge stays. Two vertex loops at one vertex of a face, or a vertex loop on another bound's vertex, share a vertex between distinct bounds, which Law_FaceBoundsShareNoVertex excludes, so no vertex loop is dropped. With no poly loop nothing is identified. Every count is then the raw one.";
+    because "The reduction does three things: contracts degenerate edges, drops vertex loops whose vertex is on another bound of the same face or repeats another vertex loop there, and identifies poly-loop points. With no degenerate edge there is nothing to contract or merge, so vertex classes are single vertices and every edge stays. A dropped vertex loop is exactly a redundant one (IsRedundantVertexLoop), which Law_NoRedundantVertexLoop excludes, so no vertex loop is dropped. With no poly loop nothing is identified. Every count is then the raw one.";
 }
 
 // The domain-end law follows from the vertex-on-curve law, except for a closed
