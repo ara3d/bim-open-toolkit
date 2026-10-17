@@ -72,7 +72,10 @@ type MeshComponents
 // Vertices - Edges + Triangles + Quads. BoundaryEdges have one element side, NonManifoldEdges more
 // than two, MisorientedEdges two sides traversed in the same direction. PinchedVertices are
 // vertices whose link is not one cycle or one path: the link of v joins, for each element at v,
-// the corner before v to the corner after v. The field names follow 02-topology's ShellCounts.
+// the corner before v to the corner after v. BoundaryCycles is the number of connected pieces of
+// the graph of boundary edges; on a surface (no non-manifold edge, no pinched vertex) every
+// boundary vertex has exactly two boundary edges, so the pieces are disjoint cycles, the boundary
+// circles of the classification chi = 2 - 2g - B. The field names follow 02-topology's ShellCounts.
 // The stdlib's TopologySummary is not used: its Manifoldness asserts vertex stars are disks, it has
 // no orientation count, and per component its ConnectedComponentCount is always 1.
 type MeshComponentCounts
@@ -86,4 +89,5 @@ type MeshComponentCounts
     NonManifoldEdges: Integer;
     MisorientedEdges: Integer;
     PinchedVertices: Integer;
+    BoundaryCycles: Integer;
 }

@@ -181,10 +181,23 @@ library ModelMeshTopologyLaws
             ? mesh.CountsOf(c).HasGenus
             : true;
 
-    // Library law: the Euler characteristic of a closed connected component with a genus is 2 minus
-    // twice its genus. Holds for every counts record, so the runner can check it on random ones.
+    // Model law, by the classification of compact surfaces with boundary: a connected, consistently
+    // oriented surface with boundary edges has 2 - chi - B even and non-negative, B its boundary
+    // cycles, so it has a genus. The closed case is Law_ClosedOrientedSurfaceHasGenus.
+    Law_OrientedSurfaceWithBoundaryHasGenus(mesh: ModelMesh, c: MeshComponentIndex): Boolean
+        => (mesh.CountsOf(c).BoundaryEdges > 0 && mesh.CountsOf(c).IsConsistentlyOriented && mesh.CountsOf(c).IsSurface)
+            ? mesh.CountsOf(c).HasGenus
+            : true;
+
+    // Library law: the Euler characteristic of a closed component with a genus is 2 minus twice
+    // its genus. Holds for every counts record, so the runner can check it on random ones.
     Law_ClosedComponentEulerIsTwoMinusTwiceGenus(c: MeshComponentCounts): Boolean
-        => c.HasGenus ? c.EulerCharacteristic == 2 - 2 * c.Genus(0) : true;
+        => (c.HasGenus && c.IsClosed && c.BoundaryCycles == 0) ? c.EulerCharacteristic == 2 - 2 * c.Genus(0) : true;
+
+    // Library law: the Euler characteristic of a component with a genus is 2 minus twice its genus
+    // minus its boundary cycles. Holds for every counts record.
+    Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles(c: MeshComponentCounts): Boolean
+        => c.HasGenus ? c.EulerCharacteristic == 2 - 2 * c.Genus(0) - c.BoundaryCycles : true;
 
     //==
     // # Helpers

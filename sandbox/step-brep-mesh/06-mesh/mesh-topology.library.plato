@@ -215,13 +215,14 @@ library ModelMeshTopology
 
     // deferred: one pass over vertices (counting Vertices and PinchedVertices per component), over
     // the edge table (an edge's component is that of its first vertex; counting Edges and the three
-    // edge defects), and over elements (counting Triangles and Quads). One entry per component.
+    // edge defects), and over elements (counting Triangles and Quads), then a union-find over the
+    // boundary edges for BoundaryCycles. One entry per component.
     ComponentCountsOf(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents): Array<MeshComponentCounts>;
 
     // The counts of a component with no cells: the value CountsOf returns for a component index
     // that names none.
     NoCells(_: MeshComponentCounts): MeshComponentCounts
-        => (0, 0, 0, 0, 0, 0, 0, 0);
+        => (0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     // The counts of component c of a mesh; NoCells when c names no component.
     CountsOf(mesh: ModelMesh, c: MeshComponentIndex): MeshComponentCounts
@@ -295,17 +296,29 @@ library ModelMeshTopology
     IsSurface(c: MeshComponentCounts): Boolean
         => c.NonManifoldEdges == 0 && c.PinchedVertices == 0;
 
-    // Whether the component is a closed, oriented surface whose Euler characteristic is even and at
-    // most 2, so that it has a genus. By the classification of surfaces every connected closed
-    // oriented surface has such an Euler characteristic; Law_ClosedOrientedSurfaceHasGenus checks
-    // that the counts agree.
+    // Whether the component is a consistently oriented surface, possibly with boundary, whose
+    // Euler characteristic and boundary cycle count leave an even, non-negative 2 - chi - B, so
+    // that it has a genus. By the classification of compact surfaces every connected oriented
+    // surface with B boundary circles has chi = 2 - 2g - B; Law_ClosedOrientedSurfaceHasGenus and
+    // Law_OrientedSurfaceWithBoundaryHasGenus check that the counts agree. A closed component has
+    // no boundary cycle, and then the condition is the familiar chi even and at most 2.
     HasGenus(c: MeshComponentCounts): Boolean
-        => c.IsClosed && c.IsConsistentlyOriented && c.IsSurface
-            && c.EulerCharacteristic <= 2 && (2 - c.EulerCharacteristic) % 2 == 0;
+        => c.IsConsistentlyOriented && c.IsSurface
+            && 2 - c.EulerCharacteristic - c.BoundaryCycles >= 0
+            && (2 - c.EulerCharacteristic - c.BoundaryCycles) % 2 == 0;
 
-    // The genus of the component, (2 - chi) / 2, the number of handles: 0 for a sphere, 1 for a
-    // torus or a block with a through hole. The fallback when HasGenus is false, which includes
-    // every component with a boundary (whose genus needs its boundary cycle count, left open).
+    // The genus of the component, (2 - chi - B) / 2, the number of handles: 0 for a sphere or a
+    // disc, 1 for a torus, a block with a through hole, or a torus with a hole cut in it. The
+    // fallback when HasGenus is false: a non-manifold, pinched, or inconsistently oriented
+    // component, or counts no surface has.
     Genus(c: MeshComponentCounts, fallback: Integer): Integer
-        => c.HasGenus ? (2 - c.EulerCharacteristic) / 2 : fallback;
+        => c.HasGenus ? (2 - c.EulerCharacteristic - c.BoundaryCycles) / 2 : fallback;
+
+    // The boundary edges of component c of a mesh, as canonical pairs: the graph whose pieces
+    // BoundaryCycles counts.
+    BoundaryEdgesOf(t: MeshEdgeTable, comps: MeshComponents, c: MeshComponentIndex): Array<VertexPair>
+        => t.CountEdges.MapRange(k => UndirectedEdgeIndex(k))
+            .FlatMap(k => (t.IsBoundaryEdge(k) ? comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c.Value : false)
+                ? [t.Edges.UndirectedEdges[k]]
+                : []);
 }

@@ -58,9 +58,11 @@ two sides), `IsClosed` the closed-surface edge condition (every edge exactly two
 The vertex condition is separate: the link of v (for each element at v, the side from the corner
 before v to the corner after) must be one cycle, or one path on a boundary; `IsPinchedVertex` fails
 it. Components are the classes of elements joined by chains that share vertices (`ComponentsOf`);
-per component `MeshComponentCounts` holds the cells and the defects. A connected, closed, oriented
-surface has Euler characteristic 2 - 2g by the classification of surfaces, which is what `Genus`
-reads off and `Law_ClosedOrientedSurfaceHasGenus` checks the counts against.
+per component `MeshComponentCounts` holds the cells, the defects, and the boundary cycles. A
+connected, oriented surface with B boundary circles has Euler characteristic 2 - 2g - B by the
+classification of compact surfaces, which is what `Genus` reads off and
+`Law_ClosedOrientedSurfaceHasGenus` (B = 0) and `Law_OrientedSurfaceWithBoundaryHasGenus` check the
+counts against.
 
 **The provenance map sends the complex to the model.** Every vertex maps to a point of a model cell
 (`VertexProvenance`: `OnVertex(v)`, `OnEdge(e, t)`, `OnFace(f, uv)`), every element to the face it
@@ -121,7 +123,7 @@ shared boundary samples exactly as the B-rep glues faces along edges, combinator
 - **Partial operations use the stdlib's styles.** `ToQuadMesh3D` returns a `QuadMeshOutcome` (style 1:
   `Ok` is true exactly when there are no triangles; otherwise `Mesh` holds every position and every
   quad and the triangles are left out). `Genus` takes a fallback (style 3) returned whenever the
-  component is not a closed, oriented surface with a valid Euler characteristic.
+  component is not an oriented surface whose counts give an even, non-negative 2 - chi - B.
 - **The split mesh groups corners by exact attribute equality.** Two corners at one vertex share a
   split vertex exactly when their normal and uv are bitwise equal, which is sound because equal
   attributes arise only by copying from one parameter-space point of one face mesh; no tolerance is
@@ -240,7 +242,9 @@ outside its range makes it vacuously true, and the range is another law's statem
 | `Law_ComponentCountIsRootCount` | one component per root | exact | test |
 | `Law_ComponentEulerCharacteristicsAddUp` | component Euler characteristics plus unreferenced vertices give the mesh's | exact | test |
 | `Law_ClosedOrientedSurfaceHasGenus` | a closed, oriented, manifold component has an even Euler characteristic at most 2 | exact | Error |
+| `Law_OrientedSurfaceWithBoundaryHasGenus` | an oriented surface component with boundary has 2 - chi - B even and at least 0 | exact | Error |
 | `Law_ClosedComponentEulerIsTwoMinusTwiceGenus` | Euler characteristic = 2 - 2 genus for a closed connected component with a genus | exact | test (random records) |
+| `Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles` | Euler characteristic = 2 - 2 genus - B for any component with a genus | exact | test (random records) |
 
 ### Measures (`mesh-measures.laws.plato`)
 
@@ -326,7 +330,7 @@ degrees, chosen here).
 ### Theorems (`*.spec.plato`)
 
 `NumberedSitesHaveDistinctIndices`, `EveryIndexHasASite`, `SharedSamplesShareAnIndex`, `ComponentsAreTheChainClasses`,
-`WatertightByNumbering`, `ClosedOrientedSurfacesHaveAGenus`, `DiscreteGaussBonnet`,
+`WatertightByNumbering`, `ClosedOrientedSurfacesHaveAGenus`, `OrientedSurfacesWithBoundaryHaveAGenus`, `DiscreteGaussBonnet`,
 `MixedGaussBonnet`, `SignedVolumeSignIsOrientation`, `RadiusRatioIsAtLeastOne`,
 `AspectRatioIsAtLeastOne`, each with its justification and the laws that test it.
 
@@ -353,8 +357,6 @@ Readings of those names this layer depends on, for the owning authors to confirm
 
 ## Left open
 
-- **The genus of a component with boundary** needs its boundary cycle count (chi = 2 - 2g - B);
-  `Genus` returns its fallback for such components.
 - **The quad volume convention** (A-C split here, averaged splits in research 4.7) is the owner's to
   confirm.
 - **The 5 degree quad angle-defect threshold** has no source.
@@ -422,6 +424,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `Law_ReversalNegatesSignedVolume(mesh, tol)`, `Law_TriangleAngleSumIsPi(mesh, e, tol)`, `Law_QuadAngleDefectIsNotNegative(mesh, e, tol)`, `Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c, tol)`, `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c, tol)` | the same without `tol`; `VolumeRoundingMagnitude`, `AngleSumResolution`, `DefectSumResolution` added | rounding laws judged by `ResolutionAt`; 07-validation's five `Check_` calls drop the argument |
 | `MeshComponents { ElementComponent; VertexComponent; ComponentCount }`, `ComponentsOf` contract partial | adds `ElementParent`, `ElementDepth` (a spanning forest rooted at each component's lowest element); `ElementParentOf`, `ElementDepthOf`, `IsComponentRoot`, `RootsBelow`, `RootCount`, `SharesAVertex` | the certificate makes the contract exact without a reachability form |
 | `IsPinchedVertex` deferred, contract partial | written out over `PieceCount` (with `FirstPositionOf`, `DistinctEnds`, `PieceLabelRound`, `PieceLabels`) | the definition is a degree test and a piece count; the body is total and exact |
+| `MeshComponentCounts` with eight fields; `Genus` for closed components only | adds `BoundaryCycles`; `HasGenus` and `Genus` use 2 - chi - B; `BoundaryEdgesOf` | the genus of a component with boundary (an open shell, a face that failed to mesh) is defined |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -454,3 +457,8 @@ Applied:
 - **`IsPinchedVertex` total and exact** (FIX-WAVE layer 6; README "Left open"). It has a body: a link
   degree above 2, or a link of more than one piece (`PieceCount`, label propagation), so the
   disconnected link is now pinned as well.
+- **The genus of components with boundary** (FIX-WAVE layer 6; README "Left open").
+  `MeshComponentCounts.BoundaryCycles` (the pieces of the boundary-edge graph, `PieceCount` in the
+  contract) gives chi = 2 - 2g - B; `HasGenus` no longer requires closedness. Theorem
+  `OrientedSurfacesWithBoundaryHaveAGenus` and two laws added; the closed-case laws keep their
+  names and meaning.

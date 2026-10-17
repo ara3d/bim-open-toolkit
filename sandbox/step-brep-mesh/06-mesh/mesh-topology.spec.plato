@@ -119,6 +119,8 @@ spec ComponentCountsOf(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents)
         result[c].PinchedVertices == mesh.Positions.Count.Range
             .Map(k => comps.VertexComponentOf(VertexIndex(k)).Value == c
                 && mesh.IsPinchedVertex(VertexIndex(k))).CountTrue;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].BoundaryCycles == t.BoundaryEdgesOf(comps, MeshComponentIndex(c)).PieceCount;
     ensures Law_ComponentEulerCharacteristicsAddUp(mesh);
     measure mesh.Positions.Count + t.CountEdges + mesh.ElementCount;
     deferred "one pass each over vertices, table edges, and elements, accumulating by component";
@@ -166,4 +168,23 @@ theorem ClosedOrientedSurfacesHaveAGenus
              computed from any cell decomposition (here V - E + F of the mesh), is 2 - 2g: even and
              at most 2.";
     tested by Law_ClosedOrientedSurfaceHasGenus, Law_ClosedComponentEulerIsTwoMinusTwiceGenus;
+}
+
+// A connected, consistently oriented surface with boundary has 2 - chi - B even and non-negative,
+// B its boundary cycles, and so a genus.
+theorem OrientedSurfacesWithBoundaryHaveAGenus
+{
+    given mesh: ModelMesh, c: MeshComponentIndex;
+    assume mesh.CountsOf(c).IsConsistentlyOriented;
+    assume mesh.CountsOf(c).IsSurface;
+    conclude mesh.CountsOf(c).HasGenus;
+    because "No non-manifold edge and no pinched vertex make the component a compact 2-manifold with
+             boundary, connected by construction (theorem ComponentsAreTheChainClasses), orientable by
+             the consistent orientation. At a boundary vertex the link is one path, whose two ends
+             are the two boundary edges there, so the boundary edges form disjoint cycles and
+             BoundaryCycles counts the boundary circles. Capping each circle with a disc gives a
+             closed oriented surface with Euler characteristic chi + B, which is 2 - 2g; so
+             2 - chi - B = 2g, even and non-negative.";
+    tested by Law_ClosedOrientedSurfaceHasGenus, Law_OrientedSurfaceWithBoundaryHasGenus,
+        Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles;
 }
