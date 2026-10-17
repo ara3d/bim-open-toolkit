@@ -312,7 +312,7 @@ Exact.
 
 Theorems in `validation.spec.plato`: `SampledCheckAgreesWithLaw`, `HigherLevelCleanImpliesLowerClean`,
 `GreenAreaExactOnStraightLoops`, `MeshAreaWithinEnvelope`, `MeshEulerEqualsBrepEulerByConstruction`,
-`ReducedEulerOracleAgrees`, `SolidShellVolumeSigns`. Conjecture: `TighterChordalNeverIncreasesDeviation`.
+`ReducedEulerOracleAgrees`, `SolidShellVolumeSigns`. No conjectures.
 
 ## Open items
 
@@ -405,3 +405,4 @@ one commit each.
 | Torus volume over a boundary that winds in v (open item 1) | `FaceVolumeTerm` integrates the area's boundary with its cut pairs and adds `ClosedSurfaceVolume` where the region is fixed only up to the whole surface; `WindsInV` deleted; `Law_DivergenceEqualsTorusVolume` added |
 | The transforms and `SameConnectivity` (FIX-WAVE ownership table); meshed witness laws through layer 8's `MeshModel` (open items 2 and 3) | `validation-transforms.library.plato` becomes `validation-comparisons.library.plato` (`BrepComparisons`): `MovedBy`, `ScaledBy`, `ScaledPoint`, their curve and surface parts, `ScaledLimit`, `ScaledCriteria`, `MeshOnce`, `WitnessCriteria` and `SameConnectivity` deleted. The witness laws mesh with `MeshModel` under layer 8's `Witness_UnitScaleOptions`, and the metamorphic laws are layer 8's laws run over the witnesses, so this layer needs no transform of its own |
 | `Law_RigidMotionKeepsConnectivity` and theorem `RigidMotionCommutesWithMeshing` are false (layer 8, decision 11: the unit box's square faces have two equally Delaunay diagonals, and a rotation that is not a quarter turn can pick the other) | dropped, with conjecture `ScalingByAnyFactorKeepsConnectivity`, which a tie refutes the same way |
+| Conjecture `TighterChordalNeverIncreasesDeviation` is false (layer 8, decision 12: on `y = h sin(2 pi x)` the nested sub-span from 0 to 3/4 deviates about 1.33 h, the whole span h) | dropped; `Law_TighterChordalNeverIncreasesSagitta` stays, restricted to lines and circles, where a circle's uniform split makes the sampled sagitta increase with the segment's angle |

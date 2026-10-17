@@ -15,7 +15,6 @@
 //  - Positive witnesses
 //  - Negative witnesses
 //  - Theorems
-//  - Conjectures
 
 //==
 // # Records
@@ -461,18 +460,4 @@ theorem SolidShellVolumeSigns
     conclude Law_OuterShellExactVolumePositive(m, b) && Law_VoidShellExactVolumeNegative(m, b, k);
     because "Layer 3 folds every shell so its faces point out of the material; by the divergence theorem the flux of x/3 through an outward closed surface is the enclosed volume, positive; a void's faces point into the void, so its flux is minus the void's volume. A shell thinner than 2 Length A would be within the file's own tolerance of zero volume.";
     tested by Law_OuterShellExactVolumePositive, Law_VoidShellExactVolumeNegative, Law_WitnessDivergenceVolumeMatchesFacts, Law_HollowBoxVoidMeshVolumeNegative;
-}
-
-//==
-// # Conjectures
-
-// A tighter chordal bound never increases the measured deviation of any
-// edge, on every curve, not only lines and circles.
-conjecture TighterChordalNeverIncreasesDeviation
-{
-    given m: BrepModel, chordal: Number, tighter: Number;
-    assume tighter > 0.0 && tighter <= chordal;
-    conclude m.MaxEdgeSagitta(m.DiscretizeAll(DefaultCriteria(chordal).WithChordal(tighter), SegmentFloors.NoFloors), SamplePlan.CheckPlan)
-        <= m.MaxEdgeSagitta(m.DiscretizeAll(DefaultCriteria(chordal), SegmentFloors.NoFloors), SamplePlan.CheckPlan) + ResolutionAt(m.ModelSizeOf);
-    tested by Law_TighterChordalNeverIncreasesSagitta;
 }
