@@ -301,8 +301,10 @@ Beyond the fixed contract, the layer calls these, as declared on 2026-10-17:
 2. **Seam pcurves.** Both uses of a seam are projected and placed on their copies by the left rule.
    A later version can read the two pcurves instead and assign them by the same rule.
 3. **The region tolerance near a pole.** The chart's mean speed over-estimates the speed near a pole,
-   which makes the region's tolerance smaller there: separation is judged a little strictly. A
-   per-segment tolerance would be exact and costs a surface derivative per segment.
+   which makes the region's tolerance smaller there. A smaller tolerance passes the test "farther
+   than the tolerance" more often, so separation is judged leniently there, not strictly: two
+   segments near a pole may pass while closer in 3D than the length tolerance. A per-segment
+   tolerance would be exact and costs a surface derivative per segment.
 4. **Exact predicates.** The orientation laws compare floating shoelace areas with zero. The
    triangulator must use robust predicates; whether the laws should too is a question for layer 07.
 5. **Seeded projection.** `LoopToUv` is defined with `Project`; an implementation seeds each sample
@@ -405,6 +407,8 @@ Applied:
   `MeshFace` with the same `MinLength` escape as the other surface criteria.
 - C5: coedge points come from layer 04's `ImagePoints` (the one image function), in the image
   `ImageInFace` chooses; `CoedgeUvRoute` and its functions are deleted.
+- F12 (first item): open item 3 corrected; a smaller region tolerance near a pole judges
+  separation leniently, not strictly.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 
