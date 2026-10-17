@@ -255,6 +255,35 @@ library StepReadingLaws
             : d.Model.Unit == f.ResolveContexts(policy).ContextUnitsOf(d.Map.Occurrences[0].Context, fallback).Length;
     }
 
+    // The magnitudes the decode exports are the model's own: ModelSize and
+    // CoordinateExtent equal layer 2's functions of the decoded model, so a
+    // later layer reading them reads what the tolerances were built from.
+    Law_DecodedMagnitudesAreTheModels(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return d.ModelSize == d.Model.ModelSize && d.CoordinateExtent == d.Model.CoordinateExtent;
+    }
+
+    // The length tolerance can be honoured at the model's coordinates: it is
+    // at least the arithmetic resolution at the coordinate extent (layer 0's
+    // Law_LengthToleranceResolvable), whatever the file stated.
+    Law_DecodedToleranceResolvable(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        return Law_LengthToleranceResolvable(d.Model.Tolerances.Length, d.CoordinateExtent);
+    }
+
+    // The two parameter floors are layer 0's functions of the length
+    // tolerance and the exported magnitudes: LengthParameterFloor over the
+    // extent, AngleParameterFloor over the model size and the extent.
+    Law_ParameterFloorsFollowLength(f: Part21File): Boolean
+    {
+        var d = f.DecodeBrep;
+        var t = d.Model.Tolerances;
+        return t.LengthParameter == t.Length.LengthParameterFloor(d.CoordinateExtent)
+            && t.AngleParameter == t.Length.AngleParameterFloor(d.ModelSize, d.CoordinateExtent);
+    }
+
     //==
     // # Closure
     //

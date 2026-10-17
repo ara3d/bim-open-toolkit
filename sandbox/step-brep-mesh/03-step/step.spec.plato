@@ -84,6 +84,8 @@ spec DecodedModel
     invariant Law_IndicesInRange(self.Model);
     invariant self.Map.CoversModel(self.Model);
     invariant self.Model.Tolerances.IsWellFormed;
+    invariant self.ModelSize == self.Model.ModelSize;
+    invariant self.CoordinateExtent == self.Model.CoordinateExtent;
     invariant forall (r: Integer) in self.Map.Repairs.Count.Range : self.Diagnostics.Any(x => x.Where == Provenance.StepInstance(self.Map.Repairs[r].Source.Instance));
     constructor DecodeBrep;
     constructor DecodeBrepWith;
@@ -259,6 +261,9 @@ spec DecodeBrep(file: Part21File): DecodedModel
     ensures forall (k: Integer) : Law_SurfaceClosureDecidedBySides(file, k, SurfaceParameter.ParameterV);
     ensures forall (c: Integer) : Law_AngleUnitIsReported(file, c);
     ensures Law_UncertaintyDefaultExactlyWhenAbsent(file);
+    ensures Law_DecodedMagnitudesAreTheModels(file);
+    ensures Law_DecodedToleranceResolvable(file);
+    ensures Law_ParameterFloorsFollowLength(file);
     ensures forall (c: Integer) : Law_ToleranceCoversStatedUncertainties(file, c);
     ensures Law_ModelUnitIsRootUnit(file);
     ensures forall (e: Integer) : Law_EdgeSenseCopied(file, e);

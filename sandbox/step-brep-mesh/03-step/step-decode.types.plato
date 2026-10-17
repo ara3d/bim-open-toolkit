@@ -198,11 +198,19 @@ type DecodePolicy
 }
 
 // The result of DecodeBrep: one kernel model for the whole file, in the root
-// occurrence's length unit, every angle in radians; the provenance map; and
-// every diagnostic, decoding never stops on a bad instance.
+// occurrence's length unit, every angle in radians; the provenance map; every
+// diagnostic, decoding never stops on a bad instance; and the two magnitudes
+// the tolerances were derived from, in model units: ModelSize, layer 2's
+// ModelSize(Model) (the diagonal of the bounding box of the defining points),
+// and CoordinateExtent, layer 2's CoordinateExtent(Model) (the largest
+// absolute coordinate). They are exported so later layers (a relative chordal
+// default, the resolvability check) read the numbers the decoder used
+// without rescanning the model (Law_DecodedMagnitudesAreTheModels).
 type DecodedModel
 {
     Model: BrepModel;
     Map: ProvenanceMap;
     Diagnostics: Array<Diagnostic>;
+    ModelSize: Number;
+    CoordinateExtent: Number;
 }

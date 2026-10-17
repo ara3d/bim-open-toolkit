@@ -34,7 +34,8 @@ library StepReading
     // reachable instances into the kernel tables, folding orientation flags
     // and making the local repairs of StepRepair, with placements and unit
     // conversion applied to every point, frame and length; set the tolerances
-    // (ModelTolerances); decide the closure of every curve and surface
+    // (ModelTolerances, from layer 2's ModelSize and CoordinateExtent of the
+    // decoded model, both exported in the result); decide the closure of every curve and surface
     // direction whose formula does not wrap from its ends at the length
     // tolerance (README, "Closure at decode"); build the provenance map.
     DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel;
@@ -152,20 +153,12 @@ library StepReading
         return Tolerances(length, policy.AngleCoincidence, length.LengthParameterFloor(extent), length.AngleParameterFloor(modelSize, extent));
     }
 
-    // The model size: the diagonal of the bounding box of the points, 0 for
-    // none. The decoder passes every cartesian_point reached from an
-    // occurrence, placed (vertices, control points, placement origins), so a
-    // sphere bounded by one vertex loop still has its radius in the box.
+    // The diagonal of the bounding box of the points, 0 for none: layer 2's
+    // BoundingDiagonal under the name layer 7's callers use. The decoder
+    // itself reads layer 2's ModelSize(m) and CoordinateExtent(m) of the
+    // decoded, placed model. Delete when layer 7 calls BoundingDiagonal.
     ModelSize(points: Array<Point3D>): Number
-    {
-        if (points.Count == 0)
-        {
-            return 0.0;
-        }
-        var lo = points.Reduce(points[0], (a, p) => Point3D(a.X.Min(p.X), a.Y.Min(p.Y), a.Z.Min(p.Z)));
-        var hi = points.Reduce(points[0], (a, p) => Point3D(a.X.Max(p.X), a.Y.Max(p.Y), a.Z.Max(p.Z)));
-        return lo.Distance(hi);
-    }
+        => points.BoundingDiagonal;
 
     // The contexts some occurrence uses.
     UsedContexts(contexts: Array<ContextUnits>, map: ProvenanceMap): Array<ContextUnits>

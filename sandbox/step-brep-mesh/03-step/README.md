@@ -229,7 +229,11 @@ of parameter because they carry different units (review C2): `LengthParameter` i
 `LengthParameterFloor(length, extent)`, in model lengths, and `AngleParameter` is
 `AngleParameterFloor(length, model size, extent)`, in radians; the old single floor divided by
 `max(model size, 1)`, which made it depend on the length unit. The model size and the extent are
-layer 2's `ModelSize` and `CoordinateExtent` of the decoded, placed model. Uncertainties from 1e-13 mm to 0.67 mm are accepted as
+layer 2's `ModelSize` and `CoordinateExtent` of the decoded, placed model. Both are exported in
+`DecodedModel` (`ModelSize`, `CoordinateExtent`), equal to layer 2's functions of the model
+(`Law_DecodedMagnitudesAreTheModels`), so layer 8's relative chordal default and layer 7's
+resolvability check read the numbers the decoder used. `Law_DecodedToleranceResolvable` and
+`Law_ParameterFloorsFollowLength` state the clamp and the floors. Uncertainties from 1e-13 mm to 0.67 mm are accepted as
 written; the meshing tolerances stay separate (research 6.5).
 
 ## Closure at decode
@@ -548,6 +552,9 @@ are about this layer's code.
 | `Law_AngleUnitIsReported` | Every used context's plane-angle unit is reported at Info: found, or defaulted by the policy. | exact | Error |
 | `Law_UncertaintyDefaultExactlyWhenAbsent` | The uncertainty default is applied exactly when no used context states a length uncertainty. | exact | Error |
 | `Law_ToleranceCoversStatedUncertainties` | The model's length tolerance is at least every stated uncertainty of a used context, converted to the model unit (within the policy's unit-match tolerance, the rounding of the conversion). | `DecodePolicy.UnitMatch` (relative 1e-9) | Error |
+| `Law_DecodedMagnitudesAreTheModels` | The exported ModelSize and CoordinateExtent equal layer 2's ModelSize and CoordinateExtent of the decoded model. | exact | Error |
+| `Law_DecodedToleranceResolvable` | The length tolerance is at least the arithmetic resolution at the coordinate extent (layer 0's Law_LengthToleranceResolvable). | exact | Error |
+| `Law_ParameterFloorsFollowLength` | LengthParameter is LengthParameterFloor(length, extent) and AngleParameter is AngleParameterFloor(length, size, extent). | exact | Error |
 | `Law_ModelUnitIsRootUnit` | The model's length unit is that of the first root occurrence's context; every other occurrence is converted to it. | exact | Error |
 | `Law_EdgeSenseCopied` | An edge keeps the same_sense of its edge_curve; its parameter range is not in the file and layer 2 derives it (EdgeDomain). | exact | Error |
 | `Law_PcurvesComeFromPcurveInstances` | Every kernel pcurve comes from a pcurve instance of the file: the decoder invents none (seams and poles are face meshing's). | exact | Error |
