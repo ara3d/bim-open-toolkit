@@ -29,13 +29,22 @@ String --ParseStep--> ParsedFile --.File--> Part21File --DecodeBrepWith(o.Decode
        --.Model--> BrepModel --MeshModel(o)--> MeshOutcome
 ```
 
+`ParseStep` is a host obligation (the owner's decision of 2026-10-17, `PLAN.md` "Decided by the
+owner during the pass"): STEP parsing stays in C#, and the `Part21File` value of layer 3 is the
+boundary between the host and Plato. Layer 3 keeps `ParseStep` as a bodiless declaration that
+Plato's foreign function interface binds to the host's parser; the first chunk's parser is the C#
+one, and the TypeScript backend will need the same service in TypeScript. Nothing in this layer
+changes: `MeshStepTextTraced` calls `ParseStep` as before, and a host that already holds a
+`Part21File` (or a `BrepModel`) enters at `DecodeBrepWith` (or `MeshModel`). Every stage from
+decoding on is Plato.
+
 Each stage has a domain on which it is exact and is extended to a total function by a located
 diagnostic outside it, the same pattern layer 3 uses for decoding. Nothing in the pipeline fails;
 it reports.
 
 | Stage | Domain where it is exact | Outside the domain |
 |---|---|---|
-| `ParseStep` (layer 3) | every `String` | total by its contract: `Ok` false exactly when an Error was reported, and `File` holds what parsed |
+| `ParseStep` (layer 3, host) | every `String` | total by its contract: `Ok` false exactly when an Error was reported, and `File` holds what parsed |
 | `DecodeBrepWith` (layer 3) | **F**, the files `ParseStep` produces; exact on its subset **D** of conforming files | total on **F**: repairs and skips, each diagnosed |
 | `MeshModel(m, o)` | **R** = { (m, o) : `Law_IndicesInRange(m)` and `IsWellFormed(o)` } (`IsRunnable`) | refused: `RefusedOutcome`, `Ok` false, no element, the refusal's findings and the model's validation |
 | `Discretize(m, e, c, floors)` (layer 4) | **E** = { e : `CanDiscretize(m, e, c)` } | the edge's entry is `Undiscretized` (no points) and an Error at `KernelEdge(e)` |
@@ -414,7 +423,7 @@ Functions that need bodies, by layer (every other function the run reaches has o
 | 0 | none deferred |
 | 1 | none deferred: the `Line` and `Plane` arms of evaluation, derivatives, `ClosestParameter`, and `Project` are closed forms with bodies |
 | 2 | `IsDegenerateEdge` (the fast path: the two vertices are farther apart than twice the length tolerance), `NormalAgreesWithParameterization` (true for every plane), and for validation `ReducedCounts`, `LinkComponentCount` |
-| 3 | `ParseStep`, `InstancePosition`, `DecodeBrepWith`, `ClassificationDiagnostics`, `ResolveContexts`, `FindOccurrences` (one root occurrence), `FlatRecord`, `SlotOf`, `ConformsTo`, and `KernelOf` for the decode laws |
+| 3 | the host's C# parser behind `ParseStep`, which the host's own tests check against layer 3's parse-print-parse and reference laws; in Plato, `InstancePosition`, `DecodeBrepWith`, `ClassificationDiagnostics`, `ResolveContexts`, `FindOccurrences` (one root occurrence), `FlatRecord`, `SlotOf`, `ConformsTo`, and `KernelOf` for the decode laws |
 | 4 | `EdgeSeeds`, `TotalTurning` (0 on a line), `IsDegenerateEdge`, `ImagePoints` (projection onto a plane), `Discretize` (a line is one segment unless floors ask for more) |
 | 5 | `Unwrap` (the identity on a plane), `AddMissingSeamsAndPoles` (nothing to add), `MeanSpeed`, `TriangulateRegion`, `RefineToSurface` (no point on a plane), `Lift` |
 | 6 | `AssembleModelMesh`, `EdgeTableOf`, `ComponentsOf`, `ComponentCountsOf`, `IsPinchedVertex`, `CoincidentVertexPairs` |
@@ -578,3 +587,6 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
 2. **The note correcting research 6.4** (finding 7 of "Findings in lower layers"): section
    "Corrections to research/VALIDATION-MATH.md". The research file is outside this layer's fence
    and is not edited; a pointer from it to the note is the supervisor's to add.
+3. **The host-parser decision** in the pipeline description: `ParseStep` is a host obligation,
+   `Part21File` the boundary, and the first chunk's parser is C#; the implementation order's layer 3
+   row says so.
