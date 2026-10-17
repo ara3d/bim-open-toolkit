@@ -335,10 +335,12 @@ library EdgeDiscretizingLaws
 
     // The closed-form count meets the chordal bound: a circular arc of the given radius and sweep,
     // split uniformly into `ArcCriteriaCount` segments, has a sagitta per segment of at most the
-    // effective chordal bound, widened by the length tolerance (for rounding at the boundary).
+    // effective chordal bound. In the reals the inequality is exact; the slack is the library's
+    // own rounding at the radius (`ResolutionAt`), never the file's length tolerance, since the
+    // law compares this layer's arithmetic with itself. A rounding law.
     Law_ArcCriteriaCountMeetsChordal(radius: Number, sweep: Angle, c: DiscretizationCriteria, t: Tolerances): Boolean
         => (radius > 0.0 && sweep.Radians > 0.0 && sweep.Radians <= Number.Tau && c.IsWellFormed && t.Length.Value >= 0.0)
             ? radius.ArcSagitta(sweep / radius.ArcCriteriaCount(sweep, c, t).ToNumber)
-                <= c.EffectiveChordal(t) + t.Length.Value
+                <= c.EffectiveChordal(t) + ResolutionAt(radius)
             : true;
 }
