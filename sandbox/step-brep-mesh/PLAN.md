@@ -88,9 +88,13 @@ what is open, and the first three tasks.
 
 Recorded as they arise; the ticket carries the same list.
 
-1. **`Number` width.** The design assumes a 64-bit real. If the C# backend emits `float`, the
-   choice is a `Double` primitive in Plato or widening `Number`. Decide before the first
-   implementation task.
+1. **`Number` width.** The design assumes a 64-bit real. The C# backend emits `float` today
+   (`src/Plato.Intrinsics/Number.cs:21`); TypeScript and Rust are 64-bit; C++, CUDA, GLSL 32-bit.
+   `TARGET-LANGUAGE.md` recommends one width per compilation, 64-bit by default on every CPU backend
+   and 32-bit only in an explicit GPU profile, over a separate `Double` type (about twenty reused
+   stdlib types would need twins) and over "whatever the backend has" (today's accidental state).
+   At 32 bits, millimetre coordinates in a 100 m building are 0.0078 mm apart. Decide before the
+   first implementation task; the C# change is about 25 code sites (plato-370).
 2. **Reconciliation with the stdlib's B-rep v1.** Replace `Brep3D` and friends in place, or ship this
    library beside them under its own names? The design uses the v1 names where meanings match and
    lists the collisions in `VOCABULARY.md`.
