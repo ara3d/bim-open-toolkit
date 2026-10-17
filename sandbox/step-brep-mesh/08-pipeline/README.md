@@ -49,7 +49,7 @@ it reports.
 | `MeshModel(m, o)` | **R** = { (m, o) : `Law_IndicesInRange(m)` and `IsWellFormed(o)` } (`IsRunnable`) | refused: `RefusedOutcome`, `Ok` false, no element, the refusal's findings and the model's validation |
 | `Discretize(m, e, c, floors)` (layer 4) | **E** = { e : `CanDiscretize(m, e, c)` } | the edge's entry is `Undiscretized` (no points) and an Error at `KernelEdge(e)` |
 | `MeshFace(m, f, d, c)` (layer 5) | **F**(d) = { f : `IsDiscretizedFace(m, f, d)` } | `UnmeshedOutcome`: an empty face mesh and an Error at `KernelFace(f)` |
-| `Refine(m, d, requests, c)` (layer 4) | `IsRefinable(m, d)` | not reached: see "Findings in lower layers", item 2 |
+| `Refine(m, d, requests, c)` (layer 4) | `IsRefinable(m, d, requests, c)`, which asks only of requested entries | not reached: every state the loop reaches satisfies it (`Law_PendingRequestsAreRefinable`, invariant I7) |
 | `AssembleModelMesh` (layer 6) | `CanAssemble` | not reached: one face mesh per face in face order and a numbering from `NumberMeshVertices` hold by construction |
 | `ValidateBrep`, `ValidateModelMesh`, `CrossCheck` (layer 7) | total: each is `ForLevel` over its checks | |
 
@@ -104,6 +104,7 @@ edge so far, one face outcome per face, and the requests of the faces meshed in 
 | I4 | every pending request is a request of some outcome, and names an edge of that face | `Law_PendingRequestIsInSomeOutcome`, `Law_RequestsNameEdgesOfTheirFace` |
 | I5 | no edge coarsens: every parameter of round r is a parameter of round r + 1 | `Law_RefinementNeverCoarsens` |
 | I6 | every discretized edge meets the accumulated floors and layer 4's structural floors | `Law_FinalDiscretizationsMeetFloors` (layer 4's `Law_SegmentFloorMet`) |
+| I7 | `Refine` can answer what is pending: every requested edge is discretizable, evaluable, and canonical | `Law_PendingRequestsAreRefinable` (layer 4's `IsRefinable`) |
 
 I3 is what makes the loop a fixed-point iteration rather than a history: because `MeshFace` reads
 only the discretizations of the edges a face cites, meshing again only the faces of changed edges
@@ -291,6 +292,7 @@ hand-written texts of "Implementation order", and over the corpus.
 | `Law_OutcomesAreCurrent` | every outcome is `FaceOutcome` under the state's discretizations | exact | library |
 | `Law_RequestsNameEdgesOfTheirFace` | every request of a face names an edge the face cites | exact | library |
 | `Law_FinalDiscretizationsMeetFloors` | every discretized edge meets the accumulated and structural floors | exact | library |
+| `Law_PendingRequestsAreRefinable` | every state meets `Refine`'s precondition over its pending requests | exact | library |
 | `Law_OutcomeIsOfItsFace` | outcome k is face k's | exact | convention |
 | `Law_PendingRequestIsInSomeOutcome` | every pending request is some outcome's | exact | convention |
 | `Law_EmptyDiscretizationExactlyWhenEdgeUnusable` | an entry is empty exactly for an edge outside **E** | exact | library |
@@ -497,13 +499,9 @@ Recorded here, not fixed there.
    01-geometry`); `IntegerTotal` by layer 3 and layer 6. The gate accepts a tie with equal return
    types, so which copy a call binds to is not stated, and a bodied and a bodiless copy can differ.
    The layer 4 copies and one `IntegerTotal` should go.
-2. **Layer 4's `Refine` asks too much of entries it never reads.** Its precondition `IsRefinable`
-   requires every entry to be evaluable and canonical, but `Refine` reads only requested entries.
-   Layer 4's README tells the pipeline to "diagnose and exclude" edges `CanDiscretize` rejects; the
-   pipeline keeps them as empty entries (decision 5), which breaks `IsRefinable` formally though no
-   face ever requests them. `IsRefinable` should range over requested edges. Likewise
-   `DiscretizeAll` requires every edge to pass `CanDiscretize`, so the pipeline repeats its map with a
-   guard (`DiscretizeUsable`); `DiscretizeAll` could take the guard itself.
+2. **Layer 4's `Refine` asked too much of entries it never reads, and `DiscretizeAll` had no guard.**
+   Fixed in the fix wave: `IsRefinable(m, d, requests, c)` asks only of requested entries, and
+   `DiscretizeAll` is total with `Undiscretized` entries.
 3. **Definitions the pipeline needs live in laws libraries.** `SameDiscretization` (layer 4,
    `EdgeDiscretizingLaws`) decides which edges a step changed, and `IsDiscretizedFace` (layer 5,
    `FaceMeshingLaws`) is `MeshFace`'s precondition, which the pipeline evaluates. Both belong in their
@@ -598,3 +596,6 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
 6. **Per-dimension parameter floors** (finding 6): the scaling laws and theorem drop the `k >= 0`
    and `Length >= Parameter` hypotheses and hold for `|k| <= 64`; `ScaledBy(m)`'s contract scales
    `LengthParameter` and keeps `AngleParameter`.
+7. **`Step`'s preconditions simplified** (finding 2, first half): `Step` requires layer 4's
+   `IsRefinable` over its pending requests, which subsumes the coverage requirement; `InitialState`
+   and `Step` ensure it of their result; new invariant I7, `Law_PendingRequestsAreRefinable`.

@@ -91,6 +91,7 @@ spec InitialState(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): Pipe
     ensures result.Outcomes.Count == m.Faces.Count;
     ensures forall (k: Integer) in m.Faces.Count.Range : result.Outcomes[k].SameFaceMeshOutcome(m.FaceOutcome(BrepFaceIndex(k), result.Discretizations, o, chosen));
     ensures forall (q: Integer) in result.Pending.Count.Range : Law_PendingRequestIsInSomeOutcome(result, q);
+    ensures m.IsRefinable(result.Discretizations, result.Pending, o.Face.Discretization);
     measure m.Edges.Count + m.Faces.Count;
 }
 
@@ -99,7 +100,7 @@ spec InitialState(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): Pipe
 spec Step(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, s: PipelineState): PipelineState
 {
     requires m.IsRunnable(o);
-    requires Law_DiscretizationsCoverEdges(m, s.Discretizations);
+    requires m.IsRefinable(s.Discretizations, s.Pending, o.Face.Discretization);   // Refine's precondition, over requested edges only
     requires s.Outcomes.Count == m.Faces.Count;
     requires !s.IsTerminal(o);
     ensures result.Round == s.Round + 1;
@@ -110,6 +111,7 @@ spec Step(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, s: PipelineSt
     ensures forall (k: Integer) in m.Faces.Count.Range : m.FaceEdges(BrepFaceIndex(k)).All(e => result.Discretizations.ByEdge[e].SameDiscretization(s.Discretizations.ByEdge[e])) ? result.Outcomes[k].SameFaceMeshOutcome(s.Outcomes[k]) : true;
     ensures forall (k: Integer) in m.Faces.Count.Range : result.Outcomes[k].SameFaceMeshOutcome(m.FaceOutcome(BrepFaceIndex(k), result.Discretizations, o, chosen));
     ensures forall (q: Integer) in result.Pending.Count.Range : Law_PendingRequestIsInSomeOutcome(result, q);
+    ensures m.IsRefinable(result.Discretizations, result.Pending, o.Face.Discretization);
     measure s.Pending.Count + m.Faces.Count;
 }
 

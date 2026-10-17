@@ -371,6 +371,22 @@ library StepToMeshLaws
     //==
     // # The loop: state invariants
 
+    // In every state the loop reaches, layer 4's Refine can answer the
+    // pending requests: one entry per edge, and every requested entry
+    // discretizable, evaluable, and canonical (IsRefinable, which asks
+    // nothing of the entries no request names). It holds because a request
+    // comes only from a face MeshFace meshed, whose edges are all discretized
+    // (IsDiscretizedFace), and names one of that face's edges. Library, exact.
+    Law_PendingRequestsAreRefinable(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
+    {
+        if (!m.IsRunnable(o))
+        {
+            return true;
+        }
+        var s = m.StateAfter(o, m.AllFaces, k);
+        return m.IsRefinable(s.Discretizations, s.Pending, o.Face.Discretization);
+    }
+
     // Outcome k of a state is the outcome of face k. Convention, exact.
     Law_OutcomeIsOfItsFace(s: PipelineState, k: Integer): Boolean
         => s.Outcomes.IsValidIndex(k) ? s.Outcomes[k].Mesh.Face.Value == k : true;
