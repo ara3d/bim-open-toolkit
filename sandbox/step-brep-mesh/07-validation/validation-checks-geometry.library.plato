@@ -201,34 +201,61 @@ library BrepCheckingGeometry
     // # File geometry (geometry)
     //
     // Laws about what the file supplied, with the model's length, angle, or
-    // parameter tolerance. Layer 1 grades them Warning below ten times the
-    // tolerance; with no measure exported they are reported here as Errors.
+    // parameter tolerance. Each folds the measure layer 1 exports beside its
+    // law (PlacementDeviation, TrimExcess, SegmentGap, SupportGap, ...) behind
+    // the law's guard, 0 outside it, so a failure is a Warning below ten times
+    // the tolerance and an Error above. The two lower-bound laws
+    // (OffsetReferenceAngle, ExtrusionProfileAngle at least the angle
+    // tolerance) have no excess to grade ten times over and stay exact Errors.
 
-    // Law_CurvePlacementOrthonormal at every curve.
+    // The surface parameter of slot k: u for 0, v otherwise.
+    ParameterOfSlot(k: Integer): SurfaceParameter
+        => k == 0 ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV;
+
+    // Law_CurvePlacementOrthonormal at every curve, measured by layer 1's
+    // PlacementDeviation in radians against the angle tolerance.
     Check_CurvePlacementOrthonormal(m: BrepModel): Check
-        => m.CheckCurves("Law_CurvePlacementOrthonormal", c => Law_CurvePlacementOrthonormal(m.Geometry, c, m.Tolerances));
+        => CheckAllWithin("Law_CurvePlacementOrthonormal", m.Geometry.Curves.Count,
+            c => m.Geometry.IsCurveInRange(CurveIndex(c)) ? m.Geometry.PlacementDeviation(CurveIndex(c)) : 0.0,
+            m.Tolerances.Angle.Value.Radians,
+            c => m.CurveSite(CurveIndex(c)));
 
     // Law_Curve2DPlacementOrthonormal at every parameter-plane curve.
     Check_Curve2DPlacementOrthonormal(m: BrepModel): Check
-        => m.CheckCurves2D("Law_Curve2DPlacementOrthonormal", c => Law_Curve2DPlacementOrthonormal(m.Geometry, c, m.Tolerances));
+        => CheckAllWithin("Law_Curve2DPlacementOrthonormal", m.Geometry.Curves2D.Count,
+            c => m.Geometry.IsCurve2DInRange(Curve2DIndex(c)) ? m.Geometry.PlacementDeviation(Curve2DIndex(c)) : 0.0,
+            m.Tolerances.Angle.Value.Radians,
+            c => m.Curve2DSite(Curve2DIndex(c)));
 
     // Law_SurfacePlacementOrthonormal at every surface.
     Check_SurfacePlacementOrthonormal(m: BrepModel): Check
-        => m.CheckSurfaces("Law_SurfacePlacementOrthonormal", s => Law_SurfacePlacementOrthonormal(m.Geometry, s, m.Tolerances));
+        => CheckAllWithin("Law_SurfacePlacementOrthonormal", m.Geometry.Surfaces.Count,
+            s => m.Geometry.IsSurfaceInRange(SurfaceIndex(s)) ? m.Geometry.PlacementDeviation(SurfaceIndex(s)) : 0.0,
+            m.Tolerances.Angle.Value.Radians,
+            s => m.SurfaceSite(SurfaceIndex(s)));
 
     // Law_TrimmedRangeInsideBasis at every curve.
     Check_TrimmedRangeInsideBasis(m: BrepModel): Check
-        => m.CheckCurves("Law_TrimmedRangeInsideBasis", c => Law_TrimmedRangeInsideBasis(m.Geometry, c, m.Tolerances));
+        => CheckAllWithinEach("Law_TrimmedRangeInsideBasis", m.Geometry.Curves.Count,
+            c => m.Geometry.CanEvaluate(CurveIndex(c)) ? m.Geometry.TrimExcess(CurveIndex(c)) : 0.0,
+            c => m.Geometry.CanEvaluate(CurveIndex(c)) ? m.Geometry.ParameterFloorOf(CurveIndex(c), m.Tolerances).Value : 0.0,
+            c => m.CurveSite(CurveIndex(c)));
 
     // Law_RectangularTrimmedInsideBasis at every surface and parameter.
     Check_RectangularTrimmedInsideBasis(m: BrepModel): Check
-        => m.CheckSurfaceParameters("Law_RectangularTrimmedInsideBasis", (s, which) => Law_RectangularTrimmedInsideBasis(m.Geometry, s, which, m.Tolerances));
+        => CheckGridWithinEach("Law_RectangularTrimmedInsideBasis", m.Geometry.Surfaces.Count, 2,
+            (s, k) => m.Geometry.CanEvaluate(SurfaceIndex(s)) ? m.Geometry.TrimBoxExcess(SurfaceIndex(s), k.ParameterOfSlot) : 0.0,
+            (s, k) => m.Geometry.CanEvaluate(SurfaceIndex(s))
+                ? m.Geometry.ParameterFloorAlong(SurfaceIndex(s), k.ParameterOfSlot, m.Tolerances).Value
+                : 0.0,
+            (s, k) => m.SurfaceSite(SurfaceIndex(s)));
 
     // Law_CompositeSegmentsChain at every curve and every join i (vacuous
     // past the curve's last segment).
     Check_CompositeSegmentsChain(m: BrepModel): Check
-        => CheckGrid("Law_CompositeSegmentsChain", m.Geometry.Curves.Count, m.Geometry.MostCompositeSegments,
-            (c, i) => Law_CompositeSegmentsChain(m.Geometry, CurveIndex(c), i, m.Tolerances),
+        => CheckGridWithin("Law_CompositeSegmentsChain", m.Geometry.Curves.Count, m.Geometry.MostCompositeSegments,
+            (c, i) => m.Geometry.CanEvaluate(CurveIndex(c)) ? m.Geometry.SegmentGap(CurveIndex(c), i) : 0.0,
+            m.Tolerances.Length.Value,
             (c, i) => m.CurveSite(CurveIndex(c)));
 
     // Law_OffsetReferenceNotTangent at every curve and sample.
@@ -239,34 +266,60 @@ library BrepCheckingGeometry
     Check_ExtrusionProfileTransverse(m: BrepModel, plan: SamplePlan): Check
         => m.CheckSurfaceSamples(plan, "Law_ExtrusionProfileTransverse", (s, uv) => Law_ExtrusionProfileTransverse(m.Geometry, s, uv.U, m.Tolerances));
 
-    // Law_SurfaceCurveLiesOnSupport at every curve, sample, and support.
+    // Law_SurfaceCurveLiesOnSupport at every curve, sample, and support k:
+    // sample j is the plan's sample j % n of support j / n.
     Check_SurfaceCurveLiesOnSupport(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSupportSamples(plan, "Law_SurfaceCurveLiesOnSupport", (c, t, k) => Law_SurfaceCurveLiesOnSupport(m.Geometry, c, t, k, m.Tolerances));
+        => CheckGridWithin("Law_SurfaceCurveLiesOnSupport", m.Geometry.Curves.Count, 2 * plan.Count,
+            (c, j) => m.Geometry.CanEvaluate(CurveIndex(c))
+                ? m.Geometry.SupportGap(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count)
+                : 0.0,
+            m.Tolerances.Length.Value,
+            (c, j) => m.CurveSite(CurveIndex(c)));
 
     // Law_SurfaceCurvePcurveLiesOnCurve at every curve, sample, and support.
     Check_SurfaceCurvePcurveLiesOnCurve(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSupportSamples(plan, "Law_SurfaceCurvePcurveLiesOnCurve", (c, t, k) => Law_SurfaceCurvePcurveLiesOnCurve(m.Geometry, c, t, k, m.Tolerances));
+        => CheckGridWithin("Law_SurfaceCurvePcurveLiesOnCurve", m.Geometry.Curves.Count, 2 * plan.Count,
+            (c, j) => m.Geometry.CanEvaluate(CurveIndex(c))
+                ? m.Geometry.PcurveToCurveGap(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count)
+                : 0.0,
+            m.Tolerances.Length.Value,
+            (c, j) => m.CurveSite(CurveIndex(c)));
 
     // Law_SurfaceCurveLiesOnPcurve at every curve, sample, and support.
     Check_SurfaceCurveLiesOnPcurve(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSupportSamples(plan, "Law_SurfaceCurveLiesOnPcurve", (c, t, k) => Law_SurfaceCurveLiesOnPcurve(m.Geometry, c, t, k, m.Tolerances));
+        => CheckGridWithin("Law_SurfaceCurveLiesOnPcurve", m.Geometry.Curves.Count, 2 * plan.Count,
+            (c, j) => m.Geometry.CanEvaluate(CurveIndex(c))
+                ? m.Geometry.CurveToPcurveGap(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count)
+                : 0.0,
+            m.Tolerances.Length.Value,
+            (c, j) => m.CurveSite(CurveIndex(c)));
 
     // Law_PcurveWithinSurfaceDomain at every pcurve and sample.
     Check_PcurveWithinSurfaceDomain(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckPcurveSamples(plan, "Law_PcurveWithinSurfaceDomain", (p, t) => Law_PcurveWithinSurfaceDomain(m.Geometry, p, t, m.Tolerances));
+        => CheckGridWithinEach("Law_PcurveWithinSurfaceDomain", m.Geometry.Pcurves.Count, 2 * plan.Count,
+            (p, j) => m.Geometry.CanEvaluate(PcurveIndex(p))
+                ? m.Geometry.PcurveDomainExcess(PcurveIndex(p), m.PcurveSamples(PcurveIndex(p), plan)[j % plan.Count], (j / plan.Count).ParameterOfSlot)
+                : 0.0,
+            (p, j) => m.Geometry.CanEvaluate(PcurveIndex(p))
+                ? m.Geometry.ParameterFloorAlong(m.Geometry.PcurveAt(PcurveIndex(p)).Surface, (j / plan.Count).ParameterOfSlot, m.Tolerances).Value
+                : 0.0,
+            (p, j) => m.PcurveSite(PcurveIndex(p)));
 
     // Law_CollapsedLineIsOnePoint at every surface, both parameters, the
     // first two collapsed lines of each, and every pair of the plan's samples
     // along the line. File law for splines and revolutions, library law for
     // the analytic cases.
     Check_CollapsedLineIsOnePoint(m: BrepModel, plan: SamplePlan): Check
-        => CheckGrid("Law_CollapsedLineIsOnePoint", m.Geometry.Surfaces.Count, 4 * plan.Count * plan.Count,
-            (s, j) => Law_CollapsedLineIsOnePoint(m.Geometry, SurfaceIndex(s),
-                j < 2 * plan.Count * plan.Count ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV,
-                (j / (plan.Count * plan.Count)) % 2,
-                m.AlongSample(SurfaceIndex(s), j < 2 * plan.Count * plan.Count, plan, (j / plan.Count) % plan.Count),
-                m.AlongSample(SurfaceIndex(s), j < 2 * plan.Count * plan.Count, plan, j % plan.Count),
-                m.Tolerances),
+        => CheckGridWithin("Law_CollapsedLineIsOnePoint", m.Geometry.Surfaces.Count, 4 * plan.Count * plan.Count,
+            (s, j) => m.Geometry.CanEvaluate(SurfaceIndex(s))
+                ? m.Geometry.CollapsedLineSpread(SurfaceIndex(s),
+                    j < 2 * plan.Count * plan.Count ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV,
+                    (j / (plan.Count * plan.Count)) % 2,
+                    m.AlongSample(SurfaceIndex(s), j < 2 * plan.Count * plan.Count, plan, (j / plan.Count) % plan.Count),
+                    m.AlongSample(SurfaceIndex(s), j < 2 * plan.Count * plan.Count, plan, j % plan.Count),
+                    m.Tolerances)
+                : 0.0,
+            m.Tolerances.Length.Value,
             (s, j) => m.SurfaceSite(SurfaceIndex(s)));
 
     // Law_TangentialPartialVanishesOnDegenerateSide at every surface, each of

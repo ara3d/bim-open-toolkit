@@ -61,6 +61,11 @@ library BrepCheckingCommon
     CheckAllWithinEach(law: String, n: Integer, measure: Function1<Integer, Number>, bound: Function1<Integer, Number>, where: Function1<Integer, Provenance>): Check
         => WorstOf(law, n.MapRange(i => CheckWithin(law, measure(i), bound(i), where(i))));
 
+    // A measured law on an n by k grid of samples whose bound differs by
+    // sample, as CheckAllWithinEach.
+    CheckGridWithinEach(law: String, n: Integer, k: Integer, measure: Function2<Integer, Integer, Number>, bound: Function2<Integer, Integer, Number>, where: Function2<Integer, Integer, Provenance>): Check
+        => WorstOf(law, (n * k).MapRange(j => CheckWithin(law, measure(j / k, j % k), bound(j / k, j % k), where(j / k, j % k))));
+
     // A measured law on an n by k grid of samples, as CheckAllWithin.
     CheckGridWithin(law: String, n: Integer, k: Integer, measure: Function2<Integer, Integer, Number>, bound: Number, where: Function2<Integer, Integer, Provenance>): Check
         => WorstOf(law, (n * k).MapRange(j => CheckWithin(law, measure(j / k, j % k), bound, where(j / k, j % k))));

@@ -157,10 +157,10 @@ library BrepWitnessesLaws
             .IsClean;
 
     // The mesh of witness k passes ValidateModelMesh at the Oracle level with
-    // the witness's tolerances and Cubit's acceptable quality thresholds.
+    // the witness's tolerances and the witness options' quality thresholds.
     Law_WitnessMeshValidatesClean(k: Integer): Boolean
         => BrepModel.WitnessAt(k).WitnessMesh.ValidateModelMesh(
-                BrepModel.WitnessAt(k).Tolerances, MeshQualityThresholds.CubitAcceptable, ConformanceLevel.Oracle)
+                BrepModel.WitnessAt(k).Tolerances, MeshingOptions.WitnessOptions.Quality, ConformanceLevel.Oracle)
             .IsClean;
 
     // After meshing the hollow box a x a x a around a void b x b x b, the
