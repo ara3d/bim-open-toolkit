@@ -373,7 +373,7 @@ library BrepGeometrySurfaces
             LinearExtrusion(profile, extrusion) => Number.NoParameters;
             BSpline(data) => data.SplineCollapsedAt(which, tol.Length);
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.CollapsedAt(basis, which, tol)
-                .OffsetsWithin(which.Along(uRange, vRange), which.Along(uSense, vSense), tol.Parameter);
+                .OffsetsWithin(which.Along(uRange, vRange), which.Along(uSense, vSense), g.ParameterFloorAlong(basis, which, tol));
             Offset(basis, distance) => g.CollapsedAt(basis, which, tol);
         };
 
@@ -392,7 +392,7 @@ library BrepGeometrySurfaces
         => g.Domain(s).DomainAlong(side.ParameterOf).Periodicity.IsPeriodic
             ? false
             : (g.Domain(s).DomainAlong(side.ParameterOf).ParameterLength.IsFinite
-                ? g.CollapsedAt(s, side.ParameterOf, tol).Any(c => (c - g.Domain(s).SideValue(side)).Abs <= tol.Parameter.Value)
+                ? g.CollapsedAt(s, side.ParameterOf, tol).Any(c => (c - g.Domain(s).SideValue(side)).Abs <= g.ParameterFloorAlong(s, side.ParameterOf, tol).Value)
                 : false);
 
     // No sides: the typed empty array.
@@ -462,7 +462,7 @@ library BrepGeometrySurfaces
             LinearExtrusion(profile, extrusion) => which.Along(g.IsClosed(profile, tol.Length), false);
             BSpline(data) => data.BSplineSidesCoincide(which, tol.Length);
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => CurveDomain(
-                which.Along(uRange, vRange), g.Domain(basis).DomainAlong(which).Periodicity).IsFullPeriod(tol.Parameter);
+                which.Along(uRange, vRange), g.Domain(basis).DomainAlong(which).Periodicity).IsFullPeriod(g.ParameterFloorAlong(basis, which, tol));
             Offset(basis, distance) => g.IsClosedIn(basis, which, tol);
         };
 
@@ -474,7 +474,42 @@ library BrepGeometrySurfaces
     // point by at most the length tolerance to first order. At a collapsed line
     // the tolerance along it is the cap: every value there is the same point.
     UvToleranceAt(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): UvTolerance
-        => tol.UvToleranceAt(g.PartialU(s, uv).Length, g.PartialV(s, uv).Length, g.Domain(s));
+        => tol.UvToleranceAt(g.UvFloorOf(s, tol), g.PartialU(s, uv).Length, g.PartialV(s, uv).Length, g.Domain(s));
+
+    // True when the surface's given parameter is an angle: u of every
+    // placement-based case but the plane and of a surface of revolution, v of
+    // the sphere and the torus, a swept surface's profile parameter when the
+    // profile's is, and a trim's or offset's basis's (README, "Natural
+    // parameterizations"). The kind chooses the parameter floor
+    // (geometry-curves.library.plato, "Parameter kinds and floors").
+    IsAngleParameter(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Boolean
+        => g.SurfaceAt(s).IsAngleParameter(g, which);
+
+    // IsAngleParameter for one record of the arena g, which holds the entries it references.
+    IsAngleParameter(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter): Boolean
+        => match (surface)
+        {
+            Plane(placement) => false;
+            Cylinder(placement, radius) => which.Along(true, false);
+            Cone(placement, radius, semiAngle) => which.Along(true, false);
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => true;
+            Revolution(profile, axis) => which.Along(true, g.IsAngleParameter(profile));
+            LinearExtrusion(profile, extrusion) => which.Along(g.IsAngleParameter(profile), false);
+            BSpline(data) => false;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.IsAngleParameter(basis, which);
+            Offset(basis, distance) => g.IsAngleParameter(basis, which);
+        };
+
+    // The model's parameter floor for the surface's given parameter: the
+    // angle floor for an angle, the length floor otherwise.
+    ParameterFloorAlong(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): ParameterTolerance
+        => g.IsAngleParameter(s, which) ? tol.AngleParameter : tol.LengthParameter;
+
+    // The floors of both parameters, the box layer 0's UvToleranceAt raises
+    // its per-point tolerance to.
+    UvFloorOf(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): UvTolerance
+        => UvTolerance(g.ParameterFloorAlong(s, SurfaceParameter.ParameterU, tol), g.ParameterFloorAlong(s, SurfaceParameter.ParameterV, tol));
 
     //==
     // # Rounding magnitude

@@ -245,8 +245,9 @@ for the axial `v`.
 - An `ensures` that compares distances without a tolerance (a global-minimizer inequality has one,
   `+ tol.Length.Value`) is a statement in exact arithmetic about the ideal function; theorems are
   likewise exact.
-- Tolerances used: `Length` for points; `Parameter`, the model's floor, where a strict parameter
-  comparison is meant (a range inside another, a side on a collapsed line); the per-point
+- Tolerances used: `Length` for points; the parameter floor of the parameter's kind
+  (`ParameterFloorOf`, `ParameterFloorAlong`, `UvFloorOf`: layer 0's `AngleParameter` for an
+  angle, `LengthParameter` otherwise), where a strict parameter comparison is meant (a range inside another, a side on a collapsed line); the per-point
   `ParameterToleranceAt` and `UvToleranceAt` where a parameter is recovered from a point;
   `Angle` for frames, transversality, the normal, and as the relative error of an area element;
   layer 0's `ResolutionAt` at an `EvaluationMagnitude` (the size of the terms an evaluation sums,
@@ -361,13 +362,14 @@ true in 32-bit and 64-bit arithmetic, and weak in 32-bit (the difference laws ac
 error near 5e-4 there).
 
 Names this layer depends on from layer 0: `CurveDomain`, `SurfaceDomain`, `Periodicity`
-(`Aperiodic`, `Periodic`), `DomainSide`, `LengthTolerance`, `AngleTolerance`,
+(`Aperiodic`, `Periodic`, `Closed`), `DomainSide`, `LengthTolerance`, `AngleTolerance`,
 `ParameterTolerance`, `UvTolerance`, `Tolerances`, `CurveIndex`, `Curve2DIndex`, `PcurveIndex`,
 `SurfaceIndex`; and the functions `IsPeriodic`, `PeriodOr`, `ParameterLength`, `IsFullPeriod`,
 `CanWrap`, `Wrap`, `NearestUnwrapped`, `SameParameter`, `ContainsParameter`, `IsUSide`,
 `SideValue`, `SideRange`, `SidePoint`, `Coincident`, `SameDirection`, `AngleBetweenDirections`,
-`ResolutionAt`, `RoundingUnit`, `ParameterToleranceAt`, `ParameterToleranceCap`, `UvToleranceAt`,
-`IsWellFormed` (on tolerances). Only the types are fixed in VOCABULARY.md; the functions are layer
+`ResolutionAt`, `RoundingUnit`, `SmallestNormal`, `ParameterToleranceAt` and `UvToleranceAt` (with
+a floor argument), `ParameterToleranceCap`, `IsWellFormed` (on tolerances), and the fields
+`Tolerances.LengthParameter` and `Tolerances.AngleParameter`. Only the types are fixed in VOCABULARY.md; the functions are layer
 0's current proposals.
 
 Gate (PLATO-PRIMER.md E.3, 2026-10-17): with this folder and a copy of `00-foundation` as the
@@ -399,6 +401,7 @@ as expected.
 | `ClosestParameter(g, p: PcurveIndex, q)` minimizer over the domain | the bounded representative: in `[0, T)` with a parameter period `T`, else of least magnitude | an unbounded line pcurve has a minimizer in every period (fix wave, F4) |
 | (new) | `PcurveParameterPeriod(g, p)`, `PcurveRangeOver(g, p, c, r)`, `PcurveSampleFor`, `Law_PcurveClosestParameterIsBounded` | pcurve ranges from the space curve and the surface periods (fix wave, F4) |
 | (new) | `CollapsesByFormula(g, s)` | the guard of `Law_TangentialPartialVanishesOnDegenerateSide` (fix wave, F10) |
+| `tol.Parameter` (one floor) | `ParameterFloorOf(g, c | p, tol)`, `ParameterFloorAlong(g, s, which, tol)`, `UvFloorOf(g, s, tol)`, `FinerParameterFloor(tol)`, and `IsAngleParameter` on curves, parameter-plane curves and surface parameters | layer 0 split the floor by kind; this layer knows the kind (fix wave, C2) |
 
 ## Fix wave, 2026-10-17
 
@@ -426,3 +429,7 @@ Applied:
 - **F10.** `Law_TangentialPartialVanishesOnDegenerateSide` holds by formula only (sphere, torus
   parts, their trims and offsets), bounded by rounding; spline and revolution sides are left to
   `Law_CollapsedLineIsOnePoint`.
+- **C2 (the layer 1 part).** Every parameter comparison takes the floor of its parameter's kind,
+  chosen by `IsAngleParameter`; `ParameterToleranceAt` and `UvToleranceAt` pass it to layer 0. A
+  parameter that is neither angle nor length (knots, a line's `t`) takes the length floor in its own
+  units, a lower bound under its per-point tolerance.

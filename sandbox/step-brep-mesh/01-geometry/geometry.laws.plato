@@ -47,6 +47,7 @@ library BrepGeometryLaws
         {
             Aperiodic => t.Max(d.Range.Start).Min(d.Range.End);
             Periodic(period) => d.CanWrap(t) ? d.Wrap(t) : d.Range.Start;
+            Closed(period) => d.CanWrap(t) ? d.Wrap(t) : d.Range.Start;
         };
 
     // uv moved into the surface domain, one coordinate at a time.
@@ -60,6 +61,7 @@ library BrepGeometryLaws
         {
             Aperiodic => d.ParameterLength.IsFinite ? d.ParameterLength : t.Abs.Max(1.0);
             Periodic(period) => period / Number.Tau;
+            Closed(period) => period;
         };
 
     // The step of the central differences: the cube root of the unit roundoff
@@ -475,7 +477,7 @@ library BrepGeometryLaws
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
             Parabola(placement, focalDistance) => true;
             Polyline(points) => true;
-            BSpline(data) => data.BSplinePoint(t).SameParameter(Oracle_BSplineCurve2DPoint(data, t), tol.Parameter);
+            BSpline(data) => data.BSplinePoint(t).SameParameter(Oracle_BSplineCurve2DPoint(data, t), tol.FinerParameterFloor);
             Trimmed(basis, range, sameSense) => true;
             Composite(segments) => true;
             Offset(basis, distance) => true;
@@ -512,7 +514,7 @@ library BrepGeometryLaws
     // A periodic curve's domain spans exactly one period, within the
     // parameter floor.
     Law_PeriodicCurveSpansOnePeriod(g: GeometrySet, c: CurveIndex, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? (g.Domain(c).Periodicity.IsPeriodic ? g.Domain(c).IsFullPeriod(tol.Parameter) : true) : true;
+        => g.CanEvaluate(c) ? (g.Domain(c).Periodicity.IsPeriodic ? g.Domain(c).IsFullPeriod(g.ParameterFloorOf(c, tol)) : true) : true;
 
     // A periodic curve is closed: it meets itself at the two ends of its
     // domain, within the length tolerance.
@@ -606,7 +608,7 @@ library BrepGeometryLaws
     // within the parameter floor.
     Law_ClosestParameterIsCanonical(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
         => g.CanEvaluate(c)
-            ? g.Domain(c).IsCanonical(g.ClosestParameter(c, g.Eval(c, g.Domain(c).SampleIn(t))), tol.Parameter)
+            ? g.Domain(c).IsCanonical(g.ClosestParameter(c, g.Eval(c, g.Domain(c).SampleIn(t))), g.ParameterFloorOf(c, tol))
             : true;
 
     // True when r is the canonical representative of a parameter of d within
@@ -623,7 +625,7 @@ library BrepGeometryLaws
     // floor: both ends inside an aperiodic basis's range, at most one period
     // long on a periodic basis (ISO 10303-42 4.5.43 IP5). Measure TrimExcess.
     Law_TrimmedRangeInsideBasis(g: GeometrySet, c: CurveIndex, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.TrimExcess(c) <= tol.Parameter.Value : true;
+        => g.CanEvaluate(c) ? g.TrimExcess(c) <= g.ParameterFloorOf(c, tol).Value : true;
 
     // The measure of Law_TrimmedRangeInsideBasis, in the basis's parameter:
     // how far a trimmed curve's range reaches outside its basis's domain; 0
@@ -660,7 +662,7 @@ library BrepGeometryLaws
     // floor: the decoder stores it as [min, max] with the sense apart, after
     // adding a period on a closed basis (ISO 10303-42 4.5.43 IP4, NOTE 1).
     Law_TrimmedRangeIsForward(g: GeometrySet, c: CurveIndex, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.TrimIsForward(c, tol.Parameter) : true;
+        => g.CanEvaluate(c) ? g.TrimIsForward(c, g.ParameterFloorOf(c, tol)) : true;
 
     // The claim of Law_TrimmedRangeIsForward for each case.
     TrimIsForward(g: GeometrySet, c: CurveIndex, tol: ParameterTolerance): Boolean
@@ -955,7 +957,7 @@ library BrepGeometryLaws
         => g.CanEvaluate(c)
             ? (g.Domain(c).Periodicity.IsPeriodic
                 ? g.Eval(c, g.Domain(c).SampleIn(t)).SameParameter(
-                    g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0)), tol.Parameter)
+                    g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0)), tol.FinerParameterFloor)
                 : true)
             : true;
 
@@ -1086,8 +1088,8 @@ library BrepGeometryLaws
         => g.CanEvaluate(p)
             ? g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))).IsFinite
                 && (g.PcurveParameterPeriod(p) > 0.0
-                    ? g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) >= -tol.Parameter.Value
-                        && g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) <= g.PcurveParameterPeriod(p) + tol.Parameter.Value
+                    ? g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) >= -g.ParameterFloorOf(p, tol).Value
+                        && g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) <= g.PcurveParameterPeriod(p) + g.ParameterFloorOf(p, tol).Value
                     : true)
             : true;
 
@@ -1096,8 +1098,8 @@ library BrepGeometryLaws
     // one per parameter.
     Law_PcurveWithinSurfaceDomain(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
         => g.CanEvaluate(p)
-            ? g.PcurveDomainExcess(p, t, SurfaceParameter.ParameterU) <= tol.Parameter.Value
-                && g.PcurveDomainExcess(p, t, SurfaceParameter.ParameterV) <= tol.Parameter.Value
+            ? g.PcurveDomainExcess(p, t, SurfaceParameter.ParameterU) <= g.ParameterFloorAlong(g.PcurveAt(p).Surface, SurfaceParameter.ParameterU, tol).Value
+                && g.PcurveDomainExcess(p, t, SurfaceParameter.ParameterV) <= g.ParameterFloorAlong(g.PcurveAt(p).Surface, SurfaceParameter.ParameterV, tol).Value
             : true;
 
     // The measure of Law_PcurveWithinSurfaceDomain in the given surface
@@ -1116,7 +1118,7 @@ library BrepGeometryLaws
     // within the parameter floor.
     Law_PeriodicSurfaceSpansOnePeriod(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
-            ? (g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic ? g.Domain(s).DomainAlong(which).IsFullPeriod(tol.Parameter) : true)
+            ? (g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic ? g.Domain(s).DomainAlong(which).IsFullPeriod(g.ParameterFloorAlong(s, which, tol)) : true)
             : true;
 
     // A surface periodic in the given parameter repeats with its period in
@@ -1160,8 +1162,8 @@ library BrepGeometryLaws
     // True when uv is within the parameter floor of a collapsed line of the
     // surface, in either parameter, measured around the circle when periodic.
     IsNearCollapsed(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CollapsedAt(s, SurfaceParameter.ParameterU, tol).Any(c => g.Domain(s).U.SameParameter(uv.U, c, tol.Parameter))
-            || g.CollapsedAt(s, SurfaceParameter.ParameterV, tol).Any(c => g.Domain(s).V.SameParameter(uv.V, c, tol.Parameter));
+        => g.CollapsedAt(s, SurfaceParameter.ParameterU, tol).Any(c => g.Domain(s).U.SameParameter(uv.U, c, g.ParameterFloorAlong(s, SurfaceParameter.ParameterU, tol)))
+            || g.CollapsedAt(s, SurfaceParameter.ParameterV, tol).Any(c => g.Domain(s).V.SameParameter(uv.V, c, g.ParameterFloorAlong(s, SurfaceParameter.ParameterV, tol)));
 
     // NormalOr is a unit vector away from collapsed lines, within the angle
     // tolerance read as a relative length error.
@@ -1332,11 +1334,12 @@ library BrepGeometryLaws
     // window of a periodic direction or the range of an aperiodic one, within
     // the parameter floor.
     Law_ProjectIsCanonical(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.Domain(s).IsCanonical(g.Project(s, g.Eval(s, g.Domain(s).SampleIn(uv))), tol.Parameter) : true;
+        => g.CanEvaluate(s) ? g.Domain(s).IsCanonical(g.Project(s, g.Eval(s, g.Domain(s).SampleIn(uv))), g.UvFloorOf(s, tol)) : true;
 
-    // True when both coordinates of uv are canonical in their directions.
-    IsCanonical(d: SurfaceDomain, uv: UvCoordinate, tol: ParameterTolerance): Boolean
-        => d.U.IsCanonical(uv.U, tol) && d.V.IsCanonical(uv.V, tol);
+    // True when both coordinates of uv are canonical in their directions,
+    // each within its own floor.
+    IsCanonical(d: SurfaceDomain, uv: UvCoordinate, tol: UvTolerance): Boolean
+        => d.U.IsCanonical(uv.U, tol.U) && d.V.IsCanonical(uv.V, tol.V);
 
     //==
     // # Surfaces: collapsed lines and degenerate sides
@@ -1420,7 +1423,7 @@ library BrepGeometryLaws
     // its basis's domain within the parameter floor (ISO 10303-42 4.5.80
     // IP1). Measure TrimBoxExcess.
     Law_RectangularTrimmedInsideBasis(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.TrimBoxExcess(s, which) <= tol.Parameter.Value : true;
+        => g.CanEvaluate(s) ? g.TrimBoxExcess(s, which) <= g.ParameterFloorAlong(s, which, tol).Value : true;
 
     // The measure of Law_RectangularTrimmedInsideBasis, in the basis's
     // parameter: how far a rectangular trimmed surface's range in the given
@@ -1449,7 +1452,7 @@ library BrepGeometryLaws
     // forward and is longer than the parameter floor (ISO 10303-42 4.5.80
     // WR1, WR2).
     Law_RectangularTrimmedRangeIsForward(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.TrimBoxIsForward(s, which, tol.Parameter) : true;
+        => g.CanEvaluate(s) ? g.TrimBoxIsForward(s, which, g.ParameterFloorAlong(s, which, tol)) : true;
 
     // The claim of Law_RectangularTrimmedRangeIsForward for each case.
     TrimBoxIsForward(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: ParameterTolerance): Boolean

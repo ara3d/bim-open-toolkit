@@ -18,6 +18,7 @@
 //  - Space curves: derivatives and curvature
 //  - Space curves: inverse evaluation
 //  - Space curves: breakpoints, closure, parameter tolerance
+//  - Parameter kinds and floors
 //  - Rounding magnitude
 //  - Surface curves and their pcurves
 //  - Polylines
@@ -238,10 +239,87 @@ library BrepGeometryCurves
                 : false);
 
     // The parameter tolerance at t: layer 0's ParameterToleranceAt with this
-    // curve's speed and its domain's cap, so a parameter step within it moves
-    // the point by at most the length tolerance to first order.
+    // curve's speed, its domain's cap, and the floor of its parameter's kind,
+    // so a parameter step within it moves the point by at most the length
+    // tolerance to first order.
     ParameterToleranceAt(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): ParameterTolerance
-        => tol.ParameterToleranceAt(g.Derivative(c, t).Length, g.Domain(c).ParameterToleranceCap);
+        => tol.ParameterToleranceAt(g.ParameterFloorOf(c, tol), g.Derivative(c, t).Length, g.Domain(c).ParameterToleranceCap);
+
+    //==
+    // # Parameter kinds and floors
+    //
+    // Layer 0 keeps one parameter floor per kind of parameter
+    // (Tolerances.AngleParameter, dimensionless; Tolerances.LengthParameter,
+    // in model length units), because one floor cannot serve both: scaling a
+    // model changes a length parameter's floor and not an angle's (review
+    // C2). This layer knows each parameter's kind and picks the floor. A
+    // parameter that is neither (a knot value, a polyline index, a line's t
+    // over a velocity of any length) takes the length floor in its own units;
+    // its per-point tolerance (ParameterToleranceAt) divides the length
+    // tolerance by its speed, and the floor only bounds that from below.
+
+    // True when curve c's parameter is an angle: a circle's or an ellipse's,
+    // and a trim's, offset's or surface curve's whose basis or master has one.
+    IsAngleParameter(g: GeometrySet, c: CurveIndex): Boolean
+        => g.CurveAt(c).IsAngleParameter(g);
+
+    // IsAngleParameter for one record of the arena g, which holds the entries it references.
+    IsAngleParameter(curve: BrepCurve, g: GeometrySet): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => false;
+            Circle(placement, radius) => true;
+            Ellipse(placement, semiAxis1, semiAxis2) => true;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => false;
+            Parabola(placement, focalDistance) => false;
+            Polyline(points) => false;
+            BSpline(data) => false;
+            Trimmed(basis, range, sameSense) => g.IsAngleParameter(basis);
+            Composite(segments) => false;
+            Offset(basis, distance, reference) => g.IsAngleParameter(basis);
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.IsAngleParameter(spaceCurve)
+                : g.IsAngleParameter(g.PcurveAt(supports.MasterPcurve(master)).Curve);
+        };
+
+    // True when parameter-plane curve c's own parameter is an angle.
+    IsAngleParameter(g: GeometrySet, c: Curve2DIndex): Boolean
+        => g.Curve2DAt(c).IsAngleParameter(g);
+
+    // IsAngleParameter for one record of the arena g, which holds the entries it references.
+    IsAngleParameter(curve: BrepCurve2D, g: GeometrySet): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => false;
+            Circle(placement, radius) => true;
+            Ellipse(placement, semiAxis1, semiAxis2) => true;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => false;
+            Parabola(placement, focalDistance) => false;
+            Polyline(points) => false;
+            BSpline(data) => false;
+            Trimmed(basis, range, sameSense) => g.IsAngleParameter(basis);
+            Composite(segments) => false;
+            Offset(basis, distance) => g.IsAngleParameter(basis);
+        };
+
+    // The model's parameter floor for curve c's parameter: the angle floor
+    // for an angle, the length floor otherwise.
+    ParameterFloorOf(g: GeometrySet, c: CurveIndex, tol: Tolerances): ParameterTolerance
+        => g.IsAngleParameter(c) ? tol.AngleParameter : tol.LengthParameter;
+
+    // The model's parameter floor for parameter-plane curve c's own parameter.
+    ParameterFloorOf(g: GeometrySet, c: Curve2DIndex, tol: Tolerances): ParameterTolerance
+        => g.IsAngleParameter(c) ? tol.AngleParameter : tol.LengthParameter;
+
+    // The model's parameter floor for pcurve p's parameter, its 2D curve's.
+    ParameterFloorOf(g: GeometrySet, p: PcurveIndex, tol: Tolerances): ParameterTolerance
+        => g.ParameterFloorOf(g.PcurveAt(p).Curve, tol);
+
+    // The finer of the two floors: for a parameter-plane point whose surface
+    // is not at hand, so that neither of its coordinates is judged too
+    // leniently.
+    FinerParameterFloor(tol: Tolerances): ParameterTolerance
+        => ParameterTolerance(tol.LengthParameter.Value.Min(tol.AngleParameter.Value));
 
     //==
     // # Rounding magnitude
@@ -723,5 +801,5 @@ library BrepGeometryCurves
 
     // The parameter tolerance at t on the pcurve, by its speed in space.
     ParameterToleranceAt(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): ParameterTolerance
-        => tol.ParameterToleranceAt(g.Derivative(p, t).Length, g.Domain(p).ParameterToleranceCap);
+        => tol.ParameterToleranceAt(g.ParameterFloorOf(p, tol), g.Derivative(p, t).Length, g.Domain(p).ParameterToleranceCap);
 }

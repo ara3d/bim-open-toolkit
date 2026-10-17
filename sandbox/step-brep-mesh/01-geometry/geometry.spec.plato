@@ -124,7 +124,7 @@ spec BSplinePoint(d: BSplineCurve2DData, t: Number): UvCoordinate
 {
     requires d.IsWellShaped;
     requires d.Basis.SplineDomain.Contains(t);
-    ensures forall (tol: Tolerances) : result.SameParameter(Oracle_BSplineCurve2DPoint(d, t), tol.Parameter);
+    ensures forall (tol: Tolerances) : result.SameParameter(Oracle_BSplineCurve2DPoint(d, t), tol.FinerParameterFloor);
     measure d.Basis.Degree * d.Basis.Degree;
     deferred "de Boor's algorithm in the parameter plane";
 }
@@ -431,7 +431,7 @@ spec Project(g: GeometrySet, s: SurfaceIndex, p: Point3D): UvCoordinate
     requires g.CanEvaluate(s);
     ensures forall (tol: Tolerances) : forall (w: UvCoordinate) in g.Domain(s) :
         g.Eval(s, result).Distance(p) <= g.Eval(s, w).Distance(p) + tol.Length.Value;
-    ensures forall (tol: Tolerances) : g.Domain(s).IsCanonical(result, tol.Parameter);
+    ensures forall (tol: Tolerances) : g.Domain(s).IsCanonical(result, g.UvFloorOf(s, tol));
     ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversPoint(g, s, uv, tol);
     ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversParameter(g, s, uv, tol);
     measure g.Breakpoints(s, SurfaceParameter.ParameterU).Count * g.Breakpoints(s, SurfaceParameter.ParameterV).Count + 1;
@@ -511,7 +511,7 @@ spec ProjectBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D): UvCoordi
     requires surface.HasEvaluableShape;
     ensures forall (tol: Tolerances) : forall (w: UvCoordinate) in surface.Domain(g) :
         surface.Eval(g, result).Distance(p) <= surface.Eval(g, w).Distance(p) + tol.Length.Value;
-    ensures forall (tol: Tolerances) : surface.Domain(g).IsCanonical(result, tol.Parameter);
+    ensures forall (tol: Tolerances) : surface.Domain(g).IsCanonical(result, UvTolerance(tol.FinerParameterFloor, tol.FinerParameterFloor));
     measure (surface.Breakpoints(g, SurfaceParameter.ParameterU).Count + 1) * (surface.Breakpoints(g, SurfaceParameter.ParameterV).Count + 1);
     deferred "grid seeds per smooth patch, Newton on the two normal equations in a trust region, sides and collapsed lines compared, wrap";
 }
@@ -523,7 +523,7 @@ spec ProjectNearBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D, seed:
     requires surface.HasEvaluableShape;
     ensures forall (tol: Tolerances) : surface.Eval(g, seed).Coincident(p, tol.Length)
         ? surface.Domain(g).SameParameter(result, seed,
-            tol.UvToleranceAt(surface.PartialU(g, seed).Length, surface.PartialV(g, seed).Length, surface.Domain(g)))
+            tol.UvToleranceAt(UvTolerance(tol.FinerParameterFloor, tol.FinerParameterFloor), surface.PartialU(g, seed).Length, surface.PartialV(g, seed).Length, surface.Domain(g)))
         : true;
     measure 1;
     deferred "Newton from the seed on the two normal equations, trust region a quarter period, no wrapping";
