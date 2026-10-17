@@ -14,13 +14,13 @@ and `CrossCheck(mesh, level, criteria)`, all at the options' `ConformanceLevel` 
 | File | Holds |
 |---|---|
 | `pipeline.types.plato` | `MeshingOptions`, `PipelineState`, `MeshOutcome`, `StepMeshOutcome` |
-| `pipeline.library.plato` | library `StepToMesh`: options, provenance, the pipeline's findings, edges, faces, the loop, assembly and validation, the entry points; 9 of its functions are owed by layers 0, 2, 4, 5 and marked `// belongs-in:` |
-| `pipeline.laws.plato` | library `StepToMeshLaws`: 34 laws, 1 witness, 13 helpers |
-| `pipeline.spec.plato` | invariants of the 4 types, 14 function contracts, 5 theorems |
+| `pipeline.library.plato` | library `StepToMesh`: options, the pipeline's findings, edges, faces, the loop, assembly and validation, the entry points; 5 of its functions are owed by layers 2, 4, 5 and marked `// belongs-in:` (`ScaledBy` on a model and on the two criteria and a limit, `WithEveryFaceReversed`) |
+| `pipeline.laws.plato` | library `StepToMeshLaws`: 34 laws, 1 witness, 9 helpers |
+| `pipeline.spec.plato` | invariants of the 4 types, 12 function contracts, 5 theorems |
 
-Counts: 4 types; 54 library functions, 52 with a body and 2 deferred (`RigidlyMoved` and
-`ScaledBy` on a model, both owed by layer 2 and needed only by the metamorphic laws); 34 laws;
-18 `spec` blocks; 5 theorems.
+Counts after the fix wave: 4 types; 49 library functions, 48 with a body and 1 deferred (`ScaledBy`
+on a model, owed by layer 2 and needed only by the scaling laws); 34 laws; 16 `spec` blocks; 5
+theorems.
 
 ## The pipeline as a composition of partial functions
 
@@ -343,9 +343,9 @@ on a conjecture any more.
 1. **A relative chordal default.** Settled in the fix wave: `RelativeMeshingOptions(m, fraction)`
    over layer 2's `ModelSize`. Whether `MeshStepText` should take a fraction instead of options, and
    resolve it after decoding, is the owner's call.
-2. **A witness with a planted bad face** for `Law_FailedFaceLeavesOthersUnchanged`: layer 7's unit
-   box with its top face bounded by a poly loop, which layer 5 does not mesh in version 1. Without
-   it the law runs vacuously on clean witnesses.
+2. **A witness with a planted bad face.** Settled in the fix wave: layer 7's
+   `Witness_BoxWithPolyLoopSheet`, with laws that run `Law_FailedFaceLeavesOthersUnchanged` at the
+   planted face, so the law is no longer vacuous on the witnesses.
 3. **Assemblies are meshed per placed copy.** Layer 3 decodes every occurrence. An instancing table
    (one mesh per part, placements beside it) would need a field in `DecodedModel`, `MeshOutcome`,
    and `ModelMesh`; the owner decides when an assembly's cost matters.
@@ -424,30 +424,31 @@ variants of the text: one truncated mid-instance (a parse Error), and one with n
 representation (no face). Expected result: 8 vertices, 12 triangles, Euler characteristic 2, closed,
 consistently oriented, signed volume 1, `Rounds` 0, `Ok` true.
 
-Functions that need bodies, by layer (every other function the run reaches has one already):
+Functions that need bodies, by layer (every other function the run reaches has one already), as
+the fix wave of 2026-10-17 left the layers:
 
 | Layer | Functions |
 |---|---|
-| 0 | none deferred |
-| 1 | none deferred: the `Line` and `Plane` arms of evaluation, derivatives, `ClosestParameter`, and `Project` are closed forms with bodies |
-| 2 | `IsDegenerateEdge` (the fast path: the two vertices are farther apart than twice the length tolerance), `NormalAgreesWithParameterization` (true for every plane), and for validation `ReducedCounts`, `LinkComponentCount` |
+| 0 | none deferred (`Located` and the `WholeInput` case, once this layer's stand-ins, are layer 0's with bodies) |
+| 1 | none deferred for a box written without pcurves: the `Line` and `Plane` arms of evaluation, derivatives, `ClosestParameter`, and `Project` are closed forms with bodies, and `NormalAgreesWithParameterization` (now layer 1's only) has a body; `ClosestParameter` on a pcurve waits for the first file with pcurves |
+| 2 | `IsDegenerateEdge` (the fast path: the two vertices are farther apart than twice the length tolerance; layer 4 now uses this one), and for validation `ReducedCounts`, `LinkComponentCount`, `CornersAroundVertex`, `ShellComponentCount` (the connectivity law), `OrientationFlips` (the orientability law), `BoundaryCycleCount` (open shells), `PolyEdgeUseDefects`, `SharesCurveParameter`; `ModelSize`, `CoordinateExtent`, and `RigidlyMoved` have bodies |
 | 3 | the host's C# parser behind `ParseStep`, which the host's own tests check against layer 3's parse-print-parse and reference laws; in Plato, `InstancePosition`, `DecodeBrepWith`, `ClassificationDiagnostics`, `ResolveContexts`, `FindOccurrences` (one root occurrence), `FlatRecord`, `SlotOf`, `ConformsTo`, and `KernelOf` for the decode laws |
-| 4 | `EdgeSeeds`, `TotalTurning` (0 on a line), `IsDegenerateEdge`, `ImagePoints` (projection onto a plane), `Discretize` (a line is one segment unless floors ask for more) |
+| 4 | `EdgeSeeds`, `TotalTurning` (0 on a line), `ImagePoints` (projection onto a plane; since the fix wave also the one image function layer 5's loops read), `Discretize` (a line is one segment unless floors ask for more); `DiscretizeAll` has a body and takes the usability guard |
 | 5 | `Unwrap` (the identity on a plane), `AddMissingSeamsAndPoles` (nothing to add), `MeanSpeed`, `TriangulateRegion`, `RefineToSurface` (no point on a plane), `Lift` |
 | 6 | `AssembleModelMesh`, `EdgeTableOf`, `ComponentsOf`, `ComponentCountsOf`, `IsPinchedVertex`, `CoincidentVertexPairs` |
-| 7 | `ValidateBrep`, `ValidateModelMesh`, `CrossCheck` at `Structural` and `Geometric`, and the planar-face area oracle at `Oracle` |
-| 8 | none deferred; `ScaledBy` on a model for the two scaling laws, or those laws wait for chunk 6 |
+| 7 | none deferred that a box reaches: `ValidateBrep(level)`, `ValidateModelMesh(t, th, level)`, and `CrossCheck(level, c)` fold checks with bodies, and the planar-face area oracle is closed form; `AreaSegmentByQuadrature`, `EdgeLengthByQuadrature`, `SampledCurvatureBound` wait for curved faces |
+| 8 | none deferred; `ScaledBy` on a model (layer 2's once it lands, with layer 1's scaled curves and surfaces) for the two scaling laws, or those laws wait for chunk 6 |
 
 Laws that must pass: `Law_MeshModelIsDeterministic`, `Law_MeshStepTextIsDeterministic`,
 `Law_OkExactlyWhenClean`, `Law_StepTextOkExactlyWhenClean`, `Law_RoundsWithinLimit`,
 `Law_EveryDiagnosticIsLocated`, `Law_EveryStepTextDiagnosticIsLocated`, `Law_LoopEndsTerminal`,
 `Law_MeasureIsNeverNegative`, `Law_OutcomeIsOfItsFace`, `Law_OutcomesAreCurrent`,
-`Law_EmptyDiscretizationExactlyWhenEdgeUnusable`, `Law_FinalDiscretizationsMeetFloors`,
+`Law_EmptyDiscretizationExactlyWhenEdgeUnusable`, `Law_PendingRequestsAreRefinable`, `Law_FinalDiscretizationsMeetFloors`,
 `Law_ClosedWhenEveryShellClosedAndNoFaceEmpty`, `Law_OrientedWhenEveryShellClosedAndNoFaceEmpty`,
 `Law_EdgeReversalPreservesMesh` on each of the 12 edges, `Law_ShellReversalNegatesVolume`,
 `Law_ValidationIsIdempotent`, `Law_ParseErrorMeansNotOk` (truncated text),
 `Law_NoFacesMeansNoMesh` and `Law_NoFacesMeansNotOk` (text without a shape),
-`Law_DecodeErrorMeansNotOk`; and, with a second witness whose top face is a poly loop,
+`Law_DecodeErrorMeansNotOk`; and, over layer 7's `Witness_BoxWithPolyLoopSheet` (a box beside a sheet whose face 6 the mesher refuses),
 `Law_EmptyFaceIsDiagnosed` and `Law_FailedFaceLeavesOthersUnchanged`.
 
 ### Chunk 2: a cylinder (one seam)
@@ -489,8 +490,8 @@ does not apply, since the face asked for refinement; `Law_OnlyFacesOfChangedEdge
 ### Chunk 6: the corpus
 
 The files of layer 3's "Test files" list, the u-blox models already on this machine first. New:
-assemblies, degree units, short names, surfaces of revolution, defective files. Layer 8:
-`RigidlyMoved` and `ScaledBy` on a model, for `Law_RigidMotionMovesPositions`,
+assemblies, degree units, short names, surfaces of revolution, defective files. Layer 2:
+`ScaledBy` on a model (`RigidlyMoved` has a body since the fix wave), for `Law_RigidMotionMovesPositions`,
 `Law_PowerOfTwoScalingKeepsConnectivity`, `Law_PowerOfTwoScalingScalesPositions` over every file.
 Every law of this layer runs on every file; the expected numbers are the published counts where
 they exist.
@@ -557,7 +558,7 @@ Recorded here, not fixed there.
 | (new, `belongs-in: 04-discretization`) | `ScaledBy(DiscretizationCriteria, factor)`, `ScaledBy(Limit, factor)` | scaling the criteria with the model |
 | (new, `belongs-in: 05-face-meshing`) | `ScaledBy(FaceMeshingCriteria, factor)` | as above |
 | (requested of layer 5, done in the fix wave) | `ensures` on `MeshFace`: requests name the face's own edges; the outcome reads only the face's edges' discretizations | finding 4 |
-| (requested of layer 7) | a witness with one planted bad face; say whether `ValidateBrep` and `ValidateModelMesh` take a level; never leave a finding at `Nowhere` | "What is left open", items 2 and 4; finding 5 |
+| (requested of layer 7, done in the fix wave) | a witness with one planted bad face; say whether `ValidateBrep` and `ValidateModelMesh` take a level; never leave a finding at `Nowhere` | "What is left open", items 2 and 4; finding 5 |
 | (research catalogue) | `Law_MeshingIsDeterministic` is `Law_MeshModelIsDeterministic` and `Law_MeshStepTextIsDeterministic`; `Law_PowerOfTwoScalingCommutes` is `Law_PowerOfTwoScalingKeepsConnectivity` and `Law_PowerOfTwoScalingScalesPositions`; `Law_RigidMotionCommutesWithinTolerance` is `Law_RigidMotionMovesPositions`; `Law_EdgeReversalPreservesMesh` and `Law_ShellReversalNegatesVolume` kept; `Law_CubeRotationCommutes` not adopted (finding 7); `Law_RenumberingPermutesMesh`, `Law_FaceSplitPreservesAreaVolumeEuler` not written (left open, item 7) | one statement per law; only exact relations as laws |
 
 ## Gate
@@ -622,3 +623,6 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
     fraction)` over layer 2's `ModelSize`.
 12. **Round bound cited**: termination and the `MaxRefinementRounds` default cite layer 4's new
     theorem `CountRequestsReachTheirCount` for how many rounds settle the count requests.
+13. **Implementation order updated** for the fix wave: the functions needing bodies by layer, the
+    chunk 1 laws (`Law_PendingRequestsAreRefinable`, `Law_ValidationIsIdempotent`, layer 7's planted
+    witness), chunk 6's transforms now layer 2's; the file table and counts.
