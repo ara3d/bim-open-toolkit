@@ -136,18 +136,6 @@ spec FinalState(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): Pipeli
 //==
 // # Contracts: outcomes and entry points
 
-// Locating keeps every check, code, and severity.
-spec Located(r: Report, where: Provenance): Report
-{
-    requires !(where == Provenance.Nowhere);
-    ensures result.Checks.Count == r.Checks.Count;
-    ensures result.Diagnostics.Count == r.Diagnostics.Count;
-    ensures result.IsClean == r.IsClean;
-    ensures forall (k: Integer) in result.Diagnostics.Count.Range : !(result.Diagnostics[k].Where == Provenance.Nowhere);
-    ensures forall (k: Integer) in result.Checks.Count.Range : Law_FailedCheckHasDiagnostic(result, k);
-    measure r.Diagnostics.Count;
-}
-
 // The meshing of a chosen set of faces: total, Ok exactly when clean, every
 // finding located, the rounds within the limit.
 spec MeshChosenFaces(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): MeshOutcome
@@ -235,7 +223,8 @@ spec ScaledBy(m: BrepModel, factor: Number): BrepModel
     ensures result.Shells.Count == m.Shells.Count && result.Bodies.Count == m.Bodies.Count;
     ensures result.Tolerances.Length.Value == m.Tolerances.Length.Value * factor;   // exact by construction: the same product
     ensures result.Tolerances.Angle == m.Tolerances.Angle;
-    ensures result.Tolerances.Parameter == m.Tolerances.Parameter;
+    ensures result.Tolerances.LengthParameter.Value == m.Tolerances.LengthParameter.Value * factor;   // exact by construction: the same product
+    ensures result.Tolerances.AngleParameter == m.Tolerances.AngleParameter;
     ensures forall (v: Integer) in m.Vertices.Count.Range : result.Vertices[v].Point.Coincident(m.Vertices[v].Point.ScaledPoint(factor), result.Tolerances.Length);
     measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
     deferred "one pass over the arena and the vertex table, multiplying every length and every length parameter by factor";
@@ -326,14 +315,13 @@ theorem OkMeansCleanAtTheLevel
     tested by Law_StepTextOkExactlyWhenClean, Law_ParseErrorMeansNotOk, Law_DecodeErrorMeansNotOk, Law_OkExactlyWhenClean, Law_MergeIsCleanExactlyWhenBothClean;
 }
 
-// Scaling up by a power of two commutes with meshing.
+// Scaling by a power of two, up or down, commutes with meshing.
 theorem PowerOfTwoScalingCommutes
 {
     given m: BrepModel, o: MeshingOptions, k: Integer;
     assume m.IsRunnable(o);
-    assume k >= 0 && k <= 64;
-    assume m.Tolerances.Length.Value >= m.Tolerances.Parameter.Value;
+    assume k.Abs <= 64;
     conclude m.MeshModel(o).Mesh.SameConnectivity(m.ScaledBy(PowerOfTwo(k)).MeshModel(o.ScaledBy(PowerOfTwo(k))).Mesh);
-    because "Multiplying by 2^k is exact while no value leaves the normal range, and commutes exactly with +, -, comparison, and the square root of a product of two lengths; a ratio of two lengths, and so every angle, is unchanged. Every comparison the pipeline makes is between two quantities of one dimension, both scaled (a sagitta against a chordal bound, a distance against the length tolerance), or between two dimensionless ones, both unchanged; so every decision of layers 4 to 6 comes out the same. The exception is the parameter tolerance at a point, layer 0's max(floor, min(Length / speed, cap)), whose floor Tolerances.Parameter serves angle and length parameters alike and which ScaledBy keeps. On an angle parameter Length / speed is a ratio of two scaled lengths, unchanged, so the tolerance is unchanged. On a length parameter of unit speed (a plane's, a cylinder's axial one) the tolerance is max(floor, Length) before and max(floor, 2^k Length) after, which is 2^k times the first because Length >= floor (the third assumption) and 2^k >= 1. On a knot parameter speed scales with Length and the ratio is unchanged. So every parameter comparison scales consistently, and connectivity is identical. Scaling down (k < 0) can make 2^k Length fall below the floor on a length parameter; that case needs per-direction floors in layer 0 (README, 'Findings in lower layers').";
+    because "Multiplying by 2^k is exact while no value leaves the normal range (|k| <= 64 keeps it there for a model whose magnitudes lie between 1e-200 and 1e200), and commutes exactly with +, -, comparison, and the square root of a product of two lengths; a ratio of two lengths, and so every angle, is unchanged. Every comparison the pipeline makes is between two quantities of one dimension, both scaled (a sagitta against a chordal bound, a distance against the length tolerance), or between two dimensionless ones, both unchanged; so every decision of layers 4 to 6 comes out the same. The parameter tolerance at a point, layer 0's ParameterToleranceAt = max(floor, min(Length / speed, cap)), scales consistently too, because layer 0's floors are per dimension and ScaledBy treats each by its dimension. On a length parameter of unit speed (a plane's, a cylinder's axial one) the floor is Tolerances.LengthParameter = max(Length, ResolutionAt(extent)), and both Length and the extent are multiplied by 2^k, so the floor, the quotient Length / 1, and their maximum are all multiplied by 2^k exactly. On an angle parameter the floor is Tolerances.AngleParameter, a ratio of two lengths or the resolution of angle values, unchanged by ScaledBy; Length / speed is a ratio of two scaled lengths, unchanged; so the tolerance is unchanged. On a knot parameter speed scales with Length and the quotient is unchanged; layer 1 picks the angle (dimensionless) floor for it, which is unchanged. So every parameter comparison is between two quantities scaled alike, and connectivity is identical for k of either sign.";
     tested by Law_PowerOfTwoScalingKeepsConnectivity, Law_PowerOfTwoScalingScalesPositions;
 }

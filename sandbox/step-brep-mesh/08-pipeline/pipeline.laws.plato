@@ -486,26 +486,25 @@ library StepToMeshLaws
             : true;
     }
 
-    // Scaling the model and every length criterion up by 2^k leaves the
-    // connectivity identical (theorem PowerOfTwoScalingCommutes). k is not
-    // negative and the length tolerance is not below the parameter floor,
-    // because the floor, which ScaledBy keeps, could otherwise bind on a
-    // length parameter of one model and not the other (README, "Findings in
-    // lower layers"); k <= 64 keeps every scaled length of a model with
-    // magnitudes up to 1e200 finite in 64 bits. Library, exact.
+    // Scaling the model and every length criterion by 2^k, up or down, leaves
+    // the connectivity identical (theorem PowerOfTwoScalingCommutes). Both
+    // directions hold because layer 0's parameter floors are per dimension:
+    // the length floor scales with the model and the angle floor does not
+    // move. |k| <= 64 keeps every scaled length of a model whose magnitudes
+    // lie between 1e-200 and 1e200 normal in 64 bits. Library, exact.
     Law_PowerOfTwoScalingKeepsConnectivity(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
-        => (m.IsRunnable(o) && k >= 0 && k <= 64 && m.Tolerances.Length.Value >= m.Tolerances.Parameter.Value)
+        => (m.IsRunnable(o) && k.Abs <= 64)
             ? m.MeshModel(o).Mesh.SameConnectivity(m.ScaledBy(PowerOfTwo(k)).MeshModel(o.ScaledBy(PowerOfTwo(k))).Mesh)
             : true;
 
-    // Scaling the model and every length criterion up by 2^k scales vertex
-    // v's position by 2^k exactly, when the two runs give the same
+    // Scaling the model and every length criterion by 2^k scales vertex v's
+    // position by 2^k exactly, when the two runs give the same
     // connectivity (the law above; k as there). Library, exact: multiplying by
     // a power of two is exact in IEEE arithmetic, and every operation on
     // lengths commutes with it.
     Law_PowerOfTwoScalingScalesPositions(m: BrepModel, o: MeshingOptions, k: Integer, v: VertexIndex): Boolean
     {
-        if (!(m.IsRunnable(o) && k >= 0 && k <= 64 && m.Tolerances.Length.Value >= m.Tolerances.Parameter.Value))
+        if (!(m.IsRunnable(o) && k.Abs <= 64))
         {
             return true;
         }

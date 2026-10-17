@@ -168,9 +168,9 @@ Validated: ValidateBrep(level), ValidateModelMesh(t, quality, level), CrossCheck
 - **Every finding is located** (`Law_EveryDiagnosticIsLocated`, `Law_EveryStepTextDiagnosticIsLocated`).
   The pipeline's own findings carry `KernelEdge` or `KernelFace` where they are about one element.
   Findings about the input as a whole, and any finding a lower layer left at `Nowhere`, are located
-  at `WholeInput`: STEP instance `#0`, a name no Part 21 file can hold (an instance name has a
-  non-zero digit, P21 6.4.4.3; layer 3's `Law_InstanceIdsPositive`). Layer 0 should give this its
-  own `Provenance` case; `WholeInput` is the one place to change when it does.
+  at layer 0's `Provenance.WholeInput`, by layer 0's `Located` (a constructor of `Report` that
+  keeps every check, code, and severity: layer 0's `Law_LocatedKeepsVerdict`,
+  `Law_LocatedKeepsFindings`).
 - **Only final outcomes report.** A face meshed in several rounds reports its last outcome; the
   findings of earlier rounds were superseded by the refinement that answered them.
 - **Ok is the verdict.** `MeshOutcomeOf` is the one place `Ok` is set, to `Report.IsClean`
@@ -234,8 +234,8 @@ The pipeline's own findings, all Errors because each means part of the model has
 11. **Metamorphic laws state only what is exact.** Scaling by a power of two is exact in IEEE
     arithmetic and every comparison in the pipeline is between quantities of one dimension, so
     connectivity is identical and positions are scaled bit for bit (`Law_PowerOfTwoScalingKeepsConnectivity`,
-    `Law_PowerOfTwoScalingScalesPositions`, theorem `PowerOfTwoScalingCommutes`), for factors of
-    at least 1 (item 6 of "Findings in lower layers"). A general rigid motion or scale factor
+    `Law_PowerOfTwoScalingScalesPositions`, theorem `PowerOfTwoScalingCommutes`), up or down: layer
+    0's per-dimension parameter floors (fix wave) scale with the model or not at all. A general rigid motion or scale factor
     rounds every coordinate differently, and a decision that sits at a tie can flip: a square planar
     face has two equally Delaunay diagonals, and rotating it by an angle that is not a quarter turn
     changes which one the in-circle test picks. So "identical connectivity" under a general rigid
@@ -298,8 +298,8 @@ hand-written texts of "Implementation order", and over the corpus.
 | `Law_ClosedWhenEveryShellClosedAndNoFaceEmpty` | closed shells and no empty face give a closed mesh | exact | library |
 | `Law_OrientedWhenEveryShellClosedAndNoFaceEmpty` | the same hypotheses give a consistently oriented mesh | exact | library |
 | `Law_RigidMotionMovesPositions` | when connectivity agrees, a moved model's vertex is the moved vertex | `LengthTolerance` | library |
-| `Law_PowerOfTwoScalingKeepsConnectivity` | scaling up by `2^k` keeps connectivity | exact | library |
-| `Law_PowerOfTwoScalingScalesPositions` | scaling up by `2^k` scales every position exactly | exact (IEEE) | library |
+| `Law_PowerOfTwoScalingKeepsConnectivity` | scaling by `2^k`, `|k| <= 64`, keeps connectivity | exact | library |
+| `Law_PowerOfTwoScalingScalesPositions` | scaling by `2^k` scales every position exactly | exact (IEEE) | library |
 | `Law_EdgeReversalPreservesMesh` | reversing an edge gives the same mesh bit for bit | exact | library |
 | `Law_ShellReversalNegatesVolume` | reversing every face negates the signed volume | `LengthTolerance` times the area | library |
 | `Law_TighterChordalStaysWithinLooserBound` | a tighter chordal bound's governed deviation is within the looser bound | `LengthTolerance` | library |
@@ -323,7 +323,7 @@ motion and scaling: decision 11. Tighter chordal: decision 12. Idempotent valida
 | `LoopTerminates` | the loop ends in at most `MaxRefinementRounds` steps, terminal | `Law_LoopEndsTerminal`, `Law_StepDecreasesMeasure`, `Law_MeasureIsNeverNegative` |
 | `FailureIsIsolated` | a face whose edges were never refined and which holds no request leaves every other face as in the run without it | `Law_FailedFaceLeavesOthersUnchanged`, `Law_OnlyFacesOfChangedEdgesAreRemeshed`, `Law_OutcomesAreCurrent`, `Law_RequestsNameEdgesOfTheirFace`, `Law_RefinementNeverCoarsens` |
 | `OkMeansCleanAtTheLevel` | `Ok` means no Error in the parse, the decode, the meshing, or the validation at the level | `Law_StepTextOkExactlyWhenClean`, `Law_ParseErrorMeansNotOk`, `Law_DecodeErrorMeansNotOk`, `Law_OkExactlyWhenClean`, layer 0's `Law_MergeIsCleanExactlyWhenBothClean` |
-| `PowerOfTwoScalingCommutes` | scaling up by `2^k` gives identical connectivity | the two scaling laws |
+| `PowerOfTwoScalingCommutes` | scaling by `2^k`, up or down, gives identical connectivity | the two scaling laws |
 
 `WatertightByConstruction` restates the root README's theorem with the actual law names. One of
 its steps rests on layer 5's conjecture `ElementsTileRegion` (every interior parameter-space segment
@@ -518,12 +518,9 @@ Recorded here, not fixed there.
    `WholeInput`) and admit a `Located` constructor of `Report`, which this layer declares with
    `// belongs-in: 00-foundation`. Layers 3 and 7 should say which of their findings are about the
    whole input.
-6. **Layer 0's parameter floor mixes dimensions.** `Tolerances.Parameter` is one floor for angle and
-   length parameters, and `ParameterFloor` mixes `max(modelSize, 1)` and `4 pi` with lengths. No
-   scaling of the floor is right for both kinds of parameter, so meshing commutes with scaling only
-   for factors of at least 1 (theorem `PowerOfTwoScalingCommutes`); a model scaled down can let the
-   floor bind on a length parameter where it did not before. Per-direction floors (one for
-   length parameters, one for angles) would make scaling exact both ways.
+6. **Layer 0's parameter floor mixed dimensions.** Fixed in the fix wave: `Tolerances` holds
+   `LengthParameter` and `AngleParameter`, so meshing commutes with scaling by `2^k` in both
+   directions (theorem `PowerOfTwoScalingCommutes`).
 7. **Research 6.4 overstates two metamorphic relations.** The correction is the note
    "Corrections to research/VALIDATION-MATH.md" below; the research file stays as written.
 8. **Layer 3 does not export the model size** it computes for the tolerance default, which a
@@ -549,6 +546,7 @@ Recorded here, not fixed there.
 | `MeshModel(m, o)` | unchanged, now `MeshChosenFaces(m, o, AllFaces(m))` | the failure isolation law compares two choices of faces |
 | (new) | `PipelineState`, `InitialState`, `Step`, `StateAfter`, `FinalState`, `IsTerminal`, `FaceOutcome`, `ChangedEdges`, `RaisedFloors`, `FacesTouching`, `RequestsOf`, `IsRunnable`, `RefusedOutcome`, `RunOutcome`, `MeshOutcomeOf`, `Validated`, `DefaultMeshingOptions`, `IsWellFormed(MeshingOptions)`, `WithChordal(MeshingOptions)`, `ChordalBound`, `ScaledBy(MeshingOptions)` | the loop as an explicit state and step, and the options' defaults |
 | (new, `belongs-in: 00-foundation`) | `WholeInput(_: Provenance)`, `Located(Diagnostic, Provenance)`, `Located(Report, Provenance)`; `Located` joins `Empty`, `Merge`, `ReportOf` as a constructor of `Report` | every finding located (finding 5) |
+| `WholeInput(_: Provenance)`, `Located(Diagnostic, Provenance)`, `Located(Report, Provenance)` and its spec (fix wave) | deleted; layer 0's `Provenance.WholeInput` case and `Located` | layer 0 took them; `#0` is no longer a sentinel |
 | (new, `belongs-in: 02-topology`) | `RigidlyMoved(m, motion: Frame3D)`, `ScaledBy(m, factor)` (both deferred), `WithEveryFaceReversed(m)` | the metamorphic laws; the arena parts belong in 01-geometry |
 | (new, `belongs-in: 04-discretization`) | `ScaledBy(DiscretizationCriteria, factor)`, `ScaledBy(Limit, factor)` | scaling the criteria with the model |
 | (new, `belongs-in: 05-face-meshing`) | `ScaledBy(FaceMeshingCriteria, factor)` | as above |
@@ -594,3 +592,9 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
 4. **`DiscretizeUsable` dropped** (finding 2, second half): `InitialState` calls layer 4's
    `DiscretizeAll`, which now takes the usability guard; this layer's `Undiscretized` is deleted in
    favour of layer 4's.
+5. **Provenance stand-ins deleted** (finding 5): `WholeInput` is layer 0's `Provenance` case, and
+   `Located` on a diagnostic and on a report is layer 0's, with its contract; the `#0` sentinel is
+   gone.
+6. **Per-dimension parameter floors** (finding 6): the scaling laws and theorem drop the `k >= 0`
+   and `Length >= Parameter` hypotheses and hold for `|k| <= 64`; `ScaledBy(m)`'s contract scales
+   `LengthParameter` and keeps `AngleParameter`.

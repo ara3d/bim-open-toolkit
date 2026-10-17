@@ -13,7 +13,6 @@
 //
 // Sections, in order:
 //  - Options
-//  - Provenance
 //  - Findings of the pipeline
 //  - Edges
 //  - Faces
@@ -74,38 +73,13 @@ library StepToMesh
         => MeshingOptions(o.Face.ScaledBy(factor), o.Level, o.MaxRefinementRounds, o.Decode, o.Quality);
 
     //==
-    // # Provenance
-
-    // belongs-in: 00-foundation
-    // The provenance of a finding about the input as a whole: a text that is
-    // not Part 21, options that cannot be honoured, a model with no faces.
-    // Written as STEP instance #0, a name no Part 21 file can hold (an
-    // instance name has a non-zero digit, P21 6.4.4.3; layer 3's
-    // Law_InstanceIdsPositive), until Provenance has a case of its own for it.
-    WholeInput(_: Provenance): Provenance
-        => Provenance.StepInstance(StepInstanceId(0));
-
-    // belongs-in: 00-foundation
-    // The diagnostic located at where when its own provenance is Nowhere;
-    // unchanged otherwise.
-    Located(d: Diagnostic, where: Provenance): Diagnostic
-        => d.Where == Provenance.Nowhere
-            ? Diagnostic(d.Severity, d.Code, d.Message, where, d.Measure)
-            : d;
-
-    // belongs-in: 00-foundation
-    // The report with every diagnostic whose provenance is Nowhere located at
-    // where. Checks, codes, and severities are kept, so every failed check
-    // keeps its diagnostic and IsClean is unchanged: a fourth constructor of
-    // Report beside Empty, Merge, and ReportOf.
-    Located(r: Report, where: Provenance): Report
-        => Report(r.Checks, r.Diagnostics.Map(d => d.Located(where)));
-
-    //==
     // # Findings of the pipeline
     //
     // Each finding the pipeline itself makes, with its code, severity, and
-    // fixed message in one place. Codes start with PIPELINE-.
+    // fixed message in one place. Codes start with PIPELINE-. A finding about
+    // the input as a whole is located at layer 0's Provenance.WholeInput, and
+    // layer 0's Located puts every finding a lower layer left at Nowhere
+    // there too.
 
     // The options cannot be honoured: a criterion is not well formed or the
     // round limit is negative. Measure: the round limit.
@@ -434,11 +408,12 @@ library StepToMesh
     // points, length parameters (a plane's, a cylinder's axial one) and the
     // pcurve coordinates along them, and the length tolerance. Angles, angle
     // parameters, knots, a line's parameter (its vector's magnitude scales
-    // instead), the angle tolerance, and the parameter floor are kept: a
-    // re-decode of the scaled file gives the same floor, since layer 0's
-    // ParameterFloor is invariant when the length tolerance and the model size
-    // scale together. Exact when factor is a power of two (the arena part
-    // belongs in 01-geometry).
+    // instead), the angle tolerance, and the angle parameter floor are kept;
+    // the length parameter floor is multiplied by factor. A re-decode of the
+    // scaled file gives the same two floors: layer 0's LengthParameterFloor
+    // scales with the length tolerance and the coordinate extent, and
+    // AngleParameterFloor is a ratio of two lengths. Exact when factor is a
+    // power of two (the arena part belongs in 01-geometry).
     ScaledBy(m: BrepModel, factor: Number): BrepModel;
 
     // belongs-in: 02-topology
