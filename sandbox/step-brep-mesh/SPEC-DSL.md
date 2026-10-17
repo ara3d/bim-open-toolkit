@@ -45,7 +45,10 @@ Law_LoopIsClosed(m: BrepModel, l: BrepLoopIndex): Boolean
   runner samples; the law does not loop.
 - Every approximate comparison names a tolerance drawn from a `Tolerances` value or a criteria
   record that is a parameter of the law. **No literal epsilon appears in a law.** Exact `==` is
-  used only on `Integer`, `Boolean`, typed indices, and sum tags.
+  used only on `Integer`, `Boolean`, typed indices, and sum tags, with one exception: a `Number`
+  that a function **copies** rather than computes (the first parameter of a discretization is the
+  domain's start, copied) may be compared with `==`, and the line carries the comment
+  `// exact by construction` so a reader and a checker know the equality is bitwise on purpose.
 - One statement per law. A law that says two things is two laws, so a failure names the one that
   failed.
 - A law references only names declared in this sandbox or in the stdlib at the pinned commit.
@@ -155,8 +158,8 @@ spec Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Edge
     requires m.IsEdgeInRange(e);
     requires c.IsWellFormed;
     ensures result.Edge == e;
-    ensures result.Parameters[0] == m.EdgeDomain(e).Start;
-    ensures result.Parameters[result.Parameters.Count - 1] == m.EdgeDomain(e).End;
+    ensures result.Parameters[0] == m.EdgeDomain(e).Range.Start;   // exact by construction
+    ensures result.Parameters[result.Parameters.Count - 1] == m.EdgeDomain(e).Range.End;   // exact by construction
     ensures Law_PointsLieOnCurve(m, result, m.Tolerances);
     ensures Law_SagittaWithinChordal(m, result, c);
     ensures Law_TurningAngleWithinAngular(m, result, c);
@@ -194,10 +197,10 @@ theorem WatertightByConstruction
     assume Law_IndicesInRange(m);
     assume Law_EveryEdgeUsedTwiceWithOppositeOrientation(m);
     assume Law_LoopsChainEndToStart(m);
-    conclude Law_MeshIsClosed(MeshModel(m, o).Mesh);
+    conclude MeshModel(m, o).Mesh.IsClosed;
     because "Each coedge consumes the unique EdgeDiscretization of its edge, forwards or reversed,
              and the mesh vertex index of the k-th point of an edge is a function of (edge, k) alone
-             (VertexLayout). The two faces adjacent to an edge therefore emit boundary segments over
+             (MeshVertexNumbering). The two faces adjacent to an edge therefore emit boundary segments over
              identical vertex index pairs, in opposite directions. Every interior segment is shared
              by the two triangles of one face by construction of a triangulation. Hence every mesh
              edge has exactly two incident elements with opposite traversal.";
@@ -219,8 +222,8 @@ forall ( <name> : <Type> ) [ in <Expr> ] : <Expr>
 exists ( <name> : <Type> ) [ in <Expr> ] : <Expr>
 ```
 
-`in` names a finite range or a continuous domain (`in m.EdgeDomain(e)`, `in 0.UpTo(n)`). The
-meaning is mathematical. The executable counterpart is a pointwise `Law_` taking the bound variable
+`in` names a finite range or a continuous domain (`in m.EdgeDomain(e).Range`, `in n.Range` for the
+integers 0 to n - 1, the stdlib's `Range` on `Integer`). The meaning is mathematical. The executable counterpart is a pointwise `Law_` taking the bound variable
 as a parameter, plus a `Check_` that samples the domain; the spec block cites both.
 
 ## 4. From law to verdict
