@@ -1,5 +1,6 @@
 using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
+using BimOpenFlow.Relations;
 using BimOpenFlow.Host;
 using BimOpenFlow.Nodes.Geometry;
 using BimOpenFlow.Studio;
@@ -12,7 +13,7 @@ namespace BimOpenFlow.NrcWorkflows.Tests;
 /// nrc-color-embodied-carbon) over duplex-enriched.ifc and the elements CSV, the per-storey carbon
 /// bar chart, and the table of written property values. Each evaluates green with the bim-profile
 /// registry and its answer node carries what the figure shows. Row counts cite
-/// samples/nrc/README.md (218 elements, 5 storey rows) and RollupGraphTests (2,441 property
+/// samples/nrc/README.md (218 elements, 5 storey rows) and RollupGraphTests (2,469 property
 /// writes); the nine categories cite expected_answers.json Q5.</summary>
 [TestFixture]
 public sealed class FigureGraphTests
@@ -80,6 +81,40 @@ public sealed class FigureGraphTests
             Assert.That(Enumerable.Range(0, coloured.Rows.Count).Count(row => IsUnmatched(coloured, row)),
                 Is.GreaterThan(0), "unanalysed instances (openings, spaces) stay grey");
         });
+    }
+
+    /// <summary>nrc-color-zone-eui colours each space by the intensity stored on its zone, read back from the
+    /// enriched file through ZoneOfSpace: the 20 spaces of the four zones take four colours, and the roof
+    /// space R301 and every non-space instance stay grey.</summary>
+    [Test]
+    public void ZoneColouring_ColoursTheTwentyZonedSpacesInFourColours_AndLeavesTheRestGrey()
+    {
+        // The graph reads the zone values through relations, so it needs the relation runtime's sources.
+        var snapshot = ModelGraphTests.EvaluateGreen(
+            ModelGraphTests.Document("nrc-color-zone-eui"), "nrc-color-zone-eui", Fixture.Registry(Fixture.Runtime));
+        var coloured = ((TableValue)snapshot.Results["answer"].Outputs[0]).Table;
+        var colouredRows = Enumerable.Range(0, coloured.Rows.Count).Where(row => !IsUnmatched(coloured, row)).ToList();
+        var palette = colouredRows
+            .Select(row => (coloured.Cell("r", row), coloured.Cell("g", row), coloured.Cell("b", row)))
+            .Distinct()
+            .Count();
+        var zoned = ZonedSpaceIds();
+        Assert.Multiple(() =>
+        {
+            Assert.That(coloured.ColumnNames(), Is.SupersetOf(new[] { "globalId", "r", "g", "b", "a" }));
+            Assert.That(ColouredElements(coloured), Is.EquivalentTo(zoned), "exactly the 20 spaces that are in a zone");
+            Assert.That(zoned, Has.Count.EqualTo(20));
+            Assert.That(palette, Is.EqualTo(4), "one colour for each of the four zone intensities");
+            Assert.That(Enumerable.Range(0, coloured.Rows.Count).Count(row => IsUnmatched(coloured, row)),
+                Is.GreaterThan(0), "the roof space and the building elements stay grey");
+        });
+    }
+
+    private static HashSet<string> ZonedSpaceIds()
+    {
+        var zones = Fixture.Runtime.Materialize(Plans.Csv("nrc", "nrc-zones.csv"));
+        return Enumerable.Range(0, zones.Rows.Count).Select(r => (string)zones.Cell("SpaceGlobalId", r)!)
+            .ToHashSet(StringComparer.Ordinal);
     }
 
     [Test]

@@ -1,0 +1,144 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 140
+    },
+    "model": {
+      "x": 40,
+      "y": 220
+    },
+    "meshes": {
+      "x": 389,
+      "y": 220
+    },
+    "zoneOfSpace": {
+      "x": 40,
+      "y": 520
+    },
+    "parameters": {
+      "x": 40,
+      "y": 700
+    },
+    "zoneValues": {
+      "x": 389,
+      "y": 560
+    },
+    "values": {
+      "x": 998,
+      "y": 560
+    },
+    "answer": {
+      "x": 1347,
+      "y": 380
+    }
+  },
+  "structure": {
+    "inputs": [
+      {
+        "default": "{SAMPLES}/duplex-enriched.ifc",
+        "description": "The enriched IFC to colour; instances that are not a zoned space stay grey.",
+        "kind": "FilePath",
+        "name": "model"
+      }
+    ],
+    "edges": [
+      {
+        "from": "model.path",
+        "to": "meshes.path"
+      },
+      {
+        "from": "zoneOfSpace.relation",
+        "to": "zoneValues.t1"
+      },
+      {
+        "from": "parameters.relation",
+        "to": "zoneValues.t2"
+      },
+      {
+        "from": "zoneValues.relation",
+        "to": "values.input"
+      },
+      {
+        "from": "meshes.instances",
+        "to": "answer.instances"
+      },
+      {
+        "from": "values.table",
+        "to": "answer.values"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "meshes",
+        "kind": "view3d.instances",
+        "version": 1
+      },
+      {
+        "id": "zoneOfSpace",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "parameters",
+        "kind": "rel.table",
+        "version": 1
+      },
+      {
+        "id": "zoneValues",
+        "kind": "rel.sql",
+        "version": 1
+      },
+      {
+        "id": "values",
+        "kind": "rel.materialize",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view3d.color",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Figure 8: the Duplex spaces coloured by the energy use intensity (kWh/m2/yr, synthetic) of their zone, on the viridis scale. The values are read back from the NRC_ZoneSummary set each IfcZone of the enriched file carries, reached through the ZoneOfSpace view; nothing is recomputed. The 20 spaces of the four zones take four colours (60.94 to 78.04); the roof space R301 and every other instance stay grey."
+    },
+    "model": {
+      "path": "$model"
+    },
+    "zoneOfSpace": {
+      "source": "duplex-enriched",
+      "table": "ZoneOfSpace"
+    },
+    "parameters": {
+      "source": "duplex-enriched",
+      "table": "ParameterText"
+    },
+    "zoneValues": {
+      "sql": "SELECT z.SpaceGlobalId AS GlobalId, z.ZoneName AS Zone,\n       CAST(p.Value AS DOUBLE) AS ZoneEnergyUseIntensity_kWh_per_m2_year\nFROM t1 z\nJOIN t2 p ON p.EntityIndex = z.ZoneIndex AND p.ParameterGroup = 'NRC_ZoneSummary'\n         AND p.Name = 'ZoneEnergyUseIntensity_kWh_per_m2_year'"
+    },
+    "values": {
+      "limit": "0"
+    },
+    "answer": {
+      "joinColumn": "globalId",
+      "valueColumn": "ZoneEnergyUseIntensity_kWh_per_m2_year",
+      "colorMap": "viridis"
+    }
+  }
+}
