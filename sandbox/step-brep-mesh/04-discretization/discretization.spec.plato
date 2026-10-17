@@ -130,7 +130,7 @@ spec EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>
     ensures forall (k: Integer) in 1.UpTo(result.Count - 1) : result[k + 1] - result[k] > m.Tolerances.Parameter.Value;
     ensures forall (k: Integer) in 0.UpTo(result.Count) : m.WithEdgeReversed(e).EdgeSeeds(e)[k] == result[k];
     measure result.Count;
-    deferred "polyline vertices, composite joints, and distinct knots read from the curve, clipped to the domain, merged within the parameter tolerance";
+    deferred "polyline vertices, composite joints, distinct knots, and on a Closed curve the copies of the join, read from the curve, clipped to the domain, merged within the parameter tolerance";
 }
 
 // The total turning of the curve's tangent over the edge domain, tangent jumps at seeds included.

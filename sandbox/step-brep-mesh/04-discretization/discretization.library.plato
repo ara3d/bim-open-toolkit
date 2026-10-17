@@ -100,13 +100,16 @@ library EdgeDiscretizing
                 && d.Parameters.All(t => m.EdgeDomain(d.Edge).Range.Contains(t)))
             : false;
 
-    // The point of the edge's curve at parameter t.
+    // The point of the edge's curve at parameter t. t is first moved into the curve's range by
+    // whole periods (layer 0's `Wrap`): an edge on a `Closed` curve may cross the join, and a
+    // closed curve's formula is evaluated only inside its range. The identity when aperiodic.
     PointOnEdge(m: BrepModel, e: BrepEdgeIndex, t: Number): Point3D
-        => m.Geometry.Eval(m.Edges[e].Curve, t);
+        => m.Geometry.Eval(m.Edges[e].Curve, m.Geometry.Domain(m.Edges[e].Curve).Wrap(t));
 
-    // The derivative of the edge's curve at parameter t, pointing towards increasing t.
+    // The derivative of the edge's curve at parameter t, pointing towards increasing t, after
+    // the same wrap.
     TangentOnEdge(m: BrepModel, e: BrepEdgeIndex, t: Number): Vector3D
-        => m.Geometry.Derivative(m.Edges[e].Curve, t);
+        => m.Geometry.Derivative(m.Edges[e].Curve, m.Geometry.Domain(m.Edges[e].Curve).Wrap(t));
 
     // The vertex at the start of the edge domain in the curve's parameter: the edge's `Start`
     // when the edge runs with its curve, its `End` otherwise.
@@ -119,7 +122,9 @@ library EdgeDiscretizing
 
     // deferred: the parameters at which every discretization of the edge must sample, sorted
     // increasing: the domain start, every polyline vertex, composite-segment joint, and distinct
-    // B-spline knot strictly inside the domain, and the domain end. Interior seeds closer than the
+    // B-spline knot strictly inside the domain, on a `Closed` curve every copy of the join (the
+    // range's start moved by whole periods) strictly inside the domain, where the point set
+    // closes but the tangent may jump, and the domain end. Interior seeds closer than the
     // `ParameterTolerance` to a neighbour are dropped. Depends on the curve and the domain only.
     EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>;
 
@@ -441,7 +446,9 @@ library EdgeDiscretizing
     // surface, each result unwrapped to
     // within half a period of its predecessor, and a point on a degenerate side of the surface (a
     // pole) given the `U` (or `V`) of its neighbour along the polyline, since `Project` leaves it
-    // arbitrary there. This is the one image function: face meshing draws its loops with it, so
+    // arbitrary there. Unwrapping uses layer 0's `NearestUnwrapped`, which treats a `Closed`
+    // direction like a periodic one, so a loop across the join of a clamped closed B-spline face
+    // does not zig-zag. This is the one image function: face meshing draws its loops with it, so
     // the image this layer certifies is the polygon face meshing triangulates. Always computed over the canonical (increasing-parameter) order of the
     // points and listed in d's order, so the image of `Reversed(d)` is this image reversed, bit
     // for bit: the same canonical-direction symmetry as `Discretize`.
@@ -452,21 +459,25 @@ library EdgeDiscretizing
     IsUnwrappedStep(dom: SurfaceDomain, a: UvCoordinate, b: UvCoordinate): Boolean
         => (b.U - a.U).IsUnwrappedIn(dom.U.Periodicity) && (b.V - a.V).IsUnwrappedIn(dom.V.Periodicity);
 
-    // True when a parameter difference is at most half a period long, or the direction is
-    // aperiodic.
+    // True when a parameter difference is at most half a period long, or the direction has no
+    // seam. A `Closed` direction has a seam like a periodic one.
     IsUnwrappedIn(x: Number, p: Periodicity): Boolean
         => match (p)
         {
             Aperiodic => true;
             Periodic(period) => 2.0 * x.Abs <= period;
+            Closed(period) => 2.0 * x.Abs <= period;
         };
 
-    // A parameter clamped into an aperiodic domain direction; unchanged in a periodic one.
+    // A parameter brought into a domain direction for evaluation: clamped into an aperiodic one,
+    // unchanged in a periodic one (the formula wraps), and wrapped into the range by whole
+    // periods in a `Closed` one (the point set wraps, the formula does not).
     ClampInto(cd: CurveDomain, x: Number): Number
         => match (cd.Periodicity)
         {
             Aperiodic => cd.Range.Clamp(x);
             Periodic(period) => x;
+            Closed(period) => cd.Wrap(x);
         };
 
     // A parameter-space point clamped into the surface's domain, so a law never evaluates the
