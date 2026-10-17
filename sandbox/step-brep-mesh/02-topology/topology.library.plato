@@ -30,6 +30,7 @@
 //  - Degenerate edges
 //  - Vertex links
 //  - Counts and Euler-Poincare
+//  - Connectivity
 //  - Bodies
 //  - Coupling measures
 //  - Parameter-space winding
@@ -640,6 +641,46 @@ library BrepTopology
     // Whether an Euler characteristic is even and at most 2 (ISO 10303-42 eq. 9).
     IsEvenAndAtMostTwo(chi: Integer): Boolean
         => chi % 2 == 0 && chi <= 2;
+
+    //==
+    // # Connectivity
+    //
+    // ISO 10303-42 requires a shell to be a connected face set: arcwise
+    // connected. Two faces touch when their bounds reference a common vertex
+    // (an edge both cite has its vertices in both) or, for faceted faces, a
+    // poly-loop point of one coincides with one of the other.
+
+    // The vertices the bounds of face f reference, with repeats. Precondition:
+    // m.IsFaceIntact(f).
+    FaceVertices(m: BrepModel, f: BrepFaceIndex): Array<BrepVertexIndex>
+        => m.Faces[f].Bounds.FlatMap(b => m.BoundVertices(b));
+
+    // The points of the poly loops that bound face f. Precondition:
+    // m.IsFaceIntact(f).
+    FacePolyPoints(m: BrepModel, f: BrepFaceIndex): Array<Point3D>
+        => m.Faces[f].Bounds.FlatMap(b => m.Loops[b.Loop].PolyLoopPointsOf);
+
+    // The points of a poly loop; none for other loops.
+    PolyLoopPointsOf(loop: BrepLoop): Array<Point3D>
+        => match (loop) {
+            EdgeLoop(coedges) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            VertexLoop(vertex) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            PolyLoop(points) => points;
+        };
+
+    // Whether faces a and b touch: a common vertex, or a coinciding pair of
+    // poly-loop points. Precondition: both faces intact.
+    FacesTouch(m: BrepModel, a: BrepFaceIndex, b: BrepFaceIndex): Boolean
+        => m.FaceVertices(a).Any(v => m.FaceVertices(b).Any(w => v == w))
+            || m.FacePolyPoints(a).Any(p => m.FacePolyPoints(b).Any(q => m.IsCoincident(p, q)));
+
+    // The number of connected components of shell s: the classes of its faces
+    // under the transitive closure of FacesTouch. Zero when no face of the
+    // shell is in range.
+    // deferred: union-find over the shell's faces, joining the faces that
+    // reference each vertex, and the faces whose poly-loop points share a cell
+    // of a spatial hash and coincide.
+    ShellComponentCount(m: BrepModel, s: ShellIndex): Integer;
 
     //==
     // # Bodies

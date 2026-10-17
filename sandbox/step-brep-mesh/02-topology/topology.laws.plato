@@ -23,6 +23,7 @@
 //  - Edge uses
 //  - Vertex links
 //  - Euler-Poincare
+//  - Connectivity
 //  - Bodies
 //  - Edge domains
 //  - Degenerate edges
@@ -147,6 +148,21 @@ library BrepTopologyLaws
             ? (m.IsShellInRange(s)
                 ? (m.Shells[s].DeclaredClosed ? m.ShellEulerPoincare(s).IsEvenAndAtMostTwo : true)
                 : true)
+            : true;
+
+    //==
+    // # Connectivity
+
+    // A shell is connected: its faces form one class under touching at a
+    // vertex or a coinciding poly-loop point (ISO 10303-42 connected_face_set,
+    // arcwise connected). Necessary, not only diagnostic: a sphere's faces and
+    // a torus's faces in one closed shell use every edge twice with opposite
+    // senses, have one-cycle links, and give chi = 2 + 0 = 2, so every other
+    // law of this layer passes with genus 0; two tori give 0 and pass as one
+    // torus. Holds for open and closed shells. Structural, exact.
+    Law_ShellIsConnected(m: BrepModel, s: ShellIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s) ? m.ShellComponentCount(s) <= 1 : true)
             : true;
 
     //==

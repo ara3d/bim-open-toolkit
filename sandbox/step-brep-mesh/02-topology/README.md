@@ -232,10 +232,13 @@ model instead of to each shell.
 The formula is necessary, not sufficient. Two L-shaped blocks touching at two corners give
 `chi = 2` with two non-manifold vertices, which only `Law_VertexLinkIsOneCycle` catches. A box with
 a sheet glued along one edge satisfies the formula with an edge used three times, which
-`Law_EveryEdgeUsedTwiceInClosedShell` catches. The theorem `ClosedOrientableShellHasEvenEuler` in
-the spec file shows which laws imply the parity half. Parity survives faces with handles, because a
-handle changes `chi` by 2. The bound `chi <= 2` needs a connected shell and handle-free faces, which
-no law here checks, so it stays a law of its own.
+`Law_EveryEdgeUsedTwiceInClosedShell` catches. A sphere's faces and a torus's faces in one closed
+shell give `chi = 2 + 0 = 2` and pass every local law as genus 0; only `Law_ShellIsConnected`
+catches them. The theorem `ClosedOrientableShellHasEvenEuler` in the spec file shows which laws
+imply the parity half. Parity survives faces with handles, because a handle changes `chi` by 2. The
+bound `chi <= 2` needs a connected shell, which `Law_ShellIsConnected` now checks, and handle-free
+faces, which no law here can check (a torus face with no bound counts 2 where its surface has 0), so
+it stays a law of its own.
 
 ## The vertex link
 
@@ -326,6 +329,7 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_VertexLinkIsOneCycle(m, s, v)` | in a shell declared closed, the link of a vertex with corners has one component | exact | structural, Error |
 | `Law_VertexLoopVertexIsIsolated(m, s, v)` | a vertex-loop vertex is an end of no edge the shell cites | exact | structural, Error |
 | `Law_EulerPoincareEvenAndBounded(m, s)` | in a shell declared closed, reduced `V - E + 2F - L` is even and at most 2 | exact | structural, Error |
+| `Law_ShellIsConnected(m, s)` | the shell's faces form one class under touching at a vertex or a coinciding poly-loop point | exact | structural, Error |
 | `Law_SolidShellsAreDeclaredClosed(m, b)` | the outer and void shells of a solid are declared closed | exact | structural, Error |
 | `Law_EdgeDomainIsForward(m, e)` | the edge domain's start does not exceed its end | parameter floor | structural, Error |
 | `Law_EdgeDomainEndsAtVertices(m, e, atStart)` | the curve at the domain end assigned to a vertex reproduces the vertex | `epsL` | geometric, W/E |
@@ -351,6 +355,7 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 | `IsDegenerateEdge(m, e)` | largest distance from a point to a curve arc: closed form for lines and conics, span subdivision and Newton for splines | 1 per edge, span count for splines |
 | `ReducedCounts(m, s)` | union-find over vertices joined by degenerate edges, one pass over bounds, spatial hash for poly-loop points | coedge sites plus bounds of the shell |
 | `LinkComponentCount(m, s, v)` | union-find over edge ends at `v` | corners at `v` |
+| `ShellComponentCount(m, s)` | union-find over the shell's faces joined at shared vertices and coinciding poly-loop points | coedge sites plus bounds of the shell |
 | `CornersAroundVertex(m, s, v)` | walk the link across shared ends | corners at `v` |
 | `IsPlainInParameters(m, f)` | sample coedges, `Project`, lift by continuity across periods, test closure and pole contact | coedge sites of `f` times samples |
 | `SignedParameterArea(m, f)` | shoelace over the lifted polygons, refined until the sign is settled | coedge sites of `f` times samples |
@@ -409,10 +414,9 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
 1. **Open shells' Euler law.** ISO's `chi + B` even and at most 2 needs `B`, the number of boundary
    cycles (a walk over free edges). Not stated; `Law_OpenShellEdgesUsedAtMostTwice` is the only
    open-shell law.
-2. **Global laws.** Shell connectivity (`Law_ShellIsConnected`) and global orientability by parity
-   search (`Law_ShellOrientable`, which names the faces to flip) are in research/VALIDATION-MATH.md
-   2.3. The local laws already catch every inconsistent edge, and the global laws would add the
-   diagnosis. Deferred to a later pass.
+2. **Global laws.** Shell connectivity is now `Law_ShellIsConnected` (fix wave). Global
+   orientability by parity search (`Law_ShellOrientable`, which names the faces to flip) is in
+   research/VALIDATION-MATH.md 2.3.
 3. **Faceted B-reps.** Edge-use and link laws see only indexed edges. A `PolyLoop`'s implicit edges
    are counted in `ReducedCounts` but no law checks their uses. Either layer 3 decodes poly loops
    into edge loops over line edges when points are shared by instance, or this layer adds poly-loop
@@ -492,3 +496,17 @@ Run on 2026-10-17 with the PLATO-PRIMER.md E.3 driver, built in the scratch fold
 | (none) | requested of 00-foundation: `PeriodicRepresentativeAbove`, `IsPeriodicDomain` | periodic arithmetic on layer 0's types; `Wrap` exists there but is proposed and gives `[0, P)`, not `(0, P]` |
 | (none) | requested of 01-geometry: `NormalAgreesWithParameterization(g, s)` | the sign `epsilon` that the `Lemon` torus case needs |
 | (proposed in layer 1's files) | to be fixed: `IsEveryIndexInRange(g)`, `PcurvesOf(g, c)`, `Domain`, `Eval`, `ClosestParameter` over `PcurveIndex` | this layer calls them for arena totality and for pcurves found through the curve |
+
+## Fix wave, 2026-10-17
+
+The fixes of the fix wave ([../reviews/FIX-WAVE.md](../reviews/FIX-WAVE.md)), from
+[../reviews/MATH-REVIEW-layers-0-6.md](../reviews/MATH-REVIEW-layers-0-6.md) (finding identifiers
+`F`, `M`, `C`, `T`, `H` there) and the "Findings in lower layers" of layers 7 and 8. One commit each.
+
+Applied:
+
+- **M1, T3 (connectivity).** `Law_ShellIsConnected(m, s)` over the deferred union-find
+  `ShellComponentCount(m, s)`, with `FacesTouch`, `FaceVertices`, `FacePolyPoints`. Faces are joined
+  at shared vertices (ISO's arcwise connectivity), not only at shared edges, so two cones apex to
+  apex are one component and fail the link law instead.
+

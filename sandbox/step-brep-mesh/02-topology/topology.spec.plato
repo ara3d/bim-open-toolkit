@@ -46,6 +46,7 @@ spec BrepModel
     invariant forall (s: Integer) in self.Shells.Count.Range :
         forall (v: Integer) in self.Vertices.Count.Range : Law_VertexLoopVertexIsIsolated(self, ShellIndex(s), BrepVertexIndex(v));
     invariant forall (s: Integer) in self.Shells.Count.Range : Law_EulerPoincareEvenAndBounded(self, ShellIndex(s));
+    invariant forall (s: Integer) in self.Shells.Count.Range : Law_ShellIsConnected(self, ShellIndex(s));
     invariant forall (b: Integer) in self.Bodies.Count.Range : Law_SolidShellsAreDeclaredClosed(self, BodyIndex(b));
     invariant forall (e: Integer) in self.Edges.Count.Range : Law_EdgeDomainIsForward(self, BrepEdgeIndex(e));
     invariant forall (e: Integer) in self.Edges.Count.Range :
@@ -149,6 +150,23 @@ spec LinkComponentCount(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Intege
     ensures m.CornersAtVertex(s, v).Count == 1 ? result == 1 : true;
     measure m.CornersAtVertex(s, v).Count;
     deferred "union-find over the edge ends ArrivingEnd(c) and LeavingEnd(c) of every corner c at v, uniting the two ends of each corner; the result is the number of classes, which equals the number of classes of corners under the transitive closure of CornersShareEnd";
+}
+
+// The number of components of a shell: classes of its faces under the
+// transitive closure of FacesTouch.
+spec ShellComponentCount(m: BrepModel, s: ShellIndex): Integer
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsShellInRange(s);
+    ensures m.ShellFaces(s).Count == 0 ? result == 0 : result >= 1;
+    ensures result <= m.ShellFaces(s).Count;
+    ensures m.ShellFaces(s).Count == 2
+        ? result == (m.FacesTouch(m.ShellFaces(s)[0], m.ShellFaces(s)[1]) ? 1 : 2)
+        : true;
+    ensures forall (f: BrepFaceIndex) in m.ShellFaces(s) :
+        m.ShellFaces(s).All(g => m.FacesTouch(f, g)) ? result <= 1 : true;
+    measure m.CoedgeSitesOfShell(s).Count + m.RawCounts(s).Loops;
+    deferred "union-find over the shell's faces: one pass over every bound, uniting the faces that reference each vertex; poly-loop points keyed through a spatial hash with cells of the length tolerance, uniting the faces of coinciding points; the result is the number of classes";
 }
 
 // The faces around a vertex in order. Exists when the link is one component
@@ -263,6 +281,6 @@ theorem ClosedOrientableShellHasEvenEuler
     assume forall (v: Integer) in m.Vertices.Count.Range : Law_VertexLinkIsOneCycle(m, s, BrepVertexIndex(v));
     assume forall (v: Integer) in m.Vertices.Count.Range : Law_VertexLoopVertexIsIsolated(m, s, BrepVertexIndex(v));
     conclude m.ShellEulerPoincare(s) % 2 == 0;
-    because "After the reduction the counted cells partition the shell's point set: vertices are points, edges are open arcs, and each face is an open surface from which each remaining bound removes a distinct boundary circle or point. Every edge has two uses with opposite composed directions, so the faces' orientations agree across every edge; every vertex has a link of one cycle, and a vertex loop's vertex touches no edge, so every point has a disk neighbourhood. The shell is therefore a closed orientable surface, possibly disconnected, whose Euler characteristic is a sum of terms 2 - 2H, each even. The count V - E + 2F - L assumes each face is a sphere with L_f holes (chi_c = 2 - L_f); a face with h handles in k pieces has chi_c = 2k - 2h - L_f, which differs by the even number 2(k - 1) - 2h, so the parity survives faces that break ISO's no-handle rule. The bound chi <= 2 also needs a connected shell and handle-free faces, which no law of this layer checks; that is why Law_EulerPoincareEvenAndBounded is a law and not a corollary.";
+    because "After the reduction the counted cells partition the shell's point set: vertices are points, edges are open arcs, and each face is an open surface from which each remaining bound removes a distinct boundary circle or point. Every edge has two uses with opposite composed directions, so the faces' orientations agree across every edge; every vertex has a link of one cycle, and a vertex loop's vertex touches no edge, so every point has a disk neighbourhood. The shell is therefore a closed orientable surface, possibly disconnected, whose Euler characteristic is a sum of terms 2 - 2H, each even. The count V - E + 2F - L assumes each face is a sphere with L_f holes (chi_c = 2 - L_f); a face with h handles in k pieces has chi_c = 2k - 2h - L_f, which differs by the even number 2(k - 1) - 2h, so the parity survives faces that break ISO's no-handle rule. The bound chi <= 2 also needs a connected shell (Law_ShellIsConnected; a sphere and a torus in one shell give 2 + 0) and handle-free faces, which no law of this layer can check (a torus face with no bound counts 2 where its surface has 0); that is why Law_EulerPoincareEvenAndBounded is a law and not a corollary.";
     tested by Law_EulerPoincareEvenAndBounded;
 }
