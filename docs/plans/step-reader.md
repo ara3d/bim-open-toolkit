@@ -115,5 +115,8 @@ STEP reader look nearly line for line like the IFC one.
 - 2026-10-17, TKT-302 done in ara3d-sdk f48f62b: complex instances parse; the u-blox 88 open with definition
   counts equal to those written; four IFC files (duplex, AC20-FZK-Haus, AC20-Institute-Var-2, large_test_model)
   dump byte-identical definitions before and after the change. The comparison also showed that the published
-  NuGet package Ara3D.IO.StepParser 1.6.1, which bim-open-data, bim-open-flow and ara3d-dataflow resolve, reads
-  `-1.` as 1: TKT-307. The IFC tools see neither fix until a new SDK package is released.
+  NuGet package Ara3D.IO.StepParser 1.6.1 reads `-1.` as 1: TKT-307. Correction, same day: inside the toolkit the
+  IFC projects build the parser from `deps/ara3d-sdk` source (bim-open-data's `Directory.Build.targets` rewrites SDK
+  package references into project references), so they already run both fixes; only standalone clones and nuget.org
+  users had 1.6.1. Ara3D.SDK 1.6.2 is being published for them. With the TKT-302 parser built from source,
+  Ara3D.Ifc.Tests passes 38, fails 0, skips 11 (49 in all), including the new `NegativeNumberTests`.

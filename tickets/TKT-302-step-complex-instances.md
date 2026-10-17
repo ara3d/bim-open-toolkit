@@ -16,7 +16,7 @@ closed: 2026-10-17
 ## Acceptance criteria
 
 - [x] a definition written #n=(A(...)B(...)...); exposes each partial entity's name and attribute list, in file order
-- [x] simple definitions keep their current API and token layout; existing IFC loading tests pass (checked instead by dumping every definition of four IFC files before and after: byte-identical; the IFC test projects resolve the NuGet package 1.6.1, not this source, so running them would not exercise the change)
+- [x] simple definitions keep their current API and token layout; existing IFC loading tests pass (checked instead by dumping every definition of four IFC files before and after: byte-identical; correction: the IFC projects build the parser from deps/ara3d-sdk source through bim-open-data's Directory.Build.targets, so they do run this change, and Ara3D.Ifc.Tests was run in full afterwards, see the plan's build log)
 - [x] a test covers a rational B-spline surface and an SI length unit written as complex instances
 - [x] the bim-open-toolkit deps.json pin for ara3d-sdk moves to the pushed commit
 
