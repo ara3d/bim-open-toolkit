@@ -1,0 +1,425 @@
+//==
+// # 00-foundation: specifications
+//
+// The invented constructs of SPEC-DSL.md section 3 for layer 0: type
+// invariants, function contracts, and theorems. Every invariant and ensures
+// cites a Law_ of foundation.laws.plato or is a short expression over names
+// declared in this layer or the stdlib. Read, not parsed: the gate skips this
+// file.
+//
+// Sections, in order:
+//  - Type invariants
+//  - Contracts: arithmetic resolution and tolerances
+//  - Contracts: periodic arithmetic and domains
+//  - Contracts: sampling
+//  - Contracts: checks and reports
+//  - Theorems
+
+//==
+// # Type invariants
+
+spec LengthTolerance
+{
+    invariant Law_LengthTolerancePositive(self);
+}
+
+spec AngleTolerance
+{
+    invariant Law_AngleTolerancePositive(self);
+}
+
+spec ParameterTolerance
+{
+    invariant Law_ParameterTolerancePositive(self);
+}
+
+spec UvTolerance
+{
+    invariant Law_ParameterTolerancePositive(self.U);
+    invariant Law_ParameterTolerancePositive(self.V);
+}
+
+// Plain data: the decoder (layer 3) builds it from the file and the
+// validator checks it, so no constructor list.
+spec Tolerances
+{
+    invariant Law_LengthTolerancePositive(self.Length);
+    invariant Law_AngleTolerancePositive(self.Angle);
+    invariant Law_ParameterTolerancePositive(self.Parameter);
+}
+
+spec Periodicity
+{
+    invariant self.IsWellFormed;
+}
+
+spec CurveDomain
+{
+    invariant self.Periodicity.IsWellFormed;
+    invariant self.Range.Start <= self.Range.End;
+}
+
+spec SurfaceDomain
+{
+    invariant self.U.Periodicity.IsWellFormed;
+    invariant self.U.Range.Start <= self.U.Range.End;
+    invariant self.V.Periodicity.IsWellFormed;
+    invariant self.V.Range.Start <= self.V.Range.End;
+}
+
+spec SamplePlan
+{
+    invariant self.IsWellFormed;
+}
+
+// Holds is "Worst <= bound" for the bound the check was built with, which
+// CheckWithin's and CheckExact's contracts state; Law_HoldingCheckIsWithinBound
+// is the executable form.
+spec Check
+{
+    invariant Law_UnmeasuredCheckFails(self);
+    constructor CheckWithin;
+    constructor CheckExact;
+    constructor WorseOf;
+}
+
+spec Report
+{
+    invariant forall (k: Integer) in self.Checks.Count.Range : Law_FailedCheckHasDiagnostic(self, k);
+    constructor Empty;
+    constructor Merge;
+    constructor ReportOf;
+}
+
+//==
+// # Contracts: arithmetic resolution and tolerances
+
+spec RoundingUnit(_: Number): Number
+{
+    // Exact on purpose: these comparisons define the unit roundoff.
+    ensures 1.0 + result == 1.0;
+    ensures 1.0 + result * 2.0 != 1.0;
+}
+
+spec SmallestNormal(_: Number): Number
+{
+    // Exact on purpose: the comparison defines normality for a power of two.
+    ensures result > 0.0;
+    ensures result + result * Number.RoundingUnit * 2.0 != result;
+    ensures result * 0.5 + result * 0.5 * Number.RoundingUnit * 2.0 == result * 0.5;
+}
+
+spec ResolutionAt(magnitude: Number): Number
+{
+    ensures magnitude.IsNaN ? true : result >= Number.SmallestNormal;
+    ensures magnitude.IsNaN ? true : result >= magnitude.Abs * Number.RoundingUnit * 32.0;
+}
+
+spec ParameterFloor(length: LengthTolerance, modelSize: Number): ParameterTolerance
+{
+    requires Law_LengthTolerancePositive(length);
+    requires modelSize.IsFinite;
+    requires modelSize >= 0.0;
+    ensures Law_ParameterTolerancePositive(result);
+    ensures result.Value >= ResolutionAt(modelSize.Max(Number.Tau * 2.0));
+    ensures result.Value >= length.Value / modelSize.Max(1.0);
+}
+
+spec ParameterToleranceAt(t: Tolerances, speed: Number, cap: Number): ParameterTolerance
+{
+    requires t.IsWellFormed;
+    requires IsSpeedAndCap(speed, cap);
+    ensures Law_ParameterTolerancePositive(result);
+    ensures Law_ParameterToleranceAtNeverBelowFloor(t, speed, cap);
+    ensures Law_ParameterToleranceAtMovesWithinLength(t, speed, cap);
+    ensures result.Value <= cap.Max(t.Parameter.Value);
+}
+
+spec UvToleranceAt(t: Tolerances, speedU: Number, speedV: Number, d: SurfaceDomain): UvTolerance
+{
+    requires t.IsWellFormed;
+    requires speedU.IsFinite;
+    requires speedU >= 0.0;
+    requires speedV.IsFinite;
+    requires speedV >= 0.0;
+    requires d.U.ParameterToleranceCap > 0.0;
+    requires d.V.ParameterToleranceCap > 0.0;
+    ensures result.IsWellFormed;
+    ensures Law_ParameterToleranceAtMovesWithinLength(t, speedU * 2.0, d.U.ParameterToleranceCap);
+    ensures Law_ParameterToleranceAtMovesWithinLength(t, speedV * 2.0, d.V.ParameterToleranceCap);
+}
+
+//==
+// # Contracts: periodic arithmetic and domains
+
+spec Wrap(t: Number, period: Number): Number
+{
+    requires t.CanWrap(period);
+    ensures Law_WrapLandsInPeriod(t, period);
+    ensures Law_WrapStaysInClass(t, period);
+    ensures result >= 0.0;
+    ensures result < period;
+}
+
+spec ShortestDifference(from: Number, to: Number, period: Number): Number
+{
+    requires (to - from).CanWrap(period);
+    ensures Law_ShortestDifferenceAtMostHalfPeriod(from, to, period);
+    ensures result + result >= 0.0 - period;
+    ensures result + result < period;
+}
+
+spec PeriodicDistance(a: Number, b: Number, period: Number): Number
+{
+    requires (b - a).CanWrap(period);
+    ensures result >= 0.0;
+    ensures result + result <= period;
+}
+
+spec NearestUnwrapped(t: Number, reference: Number, period: Number): Number
+{
+    requires (t - reference).CanWrap(period);
+    ensures (result - reference).Abs <= period * 0.5 + ResolutionAt(reference.Abs + period);
+    ensures PeriodicDistance(result, t, period) <= ResolutionAt(t.Abs + reference.Abs + period);
+}
+
+spec Wrap(d: CurveDomain, t: Number): Number
+{
+    requires d.CanWrap(t);
+    ensures d.Periodicity.IsPeriodic ? result >= d.Range.Start : result == t;   // exact by construction when aperiodic
+}
+
+spec NearestUnwrapped(d: CurveDomain, t: Number, reference: Number): Number
+{
+    requires d.Periodicity.IsPeriodic ? (t - reference).CanWrap(d.Periodicity.PeriodOr(0.0)) : t.IsFinite;
+}
+
+spec ContainsParameter(d: CurveDomain, t: Number, tol: ParameterTolerance): Boolean
+{
+    requires d.CanWrap(t);
+    requires Law_ParameterTolerancePositive(tol);
+}
+
+spec SameParameter(d: CurveDomain, a: Number, b: Number, t: ParameterTolerance): Boolean
+{
+    requires d.Periodicity.IsPeriodic ? (b - a).CanWrap(d.Periodicity.PeriodOr(0.0)) : true;
+    requires Law_ParameterTolerancePositive(t);
+}
+
+spec IsProper(d: CurveDomain, t: ParameterTolerance): Boolean
+{
+    requires Law_ParameterTolerancePositive(t);
+    ensures result ? d.ParameterLength > t.Value : true;
+    ensures result ? d.ParameterLength.IsFinite : true;
+}
+
+spec SidePoint(d: SurfaceDomain, s: DomainSide, along: Number): UvCoordinate
+{
+    ensures s.IsUSide ? result.U == d.SideValue(s) : result.V == d.SideValue(s);   // exact by construction
+}
+
+//==
+// # Contracts: sampling
+
+spec Samples(range: NumberInterval, count: Integer): Array<Number>
+{
+    requires count >= 2;
+    requires range.Start.IsFinite;
+    requires range.End.IsFinite;
+    ensures Law_SamplesHaveRequestedCount(range, count);
+    ensures Law_SamplesStartAtRangeStart(range, count);
+    ensures Law_SamplesEndAtRangeEnd(range, count);
+    ensures forall (k: Integer) in count.Range : Law_SamplesStrictlyIncreasing(range, count, k);
+    measure count;
+}
+
+spec Samples(d: CurveDomain, plan: SamplePlan): Array<Number>
+{
+    requires plan.IsWellFormed;
+    requires d.Range.Start.IsFinite;
+    requires d.Range.End.IsFinite;
+    ensures result.Count == plan.Count;
+    ensures forall (k: Integer) in plan.Count.Range : Law_DomainContainsItsSamples(d, plan, k, ParameterTolerance(ResolutionAt(d.Range.Start.Abs + d.Range.End.Abs + d.Periodicity.PeriodOr(0.0))));
+    measure plan.Count;
+}
+
+spec Samples(d: SurfaceDomain, plan: SamplePlan): Array<UvCoordinate>
+{
+    requires plan.IsWellFormed;
+    requires d.U.Range.Start.IsFinite;
+    requires d.U.Range.End.IsFinite;
+    requires d.V.Range.Start.IsFinite;
+    requires d.V.Range.End.IsFinite;
+    ensures result.Count == plan.Count * plan.Count;
+    measure plan.Count * plan.Count;
+}
+
+//==
+// # Contracts: checks and reports
+
+spec CheckWithin(law: String, worst: Number, bound: Number, where: Provenance): Check
+{
+    ensures result.Holds == (worst <= bound);
+    ensures result.Law == law;
+    ensures Law_HoldingCheckIsWithinBound(result, bound);
+    ensures Law_UnmeasuredCheckFails(result);
+}
+
+spec CheckExact(law: String, holds: Boolean, where: Provenance): Check
+{
+    ensures result.Holds == holds;
+    ensures Law_HoldingCheckIsWithinBound(result, 0.0);
+    ensures Law_UnmeasuredCheckFails(result);
+}
+
+spec WorseOf(a: Check, b: Check): Check
+{
+    requires a.Law == b.Law;
+    ensures Law_WorseOfHoldsExactlyWhenBothHold(a, b);
+    ensures result.Identical(a) || result.Identical(b);
+}
+
+spec DiagnosticOf(c: Check, g: ConstraintGroup, bound: Number, message: String): Diagnostic
+{
+    requires !c.Holds;
+    ensures result.Code == c.Law;
+    ensures result.Where == c.Where;
+    ensures result.Measure.Identical(c.Worst);
+}
+
+spec ReportOf(c: Check, g: ConstraintGroup, bound: Number, message: String): Report
+{
+    ensures result.Checks.Count == 1;
+    ensures result.Diagnostics.Count == (c.Holds ? 0 : 1);
+    ensures Law_FailedCheckHasDiagnostic(result, 0);
+}
+
+spec Merge(a: Report, b: Report): Report
+{
+    ensures result.Checks.Count == a.Checks.Count + b.Checks.Count;
+    ensures result.Diagnostics.Count == a.Diagnostics.Count + b.Diagnostics.Count;
+    ensures Law_MergeIsCleanExactlyWhenBothClean(a, b);
+    measure a.Checks.Count + b.Checks.Count + a.Diagnostics.Count + b.Diagnostics.Count;
+}
+
+//==
+// # Theorems
+
+theorem CoincidenceIsNotTransitive
+{
+    given t: LengthTolerance;
+    assume Law_LengthTolerancePositive(t);
+    conclude exists (a: Point3D) : exists (b: Point3D) : exists (c: Point3D) :
+        a.Coincident(b, t) && b.Coincident(c, t) && !a.Coincident(c, t);
+    because "Take a = (0, 0, 0), b = (0.75 t, 0, 0), c = (1.5 t, 0, 0). Then |a - b| = |b - c| =
+             0.75 t <= t and |a - c| = 1.5 t > t. So coincidence has no equivalence classes: welding
+             points by distance depends on the order of the welds, which is why the design numbers
+             mesh vertices by provenance and never welds.";
+}
+
+theorem CoincidenceChainBound
+{
+    given a: Point3D, b: Point3D, c: Point3D, t: LengthTolerance;
+    assume a.Coincident(b, t);
+    assume b.Coincident(c, t);
+    conclude a.Coincident(c, LengthTolerance(t.Value * 2.0 + ResolutionAt(t.Value)));
+    because "The triangle inequality gives |a - c| <= |a - b| + |b - c| <= 2 t in exact arithmetic.
+             Each computed distance has relative error below 4 unit roundoffs (three differences
+             each rounded once, three squares, two sums, one square root), so the computed |a - c|
+             is at most 2 t (1 + 8 u), inside 2 t + ResolutionAt(t) = 2 t + 32 u t. A chain of k
+             links stays within k t plus rounding, which is the cost of a non-transitive relation.";
+    tested by Law_CoincidenceComposesWithSummedTolerance;
+}
+
+theorem WrapIsTheCanonicalRepresentative
+{
+    given t: Number, period: Number;
+    assume t.CanWrap(period);
+    conclude t.Wrap(period) >= 0.0
+        && t.Wrap(period) < period
+        && PeriodicDistance(t.Wrap(period), t, period) <= ResolutionAt(t.Abs + period);
+    because "In exact arithmetic t - p floor(t / p) is the unique element of [0, p) congruent to t
+             modulo p. In floating point, CanWrap keeps |t / p| below 1 / (32 u), so floor(t / p)
+             is an exact integer k, possibly off by one when t / p rounds across an integer; p k
+             rounds with error at most u |t| and the subtraction is exact or rounds once, so r lies
+             within u (|t| + p) of [0, p); one correction, r + p when r < 0 or r - p when r >= p
+             (exact by Sterbenz's lemma), brings it into [0, p). The class error is at most
+             u (|t| + 3 p) plus the rounding of the distance computation, below 14 u (|t| + p);
+             2 000 000 adversarial cases in 64 and 32 bits gave at most 2 u (|t| + p).";
+    tested by Law_WrapLandsInPeriod, Law_WrapStaysInClass, Law_WrapIgnoresWholePeriods, Law_WrapIsIdempotent;
+}
+
+theorem ParameterToleranceBoundsMotion
+{
+    given t: Tolerances, speed: Number, cap: Number;
+    assume t.IsWellFormed;
+    assume IsSpeedAndCap(speed, cap);
+    conclude speed * t.ParameterToleranceAt(speed, cap).Value
+        <= t.Length.Value.Max(speed * t.Parameter.Value) + ResolutionAt(t.Length.Value.Max(speed * t.Parameter.Value));
+    because "For a C2 curve c with |c'(t0)| = speed, c(t0 + h) - c(t0) = h c'(t0) + O(h^2), so a
+             step |h| <= Length / speed moves the point by at most Length to first order. The cap
+             only lowers the tolerance, and where it binds speed * cap <= Length. The floor raises
+             it, and then the motion is speed * floor. The second-order term K h^2 / 2 (K a bound
+             on |c''|) stays below Length while h <= sqrt(2 Length / K), which holds for every
+             analytic STEP curve at tolerances below its radius; a B-spline span shorter than the
+             floor is where the first-order statement fails, and layer 1 reports it.";
+    tested by Law_ParameterToleranceAtMovesWithinLength, Law_ParameterToleranceAtNeverBelowFloor;
+}
+
+theorem UvToleranceBoundsMotion
+{
+    given t: Tolerances, speedU: Number, speedV: Number, d: SurfaceDomain, du: Number, dv: Number;
+    assume t.IsWellFormed;
+    assume IsSpeedAndCap(speedU, d.U.ParameterToleranceCap);
+    assume IsSpeedAndCap(speedV, d.V.ParameterToleranceCap);
+    assume speedU * 2.0 * t.Parameter.Value <= t.Length.Value;
+    assume speedV * 2.0 * t.Parameter.Value <= t.Length.Value;
+    assume du.Abs <= t.UvToleranceAt(speedU, speedV, d).U.Value;
+    assume dv.Abs <= t.UvToleranceAt(speedU, speedV, d).V.Value;
+    conclude speedU * du.Abs + speedV * dv.Abs <= t.Length.Value + ResolutionAt(t.Length.Value);
+    because "UvToleranceAt gives each direction the tolerance of a speed twice the partial's
+             length, so speedU |du| <= Length / 2 when the floor does not bind (the two speed
+             assumptions), whether or not the cap binds, and likewise in v. A
+             surface step is S_u du + S_v dv to first order, and |S_u du + S_v dv| <= |S_u| |du| +
+             |S_v| |dv| by the triangle inequality, whatever the angle between S_u and S_v. The box
+             is conservative: on an orthogonal parameterization the true bound is the disc
+             inscribed in it, smaller by a factor of up to sqrt(2).";
+}
+
+theorem ReportsFormAMonoid
+{
+    given a: Report, b: Report, c: Report;
+    conclude Law_MergeIsAssociative(a, b, c)
+        && Law_EmptyIsLeftIdentityOfMerge(a)
+        && Law_EmptyIsRightIdentityOfMerge(a);
+    because "Merge concatenates the check arrays and the diagnostic arrays separately, and
+             concatenation is associative with the empty array as its identity; a product of two
+             monoids is a monoid.";
+    tested by Law_MergeIsAssociative, Law_EmptyIsLeftIdentityOfMerge, Law_EmptyIsRightIdentityOfMerge;
+}
+
+theorem IsCleanIsAMonoidHomomorphism
+{
+    given a: Report, b: Report;
+    conclude Merge(a, b).IsClean == (a.IsClean && b.IsClean) && Report.Empty.IsClean;
+    because "IsClean is 'no element of Diagnostics is an Error'. The diagnostics of Merge(a, b) are
+             those of a followed by those of b, so an Error is among them exactly when it is among
+             a's or among b's; Empty has no diagnostics. So the verdict of a validation assembled
+             piece by piece equals the conjunction of the pieces' verdicts, in any grouping.";
+    tested by Law_MergeIsCleanExactlyWhenBothClean, Law_IsCleanExactlyWhenNoError;
+}
+
+theorem WorseOfFoldIsWellDefined
+{
+    given a: Check, b: Check, c: Check;
+    assume a.Law == b.Law;
+    assume b.Law == c.Law;
+    conclude Law_WorseOfIsAssociative(a, b, c) && Law_WorseOfHoldsExactlyWhenBothHold(a, b);
+    because "Outranks is a total preorder (failing above holding, then unmeasured above measured,
+             then by Worst), and WorseOf picks the leftmost greatest element; picking the leftmost
+             greatest element of a sequence under a total preorder does not depend on grouping. A
+             failing check outranks every holding one, so the fold holds exactly when every sample
+             held, and when it fails its Where names a failing sample, as SPEC-DSL.md requires of a
+             Check_.";
+    tested by Law_WorseOfIsAssociative, Law_WorseOfHoldsExactlyWhenBothHold;
+}

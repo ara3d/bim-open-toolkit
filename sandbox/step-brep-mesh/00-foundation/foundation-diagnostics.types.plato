@@ -1,0 +1,107 @@
+//==
+// # Provenance, checks, diagnostics, reports
+//
+// Layer 0 of the STEP B-rep to mesh design. Provenance is the map from a
+// result back to its source; a Check is a law evaluated over one value; a
+// Diagnostic is a finding with a severity; a Report collects both. The chain
+// is SPEC-DSL.md section 4: Law_X, then Check, then Diagnostic, then Report,
+// then IsClean.
+//
+// Sections, in order:
+//  - Provenance
+//  - Severity
+//  - Checks, diagnostics, reports
+
+//==
+// # Provenance
+
+// Where a mesh vertex sits on the exact model: on the lowest-dimensional model
+// cell that contains it (its carrier), with its parameter on that cell. A
+// vertex at a model vertex, at parameter Parameter of an edge's curve, or at
+// natural parameters Uv of a face's surface (radians or model lengths, not the
+// stdlib's normalized UV). Re-evaluating the carrier at the parameter gives the
+// vertex position within the length tolerance (layer 7).
+type MeshVertexProvenance
+    = OnVertex(Vertex: BrepVertexIndex)
+    | OnEdge(Edge: BrepEdgeIndex, Parameter: Number)
+    | OnFace(Face: BrepFaceIndex, Uv: UvCoordinate);
+
+// What a check or diagnostic is about: nothing in particular, a STEP instance,
+// a kernel object, or a mesh vertex or element. Every finding carries one so a
+// user can go from the finding to the entity in the file.
+type Provenance
+    = Nowhere
+    | StepInstance(Id: StepInstanceId)
+    | KernelVertex(Index: BrepVertexIndex)
+    | KernelEdge(Index: BrepEdgeIndex)
+    | KernelLoop(Index: BrepLoopIndex)
+    | KernelFace(Index: BrepFaceIndex)
+    | KernelShell(Index: ShellIndex)
+    | KernelBody(Index: BodyIndex)
+    | MeshVertex(Index: VertexIndex)
+    | MeshElement(Index: ElementIndex);
+
+//==
+// # Severity
+
+// How bad a finding is. Error: the result cannot be trusted (IsClean fails).
+// Warning: a geometric criterion exceeded by less than a factor of ten.
+// Info: a quality threshold missed, or a remark.
+type Severity
+    = Error
+    | Warning
+    | Info;
+
+// The three groups of constraint in the design's front README, which decide a
+// failed check's severity (SeverityOf). Topological: exact statements about
+// counts, indices, incidence, and orientation, structural rules of the file
+// included. Geometric: a measured distance or angle against a tolerance or
+// criterion. Quality: a preference with a threshold (minimum angle, aspect
+// ratio). Always written qualified: ConstraintGroup.Geometric, since layer 7's
+// ConformanceLevel also has a case Geometric.
+type ConstraintGroup
+    = Topological
+    | Geometric
+    | Quality;
+
+//==
+// # Checks, diagnostics, reports
+
+// One law evaluated over one value, sampled where the law is pointwise. Law is
+// the Law_ function's name; Worst is the worst measure seen, in the law's own
+// unit and oriented so that larger is worse; Where is the provenance of the
+// worst sample. Built only by CheckWithin, CheckExact, and WorseOf, so that
+// Holds is exactly "Worst <= bound" for the bound the check used. Worst is
+// NaN (Number.Unmeasured) when the measure could not be computed, and such a
+// check fails (Law_UnmeasuredCheckFails).
+type Check
+{
+    Law: String;
+    Holds: Boolean;
+    Worst: Number;
+    Where: Provenance;
+}
+
+// A finding: a failed check with its severity, or a problem found outside any
+// check (an unsupported STEP entity). Code is the failed law's name, or a
+// code of the producing layer for a finding outside any law; Message is a
+// fixed sentence (Plato strings cannot be composed); Measure is the check's
+// Worst, or NaN when the finding has no measure.
+type Diagnostic
+{
+    Severity: Severity;
+    Code: String;
+    Message: String;
+    Where: Provenance;
+    Measure: Number;
+}
+
+// The checks and diagnostics of one validation. Built only by Empty, Merge,
+// and ReportOf, so that every failed check has a diagnostic
+// (Law_FailedCheckHasDiagnostic). Reports form a monoid under Merge with
+// Empty as identity.
+type Report
+{
+    Checks: Array<Check>;
+    Diagnostics: Array<Diagnostic>;
+}

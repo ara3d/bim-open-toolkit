@@ -1,0 +1,295 @@
+//==
+// # BrepFoundationLaws
+//
+// The laws of layer 0 (README.md beside this file, "Laws"). A Law_ function
+// returns Boolean and states one property for all values of its parameters;
+// a leading guard `pre ? claim : true` makes it vacuously true outside its
+// hypotheses, and no guard can fault, because Number arithmetic never throws
+// and every array index is guarded with the conditional. Model laws run on
+// user data and fail with the severity the README lists; library laws are
+// tests of this layer; convention laws hold for values this library builds.
+// Rounding-only laws take their bound from ResolutionAt, never from a model
+// tolerance (SPEC-EXECUTION.md 5.9, item 4).
+//
+// Sections, in order:
+//  - Tolerances
+//  - Parameter tolerance at a point
+//  - Approximate equality
+//  - Periodic arithmetic
+//  - Domains and sampling
+//  - Checks
+//  - Reports
+//  - Indices and sides
+//  - Witnesses
+//  - Helpers
+
+library BrepFoundationLaws
+{
+    //==
+    // # Tolerances
+
+    // A length tolerance is a positive finite length. Model law, Error.
+    Law_LengthTolerancePositive(t: LengthTolerance): Boolean
+        => t.IsWellFormed;
+
+    // An angle tolerance is a positive finite angle. Model law, Error.
+    Law_AngleTolerancePositive(t: AngleTolerance): Boolean
+        => t.IsWellFormed;
+
+    // A parameter tolerance is a positive finite number. Model law, Error.
+    Law_ParameterTolerancePositive(t: ParameterTolerance): Boolean
+        => t.IsWellFormed;
+
+    // The length tolerance is no smaller than the arithmetic resolution at the
+    // model's size, so geometric verdicts at that size are not rounding noise.
+    // Model law over the model size, Warning: the file is not at fault, the
+    // Number width is.
+    Law_LengthToleranceResolvable(t: LengthTolerance, magnitude: Number): Boolean
+        => magnitude.IsFinite ? t.IsResolvable(magnitude) : true;
+
+    //==
+    // # Parameter tolerance at a point
+
+    // The derived parameter tolerance is never below the model's floor.
+    // Library law, exact.
+    Law_ParameterToleranceAtNeverBelowFloor(t: Tolerances, speed: Number, cap: Number): Boolean
+        => t.IsWellFormed && IsSpeedAndCap(speed, cap)
+            ? t.ParameterToleranceAt(speed, cap).Value >= t.Parameter.Value
+            : true;
+
+    // A parameter step within the derived tolerance moves the point by at most
+    // the length tolerance at the given speed, to first order, unless the floor
+    // binds, when it moves it by at most speed times the floor. Library law,
+    // within the rounding at that length.
+    Law_ParameterToleranceAtMovesWithinLength(t: Tolerances, speed: Number, cap: Number): Boolean
+    {
+        var reach = t.Length.Value.Max(speed * t.Parameter.Value);
+        return t.IsWellFormed && IsSpeedAndCap(speed, cap)
+            ? speed * t.ParameterToleranceAt(speed, cap).Value <= reach + ResolutionAt(reach)
+            : true;
+    }
+
+    //==
+    // # Approximate equality
+
+    // Every finite point coincides with itself. Library law, exact.
+    Law_CoincidentIsReflexive(p: Point3D, t: LengthTolerance): Boolean
+        => p.PositionVector.IsFinite && t.IsWellFormed ? p.Coincident(p, t) : true;
+
+    // Coincidence does not depend on the order of the two points. Library law,
+    // exact.
+    Law_CoincidentIsSymmetric(a: Point3D, b: Point3D, t: LengthTolerance): Boolean
+        => a.Coincident(b, t) == b.Coincident(a, t);
+
+    // Coincidence is not transitive, but it composes with summed tolerances:
+    // a within t of b and b within t of c put a within 2t of c. Library law,
+    // within the rounding at t.
+    Law_CoincidenceComposesWithSummedTolerance(a: Point3D, b: Point3D, c: Point3D, t: LengthTolerance): Boolean
+        => a.Coincident(b, t) && b.Coincident(c, t)
+            ? a.Coincident(c, LengthTolerance(t.Value * 2.0 + ResolutionAt(t.Value)))
+            : true;
+
+    // Every direction whose squared length is finite is the same direction as
+    // itself. Library law, exact.
+    Law_SameDirectionIsReflexive(d: Direction3D, t: AngleTolerance): Boolean
+        => d.Vector.LengthSquared.IsFinite && t.IsWellFormed ? d.SameDirection(d, t) : true;
+
+    //==
+    // # Periodic arithmetic
+
+    // Wrap lands in [0, period). Library law, exact.
+    Law_WrapLandsInPeriod(t: Number, period: Number): Boolean
+        => t.CanWrap(period) ? t.Wrap(period).IsInPeriod(period) : true;
+
+    // Wrapping a wrapped value changes nothing. Library law; it holds exactly
+    // and is stated within the tolerance by the house rule on Numbers.
+    Law_WrapIsIdempotent(t: Number, period: Number, tol: ParameterTolerance): Boolean
+        => t.CanWrap(period) && tol.IsWellFormed
+            ? (t.Wrap(period).Wrap(period) - t.Wrap(period)).Abs <= tol.Value
+            : true;
+
+    // Wrap(t) names the same point of the circle as t. Library law, within the
+    // rounding at |t| + period.
+    Law_WrapStaysInClass(t: Number, period: Number): Boolean
+        => t.CanWrap(period) && (t - t.Wrap(period)).CanWrap(period)
+            ? PeriodicDistance(t.Wrap(period), t, period) <= ResolutionAt(t.Abs + period)
+            : true;
+
+    // Adding a period does not change the wrapped value, measured around the
+    // circle: next to the seam Wrap(t) may be just below the period and
+    // Wrap(t + period) just above zero. Library law, within any parameter
+    // tolerance the arithmetic can resolve at |t| + period.
+    Law_WrapIgnoresWholePeriods(t: Number, period: Number, tol: ParameterTolerance): Boolean
+        => t.CanWrap(period) && (t + period).CanWrap(period) && tol.IsWellFormed && tol.IsResolvable(t.Abs + period)
+            ? PeriodicDistance((t + period).Wrap(period), t.Wrap(period), period) <= tol.Value
+            : true;
+
+    // The shortest difference is at most half a period, stated as 2|d| <=
+    // period because doubling is exact and halving is not. Library law, exact.
+    Law_ShortestDifferenceAtMostHalfPeriod(from: Number, to: Number, period: Number): Boolean
+        => (to - from).CanWrap(period)
+            ? ShortestDifference(from, to, period).Abs + ShortestDifference(from, to, period).Abs <= period
+            : true;
+
+    // The unwrapped copy lies within half a period of the reference. Library
+    // law, within any parameter tolerance resolvable at |reference| + period.
+    Law_NearestUnwrappedWithinHalfPeriodOfReference(t: Number, reference: Number, period: Number, tol: ParameterTolerance): Boolean
+        => (t - reference).CanWrap(period) && tol.IsWellFormed && tol.IsResolvable(reference.Abs + period)
+            ? (t.NearestUnwrapped(reference, period) - reference).Abs <= period * 0.5 + tol.Value
+            : true;
+
+    // The unwrapped copy names the same point of the circle as t. Library law,
+    // within any parameter tolerance resolvable at |t| + |reference| + period.
+    Law_NearestUnwrappedIsSameParameter(t: Number, reference: Number, period: Number, tol: ParameterTolerance): Boolean
+        => (t - reference).CanWrap(period)
+            && tol.IsWellFormed
+            && tol.IsResolvable(t.Abs + reference.Abs + period)
+            && (t - t.NearestUnwrapped(reference, period)).CanWrap(period)
+            ? PeriodicDistance(t.NearestUnwrapped(reference, period), t, period) <= tol.Value
+            : true;
+
+    //==
+    // # Domains and sampling
+
+    // Every sample of a proper domain lies in it. Ties Samples, IsProper, and
+    // ContainsParameter together. Library law, within any parameter tolerance
+    // resolvable at the domain's ends and period.
+    Law_DomainContainsItsSamples(d: CurveDomain, plan: SamplePlan, k: Integer, tol: ParameterTolerance): Boolean
+        => plan.IsWellFormed
+            && k >= 0
+            && k < plan.Count
+            && tol.IsWellFormed
+            && d.IsProper(tol)
+            && d.CanWrap(d.Range.End)
+            && tol.IsResolvable(d.Range.Start.Abs + d.Range.End.Abs + d.Periodicity.PeriodOr(0.0))
+            ? d.ContainsParameter(d.Samples(plan)[k], tol)
+            : true;
+
+    // Samples returns the requested number of values. Library law, exact.
+    Law_SamplesHaveRequestedCount(range: NumberInterval, count: Integer): Boolean
+        => count >= 2 ? range.Samples(count).Count == count : true;
+
+    // The first sample is the range's start, copied. Library law, exact by
+    // construction.
+    Law_SamplesStartAtRangeStart(range: NumberInterval, count: Integer): Boolean
+        => count >= 2 ? range.Samples(count)[0].Identical(range.Start) : true;
+
+    // The last sample is the range's end, copied. Library law, exact by
+    // construction.
+    Law_SamplesEndAtRangeEnd(range: NumberInterval, count: Integer): Boolean
+        => count >= 2 ? range.Samples(count)[count - 1].Identical(range.End) : true;
+
+    // Sample k is below sample k + 1 whenever the steps are resolvable.
+    // Library law, exact.
+    Law_SamplesStrictlyIncreasing(range: NumberInterval, count: Integer, k: Integer): Boolean
+        => range.StepsAreResolvable(count) && k >= 0 && k < count - 1
+            ? range.Samples(count)[k] < range.Samples(count)[k + 1]
+            : true;
+
+    //==
+    // # Checks
+
+    // A check that holds has a Worst within the bound it was checked against.
+    // Convention law: it holds for every check CheckWithin, CheckExact (bound
+    // 0), and WorseOf build, applied with that check's own bound; layer 7
+    // applies it to each Check_ with its bound.
+    Law_HoldingCheckIsWithinBound(c: Check, bound: Number): Boolean
+        => c.Holds ? c.Worst <= bound : true;
+
+    // A check whose measure could not be taken fails. Convention law.
+    Law_UnmeasuredCheckFails(c: Check): Boolean
+        => c.Worst.IsNaN ? !c.Holds : true;
+
+    // The worse of two checks holds exactly when both hold. Library law,
+    // exact.
+    Law_WorseOfHoldsExactlyWhenBothHold(a: Check, b: Check): Boolean
+        => WorseOf(a, b).Holds == (a.Holds && b.Holds);
+
+    // Folding checks with WorseOf gives the same check whatever the grouping.
+    // Library law, exact.
+    Law_WorseOfIsAssociative(a: Check, b: Check, c: Check): Boolean
+        => WorseOf(WorseOf(a, b), c).Identical(WorseOf(a, WorseOf(b, c)));
+
+    //==
+    // # Reports
+
+    // Merge is associative. Library law, exact.
+    Law_MergeIsAssociative(a: Report, b: Report, c: Report): Boolean
+        => Merge(Merge(a, b), c).Identical(Merge(a, Merge(b, c)));
+
+    // The empty report is a left identity of Merge. Library law, exact.
+    Law_EmptyIsLeftIdentityOfMerge(r: Report): Boolean
+        => Merge(Report.Empty, r).Identical(r);
+
+    // The empty report is a right identity of Merge. Library law, exact.
+    Law_EmptyIsRightIdentityOfMerge(r: Report): Boolean
+        => Merge(r, Report.Empty).Identical(r);
+
+    // A report is clean exactly when no diagnostic has severity Error.
+    // Library law, exact.
+    Law_IsCleanExactlyWhenNoError(r: Report): Boolean
+        => r.IsClean == (r.ErrorCount == 0);
+
+    // A merged report is clean exactly when both parts are. Library law,
+    // exact.
+    Law_MergeIsCleanExactlyWhenBothClean(a: Report, b: Report): Boolean
+        => Merge(a, b).IsClean == (a.IsClean && b.IsClean);
+
+    // Every failed check of a report has a diagnostic carrying its law's name.
+    // Convention law over reports built by Empty, Merge, and ReportOf.
+    Law_FailedCheckHasDiagnostic(r: Report, k: Integer): Boolean
+        => r.Checks.IsValidIndex(k)
+            ? (r.Checks[k].Holds ? true : r.Diagnostics.Any(d => d.Code == r.Checks[k].Law))
+            : true;
+
+    //==
+    // # Indices and sides
+
+    // A typed index means none exactly when its value is negative. Library
+    // law over every IIndex type, exact.
+    Law_IsNoneExactlyWhenNegative(i: IIndex): Boolean
+        => i.IsNone == (i.Value < 0);
+
+    // The opposite of the opposite side is the side. Library law, exact.
+    Law_OppositeSideIsInvolution(s: DomainSide): Boolean
+        => s.OppositeSide.OppositeSide == s;
+
+    //==
+    // # Witnesses
+
+    // Tolerances for a model in millimetres about a metre across: 1e-6 mm
+    // length, 1e-8 rad angle, and the parameter floor of a 1000 mm model,
+    // 1e-9.
+    Witness_Tolerances(_: Tolerances): Tolerances
+        => Tolerances(LengthTolerance(1e-6), AngleTolerance(Angle(1e-8)), LengthTolerance(1e-6).ParameterFloor(1000.0));
+
+    // The domain of a full circle: [0, 2 pi] with period 2 pi.
+    Witness_FullCircleDomain(_: CurveDomain): CurveDomain
+        => CurveDomain(NumberInterval(0.0, Number.Tau), Periodicity.Periodic(Number.Tau));
+
+    // The domain of a STEP spherical_surface: longitude u in [0, 2 pi],
+    // periodic; latitude v in [-pi/2, pi/2], aperiodic, its sides VMin and
+    // VMax collapsed to the two poles.
+    Witness_SphereDomain(_: SurfaceDomain): SurfaceDomain
+        => SurfaceDomain(
+            CurveDomain.Witness_FullCircleDomain,
+            CurveDomain(NumberInterval(Number.Pi * -0.5, Number.Pi * 0.5), Periodicity.Aperiodic));
+
+    // A report with one passing exact check and one failing measured check
+    // with its Warning: a 1e-6 tolerance against a resolution of 2e-6.
+    Witness_MixedReport(_: Report): Report
+        => Merge(
+            ReportOf(
+                CheckExact("Law_LengthTolerancePositive", true, Provenance.Nowhere),
+                ConstraintGroup.Topological, 0.0, "The length tolerance is a positive finite length."),
+            ReportOf(
+                CheckWithin("Law_LengthToleranceResolvable", 2e-6, 1e-6, Provenance.Nowhere),
+                ConstraintGroup.Geometric, 1e-6, "The length tolerance is below the arithmetic resolution at the model's size."));
+
+    //==
+    // # Helpers
+
+    // True when x lies in [0, period).
+    IsInPeriod(x: Number, period: Number): Boolean
+        => x >= 0.0 && x < period;
+}
