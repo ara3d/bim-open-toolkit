@@ -4,7 +4,6 @@
 // Sections, in order:
 //  - Criteria
 //  - Edge facts
-//  - Lower-layer declarations the contract lacks
 //  - Segment-count floors
 //  - Circular arcs in closed form
 //  - Segment measures
@@ -150,91 +149,6 @@ library EdgeDiscretizing
     // edges would make that loop a digon of zero area, so each such edge gets two segments.
     IsInTwoEdgeLoop(m: BrepModel, e: BrepEdgeIndex): Boolean
         => m.Loops.Any(l => l.CoedgeCount == 2 && l.CitesEdge(e));
-
-    //==
-    // # Lower-layer declarations the contract lacks
-    //
-    // Each is needed here and belongs in a lower layer; the supervising session moves it, or
-    // replaces it with that layer's own declaration, when the layers are merged.
-
-    // belongs-in: 02-topology
-    // The number of coedges of a loop; 0 for a vertex loop or a poly loop.
-    CoedgeCount(l: BrepLoop): Integer
-        => match (l)
-        {
-            EdgeLoop(coedges) => coedges.Count;
-            VertexLoop(vertex) => 0;
-            PolyLoop(points) => 0;
-        };
-
-    // belongs-in: 02-topology
-    // True when the loop cites the edge.
-    CitesEdge(l: BrepLoop, e: BrepEdgeIndex): Boolean
-        => match (l)
-        {
-            EdgeLoop(coedges) => coedges.Any(c => c.Edge == e);
-            VertexLoop(vertex) => false;
-            PolyLoop(points) => false;
-        };
-
-    // belongs-in: 02-topology
-    // True when the loop at index l cites the edge.
-    LoopUsesEdge(m: BrepModel, l: BrepLoopIndex, e: BrepEdgeIndex): Boolean
-        => m.Loops[l].CitesEdge(e);
-
-    // belongs-in: 02-topology
-    // True when one of the face's bounds cites the edge.
-    FaceUsesEdge(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
-        => m.Faces[f].Bounds.Any(b => m.LoopUsesEdge(b.Loop, e));
-
-    // belongs-in: 02-topology
-    // The faces whose bounds cite the edge, each once, in face order. Quadratic as written; an
-    // implementation builds an edge-to-face table once per model.
-    FacesOfEdge(m: BrepModel, e: BrepEdgeIndex): Array<BrepFaceIndex>
-        => m.Faces.Count.MapRange(i => BrepFaceIndex(i))
-            .FlatMap(f => Repeat(m.FaceUsesEdge(f, e) ? 1 : 0, f));
-
-    // belongs-in: 02-topology
-    // The other orientation.
-    Opposite(o: EdgeOrientation): EdgeOrientation
-        => match (o)
-        {
-            Forward => EdgeOrientation.Reversed;
-            Reversed => EdgeOrientation.Forward;
-        };
-
-    // belongs-in: 02-topology
-    // The same edge traversed the other way: ends swapped and the sense flipped, so it runs over
-    // the same curve points in the opposite direction.
-    SwappedEnds(edge: BrepEdge): BrepEdge
-        => BrepEdge(edge.End, edge.Start, edge.Curve, !edge.SameSense);
-
-    // belongs-in: 02-topology
-    // The loop with every citation of the edge flipped.
-    WithUsesFlipped(l: BrepLoop, e: BrepEdgeIndex): BrepLoop
-        => match (l)
-        {
-            EdgeLoop(coedges) => BrepLoop.EdgeLoop(
-                coedges.Map(c => c.Edge == e ? Coedge(c.Edge, c.Orientation.Opposite) : c));
-            VertexLoop(vertex) => l;
-            PolyLoop(points) => l;
-        };
-
-    // belongs-in: 02-topology
-    // The model with one edge reversed: its ends swapped, its sense flipped, and every citation
-    // of it flipped. The same solid with the same faces; the metamorphic input of the
-    // edge-reversal laws (research/VALIDATION-MATH.md 6.4).
-    WithEdgeReversed(m: BrepModel, e: BrepEdgeIndex): BrepModel
-        => BrepModel(
-            m.Geometry,
-            m.Vertices,
-            m.Edges.Count.MapRange(i => i == e.Value ? m.Edges[i].SwappedEnds : m.Edges[i]),
-            m.Loops.Map(l => l.WithUsesFlipped(e)),
-            m.Faces,
-            m.Shells,
-            m.Bodies,
-            m.Tolerances,
-            m.Unit);
 
     //==
     // # Segment-count floors
