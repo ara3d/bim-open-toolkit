@@ -120,3 +120,8 @@ STEP reader look nearly line for line like the IFC one.
   package references into project references), so they already run both fixes; only standalone clones and nuget.org
   users had 1.6.1. Ara3D.SDK 1.6.2 is being published for them. With the TKT-302 parser built from source,
   Ara3D.Ifc.Tests passes 38, fails 0, skips 11 (49 in all), including the new `NegativeNumberTests`.
+- 2026-10-17, TKT-305 preparatory chunk, bim-open-data 2b4104b: the schema-free half of `FaceSetBuilder` moves into
+  `Ara3D.MeshKernel` as `public static FaceDrop? AddFace(this WeldedMeshBuilder mesh, SurfaceMap map,
+  IReadOnlyList<Vector3> outer, IReadOnlyList<IReadOnlyList<Vector3>> holes, bool sameSense)` (`Faces/FaceMesher.cs`;
+  `FaceRingTriangulation`, `FaceDrop` and `WeldedMeshBuilder` beside it). The IFC mesher keeps the reading and the
+  diagnostics; Ara3D.Ifc.Mesher.Tests pass 164 before and after.
