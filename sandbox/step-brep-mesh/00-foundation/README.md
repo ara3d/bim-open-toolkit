@@ -211,18 +211,22 @@ The chain is SPEC-DSL.md section 4:
 Law_X  ->  Check (CheckWithin, CheckExact, folded by WorseOf)  ->  ReportOf  ->  Merge  ->  IsClean
 ```
 
-- A `Check`'s `Worst` is a measure in the law's own unit, oriented so that larger is worse.
-  `CheckWithin(law, worst, bound, where)` sets `Holds` to `worst <= bound`; `CheckExact` uses 0 for
-  holds, 1 for fails, against bound 0. Both are the only constructors besides `WorseOf`, so
-  `Law_HoldingCheckIsWithinBound` holds by construction. A measure that could not be taken is
+- A `Check`'s `Worst` is a measure in the law's own unit, oriented so that larger is worse, and
+  its `Bound` is the bound that sample was checked against. `CheckWithin(law, worst, bound, where)`
+  sets `Holds` to `worst <= bound` and keeps the bound; `CheckExact` uses 0 for holds, 1 for fails,
+  against bound 0. Both are the only constructors besides `WorseOf`, so
+  `Law_HoldsExactlyWhenWithinBound` is a type invariant. A measure that could not be taken is
   `Number.Unmeasured` (NaN), never 0, and the check fails.
 - `WorseOf` folds per-sample checks into one: a failing check outranks a holding one, then an
-  unmeasured one a measured one, then the larger `Worst`; ties keep the left. `Outranks` is a
-  total preorder, so the fold is associative, and when the result fails its `Where` names a
-  failing sample, as SPEC-DSL.md requires of a `Check_`.
-- `ReportOf(check, group, bound, message)` is the one place a check becomes a diagnostic: the check,
-  plus, when it failed, a `Diagnostic` whose `Code` is the law's name and whose severity comes from
-  `SeverityOf`. `ReportOf(diagnostics)` wraps findings that no check produced.
+  unmeasured one a measured one, then the larger `Exceedance` (`Worst / Bound`; infinity for a
+  failed exact check). Ties keep the left. Ranking by exceedance and not by raw `Worst` matters
+  because the parameter tolerance is per point: a sample 3e-9 past a bound of 1e-9 is worse than one
+  5e-6 inside a bound of 1e-5. `Outranks` is a total preorder, so the fold is associative, and
+  when the result fails its `Where` names the failing sample farthest past its own bound.
+- `ReportOf(check, group, message)` is the one place a check becomes a diagnostic: the check, plus,
+  when it failed, a `Diagnostic` whose `Code` is the law's name and whose severity comes from
+  `SeverityOf` of the check's own `Worst` and `Bound`. `ReportOf(diagnostics)` wraps findings that
+  no check produced.
 - `Report` is a monoid under `Merge` (concatenation of both arrays) with `Report.Empty` as
   identity, and `IsClean` is a monoid homomorphism into Booleans under "and": a validation assembled
   piece by piece is clean exactly when every piece is.
@@ -296,8 +300,10 @@ to be at least that rounding bound.
 | `Law_SamplesStartAtRangeStart` | the first sample is `range.Start` | exact by construction | library, test |
 | `Law_SamplesEndAtRangeEnd` | the last sample is `range.End` | exact by construction | library, test |
 | `Law_SamplesStrictlyIncreasing` | sample k is below sample k + 1 when the steps are resolvable | exact | library, test |
-| `Law_HoldingCheckIsWithinBound` | a check that holds has `Worst <= bound` for its own bound | exact | convention, test |
+| `Law_HoldsExactlyWhenWithinBound` | a check holds exactly when `Worst <= Bound` | exact | convention, test |
+| `Law_CheckBoundIsNonNegative` | a check's `Bound` is finite and at least 0 | exact | convention, test |
 | `Law_UnmeasuredCheckFails` | a check with a NaN `Worst` fails | exact | convention, test |
+| `Law_WorseOfKeepsTheGreaterExceedance` | the fold keeps the sample farthest past its own bound | exact | library, test |
 | `Law_WorseOfHoldsExactlyWhenBothHold` | `WorseOf(a, b)` holds exactly when both do | exact | library, test |
 | `Law_WorseOfIsAssociative` | the `WorseOf` fold ignores grouping | exact | library, test |
 | `Law_MergeIsAssociative` | `Merge` is associative | exact | library, test |
@@ -427,3 +433,10 @@ Applied:
    ("Closed directions" above). New: `HasSeam` (on `Periodicity` and `CurveDomain`),
    `Law_ClosedPeriodIsRangeLength`, `Law_WrapOnClosedDomainStaysInRange`,
    `Witness_ClosedSplineDomain`.
+2. **C9, T4, F7 (third item), layer 7 finding 4: `Check.Bound`.** Set by `CheckWithin` (its bound)
+   and `CheckExact` (0), kept by `WorseOf`. `WorseOf` ranks by `Exceedance`, so the fold keeps the
+   sample farthest past its own per-point bound and `SeverityOf` grades that sample.
+   `DiagnosticOf(c, g, message)` and `ReportOf(c, g, message)` drop their `bound` argument and read
+   the check's. `Law_HoldingCheckIsWithinBound(c, bound)`, false for any bound but the check's own,
+   is replaced by `Law_HoldsExactlyWhenWithinBound(c)`, now a type invariant; new
+   `Law_CheckBoundIsNonNegative`, `Law_WorseOfKeepsTheGreaterExceedance`, `Exceedance`.

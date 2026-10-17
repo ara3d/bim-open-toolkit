@@ -69,16 +69,19 @@ type ConstraintGroup
 
 // One law evaluated over one value, sampled where the law is pointwise. Law is
 // the Law_ function's name; Worst is the worst measure seen, in the law's own
-// unit and oriented so that larger is worse; Where is the provenance of the
-// worst sample. Built only by CheckWithin, CheckExact, and WorseOf, so that
-// Holds is exactly "Worst <= bound" for the bound the check used. Worst is
-// NaN (Number.Unmeasured) when the measure could not be computed, and such a
-// check fails (Law_UnmeasuredCheckFails).
+// unit and oriented so that larger is worse; Bound is the bound that sample
+// was checked against (0 for an exact law), so per-point bounds survive the
+// fold; Where is the provenance of the worst sample. Built only by
+// CheckWithin, CheckExact, and WorseOf, so that Holds is exactly "Worst <=
+// Bound" (Law_HoldsExactlyWhenWithinBound). Worst is NaN (Number.Unmeasured)
+// when the measure could not be computed, and such a check fails
+// (Law_UnmeasuredCheckFails).
 type Check
 {
     Law: String;
     Holds: Boolean;
     Worst: Number;
+    Bound: Number;
     Where: Provenance;
 }
 

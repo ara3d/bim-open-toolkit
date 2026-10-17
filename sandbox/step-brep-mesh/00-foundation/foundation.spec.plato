@@ -73,11 +73,12 @@ spec SamplePlan
     invariant self.IsWellFormed;
 }
 
-// Holds is "Worst <= bound" for the bound the check was built with, which
-// CheckWithin's and CheckExact's contracts state; Law_HoldingCheckIsWithinBound
-// is the executable form.
+// Holds is "Worst <= Bound" for the bound the check stores: a type invariant
+// since the fix wave, no longer a convention about a bound held elsewhere.
 spec Check
 {
+    invariant Law_HoldsExactlyWhenWithinBound(self);
+    invariant Law_CheckBoundIsNonNegative(self);
     invariant Law_UnmeasuredCheckFails(self);
     constructor CheckWithin;
     constructor CheckExact;
@@ -267,16 +268,20 @@ spec Samples(d: SurfaceDomain, plan: SamplePlan): Array<UvCoordinate>
 
 spec CheckWithin(law: String, worst: Number, bound: Number, where: Provenance): Check
 {
+    requires bound.IsFinite;
+    requires bound >= 0.0;
     ensures result.Holds == (worst <= bound);
     ensures result.Law == law;
-    ensures Law_HoldingCheckIsWithinBound(result, bound);
+    ensures result.Bound.Identical(bound);
+    ensures Law_HoldsExactlyWhenWithinBound(result);
     ensures Law_UnmeasuredCheckFails(result);
 }
 
 spec CheckExact(law: String, holds: Boolean, where: Provenance): Check
 {
     ensures result.Holds == holds;
-    ensures Law_HoldingCheckIsWithinBound(result, 0.0);
+    ensures result.Bound == 0.0;   // exact by construction
+    ensures Law_HoldsExactlyWhenWithinBound(result);
     ensures Law_UnmeasuredCheckFails(result);
 }
 
@@ -284,18 +289,20 @@ spec WorseOf(a: Check, b: Check): Check
 {
     requires a.Law == b.Law;
     ensures Law_WorseOfHoldsExactlyWhenBothHold(a, b);
+    ensures Law_WorseOfKeepsTheGreaterExceedance(a, b);
     ensures result.Identical(a) || result.Identical(b);
 }
 
-spec DiagnosticOf(c: Check, g: ConstraintGroup, bound: Number, message: String): Diagnostic
+spec DiagnosticOf(c: Check, g: ConstraintGroup, message: String): Diagnostic
 {
     requires !c.Holds;
     ensures result.Code == c.Law;
     ensures result.Where == c.Where;
     ensures result.Measure.Identical(c.Worst);
+    ensures result.Severity == g.SeverityOf(c.Worst, c.Bound);
 }
 
-spec ReportOf(c: Check, g: ConstraintGroup, bound: Number, message: String): Report
+spec ReportOf(c: Check, g: ConstraintGroup, message: String): Report
 {
     ensures result.Checks.Count == 1;
     ensures result.Diagnostics.Count == (c.Holds ? 0 : 1);
@@ -424,10 +431,11 @@ theorem WorseOfFoldIsWellDefined
     assume b.Law == c.Law;
     conclude Law_WorseOfIsAssociative(a, b, c) && Law_WorseOfHoldsExactlyWhenBothHold(a, b);
     because "Outranks is a total preorder (failing above holding, then unmeasured above measured,
-             then by Worst), and WorseOf picks the leftmost greatest element; picking the leftmost
+             then by Exceedance, the Worst over the check's own Bound, which is ordered as an
+             extended real), and WorseOf picks the leftmost greatest element; picking the leftmost
              greatest element of a sequence under a total preorder does not depend on grouping. A
              failing check outranks every holding one, so the fold holds exactly when every sample
-             held, and when it fails its Where names a failing sample, as SPEC-DSL.md requires of a
-             Check_.";
-    tested by Law_WorseOfIsAssociative, Law_WorseOfHoldsExactlyWhenBothHold;
+             held, and when it fails its Where names the failing sample farthest past its own
+             bound, which is the sample SeverityOf grades, as SPEC-DSL.md requires of a Check_.";
+    tested by Law_WorseOfIsAssociative, Law_WorseOfHoldsExactlyWhenBothHold, Law_WorseOfKeepsTheGreaterExceedance;
 }

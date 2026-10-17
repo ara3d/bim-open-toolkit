@@ -600,10 +600,11 @@ library BrepFoundation
             Info => false;
         };
 
-    // The severity of a failed check (SPEC-DSL.md section 4): Error for a
-    // topological law; for a geometric law, Warning while the worst measure
-    // stays below ten times the bound and Error from there on, or when it is
-    // unmeasured; Info for a quality threshold.
+    // The severity of a failed check with this worst measure and bound
+    // (SPEC-DSL.md section 4): Error for a topological law; for a geometric
+    // law, Warning while the worst measure stays below ten times the bound and
+    // Error from there on, or when it is unmeasured; Info for a quality
+    // threshold.
     SeverityOf(g: ConstraintGroup, worst: Number, bound: Number): Severity
         => match (g)
         {
@@ -615,40 +616,52 @@ library BrepFoundation
     //==
     // # Checks
 
-    // The check of a measured law over its samples: it holds exactly when
-    // worst <= bound. worst is the largest measure seen, larger meaning worse,
-    // or Number.Unmeasured, which fails.
+    // The check of a measured law at one sample, or over samples that share
+    // one bound: it holds exactly when worst <= bound, and it keeps the bound.
+    // worst is the largest measure seen, larger meaning worse, or
+    // Number.Unmeasured, which fails. Precondition: bound is a finite
+    // non-negative Number.
     CheckWithin(law: String, worst: Number, bound: Number, where: Provenance): Check
-        => Check(law, worst <= bound, worst, where);
+        => Check(law, worst <= bound, worst, bound, where);
 
     // The check of an exact law: Worst is 0 when it holds and 1 when it
     // fails, against the bound 0.
     CheckExact(law: String, holds: Boolean, where: Provenance): Check
-        => Check(law, holds, holds ? 0.0 : 1.0, where);
+        => Check(law, holds, holds ? 0.0 : 1.0, 0.0, where);
+
+    // How far the check's Worst is past its own Bound, as a multiple of the
+    // bound: Worst / Bound for a positive bound; for the bound 0 of an exact
+    // law, 0 when Worst <= 0 and infinity otherwise. NaN when Worst is. The
+    // measure SeverityOf grades, so comparing it, not the raw Worst, ranks
+    // samples whose per-point bounds differ.
+    Exceedance(c: Check): Number
+        => c.Bound > 0.0 ? c.Worst / c.Bound : (c.Worst > 0.0 ? 1.0 / 0.0 : (c.Worst.IsNaN ? c.Worst : 0.0));
 
     // True when a is at least as bad as b: a failing check outranks a holding
     // one; between two that agree on that, an unmeasured Worst outranks a
-    // measured one, and a larger Worst a smaller. A total preorder, which is
-    // what makes WorseOf associative.
+    // measured one, and a larger Exceedance a smaller. A total preorder, which
+    // is what makes WorseOf associative.
     Outranks(a: Check, b: Check): Boolean
         => a.Holds != b.Holds
             ? !a.Holds
-            : (a.Worst.IsNaN ? true : (b.Worst.IsNaN ? false : a.Worst >= b.Worst));
+            : (a.Worst.IsNaN ? true : (b.Worst.IsNaN ? false : a.Exceedance >= b.Exceedance));
 
     // The worse of two checks of one law, the left one on a tie: the fold
-    // that turns per-sample checks into one Check. Seed the fold with
-    // CheckExact(law, true, Provenance.Nowhere). Precondition: a.Law == b.Law.
+    // that turns per-sample checks into one Check, keeping the bound of the
+    // sample it keeps. Seed the fold with CheckExact(law, true,
+    // Provenance.Nowhere). Precondition: a.Law == b.Law.
     WorseOf(a: Check, b: Check): Check
         => a.Outranks(b) ? a : b;
 
     //==
     // # Diagnostics and reports
 
-    // The finding for a failed check: severity from the constraint group, the
-    // law's name as the code, the check's provenance, its Worst as the
-    // measure. Precondition: the check failed.
-    DiagnosticOf(c: Check, g: ConstraintGroup, bound: Number, message: String): Diagnostic
-        => Diagnostic(g.SeverityOf(c.Worst, bound), c.Law, message, c.Where, c.Worst);
+    // The finding for a failed check: severity from the constraint group and
+    // the check's own Worst and Bound, the law's name as the code, the
+    // check's provenance, its Worst as the measure. Precondition: the check
+    // failed.
+    DiagnosticOf(c: Check, g: ConstraintGroup, message: String): Diagnostic
+        => Diagnostic(g.SeverityOf(c.Worst, c.Bound), c.Law, message, c.Where, c.Worst);
 
     // The report with no checks and no diagnostics: Merge's identity.
     Empty(_: Report): Report
@@ -659,9 +672,10 @@ library BrepFoundation
         => Report(a.Checks.Concatenate(b.Checks), a.Diagnostics.Concatenate(b.Diagnostics));
 
     // The report of one check: the check, and its diagnostic when it failed.
-    // The one place a Check becomes a Diagnostic.
-    ReportOf(c: Check, g: ConstraintGroup, bound: Number, message: String): Report
-        => Report([c], (c.Holds ? 0 : 1).MapRange(i => c.DiagnosticOf(g, bound, message)));
+    // The one place a Check becomes a Diagnostic; the bound is the check's
+    // own.
+    ReportOf(c: Check, g: ConstraintGroup, message: String): Report
+        => Report([c], (c.Holds ? 0 : 1).MapRange(i => c.DiagnosticOf(g, message)));
 
     // The report of findings that no check produced, such as a decoder's
     // diagnostics for unsupported entities.
@@ -691,7 +705,11 @@ library BrepFoundation
 
     // True when two checks agree field by field.
     Identical(a: Check, b: Check): Boolean
-        => a.Law == b.Law && a.Holds == b.Holds && a.Worst.Identical(b.Worst) && a.Where == b.Where;
+        => a.Law == b.Law
+            && a.Holds == b.Holds
+            && a.Worst.Identical(b.Worst)
+            && a.Bound.Identical(b.Bound)
+            && a.Where == b.Where;
 
     // True when two diagnostics agree field by field.
     Identical(a: Diagnostic, b: Diagnostic): Boolean

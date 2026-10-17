@@ -211,16 +211,30 @@ library BrepFoundationLaws
     //==
     // # Checks
 
-    // A check that holds has a Worst within the bound it was checked against.
-    // Convention law: it holds for every check CheckWithin, CheckExact (bound
-    // 0), and WorseOf build, applied with that check's own bound; layer 7
-    // applies it to each Check_ with its bound.
-    Law_HoldingCheckIsWithinBound(c: Check, bound: Number): Boolean
-        => c.Holds ? c.Worst <= bound : true;
+    // A check holds exactly when its Worst is within its own Bound. Convention
+    // law: CheckWithin and CheckExact build it so, and WorseOf returns one of
+    // its arguments, so it holds for every Check. Replaces the two-argument
+    // form, which was false for a bound other than the check's own.
+    Law_HoldsExactlyWhenWithinBound(c: Check): Boolean
+        => c.Holds == (c.Worst <= c.Bound);
 
-    // A check whose measure could not be taken fails. Convention law.
+    // A check's bound is a finite non-negative Number. Convention law.
+    Law_CheckBoundIsNonNegative(c: Check): Boolean
+        => c.Bound.IsFinite && c.Bound >= 0.0;
+
+    // A check whose measure could not be taken fails. Convention law; a
+    // corollary of Law_HoldsExactlyWhenWithinBound, since NaN <= b is false.
     Law_UnmeasuredCheckFails(c: Check): Boolean
         => c.Worst.IsNaN ? !c.Holds : true;
+
+    // Between two measured checks that agree on holding, the worse of them
+    // has the larger exceedance of its own bound: the fold ranks samples by
+    // Worst / Bound, so a sample with a tight per-point bound is not hidden by
+    // a larger raw Worst against a loose one. Library law, exact.
+    Law_WorseOfKeepsTheGreaterExceedance(a: Check, b: Check): Boolean
+        => a.Holds == b.Holds && !a.Worst.IsNaN && !b.Worst.IsNaN
+            ? WorseOf(a, b).Exceedance >= a.Exceedance && WorseOf(a, b).Exceedance >= b.Exceedance
+            : true;
 
     // The worse of two checks holds exactly when both hold. Library law,
     // exact.
@@ -308,10 +322,10 @@ library BrepFoundationLaws
         => Merge(
             ReportOf(
                 CheckExact("Law_LengthTolerancePositive", true, Provenance.Nowhere),
-                ConstraintGroup.Topological, 0.0, "The length tolerance is a positive finite length."),
+                ConstraintGroup.Topological, "The length tolerance is a positive finite length."),
             ReportOf(
                 CheckWithin("Law_LengthToleranceResolvable", 2e-6, 1e-6, Provenance.Nowhere),
-                ConstraintGroup.Geometric, 1e-6, "The length tolerance is below the arithmetic resolution at the model's size."));
+                ConstraintGroup.Geometric, "The length tolerance is below the arithmetic resolution at the model's size."));
 
     //==
     // # Helpers
