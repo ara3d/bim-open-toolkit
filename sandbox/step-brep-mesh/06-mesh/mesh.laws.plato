@@ -51,6 +51,21 @@ library ModelMeshesLaws
             ? mesh.Numbering.SiteAt(v).IsSiteOf(mesh.VertexProvenance[v])
             : true;
 
+    // The provenance map is cellular (reviews/MATH-REVIEW-layers-0-6.md M9): every corner of an
+    // element of face f maps into the closure of f, that is to f itself, to an edge f's bounds cite,
+    // or to a vertex f's bounds reference. Exact. Error: a corner elsewhere is a vertex glued to the
+    // wrong cell, which the geometric re-evaluation in 07-validation may not notice when the two
+    // cells meet.
+    Law_CornerProvenanceIsOnItsElementFace(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+    {
+        var v = mesh.ElementCorner(e, slot);
+        return (mesh.VertexProvenance.IsValidIndex(v)
+                ? (mesh.ElementFace.IsValidIndex(e) ? m.IsFaceIntact(mesh.ElementFace[e]) : false)
+                : false)
+            ? m.IsOnClosureOfFace(mesh.VertexProvenance[v], mesh.ElementFace[e])
+            : true;
+    }
+
     //==
     // # Reversal
 

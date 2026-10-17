@@ -68,7 +68,8 @@ counts against.
 (`VertexProvenance`: `OnVertex(v)`, `OnEdge(e, t)`, `OnFace(f, uv)`), every element to the face it
 approximates (`ElementFace`), and every element corner to that face's parameters and outward normal
 at the corner (`CornerUvs`, `CornerNormals`). The map is cellular: a vertex inside an edge's
-discretization maps into that edge, never into a face. `07-validation` checks it geometrically by
+discretization maps into that edge, never into a face, and every corner of an element of face f maps
+into the closure of f (`Law_CornerProvenanceIsOnItsElementFace`). `07-validation` checks it geometrically by
 re-evaluating the model at each provenance (`Law_VertexReevaluatesFromProvenance`).
 
 **The numbering is a bijection from sites to indices.** The vertex set is a disjoint union: model
@@ -192,6 +193,7 @@ outside its range makes it vacuously true, and the range is another law's statem
 | `Law_ElementCornersInRange` | every element corner names a vertex | exact | Error |
 | `Law_ElementFaceIsModelFace` | every `ElementFace` entry is a model face | exact | Error |
 | `Law_VertexProvenanceMatchesNumbering` | a vertex's provenance names its index's site's cell | exact | Error |
+| `Law_CornerProvenanceIsOnItsElementFace` | every corner of an element of face f maps into the closure of f: the cellular map | exact | Error |
 | `Law_ReversalPermutesCorners` | reversed slot s is original slot `ReversedSlot(arity, s)` | exact | test |
 | `Law_ReversalMovesCornerUvWithCorner` | a corner's uv moves with its corner under reversal | exact by construction | test |
 | `Law_RestrictionKeepsTheElementsOfTheFaces` | the restriction to a set of faces has exactly their elements | exact | test |
@@ -428,6 +430,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `IsPinchedVertex` deferred, contract partial | written out over `PieceCount` (with `FirstPositionOf`, `DistinctEnds`, `PieceLabelRound`, `PieceLabels`) | the definition is a degree test and a piece count; the body is total and exact |
 | `MeshComponentCounts` with eight fields; `Genus` for closed components only | adds `BoundaryCycles`; `HasGenus` and `Genus` use 2 - chi - B; `BoundaryEdgesOf` | the genus of a component with boundary (an open shell, a face that failed to mesh) is defined |
 | (none) | `RestrictedToFaces(mesh, faces)`, `IsElementOfFaces`, `ElementsOfFaces`, `ReferencedEulerCharacteristic(mesh)` | per-shell counts (review M10, section 6): the mesh of a shell is a valid `ModelMesh`, and its Euler characteristic counts only referenced vertices |
+| (none) | `Law_CornerProvenanceIsOnItsElementFace`, `IsOnClosureOfFace` | the cellular map stated as a law (review M9); 07-validation can add its `Check_` |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -475,3 +478,6 @@ Applied:
   `RestrictedToFaces`. Conditions 2 (C6, vertex loops on a seam's pole) and 3 (F1 and C1, seams by
   the left rule and `Closed` directions) are layer 5's fixes: until they land, sphere A and B, the
   seamed cone, and closed B-spline faces produce no mesh and the identity is vacuous there.
+- **A cellular provenance law** (review M9). `Law_CornerProvenanceIsOnItsElementFace`: every corner
+  of an element of face f has provenance `OnFace(f)`, `OnEdge(e)` with e cited by f, or
+  `OnVertex(v)` with v on f's bounds (02-topology's `FaceUsesEdge`, `BoundVertices`).
