@@ -77,11 +77,13 @@ spec ValidateStep(file: Part21File, level: ConformanceLevel): Report
     measure file.Instances.Count;
 }
 
-// A mesh against its model at a level: when clean, every shell's mesh has
-// the shell's Euler characteristic and is closed exactly when the shell is.
+// A mesh against its model at a level: when clean, every face has an
+// element, and every shell's mesh has the shell's Euler characteristic and is
+// closed exactly when the shell is.
 spec CrossCheck(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel): Report
 {
     requires m.IsEveryIndexInRange;
+    ensures result.IsClean ? forall (f: BrepFaceIndex) : Law_EveryFaceIsMeshed(m, mesh, f) : true;
     ensures result.IsClean ? forall (s: ShellIndex) : Law_MeshEulerEqualsBrepEuler(m, mesh, s) : true;
     ensures result.IsClean ? forall (s: ShellIndex) : Law_MeshClosedExactlyWhenShellClosed(m, mesh, s) : true;
     ensures result.IsClean ? forall (v: VertexIndex) : Law_ProvenanceNamesModelCell(m, mesh, v) : true;

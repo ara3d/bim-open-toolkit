@@ -48,6 +48,21 @@ library BrepCrossChecking
             mesh.VertexProvenance,
             mesh.Numbering);
 
+    // True when face f has at least one element in the mesh. A face of
+    // positive area always has one; a face the mesher refused (a poly loop, a
+    // region it could not build) has none, and Law_EveryFaceIsMeshed reports
+    // it there, at the face.
+    HasMeshElements(mesh: ModelMesh, f: BrepFaceIndex): Boolean
+        => mesh.ElementFace.Any(x => x == f);
+
+    // True when every face of shell s has an element: the hypothesis of the
+    // laws that compare a shell's mesh with the shell as a whole (Euler
+    // characteristic, closure, angle defects, volume signs), which say
+    // nothing more about a shell with a face missing than that face's own
+    // finding does.
+    IsCompleteShellMesh(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+        => m.ShellFaces(s).All(f => mesh.HasMeshElements(f));
+
     // The Euler characteristic V - E + F of the shell's mesh counting only
     // the vertices its elements reference.
     ShellMeshEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Integer
@@ -223,6 +238,10 @@ library BrepCrossChecking
     //==
     // # Checks: topology against the B-rep (structure)
 
+    // Law_EveryFaceIsMeshed at every face. Structure: Error.
+    Check_EveryFaceIsMeshed(m: BrepModel, mesh: ModelMesh): Check
+        => m.CheckFaces("Law_EveryFaceIsMeshed", f => Law_EveryFaceIsMeshed(m, mesh, f));
+
     // Law_MeshEulerEqualsBrepEuler at every shell. Structure: Error.
     Check_MeshEulerEqualsBrepEuler(m: BrepModel, mesh: ModelMesh): Check
         => m.CheckShells("Law_MeshEulerEqualsBrepEuler", s => Law_MeshEulerEqualsBrepEuler(m, mesh, s));
@@ -324,6 +343,8 @@ library BrepCrossChecking
         => match (family)
         {
             StructureChecks => MergeAll([
+                ExactReport(m.Check_EveryFaceIsMeshed(mesh),
+                    "A face of the model has no element in the mesh."),
                 ExactReport(m.Check_MeshEulerEqualsBrepEuler(mesh),
                     "The mesh of a shell has a different Euler characteristic from the shell's reduced counts."),
                 ExactReport(m.Check_MeshClosedExactlyWhenShellClosed(mesh),

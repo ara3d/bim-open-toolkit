@@ -26,19 +26,32 @@ library BrepCheckingLaws
     //==
     // # Cross checks: topology
 
-    // The mesh of shell s has the Euler characteristic of the shell's
-    // reduced counts (research/VALIDATION-MATH.md 4.4): the mesh refines the
-    // cell decomposition term by term. Exact. Error.
+    // Every face of the model has at least one element in the mesh: a face
+    // of positive area is covered by at least one element. A face the mesher
+    // refused is reported here, at the face, and only here among the cross
+    // checks: the laws about a shell as a whole assume the shell's mesh is
+    // complete (IsCompleteShellMesh). Exact. Error.
+    Law_EveryFaceIsMeshed(m: BrepModel, mesh: ModelMesh, f: BrepFaceIndex): Boolean
+        => m.IsFaceInRange(f) ? mesh.HasMeshElements(f) : true;
+
+    // The complete mesh of shell s has the Euler characteristic of the
+    // shell's reduced counts (research/VALIDATION-MATH.md 4.4), the mesh
+    // restricted to the shell's elements and the vertices they reference
+    // (MATH-REVIEW section 6, condition 1): the mesh refines the cell
+    // decomposition term by term. Exact. Error.
     Law_MeshEulerEqualsBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
-            ? m.ShellMeshEuler(mesh, s) == m.ShellEulerPoincare(s)
+            ? (m.IsCompleteShellMesh(mesh, s) ? m.ShellMeshEuler(mesh, s) == m.ShellEulerPoincare(s) : true)
             : true;
 
-    // The mesh of shell s is closed exactly when the shell is: when no edge
-    // of the shell is used once (layer 2's FreeEdgeCount). Exact. Error.
+    // The complete mesh of shell s is closed exactly when the shell is: when
+    // no edge of the shell is used once (layer 2's FreeEdgeCount). Exact.
+    // Error.
     Law_MeshClosedExactlyWhenShellClosed(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
-            ? (m.ShellFaces(s).Count > 0 ? m.RestrictedToShell(mesh, s).IsClosed == (m.FreeEdgeCount(s) == 0) : true)
+            ? ((m.ShellFaces(s).Count > 0 ? m.IsCompleteShellMesh(mesh, s) : false)
+                ? m.RestrictedToShell(mesh, s).IsClosed == (m.FreeEdgeCount(s) == 0)
+                : true)
             : true;
 
     // Every mesh vertex's provenance names a vertex, edge or face of the
@@ -134,11 +147,14 @@ library BrepCheckingLaws
 
     // The mesh volume of solid b is its divergence-theorem volume within the
     // tube of radius d about its boundary (TubeVolume, Weyl's formula; valid
-    // while d is below the reach). Vacuous for a shell set and where the
-    // oracle has no number. Oracle family, Error.
+    // while d is below the reach). Vacuous for a shell set, for a body with a
+    // face missing from the mesh (Law_EveryFaceIsMeshed reports it), and where
+    // the oracle has no number. Oracle family, Error.
     Law_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
-            ? ((m.IsShellInRange(m.Bodies[b].OuterShellOf) ? m.Oracle_BodyVolume(b).IsFinite : false)
+            ? ((m.IsShellInRange(m.Bodies[b].OuterShellOf)
+                    ? (m.BodyShells(b).All(s => m.IsCompleteShellMesh(mesh, s)) ? m.Oracle_BodyVolume(b).IsFinite : false)
+                    : false)
                 ? (m.BodyMeshVolume(mesh, b) - m.Oracle_BodyVolume(b)).Abs <= m.TubeVolume(b, c)
                 : true)
             : true;
@@ -526,11 +542,13 @@ library BrepCheckingLaws
     //==
     // # Helpers
 
-    // True when the mesh of shell s is closed and consistently oriented: the
-    // hypothesis under which its signed volume's sign and its angle defects
-    // mean what the laws say.
+    // True when the mesh of shell s is complete, closed and consistently
+    // oriented: the hypothesis under which its signed volume's sign and its
+    // angle defects mean what the laws say.
     IsClosedAndOrientedShellMesh(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
-        => m.RestrictedToShell(mesh, s).IsClosed ? m.RestrictedToShell(mesh, s).IsConsistentlyOriented : false;
+        => m.IsCompleteShellMesh(mesh, s)
+            ? (m.RestrictedToShell(mesh, s).IsClosed ? m.RestrictedToShell(mesh, s).IsConsistentlyOriented : false)
+            : false;
 
     // The mesh vertex a provenance names; none for every other provenance.
     MeshVertexOf(p: Provenance): VertexIndex

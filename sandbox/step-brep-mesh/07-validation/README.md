@@ -21,7 +21,7 @@ mathematics, on hand-written witnesses, and on public files.
 | `validation-checks-discretization.library.plato` | `BrepCheckingDiscretization` | 35 checks: layer 4 |
 | `validation-checks-face-meshing.library.plato` | `BrepCheckingFaceMeshing` | 39 checks: layer 5 |
 | `validation-checks-mesh.library.plato` | `BrepCheckingMesh` | 108 checks: layer 6 |
-| `validation-checks-cross.library.plato` | `BrepCrossChecking` | 16 cross checks of a mesh against its model; `CrossReport`, `ModelOracleReport` |
+| `validation-checks-cross.library.plato` | `BrepCrossChecking` | 17 cross checks of a mesh against its model; `CrossReport`, `ModelOracleReport` |
 | `validation-checks-reports.library.plato` | `BrepCheckingReports` | one report per layer and input, split by `CheckFamily`; generated (see "Implementation notes") |
 | `validation-oracles.library.plato` | `BrepOracles` | closed forms, the Green's-theorem area, the divergence volume, the Euler and angle-defect oracles, the area envelope |
 | `validation-witnesses.library.plato` | `BrepWitnesses` | the witness models written out as `BrepModel` values, and their facts |
@@ -245,8 +245,9 @@ Richardson correction plus rounding. Severity applies where the law backs a `Che
 
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
-| `Law_MeshEulerEqualsBrepEuler` | a shell's mesh has the shell's reduced chi | exact | Error |
-| `Law_MeshClosedExactlyWhenShellClosed` | a shell's mesh is closed iff the shell has no free edge | exact | Error |
+| `Law_EveryFaceIsMeshed` | every face has at least one element | exact | Error |
+| `Law_MeshEulerEqualsBrepEuler` | a shell's complete mesh has the shell's reduced chi | exact | Error |
+| `Law_MeshClosedExactlyWhenShellClosed` | a shell's complete mesh is closed iff the shell has no free edge | exact | Error |
 | `Law_ProvenanceNamesModelCell` | each mesh vertex's provenance names a model cell | exact | Error |
 | `Law_SolidShellMeshesShareNoVertex` | outer and void shell meshes are vertex-disjoint | exact | Error |
 | `Law_OuterShellVolumePositive` | a closed oriented outer shell mesh has volume above rounding | `VolumeRoundoff` | Error |
@@ -406,3 +407,4 @@ one commit each.
 | The transforms and `SameConnectivity` (FIX-WAVE ownership table); meshed witness laws through layer 8's `MeshModel` (open items 2 and 3) | `validation-transforms.library.plato` becomes `validation-comparisons.library.plato` (`BrepComparisons`): `MovedBy`, `ScaledBy`, `ScaledPoint`, their curve and surface parts, `ScaledLimit`, `ScaledCriteria`, `MeshOnce`, `WitnessCriteria` and `SameConnectivity` deleted. The witness laws mesh with `MeshModel` under layer 8's `Witness_UnitScaleOptions`, and the metamorphic laws are layer 8's laws run over the witnesses, so this layer needs no transform of its own |
 | `Law_RigidMotionKeepsConnectivity` and theorem `RigidMotionCommutesWithMeshing` are false (layer 8, decision 11: the unit box's square faces have two equally Delaunay diagonals, and a rotation that is not a quarter turn can pick the other) | dropped, with conjecture `ScalingByAnyFactorKeepsConnectivity`, which a tie refutes the same way |
 | Conjecture `TighterChordalNeverIncreasesDeviation` is false (layer 8, decision 12: on `y = h sin(2 pi x)` the nested sub-span from 0 to 3/4 deviates about 1.33 h, the whole span h) | dropped; `Law_TighterChordalNeverIncreasesSagitta` stays, restricted to lines and circles, where a circle's uniform split makes the sampled sagitta increase with the segment's angle |
+| A face the mesher refused made every whole-shell cross check fail too (Euler, closure, angle defects, volume signs), so one bad face gave several Errors at its shell | `Law_EveryFaceIsMeshed` reports a face without an element at the face; the whole-shell laws take the hypothesis that the shell's mesh is complete (`IsCompleteShellMesh`), and `Law_SolidVolumeWithinTube` that every shell of the body is |
