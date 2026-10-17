@@ -93,6 +93,27 @@ STEP reader look nearly line for line like the IFC one.
   The set is small and closed, so TKT-304 can generate one accessor per combination as well as the general
   (partial entity, index) descriptor. The assembly placements (`SHAPE_REPRESENTATION_RELATIONSHIP` with
   transformation, 81 files) are complex instances too, so TKT-305's assembly tree depends on TKT-302.
-  The schema half waits for the AP242 long form: `ap242ed3_mim_lf_v1.152.zip` from the MBx-IF EXPRESS schema page
-  (<https://www.mbx-if.org/home/?p=613>), which states no licence; AP214 edition 3 and AP203 edition 2 are on the
-  same page.
+- 2026-10-17, TKT-301 spike, schema half. The three long forms come from the MBx-IF EXPRESS schema page
+  (<https://www.mbx-if.org/home/?p=613>), which states no licence, so they are never committed:
+  `deps/bim-open-data/data/get-express-schemas.ps1` fetches them into the git-ignored `deps/bim-open-data/data/express/`
+  (AP242 edition 3 v1.152, 2,392,527 bytes; AP214 edition 3 2010, 860,508; AP203 edition 2, 665,100). A throwaway
+  program split each with `ExpressGrammar.EntityBlocks` and `TypeBlocks`, as `IfcCodeGenTest` does, and parsed every
+  block with `Entity` or `TypeDecl`:
+
+  | Schema | ENTITY blocks | TYPE blocks | Fail | Entities with several supertypes |
+  |---|---|---|---|---|
+  | AP242 ed3 | 2,140 | 464 | 0 | 238 |
+  | AP214 ed3 | 915 | 192 | 0 | 63 |
+  | AP203 ed2 | 1,006 | 240 | 0 | 92 |
+  | IFC4X3 (reference) | 872 | 439 | 0 | 0 |
+
+  Every block parses, so TKT-303's grammar work is smaller than planned. Parsing is not reading correctly: the
+  generator's `GetEntitySubType` keeps the first supertype, so 238 AP242 entities lose inherited attributes and
+  their indices are wrong. The spike did not check that the parse trees of `ANDOR` supertype expressions or of
+  redeclared attributes are right; TKT-303 checks them against the attribute tables of
+  `sandbox/step-brep-mesh/research/STEP-BREP-MODEL.md` section 3.
+- 2026-10-17, TKT-302 done in ara3d-sdk f48f62b: complex instances parse; the u-blox 88 open with definition
+  counts equal to those written; four IFC files (duplex, AC20-FZK-Haus, AC20-Institute-Var-2, large_test_model)
+  dump byte-identical definitions before and after the change. The comparison also showed that the published
+  NuGet package Ara3D.IO.StepParser 1.6.1, which bim-open-data, bim-open-flow and ara3d-dataflow resolve, reads
+  `-1.` as 1: TKT-307. The IFC tools see neither fix until a new SDK package is released.
