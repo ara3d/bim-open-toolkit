@@ -426,6 +426,7 @@ as expected.
 | (new) | `KeepSeedWhereFree`, `NearSeedOffset`, `NearbySeed`, `Law_ProjectNearRecoversFromNearbySeed`; theorem `ProjectNearIsLocalInverse` restated with a seed in a stated neighbourhood | the local inverse keeps the seed's free coordinate (fix wave, T5) |
 | `GeometrySet { Curves; Curves2D; Pcurves; Surfaces }`; closure read from exact end coincidence (previous row) | `GeometrySet` gains `Closures: Array<ClosureMark>` (`ClosedCurve`, `ClosedCurve2D`, `ClosedSurface(s, which)`); `Domain` applies them (`WithClosure`, `IsMarkedClosed`); laws `Law_ClosureMarkInRange`, `Law_ClosureMarkNamesBoundedAperiodic` | layer 3 decides closure with its tolerance and must store it for every aperiodic record, composites and trims included; every `GeometrySet(...)` construction gains a fifth argument, `[]` when nothing is closed (layer 7's witnesses) |
 | (new) | `ScaledCurve(curve, k)`, `ScaledSurface(surface, g, k)`, `ScaledPcurve(curve2D, g, s, k)`, `ParameterScaleFactor(g, s, which, k)`, `ScaledGeometry(g, k)`, `SurfaceOf(g, c, fuel)`, `AnisotropicConic` (deferred); laws `Law_Scaled{Curve,Surface,Pcurve}PointIsScaled` | the scaling layer 2's `ScaledBy` and layer 7's metamorphic laws build on (FIX-WAVE ownership table) |
+| `UnboundedDomain` (here, `belongs-in: 00-foundation`) | layer 0's `UnboundedDomain` | the stand-in moved down (fix wave, C10) |
 
 ## Fix wave, 2026-10-17
 
@@ -480,3 +481,4 @@ Applied:
   `geometry-scaling.library.plato`: speed vectors scale with positions so curve parameters never
   change; lengths along unit frame axes (plane, cylinder and cone `v`) scale; angles never;
   pcurve coordinates follow their surface; `ScaledGeometry` scales a whole arena.
+- **C10, UnboundedDomain.** The stand-in is deleted; layer 0's is used.

@@ -24,13 +24,8 @@ library BrepGeometry
 {
     //==
     // # Standard domains
-
-    // belongs-in: 00-foundation
-    // The domain of an unbounded aperiodic parameter, the whole real line, with
-    // the largest finite Numbers as its ends, the stdlib's convention for an
-    // unbounded box (Bounds3D.Empty). ParameterLength is infinite on it.
-    UnboundedDomain(_: CurveDomain): CurveDomain
-        => CurveDomain(NumberInterval(Number.MinValue, Number.MaxValue), Periodicity.Aperiodic);
+    //
+    // UnboundedDomain, the domain of a line, is layer 0's.
 
     // One full turn, [0, 2 pi], periodic with period 2 pi: the angle of every
     // circle, ellipse, and placement-based surface except the plane.
