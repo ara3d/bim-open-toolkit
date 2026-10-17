@@ -381,7 +381,10 @@ library StepReadingLaws
     // README, "Orientation folding": the decoder multiplies a face's
     // same_sense and every bound's orientation by the signs of the
     // oriented_face, oriented shell, and mirroring placement above it, so the
-    // kernel needs no oriented types.
+    // kernel needs no oriented types. The mirror's sign is the determinant's
+    // of the occurrence's placement; layer 1 turns a left-handed surface's
+    // normal over with it (PlacementHandedness), so the same fold serves
+    // placement-based, swept and spline surfaces alike.
 
     // Folding preserves the point set of every face: for every bound, the
     // product of the face's and the bound's signs is the file's. That product
@@ -410,6 +413,41 @@ library StepReadingLaws
         var d = f.DecodeBrep;
         return k >= 0 && k < d.Model.Faces.Count && k < d.Map.Sources.Faces.Count
             ? (d.Model.Faces[k].SameSense == f.FileFaceSameSense(d.Map.Sources.Faces[k])) == !d.Map.IsFolded(BrepFaceIndex(k))
+            : true;
+    }
+
+    // A face of a mirrored occurrence has exactly one MirroredPlacement fold
+    // record, and a face of an unmirrored one none: the occurrence's
+    // placement is composed down the assembly before its determinant's sign
+    // is taken, so two mirrorings cancel there and are never recorded twice.
+    Law_MirrorFoldRecordedOnce(f: Part21File, k: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        var mirrors = d.Map.Folds.Reduce(0, (n, r) => r.Face == BrepFaceIndex(k) && r.Cause == FoldCause.MirroredPlacement ? n + 1 : n);
+        return mirrors == (d.Map.IsMirroredSource(d.Map.Sources.Faces[k]) ? 1 : 0);
+    }
+
+    // The fold and layer 1's normal agree on the mirror: a face whose
+    // surface's placement is left-handed (layer 1's PlacementHandedness is
+    // -1) lies in a mirrored occurrence, whose fold turned its sense over. On
+    // a left-handed frame layer 1's closed-form normal is multiplied by the
+    // handedness, so every surface's kernel normal turns over under a mirror
+    // as the cross product of its partials does, and the one fold, sense and
+    // bounds times the determinant's sign, is right for every surface family
+    // (review F2).
+    Law_LeftHandedSurfacesAreFolded(f: Part21File, k: Integer): Boolean
+    {
+        var d = f.DecodeBrep;
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        return d.Model.Geometry.PlacementHandedness(d.Model.Faces[k].Surface) < 0.0
+            ? d.Map.IsMirroredSource(d.Map.Sources.Faces[k])
             : true;
     }
 

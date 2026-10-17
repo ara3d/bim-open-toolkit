@@ -268,6 +268,8 @@ spec DecodeBrep(file: Part21File): DecodedModel
     ensures forall (k: Integer) : forall (j: Integer) : Law_FoldPreservesInteriorSide(file, k, j);
     ensures forall (k: Integer) : Law_FoldFlipsExactlyRecorded(file, k);
     ensures forall (r: Integer) : Law_FoldRecordsNameFalseFlags(file, r);
+    ensures forall (k: Integer) : Law_MirrorFoldRecordedOnce(file, k);
+    ensures forall (k: Integer) : Law_LeftHandedSurfacesAreFolded(file, k);
     measure file.Instances.Count + file.Attributes.Count;
 }
 
@@ -363,6 +365,6 @@ theorem FoldingKeepsFaceRegions
     assume forall (j: Integer) : Law_FoldPreservesInteriorSide(f, k, j);
     assume Law_FoldFlipsExactlyRecorded(f, k);
     conclude forall (j: Integer) in f.DecodeBrep.Model.Faces[k].Bounds.Count.Range : (f.DecodeBrep.Model.Faces[k].Bounds[j].Orientation == f.FileBoundOrientation(f.DecodeBrep.Map.Sources.Faces[k], j)) == !f.DecodeBrep.Map.IsFolded(BrepFaceIndex(k));
-    because "research/STEP-BREP-MODEL.md 4.2: a coedge runs along its curve with sign s * o * b and the face lies to its left in the surface's (u, v) plane exactly when the face sign f (times the lemon-torus sign) is +1. Flipping f and every b together reverses every coedge and moves the face to the other side of it, so the region bounded is the same; the interior-side law says each product f * b is the file's. If the face flag is flipped (an odd number of folds), every bound flag must flip too to keep the product, and if not, none may: which is the conclusion. The face's surface and loops are the decoded images of the file's (the provenance map), so its point set is the file face's.";
+    because "research/STEP-BREP-MODEL.md 4.2: a coedge runs along its curve with sign s * o * b and the face lies to its left in the surface's (u, v) plane exactly when the face sign f (times the lemon-torus sign) is +1. A mirroring placement changes neither the (u, v) plane nor the pcurves, and layer 1 turns a left-handed surface's normal over with its handedness, so the sign that relates the normal to the parameterization is the same before and after the mirror for every surface family; the rule therefore reads the same f and b on the placed face as on the file face. Flipping f and every b together reverses every coedge and moves the face to the other side of it, so the region bounded is the same; the interior-side law says each product f * b is the file's. If the face flag is flipped (an odd number of folds), every bound flag must flip too to keep the product, and if not, none may: which is the conclusion. The face's surface and loops are the decoded images of the file's (the provenance map), so its point set is the file face's.";
     tested by Law_FoldPreservesInteriorSide, Law_FoldFlipsExactlyRecorded;
 }

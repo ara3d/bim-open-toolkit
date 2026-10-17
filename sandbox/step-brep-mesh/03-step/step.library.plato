@@ -322,9 +322,14 @@ library StepReading
             OrientedFace => f.InstanceIsA(p, "ORIENTED_FACE") && !f.FieldIsTrue(p, "ORIENTED_FACE", "orientation");
             OrientedShell => (f.InstanceIsA(p, "ORIENTED_CLOSED_SHELL") && !f.FieldIsTrue(p, "ORIENTED_CLOSED_SHELL", "orientation"))
                 || (f.InstanceIsA(p, "ORIENTED_OPEN_SHELL") && !f.FieldIsTrue(p, "ORIENTED_OPEN_SHELL", "orientation"));
-            MirroredPlacement => map.Occurrences.IsValidIndex(fold.Via.Occurrence) ? map.Occurrences[fold.Via.Occurrence.Value].Placement.IsMirrored : false;
+            MirroredPlacement => map.IsMirroredSource(fold.Via);
         };
     }
+
+    // True when the occurrence of s is placed by a mirroring map (negative
+    // determinant); false for a source with no occurrence.
+    IsMirroredSource(map: ProvenanceMap, s: StepSource): Boolean
+        => map.Occurrences.IsValidIndex(s.Occurrence) ? map.Occurrences[s.Occurrence.Value].Placement.IsMirrored : false;
 
     // The source of kernel face k; NoSource when k is out of range.
     FaceSource(map: ProvenanceMap, k: BrepFaceIndex): StepSource

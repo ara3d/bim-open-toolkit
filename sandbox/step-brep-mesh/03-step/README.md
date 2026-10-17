@@ -295,7 +295,25 @@ over and the loops reverse, so after folding every face's bounds run counter-clo
 normal and every normal points out of the material: into the void, for a void shell. Each flip is
 recorded as a `FoldRecord` naming its cause and the instance that carried it; a face's flags
 differ from the file's exactly when it has an odd number of records
-(`Law_FoldFlipsExactlyRecorded`, `Law_FoldRecordsNameFalseFlags`). An `oriented_edge` becomes a
+(`Law_FoldFlipsExactlyRecorded`, `Law_FoldRecordsNameFalseFlags`).
+
+**Mirrors fold like oriented faces, because layer 1 turns the normal with the frame.** The
+review (F2) found the fold wrong for placement-based surfaces: their normal was built from the
+frame's axes, which a mirror carries to the image's outward normal, while `S_u x S_v` turns over,
+so multiplying the sense by d sent the normal into the material on planes, cylinders, cones,
+spheres and tori and out of it on swept and spline surfaces. Layer 1 now multiplies each
+closed-form normal by its frame's `Handedness` (exported per surface as `PlacementHandedness`), so
+on every surface family a mirror turns the kernel normal over exactly as it turns `S_u x S_v`.
+The kernel's sign relating normal and parameterization is then unchanged by a mirror, the uv
+plane and the pcurves are unchanged too, and the one fold, sense and every bound times d, keeps
+the region (the product f * b, `Law_FoldPreservesInteriorSide`) and makes `sigma(f') N'` the image
+of the file's outward normal: the image of an outward normal under a mirror is `d L N / |L N|`
+for the linear part L, and `sigma(d f) (d L N / |L N|)` is `sigma(f) L N / |L N|`. Two laws tie
+the fold to layer 1's sign: a face of a mirrored occurrence carries exactly one
+`MirroredPlacement` record (`Law_MirrorFoldRecordedOnce`; placements are composed down the
+assembly before the sign is taken, so two mirrors cancel), and a face on a left-handed surface lies
+in a mirrored occurrence (`Law_LeftHandedSurfacesAreFolded`). The placement law of layer 1 accepts
+an orthonormal frame of either handedness, so a mirrored mapped item no longer fails it. An `oriented_edge` becomes a
 `Coedge` whose orientation is its own; an oriented edge nested in another (against its WR1) has
 the two senses composed, with a Warning.
 
@@ -521,6 +539,8 @@ are about this layer's code.
 | `Law_FoldPreservesInteriorSide` | Folding preserves the point set of every face: for every bound, the product of the face's and the bound's signs is the file's. | exact | Error |
 | `Law_FoldFlipsExactlyRecorded` | Folding flips exactly the recorded faces: a face's same_sense differs from the file's exactly when the map records an odd number of folds for it. | exact | Error |
 | `Law_FoldRecordsNameFalseFlags` | Every fold record names an instance that carries the flip: an oriented_face or oriented shell whose orientation is .F., or an occurrence whose placement is mirrored. | exact | Error |
+| `Law_MirrorFoldRecordedOnce` | A face of a mirrored occurrence has exactly one MirroredPlacement fold record; a face of an unmirrored one none. | exact | Error |
+| `Law_LeftHandedSurfacesAreFolded` | A face whose surface's placement is left-handed (layer 1's PlacementHandedness) lies in a mirrored occurrence, whose fold turned its sense. | exact | Error |
 
 Rules of the brief that map to laws: the round trip, `Law_ParsePrintParseIsIdentity`; references
 resolve, `Law_ReferencesResolve`; no repeated name, `Law_InstanceIdsUnique`; attribute counts,
@@ -531,7 +551,8 @@ since ISO's WR4 asks only that the two directions not be parallel, which
 `Law_*CountMatchesInstances`; the bijection, `Law_ProvenanceSourcesDistinct`,
 `Law_ProvenanceLookupInvertsSources`, `Law_ReachedInstancesAreAccountedFor` (theorem
 `ProvenanceIsBijection`); totality, `Law_DecodeIsTotal`; radians, `Law_CirclePeriodIsTwoPi`;
-folding, `Law_FoldPreservesInteriorSide` and `Law_FoldFlipsExactlyRecorded`; the uncertainty
+folding, `Law_FoldPreservesInteriorSide`, `Law_FoldFlipsExactlyRecorded`,
+`Law_MirrorFoldRecordedOnce` and `Law_LeftHandedSurfacesAreFolded`; the uncertainty
 default, `Law_UncertaintyDefaultExactlyWhenAbsent`.
 
 ## Left open
