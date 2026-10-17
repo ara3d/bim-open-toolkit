@@ -1,0 +1,350 @@
+//==
+// # 08-pipeline: specifications
+//
+// The invented constructs of SPEC-DSL.md section 3 for layer 8: type
+// invariants, function contracts, and theorems. Every invariant
+// and ensures cites a Law_ of this layer or a lower one, or is a short
+// expression over declared names. Read, not parsed: the gate skips this file.
+//
+// Sections, in order:
+//  - Type invariants
+//  - Contracts: the refinement loop
+//  - Contracts: outcomes and entry points
+//  - Contracts: declarations owed by lower layers
+//  - Theorems
+
+//==
+// # Type invariants
+
+// Plain data: a caller may build any options, and a run refuses those that
+// break this (UnusableOptions), so no constructor list.
+spec MeshingOptions
+{
+    invariant self.IsWellFormed;
+}
+
+// A loop state: one outcome per face in face order, one discretization per
+// edge in edge order, every pending request one some face's outcome holds.
+// The edge and face counts are the model's (Step's ensures); the type alone
+// cannot name the model.
+spec PipelineState
+{
+    invariant self.Round >= 0;
+    invariant forall (k: Integer) in self.Outcomes.Count.Range : Law_OutcomeIsOfItsFace(self, k);
+    invariant forall (i: Integer) in self.Discretizations.ByEdge.Count.Range : Law_DiscretizationsIndexedByEdge(self.Discretizations, i);
+    invariant forall (q: Integer) in self.Pending.Count.Range : Law_PendingRequestIsInSomeOutcome(self, q);
+    invariant forall (k: Integer) in self.Outcomes.Count.Range : Law_BlockingRequestMeansEmptyMesh(self.Outcomes[k]);
+    invariant forall (k: Integer) in self.Outcomes.Count.Range : Law_EmptyMeshIsExplained(self.Outcomes[k]);
+    constructor InitialState;
+    constructor Step;
+    constructor StateAfter;
+    constructor FinalState;
+}
+
+// A meshing outcome: Ok is the verdict of the report, every finding is
+// located, and the round count is not negative.
+spec MeshOutcome
+{
+    invariant self.Ok == self.Report.IsClean;
+    invariant self.Rounds >= 0;
+    invariant forall (k: Integer) in self.Report.Diagnostics.Count.Range : !(self.Report.Diagnostics[k].Where == Provenance.Nowhere);
+    invariant forall (k: Integer) in self.Report.Checks.Count.Range : Law_FailedCheckHasDiagnostic(self.Report, k);
+    constructor MeshOutcomeOf;
+    constructor RefusedOutcome;
+    constructor RunOutcome;
+    constructor MeshChosenFaces;
+    constructor MeshModel;
+    constructor MeshStepText;
+}
+
+// A STEP meshing outcome: the decode it meshed, and a report that holds
+// every parse and decode finding before the meshing findings.
+spec StepMeshOutcome
+{
+    invariant self.Meshed.Report.Diagnostics.Count >= self.Decoded.Diagnostics.Count;
+    invariant self.Meshed.Mesh.Numbering.ModelVertexCount == self.Decoded.Model.Vertices.Count;
+    constructor MeshStepTextTraced;
+}
+
+//==
+// # Contracts: the refinement loop
+
+// Every usable edge discretized by layer 4, every other edge empty.
+spec DiscretizeUsable(m: BrepModel, c: DiscretizationCriteria): EdgeDiscretizations
+{
+    requires Law_IndicesInRange(m);
+    requires c.IsWellFormed;
+    ensures Law_DiscretizationsCoverEdges(m, result);
+    ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
+    ensures forall (i: Integer) in m.Edges.Count.Range : m.CanDiscretize(BrepEdgeIndex(i), c) ? result.ByEdge[i].SameDiscretization(m.Discretize(BrepEdgeIndex(i), c, SegmentFloors.NoFloors)) : result.ByEdge[i].Parameters.Count == 0;
+    measure m.Edges.Count;
+}
+
+// MeshFace where its precondition holds, a located error otherwise.
+spec FaceOutcome(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, o: MeshingOptions, chosen: Array<Boolean>): FaceMeshOutcome
+{
+    requires m.IsRunnable(o);
+    requires m.IsFaceInRange(f);
+    ensures result.Mesh.Face == f;
+    ensures Law_BlockingRequestMeansEmptyMesh(result);
+    ensures Law_RequestHasDiagnostic(result);
+    ensures Law_EmptyMeshIsExplained(result);
+    ensures (chosen.IsChosen(f) && m.IsDiscretizedFace(f, d)) ? result.SameFaceMeshOutcome(m.MeshFace(f, d, o.Face)) : result.Mesh.IsEmptyFaceMesh;
+    measure result.Mesh.UvPoints.Count + result.Mesh.ElementCount;
+}
+
+// The state before any refinement.
+spec InitialState(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): PipelineState
+{
+    requires m.IsRunnable(o);
+    ensures result.Round == 0;
+    ensures Law_DiscretizationsCoverEdges(m, result.Discretizations);
+    ensures result.Outcomes.Count == m.Faces.Count;
+    ensures forall (k: Integer) in m.Faces.Count.Range : result.Outcomes[k].SameFaceMeshOutcome(m.FaceOutcome(BrepFaceIndex(k), result.Discretizations, o, chosen));
+    ensures forall (q: Integer) in result.Pending.Count.Range : Law_PendingRequestIsInSomeOutcome(result, q);
+    measure m.Edges.Count + m.Faces.Count;
+}
+
+// One refinement step: Round up by one, no edge coarsened, every unrequested
+// edge kept, only faces of changed edges meshed again.
+spec Step(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, s: PipelineState): PipelineState
+{
+    requires m.IsRunnable(o);
+    requires Law_DiscretizationsCoverEdges(m, s.Discretizations);
+    requires s.Outcomes.Count == m.Faces.Count;
+    requires !s.IsTerminal(o);
+    ensures result.Round == s.Round + 1;
+    ensures Law_DiscretizationsCoverEdges(m, result.Discretizations);
+    ensures result.Outcomes.Count == m.Faces.Count;
+    ensures forall (e: BrepEdgeIndex) : Law_RefineKeepsUnrequestedEdges(m, s.Discretizations, s.Pending, o.Face.Discretization, e);
+    ensures forall (e: BrepEdgeIndex) : forall (j: Integer) : Law_RefineNeverCoarsens(m, s.Discretizations, s.Pending, o.Face.Discretization, e, j);
+    ensures forall (k: Integer) in m.Faces.Count.Range : m.FaceEdges(BrepFaceIndex(k)).All(e => result.Discretizations.ByEdge[e].SameDiscretization(s.Discretizations.ByEdge[e])) ? result.Outcomes[k].SameFaceMeshOutcome(s.Outcomes[k]) : true;
+    ensures forall (k: Integer) in m.Faces.Count.Range : result.Outcomes[k].SameFaceMeshOutcome(m.FaceOutcome(BrepFaceIndex(k), result.Discretizations, o, chosen));
+    ensures forall (q: Integer) in result.Pending.Count.Range : Law_PendingRequestIsInSomeOutcome(result, q);
+    measure s.Pending.Count + m.Faces.Count;
+}
+
+// The state after k steps, or sooner the terminal state.
+spec StateAfter(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, k: Integer): PipelineState
+{
+    requires m.IsRunnable(o);
+    ensures result.Round <= o.MaxRefinementRounds;
+    ensures result.Round == k.Max(0) || result.IsTerminal(o);
+    ensures result.Round <= k.Max(0);
+    measure k.Max(0).Min(o.MaxRefinementRounds);
+}
+
+// The terminal state.
+spec FinalState(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): PipelineState
+{
+    requires m.IsRunnable(o);
+    ensures result.IsTerminal(o);
+    ensures result.Round <= o.MaxRefinementRounds;
+    ensures Law_LoopEndsTerminal(m, o);
+    measure o.MaxRefinementRounds;
+}
+
+//==
+// # Contracts: outcomes and entry points
+
+// Locating keeps every check, code, and severity.
+spec Located(r: Report, where: Provenance): Report
+{
+    requires !(where == Provenance.Nowhere);
+    ensures result.Checks.Count == r.Checks.Count;
+    ensures result.Diagnostics.Count == r.Diagnostics.Count;
+    ensures result.IsClean == r.IsClean;
+    ensures forall (k: Integer) in result.Diagnostics.Count.Range : !(result.Diagnostics[k].Where == Provenance.Nowhere);
+    ensures forall (k: Integer) in result.Checks.Count.Range : Law_FailedCheckHasDiagnostic(result, k);
+    measure r.Diagnostics.Count;
+}
+
+// The meshing of a chosen set of faces: total, Ok exactly when clean, every
+// finding located, the rounds within the limit.
+spec MeshChosenFaces(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): MeshOutcome
+{
+    requires true;
+    ensures result.Ok == result.Report.IsClean;
+    ensures forall (k: Integer) in result.Report.Diagnostics.Count.Range : !(result.Report.Diagnostics[k].Where == Provenance.Nowhere);
+    ensures m.IsRunnable(o) ? result.Rounds == m.FinalState(o, chosen).Round : result.Rounds == 0;
+    ensures m.IsRunnable(o) ? true : !result.Ok;
+    ensures m.IsRunnable(o) ? true : result.Mesh.ElementCount == 0;
+    ensures Law_NumberingCoversPositions(result.Mesh);
+    measure m.Edges.Count + m.Faces.Count + o.MaxRefinementRounds.Max(0) * m.Faces.Count;
+}
+
+// The meshing of a model: every law of pipeline.laws.plato over (m, o).
+spec MeshModel(m: BrepModel, o: MeshingOptions): MeshOutcome
+{
+    requires true;
+    ensures Law_MeshModelIsDeterministic(m, o);
+    ensures Law_OkExactlyWhenClean(m, o);
+    ensures Law_RoundsWithinLimit(m, o);
+    ensures forall (k: Integer) : Law_EveryDiagnosticIsLocated(m, o, k);
+    ensures forall (e: BrepEdgeIndex) : Law_UndiscretizableEdgeIsDiagnosed(m, o, e);
+    ensures forall (f: BrepFaceIndex) : Law_EmptyFaceIsDiagnosed(m, o, f);
+    ensures forall (e: BrepEdgeIndex) : Law_FinalDiscretizationsMeetFloors(m, o, e);
+    ensures forall (f: BrepFaceIndex) : forall (g: BrepFaceIndex) : Law_FailedFaceLeavesOthersUnchanged(m, o, f, g);
+    ensures Law_ClosedWhenEveryShellClosedAndNoFaceEmpty(m, o);
+    ensures Law_OrientedWhenEveryShellClosedAndNoFaceEmpty(m, o);
+    ensures forall (e: BrepEdgeIndex) : Law_EdgeReversalPreservesMesh(m, o, e);
+    ensures Law_ShellReversalNegatesVolume(m, o);
+    ensures forall (c: Number) : Law_TighterChordalStaysWithinLooserBound(m, o, c);
+    measure m.Edges.Count + m.Faces.Count + o.MaxRefinementRounds.Max(0) * m.Faces.Count;
+}
+
+// The meshing of a STEP text: total, parse and decode findings first.
+spec MeshStepTextTraced(text: String, o: MeshingOptions): StepMeshOutcome
+{
+    requires true;
+    ensures result.Decoded.Model.Vertices.Count == text.ParseStep.File.DecodeBrepWith(o.Decode).Model.Vertices.Count;
+    ensures result.Meshed.Rounds == result.Decoded.Model.MeshModel(o).Rounds;
+    ensures result.Meshed.Mesh.SameModelMesh(result.Decoded.Model.MeshModel(o).Mesh);
+    ensures result.Meshed.Report.Diagnostics.Count == text.ParseStep.Diagnostics.Count + result.Decoded.Diagnostics.Count + result.Decoded.Model.MeshModel(o).Report.Diagnostics.Count;
+    ensures Law_ParseErrorMeansNotOk(text, o);
+    ensures Law_DecodeErrorMeansNotOk(text, o);
+    ensures Law_NoFacesMeansNoMesh(text, o);
+    ensures Law_NoFacesMeansNotOk(text, o);
+    measure text.ParseStep.File.Instances.Count + text.ParseStep.File.Attributes.Count;
+}
+
+// The meshing of a STEP text, without the decode.
+spec MeshStepText(text: String, o: MeshingOptions): MeshOutcome
+{
+    requires true;
+    ensures result.SameMeshOutcome(text.MeshStepTextTraced(o).Meshed);
+    ensures Law_MeshStepTextIsDeterministic(text, o);
+    ensures Law_StepTextOkExactlyWhenClean(text, o);
+    ensures forall (k: Integer) : Law_EveryStepTextDiagnosticIsLocated(text, o, k);
+    measure text.ParseStep.File.Instances.Count + text.ParseStep.File.Attributes.Count;
+}
+
+//==
+// # Contracts: declarations owed by lower layers
+
+// A rigid motion of the model: tables and parameters kept, points moved.
+spec RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel
+{
+    requires motion.IsOrthonormalWithin(m.Tolerances.Angle);
+    ensures result.Vertices.Count == m.Vertices.Count;
+    ensures result.Edges.Count == m.Edges.Count && result.Loops.Count == m.Loops.Count && result.Faces.Count == m.Faces.Count;
+    ensures result.Shells.Count == m.Shells.Count && result.Bodies.Count == m.Bodies.Count;
+    ensures result.Tolerances == m.Tolerances;
+    ensures forall (v: Integer) in m.Vertices.Count.Range : result.Vertices[v].Point.Coincident(motion.PointInFrame(m.Vertices[v].Point), m.Tolerances.Length);
+    ensures forall (s: Integer) in m.Geometry.Surfaces.Count.Range : forall (uv: UvCoordinate) : result.Geometry.Eval(SurfaceIndex(s), uv).Coincident(motion.PointInFrame(m.Geometry.Eval(SurfaceIndex(s), uv)), m.Tolerances.Length);
+    ensures forall (c: Integer) in m.Geometry.Curves.Count.Range : forall (t: Number) : result.Geometry.Eval(CurveIndex(c), t).Coincident(motion.PointInFrame(m.Geometry.Eval(CurveIndex(c), t)), m.Tolerances.Length);
+    measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
+    deferred "one pass over the arena and the vertex table, mapping points, frames, directions, and control points through the motion";
+}
+
+// The model scaled by factor: tables kept, lengths multiplied.
+spec ScaledBy(m: BrepModel, factor: Number): BrepModel
+{
+    requires factor > 0.0 && factor.IsFinite;
+    ensures result.Vertices.Count == m.Vertices.Count;
+    ensures result.Edges.Count == m.Edges.Count && result.Loops.Count == m.Loops.Count && result.Faces.Count == m.Faces.Count;
+    ensures result.Shells.Count == m.Shells.Count && result.Bodies.Count == m.Bodies.Count;
+    ensures result.Tolerances.Length.Value == m.Tolerances.Length.Value * factor;   // exact by construction: the same product
+    ensures result.Tolerances.Angle == m.Tolerances.Angle;
+    ensures result.Tolerances.Parameter == m.Tolerances.Parameter;
+    ensures forall (v: Integer) in m.Vertices.Count.Range : result.Vertices[v].Point.Coincident(m.Vertices[v].Point.ScaledPoint(factor), result.Tolerances.Length);
+    measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
+    deferred "one pass over the arena and the vertex table, multiplying every length and every length parameter by factor";
+}
+
+// Reversal keeps every table but the faces' flags.
+spec WithEveryFaceReversed(m: BrepModel): BrepModel
+{
+    ensures result.Faces.Count == m.Faces.Count;
+    ensures forall (f: Integer) in m.Faces.Count.Range : result.Faces[f].SameSense == !m.Faces[f].SameSense;
+    ensures forall (f: Integer) in m.Faces.Count.Range : forall (j: Integer) in m.Faces[f].Bounds.Count.Range : result.Faces[f].Bounds[j].Orientation == !m.Faces[f].Bounds[j].Orientation;
+    ensures forall (f: Integer) in m.Faces.Count.Range : m.FaceNormalSign(BrepFaceIndex(f)) == -result.FaceNormalSign(BrepFaceIndex(f));
+    measure m.Faces.Count;
+}
+
+//==
+// # Theorems
+
+// The assembled mesh is closed when the model's shells are closed and no
+// face is left without a mesh. The assumptions are the actual laws of layers
+// 2, 4, 5, and 6 that the argument uses.
+theorem WatertightByConstruction
+{
+    given m: BrepModel, o: MeshingOptions;
+    assume m.IsRunnable(o);
+    // layer 2: the model is a set of closed, coherently oriented shells
+    assume Law_IndicesInRange(m);
+    assume forall (l: Integer) in m.Loops.Count.Range : Law_LoopsChainEndToStart(m, BrepLoopIndex(l));
+    assume forall (s: Integer) in m.Shells.Count.Range : m.Shells[s].DeclaredClosed;
+    assume forall (s: Integer) in m.Shells.Count.Range : Law_DeclaredClosedIsClosed(m, ShellIndex(s));
+    assume forall (s: Integer) in m.Shells.Count.Range : forall (e: BrepEdgeIndex) in m.EdgesOfShell(ShellIndex(s)) : Law_EveryEdgeUsedTwiceInClosedShell(m, ShellIndex(s), e);
+    assume forall (s: Integer) in m.Shells.Count.Range : forall (e: BrepEdgeIndex) in m.EdgesOfShell(ShellIndex(s)) : Law_EdgeUsesHaveOppositeOrientation(m, ShellIndex(s), e);
+    assume forall (f: Integer) in m.Faces.Count.Range : exists (s: Integer) in m.Shells.Count.Range : m.ShellFaces(ShellIndex(s)).Any(x => x.Value == f);
+    // layer 4: one polyline per edge, read reversed by the opposite use
+    assume forall (i: Integer) : Law_DiscretizationsIndexedByEdge(m.FinalState(o, m.AllFaces).Discretizations, i);
+    assume forall (b1: FaceBound) : forall (c1: Coedge) : forall (b2: FaceBound) : forall (c2: Coedge) : forall (k: Integer) :
+        Law_OppositeUsesSeeReversedPoints(m, m.FinalState(o, m.AllFaces).Discretizations.ByEdge[c1.Edge], b1, c1, b2, c2, k);
+    // layer 5: every face meshed, its boundary the shared samples, its points identified only as sources say
+    assume forall (f: Integer) in m.Faces.Count.Range : !m.FinalState(o, m.AllFaces).Outcomes[f].Mesh.IsEmptyFaceMesh;
+    assume forall (f: Integer) in m.Faces.Count.Range : forall (b: FaceBound) in m.Faces[f].Bounds : Law_LoopToUvCountMatchesDiscretization(m, BrepFaceIndex(f), b, m.FinalState(o, m.AllFaces).Discretizations);
+    assume forall (f: Integer) in m.Faces.Count.Range : forall (i: VertexIndex) : Law_SharedPositionIsCopied(m, m.FinalState(o, m.AllFaces).Discretizations, m.FinalState(o, m.AllFaces).Outcomes[f].Mesh, i);
+    assume forall (f: Integer) in m.Faces.Count.Range : forall (i: VertexIndex) : forall (j: VertexIndex) : Law_LocalVertexFibresAreIdentifications(m.FinalState(o, m.AllFaces).Outcomes[f].Mesh, i, j);
+    assume forall (f: Integer) in m.Faces.Count.Range : forall (i: VertexIndex) : Law_ProvenanceMatchesSource(m.FinalState(o, m.AllFaces).Discretizations, m.FinalState(o, m.AllFaces).Outcomes[f].Mesh, i);
+    // layer 6: assembly identifies boundary samples by site
+    assume m.CanAssemble(m.FinalState(o, m.AllFaces).FaceMeshesOf, m.NumberMeshVertices(m.FinalState(o, m.AllFaces).Discretizations, m.FinalState(o, m.AllFaces).FaceMeshesOf));
+    conclude m.MeshModel(o).Mesh.IsClosed;
+    because "Take any mesh edge {a, b} of the assembled mesh. Case 1, it lies along a model edge e: a and b are consecutive points of e's one discretization (Law_DiscretizationsIndexedByEdge), and each face citing e emits the segment between them once per use, because LoopToUv draws every coedge's points once (Law_LoopToUvCountMatchesDiscretization) and the element sides along the boundary are the boundary segments (layer 5's TriangulateRegion fixes every boundary segment as a constraint, and the elements tile the region: layer 5's conjecture ElementsTileRegion). Every edge of a closed shell has exactly two uses (Law_EveryEdgeUsedTwiceInClosedShell, Law_DeclaredClosedIsClosed), and the two uses read the same points in opposite orders (Law_OppositeUsesSeeReversedPoints, layer 4's SharedPolylineClosesEveryEdge). The points cite one site each, so the two faces' corners are one assembled vertex (layer 6's WatertightByNumbering, through Law_SharedPositionIsCopied and Law_ProvenanceMatchesSource), and the side {a, b} has exactly two element sides, one per use. A seam is the case of two uses in one face (layer 2's Law_SeamUsesAreInOneFace); its two parameter-space copies share one local vertex (Law_LocalVertexFibresAreIdentifications), so the same count holds. Case 2, it lies inside a face: the tiling puts exactly two elements on every interior segment of the parameter region, and lifting identifies only seam copies and pole points (Law_LocalVertexFibresAreIdentifications), whose segments are boundary segments of the region glued in pairs (seam) or collapsed with their element (pole, layer 5's DroppedTrianglesArePoleSegments). Every face belongs to a shell and none is empty, so no boundary segment of the model lacks its second side. Hence every mesh edge has exactly two element sides: IsClosed. The theorem inherits the status of layer 5's conjecture ElementsTileRegion, the one assumption no law yet proves.";
+    tested by Law_ClosedWhenEveryShellClosedAndNoFaceEmpty, Law_AssembledSharedBoundaryCornersCoincide, Law_SharedBoundarySampleHasOneGlobalVertex, Law_OppositeUsesSeeReversedPoints, Law_SharedPositionIsCopied, Law_LoopToUvCountMatchesDiscretization;
+}
+
+// The loop stops, after at most MaxRefinementRounds steps, with nothing
+// pending or at the round limit.
+theorem LoopTerminates
+{
+    given m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>;
+    assume m.IsRunnable(o);
+    conclude m.FinalState(o, chosen).IsTerminal(o);
+    because "FinalState is StateAfter with bound MaxRefinementRounds. Its loop runs only while Round < MaxRefinementRounds and the state is not terminal, and each pass applies Step, whose body returns Round + 1. So the measure MaxRefinementRounds - Round is a non-negative integer (Round starts at 0 and MaxRefinementRounds >= 0 for runnable options) that falls by exactly one per pass, and the loop makes at most MaxRefinementRounds passes. Each pass terminates: Refine by layer 4's DiscretizeTerminates on every requested edge, MeshFace by the measures of layer 5's contracts, and every other function in Step is a map over a finite table. At exit the guard is false: either Round >= MaxRefinementRounds, or the state is terminal; IsTerminal includes the first, so it holds either way. A step that changes no edge meshes no face again (FacesTouching marks none), so its successor has nothing pending: the loop also stops as soon as refinement reaches a fixed point, without spending the remaining rounds.";
+    tested by Law_LoopEndsTerminal, Law_StepDecreasesMeasure, Law_MeasureIsNeverNegative;
+}
+
+// A face reaches other faces only through refinement of the edges it cites,
+// so a face that asks for nothing leaves every other face as it would be
+// without it.
+theorem FailureIsIsolated
+{
+    given m: BrepModel, o: MeshingOptions, f: BrepFaceIndex, g: BrepFaceIndex;
+    assume m.IsRunnable(o);
+    assume m.IsFaceInRange(f) && m.IsFaceInRange(g) && !(f == g);
+    assume m.FinalState(o, m.AllFaces).Outcomes[f].Requests.Count == 0;
+    assume forall (e: BrepEdgeIndex) in m.FaceEdges(f) : m.FinalState(o, m.AllFaces).Discretizations.ByEdge[e].SameDiscretization(m.InitialState(o, m.AllFaces).Discretizations.ByEdge[e]);
+    assume forall (k: Integer) : forall (h: BrepFaceIndex) : forall (q: Integer) : Law_RequestsNameEdgesOfTheirFace(m, o, k, h, q);
+    conclude m.FinalState(o, m.AllFaces).Outcomes[g].Mesh.SameFaceMesh(m.FinalState(o, m.AllFaces.Excluding(f)).Outcomes[g].Mesh);
+    because "Call A the run over every face and B the run without f. Refinement only adds parameters (Law_RefinementNeverCoarsens), so an edge that ends equal to its initial discretization was never changed; f cites only such edges, so FacesTouching never marks f, and f's outcome in A is its round-0 outcome, which is its final one and holds no request. Induction over rounds: both runs start from the same discretizations (DiscretizeUsable does not read the choice) and give every face but f the same round-0 outcome (FaceOutcome reads only f, d, and the options). If the two runs agree on the discretizations and on every outcome but f's after round r, their pending requests agree, since f contributes none in A and its excluded outcome in B holds none; so Refine gives the same discretizations, ChangedEdges the same marks, FacesTouching the same faces apart from f (never marked in A, not chosen in B), and FaceOutcome the same outcomes for them. Both runs also stop in the same round. So g's final outcome, and its mesh, are the same in both. Law_RequestsNameEdgesOfTheirFace is what makes 'f contributes no request' mean 'f changes no edge of another face' in general; here f contributes none at all. When f does ask for refinement, its influence is confined to the faces that share a refined edge with it and, through their own requests, to their neighbours: Law_OnlyFacesOfChangedEdgesAreRemeshed.";
+    tested by Law_FailedFaceLeavesOthersUnchanged, Law_OnlyFacesOfChangedEdgesAreRemeshed, Law_OutcomesAreCurrent, Law_RequestsNameEdgesOfTheirFace, Law_RefinementNeverCoarsens;
+}
+
+// Ok means the requested validation found no error, and every finding of the
+// run, the parse and decode included.
+theorem OkMeansCleanAtTheLevel
+{
+    given text: String, o: MeshingOptions;
+    assume text.MeshStepText(o).Ok;
+    conclude !text.ParseStep.Diagnostics.Any(d => d.Severity.IsError)
+        && !text.MeshStepTextTraced(o).Decoded.Diagnostics.Any(d => d.Severity.IsError)
+        && text.MeshStepTextTraced(o).Decoded.Model.MeshModel(o).Report.IsClean;
+    because "MeshOutcomeOf sets Ok to Report.IsClean. The report of MeshStepTextTraced is the parse diagnostics, then the decode diagnostics, located, then the report of MeshModel; Located keeps every severity and Merge concatenates, so by layer 0's Law_MergeIsCleanExactlyWhenBothClean it is clean exactly when each part is. MeshModel's report holds the validation at o.Level (Validated: ValidateBrep, ValidateModelMesh, and CrossCheck at the level), merged the same way.";
+    tested by Law_StepTextOkExactlyWhenClean, Law_ParseErrorMeansNotOk, Law_DecodeErrorMeansNotOk, Law_OkExactlyWhenClean, Law_MergeIsCleanExactlyWhenBothClean;
+}
+
+// Scaling up by a power of two commutes with meshing.
+theorem PowerOfTwoScalingCommutes
+{
+    given m: BrepModel, o: MeshingOptions, k: Integer;
+    assume m.IsRunnable(o);
+    assume k >= 0 && k <= 64;
+    assume m.Tolerances.Length.Value >= m.Tolerances.Parameter.Value;
+    conclude m.MeshModel(o).Mesh.SameConnectivity(m.ScaledBy(PowerOfTwo(k)).MeshModel(o.ScaledBy(PowerOfTwo(k))).Mesh);
+    because "Multiplying by 2^k is exact while no value leaves the normal range, and commutes exactly with +, -, comparison, and the square root of a product of two lengths; a ratio of two lengths, and so every angle, is unchanged. Every comparison the pipeline makes is between two quantities of one dimension, both scaled (a sagitta against a chordal bound, a distance against the length tolerance), or between two dimensionless ones, both unchanged; so every decision of layers 4 to 6 comes out the same. The exception is the parameter tolerance at a point, layer 0's max(floor, min(Length / speed, cap)), whose floor Tolerances.Parameter serves angle and length parameters alike and which ScaledBy keeps. On an angle parameter Length / speed is a ratio of two scaled lengths, unchanged, so the tolerance is unchanged. On a length parameter of unit speed (a plane's, a cylinder's axial one) the tolerance is max(floor, Length) before and max(floor, 2^k Length) after, which is 2^k times the first because Length >= floor (the third assumption) and 2^k >= 1. On a knot parameter speed scales with Length and the ratio is unchanged. So every parameter comparison scales consistently, and connectivity is identical. Scaling down (k < 0) can make 2^k Length fall below the floor on a length parameter; that case needs per-direction floors in layer 0 (README, 'Findings in lower layers').";
+    tested by Law_PowerOfTwoScalingKeepsConnectivity, Law_PowerOfTwoScalingScalesPositions;
+}

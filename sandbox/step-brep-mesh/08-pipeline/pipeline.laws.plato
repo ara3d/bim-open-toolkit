@@ -1,0 +1,562 @@
+//==
+// # STEP to mesh: laws
+//
+// Layer 8 of the STEP B-rep to mesh design. The end-to-end laws: what the
+// whole pipeline promises about its outcome, its loop, and how its result
+// moves when the input moves. Conventions (SPEC-DSL.md section 2): one
+// statement per law; a leading guard written with `? :` or an early return
+// makes a law vacuously true where its precondition fails, so every law is
+// total; exact equality only on integers, Booleans, indices, sum tags, and
+// values the law claims are bit-identical copies or bit-identical results.
+//
+// Every law takes a BrepModel, a MeshingOptions, or a String, so the
+// pseudorandom runner skips them all (PLATO-PRIMER.md B.2); they run over
+// layer 7's witnesses with Witness_UnitScaleOptions, over the hand-written
+// STEP texts of the implementation order (README.md), and over the corpus.
+// Kinds as in research/VALIDATION-MATH.md section 8: "library" laws test the
+// pipeline's code and a failure is a defect (Error); "convention" laws hold
+// for states built by InitialState and Step.
+//
+// Sections, in order:
+//  - Helpers
+//  - Witnesses
+//  - Outcomes
+//  - Diagnostics
+//  - The loop: termination
+//  - The loop: monotone and local refinement
+//  - The loop: state invariants
+//  - Failure isolation
+//  - Watertightness
+//  - Metamorphic relations
+//  - Validation
+
+library StepToMeshLaws
+{
+    //==
+    // # Helpers
+
+    // Two face meshes are the same value: one face, and every array equal
+    // entry by entry. Exact by design: the laws that use it claim that two
+    // runs compute the same mesh, bit for bit.
+    SameFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
+        => a.Face == b.Face
+            && a.UvPoints.Corresponds(b.UvPoints, (x, y) => x == y)
+            && a.Sources.Corresponds(b.Sources, (x, y) => x == y)
+            && a.LocalVertex.Corresponds(b.LocalVertex, (x, y) => x == y)
+            && a.Positions.Corresponds(b.Positions, (x, y) => x == y)
+            && a.Normals.Corresponds(b.Normals, (x, y) => x == y)
+            && a.Triangles.Corresponds(b.Triangles, (x, y) => x == y)
+            && a.Quads.Corresponds(b.Quads, (x, y) => x == y)
+            && a.Provenance.Corresponds(b.Provenance, (x, y) => x == y);
+
+    // Two face outcomes are the same: the same mesh, the same requests, and
+    // identical diagnostics (layer 0's Identical: NaN measures agree).
+    SameFaceMeshOutcome(a: FaceMeshOutcome, b: FaceMeshOutcome): Boolean
+        => a.Mesh.SameFaceMesh(b.Mesh)
+            && a.Requests.Corresponds(b.Requests, (x, y) => x == y)
+            && a.Diagnostics.Corresponds(b.Diagnostics, (x, y) => x.Identical(y));
+
+    // Two model meshes have the same connectivity: the same elements over the
+    // same vertex indices, each approximating the same face, under the same
+    // numbering. Positions, parameters, and normals are not compared.
+    SameConnectivity(a: ModelMesh, b: ModelMesh): Boolean
+        => a.Triangles.Corresponds(b.Triangles, (x, y) => x == y)
+            && a.Quads.Corresponds(b.Quads, (x, y) => x == y)
+            && a.ElementFace.Corresponds(b.ElementFace, (x, y) => x == y)
+            && IsSameNumbering(a.Numbering, b.Numbering);
+
+    // Two model meshes are the same value: the same connectivity, and every
+    // position, corner normal, corner parameter, and vertex provenance equal.
+    // Exact by design, as SameFaceMesh.
+    SameModelMesh(a: ModelMesh, b: ModelMesh): Boolean
+        => a.SameConnectivity(b)
+            && IsSamePoints(a.Positions, b.Positions)
+            && a.CornerNormals.Corresponds(b.CornerNormals, (x, y) => x == y)
+            && a.CornerUvs.Corresponds(b.CornerUvs, (x, y) => x == y)
+            && a.VertexProvenance.Corresponds(b.VertexProvenance, (x, y) => x == y);
+
+    // Two meshing outcomes are the same: verdict, rounds, mesh, and report.
+    SameMeshOutcome(a: MeshOutcome, b: MeshOutcome): Boolean
+        => a.Ok == b.Ok
+            && a.Rounds == b.Rounds
+            && a.Mesh.SameModelMesh(b.Mesh)
+            && a.Report.Identical(b.Report);
+
+    // 2 to the power k, by k exact doublings or halvings.
+    PowerOfTwo(k: Integer): Number
+    {
+        var x = 1.0;
+        var i = 0;
+        while (i < k.Abs)
+        {
+            x = k >= 0 ? x * 2.0 : x * 0.5;
+            i = i + 1;
+        }
+        return x;
+    }
+
+    // The point with every coordinate multiplied by factor.
+    ScaledPoint(p: Point3D, factor: Number): Point3D
+        => Point3D(p.X * factor, p.Y * factor, p.Z * factor);
+
+    // True when two points have identical coordinates (layer 0's Identical).
+    IsIdenticalPoint(a: Point3D, b: Point3D): Boolean
+        => a.X.Identical(b.X) && a.Y.Identical(b.Y) && a.Z.Identical(b.Z);
+
+    // True when shell s is declared closed, has no edge used once, and every
+    // edge it cites is used twice with opposite composed senses (layer 2).
+    IsClosedShell(m: BrepModel, s: ShellIndex): Boolean
+        => m.Shells[s].DeclaredClosed
+            && Law_DeclaredClosedIsClosed(m, s)
+            && m.EdgesOfShell(s).All(e =>
+                Law_EveryEdgeUsedTwiceInClosedShell(m, s, e) && Law_EdgeUsesHaveOppositeOrientation(m, s, e));
+
+    // True when the model meets the hypotheses of WatertightByConstruction
+    // that its own laws state: every loop chains end to start, every shell is
+    // a closed shell (IsClosedShell), and every face belongs to a shell.
+    // Precondition: Law_IndicesInRange(m).
+    IsClosedShellModel(m: BrepModel): Boolean
+        => m.Loops.Count.Range.All(l => Law_LoopsChainEndToStart(m, BrepLoopIndex(l)))
+            && m.Shells.Count.Range.All(s => m.IsClosedShell(ShellIndex(s)))
+            && m.Faces.Count.Range.All(f => m.Shells.Count.Range.Any(s => m.ShellFaces(ShellIndex(s)).Any(x => x.Value == f)));
+
+    // The largest deviation a state's mesh shows where the criteria govern it:
+    // the sampled sagitta (layer 4) of every edge segment not stopped by the
+    // length floor, and the deviation (layer 5) of every element whose
+    // shortest edge is at least twice the minimum length. 0 for no sample.
+    GovernedDeviation(m: BrepModel, o: MeshingOptions, s: PipelineState): Number
+        => m.GovernedEdgeDeviation(o, s.Discretizations).Max(m.GovernedFaceDeviation(o, s));
+
+    // The edge part of GovernedDeviation.
+    GovernedEdgeDeviation(m: BrepModel, o: MeshingOptions, d: EdgeDiscretizations): Number
+        => d.ByEdge.Reduce(0.0, (worst, x) =>
+            m.IsEvaluable(x)
+                ? x.SegmentCount.Range.Reduce(worst, (w, i) =>
+                    m.IsAtLengthFloor(x, o.Face.Discretization, i)
+                        ? w
+                        : w.Max(m.SampledSagitta(x, SamplePlan.DiscretizationPlan, i)))
+                : worst);
+
+    // The face part of GovernedDeviation.
+    GovernedFaceDeviation(m: BrepModel, o: MeshingOptions, s: PipelineState): Number
+        => s.Outcomes.Reduce(0.0, (worst, x) =>
+            x.Mesh.ElementCount.Range.Reduce(worst, (w, k) =>
+                m.CanMeasure(x.Mesh, ElementIndex(k))
+                    ? (x.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * o.Face.Discretization.MinLength
+                        ? w
+                        : w.Max(m.ElementDeviation(s.Discretizations, x.Mesh, ElementIndex(k))))
+                    : w));
+
+    //==
+    // # Witnesses
+
+    // Options for layer 7's unit-sized witnesses: the recommended options at
+    // a chordal bound of a hundredth of a model unit, validated at the Oracle
+    // level so that witness runs exercise every oracle.
+    Witness_UnitScaleOptions(_: MeshingOptions): MeshingOptions
+    {
+        var d = DefaultMeshingOptions(0.01);
+        return MeshingOptions(d.Face, ConformanceLevel.Oracle, d.MaxRefinementRounds, d.Decode);
+    }
+
+    //==
+    // # Outcomes
+
+    // Meshing a model twice gives the same outcome, bit for bit: no hash
+    // order, thread schedule, or address decides anything. Library, exact.
+    Law_MeshModelIsDeterministic(m: BrepModel, o: MeshingOptions): Boolean
+        => m.MeshModel(o).SameMeshOutcome(m.MeshModel(o));
+
+    // Meshing a STEP text twice gives the same outcome, bit for bit. Library,
+    // exact.
+    Law_MeshStepTextIsDeterministic(text: String, o: MeshingOptions): Boolean
+        => text.MeshStepText(o).SameMeshOutcome(text.MeshStepText(o));
+
+    // A model's outcome is Ok exactly when its report is clean at the
+    // requested level. Library, exact.
+    Law_OkExactlyWhenClean(m: BrepModel, o: MeshingOptions): Boolean
+    {
+        var x = m.MeshModel(o);
+        return x.Ok == x.Report.IsClean;
+    }
+
+    // A STEP text's outcome is Ok exactly when its report, parse and decode
+    // findings included, is clean. Library, exact.
+    Law_StepTextOkExactlyWhenClean(text: String, o: MeshingOptions): Boolean
+    {
+        var x = text.MeshStepText(o);
+        return x.Ok == x.Report.IsClean;
+    }
+
+    // The rounds taken are at most the round limit of well-formed options,
+    // and 0 for options a run refuses. Library, exact.
+    Law_RoundsWithinLimit(m: BrepModel, o: MeshingOptions): Boolean
+        => o.IsWellFormed
+            ? m.MeshModel(o).Rounds <= o.MaxRefinementRounds
+            : m.MeshModel(o).Rounds == 0;
+
+    // A text whose parse reported an Error gives an outcome that is not Ok.
+    // Library, exact.
+    Law_ParseErrorMeansNotOk(text: String, o: MeshingOptions): Boolean
+        => text.ParseStep.Ok ? true : !text.MeshStepText(o).Ok;
+
+    // A text whose decode reported an Error gives an outcome that is not Ok.
+    // Library, exact.
+    Law_DecodeErrorMeansNotOk(text: String, o: MeshingOptions): Boolean
+    {
+        var x = text.MeshStepTextTraced(o);
+        return x.Decoded.Diagnostics.Any(d => d.Severity.IsError) ? !x.Meshed.Ok : true;
+    }
+
+    // A text that decodes to a model with no face gives a mesh with no
+    // element. Library, exact.
+    Law_NoFacesMeansNoMesh(text: String, o: MeshingOptions): Boolean
+    {
+        var x = text.MeshStepTextTraced(o);
+        return x.Decoded.Model.Faces.Count == 0 ? x.Meshed.Mesh.ElementCount == 0 : true;
+    }
+
+    // A text that decodes to a model with no face gives an outcome that is
+    // not Ok. Library, exact.
+    Law_NoFacesMeansNotOk(text: String, o: MeshingOptions): Boolean
+    {
+        var x = text.MeshStepTextTraced(o);
+        return x.Decoded.Model.Faces.Count == 0 ? !x.Meshed.Ok : true;
+    }
+
+    //==
+    // # Diagnostics
+
+    // Every diagnostic of a model's outcome is located: its provenance is not
+    // Nowhere. Library, exact.
+    Law_EveryDiagnosticIsLocated(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
+    {
+        var r = m.MeshModel(o).Report;
+        return r.Diagnostics.IsValidIndex(k) ? !(r.Diagnostics[k].Where == Provenance.Nowhere) : true;
+    }
+
+    // Every diagnostic of a STEP text's outcome, parse and decode findings
+    // included, is located. Library, exact.
+    Law_EveryStepTextDiagnosticIsLocated(text: String, o: MeshingOptions, k: Integer): Boolean
+    {
+        var r = text.MeshStepText(o).Report;
+        return r.Diagnostics.IsValidIndex(k) ? !(r.Diagnostics[k].Where == Provenance.Nowhere) : true;
+    }
+
+    // An edge that cannot be discretized has an error located at the edge.
+    // Library, exact.
+    Law_UndiscretizableEdgeIsDiagnosed(m: BrepModel, o: MeshingOptions, e: BrepEdgeIndex): Boolean
+        => (m.IsRunnable(o) && m.IsEdgeInRange(e))
+            ? (m.CanDiscretize(e, o.Face.Discretization)
+                ? true
+                : m.MeshModel(o).Report.Diagnostics.Any(d => d.Severity.IsError && d.Where == Provenance.KernelEdge(e)))
+            : true;
+
+    // A face left without a mesh has an error located at the face: from face
+    // meshing, or the pipeline's own (FailureDiagnostics). Library, exact.
+    Law_EmptyFaceIsDiagnosed(m: BrepModel, o: MeshingOptions, f: BrepFaceIndex): Boolean
+        => (m.IsRunnable(o) && m.IsFaceInRange(f))
+            ? (m.FinalState(o, m.AllFaces).Outcomes[f].Mesh.IsEmptyFaceMesh
+                ? m.MeshModel(o).Report.Diagnostics.Any(d => d.Severity.IsError && d.Where == Provenance.KernelFace(f))
+                : true)
+            : true;
+
+    //==
+    // # The loop: termination
+
+    // The loop stops with nothing pending or at the round limit. Library,
+    // exact.
+    Law_LoopEndsTerminal(m: BrepModel, o: MeshingOptions): Boolean
+        => m.IsRunnable(o) ? m.FinalState(o, m.AllFaces).IsTerminal(o) : true;
+
+    // A step taken from a state that is not terminal raises Round by one, so
+    // the measure MaxRefinementRounds - Round falls by one. Library, exact.
+    Law_StepDecreasesMeasure(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
+    {
+        if (!(m.IsRunnable(o) && k >= 0))
+        {
+            return true;
+        }
+        var a = m.StateAfter(o, m.AllFaces, k);
+        var b = m.StateAfter(o, m.AllFaces, k + 1);
+        return a.IsTerminal(o) ? true : b.Round == a.Round + 1;
+    }
+
+    // No state passes the round limit, so the measure MaxRefinementRounds -
+    // Round is never negative. Library, exact.
+    Law_MeasureIsNeverNegative(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
+        => m.IsRunnable(o) ? m.StateAfter(o, m.AllFaces, k).Round <= o.MaxRefinementRounds : true;
+
+    //==
+    // # The loop: monotone and local refinement
+
+    // No edge coarsens across a step: parameter j of edge e before the step
+    // is still a parameter of edge e after it. Library, exact by
+    // construction (Refine copies every old parameter).
+    Law_RefinementNeverCoarsens(m: BrepModel, o: MeshingOptions, k: Integer, e: BrepEdgeIndex, j: Integer): Boolean
+    {
+        if (!m.IsRunnable(o))
+        {
+            return true;
+        }
+        var before = m.StateAfter(o, m.AllFaces, k).Discretizations;
+        var after = m.StateAfter(o, m.AllFaces, k + 1).Discretizations;
+        return before.ByEdge.IsValidIndex(e)
+            ? (before.ByEdge[e].Parameters.IsValidIndex(j)
+                ? (after.ByEdge.IsValidIndex(e) ? after.ByEdge[e].ContainsParameter(before.ByEdge[e].Parameters[j]) : false)
+                : true)
+            : true;
+    }
+
+    // A step meshes again only faces that cite an edge it changed: a face
+    // whose edges all come through the step unchanged keeps its outcome, bit
+    // for bit. Library, exact.
+    Law_OnlyFacesOfChangedEdgesAreRemeshed(m: BrepModel, o: MeshingOptions, k: Integer, f: BrepFaceIndex): Boolean
+    {
+        if (!(m.IsRunnable(o) && m.IsFaceInRange(f)))
+        {
+            return true;
+        }
+        var before = m.StateAfter(o, m.AllFaces, k);
+        var after = m.StateAfter(o, m.AllFaces, k + 1);
+        var changed = after.Discretizations.ChangedEdges(before.Discretizations);
+        return m.FaceEdges(f).Any(e => changed.IsValidIndex(e) ? changed[e] : true)
+            ? true
+            : before.Outcomes[f].SameFaceMeshOutcome(after.Outcomes[f]);
+    }
+
+    // Every outcome of a state the loop reaches is current: face f's outcome
+    // is what FaceOutcome gives for f under the state's discretizations, so
+    // the result depends on the loop's history only through the
+    // discretizations. Library, exact (it rests on MeshFace reading only the
+    // discretizations of the edges f cites).
+    Law_OutcomesAreCurrent(m: BrepModel, o: MeshingOptions, k: Integer, f: BrepFaceIndex): Boolean
+    {
+        if (!(m.IsRunnable(o) && m.IsFaceInRange(f)))
+        {
+            return true;
+        }
+        var s = m.StateAfter(o, m.AllFaces, k);
+        return s.Outcomes[f].SameFaceMeshOutcome(m.FaceOutcome(f, s.Discretizations, o, m.AllFaces));
+    }
+
+    // Every request in face f's outcome names an edge f cites, so a face
+    // reaches other faces only through the edges it shares with them.
+    // Library, exact (a promise of layer 5's MeshFace, stated where the loop
+    // relies on it).
+    Law_RequestsNameEdgesOfTheirFace(m: BrepModel, o: MeshingOptions, k: Integer, f: BrepFaceIndex, q: Integer): Boolean
+    {
+        if (!(m.IsRunnable(o) && m.IsFaceInRange(f)))
+        {
+            return true;
+        }
+        var x = m.StateAfter(o, m.AllFaces, k).Outcomes[f];
+        return x.Requests.IsValidIndex(q) ? m.FaceEdges(f).Any(e => e == x.Requests[q].Edge) : true;
+    }
+
+    // At the end of the loop every discretized edge meets the floors the
+    // requests raised, with layer 4's structural floors. Library, exact.
+    Law_FinalDiscretizationsMeetFloors(m: BrepModel, o: MeshingOptions, e: BrepEdgeIndex): Boolean
+    {
+        if (!(m.IsRunnable(o) && m.IsEdgeInRange(e)))
+        {
+            return true;
+        }
+        var s = m.FinalState(o, m.AllFaces);
+        return m.CanDiscretize(e, o.Face.Discretization)
+            ? Law_SegmentFloorMet(m, s.Discretizations.ByEdge[e], o.Face.Discretization, s.Floors)
+            : true;
+    }
+
+    //==
+    // # The loop: state invariants
+
+    // Outcome k of a state is the outcome of face k. Convention, exact.
+    Law_OutcomeIsOfItsFace(s: PipelineState, k: Integer): Boolean
+        => s.Outcomes.IsValidIndex(k) ? s.Outcomes[k].Mesh.Face.Value == k : true;
+
+    // Every pending request is a request of some face's outcome. Convention,
+    // exact.
+    Law_PendingRequestIsInSomeOutcome(s: PipelineState, q: Integer): Boolean
+        => s.Pending.IsValidIndex(q) ? s.Outcomes.Any(x => x.Requests.Any(r => r == s.Pending[q])) : true;
+
+    // In every state the loop reaches, edge e has no discretization exactly
+    // when CanDiscretize rejects it. Library, exact.
+    Law_EmptyDiscretizationExactlyWhenEdgeUnusable(m: BrepModel, o: MeshingOptions, k: Integer, e: BrepEdgeIndex): Boolean
+    {
+        if (!(m.IsRunnable(o) && m.IsEdgeInRange(e)))
+        {
+            return true;
+        }
+        var d = m.StateAfter(o, m.AllFaces, k).Discretizations;
+        return d.ByEdge.IsValidIndex(e)
+            ? (d.ByEdge[e].Parameters.Count == 0) == !m.CanDiscretize(e, o.Face.Discretization)
+            : true;
+    }
+
+    //==
+    // # Failure isolation
+
+    // A face that fails without asking for anything leaves every other face's
+    // mesh as it is in the run without it. Face f failed (its final mesh is
+    // empty), holds no request, and no edge of it was ever refined, so it was
+    // meshed once and asked for nothing; then face g's final mesh is
+    // bit-identical to g's final mesh when f is left out of the run. Library,
+    // exact. Run over a witness with one planted bad face (README, "Left
+    // open").
+    Law_FailedFaceLeavesOthersUnchanged(m: BrepModel, o: MeshingOptions, f: BrepFaceIndex, g: BrepFaceIndex): Boolean
+    {
+        if (!(m.IsRunnable(o) && m.IsFaceInRange(f) && m.IsFaceInRange(g)))
+        {
+            return true;
+        }
+        if (f == g)
+        {
+            return true;
+        }
+        var first = m.InitialState(o, m.AllFaces);
+        var kept = m.FinalState(o, m.AllFaces);
+        var dropped = m.FinalState(o, m.AllFaces.Excluding(f));
+        var silent = kept.Outcomes[f].Mesh.IsEmptyFaceMesh
+            && kept.Outcomes[f].Requests.Count == 0
+            && m.FaceEdges(f).All(e => kept.Discretizations.ByEdge[e].SameDiscretization(first.Discretizations.ByEdge[e]));
+        return silent ? kept.Outcomes[g].Mesh.SameFaceMesh(dropped.Outcomes[g].Mesh) : true;
+    }
+
+    //==
+    // # Watertightness
+
+    // When every shell is a closed shell, every face belongs to one, and no
+    // face is left without a mesh, the mesh is closed: every mesh edge has
+    // exactly two element sides. Library, exact; the executable instance of
+    // WatertightByConstruction.
+    Law_ClosedWhenEveryShellClosedAndNoFaceEmpty(m: BrepModel, o: MeshingOptions): Boolean
+    {
+        if (!m.IsRunnable(o))
+        {
+            return true;
+        }
+        if (!m.IsClosedShellModel)
+        {
+            return true;
+        }
+        return m.FinalState(o, m.AllFaces).Outcomes.Any(x => x.Mesh.IsEmptyFaceMesh)
+            ? true
+            : m.MeshModel(o).Mesh.IsClosed;
+    }
+
+    // Under the same hypotheses the mesh is consistently oriented: every mesh
+    // edge is traversed once each way. Library, exact.
+    Law_OrientedWhenEveryShellClosedAndNoFaceEmpty(m: BrepModel, o: MeshingOptions): Boolean
+    {
+        if (!m.IsRunnable(o))
+        {
+            return true;
+        }
+        if (!m.IsClosedShellModel)
+        {
+            return true;
+        }
+        return m.FinalState(o, m.AllFaces).Outcomes.Any(x => x.Mesh.IsEmptyFaceMesh)
+            ? true
+            : m.MeshModel(o).Mesh.IsConsistentlyOriented;
+    }
+
+    //==
+    // # Metamorphic relations
+    //
+    // Connectivity is compared only where the comparison is exact: scaling by
+    // a power of two is exact in IEEE arithmetic, so every decision the run
+    // makes is the same; a general rigid motion or scale factor rounds
+    // differently and can flip a decision at a tie (README, "Decisions").
+
+    // A rigid motion of the model moves the mesh: when the two runs give the
+    // same connectivity, vertex v of the moved run lies within the length
+    // tolerance of the moved vertex v. Library, LengthTolerance.
+    Law_RigidMotionMovesPositions(m: BrepModel, o: MeshingOptions, motion: Frame3D, v: VertexIndex): Boolean
+    {
+        if (!(m.IsRunnable(o) && motion.IsOrthonormalWithin(m.Tolerances.Angle)))
+        {
+            return true;
+        }
+        var before = m.MeshModel(o).Mesh;
+        var after = m.RigidlyMoved(motion).MeshModel(o).Mesh;
+        return (before.SameConnectivity(after) && before.Positions.IsValidIndex(v) && after.Positions.IsValidIndex(v))
+            ? motion.PointInFrame(before.Positions[v]).Coincident(after.Positions[v], m.Tolerances.Length)
+            : true;
+    }
+
+    // Scaling the model and every length criterion up by 2^k leaves the
+    // connectivity identical (theorem PowerOfTwoScalingCommutes). k is not
+    // negative and the length tolerance is not below the parameter floor,
+    // because the floor, which ScaledBy keeps, could otherwise bind on a
+    // length parameter of one model and not the other (README, "Findings in
+    // lower layers"); k <= 64 keeps every scaled length of a model with
+    // magnitudes up to 1e200 finite in 64 bits. Library, exact.
+    Law_PowerOfTwoScalingKeepsConnectivity(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
+        => (m.IsRunnable(o) && k >= 0 && k <= 64 && m.Tolerances.Length.Value >= m.Tolerances.Parameter.Value)
+            ? m.MeshModel(o).Mesh.SameConnectivity(m.ScaledBy(PowerOfTwo(k)).MeshModel(o.ScaledBy(PowerOfTwo(k))).Mesh)
+            : true;
+
+    // Scaling the model and every length criterion up by 2^k scales vertex
+    // v's position by 2^k exactly, when the two runs give the same
+    // connectivity (the law above; k as there). Library, exact: multiplying by
+    // a power of two is exact in IEEE arithmetic, and every operation on
+    // lengths commutes with it.
+    Law_PowerOfTwoScalingScalesPositions(m: BrepModel, o: MeshingOptions, k: Integer, v: VertexIndex): Boolean
+    {
+        if (!(m.IsRunnable(o) && k >= 0 && k <= 64 && m.Tolerances.Length.Value >= m.Tolerances.Parameter.Value))
+        {
+            return true;
+        }
+        var factor = PowerOfTwo(k);
+        var before = m.MeshModel(o).Mesh;
+        var after = m.ScaledBy(factor).MeshModel(o.ScaledBy(factor)).Mesh;
+        return (before.SameConnectivity(after) && before.Positions.IsValidIndex(v) && after.Positions.IsValidIndex(v))
+            ? before.Positions[v].ScaledPoint(factor).IsIdenticalPoint(after.Positions[v])
+            : true;
+    }
+
+    // Reversing an edge (vertices swapped, SameSense flipped, every use
+    // flipped) gives the same mesh, bit for bit: discretization runs in the
+    // curve's own direction and loops read it through AlongCoedge. Library,
+    // exact.
+    Law_EdgeReversalPreservesMesh(m: BrepModel, o: MeshingOptions, e: BrepEdgeIndex): Boolean
+        => (m.IsRunnable(o) && m.IsEdgeInRange(e))
+            ? m.WithEdgeReversed(e).MeshModel(o).Mesh.SameModelMesh(m.MeshModel(o).Mesh)
+            : true;
+
+    // Reversing every shell (every face's SameSense and every bound's
+    // Orientation flipped) negates the signed volume, within the length
+    // tolerance times the area: the elements are the same, wound the other
+    // way. Library, LengthTolerance times area.
+    Law_ShellReversalNegatesVolume(m: BrepModel, o: MeshingOptions): Boolean
+    {
+        if (!m.IsRunnable(o))
+        {
+            return true;
+        }
+        var before = m.MeshModel(o).Mesh;
+        var after = m.WithEveryFaceReversed.MeshModel(o).Mesh;
+        return (before.SignedVolume + after.SignedVolume).Abs <= m.Tolerances.Length.Value * before.Area;
+    }
+
+    // A mesh made under a tighter chordal bound shows, wherever the criteria
+    // govern it, no deviation above the looser bound: tightening never lets
+    // the governed deviation exceed what the looser options promise. The
+    // realized maximum itself is not monotone (README, "Decisions").
+    // Library, LengthTolerance.
+    Law_TighterChordalStaysWithinLooserBound(m: BrepModel, o: MeshingOptions, chordal: Number): Boolean
+        => (m.IsRunnable(o) && chordal > 0.0 && chordal <= o.Face.Discretization.Chordal && chordal <= o.Face.SurfaceChordal)
+            ? m.GovernedDeviation(o.WithChordal(chordal), m.FinalState(o.WithChordal(chordal), m.AllFaces))
+                <= o.ChordalBound(m.Tolerances) + m.Tolerances.Length.Value
+            : true;
+
+    //==
+    // # Validation
+
+    // Cross-checking a mesh against its model twice gives identical reports:
+    // validation reads its inputs and nothing else. Library, exact.
+    Law_CrossCheckIsIdempotent(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel): Boolean
+        => m.CrossCheck(mesh, level).Identical(m.CrossCheck(mesh, level));
+}
