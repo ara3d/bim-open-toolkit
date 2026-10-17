@@ -56,3 +56,18 @@ session accepts them.
 - **Status** accepted for a fix wave after wave B lands: one fixer per layer, one commit per
   finding, a fixer may skip a finding with a stated reason (CODING.md, "Fix and Sweep"). Findings
   that change a fixed name go through `VOCABULARY.md` revision 3.
+
+## F-45: layer 3 has no hand-built `Part21File` witness
+
+- **Raised** 2026-10-17 by the supervising session, applying the owner's rule that tests depend
+  on as little as possible and that the parser is another session's work.
+- **Where** `03-step/*.laws.plato`: every law over a `Part21File` is quantified, and the only way
+  to get a value today is `ParseStep`, a host obligation.
+- **Problem** Every decode, schema, units and WHERE law of layer 3 would wait for the C# parser
+  and its adapter.
+- **Fix** `Witness_Part21UnitBox` and the other `Part21File` literals of `TASKS.md` chunk D,
+  written with arena indices by hand, plus the law that decoding the unit-box file gives
+  `Witness_UnitBox` up to tolerance, and a `MeshParsedFile` entry in layer 8 that starts from a
+  `ParsedFile`. The same literals are the expected values of the adapter test spec (chunk E),
+  written first under `adapter/` while the layer 3 fixer owns `03-step`.
+- **Status** open, carried by `TASKS.md` chunk D.

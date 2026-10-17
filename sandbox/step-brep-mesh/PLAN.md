@@ -150,9 +150,23 @@ Recorded as they arise; the ticket carries the same list.
   make the spec DSL executable: validate, prove, generate tests; inside Plato, a separate language,
   or convention plus tooling) and `TARGET-LANGUAGE.md` (which backend to implement on first, and
   what `Number`'s width should be).
+- 2026-10-17 `TASKS.md` written while the fix wave runs (it depends on no fixer's output): eight
+  chunks A to H, eight test modules of which seven need no parser, the dependency graph, and the
+  coordination record with the parser session. Finding F-45 (no hand-built `Part21File` witness in
+  layer 3) recorded. An agent writes the adapter test spec under `adapter/`: five STEP text
+  fixtures, their expected `Part21File` literals, and `ADAPTER-SPEC.md` for whoever builds the
+  `StepDocument -> ParsedFile` adapter.
 
 ## Decided by the owner during the pass
 
+- 2026-10-17: **Tests depend on as little as possible; coordinate with the parser session.**
+  The owner asked for speed, for tests that do not depend on too many other things, for
+  development and testing from first principles, and for as much modularization as that needs.
+  `TASKS.md` is written to it: eight test modules, seven of which never read a file; shapes enter
+  as `BrepModel` witnesses before STEP text; decode tests use hand-built `Part21File` literals
+  (finding F-45); the C# parser (`Ara3D.IO.StepParser`, the session "STEP file geometry parsing
+  with Ara 3D", `docs/plans/step-reader.md`) meets the design through an adapter whose test spec
+  this side writes (`adapter/`). TKT-306 asks the owner how the two efforts relate.
 - 2026-10-17: **Plato can change; optimize for the long run.** The first versions of
   `SPEC-EXECUTION.md` and `TARGET-LANGUAGE.md` recommended the least-effort path (leave the compiler
   unchanged, convention plus tooling, the one backend that works today). The owner rejected that

@@ -1,0 +1,199 @@
+# Implementation order
+
+Written 2026-10-17 by the supervising session of TKT-299 (the STEP B-rep to mesh design), from
+layer 8's "Implementation order" and layer 7's witness table, under the owner's instruction of the
+same day: move quickly, let no test depend on more than it must, develop and test from first
+principles, and modularize as far as that requires. A separate session is writing the C# STEP
+reader (`docs/plans/step-reader.md`, TKT-301 to TKT-307); this file names the one type where the
+two meet and keeps every other chunk independent of it.
+
+## Rules every chunk follows
+
+1. **A chunk's tests read only the layers below it.** Layer k's laws run on values built by
+   layer k's own witnesses or by the witnesses of layer 7, never on a file read from disk, until
+   the end-to-end chunk at the very end.
+2. **Witnesses before files.** Every shape enters as a `BrepModel` literal (layer 7's
+   `Witness_*`) before it enters as STEP text. The literal has known counts, areas and volumes,
+   so a failing law names the defect; a file only says "different".
+3. **The parser is a host module with the boundary `Part21File`** (`03-step/step-part21.types.plato`).
+   Decode tests build `Part21File` values in Plato by hand (`Witness_Part21*`, chunk D below);
+   the parser's own tests, in C#, run layer 3's file laws over text fixtures. The two meet once,
+   in chunk E, through an adapter.
+4. **Oracles, not kernels.** No OpenCascade in library or tests (owner, 2026-10-17). A measure is
+   checked against a closed form, a Green's-theorem or divergence-theorem integral, Euler-Poincare,
+   Gauss-Bonnet, or re-evaluation from provenance (`07-validation/README.md`).
+5. **One commit per law group.** A chunk lands as several commits, each making a named set of
+   laws pass; the commit message lists them and carries `Ticket: TKT-299` until implementation
+   gets its own ticket.
+
+## Test modules and what each depends on
+
+| Module | Runs the laws of | On values from | Needs the parser | Needs layers |
+|---|---|---|---|---|
+| M0 foundation | `00-foundation` | literal tolerances, ranges, periodic domains | no | 0 |
+| M1 geometry | `01-geometry` | literal curves and surfaces in layer 1's laws file | no | 0, 1 |
+| M2 topology | `02-topology` | layer 7's ten positive and three negative `BrepModel` witnesses | no | 0 to 2, 7's witness file only |
+| M3 decode | `03-step` decode, schema, units, WHERE laws | hand-built `Part21File` values (chunk D) | no | 0 to 3 |
+| M4 discretization | `04-discretization` | witness edges: line, circle, B-spline | no | 0 to 4 |
+| M5 face meshing | `05-face-meshing` | witness faces: plane, cylinder band, sphere, torus, cone, B-spline patch | no | 0 to 5 |
+| M6 mesh | `06-mesh` | meshes assembled from M5 outputs; literal meshes (`Witness_UnitTetrahedron`, `Witness_UnitSquare`, `Witness_DartQuad`) | no | 0 to 6 |
+| M7 oracles and cross-checks | `07-validation` | witnesses meshed through layer 8's `MeshModel` | no | 0 to 8, witnesses only |
+| MP parser and adapter (C#) | layer 3's file laws: `Law_ParseOkIffNoError`, `Law_ReferencesResolve`, `Law_HeaderNamesASchema`, `Law_ChildrenPrecedeParent`, the `Part21File` invariants of `step.spec.plato`; `Law_ParsePrintParseIsIdentity` once a printer exists | text fixtures: a hand-written unit cube, the same truncated, the same without a shape representation, one complex instance, one assembly | is the parser | 0, 3's types |
+| ME end to end | `08-pipeline` over `MeshStepText` | text fixtures, then the corpus of `03-step/README.md` "Test files" | yes | all |
+
+M0 to M7 can be built and tested with no parser at all. MP can be built against the type
+declarations alone. ME is the only place the two meet.
+
+## Preconditions, none of which blocks the first chunk
+
+- **64-bit `Number`.** `TARGET-LANGUAGE.md` recommends a per-compilation profile with `cpu64`
+  as the default. Until it exists, chunk A's unit cube passes with 32-bit floats; chunks B
+  onward (circles, spheres, the B-spline patch) need the profile, so it is the first language
+  task and runs beside chunk A.
+- **The spec tooling** of `SPEC-EXECUTION.md` (`plato verify`, generators, bounded quantifiers).
+  Until it exists, the laws run as ordinary Boolean functions over the witnesses through the law
+  runner, and `.spec.plato` contracts are checked by reading. Every chunk below lists laws, not
+  contracts, for that reason.
+- **The C# parser and its adapter** (the parser session and whoever the owner assigns under
+  TKT-306). Needed by ME only.
+
+## Chunks
+
+Each chunk names the functions that need bodies (every other function the chunk reaches has one),
+the laws that must pass, and the module it extends. Shapes follow research recommendation 23, one
+new difficulty per shape.
+
+### Chunk A: the unit cube, witness-driven (M0, M1, M2, M4, M5, M6, M7)
+
+Input: `Witness_UnitBox` and `Witness_Box(w, d, h)` of layer 7. Expected mesh: 8 vertices, 12
+triangles, reduced Euler characteristic 2, closed, consistently oriented, signed volume 1,
+`Rounds` 0, `Ok` true.
+
+| Layer | Functions that need bodies |
+|---|---|
+| 0 | none |
+| 1 | none: `Line` and `Plane` evaluation, derivatives, `ClosestParameter`, `Project` are closed forms |
+| 2 | `IsDegenerateEdge`, `NormalAgreesWithParameterization`, `ReducedCounts`, `LinkComponentCount`, `CoordinateExtent`, `ModelSize` |
+| 4 | `EdgeSeeds`, `TotalTurning`, `ImagePoints`, `Discretize` |
+| 5 | `Unwrap`, `AddMissingSeamsAndPoles`, `MeanSpeed`, `TriangulateRegion`, `RefineToSurface`, `Lift` |
+| 6 | `AssembleModelMesh`, `EdgeTableOf`, `ComponentsOf`, `ComponentCountsOf`, `IsPinchedVertex`, `CoincidentVertexPairs` |
+| 7 | `ValidateBrep`, `ValidateModelMesh`, `CrossCheck` at `Structural` and `Geometric`; the planar area oracle at `Oracle` |
+| 8 | none |
+
+Laws: layer 2's well-formedness, manifold, orientation and Euler laws on the ten positive
+witnesses (they are literals, so they can all run now) and the three negative witnesses failing
+exactly their named laws; then on the box mesh: `Law_MeshModelIsDeterministic`,
+`Law_OkExactlyWhenClean`, `Law_RoundsWithinLimit`, `Law_EveryDiagnosticIsLocated`,
+`Law_LoopEndsTerminal`, `Law_MeasureIsNeverNegative`, `Law_OutcomeIsOfItsFace`,
+`Law_OutcomesAreCurrent`, `Law_EmptyDiscretizationExactlyWhenEdgeUnusable`,
+`Law_FinalDiscretizationsMeetFloors`, `Law_ClosedWhenEveryShellClosedAndNoFaceEmpty`,
+`Law_OrientedWhenEveryShellClosedAndNoFaceEmpty`, `Law_EdgeReversalPreservesMesh` on each of the
+12 edges, `Law_ShellReversalNegatesVolume`, `Law_ValidationIsIdempotent`; with
+`Witness_BoxWithFlippedFace` and the planted bad face of layer 7: `Law_EmptyFaceIsDiagnosed`,
+`Law_FailedFaceLeavesOthersUnchanged`.
+
+### Chunk B: the cylinder (M1, M4, M5 grow)
+
+`Witness_Cylinder(r, h, 2 pi)` with its seam, the band without a seam, the sector
+`Witness_Cylinder(r, h, sweep)`, then `PreferQuads` true. New: circles and the closed-form arc
+counts, closed edges, the synthetic seam cut, anisotropy, refinement against the surface,
+structured quads and `QuadCountMismatch` requests. Bodies: layer 1 `Circle` and `Cylinder` arms;
+layer 4 `RefineEdge`; layer 5 `QuadSidesOf`, `QuadGrid`, `MatchingFloors`. Laws added:
+`Law_StepDecreasesMeasure`, `Law_RefinementNeverCoarsens`, `Law_OnlyFacesOfChangedEdgesAreRemeshed`,
+`Law_RequestsNameEdgesOfTheirFace`, `Law_PendingRequestIsInSomeOutcome`,
+`Law_TighterChordalStaysWithinLooserBound` at three chordal bounds; the cylinder area and volume
+oracles.
+
+### Chunk C: sphere, torus, cone (M1, M5 grow)
+
+`Witness_Sphere(r)`, `Witness_SphereByPoleLoops(r)`, `Witness_SphereWithRedundantPoleLoops(r)`
+(negative), `Witness_Torus(R, r)`, `Witness_Cone(r, h)`. New: poles, collapsed lines, dropped
+triangles, degenerate edges of one segment, reduced counts, two periodic directions and a
+whole-period region with two seam cuts, the apex. Bodies: layer 1 `LimitNormal` and the `Sphere`,
+`Torus`, `Cone` arms. Laws: every law of A and B again; expected Euler characteristic 0 for the
+torus; the torus volume oracle over a boundary that wraps in v; Gauss-Bonnet on every closed
+mesh.
+
+### Chunk D: decode from hand-built files (M3)
+
+Layer 3 has no `Part21File` witness today (finding F-45 in `reviews/FINDINGS.md`). This chunk
+adds `Witness_Part21UnitBox`, `Witness_Part21Cylinder`, `Witness_Part21Assembly` (one part placed
+twice), `Witness_Part21Degrees` (plane angle in degrees), `Witness_Part21Complex` (one complex
+instance, the AP214 unit combination), `Witness_Part21NoShape`, `Witness_Part21DanglingReference`,
+each a `Part21File` literal written in Plato with the arena indices by hand, and the law that
+decoding `Witness_Part21UnitBox` gives a model that `IsSameModel` as `Witness_UnitBox` up to
+tolerance. Bodies: `InstancePosition`, `DecodeBrepWith`, `ClassificationDiagnostics`,
+`ResolveContexts`, `FindOccurrences`, `FlatRecord`, `SlotOf`, `ConformsTo`, `KernelOf`. Laws:
+every decode, schema, units and WHERE law of layer 3; `Law_DecodeErrorMeansNotOk`,
+`Law_NoFacesMeansNoMesh`, `Law_NoFacesMeansNotOk` through a `MeshParsedFile` entry in layer 8
+(the file-level entry that skips the parser; to be added to the contract). D depends on A only
+and runs beside B and C. The same literals are the expected values of the adapter test spec
+(chunk E), which is why they are written as `Part21File` and not as `BrepModel`.
+
+### Chunk E: the parser meets the decode (MP, ME)
+
+The parser is `Ara3D.IO.StepParser` in `deps/ara3d-sdk` (`StepDocument`: header, definitions in
+file order, one flat token arena, parent before children, raw string spans). It differs from
+`Part21File` on four points, each cheap in an adapter and none worth changing the boundary for:
+instances sorted by id; children before parents (a post-order re-emission of the arena, linear);
+decoded strings (the `\X2\`, `\S\`, `\P\` rules); and it throws on malformed input where
+`ParsedFile` wants `Ok` false with the parsed prefix. The adapter is a C# function
+`StepDocument -> ParsedFile`; who writes it waits on the owner's answer to TKT-306.
+
+This chunk's deliverable from the design side is the **adapter test spec**, `03-step/ADAPTER-SPEC.md`:
+the five text fixtures of MP as files, the expected `Part21File` for each stated as the chunk D
+literal it must equal under `IsSameFile`, the expected diagnostics for the truncated and dangling
+cases, and the file laws the adapter output must satisfy. Whoever builds the adapter implements
+against it. Then `Law_MeshStepTextIsDeterministic`, `Law_StepTextOkExactlyWhenClean`,
+`Law_EveryStepTextDiagnosticIsLocated`, `Law_ParseErrorMeansNotOk` run through `MeshStepText`.
+`Law_ParsePrintParseIsIdentity` runs once `PrintStep` exists on either side; until then it is
+stated and not executed.
+
+### Chunk F: the B-spline face (M1, M4, M5 grow)
+
+`Witness_BSplinePatchSolid(bump)`, then a `Part21File` witness for it. New: knot seeds,
+control-hull sagitta, search-based inverse evaluation, `LoopSelfIntersects` requests, a
+`MaxRefinementRounds` 0 variant giving `PIPELINE-FACE-UNRESOLVED`. Bodies: layer 1 `BSplinePoint`,
+`BSplineDerivative`, `BSplinePartial`, `ClosestParameterBySearch`, `ProjectBySearch`,
+`ProjectNearBySearch`; layer 4 `Sagitta`. Laws: all above; the area bound of the witness table.
+
+### Chunk G: genus and voids (M2, M6, M7 grow)
+
+`Witness_BlockWithThroughHole`, `Witness_HollowBox`, `Witness_TwoBoxesSharingCorner` (negative).
+Laws: Euler characteristic 0 and the component counts; the negative volume of the void shell;
+`Law_EulerPoincareEvenAndBounded`, `Law_VertexLinkIsOneCycle` failing where stated.
+
+### Chunk H: the corpus (ME)
+
+The 88 u-blox files at `C:\Users\cdigg\git\3d-format-shootout\data\submodules\3D-Step-Models-Library`
+(82 AP214, 6 AP203, the corpus the parser session already opens), then the rest of
+`03-step/README.md` "Test files". New: assemblies, degree units, short names, surfaces of
+revolution, defective files, the eleven complex-instance combinations tabled in
+`docs/plans/step-reader.md`. Bodies: layer 2 `RigidlyMoved`, `ScaledBy` for
+`Law_RigidMotionMovesPositions`, `Law_PowerOfTwoScalingKeepsConnectivity`,
+`Law_PowerOfTwoScalingScalesPositions`. Expected numbers are the published counts where they exist;
+otherwise the reports must be clean.
+
+## Order and parallelism
+
+```
+A ──┬── B ── C ── F ── H
+    ├── D ── E ─────────┘
+    └── G
+```
+
+A first, alone, because every module's bodies start there. Then B, D and G in parallel (different
+layers' bodies, witness-driven). C after B; E after D and the adapter; F after C; H last. The 64-bit
+`Number` profile runs beside A; the adapter test spec of E can be written as soon as D's literals
+exist.
+
+## Coordination with the parser session
+
+- 2026-10-17: boundary and file laws sent to the session "STEP file geometry parsing with Ara 3D".
+  Its reply: parser is `Ara3D.IO.StepParser` (NuGet 1.6.2, complex instances parse since ara3d-sdk
+  f48f62b); the four invariant differences above; no printer; throws on malformed input; nothing in
+  its tickets writes the adapter (TKT-305 meshes from generated C# types over `StepDocument`
+  directly); it asks this side for the test spec; ownership of the adapter waits on TKT-306.
+- Open for the owner: TKT-306 (how the C# reader relates to this design). The design's answer is
+  in chunk E: the adapter is small, the boundary stays, and the two meshing paths (TKT-305's and
+  this one's) can share the adapter spec's fixtures as their common test set.
