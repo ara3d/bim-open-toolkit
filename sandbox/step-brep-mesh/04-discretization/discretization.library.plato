@@ -251,15 +251,18 @@ library EdgeDiscretizing
     SegmentLength(d: EdgeDiscretization, i: Integer): Number
         => d.Points[i].Distance(d.Points[i + 1]);
 
-    // The plan's sample positions strictly inside a segment, as fractions j / (k + 1) for
-    // j = 1 .. k, k the plan's count (at least 1). Symmetric about one half; a plan of 3 gives the
-    // quarter points and the midpoint (research/MESHING-REQUIREMENTS.md 3.5).
+    // The plan's sample positions strictly inside a segment. `SamplePlan.Count` counts both ends
+    // (layer 0), so a plan of n gives the fractions j / (n - 1) for j = 1 .. n - 2; a plan below 3
+    // is read as 3, so there is always the midpoint. Symmetric about one half; a plan of 5 gives
+    // the quarter points and the midpoint (research/MESHING-REQUIREMENTS.md 3.5). The ends are
+    // left out, so a tangent is never sampled at a seed.
     InteriorFractions(plan: SamplePlan): Array<Number>
-        => plan.Count.Max(1).MapRange(j => (j + 1).ToNumber / (plan.Count.Max(1) + 1).ToNumber);
+        => (plan.Count.Max(3) - 2).MapRange(j => (j + 1).ToNumber / (plan.Count.Max(3) - 1).ToNumber);
 
-    // The plan the discretizer tests every candidate segment with: three interior samples.
+    // The plan the discretizer tests every candidate segment with: five samples counting both
+    // ends, so three interior ones (the quarter points and the midpoint).
     DiscretizationPlan(_: SamplePlan): SamplePlan
-        => SamplePlan(3);
+        => SamplePlan(5);
 
     // deferred: the Hausdorff distance between the chord from C(t0) to C(t1) and the arc
     // C([t0, t1]) of the edge's curve. For a convex arc turning less than half a turn it is the
