@@ -41,26 +41,24 @@ public sealed class NrcAnswerTests
     }
 
     [Test]
-    public void Q5_ByCategory()
+    public void Q5_ByIfcClass()
     {
         var answer = Answer("nrc-q5-by-category");
-        Assert.That(answer.Rows, Has.Count.EqualTo(9));
-        Assert.That(answer.ColumnCells("Category"), Is.EqualTo(new object?[]
-        {
-            "Wall", "Floor", "Other", "Stair", "Finish", "Window", "Door", "Roof", "Railing",
-        }));
+        Assert.That(answer.Rows, Has.Count.EqualTo(14));
+        Assert.That(answer.ColumnCells("IfcType").First(), Is.EqualTo("IFCWALLSTANDARDCASE"));
+        Assert.That(answer.ColumnCells("IfcType").Last(), Is.EqualTo("IFCRAILING"));
 
-        // The chart draws the same nine totals, through rel.materialize.
+        // The chart draws the same 14 totals, through rel.materialize.
         var chart = SampleFlowsFixture.Snapshot(SampleFlowsFixture.BimProfile, "nrc-q5-by-category").Results["chart"];
         Assert.That(chart.Status, Is.EqualTo(NodeStatus.Ok));
-        Assert.That(((TableValue)chart.Outputs[0]).Table.Rows, Has.Count.EqualTo(9));
+        Assert.That(((TableValue)chart.Outputs[0]).Table.Rows, Has.Count.EqualTo(14));
     }
 
     [Test]
     public void Q7_Absence()
     {
         var answer = Answer("nrc-q7-absence");
-        // No embodied-carbon row was written for the roof: the answer is the roof itself, not
+        // The analysed elements with no embodied-carbon row: only the roof, as a row, not
         // a zero (PROJECT.md principle 3, honest absence).
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
         Assert.That(answer.Cell("GlobalId", 0), Is.EqualTo("0jf0rYHfX3RAB3bSIRjmxl"));

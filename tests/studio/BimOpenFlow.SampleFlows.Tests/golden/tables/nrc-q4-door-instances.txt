@@ -1,16 +1,16 @@
 dfg 0.1.0;
-// nrc-q4-door-instances   graph efeadc678bd8
-about = view.note@1(text: "Q4: four door instances share the type name M_Single-Flush:0762 x 2032mm (Name carries a family:type prefix plus an instance-specific suffix, so startswith matches all four), each with its own operational carbon. Row 1, the lowest STEP id (EntityId 8066), is the one the paper's expected answer uses: 54.0 kgCO2e/yr.");
+// nrc-q4-door-instances   graph f6588678a6d9
+about = view.note@1(text: "Q4: the operational carbon of the door with GlobalId 1hOSvn6df7F8_7GcBWlS8Z. A GlobalId names one instance; the door type M_Single-Flush:0762 x 2032mm is shared by four doors, so the question asks by GlobalId. One row: 54.0 kgCO2e/yr.");
   // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
-doors = rel.filter@1(input: elements.relation, expr: "startswith([Name], 'M_Single-Flush:0762 x 2032mm')");
-  // Ok  relation plan 6dbc89d82931
-  //   "(filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\")"
+doors = rel.filter@1(input: elements.relation, expr: "[GlobalId] == '1hOSvn6df7F8_7GcBWlS8Z'");
+  // Ok  relation plan 36f14260d076
+  //   "(filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"([GlobalId] == '1hOSvn6df7F8_7GcBWlS8Z')\")"
 columns = rel.select@1(input: doors.relation, columns: "Name, OperationalCarbon_kgCO2e_per_year, EntityId, GlobalId");
-  // Ok  relation plan b83a14fde13e
-  //   "(select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"Name\" \"OperationalCarbon_kgCO2e_per_year\" \"EntityId\" \"GlobalId\"])"
+  // Ok  relation plan 7db5e100e9de
+  //   "(select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"([GlobalId] == '1hOSvn6df7F8_7GcBWlS8Z')\") [\"Name\" \"OperationalCarbon_kgCO2e_per_year\" \"EntityId\" \"GlobalId\"])"
 answer = rel.sort@1(input: columns.relation, by: "EntityId");
-  // Ok  relation plan d767a82cd555
-  //   "(sort (select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"startswith([Name], 'M_Single-Flush:0762 x 2032mm')\") [\"Name\" \"OperationalCarbon_kgCO2e_per_year\" \"EntityId\" \"GlobalId\"]) [\"EntityId\" asc"...
+  // Ok  relation plan e143d3f831fd
+  //   "(sort (select (filter (csv \"nrc\" \"nrc_analytics_elements.csv\") \"([GlobalId] == '1hOSvn6df7F8_7GcBWlS8Z')\") [\"Name\" \"OperationalCarbon_kgCO2e_per_year\" \"EntityId\" \"GlobalId\"]) [\"EntityId\" asc])"

@@ -9,11 +9,7 @@
     },
     "metrics": {
       "x": 40,
-      "y": 348
-    },
-    "roofs": {
-      "x": 389,
-      "y": 202
+      "y": 336
     },
     "embodied": {
       "x": 389,
@@ -32,14 +28,10 @@
     "edges": [
       {
         "from": "metrics.relation",
-        "to": "roofs.input"
-      },
-      {
-        "from": "metrics.relation",
         "to": "embodied.input"
       },
       {
-        "from": "roofs.relation",
+        "from": "metrics.relation",
         "to": "missing.left"
       },
       {
@@ -63,11 +55,6 @@
         "version": 1
       },
       {
-        "id": "roofs",
-        "kind": "rel.filter",
-        "version": 1
-      },
-      {
         "id": "embodied",
         "kind": "rel.filter",
         "version": 1
@@ -86,14 +73,11 @@
   },
   "values": {
     "about": {
-      "text": "Q7: which element has no embodied-carbon value. One reader of nrc_analytics_long.csv feeds both filters; the anti join keeps the roof rows whose GlobalId has no NRC.EC.A1A3.TOTAL row. The answer is the roof itself, as a row, not a zero; OtherMetrics counts the metric rows it does have."
+      "text": "Q7: which analysed elements carry no embodied-carbon property set. One reader of nrc_analytics_long.csv feeds the anti join twice: every metric row on the left, the NRC.EC.A1A3.TOTAL rows on the right. The join keeps the rows whose GlobalId has no embodied-carbon row, and the aggregate counts them per element. The answer is exactly one element, the IfcRoof 0jf0rYHfX3RAB3bSIRjmxl, as a row and not a zero; OtherMetrics counts the metric rows it does have."
     },
     "metrics": {
       "path": "nrc_analytics_long.csv",
       "source": "nrc"
-    },
-    "roofs": {
-      "expr": "[IfcClass] == 'IFCROOF'"
     },
     "embodied": {
       "expr": "[MetricId] == 'NRC.EC.A1A3.TOTAL'"

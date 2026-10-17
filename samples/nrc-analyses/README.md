@@ -18,10 +18,10 @@ unit in the column name (`OperationalCarbon_kgCO2e_per_year`, `EmbodiedCarbon_A1
 | `nrc-q1-building-total` | total operational carbon (37,196.2 kgCO2e/yr) over 218 elements | tables, bim |
 | `nrc-q2-storey-eui` | Level 1 and Level 2 mean energy use intensity, the two storeys filtered before the average and the higher first (Level 2, 40.56) | tables, bim |
 | `nrc-q3-top-elements` | the five elements with the highest operational carbon, by name and category | tables, bim |
-| `nrc-q4-door-instances` | the operational carbon of every M_Single-Flush:0762 x 2032mm door instance (the name matches four doors, not one; see below) | tables, bim |
-| `nrc-q5-by-category` | operational carbon per category (nine rows, Wall first), drawn as a bar chart by `chart` | tables, bim |
+| `nrc-q4-door-instances` | the operational carbon of the door with GlobalId 1hOSvn6df7F8_7GcBWlS8Z (one row, 54.0; see below) | tables, bim |
+| `nrc-q5-by-category` | operational carbon per IFC class (14 rows, IFCWALLSTANDARDCASE first; the file carries no Category property), drawn as a bar chart by `chart` | tables, bim |
 | `nrc-q6-analysis-run` | the analysis run id, scenario, computed time, and source tool every element cites, with its element count | tables, bim |
-| `nrc-q7-absence` | the roof with no embodied-carbon row, as a row, with the count of metric rows it does have (`OtherMetrics`, 2) | tables, bim |
+| `nrc-q7-absence` | the analysed elements with no embodied-carbon property set: exactly one, the IfcRoof 0jf0rYHfX3RAB3bSIRjmxl, as a row with the count of metric rows it does have (`OtherMetrics`, 2) | tables, bim |
 | `nrc-q8-per-storey` | per-storey element count (and how many have an embodied-carbon value), embodied carbon A1-A3, and mean energy intensity | tables, bim |
 | `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced), each placed once by the smallest `Depth`, as `nrc-rollup` does (103, 93, 14, 8) | tables, bim |
 | `nrc-dc-w1-verdicts` | rule DC-W1 over doors (8 Pass, 6 Fail; answer columns Name, Width_mm, GlobalId), coloured in 3D, a verdict count chart, and an HTML report written on Run into `artifacts/nrc` | bim only (`check.rule`, `view3d.color`) |
@@ -40,15 +40,11 @@ what `scripts/nrc-walkthrough.mjs` captures for the paper; `FigureGraphTests`
 guards them (216 of the 218 analysed elements have a mesh, so that is the
 coloured count).
 
-`nrc-q4-door-instances` has no single deterministic scalar: the paper's Q4 asks
-for "the door named M_Single-Flush:0762 x 2032mm", but that name is a Revit
-family:type name, not an instance name, and `nrc_analytics_elements.csv` (and
-`door_verdicts.csv`'s DC-M1 evidence) show four IFCDOOR instances share it,
-each with a different operational carbon value. `scripts/demo-ifc-mcp.mjs`
-does not replay Q4 at all, so there is no cited expected value to reconcile;
-the graph instead lists all four instances, sorted by their STEP id (`EntityId`),
-which is the deterministic data the paper's answer would have to pick from
-or sum; row 1, EntityId 8066, is the paper's own pick.
+`nrc-q4-door-instances` asks by GlobalId: "What is the operational carbon of the door
+with GlobalId 1hOSvn6df7F8_7GcBWlS8Z?" The earlier wording named the door type
+M_Single-Flush:0762 x 2032mm, a Revit family:type name that four IFCDOOR instances
+share (`door_verdicts.csv`'s DC-M1 evidence), each with a different value. A
+GlobalId names one instance, so the graph returns one row: 54.0 kgCO2e/yr.
 
 `nrc-q6-analysis-run` answers both halves of Q6 deterministically: "which
 run" (`AnalysisRunId`, `ScenarioName`) is the same for every one of the 218

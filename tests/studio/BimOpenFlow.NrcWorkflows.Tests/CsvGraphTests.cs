@@ -68,7 +68,7 @@ public sealed class CsvGraphTests
         // nrc_analytics_storeys.csv row "Level 1": 103 elements; Q2: mean EUI 40.5.
         Assert.That(answer.Cell("Elements", 0), Is.EqualTo(103L));
         Assert.That(Number(answer, "MeanEui_kWh_per_m2_year", 0), Is.EqualTo(40.5).Within(Tolerance));
-        // Honest absence (Q7): Roof has 8 elements, but only 7 carry an embodied-carbon row;
+        // Honest absence (Q7 in the paper): Roof has 8 elements, but only 7 carry an embodied-carbon row;
         // the sum in "EmbodiedCarbon_A1A3_kgCO2e" covers only those 7, and ElementsWithValue says so.
         Assert.That(answer.Cell("Elements", 3), Is.EqualTo(8L));
         Assert.That(answer.Cell("ElementsWithValue", 3), Is.EqualTo(7L));
@@ -88,25 +88,15 @@ public sealed class CsvGraphTests
     }
 
     [Test]
-    public void Q4_DoorInstances()
+    public void Q4_DoorByGlobalId()
     {
         var answer = Answer("nrc-q4-door-instances");
-        // Q4 asks for "the door named M_Single-Flush:0762 x 2032mm", but that name is a
-        // family:type name shared by four IFCDOOR instances (see door_verdicts.csv's DC-M1
-        // evidence), not one instance; there is no single deterministic scalar to assert. The
-        // graph instead lists all four, sorted by EntityId (STEP id), with each one's own
-        // operational carbon from nrc_analytics_elements.csv. expected_answers.json Q4 picks
-        // "the first by STEP id" (EntityId 8066, 54.0), which is row 0 with this sort.
-        Assert.That(answer.Rows, Has.Count.EqualTo(4));
-        Assert.That(answer.ColumnCells("EntityId"), Is.EqualTo(new object?[] { 8066L, 8169L, 35318L, 35413L }));
-        Assert.That(answer.ColumnCells("GlobalId"), Is.EqualTo(new object?[]
-        {
-            "1hOSvn6df7F8_7GcBWlS8Z", "1hOSvn6df7F8_7GcBWlS9F",
-            "1aj$VJZFn2TxepZUBcKp$i", "1aj$VJZFn2TxepZUBcKpac",
-        }));
-        var operationalCarbon = Numbers(answer, "OperationalCarbon_kgCO2e_per_year");
-        Assert.That(operationalCarbon, Near(54.0, 146.1, 117.3, 61.8));
-        Assert.That(operationalCarbon.Sum(), Is.EqualTo(379.2).Within(Tolerance));
+        // Q4 asks for the door with GlobalId 1hOSvn6df7F8_7GcBWlS8Z. A GlobalId names one
+        // instance (the family:type name M_Single-Flush:0762 x 2032mm is shared by four doors),
+        // so the answer is one row: operational carbon 54.0 kgCO2e/yr, from nrc_analytics_elements.csv.
+        Assert.That(answer.Rows, Has.Count.EqualTo(1));
+        Assert.That(answer.Cell("GlobalId", 0), Is.EqualTo("1hOSvn6df7F8_7GcBWlS8Z"));
+        Assert.That(answer.Cell("EntityId", 0), Is.EqualTo(8066L));
         Assert.That(Number(answer, "OperationalCarbon_kgCO2e_per_year", 0), Is.EqualTo(54.0).Within(Tolerance));
     }
 
@@ -142,26 +132,29 @@ public sealed class CsvGraphTests
     }
 
     [Test]
-    public void Q5_ByCategory()
+    public void Q5_ByIfcClass()
     {
         var answer = Answer("nrc-q5-by-category");
-        Assert.That(answer.Rows, Has.Count.EqualTo(9));
-        // expected_answers.json Q5, in descending total.
-        Assert.That(answer.ColumnCells("Category"), Is.EqualTo(new object?[]
+        // The file carries no Category property, so Q5 asks per IFC class: 14 classes over the
+        // 218 rows of nrc_analytics_elements.csv, in descending total; the totals sum to Q1's 37196.2.
+        Assert.That(answer.Rows, Has.Count.EqualTo(14));
+        Assert.That(answer.ColumnCells("IfcType"), Is.EqualTo(new object?[]
         {
-            "Wall", "Floor", "Other", "Stair", "Finish", "Window", "Door", "Roof", "Railing",
+            "IFCWALLSTANDARDCASE", "IFCSLAB", "IFCFURNISHINGELEMENT", "IFCFOOTING", "IFCDOOR", "IFCCOVERING",
+            "IFCWINDOW", "IFCBEAM", "IFCMEMBER", "IFCWALL", "IFCSTAIRFLIGHT", "IFCSTAIR", "IFCROOF", "IFCRAILING",
         }));
-        Assert.That(Numbers(answer, "OperationalCarbon_kgCO2e_per_year"),
-            Near(22854.1, 5593.5, 4313.1, 1144.2, 985.7, 978.9, 687.2, 474.7, 164.8));
+        var totals = Numbers(answer, "OperationalCarbon_kgCO2e_per_year");
+        Assert.That(totals, Near(17547.4, 5816.9, 5766.3, 2086.9, 1324.7, 985.7, 978.9, 771.6, 560.0, 357.5, 311.5, 272.7, 251.3, 164.8));
+        Assert.That(totals.Sum(), Is.EqualTo(37196.2).Within(Tolerance));
     }
 
     [Test]
     public void Q7_Absence()
     {
         var answer = Answer("nrc-q7-absence");
-        // expected_answers.json Q7: no embodied-carbon row was written for the roof, so the
-        // answer is the roof itself, as a row. nrc_analytics_long.csv holds two metrics for
-        // it, which the graph's aggregate collapses to one row per GlobalId.
+        // Q7 asks which analysed elements carry no embodied-carbon property set: exactly one, the
+        // roof. nrc_analytics_long.csv holds two other metrics for it, which the graph's aggregate
+        // collapses to one row per GlobalId.
         Assert.That(answer.Rows, Has.Count.EqualTo(1));
         Assert.That(answer.ColumnNames(), Is.EqualTo(new[] { "IfcClass", "GlobalId", "OtherMetrics" }));
         Assert.That(answer.Cell("GlobalId", 0), Is.EqualTo("0jf0rYHfX3RAB3bSIRjmxl"));

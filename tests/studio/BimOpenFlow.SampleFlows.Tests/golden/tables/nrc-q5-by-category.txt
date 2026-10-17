@@ -1,36 +1,41 @@
 dfg 0.1.0;
-// nrc-q5-by-category   graph 9232543ec973
-about = view.note@1(text: "Q5: operational carbon summed per category, highest first (expected_answers.json Q5): Wall leads at 22,854.1 kgCO2e/yr and Railing is last at 164.8. rows runs the plan so chart can draw the nine totals as bars.");
+// nrc-q5-by-category   graph f63041a89544
+about = view.note@1(text: "Q5: operational carbon summed per IFC class, highest first: IFCWALLSTANDARDCASE leads at 17,547.4 kgCO2e/yr and IFCRAILING is last at 164.8, 14 classes in all. The file carries no Category property, so the question asks per IFC class. rows runs the plan so chart can draw the 14 totals as bars.");
   // Ok
 elements = rel.csv@1(source: "nrc", path: "nrc_analytics_elements.csv");
   // Ok  relation plan 7e3cdd5d3029
   //   "(csv \"nrc\" \"nrc_analytics_elements.csv\")"
-perCategory = rel.aggregate@1(input: elements.relation, groupBy: "Category", aggregates: "sum(OperationalCarbon_kgCO2e_per_year) as OperationalCarbon_kgCO2e_per_year");
-  // Ok  relation plan 87dabe58bfe3
-  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Category\"] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"OperationalCarbon_kgCO2e_per_year\"])"
-answer = rel.sort@1(input: perCategory.relation, by: "OperationalCarbon_kgCO2e_per_year desc");
-  // Ok  relation plan 5b047e102b1d
-  //   "(sort (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"Category\"] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"OperationalCarbon_kgCO2e_per_year\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc])"
+perClass = rel.aggregate@1(input: elements.relation, groupBy: "IfcType", aggregates: "sum(OperationalCarbon_kgCO2e_per_year) as OperationalCarbon_kgCO2e_per_year");
+  // Ok  relation plan 7e8508bf0d18
+  //   "(aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"IfcType\"] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"OperationalCarbon_kgCO2e_per_year\"])"
+answer = rel.sort@1(input: perClass.relation, by: "OperationalCarbon_kgCO2e_per_year desc");
+  // Ok  relation plan 1d17e280d1ea
+  //   "(sort (aggregate (csv \"nrc\" \"nrc_analytics_elements.csv\") [\"IfcType\"] [Sum(\"OperationalCarbon_kgCO2e_per_year\")>\"OperationalCarbon_kgCO2e_per_year\"]) [\"OperationalCarbon_kgCO2e_per_year\" desc])"
 rows = rel.materialize@1(input: answer.relation, limit: "0");
-  // Ok  table 9 rows x 2 cols  sha f320f9bcc7b2
-  //   columns Category:Text, OperationalCarbon_kgCO2e_per_year:Number
-  //   [0] "Wall", 2.285E+04
-  //   [1] "Floor", 5594
-  //   [2] "Other", 4313
-chart = chart.bar@1(table: rows.table, labelColumn: "Category", valueColumns: "OperationalCarbon_kgCO2e_per_year", title: "Operational carbon per category (kgCO2e/yr, synthetic)", sort: "none");
+  // Ok  table 14 rows x 2 cols  sha 917a8decf893
+  //   columns IfcType:Text, OperationalCarbon_kgCO2e_per_year:Number
+  //   [0] "IFCWALLSTANDARDCASE", 1.755E+04
+  //   [1] "IFCSLAB", 5817
+  //   [2] "IFCFURNISHINGELEMENT", 5766
+chart = chart.bar@1(table: rows.table, labelColumn: "IfcType", valueColumns: "OperationalCarbon_kgCO2e_per_year", title: "Operational carbon per IFC class (kgCO2e/yr, synthetic)", sort: "none");
   // Ok
-  //   table: table 9 rows x 2 cols  sha f320f9bcc7b2
-  //     columns Category:Text, OperationalCarbon_kgCO2e_per_year:Number
-  //     chart 9 categories x 1 series: "OperationalCarbon_kgCO2e_per_year"
-  //     "Wall": 2.285E+04
-  //     "Floor": 5594
-  //     "Other": 4313
-  //     "Stair": 1144
-  //     "Finish": 985.7
-  //     "Window": 978.9
-  //     "Door": 687.2
-  //     "Roof": 474.7
-  //     "Railing": 164.8
+  //   table: table 14 rows x 2 cols  sha 917a8decf893
+  //     columns IfcType:Text, OperationalCarbon_kgCO2e_per_year:Number
+  //     chart 14 categories x 1 series: "OperationalCarbon_kgCO2e_per_year"
+  //     "IFCWALLSTANDARDCASE": 1.755E+04
+  //     "IFCSLAB": 5817
+  //     "IFCFURNISHINGELEMENT": 5766
+  //     "IFCFOOTING": 2087
+  //     "IFCDOOR": 1325
+  //     "IFCCOVERING": 985.7
+  //     "IFCWINDOW": 978.9
+  //     "IFCBEAM": 771.6
+  //     "IFCMEMBER": 560
+  //     "IFCWALL": 357.5
+  //     "IFCSTAIRFLIGHT": 311.5
+  //     "IFCSTAIR": 272.7
+  //     "IFCROOF": 251.3
+  //     "IFCRAILING": 164.8
   //   legend: table 0 rows x 9 cols  sha b47d2a37380c
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty

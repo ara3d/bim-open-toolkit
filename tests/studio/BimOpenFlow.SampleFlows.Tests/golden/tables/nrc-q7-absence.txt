@@ -1,6 +1,6 @@
 dfg 0.1.0;
-// nrc-q7-absence   graph 31a1e0dda853
-about = view.note@1(text: "Q7: which element has no embodied-carbon value. One reader of nrc_analytics_long.csv feeds both filters; the anti join keeps the roof rows whose GlobalId has no NRC.EC.A1A3.TOTAL row. The answer is the roof itself, as a row, not a zero; OtherMetrics counts the metric rows it does have.");
+// nrc-q7-absence   graph 8233ea46fd02
+about = view.note@1(text: "Q7: which analysed elements carry no embodied-carbon property set. One reader of nrc_analytics_long.csv feeds the anti join twice: every metric row on the left, the NRC.EC.A1A3.TOTAL rows on the right. The join keeps the rows whose GlobalId has no embodied-carbon row, and the aggregate counts them per element. The answer is exactly one element, the IfcRoof 0jf0rYHfX3RAB3bSIRjmxl, as a row and not a zero; OtherMetrics counts the metric rows it does have.");
   // Ok
 metrics = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
   // Ok  relation plan d8e1967ca45d
@@ -8,12 +8,9 @@ metrics = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
 embodied = rel.filter@1(input: metrics.relation, expr: "[MetricId] == 'NRC.EC.A1A3.TOTAL'");
   // Ok  relation plan b0d1b9c52aae
   //   "(filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([MetricId] == 'NRC.EC.A1A3.TOTAL')\")"
-roofs = rel.filter@1(input: metrics.relation, expr: "[IfcClass] == 'IFCROOF'");
-  // Ok  relation plan becde61fb55b
-  //   "(filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([IfcClass] == 'IFCROOF')\")"
-missing = rel.join@1(left: roofs.relation, right: embodied.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
-  // Ok  relation plan e4e9253abc74
-  //   "(join Anti (filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([IfcClass] == 'IFCROOF')\") (filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([MetricId] == 'NRC.EC.A1A3.TOTAL')\") [\"GlobalId\"=\"GlobalId\"])"
+missing = rel.join@1(left: metrics.relation, right: embodied.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "anti");
+  // Ok  relation plan 75cf585faf90
+  //   "(join Anti (csv \"nrc\" \"nrc_analytics_long.csv\") (filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([MetricId] == 'NRC.EC.A1A3.TOTAL')\") [\"GlobalId\"=\"GlobalId\"])"
 answer = rel.aggregate@1(input: missing.relation, groupBy: "IfcClass, GlobalId", aggregates: "count(*) as OtherMetrics");
-  // Ok  relation plan f07b7882b6b6
-  //   "(aggregate (join Anti (filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([IfcClass] == 'IFCROOF')\") (filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([MetricId] == 'NRC.EC.A1A3.TOTAL')\") [\"GlobalId\"=\"GlobalI"...
+  // Ok  relation plan 0cddbfb60551
+  //   "(aggregate (join Anti (csv \"nrc\" \"nrc_analytics_long.csv\") (filter (csv \"nrc\" \"nrc_analytics_long.csv\") \"([MetricId] == 'NRC.EC.A1A3.TOTAL')\") [\"GlobalId\"=\"GlobalId\"]) [\"IfcClass\" \"GlobalId\"] [Count(*"...

@@ -11,7 +11,7 @@
       "x": 40,
       "y": 184
     },
-    "perCategory": {
+    "perClass": {
       "x": 389,
       "y": 184
     },
@@ -32,10 +32,10 @@
     "edges": [
       {
         "from": "elements.relation",
-        "to": "perCategory.input"
+        "to": "perClass.input"
       },
       {
-        "from": "perCategory.relation",
+        "from": "perClass.relation",
         "to": "answer.input"
       },
       {
@@ -59,7 +59,7 @@
         "version": 1
       },
       {
-        "id": "perCategory",
+        "id": "perClass",
         "kind": "rel.aggregate",
         "version": 1
       },
@@ -82,15 +82,15 @@
   },
   "values": {
     "about": {
-      "text": "Q5: operational carbon summed per category, highest first (expected_answers.json Q5): Wall leads at 22,854.1 kgCO2e/yr and Railing is last at 164.8. rows runs the plan so chart can draw the nine totals as bars."
+      "text": "Q5: operational carbon summed per IFC class, highest first: IFCWALLSTANDARDCASE leads at 17,547.4 kgCO2e/yr and IFCRAILING is last at 164.8, 14 classes in all. The file carries no Category property, so the question asks per IFC class. rows runs the plan so chart can draw the 14 totals as bars."
     },
     "elements": {
       "path": "nrc_analytics_elements.csv",
       "source": "nrc"
     },
-    "perCategory": {
+    "perClass": {
       "aggregates": "sum(OperationalCarbon_kgCO2e_per_year) as OperationalCarbon_kgCO2e_per_year",
-      "groupBy": "Category"
+      "groupBy": "IfcType"
     },
     "answer": {
       "by": "OperationalCarbon_kgCO2e_per_year desc"
@@ -99,9 +99,9 @@
       "limit": "0"
     },
     "chart": {
-      "labelColumn": "Category",
+      "labelColumn": "IfcType",
       "valueColumns": "OperationalCarbon_kgCO2e_per_year",
-      "title": "Operational carbon per category (kgCO2e/yr, synthetic)",
+      "title": "Operational carbon per IFC class (kgCO2e/yr, synthetic)",
       "sort": "none"
     }
   }
