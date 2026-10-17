@@ -128,6 +128,20 @@ library BrepTopologyLaws
                 : true)
             : true;
 
+    // In a shell not declared closed, the link of every vertex with corners
+    // has one component, which, with no edge used more than twice
+    // (Law_OpenShellEdgesUsedAtMostTwice), makes it one cycle at an interior
+    // vertex or one path at a boundary vertex (research/VALIDATION-MATH.md
+    // 2.2): two sheets touching at a corner fail. Structural, exact.
+    Law_OpenShellVertexLinkIsCycleOrPath(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s)
+                ? (m.Shells[s].DeclaredClosed
+                    ? true
+                    : (m.CornersAtVertex(s, v).Count == 0 ? true : m.LinkComponentCount(s, v) == 1))
+                : true)
+            : true;
+
     // A vertex that bounds a face of the shell as a vertex loop is an end of no
     // edge the shell cites: the face surrounds it, so nothing else may touch it.
     // Structural, exact.
@@ -148,6 +162,21 @@ library BrepTopologyLaws
         => m.IsEveryIndexInRange
             ? (m.IsShellInRange(s)
                 ? (m.Shells[s].DeclaredClosed ? m.ShellEulerPoincare(s).IsEvenAndAtMostTwo : true)
+                : true)
+            : true;
+
+    // For a shell not declared closed, reduced V - E + 2F - L plus the number
+    // of boundary cycles B is even and at most 2: a compact orientable surface
+    // of genus G with B boundary circles has chi = 2 - 2G - B, and the cells
+    // counted include the boundary's (research/VALIDATION-MATH.md 1.4). A
+    // single face gives 1 + 1; a cylinder's side face alone gives 0 + 2.
+    // Structural, exact.
+    Law_OpenShellEulerEvenAndBounded(m: BrepModel, s: ShellIndex): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsShellInRange(s)
+                ? (m.Shells[s].DeclaredClosed
+                    ? true
+                    : (m.ShellEulerPoincare(s) + m.BoundaryCycleCount(s)).IsEvenAndAtMostTwo)
                 : true)
             : true;
 

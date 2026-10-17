@@ -203,6 +203,14 @@ states the genus, so no law can check the full equality. Checking per shell matt
 meaningful despite a defect but does not excuse it: `Law_EdgeHasPositiveExtent` and
 `Law_FaceBoundsShareNoVertex` still report the defect as an Error.
 
+An open shell is a compact surface with boundary. With `B` boundary circles, `chi = 2 - 2G - B`, and
+the cells counted include the boundary's, so `Law_OpenShellEulerEvenAndBounded` requires `chi + B`
+even and at most 2. A single square face: `V = 4, E = 4, F = 1, L = 1`, `chi = 1`, `B = 1`, sum 2. A
+cylinder's seamed side face alone: `V = 2, E = 3, F = 1, L = 1`, `chi = 0`, `B = 2` (the two
+circles), sum 2. `B` is the number of closed walks over the free edges, crossing each vertex through
+its link, which in an open shell is one path at a boundary vertex
+(`Law_OpenShellVertexLinkIsCycleOrPath`).
+
 Worked examples, all checked by hand. Raw counts first; a second row where the reduction changes
 them.
 
@@ -329,6 +337,8 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_VertexLinkIsOneCycle(m, s, v)` | in a shell declared closed, the link of a vertex with corners has one component | exact | structural, Error |
 | `Law_VertexLoopVertexIsIsolated(m, s, v)` | a vertex-loop vertex is an end of no edge the shell cites | exact | structural, Error |
 | `Law_EulerPoincareEvenAndBounded(m, s)` | in a shell declared closed, reduced `V - E + 2F - L` is even and at most 2 | exact | structural, Error |
+| `Law_OpenShellEulerEvenAndBounded(m, s)` | in a shell not declared closed, reduced `V - E + 2F - L` plus the boundary cycle count `B` is even and at most 2 | exact | structural, Error |
+| `Law_OpenShellVertexLinkIsCycleOrPath(m, s, v)` | in a shell not declared closed, the link of a vertex with corners has one component | exact | structural, Error |
 | `Law_ShellIsConnected(m, s)` | the shell's faces form one class under touching at a vertex or a coinciding poly-loop point | exact | structural, Error |
 | `Law_ShellIsOrientable(m, s)` | reversing the faces `OrientationFlips` names makes every edge's two uses opposite | exact | structural, Error |
 | `Law_ReversingEveryFaceKeepsCoherence(m, s)` | reversing every face leaves the shell's coherence unchanged | exact | library, test |
@@ -357,6 +367,7 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 | `IsDegenerateEdge(m, e)` | largest distance from a point to a curve arc: closed form for lines and conics, span subdivision and Newton for splines | 1 per edge, span count for splines |
 | `ReducedCounts(m, s)` | union-find over vertices joined by degenerate edges, one pass over bounds, spatial hash for poly-loop points | coedge sites plus bounds of the shell |
 | `LinkComponentCount(m, s, v)` | union-find over edge ends at `v` | corners at `v` |
+| `BoundaryCycleCount(m, s)` | walk the free edges, crossing each vertex's link path | free edges of the shell |
 | `OrientationFlips(m, s)` | two-colouring of the face graph by the parity of each edge's two uses | coedge sites of the shell |
 | `ShellComponentCount(m, s)` | union-find over the shell's faces joined at shared vertices and coinciding poly-loop points | coedge sites plus bounds of the shell |
 | `CornersAroundVertex(m, s, v)` | walk the link across shared ends | corners at `v` |
@@ -414,9 +425,8 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
 
 ## What is left open
 
-1. **Open shells' Euler law.** ISO's `chi + B` even and at most 2 needs `B`, the number of boundary
-   cycles (a walk over free edges). Not stated; `Law_OpenShellEdgesUsedAtMostTwice` is the only
-   open-shell law.
+1. **Open shells' Euler law.** Settled in the fix wave: `Law_OpenShellEulerEvenAndBounded` with the
+   deferred walk `BoundaryCycleCount`, and `Law_OpenShellVertexLinkIsCycleOrPath`.
 2. **Global laws.** Settled in the fix wave: `Law_ShellIsConnected` and `Law_ShellIsOrientable`
    (research/VALIDATION-MATH.md 2.3), with `OrientationFlips` naming the faces to flip.
 3. **Faceted B-reps.** Edge-use and link laws see only indexed edges. A `PolyLoop`'s implicit edges
@@ -517,3 +527,7 @@ Applied:
   `Reversed(face)`, `WithFacesReversed`, `WithEveryFaceReversed` (layer 8's stand-in, same
   signature), `IsOrientable`, the library law `Law_ReversingEveryFaceKeepsCoherence`, and the
   theorem `CoherentShellIsOrientable`.
+- **M2 (open shells).** `Law_OpenShellEulerEvenAndBounded(m, s)` (`chi + B` even and at most 2,
+  with the deferred walk `BoundaryCycleCount`), and the open-shell vertex condition
+  `Law_OpenShellVertexLinkIsCycleOrPath(m, s, v)` (one link component: a cycle inside, a path on the
+  boundary).

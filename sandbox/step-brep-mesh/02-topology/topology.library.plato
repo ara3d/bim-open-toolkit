@@ -635,6 +635,16 @@ library BrepTopology
     FreeEdgeCount(m: BrepModel, s: ShellIndex): Integer
         => m.EdgesOfShell(s).Reduce(0, (n, e) => m.UseCount(s, e) == 1 ? n + 1 : n);
 
+    // The number of boundary cycles of shell s: the closed walks into which
+    // its free edges split, on the reduced cells (degenerate edges contracted,
+    // as in ReducedCounts). At a vertex the walk leaves along the free edge at
+    // the other end of the vertex's link path. Zero for a shell with no free
+    // edge.
+    // deferred: mark the free edges, then walk each unvisited one, at every
+    // vertex crossing the link path (CornersAroundVertex) to its other free
+    // end, until the walk returns; count the walks.
+    BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer;
+
     // Whether a use count is zero or two.
     IsZeroOrTwo(n: Integer): Boolean
         => n == 0 || n == 2;

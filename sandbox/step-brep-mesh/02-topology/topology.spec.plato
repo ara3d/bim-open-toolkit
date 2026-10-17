@@ -46,6 +46,9 @@ spec BrepModel
     invariant forall (s: Integer) in self.Shells.Count.Range :
         forall (v: Integer) in self.Vertices.Count.Range : Law_VertexLoopVertexIsIsolated(self, ShellIndex(s), BrepVertexIndex(v));
     invariant forall (s: Integer) in self.Shells.Count.Range : Law_EulerPoincareEvenAndBounded(self, ShellIndex(s));
+    invariant forall (s: Integer) in self.Shells.Count.Range : Law_OpenShellEulerEvenAndBounded(self, ShellIndex(s));
+    invariant forall (s: Integer) in self.Shells.Count.Range :
+        forall (v: Integer) in self.Vertices.Count.Range : Law_OpenShellVertexLinkIsCycleOrPath(self, ShellIndex(s), BrepVertexIndex(v));
     invariant forall (s: Integer) in self.Shells.Count.Range : Law_ShellIsConnected(self, ShellIndex(s));
     invariant forall (s: Integer) in self.Shells.Count.Range : Law_ShellIsOrientable(self, ShellIndex(s));
     invariant forall (b: Integer) in self.Bodies.Count.Range : Law_SolidShellsAreDeclaredClosed(self, BodyIndex(b));
@@ -138,6 +141,20 @@ spec ReducedCounts(m: BrepModel, s: ShellIndex): ShellCounts
     ensures result.Vertices >= 0 && result.Edges >= 0 && result.Loops >= 0;
     measure m.CoedgeSitesOfShell(s).Count + m.RawCounts(s).Loops;
     deferred "union-find over the shell's vertices, joining the two ends of each degenerate edge; drop degenerate edges; keep an edge loop left with no coedge as a vertex loop on its class; per face, drop each vertex loop whose class appears on another bound or on an earlier vertex loop; identify poly-loop points by coincidence through a spatial hash and their implicit edges as unordered point pairs; count classes, edges, faces, bounds";
+}
+
+// The boundary cycles of a shell: the free edges of the reduced cells,
+// chained at each vertex through the vertex's link path.
+spec BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsShellInRange(s);
+    requires forall (v: Integer) in m.Vertices.Count.Range : Law_OpenShellVertexLinkIsCycleOrPath(m, s, BrepVertexIndex(v));
+    ensures result >= 0;
+    ensures result <= m.FreeEdgeCount(s);
+    ensures m.FreeEdgeCount(s) - m.DegenerateEdgeCount(s) <= 0 ? result == 0 : result >= 1;
+    measure m.FreeEdgeCount(s);
+    deferred "mark the shell's free edges that are not degenerate; from each unmarked-visited one, walk forward: at its end vertex take the link path (CornersAroundVertex), cross to the free edge at the path's other end, and continue until the walk returns to its first edge; the result is the number of walks";
 }
 
 // The number of components of the link of v: the graph on the edge ends at v
