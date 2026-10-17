@@ -14,13 +14,12 @@ and `CrossCheck(mesh, level, criteria)`, all at the options' `ConformanceLevel` 
 | File | Holds |
 |---|---|
 | `pipeline.types.plato` | `MeshingOptions`, `PipelineState`, `MeshOutcome`, `StepMeshOutcome` |
-| `pipeline.library.plato` | library `StepToMesh`: options, the pipeline's findings, edges, faces, the loop, assembly and validation, the entry points; 5 of its functions are owed by layers 2, 4, 5 and marked `// belongs-in:` (`ScaledBy` on a model and on the two criteria and a limit, `WithEveryFaceReversed`) |
+| `pipeline.library.plato` | library `StepToMesh`: options, the pipeline's findings, edges, faces, the loop, assembly and validation, the entry points; 4 of its functions are owed by layers 2, 4, 5 and marked `// belongs-in:` (`ScaledBy` on the two criteria and a limit, `WithEveryFaceReversed`) |
 | `pipeline.laws.plato` | library `StepToMeshLaws`: 34 laws, 1 witness, 9 helpers |
 | `pipeline.spec.plato` | invariants of the 4 types, 12 function contracts, 5 theorems |
 
-Counts after the fix wave: 4 types; 49 library functions, 48 with a body and 1 deferred (`ScaledBy`
-on a model, owed by layer 2 and needed only by the scaling laws); 34 laws; 16 `spec` blocks; 5
-theorems.
+Counts after the fix wave: 4 types; 48 library functions, every one with a body; 34 laws; 16
+`spec` blocks; 5 theorems.
 
 ## The pipeline as a composition of partial functions
 
@@ -400,9 +399,8 @@ The research file is kept as written; these two corrections hold for this design
   the round count; fine for witnesses, and a harness can keep the states of one run instead.
 - **Determinism** means no output order from a hash set, and no floating-point reduction whose order
   depends on a thread schedule. `Law_MeshModelIsDeterministic` is the test.
-- **The deferred function** `ScaledBy` on a model is needed only by the scaling laws; layer 2
-  gives it a body once layer 1's scaled curves and surfaces land (`RigidlyMoved` has a body in layer
-  2 since the fix wave). A bodiless function compiles to a `NotImplementedException` stub in C#
+- **The model transforms** `RigidlyMoved` and `ScaledBy` are layer 2's, with bodies since the fix
+  wave; this layer defers nothing. A bodiless function compiles to a `NotImplementedException` stub in C#
   (PLATO-PRIMER.md D.7), so they can wait for the corpus chunk.
 - **64-bit `Number`** is assumed, as in every layer. The power-of-two laws hold in 32 bits too.
 
@@ -437,7 +435,7 @@ the fix wave of 2026-10-17 left the layers:
 | 5 | `Unwrap` (the identity on a plane), `AddMissingSeamsAndPoles` (nothing to add), `MeanSpeed`, `TriangulateRegion`, `RefineToSurface` (no point on a plane), `Lift` |
 | 6 | `AssembleModelMesh`, `EdgeTableOf`, `ComponentsOf`, `ComponentCountsOf`, `IsPinchedVertex`, `CoincidentVertexPairs` |
 | 7 | none deferred that a box reaches: `ValidateBrep(level)`, `ValidateModelMesh(t, th, level)`, and `CrossCheck(level, c)` fold checks with bodies, and the planar-face area oracle is closed form; `AreaSegmentByQuadrature`, `EdgeLengthByQuadrature`, `SampledCurvatureBound` wait for curved faces |
-| 8 | none deferred; `ScaledBy` on a model (layer 2's once it lands, with layer 1's scaled curves and surfaces) for the two scaling laws, or those laws wait for chunk 6 |
+| 8 | none deferred |
 
 Laws that must pass: `Law_MeshModelIsDeterministic`, `Law_MeshStepTextIsDeterministic`,
 `Law_OkExactlyWhenClean`, `Law_StepTextOkExactlyWhenClean`, `Law_RoundsWithinLimit`,
@@ -490,8 +488,8 @@ does not apply, since the face asked for refinement; `Law_OnlyFacesOfChangedEdge
 ### Chunk 6: the corpus
 
 The files of layer 3's "Test files" list, the u-blox models already on this machine first. New:
-assemblies, degree units, short names, surfaces of revolution, defective files. Layer 2:
-`ScaledBy` on a model (`RigidlyMoved` has a body since the fix wave), for `Law_RigidMotionMovesPositions`,
+assemblies, degree units, short names, surfaces of revolution, defective files. Layer 2's
+`RigidlyMoved` and `ScaledBy` (bodies since the fix wave) feed `Law_RigidMotionMovesPositions`,
 `Law_PowerOfTwoScalingKeepsConnectivity`, `Law_PowerOfTwoScalingScalesPositions` over every file.
 Every law of this layer runs on every file; the expected numbers are the published counts where
 they exist.
@@ -540,7 +538,7 @@ Recorded here, not fixed there.
 | `DiscretizeUsable(m, c)`, `Undiscretized(e)` (fix wave) | deleted; layer 4's `DiscretizeAll(m, c, NoFloors)` and `Undiscretized(e)` | `DiscretizeAll` now takes the usability guard itself |
 | `SameConnectivity(ModelMesh, ModelMesh)` (fix wave) | deleted; layer 6's, which compares numberings as this layer's did | one declaration, in the mesh layer |
 | `SameFaceMesh`, `SameFaceMeshOutcome`, `Law_RequestsNameEdgesOfTheirFace` (fix wave) | deleted; layer 5's `SameFaceMesh`, `SameFaceMeshOutcome`, and `MeshFace`'s ensures `Law_RequestsNameFaceEdges`, `Law_MeshFaceReadsOnlyFaceEdges`, assumed by `FailureIsIsolated` | the comparisons belong beside their types; the law restated a promise layer 5 now makes |
-| `RigidlyMoved(m, motion)` (deferred), `ScaledPoint(p, factor)` (fix wave) | deleted; layer 2's, with bodies; the `RigidlyMoved` contract stays in this layer's spec until layer 2 writes one | layer 2 owns the model transforms |
+| `RigidlyMoved(m, motion)`, `ScaledBy(m, factor)` (both deferred), `ScaledPoint(p, factor)` (fix wave) | deleted; layer 2's, with bodies; the two contracts stay in this layer's spec until layer 2 writes its own | layer 2 owns the model transforms |
 | (new, fix wave) | `RelativeMeshingOptions(m, fraction)` | research 2.5's relative chordal default, now that layer 2 exports `ModelSize` |
 | `ParseOutcome { Ok; File; Diagnostics }` | not declared; layer 3's `ParsedFile` | identical fields; layer 3's proposal accepted (decision 1) |
 | `DecodeOutcome { Ok; Model; Map; Diagnostics }` | not declared; layer 3's `DecodedModel` | decoding is total and does not stop the run; a stored `Ok` would be a computable flag (decision 2) |
@@ -616,9 +614,9 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
    `Law_MeshFaceReadsOnlyFaceEdges`; `SameFaceMesh` and `SameFaceMeshOutcome` deleted for layer 5's.
    `WatertightByConstruction` no longer inherits a conjecture's status: layer 5's
    `ElementsTileRegion` is a theorem.
-10. **`RigidlyMoved` and `ScaledPoint` stand-ins deleted**: layer 2 declares both with bodies. Its
-    `ScaledBy(m, factor)` waits for layer 1's `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, so this
-    layer keeps its bodiless `ScaledBy` with `// belongs-in: 02-topology` until then.
+10. **`RigidlyMoved`, `ScaledPoint`, and `ScaledBy(m)` stand-ins deleted**: layer 2 declares all three
+    with bodies (`ScaledBy` through layer 1's `ScaledGeometry`, pcurves included, the tolerances as a
+    re-decode sets them). Their contracts stay in this layer's spec until layer 2 writes its own.
 11. **Relative chordal default** (finding 8, "What is left open" item 1): `RelativeMeshingOptions(m,
     fraction)` over layer 2's `ModelSize`.
 12. **Round bound cited**: termination and the `MaxRefinementRounds` default cite layer 4's new

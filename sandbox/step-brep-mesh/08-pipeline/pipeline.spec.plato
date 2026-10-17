@@ -218,7 +218,10 @@ spec RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel
     measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
 }
 
-// The model scaled by factor: tables kept, lengths multiplied.
+// The model scaled by factor: tables kept, lengths multiplied. The function
+// is layer 2's (with a body since the fix wave); this contract, which the
+// scaling laws rely on, belongs in 02-topology's spec and moves there when
+// layer 2 writes one.
 spec ScaledBy(m: BrepModel, factor: Number): BrepModel
 {
     requires factor > 0.0 && factor.IsFinite;
@@ -231,7 +234,6 @@ spec ScaledBy(m: BrepModel, factor: Number): BrepModel
     ensures result.Tolerances.AngleParameter == m.Tolerances.AngleParameter;
     ensures forall (v: Integer) in m.Vertices.Count.Range : result.Vertices[v].Point.Coincident(m.Vertices[v].Point.ScaledPoint(factor), result.Tolerances.Length);
     measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
-    deferred "one pass over the arena and the vertex table, multiplying every length and every length parameter by factor";
 }
 
 // Reversal keeps every table but the faces' flags.

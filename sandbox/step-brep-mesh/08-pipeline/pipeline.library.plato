@@ -8,8 +8,8 @@
 // refines the edges face meshing asks for and meshes their faces again,
 // assembles the face meshes by numbering (layer 6), and validates the result
 // at the requested conformance level (layer 7). Every body here is the
-// definition; the one deferred function, ScaledBy on a model, is a model
-// transform the scaling laws need, owed by layer 2.
+// definition; nothing is deferred (the model transforms the metamorphic
+// laws need are layer 2's).
 //
 // Sections, in order:
 //  - Options
@@ -401,20 +401,6 @@ library StepToMesh
 
     //==
     // # Declarations owed by lower layers
-
-    // belongs-in: 02-topology
-    // deferred: the model scaled about the origin by factor. Every length is
-    // multiplied by factor: points, radii, offsets, vector magnitudes, control
-    // points, length parameters (a plane's, a cylinder's axial one) and the
-    // pcurve coordinates along them, and the length tolerance. Angles, angle
-    // parameters, knots, a line's parameter (its vector's magnitude scales
-    // instead), the angle tolerance, and the angle parameter floor are kept;
-    // the length parameter floor is multiplied by factor. A re-decode of the
-    // scaled file gives the same two floors: layer 0's LengthParameterFloor
-    // scales with the length tolerance and the coordinate extent, and
-    // AngleParameterFloor is a ratio of two lengths. Exact when factor is a
-    // power of two (the arena part belongs in 01-geometry).
-    ScaledBy(m: BrepModel, factor: Number): BrepModel;
 
     // belongs-in: 02-topology
     // The model with every face reversed: each face's SameSense and each of
