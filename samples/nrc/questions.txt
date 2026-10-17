@@ -7,3 +7,4 @@ How much operational carbon is stored per IFC class?
 Which analysis run produced these values, and when?
 Which analysed elements carry no embodied-carbon property set?
 What is the total embodied carbon (A1-A3) per storey?
+Which zone has the highest energy use intensity?

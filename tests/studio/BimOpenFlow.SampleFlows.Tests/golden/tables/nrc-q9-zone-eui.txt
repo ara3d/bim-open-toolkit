@@ -1,0 +1,23 @@
+dfg 0.1.0;
+// nrc-q9-zone-eui   graph ec5320b9904f
+about = view.note@1(text: "Q9: which zone has the highest energy use intensity. The four zones of nrc-zones.csv (one per dwelling per floor, synthetic) each divide the annual operational energy of their spaces by the sum of those spaces' floor areas, both read from nrc_analytics_spaces.csv; the highest comes first. Expected: Unit B Level 1, 78.04 kWh/m2/yr. The same values are stored on the IfcZone groups of the enriched file as NRC_ZoneSummary.");
+  // Ok
+spaces = rel.csv@1(source: "nrc", path: "nrc_analytics_spaces.csv");
+  // Ok  relation plan b23c695a3274
+  //   "(csv \"nrc\" \"nrc_analytics_spaces.csv\")"
+zones = rel.csv@1(source: "nrc", path: "nrc-zones.csv");
+  // Ok  relation plan 42b9fdb2233f
+  //   "(csv \"nrc\" \"nrc-zones.csv\")"
+answer = rel.sql@1(t1: spaces.relation, t2: zones.relation, sql: """
+SELECT z.ZoneName AS Zone,
+       round(sum(CASE WHEN v.MetricId = 'NRC.ENERGY.ANNUAL' THEN v.Value END)
+             / sum(CASE WHEN v.MetricId = 'NRC.AREA.FLOOR' THEN v.Value END), 2) AS ZoneEnergyUseIntensity_kWh_per_m2_year,
+       count(DISTINCT v.GlobalId) AS Spaces,
+       round(sum(CASE WHEN v.MetricId = 'NRC.AREA.FLOOR' THEN v.Value END), 1) AS TotalFloorArea_m2,
+       round(sum(CASE WHEN v.MetricId = 'NRC.ENERGY.ANNUAL' THEN v.Value END), 1) AS TotalOperationalEnergy_kWh_per_year
+FROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId
+GROUP BY z.ZoneName
+ORDER BY ZoneEnergyUseIntensity_kWh_per_m2_year DESC
+""");
+  // Ok  relation plan ab90816249b5
+  //   "(sql \"SELECT z.ZoneName AS Zone,\n       round(sum(CASE WHEN v.MetricId = 'NRC.ENERGY.ANNUAL' THEN v.Value END)\n             / sum(CASE WHEN v.MetricId = 'NRC.AREA.FLOOR' THEN v.Value END), 2) AS ZoneE"...

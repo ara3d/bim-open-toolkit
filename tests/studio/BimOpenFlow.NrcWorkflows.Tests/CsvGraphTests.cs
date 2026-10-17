@@ -149,6 +149,22 @@ public sealed class CsvGraphTests
     }
 
     [Test]
+    public void Q9_ZoneEnergyUseIntensity()
+    {
+        var answer = Answer("nrc-q9-zone-eui");
+        // Q9 is new in the zone-level work: the four zones of nrc-zones.csv, synthetic, each zone's
+        // annual energy divided by the sum of its spaces' floor areas, highest first.
+        Assert.That(answer.Rows, Has.Count.EqualTo(4));
+        Assert.That(answer.ColumnCells("Zone"), Is.EqualTo(new object?[]
+        {
+            "Unit B Level 1", "Unit A Level 1", "Unit B Level 2", "Unit A Level 2",
+        }));
+        Assert.That(Numbers(answer, "ZoneEnergyUseIntensity_kWh_per_m2_year"), Is.EqualTo(new[] { 78.04, 72.93, 64.6, 60.94 }).Within(0.005));
+        Assert.That(answer.ColumnCells("Spaces"), Is.EqualTo(new object?[] { 5L, 5L, 5L, 5L }));
+        Assert.That(Numbers(answer, "TotalFloorArea_m2"), Near(70.9, 70.9, 67.3, 67.3));
+    }
+
+    [Test]
     public void Q7_Absence()
     {
         var answer = Answer("nrc-q7-absence");

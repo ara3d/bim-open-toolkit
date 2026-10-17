@@ -1,0 +1,73 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40,
+      "w": 560,
+      "h": 122
+    },
+    "spaces": {
+      "x": 40,
+      "y": 202
+    },
+    "zones": {
+      "x": 40,
+      "y": 502
+    },
+    "answer": {
+      "x": 389,
+      "y": 352
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "spaces.relation",
+        "to": "answer.t1"
+      },
+      {
+        "from": "zones.relation",
+        "to": "answer.t2"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "spaces",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "zones",
+        "kind": "rel.csv",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "rel.sql",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "Q9: which zone has the highest energy use intensity. The four zones of nrc-zones.csv (one per dwelling per floor, synthetic) each divide the annual operational energy of their spaces by the sum of those spaces' floor areas, both read from nrc_analytics_spaces.csv; the highest comes first. Expected: Unit B Level 1, 78.04 kWh/m2/yr. The same values are stored on the IfcZone groups of the enriched file as NRC_ZoneSummary."
+    },
+    "spaces": {
+      "path": "nrc_analytics_spaces.csv",
+      "source": "nrc"
+    },
+    "zones": {
+      "path": "nrc-zones.csv",
+      "source": "nrc"
+    },
+    "answer": {
+      "sql": "SELECT z.ZoneName AS Zone,\n       round(sum(CASE WHEN v.MetricId = 'NRC.ENERGY.ANNUAL' THEN v.Value END)\n             / sum(CASE WHEN v.MetricId = 'NRC.AREA.FLOOR' THEN v.Value END), 2) AS ZoneEnergyUseIntensity_kWh_per_m2_year,\n       count(DISTINCT v.GlobalId) AS Spaces,\n       round(sum(CASE WHEN v.MetricId = 'NRC.AREA.FLOOR' THEN v.Value END), 1) AS TotalFloorArea_m2,\n       round(sum(CASE WHEN v.MetricId = 'NRC.ENERGY.ANNUAL' THEN v.Value END), 1) AS TotalOperationalEnergy_kWh_per_year\nFROM t1 v JOIN t2 z ON z.SpaceGlobalId = v.GlobalId\nGROUP BY z.ZoneName\nORDER BY ZoneEnergyUseIntensity_kWh_per_m2_year DESC"
+    }
+  }
+}

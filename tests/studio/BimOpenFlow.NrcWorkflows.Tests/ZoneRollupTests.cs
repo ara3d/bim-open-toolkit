@@ -85,6 +85,36 @@ public sealed class ZoneRollupTests
         });
     }
 
+    /// <summary>Q9 answered from the CSVs by its graph, by the plain computation above, and by the
+    /// values stored on the zones of the enriched file: one answer.</summary>
+    [Test]
+    public void Q9_GraphAgreesWithTheCsvComputationAndTheStoredZoneValues()
+    {
+        var answer = ModelGraphTests.AnswerRows(
+            ModelGraphTests.EvaluateGreen(ModelGraphTests.Document("nrc-q9-zone-eui"), "nrc-q9-zone-eui", Fixture.Registry(Runtime)),
+            Runtime);
+        var fromCsv = References().OrderByDescending(r => Math.Round(r.Intensity, 2)).ToList();
+        var stored = Runtime.Materialize(Plans.Sql(
+            "SELECT e.Name, CAST(p.Value AS DOUBLE) AS Eui FROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex "
+            + "WHERE e.Category = 'IFCZONE' AND p.Name = 'ZoneEnergyUseIntensity_kWh_per_m2_year'",
+            Plans.Table("duplex-enriched", "ParameterText"), Plans.Table("duplex-enriched", "EntityText")));
+        var storedByZone = Enumerable.Range(0, stored.Rows.Count)
+            .ToDictionary(r => (string)stored.Cell("Name", r)!, r => Convert.ToDouble(stored.Cell("Eui", r)));
+
+        Assert.That(answer.Rows, Has.Count.EqualTo(fromCsv.Count));
+        Assert.Multiple(() =>
+        {
+            Assert.That(answer.Cell("Zone", 0), Is.EqualTo(fromCsv[0].Zone), "the highest zone");
+            for (var r = 0; r < fromCsv.Count; r++)
+            {
+                Assert.That(answer.Cell("Zone", r), Is.EqualTo(fromCsv[r].Zone));
+                var eui = Convert.ToDouble(answer.Cell("ZoneEnergyUseIntensity_kWh_per_m2_year", r), CultureInfo.InvariantCulture);
+                Assert.That(eui, Is.EqualTo(fromCsv[r].Intensity).Within(0.005), fromCsv[r].Zone);
+                Assert.That(storedByZone[fromCsv[r].Zone], Is.EqualTo(eui).Within(0.005), fromCsv[r].Zone);
+            }
+        });
+    }
+
     /// <summary>The storage defect of gap report 2.10 as a rule on the zone rows: a zone value never
     /// reuses a property name an element set carries.</summary>
     [Test]
