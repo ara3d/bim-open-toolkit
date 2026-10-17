@@ -134,10 +134,14 @@ library BrepTopologyLaws
             ? (m.IsShellInRange(s) ? m.PolyEdgeUseDefects(s) == 0 : true)
             : true;
 
-    // When an edge has exactly two uses in one face, a seam, they run in opposite
-    // composed directions (STEP edge_loop IP2). A seam used twice the same way
-    // glues the face to itself with a twist, which no flag can repair.
-    // Structural, exact.
+    // A seam's two uses run opposite: when an edge has exactly two uses in one
+    // face, they run in opposite composed directions (STEP edge_loop IP2). A
+    // seam used twice the same way glues the face to itself with a twist,
+    // which no flag can repair. The name reads "the seam's uses, in one face";
+    // what the law adds to Law_EdgeUsesHaveOppositeOrientation is its reach:
+    // it judges every face, whether or not a shell lists it, and still judges
+    // the seam when a third use of the edge elsewhere in the shell makes the
+    // shell law vacuous. Structural, exact.
     Law_SeamUsesAreInOneFace(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
         => m.IsFaceInRange(f)
             ? (m.IsEdgeInRange(e) ? m.UsesRunOpposite(m.CoedgeSitesOfEdgeInFace(f, e)) : true)

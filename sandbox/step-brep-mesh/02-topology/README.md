@@ -399,7 +399,7 @@ layer 1's `ParameterToleranceAt`.
 | `Law_DeclaredClosedIsClosed(m, s)` | a shell declared closed has no non-degenerate edge used exactly once | exact | structural, Error |
 | `Law_EdgeUsesHaveOppositeOrientation(m, s, e)` | an edge's two uses in a shell have opposite composed senses | exact | structural, Error |
 | `Law_EdgeReversalKeepsCoedgeSense(m, site)` | reversing the coedge's edge leaves its composed sense unchanged | exact | library, test |
-| `Law_SeamUsesAreInOneFace(m, f, e)` | an edge's two uses in one face (a seam) have opposite composed senses | exact | structural, Error |
+| `Law_SeamUsesAreInOneFace(m, f, e)` | an edge's two uses in one face (a seam) have opposite composed senses, for every face, in a shell or not | exact | structural, Error |
 | `Law_VertexLinkIsOneCycle(m, s, v)` | in a shell declared closed, the link of a vertex with corners has one component | exact | structural, Error |
 | `Law_VertexLoopVertexIsIsolated(m, s, v)` | a vertex-loop vertex is an end of no edge the shell cites | exact | structural, Error |
 | `Law_EulerPoincareEvenAndBounded(m, s)` | in a shell declared closed, reduced `V - E + 2F - L` is even and at most 2 | exact | structural, Error |
@@ -655,3 +655,11 @@ Applied:
 - **Poly loops (open item 3).** Decided: the laws see poly loops directly.
   `Law_PolyLoopEdgesPairUp` over the deferred `PolyEdgeUseDefects` (implicit edges identified by
   coincidence, as `ReducedCounts` does), and `Law_PolyLoopHasThreePoints`.
+
+Skipped:
+
+- **F12, the name of `Law_SeamUsesAreInOneFace`.** Its statement is kept and its comment now says
+  what it adds to the shell law (every face, in a shell or not, and a seam whose edge has a third
+  use elsewhere). The name is not changed: layer 7's `Check_SeamUsesAreInOneFace` and layer 8's
+  theorem cite it, and a rename in this wave would be one FIX-WAVE.md does not predict. The name
+  review should rename it `Law_SeamUsesRunOpposite` in all three layers at once.
