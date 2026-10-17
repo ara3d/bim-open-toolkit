@@ -74,7 +74,7 @@ const DUPLEX_CAPTURES = [
   ["nrc-storey-of-element", "answer", "table", "figure-10-storey-of-element.png",
     "Figure 10. Elements per storey from the StoreyOfEntity view, which walks ContainedIn, PartOf, and MemberOf: Level 1 has 103, the count the hand-driven session missed."],
   ["nrc-color-operational-carbon", "answer", "view3d", "figure-13-picked-element-properties.png",
-    "Figure 13. A picked wall: the 3D pane lists its property sets, including the Pset_NRC sets the enrichment wrote.", [0.5, 0.55],
+    "Figure 13. A picked wall: the 3D pane lists its property sets, including the NRC_ sets the enrichment wrote.", [0.5, 0.55],
     { answer: { valueColumn: "OperationalCarbon_kgCO2e_per_year", colorMap: "viridis" } }],
 ];
 

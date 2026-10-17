@@ -33,10 +33,10 @@ function exit(message) {
 // The paper's questions this replay answers, with the expected values from
 // nrc-ifc-llm/poc/results/expected_answers.json (copied into
 // tests/flow/BimOpenFlow.NrcWorkflows.Tests as cited numbers). Since TKT-48 the storey and
-// building totals live in Pset_NRCStoreySummary and Pset_NRCBuildingSummary under their own
+// building totals live in NRC_StoreySummary and NRC_BuildingSummary under their own
 // names, so Q1 and Q5 sum the element property with no class filter, and Q8 sums element
 // values per storey through StoreyOfElement instead of reading a storey's copy of the property.
-const OC = "p.ParameterGroup='Pset_NRCOperationalCarbon' AND p.Name='OperationalCarbon_kgCO2e_per_year'";
+const OC = "p.ParameterGroup='NRC_OperationalCarbon' AND p.Name='OperationalCarbon_kgCO2e_per_year'";
 const JOIN = "FROM ParameterText p JOIN EntityText e ON e.EntityIndex = p.EntityIndex";
 const QUESTIONS = [
   {
@@ -53,13 +53,13 @@ const QUESTIONS = [
   },
   {
     id: "Q7", question: "What is the embodied carbon of the roof?",
-    sql: "SELECT e.GlobalId, p.ParameterGroup, p.Name AS prop, p.Value FROM EntityText e LEFT JOIN ParameterText p ON p.EntityIndex=e.EntityIndex AND p.ParameterGroup LIKE 'Pset_NRC%' WHERE e.Category='IFCROOF' ORDER BY p.ParameterGroup, prop",
-    check: (rows) => rows.length > 0 && rows.every((r) => cell(r, "ParameterGroup") !== "Pset_NRCEmbodiedCarbon"),
-    expected: "not available: the roof carries no Pset_NRCEmbodiedCarbon set",
+    sql: "SELECT e.GlobalId, p.ParameterGroup, p.Name AS prop, p.Value FROM EntityText e LEFT JOIN ParameterText p ON p.EntityIndex=e.EntityIndex AND p.ParameterGroup LIKE 'NRC_%' WHERE e.Category='IFCROOF' ORDER BY p.ParameterGroup, prop",
+    check: (rows) => rows.length > 0 && rows.every((r) => cell(r, "ParameterGroup") !== "NRC_EmbodiedCarbon"),
+    expected: "not available: the roof carries no NRC_EmbodiedCarbon set",
   },
   {
     id: "Q8", question: "What is the total embodied carbon (A1-A3) per storey?",
-    sql: "SELECT so.StoreyName AS storey, round(sum(CAST(p.Value AS DOUBLE)),1) AS a1a3 FROM ParameterText p JOIN StoreyOfElement so ON so.EntityIndex = p.EntityIndex WHERE p.ParameterGroup='Pset_NRCEmbodiedCarbon' AND p.Name='EmbodiedCarbon_A1A3_kgCO2e' GROUP BY so.StoreyName ORDER BY a1a3 DESC",
+    sql: "SELECT so.StoreyName AS storey, round(sum(CAST(p.Value AS DOUBLE)),1) AS a1a3 FROM ParameterText p JOIN StoreyOfElement so ON so.EntityIndex = p.EntityIndex WHERE p.ParameterGroup='NRC_EmbodiedCarbon' AND p.Name='EmbodiedCarbon_A1A3_kgCO2e' GROUP BY so.StoreyName ORDER BY a1a3 DESC",
     check: (rows) => rows.length === 4 && cell(rows[0], "storey") === "Level 1" && near(cell(rows[0], "a1a3"), 49451.2) && near(cell(rows[1], "a1a3"), 48696.8),
     expected: "Level 1 49,451.2; Level 2 48,696.8; T/FDN 11,761.3; Roof 5,821.0",
   },

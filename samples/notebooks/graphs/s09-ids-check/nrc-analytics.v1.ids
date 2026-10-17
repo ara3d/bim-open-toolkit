@@ -2,7 +2,7 @@
 <ids xmlns="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd">
 	<info>
 		<title>NRC analytics property sets</title>
-		<description>Every analysed element (the fourteen IFC classes carrying a row in nrc_analytics_long.csv) must carry Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year as a real number. Generated from samples/nrc/nrc-metrics.csv.</description>
+		<description>Every analysed element (the fourteen IFC classes carrying a row in nrc_analytics_long.csv) must carry NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as a real number. Generated from samples/nrc/nrc-metrics.csv.</description>
 		<author>cdiggins@gmail.com</author>
 		<date>2026-09-27</date>
 	</info>
@@ -33,7 +33,7 @@
 			<requirements>
 				<property dataType="IFCREAL">
 					<propertySet>
-						<simpleValue>Pset_NRCOperationalCarbon</simpleValue>
+						<simpleValue>NRC_OperationalCarbon</simpleValue>
 					</propertySet>
 					<baseName>
 						<simpleValue>OperationalCarbon_kgCO2e_per_year</simpleValue>

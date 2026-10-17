@@ -168,7 +168,7 @@
         "text": "Same for embodied carbon, and point out the grey roof."
       },
       "reply": {
-        "text": "Viridis gradient over EmbodiedCarbon_A1A3_kgCO2e, five stops from 31.5 to 3,069.5 kgCO2e. One instance has no value and stays grey: the roof, which carries no Pset_NRCEmbodiedCarbon row in the source data. Not inferred from a nearby value.",
+        "text": "Viridis gradient over EmbodiedCarbon_A1A3_kgCO2e, five stops from 31.5 to 3,069.5 kgCO2e. One instance has no value and stays grey: the roof, which carries no NRC_EmbodiedCarbon row in the source data. Not inferred from a nearby value.",
         "tools": [
           {
             "name": "getAnalysis",

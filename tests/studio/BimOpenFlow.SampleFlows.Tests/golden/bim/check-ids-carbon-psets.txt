@@ -12,7 +12,7 @@ model = bos.load@1(path: modelPath.path, harmonize: "false");
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18553 rows x 6 cols  sha 01d959ee5fa2
+  //   parameters: table 18553 rows x 6 cols  sha 6fbda96872e9
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
   //     [0] 115, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
   //     [1] 120, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
@@ -24,7 +24,7 @@ model = bos.load@1(path: modelPath.path, harmonize: "false");
   //     [2] 135, "T/FDN", 4705, null, "MemberOf"
 verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, ids: "{SAMPLES}/ids/nrc-analytics.ids");
   // Ok
-  //   verdicts: table 436 rows x 7 cols  sha 9a83ff8e29ad
+  //   verdicts: table 436 rows x 7 cols  sha 051776bf89ef
   //     columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
   //     verdicts "IDS-EC": Fail 1, Pass 217
   //     verdicts "IDS-OC": Pass 218
@@ -43,10 +43,10 @@ chart = chart.bar@1(table: verdicts.summary, labelColumn: "CheckTitle", valueCol
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
 failures = table.filter@1(table: verdicts.verdicts, expr: "[Verdict] != 'Pass'");
-  // Ok  table 1 rows x 7 cols  sha 8493b5ffc182
+  // Ok  table 1 rows x 7 cols  sha ad42f8012c20
   //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
   //   verdicts "IDS-EC": Fail 1
 answer = view.table@1(table: failures.table, title: "Failing elements", columns: "GlobalId, CheckId, Reason");
-  // Ok  table 1 rows x 3 cols  sha 600714fd3ecf
+  // Ok  table 1 rows x 3 cols  sha 591a7ffe44d4
   //   columns GlobalId:Text, CheckId:Text, Reason:Text
-  //   [0] "0jf0rYHfX3RAB3bSIRjmxl", "IDS-EC", "no Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kg"...
+  //   [0] "0jf0rYHfX3RAB3bSIRjmxl", "IDS-EC", "no NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e"

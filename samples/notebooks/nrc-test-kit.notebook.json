@@ -921,7 +921,7 @@
         "text": "Read back the NRC values that were written into the enriched IFC."
       },
       "reply": {
-        "text": "2,441 NRC property values read back from duplex-enriched.ifc, ordered by entity, property set, and property. The first entity, #34, carries the project's Pset_NRCAnalyticsProvenance: run run-2026-09-17-01, scenario Baseline.",
+        "text": "2,441 NRC property values read back from duplex-enriched.ifc, ordered by entity, property set, and property. The first entity, #34, carries the project's NRC_AnalyticsProvenance: run run-2026-09-17-01, scenario Baseline.",
         "tools": [
           {
             "name": "getAnalysis",
@@ -975,350 +975,350 @@
               "rows": [
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "AnalysisRunId",
                   "String",
                   "run-2026-09-17-01"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "ComputedAt",
                   "String",
                   "2026-09-17T00:00:00Z"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "ComputedBy",
                   "String",
                   "Ara 3D"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "GridEmissionFactor_kgCO2e_per_kWh",
                   "Number",
                   "0.11"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "JoinKey",
                   "String",
                   "GlobalId"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "Methodology",
                   "String",
                   "Synthetic, illustrative; not EN 15978"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "MetricDictionaryURI",
                   "String",
                   "nrc-metrics.csv"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "MetricDictionaryVersion",
                   "String",
                   "NRC-metrics-0.2"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "ResultDatasetFormat",
                   "String",
                   "CSV"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "ResultDatasetURI",
                   "String",
                   "nrc_analytics_long.csv"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "ScenarioName",
                   "String",
                   "Baseline"
                 ],
                 [
                   34,
-                  "Pset_NRCAnalyticsProvenance",
+                  "NRC_AnalyticsProvenance",
                   "SourceTool",
                   "String",
                   "nrc-ifc-llm/poc/generate_synthetic_analytics.py"
                 ],
                 [
                   36,
-                  "Pset_NRCBuildingSummary",
+                  "NRC_BuildingSummary",
                   "AnalysisRunId",
                   "String",
                   "run-2026-09-17-01"
                 ],
                 [
                   36,
-                  "Pset_NRCBuildingSummary",
+                  "NRC_BuildingSummary",
                   "ElementCount",
                   "Number",
                   "218.0"
                 ],
                 [
                   36,
-                  "Pset_NRCBuildingSummary",
+                  "NRC_BuildingSummary",
                   "MeanEnergyUseIntensity_kWh_per_m2_year",
                   "Number",
                   "42.68"
                 ],
                 [
                   36,
-                  "Pset_NRCBuildingSummary",
+                  "NRC_BuildingSummary",
                   "ScenarioName",
                   "String",
                   "Baseline"
                 ],
                 [
                   36,
-                  "Pset_NRCBuildingSummary",
+                  "NRC_BuildingSummary",
                   "TotalEmbodiedCarbon_A1A3_kgCO2e",
                   "Number",
                   "115730.3"
                 ],
                 [
                   36,
-                  "Pset_NRCBuildingSummary",
+                  "NRC_BuildingSummary",
                   "TotalEmbodiedCarbon_A1A5_kgCO2e",
                   "Number",
                   "129618.1"
                 ],
                 [
                   36,
-                  "Pset_NRCBuildingSummary",
+                  "NRC_BuildingSummary",
                   "TotalOperationalCarbon_kgCO2e_per_year",
                   "Number",
                   "37196.2"
                 ],
                 [
                   39,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "AnalysisRunId",
                   "String",
                   "run-2026-09-17-01"
                 ],
                 [
                   39,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ElementCount",
                   "Number",
                   "103.0"
                 ],
                 [
                   39,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "MeanEnergyUseIntensity_kWh_per_m2_year",
                   "Number",
                   "40.5"
                 ],
                 [
                   39,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ScenarioName",
                   "String",
                   "Baseline"
                 ],
                 [
                   39,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A3_kgCO2e",
                   "Number",
                   "49451.2"
                 ],
                 [
                   39,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A5_kgCO2e",
                   "Number",
                   "55385.4"
                 ],
                 [
                   39,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalOperationalCarbon_kgCO2e_per_year",
                   "Number",
                   "17457.0"
                 ],
                 [
                   43,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "AnalysisRunId",
                   "String",
                   "run-2026-09-17-01"
                 ],
                 [
                   43,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ElementCount",
                   "Number",
                   "93.0"
                 ],
                 [
                   43,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "MeanEnergyUseIntensity_kWh_per_m2_year",
                   "Number",
                   "40.56"
                 ],
                 [
                   43,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ScenarioName",
                   "String",
                   "Baseline"
                 ],
                 [
                   43,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A3_kgCO2e",
                   "Number",
                   "48696.8"
                 ],
                 [
                   43,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A5_kgCO2e",
                   "Number",
                   "54540.6"
                 ],
                 [
                   43,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalOperationalCarbon_kgCO2e_per_year",
                   "Number",
                   "13970.2"
                 ],
                 [
                   47,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "AnalysisRunId",
                   "String",
                   "run-2026-09-17-01"
                 ],
                 [
                   47,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ElementCount",
                   "Number",
                   "14.0"
                 ],
                 [
                   47,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "MeanEnergyUseIntensity_kWh_per_m2_year",
                   "Number",
                   "61.76"
                 ],
                 [
                   47,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ScenarioName",
                   "String",
                   "Baseline"
                 ],
                 [
                   47,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A3_kgCO2e",
                   "Number",
                   "11761.3"
                 ],
                 [
                   47,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A5_kgCO2e",
                   "Number",
                   "13172.7"
                 ],
                 [
                   47,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalOperationalCarbon_kgCO2e_per_year",
                   "Number",
                   "4001.7"
                 ],
                 [
                   51,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "AnalysisRunId",
                   "String",
                   "run-2026-09-17-01"
                 ],
                 [
                   51,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ElementCount",
                   "Number",
                   "8.0"
                 ],
                 [
                   51,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "MeanEnergyUseIntensity_kWh_per_m2_year",
                   "Number",
                   "62.04"
                 ],
                 [
                   51,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "ScenarioName",
                   "String",
                   "Baseline"
                 ],
                 [
                   51,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A3_kgCO2e",
                   "Number",
                   "5821.0"
                 ],
                 [
                   51,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalEmbodiedCarbon_A1A5_kgCO2e",
                   "Number",
                   "6519.4"
                 ],
                 [
                   51,
-                  "Pset_NRCStoreySummary",
+                  "NRC_StoreySummary",
                   "TotalOperationalCarbon_kgCO2e_per_year",
                   "Number",
                   "1767.3"
                 ],
                 [
                   3797,
-                  "Pset_NRCEmbodiedCarbon",
+                  "NRC_EmbodiedCarbon",
                   "AnalysisRunId",
                   "String",
                   "run-2026-09-17-01"
                 ],
                 [
                   3797,
-                  "Pset_NRCEmbodiedCarbon",
+                  "NRC_EmbodiedCarbon",
                   "EmbodiedCarbon_A1A3_kgCO2e",
                   "Number",
                   "615.5"
                 ],
                 [
                   3797,
-                  "Pset_NRCEmbodiedCarbon",
+                  "NRC_EmbodiedCarbon",
                   "EmbodiedCarbon_A1A5_kgCO2e",
                   "Number",
                   "689.4"
@@ -1333,8 +1333,8 @@
             "id": "e2",
             "analysisId": "nrc-property-values",
             "graphHash": "2e33cac69f51e95f94265f133f609a683b6ffa487d7708990a5cfb3fd037434e",
-            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 1778,\n      \"y\": 329\n    },\n    \"entities\": {\n      \"x\": 385,\n      \"y\": 480\n    },\n    \"parameters\": {\n      \"x\": 40,\n      \"y\": 202\n    },\n    \"about\": {\n      \"x\": 40,\n      \"y\": 40,\n      \"w\": 560,\n      \"h\": 122\n    },\n    \"nrcOnly\": {\n      \"x\": 389,\n      \"y\": 202\n    },\n    \"withStepId\": {\n      \"x\": 820,\n      \"y\": 329\n    },\n    \"columns\": {\n      \"x\": 1169,\n      \"y\": 329\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"parameters.relation\",\n        \"to\": \"answer.t1\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"answer.t2\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"entities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"parameters\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"sql\": \"SELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\\n       p.ValueType AS valueType, p.Value AS paramValue\\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\\nWHERE p.ParameterGroup LIKE 'Pset_NRC%'\\nORDER BY entityId, psetName, paramName\"\n    },\n    \"entities\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"EntityText\"\n    },\n    \"parameters\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"ParameterText\"\n    }\n  }\n}",
-            "text": "dfg 0.1.0;\n// nrc-property-values   graph 2e33cac69f51\nentities = rel.table@1(source: \"duplex-enriched\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan 9a8be9f3b5d5\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nparameters = rel.table@1(source: \"duplex-enriched\", table: \"ParameterText\");\n  // Ok  relation 18099 rows x 6 cols  plan 7b315558b5df  (over 10000, not hashed)\n  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text\n  //   [0] 115, \"Ifc:ApplicationIdentifier\", \"IFCAPPLICATION\", \"\", \"String\", \"Revit\"\n  //   [1] 120, \"Ifc:ElectricCurrentExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\n  //   [2] 120, \"Ifc:ThermodynamicTemperatureExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\nanswer = rel.sql@1(t1: parameters.relation, t2: entities.relation, sql: \"\"\"\nSELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\n       p.ValueType AS valueType, p.Value AS paramValue\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\nWHERE p.ParameterGroup LIKE 'Pset_NRC%'\nORDER BY entityId, psetName, paramName\n\"\"\");\n  // Ok  relation 2441 rows x 5 cols  sha 7729c00be267  plan 7fa500a73661\n  //   columns entityId:Integer, psetName:Text, paramName:Text, valueType:Text, paramValue:Text\n  //   [0] 34, \"Pset_NRCAnalyticsProvenance\", \"AnalysisRunId\", \"String\", \"run-2026-09-17-01\"\n  //   [1] 34, \"Pset_NRCAnalyticsProvenance\", \"ComputedAt\", \"String\", \"2026-09-17T00:00:00Z\"\n  //   [2] 34, \"Pset_NRCAnalyticsProvenance\", \"ComputedBy\", \"String\", \"Ara 3D\"\n",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 1778,\n      \"y\": 329\n    },\n    \"entities\": {\n      \"x\": 385,\n      \"y\": 480\n    },\n    \"parameters\": {\n      \"x\": 40,\n      \"y\": 202\n    },\n    \"about\": {\n      \"x\": 40,\n      \"y\": 40,\n      \"w\": 560,\n      \"h\": 122\n    },\n    \"nrcOnly\": {\n      \"x\": 389,\n      \"y\": 202\n    },\n    \"withStepId\": {\n      \"x\": 820,\n      \"y\": 329\n    },\n    \"columns\": {\n      \"x\": 1169,\n      \"y\": 329\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"parameters.relation\",\n        \"to\": \"answer.t1\"\n      },\n      {\n        \"from\": \"entities.relation\",\n        \"to\": \"answer.t2\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"entities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"parameters\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"sql\": \"SELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\\n       p.ValueType AS valueType, p.Value AS paramValue\\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\\nWHERE p.ParameterGroup LIKE 'NRC_%'\\nORDER BY entityId, psetName, paramName\"\n    },\n    \"entities\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"EntityText\"\n    },\n    \"parameters\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"ParameterText\"\n    }\n  }\n}",
+            "text": "dfg 0.1.0;\n// nrc-property-values   graph 2e33cac69f51\nentities = rel.table@1(source: \"duplex-enriched\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan 9a8be9f3b5d5\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nparameters = rel.table@1(source: \"duplex-enriched\", table: \"ParameterText\");\n  // Ok  relation 18099 rows x 6 cols  plan 7b315558b5df  (over 10000, not hashed)\n  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text\n  //   [0] 115, \"Ifc:ApplicationIdentifier\", \"IFCAPPLICATION\", \"\", \"String\", \"Revit\"\n  //   [1] 120, \"Ifc:ElectricCurrentExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\n  //   [2] 120, \"Ifc:ThermodynamicTemperatureExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\nanswer = rel.sql@1(t1: parameters.relation, t2: entities.relation, sql: \"\"\"\nSELECT e.StepId AS entityId, p.ParameterGroup AS psetName, p.Name AS paramName,\n       p.ValueType AS valueType, p.Value AS paramValue\nFROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex\nWHERE p.ParameterGroup LIKE 'NRC_%'\nORDER BY entityId, psetName, paramName\n\"\"\");\n  // Ok  relation 2441 rows x 5 cols  sha 7729c00be267  plan 7fa500a73661\n  //   columns entityId:Integer, psetName:Text, paramName:Text, valueType:Text, paramValue:Text\n  //   [0] 34, \"NRC_AnalyticsProvenance\", \"AnalysisRunId\", \"String\", \"run-2026-09-17-01\"\n  //   [1] 34, \"NRC_AnalyticsProvenance\", \"ComputedAt\", \"String\", \"2026-09-17T00:00:00Z\"\n  //   [2] 34, \"NRC_AnalyticsProvenance\", \"ComputedBy\", \"String\", \"Ara 3D\"\n",
             "focus": [
               "answer"
             ]

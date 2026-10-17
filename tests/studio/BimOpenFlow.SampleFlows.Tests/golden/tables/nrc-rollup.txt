@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-rollup   graph c5906797c921
+// nrc-rollup   graph 5b1fa9f5b0e7
 about = view.note@1(text: "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
@@ -12,14 +12,14 @@ run = rel.csv@1(source: "nrc", path: "nrc-run.csv");
   // Ok  relation plan 4542dd4754c4
   //   "(csv \"nrc\" \"nrc-run.csv\")"
 provenance = rel.sql@1(t1: entities.relation, t2: run.relation, sql: """
-SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,
+SELECT e.StepId AS entityId, 'NRC_AnalyticsProvenance' AS psetName, r.Field AS paramName,
        r.ValueType AS valueType, r.Value AS paramValue
 FROM t1 e CROSS JOIN t2 r
 WHERE e.Category = 'IFCPROJECT'
 ORDER BY paramName
 """);
-  // Ok  relation plan 765e86a152cc
-  //   "(sql \"SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = "...
+  // Ok  relation plan 5688ddf55978
+  //   "(sql \"SELECT e.StepId AS entityId, 'NRC_AnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFC"...
 storeys = rel.table@1(source: "duplex-base", table: "StoreyOfElement");
   // Ok  relation plan a8c1aa22dccb
   //   "(table \"duplex-base\" \"StoreyOfElement\")"
@@ -63,5 +63,5 @@ ORDER BY entityId, psetName, paramName
   // Ok  relation plan d3f20da571ca
   //   "(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE m.Rollup\n           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS I"...
 answer = rel.sql@1(t1: summaries.relation, t2: provenance.relation, sql: "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName");
-  // Ok  relation plan 195664acd18c
+  // Ok  relation plan 49951ca7baa4
   //   "(sql \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n  "...

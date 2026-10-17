@@ -160,7 +160,7 @@
       "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"
     },
     "answer": {
-      "expr": "[psetName] == 'Pset_NRCStoreySummary'"
+      "expr": "[psetName] == 'NRC_StoreySummary'"
     },
     "containers": {
       "sql": "SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so.StoreyIndex\nWHERE e.GlobalId IS NOT NULL\nQUALIFY row_number() OVER (PARTITION BY so.EntityIndex ORDER BY so.Depth, so.StoreyIndex) = 1\nUNION ALL\nSELECT e.GlobalId, 'building', b.StepId\nFROM t2 e JOIN t2 b ON b.Category = 'IFCBUILDING'\nWHERE e.GlobalId IS NOT NULL"
@@ -179,7 +179,7 @@
       "source": "nrc"
     },
     "provenance": {
-      "sql": "SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFCPROJECT'\nORDER BY paramName"
+      "sql": "SELECT e.StepId AS entityId, 'NRC_AnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFCPROJECT'\nORDER BY paramName"
     },
     "run": {
       "path": "nrc-run.csv",

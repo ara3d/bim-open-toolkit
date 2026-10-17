@@ -17,14 +17,14 @@ function run(text) {
   return spawnSync(process.execPath, [script, '--metrics', metrics, '--out', join(dir, 'out.ids')], { encoding: 'utf8' });
 }
 
-const annual = 'NRC.OC.ANNUAL,element,Pset_NRCOperationalCarbon,OperationalCarbon_kgCO2e_per_year,';
+const annual = 'NRC.OC.ANNUAL,element,NRC_OperationalCarbon,OperationalCarbon_kgCO2e_per_year,';
 
 test('the committed dictionary is accepted', () => {
   assert.equal(run(csv).status, 0);
 });
 
 test('a blank PropertyName fails and names the row', () => {
-  const r = run(csv.replace(annual, 'NRC.OC.ANNUAL,element,Pset_NRCOperationalCarbon,,'));
+  const r = run(csv.replace(annual, 'NRC.OC.ANNUAL,element,NRC_OperationalCarbon,,'));
   assert.equal(r.status, 1);
   assert.match(r.stderr, /row 4 \(NRC\.OC\.ANNUAL, element\): PropertyName is empty/);
 });

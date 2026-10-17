@@ -10,7 +10,7 @@ public static class IfcAskPrompts
 {
     /// <summary>Property sets written by the analytics pass, as opposed to the ones the authoring
     /// tool exported. Named by prefix because each analysis writes its own set.</summary>
-    public const string AnalyticsPrefix = "Pset_NRC";
+    public const string AnalyticsPrefix = "NRC_";
 
     /// <summary>The tool guide, views and answer rules, read from the .claude/skills/ifc-ask
     /// file embedded at build time, so the Claude Code skill and this prompt never drift apart.</summary>

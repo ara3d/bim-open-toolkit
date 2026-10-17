@@ -12,8 +12,8 @@
   ],
   "turns": [
     {
-      "request": "Write an IDS that requires every analysed element to have Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year as a number.",
-      "reply": "The node catalog has no node that evaluates an IDS file: of 130 node kinds, the Compliance pack only has check.required, check.rule, check.rollup, and check.union, none named check.ids or ids.*. I wrote the specification anyway, as a real IDS 1.0 file, samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: one specification, IDS-OC, applying to the fourteen IFC classes that carry a row in nrc_analytics_long.csv (IFCWALL, IFCWALLSTANDARDCASE, IFCWINDOW, IFCDOOR, IFCROOF, IFCSLAB, IFCBEAM, IFCCOVERING, IFCRAILING, IFCSTAIR, IFCSTAIRFLIGHT, IFCFOOTING, IFCFURNISHINGELEMENT, IFCMEMBER), requiring Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year as an IFCREAL. I have not run it through the IDS 1.0 XSD or ids-lib, so I can't say yet that it validates against the schema. To check a model, I'll express the same requirement with check.required over the enriched model's own property sets, since no node reads the IDS file itself.",
+      "request": "Write an IDS that requires every analysed element to have NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as a number.",
+      "reply": "The node catalog has no node that evaluates an IDS file: of 130 node kinds, the Compliance pack only has check.required, check.rule, check.rollup, and check.union, none named check.ids or ids.*. I wrote the specification anyway, as a real IDS 1.0 file, samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: one specification, IDS-OC, applying to the fourteen IFC classes that carry a row in nrc_analytics_long.csv (IFCWALL, IFCWALLSTANDARDCASE, IFCWINDOW, IFCDOOR, IFCROOF, IFCSLAB, IFCBEAM, IFCCOVERING, IFCRAILING, IFCSTAIR, IFCSTAIRFLIGHT, IFCFOOTING, IFCFURNISHINGELEMENT, IFCMEMBER), requiring NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as an IFCREAL. I have not run it through the IDS 1.0 XSD or ids-lib, so I can't say yet that it validates against the schema. To check a model, I'll express the same requirement with check.required over the enriched model's own property sets, since no node reads the IDS file itself.",
       "tools": [
         {
           "name": "getNodeCatalog",
@@ -37,7 +37,7 @@
     },
     {
       "request": "Check the enriched model against it.",
-      "reply": "218 elements, all Pass. The graph reads duplex-enriched's own EntityText and ParameterText, keeps the fourteen analysed classes, joins each to its Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year value (null when absent), and runs check.required on that column: 218 Pass, 0 Fail, 0 InfoNotAvailable. Every analysed element in the write-back carries the property, so this specification passes outright.",
+      "reply": "218 elements, all Pass. The graph reads duplex-enriched's own EntityText and ParameterText, keeps the fourteen analysed classes, joins each to its NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year value (null when absent), and runs check.required on that column: 218 Pass, 0 Fail, 0 InfoNotAvailable. Every analysed element in the write-back carries the property, so this specification passes outright.",
       "analysisId": "nb-s09-ids-check-oc",
       "embeds": [
         {
@@ -56,7 +56,7 @@
     },
     {
       "request": "Add a requirement for embodied carbon too.",
-      "reply": "Updated the same file with a second specification, IDS-EC, requiring Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e on the same fourteen classes (3,099 bytes now, two specifications). Checking both against duplex-enriched: IDS-OC still 218 Pass, 0 Fail; IDS-EC is 217 Pass, 1 Fail out of 218. The one failure is the roof, \"Basic Roof:Live Roof over Wood Joist Flat Roof:184483\" (GlobalId 0jf0rYHfX3RAB3bSIRjmxl): it has no Pset_NRCEmbodiedCarbon at all, so the column is null for that row and check.required marks it Fail rather than passing or guessing a value.",
+      "reply": "Updated the same file with a second specification, IDS-EC, requiring NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e on the same fourteen classes (3,099 bytes now, two specifications). Checking both against duplex-enriched: IDS-OC still 218 Pass, 0 Fail; IDS-EC is 217 Pass, 1 Fail out of 218. The one failure is the roof, \"Basic Roof:Live Roof over Wood Joist Flat Roof:184483\" (GlobalId 0jf0rYHfX3RAB3bSIRjmxl): it has no NRC_EmbodiedCarbon at all, so the column is null for that row and check.required marks it Fail rather than passing or guessing a value.",
       "analysisId": "nb-s09-ids-check-oc-ec",
       "embeds": [
         {
@@ -85,7 +85,7 @@
     },
     {
       "request": "Check the base model too.",
-      "reply": "duplex-base fails both specifications outright: 0 Pass, 218 Fail on IDS-OC and 0 Pass, 218 Fail on IDS-EC, because the unenriched file carries no Pset_NRC* property sets at all, so every analysed element's value is null. duplex-enriched keeps its 218/0 on IDS-OC and 217/1 on IDS-EC. The comparison is what the write-back is for: the same check, run over the file before and after nrc-enrich-run.",
+      "reply": "duplex-base fails both specifications outright: 0 Pass, 218 Fail on IDS-OC and 0 Pass, 218 Fail on IDS-EC, because the unenriched file carries no NRC_* property sets at all, so every analysed element's value is null. duplex-enriched keeps its 218/0 on IDS-OC and 217/1 on IDS-EC. The comparison is what the write-back is for: the same check, run over the file before and after nrc-enrich-run.",
       "analysisId": "nb-s09-ids-check-base-vs-enriched",
       "embeds": [
         {

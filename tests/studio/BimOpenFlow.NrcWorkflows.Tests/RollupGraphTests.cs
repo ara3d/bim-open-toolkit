@@ -49,7 +49,7 @@ public sealed class RollupGraphTests
         for (var row = 0; row < storeys.Rows.Count; row++)
         {
             var entity = Convert.ToInt64(storeys.Cell("EntityId", row));
-            var set = Equals(storeys.Cell("Container", row), "Building") ? "Pset_NRCBuildingSummary" : "Pset_NRCStoreySummary";
+            var set = Equals(storeys.Cell("Container", row), "Building") ? "NRC_BuildingSummary" : "NRC_StoreySummary";
             var values = rows.Where(r => r.EntityId == entity && r.PsetName == set)
                 .ToDictionary(r => r.ParamName, r => r.ParamValue);
             var container = (string)storeys.Cell("Container", row)!;
@@ -78,7 +78,7 @@ public sealed class RollupGraphTests
         }
 
         // Q1 and Q8 of expected_answers.json, read from the rows the graph will write.
-        Assert.That(rows.Single(r => r.PsetName == "Pset_NRCBuildingSummary"
+        Assert.That(rows.Single(r => r.PsetName == "NRC_BuildingSummary"
             && r.ParamName == "TotalOperationalCarbon_kgCO2e_per_year").ParamValue, Is.EqualTo("37196.2"));
         Assert.That(rows.Single(r => r.EntityId == 39
             && r.ParamName == "TotalEmbodiedCarbon_A1A3_kgCO2e").ParamValue, Is.EqualTo("49451.2"));
@@ -94,18 +94,18 @@ public sealed class RollupGraphTests
             .Where(row => Equals(metrics.Cell("Level", row), "element"))
             .Select(row => (string)metrics.Cell("PropertyName", row)!)
             .ToHashSet();
-        var summaries = Answer(RollupGraph).Where(r => r.PsetName != "Pset_NRCAnalyticsProvenance").ToList();
+        var summaries = Answer(RollupGraph).Where(r => r.PsetName != "NRC_AnalyticsProvenance").ToList();
 
         Assert.That(summaries, Has.Count.EqualTo(35), "7 values on each of 4 storeys and the building");
         Assert.That(summaries.Select(r => r.ParamName), Has.None.AnyOf(elementNames.ToArray()));
         Assert.That(summaries.Select(r => r.PsetName).Distinct(),
-            Is.EquivalentTo(new[] { "Pset_NRCStoreySummary", "Pset_NRCBuildingSummary" }));
+            Is.EquivalentTo(new[] { "NRC_StoreySummary", "NRC_BuildingSummary" }));
     }
 
     [Test]
     public void Rollup_WritesEveryRunFactIntoTheProjectsProvenanceSet()
     {
-        var provenance = Answer(RollupGraph).Where(r => r.PsetName == "Pset_NRCAnalyticsProvenance").ToList();
+        var provenance = Answer(RollupGraph).Where(r => r.PsetName == "NRC_AnalyticsProvenance").ToList();
         var run = Csv("nrc-run.csv");
         var expected = Enumerable.Range(0, run.Rows.Count)
             .Select(row => ((string)run.Cell("Field", row)!, (string)run.Cell("ValueType", row)!, (string)run.Cell("Value", row)!));
@@ -215,15 +215,15 @@ public sealed class RollupGraphTests
     {
         var sets = Runtime.Materialize(Plans.Sql(
             "SELECT DISTINCT e.Category, p.ParameterGroup FROM t1 p JOIN t2 e ON e.EntityIndex = p.EntityIndex "
-            + "WHERE p.ParameterGroup LIKE 'Pset_NRC%' AND e.Category IN ('IFCBUILDINGSTOREY', 'IFCBUILDING') "
+            + "WHERE p.ParameterGroup LIKE 'NRC_%' AND e.Category IN ('IFCBUILDINGSTOREY', 'IFCBUILDING') "
             + "ORDER BY 1, 2",
             Plans.Table("duplex-enriched", "ParameterText"), Plans.Table("duplex-enriched", "EntityText")));
 
         Assert.That(Enumerable.Range(0, sets.Rows.Count).Select(row => (sets.Cell("Category", row), sets.Cell("ParameterGroup", row))),
             Is.EqualTo(new (object?, object?)[]
             {
-                ("IFCBUILDING", "Pset_NRCBuildingSummary"),
-                ("IFCBUILDINGSTOREY", "Pset_NRCStoreySummary"),
+                ("IFCBUILDING", "NRC_BuildingSummary"),
+                ("IFCBUILDINGSTOREY", "NRC_StoreySummary"),
             }));
     }
 
@@ -247,13 +247,13 @@ public sealed class RollupGraphTests
             }
 
             if (elements.Cell("EmbodiedCarbon_A1A3_kgCO2e", row) is { } a1a3)
-                Set("Pset_NRCEmbodiedCarbon",
+                Set("NRC_EmbodiedCarbon",
                     ("EmbodiedCarbon_A1A3_kgCO2e", a1a3),
                     ("EmbodiedCarbon_A1A5_kgCO2e", elements.Cell("EmbodiedCarbon_A1A5_kgCO2e", row)));
-            Set("Pset_NRCOperationalCarbon",
+            Set("NRC_OperationalCarbon",
                 ("OperationalCarbon_kgCO2e_per_year", elements.Cell("OperationalCarbon_kgCO2e_per_year", row)),
                 ("GridEmissionFactor_kgCO2e_per_kWh", grid));
-            Set("Pset_NRCEnergyPerformance",
+            Set("NRC_EnergyPerformance",
                 ("EnergyUseIntensity_kWh_per_m2_year", elements.Cell("EnergyUseIntensity_kWh_per_m2_year", row)));
         }
 

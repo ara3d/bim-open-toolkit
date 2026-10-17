@@ -94,7 +94,7 @@
     },
     {
       "request": "Read back the NRC values that were written into the enriched IFC.",
-      "reply": "2,441 NRC property values read back from duplex-enriched.ifc, ordered by entity, property set, and property. The first entity, #34, carries the project's Pset_NRCAnalyticsProvenance: run run-2026-09-17-01, scenario Baseline.",
+      "reply": "2,441 NRC property values read back from duplex-enriched.ifc, ordered by entity, property set, and property. The first entity, #34, carries the project's NRC_AnalyticsProvenance: run run-2026-09-17-01, scenario Baseline.",
       "analysisId": "nrc-property-values"
     }
   ]

@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-enrich-run   graph 585000ea304e
+// nrc-enrich-run   graph 919410db3447
 about = view.note@1(text: "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,441 values on 224 entities. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, so every Run writes the same bytes.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
@@ -12,14 +12,14 @@ run = rel.csv@1(source: "nrc", path: "nrc-run.csv");
   // Ok  relation plan 4542dd4754c4
   //   "(csv \"nrc\" \"nrc-run.csv\")"
 provenance = rel.sql@1(t1: entities.relation, t2: run.relation, sql: """
-SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,
+SELECT e.StepId AS entityId, 'NRC_AnalyticsProvenance' AS psetName, r.Field AS paramName,
        r.ValueType AS valueType, r.Value AS paramValue
 FROM t1 e CROSS JOIN t2 r
 WHERE e.Category = 'IFCPROJECT'
 ORDER BY paramName
 """);
-  // Ok  relation plan 765e86a152cc
-  //   "(sql \"SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = "...
+  // Ok  relation plan 5688ddf55978
+  //   "(sql \"SELECT e.StepId AS entityId, 'NRC_AnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFC"...
 storeys = rel.table@1(source: "duplex-base", table: "StoreyOfElement");
   // Ok  relation plan a8c1aa22dccb
   //   "(table \"duplex-base\" \"StoreyOfElement\")"
@@ -91,13 +91,13 @@ elementRows = rel.sql@1(t1: metricRows.relation, t2: runFactRows.relation, t3: r
   // Ok  relation plan d80847ee9fd0
   //   "(sql \"SELECT * FROM t1 UNION SELECT * FROM t2 UNION SELECT * FROM t3 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,"...
 rows = rel.sql@1(t1: summaries.relation, t2: provenance.relation, t3: elementRows.relation, sql: "SELECT * FROM t1 UNION ALL SELECT * FROM t2 UNION ALL SELECT * FROM t3 ORDER BY entityId, psetName, paramName");
-  // Ok  relation plan e625c4304d64
+  // Ok  relation plan 4aa7ed9b7414
   //   "(sql \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 UNION ALL SELECT * FROM t3 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m"...
 table = rel.materialize@1(input: rows.relation, limit: "0");
-  // Ok  table 2441 rows x 5 cols  sha c1c911fea1f4
+  // Ok  table 2441 rows x 5 cols  sha 9f3053b9ab84
   //   columns entityId:Integer, psetName:Text, paramName:Text, valueType:Text, paramValue:Text
-  //   [0] 34, "Pset_NRCAnalyticsProvenance", "AnalysisRunId", "Identifier", "run-2026-09-17-01"
-  //   [1] 34, "Pset_NRCAnalyticsProvenance", "ComputedAt", "Label", "2026-09-17T00:00:00Z"
-  //   [2] 34, "Pset_NRCAnalyticsProvenance", "ComputedBy", "Label", "Ara 3D"
+  //   [0] 34, "NRC_AnalyticsProvenance", "AnalysisRunId", "Identifier", "run-2026-09-17-01"
+  //   [1] 34, "NRC_AnalyticsProvenance", "ComputedAt", "Label", "2026-09-17T00:00:00Z"
+  //   [2] 34, "NRC_AnalyticsProvenance", "ComputedBy", "Label", "Ara 3D"
 answer = sink.writePsets@1(in: table.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{ARTIFACTS}/nrc/duplex-enriched-out.ifc");
   // EffectPending  not executed outside a Run

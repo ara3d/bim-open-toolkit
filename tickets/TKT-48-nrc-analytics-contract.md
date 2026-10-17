@@ -10,8 +10,8 @@ fence: [samples/nrc/*, samples/nrc-analyses/nrc-rollup.json, samples/nrc-analyse
 ## Acceptance criteria
 
 - [x] samples/nrc/nrc-metrics.csv is the one metric dictionary; graphs nrc-element-psets and nrc-rollup derive every property-set row from it, the element CSV, nrc-run.csv, and the model's StoreyOfElement view; nrc-enrich-run writes them into samples/nrc/duplex-base.ifc
-- [x] Element-level rows equal today's psets_to_write.csv element rows; storey and building totals match nrc_analytics_storeys.csv to the decimal, but are written as Pset_NRCStoreySummary and Pset_NRCBuildingSummary with Total/Mean property names
-- [x] The regenerated samples/nrc/duplex-enriched.ifc has no Pset_NRC element set on any IfcBuildingStorey or IfcBuilding; a test sums OperationalCarbon_kgCO2e_per_year over every entity carrying it with no class filter and gets 37196.2; a test asserts the committed file equals a fresh Run's output byte for byte
+- [x] Element-level rows equal today's psets_to_write.csv element rows; storey and building totals match nrc_analytics_storeys.csv to the decimal, but are written as NRC_StoreySummary and NRC_BuildingSummary with Total/Mean property names
+- [x] The regenerated samples/nrc/duplex-enriched.ifc has no NRC_ element set on any IfcBuildingStorey or IfcBuilding; a test sums OperationalCarbon_kgCO2e_per_year over every entity carrying it with no class filter and gets 37196.2; a test asserts the committed file equals a fresh Run's output byte for byte
 - [x] The IFC MCP server exposes the dictionary as a MetricCatalog view and the ifc-ask skill resolves metrics through it; StoreyOfElement is defined once, in BosDuckDbViews
 
 P1 of Proposal: docs/proposals/nrc-deliverables.md. Serves W6 and W2. Fixes the storage defect in nrc-ifc-llm paper/poc-gap-report.md 2.10 (three of four unattended misses). Synthetic data only; NRC has sent nothing.

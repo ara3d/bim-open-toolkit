@@ -11,7 +11,7 @@
   "turns": [
     {
       "request": "Put the analytics values into a copy of duplex-base.ifc as property sets.",
-      "reply": "2,441 values on 224 entities, grouped by property set: 872 Pset_NRCOperationalCarbon, 868 Pset_NRCEmbodiedCarbon, 654 Pset_NRCEnergyPerformance, 28 Pset_NRCStoreySummary, 12 Pset_NRCAnalyticsProvenance, 7 Pset_NRCBuildingSummary. The `answer` node (`sink.writePsets`, target `duplex-enriched.ifc`) stays EffectPending: nothing is written until Run.",
+      "reply": "2,441 values on 224 entities, grouped by property set: 872 NRC_OperationalCarbon, 868 NRC_EmbodiedCarbon, 654 NRC_EnergyPerformance, 28 NRC_StoreySummary, 12 NRC_AnalyticsProvenance, 7 NRC_BuildingSummary. The `answer` node (`sink.writePsets`, target `duplex-enriched.ifc`) stays EffectPending: nothing is written until Run.",
       "analysisId": "nrc-enrich-run",
       "tools": [
         { "name": "getAnalysis", "ok": true, "summary": "nrc-enrich-run: 15 nodes, 20 edges" },
@@ -41,7 +41,7 @@
           "kind": "table",
           "node": "answer",
           "port": "relation",
-          "caption": "Pset_NRCStoreySummary rows"
+          "caption": "NRC_StoreySummary rows"
         }
       ]
     },
@@ -77,7 +77,7 @@
     },
     {
       "request": "Read the values back from the new file.",
-      "reply": "2,441 rows, one for each row the table above would write: 2,394 on the 218 elements, 28 on the 4 storeys, 7 on the building, and 12 on the project. Read from duplex-enriched.ifc's parameter table, filtered to the Pset_NRC* groups — this is the paper's Figure 4.",
+      "reply": "2,441 rows, one for each row the table above would write: 2,394 on the 218 elements, 28 on the 4 storeys, 7 on the building, and 12 on the project. Read from duplex-enriched.ifc's parameter table, filtered to the NRC_* groups — this is the paper's Figure 4.",
       "analysisId": "nrc-property-values",
       "tools": [
         { "name": "getAnalysis", "ok": true, "summary": "nrc-property-values: 3 nodes, 2 edges" },

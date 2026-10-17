@@ -3,12 +3,12 @@ dfg 0.1.0;
 about = view.note@1(text: "What each IDS file asks, read by ids.specifications before any check: no model is read. The carbon file (nrc-analytics.ids) has two specifications and the door file (dc-w1.ids) one; Supported is true for all three, so ids.check can answer every facet from a .bos file.");
   // Ok
 carbon = ids.specifications@1(ids: "{SAMPLES}/ids/nrc-analytics.ids");
-  // Ok  table 2 rows x 7 cols  sha 4712348d07c9
+  // Ok  table 2 rows x 7 cols  sha 058a1174bb61
   //   columns CheckId:Text, CheckTitle:Text, IfcVersion:Text, Cardinality:Text, Applicability:Text, Requirements:Text, Supported:Boolean
   //   [0] "IDS-OC", "IDS-OC", "IFC4", "Required", "Is of type IFCWALL or IFCWALLSTANDARDCASE or IFC"..., "Has property 'OperationalCarbon_kgCO2e_per_year'"..., true
   //   [1] "IDS-EC", "IDS-EC", "IFC4", "Required", "Is of type IFCWALL or IFCWALLSTANDARDCASE or IFC"..., "Has property 'EmbodiedCarbon_A1A3_kgCO2e' in pro"..., true
 carbonTable = view.table@1(table: carbon.specifications, title: "NRC carbon property sets IDS: what it asks");
-  // Ok  table 2 rows x 7 cols  sha 4712348d07c9
+  // Ok  table 2 rows x 7 cols  sha 058a1174bb61
   //   columns CheckId:Text, CheckTitle:Text, IfcVersion:Text, Cardinality:Text, Applicability:Text, Requirements:Text, Supported:Boolean
   //   [0] "IDS-OC", "IDS-OC", "IFC4", "Required", "Is of type IFCWALL or IFCWALLSTANDARDCASE or IFC"..., "Has property 'OperationalCarbon_kgCO2e_per_year'"..., true
   //   [1] "IDS-EC", "IDS-EC", "IFC4", "Required", "Is of type IFCWALL or IFCWALLSTANDARDCASE or IFC"..., "Has property 'EmbodiedCarbon_A1A3_kgCO2e' in pro"..., true

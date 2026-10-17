@@ -29,12 +29,12 @@
     "entities": { "source": "duplex-enriched", "table": "EntityText" },
     "parameters": { "source": "duplex-enriched", "table": "ParameterText" },
     "rows": {
-      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS OperationalCarbon_kgCO2e_per_year FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'Pset_NRCOperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
+      "sql": "SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS OperationalCarbon_kgCO2e_per_year FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId"
     },
     "table": { "limit": "0" },
     "answer": {
       "checkId": "IDS-OC",
-      "title": "Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
+      "title": "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
       "citation": "nrc-analytics.ids specification 1",
       "columns": "OperationalCarbon_kgCO2e_per_year"
     },

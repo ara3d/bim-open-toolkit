@@ -26,7 +26,7 @@ unit in the column name (`OperationalCarbon_kgCO2e_per_year`, `EmbodiedCarbon_A1
 | `nrc-storey-of-element` | storey of every element by walking ContainedIn, PartOf, and MemberOf (without MemberOf, 51 of Level 1's 103 elements go unplaced), each placed once by the smallest `Depth`, as `nrc-rollup` does (103, 93, 14, 8) | tables, bim |
 | `nrc-dc-w1-verdicts` | rule DC-W1 over doors (8 Pass, 6 Fail; answer columns Name, Width_mm, GlobalId), coloured in 3D, a verdict count chart, and an HTML report written on Run into `artifacts/nrc` | bim only (`check.rule`, `view3d.color`) |
 | `nrc-element-psets` | the element property-set rows: each value of `nrc_analytics_long.csv` placed by `nrc-metrics.csv`, keyed by the STEP id of `duplex-base`, with the run facts of `nrc-run.csv` (2,394 rows; three small `rel.sql` steps and their union) | tables, bim |
-| `nrc-rollup` | the storey and building summary rows (`Pset_NRCStoreySummary`, `Pset_NRCBuildingSummary`), each element placed by `StoreyOfElement` and aggregated by its metric's `Rollup`, plus the project's `Pset_NRCAnalyticsProvenance` from `nrc-run.csv` (47 rows) | tables, bim |
+| `nrc-rollup` | the storey and building summary rows (`NRC_StoreySummary`, `NRC_BuildingSummary`), each element placed by `StoreyOfElement` and aggregated by its metric's `Rollup`, plus the project's `NRC_AnalyticsProvenance` from `nrc-run.csv` (47 rows) | tables, bim |
 | `nrc-enrich-run` | the rows of `nrc-element-psets` and `nrc-rollup` written into a copy of `duplex-base.ifc` (2,441 values on 224 entities); it carries copies of both graphs because a graph cannot reference another, and one `rows` step unions them | bim only (`sink.writePsets`) |
 | `nrc-color-operational-carbon` | graph input `model`; the Duplex model coloured by operational carbon, viridis gradient, unmatched instances grey (paper Figure 5); one "colour by an analytics column" flow, its `answer` node's `valueColumn`/`colorMap` set per figure (see `scripts/nrc-walkthrough.mjs`) | bim only (`view3d.instances`, `view3d.color`) |
 | `nrc-storey-carbon-chart` | embodied and operational carbon per storey as a bar chart with readable series names, storeys only (Figure 2), plus a Building total table (115,730.3 kgCO2e embodied, 37,196.2 kgCO2e/yr operational) | tables, bim |
@@ -65,7 +65,7 @@ Run. The rules, all driven by `samples/nrc/nrc-metrics.csv`:
 
 - An element gets one set per dictionary `PropertySet` in which it has at least
   one value in `nrc_analytics_long.csv`; the roof has no embodied value, so it
-  has no `Pset_NRCEmbodiedCarbon`.
+  has no `NRC_EmbodiedCarbon`.
 - A dictionary property with no value in the long table takes the run fact of
   the same name from `nrc-run.csv` (today only `GridEmissionFactor_kgCO2e_per_kWh`).
 - Each element is placed on one storey: its `StoreyOfElement` row with the
@@ -74,6 +74,6 @@ Run. The rules, all driven by `samples/nrc/nrc-metrics.csv`:
 - Storey and building rows aggregate by the metric's `Rollup` (`sum`, `mean`,
   or `count` of distinct elements) and round to its `Decimals`.
 - Every set carries `AnalysisRunId` and `ScenarioName`; the project's
-  `Pset_NRCAnalyticsProvenance` carries every field of `nrc-run.csv`.
+  `NRC_AnalyticsProvenance` carries every field of `nrc-run.csv`.
 - Rows are ordered by (entityId, psetName, paramName), which is unique, so a
   Run writes the same bytes every time.

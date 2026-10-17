@@ -23,7 +23,7 @@ full version and a condensed ten-page version), and a proof of concept under
 The paper's answer, in one line each:
 
 - **Storage.** Three layers: summary values in custom property sets
-  (`Pset_NRCEmbodiedCarbon` and friends) on elements and containers; an
+  (`NRC_EmbodiedCarbon` and friends) on elements and containers; an
   `IfcDocumentReference` to a long-format Parquet table joined on `GlobalId`;
   and a metric dictionary (`NRC.EC.A1A3.TOTAL`, ...) that both map to. Written
   by byte-exact patch, and expressed as an IDS (Information Delivery
@@ -82,9 +82,9 @@ rename in the Python generator; it is to make the aggregates derived.
   PropertySet, PropertyName, ValueType, Unit, LifecycleStage, Rollup
   (none|sum|mean|count), Description`. It is the single source every later piece reads: the rollup
   graph, the IDS generator, the agent's skill, and the paper's Appendix A.
-- Aggregate sets get their own names: `Pset_NRCSpaceSummary`,
-  `Pset_NRCZoneSummary`, `Pset_NRCStoreySummary`,
-  `Pset_NRCBuildingSummary`, each carrying the rolled-up properties and
+- Aggregate sets get their own names: `NRC_SpaceSummary`,
+  `NRC_ZoneSummary`, `NRC_StoreySummary`,
+  `NRC_BuildingSummary`, each carrying the rolled-up properties and
   `ElementCount`, `AnalysisRunId`, and `ScenarioName`. The rolled-up
   properties get their own names too (`TotalOperationalCarbon_kgCO2e_per_year`,
   `MeanEnergyUseIntensity_kWh_per_m2_year`), so a query on the element
@@ -104,7 +104,7 @@ rename in the Python generator; it is to make the aggregates derived.
   says to resolve a metric through it and to aggregate element sets only.
 
 Done when: `nrc-rollup` reproduces today's storey and building totals to the
-decimal; the regenerated enriched file has no `Pset_NRC*` element set on any
+decimal; the regenerated enriched file has no `NRC_*` element set on any
 `IfcBuildingStorey` or `IfcBuilding`; and a test that sums
 `OperationalCarbon_kgCO2e_per_year` over every entity carrying it, with no
 class filter, returns the element total (37,196.2) and not a multiple of it.
@@ -134,7 +134,7 @@ operational data will arrive keyed by zone. The test kit's per-element
 
 Done when: `SpaceOfElement` reaches every element the Duplex conversion
 places in a room; the enriched file contains the zones and a
-`Pset_NRCZoneSummary` on each; and `nrc-q9-zone-eui` (a new graph) answers
+`NRC_ZoneSummary` on each; and `nrc-q9-zone-eui` (a new graph) answers
 "which zone has the highest energy use intensity" with the expected value,
 asserted in `NrcWorkflows.Tests`.
 
@@ -148,9 +148,9 @@ into a verdict table.
 
 - `samples/nrc/nrc-analytics.ids`, IDS 1.0 XML, generated from
   `nrc-metrics.csv` (one specification per `AppliesTo` level): the element
-  classes require `Pset_NRCEmbodiedCarbon` and `Pset_NRCOperationalCarbon`
+  classes require `NRC_EmbodiedCarbon` and `NRC_OperationalCarbon`
   with typed values and `AnalysisRunId`; storeys require
-  `Pset_NRCStoreySummary`; the project requires the provenance set. A second
+  `NRC_StoreySummary`; the project requires the provenance set. A second
   file, `samples/nrc/dc-w1.ids`, expresses rule DC-W1 (an `IFCDOOR` whose
   `OverallWidth` is at least 850 mm) to show that a threshold rule is an IDS.
 - A library `Ara3D.Ids` under `src/data` that reads an IDS file and evaluates

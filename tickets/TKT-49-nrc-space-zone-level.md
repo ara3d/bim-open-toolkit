@@ -12,6 +12,6 @@ workflow: [kept]
 
 - [ ] Views SpaceOfElement and ZoneOfSpace in BosDuckDbViews, exposed to ifc_sql and graphs
 - [ ] IfcZoneBuilder in Ara3D.Ifc.Editing appends IFCZONE and IFCRELASSIGNSTOGROUP with deterministic GlobalIds, diff-and-reverse tested
-- [ ] samples/nrc/nrc-zones.csv (synthetic) groups Duplex's 21 spaces; the enriched file carries the zones and Pset_NRCZoneSummary; graph nrc-q9-zone-eui answers the highest-EUI zone, asserted in NrcWorkflows.Tests
+- [ ] samples/nrc/nrc-zones.csv (synthetic) groups Duplex's 21 spaces; the enriched file carries the zones and NRC_ZoneSummary; graph nrc-q9-zone-eui answers the highest-EUI zone, asserted in NrcWorkflows.Tests
 
 P2 of Proposal: docs/proposals/nrc-deliverables.md. The statement of work names zone level twice; nothing covers it.

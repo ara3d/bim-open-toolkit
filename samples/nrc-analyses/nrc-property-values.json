@@ -95,7 +95,7 @@
   },
   "values": {
     "about": {
-      "text": "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the Pset_NRC sets and withStepId adds each entity's STEP id: 2,441 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names."
+      "text": "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the NRC_ sets and withStepId adds each entity's STEP id: 2,441 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names."
     },
     "parameters": {
       "source": "duplex-enriched",
@@ -106,7 +106,7 @@
       "table": "EntityText"
     },
     "nrcOnly": {
-      "expr": "startswith([ParameterGroup], 'Pset_NRC')"
+      "expr": "startswith([ParameterGroup], 'NRC_')"
     },
     "withStepId": {
       "leftKey": "EntityIndex",

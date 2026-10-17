@@ -49,9 +49,9 @@ place the fields of `nrc-run.csv` as follows:
 
 | Field | Written to |
 |---|---|
-| `AnalysisRunId`, `ScenarioName` | every NRC set: the three element sets, `Pset_NRCStoreySummary`, `Pset_NRCBuildingSummary`, and the provenance set |
-| `GridEmissionFactor_kgCO2e_per_kWh` | each element's `Pset_NRCOperationalCarbon`, because `nrc-metrics.csv` lists it there as `NRC.GRID.FACTOR` with no value in the long table; also the provenance set |
-| every field | the project's `Pset_NRCAnalyticsProvenance`, one property per row, with the row's `ValueType` |
+| `AnalysisRunId`, `ScenarioName` | every NRC set: the three element sets, `NRC_StoreySummary`, `NRC_BuildingSummary`, and the provenance set |
+| `GridEmissionFactor_kgCO2e_per_kWh` | each element's `NRC_OperationalCarbon`, because `nrc-metrics.csv` lists it there as `NRC.GRID.FACTOR` with no value in the long table; also the provenance set |
+| every field | the project's `NRC_AnalyticsProvenance`, one property per row, with the row's `ValueType` |
 
 `MetricDictionaryURI` names `nrc-metrics.csv` relative to the enriched IFC, so
 an agent that finds the provenance set can find the dictionary beside the file.

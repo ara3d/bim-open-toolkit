@@ -189,7 +189,7 @@
       "sql": "SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE m.Rollup\n           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n           WHEN 'mean' THEN CAST(round(avg(p.Value), CAST(m.Decimals AS INTEGER)) AS VARCHAR)\n           WHEN 'count' THEN CAST(count(DISTINCT p.GlobalId) AS VARCHAR)\n       END AS paramValue\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none' AND (m.Rollup = 'count' OR m.MetricId = p.MetricId)\nGROUP BY p.entityId, m.PropertySet, m.PropertyName, m.ValueType, m.Rollup, m.Decimals\nUNION\nSELECT p.entityId, m.PropertySet, r.Field, r.ValueType, r.Value\nFROM t1 p\nJOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'\nJOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')\nORDER BY entityId, psetName, paramName"
     },
     "provenance": {
-      "sql": "SELECT e.StepId AS entityId, 'Pset_NRCAnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFCPROJECT'\nORDER BY paramName"
+      "sql": "SELECT e.StepId AS entityId, 'NRC_AnalyticsProvenance' AS psetName, r.Field AS paramName,\n       r.ValueType AS valueType, r.Value AS paramValue\nFROM t1 e CROSS JOIN t2 r\nWHERE e.Category = 'IFCPROJECT'\nORDER BY paramName"
     },
     "answer": {
       "sql": "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName"

@@ -6,7 +6,7 @@ both.
 
 | File | Specifications | Made by |
 |---|---|---|
-| `nrc-analytics.ids` | `IDS-OC` and `IDS-EC`: every element of the fourteen analysed IFC classes carries `Pset_NRCOperationalCarbon.OperationalCarbon_kgCO2e_per_year` and `Pset_NRCEmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e` as `IFCREAL` | `scripts/nrc-ids.mjs`, from `../nrc-metrics.csv` |
+| `nrc-analytics.ids` | `IDS-OC` and `IDS-EC`: every element of the fourteen analysed IFC classes carries `NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year` and `NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e` as `IFCREAL` | `scripts/nrc-ids.mjs`, from `../nrc-metrics.csv` |
 | `dc-w1.ids` | rule DC-W1, door leaf width at least 850 mm | by hand |
 
 Regenerate `nrc-analytics.ids` after a change to the metric dictionary:

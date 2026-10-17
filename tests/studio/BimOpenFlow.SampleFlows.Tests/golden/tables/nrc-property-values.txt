@@ -1,6 +1,6 @@
 dfg 0.1.0;
-// nrc-property-values   graph 8f993e66f9a0
-about = view.note@1(text: "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the Pset_NRC sets and withStepId adds each entity's STEP id: 2,441 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names.");
+// nrc-property-values   graph 6fd8ec7f7d6c
+about = view.note@1(text: "Figure 4: the NRC property values read back from duplex-enriched.ifc, the file nrc-enrich-run writes. nrcOnly keeps the NRC_ sets and withStepId adds each entity's STEP id: 2,441 rows, one for each row nrc-enrich-run handed the byte-exact writer, in the writer's column names.");
   // Ok
 entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
   // Ok  relation plan 9a8be9f3b5d5
@@ -8,15 +8,15 @@ entities = rel.table@1(source: "duplex-enriched", table: "EntityText");
 parameters = rel.table@1(source: "duplex-enriched", table: "ParameterText");
   // Ok  relation plan 7b315558b5df
   //   "(table \"duplex-enriched\" \"ParameterText\")"
-nrcOnly = rel.filter@1(input: parameters.relation, expr: "startswith([ParameterGroup], 'Pset_NRC')");
-  // Ok  relation plan 8954812c0b4c
-  //   "(filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'Pset_NRC')\")"
+nrcOnly = rel.filter@1(input: parameters.relation, expr: "startswith([ParameterGroup], 'NRC_')");
+  // Ok  relation plan 50d7e31eba54
+  //   "(filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'NRC_')\")"
 withStepId = rel.join@1(left: nrcOnly.relation, right: entities.relation, leftKey: "EntityIndex", rightKey: "EntityIndex", kind: "inner");
-  // Ok  relation plan 510ae824c4db
-  //   "(join Inner (filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'Pset_NRC')\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"])"
+  // Ok  relation plan d03bba5b696b
+  //   "(join Inner (filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'NRC_')\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"])"
 columns = rel.select@1(input: withStepId.relation, columns: "StepId as entityId, ParameterGroup as psetName, Name as paramName, ValueType as valueType, Value as paramValue");
-  // Ok  relation plan 6491dca907b3
-  //   "(select (join Inner (filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'Pset_NRC')\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"StepId\">\"entit"...
+  // Ok  relation plan eef2b98a4da8
+  //   "(select (join Inner (filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'NRC_')\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"StepId\">\"entityId\""...
 answer = rel.sort@1(input: columns.relation, by: "entityId, psetName, paramName");
-  // Ok  relation plan c7e87216b880
-  //   "(sort (select (join Inner (filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'Pset_NRC')\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"StepId\">"...
+  // Ok  relation plan 2fadaa3bd1e2
+  //   "(sort (select (join Inner (filter (table \"duplex-enriched\" \"ParameterText\") \"startswith([ParameterGroup], 'NRC_')\") (table \"duplex-enriched\" \"EntityText\") [\"EntityIndex\"=\"EntityIndex\"]) [\"StepId\">\"ent"...
