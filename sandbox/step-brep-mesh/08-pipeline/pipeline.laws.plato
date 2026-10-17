@@ -35,31 +35,10 @@ library StepToMeshLaws
     //==
     // # Helpers
 
-    // Two face meshes are the same value: one face, and every array equal
-    // entry by entry. Exact by design: the laws that use it claim that two
-    // runs compute the same mesh, bit for bit.
-    SameFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
-        => a.Face == b.Face
-            && a.UvPoints.Corresponds(b.UvPoints, (x, y) => x == y)
-            && a.Sources.Corresponds(b.Sources, (x, y) => x == y)
-            && a.LocalVertex.Corresponds(b.LocalVertex, (x, y) => x == y)
-            && a.Positions.Corresponds(b.Positions, (x, y) => x == y)
-            && a.Normals.Corresponds(b.Normals, (x, y) => x == y)
-            && a.Triangles.Corresponds(b.Triangles, (x, y) => x == y)
-            && a.Quads.Corresponds(b.Quads, (x, y) => x == y)
-            && a.Provenance.Corresponds(b.Provenance, (x, y) => x == y);
-
-    // Two face outcomes are the same: the same mesh, the same requests, and
-    // identical diagnostics (layer 0's Identical: NaN measures agree).
-    SameFaceMeshOutcome(a: FaceMeshOutcome, b: FaceMeshOutcome): Boolean
-        => a.Mesh.SameFaceMesh(b.Mesh)
-            && a.Requests.Corresponds(b.Requests, (x, y) => x == y)
-            && a.Diagnostics.Corresponds(b.Diagnostics, (x, y) => x.Identical(y));
-
     // Two model meshes are the same value: the same connectivity (layer 6's
     // SameConnectivity), and every
     // position, corner normal, corner parameter, and vertex provenance equal.
-    // Exact by design, as SameFaceMesh.
+    // Exact by design, as layer 5's SameFaceMesh.
     SameModelMesh(a: ModelMesh, b: ModelMesh): Boolean
         => a.SameConnectivity(b)
             && IsSamePoints(a.Positions, b.Positions)
@@ -320,8 +299,11 @@ library StepToMeshLaws
     // Every outcome of a state the loop reaches is current: face f's outcome
     // is what FaceOutcome gives for f under the state's discretizations, so
     // the result depends on the loop's history only through the
-    // discretizations. Library, exact (it rests on MeshFace reading only the
-    // discretizations of the edges f cites).
+    // discretizations. Library, exact. It follows from Step's rule (a face is
+    // meshed again when an edge it cites changed) and layer 5's
+    // Law_MeshFaceReadsOnlyFaceEdges, an ensures of MeshFace: an outcome
+    // whose face's edges did not change equals MeshFace under the new
+    // discretizations.
     Law_OutcomesAreCurrent(m: BrepModel, o: MeshingOptions, k: Integer, f: BrepFaceIndex): Boolean
     {
         if (!(m.IsRunnable(o) && m.IsFaceInRange(f)))
@@ -330,20 +312,6 @@ library StepToMeshLaws
         }
         var s = m.StateAfter(o, m.AllFaces, k);
         return s.Outcomes[f].SameFaceMeshOutcome(m.FaceOutcome(f, s.Discretizations, o, m.AllFaces));
-    }
-
-    // Every request in face f's outcome names an edge f cites, so a face
-    // reaches other faces only through the edges it shares with them.
-    // Library, exact (a promise of layer 5's MeshFace, stated where the loop
-    // relies on it).
-    Law_RequestsNameEdgesOfTheirFace(m: BrepModel, o: MeshingOptions, k: Integer, f: BrepFaceIndex, q: Integer): Boolean
-    {
-        if (!(m.IsRunnable(o) && m.IsFaceInRange(f)))
-        {
-            return true;
-        }
-        var x = m.StateAfter(o, m.AllFaces, k).Outcomes[f];
-        return x.Requests.IsValidIndex(q) ? m.FaceEdges(f).Any(e => e == x.Requests[q].Edge) : true;
     }
 
     // At the end of the loop every discretized edge meets the floors the

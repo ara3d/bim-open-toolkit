@@ -101,7 +101,7 @@ edge so far, one face outcome per face, and the requests of the faces meshed in 
 | I1 | `0 <= Round <= MaxRefinementRounds` | `Law_MeasureIsNeverNegative`, spec `PipelineState` |
 | I2 | one discretization per edge, entry i of edge i; empty exactly for edges outside **E** | layer 4's `Law_DiscretizationsIndexedByEdge` and `Law_UndiscretizedExactlyWhenUnusable` (round 0), `Law_EmptyDiscretizationExactlyWhenEdgeUnusable` (every round) |
 | I3 | every outcome is current: `Outcomes[f]` is `FaceOutcome(m, f, Discretizations)` | `Law_OutcomesAreCurrent`, `Law_OutcomeIsOfItsFace` |
-| I4 | every pending request is a request of some outcome, and names an edge of that face | `Law_PendingRequestIsInSomeOutcome`, `Law_RequestsNameEdgesOfTheirFace` |
+| I4 | every pending request is a request of some outcome, and names an edge of that face | `Law_PendingRequestIsInSomeOutcome`; layer 5's `Law_RequestsNameFaceEdges`, an ensures of `MeshFace` |
 | I5 | no edge coarsens: every parameter of round r is a parameter of round r + 1 | `Law_RefinementNeverCoarsens` |
 | I6 | every discretized edge meets the accumulated floors and layer 4's structural floors | `Law_FinalDiscretizationsMeetFloors` (layer 4's `Law_SegmentFloorMet`) |
 | I7 | `Refine` can answer what is pending: every requested edge is discretizable, evaluable, and canonical | `Law_PendingRequestsAreRefinable` (layer 4's `IsRefinable`) |
@@ -290,7 +290,6 @@ hand-written texts of "Implementation order", and over the corpus.
 | `Law_RefinementNeverCoarsens` | every parameter before a step is a parameter after it | exact by construction | library |
 | `Law_OnlyFacesOfChangedEdgesAreRemeshed` | a face whose edges a step leaves unchanged keeps its outcome bit for bit | exact | library |
 | `Law_OutcomesAreCurrent` | every outcome is `FaceOutcome` under the state's discretizations | exact | library |
-| `Law_RequestsNameEdgesOfTheirFace` | every request of a face names an edge the face cites | exact | library |
 | `Law_FinalDiscretizationsMeetFloors` | every discretized edge meets the accumulated and structural floors | exact | library |
 | `Law_PendingRequestsAreRefinable` | every state meets `Refine`'s precondition over its pending requests | exact | library |
 | `Law_OutcomeIsOfItsFace` | outcome k is face k's | exact | convention |
@@ -323,14 +322,15 @@ motion and scaling: decision 11. Tighter chordal: decision 12. Idempotent valida
 |---|---|---|
 | `WatertightByConstruction` | under layer 2's closed-shell laws, layer 4's sharing law, layer 5's boundary and identification laws, and layer 6's `CanAssemble`, with no face left empty, the mesh is closed | `Law_ClosedWhenEveryShellClosedAndNoFaceEmpty`, layer 6's `Law_AssembledSharedBoundaryCornersCoincide` and `Law_SharedBoundarySampleHasOneGlobalVertex`, layer 4's `Law_OppositeUsesSeeReversedPoints`, layer 5's `Law_SharedPositionIsCopied` and `Law_LoopToUvCountMatchesDiscretization` |
 | `LoopTerminates` | the loop ends in at most `MaxRefinementRounds` steps, terminal | `Law_LoopEndsTerminal`, `Law_StepDecreasesMeasure`, `Law_MeasureIsNeverNegative` |
-| `FailureIsIsolated` | a face whose edges were never refined and which holds no request leaves every other face as in the run without it | `Law_FailedFaceLeavesOthersUnchanged`, `Law_OnlyFacesOfChangedEdgesAreRemeshed`, `Law_OutcomesAreCurrent`, `Law_RequestsNameEdgesOfTheirFace`, `Law_RefinementNeverCoarsens` |
+| `FailureIsIsolated` | a face whose edges were never refined and which holds no request leaves every other face as in the run without it | `Law_FailedFaceLeavesOthersUnchanged`, `Law_OnlyFacesOfChangedEdgesAreRemeshed`, `Law_OutcomesAreCurrent`, layer 5's `Law_RequestsNameFaceEdges` and `Law_MeshFaceReadsOnlyFaceEdges`, `Law_RefinementNeverCoarsens` |
 | `OkMeansCleanAtTheLevel` | `Ok` means no Error in the parse, the decode, the meshing, or the validation at the level | `Law_StepTextOkExactlyWhenClean`, `Law_ParseErrorMeansNotOk`, `Law_DecodeErrorMeansNotOk`, `Law_OkExactlyWhenClean`, layer 0's `Law_MergeIsCleanExactlyWhenBothClean` |
 | `PowerOfTwoScalingCommutes` | scaling by `2^k`, up or down, gives identical connectivity | the two scaling laws |
 
-`WatertightByConstruction` restates the root README's theorem with the actual law names. One of
-its steps rests on layer 5's conjecture `ElementsTileRegion` (every interior parameter-space segment
-of a face mesh has exactly two elements); the theorem has that conjecture's status until layer 5
-proves it.
+`WatertightByConstruction` restates the root README's theorem with the actual law names. Its tiling
+step is layer 5's theorem `ElementsTileRegion` (since the fix wave a theorem, not a conjecture:
+every boundary segment of the region is an element side, `Law_BoundarySegmentIsElementSide`, and
+every interior side is shared by two elements, `Law_InteriorSideIsShared`), so no step of it rests
+on a conjecture any more.
 
 ## What is left open
 
@@ -452,7 +452,7 @@ closed edges (at least 3 segments), seams and the synthetic seam cut, anisotropy
 the surface, structured quads and `QuadCountMismatch` requests, so the loop takes its first rounds.
 Layer 1: the `Circle` and `Cylinder` arms. Layer 4: `RefineEdge`. Layer 5: `QuadSidesOf`, `QuadGrid`,
 `MatchingFloors`. Laws added: `Law_StepDecreasesMeasure`, `Law_RefinementNeverCoarsens`,
-`Law_OnlyFacesOfChangedEdgesAreRemeshed`, `Law_RequestsNameEdgesOfTheirFace`,
+`Law_OnlyFacesOfChangedEdgesAreRemeshed`,
 `Law_PendingRequestIsInSomeOutcome`, `Law_TighterChordalStaysWithinLooserBound` at three chordal
 bounds.
 
@@ -502,14 +502,12 @@ Recorded here, not fixed there.
 2. **Layer 4's `Refine` asked too much of entries it never reads, and `DiscretizeAll` had no guard.**
    Fixed in the fix wave: `IsRefinable(m, d, requests, c)` asks only of requested entries, and
    `DiscretizeAll` is total with `Undiscretized` entries.
-3. **Definitions the pipeline needs live in laws libraries.** `SameDiscretization` (layer 4,
-   `EdgeDiscretizingLaws`) decides which edges a step changed, and `IsDiscretizedFace` (layer 5,
-   `FaceMeshingLaws`) is `MeshFace`'s precondition, which the pipeline evaluates. Both belong in their
-   layers' main libraries.
-4. **Layer 5's contract does not state two properties the loop rests on.** That every request in
-   `MeshFace`'s outcome names an edge the face cites (here `Law_RequestsNameEdgesOfTheirFace`), and
-   that `MeshFace(m, f, d, c)` reads only the entries of `d` for the edges `f` cites (here
-   `Law_OutcomesAreCurrent`). Both should be `ensures` of `MeshFace`.
+3. **Definitions the pipeline needs lived in laws libraries.** Fixed in the fix wave:
+   `SameDiscretization` is in layer 4's `EdgeDiscretizing`, `IsDiscretizedFace` in layer 5's
+   `FaceMeshing`.
+4. **Layer 5's contract did not state two properties the loop rests on.** Fixed in the fix wave:
+   `MeshFace` ensures `Law_RequestsNameFaceEdges` and `Law_MeshFaceReadsOnlyFaceEdges`; this layer
+   uses them as assumptions and no longer restates the first.
 5. **Findings without provenance.** `Provenance` has no case for the input as a whole, so findings
    such as layer 3's `NotPart21File` have nowhere honest to point; layer 5's `NoDiagnostics` builds
    `Nowhere` sentinels (harmless, in empty arrays). Layer 0 should add a case (for example
@@ -534,6 +532,7 @@ Recorded here, not fixed there.
 |---|---|---|
 | `DiscretizeUsable(m, c)`, `Undiscretized(e)` (fix wave) | deleted; layer 4's `DiscretizeAll(m, c, NoFloors)` and `Undiscretized(e)` | `DiscretizeAll` now takes the usability guard itself |
 | `SameConnectivity(ModelMesh, ModelMesh)` (fix wave) | deleted; layer 6's, which compares numberings as this layer's did | one declaration, in the mesh layer |
+| `SameFaceMesh`, `SameFaceMeshOutcome`, `Law_RequestsNameEdgesOfTheirFace` (fix wave) | deleted; layer 5's `SameFaceMesh`, `SameFaceMeshOutcome`, and `MeshFace`'s ensures `Law_RequestsNameFaceEdges`, `Law_MeshFaceReadsOnlyFaceEdges`, assumed by `FailureIsIsolated` | the comparisons belong beside their types; the law restated a promise layer 5 now makes |
 | `ParseOutcome { Ok; File; Diagnostics }` | not declared; layer 3's `ParsedFile` | identical fields; layer 3's proposal accepted (decision 1) |
 | `DecodeOutcome { Ok; Model; Map; Diagnostics }` | not declared; layer 3's `DecodedModel` | decoding is total and does not stop the run; a stored `Ok` would be a computable flag (decision 2) |
 | `MeshingOptions { Face; Level; MaxRefinementRounds }` | adds `Decode: DecodePolicy` | the decode defaults pass through to `DecodeBrepWith` |
@@ -549,7 +548,7 @@ Recorded here, not fixed there.
 | (new, `belongs-in: 02-topology`) | `RigidlyMoved(m, motion: Frame3D)`, `ScaledBy(m, factor)` (both deferred), `WithEveryFaceReversed(m)` | the metamorphic laws; the arena parts belong in 01-geometry |
 | (new, `belongs-in: 04-discretization`) | `ScaledBy(DiscretizationCriteria, factor)`, `ScaledBy(Limit, factor)` | scaling the criteria with the model |
 | (new, `belongs-in: 05-face-meshing`) | `ScaledBy(FaceMeshingCriteria, factor)` | as above |
-| (requested of layer 5) | `ensures` on `MeshFace`: requests name the face's own edges; the outcome reads only the face's edges' discretizations | finding 4 |
+| (requested of layer 5, done in the fix wave) | `ensures` on `MeshFace`: requests name the face's own edges; the outcome reads only the face's edges' discretizations | finding 4 |
 | (requested of layer 7) | a witness with one planted bad face; say whether `ValidateBrep` and `ValidateModelMesh` take a level; never leave a finding at `Nowhere` | "What is left open", items 2 and 4; finding 5 |
 | (research catalogue) | `Law_MeshingIsDeterministic` is `Law_MeshModelIsDeterministic` and `Law_MeshStepTextIsDeterministic`; `Law_PowerOfTwoScalingCommutes` is `Law_PowerOfTwoScalingKeepsConnectivity` and `Law_PowerOfTwoScalingScalesPositions`; `Law_RigidMotionCommutesWithinTolerance` is `Law_RigidMotionMovesPositions`; `Law_EdgeReversalPreservesMesh` and `Law_ShellReversalNegatesVolume` kept; `Law_CubeRotationCommutes` not adopted (finding 7); `Law_RenumberingPermutesMesh`, `Law_FaceSplitPreservesAreaVolumeEuler` not written (left open, item 7) | one statement per law; only exact relations as laws |
 
@@ -602,3 +601,9 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
    and `Step` ensure it of their result; new invariant I7, `Law_PendingRequestsAreRefinable`.
 8. **`SameConnectivity` deleted**: layer 6 declares it with this layer's meaning (numberings
    compared).
+9. **Layer 5's two new `ensures` of `MeshFace` used as assumptions** (findings 3 and 4):
+   `Law_RequestsNameEdgesOfTheirFace` deleted (it restated `Law_RequestsNameFaceEdges`), theorem
+   `FailureIsIsolated` assumes both of layer 5's laws, `Law_OutcomesAreCurrent` cites
+   `Law_MeshFaceReadsOnlyFaceEdges`; `SameFaceMesh` and `SameFaceMeshOutcome` deleted for layer 5's.
+   `WatertightByConstruction` no longer inherits a conjecture's status: layer 5's
+   `ElementsTileRegion` is a theorem.
