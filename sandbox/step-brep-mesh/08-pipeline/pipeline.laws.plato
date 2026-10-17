@@ -156,7 +156,7 @@ library StepToMeshLaws
     Witness_UnitScaleOptions(_: MeshingOptions): MeshingOptions
     {
         var d = DefaultMeshingOptions(0.01);
-        return MeshingOptions(d.Face, ConformanceLevel.Oracle, d.MaxRefinementRounds, d.Decode);
+        return MeshingOptions(d.Face, ConformanceLevel.Oracle, d.MaxRefinementRounds, d.Decode, d.Quality);
     }
 
     //==
@@ -555,8 +555,10 @@ library StepToMeshLaws
     //==
     // # Validation
 
-    // Cross-checking a mesh against its model twice gives identical reports:
-    // validation reads its inputs and nothing else. Library, exact.
-    Law_CrossCheckIsIdempotent(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel): Boolean
-        => m.CrossCheck(mesh, level).Identical(m.CrossCheck(mesh, level));
+    // Validating a mesh against its model twice, as the pipeline does
+    // (Validated: the model, the mesh, and the cross check with the
+    // criteria, at the options' level), gives identical reports: validation
+    // reads its inputs and nothing else. Library, exact.
+    Law_ValidationIsIdempotent(m: BrepModel, mesh: ModelMesh, o: MeshingOptions): Boolean
+        => m.Validated(mesh, o).Identical(m.Validated(mesh, o));
 }

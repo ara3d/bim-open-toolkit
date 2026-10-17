@@ -8,8 +8,8 @@ every face (layer 5), refine the edges face meshing asks for in a bounded loop, 
 numbering (layer 6), and validate it at a requested conformance level (layer 7). It owns the loop,
 the options, the outcome records, and the laws about the whole.
 
-Layer 7 was being written at the same time. This layer uses only its four fixed names:
-`ConformanceLevel`, `ValidateBrep`, `ValidateModelMesh`, `CrossCheck`.
+Validation is layer 7's: `ValidateBrep(level)`, `ValidateModelMesh(tolerances, thresholds, level)`,
+and `CrossCheck(mesh, level, criteria)`, all at the options' `ConformanceLevel` (decision 10).
 
 | File | Holds |
 |---|---|
@@ -42,7 +42,7 @@ it reports.
 | `MeshFace(m, f, d, c)` (layer 5) | **F**(d) = { f : `IsDiscretizedFace(m, f, d)` } | `UnmeshedOutcome`: an empty face mesh and an Error at `KernelFace(f)` |
 | `Refine(m, d, requests, c)` (layer 4) | `IsRefinable(m, d)` | not reached: see "Findings in lower layers", item 2 |
 | `AssembleModelMesh` (layer 6) | `CanAssemble` | not reached: one face mesh per face in face order and a numbering from `NumberMeshVertices` hold by construction |
-| `ValidateBrep`, `ValidateModelMesh`, `CrossCheck` (layer 7) | assumed total | |
+| `ValidateBrep`, `ValidateModelMesh`, `CrossCheck` (layer 7) | total: each is `ForLevel` over its checks | |
 
 Decoding goes on whatever the parse found, as layer 3 asks: a file with one bad instance is still
 decoded and meshed, and the parse Error makes `Ok` false. A text that yields no face gives a mesh
@@ -116,7 +116,7 @@ assembled: `NumberMeshVertices` and `AssembleModelMesh` over the final face mesh
 
 ## Options and defaults
 
-`MeshingOptions { Face: FaceMeshingCriteria; Level: ConformanceLevel; MaxRefinementRounds: Integer; Decode: DecodePolicy }`.
+`MeshingOptions { Face: FaceMeshingCriteria; Level: ConformanceLevel; MaxRefinementRounds: Integer; Decode: DecodePolicy; Quality: MeshQualityThresholds }`.
 `DefaultMeshingOptions(chordal)` gives the research's recommended set
 ([../research/MESHING-REQUIREMENTS.md](../research/MESHING-REQUIREMENTS.md) 2.5 and section 8):
 
@@ -133,6 +133,7 @@ assembled: `NumberMeshVertices` and `AssembleModelMesh` over the final face mesh
 | `Level` | `Geometric` | checks every promise the options make (layer 7: structure, every toleranced law, the criteria, quality thresholds); `Oracle` adds the independent oracles and the library self-tests, which test runs want and production runs can skip |
 | `MaxRefinementRounds` | 5 | research 3.7 and recommendation 2: OpenCascade's bound; the early exit makes unused rounds free |
 | `Decode` | `DecodePolicy.StandardPolicy` | layer 3's defaults (millimetre, radian, 1e-6 of the model size) |
+| `Quality` | `MeshQualityThresholds.CubitAcceptable` | layer 6's "acceptable" thresholds; a missed threshold is Info, so it never changes `Ok` |
 
 `IsWellFormed(o)` is layer 5's `IsWellFormed` on the face criteria (which includes layer 4's on the
 edge criteria) and a round limit that is not negative. A run refuses other options with
@@ -152,7 +153,7 @@ DecodedModel.Diagnostics --+-- Located(WholeInput) --+
 RefusalDiagnostics | ModelDiagnostics ---------------+
 FaceMeshOutcome.Diagnostics (final outcomes) --------+-- Merge -- Located(WholeInput) -- MeshOutcome.Report
 FailureDiagnostics (faces without a mesh) -----------+                                   Ok = IsClean
-Validated: ValidateBrep, ValidateModelMesh, CrossCheck(level)
+Validated: ValidateBrep(level), ValidateModelMesh(t, quality, level), CrossCheck(level, criteria)
 ```
 
 - **Every finding is located** (`Law_EveryDiagnosticIsLocated`, `Law_EveryStepTextDiagnosticIsLocated`).
@@ -215,9 +216,12 @@ The pipeline's own findings, all Errors because each means part of the model has
    with no request carries an error, but locates blocking-request findings at the edges. Rather than
    rely on that, `FailureDiagnostics` adds an Error at the face whenever none is there
    (`Law_EmptyFaceIsDiagnosed`).
-10. **Validation is the model, the mesh, and the two against each other:** `ValidateBrep(m)`,
-    `ValidateModelMesh(mesh)`, `CrossCheck(m, mesh, level)`. Only `CrossCheck` takes the level,
-    because that is the fixed signature; whether the other two should is left to layer 7.
+10. **Validation is the model, the mesh, and the two against each other, all at the options'
+    level:** `m.ValidateBrep(o.Level)`, `mesh.ValidateModelMesh(m.Tolerances, o.Quality, o.Level)`
+    (the model's tolerances, not the mesh's own resolution, so the mesh is judged by the file's
+    promise), and `m.CrossCheck(mesh, o.Level, o.Face)` (with the criteria, so an Oracle run checks
+    face areas and solid volumes within the envelopes the criteria imply). A refused run validates
+    the model alone at the same level.
 11. **Metamorphic laws state only what is exact.** Scaling by a power of two is exact in IEEE
     arithmetic and every comparison in the pipeline is between quantities of one dimension, so
     connectivity is identical and positions are scaled bit for bit (`Law_PowerOfTwoScalingKeepsConnectivity`,
@@ -290,7 +294,7 @@ hand-written texts of "Implementation order", and over the corpus.
 | `Law_EdgeReversalPreservesMesh` | reversing an edge gives the same mesh bit for bit | exact | library |
 | `Law_ShellReversalNegatesVolume` | reversing every face negates the signed volume | `LengthTolerance` times the area | library |
 | `Law_TighterChordalStaysWithinLooserBound` | a tighter chordal bound's governed deviation is within the looser bound | `LengthTolerance` | library |
-| `Law_CrossCheckIsIdempotent` | `CrossCheck` twice gives identical reports | exact | library |
+| `Law_ValidationIsIdempotent` | `Validated` twice gives identical reports | exact | library |
 
 The requested laws map to these as follows. Determinism: the first two, over witnesses, since the
 runner cannot build their inputs. Failure isolation: `Law_FailedFaceLeavesOthersUnchanged`, with
@@ -299,7 +303,7 @@ theorem `FailureIsIsolated`. Termination: `Law_LoopEndsTerminal`, `Law_StepDecre
 `Law_RefinementNeverCoarsens`. Local re-meshing: `Law_OnlyFacesOfChangedEdgesAreRemeshed`. Closed
 mesh: `Law_ClosedWhenEveryShellClosedAndNoFaceEmpty`, theorem `WatertightByConstruction`. Rigid
 motion and scaling: decision 11. Tighter chordal: decision 12. Idempotent validation:
-`Law_CrossCheckIsIdempotent`. `Ok`: `Law_OkExactlyWhenClean`. Provenance:
+`Law_ValidationIsIdempotent`. `Ok`: `Law_OkExactlyWhenClean`. Provenance:
 `Law_EveryDiagnosticIsLocated`. Rounds: `Law_RoundsWithinLimit`.
 
 ## Theorems
@@ -329,8 +333,8 @@ proves it.
 3. **Assemblies are meshed per placed copy.** Layer 3 decodes every occurrence. An instancing table
    (one mesh per part, placements beside it) would need a field in `DecodedModel`, `MeshOutcome`,
    and `ModelMesh`; the owner decides when an assembly's cost matters.
-4. **Levels for `ValidateBrep` and `ValidateModelMesh`.** Their fixed signatures take no level, so
-   a Structural run still pays for whatever they check; layer 7 to decide.
+4. **Levels for `ValidateBrep` and `ValidateModelMesh`.** Settled in the fix wave: layer 7 gave
+   both a level, and `Validated` passes `o.Level` to all three.
 5. **Connectivity under general rigid motions and unit changes** (decision 11) is a harness check,
    not a law: run the witnesses moved by a few generic frames and report any mismatch as Info with
    the decision that flipped.
@@ -400,7 +404,7 @@ Laws that must pass: `Law_MeshModelIsDeterministic`, `Law_MeshStepTextIsDetermin
 `Law_EmptyDiscretizationExactlyWhenEdgeUnusable`, `Law_FinalDiscretizationsMeetFloors`,
 `Law_ClosedWhenEveryShellClosedAndNoFaceEmpty`, `Law_OrientedWhenEveryShellClosedAndNoFaceEmpty`,
 `Law_EdgeReversalPreservesMesh` on each of the 12 edges, `Law_ShellReversalNegatesVolume`,
-`Law_CrossCheckIsIdempotent`, `Law_ParseErrorMeansNotOk` (truncated text),
+`Law_ValidationIsIdempotent`, `Law_ParseErrorMeansNotOk` (truncated text),
 `Law_NoFacesMeansNoMesh` and `Law_NoFacesMeansNotOk` (text without a shape),
 `Law_DecodeErrorMeansNotOk`; and, with a second witness whose top face is a poly loop,
 `Law_EmptyFaceIsDiagnosed` and `Law_FailedFaceLeavesOthersUnchanged`.
@@ -506,6 +510,9 @@ Recorded here, not fixed there.
 | `ParseOutcome { Ok; File; Diagnostics }` | not declared; layer 3's `ParsedFile` | identical fields; layer 3's proposal accepted (decision 1) |
 | `DecodeOutcome { Ok; Model; Map; Diagnostics }` | not declared; layer 3's `DecodedModel` | decoding is total and does not stop the run; a stored `Ok` would be a computable flag (decision 2) |
 | `MeshingOptions { Face; Level; MaxRefinementRounds }` | adds `Decode: DecodePolicy` | the decode defaults pass through to `DecodeBrepWith` |
+| `MeshingOptions { Face; Level; MaxRefinementRounds; Decode }` (fix wave) | adds `Quality: MeshQualityThresholds` | the thresholds `ValidateModelMesh` reports against are the caller's choice, default `CubitAcceptable` |
+| `Validated(m, mesh, level)` (fix wave) | `Validated(m, mesh, o: MeshingOptions)`: `ValidateBrep(o.Level)`, `ValidateModelMesh(m.Tolerances, o.Quality, o.Level)`, `CrossCheck(mesh, o.Level, o.Face)` | layer 7's finding 8: every part at the level, the model's tolerances, the criteria for the area and volume envelopes |
+| `Law_CrossCheckIsIdempotent(m, mesh, level)` (fix wave) | `Law_ValidationIsIdempotent(m, mesh, o)` | idempotence of what the pipeline actually runs |
 | `MeshOutcome { Ok; Mesh; Report; Rounds }` | unchanged; `Ok` is `Report.IsClean`, set only by `MeshOutcomeOf` | |
 | `MeshStepText(text, options): MeshOutcome` | unchanged, now the projection of `MeshStepTextTraced(text, options): StepMeshOutcome { Decoded; Meshed }` | tracing kernel provenance to the file needs the map (decision 3) |
 | `MeshModel(m, o)` | unchanged, now `MeshChosenFaces(m, o, AllFaces(m))` | the failure isolation law compares two choices of faces |
@@ -538,3 +545,12 @@ excluded.
 - **Negative control**: a wrong argument type injected into `WholeInput` failed with CHK201, so the
   driver type-checks these files. The same control showed the checker accepting an `Integer >=
   Number` comparison (finding 9).
+
+## Fix wave, 2026-10-17
+
+Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
+
+1. **`Validated` as layer 7 proposes** (layer 7 README, "Findings in lower layers", item 8):
+   `ValidateBrep(o.Level)`, `ValidateModelMesh(m.Tolerances, o.Quality, o.Level)`,
+   `CrossCheck(mesh, o.Level, o.Face)`; `Validated` takes the options; `MeshingOptions` gains
+   `Quality`; `Law_CrossCheckIsIdempotent` becomes `Law_ValidationIsIdempotent` over `Validated`.

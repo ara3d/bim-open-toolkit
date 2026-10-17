@@ -34,13 +34,15 @@ library StepToMesh
     // chordal bound on faces (OpenCascade); a normal turn of at most 15 degrees
     // along an element edge (ACIS's default for that quantity); triangles only;
     // validation at Geometric, which checks every promise the options make;
-    // 5 refinement rounds (OpenCascade's bound); the standard decode policy.
+    // 5 refinement rounds (OpenCascade's bound); the standard decode policy;
+    // Cubit's "acceptable" quality thresholds (layer 6).
     DefaultMeshingOptions(chordal: Number): MeshingOptions
         => MeshingOptions(
             FaceMeshingCriteria(DefaultCriteria(chordal), chordal, 15.0.Degrees, false),
             ConformanceLevel.Geometric,
             5,
-            DecodePolicy.StandardPolicy);
+            DecodePolicy.StandardPolicy,
+            MeshQualityThresholds.CubitAcceptable);
 
     // True when a run can honour the options: well-formed face criteria (layer
     // 5's IsWellFormed, which includes the edge criteria) and a round limit
@@ -55,7 +57,8 @@ library StepToMesh
             FaceMeshingCriteria(o.Face.Discretization.WithChordal(chordal), chordal, o.Face.SurfaceAngular, o.Face.PreferQuads),
             o.Level,
             o.MaxRefinementRounds,
-            o.Decode);
+            o.Decode,
+            o.Quality);
 
     // The largest chordal bound the options apply on a model with tolerances
     // t, on edges (never below the length tolerance, layer 4's
@@ -65,10 +68,10 @@ library StepToMesh
 
     // The options with every length multiplied by factor: both chordal bounds,
     // the length limit, and the minimum length. Angles, counts, the level, the
-    // round limit, and the decode policy (whose lengths are relative to the
-    // model or in metres) are kept.
+    // round limit, the decode policy (whose lengths are relative to the
+    // model or in metres), and the quality thresholds (ratios) are kept.
     ScaledBy(o: MeshingOptions, factor: Number): MeshingOptions
-        => MeshingOptions(o.Face.ScaledBy(factor), o.Level, o.MaxRefinementRounds, o.Decode);
+        => MeshingOptions(o.Face.ScaledBy(factor), o.Level, o.MaxRefinementRounds, o.Decode, o.Quality);
 
     //==
     // # Provenance
@@ -340,10 +343,15 @@ library StepToMesh
     AssembledMesh(m: BrepModel, s: PipelineState): ModelMesh
         => m.AssembleModelMesh(s.FaceMeshesOf, m.NumberMeshVertices(s.Discretizations, s.FaceMeshesOf));
 
-    // The validation of a mesh of m at the level (layer 7): the model, the
-    // mesh, and the two against each other.
-    Validated(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel): Report
-        => m.ValidateBrep.Merge(mesh.ValidateModelMesh).Merge(m.CrossCheck(mesh, level));
+    // The validation of a mesh of m under the options (layer 7), every part
+    // at o.Level: the model; the mesh against the model's tolerances and the
+    // options' quality thresholds; and the two against each other with the
+    // criteria the mesh was made for, so that an Oracle run checks the face
+    // areas and solid volumes within the envelopes the criteria imply.
+    Validated(m: BrepModel, mesh: ModelMesh, o: MeshingOptions): Report
+        => m.ValidateBrep(o.Level)
+            .Merge(mesh.ValidateModelMesh(m.Tolerances, o.Quality, o.Level))
+            .Merge(m.CrossCheck(mesh, o.Level, o.Face));
 
     // The findings of a finished loop: the model's (no face, undiscretized
     // edges), every final face outcome's, and the pipeline's own finding for
@@ -368,12 +376,12 @@ library StepToMesh
 
     // The outcome of a refused run: every face mesh empty, so the mesh holds
     // the model's vertices and no element; the refusal's findings and the
-    // model's validation; no round.
+    // model's validation at o.Level; no round.
     RefusedOutcome(m: BrepModel, o: MeshingOptions): MeshOutcome
     {
         var empties = m.Faces.Count.MapRange(k => EmptyFaceMesh(BrepFaceIndex(k)));
         var mesh = m.AssembleModelMesh(empties, m.NumberMeshVertices(m.NoDiscretizations, empties));
-        var report = ReportOf(m.RefusalDiagnostics(o)).Merge(m.ValidateBrep);
+        var report = ReportOf(m.RefusalDiagnostics(o)).Merge(m.ValidateBrep(o.Level));
         return MeshOutcomeOf(mesh, report.Located(Provenance.WholeInput), 0);
     }
 
@@ -384,7 +392,7 @@ library StepToMesh
     {
         var s = m.FinalState(o, chosen);
         var mesh = m.AssembledMesh(s);
-        var report = m.LoopReport(o, chosen, s).Merge(m.Validated(mesh, o.Level));
+        var report = m.LoopReport(o, chosen, s).Merge(m.Validated(mesh, o));
         return MeshOutcomeOf(mesh, report.Located(Provenance.WholeInput), s.Round);
     }
 

@@ -25,6 +25,9 @@
 //     0 meshes every face once and refines nothing.
 //   Decode: the defaults the STEP decoder applies where a file is silent,
 //     passed through to DecodeBrepWith by MeshStepText.
+//   Quality: the element quality thresholds the mesh is reported against
+//     (layer 6), passed to layer 7's ValidateModelMesh; a threshold missed
+//     is Info, never an Error.
 // Plain data: a run refuses options that fail IsWellFormed, with a
 // diagnostic, instead of running on them.
 type MeshingOptions
@@ -33,6 +36,7 @@ type MeshingOptions
     Level: ConformanceLevel;
     MaxRefinementRounds: Integer;
     Decode: DecodePolicy;
+    Quality: MeshQualityThresholds;
 }
 
 //==
