@@ -18,7 +18,7 @@ Library blocks: `ModelMeshes` (the fixed name, in `mesh.library.plato`), with `M
 | Stem | Holds |
 |---|---|
 | `mesh-numbering` | `MeshVertexSite`, `MeshVertexNumbering`; sites to indices and back; `NumberMeshVertices`; face mesh points to sites (`GlobalVertexOf`) |
-| `mesh` | `ModelMesh`; element and corner access; element geometry (`ElementTriangles`); `Reversed`; the tetrahedron witness |
+| `mesh` | `ModelMesh`; element and corner access; element geometry (`ElementTriangles`); `Reversed`; `SameConnectivity`; the tetrahedron witness |
 | `mesh-assembly` | `AssembleModelMesh` (deferred), its preconditions (`CanAssemble`), where face mesh elements land; the watertightness law and theorem |
 | `mesh-topology` | `MeshEdgeTable`, components and their counts; manifold, closed, oriented; Euler characteristic, genus, pinched vertices |
 | `mesh-measures` | area, signed volume, winding number, corner angles and angle defects; degenerate elements, coincident vertices, folds |
@@ -411,3 +411,14 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | (none) | `Reversed(mesh)`, `WindingNumber`, `CoincidentVertexPairs`, `DegenerateElements`, `ElementsWithRepeatedCorners`, `IsPinchedVertex`, `Witness_UnitTetrahedron` | the reversal, outward-orientation, detection, and witness the laws need |
 | research catalogue names for layer 6 | `Law_MeshEdgeAtMostTwoElements` is `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides`; `Law_MeshEdgeExactlyTwoElements` is `Law_ClosedMeansEveryEdgeHasTwoSides`; `Law_MeshEdgeOppositeTraversal` is `Law_OrientedExactlyWhenNoEdgeIsMisoriented`; `Law_MeshVertexLinkIsSingleCycle` is `Law_ClosedMeshHasNoPinchedVertex`; `Law_MeshNoCoincidentVertices` is `Law_VerticesOfOneComponentAreApart`; `Law_MeshElementNotDegenerate` is `Law_ElementIsNotDegenerate`; `Law_MeshComponentEulerEvenAtMostTwo` is `Law_ClosedOrientedSurfaceHasGenus`; `Law_AngleDefectSumIdentity` is `Law_AngleDefectSumIsTwoPiTimesEuler`; `Law_QuadAngleDefectWithinTolerance` is `Law_QuadAngleDefectMeetsThreshold` | names that say the statement; the catalogue's were proposals, not fixed names |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
+| `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
+
+## Fix wave, 2026-10-17
+
+Findings from `reviews/MATH-REVIEW-layers-0-6.md`, the "Findings in lower layers" sections of
+`07-validation/README.md` and `08-pipeline/README.md`, and `reviews/FIX-WAVE.md`, one commit each.
+
+Applied:
+
+- **`SameConnectivity` by numbering** (FIX-WAVE ownership table; 07 finding 1). Declared once here
+  with a body; layers 7 and 8 delete their copies.

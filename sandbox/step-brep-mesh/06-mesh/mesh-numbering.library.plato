@@ -182,6 +182,17 @@ library ModelMeshNumbering
                OnFace(f, uv) => true;
            };
 
+    // Whether two integer arrays are equal entry by entry.
+    IsSameIntegers(a: Array<Integer>, b: Array<Integer>): Boolean
+        => a.Count == b.Count ? a.Count.MapRange(k => a[k] == b[k]).All(x => x) : false;
+
+    // Whether two numberings are equal field by field: the same model vertex count and the same
+    // runs, so every site has the same index in both.
+    IsSameNumbering(a: MeshVertexNumbering, b: MeshVertexNumbering): Boolean
+        => a.ModelVertexCount == b.ModelVertexCount
+            && IsSameIntegers(a.EdgeInteriorStart, b.EdgeInteriorStart)
+            && IsSameIntegers(a.FaceInteriorStart, b.FaceInteriorStart);
+
     //==
     // # Building the numbering
 

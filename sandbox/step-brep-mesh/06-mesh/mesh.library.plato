@@ -10,6 +10,7 @@
 //  - Elements and corners of a model mesh
 //  - Element geometry and corner attributes
 //  - Orientation reversal
+//  - Comparison
 
 library ModelMeshes
 {
@@ -199,4 +200,21 @@ library ModelMeshes
             mesh.ElementFace,
             mesh.VertexProvenance,
             mesh.Numbering);
+
+    //==
+    // # Comparison
+
+    // Whether two model meshes have the same connectivity: the same triangles and quads over the
+    // same vertex indices, each element approximating the same face, the same vertex count, and the
+    // same numbering, so every vertex index names the same site (model vertex, edge sample, or face
+    // interior vertex) in both. Positions, corner parameters, corner normals, and the parameter values
+    // inside VertexProvenance are not compared: scaling or moving a model changes them and keeps the
+    // connectivity. The meaning 08-pipeline gave it; 07-validation's copy compared only the vertex
+    // count, which two different numberings of one vertex total pass.
+    SameConnectivity(a: ModelMesh, b: ModelMesh): Boolean
+        => a.Triangles.Corresponds(b.Triangles, (x, y) => x == y)
+            && a.Quads.Corresponds(b.Quads, (x, y) => x == y)
+            && a.ElementFace.Corresponds(b.ElementFace, (x, y) => x == y)
+            && a.Positions.Count == b.Positions.Count
+            && IsSameNumbering(a.Numbering, b.Numbering);
 }

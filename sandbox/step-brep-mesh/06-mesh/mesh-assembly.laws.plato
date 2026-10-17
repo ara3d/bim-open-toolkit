@@ -142,16 +142,6 @@ library ModelMeshAssemblyLaws
                Interior => true;
            };
 
-    // Whether two integer arrays are equal entry by entry.
-    IsSameIntegers(a: Array<Integer>, b: Array<Integer>): Boolean
-        => a.Count == b.Count ? a.Count.MapRange(k => a[k] == b[k]).All(x => x) : false;
-
-    // Whether two numberings are equal field by field.
-    IsSameNumbering(a: MeshVertexNumbering, b: MeshVertexNumbering): Boolean
-        => a.ModelVertexCount == b.ModelVertexCount
-            && IsSameIntegers(a.EdgeInteriorStart, b.EdgeInteriorStart)
-            && IsSameIntegers(a.FaceInteriorStart, b.FaceInteriorStart);
-
     // Whether vertex v of the mesh exists and sits exactly at p.
     PositionIs(mesh: ModelMesh, v: VertexIndex, p: Point3D): Boolean
         => mesh.Positions.IsValidIndex(v) ? mesh.Positions[v] == p : false;   // exact by construction
