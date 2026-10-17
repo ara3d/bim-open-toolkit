@@ -312,6 +312,8 @@ spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
     ensures Law_EmptyMeshIsExplained(result);
     ensures Law_MeshedFaceHasSimpleRegion(m, f, d, c);
     ensures Law_NoQuadsUnlessPreferred(m, f, d, c);
+    ensures forall (q: Integer) in result.Requests.Count.Range: Law_RequestsNameFaceEdges(m, f, d, c, q);
+    ensures forall (d2: EdgeDiscretizations): Law_MeshFaceReadsOnlyFaceEdges(m, f, d, d2, c);
     ensures forall (k: Integer) in result.Mesh.ElementCount.Range: Law_ElementFacesFaceNormal(m, result.Mesh, ElementIndex(k));
     ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
         Law_ElementDeviationWithinSurfaceChordal(m, d, result.Mesh, c, ElementIndex(k))

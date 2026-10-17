@@ -18,7 +18,7 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: preconditions (`IsDiscretizedFace`), criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
-| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 43 laws and their guards |
+| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 45 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 3 theorems |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
@@ -254,6 +254,8 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_BlockingRequestMeansEmptyMesh` | a blocking request comes with an empty mesh | exact | E |
 | `Law_RequestHasDiagnostic` | a request comes with at least one diagnostic | exact | E |
 | `Law_EmptyMeshIsExplained` | an empty mesh with no request comes with an error diagnostic | exact | E |
+| `Law_RequestsNameFaceEdges` | every request of `MeshFace`'s outcome names an edge the face cites | exact | test |
+| `Law_MeshFaceReadsOnlyFaceEdges` | discretization sets that agree on the face's edges give the same outcome, bit for bit | exact | test |
 
 Theorems in the spec: `SharedEdgePositionsAgree` (two faces hold bitwise equal positions for a shared sample, so
 assembly needs no welding), `DroppedTrianglesArePoleSegments` (the dropped count equals the number of
@@ -352,6 +354,7 @@ knots); offset and rectangular-trimmed last.
 | conjecture `ElementsTileRegion` | a theorem, assuming the region is simple and the two side laws; `TriangulateRegion`, `RefineToSurface`, `QuadGrid` ensure `Law_BoundarySegmentIsElementSide` and `Law_InteriorSideIsShared`; new `LoopOffset`, `LoopOfBoundaryPoint`, `NextBoundaryPoint`, `IsBoundarySegment`, `ElementHasSide`, `SideCount` | Keeping the boundary points does not make a tiling (review M5, H6); layer 08's watertightness theorem no longer rests on a conjecture |
 | `IsDiscretizedFace`, `IsDiscretizedBound`, `HasSample` in `FaceMeshingLaws` | in `FaceMeshing`, same signatures | `MeshFace`'s precondition, which layer 08 evaluates, is a definition of the layer, not a law guard (layer 08 finding 3) |
 | `StepBelowHalfPeriod`, `Winding`: Aperiodic and Periodic | a `Closed` arm, treated as `Periodic` | Layer 00's new periodicity case (review C1, T1) |
+| `MeshFace` ensures | also `Law_RequestsNameFaceEdges` and `Law_MeshFaceReadsOnlyFaceEdges`; new `AgreeOnFaceEdges`, `SameFaceMesh`, `SameFaceMeshOutcome` (layer 08 declared the last two with the same bodies; they belong with the types here, and layer 08's copies should go) | Layer 08's refinement loop rests on both properties (layer 08 finding 4) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -383,6 +386,10 @@ Applied:
   arm, the same as `Periodic`; every seam function inherits it.
 - C10, layer 07 finding 2: `IsFaceInteriorProvenance` deleted; `ProvenanceAgrees` uses layer 00's
   `IsOnFace`.
+- Layer 08 finding 4: `MeshFace` ensures that every request names an edge the face cites
+  (`Law_RequestsNameFaceEdges`) and that it reads only those edges' discretizations
+  (`Law_MeshFaceReadsOnlyFaceEdges`). `SameFaceMesh` and `SameFaceMeshOutcome` are declared here,
+  beside their types; layer 08's identical copies are left for its fixer to delete.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 

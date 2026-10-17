@@ -462,6 +462,33 @@ library FaceMeshing
             QuadCountMismatch => false;
         };
 
+    // True when d and d2 hold the same discretization for every edge face f cites (layer 04's
+    // SameDiscretization): the only entries MeshFace reads.
+    AgreeOnFaceEdges(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, d2: EdgeDiscretizations): Boolean
+        => m.FaceEdges(f).All(e => (d.ByEdge.IsValidIndex(e) && d2.ByEdge.IsValidIndex(e))
+            ? d.ByEdge[e].SameDiscretization(d2.ByEdge[e])
+            : false);
+
+    // Two face meshes are the same value: one face, and every array equal entry by entry. Exact
+    // by design: it compares two computations of one mesh, bit for bit.
+    SameFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
+        => a.Face == b.Face
+            && a.UvPoints.Corresponds(b.UvPoints, (x, y) => x == y)
+            && a.Sources.Corresponds(b.Sources, (x, y) => x == y)
+            && a.LocalVertex.Corresponds(b.LocalVertex, (x, y) => x == y)
+            && a.Positions.Corresponds(b.Positions, (x, y) => x == y)
+            && a.Normals.Corresponds(b.Normals, (x, y) => x == y)
+            && a.Triangles.Corresponds(b.Triangles, (x, y) => x == y)
+            && a.Quads.Corresponds(b.Quads, (x, y) => x == y)
+            && a.Provenance.Corresponds(b.Provenance, (x, y) => x == y);
+
+    // Two face outcomes are the same: the same mesh, the same requests, and identical diagnostics
+    // (layer 00's Identical: NaN measures agree).
+    SameFaceMeshOutcome(a: FaceMeshOutcome, b: FaceMeshOutcome): Boolean
+        => a.Mesh.SameFaceMesh(b.Mesh)
+            && a.Requests.Corresponds(b.Requests, (x, y) => x == y)
+            && a.Diagnostics.Corresponds(b.Diagnostics, (x, y) => x.Identical(y));
+
     // A face mesh with no points, vertices, or elements.
     EmptyFaceMesh(f: BrepFaceIndex): FaceMesh
         => FaceMesh(f, [], [], [], [], [], [], [], []);

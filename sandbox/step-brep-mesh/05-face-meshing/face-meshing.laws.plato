@@ -425,6 +425,26 @@ library FaceMeshingLaws
             ? true
             : (m.IsDiscretizedFace(f, d) ? m.MeshFace(f, d, c).Mesh.Quads.Count == 0 : true);
 
+    // Every request in MeshFace's outcome for face f names an edge f cites, so a face reaches
+    // other faces only through the edges it shares with them (layer 08's refinement loop relies
+    // on it).
+    Law_RequestsNameFaceEdges(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, q: Integer): Boolean
+        => (m.IsDiscretizedFace(f, d) && c.IsWellFormed)
+            ? m.RequestNamesFaceEdge(f, m.MeshFace(f, d, c), q)
+            : true;
+
+    // The claim of Law_RequestsNameFaceEdges for request q of outcome o.
+    RequestNamesFaceEdge(m: BrepModel, f: BrepFaceIndex, o: FaceMeshOutcome, q: Integer): Boolean
+        => o.Requests.IsValidIndex(q) ? m.FaceEdges(f).Any(e => e == o.Requests[q].Edge) : true;
+
+    // MeshFace reads only the discretizations of the edges face f cites: two discretization sets
+    // that agree on those edges give the same outcome, bit for bit (layer 08's loop rests on it
+    // to keep an outcome current while other edges change).
+    Law_MeshFaceReadsOnlyFaceEdges(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, d2: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => (m.IsDiscretizedFace(f, d) && c.IsWellFormed)
+            ? (m.AgreeOnFaceEdges(f, d, d2) ? m.MeshFace(f, d, c).SameFaceMeshOutcome(m.MeshFace(f, d2, c)) : true)
+            : true;
+
     // An outcome with a blocking request has an empty mesh.
     Law_BlockingRequestMeansEmptyMesh(o: FaceMeshOutcome): Boolean
         => o.Requests.Any(q => q.Reason.IsBlocking) ? o.Mesh.IsEmptyFaceMesh : true;
