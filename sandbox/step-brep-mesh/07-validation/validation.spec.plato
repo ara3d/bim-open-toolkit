@@ -375,6 +375,22 @@ spec Witness_BoxWithFlippedFace(_: BrepModel): BrepModel
     measure result.Faces.Count;
 }
 
+// The unit box beside a faceted sheet: a valid model whose face 6, bounded
+// by a poly loop, layer 5 does not mesh; the planted bad face of layer 8's
+// failure-isolation law, with exactly two Errors at the face and none
+// outside the sheet.
+spec Witness_BoxWithPolyLoopSheet(_: BrepModel): BrepModel
+{
+    ensures result.Faces.Count == 7;
+    ensures result.RawCounts(ShellIndex(1)) == ShellCounts(0, 0, 1, 1);
+    ensures Law_PlantedBadFaceFailsSilently(result);
+    ensures Law_PlantedBadFaceIsDiagnosed(result);
+    ensures Law_PlantedBadFaceHasTwoErrors(result);
+    ensures forall (g: Integer) : Law_PlantedBadFaceLeavesOthersUnchanged(g);
+    ensures forall (k: Integer) : Law_PlantedBadFaceErrorsStayInTheSheet(k);
+    measure result.Faces.Count;
+}
+
 // Two unit boxes touching at a corner in one shell: fails exactly
 // Law_EulerPoincareEvenAndBounded and Law_VertexLinkIsOneCycle.
 spec Witness_TwoBoxesSharingCorner(_: BrepModel): BrepModel

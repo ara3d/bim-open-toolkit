@@ -600,6 +600,40 @@ library BrepWitnesses
             LengthUnit.Metre);
     }
 
+    // The unit box with a faceted sheet beside it: shell 0 and body 0 are
+    // Witness_UnitBox; face 6 is a triangle on the plane z = 3, bounded by a
+    // poly loop through (0, 0, 3), (1, 0, 3), (0, 1, 3), counter-clockwise
+    // about +z, alone in open shell 1, which body 1 holds as a shell set. A
+    // poly loop is legal STEP, and layer 5 does not mesh a face bounded by one
+    // in version 1, so face 6 is the planted bad face of layer 8's
+    // failure-isolation law. Expected diagnostics, meshed under the witness
+    // options: at face 6, layer 5's FACE-POLY-LOOP and the cross check
+    // Law_EveryFaceIsMeshed, both Errors (layer 8 adds no PIPELINE-FACE-EMPTY,
+    // since the face already has an Error); at shell 1, whatever layer 2
+    // reports of a shell whose loop has no indexed cell (raw counts 0, 0, 1,
+    // 1, chi = 1 with no free edge, so its open-shell Euler law fails; README,
+    // "Findings in lower layers"); nothing at shell 0, body 0, faces 0 to 5,
+    // or their edges and vertices, which mesh as in Witness_UnitBox.
+    Witness_BoxWithPolyLoopSheet(_: BrepModel): BrepModel
+    {
+        var box = BrepModel.Witness_UnitBox;
+        return BrepModel(
+            GeometrySet(box.Geometry.Curves, box.Geometry.Curves2D, box.Geometry.Pcurves,
+                box.Geometry.Surfaces.Concatenate([BrepSurface.Plane(WorldFrameAt(Point3D(0.0, 0.0, 3.0)))])),
+            box.Vertices,
+            box.Edges,
+            box.Loops.Concatenate([BrepLoop.PolyLoop([Point3D(0.0, 0.0, 3.0), Point3D(1.0, 0.0, 3.0), Point3D(0.0, 1.0, 3.0)])]),
+            box.Faces.Concatenate([SingleLoopFace(6, 6, true)]),
+            box.Shells.Concatenate([BrepShell([BrepFaceIndex(6)], false)]),
+            box.Bodies.Concatenate([BrepBody.ShellSet([ShellIndex(1)])]),
+            box.Tolerances,
+            box.Unit);
+    }
+
+    // The planted bad face of Witness_BoxWithPolyLoopSheet.
+    PlantedBadFace(_: BrepFaceIndex): BrepFaceIndex
+        => BrepFaceIndex(6);
+
     //==
     // # Facts
     //

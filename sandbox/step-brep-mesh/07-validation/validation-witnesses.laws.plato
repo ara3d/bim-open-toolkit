@@ -235,6 +235,57 @@ library BrepWitnessesLaws
         => BrepModel.Witness_TwoBoxesSharingCorner.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 2;
 
     //==
+    // # The planted bad face
+    //
+    // Witness_BoxWithPolyLoopSheet: a valid model whose face 6 the mesher
+    // refuses. These laws make layer 8's failure-isolation law non-vacuous
+    // and fix the face's expected diagnostics.
+
+    // True when a finding is about the sheet: face 6, shell 1, or body 1.
+    IsAboutPlantedSheet(p: Provenance): Boolean
+        => p == Provenance.KernelFace(BrepFaceIndex.PlantedBadFace)
+            || p == Provenance.KernelShell(ShellIndex(1))
+            || p == Provenance.KernelBody(BodyIndex(1));
+
+    // The planted face fails silently, the hypothesis of layer 8's
+    // Law_FailedFaceLeavesOthersUnchanged: its final mesh is empty and it
+    // holds no request.
+    Law_PlantedBadFaceFailsSilently(_: BrepModel): Boolean
+    {
+        var m = BrepModel.Witness_BoxWithPolyLoopSheet;
+        var last = m.FinalState(MeshingOptions.WitnessOptions, m.AllFaces).Outcomes[BrepFaceIndex.PlantedBadFace];
+        return last.Mesh.IsEmptyFaceMesh && last.Requests.Count == 0;
+    }
+
+    // Leaving the planted face out of the run or keeping it gives face g the
+    // same final mesh, bit for bit: layer 8's law at the planted face.
+    Law_PlantedBadFaceLeavesOthersUnchanged(g: Integer): Boolean
+        => BrepModel.Witness_BoxWithPolyLoopSheet.Law_FailedFaceLeavesOthersUnchanged(
+            MeshingOptions.WitnessOptions, BrepFaceIndex.PlantedBadFace, BrepFaceIndex(g));
+
+    // Meshing the model is not Ok, and the planted face carries an Error.
+    Law_PlantedBadFaceIsDiagnosed(_: BrepModel): Boolean
+        => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Ok.Not
+            && BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Any(d =>
+                d.Severity.IsError && d.Where == Provenance.KernelFace(BrepFaceIndex.PlantedBadFace));
+
+    // Every Error of the run is about the sheet: the failure stays where it
+    // is, and the box beside it is clean (finding k of the report).
+    Law_PlantedBadFaceErrorsStayInTheSheet(k: Integer): Boolean
+        => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.IsValidIndex(k)
+            ? (BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics[k].Severity.IsError
+                ? BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics[k].Where.IsAboutPlantedSheet
+                : true)
+            : true;
+
+    // At the planted face the run has exactly two Errors, layer 5's
+    // FACE-POLY-LOOP and the cross check Law_EveryFaceIsMeshed, as
+    // Witness_BoxWithPolyLoopSheet states.
+    Law_PlantedBadFaceHasTwoErrors(_: BrepModel): Boolean
+        => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Reduce(0, (n, d) =>
+            (d.Severity.IsError ? d.Where == Provenance.KernelFace(BrepFaceIndex.PlantedBadFace) : false) ? n + 1 : n) == 2;
+
+    //==
     // # Metamorphic relations
     //
     // Layer 8's metamorphic laws over the witnesses, under the witness

@@ -198,6 +198,12 @@ Negative witnesses, each failing exactly the named laws of layer 2 (research/VAL
 | `Witness_BoxWithFlippedFace` | 8, 12, 6, 6 | `Law_LoopWindingMatchesSameSense` at face 0 |
 | `Witness_TwoBoxesSharingCorner` | 15, 24, 12, 12 (chi 3) | `Law_EulerPoincareEvenAndBounded`, `Law_VertexLinkIsOneCycle` at vertex 6 |
 
+A planted bad face for layer 8's failure-isolation law:
+
+| Witness | Holds | Expected diagnostics when meshed |
+|---|---|---|
+| `Witness_BoxWithPolyLoopSheet` | the unit box (shell 0, body 0) and face 6, a triangle at z = 3 bounded by a poly loop, alone in open shell 1 (body 1, a shell set) | at face 6: layer 5's `FACE-POLY-LOOP` and `Law_EveryFaceIsMeshed`, both Errors; at shell 1: layer 2's open-shell Euler law (a poly loop has no indexed cell, so chi = 1 with no boundary cycle); nothing at the box |
+
 `WitnessAt(k)` and `FactsAt(k)` index the positive witnesses by k modulo 10, so a law quantifies
 over all of them with one Integer.
 
@@ -305,6 +311,7 @@ Exact.
 | `Law_WitnessMeshesOk`, `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean` | each witness meshed by layer 8's `MeshModel` is Ok and clean at Oracle | (the checks' own) |
 | `Law_HollowBoxVoidMeshVolumeNegative`, `...OuterMeshVolumePositive` | volume signs after meshing | `VolumeRoundoff` |
 | `Law_HollowBoxMeshVolumeIsDifference` | meshed volume a^3 - b^3 | 2 `VolumeRoundoff` |
+| `Law_PlantedBadFaceFailsSilently`, `...IsDiagnosed`, `...HasTwoErrors`, `...ErrorsStayInTheSheet`, `...LeavesOthersUnchanged` | the planted face meshes to nothing and asks for nothing; two Errors at it, none outside the sheet; layer 8's `Law_FailedFaceLeavesOthersUnchanged` at it | exact |
 | `Law_RedundantPoleLoops...`, `Law_FlippedFace...`, `Law_SharedCorner...` (9) | each named check fails; the structure family has exactly that many diagnostics | exact |
 | `Law_WitnessRigidMotionMovesPositions` | layer 8's `Law_RigidMotionMovesPositions` on each witness | Length |
 | `Law_WitnessPowerOfTwoScalingKeepsConnectivity`, `...ScalesPositions` | layer 8's scaling laws on each witness | exact |
@@ -388,9 +395,14 @@ library was added). Over layers 00 to 08: PASS, 0 errors, 6,357 functions.
 5. **Layer 1 exports Booleans only** for its file-geometry laws (placement orthonormality and the
    like), so they are graded as exact Errors here; exporting the measure would allow the ten-times
    Warning grading.
-6. **The gate skips lambda bodies** (see "Implementation notes").
-7. **Layer 6 cites `Law_AngleDefectMatchesBrepEuler`** as this layer's; it is declared here.
-8. **Layer 8's `Validated`** calls `m.ValidateBrep` (always Geometric, ignoring `o.Level`),
+6. **A shell of poly loops fails layer 2's Euler laws.** A poly loop's points are not indexed, so a
+   faceted shell counts no vertex and no edge: a single triangle sheet has chi = 1 and no free
+   edge, which layer 2's open-shell Euler law rejects, and a faceted tetrahedron has chi = 4. A
+   faceted B-rep is legal STEP; layer 2 should count a poly loop's points and implicit edges, or
+   exempt such shells as `ReducedCounts`' contract already does (`ShellHasPolyLoop`).
+7. **The gate skips lambda bodies** (see "Implementation notes").
+8. **Layer 6 cites `Law_AngleDefectMatchesBrepEuler`** as this layer's; it is declared here.
+9. **Layer 8's `Validated`** calls `m.ValidateBrep` (always Geometric, ignoring `o.Level`),
    `mesh.ValidateModelMesh` (structural, without the model's tolerances), and `CrossCheck(mesh,
    level)` without criteria, so Oracle-level runs skip the area and volume envelopes. Proposed:
    `m.ValidateBrep(level)`, `mesh.ValidateModelMesh(m.Tolerances, MeshQualityThresholds.CubitAcceptable,
@@ -408,3 +420,4 @@ one commit each.
 | `Law_RigidMotionKeepsConnectivity` and theorem `RigidMotionCommutesWithMeshing` are false (layer 8, decision 11: the unit box's square faces have two equally Delaunay diagonals, and a rotation that is not a quarter turn can pick the other) | dropped, with conjecture `ScalingByAnyFactorKeepsConnectivity`, which a tie refutes the same way |
 | Conjecture `TighterChordalNeverIncreasesDeviation` is false (layer 8, decision 12: on `y = h sin(2 pi x)` the nested sub-span from 0 to 3/4 deviates about 1.33 h, the whole span h) | dropped; `Law_TighterChordalNeverIncreasesSagitta` stays, restricted to lines and circles, where a circle's uniform split makes the sampled sagitta increase with the segment's angle |
 | A face the mesher refused made every whole-shell cross check fail too (Euler, closure, angle defects, volume signs), so one bad face gave several Errors at its shell | `Law_EveryFaceIsMeshed` reports a face without an element at the face; the whole-shell laws take the hypothesis that the shell's mesh is complete (`IsCompleteShellMesh`), and `Law_SolidVolumeWithinTube` that every shell of the body is |
+| A witness with one planted bad face (layer 8, "What is left open" item 2) | `Witness_BoxWithPolyLoopSheet`, its expected diagnostics in its comment and the table above, and five laws that run layer 8's `Law_FailedFaceLeavesOthersUnchanged` at it non-vacuously |
