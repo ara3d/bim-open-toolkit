@@ -344,13 +344,19 @@ library FaceMeshingLaws
         };
 
     // The normal stored for a parameter-space point off the collapsed lines is the face normal
-    // there, within the model's angle tolerance.
+    // there, up to rounding. Both sides are this library's own computation, so the bound is the
+    // arithmetic resolution of a unit vector (layer 00's ResolutionAt(1)), not the file's angle
+    // tolerance, and the angle is layer 00's AngleBetweenDirections (atan2), which gives exactly
+    // zero for identical directions; the arc cosine cannot resolve angles below about 1.5e-8 rad,
+    // and a third of random unit vectors compared with themselves exceed the 1e-9 rad tolerance
+    // under it (review F7).
     Law_PointNormalIsFaceNormal(m: BrepModel, fm: FaceMesh, i: VertexIndex): Boolean
         => (m.IsFaceIntact(fm.Face) && fm.IsLiftedPoint(i))
             ? (m.IsOnCollapsedLine(fm.Face, fm.UvPoints[i])
                 ? true
-                : fm.Normals[i].Vector.AngleBetween(m.FaceNormalAt(fm.Face, fm.UvPoints[i], fm.Normals[i].Vector))
-                    <= m.Tolerances.Angle.Value)
+                : fm.Normals[i].AngleBetweenDirections(
+                    Direction3D(m.FaceNormalAt(fm.Face, fm.UvPoints[i], fm.Normals[i].Vector))).Radians
+                    <= ResolutionAt(1.0))
             : true;
 
     // Lift drops exactly the triangles with two corners that are one local vertex (identified

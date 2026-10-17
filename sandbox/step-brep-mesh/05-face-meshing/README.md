@@ -242,7 +242,7 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_LocalVertexFibresAreIdentifications` | two points share a vertex exactly when their sources are identified | exact | E |
 | `Law_SharedPositionIsCopied` | a vertex or edge-sample point sits exactly at the shared point | exact by construction | E |
 | `Law_ProvenanceMatchesSource` | provenance is the vertex, the edge and sample parameter, or the face | exact by construction | E |
-| `Law_PointNormalIsFaceNormal` | a stored normal off collapsed lines is the face normal | `Tolerances.Angle` | W/E |
+| `Law_PointNormalIsFaceNormal` | a stored normal off collapsed lines is the face normal, by `AngleBetweenDirections` | `ResolutionAt(1)` (rounding) | E |
 | `Law_DroppedElementsArePoleCollapsed` | elements dropped = triangles with two corners of identified sources | exact | E |
 | `Law_CollapsedQuadsBecomeTriangles` | quads lost = quads with two corners of identified sources | exact | E |
 | `Law_ElementFacesFaceNormal` | every element winds counter-clockwise about the face normal | exact sign | E |
@@ -394,6 +394,8 @@ Applied:
   beside their types; layer 08's identical copies are left for its fixer to delete.
 - C2, FIX-WAVE `Tolerances.Parameter` split: `RegionTolerance` passes layer 01's per-kind floors
   (`UvFloorOf`) to layer 00's `UvToleranceAt`; `PointTolerance` inherits them through layer 01.
+- F7: `Law_PointNormalIsFaceNormal` measures with `AngleBetweenDirections` against the rounding
+  bound `ResolutionAt(1)`, not the arc cosine against the file's angle tolerance.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 
