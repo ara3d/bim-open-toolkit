@@ -1,0 +1,21 @@
+ZoneName,SpaceGlobalId,RoomNumber,RoomName
+Unit A Level 1,0BTBFw6f90Nfh9rP1dlXrr,A101,Foyer
+Unit A Level 1,0BTBFw6f90Nfh9rP1dlXr2,A102,Living Room
+Unit A Level 1,0BTBFw6f90Nfh9rP1dlXr$,A103,Kitchen
+Unit A Level 1,0BTBFw6f90Nfh9rP1dlXru,A104,Bathroom 1
+Unit A Level 1,10mjSDZJj9gPS2PrQaxa3z,A105,Stair
+Unit A Level 2,0BTBFw6f90Nfh9rP1dlXri,A201,Hallway
+Unit A Level 2,0BTBFw6f90Nfh9rP1dlXrc,A202,Bedroom 1
+Unit A Level 2,0BTBFw6f90Nfh9rP1dlXrb,A203,Bedroom 2
+Unit A Level 2,0BTBFw6f90Nfh9rP1dlXre,A204,Bathroom 2
+Unit A Level 2,2gRXFgjRn2HPE$YoDLX3FV,A205,Utility
+Unit B Level 1,0BTBFw6f90Nfh9rP1dl_3Q,B101,Foyer
+Unit B Level 1,0BTBFw6f90Nfh9rP1dl_CZ,B102,Living Room
+Unit B Level 1,0BTBFw6f90Nfh9rP1dl_3S,B103,Kitchen
+Unit B Level 1,0BTBFw6f90Nfh9rP1dl_3P,B104,Bathroom 1
+Unit B Level 1,10mjSDZJj9gPS2PrQaxa4o,B105,Room
+Unit B Level 2,0BTBFw6f90Nfh9rP1dl_3G,B201,Hallway
+Unit B Level 2,0BTBFw6f90Nfh9rP1dl_3A,B202,Bedroom 1
+Unit B Level 2,0BTBFw6f90Nfh9rP1dl_39,B203,Bedroom 2
+Unit B Level 2,0BTBFw6f90Nfh9rP1dl_3C,B204,Bathroom 2
+Unit B Level 2,2gRXFgjRn2HPE$YoDLX3FC,B205,Utility

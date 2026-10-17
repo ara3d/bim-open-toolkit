@@ -18,6 +18,7 @@ The Duplex files are buildingSMART International's, CC BY 4.0; `NOTICE.md` in th
 | `duplex-enriched.ifc` | — | `duplex-base.ifc` plus 659 property sets holding 2,441 values, written by a Run of `nrc-enrich-run`; a test asserts a fresh Run reproduces it byte for byte |
 | `duplex-base.ifc` | — | the unenriched Duplex, byte-identical to `nrc-ifc-llm/IFC-Test-Kit/duplex.ifc` (SHA-256 `b347a2c8…06ed`); the source the enrichment graphs write into |
 | `nrc-metrics.csv` | 15 | the metric dictionary: one row per metric and level, naming the property set, property, value type, unit, stage, rollup rule, and the decimals a rolled-up value is rounded to (TKT-48) |
+| `nrc-zones.csv` | 20 | the Duplex zoning, synthetic: one zone per dwelling per floor (Unit A Level 1, Unit A Level 2, Unit B Level 1, Unit B Level 2) over the 20 conditioned spaces, the unconditioned roof space left out; made by `node samples/nrc/make-zone-data.mjs` from the spaces of `duplex-base.ifc`; the model has no zones, so `nrc-enrich-run` writes this table back as `IfcZone` groups |
 | `nrc-run.csv` | 12 | run-level facts written once: run id, scenario, grid emission factor, and the provenance fields |
 
 Every value is synthetic; NRC has supplied no model or dataset.
