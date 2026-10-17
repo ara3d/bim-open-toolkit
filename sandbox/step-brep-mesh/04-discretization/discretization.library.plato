@@ -571,6 +571,16 @@ library EdgeDiscretizing
     ContainsParameter(d: EdgeDiscretization, t: Number): Boolean
         => d.Parameters.Any(x => x == t);
 
+    // Two discretizations are the same: same edge, same counts, and every parameter and point
+    // bit-identical. Exact by design: the laws that use it compare copies, or claim determinism.
+    SameDiscretization(a: EdgeDiscretization, b: EdgeDiscretization): Boolean
+        => (a.Edge == b.Edge
+            && a.Parameters.Count == b.Parameters.Count
+            && a.Points.Count == b.Points.Count)
+            ? (a.Parameters.Count.MapRange(i => a.Parameters[i] == b.Parameters[i]).All(x => x)
+                && a.Points.Count.MapRange(i => a.Points[i] == b.Points[i]).All(x => x))
+            : false;
+
     // The same polyline traversed the other way: both arrays reversed, the edge kept. An
     // involution; copies only, so a reversed point is bit-identical to its original.
     Reversed(d: EdgeDiscretization): EdgeDiscretization
@@ -605,6 +615,17 @@ library EdgeDiscretizing
     // The largest segment count requested for the edge, 0 when none.
     RequestedSegments(requests: Array<EdgeRefinementRequest>, e: BrepEdgeIndex): Integer
         => requests.Reduce(0, (x, r) => r.Edge == e ? x.Max(r.Segments) : x);
+
+    // The precondition of `Refine`: one entry per edge of the model, entry i for edge i, and every
+    // entry a request names discretizable under the criteria, evaluable, and canonical. Entries
+    // no request names are never read, so nothing is asked of them: an `Undiscretized` entry may
+    // stay as long as no face asks for its edge.
+    IsRefinable(m: BrepModel, ds: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): Boolean
+        => m.Law_DiscretizationsCoverEdges(ds)
+            && ds.ByEdge.Count.MapRange(i => ds.Law_DiscretizationsIndexedByEdge(i)).All(x => x)
+            && ds.ByEdge.All(x => requests.IsRequested(x.Edge)
+                ? (m.CanDiscretize(x.Edge, c) ? (m.IsEvaluable(x) ? x.RunsAlongCurve : false) : false)
+                : true);
 
     // deferred: the canonical discretization `d` refined under criteria `c`: bisection continued
     // from d's partition at parameter midpoints, by the same tests and the same minimum-length
