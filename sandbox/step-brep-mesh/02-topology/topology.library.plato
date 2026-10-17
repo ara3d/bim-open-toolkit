@@ -607,15 +607,48 @@ library BrepTopology
         return all.FlatMap(p => m.Geometry.Pcurves[p].Surface == m.Faces[f].Surface ? [p] : all.Take(0));
     }
 
-    // The parameter range edge e occupies on pcurve p, by the same rule as
-    // EdgeDomain: a pcurve has the sense of its 3D curve, and the vertices are
-    // located on the pcurve's image in space. Precondition:
+    // The parameter range edge e occupies on pcurve p: layer 1's
+    // PcurveRangeOver, the range of p covering the curve's points over the
+    // edge domain, derived from that range and the surface's periods, never
+    // from the pcurve's own domain, which is unbounded for the commonest pcurve
+    // (the bottom circle of a cylinder has a 2D line; review F4b). A closed
+    // edge on a curve that loops spans one parameter period of the pcurve
+    // (PcurveParameterPeriod) from its start: closedness is index identity
+    // here as in EdgeDomain, not the coincidence test PcurveRangeOver falls
+    // back on. Bounded always. Periodic is copied from the 2D curve's domain,
+    // which wraps in its formula; anything else is Aperiodic. Precondition:
     // m.IsEveryIndexInRange, e in range, p a pcurve of e's curve.
     PcurveEdgeDomain(m: BrepModel, e: BrepEdgeIndex, p: PcurveIndex): CurveDomain
-        => m.Geometry.Domain(p).TraversalDomain(
-            m.Geometry.ClosestParameter(p, m.Vertices[m.FirstVertexAlongCurve(e)].Point),
-            m.Geometry.ClosestParameter(p, m.Vertices[m.LastVertexAlongCurve(e)].Point),
-            m.IsClosedEdge(e));
+    {
+        var r = m.Geometry.PcurveRangeOver(p, m.Edges[e].Curve, m.EdgeDomain(e).Range);
+        var period = m.Geometry.PcurveParameterPeriod(p);
+        var spansPeriod = m.IsClosedEdge(e) ? (m.IsOnClosedCurve(e) ? period > 0.0 : false) : false;
+        return CurveDomain(
+            spansPeriod ? NumberInterval(r.Start, r.Start + period) : r,
+            m.Geometry.Domain(p).Periodicity.IsPeriodic ? m.Geometry.Domain(p).Periodicity : Periodicity.Aperiodic);
+    }
+
+    // The k-th pcurve of edge e's curve. Precondition: m.IsEveryIndexInRange,
+    // e in range, k a position in PcurvesOf(e's curve).
+    PcurveOfEdge(m: BrepModel, e: BrepEdgeIndex, k: Integer): PcurveIndex
+        => m.Geometry.PcurvesOf(m.Edges[e].Curve)[k];
+
+    // Whether k names a pcurve of edge e's curve. Precondition:
+    // m.IsEveryIndexInRange and e in range.
+    HasPcurve(m: BrepModel, e: BrepEdgeIndex, k: Integer): Boolean
+        => m.Geometry.PcurvesOf(m.Edges[e].Curve).IsValidIndex(k);
+
+    // Whether the k-th pcurve of edge e is parameterized like the curve over
+    // the edge: at every parameter t of the edge domain, the pcurve's point at
+    // the same t lies within the length tolerance of the curve's
+    // (PcurveParameterDeviationAt). Not a law: STEP promises only that the two
+    // agree as point sets (layer 1 decision 8). It is the route choice of
+    // review C5: where it holds, an edge's parameter-space images may evaluate
+    // the pcurve at the curve's own parameters; where it does not, they invert.
+    // Precondition: m.IsEveryIndexInRange, e in range, m.HasPcurve(e, k).
+    // deferred: sample PcurveParameterDeviationAt over the edge domain at the
+    // seeds and midpoints, refining where the deviation grows.
+    SharesCurveParameter(m: BrepModel, e: BrepEdgeIndex, k: Integer): Boolean;
 
     //==
     // # Degenerate edges
@@ -929,10 +962,21 @@ library BrepTopology
     SampleFraction(t: Number): Number
         => t.IsFinite ? t.Clamp(0.0, 1.0) : 0.0;
 
+    // The parameter at fraction t of edge e's domain. Precondition:
+    // m.IsEveryIndexInRange and m.IsEdgeInRange(e).
+    EdgeParameterAt(m: BrepModel, e: BrepEdgeIndex, t: Number): Number
+        => m.EdgeDomain(e).Range.Lerp(t.SampleFraction);
+
     // The point of edge e's curve at fraction t of its edge domain.
     // Precondition: m.IsEveryIndexInRange and m.IsEdgeInRange(e).
     CurvePointAt(m: BrepModel, e: BrepEdgeIndex, t: Number): Point3D
-        => m.EdgeCurvePoint(e, m.EdgeDomain(e).Range.Lerp(t.SampleFraction));
+        => m.EdgeCurvePoint(e, m.EdgeParameterAt(e, t));
+
+    // The derivative of edge e's curve at fraction t of its edge domain, the
+    // parameter wrapped as EdgeCurvePoint wraps it. Precondition:
+    // m.IsEveryIndexInRange and m.IsEdgeInRange(e).
+    CurveTangentAt(m: BrepModel, e: BrepEdgeIndex, t: Number): Vector3D
+        => m.Geometry.Derivative(m.Edges[e].Curve, m.Geometry.Domain(m.Edges[e].Curve).Wrap(m.EdgeParameterAt(e, t)));
 
     // The distance from edge e's Start (atStart) or End vertex to the nearest
     // point of its curve. Precondition: m.IsEveryIndexInRange and
@@ -968,11 +1012,47 @@ library BrepTopology
     // in PcurvesOf(e's curve).
     PcurveDeviationAt(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number
     {
-        var p = m.Geometry.PcurvesOf(m.Edges[e].Curve)[k];
+        var p = m.PcurveOfEdge(e, k);
         var q = m.Geometry.Eval(p, m.PcurveEdgeDomain(e, p).Range.Lerp(t.SampleFraction));
         var c = m.Edges[e].Curve;
         return q.Distance(m.Geometry.Eval(c, m.Geometry.ClosestParameter(c, q)));
     }
+
+    // The reverse direction: the distance from the curve point at fraction t
+    // of edge e's domain to the nearest point of the k-th pcurve's image in
+    // space. Precondition as PcurveDeviationAt.
+    CurvePcurveDeviationAt(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number
+    {
+        var p = m.PcurveOfEdge(e, k);
+        var c = m.CurvePointAt(e, t);
+        return c.Distance(m.Geometry.Eval(p, m.Geometry.ClosestParameter(p, c)));
+    }
+
+    // The distance between the curve's and the k-th pcurve's points at the
+    // same parameter, the parameter at fraction t of edge e's domain: zero
+    // within rounding when the pcurve shares the curve's parameter
+    // (SharesCurveParameter). Precondition as PcurveDeviationAt.
+    PcurveParameterDeviationAt(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number
+        => m.Geometry.Eval(m.PcurveOfEdge(e, k), m.EdgeParameterAt(e, t)).Distance(m.CurvePointAt(e, t));
+
+    // Whether the k-th pcurve runs the way the curve does at fraction t of
+    // edge e's domain: the curve's tangent there and the pcurve's tangent in
+    // space at the nearest pcurve point do not point apart. Where either
+    // tangent's length is below the arithmetic resolution the sign is noise
+    // and the test passes. Precondition as PcurveDeviationAt.
+    PcurveRunsWithCurveAt(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Boolean
+    {
+        var p = m.PcurveOfEdge(e, k);
+        var curveTangent = m.CurveTangentAt(e, t);
+        var pcurveTangent = m.Geometry.Derivative(p, m.Geometry.ClosestParameter(p, m.CurvePointAt(e, t)));
+        return curveTangent.Dot(pcurveTangent) >= 0.0 - ResolutionAt(curveTangent.Length * pcurveTangent.Length);
+    }
+
+    // Whether the k-th pcurve of edge e lies on the surface of a face whose
+    // bounds cite e. Precondition: m.IsEveryIndexInRange, e in range,
+    // m.HasPcurve(e, k).
+    IsPcurveOnAdjacentFace(m: BrepModel, e: BrepEdgeIndex, k: Integer): Boolean
+        => m.FacesOfEdge(e).Any(f => m.Faces[f].Surface == m.Geometry.Pcurves[m.PcurveOfEdge(e, k)].Surface);
 
     //==
     // # Parameter-space winding

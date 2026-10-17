@@ -180,10 +180,25 @@ of an edge. In STEP a pcurve hangs off the edge's curve (`surface_curve`, `seam_
 exporters write none. This layer therefore finds pcurves through the curve:
 `PcurvesOnFace(m, e, f)` lists the pcurves of `e`'s curve that lie on `f`'s surface, one for an
 ordinary edge and two for a seam. Which seam pcurve goes with which use is decided by the left/right
-rule above, and that decision is face meshing's (layer 5). `Law_PcurveAgreesWithCurve` compares a
-pcurve and the 3D curve as point sets, sampling the pcurve over its own edge range
-(`PcurveEdgeDomain`, built by the same rule as `EdgeDomain`, since a pcurve shares its curve's
-sense) and measuring the distance to the 3D curve by one-dimensional inverse evaluation.
+rule above, and that decision is face meshing's (layer 5).
+
+`PcurveEdgeDomain(m, e, p)` is the range of `p` that covers the edge's curve over `EdgeDomain`:
+layer 1's `PcurveRangeOver`, which locates the curve's end points on the pcurve and moves the end by
+the pcurve's parameter period where its space point repeats. It never reads the pcurve's own
+domain. The bottom circle of a cylinder is a closed edge whose pcurve is a 2D line `v = 0`: its own
+domain is unbounded, and the first version's rule sampled `[-1.8e308, 1.8e308]` (review F4b). Now
+the range is `[a, a + 2 pi / |du|]`, one turn. A closed edge spans one parameter period by index
+identity, as in `EdgeDomain`.
+
+Four laws couple a pcurve to its edge (review M3). `Law_PcurveAgreesWithCurve` (pcurve to curve)
+and `Law_CurveAgreesWithPcurve` (curve to pcurve) make them one point set within `epsL`;
+`Law_PcurveRunsWithCurve` checks that their tangents do not point apart, which is the premise of
+orienting a pcurve with the coedge's composed sense; `Law_PcurveSurfaceIsAFaceSurface` checks that
+the pcurve's surface is one a face citing the edge lies on (a Warning: `PcurvesOnFace` ignores any
+other). Same parameterization, `|S(q(t)) - c(t)| <= epsL` at the edge's parameters, is not a law:
+STEP does not promise it (layer 1 decision 8). `SharesCurveParameter` decides it per pcurve, and is
+the route choice of review C5 for layers 4 and 5: evaluate the pcurve at the curve's parameters
+where it holds, invert where it does not.
 
 ## Euler-Poincare and the counting rule
 
@@ -388,7 +403,10 @@ layer 1's `ParameterToleranceAt`.
 | `Law_DegenerateEdgeHasCoincidentVertices(m, e)` | a degenerate edge's two vertices coincide | `epsL` | structural, Error |
 | `Law_DegenerateEdgeStaysAtStart(m, e, t)` | a degenerate edge's curve at fraction `t` lies at its start vertex | `epsL` | library, test |
 | `Law_EdgeLiesOnAdjacentSurfaces(m, site, t)` | the edge's curve at fraction `t` lies on the surface of the face citing it | `epsL` | geometric, W/E |
-| `Law_PcurveAgreesWithCurve(m, e, k, t)` | the `k`-th pcurve's point at fraction `t` of its edge range lies on the 3D curve | `epsL` | geometric, W/E |
+| `Law_PcurveAgreesWithCurve(m, e, k, t)` | the `k`-th pcurve's point at fraction `t` of its bounded edge range lies on the 3D curve | `epsL` | geometric, W/E |
+| `Law_CurveAgreesWithPcurve(m, e, k, t)` | the curve's point at fraction `t` of the edge domain lies on the `k`-th pcurve's image | `epsL` | geometric, W/E |
+| `Law_PcurveRunsWithCurve(m, e, k, t)` | the pcurve's and the curve's tangents do not point apart | exact sign beyond rounding | structural, Error |
+| `Law_PcurveSurfaceIsAFaceSurface(m, e, k)` | the pcurve's surface is that of a face citing the edge | exact | structural, Warning (ignored) |
 | `Law_ParameterizationSignIsConstantOnFace(m, site, t)` | at the projection of a coedge point, `N . (PartialU x PartialV)` has the sign `epsilon` says, where resolvable | exact sign | library, test |
 | `Law_LoopWindingMatchesSameSense(m, f)` | a plain face's parameter-space region has the sign `FaceNormalSign` says | exact sign | structural, Error |
 
@@ -475,8 +493,7 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
    are counted in `ReducedCounts` but no law checks their uses. Either layer 3 decodes poly loops
    into edge loops over line edges when points are shared by instance, or this layer adds poly-loop
    versions of the edge-use laws. The owner or layer 3's author decides.
-4. **The rest of the pcurve laws**: the reverse point-set direction (the curve onto the pcurve), sign
-   agreement of the tangents, and that each pcurve's surface is a surface of a face citing the edge.
+4. **The rest of the pcurve laws.** Settled in the fix wave (review M3): see "Pcurves".
 5. **Parameter-space loop laws**: simplicity and nesting (`Law_LoopSimpleInParameterSpace`,
    `Law_InnerBoundInsideOuter`) belong to layer 5's region, or to this layer for plain faces.
 6. **The parameter tolerance for curve parameters.** Settled in the fix wave: layer 1's
@@ -604,3 +621,11 @@ Applied:
   start instead of the model-wide floor, so this layer no longer reads `Tolerances.Parameter`, which
   layer 0 split.
 - **T9 (decided, not applied).** Edge and pcurve ranges are not stored at decode (open item 7).
+- **F4b, M3, C5 (pcurves).** `PcurveEdgeDomain` is layer 1's `PcurveRangeOver` over the edge
+  domain, one parameter period for a closed edge, and bounded always. New laws
+  `Law_CurveAgreesWithPcurve` (the reverse point-set direction), `Law_PcurveRunsWithCurve` (tangent
+  sense), `Law_PcurveSurfaceIsAFaceSurface` (Warning); measures `CurvePcurveDeviationAt`,
+  `PcurveParameterDeviationAt`, `PcurveRunsWithCurveAt`; helpers `PcurveOfEdge`, `HasPcurve`,
+  `EdgeParameterAt`, `CurveTangentAt`, `IsPcurveOnAdjacentFace`. Same parameterization is the
+  deferred predicate `SharesCurveParameter`, not a law, since STEP does not promise it; it is the
+  route choice review C5 asks layers 4 and 5 to share.

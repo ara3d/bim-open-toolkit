@@ -374,15 +374,42 @@ library BrepTopologyLaws
             : true;
 
     // Each pcurve of an edge's curve and the 3D curve agree as point sets over
-    // the edge: the pcurve's point at fraction t of its edge range lies on the 3D
-    // curve. Geometric, Tolerances.Length.
+    // the edge, pcurve to curve: the pcurve's point at fraction t of its edge
+    // range, which is bounded (PcurveEdgeDomain), lies on the 3D curve.
+    // Geometric, Tolerances.Length.
     Law_PcurveAgreesWithCurve(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Boolean
         => m.IsEveryIndexInRange
             ? (m.IsEdgeInRange(e)
-                ? (m.Geometry.PcurvesOf(m.Edges[e].Curve).IsValidIndex(k)
-                    ? m.PcurveDeviationAt(e, k, t) <= m.Tolerances.Length.Value
-                    : true)
+                ? (m.HasPcurve(e, k) ? m.PcurveDeviationAt(e, k, t) <= m.Tolerances.Length.Value : true)
                 : true)
+            : true;
+
+    // The reverse direction, curve to pcurve: the curve's point at fraction t
+    // of the edge domain lies on the k-th pcurve's image. With the law above,
+    // the two agree as point sets over the edge (review M3). Geometric,
+    // Tolerances.Length.
+    Law_CurveAgreesWithPcurve(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e)
+                ? (m.HasPcurve(e, k) ? m.CurvePcurveDeviationAt(e, k, t) <= m.Tolerances.Length.Value : true)
+                : true)
+            : true;
+
+    // A pcurve runs the way its curve does (ISO 10303-42 4.5.49 IP2): their
+    // tangents at fraction t of the edge do not point apart. The composed
+    // sense CoedgeRunsForwardOnCurve orients the pcurve on this premise.
+    // Structural, exact sign beyond the arithmetic resolution.
+    Law_PcurveRunsWithCurve(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e) ? (m.HasPcurve(e, k) ? m.PcurveRunsWithCurveAt(e, k, t) : true) : true)
+            : true;
+
+    // A pcurve lies on the surface of a face whose bounds cite its edge.
+    // PcurvesOnFace never returns one that does not, so such a pcurve is
+    // ignored, not wrong in any result: Structural, exact, Warning.
+    Law_PcurveSurfaceIsAFaceSurface(m: BrepModel, e: BrepEdgeIndex, k: Integer): Boolean
+        => m.IsEveryIndexInRange
+            ? (m.IsEdgeInRange(e) ? (m.HasPcurve(e, k) ? m.IsPcurveOnAdjacentFace(e, k) : true) : true)
             : true;
 
     //==

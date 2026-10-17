@@ -67,6 +67,14 @@ spec BrepModel
     invariant forall (e: Integer) in self.Edges.Count.Range :
         forall (k: Integer) :
             forall (t: Number) in NumberInterval(0.0, 1.0) : Law_PcurveAgreesWithCurve(self, BrepEdgeIndex(e), k, t);
+    invariant forall (e: Integer) in self.Edges.Count.Range :
+        forall (k: Integer) :
+            forall (t: Number) in NumberInterval(0.0, 1.0) : Law_CurveAgreesWithPcurve(self, BrepEdgeIndex(e), k, t);
+    invariant forall (e: Integer) in self.Edges.Count.Range :
+        forall (k: Integer) :
+            forall (t: Number) in NumberInterval(0.0, 1.0) : Law_PcurveRunsWithCurve(self, BrepEdgeIndex(e), k, t);
+    invariant forall (e: Integer) in self.Edges.Count.Range :
+        forall (k: Integer) : Law_PcurveSurfaceIsAFaceSurface(self, BrepEdgeIndex(e), k);
 }
 
 // Cell counts are never negative. Plain data: witnesses state their expected
@@ -112,8 +120,37 @@ spec EdgeDomain(m: BrepModel, e: BrepEdgeIndex): CurveDomain
     measure 1;
 }
 
+// The range of an edge on one of its pcurves. Its body is the definition;
+// this contract states what consumers may rely on.
+spec PcurveEdgeDomain(m: BrepModel, e: BrepEdgeIndex, p: PcurveIndex): CurveDomain
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsEdgeInRange(e);
+    requires m.Geometry.PcurvesOf(m.Edges[e].Curve).Any(q => q == p);
+    ensures result.Range.Start.IsFinite && result.Range.End.IsFinite;   // never the pcurve's own unbounded domain (review F4b)
+    ensures result.Range.Start <= result.Range.End;
+    ensures result.Range.Start == m.Geometry.PcurveRangeOver(p, m.Edges[e].Curve, m.EdgeDomain(e).Range).Start;   // exact by construction
+    ensures (m.IsClosedEdge(e) && m.IsOnClosedCurve(e) && m.Geometry.PcurveParameterPeriod(p) > 0.0)
+        ? result.Range.End == result.Range.Start + m.Geometry.PcurveParameterPeriod(p)   // exact by construction
+        : true;
+    measure 1;
+}
+
 //==
 // # Deferred algorithms
+
+// Same parameterization of a pcurve and its curve over an edge: the route
+// choice of review C5, not a validity rule.
+spec SharesCurveParameter(m: BrepModel, e: BrepEdgeIndex, k: Integer): Boolean
+{
+    requires Law_IndicesInRange(m);
+    requires m.IsEdgeInRange(e);
+    requires m.HasPcurve(e, k);
+    ensures result == forall (t: Number) in NumberInterval(0.0, 1.0) :
+        m.PcurveParameterDeviationAt(e, k, t) <= m.Tolerances.Length.Value;
+    measure m.EdgeDomain(e).Range.Length;
+    deferred "PcurveParameterDeviationAt at the curve's breakpoints inside the edge domain and the midpoints between them, bisecting each span whose midpoint deviation exceeds half the tolerance, to a depth bounded by the parameter tolerance";
+}
 
 // Degeneracy is a property of the curve over the edge domain, not of the two
 // vertex points: a full circle has coincident ends and is not degenerate.
