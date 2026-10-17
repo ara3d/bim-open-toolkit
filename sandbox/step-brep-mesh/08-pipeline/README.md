@@ -151,8 +151,10 @@ edge criteria) and a round limit that is not negative. A run refuses other optio
 guessing what the caller meant.
 
 The research also recommends deriving the chordal bound from a fraction (0.001) of the model's
-diagonal once per model. That needs the model size, which layer 3 computes and does not export;
-see "What is left open".
+diagonal once per model: `RelativeMeshingOptions(m, fraction)` is `DefaultMeshingOptions` at
+`fraction * ModelSize(m)` (layer 2's `ModelSize`, since the fix wave). Options are chosen before a
+text is decoded, so `MeshStepText` keeps an absolute bound; a caller who wants the relative one
+decodes first and meshes the model.
 
 ## The diagnostics flow
 
@@ -334,10 +336,9 @@ on a conjecture any more.
 
 ## What is left open
 
-1. **A relative chordal default.** Research 2.5 recommends 0.001 of the model's diagonal. Layer 3
-   computes the model size for its tolerance default and does not export it; with a `ModelSize`
-   field in `DecodedModel`, a `RelativeMeshingOptions(fraction)` resolved once per model would
-   follow.
+1. **A relative chordal default.** Settled in the fix wave: `RelativeMeshingOptions(m, fraction)`
+   over layer 2's `ModelSize`. Whether `MeshStepText` should take a fraction instead of options, and
+   resolve it after decoding, is the owner's call.
 2. **A witness with a planted bad face** for `Law_FailedFaceLeavesOthersUnchanged`: layer 7's unit
    box with its top face bounded by a poly loop, which layer 5 does not mesh in version 1. Without
    it the law runs vacuously on clean witnesses.
@@ -520,8 +521,8 @@ Recorded here, not fixed there.
    directions (theorem `PowerOfTwoScalingCommutes`).
 7. **Research 6.4 overstates two metamorphic relations.** The correction is the note
    "Corrections to research/VALIDATION-MATH.md" below; the research file stays as written.
-8. **Layer 3 does not export the model size** it computes for the tolerance default, which a
-   relative chordal default needs ("What is left open", item 1).
+8. **Layer 3 did not export the model size.** Fixed in the fix wave: layer 2's `ModelSize(m)` and
+   `CoordinateExtent(m)`, which layer 3 uses too.
 9. **The type checker accepted `Integer >= Number`** in a negative control on this layer's files
    (`o.MaxRefinementRounds >= 0.5`); it caught a wrong constructor argument in the same run. Mixed
    comparisons need reading; PLATO-PRIMER.md D.13 lists what the front end misses and should add
@@ -535,6 +536,7 @@ Recorded here, not fixed there.
 | `SameConnectivity(ModelMesh, ModelMesh)` (fix wave) | deleted; layer 6's, which compares numberings as this layer's did | one declaration, in the mesh layer |
 | `SameFaceMesh`, `SameFaceMeshOutcome`, `Law_RequestsNameEdgesOfTheirFace` (fix wave) | deleted; layer 5's `SameFaceMesh`, `SameFaceMeshOutcome`, and `MeshFace`'s ensures `Law_RequestsNameFaceEdges`, `Law_MeshFaceReadsOnlyFaceEdges`, assumed by `FailureIsIsolated` | the comparisons belong beside their types; the law restated a promise layer 5 now makes |
 | `RigidlyMoved(m, motion)` (deferred), `ScaledPoint(p, factor)` (fix wave) | deleted; layer 2's, with bodies; the `RigidlyMoved` contract stays in this layer's spec until layer 2 writes one | layer 2 owns the model transforms |
+| (new, fix wave) | `RelativeMeshingOptions(m, fraction)` | research 2.5's relative chordal default, now that layer 2 exports `ModelSize` |
 | `ParseOutcome { Ok; File; Diagnostics }` | not declared; layer 3's `ParsedFile` | identical fields; layer 3's proposal accepted (decision 1) |
 | `DecodeOutcome { Ok; Model; Map; Diagnostics }` | not declared; layer 3's `DecodedModel` | decoding is total and does not stop the run; a stored `Ok` would be a computable flag (decision 2) |
 | `MeshingOptions { Face; Level; MaxRefinementRounds }` | adds `Decode: DecodePolicy` | the decode defaults pass through to `DecodeBrepWith` |
@@ -612,3 +614,5 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
 10. **`RigidlyMoved` and `ScaledPoint` stand-ins deleted**: layer 2 declares both with bodies. Its
     `ScaledBy(m, factor)` waits for layer 1's `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, so this
     layer keeps its bodiless `ScaledBy` with `// belongs-in: 02-topology` until then.
+11. **Relative chordal default** (finding 8, "What is left open" item 1): `RelativeMeshingOptions(m,
+    fraction)` over layer 2's `ModelSize`.

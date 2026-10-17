@@ -43,6 +43,15 @@ library StepToMesh
             DecodePolicy.StandardPolicy,
             MeshQualityThresholds.CubitAcceptable);
 
+    // The recommended options with the chordal bound a fraction of model m's
+    // size (layer 2's ModelSize, the diagonal of its bounding box), resolved
+    // once per model: research/MESHING-REQUIREMENTS.md 2.5 recommends 0.001.
+    // A model with no point has size 0, so its chordal bound is 0 and a run
+    // refuses the options (PIPELINE-OPTIONS-ILL-FORMED) rather than guess.
+    // A caller meshing a text decodes it first and passes the decoded model.
+    RelativeMeshingOptions(m: BrepModel, fraction: Number): MeshingOptions
+        => DefaultMeshingOptions(fraction * m.ModelSize);
+
     // True when a run can honour the options: well-formed face criteria (layer
     // 5's IsWellFormed, which includes the edge criteria) and a round limit
     // that is not negative.
