@@ -1218,6 +1218,16 @@ that uses geometry types cannot be compiled to C# yet.
 
 ## F. Pitfalls checklist
 
+Two limits found by the layer 1 author with small test files on 2026-10-17, confirmed by probe:
+
+- **`match` only on a parameter or a local, never on an index expression.** The sum checker cannot
+  type `match (g.Curves[i.Value]) { ... }`; bind the element to a `var` first, or take it as a
+  parameter, the way the stdlib does.
+- **A call types only when the callee's library was compiled earlier in file order.** A `match` arm
+  calling a function from a library file that sorts later leaves the arm untyped. Keep the
+  libraries a function depends on in files that sort before it, or expect the sum checker to miss
+  the arm.
+
 - Write `0.0`, not `0`, wherever a `Number` is meant: Integer never converts to Number (CHK201/CHK101).
 - Never guard an index, a division, or a sum projection with `&&`/`||`: both sides run. Use `? :`.
 - A bare `Number` passed as an `Angle` is taken as radians without a word: build angles with
