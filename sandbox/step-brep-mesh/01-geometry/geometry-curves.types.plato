@@ -1,0 +1,137 @@
+//==
+// # Curves of the geometry arena
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file). The
+// exact curves of ISO 10303-42 that an edge, a pcurve, a composite segment, or
+// a swept surface's profile can name, as closed sums. A curve is a map from its
+// CurveDomain into space (BrepCurve) or into one surface's parameter plane
+// (BrepCurve2D), written in its natural parameter: radians for an angle, model
+// length units for a length, the knot value for a spline. Each case is one
+// evaluation formula; the formulas are in geometry-curves.library.plato. A case
+// that is built on another curve names it by index into the GeometrySet arena,
+// never by nesting, so neither sum is recursive.
+//
+// Sections, in order:
+//  - Space curves
+//  - Parameter-plane curves
+//  - Pieces of composite curves
+//  - Pieces of surface curves
+//  - Pcurves
+
+//==
+// # Space curves
+
+// A curve in model space as ISO 10303-42 4.5.23 defines it: the image of its
+// domain under one of the maps below, in increasing parameter. C, x, y, z are a
+// placement's origin and axes; angles are radians (the decoder converts).
+//  Line(P, V): P + t V, t in (-inf, inf). V keeps the file's magnitude, which
+//    sets the speed (STEP `line`; exporters write |V| = 1, 1000, or the edge length).
+//  Circle(C, R): C + R (cos t x + sin t y), period 2 pi (STEP `circle`).
+//  Ellipse(C, R1, R2): C + R1 cos t x + R2 sin t y, period 2 pi; R1 < R2 is
+//    legal, R1 is along x whichever is longer (STEP `ellipse`).
+//  Hyperbola(C, R1, R2): C + R1 cosh t x + R2 sinh t y, the branch on +x,
+//    t in (-inf, inf) and not an angle (STEP `hyperbola`).
+//  Parabola(C, F): C + F (t^2 x + 2 t y), apex at C, t in (-inf, inf)
+//    (STEP `parabola`).
+//  Polyline(P_0..P_{n-1}): P_i + (t - i)(P_{i+1} - P_i) on [i, i + 1], domain
+//    [0, n - 1], never periodic (STEP `polyline`).
+//  BSpline(d): sum w_i N_i(t) P_i / sum w_i N_i(t) on the knot span
+//    [k_degree, k_n] (STEP `b_spline_curve` and its knot and rational subtypes).
+//  Trimmed(B, [a, b], s): the basis B from a to b (s true) or from b to a,
+//    reparameterized from 0 to b - a (STEP `trimmed_curve`, ISO 4.5.43).
+//  Composite(segments): the segments end to end, each over its own parametric
+//    length (STEP `composite_curve`, ISO 4.5.44).
+//  Offset(B, d, v): B(t) + d <v x B'(t)>, the basis's parameter (STEP
+//    `offset_curve_3d`, ISO 4.5.55).
+//  OnSurface(B, supports, master): the space curve B together with its one or
+//    two supports; evaluated through the master representation (STEP
+//    `surface_curve`, `seam_curve`, `intersection_curve`, ISO 4.5.49 to 4.5.51).
+type BrepCurve
+    = Line(Origin: Point3D, Velocity: Vector3D)
+    | Circle(Placement: Frame3D, Radius: Number)
+    | Ellipse(Placement: Frame3D, SemiAxis1: Number, SemiAxis2: Number)
+    | Hyperbola(Placement: Frame3D, SemiAxis: Number, SemiImaginaryAxis: Number)
+    | Parabola(Placement: Frame3D, FocalDistance: Number)
+    | Polyline(Points: Array<Point3D>)
+    | BSpline(Data: BSplineCurveData)
+    | Trimmed(Basis: CurveIndex, Range: NumberInterval, SameSense: Boolean)
+    | Composite(Segments: Array<CompositeSegment>)
+    | Offset(Basis: CurveIndex, Distance: Number, Reference: Direction3D)
+    | OnSurface(Curve: CurveIndex, Supports: Array<CurveSupport>, Master: PreferredRepresentation);
+
+//==
+// # Parameter-plane curves
+
+// A curve in one surface's parameter plane, the 2D curve of a pcurve (STEP
+// curves founded in a 2D parametric_representation_context). Its points are
+// UvCoordinates holding the surface's natural parameters (radians, model
+// lengths), not the stdlib's normalized ones. The cases and formulas are those
+// of BrepCurve in the plane, with Frame2D placements (STEP axis2_placement_2d)
+// and no OnSurface case. Offset(B, d) is B(t) + d <B'(t)> rotated a quarter
+// turn counter-clockwise, the side of ISO's orthogonal_complement (STEP
+// `offset_curve_2d`; the side is unconfirmed against the standard's text).
+type BrepCurve2D
+    = Line(Origin: UvCoordinate, Velocity: Vector2D)
+    | Circle(Placement: Frame2D, Radius: Number)
+    | Ellipse(Placement: Frame2D, SemiAxis1: Number, SemiAxis2: Number)
+    | Hyperbola(Placement: Frame2D, SemiAxis: Number, SemiImaginaryAxis: Number)
+    | Parabola(Placement: Frame2D, FocalDistance: Number)
+    | Polyline(Points: Array<UvCoordinate>)
+    | BSpline(Data: BSplineCurve2DData)
+    | Trimmed(Basis: Curve2DIndex, Range: NumberInterval, SameSense: Boolean)
+    | Composite(Segments: Array<CompositeSegment2D>)
+    | Offset(Basis: Curve2DIndex, Distance: Number);
+
+//==
+// # Pieces of composite curves
+
+// One segment of a composite space curve (STEP composite_curve_segment): a
+// bounded curve of the arena, run with its parameter (SameSense) or against it.
+// STEP's transition code is not kept: continuity at a join is a checked property
+// (Law_CompositeSegmentsChain) and closure is geometric (IsClosed).
+type CompositeSegment
+    implements IValue
+{
+    Curve: CurveIndex;
+    SameSense: Boolean;
+}
+
+// One segment of a composite parameter-plane curve; as CompositeSegment.
+type CompositeSegment2D
+    implements IValue
+{
+    Curve: Curve2DIndex;
+    SameSense: Boolean;
+}
+
+//==
+// # Pieces of surface curves
+
+// One entry of a surface curve's associated geometry (STEP pcurve_or_surface):
+// the curve's image in a surface's parameter plane, or only the surface it lies
+// on (ACIS writes bare planes).
+type CurveSupport
+    = Parametric(Pcurve: PcurveIndex)
+    | SurfaceOnly(Surface: SurfaceIndex);
+
+// Which representation of a surface curve defines its parameterization (STEP
+// preferred_surface_curve_representation): the space curve, the first
+// support's pcurve, or the second's (ISO 10303-42 4.2.6).
+type PreferredRepresentation
+    = SpaceCurve
+    | FirstPcurve
+    | SecondPcurve;
+
+//==
+// # Pcurves
+
+// A curve in the parameter plane of one surface (STEP pcurve, ISO 4.5.47). As a
+// space curve it is t -> Eval(Surface, Eval(Curve, t)), in the 2D curve's own
+// parameter, which need not equal the parameter of any space curve with the
+// same image.
+type Pcurve
+    implements IValue
+{
+    Surface: SurfaceIndex;
+    Curve: Curve2DIndex;
+}

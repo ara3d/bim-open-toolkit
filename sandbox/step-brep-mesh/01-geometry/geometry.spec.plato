@@ -1,0 +1,642 @@
+//==
+// # Geometry contracts
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file): the
+// status of the geometry laws, in the constructs of SPEC-DSL.md section 3 only.
+// Type invariants for the records a validator checks, contracts for every
+// deferred function and for the arena functions VOCABULARY.md fixes, and the
+// theorems the laws rest on.
+//
+// Two readings this file relies on (README, "How to read the contracts"):
+// - forall (tol: Tolerances) ranges over the tolerances the arithmetic can
+//   honour at the arena's magnitudes (layer 0's IsResolvable); the law runner
+//   instantiates it with a witness model's own tolerances.
+// - A record-level function (receiver a BrepCurve or BrepSurface record)
+//   requires the record to be evaluable in the arena g passed with it:
+//   g.IsWellFormed, g.ReferencesInRange(record), record.HasEvaluableShape.
+//
+// Sections, in order:
+//  - Records
+//  - The arena
+//  - B-spline evaluation (deferred)
+//  - Curves
+//  - Curves: deferred
+//  - Surfaces
+//  - Surfaces: deferred
+//  - Theorems
+
+//==
+// # Records
+
+spec BSplineCurveData
+{
+    invariant Law_BSplineCurveDegreePositive(self);
+    invariant Law_BSplineCurveKnotCount(self);
+    invariant Law_BSplineCurveKnotsNonDecreasing(self);
+    invariant Law_BSplineCurveKnotMultiplicityBounded(self);
+    invariant Law_BSplineCurveDomainNonEmpty(self);
+    invariant Law_BSplineCurveWeightCount(self);
+    invariant Law_BSplineCurveWeightsPositive(self);
+}
+
+spec BSplineCurve2DData
+{
+    invariant Law_BSplineCurve2DDegreePositive(self);
+    invariant Law_BSplineCurve2DKnotCount(self);
+    invariant Law_BSplineCurve2DKnotsNonDecreasing(self);
+    invariant Law_BSplineCurve2DKnotMultiplicityBounded(self);
+    invariant Law_BSplineCurve2DDomainNonEmpty(self);
+    invariant Law_BSplineCurve2DWeightCount(self);
+    invariant Law_BSplineCurve2DWeightsPositive(self);
+}
+
+spec BSplineSurfaceData
+{
+    invariant forall (which: SurfaceParameter) : Law_BSplineSurfaceDegreePositive(self, which);
+    invariant forall (which: SurfaceParameter) : Law_BSplineSurfaceKnotCount(self, which);
+    invariant forall (which: SurfaceParameter) : Law_BSplineSurfaceKnotsNonDecreasing(self, which);
+    invariant forall (which: SurfaceParameter) : Law_BSplineSurfaceKnotMultiplicityBounded(self, which);
+    invariant forall (which: SurfaceParameter) : Law_BSplineSurfaceDomainNonEmpty(self, which);
+    invariant Law_BSplineSurfaceNetConsistent(self);
+    invariant Law_BSplineSurfaceWeightGridMatchesNet(self);
+    invariant Law_BSplineSurfaceWeightsPositive(self);
+}
+
+//==
+// # The arena
+
+// Plain data: the decoder (layer 3) builds it, and ValidateBrep (layer 7)
+// checks these before anything evaluates it.
+spec GeometrySet
+{
+    invariant forall (i: Integer) in self.Curves.Count.Range : Law_CurveReferencesInRange(self, CurveIndex(i));
+    invariant forall (i: Integer) in self.Curves2D.Count.Range : Law_Curve2DReferencesInRange(self, Curve2DIndex(i));
+    invariant forall (i: Integer) in self.Pcurves.Count.Range : Law_PcurveReferencesInRange(self, PcurveIndex(i));
+    invariant forall (i: Integer) in self.Surfaces.Count.Range : Law_SurfaceReferencesInRange(self, SurfaceIndex(i));
+    invariant forall (i: Integer) in self.Curves.Count.Range : Law_CurveReferencesAcyclic(self, CurveIndex(i));
+    invariant forall (i: Integer) in self.Curves2D.Count.Range : Law_Curve2DReferencesAcyclic(self, Curve2DIndex(i));
+    invariant forall (i: Integer) in self.Surfaces.Count.Range : Law_SurfaceReferencesAcyclic(self, SurfaceIndex(i));
+    invariant forall (i: Integer) in self.Curves.Count.Range : Law_CurveHasEvaluableShape(self, CurveIndex(i));
+    invariant forall (i: Integer) in self.Curves2D.Count.Range : Law_Curve2DHasEvaluableShape(self, Curve2DIndex(i));
+    invariant forall (i: Integer) in self.Surfaces.Count.Range : Law_SurfaceHasEvaluableShape(self, SurfaceIndex(i));
+}
+
+spec IsWellFormed(g: GeometrySet): Boolean
+{
+    ensures result == (g.IsEveryIndexInRange
+        && (forall (i: Integer) in g.Curves.Count.Range : g.IsAcyclicFrom(CurveIndex(i)))
+        && (forall (i: Integer) in g.Curves2D.Count.Range : g.IsAcyclicFrom(Curve2DIndex(i)))
+        && (forall (i: Integer) in g.Surfaces.Count.Range : g.IsAcyclicFrom(SurfaceIndex(i)))
+        && (forall (i: Integer) in g.Curves.Count.Range : g.CurveAt(CurveIndex(i)).HasEvaluableShape)
+        && (forall (i: Integer) in g.Curves2D.Count.Range : g.Curve2DAt(Curve2DIndex(i)).HasEvaluableShape)
+        && (forall (i: Integer) in g.Surfaces.Count.Range : g.SurfaceAt(SurfaceIndex(i)).HasEvaluableShape));
+    measure g.ReferenceFuel * g.ReferenceFuel;
+}
+
+//==
+// # B-spline evaluation (deferred)
+
+spec BSplinePoint(d: BSplineCurveData, t: Number): Point3D
+{
+    requires d.IsWellShaped;
+    requires d.Basis.SplineDomain.Contains(t);
+    ensures forall (tol: Tolerances) : result.Coincident(Oracle_BSplineCurvePoint(d, t), tol.Length);
+    measure d.Basis.Degree * d.Basis.Degree;
+    deferred "de Boor's algorithm on homogeneous control points over the span holding t";
+}
+
+spec BSplineDerivative(d: BSplineCurveData, t: Number, order: Integer): Vector3D
+{
+    requires d.IsWellShaped;
+    requires d.Basis.SplineDomain.Contains(t);
+    requires order >= 1 && order <= 2;
+    ensures order == 1
+        ? forall (tol: Tolerances) : Law_DerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], []), CurveIndex(0), t, tol)
+        : true;
+    ensures order == 2
+        ? forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], []), CurveIndex(0), t, tol)
+        : true;
+    measure d.Basis.Degree * d.Basis.Degree * order;
+    deferred "derivatives of the homogeneous curve by de Boor, then the quotient rule (Piegl and Tiller A3.2, A4.2)";
+}
+
+spec BSplinePoint(d: BSplineCurve2DData, t: Number): UvCoordinate
+{
+    requires d.IsWellShaped;
+    requires d.Basis.SplineDomain.Contains(t);
+    ensures forall (tol: Tolerances) : result.SameParameter(Oracle_BSplineCurve2DPoint(d, t), tol.Parameter);
+    measure d.Basis.Degree * d.Basis.Degree;
+    deferred "de Boor's algorithm in the parameter plane";
+}
+
+spec BSplineDerivative(d: BSplineCurve2DData, t: Number, order: Integer): Vector2D
+{
+    requires d.IsWellShaped;
+    requires d.Basis.SplineDomain.Contains(t);
+    requires order >= 1 && order <= 2;
+    ensures order == 1
+        ? forall (tol: Tolerances) : Law_Curve2DDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], []), Curve2DIndex(0), t, tol)
+        : true;
+    ensures order == 2
+        ? forall (tol: Tolerances) : Law_Curve2DSecondDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], []), Curve2DIndex(0), t, tol)
+        : true;
+    measure d.Basis.Degree * d.Basis.Degree * order;
+    deferred "derivatives of the homogeneous parameter-plane curve, then the quotient rule";
+}
+
+spec BSplinePoint(d: BSplineSurfaceData, uv: UvCoordinate): Point3D
+{
+    requires d.IsWellShaped;
+    requires d.U.SplineDomain.Contains(uv.U) && d.V.SplineDomain.Contains(uv.V);
+    ensures forall (tol: Tolerances) : result.Coincident(Oracle_BSplineSurfacePoint(d, uv), tol.Length);
+    measure d.U.Degree * d.V.Degree * (d.U.Degree + d.V.Degree);
+    deferred "tensor-product de Boor: one curve evaluation per control row, then one across (Piegl and Tiller A4.3)";
+}
+
+spec BSplinePartial(d: BSplineSurfaceData, uv: UvCoordinate, uOrder: Integer, vOrder: Integer): Vector3D
+{
+    requires d.IsWellShaped;
+    requires d.U.SplineDomain.Contains(uv.U) && d.V.SplineDomain.Contains(uv.V);
+    requires uOrder >= 0 && vOrder >= 0 && uOrder + vOrder >= 1 && uOrder + vOrder <= 2;
+    ensures uOrder == 1 && vOrder == 0
+        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)]), SurfaceIndex(0), uv, SurfaceParameter.ParameterU, tol)
+        : true;
+    ensures uOrder == 0 && vOrder == 1
+        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)]), SurfaceIndex(0), uv, SurfaceParameter.ParameterV, tol)
+        : true;
+    measure d.U.Degree * d.V.Degree * (d.U.Degree + d.V.Degree) * (uOrder + vOrder);
+    deferred "mixed partials of the rational tensor-product surface (Piegl and Tiller A4.4)";
+}
+
+// A true answer is a promise; a false one is not: a side can collapse
+// geometrically while its control row is spread wider than tol.
+spec BSplineSideCollapses(d: BSplineSurfaceData, side: DomainSide, tol: LengthTolerance): Boolean
+{
+    requires d.IsWellShaped;
+    requires tol.IsWellFormed;
+    ensures result
+        ? forall (a: Number) in SurfaceDomain(BoundedDomain(d.U.SplineDomain), BoundedDomain(d.V.SplineDomain)).SideRange(side) :
+            d.BSplinePoint(SurfaceDomain(BoundedDomain(d.U.SplineDomain), BoundedDomain(d.V.SplineDomain)).SidePoint(side, a)).Distance(
+                d.BSplinePoint(SurfaceDomain(BoundedDomain(d.U.SplineDomain), BoundedDomain(d.V.SplineDomain)).SidePoint(side,
+                    SurfaceDomain(BoundedDomain(d.U.SplineDomain), BoundedDomain(d.V.SplineDomain)).SideRange(side).Start))) <= tol.Value + tol.Value
+        : true;
+    measure d.ControlPoints.ColumnCount + d.ControlPoints.RowCount;
+    deferred "knot insertion to multiplicity Degree at the side, then a control-row spread test (convex hull)";
+}
+
+// As BSplineSideCollapses, a true answer is a promise.
+spec BSplineSidesCoincide(d: BSplineSurfaceData, which: SurfaceParameter, tol: LengthTolerance): Boolean
+{
+    requires d.IsWellShaped;
+    requires tol.IsWellFormed;
+    ensures result
+        ? forall (a: Number) in d.BasisAlong(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU)).SplineDomain :
+            d.BSplinePoint(UvCoordinate(0.0, 0.0).WithCoordinate(which, d.BasisAlong(which).SplineDomain.Start)
+                    .WithCoordinate(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU), a))
+                .Coincident(d.BSplinePoint(UvCoordinate(0.0, 0.0).WithCoordinate(which, d.BasisAlong(which).SplineDomain.End)
+                    .WithCoordinate(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU), a)), tol)
+        : true;
+    measure d.ControlPoints.ColumnCount * d.ControlPoints.RowCount;
+    deferred "the two boundary control rows by knot insertion, compared pointwise (convex hull)";
+}
+
+//==
+// # Curves
+
+spec Domain(g: GeometrySet, c: CurveIndex): CurveDomain
+{
+    requires g.CanEvaluate(c);
+    ensures forall (tol: Tolerances) : Law_PeriodicCurveSpansOnePeriod(g, c, tol);
+    ensures Law_BSplineCurveDomainIsKnotSpan(g, c);
+    ensures result.Range.Start <= result.Range.End;
+    measure g.CurveDepth(c, g.ReferenceFuel);
+}
+
+spec Eval(g: GeometrySet, c: CurveIndex, t: Number): Point3D
+{
+    requires g.CanEvaluate(c);
+    requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
+    ensures forall (tol: Tolerances) : Law_CurveRepeatsWithPeriod(g, c, t, tol);
+    ensures forall (tol: Tolerances) : Law_BSplineCurveMatchesBasisSum(g, c, t, tol);
+    ensures forall (tol: Tolerances) : Law_TrimmedStartsAtSensedEnd(g, c, tol);
+    measure g.CurveDepth(c, g.ReferenceFuel);
+}
+
+spec Derivative(g: GeometrySet, c: CurveIndex, t: Number): Vector3D
+{
+    requires g.CanEvaluate(c);
+    requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
+    ensures forall (tol: Tolerances) : Law_DerivativeMatchesCentralDifference(g, c, t, tol);
+    measure g.CurveDepth(c, g.ReferenceFuel);
+}
+
+spec SecondDerivative(g: GeometrySet, c: CurveIndex, t: Number): Vector3D
+{
+    requires g.CanEvaluate(c);
+    requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
+    ensures forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(g, c, t, tol);
+    measure g.CurveDepth(c, g.ReferenceFuel);
+}
+
+// The edge ranges of layer 2 are built from this function, so its choice of
+// representative is part of the contract.
+spec ClosestParameter(g: GeometrySet, c: CurveIndex, p: Point3D): Number
+{
+    requires g.CanEvaluate(c);
+    ensures forall (tol: Tolerances) : forall (s: Number) in g.Domain(c).Range :
+        g.Eval(c, result).Distance(p) <= g.Eval(c, s).Distance(p) + tol.Length.Value;
+    ensures result >= g.Domain(c).Range.Start;
+    ensures result <= g.Domain(c).Range.Start + g.Domain(c).Periodicity.PeriodOr(g.Domain(c).ParameterLength);
+    ensures forall (tol: Tolerances) : forall (t: Number) : Law_ClosestParameterRecoversPoint(g, c, t, tol);
+    measure g.Breakpoints(c).Count + 1;
+}
+
+spec IsClosed(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
+{
+    requires g.CanEvaluate(c);
+    ensures g.Domain(c).Periodicity.IsPeriodic ? result : true;
+    ensures g.Domain(c).ParameterLength.IsFinite ? true : !result || g.Domain(c).Periodicity.IsPeriodic;
+    measure 2;
+}
+
+spec PcurvesOf(g: GeometrySet, c: CurveIndex): Array<PcurveIndex>
+{
+    requires g.CanEvaluate(c);
+    ensures result.Count <= 2;
+    ensures forall (k: Integer) in result.Count.Range : g.IsPcurveInRange(result[k]);
+    measure result.Count;
+}
+
+spec Eval(g: GeometrySet, c: Curve2DIndex, t: Number): UvCoordinate
+{
+    requires g.CanEvaluate(c);
+    requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
+    ensures forall (tol: Tolerances) : Law_Curve2DRepeatsWithPeriod(g, c, t, tol);
+    measure g.Curve2DDepth(c, g.ReferenceFuel);
+}
+
+spec Eval(g: GeometrySet, p: PcurveIndex, t: Number): Point3D
+{
+    requires g.CanEvaluate(p);
+    requires g.Domain(p).Periodicity.IsPeriodic || g.Domain(p).Range.Contains(t);
+    ensures result == g.Eval(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, t));
+    measure g.PcurveDepth(p, g.ReferenceFuel);
+}
+
+//==
+// # Curves: deferred
+
+spec ClosestParameterBySearch(curve: BrepCurve, g: GeometrySet, p: Point3D): Number
+{
+    requires g.IsWellFormed;
+    requires g.ReferencesInRange(curve);
+    requires curve.HasEvaluableShape;
+    ensures forall (tol: Tolerances) : forall (s: Number) in curve.Domain(g).Range :
+        curve.Eval(g, result).Distance(p) <= curve.Eval(g, s).Distance(p) + tol.Length.Value;
+    ensures result >= curve.Domain(g).Range.Start;
+    ensures result <= curve.Domain(g).Range.Start + curve.Domain(g).Periodicity.PeriodOr(curve.Domain(g).ParameterLength);
+    measure curve.Breakpoints(g).Count + 1;
+    deferred "bracket by curvature-paced sampling of each smooth piece, Newton with bisection fallback, compare ends, wrap, ties to the smaller parameter";
+}
+
+spec OffsetSecondDerivative(g: GeometrySet, basis: CurveIndex, distance: Number, reference: Direction3D, t: Number): Vector3D
+{
+    requires g.CanEvaluate(basis);
+    requires g.Domain(basis).Periodicity.IsPeriodic || g.Domain(basis).Range.Contains(t);
+    ensures forall (c: CurveIndex) in g.Curves.Count.Range.Map(i => CurveIndex(i)) :
+        g.CurveAt(c) == BrepCurve.Offset(basis, distance, reference)
+            ? forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(g, c, t, tol)
+            : true;
+    measure g.CurveDepth(basis, g.ReferenceFuel);
+    deferred "differentiate UnitVectorDerivative once more with the basis's third derivative";
+}
+
+spec OffsetSecondDerivative(g: GeometrySet, basis: Curve2DIndex, distance: Number, t: Number): Vector2D
+{
+    requires g.CanEvaluate(basis);
+    requires g.Domain(basis).Periodicity.IsPeriodic || g.Domain(basis).Range.Contains(t);
+    ensures forall (c: Curve2DIndex) in g.Curves2D.Count.Range.Map(i => Curve2DIndex(i)) :
+        g.Curve2DAt(c) == BrepCurve2D.Offset(basis, distance)
+            ? forall (tol: Tolerances) : Law_Curve2DSecondDerivativeMatchesCentralDifference(g, c, t, tol)
+            : true;
+    measure g.Curve2DDepth(basis, g.ReferenceFuel);
+    deferred "as in space, with the quarter-turn of the unit tangent";
+}
+
+spec SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D
+{
+    requires g.CanEvaluate(p);
+    requires g.Domain(p).Periodicity.IsPeriodic || g.Domain(p).Range.Contains(t);
+    ensures forall (tol: Tolerances) : Law_PcurveSecondDerivativeMatchesCentralDifference(g, p, t, tol);
+    measure g.PcurveDepth(p, g.ReferenceFuel);
+    deferred "the chain rule to second order over the surface's second partials";
+}
+
+spec ClosestParameter(g: GeometrySet, p: PcurveIndex, q: Point3D): Number
+{
+    requires g.CanEvaluate(p);
+    ensures forall (tol: Tolerances) : forall (s: Number) in g.Domain(p).Range :
+        g.Eval(p, result).Distance(q) <= g.Eval(p, s).Distance(q) + tol.Length.Value;
+    ensures result >= g.Domain(p).Range.Start;
+    ensures result <= g.Domain(p).Range.Start + g.Domain(p).Periodicity.PeriodOr(g.Domain(p).ParameterLength);
+    measure g.Breakpoints(g.PcurveAt(p).Curve).Count + 1;
+    deferred "the curve search over the pcurve as a space curve, seeded from Project on its surface";
+}
+
+//==
+// # Surfaces
+
+spec Domain(g: GeometrySet, s: SurfaceIndex): SurfaceDomain
+{
+    requires g.CanEvaluate(s);
+    ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_PeriodicSurfaceSpansOnePeriod(g, s, which, tol);
+    ensures forall (which: SurfaceParameter) : Law_BSplineSurfaceDomainIsKnotSpan(g, s, which);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+spec Eval(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Point3D
+{
+    requires g.CanEvaluate(s);
+    requires g.Domain(s).ContainsParameter(uv, UvTolerance(ParameterTolerance(0.0), ParameterTolerance(0.0)));
+    ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_SurfaceRepeatsWithPeriod(g, s, uv, which, tol);
+    ensures forall (tol: Tolerances) : Law_BSplineSurfaceMatchesBasisSum(g, s, uv, tol);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+spec PartialU(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
+{
+    requires g.CanEvaluate(s);
+    ensures forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(g, s, uv, SurfaceParameter.ParameterU, tol);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+spec PartialV(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
+{
+    requires g.CanEvaluate(s);
+    ensures forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(g, s, uv, SurfaceParameter.ParameterV, tol);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+spec NormalOr(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, fallback: Direction3D): Direction3D
+{
+    requires g.CanEvaluate(s);
+    ensures forall (tol: Tolerances) : Law_NormalIsUnit(g, s, uv, tol);
+    ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_NormalOrthogonalToPartial(g, s, uv, which, tol);
+    ensures forall (tol: Tolerances) : Law_NormalSenseMatchesParameterization(g, s, uv, tol);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+spec AreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Number
+{
+    requires g.CanEvaluate(s);
+    ensures result >= 0.0;
+    ensures forall (tol: Tolerances) : Law_AreaElementMatchesCrossProduct(g, s, uv, tol);
+    ensures forall (tol: Tolerances) : Law_AreaElementPositiveAwayFromCollapse(g, s, uv, tol);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+// Pcurves are optional and most files carry none, so this is the main path
+// from a 3D point to a face's parameter plane.
+spec Project(g: GeometrySet, s: SurfaceIndex, p: Point3D): UvCoordinate
+{
+    requires g.CanEvaluate(s);
+    ensures forall (tol: Tolerances) : forall (w: UvCoordinate) in g.Domain(s) :
+        g.Eval(s, result).Distance(p) <= g.Eval(s, w).Distance(p) + tol.Length.Value;
+    ensures forall (tol: Tolerances) : g.Domain(s).IsCanonical(result, tol.Parameter);
+    ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversPoint(g, s, uv, tol);
+    ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversParameter(g, s, uv, tol);
+    measure g.Breakpoints(s, SurfaceParameter.ParameterU).Count * g.Breakpoints(s, SurfaceParameter.ParameterV).Count + 1;
+}
+
+spec ProjectNear(g: GeometrySet, s: SurfaceIndex, p: Point3D, seed: UvCoordinate): UvCoordinate
+{
+    requires g.CanEvaluate(s);
+    ensures result == g.Domain(s).NearestUnwrapped(result, seed);
+    ensures forall (tol: Tolerances) : g.Eval(s, seed).Coincident(p, tol.Length)
+        ? g.Domain(s).SameParameter(result, seed, g.UvToleranceAt(s, seed, tol))
+        : true;
+    measure 1;
+}
+
+spec DegenerateSides(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Array<DomainSide>
+{
+    requires g.CanEvaluate(s);
+    requires tol.IsWellFormed;
+    ensures result.Count <= 4;
+    ensures forall (k: Integer) in result.Count.Range : !g.Domain(s).DomainAlong(result[k].ParameterOf).Periodicity.IsPeriodic;
+    ensures forall (k: Integer) in result.Count.Range : forall (a: Number) : Law_TangentialPartialVanishesOnDegenerateSide(g, s, k, a, tol);
+    measure 4;
+}
+
+spec CollapsedAt(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Array<Number>
+{
+    requires g.CanEvaluate(s);
+    requires tol.IsWellFormed;
+    ensures forall (k: Integer) in result.Count.Range : forall (a: Number) : forall (b: Number) :
+        Law_CollapsedLineIsOnePoint(g, s, which, k, a, b, tol);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+spec IsClosedIn(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
+{
+    requires g.CanEvaluate(s);
+    requires tol.IsWellFormed;
+    ensures g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic ? result : true;
+    ensures result && !g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic
+        ? forall (a: Number) in g.Domain(s).DomainAlong(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU)).Range :
+            g.Eval(s, UvCoordinate(0.0, 0.0).WithCoordinate(which, g.Domain(s).DomainAlong(which).Range.Start)
+                    .WithCoordinate(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU), a))
+                .Coincident(g.Eval(s, UvCoordinate(0.0, 0.0).WithCoordinate(which, g.Domain(s).DomainAlong(which).Range.End)
+                    .WithCoordinate(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU), a)), tol.Length)
+        : true;
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
+//==
+// # Surfaces: deferred
+
+spec OffsetPartial(g: GeometrySet, basis: SurfaceIndex, distance: Number, uv: UvCoordinate, which: SurfaceParameter): Vector3D
+{
+    requires g.CanEvaluate(basis);
+    ensures forall (o: SurfaceIndex) in g.Surfaces.Count.Range.Map(i => SurfaceIndex(i)) :
+        g.SurfaceAt(o) == BrepSurface.Offset(basis, distance)
+            ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(g, o, uv, which, tol)
+            : true;
+    measure g.SurfaceDepth(basis, g.ReferenceFuel);
+    deferred "S_x + d N_x with N_x from the Weingarten equations over the basis's second partials";
+}
+
+spec LimitNormal(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D
+{
+    requires g.CanEvaluate(s);
+    ensures g.AreaElement(s, uv) > 0.0 ? result == g.NormalOr(s, uv, result) : true;
+    ensures forall (tol: Tolerances) : result.IsUnitWithin(tol.Angle);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+    deferred "NormalOr where regular; on a collapsed line, the limit along the transverse parameter";
+}
+
+spec ProjectBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D): UvCoordinate
+{
+    requires g.IsWellFormed;
+    requires g.ReferencesInRange(surface);
+    requires surface.HasEvaluableShape;
+    ensures forall (tol: Tolerances) : forall (w: UvCoordinate) in surface.Domain(g) :
+        surface.Eval(g, result).Distance(p) <= surface.Eval(g, w).Distance(p) + tol.Length.Value;
+    ensures forall (tol: Tolerances) : surface.Domain(g).IsCanonical(result, tol.Parameter);
+    measure (surface.Breakpoints(g, SurfaceParameter.ParameterU).Count + 1) * (surface.Breakpoints(g, SurfaceParameter.ParameterV).Count + 1);
+    deferred "grid seeds per smooth patch, Newton on the two normal equations in a trust region, sides and collapsed lines compared, wrap";
+}
+
+spec ProjectNearBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): UvCoordinate
+{
+    requires g.IsWellFormed;
+    requires g.ReferencesInRange(surface);
+    requires surface.HasEvaluableShape;
+    ensures forall (tol: Tolerances) : surface.Eval(g, seed).Coincident(p, tol.Length)
+        ? surface.Domain(g).SameParameter(result, seed,
+            tol.UvToleranceAt(surface.PartialU(g, seed).Length, surface.PartialV(g, seed).Length, surface.Domain(g)))
+        : true;
+    measure 1;
+    deferred "Newton from the seed on the two normal equations, trust region a quarter period, no wrapping";
+}
+
+//==
+// # Theorems
+
+theorem EvaluationTerminates
+{
+    given g: GeometrySet, c: CurveIndex;
+    assume g.CanEvaluate(c);
+    conclude g.CurveDepth(c, g.ReferenceFuel) < g.ReferenceFuel;
+    because "Every recursive call of a curve or surface evaluator (Domain, Eval, Derivative, SecondDerivative,
+             Breakpoints, ClosestParameter, and the surface functions) is made on an entry the current record
+             indexes, so the recursion follows edges of the reference graph and its depth is at most the length of
+             the longest chain from c, which CurveDepth counts. IsWellFormed bounds that length below
+             ReferenceFuel; and every helper loop runs over a finite array (segments, control points, knots).
+             The recursion therefore terminates with depth below ReferenceFuel.";
+    tested by Law_CurveReferencesAcyclic, Law_SurfaceReferencesAcyclic, Law_Curve2DReferencesAcyclic;
+}
+
+theorem DepthBelowFuelIffAcyclic
+{
+    given g: GeometrySet, c: CurveIndex;
+    assume g.IsEveryIndexInRange;
+    assume g.IsCurveInRange(c);
+    conclude g.IsAcyclicFrom(c) == (forall (n: Integer) : g.CurveDepth(c, n) < g.ReferenceFuel);
+    because "Pigeonhole. ReferenceFuel is one more than the number of entries. With no cycle reachable from c,
+             every chain from c has distinct nodes, at most ReferenceFuel - 1 of them, so the depth under any cap
+             stays below ReferenceFuel. With a reachable cycle the chain can be walked for ever, so under the cap
+             ReferenceFuel the depth equals the cap and IsAcyclicFrom is false; the forall fails at
+             n = ReferenceFuel. One evaluation at the cap ReferenceFuel therefore decides acyclicity.";
+    tested by Law_CurveReferencesAcyclic;
+}
+
+theorem KnotMultiplicityWindow
+{
+    given b: SplineBasis;
+    assume b.HasPositiveDegree;
+    assume b.KnotsNonDecreasing;
+    assume b.Knots.Count >= 2;
+    conclude b.KnotMultiplicityBounded == forall (i: Integer) in b.Knots.Count.Range :
+        b.Knots.Knots.Map(k => k == b.Knots.KnotAt(i) ? 1 : 0).Reduce(0, (x, y) => x + y)
+            <= ((b.Knots.KnotAt(i) == b.Knots.KnotAt(0) || b.Knots.KnotAt(i) == b.Knots.KnotAt(b.Knots.Count - 1))
+                ? b.Degree + 1
+                : b.Degree);
+    because "With the knots non-decreasing, equal values are contiguous. A value with multiplicity m occupies
+             positions p .. p + m - 1. If it is an interior knot (p >= 1, p + m - 1 <= Count - 2), it has
+             m <= Degree exactly when no window [i, i + Degree] inside 1 .. Count - 2 is constant on it. If it is
+             the first knot (p = 0), its copies inside 1 .. Count - 2 number m - 1, at most Degree exactly when
+             m <= Degree + 1; the last knot is symmetric. So 'no constant window of Degree + 1 knots inside
+             positions 1 .. Count - 2' is ISO's 'interior multiplicities at most Degree, end multiplicities at
+             most Degree + 1' (constraints_param_b_spline, ISO 10303-42 4.6.11).";
+    tested by Law_BSplineCurveKnotMultiplicityBounded, Law_BSplineSurfaceKnotMultiplicityBounded;
+}
+
+theorem ConeAreaElement
+{
+    given g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, f: Frame3D, radius: Number, a: Angle;
+    assume g.CanEvaluate(s);
+    assume g.SurfaceAt(s) == BrepSurface.Cone(f, radius, a);
+    assume forall (tol: AngleTolerance) : f.IsOrthonormalWithin(tol);
+    conclude g.PartialU(s, uv).Cross(g.PartialV(s, uv)).Length == (radius + uv.V * a.Tan).Abs / a.Cos;
+    because "With rho = R + v tan a, S_u = rho e_u and S_v = tan a e_r + z. Since e_u x e_r = -z and e_u x z = e_r,
+             S_u x S_v = rho (e_r - tan a z), of length |rho| sqrt(1 + tan^2 a) = |rho| / cos a for |a| < pi/2.
+             The v of ISO 10303-42 4.5.61 is axial; a slant-length v (OpenCascade) would remove the 1 / cos a.
+             Check: the frustum v in [0, H] has area 2 pi (R H + H^2 tan a / 2) / cos a = pi (r1 + r2) s, the
+             textbook area with slant height s = H / cos a (research/VALIDATION-MATH.md 5.1).";
+    tested by Law_ConeAreaElement;
+}
+
+theorem SphereAreaElement
+{
+    given g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, f: Frame3D, radius: Number;
+    assume g.CanEvaluate(s);
+    assume g.SurfaceAt(s) == BrepSurface.Sphere(f, radius);
+    assume forall (tol: AngleTolerance) : f.IsOrthonormalWithin(tol);
+    assume uv.V >= -Number.HalfPi && uv.V <= Number.HalfPi;
+    conclude g.PartialU(s, uv).Cross(g.PartialV(s, uv)).Length == radius * radius * uv.V.Cos;
+    because "S_u = R cos v e_u and S_v = -R sin v e_r + R cos v z, so S_u x S_v = R^2 cos v (cos v e_r + sin v z),
+             a positive multiple of ISO's outward normal for v in (-pi/2, pi/2), of length R^2 cos v.";
+    tested by Law_SphereAreaElement;
+}
+
+theorem TorusAreaElement
+{
+    given g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, f: Frame3D, major: Number, minor: Number, part: TorusPart;
+    assume g.CanEvaluate(s);
+    assume g.SurfaceAt(s) == BrepSurface.Torus(f, major, minor, part);
+    assume forall (tol: AngleTolerance) : f.IsOrthonormalWithin(tol);
+    conclude g.PartialU(s, uv).Cross(g.PartialV(s, uv)).Length == minor * (major + minor * uv.V.Cos).Abs;
+    because "With rho = R + r cos v, S_u = rho e_u and S_v = -r sin v e_r + r cos v z, so S_u x S_v =
+             r rho (cos v e_r + sin v z), of length r |rho|; on a ring torus (R > r) rho > 0 and this is
+             r (R + r cos v).";
+    tested by Law_TorusAreaElement;
+}
+
+theorem LemonNormalOpposesParameterization
+{
+    given g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, f: Frame3D, major: Number, minor: Number;
+    assume g.CanEvaluate(s);
+    assume g.SurfaceAt(s) == BrepSurface.Torus(f, major, minor, TorusPart.Lemon);
+    assume uv.V > SpindleAngle(major, minor) && uv.V < Number.Tau - SpindleAngle(major, minor);
+    conclude g.NormalOr(s, uv, f.ZAxis).Vector.Dot(g.PartialU(s, uv).Cross(g.PartialV(s, uv))) < 0.0;
+    because "On the lemon, cos v < -R / r, so rho = R + r cos v < 0 and S_u x S_v = r rho N with N = cos v e_r +
+             sin v z, ISO's stated normal (4.5.64 NOTE 1). The dot product is r rho < 0. On the apple and a ring
+             torus rho > 0 and the sign is positive, which is all NormalAgreesWithParameterization records.";
+    tested by Law_NormalSenseMatchesParameterization;
+}
+
+theorem TangentialPartialVanishesOnCollapsedLine
+{
+    given g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, c: Number, a: Number;
+    assume g.CanEvaluate(s);
+    assume forall (b: Number) : g.Eval(s, g.IsoPoint(s, which, c, b)) == g.Eval(s, g.IsoPoint(s, which, c, a));
+    conclude g.Partial(s, g.IsoPoint(s, which, c, a), which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU)).Length == 0.0;
+    because "Along the iso-line the map is constant, so its derivative along the line, the partial in the other
+             parameter, is zero. The partial across the line need not vanish: at a sphere's north pole S_v is
+             -R e_r(u), a different vector for every u, which is why a pole has one point but a fan of tangents.";
+    tested by Law_TangentialPartialVanishesOnDegenerateSide, Law_CollapsedLineIsOnePoint;
+}
+
+theorem ProjectNearIsLocalInverse
+{
+    given g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances;
+    assume g.CanEvaluate(s);
+    assume g.AreaElement(s, uv) > 0.0;
+    conclude g.Domain(s).SameParameter(g.ProjectNear(s, g.Eval(s, uv), uv), uv, g.UvToleranceAt(s, uv, tol));
+    because "Where S_u x S_v is not zero the Jacobian of the surface map has rank two, so by the inverse function
+             theorem the map is a diffeomorphism from a neighbourhood of uv onto its image; Newton's iteration
+             on the normal equations started at the exact preimage stays at it, and a closed form returns the
+             unique preimage on the window, which NearestUnwrapped moves to the seed's copy. On a collapsed line
+             UvToleranceAt's tolerance along the line is its cap, so the claim holds there too.";
+    tested by Law_ProjectNearRecoversParameter;
+}
+
+conjecture CentralDifferenceStepSuffices
+{
+    given g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances;
+    assume g.CanEvaluate(c);
+    assume tol.IsWellFormed;
+    conclude Law_DerivativeMatchesCentralDifference(g, c, t, tol);
+    tested by Law_DerivativeMatchesCentralDifference, Law_PartialMatchesCentralDifference;
+}

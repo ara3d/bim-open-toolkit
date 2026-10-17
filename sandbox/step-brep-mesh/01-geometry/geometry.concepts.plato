@@ -1,0 +1,55 @@
+//==
+// # Natural-geometry concepts
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file). The
+// operations meshing asks of a curve or a surface in its natural parameters:
+// evaluate, differentiate, invert, and describe the domain. The STEP arena
+// implements them through its views (ArenaCurve, ArenaCurve2D, ArenaSurface);
+// a geometry from another source can implement them directly. Unlike the
+// stdlib's ICurve3D and IParametricSurface, the domain is the curve's own, not
+// the unit interval or square.
+//
+// Sections, in order:
+//  - Curves
+//  - Surfaces
+
+//==
+// # Curves
+
+// A space curve in its natural parameter: a map from Domain into space with
+// first and second derivatives and an inverse (the closest parameter). Eval is
+// inherited from IProcedural.
+interface INaturalCurve3D
+    inherits IProcedural<Number, Point3D>
+{
+    Domain(x: Self): CurveDomain;
+    Derivative(x: Self, t: Number): Vector3D;
+    SecondDerivative(x: Self, t: Number): Vector3D;
+    ClosestParameter(x: Self, p: Point3D): Number;
+}
+
+// A curve in a surface's parameter plane in its natural parameter.
+interface INaturalCurve2D
+    inherits IProcedural<Number, UvCoordinate>
+{
+    Domain(x: Self): CurveDomain;
+    Derivative(x: Self, t: Number): Vector2D;
+}
+
+//==
+// # Surfaces
+
+// A surface in its natural parameters: a map from Domain into space with its
+// partial derivatives, its normal as ISO 10303-42 states it, its area element,
+// its inverse (Project), and the sides of its domain it collapses to a point.
+interface INaturalSurface
+    inherits IProcedural<UvCoordinate, Point3D>
+{
+    Domain(x: Self): SurfaceDomain;
+    PartialU(x: Self, uv: UvCoordinate): Vector3D;
+    PartialV(x: Self, uv: UvCoordinate): Vector3D;
+    NormalOr(x: Self, uv: UvCoordinate, fallback: Direction3D): Direction3D;
+    AreaElement(x: Self, uv: UvCoordinate): Number;
+    Project(x: Self, p: Point3D): UvCoordinate;
+    DegenerateSides(x: Self, tol: Tolerances): Array<DomainSide>;
+}

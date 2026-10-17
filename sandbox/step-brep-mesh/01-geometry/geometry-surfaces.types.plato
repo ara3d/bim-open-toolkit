@@ -1,0 +1,76 @@
+//==
+// # Surfaces of the geometry arena
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file). The
+// exact surfaces of ISO 10303-42 that a face can lie on, as one closed sum. A
+// surface is a map from its SurfaceDomain into space in its natural parameters;
+// each case is one evaluation formula (geometry-surfaces.library.plato).
+// Placement-based cases carry a Frame3D; cases built on a curve or another
+// surface name it by index into the GeometrySet arena.
+//
+// Sections, in order:
+//  - Surfaces
+//  - The parts of a spindle torus
+//  - Parameter directions
+
+//==
+// # Surfaces
+
+// A surface as ISO 10303-42 4.5.57 defines it. C, x, y, z are the placement's
+// origin and axes, e_r(u) = cos u x + sin u y. Angles are radians; u of every
+// placement-based case except Plane is an angle of period 2 pi.
+//  Plane(C): C + u x + v y; u, v lengths in (-inf, inf).
+//  Cylinder(C, R): C + R e_r(u) + v z; v a length in (-inf, inf).
+//  Cone(C, R, a): C + (R + v tan a) e_r(u) + v z; v is AXIAL, not the slant
+//    length (ISO 4.5.61), in (-inf, inf): both nappes, apex at v = -R / tan a.
+//  Sphere(C, R): C + R cos v e_r(u) + R sin v z; v the latitude in
+//    [-pi/2, pi/2], poles at both ends.
+//  Torus(C, R, r, part): C + (R + r cos v) e_r(u) + r sin v z; part selects the
+//    v range: all of it (STEP toroidal_surface) or one part of a spindle torus
+//    (STEP degenerate_toroidal_surface, select_outer).
+//  Revolution(L, A): the profile curve L(v) rotated by u, right-handed, about
+//    the unit axis A (STEP surface_of_revolution); v the profile's parameter.
+//  LinearExtrusion(L, V): L(u) + v V; V keeps the file's magnitude, which sets
+//    the scale of v (STEP surface_of_linear_extrusion).
+//  BSpline(d): sum w_ij N_i(u) N_j(v) P_ij / sum w_ij N_i(u) N_j(v) (STEP
+//    b_spline_surface and its knot and rational subtypes).
+//  RectangularTrimmed(B, [u1, u2], [v1, v2], su, sv): the basis over the box,
+//    each direction reparameterized from 0 as Trimmed curves are (STEP
+//    rectangular_trimmed_surface, ISO 4.5.80; reading unconfirmed, README).
+//  Offset(B, d): B(u, v) + d N_B(u, v), N_B the basis normal extended by
+//    continuity (STEP offset_surface, ISO 4.5.86).
+type BrepSurface
+    = Plane(Placement: Frame3D)
+    | Cylinder(Placement: Frame3D, Radius: Number)
+    | Cone(Placement: Frame3D, Radius: Number, SemiAngle: Angle)
+    | Sphere(Placement: Frame3D, Radius: Number)
+    | Torus(Placement: Frame3D, MajorRadius: Number, MinorRadius: Number, Part: TorusPart)
+    | Revolution(Profile: CurveIndex, Axis: InfiniteLine3D)
+    | LinearExtrusion(Profile: CurveIndex, Extrusion: Vector3D)
+    | BSpline(Data: BSplineSurfaceData)
+    | RectangularTrimmed(Basis: SurfaceIndex, URange: NumberInterval, VRange: NumberInterval, USense: Boolean, VSense: Boolean)
+    | Offset(Basis: SurfaceIndex, Distance: Number);
+
+//==
+// # The parts of a spindle torus
+
+// Which v range of a torus the surface is. Full: the whole meridian circle,
+// v periodic (STEP toroidal_surface; a ring torus when major > minor). Apple
+// and Lemon: the outer and inner parts of a spindle torus, major < minor, v in
+// [-phi, phi] and [phi, 2 pi - phi] with minor cos phi = -major, both ends on
+// the axis (STEP degenerate_toroidal_surface with select_outer true and false;
+// https://en.wikipedia.org/wiki/Torus#Geometry). The formula is the same for
+// all three, so the selection is a domain, not a case.
+type TorusPart
+    = Full
+    | Apple
+    | Lemon;
+
+//==
+// # Parameter directions
+
+// One of a surface's two parameters, for the functions and laws that treat u
+// and v alike (CollapsedAt, Breakpoints, IsClosedIn).
+type SurfaceParameter
+    = ParameterU
+    | ParameterV;

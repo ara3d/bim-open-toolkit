@@ -1,0 +1,595 @@
+//==
+// # BrepGeometrySurfaces
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file):
+// evaluation of the arena's surfaces in their natural parameters. Each function
+// over a surface index looks the record up and hands it to the function of the
+// same name over the record, which is one exhaustive match over BrepSurface; a
+// case built on a curve or another surface evaluates it through the arena.
+// Every function requires g.CanEvaluate(s). Formulas are written out, with
+// e_r(u) = cos u x + sin u y and e_u(u) = -sin u x + cos u y in the
+// placement's axes; the closed forms of the area element are those of
+// research/VALIDATION-MATH.md 5.1.
+// Inverse evaluation beyond the closed forms, de Boor, and the offset surface's
+// derivatives are deferred, with contracts in geometry.spec.plato.
+//
+// Sections, in order:
+//  - Domain and point
+//  - Partial derivatives
+//  - Normal and area element
+//  - Inverse evaluation
+//  - Collapsed lines and degenerate sides
+//  - Breakpoints and closure
+//  - Parameter tolerance
+//  - Helpers by case
+//  - Helpers by parameter direction
+
+library BrepGeometrySurfaces
+{
+    //==
+    // # Domain and point
+
+    // The surface's natural domain (README, "Natural parameterizations"). The
+    // cone's v covers both nappes, so its apex is an interior collapsed line
+    // (CollapsedAt), not a side.
+    Domain(g: GeometrySet, s: SurfaceIndex): SurfaceDomain
+        => g.SurfaceAt(s).Domain(g);
+
+    // Domain for one record of the arena g, which holds the entries it references.
+    Domain(surface: BrepSurface, g: GeometrySet): SurfaceDomain
+        => match (surface)
+        {
+            Plane(placement) => SurfaceDomain(CurveDomain.UnboundedDomain, CurveDomain.UnboundedDomain);
+            Cylinder(placement, radius) => SurfaceDomain(CurveDomain.FullTurnDomain, CurveDomain.UnboundedDomain);
+            Cone(placement, radius, semiAngle) => SurfaceDomain(CurveDomain.FullTurnDomain, CurveDomain.UnboundedDomain);
+            Sphere(placement, radius) => SurfaceDomain(CurveDomain.FullTurnDomain, BoundedDomain(NumberInterval(-Number.HalfPi, Number.HalfPi)));
+            Torus(placement, major, minor, part) => SurfaceDomain(CurveDomain.FullTurnDomain, part.TorusVDomain(major, minor));
+            Revolution(profile, axis) => SurfaceDomain(CurveDomain.FullTurnDomain, g.Domain(profile));
+            LinearExtrusion(profile, extrusion) => SurfaceDomain(g.Domain(profile), CurveDomain.UnboundedDomain);
+            BSpline(data) => SurfaceDomain(BoundedDomain(data.U.SplineDomain), BoundedDomain(data.V.SplineDomain));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => SurfaceDomain(
+                BoundedDomain(NumberInterval(0.0, uRange.End - uRange.Start)),
+                BoundedDomain(NumberInterval(0.0, vRange.End - vRange.Start)));
+            Offset(basis, distance) => g.Domain(basis);
+        };
+
+    // The surface's point at uv (ISO 10303-42 4.5.59 to 4.5.86; the formulas
+    // are listed on BrepSurface). Precondition: uv in the domain, any real in
+    // a periodic or unbounded direction.
+    Eval(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Point3D
+        => g.SurfaceAt(s).Eval(g, uv);
+
+    // Eval for one record of the arena g, which holds the entries it references.
+    Eval(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Point3D
+        => match (surface)
+        {
+            Plane(placement) => placement.FramePoint(uv.U, uv.V, 0.0);
+            Cylinder(placement, radius) => placement.FramePoint(radius * uv.U.Cos, radius * uv.U.Sin, uv.V);
+            Cone(placement, radius, semiAngle) => placement.FramePoint(
+                (radius + uv.V * semiAngle.Tan) * uv.U.Cos, (radius + uv.V * semiAngle.Tan) * uv.U.Sin, uv.V);
+            Sphere(placement, radius) => placement.FramePoint(
+                radius * uv.V.Cos * uv.U.Cos, radius * uv.V.Cos * uv.U.Sin, radius * uv.V.Sin);
+            Torus(placement, major, minor, part) => placement.FramePoint(
+                (major + minor * uv.V.Cos) * uv.U.Cos, (major + minor * uv.V.Cos) * uv.U.Sin, minor * uv.V.Sin);
+            Revolution(profile, axis) => axis.Origin + RodriguesRotation(axis.Direction.Vector, g.Eval(profile, uv.V) - axis.Origin, uv.U);
+            LinearExtrusion(profile, extrusion) => g.Eval(profile, uv.U) + extrusion * uv.V;
+            BSpline(data) => data.BSplinePoint(uv);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Eval(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv));
+            Offset(basis, distance) => g.Eval(basis, uv) + g.LimitNormal(basis, uv).Vector * distance;
+        };
+
+    //==
+    // # Partial derivatives
+
+    // The partial derivative of Eval with respect to u. Zero along a collapsed
+    // line of constant v: a sphere's poles, a cone's apex, a spindle torus's
+    // axis points (theorem TangentialPartialVanishesOnCollapsedLine).
+    PartialU(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
+        => g.SurfaceAt(s).PartialU(g, uv);
+
+    // PartialU for one record of the arena g, which holds the entries it references.
+    PartialU(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Vector3D
+        => match (surface)
+        {
+            Plane(placement) => placement.XAxis.Vector;
+            Cylinder(placement, radius) => placement.FrameVector(-radius * uv.U.Sin, radius * uv.U.Cos, 0.0);
+            Cone(placement, radius, semiAngle) => placement.FrameVector(
+                -(radius + uv.V * semiAngle.Tan) * uv.U.Sin, (radius + uv.V * semiAngle.Tan) * uv.U.Cos, 0.0);
+            Sphere(placement, radius) => placement.FrameVector(-radius * uv.V.Cos * uv.U.Sin, radius * uv.V.Cos * uv.U.Cos, 0.0);
+            Torus(placement, major, minor, part) => placement.FrameVector(
+                -(major + minor * uv.V.Cos) * uv.U.Sin, (major + minor * uv.V.Cos) * uv.U.Cos, 0.0);
+            Revolution(profile, axis) => axis.Direction.Vector.Cross(
+                RodriguesRotation(axis.Direction.Vector, g.Eval(profile, uv.V) - axis.Origin, uv.U));
+            LinearExtrusion(profile, extrusion) => g.Derivative(profile, uv.U);
+            BSpline(data) => data.BSplinePartial(uv, 1, 0);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.PartialU(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv))
+                * uSense.SenseSign;
+            Offset(basis, distance) => g.OffsetPartial(basis, distance, uv, SurfaceParameter.ParameterU);
+        };
+
+    // The partial derivative of Eval with respect to v.
+    PartialV(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
+        => g.SurfaceAt(s).PartialV(g, uv);
+
+    // PartialV for one record of the arena g, which holds the entries it references.
+    PartialV(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Vector3D
+        => match (surface)
+        {
+            Plane(placement) => placement.YAxis.Vector;
+            Cylinder(placement, radius) => placement.ZAxis.Vector;
+            Cone(placement, radius, semiAngle) => placement.FrameVector(semiAngle.Tan * uv.U.Cos, semiAngle.Tan * uv.U.Sin, 1.0);
+            Sphere(placement, radius) => placement.FrameVector(
+                -radius * uv.V.Sin * uv.U.Cos, -radius * uv.V.Sin * uv.U.Sin, radius * uv.V.Cos);
+            Torus(placement, major, minor, part) => placement.FrameVector(
+                -minor * uv.V.Sin * uv.U.Cos, -minor * uv.V.Sin * uv.U.Sin, minor * uv.V.Cos);
+            Revolution(profile, axis) => RodriguesRotation(axis.Direction.Vector, g.Derivative(profile, uv.V), uv.U);
+            LinearExtrusion(profile, extrusion) => extrusion;
+            BSpline(data) => data.BSplinePartial(uv, 0, 1);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.PartialV(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv))
+                * vSense.SenseSign;
+            Offset(basis, distance) => g.OffsetPartial(basis, distance, uv, SurfaceParameter.ParameterV);
+        };
+
+    // The partial derivative with respect to the given parameter.
+    Partial(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter): Vector3D
+        => match (which)
+        {
+            ParameterU => g.PartialU(s, uv);
+            ParameterV => g.PartialV(s, uv);
+        };
+
+    // deferred: the partial of B + d N_B with respect to the given parameter,
+    // S_x + d N_x with N_x from the Weingarten equations over the basis's
+    // first and second partials (https://en.wikipedia.org/wiki/Weingarten_equations);
+    // for an analytic basis the offset is analytic again (a cylinder of radius
+    // R + d) and the closed form applies.
+    OffsetPartial(g: GeometrySet, basis: SurfaceIndex, distance: Number, uv: UvCoordinate, which: SurfaceParameter): Vector3D;
+
+    //==
+    // # Normal and area element
+
+    // The unit normal at uv as ISO 10303-42 states it, or fallback where it
+    // has none. Closed forms for the elementary surfaces, which extend by
+    // continuity to a sphere's poles; the fallback is taken only at a cone's
+    // apex and where the cross product of the partials is exactly zero. The
+    // normal is <PartialU x PartialV> except on the part of a torus inside its
+    // axis, where ISO's normal is the opposite (the Lemon part, 4.5.64 NOTE 1;
+    // NormalAgreesWithParameterization). A rectangular trimmed surface's normal
+    // turns over when exactly one of its senses is reversed.
+    NormalOr(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, fallback: Direction3D): Direction3D
+        => g.SurfaceAt(s).NormalOr(g, uv, fallback);
+
+    // NormalOr for one record of the arena g, which holds the entries it references.
+    NormalOr(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, fallback: Direction3D): Direction3D
+        => match (surface)
+        {
+            Plane(placement) => placement.ZAxis;
+            Cylinder(placement, radius) => Direction3D(placement.FrameVector(uv.U.Cos, uv.U.Sin, 0.0));
+            Cone(placement, radius, semiAngle) => ConeNormalOr(placement, radius, semiAngle, uv, fallback);
+            Sphere(placement, radius) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin));
+            Torus(placement, major, minor, part) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin));
+            Revolution(profile, axis) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
+            LinearExtrusion(profile, extrusion) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
+            BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => uSense == vSense
+                ? g.NormalOr(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv), fallback)
+                : Direction3D(g.NormalOr(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv), fallback).Vector * (-1.0));
+            Offset(basis, distance) => g.NormalOr(basis, uv, fallback);
+        };
+
+    // True when the surface's stated normal is <PartialU x PartialV> wherever
+    // that is defined, false when it is the opposite. False only for the Lemon
+    // part of a torus and surfaces built on one; a Full torus with major below
+    // minor (a self-intersecting deviation layer 3 reports) is answered for its
+    // outer part. Layer 2 composes it with a face's SameSense.
+    NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean
+        => g.SurfaceAt(s).NormalAgreesWithParameterization(g);
+
+    // NormalAgreesWithParameterization for one record of the arena g, which holds the entries it references.
+    NormalAgreesWithParameterization(surface: BrepSurface, g: GeometrySet): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => true;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => part != TorusPart.Lemon;
+            Revolution(profile, axis) => true;
+            LinearExtrusion(profile, extrusion) => true;
+            BSpline(data) => true;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.NormalAgreesWithParameterization(basis);
+            Offset(basis, distance) => g.NormalAgreesWithParameterization(basis);
+        };
+
+    // The area element |PartialU x PartialV| at uv: the factor by which the
+    // map scales parameter area, so a face's area is its integral over the
+    // face's parameter region (https://en.wikipedia.org/wiki/Surface_integral).
+    // Closed forms for the analytic cases (research/VALIDATION-MATH.md 5.1):
+    // plane 1, cylinder R, cone |R + v tan a| / cos a (v axial), sphere
+    // R^2 cos v, torus r |R + r cos v|, revolution |(A x (L(v) - C)) x L'(v)|,
+    // extrusion |L'(u) x V|. Zero on collapsed lines.
+    AreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Number
+        => g.SurfaceAt(s).AreaElement(g, uv);
+
+    // AreaElement for one record of the arena g, which holds the entries it references.
+    AreaElement(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Number
+        => match (surface)
+        {
+            Plane(placement) => 1.0;
+            Cylinder(placement, radius) => radius.Abs;
+            Cone(placement, radius, semiAngle) => (radius + uv.V * semiAngle.Tan).Abs / semiAngle.Cos;
+            Sphere(placement, radius) => (radius * radius * uv.V.Cos).Abs;
+            Torus(placement, major, minor, part) => (minor * (major + minor * uv.V.Cos)).Abs;
+            Revolution(profile, axis) => axis.Direction.Vector.Cross(g.Eval(profile, uv.V) - axis.Origin).Cross(g.Derivative(profile, uv.V)).Length;
+            LinearExtrusion(profile, extrusion) => g.Derivative(profile, uv.U).Cross(extrusion).Length;
+            BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.AreaElement(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv));
+            Offset(basis, distance) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
+        };
+
+    // deferred: the basis normal extended by continuity (ISO 10303-42 4.5.86):
+    // NormalOr where the basis's partials span a plane; on a collapsed line,
+    // the limit of NormalOr along the transverse parameter toward uv, which
+    // exists for a sphere's pole (one direction) and a cone's apex (one
+    // direction per u, the ruling's normal).
+    LimitNormal(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D;
+
+    //==
+    // # Inverse evaluation
+
+    // The parameters of the surface's point nearest to p: a global minimizer
+    // of |Eval(uv) - p|. Each periodic coordinate is the representative in
+    // [Range.Start, Range.Start + period). Where the free coordinate is not
+    // determined (p on the axis of a surface of revolution, p at a pole) it is
+    // the window's start, 0, and callers take it from a neighbour (layer 5).
+    // Pcurves are optional and most files have none, so this is the main path
+    // from a 3D edge point to a face's parameter plane. Closed forms for the
+    // plane, cylinder, cone, sphere and ring torus; a search for the rest.
+    Project(g: GeometrySet, s: SurfaceIndex, p: Point3D): UvCoordinate
+        => g.SurfaceAt(s).Project(g, p);
+
+    // Project for one record of the arena g, which holds the entries it references.
+    Project(surface: BrepSurface, g: GeometrySet, p: Point3D): UvCoordinate
+        => match (surface)
+        {
+            Plane(placement) => UvCoordinate(placement.LocalCoordinates(p).X, placement.LocalCoordinates(p).Y);
+            Cylinder(placement, radius) => UvCoordinate(placement.PolarAngle(p), placement.LocalCoordinates(p).Z);
+            Cone(placement, radius, semiAngle) => ConeProject(placement, radius, semiAngle, p);
+            Sphere(placement, radius) => UvCoordinate(placement.PolarAngle(p), placement.LocalCoordinates(p).Z.Atan2(placement.AxialRadius(p)).Radians);
+            Torus(placement, major, minor, part) => part == TorusPart.Full && major > minor
+                ? UvCoordinate(placement.PolarAngle(p), placement.LocalCoordinates(p).Z.Atan2(placement.AxialRadius(p) - major).Radians.IntoFullTurn)
+                : surface.ProjectBySearch(g, p);
+            Revolution(profile, axis) => surface.ProjectBySearch(g, p);
+            LinearExtrusion(profile, extrusion) => surface.ProjectBySearch(g, p);
+            BSpline(data) => surface.ProjectBySearch(g, p);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => surface.ProjectBySearch(g, p);
+            Offset(basis, distance) => surface.ProjectBySearch(g, p);
+        };
+
+    // The parameters of the point nearest to p in the neighbourhood of seed,
+    // each periodic coordinate the copy nearest to the seed's: the local
+    // inverse face meshing uses along an edge, seeding each point with the
+    // previous one's parameters so the curve's continuity chooses the root and
+    // no unwrapping is needed (research/MESHING-REQUIREMENTS.md 4.2). For a
+    // surface that is injective by construction it is Project moved to the
+    // seed's copy; otherwise a local search.
+    ProjectNear(g: GeometrySet, s: SurfaceIndex, p: Point3D, seed: UvCoordinate): UvCoordinate
+        => g.IsInjectiveByConstruction(s) && g.HasClosedFormProjection(s)
+            ? g.Domain(s).NearestUnwrapped(g.Project(s, p), seed)
+            : g.SurfaceAt(s).ProjectNearBySearch(g, p, seed);
+
+    // deferred: global minimization of |Eval(uv) - p|^2 over the domain: seed
+    // from a grid over each smooth patch (Breakpoints in u and v) sized by the
+    // patch's curvature, polish the best seeds by Newton's iteration on the
+    // two equations (Eval - p) . PartialU = 0, (Eval - p) . PartialV = 0 with a
+    // trust region kept inside the domain, compare with the closest points on
+    // the domain's sides and collapsed lines, then wrap periodic coordinates
+    // into the window and set an undetermined coordinate to the window's start.
+    ProjectBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D): UvCoordinate;
+
+    // deferred: Newton's iteration from seed on the same two equations, with a
+    // trust region of a quarter period in a periodic direction and the domain
+    // in a bounded one; periodic coordinates are not wrapped, so the result is
+    // the copy reached from the seed.
+    ProjectNearBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): UvCoordinate;
+
+    // True when Project has a closed form for the surface: plane, cylinder,
+    // cone, sphere, and a Full torus with major above minor.
+    HasClosedFormProjection(g: GeometrySet, s: SurfaceIndex): Boolean
+        => g.SurfaceAt(s).HasClosedFormProjection(g);
+
+    // HasClosedFormProjection for one record of the arena g, which holds the entries it references.
+    HasClosedFormProjection(surface: BrepSurface, g: GeometrySet): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => true;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => part == TorusPart.Full && major > minor;
+            Revolution(profile, axis) => false;
+            LinearExtrusion(profile, extrusion) => false;
+            BSpline(data) => false;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => false;
+            Offset(basis, distance) => false;
+        };
+
+    // True when the map is one-to-one on its window away from collapsed lines
+    // by the shape of its formula, so a point determines its parameters: the
+    // plane, cylinder, both nappes of the cone, the sphere, a ring torus, and
+    // each part of a spindle torus. A swept, spline or offset surface may
+    // overlap itself (ISO 10303-42 5.2.1 allows it), so no closed-form test
+    // decides it.
+    IsInjectiveByConstruction(g: GeometrySet, s: SurfaceIndex): Boolean
+        => g.SurfaceAt(s).IsInjectiveByConstruction(g);
+
+    // IsInjectiveByConstruction for one record of the arena g, which holds the entries it references.
+    IsInjectiveByConstruction(surface: BrepSurface, g: GeometrySet): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => true;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => part != TorusPart.Full || major > minor;
+            Revolution(profile, axis) => false;
+            LinearExtrusion(profile, extrusion) => false;
+            BSpline(data) => false;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.IsInjectiveByConstruction(basis);
+            Offset(basis, distance) => false;
+        };
+
+    //==
+    // # Collapsed lines and degenerate sides
+
+    // The values c of the given parameter whose whole iso-line (that
+    // parameter held at c, the other varying) the map sends to one point:
+    // CollapsedAt(V) is v = -R / tan a on a cone (the apex, inside the
+    // domain), v = -pi/2 and pi/2 on a sphere, the axis points of a spindle
+    // torus, the profile's ends on the axis of a surface of revolution, and a
+    // spline's collapsed control rows. Tolerance-dependent for the swept and
+    // spline cases. An interior point where a revolution profile touches its
+    // axis is not found (README, open questions).
+    CollapsedAt(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Array<Number>
+        => g.SurfaceAt(s).CollapsedAt(g, which, tol);
+
+    // CollapsedAt for one record of the arena g, which holds the entries it references.
+    CollapsedAt(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter, tol: Tolerances): Array<Number>
+        => match (surface)
+        {
+            Plane(placement) => Number.NoParameters;
+            Cylinder(placement, radius) => Number.NoParameters;
+            Cone(placement, radius, semiAngle) => which.Along(Number.NoParameters,
+                semiAngle.Radians == 0.0 ? Number.NoParameters : [-radius / semiAngle.Tan]);
+            Sphere(placement, radius) => which.Along(Number.NoParameters, [-Number.HalfPi, Number.HalfPi]);
+            Torus(placement, major, minor, part) => which.Along(Number.NoParameters, part.TorusCollapsedV(major, minor));
+            Revolution(profile, axis) => which.Along(Number.NoParameters, g.ProfileEndsOnAxis(profile, axis, tol.Length));
+            LinearExtrusion(profile, extrusion) => Number.NoParameters;
+            BSpline(data) => data.SplineCollapsedAt(which, tol.Length);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.CollapsedAt(basis, which, tol)
+                .OffsetsWithin(which.Along(uRange, vRange), which.Along(uSense, vSense), tol.Parameter);
+            Offset(basis, distance) => g.CollapsedAt(basis, which, tol);
+        };
+
+    // The sides of the natural domain the surface collapses to a point: the
+    // sides of a bounded aperiodic direction that lie on a collapsed line
+    // within the parameter floor. A periodic direction has no sides; an
+    // unbounded one has none at a finite place. A cone's apex is interior to
+    // its domain, so a cone has no degenerate side; face meshing compares its
+    // face box with CollapsedAt for that.
+    DegenerateSides(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Array<DomainSide>
+        => [DomainSide.UMin, DomainSide.UMax, DomainSide.VMin, DomainSide.VMax]
+            .FlatMap(side => g.IsSideCollapsed(s, side, tol) ? [side] : DomainSide.NoSides);
+
+    // True when the side is one of the surface's degenerate sides.
+    IsSideCollapsed(g: GeometrySet, s: SurfaceIndex, side: DomainSide, tol: Tolerances): Boolean
+        => g.Domain(s).DomainAlong(side.ParameterOf).Periodicity.IsPeriodic
+            ? false
+            : (g.Domain(s).DomainAlong(side.ParameterOf).ParameterLength.IsFinite
+                ? g.CollapsedAt(s, side.ParameterOf, tol).Any(c => (c - g.Domain(s).SideValue(side)).Abs <= tol.Parameter.Value)
+                : false);
+
+    // No sides: the typed empty array.
+    NoSides(_: DomainSide): Array<DomainSide>
+        => [DomainSide.UMin].Take(0);
+
+    //==
+    // # Breakpoints and closure
+
+    // The values of the given parameter along whose iso-lines the surface may
+    // lose tangent continuity: a spline's knots of multiplicity at least the
+    // degree, a swept surface's profile breakpoints, a trimmed basis's seen
+    // through the trim. Face meshing seeds them as interior lines.
+    Breakpoints(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Array<Number>
+        => g.SurfaceAt(s).Breakpoints(g, which);
+
+    // Breakpoints for one record of the arena g, which holds the entries it references.
+    Breakpoints(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter): Array<Number>
+        => match (surface)
+        {
+            Plane(placement) => Number.NoParameters;
+            Cylinder(placement, radius) => Number.NoParameters;
+            Cone(placement, radius, semiAngle) => Number.NoParameters;
+            Sphere(placement, radius) => Number.NoParameters;
+            Torus(placement, major, minor, part) => Number.NoParameters;
+            Revolution(profile, axis) => which.Along(Number.NoParameters, g.Breakpoints(profile));
+            LinearExtrusion(profile, extrusion) => which.Along(g.Breakpoints(profile), Number.NoParameters);
+            BSpline(data) => data.BasisAlong(which).SplineBreakpoints;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Breakpoints(basis, which)
+                .OffsetsInside(which.Along(uRange, vRange), which.Along(uSense, vSense));
+            Offset(basis, distance) => g.Breakpoints(basis, which);
+        };
+
+    // True when the surface is closed in the given parameter: periodic in it,
+    // or bounded with its two opposite sides the same curve within tolerance
+    // (a clamped B-spline closed in u, a revolution of a closed profile, a
+    // trim spanning a whole period). Closure is what face meshing treats as a
+    // seam; periodicity only says the formula wraps (README, "Closure and
+    // periodicity").
+    IsClosedIn(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
+        => g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic
+            ? true
+            : (g.Domain(s).DomainAlong(which).ParameterLength.IsFinite ? g.SidesCoincide(s, which, tol) : false);
+
+    // True when the two sides across the given bounded parameter are the same
+    // curve within tolerance. The sphere's and the torus parts' v ends are
+    // distinct points, so never.
+    SidesCoincide(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
+        => g.SurfaceAt(s).SidesCoincide(g, which, tol);
+
+    // SidesCoincide for one record of the arena g, which holds the entries it references.
+    SidesCoincide(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter, tol: Tolerances): Boolean
+        => match (surface)
+        {
+            Plane(placement) => false;
+            Cylinder(placement, radius) => false;
+            Cone(placement, radius, semiAngle) => false;
+            Sphere(placement, radius) => false;
+            Torus(placement, major, minor, part) => false;
+            Revolution(profile, axis) => which.Along(false, g.IsClosed(profile, tol.Length));
+            LinearExtrusion(profile, extrusion) => which.Along(g.IsClosed(profile, tol.Length), false);
+            BSpline(data) => data.BSplineSidesCoincide(which, tol.Length);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => CurveDomain(
+                which.Along(uRange, vRange), g.Domain(basis).DomainAlong(which).Periodicity).IsFullPeriod(tol.Parameter);
+            Offset(basis, distance) => g.IsClosedIn(basis, which, tol);
+        };
+
+    //==
+    // # Parameter tolerance
+
+    // The parameter tolerance in each direction at uv: layer 0's UvToleranceAt
+    // with this surface's partials, so a displacement within it moves the
+    // point by at most the length tolerance to first order. At a collapsed line
+    // the tolerance along it is the cap: every value there is the same point.
+    UvToleranceAt(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): UvTolerance
+        => tol.UvToleranceAt(g.PartialU(s, uv).Length, g.PartialV(s, uv).Length, g.Domain(s));
+
+    //==
+    // # Helpers by case
+
+    // The rotation of w by angle u about the unit axis a, right-handed:
+    // w cos u + (a x w) sin u + a (a . w)(1 - cos u)
+    // (https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula).
+    RodriguesRotation(a: Vector3D, w: Vector3D, u: Number): Vector3D
+        => w * u.Cos + a.Cross(w) * u.Sin + a * (a.Dot(w) * (1.0 - u.Cos));
+
+    // The cone's normal: (cos a e_r - sin a z) on the nappe where
+    // R + v tan a > 0, its negation on the other, which is <S_u x S_v> on both
+    // (ISO 10303-42 4.5.61); fallback at the apex, where no normal exists.
+    // The apex test is exact: the formula is right arbitrarily close to it.
+    ConeNormalOr(f: Frame3D, radius: Number, semiAngle: Angle, uv: UvCoordinate, fallback: Direction3D): Direction3D
+        => radius + uv.V * semiAngle.Tan == 0.0
+            ? fallback
+            : Direction3D(f.FrameVector(semiAngle.Cos * uv.U.Cos, semiAngle.Cos * uv.U.Sin, -semiAngle.Sin)
+                * (radius + uv.V * semiAngle.Tan).Sign.ToNumber);
+
+    // The cone's closest parameters to p. In the meridian plane through p
+    // (radial coordinate r >= 0 toward p, axial z), the rulings at u and at
+    // u + pi are the lines (R + v tan a, v) and (-(R + v tan a), v); the foot
+    // on each is v = cos^2 a (z + tan a (r -+ R)), the distances
+    // |(r -+ R) cos a -+ z sin a|; the nearer line wins, the ruling at u on a
+    // tie.
+    ConeProject(f: Frame3D, radius: Number, semiAngle: Angle, p: Point3D): UvCoordinate
+    {
+        var z = f.LocalCoordinates(p).Z;
+        var r = f.AxialRadius(p);
+        var cosSquared = semiAngle.Cos * semiAngle.Cos;
+        var near = ((r - radius) * semiAngle.Cos - z * semiAngle.Sin).Abs;
+        var far = ((r + radius) * semiAngle.Cos + z * semiAngle.Sin).Abs;
+        return near <= far
+            ? UvCoordinate(f.PolarAngle(p), cosSquared * (z + semiAngle.Tan * (r - radius)))
+            : UvCoordinate((f.PolarAngle(p) + Number.Pi).IntoFullTurn, cosSquared * (z - semiAngle.Tan * (r + radius)));
+    }
+
+    // The angle phi with minor cos phi = -major, in (pi/2, pi] for a spindle
+    // torus: the meridian circle meets the axis at v = +-phi. Precondition:
+    // major <= minor.
+    SpindleAngle(major: Number, minor: Number): Number
+        => (-major / minor).Acos.Radians;
+
+    // The v domain of a torus part: the whole circle, periodic, for Full;
+    // [-phi, phi] for Apple and [phi, 2 pi - phi] for Lemon, aperiodic.
+    TorusVDomain(part: TorusPart, major: Number, minor: Number): CurveDomain
+        => match (part)
+        {
+            Full => CurveDomain.FullTurnDomain;
+            Apple => BoundedDomain(NumberInterval(-SpindleAngle(major, minor), SpindleAngle(major, minor)));
+            Lemon => BoundedDomain(NumberInterval(SpindleAngle(major, minor), Number.Tau - SpindleAngle(major, minor)));
+        };
+
+    // The v values where a torus part meets its axis, R + r cos v = 0: none
+    // on a ring torus; pi on a horn torus (major equal to minor, compared
+    // exactly because both radii are copied); phi and 2 pi - phi on a Full
+    // spindle torus, where they are interior; the two domain ends of Apple and
+    // Lemon.
+    TorusCollapsedV(part: TorusPart, major: Number, minor: Number): Array<Number>
+        => match (part)
+        {
+            Full => major > minor
+                ? Number.NoParameters
+                : (major == minor ? [Number.Pi] : [SpindleAngle(major, minor), Number.Tau - SpindleAngle(major, minor)]);
+            Apple => [-SpindleAngle(major, minor), SpindleAngle(major, minor)];
+            Lemon => [SpindleAngle(major, minor), Number.Tau - SpindleAngle(major, minor)];
+        };
+
+    // The ends of a bounded aperiodic profile that lie on the axis within the
+    // length tolerance: where a surface of revolution closes to a pole.
+    // Precondition: the axis direction is a unit vector.
+    ProfileEndsOnAxis(g: GeometrySet, profile: CurveIndex, axis: InfiniteLine3D, tol: LengthTolerance): Array<Number>
+        => g.Domain(profile).Periodicity.IsPeriodic || !g.Domain(profile).ParameterLength.IsFinite
+            ? Number.NoParameters
+            : [g.Domain(profile).Range.Start, g.Domain(profile).Range.End].FlatMap(v =>
+                axis.Direction.Vector.Cross(g.Eval(profile, v) - axis.Origin).Length <= tol.Value ? [v] : Number.NoParameters);
+
+    // The values of the given parameter where a spline's side collapses: the
+    // domain's start when the min side does, its end when the max side does.
+    SplineCollapsedAt(d: BSplineSurfaceData, which: SurfaceParameter, tol: LengthTolerance): Array<Number>
+        => (d.BSplineSideCollapses(which.Along(DomainSide.UMin, DomainSide.VMin), tol)
+                ? [d.BasisAlong(which).SplineDomain.Start]
+                : Number.NoParameters)
+            .Concatenate(d.BSplineSideCollapses(which.Along(DomainSide.UMax, DomainSide.VMax), tol)
+                ? [d.BasisAlong(which).SplineDomain.End]
+                : Number.NoParameters);
+
+    // The basis parameters of a rectangular trimmed surface's point uv: each
+    // direction run from its range's start or end by its sense.
+    TrimmedToBasis(uRange: NumberInterval, vRange: NumberInterval, uSense: Boolean, vSense: Boolean, uv: UvCoordinate): UvCoordinate
+        => UvCoordinate(uRange.SensedParameter(uSense, uv.U), vRange.SensedParameter(vSense, uv.V));
+
+    // The values within range r, ends included up to the tolerance, as
+    // distances along a run of r in the given sense: a basis's collapsed lines
+    // seen from a trimmed piece of it, where a collapsed line at the trim's
+    // edge is a side.
+    OffsetsWithin(values: Array<Number>, r: NumberInterval, sameSense: Boolean, tol: ParameterTolerance): Array<Number>
+        => values.FlatMap(t =>
+            r.SensedOffset(sameSense, t) >= -tol.Value && r.SensedOffset(sameSense, t) <= r.End - r.Start + tol.Value
+                ? [r.SensedOffset(sameSense, t)]
+                : values.Take(0));
+
+    //==
+    // # Helpers by parameter direction
+
+    // u when the parameter is ParameterU, v when it is ParameterV.
+    Along(which: SurfaceParameter, u: $T, v: $T): $T
+        => match (which)
+        {
+            ParameterU => u;
+            ParameterV => v;
+        };
+
+    // The domain of the given parameter.
+    DomainAlong(d: SurfaceDomain, which: SurfaceParameter): CurveDomain
+        => which.Along(d.U, d.V);
+
+    // The parameter held constant along a side: u on UMin and UMax.
+    ParameterOf(side: DomainSide): SurfaceParameter
+        => side.IsUSide ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV;
+
+    // The given coordinate of uv.
+    Coordinate(uv: UvCoordinate, which: SurfaceParameter): Number
+        => which.Along(uv.U, uv.V);
+
+    // uv with the given coordinate replaced by x.
+    WithCoordinate(uv: UvCoordinate, which: SurfaceParameter, x: Number): UvCoordinate
+        => which.Along(UvCoordinate(x, uv.V), UvCoordinate(uv.U, x));
+}

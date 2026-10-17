@@ -1,0 +1,60 @@
+//==
+// # The geometry arena
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file). The
+// flat tables of curves, parameter-plane curves, pcurves, and surfaces that a
+// model's topology indexes into, and three views that make one arena entry a
+// value implementing the natural-geometry concepts.
+//
+// Sections, in order:
+//  - The arena
+//  - Views of one arena entry
+
+//==
+// # The arena
+
+// Every curve and surface of one model, in four tables indexed by CurveIndex,
+// Curve2DIndex, PcurveIndex and SurfaceIndex. Entries reference each other only
+// by index. Well formed (IsWellFormed) when every index is in range, no chain of
+// references returns to where it started, and every record has the shape its
+// formula needs; every evaluation function requires it.
+type GeometrySet
+{
+    Curves: Array<BrepCurve>;
+    Curves2D: Array<BrepCurve2D>;
+    Pcurves: Array<Pcurve>;
+    Surfaces: Array<BrepSurface>;
+}
+
+//==
+// # Views of one arena entry
+//
+// The evaluation functions take the arena as receiver, so a BrepCurve alone
+// cannot implement an interface whose receiver is the curve (PLATO-PRIMER.md
+// A.3). A view pairs the arena with one index; it implements the concept by
+// delegating to the arena functions, and a non-STEP geometry can implement the
+// same concept directly.
+
+// Curve c of the arena g, as a value.
+type ArenaCurve
+    implements INaturalCurve3D
+{
+    Geometry: GeometrySet;
+    Curve: CurveIndex;
+}
+
+// Parameter-plane curve c of the arena g, as a value.
+type ArenaCurve2D
+    implements INaturalCurve2D
+{
+    Geometry: GeometrySet;
+    Curve: Curve2DIndex;
+}
+
+// Surface s of the arena g, as a value.
+type ArenaSurface
+    implements INaturalSurface
+{
+    Geometry: GeometrySet;
+    Surface: SurfaceIndex;
+}

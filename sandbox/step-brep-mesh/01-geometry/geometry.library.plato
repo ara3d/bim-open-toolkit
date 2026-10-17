@@ -1,0 +1,560 @@
+//==
+// # BrepGeometry
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file): the
+// arena as a whole. Index ranges, record shapes, the reference graph and its
+// acyclicity, well-formedness, the helpers every evaluator shares, and the
+// views that implement the natural-geometry concepts. Curve evaluation is in
+// BrepGeometryCurves, surface evaluation in BrepGeometrySurfaces, B-spline
+// records in BrepGeometrySplines; laws in geometry.laws.plato, contracts in
+// geometry.spec.plato.
+//
+// Sections, in order:
+//  - Standard domains
+//  - Index ranges
+//  - References in range
+//  - Record shapes
+//  - The reference graph
+//  - Well-formedness
+//  - Placements
+//  - Pieces laid end to end
+//  - Views
+
+library BrepGeometry
+{
+    //==
+    // # Standard domains
+
+    // belongs-in: 00-foundation
+    // The domain of an unbounded aperiodic parameter, the whole real line, with
+    // the largest finite Numbers as its ends, the stdlib's convention for an
+    // unbounded box (Bounds3D.Empty). ParameterLength is infinite on it.
+    UnboundedDomain(_: CurveDomain): CurveDomain
+        => CurveDomain(NumberInterval(Number.MinValue, Number.MaxValue), Periodicity.Aperiodic);
+
+    // One full turn, [0, 2 pi], periodic with period 2 pi: the angle of every
+    // circle, ellipse, and placement-based surface except the plane.
+    FullTurnDomain(_: CurveDomain): CurveDomain
+        => CurveDomain(NumberInterval(0.0, Number.Tau), Periodicity.Periodic(Number.Tau));
+
+    // A bounded aperiodic domain over the range r.
+    BoundedDomain(r: NumberInterval): CurveDomain
+        => CurveDomain(r, Periodicity.Aperiodic);
+
+    // A periodic angle reduced into [0, 2 pi): layer 0's Wrap with period 2 pi.
+    IntoFullTurn(a: Number): Number
+        => a.Wrap(Number.Tau);
+
+    //==
+    // # Index ranges
+
+    // True when c names a curve of the arena.
+    IsCurveInRange(g: GeometrySet, c: CurveIndex): Boolean
+        => g.Curves.IsValidIndex(c);
+
+    // True when c names a parameter-plane curve of the arena.
+    IsCurve2DInRange(g: GeometrySet, c: Curve2DIndex): Boolean
+        => g.Curves2D.IsValidIndex(c);
+
+    // True when p names a pcurve of the arena.
+    IsPcurveInRange(g: GeometrySet, p: PcurveIndex): Boolean
+        => g.Pcurves.IsValidIndex(p);
+
+    // True when s names a surface of the arena.
+    IsSurfaceInRange(g: GeometrySet, s: SurfaceIndex): Boolean
+        => g.Surfaces.IsValidIndex(s);
+
+    // Curve c of the arena. Every lookup goes through these four accessors,
+    // which index by the Integer so the result type is declared, not
+    // inferred. Precondition: c in range.
+    CurveAt(g: GeometrySet, c: CurveIndex): BrepCurve
+        => g.Curves[c.Value];
+
+    // Parameter-plane curve c of the arena. Precondition: c in range.
+    Curve2DAt(g: GeometrySet, c: Curve2DIndex): BrepCurve2D
+        => g.Curves2D[c.Value];
+
+    // Pcurve p of the arena. Precondition: p in range.
+    PcurveAt(g: GeometrySet, p: PcurveIndex): Pcurve
+        => g.Pcurves[p.Value];
+
+    // Surface s of the arena. Precondition: s in range.
+    SurfaceAt(g: GeometrySet, s: SurfaceIndex): BrepSurface
+        => g.Surfaces[s.Value];
+
+    //==
+    // # References in range
+    //
+    // Each predicate looks at one record's own references, not at what they
+    // reference in turn; IsEveryIndexInRange folds them over the arena.
+
+    // True when every index curve holds names an entry of the arena.
+    ReferencesInRange(g: GeometrySet, curve: BrepCurve): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => true;
+            Circle(placement, radius) => true;
+            Ellipse(placement, semiAxis1, semiAxis2) => true;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
+            Parabola(placement, focalDistance) => true;
+            Polyline(points) => true;
+            BSpline(data) => true;
+            Trimmed(basis, range, sameSense) => g.IsCurveInRange(basis);
+            Composite(segments) => segments.All(segment => g.IsCurveInRange(segment.Curve));
+            Offset(basis, distance, reference) => g.IsCurveInRange(basis);
+            OnSurface(spaceCurve, supports, master) => g.IsCurveInRange(spaceCurve) && supports.All(support => g.IsSupportInRange(support));
+        };
+
+    // True when every index curve holds names an entry of the arena.
+    ReferencesInRange(g: GeometrySet, curve: BrepCurve2D): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => true;
+            Circle(placement, radius) => true;
+            Ellipse(placement, semiAxis1, semiAxis2) => true;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
+            Parabola(placement, focalDistance) => true;
+            Polyline(points) => true;
+            BSpline(data) => true;
+            Trimmed(basis, range, sameSense) => g.IsCurve2DInRange(basis);
+            Composite(segments) => segments.All(segment => g.IsCurve2DInRange(segment.Curve));
+            Offset(basis, distance) => g.IsCurve2DInRange(basis);
+        };
+
+    // True when the pcurve's surface and 2D curve are entries of the arena.
+    ReferencesInRange(g: GeometrySet, p: Pcurve): Boolean
+        => g.IsSurfaceInRange(p.Surface) && g.IsCurve2DInRange(p.Curve);
+
+    // True when every index surface holds names an entry of the arena.
+    ReferencesInRange(g: GeometrySet, surface: BrepSurface): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => true;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => true;
+            Revolution(profile, axis) => g.IsCurveInRange(profile);
+            LinearExtrusion(profile, extrusion) => g.IsCurveInRange(profile);
+            BSpline(data) => true;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.IsSurfaceInRange(basis);
+            Offset(basis, distance) => g.IsSurfaceInRange(basis);
+        };
+
+    // True when the support's pcurve or surface is an entry of the arena.
+    IsSupportInRange(g: GeometrySet, support: CurveSupport): Boolean
+        => match (support)
+        {
+            Parametric(pcurve) => g.IsPcurveInRange(pcurve);
+            SurfaceOnly(surface) => g.IsSurfaceInRange(surface);
+        };
+
+    // True when every index anywhere in the arena is in range: basis curves
+    // and surfaces, composite segments, surface-curve supports, each pcurve's
+    // surface and 2D curve. The first condition of IsWellFormed.
+    IsEveryIndexInRange(g: GeometrySet): Boolean
+        => g.Curves.All(curve => g.ReferencesInRange(curve))
+            && g.Curves2D.All(curve => g.ReferencesInRange(curve))
+            && g.Pcurves.All(p => g.ReferencesInRange(p))
+            && g.Surfaces.All(surface => g.ReferencesInRange(surface));
+
+    //==
+    // # Record shapes
+    //
+    // The counts a formula indexes by, so that evaluating a well-formed arena
+    // never reads past an array. These are the evaluation-critical subset of
+    // ISO 10303-42's WHERE rules; layer 3 states the rest over the decoded
+    // STEP entities.
+
+    // True when the curve's arrays have the sizes its formula reads: a
+    // polyline of at least two points, a composite of at least one segment, a
+    // well-shaped spline, a surface curve with one or two supports.
+    HasEvaluableShape(curve: BrepCurve): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => true;
+            Circle(placement, radius) => true;
+            Ellipse(placement, semiAxis1, semiAxis2) => true;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
+            Parabola(placement, focalDistance) => true;
+            Polyline(points) => points.Count >= 2;
+            BSpline(data) => data.IsWellShaped;
+            Trimmed(basis, range, sameSense) => true;
+            Composite(segments) => segments.Count >= 1;
+            Offset(basis, distance, reference) => true;
+            OnSurface(spaceCurve, supports, master) => supports.Count >= 1 && supports.Count <= 2;
+        };
+
+    // True when the parameter-plane curve's arrays have the sizes its formula
+    // reads.
+    HasEvaluableShape(curve: BrepCurve2D): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => true;
+            Circle(placement, radius) => true;
+            Ellipse(placement, semiAxis1, semiAxis2) => true;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
+            Parabola(placement, focalDistance) => true;
+            Polyline(points) => points.Count >= 2;
+            BSpline(data) => data.IsWellShaped;
+            Trimmed(basis, range, sameSense) => true;
+            Composite(segments) => segments.Count >= 1;
+            Offset(basis, distance) => true;
+        };
+
+    // True when the surface's arrays have the sizes its formula reads: only
+    // the B-spline case has arrays.
+    HasEvaluableShape(surface: BrepSurface): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => true;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => true;
+            Revolution(profile, axis) => true;
+            LinearExtrusion(profile, extrusion) => true;
+            BSpline(data) => data.IsWellShaped;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => true;
+            Offset(basis, distance) => true;
+        };
+
+    //==
+    // # The reference graph
+    //
+    // Curves, 2D curves, pcurves and surfaces are the nodes; an edge runs from
+    // an entry to each entry its payload indexes. Evaluation recurses along the
+    // edges, so it terminates exactly when the graph has no cycle. Depth is the
+    // number of nodes on the longest chain from a node, capped at a fuel that
+    // no acyclic chain reaches: a chain of fuel nodes must repeat one
+    // (pigeonhole). Out-of-range references end a chain; they are the subject
+    // of IsEveryIndexInRange. Cost: the number of chains, which is the arena
+    // size for the trees real files contain and exponential only for a
+    // deliberately shared diamond-shaped graph.
+
+    // The number of entries in the arena plus one: a chain of that many nodes
+    // repeats a node.
+    ReferenceFuel(g: GeometrySet): Integer
+        => g.Curves.Count + g.Curves2D.Count + g.Pcurves.Count + g.Surfaces.Count + 1;
+
+    // The longest chain of references starting at curve c, counting c, capped
+    // at fuel; 0 when c is out of range or fuel is spent.
+    CurveDepth(g: GeometrySet, c: CurveIndex, fuel: Integer): Integer
+        => fuel <= 0 ? 0 : (g.IsCurveInRange(c) ? 1 + g.ChildDepth(g.CurveAt(c), fuel - 1) : 0);
+
+    // The longest chain starting at parameter-plane curve c, capped at fuel.
+    Curve2DDepth(g: GeometrySet, c: Curve2DIndex, fuel: Integer): Integer
+        => fuel <= 0 ? 0 : (g.IsCurve2DInRange(c) ? 1 + g.ChildDepth(g.Curve2DAt(c), fuel - 1) : 0);
+
+    // The longest chain starting at pcurve p, capped at fuel.
+    PcurveDepth(g: GeometrySet, p: PcurveIndex, fuel: Integer): Integer
+        => fuel <= 0
+            ? 0
+            : (g.IsPcurveInRange(p)
+                ? 1 + g.SurfaceDepth(g.PcurveAt(p).Surface, fuel - 1).Max(g.Curve2DDepth(g.PcurveAt(p).Curve, fuel - 1))
+                : 0);
+
+    // The longest chain starting at surface s, capped at fuel.
+    SurfaceDepth(g: GeometrySet, s: SurfaceIndex, fuel: Integer): Integer
+        => fuel <= 0 ? 0 : (g.IsSurfaceInRange(s) ? 1 + g.ChildDepth(g.SurfaceAt(s), fuel - 1) : 0);
+
+    // The longest chain starting at a surface curve's support.
+    SupportDepth(g: GeometrySet, support: CurveSupport, fuel: Integer): Integer
+        => match (support)
+        {
+            Parametric(pcurve) => g.PcurveDepth(pcurve, fuel);
+            SurfaceOnly(surface) => g.SurfaceDepth(surface, fuel);
+        };
+
+    // The longest chain starting at any entry the curve references; 0 for a
+    // curve that references nothing.
+    ChildDepth(g: GeometrySet, curve: BrepCurve, fuel: Integer): Integer
+        => match (curve)
+        {
+            Line(origin, velocity) => 0;
+            Circle(placement, radius) => 0;
+            Ellipse(placement, semiAxis1, semiAxis2) => 0;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => 0;
+            Parabola(placement, focalDistance) => 0;
+            Polyline(points) => 0;
+            BSpline(data) => 0;
+            Trimmed(basis, range, sameSense) => g.CurveDepth(basis, fuel);
+            Composite(segments) => segments.Map(segment => g.CurveDepth(segment.Curve, fuel)).Reduce(0, (a, b) => a.Max(b));
+            Offset(basis, distance, reference) => g.CurveDepth(basis, fuel);
+            OnSurface(spaceCurve, supports, master) => g.CurveDepth(spaceCurve, fuel).Max(supports.Map(support => g.SupportDepth(support, fuel)).Reduce(0, (a, b) => a.Max(b)));
+        };
+
+    // The longest chain starting at any entry the parameter-plane curve
+    // references.
+    ChildDepth(g: GeometrySet, curve: BrepCurve2D, fuel: Integer): Integer
+        => match (curve)
+        {
+            Line(origin, velocity) => 0;
+            Circle(placement, radius) => 0;
+            Ellipse(placement, semiAxis1, semiAxis2) => 0;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => 0;
+            Parabola(placement, focalDistance) => 0;
+            Polyline(points) => 0;
+            BSpline(data) => 0;
+            Trimmed(basis, range, sameSense) => g.Curve2DDepth(basis, fuel);
+            Composite(segments) => segments.Map(segment => g.Curve2DDepth(segment.Curve, fuel)).Reduce(0, (a, b) => a.Max(b));
+            Offset(basis, distance) => g.Curve2DDepth(basis, fuel);
+        };
+
+    // The longest chain starting at any entry the surface references.
+    ChildDepth(g: GeometrySet, surface: BrepSurface, fuel: Integer): Integer
+        => match (surface)
+        {
+            Plane(placement) => 0;
+            Cylinder(placement, radius) => 0;
+            Cone(placement, radius, semiAngle) => 0;
+            Sphere(placement, radius) => 0;
+            Torus(placement, major, minor, part) => 0;
+            Revolution(profile, axis) => g.CurveDepth(profile, fuel);
+            LinearExtrusion(profile, extrusion) => g.CurveDepth(profile, fuel);
+            BSpline(data) => 0;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.SurfaceDepth(basis, fuel);
+            Offset(basis, distance) => g.SurfaceDepth(basis, fuel);
+        };
+
+    // True when no chain of references from curve c returns to an entry it
+    // has passed: its depth stays below the fuel.
+    IsAcyclicFrom(g: GeometrySet, c: CurveIndex): Boolean
+        => g.CurveDepth(c, g.ReferenceFuel) < g.ReferenceFuel;
+
+    // True when no chain from parameter-plane curve c repeats an entry.
+    IsAcyclicFrom(g: GeometrySet, c: Curve2DIndex): Boolean
+        => g.Curve2DDepth(c, g.ReferenceFuel) < g.ReferenceFuel;
+
+    // True when no chain from surface s repeats an entry.
+    IsAcyclicFrom(g: GeometrySet, s: SurfaceIndex): Boolean
+        => g.SurfaceDepth(s, g.ReferenceFuel) < g.ReferenceFuel;
+
+    //==
+    // # Well-formedness
+
+    // True when evaluation of every entry is total: every index in range, the
+    // reference graph acyclic, every record evaluable. A pcurve has no cycle
+    // of its own; it is reached through its surface and 2D curve, which are
+    // checked here. The precondition of every evaluation function.
+    IsWellFormed(g: GeometrySet): Boolean
+        => g.IsEveryIndexInRange
+            && g.Curves.All(curve => curve.HasEvaluableShape)
+            && g.Curves2D.All(curve => curve.HasEvaluableShape)
+            && g.Surfaces.All(surface => surface.HasEvaluableShape)
+            && g.Curves.Count.Range.All(i => g.IsAcyclicFrom(CurveIndex(i)))
+            && g.Curves2D.Count.Range.All(i => g.IsAcyclicFrom(Curve2DIndex(i)))
+            && g.Surfaces.Count.Range.All(i => g.IsAcyclicFrom(SurfaceIndex(i)));
+
+    // True when curve c of g may be evaluated: the arena is well formed and c
+    // is in range. The guard of every law that evaluates a curve.
+    CanEvaluate(g: GeometrySet, c: CurveIndex): Boolean
+        => g.IsWellFormed ? g.IsCurveInRange(c) : false;
+
+    // True when parameter-plane curve c of g may be evaluated.
+    CanEvaluate(g: GeometrySet, c: Curve2DIndex): Boolean
+        => g.IsWellFormed ? g.IsCurve2DInRange(c) : false;
+
+    // True when pcurve p of g may be evaluated.
+    CanEvaluate(g: GeometrySet, p: PcurveIndex): Boolean
+        => g.IsWellFormed ? g.IsPcurveInRange(p) : false;
+
+    // True when surface s of g may be evaluated.
+    CanEvaluate(g: GeometrySet, s: SurfaceIndex): Boolean
+        => g.IsWellFormed ? g.IsSurfaceInRange(s) : false;
+
+    //==
+    // # Placements
+
+    // The vector with coordinates (x, y, z) in the frame's axes:
+    // x XAxis + y YAxis + z ZAxis. FramePoint without the origin.
+    FrameVector(f: Frame3D, x: Number, y: Number, z: Number): Vector3D
+        => f.XAxis.Vector * x + f.YAxis.Vector * y + f.ZAxis.Vector * z;
+
+    // The coordinates of p in the frame: its offset from the origin dotted
+    // with each axis. Inverts FramePoint when the frame is orthonormal.
+    LocalCoordinates(f: Frame3D, p: Point3D): Vector3D
+        => Vector3D((p - f.Origin).Dot(f.XAxis.Vector), (p - f.Origin).Dot(f.YAxis.Vector), (p - f.Origin).Dot(f.ZAxis.Vector));
+
+    // The angle of p about the frame's Z axis, from XAxis toward YAxis, in
+    // [0, 2 pi): the u of p on every placement-based surface of revolution.
+    // 0 for a point on the axis, where every angle is equally near.
+    PolarAngle(f: Frame3D, p: Point3D): Number
+        => f.LocalCoordinates(p).Y.Atan2(f.LocalCoordinates(p).X).Radians.IntoFullTurn;
+
+    // The distance of p from the frame's Z axis.
+    AxialRadius(f: Frame3D, p: Point3D): Number
+        => (f.LocalCoordinates(p).X.Square + f.LocalCoordinates(p).Y.Square).Sqrt;
+
+    // The point with coordinates (x, y) in a plane frame, as a parameter-plane
+    // point: Origin + x XAxis + y YAxis.
+    FrameUv(f: Frame2D, x: Number, y: Number): UvCoordinate
+        => UvCoordinate(
+            f.Origin.X + f.XAxis.Vector.X * x + f.YAxis.Vector.X * y,
+            f.Origin.Y + f.XAxis.Vector.Y * x + f.YAxis.Vector.Y * y);
+
+    // The vector with coordinates (x, y) in a plane frame's axes.
+    FrameVector(f: Frame2D, x: Number, y: Number): Vector2D
+        => f.XAxis.Vector * x + f.YAxis.Vector * y;
+
+    // True when the direction has unit length within the angle tolerance, read
+    // as a relative length error.
+    IsUnitWithin(d: Direction3D, tol: AngleTolerance): Boolean
+        => (d.Vector.Length - 1.0).Abs <= tol.Value.Radians;
+
+    // True when the plane direction has unit length within the angle tolerance.
+    IsUnitWithin(d: Direction2D, tol: AngleTolerance): Boolean
+        => (d.Vector.Length - 1.0).Abs <= tol.Value.Radians;
+
+    // True when the frame is orthonormal and right-handed within the angle
+    // tolerance: unit axes, X and Y perpendicular, and X x Y along Z. Y and Z
+    // perpendicular to X follow from the last two to first order.
+    IsOrthonormalWithin(f: Frame3D, tol: AngleTolerance): Boolean
+        => f.XAxis.IsUnitWithin(tol)
+            && f.YAxis.IsUnitWithin(tol)
+            && f.ZAxis.IsUnitWithin(tol)
+            && f.XAxis.Vector.Dot(f.YAxis.Vector).Abs <= tol.Value.Sin
+            && Direction3D(f.XAxis.Vector.Cross(f.YAxis.Vector)).SameDirection(f.ZAxis, tol);
+
+    // True when the plane frame is orthonormal and counter-clockwise within the
+    // angle tolerance: unit axes and Y the quarter-turn of X.
+    IsOrthonormalWithin(f: Frame2D, tol: AngleTolerance): Boolean
+        => f.XAxis.IsUnitWithin(tol)
+            && f.YAxis.IsUnitWithin(tol)
+            && (f.YAxis.Vector - f.XAxis.Vector.Perp).Length <= tol.Value.Sin;
+
+    //==
+    // # Pieces laid end to end
+    //
+    // A composite curve lays its segments end to end in parameter, and a
+    // trimmed curve or surface runs a range forwards or backwards. These
+    // helpers do that arithmetic once for 3D and 2D curves and for surfaces.
+
+    // +1 for a piece run with its parameter, -1 against it: the factor on
+    // every odd derivative.
+    SenseSign(sameSense: Boolean): Number
+        => sameSense ? 1.0 : -1.0;
+
+    // The parameter of range r at distance s from its start when run with the
+    // parameter, or from its end when run against it.
+    SensedParameter(r: NumberInterval, sameSense: Boolean, s: Number): Number
+        => sameSense ? r.Start + s : r.End - s;
+
+    // The distance along r, from the start of a run in the given sense, of the
+    // parameter t: the inverse of SensedParameter.
+    SensedOffset(r: NumberInterval, sameSense: Boolean, t: Number): Number
+        => sameSense ? t - r.Start : r.End - t;
+
+    // The values strictly inside range r, as distances along a run of r in the
+    // given sense: a basis's breakpoints seen from a trimmed piece of it.
+    OffsetsInside(values: Array<Number>, r: NumberInterval, sameSense: Boolean): Array<Number>
+        => values.FlatMap(t =>
+            r.SensedOffset(sameSense, t) > 0.0 && r.SensedOffset(sameSense, t) < r.End - r.Start
+                ? [r.SensedOffset(sameSense, t)]
+                : values.Take(0));
+
+    // The index of the piece containing t when pieces of the given parametric
+    // lengths are laid end to end from 0: the last piece starting at or before
+    // t, so a join belongs to the later piece; the first or last piece for t
+    // outside. Precondition: at least one piece.
+    PieceAt(extents: Array<Number>, t: Number): Integer
+    {
+        var index = 0;
+        var next = extents[0];
+        var searching = true;
+        while (searching)
+        {
+            if (index + 1 < extents.Count)
+            {
+                if (next <= t)
+                {
+                    index = index + 1;
+                    next = next + extents[index];
+                }
+                else
+                {
+                    searching = false;
+                }
+            }
+            else
+            {
+                searching = false;
+            }
+        }
+        return index;
+    }
+
+    // Where piece i starts: the sum of the lengths of the pieces before it.
+    PieceStart(extents: Array<Number>, i: Integer): Number
+        => extents.Take(i).SumOf;
+
+    //==
+    // # Views
+    //
+    // Each function discharges one concept obligation by delegating to the
+    // arena function of the same name.
+
+    // The curve's domain.
+    Domain(x: ArenaCurve): CurveDomain
+        => x.Geometry.Domain(x.Curve);
+
+    // The curve's point at t.
+    Eval(x: ArenaCurve, t: Number): Point3D
+        => x.Geometry.Eval(x.Curve, t);
+
+    // The curve's derivative at t.
+    Derivative(x: ArenaCurve, t: Number): Vector3D
+        => x.Geometry.Derivative(x.Curve, t);
+
+    // The curve's second derivative at t.
+    SecondDerivative(x: ArenaCurve, t: Number): Vector3D
+        => x.Geometry.SecondDerivative(x.Curve, t);
+
+    // The curve's parameter nearest to p.
+    ClosestParameter(x: ArenaCurve, p: Point3D): Number
+        => x.Geometry.ClosestParameter(x.Curve, p);
+
+    // The parameter-plane curve's domain.
+    Domain(x: ArenaCurve2D): CurveDomain
+        => x.Geometry.Domain(x.Curve);
+
+    // The parameter-plane curve's point at t.
+    Eval(x: ArenaCurve2D, t: Number): UvCoordinate
+        => x.Geometry.Eval(x.Curve, t);
+
+    // The parameter-plane curve's derivative at t.
+    Derivative(x: ArenaCurve2D, t: Number): Vector2D
+        => x.Geometry.Derivative(x.Curve, t);
+
+    // The surface's domain.
+    Domain(x: ArenaSurface): SurfaceDomain
+        => x.Geometry.Domain(x.Surface);
+
+    // The surface's point at uv.
+    Eval(x: ArenaSurface, uv: UvCoordinate): Point3D
+        => x.Geometry.Eval(x.Surface, uv);
+
+    // The surface's u partial at uv.
+    PartialU(x: ArenaSurface, uv: UvCoordinate): Vector3D
+        => x.Geometry.PartialU(x.Surface, uv);
+
+    // The surface's v partial at uv.
+    PartialV(x: ArenaSurface, uv: UvCoordinate): Vector3D
+        => x.Geometry.PartialV(x.Surface, uv);
+
+    // The surface's normal at uv, or fallback where it has none.
+    NormalOr(x: ArenaSurface, uv: UvCoordinate, fallback: Direction3D): Direction3D
+        => x.Geometry.NormalOr(x.Surface, uv, fallback);
+
+    // The surface's area element at uv.
+    AreaElement(x: ArenaSurface, uv: UvCoordinate): Number
+        => x.Geometry.AreaElement(x.Surface, uv);
+
+    // The surface's parameters of the point nearest to p.
+    Project(x: ArenaSurface, p: Point3D): UvCoordinate
+        => x.Geometry.Project(x.Surface, p);
+
+    // The sides of the surface's domain it collapses to a point.
+    DegenerateSides(x: ArenaSurface, tol: Tolerances): Array<DomainSide>
+        => x.Geometry.DegenerateSides(x.Surface, tol);
+}

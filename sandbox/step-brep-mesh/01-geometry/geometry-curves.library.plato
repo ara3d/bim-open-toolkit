@@ -1,0 +1,568 @@
+//==
+// # BrepGeometryCurves
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file):
+// evaluation of the arena's space curves, parameter-plane curves and pcurves in
+// their natural parameters. Each function over a curve index looks the record
+// up and hands it to the function of the same name over the record, which is
+// one exhaustive match over the sum (a match on a parameter: README,
+// "Implementation notes"). A case built on another curve evaluates it through
+// the arena, which terminates because a well-formed arena has no reference cycle
+// (IsWellFormed, theorem EvaluationTerminates). Every function requires
+// g.CanEvaluate on its index. Formulas are written out; inverse evaluation
+// beyond the closed forms, de Boor, and the third-order quantities an offset
+// needs are deferred, with contracts in geometry.spec.plato.
+//
+// Sections, in order:
+//  - Space curves: domain and point
+//  - Space curves: derivatives and curvature
+//  - Space curves: inverse evaluation
+//  - Space curves: breakpoints, closure, parameter tolerance
+//  - Surface curves and their pcurves
+//  - Polylines
+//  - Composite curves
+//  - Offset curves
+//  - Parameter-plane curves
+//  - Pcurves
+
+library BrepGeometryCurves
+{
+    //==
+    // # Space curves: domain and point
+
+    // The curve's natural domain (README, "Natural parameterizations"): the
+    // whole line for lines, hyperbolas and parabolas; one turn, periodic, for
+    // circles and ellipses; [0, n - 1] for a polyline; the knot span for a
+    // spline; [0, b - a] for a trimmed curve; [0, total parametric length] for
+    // a composite; the basis's for an offset; the master representation's for
+    // a surface curve.
+    Domain(g: GeometrySet, c: CurveIndex): CurveDomain
+        => g.CurveAt(c).Domain(g);
+
+    // Domain for one record of the arena g, which holds the entries it references.
+    Domain(curve: BrepCurve, g: GeometrySet): CurveDomain
+        => match (curve)
+        {
+            Line(origin, velocity) => CurveDomain.UnboundedDomain;
+            Circle(placement, radius) => CurveDomain.FullTurnDomain;
+            Ellipse(placement, semiAxis1, semiAxis2) => CurveDomain.FullTurnDomain;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveDomain.UnboundedDomain;
+            Parabola(placement, focalDistance) => CurveDomain.UnboundedDomain;
+            Polyline(points) => BoundedDomain(NumberInterval(0.0, (points.Count - 1).ToNumber));
+            BSpline(data) => BoundedDomain(data.Basis.SplineDomain);
+            Trimmed(basis, range, sameSense) => BoundedDomain(NumberInterval(0.0, range.End - range.Start));
+            Composite(segments) => BoundedDomain(NumberInterval(0.0, g.CompositeExtents(segments).SumOf));
+            Offset(basis, distance, reference) => g.Domain(basis);
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.Domain(spaceCurve)
+                : g.Domain(supports.MasterPcurve(master));
+        };
+
+    // The curve's point at parameter t (ISO 10303-42 4.5.24 to 4.5.55; the
+    // formulas are listed on BrepCurve). Precondition: t in the domain, any
+    // real when the domain is periodic or unbounded.
+    Eval(g: GeometrySet, c: CurveIndex, t: Number): Point3D
+        => g.CurveAt(c).Eval(g, t);
+
+    // Eval for one record of the arena g, which holds the entries it references.
+    Eval(curve: BrepCurve, g: GeometrySet, t: Number): Point3D
+        => match (curve)
+        {
+            Line(origin, velocity) => origin + velocity * t;
+            Circle(placement, radius) => placement.FramePoint(radius * t.Cos, radius * t.Sin, 0.0);
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.FramePoint(semiAxis1 * t.Cos, semiAxis2 * t.Sin, 0.0);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.FramePoint(semiAxis * t.Cosh, semiImaginaryAxis * t.Sinh, 0.0);
+            Parabola(placement, focalDistance) => placement.FramePoint(focalDistance * t * t, 2.0 * focalDistance * t, 0.0);
+            Polyline(points) => points.PolylinePoint(t);
+            BSpline(data) => data.BSplinePoint(t);
+            Trimmed(basis, range, sameSense) => g.Eval(basis, range.SensedParameter(sameSense, t));
+            Composite(segments) => g.Eval(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Offset(basis, distance, reference) => g.Eval(basis, t) + reference.Vector.Cross(g.Derivative(basis, t)).Normalize * distance;
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.Eval(spaceCurve, t)
+                : g.Eval(supports.MasterPcurve(master), t);
+        };
+
+    //==
+    // # Space curves: derivatives and curvature
+
+    // The derivative of Eval with respect to t: the velocity, whose length is
+    // the speed. At a polyline vertex it is the next segment's (the domain end
+    // takes the last segment's); across a composite join, the later segment's.
+    Derivative(g: GeometrySet, c: CurveIndex, t: Number): Vector3D
+        => g.CurveAt(c).Derivative(g, t);
+
+    // Derivative for one record of the arena g, which holds the entries it references.
+    Derivative(curve: BrepCurve, g: GeometrySet, t: Number): Vector3D
+        => match (curve)
+        {
+            Line(origin, velocity) => velocity;
+            Circle(placement, radius) => placement.FrameVector(-radius * t.Sin, radius * t.Cos, 0.0);
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.FrameVector(-semiAxis1 * t.Sin, semiAxis2 * t.Cos, 0.0);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.FrameVector(semiAxis * t.Sinh, semiImaginaryAxis * t.Cosh, 0.0);
+            Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance * t, 2.0 * focalDistance, 0.0);
+            Polyline(points) => points.PolylineChord(t);
+            BSpline(data) => data.BSplineDerivative(t, 1);
+            Trimmed(basis, range, sameSense) => g.Derivative(basis, range.SensedParameter(sameSense, t)) * sameSense.SenseSign;
+            Composite(segments) => g.Derivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t))
+                * segments[g.CompositeSegmentAt(segments, t)].SameSense.SenseSign;
+            Offset(basis, distance, reference) => g.Derivative(basis, t)
+                + UnitVectorDerivative(reference.Vector.Cross(g.Derivative(basis, t)), reference.Vector.Cross(g.SecondDerivative(basis, t))) * distance;
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.Derivative(spaceCurve, t)
+                : g.Derivative(supports.MasterPcurve(master), t);
+        };
+
+    // The second derivative of Eval with respect to t: the acceleration. Zero
+    // on lines and polylines.
+    SecondDerivative(g: GeometrySet, c: CurveIndex, t: Number): Vector3D
+        => g.CurveAt(c).SecondDerivative(g, t);
+
+    // SecondDerivative for one record of the arena g, which holds the entries it references.
+    SecondDerivative(curve: BrepCurve, g: GeometrySet, t: Number): Vector3D
+        => match (curve)
+        {
+            Line(origin, velocity) => Vector3D(0.0, 0.0, 0.0);
+            Circle(placement, radius) => placement.FrameVector(-radius * t.Cos, -radius * t.Sin, 0.0);
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.FrameVector(-semiAxis1 * t.Cos, -semiAxis2 * t.Sin, 0.0);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.FrameVector(semiAxis * t.Cosh, semiImaginaryAxis * t.Sinh, 0.0);
+            Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance, 0.0, 0.0);
+            Polyline(points) => Vector3D(0.0, 0.0, 0.0);
+            BSpline(data) => data.BSplineDerivative(t, 2);
+            Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, range.SensedParameter(sameSense, t));
+            Composite(segments) => g.SecondDerivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Offset(basis, distance, reference) => g.OffsetSecondDerivative(basis, distance, reference, t);
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.SecondDerivative(spaceCurve, t)
+                : g.SecondDerivative(supports.MasterPcurve(master), t);
+        };
+
+    // The curvature |C' x C''| / |C'|^3, the reciprocal of the radius of the
+    // osculating circle (https://en.wikipedia.org/wiki/Curvature#Space_curves);
+    // independent of the parameterization. Precondition: the speed is not zero.
+    Curvature(g: GeometrySet, c: CurveIndex, t: Number): Number
+        => g.Derivative(c, t).Cross(g.SecondDerivative(c, t)).Length
+            / (g.Derivative(c, t).Length * g.Derivative(c, t).Length * g.Derivative(c, t).Length);
+
+    //==
+    // # Space curves: inverse evaluation
+
+    // The parameter of the curve's point nearest to p: a global minimizer of
+    // |Eval(t) - p| over the domain. On a periodic curve, the representative
+    // in [Range.Start, Range.Start + period); on a closed aperiodic curve whose
+    // join is the nearest point, Range.Start; on a circle's axis, 0. Edge ranges
+    // are derived from it (layer 2's EdgeDomain), so it is on the main path.
+    // Closed forms for lines, circles and polylines; a search for the rest.
+    ClosestParameter(g: GeometrySet, c: CurveIndex, p: Point3D): Number
+        => g.CurveAt(c).ClosestParameter(g, p);
+
+    // ClosestParameter for one record of the arena g, which holds the entries it references.
+    ClosestParameter(curve: BrepCurve, g: GeometrySet, p: Point3D): Number
+        => match (curve)
+        {
+            Line(origin, velocity) => (p - origin).Dot(velocity) / velocity.LengthSquared;
+            Circle(placement, radius) => placement.PolarAngle(p);
+            Ellipse(placement, semiAxis1, semiAxis2) => curve.ClosestParameterBySearch(g, p);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => curve.ClosestParameterBySearch(g, p);
+            Parabola(placement, focalDistance) => curve.ClosestParameterBySearch(g, p);
+            Polyline(points) => points.PolylineClosestParameter(p);
+            BSpline(data) => curve.ClosestParameterBySearch(g, p);
+            Trimmed(basis, range, sameSense) => curve.ClosestParameterBySearch(g, p);
+            Composite(segments) => curve.ClosestParameterBySearch(g, p);
+            Offset(basis, distance, reference) => curve.ClosestParameterBySearch(g, p);
+            OnSurface(spaceCurve, supports, master) => curve.ClosestParameterBySearch(g, p);
+        };
+
+    // deferred: global minimization of |Eval(t) - p|^2 over the domain:
+    // bracket by sampling each smooth piece (Breakpoints) at a density set by
+    // its curvature, polish the best brackets by Newton's iteration on
+    // (Eval(t) - p) . Derivative(t) = 0 with bisection fallback, compare with
+    // the domain ends, wrap into the canonical window, and break ties toward
+    // the smaller parameter. For an unbounded domain the search starts from
+    // the foot of p on the curve's local quadratic model.
+    ClosestParameterBySearch(curve: BrepCurve, g: GeometrySet, p: Point3D): Number;
+
+    //==
+    // # Space curves: breakpoints, closure, parameter tolerance
+
+    // The parameters inside the domain where the curve may lose tangent
+    // continuity: polyline vertices, spline knots of multiplicity at least the
+    // degree, composite joins, and the basis's breakpoints as seen through a
+    // trim, an offset, or a pcurve. A discretization samples them; a finite
+    // difference must not straddle one. Unordered.
+    Breakpoints(g: GeometrySet, c: CurveIndex): Array<Number>
+        => g.CurveAt(c).Breakpoints(g);
+
+    // Breakpoints for one record of the arena g, which holds the entries it references.
+    Breakpoints(curve: BrepCurve, g: GeometrySet): Array<Number>
+        => match (curve)
+        {
+            Line(origin, velocity) => Number.NoParameters;
+            Circle(placement, radius) => Number.NoParameters;
+            Ellipse(placement, semiAxis1, semiAxis2) => Number.NoParameters;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => Number.NoParameters;
+            Parabola(placement, focalDistance) => Number.NoParameters;
+            Polyline(points) => (points.Count - 2).Max(0).MapRange(i => (i + 1).ToNumber);
+            BSpline(data) => data.Basis.SplineBreakpoints;
+            Trimmed(basis, range, sameSense) => g.Breakpoints(basis).OffsetsInside(range, sameSense);
+            Composite(segments) => g.CompositeBreakpoints(segments);
+            Offset(basis, distance, reference) => g.Breakpoints(basis);
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.Breakpoints(spaceCurve)
+                : g.Breakpoints(g.PcurveAt(supports.MasterPcurve(master)).Curve);
+        };
+
+    // No parameters: the typed empty array.
+    NoParameters(_: Number): Array<Number>
+        => 0.MapRange(i => i.ToNumber);
+
+    // True when the curve is closed: periodic, or bounded with its two ends
+    // within the length tolerance. Closure is geometric and tolerance
+    // dependent; periodicity is a property of the formula (README, "Closure
+    // and periodicity"). An unbounded curve is never closed.
+    IsClosed(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
+        => g.Domain(c).Periodicity.IsPeriodic
+            ? true
+            : (g.Domain(c).ParameterLength.IsFinite
+                ? g.Eval(c, g.Domain(c).Range.Start).Coincident(g.Eval(c, g.Domain(c).Range.End), tol)
+                : false);
+
+    // The parameter tolerance at t: layer 0's ParameterToleranceAt with this
+    // curve's speed and its domain's cap, so a parameter step within it moves
+    // the point by at most the length tolerance to first order.
+    ParameterToleranceAt(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): ParameterTolerance
+        => tol.ParameterToleranceAt(g.Derivative(c, t).Length, g.Domain(c).ParameterToleranceCap);
+
+    //==
+    // # Surface curves and their pcurves
+
+    // The pcurves a curve carries: the parametric supports of an OnSurface
+    // case, in order; empty for every other case and for supports that name
+    // only a surface. Layers 2 and 4 match them to faces by surface.
+    PcurvesOf(g: GeometrySet, c: CurveIndex): Array<PcurveIndex>
+        => g.CurveAt(c).PcurvesOf(g);
+
+    // PcurvesOf for one record of the arena g, which holds the entries it references.
+    PcurvesOf(curve: BrepCurve, g: GeometrySet): Array<PcurveIndex>
+        => match (curve)
+        {
+            Line(origin, velocity) => PcurveIndex.NoPcurves;
+            Circle(placement, radius) => PcurveIndex.NoPcurves;
+            Ellipse(placement, semiAxis1, semiAxis2) => PcurveIndex.NoPcurves;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => PcurveIndex.NoPcurves;
+            Parabola(placement, focalDistance) => PcurveIndex.NoPcurves;
+            Polyline(points) => PcurveIndex.NoPcurves;
+            BSpline(data) => PcurveIndex.NoPcurves;
+            Trimmed(basis, range, sameSense) => PcurveIndex.NoPcurves;
+            Composite(segments) => PcurveIndex.NoPcurves;
+            Offset(basis, distance, reference) => PcurveIndex.NoPcurves;
+            OnSurface(spaceCurve, supports, master) => supports.FlatMap(support =>
+                support.PcurveOrNone.IsNone ? PcurveIndex.NoPcurves : [support.PcurveOrNone]);
+        };
+
+    // No pcurves: the typed empty array.
+    NoPcurves(_: PcurveIndex): Array<PcurveIndex>
+        => 0.MapRange(i => PcurveIndex(i));
+
+    // The support's pcurve, or none (-1) when the support names only a surface.
+    PcurveOrNone(support: CurveSupport): PcurveIndex
+        => match (support)
+        {
+            Parametric(pcurve) => pcurve;
+            SurfaceOnly(surface) => PcurveIndex(-1);
+        };
+
+    // The pcurve that defines a surface curve's parameterization, or none
+    // when the space curve does. A master naming a support that is absent or
+    // is only a surface (a file breaking surface_curve WR2 or WR3) also gives
+    // none, and the space curve rules; layer 3 reports the file.
+    MasterPcurve(supports: Array<CurveSupport>, master: PreferredRepresentation): PcurveIndex
+        => match (master)
+        {
+            SpaceCurve => PcurveIndex(-1);
+            FirstPcurve => supports.Count > 0 ? supports[0].PcurveOrNone : PcurveIndex(-1);
+            SecondPcurve => supports.Count > 1 ? supports[1].PcurveOrNone : PcurveIndex(-1);
+        };
+
+    //==
+    // # Polylines
+
+    // The segment of an n-point polyline that holds t: floor(t) clamped to
+    // [0, n - 2], so a vertex belongs to the segment it starts.
+    PolylineSegmentAt(count: Integer, t: Number): Integer
+        => t.Max(0.0).Min((count - 2).ToNumber).Floor.ToInteger;
+
+    // The polyline's point at t: the segment's start moved toward its end by
+    // the fractional part (ISO 10303-42 4.5.33).
+    PolylinePoint(points: Array<Point3D>, t: Number): Point3D
+        => points[PolylineSegmentAt(points.Count, t)].Lerp(points[PolylineSegmentAt(points.Count, t) + 1], t - PolylineSegmentAt(points.Count, t).ToNumber);
+
+    // The polyline's velocity at t: the chord of the segment holding t.
+    PolylineChord(points: Array<Point3D>, t: Number): Vector3D
+        => points[PolylineSegmentAt(points.Count, t) + 1] - points[PolylineSegmentAt(points.Count, t)];
+
+    // The parameter of the polyline's point nearest to p: each segment's foot
+    // of p, clamped to the segment, the nearest kept; ties go to the smaller
+    // parameter.
+    PolylineClosestParameter(points: Array<Point3D>, p: Point3D): Number
+    {
+        var best = 0.0;
+        var bestDistance = points[0].DistanceSquared(p);
+        var i = 0;
+        var s = 0.0;
+        var chord = points[1] - points[0];
+        var distance = 0.0;
+        while (i + 1 < points.Count)
+        {
+            chord = points[i + 1] - points[i];
+            s = chord.LengthSquared > 0.0 ? ((p - points[i]).Dot(chord) / chord.LengthSquared).Max(0.0).Min(1.0) : 0.0;
+            distance = points[i].Lerp(points[i + 1], s).DistanceSquared(p);
+            if (distance < bestDistance)
+            {
+                best = i.ToNumber + s;
+                bestDistance = distance;
+            }
+            i = i + 1;
+        }
+        return best;
+    }
+
+    //==
+    // # Composite curves
+    //
+    // Segment i spans [sum of the lengths before it, that plus its own], each
+    // length the parametric length of the segment's curve, and runs its curve
+    // forwards or backwards by SameSense (ISO 10303-42 4.5.44).
+
+    // The parametric lengths of the segments' curves, in order.
+    CompositeExtents(g: GeometrySet, segments: Array<CompositeSegment>): Array<Number>
+        => segments.Map(segment => g.Domain(segment.Curve).ParameterLength);
+
+    // The index of the segment holding t.
+    CompositeSegmentAt(g: GeometrySet, segments: Array<CompositeSegment>, t: Number): Integer
+        => g.CompositeExtents(segments).PieceAt(t);
+
+    // The parameter, on its own curve, of the segment point at t.
+    CompositeLocal(g: GeometrySet, segments: Array<CompositeSegment>, t: Number): Number
+    {
+        var extents = g.CompositeExtents(segments);
+        var i = extents.PieceAt(t);
+        return g.Domain(segments[i].Curve).Range.SensedParameter(segments[i].SameSense, t - extents.PieceStart(i));
+    }
+
+    // The composite's breakpoints: every join, and each segment's own
+    // breakpoints moved to the composite's parameter.
+    CompositeBreakpoints(g: GeometrySet, segments: Array<CompositeSegment>): Array<Number>
+    {
+        var extents = g.CompositeExtents(segments);
+        return segments.Count.Range.FlatMap(i =>
+            (i == 0 ? Number.NoParameters : [extents.PieceStart(i)]).Concatenate(
+                g.Breakpoints(segments[i].Curve)
+                    .OffsetsInside(g.Domain(segments[i].Curve).Range, segments[i].SameSense)
+                    .Map(s => extents.PieceStart(i) + s)));
+    }
+
+    //==
+    // # Offset curves
+
+    // The derivative of the unit vector n / |n| given the derivative dn of n:
+    // (dn - <n> (<n> . dn)) / |n|. Precondition: n is not zero.
+    UnitVectorDerivative(n: Vector3D, dn: Vector3D): Vector3D
+        => (dn - n.Normalize * n.Normalize.Dot(dn)) * (1.0 / n.Length);
+
+    // deferred: the second derivative of B(t) + d <v x B'(t)>, which needs the
+    // basis's third derivative: by differentiating UnitVectorDerivative once
+    // more, with the basis's third derivative from the spline (order 3) or the
+    // closed forms, or by a central difference of Derivative where the basis
+    // has none.
+    OffsetSecondDerivative(g: GeometrySet, basis: CurveIndex, distance: Number, reference: Direction3D, t: Number): Vector3D;
+
+    //==
+    // # Parameter-plane curves
+    //
+    // The same formulas as for space curves, in the plane of one surface's
+    // natural parameters; the comments there apply.
+
+    // The parameter-plane curve's natural domain.
+    Domain(g: GeometrySet, c: Curve2DIndex): CurveDomain
+        => g.Curve2DAt(c).Domain(g);
+
+    // Domain for one record of the arena g, which holds the entries it references.
+    Domain(curve: BrepCurve2D, g: GeometrySet): CurveDomain
+        => match (curve)
+        {
+            Line(origin, velocity) => CurveDomain.UnboundedDomain;
+            Circle(placement, radius) => CurveDomain.FullTurnDomain;
+            Ellipse(placement, semiAxis1, semiAxis2) => CurveDomain.FullTurnDomain;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveDomain.UnboundedDomain;
+            Parabola(placement, focalDistance) => CurveDomain.UnboundedDomain;
+            Polyline(points) => BoundedDomain(NumberInterval(0.0, (points.Count - 1).ToNumber));
+            BSpline(data) => BoundedDomain(data.Basis.SplineDomain);
+            Trimmed(basis, range, sameSense) => BoundedDomain(NumberInterval(0.0, range.End - range.Start));
+            Composite(segments) => BoundedDomain(NumberInterval(0.0, g.CompositeExtents(segments).SumOf));
+            Offset(basis, distance) => g.Domain(basis);
+        };
+
+    // The parameter-plane curve's point at t, in the surface's natural
+    // parameters.
+    Eval(g: GeometrySet, c: Curve2DIndex, t: Number): UvCoordinate
+        => g.Curve2DAt(c).Eval(g, t);
+
+    // Eval for one record of the arena g, which holds the entries it references.
+    Eval(curve: BrepCurve2D, g: GeometrySet, t: Number): UvCoordinate
+        => match (curve)
+        {
+            Line(origin, velocity) => origin + velocity * t;
+            Circle(placement, radius) => placement.FrameUv(radius * t.Cos, radius * t.Sin);
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.FrameUv(semiAxis1 * t.Cos, semiAxis2 * t.Sin);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.FrameUv(semiAxis * t.Cosh, semiImaginaryAxis * t.Sinh);
+            Parabola(placement, focalDistance) => placement.FrameUv(focalDistance * t * t, 2.0 * focalDistance * t);
+            Polyline(points) => points.PolylinePoint(t);
+            BSpline(data) => data.BSplinePoint(t);
+            Trimmed(basis, range, sameSense) => g.Eval(basis, range.SensedParameter(sameSense, t));
+            Composite(segments) => g.Eval(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Offset(basis, distance) => g.Eval(basis, t) + g.Derivative(basis, t).Normalize.Perp * distance;
+        };
+
+    // The parameter-plane curve's derivative at t.
+    Derivative(g: GeometrySet, c: Curve2DIndex, t: Number): Vector2D
+        => g.Curve2DAt(c).Derivative(g, t);
+
+    // Derivative for one record of the arena g, which holds the entries it references.
+    Derivative(curve: BrepCurve2D, g: GeometrySet, t: Number): Vector2D
+        => match (curve)
+        {
+            Line(origin, velocity) => velocity;
+            Circle(placement, radius) => placement.FrameVector(-radius * t.Sin, radius * t.Cos);
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.FrameVector(-semiAxis1 * t.Sin, semiAxis2 * t.Cos);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.FrameVector(semiAxis * t.Sinh, semiImaginaryAxis * t.Cosh);
+            Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance * t, 2.0 * focalDistance);
+            Polyline(points) => points.PolylineChord(t);
+            BSpline(data) => data.BSplineDerivative(t, 1);
+            Trimmed(basis, range, sameSense) => g.Derivative(basis, range.SensedParameter(sameSense, t)) * sameSense.SenseSign;
+            Composite(segments) => g.Derivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t))
+                * segments[g.CompositeSegmentAt(segments, t)].SameSense.SenseSign;
+            Offset(basis, distance) => g.Derivative(basis, t)
+                + UnitVectorDerivative(g.Derivative(basis, t), g.SecondDerivative(basis, t)).Perp * distance;
+        };
+
+    // The parameter-plane curve's second derivative at t.
+    SecondDerivative(g: GeometrySet, c: Curve2DIndex, t: Number): Vector2D
+        => g.Curve2DAt(c).SecondDerivative(g, t);
+
+    // SecondDerivative for one record of the arena g, which holds the entries it references.
+    SecondDerivative(curve: BrepCurve2D, g: GeometrySet, t: Number): Vector2D
+        => match (curve)
+        {
+            Line(origin, velocity) => Vector2D(0.0, 0.0);
+            Circle(placement, radius) => placement.FrameVector(-radius * t.Cos, -radius * t.Sin);
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.FrameVector(-semiAxis1 * t.Cos, -semiAxis2 * t.Sin);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.FrameVector(semiAxis * t.Cosh, semiImaginaryAxis * t.Sinh);
+            Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance, 0.0);
+            Polyline(points) => Vector2D(0.0, 0.0);
+            BSpline(data) => data.BSplineDerivative(t, 2);
+            Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, range.SensedParameter(sameSense, t));
+            Composite(segments) => g.SecondDerivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Offset(basis, distance) => g.OffsetSecondDerivative(basis, distance, t);
+        };
+
+    // The parameter-plane curve's breakpoints, as for space curves.
+    Breakpoints(g: GeometrySet, c: Curve2DIndex): Array<Number>
+        => g.Curve2DAt(c).Breakpoints(g);
+
+    // Breakpoints for one record of the arena g, which holds the entries it references.
+    Breakpoints(curve: BrepCurve2D, g: GeometrySet): Array<Number>
+        => match (curve)
+        {
+            Line(origin, velocity) => Number.NoParameters;
+            Circle(placement, radius) => Number.NoParameters;
+            Ellipse(placement, semiAxis1, semiAxis2) => Number.NoParameters;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => Number.NoParameters;
+            Parabola(placement, focalDistance) => Number.NoParameters;
+            Polyline(points) => (points.Count - 2).Max(0).MapRange(i => (i + 1).ToNumber);
+            BSpline(data) => data.Basis.SplineBreakpoints;
+            Trimmed(basis, range, sameSense) => g.Breakpoints(basis).OffsetsInside(range, sameSense);
+            Composite(segments) => g.CompositeBreakpoints(segments);
+            Offset(basis, distance) => g.Breakpoints(basis);
+        };
+
+    // The parameter-plane polyline's point at t.
+    PolylinePoint(points: Array<UvCoordinate>, t: Number): UvCoordinate
+        => points[PolylineSegmentAt(points.Count, t)].Lerp(points[PolylineSegmentAt(points.Count, t) + 1], t - PolylineSegmentAt(points.Count, t).ToNumber);
+
+    // The parameter-plane polyline's velocity at t.
+    PolylineChord(points: Array<UvCoordinate>, t: Number): Vector2D
+        => points[PolylineSegmentAt(points.Count, t) + 1] - points[PolylineSegmentAt(points.Count, t)];
+
+    // The parametric lengths of a parameter-plane composite's segments.
+    CompositeExtents(g: GeometrySet, segments: Array<CompositeSegment2D>): Array<Number>
+        => segments.Map(segment => g.Domain(segment.Curve).ParameterLength);
+
+    // The index of the parameter-plane composite's segment holding t.
+    CompositeSegmentAt(g: GeometrySet, segments: Array<CompositeSegment2D>, t: Number): Integer
+        => g.CompositeExtents(segments).PieceAt(t);
+
+    // The parameter, on its own curve, of the parameter-plane composite's
+    // point at t.
+    CompositeLocal(g: GeometrySet, segments: Array<CompositeSegment2D>, t: Number): Number
+    {
+        var extents = g.CompositeExtents(segments);
+        var i = extents.PieceAt(t);
+        return g.Domain(segments[i].Curve).Range.SensedParameter(segments[i].SameSense, t - extents.PieceStart(i));
+    }
+
+    // The parameter-plane composite's breakpoints.
+    CompositeBreakpoints(g: GeometrySet, segments: Array<CompositeSegment2D>): Array<Number>
+    {
+        var extents = g.CompositeExtents(segments);
+        return segments.Count.Range.FlatMap(i =>
+            (i == 0 ? Number.NoParameters : [extents.PieceStart(i)]).Concatenate(
+                g.Breakpoints(segments[i].Curve)
+                    .OffsetsInside(g.Domain(segments[i].Curve).Range, segments[i].SameSense)
+                    .Map(s => extents.PieceStart(i) + s)));
+    }
+
+    // The derivative of the unit plane vector n / |n| given dn.
+    UnitVectorDerivative(n: Vector2D, dn: Vector2D): Vector2D
+        => (dn - n.Normalize * n.Normalize.Dot(dn)) * (1.0 / n.Length);
+
+    // deferred: the second derivative of a parameter-plane offset curve, by
+    // the basis's third derivative as for OffsetSecondDerivative in space.
+    OffsetSecondDerivative(g: GeometrySet, basis: Curve2DIndex, distance: Number, t: Number): Vector2D;
+
+    //==
+    // # Pcurves
+    //
+    // A pcurve as a space curve: its surface over its 2D curve, in the 2D
+    // curve's parameter (ISO 10303-42 4.5.47).
+
+    // The pcurve's domain: its 2D curve's.
+    Domain(g: GeometrySet, p: PcurveIndex): CurveDomain
+        => g.Domain(g.PcurveAt(p).Curve);
+
+    // The pcurve's point in space at t: its surface at its 2D curve's point.
+    Eval(g: GeometrySet, p: PcurveIndex, t: Number): Point3D
+        => g.Eval(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, t));
+
+    // The pcurve's velocity in space at t, by the chain rule:
+    // S_u u'(t) + S_v v'(t).
+    Derivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D
+        => g.PartialU(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, t)) * g.Derivative(g.PcurveAt(p).Curve, t).X
+            + g.PartialV(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, t)) * g.Derivative(g.PcurveAt(p).Curve, t).Y;
+
+    // deferred: the chain rule to second order, S_uu u'^2 + 2 S_uv u' v' +
+    // S_vv v'^2 + S_u u'' + S_v v'', which needs the surface's second partials;
+    // the B-spline case has them (BSplinePartial), the analytic ones in closed
+    // form, the rest by a central difference of the surface partials.
+    SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D;
+
+    // deferred: ClosestParameterBySearch over the pcurve as a space curve:
+    // the parameter of the pcurve's point nearest to q. Seeding from
+    // Project(surface, q) and a closest parameter of that uv on the 2D curve
+    // is the fast path when the surface is injective near q.
+    ClosestParameter(g: GeometrySet, p: PcurveIndex, q: Point3D): Number;
+
+    // The parameter tolerance at t on the pcurve, by its speed in space.
+    ParameterToleranceAt(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): ParameterTolerance
+        => tol.ParameterToleranceAt(g.Derivative(p, t).Length, g.Domain(p).ParameterToleranceCap);
+}
