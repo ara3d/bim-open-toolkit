@@ -263,6 +263,25 @@ library BrepOracles
             Offset(basis, distance) => Number.Unmeasured;
         };
 
+    // The volume a closed surface encloses, its whole outward flux over
+    // three: a sphere's 4 pi R^3 / 3, a ring torus's 2 pi^2 R r^2; NaN where
+    // ClosedSurfaceArea is NaN. Its outward side is the side S_u x S_v points
+    // to, so a face whose normal agrees with the surface's adds it.
+    ClosedSurfaceVolume(surface: BrepSurface): Number
+        => match (surface)
+        {
+            Plane(placement) => Number.Unmeasured;
+            Cylinder(placement, radius) => Number.Unmeasured;
+            Cone(placement, radius, semiAngle) => Number.Unmeasured;
+            Sphere(placement, radius) => 2.0 * Number.Tau * radius.Abs * radius * radius / 3.0;
+            Torus(placement, major, minor, part) => part == TorusPart.Full && major > minor ? Number.Pi * Number.Tau * major * minor * minor : Number.Unmeasured;
+            Revolution(profile, axis) => Number.Unmeasured;
+            LinearExtrusion(profile, extrusion) => Number.Unmeasured;
+            BSpline(data) => Number.Unmeasured;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => Number.Unmeasured;
+            Offset(basis, distance) => Number.Unmeasured;
+        };
+
     // The boundary of face f's region in its parameter plane at n chords per
     // coedge: the segments of every bound's lifted path, the implicit pole
     // sides that balance the paths' net winding in u, and the cut pairs of
@@ -487,11 +506,6 @@ library BrepOracles
             GreenSegment(UvCoordinate(uref, p.Points.First.V), UvCoordinate(p.Points.First.U, p.Points.First.V))]);
     }
 
-    // True when some path winds in v: the region is closed only up to the
-    // whole surface, which the area handles and the volume does not.
-    WindsInV(paths: Array<GreenPath>): Boolean
-        => paths.Any(p => p.WindingV != 0);
-
     //==
     // # Area potentials per surface
     //
@@ -656,8 +670,9 @@ library BrepOracles
 
     // The volume shell s encloses by the divergence theorem over its exact
     // faces, about the centre of the bounding box of its vertices; NaN when a
-    // face cannot be integrated (no closed-form potential, a region fixed
-    // only up to its whole closed surface, a loop winding in v).
+    // face cannot be integrated (a poly loop, or a surface with no
+    // closed-form potential). Total over loops that wind in v and over
+    // regions fixed only up to their whole closed surface (FaceVolumeTerm).
     Oracle_DivergenceVolume(m: BrepModel, s: ShellIndex): Number
         => m.IsShellInRange(s)
             ? Richardson(m.ShellVolume(s, Integer.GreenChords), m.ShellVolume(s, 2 * Integer.GreenChords))
@@ -698,14 +713,22 @@ library BrepOracles
         => m.ShellFaces(s).Map(f => m.FaceVolumeTerm(f, m.ShellOrigin(s), n)).SumOf / 3.0;
 
     // The closed integral of the volume potential about origin o over face
-    // f's n-chord boundary; NaN when the oracle cannot run on the face, when
-    // a path winds in v, or when the face's region is fixed only up to the
-    // whole closed surface (its raw Green area is not positive).
+    // f's n-chord boundary, the area's boundary with its pole sides and cut
+    // pairs: Green's theorem on the cut-open region holds for any potential,
+    // and the cut pairs lie at constant v, where IntegrateTrig is exact, so a
+    // loop that winds in v (the torus witness) is integrated like any other.
+    // Where the area oracle fixes the region only up to the whole closed
+    // surface (its raw area is not positive, so the region is the loops'
+    // region plus the surface), the surface's whole flux, three times the
+    // volume it encloses, is added with the face's normal sign, as
+    // GreenArea adds the whole area. NaN when the oracle cannot run on the
+    // face or the surface has no closed-form potential.
     FaceVolumeTerm(m: BrepModel, f: BrepFaceIndex, o: Point3D, n: Integer): Number
         => m.CanGreen(f)
-            ? ((m.RawGreenArea(f, n) > 0.0 ? m.Faces[f].Bounds.Count.Range.FlatMap(j => m.GreenPathsOfBound(f, j, n)).WindsInV.Not : false)
-                ? m.GreenBoundary(f, n).Map(seg => m.Geometry.SurfaceAt(m.Faces[f].Surface).VolumeSegment(m.Geometry, o, seg)).SumOf
-                : Number.Unmeasured)
+            ? m.GreenBoundary(f, n).Map(seg => m.Geometry.SurfaceAt(m.Faces[f].Surface).VolumeSegment(m.Geometry, o, seg)).SumOf
+                + (m.RawGreenArea(f, n) > 0.0
+                    ? 0.0
+                    : 3.0 * m.Geometry.SurfaceAt(m.Faces[f].Surface).ClosedSurfaceVolume * m.FaceNormalSign(f).ToNumber)
             : Number.Unmeasured;
 
     // The centre of the bounding box of shell s's vertex points: the origin

@@ -143,7 +143,11 @@ same boundary as the area. For the elementary surfaces F is a trigonometric poly
 F = A(v) + B(v) cos u + C(v) sin u (`TrigCoefficients`), exact on segments of constant v and
 integrated by 5-point Gauss-Legendre otherwise, then extrapolated as the area is.
 `DivergenceAllowance` is the Richardson correction plus rounding. A face whose loops wind in v (the
-torus's cut case) gives NaN; so does a surface without a closed-form F.
+torus witness) uses the area's cut pairs: Green's theorem on the cut-open region holds for any
+potential, and the cuts lie at constant v, where the trigonometric integral is exact. Where the area
+oracle fixes a region only up to the whole closed surface, the face adds the surface's whole flux,
+three times the volume it encloses (`ClosedSurfaceVolume`), with its normal sign, as the area adds
+the whole area. A surface without a closed-form F gives NaN.
 
 ## The area tolerance
 
@@ -263,7 +267,8 @@ Richardson correction plus rounding. Severity applies where the law backs a `Che
 `Law_GreenEqualsCylinderPatchArea`, `...CylinderSectorPatchArea`, `...SphereArea`,
 `...SphereAreaByPoleLoops`, `...TorusArea`, `...ConePatchArea`, `...BoxFaceArea`: the Green area of
 the matching parameterized witness face equals the closed form within the allowance, for every
-positive size. `Law_PlanarOracleEqualsDiskArea`: the exact planar oracle gives pi r^2 within
+positive size. `Law_DivergenceEqualsTorusVolume`: the divergence volume of the torus witness, whose
+loop winds in v, is 2 pi^2 R r^2 within the allowance. `Law_PlanarOracleEqualsDiskArea`: the exact planar oracle gives pi r^2 within
 rounding. `Law_GreenDiskAreaWithinArcResidual`: the Green area of a disk is within r^2 (2 pi)^5 /
 (960 n^4) plus rounding (the residual after Richardson on a circular arc).
 
@@ -312,26 +317,23 @@ Theorems in `validation.spec.plato`: `SampledCheckAgreesWithLaw`, `HigherLevelCl
 
 ## Open items
 
-1. **Torus volume.** `Witness_Torus`'s loop winds in v, so `FaceVolumeTerm` returns NaN and the
-   volume laws are vacuous on it. Cutting the region for the volume as the area does would close
-   it; the area path already has `CutSegments`.
-2. **Scaling with pcurves on planes.** `ScaledBy` keeps parameter-plane curves and pcurves, exact
+1. **Scaling with pcurves on planes.** `ScaledBy` keeps parameter-plane curves and pcurves, exact
    for every surface whose parameters are angles, not for a plane's lengths. The witnesses carry no
    pcurves; a corpus model would need them scaled.
-3. **Meshing in the witness laws.** `MeshOnce` runs layers 4 to 6 once with no refinement loop.
+2. **Meshing in the witness laws.** `MeshOnce` runs layers 4 to 6 once with no refinement loop.
    Layer 8's `MeshModel` exists; the meshed witness laws should also run over its mesh once the
    whole stack is in one compile. They are kept on `MeshOnce` so the gate over layers 0 to 7 passes
    without layer 8.
-4. **The short entry points.** `ValidateDiscretizations(m, d)` and `ValidateFaceMesh(m, fm)` run the
+3. **The short entry points.** `ValidateDiscretizations(m, d)` and `ValidateFaceMesh(m, fm)` run the
    structural family only, since the criteria are not in their arguments; `ValidateModelMesh(mesh)`
    uses tolerances at sixteen times the mesh's floating-point resolution. Callers with criteria should
    use the long forms.
-5. **Sphere witness reading.** VOCABULARY.md's "two poles" is read as poles at the seam's ends
+4. **Sphere witness reading.** VOCABULARY.md's "two poles" is read as poles at the seam's ends
    (`Witness_Sphere`); the vertex-loop variant is `Witness_SphereByPoleLoops`, and the variant with
    both is a negative witness.
-6. **NIST validation properties.** Reading them needs a decoder for AP242's
+5. **NIST validation properties.** Reading them needs a decoder for AP242's
    `geometric_validation_property`; not in layer 3.
-7. **Messages.** Report messages of the generated reports are the law's name in words. A message
+6. **Messages.** Report messages of the generated reports are the law's name in words. A message
    per law, written by hand, would read better.
 
 ## Implementation notes
@@ -400,3 +402,12 @@ library was added). Over layers 00 to 08: PASS, 0 errors, 6,357 functions.
    level)` without criteria, so Oracle-level runs skip the area and volume envelopes. Proposed:
    `m.ValidateBrep(level)`, `mesh.ValidateModelMesh(m.Tolerances, MeshQualityThresholds.CubitAcceptable,
    level)`, `m.CrossCheck(mesh, level, o.Face)`.
+
+## Fix wave, 2026-10-17
+
+Findings from `reviews/FIX-WAVE.md`, `reviews/MATH-REVIEW-layers-0-6.md` and layer 8's README,
+one commit each.
+
+| Finding | Done |
+|---|---|
+| Torus volume over a boundary that winds in v (open item 1) | `FaceVolumeTerm` integrates the area's boundary with its cut pairs and adds `ClosedSurfaceVolume` where the region is fixed only up to the whole surface; `WindsInV` deleted; `Law_DivergenceEqualsTorusVolume` added |

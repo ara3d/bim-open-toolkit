@@ -232,6 +232,15 @@ library BrepCheckingLaws
                 <= BrepModel.Witness_Torus(major, minor).GreenAllowance(BrepFaceIndex(0))
             : true;
 
+    // The ring torus of radii major > minor > 0 encloses 2 pi^2 R r^2 by the
+    // divergence theorem, though its one loop winds in v and its region is
+    // fixed only up to the whole surface.
+    Law_DivergenceEqualsTorusVolume(major: Number, minor: Number): Boolean
+        => (minor > 0.0 && major > minor && major.IsFinite)
+            ? (BrepModel.Witness_Torus(major, minor).Oracle_DivergenceVolume(ShellIndex(0)) - Number.Pi * Number.Tau * major * minor * minor).Abs
+                <= BrepModel.Witness_Torus(major, minor).DivergenceAllowance(ShellIndex(0))
+            : true;
+
     // The side of the cone of base radius r and height h, v from the apex
     // -h to the base 0: pi r sqrt(r^2 + h^2), the whole of it carried by the
     // apex's pole side.

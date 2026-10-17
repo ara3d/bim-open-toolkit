@@ -254,6 +254,7 @@ spec Witness_Torus(_: BrepModel, major: Number, minor: Number): BrepModel
     ensures result.ShellGenus(ShellIndex(0)) == 1;
     ensures result.ValidateBrep.IsClean;
     ensures Law_GreenEqualsTorusArea(major, minor);
+    ensures Law_DivergenceEqualsTorusVolume(major, minor);
     measure result.Faces.Count;
 }
 
