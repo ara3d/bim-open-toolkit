@@ -42706,5 +42706,8 @@ DATA;
 #42915=IFCPROPERTYSINGLEVALUE('ZoneEnergyUseIntensity_kWh_per_m2_year',$,IFCREAL(64.6),$);
 #42916=IFCPROPERTYSET('3B87vymw4J1duWvbcZMZvc',#33,'NRC_ZoneSummary',$,(#42909,#42910,#42911,#42912,#42913,#42914,#42915));
 #42917=IFCRELDEFINESBYPROPERTIES('3L8e$MFY22xcLmxH9Hg1FE',#33,$,$,(#42880),#42916);
+#42918=IFCDOCUMENTINFORMATION('nrc_analytics_long.csv','nrc_analytics_long.csv','Long table of the analytics values: one row per element and metric. Format: text/csv. SHA-256: 2abfc9dda1786bfa503fc901ec3e01cb3d2633ce0a9f520736ec95bc1812f313. Join key: GlobalId.',(#42919),$,$,$,$,$,$,$,$,$,$,$,$,$);
+#42919=IFCDOCUMENTREFERENCE('nrc_analytics_long.csv','nrc_analytics_long.csv',$);
+#42920=IFCRELASSOCIATESDOCUMENT('1rAB_ZiEEgj9Ib4QMaH1oq',#33,'nrc_analytics_long.csv','Long table of the analytics values: one row per element and metric. Format: text/csv. SHA-256: 2abfc9dda1786bfa503fc901ec3e01cb3d2633ce0a9f520736ec95bc1812f313. Join key: GlobalId.',(#34),#42919);
 ENDSEC;
 END-ISO-10303-21;

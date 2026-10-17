@@ -446,7 +446,10 @@
     },
     "answer": {
       "sourcePath": "{SAMPLES}/duplex-base.ifc",
-      "targetPath": "{ARTIFACTS}/nrc/duplex-enriched-out.ifc"
+      "targetPath": "{ARTIFACTS}/nrc/duplex-enriched-out.ifc",
+      "documentPath": "{SAMPLES}/nrc_analytics_long.csv",
+      "documentDescription": "Long table of the analytics values: one row per element and metric.",
+      "documentKey": "GlobalId"
     },
     "zoneSpaces": {
       "path": "nrc_analytics_spaces.csv",

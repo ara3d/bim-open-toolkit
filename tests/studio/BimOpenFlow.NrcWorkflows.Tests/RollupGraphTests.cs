@@ -164,11 +164,28 @@ public sealed class RollupGraphTests
             Assert.That(summary.Cell("entitiesTouched", 0), Is.EqualTo(228L));
             Assert.That(summary.Cell("valuesWritten", 0), Is.EqualTo(2469L));
             Assert.That(summary.Cell("zonesWritten", 0), Is.EqualTo(4L));
+            Assert.That(summary.Cell("documentsWritten", 0), Is.EqualTo(1L));
             Assert.That(summary.Cell("targetPath", 0), Is.EqualTo(target));
         });
         Assert.That(File.ReadAllBytes(target), Is.EqualTo(File.ReadAllBytes(NrcPaths.Ifc)),
             $"the committed enriched IFC differs from a fresh Run's output, left at {target}");
         Directory.Delete(targetDir, recursive: true);
+    }
+
+    /// <summary>The enriched file points at the long table: its name, format, SHA-256 (of the committed
+    /// file, which .gitattributes keeps free of line-ending changes), and the join key GlobalId.</summary>
+    [Test]
+    public void Enriched_CarriesADocumentReferenceToTheLongTable()
+    {
+        var table = Path.Combine(NrcPaths.SamplesDir, "nrc_analytics_long.csv");
+        var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(table))).ToLowerInvariant();
+        var text = File.ReadAllText(NrcPaths.Ifc);
+        Assert.Multiple(() =>
+        {
+            Assert.That(text, Does.Contain("'nrc_analytics_long.csv'"));
+            Assert.That(text, Does.Contain($"Format: text/csv. SHA-256: {sha}. Join key: GlobalId."));
+            Assert.That(text, Does.Contain("IFCRELASSOCIATESDOCUMENT('"));
+        });
     }
 
     /// <summary>The enrichment only adds: every entity of duplex-base.ifc is unchanged, and each
@@ -182,6 +199,7 @@ public sealed class RollupGraphTests
         var added = diff.Added.Select(id => after.GetSpan(id)!.Value.TypeName.ToUpperInvariant())
             .GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count());
 
+        // the long table's document reference (information, reference, relationship),
         // 653 element sets (217 embodied, 218 operational, 218 energy), 4 storey, 1 building, 1 provenance,
         // and 4 zone sets, each with the zone and the relationship that assigns its spaces.
         Assert.Multiple(() =>
@@ -196,6 +214,9 @@ public sealed class RollupGraphTests
                 ["IFCPROPERTYSINGLEVALUE"] = 2469,
                 ["IFCZONE"] = 4,
                 ["IFCRELASSIGNSTOGROUP"] = 4,
+                ["IFCDOCUMENTINFORMATION"] = 1,
+                ["IFCDOCUMENTREFERENCE"] = 1,
+                ["IFCRELASSOCIATESDOCUMENT"] = 1,
             }));
         });
     }

@@ -4,6 +4,8 @@ spec/** text eol=lf
 
 # IFC files are byte-exact: the NRC write-back is verified by hash and entity diff.
 samples/nrc/*.ifc -text
+# The enriched IFC records this file's SHA-256 (IfcDocumentReference), so it must not change with line-ending settings.
+samples/nrc/nrc_analytics_long.csv -text
 
 # Golden graph text is compared byte for byte with the printer's LF output (TKT-85).
 tests/studio/BimOpenFlow.SampleFlows.Tests/golden/** text eol=lf

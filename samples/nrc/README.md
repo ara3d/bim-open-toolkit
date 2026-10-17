@@ -15,7 +15,7 @@ The Duplex files are buildingSMART International's, CC BY 4.0; `NOTICE.md` in th
 | `nrc_analytics_long.csv` | 870 | the same numbers in long form: one row per (element, metric) |
 | `nrc_analytics_storeys.csv` | 5 | per-storey rollups plus a `Building` total row, as the generator computed them; a reference the tests compare the `nrc-rollup` graph against, not an input |
 | `door_verdicts.csv` | 56 | door rule verdicts with evidence and citation text |
-| `duplex-enriched.ifc` | — | `duplex-base.ifc` plus 663 property sets holding 2,469 values and four `IfcZone` groups (one `NRC_ZoneSummary` set each), written by a Run of `nrc-enrich-run`; a test asserts a fresh Run reproduces it byte for byte |
+| `duplex-enriched.ifc` | — | `duplex-base.ifc` plus 663 property sets holding 2,469 values and four `IfcZone` groups (one `NRC_ZoneSummary` set each) and an `IfcDocumentReference` on the project naming `nrc_analytics_long.csv` with its format, SHA-256, and join key `GlobalId`, written by a Run of `nrc-enrich-run`; a test asserts a fresh Run reproduces it byte for byte |
 | `duplex-base.ifc` | — | the unenriched Duplex, byte-identical to `nrc-ifc-llm/IFC-Test-Kit/duplex.ifc` (SHA-256 `b347a2c8…06ed`); the source the enrichment graphs write into |
 | `nrc-metrics.csv` | 20 | the metric dictionary: one row per metric and level, naming the property set, property, value type, unit, stage, rollup rule, and the decimals a rolled-up value is rounded to (TKT-48) |
 | `nrc_analytics_spaces.csv` | 60 | the synthetic per-space values of the 20 conditioned spaces: floor area (a copy of the model's `GSA BIM Area`, rounded to 0.01 m2), annual operational energy, and annual operational carbon; made by `make-zone-data.mjs`; no zone total is supplied |
