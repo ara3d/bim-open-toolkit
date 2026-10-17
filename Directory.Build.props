@@ -44,7 +44,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Central NuGet dependency versions">
-    <Ara3DSdkVersion>1.6.1</Ara3DSdkVersion>
+    <Ara3DSdkVersion>1.6.2</Ara3DSdkVersion>
     <Ara3DClosedXmlVersion>0.105.0</Ara3DClosedXmlVersion>
     <Ara3DCoverletCollectorVersion>6.0.0</Ara3DCoverletCollectorVersion>
     <Ara3DGoogleFlatBuffersVersion>25.2.10</Ara3DGoogleFlatBuffersVersion>
