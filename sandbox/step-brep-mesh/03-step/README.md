@@ -35,7 +35,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
 | `step.laws.plato` | laws | `StepReadingLaws` | the decode |
 | `step.spec.plato` | spec | | type invariants, a contract for each of the 19 deferred functions and for `DecodeBrep`, 3 theorems |
 
-Counts: 31 types; 182 library functions, 163 with bodies and 19 deferred; 162 laws; 26 `spec`
+Counts: 31 types; 185 library functions, 166 with bodies and 19 deferred; 171 laws; 26 `spec`
 blocks (6 on types, 20 on functions) and 3 theorems. The library was split from the
 `step.library.plato` the brief names into six blocks because the schema table and the WHERE
 helpers are subjects of their own; the laws follow the same split.
@@ -652,6 +652,38 @@ From research section 8, the corpus starts with:
 | `SHO/NORA-B101.step`, `SHO/IRIS-W1x1.step`, `SHO/ELLA-W1.STEP`, `SHO/NINA-B222-W1x2.STEP`, `SHO/c211_case_with_odin_v1.step`, `SHO/ODIN-W260.STEP`, `SHO/THEO-P173.STEP`, `POS/ANN-MB2.step`, `SHO/BMD-301.STEP`, `SHO/JODY-W3.STEP`, `CEL/LENA-R8.STEP`, `SHO/M2-JODY-W377-00C_PCIE-UART.step` | u-blox 3D-Step-Models-Library, already on this machine (research 8.2) | seams, vertex-loop poles, 8,386 pcurves, a `seam_curve`, Autodesk seams without pcurves, `brep_with_voids`, two outer bounds, out-of-order complex units, metre units, closed shells with free edges, lines with magnitude 1000, degree units, 1,218 occurrences |
 | `rassor_shrinkwrap.stp` | NASA 3D Resources (Creo) | size (13,394 faces), voids, degrees |
 
+## Fix wave, 2026-10-17
+
+Applied, one commit each (TKT-299, `reviews/FIX-WAVE.md`):
+
+- **T1/C1, `Closed` at decode.** The rule, the two flags codes, `Law_CurveClosureDecidedByEnds`,
+  `Law_SurfaceClosureDecidedBySides` ("Closure at decode").
+- **F2, mirrored placements.** The fold is kept and now right for every surface family because
+  layer 1 multiplies closed-form normals by the frame's handedness; `Law_MirrorFoldRecordedOnce`,
+  `Law_LeftHandedSurfacesAreFolded`; theorem `FoldingKeepsFaceRegions` restated.
+- **C2 and F6, tolerances.** Both parameter floors set; the clamp at the coordinate extent. One
+  commit, because both read the same new argument.
+- **Layer 8 finding 8.** `ModelSize` and `CoordinateExtent` exported in `DecodedModel`, with
+  `Law_DecodedMagnitudesAreTheModels`, `Law_DecodedToleranceResolvable`,
+  `Law_ParameterFloorsFollowLength`.
+- **Layer 8 finding 5, layer 7 finding 3.** `WholeInput` for whole-file findings,
+  `KernelCurve`/`KernelSurface` for record defects (`SubjectOf`, two laws).
+- **C10.** `IntegerTotal` and `StepOccurrenceIndex` deleted; layer 0 declares both.
+- **F7 (this layer's case).** `axis2_placement_3d` WR4 and the orthogonality practice law use
+  `AngleBetweenDirections`; the arc cosine cannot resolve the policy's 1e-9 rad.
+- **Owner decision.** `ParseStep`, `PrintStep`, `NameOctetsPrecede` are host obligations
+  ("Host obligations").
+
+Skipped, with reasons:
+
+- **F3, split a `Full` torus with major below minor at decode.** Layer 1 fixed the normal of the
+  Full spindle torus instead (`1f760aeb`), which makes the sense one sign per surface without new
+  faces, edges and pcurves at the axis circle; `TorusMajorBelowMinor` still reports it.
+- **T9, store edge and pcurve ranges at decode.** It adds fields to layer 2's `BrepEdge` and
+  `Coedge`; layer 2 fixed `EdgeDomain` and the pcurve ranges itself in this wave (`342cc0ac`,
+  `b9d089e7`). Left for a later decision between the two.
+- **F-1 (typed STEP entities, `reviews/FINDINGS.md`).** On hold by the owner's decision.
+
 ## Changes to the contract
 
 | Old | New | Reason |
@@ -668,4 +700,10 @@ From research section 8, the corpus starts with:
 | `FaceBound.IsOuter` "records that the file wrote face_outer_bound" (layer 2's comment) | as written, except false on every bound of a face that has two or more | a contradictory hint is dropped so `Law_AtMostOneOuterBound` holds after decode |
 | layer 8 `ParseOutcome { Ok; File; Diagnostics }` | proposal: layer 8 reuses `ParsedFile`, which has the same fields | one declaration of one shape |
 | (none) | `IntegerTotal`, layer 0's (moved there in the fix wave; this layer's and layer 6's copies deleted) | two identical overloads are ambiguous once both layers compile together |
-| names used from lower layers beyond the fixed list | layer 0: `ResolutionAt`, `ParameterFloor`, `Coincident`, `IsWellFormed`, `IsError`, `IsPeriodic`, `PeriodOr`, `Corresponds`, `Identical`, `Unmeasured`; layer 2: `ScaleToMetres` | these should become fixed names, or this layer breaks when they are renamed |
+| names used from lower layers beyond the fixed list | layer 0: `ResolutionAt`, `ResolvableLength`, `LengthParameterFloor`, `AngleParameterFloor`, `Law_LengthToleranceResolvable`, `Coincident`, `IsWellFormed`, `IsError`, `IsPeriodic`, `HasSeam`, `PeriodOr`, `Corresponds`, `Identical`, `Unmeasured`, `AngleBetweenDirections`, `IntegerTotal`, `StepOccurrenceIndex`, `WholeInput`, `KernelCurve`, `KernelSurface`; layer 1: `PlacementHandedness`, `SidesCoincide`, `DomainAlong`; layer 2: `ScaleToMetres`, `ModelSize(m)`, `CoordinateExtent(m)`, `BoundingDiagonal` | these should become fixed names, or this layer breaks when they are renamed |
+| `Tolerances(length, angle, ParameterFloor(length, size))` | `Tolerances(length, angle, LengthParameterFloor(length, extent), AngleParameterFloor(length, size, extent))`; `ModelLengthTolerance` and `ModelTolerances` take the extent | per-dimension floors (C2) and the rounding floor at the coordinate extent (F6) |
+| `DecodedModel { Model; Map; Diagnostics }` | adds `ModelSize`, `CoordinateExtent` | layer 8's relative chordal default and layer 7's resolvability check need the numbers the decoder used |
+| `ModelSize(points)`: the decoder's size | forwards to layer 2's `BoundingDiagonal`; the decoder reads layer 2's `ModelSize(m)` | one owner of the bounding-box size; kept only for layer 7's callers |
+| periodicity of decoded curves and surfaces: layer 1's case alone | `Closed(Period)` decided at decode from the ends at the length tolerance | review T1/C1; layer 1 stores the decision in its aperiodic records |
+| (none) | `StepFindingSubject`, `SubjectOf`, `FitsSubject`, `PointsAtSubject`; codes `ClosedFlagWithoutClosure`, `ClosureWithoutClosedFlag` | each finding's `Where` fixed per code; closure flags diagnosed |
+| (none) | `IsMirroredSource` | the mirror test the fold laws share |
