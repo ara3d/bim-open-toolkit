@@ -268,8 +268,12 @@ library EdgeDiscretizing
     // C([t0, t1]) of the edge's curve. For a convex arc turning less than half a turn it is the
     // largest distance from the arc to the chord's line. Closed form for a line (0), a circle
     // (R (1 - cos(dt / 2))), and an ellipse (the distance of the parametric midpoint from the
-    // chord's line, an affine image of the circle case); a control-hull bound per polynomial
-    // Bezier span; sampled for rational spans.
+    // chord's line, an affine image of the circle case). Every other curve: per Bezier span,
+    // polynomial or rational, the largest distance of a control point from the chord bounds the
+    // sagitta, since a span with positive weights (which ISO 10303-42 requires) lies in the
+    // convex hull of its control points and the distance to a segment is convex, so its maximum
+    // over the hull is at a control point; spans are subdivided until that bound is within the
+    // length tolerance of the sampled maximum. No curve is left with a sampled value only.
     Sagitta(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number;
 
     // The largest distance from the curve, at the plan's interior samples of segment i, to the
@@ -448,9 +452,9 @@ library EdgeDiscretizing
     // points: radius a for the chordal and length bounds, the angular bound scaled by b / a, radius
     // b for the length cap), raised one at a time until every image criterion holds or the length
     // cap is reached. Every other curve is bisected at parameter midpoints, seed span by
-    // seed span, while a criterion fails on a segment (sampled with `DiscretizationPlan`, or
-    // certified by a control-hull bound on polynomial spans) and both halves would be at least the
-    // effective minimum length; then the segment longest in parameter is halved, one at a time,
+    // seed span, while a criterion fails on a segment (the sagitta by `Sagitta`'s certificate,
+    // polynomial or rational; the angles with `DiscretizationPlan`; the image chords) and both
+    // halves would be at least the effective minimum length; then the segment longest in parameter is halved, one at a time,
     // until `MinimumSegmentCount` is reached. A degenerate edge gets its two domain ends and its
     // vertex point twice.
     Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization;

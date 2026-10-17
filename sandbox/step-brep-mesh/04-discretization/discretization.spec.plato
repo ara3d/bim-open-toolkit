@@ -70,13 +70,14 @@ spec Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floor
     ensures Law_ClosedEdgeHasMinSegments(m, result, c);
     ensures Law_SegmentFloorMet(m, result, c, floors);
     ensures forall (i: Integer) : Law_SagittaWithinChordal(m, result, c, SamplePlan.DiscretizationPlan, i);
+    ensures forall (i: Integer) : Law_CertifiedSagittaWithinChordal(m, result, c, i);
     ensures forall (i: Integer) : Law_TangentDeviationWithinHalfAngular(m, result, c, SamplePlan.DiscretizationPlan, i);
     ensures forall (i: Integer) : Law_TurningAngleWithinAngular(m, result, c, i);
     ensures forall (i: Integer) : Law_SegmentWithinMaxLength(m, result, c, i);
     ensures forall (i: Integer) : Law_ShortSegmentIsForced(m, result, c, floors, i);
     ensures forall (img: EdgeImage) in m.EdgeImages(e) : forall (i: Integer) : Law_ImageChordWithinChordal(m, result, c, img, SamplePlan.DiscretizationPlan, i);
     measure result.Parameters.Count;
-    deferred "seeds; a closed-form uniform count for conics, raised until the image criteria hold; adaptive bisection at parameter midpoints with three-sample tests for other curves; then the count floors";
+    deferred "seeds; a closed-form uniform count for conics, raised until the image criteria hold; adaptive bisection at parameter midpoints for other curves, the sagitta tested by Sagitta's certificate and the angles by the plan's samples; then the count floors";
 }
 
 // A canonical discretization refined under tighter criteria or to a higher count.
@@ -96,6 +97,7 @@ spec RefineEdge(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, 
     ensures Law_DomainStartPointIsVertex(m, result);
     ensures Law_DomainEndPointIsVertex(m, result);
     ensures forall (i: Integer) : Law_SagittaWithinChordal(m, result, c, SamplePlan.DiscretizationPlan, i);
+    ensures forall (i: Integer) : Law_CertifiedSagittaWithinChordal(m, result, c, i);
     ensures forall (i: Integer) : Law_TangentDeviationWithinHalfAngular(m, result, c, SamplePlan.DiscretizationPlan, i);
     ensures forall (i: Integer) : Law_TurningAngleWithinAngular(m, result, c, i);
     ensures forall (i: Integer) : Law_SegmentWithinMaxLength(m, result, c, i);
@@ -114,7 +116,7 @@ spec Sagitta(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number
     ensures forall (f: Number) in NumberInterval(0.0, 1.0) : DistanceToSegment(m.PointOnEdge(e, t0), m.PointOnEdge(e, t1), m.PointOnEdge(e, t0 + (t1 - t0) * f)) <= result + m.Tolerances.Length.Value;
     ensures exists (f: Number) in NumberInterval(0.0, 1.0) : DistanceToSegment(m.PointOnEdge(e, t0), m.PointOnEdge(e, t1), m.PointOnEdge(e, t0 + (t1 - t0) * f)) >= result - m.Tolerances.Length.Value;
     measure m.EdgeSeeds(e).Count;
-    deferred "closed form for line, circle, and ellipse; control-hull bound per polynomial Bezier span; dense sampling for rational spans";
+    deferred "closed form for line, circle, and ellipse; control-hull bound per Bezier span, polynomial or rational with positive weights (convex hull property), subdivided until within the length tolerance of the sampled maximum";
 }
 
 // The parameters every discretization of the edge samples.

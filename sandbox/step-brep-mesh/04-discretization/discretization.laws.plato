@@ -140,6 +140,18 @@ library EdgeDiscretizingLaws
                 || m.IsAtLengthFloor(d, c, i))
             : true;
 
+    // The certified form: the exact sagitta of segment i's arc (`Sagitta`, from its closed form or
+    // a control-hull bound, never from samples) is at most the effective chordal bound, widened
+    // by the length tolerance, or the floor stopped the segment. The sampled law above is what
+    // validation can measure on any polyline; this one is what `Discretize` promises, and a
+    // sampled check can miss a bump between its samples. A library law.
+    Law_CertifiedSagittaWithinChordal(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, i: Integer): Boolean
+        => m.IsEvaluableSegment(d, i)
+            ? (m.Sagitta(d.Edge, d.Parameters[i].Min(d.Parameters[i + 1]), d.Parameters[i].Max(d.Parameters[i + 1]))
+                    <= c.EffectiveChordal(m.Tolerances) + m.Tolerances.Length.Value
+                || m.IsAtLengthFloor(d, c, i))
+            : true;
+
     // Segment i's chord stays within half the effective angular bound of the curve's tangent at
     // the sampled interior points, widened by the angle tolerance. Covers single-segment edges
     // and end segments, which have no turning angle.
