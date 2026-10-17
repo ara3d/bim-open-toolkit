@@ -130,6 +130,13 @@ library ModelMeshTopology
     EulerCharacteristic(mesh: ModelMesh): Integer
         => mesh.Positions.Count - mesh.EdgeTableOf.CountEdges + mesh.ElementCount;
 
+    // The Euler characteristic of the surface the elements form, V - E + F counting only the
+    // vertices some element references: the sum of the components' Euler characteristics. Of
+    // RestrictedToFaces(shell's faces), it is the mesh side of 07-validation's per-shell Euler
+    // identity (Law_MeshEulerEqualsBrepEuler).
+    ReferencedEulerCharacteristic(mesh: ModelMesh): Integer
+        => mesh.EulerCharacteristic - mesh.ComponentsOf.UnreferencedVertexCount;
+
     //==
     // # Components
 

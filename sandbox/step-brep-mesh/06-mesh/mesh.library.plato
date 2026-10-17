@@ -10,6 +10,7 @@
 //  - Elements and corners of a model mesh
 //  - Element geometry and corner attributes
 //  - Orientation reversal
+//  - Restriction to a set of faces
 //  - Comparison
 
 library ModelMeshes
@@ -200,6 +201,43 @@ library ModelMeshes
             mesh.ElementFace,
             mesh.VertexProvenance,
             mesh.Numbering);
+
+    //==
+    // # Restriction to a set of faces
+    //
+    // The mesh of a shell, or of any set of model faces, is the sub-complex of their elements. It
+    // keeps every position, the provenance, and the numbering, so a vertex index means the same in
+    // the restriction as in the whole mesh; the vertices no kept element references (those of other
+    // shells, and model vertices no face mesh reaches) stay as unreferenced vertices, which
+    // ReferencedEulerCharacteristic leaves out. Two shells may share edges and vertices (02-topology
+    // decision 6), so per-shell counts come from this restriction, never from the components of
+    // the whole mesh (reviews/MATH-REVIEW-layers-0-6.md section 6, condition 1).
+
+    // Whether element e approximates one of the given faces.
+    IsElementOfFaces(mesh: ModelMesh, e: ElementIndex, faces: Array<BrepFaceIndex>): Boolean
+        => mesh.ElementFace.IsValidIndex(e) ? faces.Any(f => f.Value == mesh.ElementFace[e].Value) : false;
+
+    // The elements that approximate one of the given faces, in element order.
+    ElementsOfFaces(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Array<ElementIndex>
+        => mesh.ElementCount.MapRange(k => ElementIndex(k)).FlatMap(e => mesh.IsElementOfFaces(e, faces) ? [e] : []);
+
+    // The mesh restricted to the elements of the given faces: their triangles and quads in element
+    // order with their element faces and corner attributes; every position, the vertex provenance,
+    // and the numbering unchanged. A valid ModelMesh whenever mesh is one. Precondition: every
+    // element of mesh has valid corner attributes (the ModelMesh invariants).
+    RestrictedToFaces(mesh: ModelMesh, faces: Array<BrepFaceIndex>): ModelMesh
+    {
+        var kept = mesh.ElementsOfFaces(faces);
+        return ModelMesh(
+            mesh.Positions,
+            kept.FlatMap(e => mesh.IsTriangle(e) ? [mesh.Triangles[e.Value]] : []),
+            kept.FlatMap(e => mesh.IsQuad(e) ? [mesh.Quads[e.Value - mesh.Triangles.Count]] : []),
+            kept.FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.CornerNormalAt(e, s))),
+            kept.FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.CornerUvAt(e, s))),
+            kept.Map(e => mesh.ElementFace[e]),
+            mesh.VertexProvenance,
+            mesh.Numbering);
+    }
 
     //==
     // # Comparison

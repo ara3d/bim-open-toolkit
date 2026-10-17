@@ -28,6 +28,7 @@ spec ModelMesh
     invariant forall (v: VertexIndex) : Law_VertexProvenanceMatchesNumbering(self, v);
     constructor AssembleModelMesh;
     constructor Reversed;
+    constructor RestrictedToFaces;
     constructor Witness_UnitTetrahedron;
 }
 
@@ -50,6 +51,27 @@ spec Reversed(mesh: ModelMesh): ModelMesh
     ensures result.IsClosed == mesh.IsClosed;
     ensures result.IsConsistentlyOriented == mesh.IsConsistentlyOriented;
     measure mesh.CornerCount;
+}
+
+//==
+// # Restriction
+
+// The sub-complex of the elements of a set of faces, over the same vertices and numbering.
+spec RestrictedToFaces(mesh: ModelMesh, faces: Array<BrepFaceIndex>): ModelMesh
+{
+    requires forall (e: ElementIndex) in mesh.ElementCount.Range : mesh.HasValidCornerAttributes(e);
+    ensures Law_ElementFaceHasOneEntryPerElement(result);
+    ensures Law_CornerNormalsHaveOneEntryPerCorner(result);
+    ensures Law_CornerUvsHaveOneEntryPerCorner(result);
+    ensures Law_VertexProvenanceHasOneEntryPerVertex(result);
+    ensures Law_NumberingCoversPositions(result);
+    ensures forall (e: ElementIndex) : Law_ElementCornersInRange(result, e);
+    ensures forall (v: VertexIndex) : Law_VertexProvenanceMatchesNumbering(result, v);
+    ensures Law_RestrictionKeepsTheElementsOfTheFaces(mesh, faces);
+    ensures forall (k: Integer) : forall (slot: Integer) : Law_RestrictionKeepsEachCorner(mesh, faces, k, slot);
+    ensures forall (k: Integer) : Law_RestrictionKeepsEachElementFace(mesh, faces, k);
+    ensures Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic(mesh);
+    measure mesh.ElementCount * faces.Count;
 }
 
 //==

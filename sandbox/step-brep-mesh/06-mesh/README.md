@@ -18,7 +18,7 @@ Library blocks: `ModelMeshes` (the fixed name, in `mesh.library.plato`), with `M
 | Stem | Holds |
 |---|---|
 | `mesh-numbering` | `MeshVertexSite`, `MeshVertexNumbering`; sites to indices and back; `NumberMeshVertices`; face mesh points to sites (`GlobalVertexOf`) |
-| `mesh` | `ModelMesh`; element and corner access; element geometry (`ElementTriangles`); `Reversed`; `SameConnectivity`; the tetrahedron witness |
+| `mesh` | `ModelMesh`; element and corner access; element geometry (`ElementTriangles`); `Reversed`; `RestrictedToFaces`; `SameConnectivity`; the tetrahedron witness |
 | `mesh-assembly` | `AssembleModelMesh` (deferred), its preconditions (`CanAssemble`), where face mesh elements land; the watertightness law and theorem |
 | `mesh-topology` | `MeshEdgeTable`, components and their counts; manifold, closed, oriented; Euler characteristic, genus, pinched vertices |
 | `mesh-measures` | area, signed volume, winding number, corner angles and angle defects; degenerate elements, coincident vertices, folds |
@@ -194,6 +194,9 @@ outside its range makes it vacuously true, and the range is another law's statem
 | `Law_VertexProvenanceMatchesNumbering` | a vertex's provenance names its index's site's cell | exact | Error |
 | `Law_ReversalPermutesCorners` | reversed slot s is original slot `ReversedSlot(arity, s)` | exact | test |
 | `Law_ReversalMovesCornerUvWithCorner` | a corner's uv moves with its corner under reversal | exact by construction | test |
+| `Law_RestrictionKeepsTheElementsOfTheFaces` | the restriction to a set of faces has exactly their elements | exact | test |
+| `Law_RestrictionKeepsEachElement` | element k of the restriction is the k-th kept element, corners and face | exact | test |
+| `Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic` | restricting to all faces keeps V - E + F | exact | test |
 
 ### Assembly (`mesh-assembly.laws.plato`)
 
@@ -366,8 +369,6 @@ Readings of those names this layer depends on, for the owning authors to confirm
 - **Degenerate model edges.** A degenerate edge (a pole or an apex) should be discretized by its two
   vertex points only; if it had interior points they would be distinct coincident vertices, which
   `Law_VerticesOfOneComponentAreApart` reports. `04-discretization` to confirm.
-- **Components and shells.** Matching mesh components to model shells (for per-shell Euler and
-  volume checks) belongs to `07-validation`.
 
 ## Implementation notes
 
@@ -425,6 +426,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `MeshComponents { ElementComponent; VertexComponent; ComponentCount }`, `ComponentsOf` contract partial | adds `ElementParent`, `ElementDepth` (a spanning forest rooted at each component's lowest element); `ElementParentOf`, `ElementDepthOf`, `IsComponentRoot`, `RootsBelow`, `RootCount`, `SharesAVertex` | the certificate makes the contract exact without a reachability form |
 | `IsPinchedVertex` deferred, contract partial | written out over `PieceCount` (with `FirstPositionOf`, `DistinctEnds`, `PieceLabelRound`, `PieceLabels`) | the definition is a degree test and a piece count; the body is total and exact |
 | `MeshComponentCounts` with eight fields; `Genus` for closed components only | adds `BoundaryCycles`; `HasGenus` and `Genus` use 2 - chi - B; `BoundaryEdgesOf` | the genus of a component with boundary (an open shell, a face that failed to mesh) is defined |
+| (none) | `RestrictedToFaces(mesh, faces)`, `IsElementOfFaces`, `ElementsOfFaces`, `ReferencedEulerCharacteristic(mesh)` | per-shell counts (review M10, section 6): the mesh of a shell is a valid `ModelMesh`, and its Euler characteristic counts only referenced vertices |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -462,3 +464,13 @@ Applied:
   contract) gives chi = 2 - 2g - B; `HasGenus` no longer requires closedness. Theorem
   `OrientedSurfacesWithBoundaryHaveAGenus` and two laws added; the closed-case laws keep their
   names and meaning.
+- **Counts per shell** (review M10 and section 6, condition 1). `RestrictedToFaces(mesh, faces)`
+  is the sub-complex of a set of faces over the same vertices and numbering, a valid `ModelMesh`
+  (corner attributes kept), and `ReferencedEulerCharacteristic` is its V - E + F over referenced
+  vertices. The function `07-validation` needs for `Law_MeshEulerEqualsBrepEuler` is
+  `mesh.RestrictedToFaces(m.ShellFaces(s)).ReferencedEulerCharacteristic`. Layer 7's
+  `RestrictedToShell` already compares per shell, as condition 1 requires, but builds a mesh with
+  empty corner arrays, which breaks `ModelMesh`'s invariants; it should become a call to
+  `RestrictedToFaces`. Conditions 2 (C6, vertex loops on a seam's pole) and 3 (F1 and C1, seams by
+  the left rule and `Closed` directions) are layer 5's fixes: until they land, sphere A and B, the
+  seamed cone, and closed B-spline faces produce no mesh and the identity is vacuous there.
