@@ -580,6 +580,14 @@ excluded.
   driver type-checks these files. The same control showed the checker accepting an `Integer >=
   Number` comparison (finding 9).
 
+- **Fix wave, 2026-10-17.** Each finding was gated over this folder plus a snapshot of main taken
+  from committed files (`git archive HEAD`), refreshed four times as the other layers landed; where
+  another layer had committed half of a cross-layer rename, the snapshot alone was patched to the
+  new name. Final gate against main at 989a5294 with this folder's last edits: no finding in
+  `08-pipeline`; `FAIL: 14 error(s) in scope; 6624 functions type-checked`, all 14 in
+  `07-validation/validation-witnesses.library.plato`, whose witnesses build `GeometrySet` without
+  the field layer 1 added during the wave (layer 7's fixer to follow).
+
 ## Fix wave, 2026-10-17
 
 Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
@@ -624,3 +632,15 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
 13. **Implementation order updated** for the fix wave: the functions needing bodies by layer, the
     chunk 1 laws (`Law_PendingRequestsAreRefinable`, `Law_ValidationIsIdempotent`, layer 7's planted
     witness), chunk 6's transforms now layer 2's; the file table and counts.
+
+Kept, with the reason:
+
+- `ScaledBy(DiscretizationCriteria, factor)`, `ScaledBy(Limit, factor)` (`belongs-in:
+  04-discretization`), `ScaledBy(FaceMeshingCriteria, factor)` (`belongs-in: 05-face-meshing`), and
+  `WithEveryFaceReversed(m)` (`belongs-in: 02-topology`) stay here: the fix wave's ownership table
+  does not move them, and no lower layer declares them, so deleting them would delete the
+  definitions.
+- The commit for findings 5 and 6 holds both, since their edits interleave in the same blocks and
+  splitting them needed an interactive add (principle: one commit per finding).
+- The pointer from `research/VALIDATION-MATH.md` to the corrections note is outside this layer's
+  fence and is left to the supervising session.
