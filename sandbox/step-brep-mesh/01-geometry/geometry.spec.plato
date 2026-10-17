@@ -632,11 +632,32 @@ theorem ProjectNearIsLocalInverse
     tested by Law_ProjectNearRecoversParameter;
 }
 
-conjecture CentralDifferenceStepSuffices
+// Replaces conjecture CentralDifferenceStepSuffices, which the mathematical
+// review refuted (reviews/MATH-REVIEW-layers-0-6.md F5, H1): a quadratic
+// B-spline at a simple knot erred by 1.1e-4 against a bound of 1.3e-7, and a
+// circle through the origin failed at an angle tolerance of 1e-12. The law now
+// excludes every break of DifferenceOrder and takes Richardson's estimate plus
+// the library's own rounding as its bound, so neither counterexample applies.
+theorem RichardsonBoundsTheDifferenceError
 {
     given g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances;
     assume g.CanEvaluate(c);
-    assume tol.IsWellFormed;
     conclude Law_DerivativeMatchesCentralDifference(g, c, t, tol);
-    tested by Law_DerivativeMatchesCentralDifference, Law_PartialMatchesCentralDifference;
+    because "Let h be the step of the law and x the sample. No break of order six lies in [x - h, x + h], so C has
+             six continuous derivatives there and Taylor's theorem gives D(h) = C' + a h^2 + b h^4 + r(h), with
+             a = C'''/6, b = C^(5)/120, and |r(h)| at most h^6 max|C^(7)| / 5040 after the sixth-order term
+             cancels by symmetry. Then D(h/2) - C' = a h^2/4 + b h^4/16 + r(h/2) and D(h) - D(h/2) = 3a h^2/4 +
+             15 b h^4/16 + r(h) - r(h/2), so |D(h/2) - C'| <= (1/3)|D(h) - D(h/2)| + |b| h^4 / 4 + (4/3)(|r(h)| +
+             |r(h/2)|). The law allows (4/3)|D(h) - D(h/2)| + ResolutionAt(M)/h, so it holds when |b| h^4 / 4 plus
+             the remainders fits in (|a| h^2 + ResolutionAt(M)/h) after the slack of 1. With h = 4.8e-6 s (s the
+             piece scale) the term h^4 |C^(5)| / 480 is 1.1e-24 s^4 |C^(5)|, against ResolutionAt(M)/h = 7.4e-10 M/s
+             in 64 bits: the law holds whenever |C^(5)| <= 6e14 M / s^5, that is unless a fifth derivative is
+             fourteen orders of magnitude above what the curve's size and the piece's length give. Rounding: each
+             evaluation errs by at most a few units of M in the last place, so each quotient by about 2 u M / h,
+             far inside ResolutionAt(M)/h = 32 u M / h. The second-derivative law is the same argument applied to C',
+             whose rounding is that of Eval over the piece scale. Both counterexamples of the review are excluded:
+             the quadratic's knot is a break of order six, and the circle's rounding is measured at its
+             EvaluationMagnitude |C| + R = 2, not at |Eval| = 0.";
+    tested by Law_DerivativeMatchesCentralDifference, Law_SecondDerivativeMatchesCentralDifference,
+        Law_PartialMatchesCentralDifference, Law_PcurveDerivativeMatchesCentralDifference;
 }

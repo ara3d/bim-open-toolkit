@@ -231,8 +231,9 @@ for the axial `v`.
 - Tolerances used: `Length` for points; `Parameter`, the model's floor, where a strict parameter
   comparison is meant (a range inside another, a side on a collapsed line); the per-point
   `ParameterToleranceAt` and `UvToleranceAt` where a parameter is recovered from a point;
-  `Angle` for frames, transversality, the normal, and as the relative error of a derivative or an
-  area element; layer 0's `ResolutionAt` for the rounding of two evaluations over a difference step.
+  `Angle` for frames, transversality, the normal, and as the relative error of an area element;
+  layer 0's `ResolutionAt` at an `EvaluationMagnitude` (the size of the terms an evaluation sums,
+  not of its result) for every law about this layer's own arithmetic.
 
 ## Laws
 
@@ -254,8 +255,8 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_PeriodicCurveSpansOnePeriod`, `Law_PeriodicSurfaceSpansOnePeriod` | a periodic domain is one period long | Parameter | Library |
 | `Law_PeriodicCurveIsClosed` | a periodic curve meets itself at its domain's ends | Length | Library |
 | `Law_CurveRepeatsWithPeriod`, `Law_Curve2DRepeatsWithPeriod`, `Law_SurfaceRepeatsWithPeriod` | `Eval(t + P)` is `Eval(t)` | Length (Parameter in 2D) | Library |
-| `Law_DerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveDerivativeMatchesCentralDifference`, `Law_PartialMatchesCentralDifference` | the derivative agrees with the central difference at step `cbrt(u) * scale` | Angle times speed, plus `ResolutionAt` over the step | Library |
-| `Law_SecondDerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveSecondDerivativeMatchesCentralDifference` | the second derivative agrees with the central difference of the first | Angle times (acceleration + speed / scale), plus rounding | Library |
+| `Law_DerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveDerivativeMatchesCentralDifference`, `Law_PartialMatchesCentralDifference` | `|D(h/2) - C'| <= 4/3 |D(h) - D(h/2)|` plus rounding, `D` the central difference, `h = cbrt(u)` times the shortest smooth piece; samples within `h` of a break of order 6 (every distinct knot) excluded | Richardson's estimate plus `ResolutionAt(EvaluationMagnitude) / h`; `tol` not read | Library |
+| `Law_SecondDerivativeMatchesCentralDifference`, `..2D..`, `Law_PcurveSecondDerivativeMatchesCentralDifference` | the same for the central difference of the first derivative | as above, rounding over the piece scale | Library |
 | `Law_ClosestParameterRecoversPoint` | the point at `ClosestParameter(Eval(t))` is `Eval(t)` | Length | Library |
 | `Law_ClosestParameterIsCanonical`, `Law_ProjectIsCanonical` | the result is in the canonical window | Parameter | Library |
 | `Law_TrimmedRangeInsideBasis`, `Law_RectangularTrimmedInsideBasis` | the trim lies in the basis domain (at most one period on a periodic basis) | Parameter | File, 10x |
@@ -289,11 +290,11 @@ line and so says nothing of the free coordinate there.
 
 ## Left open
 
-1. **The central-difference step.** The derivative laws use `h = cbrt(unit roundoff) * scale`
-   (6e-6 of the scale in 64 bits). They hold while the relative third derivative is below
-   `6 alpha / h^2`, which a spline with knot spans shorter than about `h / sqrt(alpha)` of its
-   domain can break (1e-3 of it at `alpha = 1e-6`). Recorded as conjecture
-   `CentralDifferenceStepSuffices`; a per-span step would close it.
+1. **The central-difference step.** Closed in the fix wave: the step is `cbrt(u)` times the
+   shortest smooth piece, every break of order 6 is excluded, and the bound is Richardson's estimate
+   plus the library's rounding (theorem `RichardsonBoundsTheDifferenceError`, which replaces the
+   refuted conjecture `CentralDifferenceStepSuffices`). The laws still take a `tol` they do not
+   read, so that layer 7's calls keep their shape; dropping it is a two-layer change for later.
 2. **Interior singular points.** A revolution profile touching its axis inside its domain, or a
    spline row collapsed inside the net, is not found by `CollapsedAt`;
    `Law_AreaElementPositiveAwayFromCollapse` reports such a surface instead.
@@ -363,3 +364,18 @@ as expected.
 | (new) | `Domain`, `Eval`, `Derivative`, `SecondDerivative`, `ClosestParameter` on `PcurveIndex`; `Domain`, `Eval`, `Derivative`, `SecondDerivative`, `Breakpoints` on `Curve2DIndex`; `PcurvesOf` | declared by layers 2 and 4 with `belongs-in: 01-geometry`, same signatures; their copies can go |
 | (new) | `IsEveryIndexInRange`, `IsWellFormed`, `CanEvaluate`, `CurveAt`, `Curve2DAt`, `PcurveAt`, `SurfaceAt` | arena well-formedness and typed lookup (decisions 9, 10, 15) |
 | (new, `belongs-in: 00-foundation`) | `UnboundedDomain(_: CurveDomain)` | layer 0 allows unbounded domains but has no constructor for one |
+| `IsBreakKnot(b, i)`, `CompositeBreakpoints` | `IsBreakKnot(b, i, order)`, `CompositeBreaks(g, segments, order)` | breaks of any derivative order (fix wave, F5) |
+| (new) | `Breaks(g, c, order)` on curves, parameter-plane curves and surfaces; `SplineBreaks(b, order)`; `EvaluationMagnitude` on curves, parameter-plane curves, pcurves and surfaces | the derivative laws' exclusions and rounding bound (fix wave, F5) |
+
+## Fix wave, 2026-10-17
+
+Findings from [reviews/MATH-REVIEW-layers-0-6.md](../reviews/MATH-REVIEW-layers-0-6.md), the
+"Findings in lower layers" of layers 7 and 8, and [reviews/FIX-WAVE.md](../reviews/FIX-WAVE.md),
+one commit each.
+
+Applied:
+
+- **F5, H1.** Derivative laws exclude every break of order 6 (all distinct knots up to degree 6),
+  step from the shortest smooth piece, bound by Richardson's estimate plus
+  `ResolutionAt(EvaluationMagnitude) / h`; the refuted conjecture is replaced by theorem
+  `RichardsonBoundsTheDifferenceError` with its hypothesis (`|C^(5)| <= 6e14 M / s^5`).

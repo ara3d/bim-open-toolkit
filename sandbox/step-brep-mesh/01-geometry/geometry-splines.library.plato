@@ -138,17 +138,27 @@ library BrepGeometrySplines
     // # Breakpoints
 
     // True when position i holds the first copy of a knot strictly inside the
-    // domain whose multiplicity is at least the degree: there the spline may
-    // lose tangent continuity, so a discretization must sample it and a finite
-    // difference must not straddle it. Exact by construction (copied knots).
-    IsBreakKnot(b: SplineBasis, i: Integer): Boolean
-        => b.Degree < 1 || i <= b.Degree || i >= b.Knots.Count - b.Degree - 1
+    // domain at which a derivative of order at most `order` may jump: a knot
+    // of multiplicity m leaves the spline C^(Degree - m) there, so its
+    // derivative of order k may jump exactly when m >= Degree - k + 1. Order
+    // 1 gives the knots of multiplicity at least the degree, where the
+    // tangent may break; an order at least the degree gives every distinct
+    // interior knot. Exact by construction (copied knots).
+    IsBreakKnot(b: SplineBasis, i: Integer, order: Integer): Boolean
+        => b.Degree < 1 || order < 1 || i <= b.Degree || i >= b.Knots.Count - b.Degree - 1
             ? false
-            : b.Knots.KnotAt(i - 1) < b.Knots.KnotAt(i) && b.Knots.KnotAt(i + b.Degree - 1) == b.Knots.KnotAt(i);
+            : b.Knots.KnotAt(i - 1) < b.Knots.KnotAt(i)
+                && b.Knots.KnotAt(i + (b.Degree - order).Max(0)) == b.Knots.KnotAt(i);
 
-    // The interior knots of multiplicity at least the degree, ascending.
+    // The interior knots at which a derivative of order at most `order` may
+    // jump, ascending.
+    SplineBreaks(b: SplineBasis, order: Integer): Array<Number>
+        => b.Knots.Count.Range.FlatMap(i => b.IsBreakKnot(i, order) ? [b.Knots.KnotAt(i)] : b.Knots.Knots.Take(0));
+
+    // The interior knots of multiplicity at least the degree, where the
+    // spline may lose tangent continuity: SplineBreaks of order 1.
     SplineBreakpoints(b: SplineBasis): Array<Number>
-        => b.Knots.Count.Range.FlatMap(i => b.IsBreakKnot(i) ? [b.Knots.KnotAt(i)] : b.Knots.Knots.Take(0));
+        => b.SplineBreaks(1);
 
     //==
     // # Evaluation (deferred)

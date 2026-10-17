@@ -63,11 +63,47 @@ library BrepGeometryLaws
         };
 
     // The step of the central differences: the cube root of the unit roundoff
-    // times the parameter's scale, the step that balances truncation against
+    // times the given scale, the step that balances truncation against
     // rounding (Press et al., Numerical Recipes, 3rd ed., section 5.7).
-    // 6e-6 of the scale in 64 bits, 4e-3 in 32.
-    DifferenceStep(d: CurveDomain, t: Number): Number
-        => Number.RoundingUnit.Pow(1.0 / 3.0) * d.ParameterScale(t);
+    // 4.8e-6 of the scale in 64 bits, 2.5e-3 in 32.
+    DifferenceStep(scale: Number): Number
+        => Number.RoundingUnit.Pow(1.0 / 3.0) * scale;
+
+    // The smoothness the difference laws ask of what they difference.
+    // Richardson's estimate (WithinRichardson) rests on the expansion of a
+    // central difference to its h^4 term, which needs five continuous
+    // derivatives of the function differenced; the second-derivative laws
+    // difference the first derivative, so six of the curve. Breaks of this
+    // order are excluded from every difference interval.
+    DifferenceOrder(_: Integer): Integer
+        => 6;
+
+    // The scale of the difference step at t: the domain's natural scale
+    // (ParameterScale), or the shortest piece the breaks and a bounded
+    // range's ends cut the parameter into when that is shorter, so the step
+    // fits inside every smooth piece of a spline with short knot spans.
+    PieceScale(d: CurveDomain, breaks: Array<Number>, t: Number): Number
+        => (d.ParameterLength.IsFinite ? breaks.Concatenate([d.Range.Start, d.Range.End]) : breaks)
+            .SmallestGap(d.ParameterScale(t));
+
+    // The smallest positive difference between two of the values, at most
+    // bound.
+    SmallestGap(values: Array<Number>, bound: Number): Number
+        => values.Reduce(bound, (m, a) => values.Reduce(m, (n, b) => a < b ? n.Min(b - a) : n));
+
+    // Richardson's estimate of the error of a central difference
+    // (https://en.wikipedia.org/wiki/Richardson_extrapolation). With
+    // D(h) = f' + a h^2 + b h^4 + ..., D(h) - D(h/2) = (3/4) a h^2, so the
+    // error a h^2 / 4 of the finer quotient is a third of the difference of
+    // the two. The factor 4/3 keeps four times that, a margin for the h^4
+    // term; rounding bounds the rounding of the two quotients. The estimate
+    // calibrates itself to the function: no tolerance of the model enters.
+    WithinRichardson(coarse: Vector3D, fine: Vector3D, exact: Vector3D, rounding: Number): Boolean
+        => (fine - exact).Length <= (coarse - fine).Length * (4.0 / 3.0) + rounding;
+
+    // WithinRichardson in the parameter plane.
+    WithinRichardson(coarse: Vector2D, fine: Vector2D, exact: Vector2D, rounding: Number): Boolean
+        => (fine - exact).Length <= (coarse - fine).Length * (4.0 / 3.0) + rounding;
 
     // True when a sample and both its neighbours at distance h fit in the
     // domain.
@@ -480,42 +516,58 @@ library BrepGeometryLaws
     //==
     // # Curves: derivatives
 
-    // Derivative agrees with the central difference of Eval at the step h of
-    // DifferenceStep: |(C(t + h) - C(t - h)) / 2h - C'(t)| is at most the angle
-    // tolerance times the speed plus the rounding of the two evaluations over
-    // the step. A sample whose difference interval holds a breakpoint is
-    // excluded. The truncation error h^2 |C'''| / 6 stays below the first term
-    // while |C'''| / |C'| < 6 alpha / h^2 (README, open questions).
+    // Derivative agrees with the central difference of Eval within
+    // Richardson's estimate: with D(h) = (C(x + h) - C(x - h)) / 2h at the
+    // step h of DifferenceStep over the PieceScale, |D(h/2) - C'(x)| is at
+    // most 4/3 |D(h) - D(h/2)| plus ResolutionAt(EvaluationMagnitude) / h, the
+    // rounding of the library's own arithmetic. A sample whose difference
+    // interval holds a break of DifferenceOrder (every distinct interior knot
+    // of a spline of degree up to six) is excluded. tol is not read: the
+    // bound is the library's, never the file's (layer 0's rounding rule); the
+    // parameter keeps the signature layer 7 calls.
     Law_DerivativeMatchesCentralDifference(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.DerivativeAgrees(c, t, g.Domain(c).DifferenceStep(t), tol) : true;
+        => g.CanEvaluate(c) ? g.DerivativeAgrees(c, t) : true;
 
-    // The claim of Law_DerivativeMatchesCentralDifference at step h.
-    DerivativeAgrees(g: GeometrySet, c: CurveIndex, t: Number, h: Number, tol: Tolerances): Boolean
+    // The central difference of curve c's Eval at x with step h.
+    CentralDifference(g: GeometrySet, c: CurveIndex, x: Number, h: Number): Vector3D
+        => (g.Eval(c, x + h) - g.Eval(c, x - h)) * (0.5 / h);
+
+    // The central difference of curve c's Derivative at x with step h.
+    CentralDifferenceOfDerivative(g: GeometrySet, c: CurveIndex, x: Number, h: Number): Vector3D
+        => (g.Derivative(c, x + h) - g.Derivative(c, x - h)) * (0.5 / h);
+
+    // The claim of Law_DerivativeMatchesCentralDifference.
+    DerivativeAgrees(g: GeometrySet, c: CurveIndex, t: Number): Boolean
     {
         var d = g.Domain(c);
+        var breaks = g.Breaks(c, Integer.DifferenceOrder);
+        var h = DifferenceStep(d.PieceScale(breaks, t));
         var x = d.InteriorSample(t, h);
-        return !d.HasInterior(h) || g.Breakpoints(c).StraddlesBreakpoint(x, h)
+        return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
-            : ((g.Eval(c, x + h) - g.Eval(c, x - h)) * (0.5 / h) - g.Derivative(c, x)).Length
-                <= tol.Angle.Value.Radians * g.Derivative(c, x).Length + ResolutionAt(g.Eval(c, x).PositionVector.Length) / h;
+            : WithinRichardson(g.CentralDifference(c, x, h), g.CentralDifference(c, x, h * 0.5), g.Derivative(c, x),
+                ResolutionAt(g.EvaluationMagnitude(c, x)) / h);
     }
 
-    // SecondDerivative agrees with the central difference of Derivative at
-    // the same step, within the angle tolerance times the acceleration and the
-    // speed over the parameter's scale, plus rounding.
+    // SecondDerivative agrees with the central difference of Derivative
+    // within Richardson's estimate, as Law_DerivativeMatchesCentralDifference;
+    // the rounding of a derivative formula is that of Eval over the
+    // parameter's piece scale.
     Law_SecondDerivativeMatchesCentralDifference(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.SecondDerivativeAgrees(c, t, g.Domain(c).DifferenceStep(t), tol) : true;
+        => g.CanEvaluate(c) ? g.SecondDerivativeAgrees(c, t) : true;
 
-    // The claim of Law_SecondDerivativeMatchesCentralDifference at step h.
-    SecondDerivativeAgrees(g: GeometrySet, c: CurveIndex, t: Number, h: Number, tol: Tolerances): Boolean
+    // The claim of Law_SecondDerivativeMatchesCentralDifference.
+    SecondDerivativeAgrees(g: GeometrySet, c: CurveIndex, t: Number): Boolean
     {
         var d = g.Domain(c);
+        var breaks = g.Breaks(c, Integer.DifferenceOrder);
+        var scale = d.PieceScale(breaks, t);
+        var h = DifferenceStep(scale);
         var x = d.InteriorSample(t, h);
-        return !d.HasInterior(h) || g.Breakpoints(c).StraddlesBreakpoint(x, h)
+        return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
-            : ((g.Derivative(c, x + h) - g.Derivative(c, x - h)) * (0.5 / h) - g.SecondDerivative(c, x)).Length
-                <= tol.Angle.Value.Radians * (g.SecondDerivative(c, x).Length + g.Derivative(c, x).Length / d.ParameterScale(x))
-                    + ResolutionAt(g.Derivative(c, x).Length) / h;
+            : WithinRichardson(g.CentralDifferenceOfDerivative(c, x, h), g.CentralDifferenceOfDerivative(c, x, h * 0.5),
+                g.SecondDerivative(c, x), ResolutionAt(g.EvaluationMagnitude(c, x) / scale) / h);
     }
 
     //==
@@ -843,73 +895,123 @@ library BrepGeometryLaws
             : true;
 
     // A parameter-plane curve's Derivative agrees with the central difference
-    // of its Eval, as Law_DerivativeMatchesCentralDifference in space.
+    // of its Eval within Richardson's estimate, as
+    // Law_DerivativeMatchesCentralDifference in space. tol is not read.
     Law_Curve2DDerivativeMatchesCentralDifference(g: GeometrySet, c: Curve2DIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.DerivativeAgrees(c, t, g.Domain(c).DifferenceStep(t), tol) : true;
+        => g.CanEvaluate(c) ? g.DerivativeAgrees(c, t) : true;
 
-    // The claim of Law_Curve2DDerivativeMatchesCentralDifference at step h.
-    DerivativeAgrees(g: GeometrySet, c: Curve2DIndex, t: Number, h: Number, tol: Tolerances): Boolean
+    // The central difference of parameter-plane curve c's Eval at x.
+    CentralDifference(g: GeometrySet, c: Curve2DIndex, x: Number, h: Number): Vector2D
+        => (g.Eval(c, x + h) - g.Eval(c, x - h)) * (0.5 / h);
+
+    // The central difference of parameter-plane curve c's Derivative at x.
+    CentralDifferenceOfDerivative(g: GeometrySet, c: Curve2DIndex, x: Number, h: Number): Vector2D
+        => (g.Derivative(c, x + h) - g.Derivative(c, x - h)) * (0.5 / h);
+
+    // The claim of Law_Curve2DDerivativeMatchesCentralDifference.
+    DerivativeAgrees(g: GeometrySet, c: Curve2DIndex, t: Number): Boolean
     {
         var d = g.Domain(c);
+        var breaks = g.Breaks(c, Integer.DifferenceOrder);
+        var h = DifferenceStep(d.PieceScale(breaks, t));
         var x = d.InteriorSample(t, h);
-        return !d.HasInterior(h) || g.Breakpoints(c).StraddlesBreakpoint(x, h)
+        return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
-            : ((g.Eval(c, x + h) - g.Eval(c, x - h)) * (0.5 / h) - g.Derivative(c, x)).Length
-                <= tol.Angle.Value.Radians * g.Derivative(c, x).Length
-                    + ResolutionAt(g.Eval(c, x).U.Abs.Max(g.Eval(c, x).V.Abs)) / h;
+            : WithinRichardson(g.CentralDifference(c, x, h), g.CentralDifference(c, x, h * 0.5), g.Derivative(c, x),
+                ResolutionAt(g.EvaluationMagnitude(c, x)) / h);
     }
 
     // A parameter-plane curve's SecondDerivative agrees with the central
-    // difference of its Derivative, as
-    // Law_SecondDerivativeMatchesCentralDifference in space.
+    // difference of its Derivative within Richardson's estimate, as
+    // Law_SecondDerivativeMatchesCentralDifference in space. tol is not read.
     Law_Curve2DSecondDerivativeMatchesCentralDifference(g: GeometrySet, c: Curve2DIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.SecondDerivativeAgrees(c, t, g.Domain(c).DifferenceStep(t), tol) : true;
+        => g.CanEvaluate(c) ? g.SecondDerivativeAgrees(c, t) : true;
 
-    // The claim of Law_Curve2DSecondDerivativeMatchesCentralDifference at
-    // step h.
-    SecondDerivativeAgrees(g: GeometrySet, c: Curve2DIndex, t: Number, h: Number, tol: Tolerances): Boolean
+    // The claim of Law_Curve2DSecondDerivativeMatchesCentralDifference.
+    SecondDerivativeAgrees(g: GeometrySet, c: Curve2DIndex, t: Number): Boolean
     {
         var d = g.Domain(c);
+        var breaks = g.Breaks(c, Integer.DifferenceOrder);
+        var scale = d.PieceScale(breaks, t);
+        var h = DifferenceStep(scale);
         var x = d.InteriorSample(t, h);
-        return !d.HasInterior(h) || g.Breakpoints(c).StraddlesBreakpoint(x, h)
+        return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
-            : ((g.Derivative(c, x + h) - g.Derivative(c, x - h)) * (0.5 / h) - g.SecondDerivative(c, x)).Length
-                <= tol.Angle.Value.Radians * (g.SecondDerivative(c, x).Length + g.Derivative(c, x).Length / d.ParameterScale(x))
-                    + ResolutionAt(g.Derivative(c, x).Length) / h;
+            : WithinRichardson(g.CentralDifferenceOfDerivative(c, x, h), g.CentralDifferenceOfDerivative(c, x, h * 0.5),
+                g.SecondDerivative(c, x), ResolutionAt(g.EvaluationMagnitude(c, x) / scale) / h);
     }
 
     // A pcurve's space velocity, by the chain rule, agrees with the central
-    // difference of its space points, as Law_DerivativeMatchesCentralDifference.
+    // difference of its space points within Richardson's estimate, as
+    // Law_DerivativeMatchesCentralDifference. Besides the 2D curve's own
+    // breaks, a difference interval over which the 2D curve crosses a break
+    // line of the surface is excluded. tol is not read.
     Law_PcurveDerivativeMatchesCentralDifference(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(p) ? g.DerivativeAgrees(p, t, g.Domain(p).DifferenceStep(t), tol) : true;
+        => g.CanEvaluate(p) ? g.DerivativeAgrees(p, t) : true;
 
-    // The claim of Law_PcurveDerivativeMatchesCentralDifference at step h.
-    DerivativeAgrees(g: GeometrySet, p: PcurveIndex, t: Number, h: Number, tol: Tolerances): Boolean
+    // The central difference of pcurve p's space points at x.
+    CentralDifference(g: GeometrySet, p: PcurveIndex, x: Number, h: Number): Vector3D
+        => (g.Eval(p, x + h) - g.Eval(p, x - h)) * (0.5 / h);
+
+    // The central difference of pcurve p's space velocity at x.
+    CentralDifferenceOfDerivative(g: GeometrySet, p: PcurveIndex, x: Number, h: Number): Vector3D
+        => (g.Derivative(p, x + h) - g.Derivative(p, x - h)) * (0.5 / h);
+
+    // True when the pcurve's 2D curve, between x - h and x + h, reaches an
+    // iso-line of its surface along which a partial of DifferenceOrder may
+    // jump: a break value of u (or v) lies between the u (or v) coordinates
+    // at the interval's ends. Over an interval this short the 2D curve is
+    // monotone in each coordinate unless that coordinate's derivative
+    // vanishes there, and a curve that touches a line without crossing it
+    // stays on one smooth side.
+    CrossesSurfaceBreak(g: GeometrySet, p: PcurveIndex, x: Number, h: Number): Boolean
+    {
+        var s = g.PcurveAt(p).Surface;
+        var a = g.Eval(g.PcurveAt(p).Curve, x - h);
+        var b = g.Eval(g.PcurveAt(p).Curve, x + h);
+        return g.Breaks(s, SurfaceParameter.ParameterU, Integer.DifferenceOrder).Any(k => a.U.Min(b.U) <= k && k <= a.U.Max(b.U))
+            || g.Breaks(s, SurfaceParameter.ParameterV, Integer.DifferenceOrder).Any(k => a.V.Min(b.V) <= k && k <= a.V.Max(b.V));
+    }
+
+    // The rounding of the pcurve's space point at x: the surface's own, plus
+    // the 2D curve's rounding carried through the partials.
+    PcurveRounding(g: GeometrySet, p: PcurveIndex, x: Number): Number
+        => ResolutionAt(g.EvaluationMagnitude(p, x))
+            + (g.PartialU(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, x)).Length
+                + g.PartialV(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, x)).Length)
+                * ResolutionAt(g.EvaluationMagnitude(g.PcurveAt(p).Curve, x));
+
+    // The claim of Law_PcurveDerivativeMatchesCentralDifference.
+    DerivativeAgrees(g: GeometrySet, p: PcurveIndex, t: Number): Boolean
     {
         var d = g.Domain(p);
+        var breaks = g.Breaks(g.PcurveAt(p).Curve, Integer.DifferenceOrder);
+        var h = DifferenceStep(d.PieceScale(breaks, t));
         var x = d.InteriorSample(t, h);
-        return !d.HasInterior(h) || g.Breakpoints(g.PcurveAt(p).Curve).StraddlesBreakpoint(x, h)
+        return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h) || g.CrossesSurfaceBreak(p, x, h)
             ? true
-            : ((g.Eval(p, x + h) - g.Eval(p, x - h)) * (0.5 / h) - g.Derivative(p, x)).Length
-                <= tol.Angle.Value.Radians * g.Derivative(p, x).Length + ResolutionAt(g.Eval(p, x).PositionVector.Length) / h;
+            : WithinRichardson(g.CentralDifference(p, x, h), g.CentralDifference(p, x, h * 0.5), g.Derivative(p, x),
+                g.PcurveRounding(p, x) / h);
     }
 
     // A pcurve's space acceleration agrees with the central difference of its
-    // space velocity, as Law_SecondDerivativeMatchesCentralDifference.
+    // space velocity within Richardson's estimate, as
+    // Law_SecondDerivativeMatchesCentralDifference. tol is not read.
     Law_PcurveSecondDerivativeMatchesCentralDifference(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(p) ? g.SecondDerivativeAgrees(p, t, g.Domain(p).DifferenceStep(t), tol) : true;
+        => g.CanEvaluate(p) ? g.SecondDerivativeAgrees(p, t) : true;
 
-    // The claim of Law_PcurveSecondDerivativeMatchesCentralDifference at
-    // step h.
-    SecondDerivativeAgrees(g: GeometrySet, p: PcurveIndex, t: Number, h: Number, tol: Tolerances): Boolean
+    // The claim of Law_PcurveSecondDerivativeMatchesCentralDifference.
+    SecondDerivativeAgrees(g: GeometrySet, p: PcurveIndex, t: Number): Boolean
     {
         var d = g.Domain(p);
+        var breaks = g.Breaks(g.PcurveAt(p).Curve, Integer.DifferenceOrder);
+        var scale = d.PieceScale(breaks, t);
+        var h = DifferenceStep(scale);
         var x = d.InteriorSample(t, h);
-        return !d.HasInterior(h) || g.Breakpoints(g.PcurveAt(p).Curve).StraddlesBreakpoint(x, h)
+        return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h) || g.CrossesSurfaceBreak(p, x, h)
             ? true
-            : ((g.Derivative(p, x + h) - g.Derivative(p, x - h)) * (0.5 / h) - g.SecondDerivative(p, x)).Length
-                <= tol.Angle.Value.Radians * (g.SecondDerivative(p, x).Length + g.Derivative(p, x).Length / d.ParameterScale(x))
-                    + ResolutionAt(g.Derivative(p, x).Length) / h;
+            : WithinRichardson(g.CentralDifferenceOfDerivative(p, x, h), g.CentralDifferenceOfDerivative(p, x, h * 0.5),
+                g.SecondDerivative(p, x), g.PcurveRounding(p, x) / (scale * h));
     }
 
     // A pcurve stays inside its surface's domain, within the parameter floor
@@ -944,21 +1046,28 @@ library BrepGeometryLaws
     // # Surfaces: derivatives, normal, area element
 
     // The partial in the given parameter agrees with the central difference
-    // of Eval in that parameter, as Law_DerivativeMatchesCentralDifference.
+    // of Eval in that parameter within Richardson's estimate, as
+    // Law_DerivativeMatchesCentralDifference. tol is not read.
     Law_PartialMatchesCentralDifference(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.PartialAgrees(s, g.Domain(s).SampleIn(uv), which, tol) : true;
+        => g.CanEvaluate(s) ? g.PartialAgrees(s, g.Domain(s).SampleIn(uv), which) : true;
+
+    // The central difference of surface s's Eval at w in the given
+    // parameter, with step h.
+    CentralDifference(g: GeometrySet, s: SurfaceIndex, w: UvCoordinate, which: SurfaceParameter, h: Number): Vector3D
+        => (g.Eval(s, w.WithCoordinate(which, w.Coordinate(which) + h)) - g.Eval(s, w.WithCoordinate(which, w.Coordinate(which) - h))) * (0.5 / h);
 
     // The claim of Law_PartialMatchesCentralDifference.
-    PartialAgrees(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter, tol: Tolerances): Boolean
+    PartialAgrees(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter): Boolean
     {
         var d = g.Domain(s).DomainAlong(which);
-        var h = d.DifferenceStep(uv.Coordinate(which));
+        var breaks = g.Breaks(s, which, Integer.DifferenceOrder);
+        var h = DifferenceStep(d.PieceScale(breaks, uv.Coordinate(which)));
         var x = d.InteriorSample(uv.Coordinate(which), h);
         var w = uv.WithCoordinate(which, x);
-        return !d.HasInterior(h) || g.Breakpoints(s, which).StraddlesBreakpoint(x, h)
+        return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
-            : ((g.Eval(s, w.WithCoordinate(which, x + h)) - g.Eval(s, w.WithCoordinate(which, x - h))) * (0.5 / h) - g.Partial(s, w, which)).Length
-                <= tol.Angle.Value.Radians * g.Partial(s, w, which).Length + ResolutionAt(g.Eval(s, w).PositionVector.Length) / h;
+            : WithinRichardson(g.CentralDifference(s, w, which, h), g.CentralDifference(s, w, which, h * 0.5), g.Partial(s, w, which),
+                ResolutionAt(g.EvaluationMagnitude(s, w)) / h);
     }
 
     // True when uv is within the parameter floor of a collapsed line of the

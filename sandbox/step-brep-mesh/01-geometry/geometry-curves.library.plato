@@ -18,6 +18,7 @@
 //  - Space curves: derivatives and curvature
 //  - Space curves: inverse evaluation
 //  - Space curves: breakpoints, closure, parameter tolerance
+//  - Rounding magnitude
 //  - Surface curves and their pcurves
 //  - Polylines
 //  - Composite curves
@@ -188,13 +189,22 @@ library BrepGeometryCurves
     // The parameters inside the domain where the curve may lose tangent
     // continuity: polyline vertices, spline knots of multiplicity at least the
     // degree, composite joins, and the basis's breakpoints as seen through a
-    // trim, an offset, or a pcurve. A discretization samples them; a finite
-    // difference must not straddle one. Unordered.
+    // trim, an offset, or a pcurve. A discretization samples them. Breaks of
+    // order 1. Unordered.
     Breakpoints(g: GeometrySet, c: CurveIndex): Array<Number>
-        => g.CurveAt(c).Breakpoints(g);
+        => g.Breaks(c, 1);
 
-    // Breakpoints for one record of the arena g, which holds the entries it references.
-    Breakpoints(curve: BrepCurve, g: GeometrySet): Array<Number>
+    // The parameters inside the domain where a derivative of order at most
+    // `order` may jump: the breakpoints, and on a spline every knot whose
+    // multiplicity leaves it less smooth than that order (SplineBreaks). An
+    // offset needs one order more of its basis. A difference quotient is
+    // accurate to its stated order only on an interval holding none of them.
+    // Unordered.
+    Breaks(g: GeometrySet, c: CurveIndex, order: Integer): Array<Number>
+        => g.CurveAt(c).Breaks(g, order);
+
+    // Breaks for one record of the arena g, which holds the entries it references.
+    Breaks(curve: BrepCurve, g: GeometrySet, order: Integer): Array<Number>
         => match (curve)
         {
             Line(origin, velocity) => Number.NoParameters;
@@ -203,13 +213,13 @@ library BrepGeometryCurves
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => Number.NoParameters;
             Parabola(placement, focalDistance) => Number.NoParameters;
             Polyline(points) => (points.Count - 2).Max(0).MapRange(i => (i + 1).ToNumber);
-            BSpline(data) => data.Basis.SplineBreakpoints;
-            Trimmed(basis, range, sameSense) => g.Breakpoints(basis).OffsetsInside(range, sameSense);
-            Composite(segments) => g.CompositeBreakpoints(segments);
-            Offset(basis, distance, reference) => g.Breakpoints(basis);
+            BSpline(data) => data.Basis.SplineBreaks(order);
+            Trimmed(basis, range, sameSense) => g.Breaks(basis, order).OffsetsInside(range, sameSense);
+            Composite(segments) => g.CompositeBreaks(segments, order);
+            Offset(basis, distance, reference) => g.Breaks(basis, order + 1);
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
-                ? g.Breakpoints(spaceCurve)
-                : g.Breakpoints(g.PcurveAt(supports.MasterPcurve(master)).Curve);
+                ? g.Breaks(spaceCurve, order)
+                : g.Breaks(g.PcurveAt(supports.MasterPcurve(master)).Curve, order);
         };
 
     // No parameters: the typed empty array.
@@ -232,6 +242,56 @@ library BrepGeometryCurves
     // the point by at most the length tolerance to first order.
     ParameterToleranceAt(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): ParameterTolerance
         => tol.ParameterToleranceAt(g.Derivative(c, t).Length, g.Domain(c).ParameterToleranceCap);
+
+    //==
+    // # Rounding magnitude
+    //
+    // Rounding in an evaluation is relative to the size of the terms it adds,
+    // not to the size of the result: a circle of radius 1 centred at (1, 0)
+    // passes through the origin at t = pi, where |Eval| is 0 but the sum
+    // that produced it carried terms of size 1. EvaluationMagnitude bounds
+    // those terms, so layer 0's ResolutionAt(EvaluationMagnitude) bounds the
+    // rounding of Eval, and of every derivative formula after dividing by
+    // the parameter's scale. Every law of this layer about its own
+    // arithmetic takes its bound from here (layer 0's rule: rounding laws
+    // take ResolutionAt, never a model tolerance).
+
+    // A bound on the size of the terms Eval(g, c, t) sums: the placement's
+    // origin plus the radii (with the hyperbolic or polynomial factor at t)
+    // for conics, |P| + |t| |V| for a line, the largest control point times
+    // the ratio of the largest weight to the smallest for a spline, the
+    // basis's at the mapped parameter for trims, composites and offsets
+    // (plus the offset distance), and the master representation's for a
+    // surface curve.
+    EvaluationMagnitude(g: GeometrySet, c: CurveIndex, t: Number): Number
+        => g.CurveAt(c).EvaluationMagnitude(g, t);
+
+    // EvaluationMagnitude for one record of the arena g, which holds the entries it references.
+    EvaluationMagnitude(curve: BrepCurve, g: GeometrySet, t: Number): Number
+        => match (curve)
+        {
+            Line(origin, velocity) => origin.PositionVector.Length + t.Abs * velocity.Length;
+            Circle(placement, radius) => placement.Origin.PositionVector.Length + radius.Abs;
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.Origin.PositionVector.Length + semiAxis1.Abs.Max(semiAxis2.Abs);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.Origin.PositionVector.Length + (semiAxis.Abs + semiImaginaryAxis.Abs) * t.Cosh;
+            Parabola(placement, focalDistance) => placement.Origin.PositionVector.Length + focalDistance.Abs * (t * t + 2.0 * t.Abs);
+            Polyline(points) => points.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length));
+            BSpline(data) => data.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length)) * data.Weights.WeightRatio;
+            Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, range.SensedParameter(sameSense, t));
+            Composite(segments) => g.EvaluationMagnitude(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Offset(basis, distance, reference) => g.EvaluationMagnitude(basis, t) + distance.Abs;
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.EvaluationMagnitude(spaceCurve, t)
+                : g.EvaluationMagnitude(supports.MasterPcurve(master), t);
+        };
+
+    // The ratio of the largest weight to the smallest, at least 1: the factor
+    // by which the rational quotient can enlarge the rounding of its
+    // numerator. 1 for an empty array.
+    WeightRatio(weights: Array<Number>): Number
+        => weights.Count == 0
+            ? 1.0
+            : weights.Reduce(0.0, (m, w) => m.Max(w.Abs)) / weights.Reduce(Number.MaxValue, (m, w) => m.Min(w.Abs)).Max(Number.SmallestNormal);
 
     //==
     // # Surface curves and their pcurves
@@ -350,14 +410,14 @@ library BrepGeometryCurves
         return g.Domain(segments[i].Curve).Range.SensedParameter(segments[i].SameSense, t - extents.PieceStart(i));
     }
 
-    // The composite's breakpoints: every join, and each segment's own
-    // breakpoints moved to the composite's parameter.
-    CompositeBreakpoints(g: GeometrySet, segments: Array<CompositeSegment>): Array<Number>
+    // The composite's breaks of the given order: every join, and each
+    // segment's own breaks moved to the composite's parameter.
+    CompositeBreaks(g: GeometrySet, segments: Array<CompositeSegment>, order: Integer): Array<Number>
     {
         var extents = g.CompositeExtents(segments);
         return segments.Count.Range.FlatMap(i =>
             (i == 0 ? Number.NoParameters : [extents.PieceStart(i)]).Concatenate(
-                g.Breakpoints(segments[i].Curve)
+                g.Breaks(segments[i].Curve, order)
                     .OffsetsInside(g.Domain(segments[i].Curve).Range, segments[i].SameSense)
                     .Map(s => extents.PieceStart(i) + s)));
     }
@@ -468,10 +528,15 @@ library BrepGeometryCurves
 
     // The parameter-plane curve's breakpoints, as for space curves.
     Breakpoints(g: GeometrySet, c: Curve2DIndex): Array<Number>
-        => g.Curve2DAt(c).Breakpoints(g);
+        => g.Breaks(c, 1);
 
-    // Breakpoints for one record of the arena g, which holds the entries it references.
-    Breakpoints(curve: BrepCurve2D, g: GeometrySet): Array<Number>
+    // The parameter-plane curve's breaks of the given order, as for space
+    // curves.
+    Breaks(g: GeometrySet, c: Curve2DIndex, order: Integer): Array<Number>
+        => g.Curve2DAt(c).Breaks(g, order);
+
+    // Breaks for one record of the arena g, which holds the entries it references.
+    Breaks(curve: BrepCurve2D, g: GeometrySet, order: Integer): Array<Number>
         => match (curve)
         {
             Line(origin, velocity) => Number.NoParameters;
@@ -480,11 +545,41 @@ library BrepGeometryCurves
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => Number.NoParameters;
             Parabola(placement, focalDistance) => Number.NoParameters;
             Polyline(points) => (points.Count - 2).Max(0).MapRange(i => (i + 1).ToNumber);
-            BSpline(data) => data.Basis.SplineBreakpoints;
-            Trimmed(basis, range, sameSense) => g.Breakpoints(basis).OffsetsInside(range, sameSense);
-            Composite(segments) => g.CompositeBreakpoints(segments);
-            Offset(basis, distance) => g.Breakpoints(basis);
+            BSpline(data) => data.Basis.SplineBreaks(order);
+            Trimmed(basis, range, sameSense) => g.Breaks(basis, order).OffsetsInside(range, sameSense);
+            Composite(segments) => g.CompositeBreaks(segments, order);
+            Offset(basis, distance) => g.Breaks(basis, order + 1);
         };
+
+    // A bound on the size of the terms Eval(g, c, t) sums for a
+    // parameter-plane curve, as EvaluationMagnitude in space with a point's
+    // distance from the parameter plane's origin.
+    EvaluationMagnitude(g: GeometrySet, c: Curve2DIndex, t: Number): Number
+        => g.Curve2DAt(c).EvaluationMagnitude(g, t);
+
+    // EvaluationMagnitude for one record of the arena g, which holds the entries it references.
+    EvaluationMagnitude(curve: BrepCurve2D, g: GeometrySet, t: Number): Number
+        => match (curve)
+        {
+            Line(origin, velocity) => origin.UvMagnitude + t.Abs * velocity.Length;
+            Circle(placement, radius) => placement.Origin.UvMagnitude + radius.Abs;
+            Ellipse(placement, semiAxis1, semiAxis2) => placement.Origin.UvMagnitude + semiAxis1.Abs.Max(semiAxis2.Abs);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => placement.Origin.UvMagnitude + (semiAxis.Abs + semiImaginaryAxis.Abs) * t.Cosh;
+            Parabola(placement, focalDistance) => placement.Origin.UvMagnitude + focalDistance.Abs * (t * t + 2.0 * t.Abs);
+            Polyline(points) => points.Reduce(0.0, (m, p) => m.Max(p.UvMagnitude));
+            BSpline(data) => data.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.UvMagnitude)) * data.Weights.WeightRatio;
+            Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, range.SensedParameter(sameSense, t));
+            Composite(segments) => g.EvaluationMagnitude(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Offset(basis, distance) => g.EvaluationMagnitude(basis, t) + distance.Abs;
+        };
+
+    // The distance of a parameter-plane point from (0, 0).
+    UvMagnitude(uv: UvCoordinate): Number
+        => (uv.U * uv.U + uv.V * uv.V).Sqrt;
+
+    // The distance of a plane point (a Frame2D's origin) from (0, 0).
+    UvMagnitude(p: Point2D): Number
+        => (p.X * p.X + p.Y * p.Y).Sqrt;
 
     // The parameter-plane polyline's point at t.
     PolylinePoint(points: Array<UvCoordinate>, t: Number): UvCoordinate
@@ -511,13 +606,13 @@ library BrepGeometryCurves
         return g.Domain(segments[i].Curve).Range.SensedParameter(segments[i].SameSense, t - extents.PieceStart(i));
     }
 
-    // The parameter-plane composite's breakpoints.
-    CompositeBreakpoints(g: GeometrySet, segments: Array<CompositeSegment2D>): Array<Number>
+    // The parameter-plane composite's breaks of the given order.
+    CompositeBreaks(g: GeometrySet, segments: Array<CompositeSegment2D>, order: Integer): Array<Number>
     {
         var extents = g.CompositeExtents(segments);
         return segments.Count.Range.FlatMap(i =>
             (i == 0 ? Number.NoParameters : [extents.PieceStart(i)]).Concatenate(
-                g.Breakpoints(segments[i].Curve)
+                g.Breaks(segments[i].Curve, order)
                     .OffsetsInside(g.Domain(segments[i].Curve).Range, segments[i].SameSense)
                     .Map(s => extents.PieceStart(i) + s)));
     }
@@ -561,6 +656,11 @@ library BrepGeometryCurves
     // Project(surface, q) and a closest parameter of that uv on the 2D curve
     // is the fast path when the surface is injective near q.
     ClosestParameter(g: GeometrySet, p: PcurveIndex, q: Point3D): Number;
+
+    // A bound on the size of the terms the pcurve's space point at t sums:
+    // its surface's at the 2D curve's point.
+    EvaluationMagnitude(g: GeometrySet, p: PcurveIndex, t: Number): Number
+        => g.EvaluationMagnitude(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, t));
 
     // The parameter tolerance at t on the pcurve, by its speed in space.
     ParameterToleranceAt(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): ParameterTolerance

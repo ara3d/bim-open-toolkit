@@ -21,6 +21,7 @@
 //  - Collapsed lines and degenerate sides
 //  - Breakpoints and closure
 //  - Parameter tolerance
+//  - Rounding magnitude
 //  - Helpers by case
 //  - Helpers by parameter direction
 
@@ -399,12 +400,18 @@ library BrepGeometrySurfaces
     // The values of the given parameter along whose iso-lines the surface may
     // lose tangent continuity: a spline's knots of multiplicity at least the
     // degree, a swept surface's profile breakpoints, a trimmed basis's seen
-    // through the trim. Face meshing seeds them as interior lines.
+    // through the trim. Face meshing seeds them as interior lines. Breaks of
+    // order 1.
     Breakpoints(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Array<Number>
-        => g.SurfaceAt(s).Breakpoints(g, which);
+        => g.Breaks(s, which, 1);
 
-    // Breakpoints for one record of the arena g, which holds the entries it references.
-    Breakpoints(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter): Array<Number>
+    // The values of the given parameter along whose iso-lines a partial of
+    // order at most `order` may jump, as Breaks on curves.
+    Breaks(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, order: Integer): Array<Number>
+        => g.SurfaceAt(s).Breaks(g, which, order);
+
+    // Breaks for one record of the arena g, which holds the entries it references.
+    Breaks(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter, order: Integer): Array<Number>
         => match (surface)
         {
             Plane(placement) => Number.NoParameters;
@@ -412,12 +419,12 @@ library BrepGeometrySurfaces
             Cone(placement, radius, semiAngle) => Number.NoParameters;
             Sphere(placement, radius) => Number.NoParameters;
             Torus(placement, major, minor, part) => Number.NoParameters;
-            Revolution(profile, axis) => which.Along(Number.NoParameters, g.Breakpoints(profile));
-            LinearExtrusion(profile, extrusion) => which.Along(g.Breakpoints(profile), Number.NoParameters);
-            BSpline(data) => data.BasisAlong(which).SplineBreakpoints;
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Breakpoints(basis, which)
+            Revolution(profile, axis) => which.Along(Number.NoParameters, g.Breaks(profile, order));
+            LinearExtrusion(profile, extrusion) => which.Along(g.Breaks(profile, order), Number.NoParameters);
+            BSpline(data) => data.BasisAlong(which).SplineBreaks(order);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Breaks(basis, which, order)
                 .OffsetsInside(which.Along(uRange, vRange), which.Along(uSense, vSense));
-            Offset(basis, distance) => g.Breakpoints(basis, which);
+            Offset(basis, distance) => g.Breaks(basis, which, order + 1);
         };
 
     // True when the surface is closed in the given parameter: periodic in it,
@@ -463,6 +470,35 @@ library BrepGeometrySurfaces
     // the tolerance along it is the cap: every value there is the same point.
     UvToleranceAt(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): UvTolerance
         => tol.UvToleranceAt(g.PartialU(s, uv).Length, g.PartialV(s, uv).Length, g.Domain(s));
+
+    //==
+    // # Rounding magnitude
+
+    // A bound on the size of the terms Eval(g, s, uv) sums, as
+    // EvaluationMagnitude on curves (geometry-curves.library.plato): the
+    // placement's origin plus the radii and the length coordinates for the
+    // placement-based cases, the profile's at its parameter plus the axis
+    // origin or |v| |V| for the swept cases, the largest control point times
+    // the weight ratio for a spline, the basis's at the mapped parameters for
+    // a trim and an offset (plus the offset distance).
+    EvaluationMagnitude(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Number
+        => g.SurfaceAt(s).EvaluationMagnitude(g, uv);
+
+    // EvaluationMagnitude for one record of the arena g, which holds the entries it references.
+    EvaluationMagnitude(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Number
+        => match (surface)
+        {
+            Plane(placement) => placement.Origin.PositionVector.Length + uv.U.Abs + uv.V.Abs;
+            Cylinder(placement, radius) => placement.Origin.PositionVector.Length + radius.Abs + uv.V.Abs;
+            Cone(placement, radius, semiAngle) => placement.Origin.PositionVector.Length + radius.Abs + uv.V.Abs * (1.0 + semiAngle.Tan.Abs);
+            Sphere(placement, radius) => placement.Origin.PositionVector.Length + radius.Abs;
+            Torus(placement, major, minor, part) => placement.Origin.PositionVector.Length + major.Abs + minor.Abs;
+            Revolution(profile, axis) => axis.Origin.PositionVector.Length * 2.0 + g.EvaluationMagnitude(profile, uv.V);
+            LinearExtrusion(profile, extrusion) => g.EvaluationMagnitude(profile, uv.U) + uv.V.Abs * extrusion.Length;
+            BSpline(data) => data.ControlPoints.Elements.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length)) * data.Weights.Elements.WeightRatio;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.EvaluationMagnitude(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv));
+            Offset(basis, distance) => g.EvaluationMagnitude(basis, uv) + distance.Abs;
+        };
 
     //==
     // # Helpers by case
