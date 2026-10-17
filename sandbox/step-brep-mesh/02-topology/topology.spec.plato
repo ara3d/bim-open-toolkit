@@ -290,7 +290,7 @@ spec IsPlainInParameters(m: BrepModel, f: BrepFaceIndex): Boolean
     ensures result ? m.HasSeam(f).Not : true;
     ensures result ? m.Faces[f].Bounds.Count >= 1 : true;
     measure m.CoedgeSitesOfFace(f).Count;
-    deferred "sample each coedge's curve over its edge domain in its composed direction; map every sample to (u, v) with Project; lift each value next to its predecessor by the surface's periods; reject when a bound's lifted polygon does not return to its start within the parameter tolerance, or a loop vertex lies on a side DegenerateSides names";
+    deferred "sample each coedge's curve over its edge domain in its composed direction; map every sample to (u, v) with Project; lift each value next to its predecessor by the period of every direction with a seam, Closed as well as Periodic (NearestUnwrapped on the surface domain); reject when a bound's lifted polygon does not return to its start within the parameter tolerance, or a loop vertex lies on a side DegenerateSides names";
 }
 
 // Green's theorem with unit weight over the face's parameter-space region.

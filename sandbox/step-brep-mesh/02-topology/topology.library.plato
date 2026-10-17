@@ -1093,9 +1093,14 @@ library BrepTopology
     // pole handling: every bound is an edge loop, no edge is a seam of f, no loop
     // vertex lies on a degenerate side (DegenerateSides), and each bound's
     // projected, continuity-unwrapped polygon returns to its start within the
-    // parameter tolerance, so that no bound wraps a period.
+    // parameter tolerance, so that no bound wraps a period. Every direction with
+    // a seam is unwrapped, Closed as well as Periodic (layer 0's HasSeam and
+    // NearestUnwrapped on the surface domain): a band between two circles of a
+    // clamped closed B-spline surface wraps its closed direction and is not
+    // plain, though its formula does not wrap (review C1).
     // deferred: sample each coedge's curve, map the samples with Project, unwrap
-    // by continuity across periods, and test closure and pole contact.
+    // by continuity across the periods of every direction with a seam, and test
+    // closure and pole contact.
     IsPlainInParameters(m: BrepModel, f: BrepFaceIndex): Boolean;
 
     // The signed area of face f's region in its parameter plane: the sum over

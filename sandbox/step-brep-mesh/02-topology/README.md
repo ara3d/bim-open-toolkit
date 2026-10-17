@@ -370,8 +370,8 @@ layer 1's knowledge and are marked `belongs-in: 01-geometry`; `ScaledTolerances`
    and an out-of-range basis curve would fault inside them.
 8. **Degeneracy is a property of the curve over the edge domain**, not of the vertex points: a
    full circle has coincident ends and is not degenerate.
-9. **The winding law applies only to plain faces** (`IsPlainInParameters`). With a seam, a wrapping
-   loop or a pole, the parameter-space image depends on choices face meshing makes: which seam copy,
+9. **The winding law applies only to plain faces** (`IsPlainInParameters`). With a seam, a loop
+   wrapping a `Periodic` or `Closed` direction, or a pole, the parameter-space image depends on choices face meshing makes: which seam copy,
    where to cut, where the collapsed side lies. Layer 5's region laws check those faces after the
    choice. Plane faces, split cylinder faces and most B-spline faces are plain.
 10. **No law takes a free genus or a rounding bound.** Research/VALIDATION-MATH.md proposes
@@ -465,7 +465,8 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 | `OrientationFlips(m, s)` | two-colouring of the face graph by the parity of each edge's two uses | coedge sites of the shell |
 | `ShellComponentCount(m, s)` | union-find over the shell's faces joined at shared vertices and coinciding poly-loop points | coedge sites plus bounds of the shell |
 | `CornersAroundVertex(m, s, v)` | walk the link across shared ends | corners at `v` |
-| `IsPlainInParameters(m, f)` | sample coedges, `Project`, lift by continuity across periods, test closure and pole contact | coedge sites of `f` times samples |
+| `IsPlainInParameters(m, f)` | sample coedges, `Project`, lift by continuity across the period of every direction with a seam (`Periodic` or `Closed`), test closure and pole contact | coedge sites of `f` times samples |
+| `SharesCurveParameter(m, e, k)` | `PcurveParameterDeviationAt` at breakpoints and midpoints, bisecting where it grows | breakpoints of the edge domain |
 | `SignedParameterArea(m, f)` | shoelace over the lifted polygons, refined until the sign is settled | coedge sites of `f` times samples |
 
 ## Names
@@ -697,6 +698,10 @@ Applied:
 - **Stand-in `PeriodicRepresentativeAbove` deleted.** Layer 0 committed it (`c09a121b`) with the
   same signature and meaning, after this layer's snapshot was taken; the gate's predicted snapshot
   carries it.
+- **`Closed` directions in seam reasoning (FIX-WAVE layer 0 table).** Every match on
+  `Periodicity` in this layer has the `Closed` arm (`TraversalDomain`); seam and wrap tests read
+  layer 0's `HasSeam`; `IsPlainInParameters` unwraps every direction with a seam, so a band on a
+  clamped closed B-spline surface is not taken for a plain face.
 
 Skipped:
 
