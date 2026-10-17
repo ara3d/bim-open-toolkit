@@ -309,9 +309,11 @@ library UvRegions
 
     // The parameter tolerance of face f's region: layer 00's UvToleranceAt at the chart's mean
     // speeds, so a boundary displacement within it moves the surface point by about the length
-    // tolerance.
+    // tolerance, never below the floor of each direction's kind (layer 01's UvFloorOf: the angle
+    // floor for an angle parameter, the length floor otherwise).
     RegionTolerance(m: BrepModel, f: BrepFaceIndex, chart: FaceChart): UvTolerance
-        => m.Tolerances.UvToleranceAt(chart.ScaleU, chart.ScaleV, m.SurfaceDomainOf(f));
+        => m.Tolerances.UvToleranceAt(m.Geometry.UvFloorOf(m.SurfaceOf(f), m.Tolerances),
+            chart.ScaleU, chart.ScaleV, m.SurfaceDomainOf(f));
 
     // The parameter tolerance at the point uv of face f's surface (layer 01's UvToleranceAt).
     PointTolerance(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate): UvTolerance

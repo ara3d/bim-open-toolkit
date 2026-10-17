@@ -133,7 +133,8 @@ does). That is exact on planes and cylinders and close on cones; the constrained
 triangulation and refinement's insertion decisions work there. No acceptance test depends on the
 chart: chordal deviation, normal deviation, and winding are measured in 3D. The first fundamental
 form enters in one more place: tolerances. The region's tolerance is layer 00's `UvToleranceAt` at
-the chart's speeds (`RegionTolerance`); a point's tolerance is layer 01's `UvToleranceAt` at the
+the chart's speeds, floored per direction by its kind (layer 01's `UvFloorOf`: the angle floor in
+radians for an angle parameter, the length floor otherwise) (`RegionTolerance`); a point's tolerance is layer 01's `UvToleranceAt` at the
 local speeds (`PointTolerance`). A metric (Riemannian) triangulation for B-spline faces is left for a
 later version.
 
@@ -355,6 +356,7 @@ knots); offset and rectangular-trimmed last.
 | `IsDiscretizedFace`, `IsDiscretizedBound`, `HasSample` in `FaceMeshingLaws` | in `FaceMeshing`, same signatures | `MeshFace`'s precondition, which layer 08 evaluates, is a definition of the layer, not a law guard (layer 08 finding 3) |
 | `StepBelowHalfPeriod`, `Winding`: Aperiodic and Periodic | a `Closed` arm, treated as `Periodic` | Layer 00's new periodicity case (review C1, T1) |
 | `MeshFace` ensures | also `Law_RequestsNameFaceEdges` and `Law_MeshFaceReadsOnlyFaceEdges`; new `AgreeOnFaceEdges`, `SameFaceMesh`, `SameFaceMeshOutcome` (layer 08 declared the last two with the same bodies; they belong with the types here, and layer 08's copies should go) | Layer 08's refinement loop rests on both properties (layer 08 finding 4) |
+| `RegionTolerance`: one model-wide parameter floor | the floor of each direction's kind, from layer 01's `UvFloorOf`, passed to layer 00's `UvToleranceAt` | Layer 00 split `Tolerances.Parameter` into `LengthParameter` and `AngleParameter` (review C2) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -390,6 +392,8 @@ Applied:
   (`Law_RequestsNameFaceEdges`) and that it reads only those edges' discretizations
   (`Law_MeshFaceReadsOnlyFaceEdges`). `SameFaceMesh` and `SameFaceMeshOutcome` are declared here,
   beside their types; layer 08's identical copies are left for its fixer to delete.
+- C2, FIX-WAVE `Tolerances.Parameter` split: `RegionTolerance` passes layer 01's per-kind floors
+  (`UvFloorOf`) to layer 00's `UvToleranceAt`; `PointTolerance` inherits them through layer 01.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 
