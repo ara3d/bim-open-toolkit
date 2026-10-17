@@ -215,12 +215,21 @@ length unit gets the millimetre, with a Warning.
    a 100 mm part, OpenCascade's default at that size. A model of one point gets 1e-7 m. The
    default is applied exactly when no used context states an uncertainty
    (`Law_UncertaintyDefaultExactlyWhenAbsent`);
-3. never below `ResolutionAt(model size)` (layer 0), the smallest difference the arithmetic can
-   resolve there; a Theorem file's 1e-13 mm is raised to it with a Warning.
+3. never below `ResolutionAt(coordinate extent)` (layer 0's `ResolvableLength`), the smallest
+   difference the arithmetic can resolve at the largest absolute coordinate; a Theorem file's
+   1e-13 mm is raised to it with a Warning. The extent, not the model size, because rounding
+   depends on how large the coordinates are: a 100 m building in millimetres at survey
+   coordinates near 5e9 mm has a model size of 1e5 mm, where `ResolutionAt` is 3.6e-10 mm, but
+   its coordinates resolve only to 1.8e-5 mm, so a stated 1e-6 mm would be rounding noise (review
+   F6).
 
 `ModelLengthTolerance` is that rule as a body. `Tolerances.Angle` is the policy's 1e-9 rad (no
-surveyed file states an angle uncertainty); `Tolerances.Parameter` is layer 0's
-`ParameterFloor(length, model size)`. Uncertainties from 1e-13 mm to 0.67 mm are accepted as
+surveyed file states an angle uncertainty). The two parameter floors are layer 0's, one per kind
+of parameter because they carry different units (review C2): `LengthParameter` is
+`LengthParameterFloor(length, extent)`, in model lengths, and `AngleParameter` is
+`AngleParameterFloor(length, model size, extent)`, in radians; the old single floor divided by
+`max(model size, 1)`, which made it depend on the length unit. The model size and the extent are
+layer 2's `ModelSize` and `CoordinateExtent` of the decoded, placed model. Uncertainties from 1e-13 mm to 0.67 mm are accepted as
 written; the meshing tolerances stay separate (research 6.5).
 
 ## Closure at decode
@@ -533,7 +542,7 @@ are about this layer's code.
 | `Law_CurveCountMatchesInstances` | One BrepCurve or BrepCurve2D per reached curve that is not a pcurve: basis curves, composite segments' curves, and the 2D curves inside pcurve definitions each get their own entry, never nested. | exact | Error |
 | `Law_PcurveCountMatchesInstances` | One Pcurve per reached pcurve: the file's pcurves are kept, and none is invented (Law_PcurvesComeFromPcurveInstances). | exact | Error |
 | `Law_SurfaceCountMatchesInstances` | One BrepSurface per reached surface. | exact | Error |
-| `Law_CirclePeriodIsTwoPi` | Angles are radians after decoding, whatever the file's plane-angle unit: a kernel curve decoded from a circle has period 2 pi within tol, in a file whose angle unit is the degree as in any other. | `ParameterTolerance` (parameter) | Error |
+| `Law_CirclePeriodIsTwoPi` | Angles are radians after decoding, whatever the file's plane-angle unit: a kernel curve decoded from a circle has period 2 pi within tol, in a file whose angle unit is the degree as in any other. | `ParameterTolerance` (parameter; the contract passes `Tolerances.AngleParameter`) | Error |
 | `Law_CurveClosureDecidedByEnds` | A decoded curve whose formula does not wrap is Closed exactly when its range is bounded and its ends coincide within the length tolerance. | `Tolerances.Length` of the model | Error |
 | `Law_SurfaceClosureDecidedBySides` | A decoded surface direction whose formula does not wrap is Closed exactly when it is bounded and its opposite sides coincide within the length tolerance (SidesCoincide). | `Tolerances.Length` of the model | Error |
 | `Law_AngleUnitIsReported` | Every used context's plane-angle unit is reported at Info: found, or defaulted by the policy. | exact | Error |

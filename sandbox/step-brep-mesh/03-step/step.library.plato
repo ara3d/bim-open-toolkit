@@ -127,23 +127,29 @@ library StepReading
     // contexts converted to the model unit, which honours every exporter's own
     // claim of coincidence; or, when none states one, the policy fraction of
     // the model size (the fallback when the size is zero); never below the
-    // arithmetic resolution at the model size (ResolutionAt, layer 0), which a
-    // 1e-13 mm uncertainty is.
-    ModelLengthTolerance(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, policy: DecodePolicy): LengthTolerance
+    // arithmetic resolution at the coordinate extent, the largest absolute
+    // coordinate (layer 0's ResolvableLength): rounding depends on how large
+    // the coordinates are, not on how large the model is, so a part at survey
+    // coordinates near 5e9 mm cannot honour a 1e-6 mm tolerance whatever its
+    // size (review F6). A 1e-13 mm uncertainty is raised the same way.
+    ModelLengthTolerance(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, extent: Number, policy: DecodePolicy): LengthTolerance
     {
         var stated = used.FlatMap(c => c.StatedUncertaintyIn(unit));
         var fallback = modelSize > 0.0 ? policy.DefaultRelativeUncertainty * modelSize : ConvertLength(policy.FallbackUncertaintyMetres, LengthUnit.Metre, unit);
         var value = stated.Count == 0 ? fallback : stated.Reduce(0.0, (a, b) => a.Max(b));
-        return LengthTolerance(value.Max(ResolutionAt(modelSize)));
+        return LengthTolerance(LengthTolerance(value).ResolvableLength(extent));
     }
 
     // The model's tolerances: the length tolerance above, the policy's angle
-    // tolerance, and the parameter floor layer 0 derives from them
-    // (ParameterFloor).
-    ModelTolerances(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, policy: DecodePolicy): Tolerances
+    // tolerance, and the two parameter floors layer 0 derives from them, one
+    // per kind of parameter (LengthParameterFloor over the coordinate extent,
+    // AngleParameterFloor over the model size and the extent). modelSize is
+    // layer 2's ModelSize and extent its CoordinateExtent, both of the
+    // decoded, placed model.
+    ModelTolerances(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, extent: Number, policy: DecodePolicy): Tolerances
     {
-        var length = ModelLengthTolerance(used, unit, modelSize, policy);
-        return Tolerances(length, policy.AngleCoincidence, ParameterFloor(length, modelSize));
+        var length = ModelLengthTolerance(used, unit, modelSize, extent, policy);
+        return Tolerances(length, policy.AngleCoincidence, length.LengthParameterFloor(extent), length.AngleParameterFloor(modelSize, extent));
     }
 
     // The model size: the diagonal of the bounding box of the points, 0 for
