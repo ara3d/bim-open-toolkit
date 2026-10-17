@@ -58,6 +58,15 @@ cylinder do. When the uses meet at a pole or an apex nothing does: a sphere boun
 cone bounded by its base circle and a seam to its apex, would put both uses on one copy, a zero-width
 slit that no refinement clears.
 
+**A closed direction is a periodic one here.** Layer 00's `Periodicity` has a third case,
+`Closed(Period)`: the formula does not wrap, but the range's two ends are one point, as on a clamped
+B-spline surface that a CAD system wraps into a cylinder (STEP has no periodic B-spline surface).
+Every function of this layer that reasons about seams (`StepBelowHalfPeriod`, `Winding`, `Unwrap`,
+`AddMissingSeamsAndPoles`, the left rule) treats `Closed` exactly like `Periodic`; layer 01's `Eval`
+moves a closed parameter into its range before evaluating. Without it, a seam's samples on such a face
+would have two nearest copies, the loop would zig-zag, and a band between two closed B-spline edges
+would get no cut.
+
 **A seam cut chooses a fundamental domain.** When loops wind, `Omega` does not embed in the plane.
 Cutting `M` along an arc from one winding loop to another (or to a pole) gives a region that does,
 and the two banks of the cut become two sides of a planar polygon. The two copies differ by one
@@ -342,6 +351,7 @@ knots); offset and rectangular-trimmed last.
 | `IsPoleCollapsed(m, f, t, k)`, `PoleCollapsedTriangleCount`, `PoleCollapsedQuadCount`, `ShareCollapsedLine`: corners on one collapsed line | `IsCollapsedElement(t, k)`, `CollapsedTriangleCount(t)`, `CollapsedQuadCount(t)`: two corners with identified sources; `IsSurfaceEdge` compares local vertices; `ShareCollapsedLine` removed | The drop test agrees with Lift's identification (review M7) |
 | conjecture `ElementsTileRegion` | a theorem, assuming the region is simple and the two side laws; `TriangulateRegion`, `RefineToSurface`, `QuadGrid` ensure `Law_BoundarySegmentIsElementSide` and `Law_InteriorSideIsShared`; new `LoopOffset`, `LoopOfBoundaryPoint`, `NextBoundaryPoint`, `IsBoundarySegment`, `ElementHasSide`, `SideCount` | Keeping the boundary points does not make a tiling (review M5, H6); layer 08's watertightness theorem no longer rests on a conjecture |
 | `IsDiscretizedFace`, `IsDiscretizedBound`, `HasSample` in `FaceMeshingLaws` | in `FaceMeshing`, same signatures | `MeshFace`'s precondition, which layer 08 evaluates, is a definition of the layer, not a law guard (layer 08 finding 3) |
+| `StepBelowHalfPeriod`, `Winding`: Aperiodic and Periodic | a `Closed` arm, treated as `Periodic` | Layer 00's new periodicity case (review C1, T1) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -369,6 +379,8 @@ Applied:
   assumptions, and `DroppedTrianglesArePoleSegments` states the one it used silently.
 - Layer 08 finding 3: `IsDiscretizedFace` (with `IsDiscretizedBound` and `HasSample`, which it
   calls) moved from the laws block into `FaceMeshing`.
+- C1, T1 (FIX-WAVE "Closed directions"): `StepBelowHalfPeriod` and `Winding` gain the `Closed`
+  arm, the same as `Periodic`; every seam function inherits it.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 

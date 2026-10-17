@@ -420,13 +420,21 @@ library UvRegions
 
     //==
     // # Periodic directions
+    //
+    // In this layer a periodic direction is one whose Periodicity is Periodic or Closed (layer
+    // 00): a closed direction (a clamped B-spline surface whose first and last rows coincide, as
+    // CAD systems write a wrapped cylinder) has a seam at its range's ends exactly as a periodic
+    // one does, so unwrapping, windings, seam uses, and synthetic cuts treat the two alike. Only
+    // evaluation differs, and layer 01's Eval moves a closed direction's parameter into its range
+    // first, so an unwrapped copy evaluates to the same point.
 
-    // True when the step from a to b is shorter than half the period along a periodic direction;
-    // always true along an aperiodic one.
+    // True when the step from a to b is shorter than half the period along a periodic or closed
+    // direction; always true along an aperiodic one.
     StepBelowHalfPeriod(dom: CurveDomain, a: Number, b: Number): Boolean
         => match (dom.Periodicity) {
             Aperiodic => true;
             Periodic(period) => (b - a).Abs < 0.5 * period;
+            Closed(period) => (b - a).Abs < 0.5 * period;
         };
 
     // True when the step from a to b is shorter than half a period in every periodic direction.
@@ -446,12 +454,14 @@ library UvRegions
     // The whole number of periods a closed loop winds along one direction, from its first and
     // last parameter values. The loop's total displacement is (last - first) plus a closing step
     // shorter than half a period, and equals the winding times the period, so rounding
-    // (last - first) / period gives the winding. Zero along an aperiodic direction. Exact when
-    // every step of the loop is below half a period.
+    // (last - first) / period gives the winding. Zero along an aperiodic direction; a closed
+    // direction winds like a periodic one, so a band between two closed B-spline edges gets its
+    // synthetic cut. Exact when every step of the loop is below half a period.
     Winding(dom: CurveDomain, first: Number, last: Number): Integer
         => match (dom.Periodicity) {
             Aperiodic => 0;
             Periodic(period) => ((last - first) / period + 0.5).Floor.ToInteger;
+            Closed(period) => ((last - first) / period + 0.5).Floor.ToInteger;
         };
 
     // How many periods loop l winds in u, in face f's surface domain.
