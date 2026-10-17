@@ -240,12 +240,12 @@ outside its range makes it vacuously true, and the range is another law's statem
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
 | `Law_AreaIsSumOfFaceMeshAreas` | the assembled area is the sum of the face mesh areas (the element areas are bitwise equal, only the grouping of the compensated sums differs) | `ResolutionAt` of the total (`TotalsAgree`) | test |
-| `Law_ReversalNegatesSignedVolume` | reversing every element negates the signed volume | `LengthTolerance` times the area | test |
+| `Law_ReversalNegatesSignedVolume` | reversing every element negates the signed volume | `ResolutionAt(VolumeRoundingMagnitude)` | test |
 | `Law_OutwardTetrahedronHasPositiveVolume` | the outward-wound unit tetrahedron has positive signed volume | exact sign | test |
-| `Law_TriangleAngleSumIsPi` | a triangle's angles sum to pi | `AngleTolerance` | Error |
-| `Law_QuadAngleDefectIsNotNegative` | a quad's angles sum to at most 2 pi | `AngleTolerance` | test |
-| `Law_AngleDefectSumIsTwoPiTimesEuler` | discrete Gauss-Bonnet on a closed all-triangle component; checks angle sums and counts, not geometry (see below) | `AngleTolerance` times the component's vertex count | Error |
-| `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects` | the same with quads: defects = 2 pi chi + the quads' own defects | `AngleTolerance` times vertices plus quads | Error |
+| `Law_TriangleAngleSumIsPi` | a triangle's angles sum to pi (fails on a zero-length side) | `AngleSumResolution`, `ResolutionAt(2 pi)` | Error |
+| `Law_QuadAngleDefectIsNotNegative` | a quad's angles sum to at most 2 pi | `AngleSumResolution` | test |
+| `Law_AngleDefectSumIsTwoPiTimesEuler` | discrete Gauss-Bonnet on a closed all-triangle component; checks angle sums and counts, not geometry (see below) | `DefectSumResolution`: `ResolutionAt(2 pi V + pi K)`, K the corners | Error |
+| `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects` | the same with quads: defects = 2 pi chi + the quads' own defects | `DefectSumResolution`: `ResolutionAt(2 pi (V + Q) + pi K)` | Error |
 | `Law_ElementHasNoRepeatedCorner` | no element names a vertex twice | exact | Error |
 | `Law_ElementIsNotDegenerate` | every element's smallest altitude exceeds the length tolerance | `LengthTolerance` | Error |
 | `Law_VerticesOfOneComponentAreApart` | distinct vertices of one component are farther apart than the length tolerance | `LengthTolerance` | Error |
@@ -414,6 +414,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | research catalogue names for layer 6 | `Law_MeshEdgeAtMostTwoElements` is `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides`; `Law_MeshEdgeExactlyTwoElements` is `Law_ClosedMeansEveryEdgeHasTwoSides`; `Law_MeshEdgeOppositeTraversal` is `Law_OrientedExactlyWhenNoEdgeIsMisoriented`; `Law_MeshVertexLinkIsSingleCycle` is `Law_ClosedMeshHasNoPinchedVertex`; `Law_MeshNoCoincidentVertices` is `Law_VerticesOfOneComponentAreApart`; `Law_MeshElementNotDegenerate` is `Law_ElementIsNotDegenerate`; `Law_MeshComponentEulerEvenAtMostTwo` is `Law_ClosedOrientedSurfaceHasGenus`; `Law_AngleDefectSumIdentity` is `Law_AngleDefectSumIsTwoPiTimesEuler`; `Law_QuadAngleDefectWithinTolerance` is `Law_QuadAngleDefectMeetsThreshold` | names that say the statement; the catalogue's were proposals, not fixed names |
 | (none) | `CompensatedSum(values)`, `TotalsAgree(a, b)` | the summation and the yardstick of every law comparing two totals |
 | `Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n, tol)`, `Law_TriangleMeshKeepsArea(mesh, tol)`, `Law_QuadMeshKeepsAreaWhenOk(mesh, tol)`, `Law_PolygonMeshKeepsArea(mesh, tol)` | the same without `tol` | rounding laws judged by `ResolutionAt`, not by the model's length tolerance; 07-validation's four `Check_` calls drop the argument |
+| `Law_ReversalNegatesSignedVolume(mesh, tol)`, `Law_TriangleAngleSumIsPi(mesh, e, tol)`, `Law_QuadAngleDefectIsNotNegative(mesh, e, tol)`, `Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c, tol)`, `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c, tol)` | the same without `tol`; `VolumeRoundingMagnitude`, `AngleSumResolution`, `DefectSumResolution` added | rounding laws judged by `ResolutionAt`; 07-validation's five `Check_` calls drop the argument |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -429,3 +430,9 @@ Applied:
 - **Area-sum and conversion area laws by `ResolutionAt`** (review F7). `CompensatedSum` and
   `TotalsAgree` added; `Area` and `FaceMeshArea` are compensated; the four area laws lose their
   `LengthTolerance` parameter. The README's "true for meshes of any size" now holds.
+- **The other rounding laws by `ResolutionAt`** (review F7, "and others"). The volume reversal law
+  is judged by `ResolutionAt` of `VolumeRoundingMagnitude` (the sum of the products of corner
+  distances from the volume origin), the triangle angle sum and quad defect laws by
+  `ResolutionAt(2 pi)`, and both Gauss-Bonnet laws by `ResolutionAt` of the defect sum's
+  magnitude; the signed volume and the angle sums are compensated. The model's angle tolerance
+  (1e-9 rad by layer 3's policy) was the wrong kind of bound for an identity about rounding.

@@ -93,7 +93,20 @@ library ModelMeshMeasures
     // depend on the origin, and it is positive when the elements face out of the region they
     // enclose (theorem SignedVolumeSignIsOrientation).
     SignedVolume(mesh: ModelMesh): Number
-        => mesh.ElementCount.MapRange(k => mesh.ElementSignedVolume(ElementIndex(k), mesh.VolumeOrigin)).SumOf;
+        => mesh.ElementCount.MapRange(k => mesh.ElementSignedVolume(ElementIndex(k), mesh.VolumeOrigin)).CompensatedSum;
+
+    // The magnitude the signed volume's rounding scales with: over every flat triangle (a, b, c) of
+    // ElementTriangles, the product |a - o| |b - o| |c - o| about the volume origin o, summed. Each
+    // tetrahedron's six-fold volume (a - o) x (b - o) . (c - o) is computed with an error of at most
+    // about 42u times its product (the differences, the cross product, and the dot product each
+    // round relative to the sum of the absolute products, which is at most 3 sqrt(3) times the
+    // product of the lengths); divided by 6 and summed compensated, a signed volume errs by at most
+    // about 8u times this magnitude. Precondition: mesh.HasAllValidCorners.
+    VolumeRoundingMagnitude(mesh: ModelMesh): Number
+        => mesh.ElementCount.MapRange(k => mesh.ElementTriangles(ElementIndex(k))
+                .Map(t => (t.A - mesh.VolumeOrigin).Length * (t.B - mesh.VolumeOrigin).Length * (t.C - mesh.VolumeOrigin).Length)
+                .SumOf)
+            .CompensatedSum;
 
     // The signed solid angle the triangle (a, b, c) subtends at q, in steradians, positive when q
     // lies on the side the triangle's right-hand-rule normal points away from; by the formula of
@@ -121,10 +134,26 @@ library ModelMeshMeasures
         => mesh.ElementCount.MapRange(k => comps.ElementComponentOf(ElementIndex(k)).Value == c.Value
                 ? mesh.ElementSignedVolume(ElementIndex(k), mesh.VolumeOrigin)
                 : 0.0)
-            .SumOf;
+            .CompensatedSum;
 
     //==
     // # Corner angles and angle defects
+
+    // The rounding resolution of one element's angle sum: ResolutionAt(2 pi), about 200 unit
+    // roundoffs. Each corner angle, atan2(|u x v|, u . v) of rounded differences, errs by at most
+    // about 13u whatever the element's shape (the errors of |u x v| and u . v are both at most a few
+    // u times |u| |v|, and the angle's error is their combination divided by |u| |v|), so four
+    // corners and their sum stay below 60u.
+    AngleSumResolution(_: Angle): Number
+        => ResolutionAt(Number.Tau);
+
+    // The rounding resolution of the angle defect sum of a component with v vertices, q quads, and
+    // k element corners: ResolutionAt(2 pi (v + q) + pi k). The corner angles err by about 13u each
+    // (AngleSumResolution), the compensated sum by 2u times pi k, the product 2 pi v and the
+    // subtraction by a few u times 2 pi v, and each quad defect by about 60u: about a quarter of
+    // the bound in all.
+    DefectSumResolution(v: Integer, q: Integer, k: Integer): Number
+        => ResolutionAt(Number.Tau * (v + q).ToNumber + Number.Pi * k.ToNumber);
 
     // The angle at p between the rays to a and to b, in [0, pi]. 0 when either ray has zero length.
     AngleAt(p: Point3D, a: Point3D, b: Point3D): Angle
@@ -163,14 +192,14 @@ library ModelMeshMeasures
             - mesh.ElementCount.MapRange(k => comps.IsInComponent(ElementIndex(k), c)
                     ? mesh.ElementAngleSum(ElementIndex(k))
                     : 0.0)
-                .SumOf);
+                .CompensatedSum);
 
     // The sum of the angle defects of the quads of component c.
     QuadAngleDefectSum(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Angle
         => Angle(mesh.ElementCount.MapRange(k => (comps.IsInComponent(ElementIndex(k), c) && mesh.IsQuad(ElementIndex(k)))
                 ? mesh.QuadAngleDefect(ElementIndex(k)).Radians
                 : 0.0)
-            .SumOf);
+            .CompensatedSum);
 
     //==
     // # Degenerate elements and coincident vertices

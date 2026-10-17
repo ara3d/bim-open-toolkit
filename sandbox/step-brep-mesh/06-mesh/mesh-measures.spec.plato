@@ -44,8 +44,8 @@ theorem DiscreteGaussBonnet
              T = 2(E - T) and 2 pi V - pi T = 2 pi (V - E + T) = 2 pi chi (VALIDATION-MATH.md 4.5).
              Only the angle sums and 3T = 2E are used: the identity holds for any positions, so it
              checks the angle and counting code, not the geometry. In floating point each corner
-             angle carries a rounding error, which the law bounds by the angular tolerance per
-             vertex.";
+             angle carries a rounding error of about 13 unit roundoffs, which the law bounds by
+             ResolutionAt of the sum's magnitude (DefectSumResolution).";
     tested by Law_AngleDefectSumIsTwoPiTimesEuler, Law_TriangleAngleSumIsPi;
 }
 
