@@ -438,22 +438,10 @@ library EdgeDiscretizing
     // parameter). Without: `Project` of each point onto the surface, each result unwrapped to
     // within half a period of its predecessor, and a point on a degenerate side of the surface (a
     // pole) given the `U` (or `V`) of its neighbour along the polyline, since `Project` leaves it
-    // arbitrary there.
+    // arbitrary there. Always computed over the canonical (increasing-parameter) order of the
+    // points and listed in d's order, so the image of `Reversed(d)` is this image reversed, bit
+    // for bit: the same canonical-direction symmetry as `Discretize`.
     ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvCoordinate>;
-
-    // A parameter difference reduced to the shortest equivalent one in a periodic direction:
-    // unchanged when aperiodic, otherwise within half a period of zero.
-    PeriodicGap(x: Number, p: Periodicity): Number
-        => match (p)
-        {
-            Aperiodic => x;
-            Periodic(period) => x - period * (x / period).Round(0);
-        };
-
-    // The distance between two points of a parameter space, each periodic direction taken modulo
-    // its period.
-    UvGap(dom: SurfaceDomain, a: UvCoordinate, b: UvCoordinate): Number
-        => Vector2D((a.U - b.U).PeriodicGap(dom.U.Periodicity), (a.V - b.V).PeriodicGap(dom.V.Periodicity)).Length;
 
     // True when the step from a to b is unwrapped: in each periodic direction it is at most half
     // a period long.
@@ -500,17 +488,6 @@ library EdgeDiscretizing
         return uvs.Count == d.Points.Count
             ? d.SegmentCount.MapRange(i => m.UvChordDeviation(s, d.Points[i], d.Points[i + 1], uvs[i], uvs[i + 1], plan))
             : 0.MapRange(i => 0.0);
-    }
-
-    // The parameter-space distance between image point i and the pcurve at parameter i; 0 when
-    // the image has no pcurve or no point i.
-    PcurveGap(m: BrepModel, d: EdgeDiscretization, img: EdgeImage, i: Integer): Number
-    {
-        var uvs = m.ImagePoints(d, img);
-        return img.Pcurve.IsNone || !uvs.IsValidIndex(i)
-            ? 0.0
-            : m.Geometry.Domain(m.ImageSurface(img))
-                .UvGap(uvs[i], m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, d.Parameters[i]));
     }
 
     //==

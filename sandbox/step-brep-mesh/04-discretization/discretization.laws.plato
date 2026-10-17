@@ -205,13 +205,6 @@ library EdgeDiscretizingLaws
             ? m.ImagePoints(d, img).Count == d.Points.Count
             : true;
 
-    // Image point i lies on the pcurve at parameter i, within the model's parameter tolerance,
-    // each periodic direction taken modulo its period. Vacuous for an image made by projection.
-    Law_ImageFollowsPcurve(m: BrepModel, d: EdgeDiscretization, img: EdgeImage, i: Integer): Boolean
-        => (m.IsEvaluable(d) && m.IsImageEvaluable(img) && d.Points.IsValidIndex(i))
-            ? m.PcurveGap(d, img, i) <= m.Tolerances.Parameter.Value
-            : true;
-
     // The surface at image point i is polyline point i, within twice the length tolerance: once
     // for the pcurve's agreement with the curve, once for an end point's distance from the curve.
     // Holds at a pole too, where any parameter maps to the pole.

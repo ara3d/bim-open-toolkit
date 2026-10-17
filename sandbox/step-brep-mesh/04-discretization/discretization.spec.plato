@@ -152,12 +152,11 @@ spec ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvC
     ensures Law_ImageHasOnePointPerPoint(m, d, img);
     ensures img.Pcurve.IsNone ? true : forall (i: Integer) in 0.UpTo(result.Count) : result[i] == m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, d.Parameters[i]);
     ensures img.Pcurve.IsNone ? forall (i: Integer) in 0.UpTo(result.Count) : m.Geometry.Eval(m.ImageSurface(img), result[i]).Distance(d.Points[i]) <= m.Tolerances.Length.Value : true;
-    ensures forall (i: Integer) : Law_ImageFollowsPcurve(m, d, img, i);
     ensures forall (i: Integer) : Law_ImagePointReevaluates(m, d, img, i);
     ensures forall (i: Integer) : Law_ImageStepsAreUnwrapped(m, d, img, i);
-    ensures forall (i: Integer) in 0.UpTo(result.Count) : m.Geometry.Domain(m.ImageSurface(img)).UvGap(m.ImagePoints(d.Reversed, img)[result.Count - 1 - i], result[i]) <= m.Tolerances.Parameter.Value;
+    ensures forall (i: Integer) in 0.UpTo(result.Count) : m.ImagePoints(d.Reversed, img)[result.Count - 1 - i].U == result[i].U && m.ImagePoints(d.Reversed, img)[result.Count - 1 - i].V == result[i].V;
     measure d.Points.Count;
-    deferred "pcurve evaluation; otherwise Project seeded by the previous point's parameters, unwrapped, with a pole's free parameter taken from its neighbour";
+    deferred "pcurve evaluation; otherwise Project seeded by the previous point's parameters, unwrapped, with a pole's free parameter taken from its neighbour; always over the canonical order, reversed with d";
 }
 
 //==
