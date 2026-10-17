@@ -667,6 +667,31 @@ library UvRegions
     BoundaryCount(r: UvRegion): Integer
         => r.BoundaryPoints.Count;
 
+    // The position in BoundaryPoints of loop k's first point: the point counts of the loops
+    // before it added. Precondition: 0 <= k <= NumberOfLoops.
+    LoopOffset(r: UvRegion, k: Integer): Integer
+        => k.Range.Reduce(0, (n, q) => n + r.LoopAt(q).Points.Count);
+
+    // The loop that boundary point a belongs to, or -1 when a is not a boundary point.
+    LoopOfBoundaryPoint(r: UvRegion, a: Integer): Integer
+        => r.NumberOfLoops.Range.Reduce(-1, (found, q) =>
+            found >= 0 ? found : ((a >= r.LoopOffset(q) && a < r.LoopOffset(q + 1)) ? q : -1));
+
+    // The boundary point that follows boundary point a along its loop, or -1 when a is not a
+    // boundary point.
+    NextBoundaryPoint(r: UvRegion, a: Integer): Integer
+    {
+        var k = r.LoopOfBoundaryPoint(a);
+        return k < 0 ? -1 : r.LoopOffset(k) + (a - r.LoopOffset(k) + 1) % r.LoopAt(k).Points.Count;
+    }
+
+    // True when the points with indices a and b in BoundaryPoints order form a boundary segment
+    // traversed from a to b, on a loop of at least three points (a point hole has no segment).
+    IsBoundarySegment(r: UvRegion, a: Integer, b: Integer): Boolean
+        => r.LoopOfBoundaryPoint(a) < 0
+            ? false
+            : (r.LoopAt(r.LoopOfBoundaryPoint(a)).Points.Count >= 3 && r.NextBoundaryPoint(a) == b);
+
     //==
     // # Seam cuts
 

@@ -18,8 +18,8 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
-| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 41 laws and their guards |
-| `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 2 theorems, 1 conjecture |
+| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 43 laws and their guards |
+| `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 3 theorems |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
 the region half has its own block, `UvRegions`; `FaceMeshing` keeps the contract's name and the entry
@@ -220,6 +220,8 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_TriangulationKeepsBoundary` | the first `BoundaryCount` points and sources are the region's, unchanged | exact by construction | E |
 | `Law_TriangulationAddsOnlyInteriorPoints` | every later point is `Interior` and strictly inside | region tolerance | E |
 | `Law_EveryPointIsACorner` | every point is a corner of some element | exact | E |
+| `Law_BoundarySegmentIsElementSide` | every boundary segment of the region is a side of exactly one element, in the boundary's direction, and of none reversed | exact | E |
+| `Law_InteriorSideIsShared` | every element side that is not a boundary segment is a side of exactly two elements, traversed opposite ways | exact | E |
 | `Law_ElementPositiveInChart` | every element has positive signed area in the chart | exact sign | E |
 | `Law_ElementAreasSumToRegionArea` | element areas sum to the region's area | `AreaTolerance` of the region tolerance | E |
 | `Law_ElementLiftsFacingFaceNormal` | every element not collapsed at a pole, lifted through the surface, winds counter-clockwise about the face normal | exact sign | E |
@@ -246,7 +248,9 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 
 Theorems in the spec: `SharedEdgePositionsAgree` (two faces hold bitwise equal positions for a shared sample, so
 assembly needs no welding), `DroppedTrianglesArePoleSegments` (the dropped count equals the number of
-boundary segments on collapsed lines). Conjecture: `ElementsTileRegion`. The conjecture
+boundary segments on collapsed lines), `ElementsTileRegion` (every point strictly inside the region
+lies in an element; a theorem once `Law_BoundarySegmentIsElementSide` and
+`Law_InteriorSideIsShared` hold, and false without them). The conjecture
 `NormalTurnBoundsCentroidDeviation` was dropped as false (the sliver above is its counterexample).
 
 The catalogue entry `Law_FaceFlipReversesWinding` (research/VALIDATION-MATH.md section 8) is not
@@ -336,6 +340,7 @@ knots); offset and rectangular-trimmed last.
 | `AddMissingSeamsAndPoles(m, f, loops, c)`: one loop per bound | one loop per bound of `MeshedBounds(m, f)` | Layer 02's vertex-loop reduction (review C6) |
 | theorem `ChartWindingIsFaceWinding` | dropped; `RefineToSurface` ensures `Law_ElementLiftsFacingFaceNormal`, `QuadGridIfRectangular` gives no grid when an element folds (`GridUnlessFolded`); new `ElementUvCentroid(t, k)`, `LiftedVectorArea`, `LiftsFacingFaceNormal` | The theorem is false for slivers (review H5) |
 | `IsPoleCollapsed(m, f, t, k)`, `PoleCollapsedTriangleCount`, `PoleCollapsedQuadCount`, `ShareCollapsedLine`: corners on one collapsed line | `IsCollapsedElement(t, k)`, `CollapsedTriangleCount(t)`, `CollapsedQuadCount(t)`: two corners with identified sources; `IsSurfaceEdge` compares local vertices; `ShareCollapsedLine` removed | The drop test agrees with Lift's identification (review M7) |
+| conjecture `ElementsTileRegion` | a theorem, assuming the region is simple and the two side laws; `TriangulateRegion`, `RefineToSurface`, `QuadGrid` ensure `Law_BoundarySegmentIsElementSide` and `Law_InteriorSideIsShared`; new `LoopOffset`, `LoopOfBoundaryPoint`, `NextBoundaryPoint`, `IsBoundarySegment`, `ElementHasSide`, `SideCount` | Keeping the boundary points does not make a tiling (review M5, H6); layer 08's watertightness theorem no longer rests on a conjecture |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -358,6 +363,9 @@ Applied:
   and in "SurfaceAngular is the normal turn"; refinement enforces the centroid test on its own.
 - M7: an element is dropped exactly when two of its corners have identified sources (one local
   vertex), not by a distance test against a collapsed line.
+- M5, H6: `Law_BoundarySegmentIsElementSide` and `Law_InteriorSideIsShared` added and ensured by
+  the three triangulating functions; `ElementsTileRegion` is now a theorem with them among its
+  assumptions, and `DroppedTrianglesArePoleSegments` states the one it used silently.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 

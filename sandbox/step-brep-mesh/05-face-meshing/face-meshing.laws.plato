@@ -267,6 +267,33 @@ library FaceMeshingLaws
                 : true)
             : true;
 
+    // Boundary segment i of loop k of region r is a side of exactly one element of triangulation
+    // t, traversed in the boundary's direction, and no element runs along it the other way
+    // (review M5). Keeping the boundary points is not enough: a unit square triangulated by ABC
+    // and ABD keeps every corner, has two positive triangles whose areas sum to 1, and leaves
+    // (0.2, 0.9) uncovered, because the side CD is no element's side.
+    Law_BoundarySegmentIsElementSide(r: UvRegion, t: UvTriangulation, k: Integer, i: Integer): Boolean
+        => r.HasSegment(k, i)
+            ? ((r.LoopAt(k).Points.Count >= 3 && r.IsIndexedRegion && t.CornersInRange)
+                ? t.SideCount(VertexIndex(r.LoopOffset(k) + i), VertexIndex(r.NextBoundaryPoint(r.LoopOffset(k) + i))) == 1
+                    && t.SideCount(VertexIndex(r.NextBoundaryPoint(r.LoopOffset(k) + i)), VertexIndex(r.LoopOffset(k) + i)) == 0
+                : true)
+            : true;
+
+    // Every side of an element of triangulation t that is not a boundary segment of region r is a
+    // side of exactly two elements, traversed opposite ways: side j of element k runs from a to b,
+    // no other element runs from a to b, and exactly one runs from b to a.
+    Law_InteriorSideIsShared(r: UvRegion, t: UvTriangulation, k: ElementIndex, j: Integer): Boolean
+        => (t.HasElement(k) && t.CornersInRange && r.IsIndexedRegion)
+            ? ((j >= 0 && j < t.ElementCorners(k).Count)
+                ? t.InteriorSideIsShared(r, t.ElementCorners(k)[j], t.ElementCorners(k).AtModulo(j + 1))
+                : true)
+            : true;
+
+    // The claim of Law_InteriorSideIsShared for the side from a to b.
+    InteriorSideIsShared(t: UvTriangulation, r: UvRegion, a: VertexIndex, b: VertexIndex): Boolean
+        => r.IsBoundarySegment(a.Value, b.Value) ? true : (t.SideCount(a, b) == 1 && t.SideCount(b, a) == 1);
+
     // No element of a triangulation of face f spans half a period or more in a periodic
     // direction, so none wraps around the surface or folds across a seam.
     Law_ElementSpansBelowHalfPeriod(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean

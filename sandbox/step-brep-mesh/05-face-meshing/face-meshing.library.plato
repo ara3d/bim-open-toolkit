@@ -89,6 +89,18 @@ library FaceMeshing
     CornersInRange(t: UvTriangulation): Boolean
         => t.ElementCount.Range.All(k => t.ElementCornersInRange(ElementIndex(k)));
 
+    // True when element k has a side running from point a to point b, in its winding order.
+    // Precondition: HasElement.
+    ElementHasSide(t: UvTriangulation, k: ElementIndex, a: VertexIndex, b: VertexIndex): Boolean
+    {
+        var cs = t.ElementCorners(k);
+        return cs.Count.Range.Any(j => cs[j] == a && cs.AtModulo(j + 1) == b);
+    }
+
+    // The number of elements with a side from point a to point b.
+    SideCount(t: UvTriangulation, a: VertexIndex, b: VertexIndex): Integer
+        => t.ElementCount.Range.Reduce(0, (n, k) => n + (t.ElementHasSide(ElementIndex(k), a, b) ? 1 : 0));
+
     // The signed area of element k in the oriented chart. Precondition: corners in range.
     ElementChartArea(t: UvTriangulation, k: ElementIndex, mirrored: Boolean): Number
         => t.ElementCorners(k).Map(v => t.Points[v].OrientedPoint(mirrored)).ShoelaceArea;

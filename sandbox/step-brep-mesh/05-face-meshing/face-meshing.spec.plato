@@ -220,6 +220,10 @@ spec TriangulateRegion(r: UvRegion, chart: FaceChart): UvTriangulation
     ensures forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, result, i);
     ensures forall (k: Integer) in result.ElementCount.Range: result.ElementChartArea(ElementIndex(k), chart.Mirrored) > 0.0;
     ensures forall (i: Integer) in result.Points.Count.Range: Law_EveryPointIsACorner(result, i);
+    ensures forall (k: Integer) in r.NumberOfLoops.Range:
+        forall (i: Integer) in r.LoopAt(k).Points.Count.Range: Law_BoundarySegmentIsElementSide(r, result, k, i);
+    ensures forall (k: Integer) in result.ElementCount.Range:
+        forall (j: Integer) in 4.Range: Law_InteriorSideIsShared(r, result, ElementIndex(k), j);
     ensures result.Quads.Count == 0;
     measure r.BoundaryCount;
     deferred "constrained Delaunay triangulation in the chart (CDT, Triangle -p), even-odd hole removal, exact orientation and in-circle predicates";
@@ -237,6 +241,10 @@ spec RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceCha
     ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementPositiveInChart(m, f, result, ElementIndex(k));
     ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementSpansBelowHalfPeriod(m, f, result, ElementIndex(k));
     ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementLiftsFacingFaceNormal(m, f, result, ElementIndex(k));
+    ensures forall (k: Integer) in r.NumberOfLoops.Range:
+        forall (i: Integer) in r.LoopAt(k).Points.Count.Range: Law_BoundarySegmentIsElementSide(r, result, k, i);
+    ensures forall (k: Integer) in result.ElementCount.Range:
+        forall (j: Integer) in 4.Range: Law_InteriorSideIsShared(r, result, ElementIndex(k), j);
     ensures Law_ElementAreasSumToRegionArea(m, f, r, result);
     ensures result.Quads.Count == t.Quads.Count;
     measure result.Points.Count;
@@ -252,6 +260,9 @@ spec QuadGrid(m: BrepModel, f: BrepFaceIndex, r: UvRegion, corners: Array<Vertex
     ensures forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, result, i);
     ensures forall (i: Integer) in result.Points.Count.Range: Law_TriangulationAddsOnlyInteriorPoints(m, f, r, result, i);
     ensures forall (k: Integer) in result.ElementCount.Range: Law_ElementPositiveInChart(m, f, result, ElementIndex(k));
+    ensures forall (i: Integer) in r.Outer.Points.Count.Range: Law_BoundarySegmentIsElementSide(r, result, 0, i);
+    ensures forall (k: Integer) in result.ElementCount.Range:
+        forall (j: Integer) in 4.Range: Law_InteriorSideIsShared(r, result, ElementIndex(k), j);
     ensures Law_ElementAreasSumToRegionArea(m, f, r, result);
     measure r.SideSegmentCount(corners, 0) * r.SideSegmentCount(corners, 1);
     deferred "transfinite (Coons) interpolation between the four side polylines; split quads failing warp or convexity after lifting";
@@ -351,26 +362,35 @@ theorem DroppedTrianglesArePoleSegments
     given m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation, fm: FaceMesh;
     assume forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, t, i);
     assume forall (k: Integer) in t.ElementCount.Range: Law_ElementPositiveInChart(m, f, t, ElementIndex(k));
+    assume forall (k: Integer) in r.NumberOfLoops.Range:
+        forall (i: Integer) in r.LoopAt(k).Points.Count.Range: Law_BoundarySegmentIsElementSide(r, t, k, i);
     assume Law_DroppedElementsArePoleCollapsed(m, f, t, fm);
     assume t.Quads.Count == 0;
     conclude t.ElementCount - fm.ElementCount ==
         r.NumberOfLoops.Range.Reduce(0, (n, k) => n + r.LoopAt(k).Points.Count.Range.Reduce(0, (s, i) =>
             s + (IdentifiedSources(r.LoopAt(k).Sources[i], r.LoopAt(k).Sources.AtModulo(i + 1)) ? 1 : 0)));
-    because "A dropped triangle has two corners with identified sources (IsCollapsedElement). Within a region, identified points that are not a period apart are points of one pole segment, which lies on a collapsed line that bounds the region, so the side between the two corners lies along the pole segment and is a boundary segment whose ends are identified (an interior chord along a boundary line would overlap boundary segments, which a positively oriented triangulation forbids). Each boundary segment belongs to exactly one triangle. A positive triangle cannot have three collinear corners, so no triangle has two such segments.";
+    because "A dropped triangle has two corners with identified sources (IsCollapsedElement). Within a region, identified points that are not a period apart are points of one pole segment, which lies on a collapsed line that bounds the region, so the side between the two corners lies along the pole segment and is a boundary segment whose ends are identified (an interior chord along a boundary line would overlap boundary segments, which a positively oriented triangulation forbids). Each boundary segment is a side of exactly one triangle (Law_BoundarySegmentIsElementSide, now an assumption rather than a silent one). A positive triangle cannot have three collinear corners, so no triangle has two such segments.";
     tested by Law_DroppedElementsArePoleCollapsed;
 }
 
-// The parameter-space elements tile the region.
-conjecture ElementsTileRegion
+// The parameter-space elements tile the region: every point strictly inside it lies in an
+// element. A theorem once the sides are conforming (review H6); without
+// Law_BoundarySegmentIsElementSide it is false (the unit square triangulated by ABC and ABD).
+theorem ElementsTileRegion
 {
     given m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation, uv: UvCoordinate;
+    assume r.IsSimpleRegion(m.RegionTolerance(f, m.ChartOf(f, r)));
     assume forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, t, i);
     assume forall (k: Integer) in t.ElementCount.Range: Law_ElementPositiveInChart(m, f, t, ElementIndex(k));
-    assume Law_ElementAreasSumToRegionArea(m, f, r, t);
+    assume forall (k: Integer) in r.NumberOfLoops.Range:
+        forall (i: Integer) in r.LoopAt(k).Points.Count.Range: Law_BoundarySegmentIsElementSide(r, t, k, i);
+    assume forall (k: Integer) in t.ElementCount.Range:
+        forall (j: Integer) in 4.Range: Law_InteriorSideIsShared(r, t, ElementIndex(k), j);
     assume r.IsStrictlyInside(uv, m.RegionTolerance(f, m.ChartOf(f, r)));
     conclude exists (k: Integer) in t.ElementCount.Range:
         t.ElementCorners(ElementIndex(k)).Map(v => t.Points[v].ToPoint2D).PolygonContainsPoint(uv.ToPoint2D);
-    tested by Law_ElementAreasSumToRegionArea, Law_ElementPositiveInChart;
+    because "Take the elements, each positively oriented in the chart, as a 2-chain c = sum of the elements with coefficient 1. Its boundary is the sum of the elements' directed sides. Each interior side appears once in each direction (Law_InteriorSideIsShared) and cancels; each boundary segment of the region appears exactly once, in the boundary's direction, and never reversed (Law_BoundarySegmentIsElementSide). So the boundary of c is the region's boundary cycle dP (outer loop counter-clockwise, holes clockwise in the chart, by RegionOf's ensures; point holes contribute nothing). The number of elements over a point not on any side is the winding number of the boundary of c about it, which is the winding number of dP: 1 inside the simple region, 0 outside. A point strictly inside the region lies on no boundary segment; if it lies on an interior side, it lies in the closed element on either side. Hence some element contains uv, and in fact exactly one does away from the sides.";
+    tested by Law_BoundarySegmentIsElementSide, Law_InteriorSideIsShared, Law_ElementAreasSumToRegionArea, Law_ElementPositiveInChart;
 }
 
 // The former conjecture NormalTurnBoundsCentroidDeviation (an element whose surface edges turn by
