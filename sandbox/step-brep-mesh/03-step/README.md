@@ -345,6 +345,14 @@ the two senses composed, with a Warning.
   in the survey.
 - **Diagnostics are one closed sum** (`StepDiagnosticCode`) with one table (`Diagnose`), so every
   code, severity and message lives in one place and a law can ask for one (`HasCode`).
+- **Every finding points at its subject** (`SubjectOf`, a column of the same table). A finding
+  about the file as a whole (not Part 21, an incomplete header, a census of short names or
+  lenient tokens, the model's tolerance defaulted, clamped or disagreeing, no shape) points at
+  layer 0's `WholeInput`, never at a sentinel; a defect in a decoded curve or surface record
+  (knots repaired, a closure flag contradicted, a torus with a negative or small major radius, a
+  missing `curve_3d`) points at the record, `KernelCurve` or `KernelSurface`, which the provenance
+  map turns back into its instance; every other finding points at the instance that carries it.
+  `Law_ParseFindingsPointAtTheirSubject` and `Law_DecodeFindingsPointAtTheirSubject` state it.
 
 ## Laws
 
@@ -370,6 +378,7 @@ are about this layer's code.
 | `Law_ChildrenPrecedeParent` | Every value nested in another (a list item, the inner value of a typed parameter) has a smaller index than its holder: the arena is a forest stored children first, so every recursive reader terminates. | exact | Error |
 | `Law_ReferencesResolve` | Every reference names an instance of the file. | exact | Warning (P21-DANGLING-REFERENCE); Error where a decoded instance needs it |
 | `Law_HeaderNamesASchema` | The header names at least one schema (FILE_SCHEMA is a LIST [1:?], P21 8.2.4). | exact | Warning |
+| `Law_ParseFindingsPointAtTheirSubject` | Every finding of the parse with code c points at c's subject: WholeInput for a finding about the text, the instance otherwise. | exact | Error |
 
 #### `step-schema.laws.plato` (block `StepSchemaModelLaws`)
 
@@ -508,6 +517,7 @@ are about this layer's code.
 | `Law_DecodeIsTotal` | Whatever the file, every index of the decoded model is in range (layer 2's Law_IndicesInRange): no instance makes decoding fail; whatever cannot be decoded is left out and diagnosed. | exact | Error |
 | `Law_DecodedTolerancesWellFormed` | Whatever the file, the decoded tolerances are positive and finite. | exact | Error |
 | `Law_RepairsAreDiagnosed` | Every repair has a diagnostic about its instance. | exact | Error |
+| `Law_DecodeFindingsPointAtTheirSubject` | Every finding of the decode with code c points at c's subject (SubjectOf): WholeInput, the instance, or the decoded curve or surface. | exact | Error |
 | `Law_ProvenanceCoversModel` | Every kernel element has exactly one source: each table of the map is as long as the model's. | exact | Error |
 | `Law_ProvenanceSourcesDistinct` | No two kernel elements share a source: the map is injective. | exact | Error |
 | `Law_ProvenanceLookupInvertsSources` | Looking a source up gives back the kernel element it is the source of: KernelOf inverts the map's forward tables. | exact | Error |

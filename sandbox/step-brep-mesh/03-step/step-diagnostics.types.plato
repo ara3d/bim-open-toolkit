@@ -8,6 +8,7 @@
 //
 // Sections, in order:
 //  - Codes
+//  - Subjects
 
 //==
 // # Codes
@@ -68,3 +69,18 @@ type StepDiagnosticCode
     | OrientationFolded
     | FaceCitedTwice
     | InstanceSkipped;
+
+//==
+// # Subjects
+
+// What a finding of this layer points at, as its Diagnostic.Where: the input
+// as a whole (WholeInput: a text that is not Part 21, the model's tolerance,
+// a census of the file), one STEP instance (StepInstance: an instance the
+// decoder skipped, merged, or read a unit or a flag from), or the decoded
+// curve or surface record whose geometry has the defect (KernelCurve,
+// KernelSurface; a 2D curve inside a pcurve, which Provenance cannot name,
+// by its StepInstance). Fixed per code by SubjectOf.
+type StepFindingSubject
+    = AboutInput
+    | AboutInstance
+    | AboutGeometry;

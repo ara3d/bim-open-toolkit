@@ -96,6 +96,7 @@ spec ParseStep(text: String): ParsedFile
 {
     requires true;
     ensures Law_ParseOkIffNoError(text);
+    ensures forall (c: StepDiagnosticCode) : Law_ParseFindingsPointAtTheirSubject(text, c);
     ensures Law_ParsePrintParseIsIdentity(text);
     ensures forall (a: Integer) in result.File.Attributes.Count.Range : Law_ReferencesResolve(result.File, a) || result.Diagnostics.HasCode(StepDiagnosticCode.DanglingReference);
     ensures result.File.Header.Schema.Count >= 1 || result.Diagnostics.HasCode(StepDiagnosticCode.HeaderIncomplete) || result.Diagnostics.HasCode(StepDiagnosticCode.NotPart21File);
@@ -241,6 +242,7 @@ spec DecodeBrep(file: Part21File): DecodedModel
     ensures forall (a: Integer) : Law_SourceKindMatchesTable(file, a);
     ensures forall (r: Integer) : Law_RepairedSourcesAreUnmapped(file, r);
     ensures forall (r: Integer) : Law_RepairsAreDiagnosed(file, r);
+    ensures forall (c: StepDiagnosticCode) : Law_DecodeFindingsPointAtTheirSubject(file, c);
     ensures forall (o: Integer) : forall (k: Integer) : Law_ReachedInstancesAreAccountedFor(file, o, k);
     ensures Law_VertexCountMatchesInstances(file);
     ensures Law_EdgeCountMatchesInstances(file);

@@ -28,6 +28,13 @@ library Part21ReadingLaws
         return first.IsSameFile(first.PrintStep.ParseStep.File);
     }
 
+    // Every finding of the parse points at its code's subject (SubjectOf): a
+    // text that is not Part 21, an incomplete header, or a census of lenient
+    // tokens at WholeInput; a duplicate name, a syntax error, or a dangling
+    // reference at its instance.
+    Law_ParseFindingsPointAtTheirSubject(text: String, c: StepDiagnosticCode): Boolean
+        => text.ParseStep.Diagnostics.PointsAtSubject(c);
+
     // A parse is Ok exactly when it reported no Error.
     Law_ParseOkIffNoError(text: String): Boolean
     {

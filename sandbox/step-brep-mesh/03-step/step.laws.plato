@@ -40,6 +40,13 @@ library StepReadingLaws
         return r >= 0 && r < d.Map.Repairs.Count ? d.Diagnostics.Any(x => x.Where == Provenance.StepInstance(d.Map.Repairs[r].Source.Instance)) : true;
     }
 
+    // Every finding of the decode points at its code's subject (SubjectOf):
+    // a finding about the file as a whole at WholeInput, a defect of a
+    // decoded curve or surface at that record, every other finding at its
+    // instance. No finding points at Nowhere.
+    Law_DecodeFindingsPointAtTheirSubject(f: Part21File, c: StepDiagnosticCode): Boolean
+        => f.DecodeBrep.Diagnostics.PointsAtSubject(c);
+
     //==
     // # The provenance map
 

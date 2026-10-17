@@ -10,7 +10,7 @@
 //
 // Sections, in order:
 //  - The table
-//  - Queries
+//  - Subjects and queries
 
 library StepDiagnostics
 {
@@ -74,7 +74,94 @@ library StepDiagnostics
         };
 
     //==
-    // # Queries
+    // # Subjects and queries
+
+    // What a finding with code c points at. The rule: a finding about the
+    // file as a whole (no instance carries it: the text, the header, a census,
+    // the model's tolerance, an empty result) is AboutInput, so its Where is
+    // WholeInput and never a sentinel; a defect in a decoded curve or surface
+    // record is AboutGeometry, at that record (KernelCurve, KernelSurface),
+    // which the provenance map turns back into its instance; every other
+    // finding is AboutInstance, at the instance that carries it (a skipped or
+    // merged instance has no kernel element to point at).
+    SubjectOf(c: StepDiagnosticCode): StepFindingSubject
+        => match (c) {
+            NotPart21File => StepFindingSubject.AboutInput;
+            SyntaxError => StepFindingSubject.AboutInstance;
+            DuplicateInstanceId => StepFindingSubject.AboutInstance;
+            DanglingReference => StepFindingSubject.AboutInstance;
+            UnsupportedSection => StepFindingSubject.AboutInput;
+            LenientToken => StepFindingSubject.AboutInput;
+            HeaderIncomplete => StepFindingSubject.AboutInput;
+            SchemaUnrecognised => StepFindingSubject.AboutInput;
+            ShortNamesUsed => StepFindingSubject.AboutInput;
+            ComplexPartsOutOfOrder => StepFindingSubject.AboutInput;
+            ValueWhereDerived => StepFindingSubject.AboutInput;
+            AttributeCountMismatch => StepFindingSubject.AboutInstance;
+            AttributeKindMismatch => StepFindingSubject.AboutInstance;
+            EntityTypeIgnored => StepFindingSubject.AboutInstance;
+            EntityTypeUnsupported => StepFindingSubject.AboutInstance;
+            InstancesUnreferenced => StepFindingSubject.AboutInstance;
+            LengthUnitFound => StepFindingSubject.AboutInstance;
+            LengthUnitDefaulted => StepFindingSubject.AboutInstance;
+            LengthUnitsAmbiguous => StepFindingSubject.AboutInstance;
+            AngleUnitFound => StepFindingSubject.AboutInstance;
+            AngleUnitDefaulted => StepFindingSubject.AboutInstance;
+            DegreeFactorSnapped => StepFindingSubject.AboutInstance;
+            UncertaintyFound => StepFindingSubject.AboutInstance;
+            UncertaintyDefaulted => StepFindingSubject.AboutInput;
+            UncertaintyClamped => StepFindingSubject.AboutInput;
+            UncertaintiesDiffer => StepFindingSubject.AboutInput;
+            UnitsConverted => StepFindingSubject.AboutInstance;
+            RootUnitsDisagree => StepFindingSubject.AboutInput;
+            NoShapeFound => StepFindingSubject.AboutInput;
+            AssemblyCycle => StepFindingSubject.AboutInstance;
+            PlacementItemsSwapped => StepFindingSubject.AboutInstance;
+            MirroredPlacementFolded => StepFindingSubject.AboutInstance;
+            ZeroDirection => StepFindingSubject.AboutInstance;
+            ParallelPlacementAxes => StepFindingSubject.AboutInstance;
+            NonOrthogonalPlacement => StepFindingSubject.AboutInstance;
+            KnotsRepaired => StepFindingSubject.AboutGeometry;
+            ClosedFlagWithoutClosure => StepFindingSubject.AboutGeometry;
+            ClosureWithoutClosedFlag => StepFindingSubject.AboutGeometry;
+            NegativeTorusMajorRadius => StepFindingSubject.AboutGeometry;
+            TorusMajorBelowMinor => StepFindingSubject.AboutGeometry;
+            MissingCurve3D => StepFindingSubject.AboutGeometry;
+            DuplicateVertexMerged => StepFindingSubject.AboutInstance;
+            ClosedEdgeVerticesMerged => StepFindingSubject.AboutInstance;
+            ZeroLengthEdgeDropped => StepFindingSubject.AboutInstance;
+            NestedOrientedEdge => StepFindingSubject.AboutInstance;
+            TwoOuterBounds => StepFindingSubject.AboutInstance;
+            ClosedShellHasFreeEdges => StepFindingSubject.AboutInstance;
+            OrientationFolded => StepFindingSubject.AboutInstance;
+            FaceCitedTwice => StepFindingSubject.AboutInstance;
+            InstanceSkipped => StepFindingSubject.AboutInstance;
+        };
+
+    // True when a Where fits the subject: WholeInput for AboutInput, a STEP
+    // instance for AboutInstance, a kernel curve or surface (or the instance
+    // of a 2D curve) for AboutGeometry. Nowhere and the topology and mesh
+    // cases fit none.
+    FitsSubject(p: Provenance, s: StepFindingSubject): Boolean
+        => match (p) {
+            Nowhere => false;
+            WholeInput => s == StepFindingSubject.AboutInput;
+            StepInstance(id) => s == StepFindingSubject.AboutInstance || s == StepFindingSubject.AboutGeometry;
+            KernelCurve(index) => s == StepFindingSubject.AboutGeometry;
+            KernelSurface(index) => s == StepFindingSubject.AboutGeometry;
+            KernelVertex(index) => false;
+            KernelEdge(index) => false;
+            KernelLoop(index) => false;
+            KernelFace(index) => false;
+            KernelShell(index) => false;
+            KernelBody(index) => false;
+            MeshVertex(index) => false;
+            MeshElement(index) => false;
+        };
+
+    // True when every diagnostic in ds with c's code points at c's subject.
+    PointsAtSubject(ds: Array<Diagnostic>, c: StepDiagnosticCode): Boolean
+        => ds.All(d => !(d.Code == c.CodeOf) || d.Where.FitsSubject(c.SubjectOf));
 
     // The code text of c, as Diagnose writes it.
     CodeOf(c: StepDiagnosticCode): String
