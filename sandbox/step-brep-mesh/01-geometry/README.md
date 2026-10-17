@@ -209,6 +209,8 @@ for the axial `v`.
     or apex) that coordinate is the window's start, `0`, exactly on the axis and arbitrary within
     the tolerance of it; the per-point tolerance there is the cap, so no law depends on it, and
     face meshing takes the coordinate from a neighbour (research/MESHING-REQUIREMENTS.md 4.2).
+    `ProjectNear` keeps the seed's value of a coordinate the point does not determine
+    (`KeepSeedWhereFree`), so face meshing needs no special case at a pole (review T5).
     Closed forms for the plane, cylinder, cone (both rulings in the meridian plane compared),
     sphere, and ring torus; a deferred search for the rest.
 13. **`DegenerateSides` takes a tolerance.** A spline side collapses when its control row does,
@@ -303,6 +305,7 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_ProjectRecoversPoint` | `Eval(Project(Eval(uv)))` is `Eval(uv)`, on degenerate sides too | Length | Library |
 | `Law_ProjectRecoversParameter` | on surfaces injective by construction, `Project(Eval(uv))` is `uv` modulo the period | `UvToleranceAt(uv)` | Library |
 | `Law_ProjectNearRecoversParameter` | `ProjectNear(Eval(uv), seed uv)` is `uv`, on every surface | `UvToleranceAt(uv)` | Library |
+| `Law_ProjectNearRecoversFromNearbySeed` | the same from a seed moved by up to `NearSeedOffset` (1.8e-3 of each direction's scale), so the inverse must iterate | `UvToleranceAt(uv)` | Library |
 | `Law_CollapsedLineIsOnePoint` | each `CollapsedAt` line is one point | Length | Library (spline, revolution: File, 10x) |
 | `Law_TangentialPartialVanishesOnDegenerateSide` | along a degenerate side of a surface that collapses it by formula, the partial along it times the side's length is within rounding; vacuous for spline and revolution sides (review F10) | `ResolutionAt(EvaluationMagnitude)` | Library |
 
@@ -414,6 +417,7 @@ as expected.
 | (new) | `IsClamped`, `SplineDomainOf`, `SameExactly`, `IsClosedSpline`, `EndRowsCoincide`, `PolylineDomain`, `BasisParameter`, `IntoRange`; `TrimmedToBasis` takes the arena and the basis | closed domains, and trims across a closed join | 
 | `IsNearCollapsed` (parameter-floor zone) | `IsOnCollapsedLine` (rounding), `NormalAngleBound`, `DirectionScale`; `AreaElementIs` drops its tolerance | normal and area-element laws bounded by rounding (fix wave, F11, F7) |
 | (new) | `Law_ClosestParameterNoWorseThanSample`, `Law_ClosestParameterIsStationary`, `Law_ProjectNoWorseThanSample`, `Law_ProjectIsStationary`, `IsInteriorParameter` | inverse evaluation tested at points off the geometry (fix wave, M4) |
+| (new) | `KeepSeedWhereFree`, `NearSeedOffset`, `NearbySeed`, `Law_ProjectNearRecoversFromNearbySeed`; theorem `ProjectNearIsLocalInverse` restated with a seed in a stated neighbourhood | the local inverse keeps the seed's free coordinate (fix wave, T5) |
 
 ## Fix wave, 2026-10-17
 
@@ -457,3 +461,6 @@ Applied:
   `NormalAngleBound`.
 - **M4.** Inverse evaluation is tested at any point: no worse than any sample, and stationary at
   an interior minimizer, on curves and surfaces.
+- **T5, and theorem ProjectNearIsLocalInverse.** `ProjectNear` keeps the seed's free coordinate at a
+  pole, apex or axis; the theorem is restated for a seed in a neighbourhood the inverse function
+  theorem provides, and a new law seeds near the answer, not at it.

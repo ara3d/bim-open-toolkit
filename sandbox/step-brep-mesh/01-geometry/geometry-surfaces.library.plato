@@ -274,16 +274,29 @@ library BrepGeometrySurfaces
         };
 
     // The parameters of the point nearest to p in the neighbourhood of seed,
-    // each periodic coordinate the copy nearest to the seed's: the local
-    // inverse face meshing uses along an edge, seeding each point with the
-    // previous one's parameters so the curve's continuity chooses the root and
-    // no unwrapping is needed (research/MESHING-REQUIREMENTS.md 4.2). For a
-    // surface that is injective by construction it is Project moved to the
-    // seed's copy; otherwise a local search.
+    // each periodic coordinate the copy nearest to the seed's, and each
+    // coordinate the point does not determine (at a pole, an apex, or on the
+    // axis of a surface of revolution) the seed's own: the local inverse face
+    // meshing uses along an edge, seeding each point with the previous one's
+    // parameters so the curve's continuity chooses the root, no unwrapping
+    // is needed, and a pole takes its free coordinate from its neighbour
+    // without a special case (research/MESHING-REQUIREMENTS.md 4.2; review
+    // T5). For a surface that is injective by construction it is Project
+    // moved to the seed's copy; otherwise a local search.
     ProjectNear(g: GeometrySet, s: SurfaceIndex, p: Point3D, seed: UvCoordinate): UvCoordinate
         => g.IsInjectiveByConstruction(s) && g.HasClosedFormProjection(s)
-            ? g.Domain(s).NearestUnwrapped(g.Project(s, p), seed)
+            ? g.KeepSeedWhereFree(s, g.Domain(s).NearestUnwrapped(g.Project(s, p), seed), seed)
             : g.SurfaceAt(s).ProjectNearBySearch(g, p, seed);
+
+    // uv with each coordinate the point does not determine replaced by the
+    // seed's. A coordinate is free at uv when moving it to the seed's value
+    // leaves the point where it is, to the rounding of the evaluation.
+    // Precondition: the seed's coordinates can be evaluated (the closed-form
+    // surfaces have no Closed direction).
+    KeepSeedWhereFree(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, seed: UvCoordinate): UvCoordinate
+        => UvCoordinate(
+            g.Eval(s, UvCoordinate(seed.U, uv.V)).Distance(g.Eval(s, uv)) <= ResolutionAt(g.EvaluationMagnitude(s, uv)) ? seed.U : uv.U,
+            g.Eval(s, UvCoordinate(uv.U, seed.V)).Distance(g.Eval(s, uv)) <= ResolutionAt(g.EvaluationMagnitude(s, uv)) ? seed.V : uv.V);
 
     // deferred: global minimization of |Eval(uv) - p|^2 over the domain: seed
     // from a grid over each smooth patch (Breakpoints in u and v) sized by the
@@ -297,7 +310,8 @@ library BrepGeometrySurfaces
     // deferred: Newton's iteration from seed on the same two equations, with a
     // trust region of a quarter period in a periodic direction and the domain
     // in a bounded one; periodic coordinates are not wrapped, so the result is
-    // the copy reached from the seed.
+    // the copy reached from the seed; a coordinate the point does not
+    // determine keeps the seed's value (KeepSeedWhereFree).
     ProjectNearBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): UvCoordinate;
 
     // True when Project has a closed form for the surface: plane, cylinder,

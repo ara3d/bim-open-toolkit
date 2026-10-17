@@ -656,18 +656,28 @@ theorem TangentialPartialVanishesOnCollapsedLine
     tested by Law_TangentialPartialVanishesOnDegenerateSide, Law_CollapsedLineIsOnePoint;
 }
 
+// Restated after the review (section 5): seeding at the exact preimage made
+// the claim trivial. The seed is now any point of a neighbourhood the inverse
+// function theorem provides, and the law seeds near uv, not at it.
 theorem ProjectNearIsLocalInverse
 {
-    given g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances;
+    given g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, seed: UvCoordinate, tol: Tolerances;
     assume g.CanEvaluate(s);
     assume g.AreaElement(s, uv) > 0.0;
-    conclude g.Domain(s).SameParameter(g.ProjectNear(s, g.Eval(s, uv), uv), uv, g.UvToleranceAt(s, uv, tol));
+    assume exists (r: Number) : r > 0.0
+        && (forall (w: UvCoordinate) : (w.U - uv.U).Abs <= r && (w.V - uv.V).Abs <= r ? g.AreaElement(s, w) > 0.0 : true)
+        && (seed.U - uv.U).Abs * g.PartialU(s, uv).Length + (seed.V - uv.V).Abs * g.PartialV(s, uv).Length
+            <= r * g.AreaElement(s, uv) / (g.PartialU(s, uv).Length + g.PartialV(s, uv).Length);
+    conclude g.Domain(s).SameParameter(g.ProjectNear(s, g.Eval(s, uv), seed), uv, g.UvToleranceAt(s, uv, tol));
     because "Where S_u x S_v is not zero the Jacobian of the surface map has rank two, so by the inverse function
-             theorem the map is a diffeomorphism from a neighbourhood of uv onto its image; Newton's iteration
-             on the normal equations started at the exact preimage stays at it, and a closed form returns the
-             unique preimage on the window, which NearestUnwrapped moves to the seed's copy. On a collapsed line
-             UvToleranceAt's tolerance along the line is its cap, so the claim holds there too.";
-    tested by Law_ProjectNearRecoversParameter;
+             theorem the map is a diffeomorphism from a neighbourhood of uv onto its image. The hypothesis puts the
+             seed inside a square of half-width r on which the map stays regular, at a distance the smaller
+             singular value of the Jacobian (at least |S_u x S_v| / (|S_u| + |S_v|)) carries well inside it, where
+             Newton's iteration on the normal equations, kept in its trust region, converges to the unique
+             preimage; a closed form returns the unique preimage on the window, which NearestUnwrapped moves to
+             the seed's copy. On a collapsed line UvToleranceAt's tolerance along the line is its cap, and
+             KeepSeedWhereFree returns the seed's free coordinate, so the claim holds there too.";
+    tested by Law_ProjectNearRecoversParameter, Law_ProjectNearRecoversFromNearbySeed;
 }
 
 // Replaces conjecture CentralDifferenceStepSuffices, which the mathematical

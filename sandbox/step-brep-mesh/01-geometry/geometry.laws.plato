@@ -1408,6 +1408,36 @@ library BrepGeometryLaws
                 g.UvToleranceAt(s, g.Domain(s).SampleIn(uv), tol))
             : true;
 
+    // ProjectNear seeded near uv, not at it, recovers uv from Eval(uv) within
+    // the parameter tolerance at uv: the seed is uv moved by du and dv (each
+    // clamped to [-1, 1]) times NearSeedOffset of each direction's scale, so
+    // the local inverse must iterate. Law_ProjectNearRecoversParameter seeds
+    // at the answer, where a Newton iteration has nothing to do (review
+    // section 5, ProjectNearIsLocalInverse). Holds where the offset is inside
+    // the neighbourhood the inverse function theorem gives, which theorem
+    // ProjectNearIsLocalInverse states.
+    Law_ProjectNearRecoversFromNearbySeed(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, du: Number, dv: Number, tol: Tolerances): Boolean
+        => g.CanEvaluate(s)
+            ? g.Domain(s).SameParameter(
+                g.ProjectNear(s, g.Eval(s, g.Domain(s).SampleIn(uv)), g.NearbySeed(s, g.Domain(s).SampleIn(uv), du, dv)),
+                g.Domain(s).SampleIn(uv), g.UvToleranceAt(s, g.Domain(s).SampleIn(uv), tol))
+            : true;
+
+    // The offset of a nearby seed, as a fraction of a direction's scale: the
+    // sixth root of the unit roundoff, about 1.8e-3 in 64 bits, far enough
+    // that an iteration must move and near enough to stay inside the local
+    // inverse's neighbourhood on a surface whose curvature radius is above a
+    // hundredth of the scale.
+    NearSeedOffset(scale: Number): Number
+        => Number.RoundingUnit.Pow(1.0 / 6.0) * scale;
+
+    // uv moved by du and dv, each clamped to [-1, 1], times NearSeedOffset of
+    // each direction's scale, and kept inside a bounded direction's range.
+    NearbySeed(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, du: Number, dv: Number): UvCoordinate
+        => g.Domain(s).SampleIn(UvCoordinate(
+            uv.U + du.Max(-1.0).Min(1.0) * NearSeedOffset(g.SurfaceAt(s).DirectionScale(g, uv, SurfaceParameter.ParameterU)),
+            uv.V + dv.Max(-1.0).Min(1.0) * NearSeedOffset(g.SurfaceAt(s).DirectionScale(g, uv, SurfaceParameter.ParameterV))));
+
     // Project returns the canonical representative: each coordinate in the
     // window of a periodic direction or the range of an aperiodic one, within
     // the parameter floor.
