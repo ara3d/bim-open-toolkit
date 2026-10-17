@@ -293,6 +293,14 @@ toleranced one is `Warning` below ten times its tolerance and `Error` above.
 | `Law_CollapsedLineIsOnePoint` | each `CollapsedAt` line is one point | Length | Library (spline, revolution: File, 10x) |
 | `Law_TangentialPartialVanishesOnDegenerateSide` | along a degenerate side, the partial along it times the side's length is within the tolerance | Length | Library (spline, revolution: File, 10x) |
 
+Every toleranced File law exports its measure, so layer 7 can grade it Warning below ten times
+the tolerance: `PlacementDeviation` (radians), `TrimExcess` and `TrimBoxExcess` (the basis's
+parameter), `SegmentGap`, `SupportGap`, `PcurveToCurveGap`, `CurveToPcurveGap` and
+`CollapsedLineSpread` (lengths), `PcurveDomainExcess` (per surface parameter), and the lower bounds
+`OffsetReferenceAngle` and `ExtrusionProfileAngle` (radians from parallel; the law holds when the
+measure is at least the tolerance). Each law is its measure compared with the tolerance, so the two
+cannot disagree.
+
 The brief asked that "both partials vanish along a degenerate side"; only the partial along the
 side does, so the law states that, and theorem `TangentialPartialVanishesOnCollapsedLine` gives the
 counterexample for the other. "Away from degenerate sides" is made precise two ways: laws about
@@ -381,6 +389,7 @@ as expected.
 | `IsOrthonormalWithin(Frame3D)` used by the placement laws | `OrthonormalityDeviation(f)` (either handedness) in the placement laws; `IsOrthonormalWithin` stays right-handed for rigid motions | mirrored placements are legal (fix wave, F2; decision 17) |
 | (new) | `Handedness(f: Frame3D)`, `PlacementHandedness(g, s)`, `PlacementDeviation(g, c | s)` | the determinant sign for layers 2 and 3; the placement laws' measure for layer 7 (fix wave, F2) |
 | (new) | `TorusNormalOr`; a contract for `NormalAgreesWithParameterization` (one sign over the domain) | the Full spindle torus normal follows `S_u x S_v` (fix wave, F3, C3) |
+| `TrimInsideBasis`, `HoldsRange`, `SegmentsChainAt`, `ReferenceTransverse`, `IsTransverseTo`, `LiesOn`, `PcurveLiesOnCurve`, `CurveLiesOnPcurve`, `TrimBoxInsideBasis`, `ExtrusionTransverse` (Boolean claims) | the measures `TrimExcess`, `RangeExcess`, `SegmentGap`, `OffsetReferenceAngle`, `AngleFromParallel`, `GapTo`, `SupportGap`, `PcurveToCurveGap`, `CurveToPcurveGap`, `PcurveDomainExcess`, `TrimBoxExcess`, `ExtrusionProfileAngle`, `CollapsedLineSpread` | layer 7 grades file laws by their measure (layer 7 finding 5) |
 
 ## Fix wave, 2026-10-17
 
@@ -400,3 +409,5 @@ Applied:
 - **F3, C3.** A Full torus with major below minor takes `sign(rho)` times the closed-form normal, so
   `NormalAgreesWithParameterization` is one sign per surface, now stated as its contract; the Apple
   and Lemon keep the closed form, which is `eps <S_u x S_v>` on both.
+- **Layer 7 finding 5.** Every toleranced File law is its exported measure compared with the
+  tolerance; the Boolean claim helpers are gone.

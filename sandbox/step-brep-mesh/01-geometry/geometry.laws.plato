@@ -621,37 +621,40 @@ library BrepGeometryLaws
 
     // A trimmed curve's range lies in its basis's domain within the parameter
     // floor: both ends inside an aperiodic basis's range, at most one period
-    // long on a periodic basis (ISO 10303-42 4.5.43 IP5).
+    // long on a periodic basis (ISO 10303-42 4.5.43 IP5). Measure TrimExcess.
     Law_TrimmedRangeInsideBasis(g: GeometrySet, c: CurveIndex, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.TrimInsideBasis(c, tol.Parameter) : true;
+        => g.CanEvaluate(c) ? g.TrimExcess(c) <= tol.Parameter.Value : true;
 
-    // The claim of Law_TrimmedRangeInsideBasis for each case.
-    TrimInsideBasis(g: GeometrySet, c: CurveIndex, tol: ParameterTolerance): Boolean
-        => g.CurveAt(c).TrimInsideBasis(g, tol);
+    // The measure of Law_TrimmedRangeInsideBasis, in the basis's parameter:
+    // how far a trimmed curve's range reaches outside its basis's domain; 0
+    // for every other case. Precondition: g.CanEvaluate(c).
+    TrimExcess(g: GeometrySet, c: CurveIndex): Number
+        => g.CurveAt(c).TrimExcess(g);
 
-    // TrimInsideBasis for one record of the arena g, which holds the entries it references.
-    TrimInsideBasis(curve: BrepCurve, g: GeometrySet, tol: ParameterTolerance): Boolean
+    // TrimExcess for one record of the arena g, which holds the entries it references.
+    TrimExcess(curve: BrepCurve, g: GeometrySet): Number
         => match (curve)
         {
-            Line(origin, velocity) => true;
-            Circle(placement, radius) => true;
-            Ellipse(placement, semiAxis1, semiAxis2) => true;
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
-            Parabola(placement, focalDistance) => true;
-            Polyline(points) => true;
-            BSpline(data) => true;
-            Trimmed(basis, range, sameSense) => g.Domain(basis).HoldsRange(range, tol);
-            Composite(segments) => true;
-            Offset(basis, distance, reference) => true;
-            OnSurface(spaceCurve, supports, master) => true;
+            Line(origin, velocity) => 0.0;
+            Circle(placement, radius) => 0.0;
+            Ellipse(placement, semiAxis1, semiAxis2) => 0.0;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => 0.0;
+            Parabola(placement, focalDistance) => 0.0;
+            Polyline(points) => 0.0;
+            BSpline(data) => 0.0;
+            Trimmed(basis, range, sameSense) => g.Domain(basis).RangeExcess(range);
+            Composite(segments) => 0.0;
+            Offset(basis, distance, reference) => 0.0;
+            OnSurface(spaceCurve, supports, master) => 0.0;
         };
 
-    // True when range r fits in domain d within tol: no longer than one
-    // period when d is periodic, both ends in d's range otherwise.
-    HoldsRange(d: CurveDomain, r: NumberInterval, tol: ParameterTolerance): Boolean
+    // How far range r reaches outside domain d: its length beyond one period
+    // when d is periodic, the larger overhang of its two ends otherwise; 0
+    // when it fits.
+    RangeExcess(d: CurveDomain, r: NumberInterval): Number
         => d.Periodicity.IsPeriodic
-            ? r.End - r.Start <= d.Periodicity.PeriodOr(0.0) + tol.Value
-            : d.ContainsParameter(r.Start, tol) && d.ContainsParameter(r.End, tol);
+            ? (r.End - r.Start - d.Periodicity.PeriodOr(0.0)).Max(0.0)
+            : (d.Range.Start - r.Start).Max(r.End - d.Range.End).Max(0.0);
 
     // A trimmed curve's range runs forward and is longer than the parameter
     // floor: the decoder stores it as [min, max] with the sense apart, after
@@ -733,31 +736,35 @@ library BrepGeometryLaws
         };
 
     // Consecutive segments of a composite curve chain: segment i ends, in its
-    // sense, where segment i + 1 starts, within the length tolerance.
+    // sense, where segment i + 1 starts, within the length tolerance. Measure
+    // SegmentGap.
     Law_CompositeSegmentsChain(g: GeometrySet, c: CurveIndex, i: Integer, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.SegmentsChainAt(c, i, tol.Length) : true;
+        => g.CanEvaluate(c) ? g.SegmentGap(c, i) <= tol.Length.Value : true;
 
-    // The claim of Law_CompositeSegmentsChain for each case.
-    SegmentsChainAt(g: GeometrySet, c: CurveIndex, i: Integer, tol: LengthTolerance): Boolean
-        => g.CurveAt(c).SegmentsChainAt(g, i, tol);
+    // The measure of Law_CompositeSegmentsChain, a length: the distance from
+    // the end of segment i to the start of segment i + 1; 0 for every other
+    // case and for i not followed by a segment. Precondition:
+    // g.CanEvaluate(c).
+    SegmentGap(g: GeometrySet, c: CurveIndex, i: Integer): Number
+        => g.CurveAt(c).SegmentGap(g, i);
 
-    // SegmentsChainAt for one record of the arena g, which holds the entries it references.
-    SegmentsChainAt(curve: BrepCurve, g: GeometrySet, i: Integer, tol: LengthTolerance): Boolean
+    // SegmentGap for one record of the arena g, which holds the entries it references.
+    SegmentGap(curve: BrepCurve, g: GeometrySet, i: Integer): Number
         => match (curve)
         {
-            Line(origin, velocity) => true;
-            Circle(placement, radius) => true;
-            Ellipse(placement, semiAxis1, semiAxis2) => true;
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
-            Parabola(placement, focalDistance) => true;
-            Polyline(points) => true;
-            BSpline(data) => true;
-            Trimmed(basis, range, sameSense) => true;
+            Line(origin, velocity) => 0.0;
+            Circle(placement, radius) => 0.0;
+            Ellipse(placement, semiAxis1, semiAxis2) => 0.0;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => 0.0;
+            Parabola(placement, focalDistance) => 0.0;
+            Polyline(points) => 0.0;
+            BSpline(data) => 0.0;
+            Trimmed(basis, range, sameSense) => 0.0;
             Composite(segments) => i >= 0 && i + 1 < segments.Count
-                ? g.SegmentEnd(segments[i]).Coincident(g.SegmentStart(segments[i + 1]), tol)
-                : true;
-            Offset(basis, distance, reference) => true;
-            OnSurface(spaceCurve, supports, master) => true;
+                ? g.SegmentEnd(segments[i]).Distance(g.SegmentStart(segments[i + 1]))
+                : 0.0;
+            Offset(basis, distance, reference) => 0.0;
+            OnSurface(spaceCurve, supports, master) => 0.0;
         };
 
     // Where a composite segment starts, in its sense.
@@ -770,36 +777,40 @@ library BrepGeometryLaws
 
     // An offset curve's reference direction is never along the basis's
     // tangent: the angle between them stays at least the angle tolerance from
-    // 0 and from pi (ISO 10303-42 4.5.55 IP1).
+    // 0 and from pi (ISO 10303-42 4.5.55 IP1). Measure OffsetReferenceAngle,
+    // a lower bound: the law holds when the measure is at least the
+    // tolerance.
     Law_OffsetReferenceNotTangent(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.ReferenceTransverse(c, t, tol.Angle) : true;
+        => g.CanEvaluate(c) ? g.OffsetReferenceAngle(c, t) >= tol.Angle.Value.Radians : true;
 
-    // The claim of Law_OffsetReferenceNotTangent for each case.
-    ReferenceTransverse(g: GeometrySet, c: CurveIndex, t: Number, tol: AngleTolerance): Boolean
-        => g.CurveAt(c).ReferenceTransverse(g, t, tol);
+    // The measure of Law_OffsetReferenceNotTangent, in radians: the angle
+    // between an offset curve's reference direction and its basis's tangent
+    // at t, measured from the nearer of the two parallel directions, so in
+    // [0, pi/2]; pi/2 for every other case. Precondition: g.CanEvaluate(c).
+    OffsetReferenceAngle(g: GeometrySet, c: CurveIndex, t: Number): Number
+        => g.CurveAt(c).OffsetReferenceAngle(g, t);
 
-    // ReferenceTransverse for one record of the arena g, which holds the entries it references.
-    ReferenceTransverse(curve: BrepCurve, g: GeometrySet, t: Number, tol: AngleTolerance): Boolean
+    // OffsetReferenceAngle for one record of the arena g, which holds the entries it references.
+    OffsetReferenceAngle(curve: BrepCurve, g: GeometrySet, t: Number): Number
         => match (curve)
         {
-            Line(origin, velocity) => true;
-            Circle(placement, radius) => true;
-            Ellipse(placement, semiAxis1, semiAxis2) => true;
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
-            Parabola(placement, focalDistance) => true;
-            Polyline(points) => true;
-            BSpline(data) => true;
-            Trimmed(basis, range, sameSense) => true;
-            Composite(segments) => true;
-            Offset(basis, distance, reference) => reference.IsTransverseTo(g.Derivative(basis, g.Domain(basis).SampleIn(t)), tol);
-            OnSurface(spaceCurve, supports, master) => true;
+            Line(origin, velocity) => Number.HalfPi;
+            Circle(placement, radius) => Number.HalfPi;
+            Ellipse(placement, semiAxis1, semiAxis2) => Number.HalfPi;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => Number.HalfPi;
+            Parabola(placement, focalDistance) => Number.HalfPi;
+            Polyline(points) => Number.HalfPi;
+            BSpline(data) => Number.HalfPi;
+            Trimmed(basis, range, sameSense) => Number.HalfPi;
+            Composite(segments) => Number.HalfPi;
+            Offset(basis, distance, reference) => reference.AngleFromParallel(g.Derivative(basis, g.Domain(basis).SampleIn(t)));
+            OnSurface(spaceCurve, supports, master) => Number.HalfPi;
         };
 
-    // True when direction d and vector v are not parallel within tol: the
-    // angle between them is at least tol from 0 and from pi.
-    IsTransverseTo(d: Direction3D, v: Vector3D, tol: AngleTolerance): Boolean
-        => d.AngleBetweenDirections(Direction3D(v)) >= tol.Value
-            && d.AngleBetweenDirections(Direction3D(v)) <= Angle(Number.Pi) - tol.Value;
+    // The angle between direction d and vector v measured from the nearer of
+    // v and -v, in [0, pi/2] radians: 0 when they are parallel.
+    AngleFromParallel(d: Direction3D, v: Vector3D): Number
+        => d.AngleBetweenDirections(Direction3D(v)).Radians.Min(Number.Pi - d.AngleBetweenDirections(Direction3D(v)).Radians);
 
     // The supports of a surface curve; none for every other case.
     SupportsOf(curve: BrepCurve): Array<CurveSupport>
@@ -843,48 +854,66 @@ library BrepGeometryLaws
             SurfaceOnly(surface) => surface;
         };
 
-    // True when p lies on surface s within the length tolerance: the point of
-    // s nearest to p coincides with it.
-    LiesOn(p: Point3D, g: GeometrySet, s: SurfaceIndex, tol: LengthTolerance): Boolean
-        => g.Eval(s, g.Project(s, p)).Coincident(p, tol);
+    // The distance from p to surface s: from p to the point of s nearest to
+    // it.
+    GapTo(p: Point3D, g: GeometrySet, s: SurfaceIndex): Number
+        => g.Eval(s, g.Project(s, p)).Distance(p);
 
     // A surface curve lies on the surface of its k-th support within the
-    // length tolerance (ISO 10303-42 4.5.49 IP1).
+    // length tolerance (ISO 10303-42 4.5.49 IP1). Measure SupportGap.
     Law_SurfaceCurveLiesOnSupport(g: GeometrySet, c: CurveIndex, t: Number, k: Integer, tol: Tolerances): Boolean
-        => g.CanEvaluate(c)
-            ? (g.CurveAt(c).SupportsOf.IsValidIndex(k)
-                ? g.Eval(c, g.Domain(c).SampleIn(t)).LiesOn(g, g.SupportSurface(g.CurveAt(c).SupportsOf[k]), tol.Length)
-                : true)
-            : true;
+        => g.CanEvaluate(c) ? g.SupportGap(c, t, k) <= tol.Length.Value : true;
+
+    // The measure of Law_SurfaceCurveLiesOnSupport, a length: the distance
+    // from the curve's point at t to the surface of its k-th support; 0 when
+    // there is no k-th support. Precondition: g.CanEvaluate(c).
+    SupportGap(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Number
+        => g.CurveAt(c).SupportsOf.IsValidIndex(k)
+            ? g.Eval(c, g.Domain(c).SampleIn(t)).GapTo(g, g.SupportSurface(g.CurveAt(c).SupportsOf[k]))
+            : 0.0;
 
     // Every point of a surface curve's k-th pcurve lies on its space curve
     // within the length tolerance: the first half of the point-set agreement,
     // compared by point because the two parameterizations may differ.
+    // Measure PcurveToCurveGap.
     Law_SurfaceCurvePcurveLiesOnCurve(g: GeometrySet, c: CurveIndex, t: Number, k: Integer, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.PcurveLiesOnCurve(g.CurveAt(c).SpaceCurveOf, g.CurveAt(c).SupportsOf, t, k, tol.Length) : true;
+        => g.CanEvaluate(c) ? g.PcurveToCurveGap(c, t, k) <= tol.Length.Value : true;
 
-    // The claim of Law_SurfaceCurvePcurveLiesOnCurve.
-    PcurveLiesOnCurve(g: GeometrySet, spaceCurve: CurveIndex, supports: Array<CurveSupport>, t: Number, k: Integer, tol: LengthTolerance): Boolean
+    // The measure of Law_SurfaceCurvePcurveLiesOnCurve, a length: the
+    // distance from the k-th pcurve's point at sample t to the space curve; 0
+    // when there is no k-th pcurve. Precondition: g.CanEvaluate(c).
+    PcurveToCurveGap(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Number
+        => g.PcurveToCurveGap(g.CurveAt(c).SpaceCurveOf, g.CurveAt(c).SupportsOf, t, k);
+
+    // PcurveToCurveGap over the parts of a surface curve.
+    PcurveToCurveGap(g: GeometrySet, spaceCurve: CurveIndex, supports: Array<CurveSupport>, t: Number, k: Integer): Number
         => supports.IsValidIndex(k)
             ? (supports[k].PcurveOrNone.IsNone || spaceCurve.IsNone
-                ? true
+                ? 0.0
                 : g.Eval(spaceCurve, g.ClosestParameter(spaceCurve, g.Eval(supports[k].PcurveOrNone, g.Domain(supports[k].PcurveOrNone).SampleIn(t))))
-                    .Coincident(g.Eval(supports[k].PcurveOrNone, g.Domain(supports[k].PcurveOrNone).SampleIn(t)), tol))
-            : true;
+                    .Distance(g.Eval(supports[k].PcurveOrNone, g.Domain(supports[k].PcurveOrNone).SampleIn(t))))
+            : 0.0;
 
     // Every point of a surface curve's space curve lies on its k-th pcurve
-    // within the length tolerance: the second half of the point-set agreement.
+    // within the length tolerance: the second half of the point-set
+    // agreement. Measure CurveToPcurveGap.
     Law_SurfaceCurveLiesOnPcurve(g: GeometrySet, c: CurveIndex, t: Number, k: Integer, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.CurveLiesOnPcurve(g.CurveAt(c).SpaceCurveOf, g.CurveAt(c).SupportsOf, t, k, tol.Length) : true;
+        => g.CanEvaluate(c) ? g.CurveToPcurveGap(c, t, k) <= tol.Length.Value : true;
 
-    // The claim of Law_SurfaceCurveLiesOnPcurve.
-    CurveLiesOnPcurve(g: GeometrySet, spaceCurve: CurveIndex, supports: Array<CurveSupport>, t: Number, k: Integer, tol: LengthTolerance): Boolean
+    // The measure of Law_SurfaceCurveLiesOnPcurve, a length: the distance from
+    // the space curve's point at sample t to the k-th pcurve; 0 when there is
+    // no k-th pcurve. Precondition: g.CanEvaluate(c).
+    CurveToPcurveGap(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Number
+        => g.CurveToPcurveGap(g.CurveAt(c).SpaceCurveOf, g.CurveAt(c).SupportsOf, t, k);
+
+    // CurveToPcurveGap over the parts of a surface curve.
+    CurveToPcurveGap(g: GeometrySet, spaceCurve: CurveIndex, supports: Array<CurveSupport>, t: Number, k: Integer): Number
         => supports.IsValidIndex(k)
             ? (supports[k].PcurveOrNone.IsNone || spaceCurve.IsNone
-                ? true
+                ? 0.0
                 : g.Eval(supports[k].PcurveOrNone, g.ClosestParameter(supports[k].PcurveOrNone, g.Eval(spaceCurve, g.Domain(spaceCurve).SampleIn(t))))
-                    .Coincident(g.Eval(spaceCurve, g.Domain(spaceCurve).SampleIn(t)), tol))
-            : true;
+                    .Distance(g.Eval(spaceCurve, g.Domain(spaceCurve).SampleIn(t))))
+            : 0.0;
 
     // A surface curve's k-th pcurve runs the same way as its space curve
     // (ISO 10303-42 4.5.49 IP2): at matched points their velocities make an
@@ -1035,12 +1064,22 @@ library BrepGeometryLaws
     }
 
     // A pcurve stays inside its surface's domain, within the parameter floor
-    // (periodic directions contain every value).
+    // (periodic directions contain every value). Measure PcurveDomainExcess,
+    // one per parameter.
     Law_PcurveWithinSurfaceDomain(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
         => g.CanEvaluate(p)
-            ? g.Domain(g.PcurveAt(p).Surface).ContainsParameter(
-                g.Eval(g.PcurveAt(p).Curve, g.Domain(p).SampleIn(t)), UvTolerance(tol.Parameter, tol.Parameter))
+            ? g.PcurveDomainExcess(p, t, SurfaceParameter.ParameterU) <= tol.Parameter.Value
+                && g.PcurveDomainExcess(p, t, SurfaceParameter.ParameterV) <= tol.Parameter.Value
             : true;
+
+    // The measure of Law_PcurveWithinSurfaceDomain in the given surface
+    // parameter, in that parameter's units: how far the pcurve's point at
+    // sample t lies outside the surface's range in it; 0 in a periodic
+    // direction. Precondition: g.CanEvaluate(p).
+    PcurveDomainExcess(g: GeometrySet, p: PcurveIndex, t: Number, which: SurfaceParameter): Number
+        => g.Domain(g.PcurveAt(p).Surface).DomainAlong(which).RangeExcess(
+            NumberInterval(g.Eval(g.PcurveAt(p).Curve, g.Domain(p).SampleIn(t)).Coordinate(which),
+                g.Eval(g.PcurveAt(p).Curve, g.Domain(p).SampleIn(t)).Coordinate(which)));
 
     //==
     // # Surfaces: period
@@ -1276,14 +1315,19 @@ library BrepGeometryLaws
 
     // The k-th collapsed line of the given parameter is one point: its points
     // at any two values a and b of the other parameter coincide within the
-    // length tolerance.
+    // length tolerance. Measure CollapsedLineSpread.
     Law_CollapsedLineIsOnePoint(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, k: Integer, a: Number, b: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(s)
-            ? (g.CollapsedAt(s, which, tol).IsValidIndex(k)
-                ? g.Eval(s, g.IsoPoint(s, which, g.CollapsedAt(s, which, tol)[k], a)).Coincident(
-                    g.Eval(s, g.IsoPoint(s, which, g.CollapsedAt(s, which, tol)[k], b)), tol.Length)
-                : true)
-            : true;
+        => g.CanEvaluate(s) ? g.CollapsedLineSpread(s, which, k, a, b, tol) <= tol.Length.Value : true;
+
+    // The measure of Law_CollapsedLineIsOnePoint, a length: the distance
+    // between the k-th collapsed line's points at a and b; 0 when there is no
+    // k-th line. tol decides which lines collapse (CollapsedAt). Precondition:
+    // g.CanEvaluate(s).
+    CollapsedLineSpread(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, k: Integer, a: Number, b: Number, tol: Tolerances): Number
+        => g.CollapsedAt(s, which, tol).IsValidIndex(k)
+            ? g.Eval(s, g.IsoPoint(s, which, g.CollapsedAt(s, which, tol)[k], a)).Distance(
+                g.Eval(s, g.IsoPoint(s, which, g.CollapsedAt(s, which, tol)[k], b)))
+            : 0.0;
 
     // The parameter-plane point with the given parameter at c and the other
     // at the sample `along`, moved into the other parameter's domain.
@@ -1316,28 +1360,32 @@ library BrepGeometryLaws
     // # Surfaces, case by case
 
     // A rectangular trimmed surface's range in the given parameter lies in
-    // its basis's domain within the parameter floor (ISO 10303-42 4.5.80 IP1).
+    // its basis's domain within the parameter floor (ISO 10303-42 4.5.80
+    // IP1). Measure TrimBoxExcess.
     Law_RectangularTrimmedInsideBasis(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.TrimBoxInsideBasis(s, which, tol.Parameter) : true;
+        => g.CanEvaluate(s) ? g.TrimBoxExcess(s, which) <= tol.Parameter.Value : true;
 
-    // The claim of Law_RectangularTrimmedInsideBasis for each case.
-    TrimBoxInsideBasis(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: ParameterTolerance): Boolean
-        => g.SurfaceAt(s).TrimBoxInsideBasis(g, which, tol);
+    // The measure of Law_RectangularTrimmedInsideBasis, in the basis's
+    // parameter: how far a rectangular trimmed surface's range in the given
+    // parameter reaches outside its basis's domain; 0 for every other case.
+    // Precondition: g.CanEvaluate(s).
+    TrimBoxExcess(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Number
+        => g.SurfaceAt(s).TrimBoxExcess(g, which);
 
-    // TrimBoxInsideBasis for one record of the arena g, which holds the entries it references.
-    TrimBoxInsideBasis(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter, tol: ParameterTolerance): Boolean
+    // TrimBoxExcess for one record of the arena g, which holds the entries it references.
+    TrimBoxExcess(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter): Number
         => match (surface)
         {
-            Plane(placement) => true;
-            Cylinder(placement, radius) => true;
-            Cone(placement, radius, semiAngle) => true;
-            Sphere(placement, radius) => true;
-            Torus(placement, major, minor, part) => true;
-            Revolution(profile, axis) => true;
-            LinearExtrusion(profile, extrusion) => true;
-            BSpline(data) => true;
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Domain(basis).DomainAlong(which).HoldsRange(which.Along(uRange, vRange), tol);
-            Offset(basis, distance) => true;
+            Plane(placement) => 0.0;
+            Cylinder(placement, radius) => 0.0;
+            Cone(placement, radius, semiAngle) => 0.0;
+            Sphere(placement, radius) => 0.0;
+            Torus(placement, major, minor, part) => 0.0;
+            Revolution(profile, axis) => 0.0;
+            LinearExtrusion(profile, extrusion) => 0.0;
+            BSpline(data) => 0.0;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Domain(basis).DomainAlong(which).RangeExcess(which.Along(uRange, vRange));
+            Offset(basis, distance) => 0.0;
         };
 
     // A rectangular trimmed surface's range in the given parameter runs
@@ -1370,27 +1418,32 @@ library BrepGeometryLaws
     // between the profile's tangent at u and the extrusion vector stays at
     // least the angle tolerance from 0 and pi (ISO 10303-42 4.5.67; where it
     // fails the surface degenerates along a ruling).
+    // Measure ExtrusionProfileAngle, a lower bound as for
+    // Law_OffsetReferenceNotTangent.
     Law_ExtrusionProfileTransverse(g: GeometrySet, s: SurfaceIndex, u: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.ExtrusionTransverse(s, u, tol.Angle) : true;
+        => g.CanEvaluate(s) ? g.ExtrusionProfileAngle(s, u) >= tol.Angle.Value.Radians : true;
 
-    // The claim of Law_ExtrusionProfileTransverse for each case.
-    ExtrusionTransverse(g: GeometrySet, s: SurfaceIndex, u: Number, tol: AngleTolerance): Boolean
-        => g.SurfaceAt(s).ExtrusionTransverse(g, u, tol);
+    // The measure of Law_ExtrusionProfileTransverse, in radians: the angle
+    // between a linear extrusion's vector and its profile's tangent at u,
+    // from the nearer parallel direction, in [0, pi/2]; pi/2 for every other
+    // case. Precondition: g.CanEvaluate(s).
+    ExtrusionProfileAngle(g: GeometrySet, s: SurfaceIndex, u: Number): Number
+        => g.SurfaceAt(s).ExtrusionProfileAngle(g, u);
 
-    // ExtrusionTransverse for one record of the arena g, which holds the entries it references.
-    ExtrusionTransverse(surface: BrepSurface, g: GeometrySet, u: Number, tol: AngleTolerance): Boolean
+    // ExtrusionProfileAngle for one record of the arena g, which holds the entries it references.
+    ExtrusionProfileAngle(surface: BrepSurface, g: GeometrySet, u: Number): Number
         => match (surface)
         {
-            Plane(placement) => true;
-            Cylinder(placement, radius) => true;
-            Cone(placement, radius, semiAngle) => true;
-            Sphere(placement, radius) => true;
-            Torus(placement, major, minor, part) => true;
-            Revolution(profile, axis) => true;
-            LinearExtrusion(profile, extrusion) => Direction3D(extrusion).IsTransverseTo(g.Derivative(profile, g.Domain(profile).SampleIn(u)), tol);
-            BSpline(data) => true;
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => true;
-            Offset(basis, distance) => true;
+            Plane(placement) => Number.HalfPi;
+            Cylinder(placement, radius) => Number.HalfPi;
+            Cone(placement, radius, semiAngle) => Number.HalfPi;
+            Sphere(placement, radius) => Number.HalfPi;
+            Torus(placement, major, minor, part) => Number.HalfPi;
+            Revolution(profile, axis) => Number.HalfPi;
+            LinearExtrusion(profile, extrusion) => Direction3D(extrusion).AngleFromParallel(g.Derivative(profile, g.Domain(profile).SampleIn(u)));
+            BSpline(data) => Number.HalfPi;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => Number.HalfPi;
+            Offset(basis, distance) => Number.HalfPi;
         };
 
     //==
