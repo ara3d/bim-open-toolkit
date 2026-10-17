@@ -163,7 +163,9 @@ for the axial `v`.
    ignored for ring tori would be a field that means nothing in most values. `HasEvaluableShape`
    requires `major < minor` for the two spindle parts (the entity's WR1). A plain
    `toroidal_surface` with `major < minor` (a Unigraphics deviation) stays `Full`; it is
-   self-intersecting, `IsInjectiveByConstruction` is false for it, and layer 3 reports it.
+   self-intersecting, `IsInjectiveByConstruction` is false for it, and layer 3 reports it. Its
+   normal is ISO's `<S_u x S_v>`, which is the closed form outside the axis and its negation inside
+   (review F3), so `NormalAgreesWithParameterization` is true on all of it.
 7. **`Trimmed` and `RectangularTrimmed` use ISO's reparameterization from 0.** The decoder stores
    the range forward (`[min, max]`, a period added on a periodic basis per 4.5.43 NOTE 1) and the
    sense apart; `SensedParameter` maps a trimmed parameter to the basis's. Edges rarely name a
@@ -378,6 +380,7 @@ as expected.
 | (new) | `Breaks(g, c, order)` on curves, parameter-plane curves and surfaces; `SplineBreaks(b, order)`; `EvaluationMagnitude` on curves, parameter-plane curves, pcurves and surfaces | the derivative laws' exclusions and rounding bound (fix wave, F5) |
 | `IsOrthonormalWithin(Frame3D)` used by the placement laws | `OrthonormalityDeviation(f)` (either handedness) in the placement laws; `IsOrthonormalWithin` stays right-handed for rigid motions | mirrored placements are legal (fix wave, F2; decision 17) |
 | (new) | `Handedness(f: Frame3D)`, `PlacementHandedness(g, s)`, `PlacementDeviation(g, c | s)` | the determinant sign for layers 2 and 3; the placement laws' measure for layer 7 (fix wave, F2) |
+| (new) | `TorusNormalOr`; a contract for `NormalAgreesWithParameterization` (one sign over the domain) | the Full spindle torus normal follows `S_u x S_v` (fix wave, F3, C3) |
 
 ## Fix wave, 2026-10-17
 
@@ -394,3 +397,6 @@ Applied:
 - **F2.** Placement laws accept mirrored frames and export `PlacementDeviation`; `Handedness` and
   `PlacementHandedness` export the determinant sign; the closed-form normals multiply by it, so
   `NormalOr = eps <S_u x S_v>` holds on mirrored placements (decision 17).
+- **F3, C3.** A Full torus with major below minor takes `sign(rho)` times the closed-form normal, so
+  `NormalAgreesWithParameterization` is one sign per surface, now stated as its contract; the Apple
+  and Lemon keep the closed form, which is `eps <S_u x S_v>` on both.

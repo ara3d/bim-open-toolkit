@@ -173,7 +173,7 @@ library BrepGeometrySurfaces
             Cylinder(placement, radius) => Direction3D(placement.FrameVector(uv.U.Cos, uv.U.Sin, 0.0) * placement.Handedness);
             Cone(placement, radius, semiAngle) => ConeNormalOr(placement, radius, semiAngle, uv, fallback);
             Sphere(placement, radius) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin) * placement.Handedness);
-            Torus(placement, major, minor, part) => Direction3D(placement.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin) * placement.Handedness);
+            Torus(placement, major, minor, part) => TorusNormalOr(placement, major, minor, part, uv, fallback);
             Revolution(profile, axis) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
             LinearExtrusion(profile, extrusion) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
             BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
@@ -524,6 +524,29 @@ library BrepGeometrySurfaces
             ? fallback
             : Direction3D(f.FrameVector(semiAngle.Cos * uv.U.Cos, semiAngle.Cos * uv.U.Sin, -semiAngle.Sin)
                 * ((radius + uv.V * semiAngle.Tan).Sign.ToNumber * f.Handedness));
+
+    // The torus's normal, eps <S_u x S_v>. With rho = R + r cos v,
+    // S_u x S_v = r rho (cos v e_r + sin v z) times the frame's Handedness
+    // (theorem TorusAreaElement). On a ring torus and the Apple rho > 0, and
+    // on the Lemon rho < 0 with eps = -1, so on all three the normal is the
+    // closed form (cos v e_r + sin v z), pointing away from the meridian
+    // circle's centre, taken without a sign test so that it extends to the
+    // axis points at the domain's ends. On a Full spindle torus (major below
+    // minor, a toroidal_surface layer 3 reports) rho changes sign at the axis
+    // points v = phi and 2 pi - phi; there ISO's normal is <S_u x S_v>, so the
+    // closed form is multiplied by the sign of rho, and the fallback is taken
+    // where rho is exactly zero (review F3). A horn torus (major equal to
+    // minor) has rho >= 0, zero only at v = pi.
+    TorusNormalOr(f: Frame3D, major: Number, minor: Number, part: TorusPart, uv: UvCoordinate, fallback: Direction3D): Direction3D
+        => match (part)
+        {
+            Full => major + minor * uv.V.Cos == 0.0
+                ? fallback
+                : Direction3D(f.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin)
+                    * ((major + minor * uv.V.Cos).Sign.ToNumber * f.Handedness));
+            Apple => Direction3D(f.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin) * f.Handedness);
+            Lemon => Direction3D(f.FrameVector(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin) * f.Handedness);
+        };
 
     // The Handedness of the surface's placement: its frame's for the
     // placement-based cases, its basis's for a trim or an offset, and +1 for

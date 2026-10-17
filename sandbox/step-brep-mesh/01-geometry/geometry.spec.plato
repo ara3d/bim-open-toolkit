@@ -386,6 +386,16 @@ spec NormalOr(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, fallback: Direc
     measure g.SurfaceDepth(s, g.ReferenceFuel);
 }
 
+// The sign eps of NormalOr against PartialU x PartialV is one value for the
+// whole surface (review C3): constant over the domain wherever the cross
+// product is not zero, on placements of either handedness.
+spec NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean
+{
+    requires g.CanEvaluate(s);
+    ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) in g.Domain(s) : Law_NormalSenseMatchesParameterization(g, s, uv, tol);
+    measure g.SurfaceDepth(s, g.ReferenceFuel);
+}
+
 spec AreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Number
 {
     requires g.CanEvaluate(s);
@@ -602,7 +612,9 @@ theorem LemonNormalOpposesParameterization
     conclude g.NormalOr(s, uv, f.ZAxis).Vector.Dot(g.PartialU(s, uv).Cross(g.PartialV(s, uv))) < 0.0;
     because "On the lemon, cos v < -R / r, so rho = R + r cos v < 0 and S_u x S_v = r rho N with N = cos v e_r +
              sin v z, ISO's stated normal (4.5.64 NOTE 1). The dot product is r rho < 0. On the apple and a ring
-             torus rho > 0 and the sign is positive, which is all NormalAgreesWithParameterization records.";
+             torus rho > 0 and the sign is positive. On a Full torus with R < r, rho changes sign at the axis
+             points, and TorusNormalOr multiplies N by the sign of rho, so the product is r |rho| > 0 on both
+             sides: one sign per surface, which is all NormalAgreesWithParameterization records.";
     tested by Law_NormalSenseMatchesParameterization;
 }
 
