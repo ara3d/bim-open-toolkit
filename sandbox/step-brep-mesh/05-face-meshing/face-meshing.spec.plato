@@ -355,8 +355,8 @@ theorem DroppedTrianglesArePoleSegments
     assume t.Quads.Count == 0;
     conclude t.ElementCount - fm.ElementCount ==
         r.NumberOfLoops.Range.Reduce(0, (n, k) => n + r.LoopAt(k).Points.Count.Range.Reduce(0, (s, i) =>
-            s + (m.ShareCollapsedLine(f, r.SegmentStart(k, i), r.SegmentEnd(k, i)) ? 1 : 0)));
-    because "A triangle with two corners on one collapsed line has the segment between them on that line. The line bounds the region, so the segment is a boundary segment (an interior chord along a boundary line would overlap boundary segments, which a positively oriented triangulation forbids), and each boundary segment belongs to exactly one triangle. A positive triangle cannot have three collinear corners, so no triangle has two such segments.";
+            s + (IdentifiedSources(r.LoopAt(k).Sources[i], r.LoopAt(k).Sources.AtModulo(i + 1)) ? 1 : 0)));
+    because "A dropped triangle has two corners with identified sources (IsCollapsedElement). Within a region, identified points that are not a period apart are points of one pole segment, which lies on a collapsed line that bounds the region, so the side between the two corners lies along the pole segment and is a boundary segment whose ends are identified (an interior chord along a boundary line would overlap boundary segments, which a positively oriented triangulation forbids). Each boundary segment belongs to exactly one triangle. A positive triangle cannot have three collinear corners, so no triangle has two such segments.";
     tested by Law_DroppedElementsArePoleCollapsed;
 }
 

@@ -553,15 +553,6 @@ library UvRegions
         => m.IsOnCollapsedLineAlong(f, uv, SurfaceParameter.ParameterU)
             || m.IsOnCollapsedLineAlong(f, uv, SurfaceParameter.ParameterV);
 
-    // True when a and b lie on one common collapsed line along parameter `which`.
-    ShareCollapsedLineAlong(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, which: SurfaceParameter): Boolean
-        => m.CollapsedLines(f, which).Any(c => m.IsOnLine(f, a, which, c) && m.IsOnLine(f, b, which, c));
-
-    // True when a and b lie on one common collapsed line: two points that lift to one 3D point.
-    ShareCollapsedLine(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate): Boolean
-        => m.ShareCollapsedLineAlong(f, a, b, SurfaceParameter.ParameterU)
-            || m.ShareCollapsedLineAlong(f, a, b, SurfaceParameter.ParameterV);
-
     //==
     // # Boundary segments, simplicity, containment
     //

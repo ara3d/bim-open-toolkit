@@ -263,7 +263,7 @@ library FaceMeshingLaws
     Law_ElementLiftsFacingFaceNormal(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean
         => (m.IsFaceIntact(f) && t.HasElement(k))
             ? (t.ElementCornersInRange(k)
-                ? (m.IsPoleCollapsed(f, t, k) ? true : m.LiftsFacingFaceNormal(f, t, k))
+                ? (t.IsCollapsedElement(k) ? true : m.LiftsFacingFaceNormal(f, t, k))
                 : true)
             : true;
 
@@ -353,17 +353,18 @@ library FaceMeshingLaws
                     <= m.Tolerances.Angle.Value)
             : true;
 
-    // Lift drops exactly the triangles with two corners on one collapsed line: the face mesh has
-    // that many fewer elements than the triangulation it was lifted from.
+    // Lift drops exactly the triangles with two corners that are one local vertex (identified
+    // sources, the points of one pole segment): the face mesh has that many fewer elements than
+    // the triangulation it was lifted from.
     Law_DroppedElementsArePoleCollapsed(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, fm: FaceMesh): Boolean
         => (m.IsFaceIntact(f) && t.CornersInRange)
-            ? t.ElementCount - fm.ElementCount == m.PoleCollapsedTriangleCount(f, t)
+            ? t.ElementCount - fm.ElementCount == t.CollapsedTriangleCount
             : true;
 
-    // Lift turns exactly the quads with two corners on one collapsed line into triangles.
+    // Lift turns exactly the quads with two corners that are one local vertex into triangles.
     Law_CollapsedQuadsBecomeTriangles(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, fm: FaceMesh): Boolean
         => (m.IsFaceIntact(f) && t.CornersInRange)
-            ? t.Quads.Count - fm.Quads.Count == m.PoleCollapsedQuadCount(f, t)
+            ? t.Quads.Count - fm.Quads.Count == t.CollapsedQuadCount
             : true;
 
     //==

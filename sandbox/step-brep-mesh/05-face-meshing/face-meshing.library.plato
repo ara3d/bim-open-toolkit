@@ -106,13 +106,17 @@ library FaceMeshing
             m.SurfaceDomainOf(f).StepBelowHalfPeriod(t.Points[cs[i]], t.Points[cs[j]])));
     }
 
-    // True when two corners of element k lie on one collapsed line of face f's surface, so the
-    // element loses a corner in 3D. Precondition: corners in range.
-    IsPoleCollapsed(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: ElementIndex): Boolean
+    // True when two corners of element k have identified sources (IdentifiedSources), so Lift
+    // gives them one local vertex and the element loses a corner in 3D: two points of one pole
+    // segment. Decided by the sources, as Lift's identification is, never by distance to a
+    // collapsed line, so the elements dropped are exactly those that lose a corner (review M7).
+    // Two copies of a seam point are identified too, but no element joins them: they are a period
+    // apart (Law_ElementSpansBelowHalfPeriod). Precondition: corners in range.
+    IsCollapsedElement(t: UvTriangulation, k: ElementIndex): Boolean
     {
         var cs = t.ElementCorners(k);
         return cs.Count.Range.Any(i => cs.Count.Range.Any(j =>
-            j > i ? m.ShareCollapsedLine(f, t.Points[cs[i]], t.Points[cs[j]]) : false));
+            j > i ? IdentifiedSources(t.Sources[cs[i]], t.Sources[cs[j]]) : false));
     }
 
     // The mean of element k's corner parameters: its parameter centroid. Precondition: corners
@@ -137,14 +141,14 @@ library FaceMeshing
         => m.LiftedVectorArea(f, t, k).Dot(
             m.FaceNormalAt(f, t.ElementUvCentroid(k), m.LiftedVectorArea(f, t, k))) > 0.0;
 
-    // How many triangles collapse at a pole: the triangles Lift drops.
-    PoleCollapsedTriangleCount(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation): Integer
-        => t.Triangles.Count.Range.Reduce(0, (n, k) => n + (m.IsPoleCollapsed(f, t, ElementIndex(k)) ? 1 : 0));
+    // How many triangles collapse: the triangles Lift drops.
+    CollapsedTriangleCount(t: UvTriangulation): Integer
+        => t.Triangles.Count.Range.Reduce(0, (n, k) => n + (t.IsCollapsedElement(ElementIndex(k)) ? 1 : 0));
 
-    // How many quads collapse at a pole: the quads Lift turns into triangles.
-    PoleCollapsedQuadCount(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation): Integer
+    // How many quads collapse: the quads Lift turns into triangles.
+    CollapsedQuadCount(t: UvTriangulation): Integer
         => t.Quads.Count.Range.Reduce(0, (n, q) =>
-            n + (m.IsPoleCollapsed(f, t, ElementIndex(t.Triangles.Count + q)) ? 1 : 0));
+            n + (t.IsCollapsedElement(ElementIndex(t.Triangles.Count + q)) ? 1 : 0));
 
     //==
     // # Lifting
@@ -154,8 +158,8 @@ library FaceMeshing
     // point of its first member; Normals by FaceNormalAt, or on a collapsed line by layer 01's
     // LimitNormal at the point's own parameters (one normal per meridian at a cone apex) times
     // the face's sense; Provenance by ProvenanceOfSource of the class's first member; drop
-    // triangles with two corners on one collapsed line, and turn such quads into the triangle of
-    // their other three corners.
+    // triangles with two corners in one class (IsCollapsedElement), and turn such quads into the
+    // triangle of their other three corners.
     Lift(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation): FaceMesh;
 
     // The position of the local vertex of a point with source s: the model vertex's point or the
@@ -285,10 +289,11 @@ library FaceMeshing
         => Point3D((a.X + b.X) * 0.5, (a.Y + b.Y) * 0.5, (a.Z + b.Z) * 0.5);
 
     // True when the element edge from point a to point b is a surface edge of face mesh fm, its
-    // edges discretized as d.
+    // edges discretized as d: not a model-edge segment, and its two ends are two local vertices
+    // (an edge along a pole segment has no length in 3D).
     IsSurfaceEdge(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, a: VertexIndex, b: VertexIndex): Boolean
         => m.IsModelEdgeSegment(fm.Face, d, fm.Sources[a], fm.Sources[b]).Not
-            && m.ShareCollapsedLine(fm.Face, fm.UvPoints[a], fm.UvPoints[b]).Not;
+            && fm.LocalVertex[a] != fm.LocalVertex[b];
 
     // The distance from p to face f's surface, measured to the surface point inverse evaluation
     // returns. Never below the true distance, so a bound on it bounds the truth.
@@ -375,7 +380,7 @@ library FaceMeshing
     // which splits folds.
     GridUnlessFolded(m: BrepModel, f: BrepFaceIndex, g: UvTriangulation): QuadGridOutcome
         => g.ElementCount.Range.All(k =>
-            m.IsPoleCollapsed(f, g, ElementIndex(k)) ? true : m.LiftsFacingFaceNormal(f, g, ElementIndex(k)))
+            g.IsCollapsedElement(ElementIndex(k)) ? true : m.LiftsFacingFaceNormal(f, g, ElementIndex(k)))
             ? QuadGridOutcome.Grid(g)
             : QuadGridOutcome.NoGrid;
 

@@ -79,7 +79,9 @@ the source of every boundary point; `IdentifiedSources` is `~`.
 **The triangulation** is a constrained planar subdivision of `P` whose vertices include every
 boundary point, unchanged, and possibly interior points. **Lifting** composes it with `S`: each
 corner goes to its 3D vertex, the elements become flat triangles and quads, and the complex is
-`T / ~`. Elements with two corners on one pole segment collapse and are dropped.
+`T / ~`. Elements with two corners on one pole segment collapse and are dropped; the test is
+combinatorial (two corners with identified sources, `IsCollapsedElement`), the same relation that
+numbers the local vertices, so an element is dropped exactly when it loses a corner.
 
 **Orientation.** Work in the chart `chi(u, v) = (s u, v)` with `s` = layer 02's `FaceNormalSign`,
 the sign of the face normal against `PartialU x PartialV` (the face's `SameSense`, times -1 on the
@@ -229,8 +231,8 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_SharedPositionIsCopied` | a vertex or edge-sample point sits exactly at the shared point | exact by construction | E |
 | `Law_ProvenanceMatchesSource` | provenance is the vertex, the edge and sample parameter, or the face | exact by construction | E |
 | `Law_PointNormalIsFaceNormal` | a stored normal off collapsed lines is the face normal | `Tolerances.Angle` | W/E |
-| `Law_DroppedElementsArePoleCollapsed` | elements dropped = triangles with two corners on one collapsed line | exact | E |
-| `Law_CollapsedQuadsBecomeTriangles` | quads lost = quads with two corners on one collapsed line | exact | E |
+| `Law_DroppedElementsArePoleCollapsed` | elements dropped = triangles with two corners of identified sources | exact | E |
+| `Law_CollapsedQuadsBecomeTriangles` | quads lost = quads with two corners of identified sources | exact | E |
 | `Law_ElementFacesFaceNormal` | every element winds counter-clockwise about the face normal | exact sign | E |
 | `Law_ElementNormalAgreesWithSurface` | element normal within `SurfaceAngular` of the face normal at its parameter centroid, off collapsed lines | `SurfaceAngular` | W/E |
 | `Law_SurfaceEdgeNormalTurnWithinSurfaceAngular` | the normal turns by at most `SurfaceAngular` along every surface edge | `SurfaceAngular` | W/E |
@@ -327,12 +329,13 @@ knots); offset and rectangular-trimmed last.
 | `UvPointSource.FromEdge(Edge, Index)` | Index is 1 to count - 2; end samples are `FromVertex` | Each sample has one source; the count law is exact |
 | `UvPointSource.Pole(Side, Index)`: a domain side | the side of the face's parameter box along a collapsed iso-line (a cone apex lies inside the domain) | Layer 01 places the apex inside the cone's domain |
 | (unspecified signatures) | `LoopToUv(m, f, b: FaceBound, d)`, `Unwrap(m, f, l)`, `AddMissingSeamsAndPoles(m, f, loops, c)`, `OrientRegion(m, f, r)`, `TriangulateRegion(r, chart: FaceChart)`, `RefineToSurface(m, f, r, chart, t, c)`, `QuadGridIfRectangular(m, f, d, r, c): QuadGridOutcome` | Each takes what its contract needs |
-| (new, proposed) | types `UvSample`, `CoedgeUvRoute`, `FaceChart`, `QuadSides`, `QuadGridOutcome`; library block `UvRegions` beside `FaceMeshing`; functions `ChooseUvRoute`, `PcurveUv`, `ChartOf`, `MeanSpeed`, `RegionTolerance`, `UnorientedRegionOf`, `IdentifiedSources`, `IsOnCollapsedLine`, `ShareCollapsedLine`, `QuadSidesOf`, `QuadGrid`, `MatchingFloors`, `IsBlocking`, `SharedPosition`, `ProvenanceOfSource`, `ElementDeviation`, `EdgeNormalTurn`, `WindingSign` | Named in the laws and contracts above |
+| (new, proposed) | types `UvSample`, `CoedgeUvRoute`, `FaceChart`, `QuadSides`, `QuadGridOutcome`; library block `UvRegions` beside `FaceMeshing`; functions `ChooseUvRoute`, `PcurveUv`, `ChartOf`, `MeanSpeed`, `RegionTolerance`, `UnorientedRegionOf`, `IdentifiedSources`, `IsOnCollapsedLine`, `QuadSidesOf`, `QuadGrid`, `MatchingFloors`, `IsBlocking`, `SharedPosition`, `ProvenanceOfSource`, `ElementDeviation`, `EdgeNormalTurn`, `WindingSign` | Named in the laws and contracts above |
 | layer 06 `IsOnFace(p: MeshVertexProvenance, f)` | this layer's `IsFaceInteriorProvenance` has the same meaning | Both belong in layer 00 beside `MeshVertexProvenance`; renamed here to avoid a duplicate signature until they merge |
 | `Unwrap`: every point by continuity | the second use of every seam segment by the left rule, every other point by continuity; ensures `Law_SeamUsesOnOppositeCopies` | Continuity puts both uses on one copy when they meet at a pole or an apex (review F1) |
 | `AddMissingSeamsAndPoles`: requires every step below half a period | requires `IsUnwrappedStep` (a step touching a collapsed line may jump) and the left rule; ensures the left rule on its loops; pole segments run from the arriving to the leaving free parameter, windings counted after | The free parameter at a pole passes from one seam copy to the other |
 | `AddMissingSeamsAndPoles(m, f, loops, c)`: one loop per bound | one loop per bound of `MeshedBounds(m, f)` | Layer 02's vertex-loop reduction (review C6) |
 | theorem `ChartWindingIsFaceWinding` | dropped; `RefineToSurface` ensures `Law_ElementLiftsFacingFaceNormal`, `QuadGridIfRectangular` gives no grid when an element folds (`GridUnlessFolded`); new `ElementUvCentroid(t, k)`, `LiftedVectorArea`, `LiftsFacingFaceNormal` | The theorem is false for slivers (review H5) |
+| `IsPoleCollapsed(m, f, t, k)`, `PoleCollapsedTriangleCount`, `PoleCollapsedQuadCount`, `ShareCollapsedLine`: corners on one collapsed line | `IsCollapsedElement(t, k)`, `CollapsedTriangleCount(t)`, `CollapsedQuadCount(t)`: two corners with identified sources; `IsSurfaceEdge` compares local vertices; `ShareCollapsedLine` removed | The drop test agrees with Lift's identification (review M7) |
 | (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
 
 ## Fix wave, 2026-10-17
@@ -353,6 +356,8 @@ Applied:
 - H7: conjecture `NormalTurnBoundsCentroidDeviation` dropped as refuted; the unit-sphere sliver
   (turns at most 0.175 rad, flat normal 2.05 rad off) is recorded as its counterexample in the spec
   and in "SurfaceAngular is the normal turn"; refinement enforces the centroid test on its own.
+- M7: an element is dropped exactly when two of its corners have identified sources (one local
+  vertex), not by a distance test against a collapsed line.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 
