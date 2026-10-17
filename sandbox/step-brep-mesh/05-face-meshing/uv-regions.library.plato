@@ -16,6 +16,7 @@
 //  - The chart, tolerances, and signed areas
 //  - Orientation and the region
 //  - Periodic directions
+//  - Seam uses and the left rule
 //  - Collapsed lines
 //  - Boundary segments, simplicity, containment
 //  - Seam cuts
@@ -183,7 +184,8 @@ library UvRegions
     // the main path. A pcurve is used only when it is unambiguous: the edge's curve carries
     // exactly one pcurve on the face's surface (layer 02's PcurvesOnFace), and the edge is not a
     // seam of the face. A seam's two pcurves lie on one surface and the file does not say which
-    // use takes which; continuity in Unwrap assigns the two copies instead.
+    // use takes which; the seam is projected, and Unwrap assigns its two uses to the two copies
+    // by the left rule (section "Seam uses and the left rule").
     // Law_PcurveAgreesWithProjection checks a pcurve against the projection wherever the rule
     // reads the pcurve.
 
@@ -253,16 +255,23 @@ library UvRegions
     }
 
     // deferred: one scan along the loop. The first point is wrapped into the domain's window in
-    // each periodic direction (layer 00's Wrap); each later point is replaced by its copy nearest
-    // its predecessor (layer 00's NearestUnwrapped); a point on a collapsed line takes the free
+    // each periodic direction (layer 00's Wrap). A point that starts a step of a seam use whose
+    // twin step (the other use of the same seam segment, AreTwinSteps) is already placed takes
+    // the copy the left rule gives: its twin copy lies one period away and to the left of the
+    // step in the face's chart (FollowsLeftRule). Every other point takes its copy nearest its
+    // predecessor (layer 00's NearestUnwrapped). A point on a collapsed line takes the free
     // parameter (u at a sphere pole) from its predecessor, or from its successor when it is the
-    // first point.
+    // first point. Continuity alone is not enough: when the two uses of a seam meet at a pole or
+    // an apex nothing between them winds around the period, and both would land on one copy.
     Unwrap(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvLoop;
 
     // deferred: completes the face's unwrapped loops into closed ones
     // (research/MESHING-REQUIREMENTS.md sections 4.3, 4.4). Shifts whole loops by periods into one
     // window. Replaces each loop point on a collapsed line by the pole segment from the arriving
-    // to the leaving free parameter, its points FromVertex (the pole is that model vertex). Adds
+    // free parameter (its predecessor's) to the leaving one (its successor's, cyclically), its
+    // points FromVertex (the pole is that model vertex); with the seam uses on their copies by the
+    // left rule, a loop through a pole or an apex then closes in the plane, and the windings that
+    // decide synthetic cuts are counted after this replacement. Adds
     // the whole pole segment where loops wind around a collapsed line no loop reaches (Pole
     // points). Expands a vertex loop on a collapsed line into that segment. Cuts one synthetic
     // seam per periodic direction in which loops wind, joining two winding loops, or a winding
@@ -400,6 +409,16 @@ library UvRegions
     StepBelowHalfPeriod(dom: SurfaceDomain, a: UvCoordinate, b: UvCoordinate): Boolean
         => dom.U.StepBelowHalfPeriod(a.U, b.U) && dom.V.StepBelowHalfPeriod(a.V, b.V);
 
+    // True when the step from point i to point i + 1 of loop l (on face f) is below half a period
+    // in every periodic direction, or touches a collapsed line, where the free parameter may jump
+    // from the arriving seam copy to the leaving one; true when there is no such step.
+    IsUnwrappedStep(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean
+        => (i >= 0 && i + 1 < l.Points.Count)
+            ? ((m.IsOnCollapsedLine(f, l.Points[i]) || m.IsOnCollapsedLine(f, l.Points[i + 1]))
+                ? true
+                : m.SurfaceDomainOf(f).StepBelowHalfPeriod(l.Points[i], l.Points[i + 1]))
+            : true;
+
     // The whole number of periods a closed loop winds along one direction, from its first and
     // last parameter values. The loop's total displacement is (last - first) plus a closing step
     // shorter than half a period, and equals the winding times the period, so rounding
@@ -418,6 +437,70 @@ library UvRegions
     // How many periods loop l winds in v, in face f's surface domain.
     VWinding(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Integer
         => l.Points.IsEmpty ? 0 : m.SurfaceDomainOf(f).V.Winding(l.Points.First.V, l.Points.Last.V);
+
+    //==
+    // # Seam uses and the left rule
+    //
+    // A model seam is an edge that face f uses twice, once in each direction (layer 02's
+    // IsSeamEdgeOf). Its two uses are the two banks of one cut, one period apart, and the file
+    // does not record which use lies on which copy. research/STEP-BREP-MODEL.md section 4.3
+    // settles it: in the chart (s u, v), s = FaceNormalSign, the face lies to the left of every
+    // coedge as traversed, so the other bank of a seam use lies to its left. A use traversed with
+    // increasing v sits on the copy at the larger chart u, and a use traversed with decreasing v
+    // on the smaller; for a seam along u (a torus's second seam), a use traversed with increasing
+    // chart u sits on the smaller v copy. Continuity decides this only when something between the
+    // two uses winds around the period (the circles of a cylinder); at a pole or an apex nothing
+    // does, so the rule is applied to every seam use. Sources alone identify a seam step, so the
+    // rule needs no discretization.
+
+    // True when the points with sources a and b are neighbours along seam e of face f: two
+    // samples of e with indices one apart, a sample of e next to one of e's end vertices, or e's
+    // two end vertices (a seam drawn as one segment). In a loop that is not malformed this is
+    // exactly a segment of e's discretization.
+    AreSeamNeighbours(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex, a: UvPointSource, b: UvPointSource): Boolean
+        => m.IsSeamEdgeOf(f, e)
+            ? ((a.IsSampleOfEdge(e) && b.IsSampleOfEdge(e))
+                ? (a.SampleIndex - b.SampleIndex).Abs == 1
+                : ((a.IsSampleOfEdge(e) || b.IsSampleOfEdge(e))
+                    ? (m.IsEndVertexSource(e, a) || m.IsEndVertexSource(e, b))
+                    : m.JoinsEndsOf(e, a, b)))
+            : false;
+
+    // True when s is one of edge e's two end vertices.
+    IsEndVertexSource(m: BrepModel, e: BrepEdgeIndex, s: UvPointSource): Boolean
+        => s.IsVertexSource(m.Edges[e].Start) || s.IsVertexSource(m.Edges[e].End);
+
+    // True when steps i and j of loop l run along one segment of seam e of face f in opposite
+    // directions: the two uses of that segment. Precondition: i and j are positions of l, which
+    // has as many sources as points.
+    AreTwinSteps(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex, l: UvLoop, i: Integer, j: Integer): Boolean
+        => i != j
+            && m.AreSeamNeighbours(f, e, l.Sources[i], l.Sources.AtModulo(i + 1))
+            && l.Sources[i] == l.Sources.AtModulo(j + 1)
+            && l.Sources.AtModulo(i + 1) == l.Sources[j];
+
+    // True when b is a copy of a one whole period away: the same surface parameters modulo the
+    // periods, within the parameter tolerance at a, and exactly one period apart in exactly one
+    // periodic direction.
+    IsOnePeriodAway(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate): Boolean
+        => m.SurfaceDomainOf(f).SameParameter(a, b, m.PointTolerance(f, a))
+            && m.SurfaceDomainOf(f).U.Winding(a.U, b.U).Abs + m.SurfaceDomainOf(f).V.Winding(a.V, b.V).Abs == 1;
+
+    // True when c lies strictly to the left of the step from a to b in face f's oriented chart:
+    // the triangle (a, b, c) runs counter-clockwise there. An exact sign test; the chart's scales
+    // are positive and do not change it.
+    IsLeftOfStep(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, c: UvCoordinate): Boolean
+        => [a, b, c].Map(p => p.OrientedPoint(m.IsChartMirrored(f))).ShoelaceArea > 0.0;
+
+    // The left rule at the start of step i of loop l, whose twin step is j: the twin copy of
+    // point i (the end of step j) lies one period away and to the left of step i. Exempt when
+    // either copy lies on a collapsed line, whose free parameter belongs to the pole segment.
+    // Precondition: i and j are positions of l.
+    FollowsLeftRule(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer, j: Integer): Boolean
+        => (m.IsOnCollapsedLine(f, l.Points[i]) || m.IsOnCollapsedLine(f, l.Points.AtModulo(j + 1)))
+            ? true
+            : m.IsOnePeriodAway(f, l.Points[i], l.Points.AtModulo(j + 1))
+                && m.IsLeftOfStep(f, l.Points[i], l.Points.AtModulo(i + 1), l.Points.AtModulo(j + 1));
 
     //==
     // # Collapsed lines

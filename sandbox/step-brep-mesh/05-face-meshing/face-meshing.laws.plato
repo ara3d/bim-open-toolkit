@@ -136,14 +136,23 @@ library FaceMeshingLaws
             : false;
 
     // After Unwrap, consecutive points of a loop are closer than half a period in every periodic
-    // direction of face f's surface. The closing step from the last point to the first is not
-    // claimed: for a loop that winds it is a whole number of periods off.
+    // direction of face f's surface, except across a step that touches a collapsed line, where
+    // the free parameter passes from the arriving seam copy to the leaving one. The closing step
+    // from the last point to the first is not claimed: for a loop that winds it is a whole number
+    // of periods off.
     Law_UnwrappedStepBelowHalfPeriod(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean
-        => m.IsFaceIntact(f) ? m.Unwrap(f, l).StepBelowHalfPeriodAt(m.SurfaceDomainOf(f), i) : true;
+        => m.IsFaceIntact(f) ? m.IsUnwrappedStep(f, m.Unwrap(f, l), i) : true;
 
-    // True when the step from point i to point i + 1 is below half a period, or there is none.
-    StepBelowHalfPeriodAt(l: UvLoop, dom: SurfaceDomain, i: Integer): Boolean
-        => (i >= 0 && i + 1 < l.Points.Count) ? dom.StepBelowHalfPeriod(l.Points[i], l.Points[i + 1]) : true;
+    // The two uses of a model seam lie on opposite copies of the period, by the left rule of
+    // research/STEP-BREP-MODEL.md section 4.3: where steps i and j of a loop of face f run along
+    // one segment of seam e in opposite directions, the twin copy of the start of step i (the end
+    // of step j) lies one period away and to the left of step i in the face's chart. Points on a
+    // collapsed line are exempt. The law holds for Unwrap's loops and the region's.
+    Law_SeamUsesOnOppositeCopies(m: BrepModel, f: BrepFaceIndex, l: UvLoop, e: BrepEdgeIndex, i: Integer, j: Integer): Boolean
+        => (m.IsFaceIntact(f) && m.IsEdgeIntact(e) && l.Points.Count == l.Sources.Count
+            && l.Points.IsValidIndex(i) && l.Points.IsValidIndex(j))
+            ? (m.AreTwinSteps(f, e, l, i, j) ? m.FollowsLeftRule(f, l, i, j) : true)
+            : true;
 
     //==
     // # The region

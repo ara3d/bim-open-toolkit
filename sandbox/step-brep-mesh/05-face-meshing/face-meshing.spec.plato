@@ -128,8 +128,11 @@ spec Unwrap(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvLoop
     ensures forall (i: Integer) in l.Points.Count.Range: Law_UnwrapKeepsSources(m, f, l, i);
     ensures forall (i: Integer) in l.Points.Count.Range: Law_UnwrapMovesByWholePeriods(m, f, l, i);
     ensures forall (i: Integer) in l.Points.Count.Range: Law_UnwrappedStepBelowHalfPeriod(m, f, l, i);
+    ensures forall (e: BrepEdgeIndex) in m.FaceEdges(f):
+        forall (i: Integer) in l.Points.Count.Range:
+            forall (j: Integer) in l.Points.Count.Range: Law_SeamUsesOnOppositeCopies(m, f, result, e, i, j);
     measure l.Points.Count;
-    deferred "one scan: each point replaced by its periodic copy nearest its predecessor; free parameter on a collapsed line from the neighbour";
+    deferred "one scan: a seam use whose twin is placed takes its copy by the left rule; every other point its periodic copy nearest its predecessor; free parameter on a collapsed line from the neighbour";
 }
 
 spec AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion
@@ -138,8 +141,11 @@ spec AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop
     requires c.IsWellFormed;
     requires loops.Count == m.Faces[f].Bounds.Count;
     requires forall (k: Integer) in loops.Count.Range:
-        forall (i: Integer) in loops[k].Points.Count.Range:
-            loops[k].StepBelowHalfPeriodAt(m.SurfaceDomainOf(f), i);
+        forall (i: Integer) in loops[k].Points.Count.Range: m.IsUnwrappedStep(f, loops[k], i);
+    requires forall (k: Integer) in loops.Count.Range:
+        forall (e: BrepEdgeIndex) in m.FaceEdges(f):
+            forall (i: Integer) in loops[k].Points.Count.Range:
+                forall (j: Integer) in loops[k].Points.Count.Range: Law_SeamUsesOnOppositeCopies(m, f, loops[k], e, i, j);
     ensures result.IsIndexedRegion;
     ensures forall (k: Integer) in result.NumberOfLoops.Range: Law_RegionLoopClosesInPlane(m, f, result, k);
     ensures forall (i: Integer) in result.Outer.Points.Count.Range: Law_SeamCutCopiesRunOpposite(result, i);
@@ -149,8 +155,12 @@ spec AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop
     ensures forall (k: Integer) in result.NumberOfLoops.Range:
         forall (i: Integer) in result.LoopAt(k).Points.Count.Range:
             result.LoopAt(k).Sources[i].IsPolePoint ? m.IsOnCollapsedLine(f, result.LoopAt(k).Points[i]) : true;
+    ensures forall (k: Integer) in result.NumberOfLoops.Range:
+        forall (e: BrepEdgeIndex) in m.FaceEdges(f):
+            forall (i: Integer) in result.LoopAt(k).Points.Count.Range:
+                forall (j: Integer) in result.LoopAt(k).Points.Count.Range: Law_SeamUsesOnOppositeCopies(m, f, result.LoopAt(k), e, i, j);
     measure SumOf(loops.Map(l => l.Points.Count.ToNumber));
-    deferred "seam unwrapping across loops, pole-segment insertion, synthetic seam cut between winding loops, outer loop by containment";
+    deferred "whole-loop period shifts, pole-segment insertion from the arriving to the leaving free parameter, synthetic seam cut between winding loops, outer loop by containment";
 }
 
 spec OrientRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): UvRegion

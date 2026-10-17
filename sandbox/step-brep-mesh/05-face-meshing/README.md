@@ -18,7 +18,7 @@ Algorithms are deferred; every deferred function has a contract in `face-meshing
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
-| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 39 laws and their guards |
+| `face-meshing.laws.plato` | library `FaceMeshingLaws`: 40 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 13 functions, 3 theorems, 2 conjectures |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
@@ -42,9 +42,21 @@ pcurve (the rule is below). It is the only place a 3D point becomes a parameter 
 `Law_LoopPointLiftsToSharedPoint` checks that `S` maps each one back within the length tolerance.
 
 **Unwrapping is lifting through the covering map.** A loop in `M` lifts to a path in the plane:
-`Unwrap` replaces each point by the copy nearest its predecessor. The path closes when the loop
-winds zero times around each periodic direction. A circle around a cylinder winds once, so its lift
-ends one period from where it began (`Winding`, `UWinding`, `VWinding`).
+`Unwrap` replaces each point by the copy nearest its predecessor, except on a model seam, where the
+left rule below picks the copy. The path closes when the loop winds zero times around each periodic
+direction. A circle around a cylinder winds once, so its lift ends one period from where it began
+(`Winding`, `UWinding`, `VWinding`).
+
+**The two uses of a model seam lie on opposite copies, by the left rule.** In the chart
+`(s u, v)` (below), the face lies to the left of every coedge as traversed
+(research/STEP-BREP-MODEL.md section 4.3), so the other bank of a seam use lies to its left: the use
+traversed with increasing `v` sits on the copy at the larger chart `u`, the one traversed with
+decreasing `v` on the smaller. `Unwrap` applies this to the second use of every seam segment
+(`AreTwinSteps`, `FollowsLeftRule`), and `Law_SeamUsesOnOppositeCopies` states it. Continuity would
+decide it only when something between the two uses winds around the period, as the circles of a
+cylinder do. When the uses meet at a pole or an apex nothing does: a sphere bounded by one seam, or a
+cone bounded by its base circle and a seam to its apex, would put both uses on one copy, a zero-width
+slit that no refinement clears.
 
 **A seam cut chooses a fundamental domain.** When loops wind, `Omega` does not embed in the plane.
 Cutting `M` along an arc from one winding loop to another (or to a pole) gives a region that does,
@@ -81,8 +93,8 @@ corner order from parameter space to space, and the theorem `ChartWindingIsFaceW
 (research/STEP-BREP-MODEL.md section 6.4). `ChooseUvRoute` reads an edge's samples from a pcurve
 when the edge's curve carries exactly one pcurve on the face's surface (layer 02's `PcurvesOnFace`)
 and the edge is not a seam of the face; otherwise it projects. A seam's two pcurves lie on the same
-surface, and the file does not record which use takes which; continuity in `Unwrap` assigns the two
-copies anyway. On the pcurve route the parameter is found by one-dimensional inverse evaluation on
+surface, and the file does not record which use takes which; the left rule in `Unwrap` assigns the
+two copies. On the pcurve route the parameter is found by one-dimensional inverse evaluation on
 the pcurve lifted through the surface (layer 01's `ClosestParameter` on a `PcurveIndex`), which is
 robust where surface projection is not. `Law_PcurveAgreesWithProjection` states that the two routes
 give the same parameters up to whole periods, within the parameter tolerance at the point, except on
@@ -184,7 +196,8 @@ Error above; "test" marks a law about the library's own functions, run on witnes
 | `Law_PcurveAgreesWithProjection` | where the pcurve is read, pcurve and projection agree up to periods, off collapsed lines | parameter tolerance at the point | W/E |
 | `Law_UnwrapKeepsSources` | `Unwrap` keeps every source in order | exact | test |
 | `Law_UnwrapMovesByWholePeriods` | `Unwrap` moves points off collapsed lines by whole periods only | parameter tolerance at the point | test |
-| `Law_UnwrappedStepBelowHalfPeriod` | consecutive unwrapped points are closer than half a period per periodic direction | exact | E |
+| `Law_UnwrappedStepBelowHalfPeriod` | consecutive unwrapped points are closer than half a period per periodic direction, except across a step touching a collapsed line | exact | E |
+| `Law_SeamUsesOnOppositeCopies` | the twin copy of a seam-use point lies one period away and to the left of the use in the chart | parameter tolerance at the point; exact sign | E |
 | `Law_RegionLoopClosesInPlane` | every loop of the region winds zero times in u and in v | exact | E |
 | `Law_UvRegionWindingPositive` | the outer loop has positive signed area in the chart | exact sign | E |
 | `Law_UvHoleWindingNegative` | every hole that is not a point hole has negative signed area in the chart | exact sign | E |
@@ -255,8 +268,8 @@ Beyond the fixed contract, the layer calls these, as declared on 2026-10-17:
    not cut the region there; `AddMissingSeamsAndPoles` has no outcome through which to diagnose it.
    Either the region type gains a diagnostic, or `MeshFace` checks `CollapsedAt` against the region
    first.
-2. **Seam pcurves.** Both uses of a seam are projected. A later version can read the two pcurves and
-   assign them by the left rule (research/STEP-BREP-MODEL.md section 4.3).
+2. **Seam pcurves.** Both uses of a seam are projected and placed on their copies by the left rule.
+   A later version can read the two pcurves instead and assign them by the same rule.
 3. **The region tolerance near a pole.** The chart's mean speed over-estimates the speed near a pole,
    which makes the region's tolerance smaller there: separation is judged a little strictly. A
    per-segment tolerance would be exact and costs a surface derivative per segment.
@@ -276,7 +289,7 @@ Beyond the fixed contract, the layer calls these, as declared on 2026-10-17:
 | Step | Algorithm family | Cost (n boundary points, N mesh points) |
 |---|---|---|
 | `LoopToUv` | Newton projection seeded by the previous sample; closed form on analytic surfaces | O(n) evaluations |
-| `Unwrap` | one scan, nearest periodic copy | O(n) |
+| `Unwrap` | one scan, nearest periodic copy; the second use of each seam segment by the left rule (its twin found through a hash on the source) | O(n) |
 | `AddMissingSeamsAndPoles` | window shift, pole-segment insertion, one straight cut per winding direction, outer loop by containment | O(n + L^2) for L loops |
 | simplicity (`IsSimpleRegion`) | sweep line; the definition is all pairs | O(n log n); O(n^2) as written |
 | `TriangulateRegion` | constrained Delaunay (CDT library, Triangle `-p`), even-odd hole removal, Shewchuk predicates | O(n log n) |
@@ -307,6 +320,21 @@ knots); offset and rectangular-trimmed last.
 | (unspecified signatures) | `LoopToUv(m, f, b: FaceBound, d)`, `Unwrap(m, f, l)`, `AddMissingSeamsAndPoles(m, f, loops, c)`, `OrientRegion(m, f, r)`, `TriangulateRegion(r, chart: FaceChart)`, `RefineToSurface(m, f, r, chart, t, c)`, `QuadGridIfRectangular(m, f, d, r, c): QuadGridOutcome` | Each takes what its contract needs |
 | (new, proposed) | types `UvSample`, `CoedgeUvRoute`, `FaceChart`, `QuadSides`, `QuadGridOutcome`; library block `UvRegions` beside `FaceMeshing`; functions `ChooseUvRoute`, `PcurveUv`, `ChartOf`, `MeanSpeed`, `RegionTolerance`, `UnorientedRegionOf`, `IdentifiedSources`, `IsOnCollapsedLine`, `ShareCollapsedLine`, `QuadSidesOf`, `QuadGrid`, `MatchingFloors`, `IsBlocking`, `SharedPosition`, `ProvenanceOfSource`, `ElementDeviation`, `EdgeNormalTurn`, `WindingSign` | Named in the laws and contracts above |
 | layer 06 `IsOnFace(p: MeshVertexProvenance, f)` | this layer's `IsFaceInteriorProvenance` has the same meaning | Both belong in layer 00 beside `MeshVertexProvenance`; renamed here to avoid a duplicate signature until they merge |
+| `Unwrap`: every point by continuity | the second use of every seam segment by the left rule, every other point by continuity; ensures `Law_SeamUsesOnOppositeCopies` | Continuity puts both uses on one copy when they meet at a pole or an apex (review F1) |
+| `AddMissingSeamsAndPoles`: requires every step below half a period | requires `IsUnwrappedStep` (a step touching a collapsed line may jump) and the left rule; ensures the left rule on its loops; pole segments run from the arriving to the leaving free parameter, windings counted after | The free parameter at a pole passes from one seam copy to the other |
+| (new) | `Law_SeamUsesOnOppositeCopies`, `AreSeamNeighbours`, `IsEndVertexSource`, `AreTwinSteps`, `IsOnePeriodAway`, `IsLeftOfStep`, `FollowsLeftRule`, `IsUnwrappedStep`; `StepBelowHalfPeriodAt` removed | The left rule and its law (review M8) |
+
+## Fix wave, 2026-10-17
+
+Findings from `reviews/MATH-REVIEW-layers-0-6.md`, the lower-layer findings of layers 07 and 08, and
+`reviews/FIX-WAVE.md`, one commit each.
+
+Applied:
+
+- F1, M8: seam uses placed by the left rule of research/STEP-BREP-MODEL.md 4.3, not by continuity;
+  `Law_SeamUsesOnOppositeCopies`; a step touching a collapsed line is exempt from the half-period
+  law; pole segments from the arriving to the leaving free parameter. The seamed sphere and the
+  seamed cone now close in the plane.
 
 ## Gate
 
