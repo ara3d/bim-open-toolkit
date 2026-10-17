@@ -68,12 +68,25 @@ library BrepChecking
         => (DiscretizationCriteria.StructuralCriteria, Number.MaxValue, Angle(Number.Pi), false);
 
     // Tolerances at sixteen times the floating-point resolution of a mesh's
-    // size, for checking a mesh that arrives without its model's tolerances.
+    // coordinates (layer 0's rule: rounding is judged at the coordinate
+    // extent, not the model size), for checking a mesh that arrives without
+    // its model's tolerances; the two parameter floors from layer 0's floor
+    // functions.
     ResolutionTolerances(mesh: ModelMesh): Tolerances
-        => Tolerances(
-            LengthTolerance(16.0 * ResolutionAt(mesh.Positions.ModelSize)),
+    {
+        var extent = mesh.Positions.CoordinateExtentOf;
+        var length = LengthTolerance(16.0 * ResolutionAt(extent));
+        return Tolerances(
+            length,
             AngleTolerance(Angle(16.0 * ResolutionAt(Number.Tau))),
-            ParameterTolerance(16.0 * ResolutionAt(mesh.Positions.ModelSize)));
+            LengthParameterFloor(length, extent),
+            AngleParameterFloor(length, mesh.Positions.ModelSize, extent));
+    }
+
+    // The largest absolute coordinate of the points, 0 for none: the extent
+    // at which their rounding is judged.
+    CoordinateExtentOf(points: Array<Point3D>): Number
+        => points.Reduce(0.0, (e, p) => e.Max(p.X.Abs).Max(p.Y.Abs).Max(p.Z.Abs));
 
     //==
     // # The file and the model

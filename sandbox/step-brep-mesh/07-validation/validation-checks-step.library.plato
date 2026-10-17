@@ -187,10 +187,10 @@ library BrepCheckingStep
     // # Units, sense and folding (self-tests)
 
     // Law_CirclePeriodIsTwoPi at every decoded curve, with the decoded
-    // model's parameter floor.
+    // model's angle parameter floor (a circle's parameter is an angle).
     Check_CirclePeriodIsTwoPi(f: Part21File): Check
         => CheckAll("Law_CirclePeriodIsTwoPi", f.DecodeBrep.Model.Geometry.Curves.Count,
-            k => Law_CirclePeriodIsTwoPi(f, k, f.DecodeBrep.Model.Tolerances.Parameter), k => Provenance.Nowhere);
+            k => Law_CirclePeriodIsTwoPi(f, k, f.DecodeBrep.Model.Tolerances.AngleParameter), k => Provenance.Nowhere);
 
     // Law_AngleUnitIsReported at every context of the file (a position past
     // the used contexts is vacuous).

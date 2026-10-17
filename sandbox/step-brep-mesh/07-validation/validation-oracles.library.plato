@@ -391,13 +391,13 @@ library BrepOracles
     // going down; with sigma = (below ? -1 : +1) times FaceNormalSign, the side
     // runs with sigma > 0 in (0, P] and with sigma < 0 in [-P, 0), the
     // representative of start - arrive modulo the period P, a whole period
-    // when the two are the same parameter within the model's parameter floor
+    // when the two are the same parameter within u's parameter floor
     // (the face goes all the way round the pole). An aperiodic u gives the
     // plain difference.
     PoleDeltaU(m: BrepModel, f: BrepFaceIndex, before: UvCoordinate, arrive: UvCoordinate, start: UvCoordinate): Number
     {
         var period = m.Geometry.Domain(m.Faces[f].Surface).U.Periodicity.PeriodOr(0.0);
-        var floor = m.Tolerances.Parameter.Value;
+        var floor = m.Geometry.ParameterFloorAlong(m.Faces[f].Surface, SurfaceParameter.ParameterU, m.Tolerances).Value;
         var sigma = (before.V < arrive.V ? -1 : 1) * m.FaceNormalSign(f);
         var w = period > 0.0 ? (start.U - arrive.U).Wrap(period) : start.U - arrive.U;
         var whole = period > 0.0 ? (w <= floor || period - w <= floor) : false;
@@ -431,11 +431,12 @@ library BrepOracles
     // # Poles, windings and cuts
 
     // True when uv lies on a collapsed line in v of face f's surface (a pole,
-    // an apex): within the model's parameter floor of a value CollapsedAt
+    // an apex): within v's parameter floor of a value CollapsedAt
     // lists, measured around the circle when v is periodic.
     IsAtVCollapse(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate): Boolean
         => m.Geometry.CollapsedAt(m.Faces[f].Surface, SurfaceParameter.ParameterV, m.Tolerances)
-            .Any(c => m.Geometry.Domain(m.Faces[f].Surface).V.SameParameter(uv.V, c, m.Tolerances.Parameter));
+            .Any(c => m.Geometry.Domain(m.Faces[f].Surface).V.SameParameter(uv.V, c,
+                m.Geometry.ParameterFloorAlong(m.Faces[f].Surface, SurfaceParameter.ParameterV, m.Tolerances)));
 
     // The pole side of a vertex loop at vertex v of face f: a whole period in
     // u at the vertex's collapsed line, run by the pole rule (the face lies

@@ -40,10 +40,13 @@ library BrepCheckingTopology
     Check_AngleTolerancePositive(m: BrepModel): Check
         => CheckOnce("Law_AngleTolerancePositive", Law_AngleTolerancePositive(m.Tolerances.Angle));
 
-    // Law_ParameterTolerancePositive on the model's parameter floor.
-    // Topological group: Error.
+    // Law_ParameterTolerancePositive on both of the model's parameter floors,
+    // the length floor then the angle floor (layer 0's per-dimension floors).
+    // Structure: Error.
     Check_ParameterTolerancePositive(m: BrepModel): Check
-        => CheckOnce("Law_ParameterTolerancePositive", Law_ParameterTolerancePositive(m.Tolerances.Parameter));
+        => CheckAll("Law_ParameterTolerancePositive", 2,
+            k => Law_ParameterTolerancePositive(k == 0 ? m.Tolerances.LengthParameter : m.Tolerances.AngleParameter),
+            k => Provenance.Nowhere);
 
     // Law_LengthToleranceResolvable at the model's size (the diagonal of the
     // bounding box of its vertex points): Worst is the arithmetic resolution

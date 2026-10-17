@@ -71,13 +71,19 @@ only place a level becomes a set of checks.
 
 ## Severity rules
 
-Severity comes from layer 0's `SeverityOf(ConstraintGroup, worst, bound)`, through three builders:
+Severity comes from layer 0's `SeverityOf(ConstraintGroup, worst, bound)`, with the bound the
+check itself carries (`Check.Bound`, the bound of the sample the fold kept), through four builders:
 
-- `ExactReport(check, message)`: group `Topological`, always Error.
-- `MeasuredReport(check, bound, message)`: group `Geometric`, Warning while `worst < 10 bound`,
-  Error beyond. A check whose law layer 2 or 3 grades a Warning is reported with bound 1 against
-  its `Worst` of 1 (layer 0's `CheckExact`), which gives a Warning.
-- `QualityReport(check, bound, message)`: group `Quality`, always Info.
+- `ExactReport(check, message)`: group `Topological`, always Error. Also the oracle comparisons,
+  whose diagnostics still carry the measure and the per-face or per-body envelope.
+- `MeasuredReport(check, message)`: group `Geometric`, Warning while `worst < 10 bound`, Error
+  beyond.
+- `WarningReport(check, message)`: an exact law its layer grades a Warning (two of layer 3's file
+  laws, three WHERE rules); `AsWarning` restates the failure as Worst 2 against bound 1.
+- `QualityReport(check, message)`: group `Quality`, always Info.
+
+A measured law whose bound differs by sample (a face's area envelope, a body's tube) folds with
+`CheckAllWithinEach`, and layer 0's `WorseOf` keeps the sample furthest past its own bound.
 
 `IsClean` means no Error. A Geometric warning therefore never fails a run; ten times the bound
 does.
@@ -344,8 +350,8 @@ Theorems in `validation.spec.plato`: `SampledCheckAgreesWithLaw`, `HigherLevelCl
   a table of the 17 measured checks, the Warning and Info grades from the check's comment. Rerun the
   script (kept in the session scratchpad as `genreports.py`) whenever a check is added; it belongs
   under `tools/` once the design leaves the sandbox.
-- **Bounds repeated.** `Check` has no `Bound` field, so each measured check's bound is written twice:
-  in the check and in its report. See "Findings in lower layers".
+- **Bounds written once.** Each measured check's bound is written in the check alone; the report
+  reads it from `Check.Bound`.
 - **File size.** The per-layer check files hold 30 to 120 declarations, above the 12 the brief
   suggests. They are grouped by the layer whose laws they check, so one file changes when one layer's
   laws change; splitting by section would scatter that.
@@ -421,3 +427,11 @@ one commit each.
 | Conjecture `TighterChordalNeverIncreasesDeviation` is false (layer 8, decision 12: on `y = h sin(2 pi x)` the nested sub-span from 0 to 3/4 deviates about 1.33 h, the whole span h) | dropped; `Law_TighterChordalNeverIncreasesSagitta` stays, restricted to lines and circles, where a circle's uniform split makes the sampled sagitta increase with the segment's angle |
 | A face the mesher refused made every whole-shell cross check fail too (Euler, closure, angle defects, volume signs), so one bad face gave several Errors at its shell | `Law_EveryFaceIsMeshed` reports a face without an element at the face; the whole-shell laws take the hypothesis that the shell's mesh is complete (`IsCompleteShellMesh`), and `Law_SolidVolumeWithinTube` that every shell of the body is |
 | A witness with one planted bad face (layer 8, "What is left open" item 2) | `Witness_BoxWithPolyLoopSheet`, its expected diagnostics in its comment and the table above, and five laws that run layer 8's `Law_FailedFaceLeavesOthersUnchanged` at it non-vacuously |
+| `Check.Bound` (FIX-WAVE layer 0 table; review C9) | the report builders take no bound; `WarningReport` and `AsWarning` replace "bound 1 against Worst 1" for Warning-graded exact laws; `Check_FaceAreaMatchesOracle` and `Check_SolidVolumeWithinTube` are measured against their per-face and per-body envelopes with `CheckAllWithinEach` |
+| Layer 0's split parameter floor | `ResolutionTolerances` builds both floors from layer 0's floor functions at the mesh's coordinate extent; `Check_ParameterTolerancePositive` checks both floors; `Check_CirclePeriodIsTwoPi` takes the angle floor; the pole and collapse tests take layer 1's `ParameterFloorAlong` |
+| Layer 0's new `Provenance` cases | `MeshVertexOf` and `MeshElementOf` gain the `WholeInput`, `KernelCurve`, `KernelSurface` arms |
+| Layer 4's law changes | `Check_AtLeastTwoParameters` becomes `Check_EmptyOrAtLeastTwoParameters`; `Check_UndiscretizedExactlyWhenUnusable` added; `Check_ImageFollowsPcurve`, `PcurveGapAt` and `Law_ImageFollowsPcurveCheckAgrees` dropped with the law |
+| Layer 6's rounding laws lose their tolerance argument | eight checks drop their `Tolerances` parameter and argument |
+
+These five landed in one commit: each alone fails the gate against the refreshed snapshot, since
+the reports file calls every layer's checks.

@@ -9,7 +9,7 @@
 // any entry). Model laws use the criteria the polylines were made under;
 // library laws are self-tests on the entries in hand. Where layer 4 exports
 // the measure a criterion compares (SampledSagitta, TangentDeviation,
-// TurningAngle, SegmentLength, PcurveGap, ImageChordDeviations) the check
+// TurningAngle, SegmentLength, ImageChordDeviations) the check
 // folds it with CheckWithin against the criterion widened as the law widens
 // it, and a segment the refinement floor stopped measures 0, the law's
 // exemption; so a failure is a Warning below ten times the bound and an Error
@@ -33,9 +33,15 @@ library BrepCheckingDiscretization
     Check_ParameterCountEqualsPointCount(d: EdgeDiscretizations): Check
         => d.CheckEntries("Law_ParameterCountEqualsPointCount", x => Law_ParameterCountEqualsPointCount(x));
 
-    // Law_AtLeastTwoParameters at every entry. Structure: Error.
-    Check_AtLeastTwoParameters(d: EdgeDiscretizations): Check
-        => d.CheckEntries("Law_AtLeastTwoParameters", x => Law_AtLeastTwoParameters(x));
+    // Law_EmptyOrAtLeastTwoParameters at every entry. Structure: Error.
+    Check_EmptyOrAtLeastTwoParameters(d: EdgeDiscretizations): Check
+        => d.CheckEntries("Law_EmptyOrAtLeastTwoParameters", x => Law_EmptyOrAtLeastTwoParameters(x));
+
+    // Law_UndiscretizedExactlyWhenUnusable at every entry, under the
+    // criteria the entries were made for. Structure: Error.
+    Check_UndiscretizedExactlyWhenUnusable(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria): Check
+        => CheckAll("Law_UndiscretizedExactlyWhenUnusable", d.ByEdge.Count,
+            i => Law_UndiscretizedExactlyWhenUnusable(m, d, c, i), i => AtEdge(i));
 
     // Law_ParametersStrictlyMonotone at every entry and parameter. Structure:
     // Error.
@@ -159,14 +165,6 @@ library BrepCheckingDiscretization
     Check_ImageHasOnePointPerPoint(m: BrepModel, d: EdgeDiscretizations): Check
         => CheckGrid("Law_ImageHasOnePointPerPoint", d.ByEdge.Count, m.MostImages,
             (k, j) => m.ImageAt(d.ByEdge[k], j, x => Law_ImageHasOnePointPerPoint(m, d.ByEdge[k], x)),
-            (k, j) => AtEdge(k));
-
-    // Law_ImageFollowsPcurve at every entry, image, and point, measured by
-    // PcurveGap against Tolerances.Parameter. Geometry: W/E.
-    Check_ImageFollowsPcurve(m: BrepModel, d: EdgeDiscretizations): Check
-        => CheckGridWithin("Law_ImageFollowsPcurve", d.ByEdge.Count, m.MostImages * d.MostPoints,
-            (k, j) => m.PcurveGapAt(d.ByEdge[k], j / d.MostPoints, j % d.MostPoints),
-            m.Tolerances.Parameter.Value,
             (k, j) => AtEdge(k));
 
     // Law_ImagePointReevaluates at every entry, image, and point. Geometry,
@@ -318,14 +316,6 @@ library BrepCheckingDiscretization
     // Law_SegmentWithinMaxLength's guard and exemption.
     LengthExcess(m: BrepModel, x: EdgeDiscretization, c: DiscretizationCriteria, i: Integer): Number
         => m.IsEvaluableSegment(x, i) ? (m.IsAtLengthFloor(x, c, i) ? 0.0 : x.SegmentLength(i) - m.Tolerances.Length.Value) : 0.0;
-
-    // PcurveGap of point i in image j behind Law_ImageFollowsPcurve's guard.
-    PcurveGapAt(m: BrepModel, x: EdgeDiscretization, j: Integer, i: Integer): Number
-        => (m.IsEvaluable(x) && x.Points.IsValidIndex(i))
-            ? (m.EdgeImages(x.Edge).IsValidIndex(j)
-                ? (m.IsImageEvaluable(m.EdgeImages(x.Edge)[j]) ? m.PcurveGap(x, m.EdgeImages(x.Edge)[j], i) : 0.0)
-                : 0.0)
-            : 0.0;
 
     // The image chord deviation of segment i in image j behind
     // Law_ImageChordWithinChordal's guard and exemption.

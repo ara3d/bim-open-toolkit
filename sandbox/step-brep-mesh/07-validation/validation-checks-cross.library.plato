@@ -139,13 +139,16 @@ library BrepCrossChecking
         => Direction3D(m.Geometry.NormalOr(m.Faces[f].Surface, uv, fallback).Vector * (m.Faces[f].SameSense ? 1.0 : -1.0));
 
     // True when uv lies on a collapsed line of face f's surface in either
-    // parameter, within the parameter floor: where the surface normal is a
+    // parameter, within that parameter's floor (layer 1's ParameterFloorAlong,
+    // angle or length by the parameter's kind): where the surface normal is a
     // limit, which no normal law judges.
     IsOnAnyCollapse(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate): Boolean
         => m.Geometry.CollapsedAt(m.Faces[f].Surface, SurfaceParameter.ParameterV, m.Tolerances)
-                .Any(c => m.Geometry.Domain(m.Faces[f].Surface).V.SameParameter(uv.V, c, m.Tolerances.Parameter))
+                .Any(c => m.Geometry.Domain(m.Faces[f].Surface).V.SameParameter(uv.V, c,
+                    m.Geometry.ParameterFloorAlong(m.Faces[f].Surface, SurfaceParameter.ParameterV, m.Tolerances)))
             || m.Geometry.CollapsedAt(m.Faces[f].Surface, SurfaceParameter.ParameterU, m.Tolerances)
-                .Any(c => m.Geometry.Domain(m.Faces[f].Surface).U.SameParameter(uv.U, c, m.Tolerances.Parameter));
+                .Any(c => m.Geometry.Domain(m.Faces[f].Surface).U.SameParameter(uv.U, c,
+                    m.Geometry.ParameterFloorAlong(m.Faces[f].Surface, SurfaceParameter.ParameterU, m.Tolerances)));
 
     // True when element e of the mesh can be compared with its face: valid
     // corners and corner attributes, its face a face of the model, and the
@@ -295,20 +298,49 @@ library BrepCrossChecking
     //==
     // # Checks: oracles (oracle)
 
-    // Law_FaceAreaMatchesOracle at every face, the law's Boolean folded: each
-    // face has its own bound (FaceAreaTolerance), so no one bound grades the
-    // excess ten times over. Oracle family: Error.
+    // Law_FaceAreaMatchesOracle at every face, measured by FaceAreaGap
+    // against the face's own envelope (FaceAreaTolerance), which the check
+    // keeps as its bound; 0 against 0 where the law is vacuous. Oracle
+    // family: Error.
     Check_FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => m.CheckFaces("Law_FaceAreaMatchesOracle", f => Law_FaceAreaMatchesOracle(m, mesh, c, f));
+        => CheckAllWithinEach("Law_FaceAreaMatchesOracle", m.Faces.Count,
+            f => m.IsFaceAreaJudged(c, BrepFaceIndex(f)) ? m.FaceAreaGap(mesh, BrepFaceIndex(f)) : 0.0,
+            f => m.IsFaceAreaJudged(c, BrepFaceIndex(f)) ? m.FaceAreaTolerance(BrepFaceIndex(f), c) : 0.0,
+            f => AtFace(f));
+
+    // True when face f's mesh area is judged: the oracle has a number and
+    // the envelope is finite (it is not at a cone's apex, where the
+    // curvature bound is infinite and the law vacuous).
+    IsFaceAreaJudged(m: BrepModel, c: FaceMeshingCriteria, f: BrepFaceIndex): Boolean
+        => m.Oracle_FaceAreaByGreen(f).IsFinite ? m.FaceAreaTolerance(f, c).IsFinite : false;
 
     // Law_AngleDefectMatchesBrepEuler at every shell. Oracle family,
     // structure: Error.
     Check_AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh): Check
         => m.CheckShells("Law_AngleDefectMatchesBrepEuler", s => Law_AngleDefectMatchesBrepEuler(m, mesh, s));
 
-    // Law_SolidVolumeWithinTube at every body. Oracle family: Error.
+    // Law_SolidVolumeWithinTube at every body, measured by the gap between
+    // the mesh volume and the divergence volume against the body's own tube
+    // (TubeVolume), which the check keeps as its bound; 0 against 0 where the
+    // law is vacuous. Oracle family: Error.
     Check_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => m.CheckBodies("Law_SolidVolumeWithinTube", b => Law_SolidVolumeWithinTube(m, mesh, c, b));
+        => CheckAllWithinEach("Law_SolidVolumeWithinTube", m.Bodies.Count,
+            b => m.IsSolidVolumeJudged(mesh, c, BodyIndex(b))
+                ? (m.BodyMeshVolume(mesh, BodyIndex(b)) - m.Oracle_BodyVolume(BodyIndex(b))).Abs
+                : 0.0,
+            b => m.IsSolidVolumeJudged(mesh, c, BodyIndex(b)) ? m.TubeVolume(BodyIndex(b), c) : 0.0,
+            b => AtBody(b));
+
+    // True when body b's mesh volume is judged: the hypotheses of
+    // Law_SolidVolumeWithinTube, and a finite tube.
+    IsSolidVolumeJudged(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
+        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
+            ? ((m.IsShellInRange(m.Bodies[b].OuterShellOf)
+                    ? (m.BodyShells(b).All(s => m.IsCompleteShellMesh(mesh, s)) ? m.Oracle_BodyVolume(b).IsFinite : false)
+                    : false)
+                ? m.TubeVolume(b, c).IsFinite
+                : false)
+            : false;
 
     // Law_ReducedEulerMatchesOracle at every shell. Oracle family, structure:
     // Error.
@@ -358,9 +390,9 @@ library BrepCrossChecking
                 ExactReport(m.Check_VoidShellVolumeNegative(mesh),
                     "The mesh of a void shell does not enclose a negative volume: its elements face out of the void.")]);
             GeometryChecks => MergeAll([
-                MeasuredReport(m.Check_VertexReevaluatesFromProvenance(mesh), m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_VertexReevaluatesFromProvenance(mesh),
                     "A mesh vertex is farther than the length tolerance from the model point its provenance names."),
-                MeasuredReport(m.Check_CornerNormalIsFaceNormal(mesh), m.Tolerances.Angle.Value.Radians,
+                MeasuredReport(m.Check_CornerNormalIsFaceNormal(mesh),
                     "A corner normal differs from the face normal at the corner's parameters by more than the angle tolerance.")]);
             QualityChecks => Report.Empty;
             OracleChecks => ExactReport(m.Check_AngleDefectMatchesBrepEuler(mesh),
@@ -393,7 +425,7 @@ library BrepCrossChecking
         => match (family)
         {
             StructureChecks => Report.Empty;
-            GeometryChecks => MeasuredReport(m.Check_ElementNormalAgreesWithFaceNormal(mesh, c), c.SurfaceAngular.Radians,
+            GeometryChecks => MeasuredReport(m.Check_ElementNormalAgreesWithFaceNormal(mesh, c),
                 "An element's normal differs from the surface normal at its parameter centroid by more than the surface angular criterion.");
             QualityChecks => Report.Empty;
             OracleChecks => MergeAll([

@@ -7,9 +7,9 @@
 // Generated from the check libraries by the layer's report script (README,
 // "Implementation notes"): a check's family comes from its section
 // (structure, geometry, quality, self-tests); a measured check carries its
-// law's bound; a check whose law layer 3 or 2 grades a Warning gets
-// MeasuredReport with bound 1 against its Worst of 1; an Info check gets
-// QualityReport. Each message is the law's name in words, and the
+// law's bound in its own Bound (layer 0's Check), so the report states none;
+// a check whose law layer 3 or 2 grades a Warning gets WarningReport; an Info
+// check gets QualityReport. Each message is the law's name in words, and the
 // diagnostic's code is the law's name.
 
 library BrepCheckingReports
@@ -66,17 +66,17 @@ library BrepCheckingReports
                 ExactReport(m.Check_LoopWindingMatchesSameSense,
                     "Loop winding matches same sense does not hold.")]);
             GeometryChecks => MergeAll([
-                MeasuredReport(m.Check_LengthToleranceResolvable, m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_LengthToleranceResolvable,
                     "Length tolerance resolvable does not hold."),
-                MeasuredReport(m.Check_DegenerateEdgeStaysAtStart(plan), m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_DegenerateEdgeStaysAtStart(plan),
                     "Degenerate edge stays at start does not hold."),
-                MeasuredReport(m.Check_EdgeDomainEndsAtVertices, m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_EdgeDomainEndsAtVertices,
                     "Edge domain ends at vertices does not hold."),
-                MeasuredReport(m.Check_VertexCoincidesWithCurveEnd, m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_VertexCoincidesWithCurveEnd,
                     "Vertex coincides with curve end does not hold."),
-                MeasuredReport(m.Check_EdgeLiesOnAdjacentSurfaces(plan), m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_EdgeLiesOnAdjacentSurfaces(plan),
                     "Edge lies on adjacent surfaces does not hold."),
-                MeasuredReport(m.Check_PcurveAgreesWithCurve(plan), m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_PcurveAgreesWithCurve(plan),
                     "Pcurve agrees with curve does not hold.")]);
             QualityChecks => Report.Empty;
             OracleChecks => Report.Empty;
@@ -273,8 +273,10 @@ library BrepCheckingReports
             StructureChecks => MergeAll([
                 ExactReport(d.Check_ParameterCountEqualsPointCount,
                     "Parameter count equals point count does not hold."),
-                ExactReport(d.Check_AtLeastTwoParameters,
-                    "At least two parameters does not hold."),
+                ExactReport(d.Check_EmptyOrAtLeastTwoParameters,
+                    "Empty or at least two parameters does not hold."),
+                ExactReport(m.Check_UndiscretizedExactlyWhenUnusable(d, c),
+                    "Undiscretized exactly when unusable does not hold."),
                 ExactReport(d.Check_ParametersStrictlyMonotone,
                     "Parameters strictly monotone does not hold."),
                 ExactReport(d.Check_ParametersStrictlyIncreasing,
@@ -306,21 +308,19 @@ library BrepCheckingReports
                 ExactReport(m.Check_ImageStepsAreUnwrapped(d),
                     "Image steps are unwrapped does not hold.")]);
             GeometryChecks => MergeAll([
-                MeasuredReport(m.Check_PointsLieOnCurve(d), m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_PointsLieOnCurve(d),
                     "Points lie on curve does not hold."),
-                MeasuredReport(m.Check_SagittaWithinChordal(d, c, plan), c.EffectiveChordal(m.Tolerances) + m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_SagittaWithinChordal(d, c, plan),
                     "Sagitta within chordal does not hold."),
-                MeasuredReport(m.Check_TangentDeviationWithinHalfAngular(d, c, plan), (c.EffectiveAngular * 0.5 + m.Tolerances.Angle.Value).Radians,
+                MeasuredReport(m.Check_TangentDeviationWithinHalfAngular(d, c, plan),
                     "Tangent deviation within half angular does not hold."),
-                MeasuredReport(m.Check_TurningAngleWithinAngular(d, c), (c.EffectiveAngular + m.Tolerances.Angle.Value).Radians,
+                MeasuredReport(m.Check_TurningAngleWithinAngular(d, c),
                     "Turning angle within angular does not hold."),
-                MeasuredReport(m.Check_SegmentWithinMaxLength(d, c), c.MaxLength.LimitValue,
+                MeasuredReport(m.Check_SegmentWithinMaxLength(d, c),
                     "Segment within max length does not hold."),
-                MeasuredReport(m.Check_ImageFollowsPcurve(d), m.Tolerances.Parameter.Value,
-                    "Image follows pcurve does not hold."),
-                MeasuredReport(m.Check_ImageChordWithinChordal(d, c, plan), c.EffectiveChordal(m.Tolerances) + 2.0 * m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_ImageChordWithinChordal(d, c, plan),
                     "Image chord within chordal does not hold.")]);
-            QualityChecks => QualityReport(m.Check_ShortSegmentIsForced(d, c, floors), 0.0,
+            QualityChecks => QualityReport(m.Check_ShortSegmentIsForced(d, c, floors),
                     "Short segment is forced does not hold.");
             OracleChecks => Report.Empty;
             SelfTestChecks => MergeAll([
@@ -371,9 +371,9 @@ library BrepCheckingReports
             GeometryChecks => MergeAll([
                 ExactReport(m.Check_PointNormalIsFaceNormal(fm),
                     "Point normal is face normal does not hold."),
-                MeasuredReport(m.Check_ElementNormalAgreesWithSurface(fm, c), c.SurfaceAngular.Radians,
+                MeasuredReport(m.Check_ElementNormalAgreesWithSurface(fm, c),
                     "Element normal agrees with surface does not hold."),
-                MeasuredReport(fm.Check_QuadPlanarWithinSurfaceChordal(c), c.SurfaceChordal,
+                MeasuredReport(fm.Check_QuadPlanarWithinSurfaceChordal(c),
                     "Quad planar within surface chordal does not hold.")]);
             QualityChecks => Report.Empty;
             OracleChecks => Report.Empty;
@@ -392,9 +392,9 @@ library BrepCheckingReports
                 ExactReport(d.Check_ProvenanceMatchesSource(fm),
                     "Provenance matches source does not hold.")]);
             GeometryChecks => MergeAll([
-                MeasuredReport(m.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(d, fm, c), c.SurfaceAngular.Radians,
+                MeasuredReport(m.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(d, fm, c),
                     "Surface edge normal turn within surface angular does not hold."),
-                MeasuredReport(m.Check_ElementDeviationWithinSurfaceChordal(d, fm, c), c.SurfaceChordal + m.Tolerances.Length.Value,
+                MeasuredReport(m.Check_ElementDeviationWithinSurfaceChordal(d, fm, c),
                     "Element deviation within surface chordal does not hold.")]);
             QualityChecks => Report.Empty;
             OracleChecks => Report.Empty;
@@ -498,11 +498,11 @@ library BrepCheckingReports
                     "Element is not folded does not hold."),
                 ExactReport(mesh.Check_QuadIsConvex,
                     "Quad is convex does not hold."),
-                ExactReport(mesh.Check_TriangleAngleSumIsPi(t),
+                ExactReport(mesh.Check_TriangleAngleSumIsPi,
                     "Triangle angle sum is pi does not hold."),
-                ExactReport(mesh.Check_AngleDefectSumIsTwoPiTimesEuler(t),
+                ExactReport(mesh.Check_AngleDefectSumIsTwoPiTimesEuler,
                     "Angle defect sum is two pi times Euler does not hold."),
-                ExactReport(mesh.Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(t),
+                ExactReport(mesh.Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects,
                     "Angle defect sum is two pi times Euler plus quad defects does not hold."),
                 ExactReport(mesh.Check_ElementIsNotDegenerate(t),
                     "Element is not degenerate does not hold."),
@@ -510,21 +510,21 @@ library BrepCheckingReports
                     "Vertices of one component are apart does not hold.")]);
             GeometryChecks => Report.Empty;
             QualityChecks => MergeAll([
-                QualityReport(mesh.Check_TriangleMinAngleMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_TriangleMinAngleMeetsThreshold(th),
                     "Triangle min angle meets threshold does not hold."),
-                QualityReport(mesh.Check_TriangleMaxAngleMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_TriangleMaxAngleMeetsThreshold(th),
                     "Triangle max angle meets threshold does not hold."),
-                QualityReport(mesh.Check_TriangleRadiusRatioMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_TriangleRadiusRatioMeetsThreshold(th),
                     "Triangle radius ratio meets threshold does not hold."),
-                QualityReport(mesh.Check_TriangleAspectRatioMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_TriangleAspectRatioMeetsThreshold(th),
                     "Triangle aspect ratio meets threshold does not hold."),
-                QualityReport(mesh.Check_QuadSkewMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_QuadSkewMeetsThreshold(th),
                     "Quad skew meets threshold does not hold."),
-                QualityReport(mesh.Check_QuadWarpMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_QuadWarpMeetsThreshold(th),
                     "Quad warp meets threshold does not hold."),
-                QualityReport(mesh.Check_QuadAngleDefectMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_QuadAngleDefectMeetsThreshold(th),
                     "Quad angle defect meets threshold does not hold."),
-                QualityReport(mesh.Check_QuadScaledJacobianMeetsThreshold(th), 0.0,
+                QualityReport(mesh.Check_QuadScaledJacobianMeetsThreshold(th),
                     "Quad scaled jacobian meets threshold does not hold.")]);
             OracleChecks => Report.Empty;
             SelfTestChecks => MergeAll([
@@ -576,11 +576,11 @@ library BrepCheckingReports
                     "Component Euler characteristics add up does not hold."),
                 ExactReport(mesh.Check_ClosedComponentEulerIsTwoMinusTwiceGenus,
                     "Closed component Euler is two minus twice genus does not hold."),
-                ExactReport(mesh.Check_ReversalNegatesSignedVolume(t),
+                ExactReport(mesh.Check_ReversalNegatesSignedVolume,
                     "Reversal negates signed volume does not hold."),
                 ExactReport(ModelMesh.Check_OutwardTetrahedronHasPositiveVolume,
                     "Outward tetrahedron has positive volume does not hold."),
-                ExactReport(mesh.Check_QuadAngleDefectIsNotNegative(t),
+                ExactReport(mesh.Check_QuadAngleDefectIsNotNegative,
                     "Quad angle defect is not negative does not hold."),
                 ExactReport(mesh.Check_ReportedPairIsCoincident(t),
                     "Reported pair is coincident does not hold."),
@@ -606,19 +606,19 @@ library BrepCheckingReports
                     "Triangle mesh splits each quad in two does not hold."),
                 ExactReport(mesh.Check_TriangulatedCornerNamesTheTriangleCorner,
                     "Triangulated corner names the triangle corner does not hold."),
-                ExactReport(mesh.Check_TriangleMeshKeepsArea(t),
+                ExactReport(mesh.Check_TriangleMeshKeepsArea,
                     "Triangle mesh keeps area does not hold."),
                 ExactReport(mesh.Check_QuadMeshIsOkExactlyWithoutTriangles,
                     "Quad mesh is ok exactly without triangles does not hold."),
                 ExactReport(mesh.Check_QuadMeshKeepsPositions,
                     "Quad mesh keeps positions does not hold."),
-                ExactReport(mesh.Check_QuadMeshKeepsAreaWhenOk(t),
+                ExactReport(mesh.Check_QuadMeshKeepsAreaWhenOk,
                     "Quad mesh keeps area when ok does not hold."),
                 ExactReport(mesh.Check_PolygonMeshKeepsPositions,
                     "Polygon mesh keeps positions does not hold."),
                 ExactReport(mesh.Check_PolygonMeshHasOneFacePerElement,
                     "Polygon mesh has one face per element does not hold."),
-                ExactReport(mesh.Check_PolygonMeshKeepsArea(t),
+                ExactReport(mesh.Check_PolygonMeshKeepsArea,
                     "Polygon mesh keeps area does not hold."),
                 ExactReport(mesh.Check_SplitHasAtLeastAsManyVertices,
                     "Split has at least as many vertices does not hold."),
@@ -730,9 +730,9 @@ library BrepCheckingReports
                     "Record indices in range does not hold."),
                 ExactReport(f.Check_ChildrenPrecedeParent,
                     "Children precede parent does not hold."),
-                MeasuredReport(f.Check_ReferencesResolve, 1.0,
+                WarningReport(f.Check_ReferencesResolve,
                     "References resolve does not hold."),
-                MeasuredReport(f.Check_HeaderNamesASchema, 1.0,
+                WarningReport(f.Check_HeaderNamesASchema,
                     "Header names a schema does not hold."),
                 ExactReport(f.Check_AttributeCountMatchesSchema,
                     "Attribute count matches schema does not hold."),
@@ -744,7 +744,7 @@ library BrepCheckingReports
                     "Defined type rules hold does not hold."),
                 f.WhereRulesReport]);
             GeometryChecks => Report.Empty;
-            QualityChecks => QualityReport(f.Check_ComplexPartsInStandardOrder, 0.0,
+            QualityChecks => QualityReport(f.Check_ComplexPartsInStandardOrder,
                     "Complex parts in standard order does not hold.");
             OracleChecks => Report.Empty;
             SelfTestChecks => MergeAll([

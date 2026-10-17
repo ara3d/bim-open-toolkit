@@ -108,20 +108,20 @@ library BrepCheckingMesh
     Check_QuadIsConvex(mesh: ModelMesh): Check
         => mesh.CheckMeshElements("Law_QuadIsConvex", e => Law_QuadIsConvex(mesh, e));
 
-    // Law_TriangleAngleSumIsPi at every element, with the model's angle
-    // tolerance. Structure: Error.
-    Check_TriangleAngleSumIsPi(mesh: ModelMesh, t: Tolerances): Check
-        => mesh.CheckMeshElements("Law_TriangleAngleSumIsPi", e => Law_TriangleAngleSumIsPi(mesh, e, t.Angle));
+    // Law_TriangleAngleSumIsPi at every element, judged by layer 6's own
+    // rounding bound. Structure: Error.
+    Check_TriangleAngleSumIsPi(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_TriangleAngleSumIsPi", e => Law_TriangleAngleSumIsPi(mesh, e));
 
-    // Law_AngleDefectSumIsTwoPiTimesEuler at every component, with the
-    // model's angle tolerance. Structure: Error.
-    Check_AngleDefectSumIsTwoPiTimesEuler(mesh: ModelMesh, t: Tolerances): Check
-        => mesh.CheckComponents("Law_AngleDefectSumIsTwoPiTimesEuler", c => Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c, t.Angle));
+    // Law_AngleDefectSumIsTwoPiTimesEuler at every component, judged by
+    // layer 6's own rounding bound. Structure: Error.
+    Check_AngleDefectSumIsTwoPiTimesEuler(mesh: ModelMesh): Check
+        => mesh.CheckComponents("Law_AngleDefectSumIsTwoPiTimesEuler", c => Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c));
 
     // Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects at every component.
     // Structure: Error.
-    Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh: ModelMesh, t: Tolerances): Check
-        => mesh.CheckComponents("Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects", c => Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c, t.Angle));
+    Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh: ModelMesh): Check
+        => mesh.CheckComponents("Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects", c => Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c));
 
     // Law_ElementIsNotDegenerate at every element, with the model's length
     // tolerance. Structure: Error.
@@ -344,17 +344,17 @@ library BrepCheckingMesh
     //==
     // # Self-tests: measures and metrics
 
-    // Law_ReversalNegatesSignedVolume with the model's length tolerance.
-    Check_ReversalNegatesSignedVolume(mesh: ModelMesh, t: Tolerances): Check
-        => CheckOnce("Law_ReversalNegatesSignedVolume", Law_ReversalNegatesSignedVolume(mesh, t.Length));
+    // Law_ReversalNegatesSignedVolume, judged by layer 6's own rounding bound.
+    Check_ReversalNegatesSignedVolume(mesh: ModelMesh): Check
+        => CheckOnce("Law_ReversalNegatesSignedVolume", Law_ReversalNegatesSignedVolume(mesh));
 
     // Law_OutwardTetrahedronHasPositiveVolume, on its constant witness.
     Check_OutwardTetrahedronHasPositiveVolume(_: ModelMesh): Check
         => CheckOnce("Law_OutwardTetrahedronHasPositiveVolume", Law_OutwardTetrahedronHasPositiveVolume(ModelMesh.Witness_UnitTetrahedron));
 
     // Law_QuadAngleDefectIsNotNegative at every element.
-    Check_QuadAngleDefectIsNotNegative(mesh: ModelMesh, t: Tolerances): Check
-        => mesh.CheckMeshElements("Law_QuadAngleDefectIsNotNegative", e => Law_QuadAngleDefectIsNotNegative(mesh, e, t.Angle));
+    Check_QuadAngleDefectIsNotNegative(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_QuadAngleDefectIsNotNegative", e => Law_QuadAngleDefectIsNotNegative(mesh, e));
 
     // Law_ReportedPairIsCoincident at every reported pair.
     Check_ReportedPairIsCoincident(mesh: ModelMesh, t: Tolerances): Check
@@ -472,9 +472,9 @@ library BrepCheckingMesh
                 VertexIndex(ij / faceMeshes.MostFaceMeshPoints), VertexIndex(ij % faceMeshes.MostFaceMeshPoints)),
             (ab, ij) => Provenance.KernelFace(faceMeshes[ab / faceMeshes.Count].Face));
 
-    // Law_AreaIsSumOfFaceMeshAreas with the model's length tolerance.
+    // Law_AreaIsSumOfFaceMeshAreas, judged by layer 6's own rounding bound.
     Check_AreaIsSumOfFaceMeshAreas(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering): Check
-        => CheckOnce("Law_AreaIsSumOfFaceMeshAreas", Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n, m.Tolerances.Length));
+        => CheckOnce("Law_AreaIsSumOfFaceMeshAreas", Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n));
 
     //==
     // # Self-tests: conversions
@@ -493,9 +493,9 @@ library BrepCheckingMesh
         => CheckGrid("Law_TriangulatedCornerNamesTheTriangleCorner", mesh.ToTriangleMesh3D.Faces.Count, 3,
             (k, s) => Law_TriangulatedCornerNamesTheTriangleCorner(mesh, k, s), (k, s) => Provenance.Nowhere);
 
-    // Law_TriangleMeshKeepsArea with the given length tolerance.
-    Check_TriangleMeshKeepsArea(mesh: ModelMesh, t: Tolerances): Check
-        => CheckOnce("Law_TriangleMeshKeepsArea", Law_TriangleMeshKeepsArea(mesh, t.Length));
+    // Law_TriangleMeshKeepsArea, judged by layer 6's own rounding bound.
+    Check_TriangleMeshKeepsArea(mesh: ModelMesh): Check
+        => CheckOnce("Law_TriangleMeshKeepsArea", Law_TriangleMeshKeepsArea(mesh));
 
     // Law_QuadMeshIsOkExactlyWithoutTriangles.
     Check_QuadMeshIsOkExactlyWithoutTriangles(mesh: ModelMesh): Check
@@ -505,9 +505,9 @@ library BrepCheckingMesh
     Check_QuadMeshKeepsPositions(mesh: ModelMesh): Check
         => CheckOnce("Law_QuadMeshKeepsPositions", Law_QuadMeshKeepsPositions(mesh));
 
-    // Law_QuadMeshKeepsAreaWhenOk with the given length tolerance.
-    Check_QuadMeshKeepsAreaWhenOk(mesh: ModelMesh, t: Tolerances): Check
-        => CheckOnce("Law_QuadMeshKeepsAreaWhenOk", Law_QuadMeshKeepsAreaWhenOk(mesh, t.Length));
+    // Law_QuadMeshKeepsAreaWhenOk, judged by layer 6's own rounding bound.
+    Check_QuadMeshKeepsAreaWhenOk(mesh: ModelMesh): Check
+        => CheckOnce("Law_QuadMeshKeepsAreaWhenOk", Law_QuadMeshKeepsAreaWhenOk(mesh));
 
     // Law_PolygonMeshKeepsPositions.
     Check_PolygonMeshKeepsPositions(mesh: ModelMesh): Check
@@ -517,9 +517,9 @@ library BrepCheckingMesh
     Check_PolygonMeshHasOneFacePerElement(mesh: ModelMesh): Check
         => CheckOnce("Law_PolygonMeshHasOneFacePerElement", Law_PolygonMeshHasOneFacePerElement(mesh));
 
-    // Law_PolygonMeshKeepsArea with the given length tolerance.
-    Check_PolygonMeshKeepsArea(mesh: ModelMesh, t: Tolerances): Check
-        => CheckOnce("Law_PolygonMeshKeepsArea", Law_PolygonMeshKeepsArea(mesh, t.Length));
+    // Law_PolygonMeshKeepsArea, judged by layer 6's own rounding bound.
+    Check_PolygonMeshKeepsArea(mesh: ModelMesh): Check
+        => CheckOnce("Law_PolygonMeshKeepsArea", Law_PolygonMeshKeepsArea(mesh));
 
     // Law_SplitHasAtLeastAsManyVertices.
     Check_SplitHasAtLeastAsManyVertices(mesh: ModelMesh): Check

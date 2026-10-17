@@ -9,8 +9,8 @@
 // with the decode policy's AngleCoincidence, the tolerance the decoder itself
 // uses. A WHERE rule is an exact statement about the file (structure): a
 // failure is an Error, except the four that layer 3 grades lower, named in
-// their comments: three are reported as Warnings (MeasuredReport with bound 1
-// against a Worst of 1) and one as Info (QualityReport). WhereRulesReport
+// their comments: three are reported as Warnings (WarningReport) and one as
+// Info (QualityReport). WhereRulesReport
 // merges them all. The checks were generated from the law signatures of
 // step-where.laws.plato, one per law, so no name is retyped by hand.
 //
@@ -637,7 +637,7 @@ library BrepCheckingWhere
                 "axis2_placement_3d WR3: the ref_direction, when present, is three-dimensional."),
             ExactReport(f.Check_Where_Axis2Placement3D_WR4,
                 "axis2_placement_3d WR4: axis and ref_direction, when both present, are not parallel."),
-            MeasuredReport(f.Check_Practice_Axis2Placement3D_Orthogonal, 1.0,
+            WarningReport(f.Check_Practice_Axis2Placement3D_Orthogonal,
                 "Practice, not an ISO rule: axis and ref_direction, when both present, are orthogonal within tol."),
             ExactReport(f.Check_Where_CartesianTransformationOperator_WR1,
                 "cartesian_transformation_operator WR1 (P42 4.5.20): the derived scale (scale, or 1.0 when absent) is positive."),
@@ -743,7 +743,7 @@ library BrepCheckingWhere
                 "edge_loop WR1 (P42 5.5.15): the loop closes: the first oriented edge starts at the same vertex instance the last one ends at."),
             ExactReport(f.Check_Where_Face_WR1,
                 "face WR1 (P42 5.5.19, mixed_loop_type_set 5.6.16): poly loops are not mixed with other loop kinds among a face's bounds."),
-            MeasuredReport(f.Check_Where_Face_WR2, 1.0,
+            WarningReport(f.Check_Where_Face_WR2,
                 "face WR2 (P42 5.5.19): a face has at most one face_outer_bound."),
             ExactReport(f.Check_Where_FaceSurface_WR1,
                 "face_surface WR1 (P42 5.5.20): the face geometry is not an oriented_surface."),
@@ -771,7 +771,7 @@ library BrepCheckingWhere
                 "advanced_face WR7: a vertex loop's vertex is a vertex_point on a cartesian_point."),
             ExactReport(f.Check_Where_AdvancedFace_WR8,
                 "advanced_face WR8: every bound is an edge loop or a vertex loop (no poly loops)."),
-            MeasuredReport(f.Check_Where_AdvancedFace_WR9, 1.0,
+            WarningReport(f.Check_Where_AdvancedFace_WR9,
                 "advanced_face WR9: a surface_curve edge geometry has only pcurves as associated geometry, no bare surfaces."),
             ExactReport(f.Check_Where_AdvancedFace_WR10,
                 "advanced_face WR10: a polyline used as edge geometry or as a swept curve has at least three points."),
@@ -825,7 +825,7 @@ library BrepCheckingWhere
                 "representation_map WR1 (P43 4.4.18): the mapping origin is founded in the mapped representation's context."),
             ExactReport(f.Check_Where_RepresentationRelationshipWithTransformation_WR1,
                 "representation_relationship_with_transformation WR1 (P43 4.4.21): the two representations are in different contexts."),
-            QualityReport(f.Check_Where_RepresentationRelationshipWithTransformation_WR2, 0.0,
+            QualityReport(f.Check_Where_RepresentationRelationshipWithTransformation_WR2,
                 "representation_relationship_with_transformation WR2: with an item_defined_transformation, transform_item_1 is in rep_1's context and transform_item_2 in rep_2's."),
             ExactReport(f.Check_Where_ShapeRepresentationRelationship_WR1,
                 "shape_representation_relationship WR1 (AIM): one side is a shape_representation.")

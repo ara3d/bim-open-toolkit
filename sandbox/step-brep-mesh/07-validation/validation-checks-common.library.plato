@@ -54,6 +54,13 @@ library BrepCheckingCommon
     CheckGrid(law: String, n: Integer, k: Integer, holds: Function2<Integer, Integer, Boolean>, where: Function2<Integer, Integer, Provenance>): Check
         => WorstOf(law, (n * k).MapRange(j => CheckExact(law, holds(j / k, j % k), where(j / k, j % k))));
 
+    // A measured law at each index 0 to n - 1 whose bound differs by sample
+    // (a per-face envelope, a per-point parameter tolerance): sample i holds
+    // when measure(i) <= bound(i), and the fold keeps the sample furthest
+    // past its own bound (layer 0's Exceedance), with that bound.
+    CheckAllWithinEach(law: String, n: Integer, measure: Function1<Integer, Number>, bound: Function1<Integer, Number>, where: Function1<Integer, Provenance>): Check
+        => WorstOf(law, n.MapRange(i => CheckWithin(law, measure(i), bound(i), where(i))));
+
     // A measured law on an n by k grid of samples, as CheckAllWithin.
     CheckGridWithin(law: String, n: Integer, k: Integer, measure: Function2<Integer, Integer, Number>, bound: Number, where: Function2<Integer, Integer, Provenance>): Check
         => WorstOf(law, (n * k).MapRange(j => CheckWithin(law, measure(j / k, j % k), bound, where(j / k, j % k))));
@@ -98,22 +105,37 @@ library BrepCheckingCommon
     MergeAll(reports: Array<Report>): Report
         => reports.Reduce(Report.Empty, (a, b) => Merge(a, b));
 
-    // The report of an exact law: Topological group, bound 0, so a failure is
-    // an Error. Also used for library self-tests and for geometric laws whose
-    // layer exposes no measure (01-geometry's file laws), which are then
-    // Errors without the ten-times grading.
+    // The report of an exact law: Topological group, so a failure is an
+    // Error. Also used for library self-tests and for the oracle comparisons,
+    // whose failures are Errors at any size; their diagnostics still carry
+    // the measure.
     ExactReport(c: Check, message: String): Report
-        => ReportOf(c, ConstraintGroup.Topological, 0.0, message);
+        => ReportOf(c, ConstraintGroup.Topological, message);
 
-    // The report of a measured geometric law against its bound: a failure is
-    // a Warning while Worst stays below ten times the bound and an Error from
-    // there, or when Worst is NaN (layer 0's SeverityOf).
-    MeasuredReport(c: Check, bound: Number, message: String): Report
-        => ReportOf(c, ConstraintGroup.Geometric, bound, message);
+    // The report of a measured geometric law against the bound the check
+    // carries (layer 0's Check.Bound, the bound of the sample it kept): a
+    // failure is a Warning while Worst stays below ten times the bound and an
+    // Error from there, or when Worst is NaN (layer 0's SeverityOf).
+    MeasuredReport(c: Check, message: String): Report
+        => ReportOf(c, ConstraintGroup.Geometric, message);
+
+    // The report of an exact law its layer grades a Warning (layer 3's
+    // unresolved references and unnamed schema, three WHERE rules; layer 2's
+    // defects the reduction repairs): a failure is always a Warning.
+    WarningReport(c: Check, message: String): Report
+        => ReportOf(c.AsWarning, ConstraintGroup.Geometric, message);
+
+    // An exact check restated as a measured one that SeverityOf grades a
+    // Warning: a failure becomes Worst 2 against bound 1, past the bound and
+    // below ten times it; a holding check Worst 0. Layer 0's constructors
+    // keep it well formed (CheckWithin), and the law, the hold and the
+    // provenance are the check's own.
+    AsWarning(c: Check): Check
+        => CheckWithin(c.Law, c.Holds ? 0.0 : 2.0, 1.0, c.Where);
 
     // The report of a quality threshold: a failure is Info.
-    QualityReport(c: Check, bound: Number, message: String): Report
-        => ReportOf(c, ConstraintGroup.Quality, bound, message);
+    QualityReport(c: Check, message: String): Report
+        => ReportOf(c, ConstraintGroup.Quality, message);
 
     //==
     // # Provenance of model cells

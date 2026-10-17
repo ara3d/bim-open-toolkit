@@ -124,10 +124,11 @@ library BrepCheckingLaws
     // FaceAreaTolerance, the envelope the criteria imply
     // (A ((1 + kappa d)^2 / cos(2 SurfaceAngular) - 1) + d_e P + the oracle's
     // allowance; README, "The area tolerance"). Vacuous where the oracle has
-    // no number. Oracle family, Error.
+    // no number or the envelope is infinite (IsFaceAreaJudged). Oracle family,
+    // Error.
     Law_FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, f: BrepFaceIndex): Boolean
         => m.IsFaceInRange(f)
-            ? (m.Oracle_FaceAreaByGreen(f).IsFinite ? m.FaceAreaGap(mesh, f) <= m.FaceAreaTolerance(f, c) : true)
+            ? (m.IsFaceAreaJudged(c, f) ? m.FaceAreaGap(mesh, f) <= m.FaceAreaTolerance(f, c) : true)
             : true;
 
     // On a closed mesh of shell s, the angle defects less the quads' own
@@ -149,14 +150,11 @@ library BrepCheckingLaws
     // tube of radius d about its boundary (TubeVolume, Weyl's formula; valid
     // while d is below the reach). Vacuous for a shell set, for a body with a
     // face missing from the mesh (Law_EveryFaceIsMeshed reports it), and where
-    // the oracle has no number. Oracle family, Error.
+    // the oracle or the tube has no finite number (IsSolidVolumeJudged).
+    // Oracle family, Error.
     Law_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
-        => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
-            ? ((m.IsShellInRange(m.Bodies[b].OuterShellOf)
-                    ? (m.BodyShells(b).All(s => m.IsCompleteShellMesh(mesh, s)) ? m.Oracle_BodyVolume(b).IsFinite : false)
-                    : false)
-                ? (m.BodyMeshVolume(mesh, b) - m.Oracle_BodyVolume(b)).Abs <= m.TubeVolume(b, c)
-                : true)
+        => m.IsSolidVolumeJudged(mesh, c, b)
+            ? (m.BodyMeshVolume(mesh, b) - m.Oracle_BodyVolume(b)).Abs <= m.TubeVolume(b, c)
             : true;
 
     // Layer 2's reduced Euler characteristic of shell s (union-find over the
@@ -419,13 +417,6 @@ library BrepCheckingLaws
             ? Law_SegmentWithinMaxLength(m, d.ByEdge[k], c, i)
             : true;
 
-    // Check_ImageFollowsPcurve agrees with its law at entry k, image j and
-    // point i.
-    Law_ImageFollowsPcurveCheckAgrees(m: BrepModel, d: EdgeDiscretizations, k: Integer, j: Integer, i: Integer): Boolean
-        => ((m.Tolerances.IsWellFormed ? d.ByEdge.IsValidIndex(k) : false) ? m.Check_ImageFollowsPcurve(d).Holds : false)
-            ? m.ImageAt(d.ByEdge[k], j, img => Law_ImageFollowsPcurve(m, d.ByEdge[k], img, i))
-            : true;
-
     // Check_ImageChordWithinChordal agrees with its law at entry k, image j
     // and segment i.
     Law_ImageChordCheckAgrees(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, plan: SamplePlan, k: Integer, j: Integer, i: Integer): Boolean
@@ -555,7 +546,10 @@ library BrepCheckingLaws
         => match (p)
         {
             Nowhere => VertexIndex(-1);
+            WholeInput => VertexIndex(-1);
             StepInstance(id) => VertexIndex(-1);
+            KernelCurve(index) => VertexIndex(-1);
+            KernelSurface(index) => VertexIndex(-1);
             KernelVertex(index) => VertexIndex(-1);
             KernelEdge(index) => VertexIndex(-1);
             KernelLoop(index) => VertexIndex(-1);
@@ -571,7 +565,10 @@ library BrepCheckingLaws
         => match (p)
         {
             Nowhere => ElementIndex(-1);
+            WholeInput => ElementIndex(-1);
             StepInstance(id) => ElementIndex(-1);
+            KernelCurve(index) => ElementIndex(-1);
+            KernelSurface(index) => ElementIndex(-1);
             KernelVertex(index) => ElementIndex(-1);
             KernelEdge(index) => ElementIndex(-1);
             KernelLoop(index) => ElementIndex(-1);
