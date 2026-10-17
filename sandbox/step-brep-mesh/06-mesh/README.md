@@ -258,6 +258,7 @@ outside its range makes it vacuously true, and the range is another law's statem
 |---|---|---|---|
 | `Law_AreaIsSumOfFaceMeshAreas` | the assembled area is the sum of the face mesh areas (the element areas are bitwise equal, only the grouping of the compensated sums differs) | `ResolutionAt` of the total (`TotalsAgree`) | test |
 | `Law_ReversalNegatesSignedVolume` | reversing every element negates the signed volume | `ResolutionAt(VolumeRoundingMagnitude)` | test |
+| `Law_VectorAreaVanishes` | a closed, consistently oriented component has zero vector area | `ResolutionAt(VectorAreaRoundingMagnitude)` | test |
 | `Law_OutwardTetrahedronHasPositiveVolume` | the outward-wound unit tetrahedron has positive signed volume | exact sign | test |
 | `Law_TriangleAngleSumIsPi` | a triangle's angles sum to pi (fails on a zero-length side) | `AngleSumResolution`, `ResolutionAt(2 pi)` | Error |
 | `Law_QuadAngleDefectIsNotNegative` | a quad's angles sum to at most 2 pi | `AngleSumResolution` | test |
@@ -366,9 +367,6 @@ Readings of those names this layer depends on, for the owning authors to confirm
 - **The quad volume convention** (A-C split here, averaged splits in research 4.7) is the owner's to
   confirm.
 - **The 5 degree quad angle-defect threshold** has no source.
-- **`Law_VectorAreaVanishes`** (research 4.6) is not written: in exact arithmetic it follows from
-  closed and oriented, and the research gives its floating-point tolerance only as an order of
-  magnitude.
 - **Degenerate model edges.** A degenerate edge (a pole or an apex) should be discretized by its two
   vertex points only; if it had interior points they would be distinct coincident vertices, which
   `Law_VerticesOfOneComponentAreApart` reports. `04-discretization` to confirm.
@@ -431,6 +429,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `MeshComponentCounts` with eight fields; `Genus` for closed components only | adds `BoundaryCycles`; `HasGenus` and `Genus` use 2 - chi - B; `BoundaryEdgesOf` | the genus of a component with boundary (an open shell, a face that failed to mesh) is defined |
 | (none) | `RestrictedToFaces(mesh, faces)`, `IsElementOfFaces`, `ElementsOfFaces`, `ReferencedEulerCharacteristic(mesh)` | per-shell counts (review M10, section 6): the mesh of a shell is a valid `ModelMesh`, and its Euler characteristic counts only referenced vertices |
 | (none) | `Law_CornerProvenanceIsOnItsElementFace`, `IsOnClosureOfFace` | the cellular map stated as a law (review M9); 07-validation can add its `Check_` |
+| (none) | `Law_VectorAreaVanishes`, `ComponentVectorArea`, `VectorAreaRoundingMagnitude` | research 4.6's law with an a-priori rounding bound (review M11) |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
 
@@ -481,3 +480,6 @@ Applied:
 - **A cellular provenance law** (review M9). `Law_CornerProvenanceIsOnItsElementFace`: every corner
   of an element of face f has provenance `OnFace(f)`, `OnEdge(e)` with e cited by f, or
   `OnVertex(v)` with v on f's bounds (02-topology's `FaceUsesEdge`, `BoundVertices`).
+- **`Law_VectorAreaVanishes` stated** (review M11). The vector area of a closed, consistently
+  oriented component, summed compensated, is within `ResolutionAt` of the sum of |b - a| |c - a|
+  over its triangles.

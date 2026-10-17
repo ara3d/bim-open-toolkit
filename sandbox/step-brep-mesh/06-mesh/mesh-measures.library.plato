@@ -129,6 +129,29 @@ library ModelMeshMeasures
                 .Map(t => SolidAngle(q, t.A, t.B, t.C)).SumOf)
             .SumOf / (2.0 * Number.Tau);
 
+    // Twice the vector area of component c: over the flat triangles (a, b, c) of its elements
+    // (ElementTriangles), the sum of (b - a) x (c - a), compensated coordinate by coordinate. It
+    // vanishes in real arithmetic on a closed, consistently oriented component, since it equals the
+    // sum of a x b + b x c + c x a, in which every edge's two opposite traversals cancel (a quad's
+    // A-C diagonal cancels inside the quad). Precondition: mesh.HasAllValidCorners.
+    ComponentVectorArea(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Vector3D
+    {
+        var vs = mesh.ElementCount.MapRange(k => ElementIndex(k))
+            .FlatMap(e => comps.IsInComponent(e, c) ? mesh.ElementTriangles(e).Map(t => t.TwiceVectorArea) : []);
+        return Vector3D(vs.Map(v => v.X).CompensatedSum, vs.Map(v => v.Y).CompensatedSum, vs.Map(v => v.Z).CompensatedSum);
+    }
+
+    // The magnitude the vector area's rounding scales with: over the flat triangles (a, b, c) of
+    // component c, the sum of |b - a| |c - a|. Each cross product of rounded differences errs by at
+    // most about 4u times |b - a| |c - a| per coordinate and the compensated sums add 2u times this
+    // magnitude, so the computed vector's length is at most about 11u times it (review M11 gives the
+    // same form with pairwise summation). Precondition: mesh.HasAllValidCorners.
+    VectorAreaRoundingMagnitude(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Number
+        => mesh.ElementCount.MapRange(k => comps.IsInComponent(ElementIndex(k), c)
+                ? mesh.ElementTriangles(ElementIndex(k)).Map(t => t.A.Distance(t.B) * t.A.Distance(t.C)).SumOf
+                : 0.0)
+            .CompensatedSum;
+
     // The signed volume of component c alone, about the same origin as the whole mesh's.
     SignedVolume(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Number
         => mesh.ElementCount.MapRange(k => comps.ElementComponentOf(ElementIndex(k)).Value == c.Value
