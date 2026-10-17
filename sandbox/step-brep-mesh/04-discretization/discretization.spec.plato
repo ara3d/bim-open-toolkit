@@ -126,11 +126,11 @@ spec EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>
     ensures result[0] == m.EdgeDomain(e).Range.Start;
     ensures result[result.Count - 1] == m.EdgeDomain(e).Range.End;
     ensures forall (k: Integer) in 0.UpTo(result.Count - 1) : result[k] < result[k + 1];
-    ensures forall (k: Integer) in 1.UpTo(result.Count - 1) : result[k] - result[k - 1] > m.Tolerances.Parameter.Value;
-    ensures forall (k: Integer) in 1.UpTo(result.Count - 1) : result[k + 1] - result[k] > m.Tolerances.Parameter.Value;
+    ensures forall (k: Integer) in 1.UpTo(result.Count - 1) : result[k] - result[k - 1] > m.Geometry.ParameterToleranceAt(m.Edges[e].Curve, result[k], m.Tolerances).Value;
+    ensures forall (k: Integer) in 1.UpTo(result.Count - 1) : result[k + 1] - result[k] > m.Geometry.ParameterToleranceAt(m.Edges[e].Curve, result[k], m.Tolerances).Value;
     ensures forall (k: Integer) in 0.UpTo(result.Count) : m.WithEdgeReversed(e).EdgeSeeds(e)[k] == result[k];
     measure result.Count;
-    deferred "polyline vertices, composite joints, distinct knots, and on a Closed curve the copies of the join, read from the curve, clipped to the domain, merged within the parameter tolerance";
+    deferred "polyline vertices, composite joints, distinct knots, and on a Closed curve the copies of the join, read from the curve, clipped to the domain, merged within the curve's parameter tolerance at the seed (layer 1's ParameterToleranceAt, whose floor is the length or angle floor by the parameter's kind)";
 }
 
 // The total turning of the curve's tangent over the edge domain, tangent jumps at seeds included.

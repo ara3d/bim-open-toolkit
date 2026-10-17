@@ -124,7 +124,9 @@ library EdgeDiscretizing
     // B-spline knot strictly inside the domain, on a `Closed` curve every copy of the join (the
     // range's start moved by whole periods) strictly inside the domain, where the point set
     // closes but the tangent may jump, and the domain end. Interior seeds closer than the
-    // `ParameterTolerance` to a neighbour are dropped. Depends on the curve and the domain only.
+    // curve's parameter tolerance at the seed (layer 1's `ParameterToleranceAt(g, c, t, tol)`,
+    // whose floor is `Tolerances.LengthParameter` or `Tolerances.AngleParameter` by the
+    // parameter's kind) to a neighbour are dropped. Depends on the curve and the domain only.
     EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>;
 
     // True when t is one of the edge's seeds. Exact equality: a seed is copied into the

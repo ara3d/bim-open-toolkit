@@ -10,7 +10,7 @@
 // makes a law vacuously true where its precondition fails, so every law is total; a pointwise law
 // takes the segment or sample index as a parameter. Every approximate comparison is against a
 // criterion widened by the model's own tolerance of the same dimension (`Tolerances.Length`,
-// `Tolerances.Angle`, `Tolerances.Parameter`): a criterion exceeded by less than the file's own
+// `Tolerances.Angle`): a criterion exceeded by less than the file's own
 // uncertainty is met. Exact `==` on a `Number` or a `Point3D` appears only where the value is
 // copied, never computed: end points, seeds, reversal, refinement.
 //
