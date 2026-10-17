@@ -39,7 +39,6 @@
 //  - Size and extent
 //  - Model transforms
 //  - Units
-//  - Owed by 00-foundation
 
 library BrepTopology
 {
@@ -1364,20 +1363,4 @@ library BrepTopology
             Foot => 0.3048;
             Scaled(metresPerUnit) => metresPerUnit;
         };
-
-    //==
-    // # Owed by 00-foundation
-
-    // belongs-in: 00-foundation
-    // The value congruent to t modulo period in (reference, reference + period]:
-    // the end of a periodic range that starts at reference and runs forward to
-    // t. A t congruent to reference gives a full period. Precondition: period is
-    // positive and finite.
-    PeriodicRepresentativeAbove(t: Number, reference: Number, period: Number): Number
-    {
-        var offset = t - reference;
-        var reduced = offset - (offset / period).Floor * period;
-        return reduced > 0.0 ? reference + reduced : reference + period;
-    }
-
 }

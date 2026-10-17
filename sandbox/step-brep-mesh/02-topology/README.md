@@ -512,9 +512,11 @@ should move to VOCABULARY.md's fixed list. This layer relies on three properties
 is called; `PcurvesOf` returns at most two pcurves; a pcurve has the sense of its 3D curve.
 
 **Declared here on behalf of lower layers** (`// belongs-in:`), to be deleted once the owner
-declares them: for 00-foundation, `PeriodicRepresentativeAbove(t, reference, period)`, which layer
-0's fix-wave commits had not yet declared when this layer's snapshot was taken. `IsPeriodicDomain(d)`
-is deleted: layer 0's `HasSeam(d)` replaces it. `NormalAgreesWithParameterization(g, s)`, the sign `epsilon`, was declared
+declares them: for 00-foundation, `ScaledTolerances(t, factor)`; for 01-geometry, `DefiningPoints`
+over `BrepCurve` and `BrepSurface`, `MovedGeometry`, `Moved` over `BrepCurve` and `BrepSurface`,
+`MovedFrame`, `MovedDirection`, `MovedVector`. Deleted in the fix wave because the owner now declares
+them: `PeriodicRepresentativeAbove` and `IsPeriodicDomain` (layer 0; this layer uses `HasSeam`), and
+`NormalAgreesWithParameterization(g, s)`, the sign `epsilon`, was declared
 here for layer 1 and is now layer 1's alone (fix wave).
 
 **Obligations on 03-step**: fold `oriented_face`, `oriented_closed_shell` and void orientation into
@@ -657,8 +659,8 @@ Applied:
   parameter into a `Closed` curve's domain before evaluating; the spec's `EdgeDomain` contract and
   the theorem `EdgeDomainEndsFollowFromVertexOnCurve` (its exclusion now covers only `Closed`
   curves, by the closure gap) are restated. The stand-in `IsPeriodicDomain` is deleted; layer 0's
-  `HasSeam` replaces it. `PeriodicRepresentativeAbove` stays as a `belongs-in` stand-in until layer
-  0 declares it.
+  `HasSeam` replaces it. `PeriodicRepresentativeAbove` is deleted in a later commit, once layer 0
+  declared it with the same signature and meaning.
 - **T8.** `Law_EdgeDomainIsForward` is judged by layer 1's `ParameterToleranceAt` at the range's
   start instead of the model-wide floor, so this layer no longer reads `Tolerances.Parameter`, which
   layer 0 split.
@@ -692,6 +694,9 @@ Applied:
   `Scaled(loop)`; `RigidlyMoved` now builds its arena through `MovedGeometry` (`belongs-in:
   01-geometry`), so it follows `GeometrySet`'s new `Closures` field. Library law
   `Law_ScalingScalesExtent`.
+- **Stand-in `PeriodicRepresentativeAbove` deleted.** Layer 0 committed it (`c09a121b`) with the
+  same signature and meaning, after this layer's snapshot was taken; the gate's predicted snapshot
+  carries it.
 
 Skipped:
 
