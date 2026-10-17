@@ -42,17 +42,21 @@ evaluated; layer 0's `Wrap` and `NearestUnwrapped` are the section and the path 
 quotient. An aperiodic domain is a closed interval, possibly the whole line (`UnboundedDomain`,
 ends at `Number.MinValue` and `Number.MaxValue`, so `ParameterLength` is infinite).
 
-**Closure is not periodicity.** A bounded curve is *closed* when its two ends coincide within the
-length tolerance (`IsClosed`). Periodic implies closed. Closed does not imply periodic: a clamped
-B-spline whose first and last control points coincide is closed, yet its derivative may jump at
-the join, and evaluation outside its knot span is undefined (ISO 10303-42 4.5.34). So
-`Periodicity` records only what the formula guarantees, and is decided by the case alone:
-conics and every angle parameter are periodic; polylines, splines, trimmed and composite curves
-are aperiodic. STEP's `closed_curve`, `u_closed`, `v_closed` flags are information only and are not
-kept. A surface is closed in a parameter (`IsClosedIn`) when it is periodic in it or its two
-opposite sides are the same curve within tolerance; face meshing treats a closed direction as a
-seam either way, with the range's length as the period, and wraps a parameter into the range
-before evaluating an aperiodic one.
+**Closure is not periodicity, and both are in the domain.** A bounded curve is *closed* when its two
+ends coincide. Periodic implies closed. Closed does not imply periodic: a clamped B-spline whose
+first and last control points coincide is closed, yet its derivative may jump at the join, and
+evaluation outside its knot span is undefined (ISO 10303-42 4.5.34). Layer 0's `Periodicity` has
+three cases: `Periodic` (the formula wraps: conics and every angle parameter), `Closed` (the point
+set wraps, the formula does not: a clamped spline or a polyline whose first and last control
+points are the same point exactly), and `Aperiodic`. `HasSeam` is true for the first two, and every
+seam, unwrapping, winding and edge-domain decision above this layer reads it (review C1, T1).
+Layer 3 decides closure at decode, from `closed_curve`, `u_closed`, `v_closed` or end coincidence
+within the length tolerance, and writes the decision into the record by snapping the last control
+point (row) onto the first and clamping an unclamped closed spline by knot insertion; `Domain`
+then reads it exactly. A surface is closed in a parameter (`IsClosedIn`) when its domain has a seam
+in it or its two opposite sides are the same curve within tolerance. A closed direction has no
+degenerate sides; a trim across a closed basis's join is wrapped into the basis's range
+(`BasisParameter`, `TrimmedToBasis`) before it is evaluated.
 
 **A surface is a map from a rectangle.** A `BrepSurface` is `S: D_u x D_v -> R^3`, each direction a
 `CurveDomain`. A cylinder's domain is a circle times a line, a torus's a circle times a circle.
@@ -152,10 +156,10 @@ for the axial `v`.
    file's codes with the geometry and report a disagreement. A
    `reparametrised_composite_curve_segment` changes parameters, not the point set; layer 3 decodes
    it as a plain segment with a warning.
-5. **Closure and periodicity are separate (above).** A closed, clamped B-spline is `Aperiodic`
-   and `IsClosed`. Making it periodic, as OpenCascade does, would need a tolerance inside
-   `Domain`, whose contract has none, and would let `Eval` wrap into a region where the formula is
-   not periodic in its derivatives.
+5. **Closure and periodicity are separate (above).** A closed, clamped B-spline is `Closed`, not
+   `Periodic`: making it periodic, as OpenCascade does, would let `Eval` wrap into a region where
+   the formula is not periodic in its derivatives. The decision needs a tolerance, which `Domain`
+   has none of, so layer 3 makes it and records it by an exact coincidence (fix wave, T1).
 6. **`select_outer` lives in the torus payload as `TorusPart`.** The three parts share one
    formula, so the choice is a domain, not a case: `Full` (STEP `toroidal_surface`, any radii),
    `Apple` and `Lemon` (STEP `degenerate_toroidal_surface` with `select_outer` true and false).
@@ -402,6 +406,8 @@ as expected.
 | (new) | `PcurveParameterPeriod(g, p)`, `PcurveRangeOver(g, p, c, r)`, `PcurveSampleFor`, `Law_PcurveClosestParameterIsBounded` | pcurve ranges from the space curve and the surface periods (fix wave, F4) |
 | (new) | `CollapsesByFormula(g, s)` | the guard of `Law_TangentialPartialVanishesOnDegenerateSide` (fix wave, F10) |
 | `tol.Parameter` (one floor) | `ParameterFloorOf(g, c | p, tol)`, `ParameterFloorAlong(g, s, which, tol)`, `UvFloorOf(g, s, tol)`, `FinerParameterFloor(tol)`, and `IsAngleParameter` on curves, parameter-plane curves and surface parameters | layer 0 split the floor by kind; this layer knows the kind (fix wave, C2) |
+| `Domain` of a closed spline or polyline: `Aperiodic` | `Closed(range length)` when clamped with first and last control points (rows) the same point exactly; `IsClosed`, `IsClosedIn`, `DegenerateSides`, the period laws read `HasSeam` | closure decided once at decode and seen by every layer (fix wave, T1, C1) |
+| (new) | `IsClamped`, `SplineDomainOf`, `SameExactly`, `IsClosedSpline`, `EndRowsCoincide`, `PolylineDomain`, `BasisParameter`, `IntoRange`; `TrimmedToBasis` takes the arena and the basis | closed domains, and trims across a closed join | 
 
 ## Fix wave, 2026-10-17
 
@@ -433,3 +439,6 @@ Applied:
   chosen by `IsAngleParameter`; `ParameterToleranceAt` and `UvToleranceAt` pass it to layer 0. A
   parameter that is neither angle nor length (knots, a line's `t`) takes the length floor in its own
   units, a lower bound under its per-point tolerance.
+- **T1, C1 (the layer 1 part).** Splines and polylines whose ends are the same point exactly get a
+  `Closed` domain; `IsClosed` and `IsClosedIn` report it; closed directions have no sides; trims
+  across a closed join wrap. Layer 3 records its decision by snapping and clamping (above).

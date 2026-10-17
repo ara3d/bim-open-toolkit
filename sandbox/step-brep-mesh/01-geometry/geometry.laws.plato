@@ -514,13 +514,14 @@ library BrepGeometryLaws
     // A periodic curve's domain spans exactly one period, within the
     // parameter floor.
     Law_PeriodicCurveSpansOnePeriod(g: GeometrySet, c: CurveIndex, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? (g.Domain(c).Periodicity.IsPeriodic ? g.Domain(c).IsFullPeriod(g.ParameterFloorOf(c, tol)) : true) : true;
+        => g.CanEvaluate(c) ? (g.Domain(c).HasSeam ? g.Domain(c).IsFullPeriod(g.ParameterFloorOf(c, tol)) : true) : true;
 
-    // A periodic curve is closed: it meets itself at the two ends of its
-    // domain, within the length tolerance.
+    // A periodic or closed curve meets itself at the two ends of its domain,
+    // within the length tolerance: for a Closed domain this is the decode's
+    // decision checked against the geometry.
     Law_PeriodicCurveIsClosed(g: GeometrySet, c: CurveIndex, tol: Tolerances): Boolean
         => g.CanEvaluate(c)
-            ? (g.Domain(c).Periodicity.IsPeriodic
+            ? (g.Domain(c).HasSeam
                 ? g.Eval(c, g.Domain(c).Range.Start).Coincident(g.Eval(c, g.Domain(c).Range.End), tol.Length)
                 : true)
             : true;
@@ -654,7 +655,7 @@ library BrepGeometryLaws
     // when d is periodic, the larger overhang of its two ends otherwise; 0
     // when it fits.
     RangeExcess(d: CurveDomain, r: NumberInterval): Number
-        => d.Periodicity.IsPeriodic
+        => d.HasSeam
             ? (r.End - r.Start - d.Periodicity.PeriodOr(0.0)).Max(0.0)
             : (d.Range.Start - r.Start).Max(r.End - d.Range.End).Max(0.0);
 
@@ -909,7 +910,7 @@ library BrepGeometryLaws
     // finite parameter's point lies on the line.
     PcurveSampleFor(g: GeometrySet, p: PcurveIndex, c: CurveIndex, t: Number): Number
         => g.Domain(c).ParameterLength.IsFinite && g.Domain(c).ParameterLength > 0.0
-            ? g.PcurveRangeOver(p, c, g.Domain(c).Range).Lerp((g.Domain(c).SampleIn(t) - g.Domain(c).Range.Start) / g.Domain(c).ParameterLength)
+            ? g.Domain(p).IntoRange(g.PcurveRangeOver(p, c, g.Domain(c).Range).Lerp((g.Domain(c).SampleIn(t) - g.Domain(c).Range.Start) / g.Domain(c).ParameterLength))
             : g.Domain(p).SampleIn(t);
 
     // Every point of a surface curve's space curve lies on its k-th pcurve
@@ -1118,7 +1119,7 @@ library BrepGeometryLaws
     // within the parameter floor.
     Law_PeriodicSurfaceSpansOnePeriod(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
         => g.CanEvaluate(s)
-            ? (g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic ? g.Domain(s).DomainAlong(which).IsFullPeriod(g.ParameterFloorAlong(s, which, tol)) : true)
+            ? (g.Domain(s).DomainAlong(which).HasSeam ? g.Domain(s).DomainAlong(which).IsFullPeriod(g.ParameterFloorAlong(s, which, tol)) : true)
             : true;
 
     // A surface periodic in the given parameter repeats with its period in

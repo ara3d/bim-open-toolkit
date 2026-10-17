@@ -254,8 +254,8 @@ spec ClosestParameter(g: GeometrySet, c: CurveIndex, p: Point3D): Number
 spec IsClosed(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
 {
     requires g.CanEvaluate(c);
-    ensures g.Domain(c).Periodicity.IsPeriodic ? result : true;
-    ensures g.Domain(c).ParameterLength.IsFinite ? true : !result || g.Domain(c).Periodicity.IsPeriodic;
+    ensures g.Domain(c).HasSeam ? result : true;
+    ensures g.Domain(c).ParameterLength.IsFinite ? true : !result || g.Domain(c).HasSeam;
     measure 2;
 }
 
@@ -452,7 +452,7 @@ spec DegenerateSides(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Array<Do
     requires g.CanEvaluate(s);
     requires tol.IsWellFormed;
     ensures result.Count <= 4;
-    ensures forall (k: Integer) in result.Count.Range : !g.Domain(s).DomainAlong(result[k].ParameterOf).Periodicity.IsPeriodic;
+    ensures forall (k: Integer) in result.Count.Range : !g.Domain(s).DomainAlong(result[k].ParameterOf).HasSeam;
     ensures forall (k: Integer) in result.Count.Range : forall (a: Number) : Law_TangentialPartialVanishesOnDegenerateSide(g, s, k, a, tol);
     measure 4;
 }
@@ -470,8 +470,8 @@ spec IsClosedIn(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: T
 {
     requires g.CanEvaluate(s);
     requires tol.IsWellFormed;
-    ensures g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic ? result : true;
-    ensures result && !g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic
+    ensures g.Domain(s).DomainAlong(which).HasSeam ? result : true;
+    ensures result && !g.Domain(s).DomainAlong(which).HasSeam
         ? forall (a: Number) in g.Domain(s).DomainAlong(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU)).Range :
             g.Eval(s, UvCoordinate(0.0, 0.0).WithCoordinate(which, g.Domain(s).DomainAlong(which).Range.Start)
                     .WithCoordinate(which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU), a))

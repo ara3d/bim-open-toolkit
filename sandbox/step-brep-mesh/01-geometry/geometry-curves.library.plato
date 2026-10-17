@@ -50,8 +50,8 @@ library BrepGeometryCurves
             Ellipse(placement, semiAxis1, semiAxis2) => CurveDomain.FullTurnDomain;
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveDomain.UnboundedDomain;
             Parabola(placement, focalDistance) => CurveDomain.UnboundedDomain;
-            Polyline(points) => BoundedDomain(NumberInterval(0.0, (points.Count - 1).ToNumber));
-            BSpline(data) => BoundedDomain(data.Basis.SplineDomain);
+            Polyline(points) => PolylineDomain(points.Count, points[0].SameExactly(points[points.Count - 1]));
+            BSpline(data) => data.Basis.SplineDomainOf(data.IsClosedSpline);
             Trimmed(basis, range, sameSense) => BoundedDomain(NumberInterval(0.0, range.End - range.Start));
             Composite(segments) => BoundedDomain(NumberInterval(0.0, g.CompositeExtents(segments).SumOf));
             Offset(basis, distance, reference) => g.Domain(basis);
@@ -59,6 +59,32 @@ library BrepGeometryCurves
                 ? g.Domain(spaceCurve)
                 : g.Domain(supports.MasterPcurve(master));
         };
+
+    // The domain of an n-point polyline, [0, n - 1]: Closed with period
+    // n - 1 when its first and last points are the same point exactly
+    // (closed), Aperiodic otherwise.
+    PolylineDomain(count: Integer, closed: Boolean): CurveDomain
+        => closed
+            ? CurveDomain(NumberInterval(0.0, (count - 1).ToNumber), Periodicity.Closed((count - 1).ToNumber))
+            : BoundedDomain(NumberInterval(0.0, (count - 1).ToNumber));
+
+    // The basis's parameter of a trimmed piece's parameter t, wrapped into
+    // the basis's range when the basis is closed but not periodic: a trim may
+    // run across a closed basis's join (the decoder adds a period, ISO
+    // 10303-42 4.5.43 NOTE 1), and a closed B-spline is evaluated only inside
+    // its range. At the join itself the wrapped parameter is the range's
+    // start, the same point.
+    BasisParameter(g: GeometrySet, basis: CurveIndex, range: NumberInterval, sameSense: Boolean, t: Number): Number
+        => g.Domain(basis).IntoRange(range.SensedParameter(sameSense, t));
+
+    // BasisParameter for a parameter-plane basis.
+    BasisParameter(g: GeometrySet, basis: Curve2DIndex, range: NumberInterval, sameSense: Boolean, t: Number): Number
+        => g.Domain(basis).IntoRange(range.SensedParameter(sameSense, t));
+
+    // t wrapped into the range when the domain has a seam but its formula
+    // does not wrap (Closed); t itself otherwise.
+    IntoRange(d: CurveDomain, t: Number): Number
+        => d.HasSeam && !d.Periodicity.IsPeriodic && d.CanWrap(t) ? d.Wrap(t) : t;
 
     // The curve's point at parameter t (ISO 10303-42 4.5.24 to 4.5.55; the
     // formulas are listed on BrepCurve). Precondition: t in the domain, any
@@ -77,7 +103,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.FramePoint(focalDistance * t * t, 2.0 * focalDistance * t, 0.0);
             Polyline(points) => points.PolylinePoint(t);
             BSpline(data) => data.BSplinePoint(t);
-            Trimmed(basis, range, sameSense) => g.Eval(basis, range.SensedParameter(sameSense, t));
+            Trimmed(basis, range, sameSense) => g.Eval(basis, g.BasisParameter(basis, range, sameSense, t));
             Composite(segments) => g.Eval(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
             Offset(basis, distance, reference) => g.Eval(basis, t) + reference.Vector.Cross(g.Derivative(basis, t)).Normalize * distance;
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
@@ -105,7 +131,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance * t, 2.0 * focalDistance, 0.0);
             Polyline(points) => points.PolylineChord(t);
             BSpline(data) => data.BSplineDerivative(t, 1);
-            Trimmed(basis, range, sameSense) => g.Derivative(basis, range.SensedParameter(sameSense, t)) * sameSense.SenseSign;
+            Trimmed(basis, range, sameSense) => g.Derivative(basis, g.BasisParameter(basis, range, sameSense, t)) * sameSense.SenseSign;
             Composite(segments) => g.Derivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t))
                 * segments[g.CompositeSegmentAt(segments, t)].SameSense.SenseSign;
             Offset(basis, distance, reference) => g.Derivative(basis, t)
@@ -131,7 +157,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance, 0.0, 0.0);
             Polyline(points) => Vector3D(0.0, 0.0, 0.0);
             BSpline(data) => data.BSplineDerivative(t, 2);
-            Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, range.SensedParameter(sameSense, t));
+            Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, g.BasisParameter(basis, range, sameSense, t));
             Composite(segments) => g.SecondDerivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
             Offset(basis, distance, reference) => g.OffsetSecondDerivative(basis, distance, reference, t);
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
@@ -227,12 +253,14 @@ library BrepGeometryCurves
     NoParameters(_: Number): Array<Number>
         => 0.MapRange(i => i.ToNumber);
 
-    // True when the curve is closed: periodic, or bounded with its two ends
-    // within the length tolerance. Closure is geometric and tolerance
-    // dependent; periodicity is a property of the formula (README, "Closure
-    // and periodicity"). An unbounded curve is never closed.
+    // True when the curve is closed: its domain has a seam (Periodic, or
+    // Closed as decided at decode), or it is bounded with its two ends within
+    // the length tolerance. Layers above read the seam from the domain
+    // (HasSeam); this answers for a curve the decoder left Aperiodic, such as
+    // a composite whose ends meet (README, "Closure and periodicity"). An
+    // unbounded curve is never closed.
     IsClosed(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
-        => g.Domain(c).Periodicity.IsPeriodic
+        => g.Domain(c).HasSeam
             ? true
             : (g.Domain(c).ParameterLength.IsFinite
                 ? g.Eval(c, g.Domain(c).Range.Start).Coincident(g.Eval(c, g.Domain(c).Range.End), tol)
@@ -355,7 +383,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.Origin.PositionVector.Length + focalDistance.Abs * (t * t + 2.0 * t.Abs);
             Polyline(points) => points.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length));
             BSpline(data) => data.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length)) * data.Weights.WeightRatio;
-            Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, range.SensedParameter(sameSense, t));
+            Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, g.BasisParameter(basis, range, sameSense, t));
             Composite(segments) => g.EvaluationMagnitude(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
             Offset(basis, distance, reference) => g.EvaluationMagnitude(basis, t) + distance.Abs;
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
@@ -534,8 +562,8 @@ library BrepGeometryCurves
             Ellipse(placement, semiAxis1, semiAxis2) => CurveDomain.FullTurnDomain;
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveDomain.UnboundedDomain;
             Parabola(placement, focalDistance) => CurveDomain.UnboundedDomain;
-            Polyline(points) => BoundedDomain(NumberInterval(0.0, (points.Count - 1).ToNumber));
-            BSpline(data) => BoundedDomain(data.Basis.SplineDomain);
+            Polyline(points) => PolylineDomain(points.Count, points[0].SameExactly(points[points.Count - 1]));
+            BSpline(data) => data.Basis.SplineDomainOf(data.IsClosedSpline);
             Trimmed(basis, range, sameSense) => BoundedDomain(NumberInterval(0.0, range.End - range.Start));
             Composite(segments) => BoundedDomain(NumberInterval(0.0, g.CompositeExtents(segments).SumOf));
             Offset(basis, distance) => g.Domain(basis);
@@ -557,7 +585,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.FrameUv(focalDistance * t * t, 2.0 * focalDistance * t);
             Polyline(points) => points.PolylinePoint(t);
             BSpline(data) => data.BSplinePoint(t);
-            Trimmed(basis, range, sameSense) => g.Eval(basis, range.SensedParameter(sameSense, t));
+            Trimmed(basis, range, sameSense) => g.Eval(basis, g.BasisParameter(basis, range, sameSense, t));
             Composite(segments) => g.Eval(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
             Offset(basis, distance) => g.Eval(basis, t) + g.Derivative(basis, t).Normalize.Perp * distance;
         };
@@ -577,7 +605,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance * t, 2.0 * focalDistance);
             Polyline(points) => points.PolylineChord(t);
             BSpline(data) => data.BSplineDerivative(t, 1);
-            Trimmed(basis, range, sameSense) => g.Derivative(basis, range.SensedParameter(sameSense, t)) * sameSense.SenseSign;
+            Trimmed(basis, range, sameSense) => g.Derivative(basis, g.BasisParameter(basis, range, sameSense, t)) * sameSense.SenseSign;
             Composite(segments) => g.Derivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t))
                 * segments[g.CompositeSegmentAt(segments, t)].SameSense.SenseSign;
             Offset(basis, distance) => g.Derivative(basis, t)
@@ -599,7 +627,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.FrameVector(2.0 * focalDistance, 0.0);
             Polyline(points) => Vector2D(0.0, 0.0);
             BSpline(data) => data.BSplineDerivative(t, 2);
-            Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, range.SensedParameter(sameSense, t));
+            Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, g.BasisParameter(basis, range, sameSense, t));
             Composite(segments) => g.SecondDerivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
             Offset(basis, distance) => g.OffsetSecondDerivative(basis, distance, t);
         };
@@ -646,7 +674,7 @@ library BrepGeometryCurves
             Parabola(placement, focalDistance) => placement.Origin.UvMagnitude + focalDistance.Abs * (t * t + 2.0 * t.Abs);
             Polyline(points) => points.Reduce(0.0, (m, p) => m.Max(p.UvMagnitude));
             BSpline(data) => data.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.UvMagnitude)) * data.Weights.WeightRatio;
-            Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, range.SensedParameter(sameSense, t));
+            Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, g.BasisParameter(basis, range, sameSense, t));
             Composite(segments) => g.EvaluationMagnitude(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
             Offset(basis, distance) => g.EvaluationMagnitude(basis, t) + distance.Abs;
         };
@@ -748,7 +776,7 @@ library BrepGeometryCurves
     // (the velocity is copied from the file, so the zero test of the other
     // component is exact by construction); 0 for every other case.
     PcurveParameterPeriod(g: GeometrySet, p: PcurveIndex): Number
-        => g.Domain(p).Periodicity.IsPeriodic
+        => g.Domain(p).HasSeam
             ? g.Domain(p).Periodicity.PeriodOr(0.0)
             : g.Curve2DAt(g.PcurveAt(p).Curve).ParameterPeriodOn(g.Domain(g.PcurveAt(p).Surface));
 

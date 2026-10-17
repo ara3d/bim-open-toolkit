@@ -47,7 +47,8 @@ library BrepGeometrySurfaces
             Torus(placement, major, minor, part) => SurfaceDomain(CurveDomain.FullTurnDomain, part.TorusVDomain(major, minor));
             Revolution(profile, axis) => SurfaceDomain(CurveDomain.FullTurnDomain, g.Domain(profile));
             LinearExtrusion(profile, extrusion) => SurfaceDomain(g.Domain(profile), CurveDomain.UnboundedDomain);
-            BSpline(data) => SurfaceDomain(BoundedDomain(data.U.SplineDomain), BoundedDomain(data.V.SplineDomain));
+            BSpline(data) => SurfaceDomain(data.U.SplineDomainOf(data.IsClosedSpline(SurfaceParameter.ParameterU)),
+                data.V.SplineDomainOf(data.IsClosedSpline(SurfaceParameter.ParameterV)));
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => SurfaceDomain(
                 BoundedDomain(NumberInterval(0.0, uRange.End - uRange.Start)),
                 BoundedDomain(NumberInterval(0.0, vRange.End - vRange.Start)));
@@ -75,7 +76,7 @@ library BrepGeometrySurfaces
             Revolution(profile, axis) => axis.Origin + RodriguesRotation(axis.Direction.Vector, g.Eval(profile, uv.V) - axis.Origin, uv.U);
             LinearExtrusion(profile, extrusion) => g.Eval(profile, uv.U) + extrusion * uv.V;
             BSpline(data) => data.BSplinePoint(uv);
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Eval(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.Eval(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
             Offset(basis, distance) => g.Eval(basis, uv) + g.LimitNormal(basis, uv).Vector * distance;
         };
 
@@ -103,7 +104,7 @@ library BrepGeometrySurfaces
                 RodriguesRotation(axis.Direction.Vector, g.Eval(profile, uv.V) - axis.Origin, uv.U));
             LinearExtrusion(profile, extrusion) => g.Derivative(profile, uv.U);
             BSpline(data) => data.BSplinePartial(uv, 1, 0);
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.PartialU(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv))
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.PartialU(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv))
                 * uSense.SenseSign;
             Offset(basis, distance) => g.OffsetPartial(basis, distance, uv, SurfaceParameter.ParameterU);
         };
@@ -126,7 +127,7 @@ library BrepGeometrySurfaces
             Revolution(profile, axis) => RodriguesRotation(axis.Direction.Vector, g.Derivative(profile, uv.V), uv.U);
             LinearExtrusion(profile, extrusion) => extrusion;
             BSpline(data) => data.BSplinePartial(uv, 0, 1);
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.PartialV(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv))
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.PartialV(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv))
                 * vSense.SenseSign;
             Offset(basis, distance) => g.OffsetPartial(basis, distance, uv, SurfaceParameter.ParameterV);
         };
@@ -178,8 +179,8 @@ library BrepGeometrySurfaces
             LinearExtrusion(profile, extrusion) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
             BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => uSense == vSense
-                ? g.NormalOr(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv), fallback)
-                : Direction3D(g.NormalOr(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv), fallback).Vector * (-1.0));
+                ? g.NormalOr(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv), fallback)
+                : Direction3D(g.NormalOr(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv), fallback).Vector * (-1.0));
             Offset(basis, distance) => g.NormalOr(basis, uv, fallback);
         };
 
@@ -229,7 +230,7 @@ library BrepGeometrySurfaces
             Revolution(profile, axis) => axis.Direction.Vector.Cross(g.Eval(profile, uv.V) - axis.Origin).Cross(g.Derivative(profile, uv.V)).Length;
             LinearExtrusion(profile, extrusion) => g.Derivative(profile, uv.U).Cross(extrusion).Length;
             BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.AreaElement(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.AreaElement(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
             Offset(basis, distance) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
         };
 
@@ -389,7 +390,7 @@ library BrepGeometrySurfaces
 
     // True when the side is one of the surface's degenerate sides.
     IsSideCollapsed(g: GeometrySet, s: SurfaceIndex, side: DomainSide, tol: Tolerances): Boolean
-        => g.Domain(s).DomainAlong(side.ParameterOf).Periodicity.IsPeriodic
+        => g.Domain(s).DomainAlong(side.ParameterOf).HasSeam
             ? false
             : (g.Domain(s).DomainAlong(side.ParameterOf).ParameterLength.IsFinite
                 ? g.CollapsedAt(s, side.ParameterOf, tol).Any(c => (c - g.Domain(s).SideValue(side)).Abs <= g.ParameterFloorAlong(s, side.ParameterOf, tol).Value)
@@ -439,7 +440,7 @@ library BrepGeometrySurfaces
     // seam; periodicity only says the formula wraps (README, "Closure and
     // periodicity").
     IsClosedIn(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): Boolean
-        => g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic
+        => g.Domain(s).DomainAlong(which).HasSeam
             ? true
             : (g.Domain(s).DomainAlong(which).ParameterLength.IsFinite ? g.SidesCoincide(s, which, tol) : false);
 
@@ -536,7 +537,7 @@ library BrepGeometrySurfaces
             Revolution(profile, axis) => axis.Origin.PositionVector.Length * 2.0 + g.EvaluationMagnitude(profile, uv.V);
             LinearExtrusion(profile, extrusion) => g.EvaluationMagnitude(profile, uv.U) + uv.V.Abs * extrusion.Length;
             BSpline(data) => data.ControlPoints.Elements.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length)) * data.Weights.Elements.WeightRatio;
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.EvaluationMagnitude(basis, TrimmedToBasis(uRange, vRange, uSense, vSense, uv));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.EvaluationMagnitude(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
             Offset(basis, distance) => g.EvaluationMagnitude(basis, uv) + distance.Abs;
         };
 
@@ -660,7 +661,7 @@ library BrepGeometrySurfaces
     // length tolerance: where a surface of revolution closes to a pole.
     // Precondition: the axis direction is a unit vector.
     ProfileEndsOnAxis(g: GeometrySet, profile: CurveIndex, axis: InfiniteLine3D, tol: LengthTolerance): Array<Number>
-        => g.Domain(profile).Periodicity.IsPeriodic || !g.Domain(profile).ParameterLength.IsFinite
+        => g.Domain(profile).HasSeam || !g.Domain(profile).ParameterLength.IsFinite
             ? Number.NoParameters
             : [g.Domain(profile).Range.Start, g.Domain(profile).Range.End].FlatMap(v =>
                 axis.Direction.Vector.Cross(g.Eval(profile, v) - axis.Origin).Length <= tol.Value ? [v] : Number.NoParameters);
@@ -676,9 +677,12 @@ library BrepGeometrySurfaces
                 : Number.NoParameters);
 
     // The basis parameters of a rectangular trimmed surface's point uv: each
-    // direction run from its range's start or end by its sense.
-    TrimmedToBasis(uRange: NumberInterval, vRange: NumberInterval, uSense: Boolean, vSense: Boolean, uv: UvCoordinate): UvCoordinate
-        => UvCoordinate(uRange.SensedParameter(uSense, uv.U), vRange.SensedParameter(vSense, uv.V));
+    // direction run from its range's start or end by its sense, then wrapped
+    // into the basis's range where the basis is closed but not periodic, as
+    // BasisParameter for trimmed curves.
+    TrimmedToBasis(g: GeometrySet, basis: SurfaceIndex, uRange: NumberInterval, vRange: NumberInterval, uSense: Boolean, vSense: Boolean, uv: UvCoordinate): UvCoordinate
+        => UvCoordinate(g.Domain(basis).U.IntoRange(uRange.SensedParameter(uSense, uv.U)),
+            g.Domain(basis).V.IntoRange(vRange.SensedParameter(vSense, uv.V)));
 
     // The values within range r, ends included up to the tolerance, as
     // distances along a run of r in the given sense: a basis's collapsed lines
