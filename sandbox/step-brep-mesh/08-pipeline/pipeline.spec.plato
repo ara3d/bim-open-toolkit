@@ -202,6 +202,9 @@ spec MeshStepText(text: String, o: MeshingOptions): MeshOutcome
 // # Contracts: declarations owed by lower layers
 
 // A rigid motion of the model: tables and parameters kept, points moved.
+// The function is layer 2's (with a body since the fix wave); this contract,
+// which this layer's Law_RigidMotionMovesPositions relies on, belongs in
+// 02-topology's spec and moves there when layer 2 writes one.
 spec RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel
 {
     requires motion.IsOrthonormalWithin(m.Tolerances.Angle);
@@ -213,7 +216,6 @@ spec RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel
     ensures forall (s: Integer) in m.Geometry.Surfaces.Count.Range : forall (uv: UvCoordinate) : result.Geometry.Eval(SurfaceIndex(s), uv).Coincident(motion.PointInFrame(m.Geometry.Eval(SurfaceIndex(s), uv)), m.Tolerances.Length);
     ensures forall (c: Integer) in m.Geometry.Curves.Count.Range : forall (t: Number) : result.Geometry.Eval(CurveIndex(c), t).Coincident(motion.PointInFrame(m.Geometry.Eval(CurveIndex(c), t)), m.Tolerances.Length);
     measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
-    deferred "one pass over the arena and the vertex table, mapping points, frames, directions, and control points through the motion";
 }
 
 // The model scaled by factor: tables kept, lengths multiplied.

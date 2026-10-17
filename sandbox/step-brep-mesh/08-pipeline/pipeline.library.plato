@@ -8,8 +8,8 @@
 // refines the edges face meshing asks for and meshes their faces again,
 // assembles the face meshes by numbering (layer 6), and validates the result
 // at the requested conformance level (layer 7). Every body here is the
-// definition; the two deferred functions are model transforms the
-// metamorphic laws need, owed by layer 2.
+// definition; the one deferred function, ScaledBy on a model, is a model
+// transform the scaling laws need, owed by layer 2.
 //
 // Sections, in order:
 //  - Options
@@ -392,15 +392,6 @@ library StepToMesh
 
     //==
     // # Declarations owed by lower layers
-
-    // belongs-in: 02-topology
-    // deferred: a rigid motion of the whole model. Every point of the arena
-    // and every vertex goes to motion.PointInFrame(p); every placement frame,
-    // direction, and vector turns by the frame's axes; B-spline control points
-    // move as points; weights, knots, every curve and surface parameter, the
-    // topology, the tolerances, and the unit are kept. One pass over the
-    // tables (the arena part belongs in 01-geometry).
-    RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel;
 
     // belongs-in: 02-topology
     // deferred: the model scaled about the origin by factor. Every length is

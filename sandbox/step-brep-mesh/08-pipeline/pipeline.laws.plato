@@ -66,10 +66,6 @@ library StepToMeshLaws
         return x;
     }
 
-    // The point with every coordinate multiplied by factor.
-    ScaledPoint(p: Point3D, factor: Number): Point3D
-        => Point3D(p.X * factor, p.Y * factor, p.Z * factor);
-
     // True when two points have identical coordinates (layer 0's Identical).
     IsIdenticalPoint(a: Point3D, b: Point3D): Boolean
         => a.X.Identical(b.X) && a.Y.Identical(b.Y) && a.Z.Identical(b.Z);

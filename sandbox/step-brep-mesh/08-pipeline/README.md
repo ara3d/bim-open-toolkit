@@ -395,8 +395,9 @@ The research file is kept as written; these two corrections hold for this design
   the round count; fine for witnesses, and a harness can keep the states of one run instead.
 - **Determinism** means no output order from a hash set, and no floating-point reduction whose order
   depends on a thread schedule. `Law_MeshModelIsDeterministic` is the test.
-- **The deferred functions** `RigidlyMoved` and `ScaledBy` on a model are needed only by the
-  metamorphic laws. A bodiless function compiles to a `NotImplementedException` stub in C#
+- **The deferred function** `ScaledBy` on a model is needed only by the scaling laws; layer 2
+  gives it a body once layer 1's scaled curves and surfaces land (`RigidlyMoved` has a body in layer
+  2 since the fix wave). A bodiless function compiles to a `NotImplementedException` stub in C#
   (PLATO-PRIMER.md D.7), so they can wait for the corpus chunk.
 - **64-bit `Number`** is assumed, as in every layer. The power-of-two laws hold in 32 bits too.
 
@@ -533,6 +534,7 @@ Recorded here, not fixed there.
 | `DiscretizeUsable(m, c)`, `Undiscretized(e)` (fix wave) | deleted; layer 4's `DiscretizeAll(m, c, NoFloors)` and `Undiscretized(e)` | `DiscretizeAll` now takes the usability guard itself |
 | `SameConnectivity(ModelMesh, ModelMesh)` (fix wave) | deleted; layer 6's, which compares numberings as this layer's did | one declaration, in the mesh layer |
 | `SameFaceMesh`, `SameFaceMeshOutcome`, `Law_RequestsNameEdgesOfTheirFace` (fix wave) | deleted; layer 5's `SameFaceMesh`, `SameFaceMeshOutcome`, and `MeshFace`'s ensures `Law_RequestsNameFaceEdges`, `Law_MeshFaceReadsOnlyFaceEdges`, assumed by `FailureIsIsolated` | the comparisons belong beside their types; the law restated a promise layer 5 now makes |
+| `RigidlyMoved(m, motion)` (deferred), `ScaledPoint(p, factor)` (fix wave) | deleted; layer 2's, with bodies; the `RigidlyMoved` contract stays in this layer's spec until layer 2 writes one | layer 2 owns the model transforms |
 | `ParseOutcome { Ok; File; Diagnostics }` | not declared; layer 3's `ParsedFile` | identical fields; layer 3's proposal accepted (decision 1) |
 | `DecodeOutcome { Ok; Model; Map; Diagnostics }` | not declared; layer 3's `DecodedModel` | decoding is total and does not stop the run; a stored `Ok` would be a computable flag (decision 2) |
 | `MeshingOptions { Face; Level; MaxRefinementRounds }` | adds `Decode: DecodePolicy` | the decode defaults pass through to `DecodeBrepWith` |
@@ -607,3 +609,6 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
    `Law_MeshFaceReadsOnlyFaceEdges`; `SameFaceMesh` and `SameFaceMeshOutcome` deleted for layer 5's.
    `WatertightByConstruction` no longer inherits a conjecture's status: layer 5's
    `ElementsTileRegion` is a theorem.
+10. **`RigidlyMoved` and `ScaledPoint` stand-ins deleted**: layer 2 declares both with bodies. Its
+    `ScaledBy(m, factor)` waits for layer 1's `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, so this
+    layer keeps its bodiless `ScaledBy` with `// belongs-in: 02-topology` until then.
