@@ -36,7 +36,7 @@ theorem DiscreteGaussBonnet
     assume mesh.HasAllValidCorners;
     assume mesh.CountsOf(c).IsClosed;
     assume mesh.CountsOf(c).Quads == 0;
-    assume forall (e: ElementIndex) : Law_ElementIsNotDegenerate(mesh, e, LengthTolerance(0.0));
+    assume forall (e: ElementIndex) : mesh.HasValidCorners(e) ? mesh.ElementSmallestAltitude(e) > 0.0 : true;
     conclude mesh.AngleDefectSum(mesh.ComponentsOf, c).Radians
         == Number.Tau * mesh.CountsOf(c).EulerCharacteristic.ToNumber;
     because "Summing the defects gives 2 pi V - (sum of all corner angles) = 2 pi V - pi T, since the
@@ -55,7 +55,7 @@ theorem MixedGaussBonnet
     given mesh: ModelMesh, c: MeshComponentIndex;
     assume mesh.HasAllValidCorners;
     assume mesh.CountsOf(c).IsClosed;
-    assume forall (e: ElementIndex) : Law_ElementIsNotDegenerate(mesh, e, LengthTolerance(0.0));
+    assume forall (e: ElementIndex) : mesh.HasValidCorners(e) ? mesh.ElementSmallestAltitude(e) > 0.0 : true;
     conclude mesh.AngleDefectSum(mesh.ComponentsOf, c).Radians
         == Number.Tau * mesh.CountsOf(c).EulerCharacteristic.ToNumber
             + mesh.QuadAngleDefectSum(mesh.ComponentsOf, c).Radians;

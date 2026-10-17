@@ -436,3 +436,6 @@ Applied:
   `ResolutionAt(2 pi)`, and both Gauss-Bonnet laws by `ResolutionAt` of the defect sum's
   magnitude; the signed volume and the angle sums are compensated. The model's angle tolerance
   (1e-9 rad by layer 3's policy) was the wrong kind of bound for an identity about rounding.
+- **No ill-formed tolerance in the Gauss-Bonnet theorems** (review F12). `DiscreteGaussBonnet` and
+  `MixedGaussBonnet` assumed `Law_ElementIsNotDegenerate` at `LengthTolerance(0.0)`, below layer 0's
+  smallest well-formed tolerance; they now assume a positive smallest altitude directly.
