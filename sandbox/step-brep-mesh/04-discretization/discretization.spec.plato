@@ -241,11 +241,12 @@ theorem TurningAngleBoundedByTangentDeviation
     assume m.IsEvaluable(d);
     assume i >= 1 && i + 1 < d.Points.Count;
     assume !m.IsSeedParameter(d.Edge, d.Parameters[i]);
+    assume forall (t: Number) in NumberInterval(d.Parameters[i - 1].Min(d.Parameters[i + 1]), d.Parameters[i - 1].Max(d.Parameters[i + 1])) : m.TangentOnEdge(d.Edge, t).Length > 0.0;
     assume forall (plan: SamplePlan) : Law_TangentDeviationWithinHalfAngular(m, d, c, plan, i - 1);
     assume forall (plan: SamplePlan) : Law_TangentDeviationWithinHalfAngular(m, d, c, plan, i);
     assume !m.IsAtLengthFloor(d, c, i - 1) && !m.IsAtLengthFloor(d, c, i);
     conclude d.TurningAngle(i) <= c.EffectiveAngular + m.Tolerances.Angle.Value * 2.0;
-    because "Over every plan, the sampled tangent deviation of a segment tends to the supremum over its open parameter interval of the angle between its chord and the tangent, and the one-sided tangents at its ends are limits of interior tangents, so each chord is within half the angular bound (plus the angle tolerance) of the tangent at each of its ends. Point i is not a seed, so the curve is tangent-continuous there (every possible corner is a seed) and the left and right tangents coincide, the curve being regular. The triangle inequality for angles then gives turning(i) <= dev(i - 1) + dev(i) <= Angular + 2 AngleTolerance.";
+    because "Over every plan, the sampled tangent deviation of a segment tends to the supremum over its open parameter interval of the angle between its chord and the tangent, and the one-sided tangents at its ends are limits of interior tangents, so each chord is within half the angular bound (plus the angle tolerance) of the tangent at each of its ends. Point i is not a seed, so the curve is tangent-continuous there (every possible corner is a seed) and the left and right tangents coincide, because the curve is regular on the two closed spans (the second assumption: coincident B-spline control points can make the derivative vanish inside a span, where the tangent direction may reverse without a seed, and there the conclusion fails). The triangle inequality for angles then gives turning(i) <= dev(i - 1) + dev(i) <= Angular + 2 AngleTolerance.";
     tested by Law_TurningAngleWithinAngular, Law_TangentDeviationWithinHalfAngular;
 }
 
