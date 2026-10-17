@@ -293,13 +293,17 @@ library BrepTopologyLaws
             : true;
 
     // The edge domain runs forward: its start does not exceed its end. On an
-    // aperiodic curve a wrong SameSense inverts it; on a periodic curve it holds
-    // by construction. Structural, Tolerances.Parameter (the model's parameter
-    // floor).
+    // aperiodic curve a wrong SameSense inverts it; on a curve that loops it
+    // holds by construction. Structural, the parameter tolerance at the range's
+    // start (01-geometry's ParameterToleranceAt: the length tolerance over the
+    // curve's speed there, between layer 0's floor and cap), not the
+    // model-wide floor (review T8).
     Law_EdgeDomainIsForward(m: BrepModel, e: BrepEdgeIndex): Boolean
         => m.IsEveryIndexInRange
             ? (m.IsEdgeInRange(e)
-                ? m.EdgeDomain(e).Range.Start <= m.EdgeDomain(e).Range.End + m.Tolerances.Parameter.Value
+                ? m.EdgeDomain(e).Range.Start
+                    <= m.EdgeDomain(e).Range.End
+                        + m.Geometry.ParameterToleranceAt(m.Edges[e].Curve, m.EdgeDomain(e).Range.Start, m.Tolerances).Value
                 : true)
             : true;
 

@@ -140,11 +140,19 @@ vertices. `EdgeDomain(m, e)` derives the range:
 1. The vertex met first along the curve's increasing parameter is `Start` when `SameSense` is
    true, else `End` (`FirstVertexAlongCurve`). Its parameter `a` and the other vertex's parameter
    `b` come from layer 1's `ClosestParameter`.
-2. Aperiodic curve: the range is `[a, b]`. A closed edge (`Start == End` as indices) on an aperiodic
-   curve, such as a closed clamped B-spline, spans the curve's whole domain.
-3. Periodic curve with period `P`: the range is `[a, a + w]`, where `a + w` is the representative
-   of `b` in `(a, a + P]` (`PeriodicRepresentativeAbove`). A closed edge spans `[a, a + P]`.
-4. The periodicity is copied from the curve's domain.
+2. Aperiodic curve: the range is `[a, b]`. A closed edge (`Start == End` as indices) on a curve
+   that neither wraps nor closes can only be degenerate, and gets `[a, a]`. The first version gave
+   it the curve's whole domain, which is `[-MaxValue, MaxValue]` on a line (review F4a).
+3. Curve that loops, `Periodic(P)` or `Closed(P)` (a clamped B-spline whose ends coincide, decided
+   by layer 3 at decode): the range is `[a, a + w]`, where `a + w` is the representative of `b` in
+   `(a, a + P]` (`PeriodicRepresentativeAbove`). A closed edge spans `[a, a + P]`. An arc that
+   crosses a closed B-spline's join gets that arc, not its complement (review F4c).
+4. Periodicity: `Periodic` is copied, since the formula wraps everywhere. `Closed` says that the
+   range's two ends are one point, so a closed edge keeps it and an open arc is `Aperiodic`. A
+   parameter beyond a `Closed` curve's range is wrapped into it before evaluation
+   (`EdgeCurvePoint`, through layer 0's `Wrap`).
+
+The range is always bounded: both ends are inverse-evaluation results.
 
 The range therefore always runs forward in the curve's parameter, which is what layer 4's
 discretization needs (`EdgeDiscretization.Parameters` strictly increasing from `Range.Start` to
@@ -159,9 +167,10 @@ out either nearly zero or nearly a full period, depending on rounding in `Closes
 
 The laws of the rule: `Law_VertexCoincidesWithCurveEnd` (each vertex lies on the curve; a data law),
 `Law_EdgeDomainEndsAtVertices` (the curve at the assigned end reproduces the vertex; the theorem
-`EdgeDomainEndsFollowFromVertexOnCurve` derives it from the previous law except for a closed edge on
-an aperiodic curve), and `Law_EdgeDomainIsForward` (on an aperiodic curve a wrong `SameSense`
-inverts the range). On a periodic curve a wrong `SameSense` instead gives the complementary arc,
+`EdgeDomainEndsFollowFromVertexOnCurve` derives it from the previous law on every curve but a
+`Closed` one, where wrapping adds the closure gap), and `Law_EdgeDomainIsForward` (on an aperiodic
+curve a wrong `SameSense` inverts the range; judged by the parameter tolerance at the range's start,
+layer 1's `ParameterToleranceAt`). On a periodic curve a wrong `SameSense` instead gives the complementary arc,
 which no edge-level law can see; the face-level winding law and layer 7's area oracles catch it.
 
 ## Pcurves
@@ -300,7 +309,9 @@ cones apex to apex give two cycles at the shared apex and fail the law; their re
    face meshing's left/right rule and the winding law read one number. `epsilon` comes from layer 1.
 4. **The edge domain runs forward, and closedness is index identity.** The two alternatives,
    traversal-ordered ranges and closedness by coincidence, each make layer 4's discretization or the
-   full-circle case ambiguous.
+   full-circle case ambiguous. Whether a closed edge spans a period is decided by the curve's
+   periodicity alone (`Periodic` or `Closed`, decided once by layer 3), never by the curve's domain:
+   on a curve that does not loop, a closed edge is degenerate.
 5. **Pcurves are found through the curve**, not stored on coedges: `Coedge` is fixed with two
    fields, pcurves are optional in STEP, and assigning the two seam pcurves to uses is face meshing's
    job.
@@ -342,7 +353,8 @@ cones apex to apex give two cycles at the shared apex and fail the law; their re
 Kind: structural laws are exact or tolerance-based statements about topology or about the data's
 claims, Error when they fail. A geometric law is a Warning when it fails by less than ten times its
 tolerance and an Error above (SPEC-DSL.md section 4). A library law can fail only through a defect in
-this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Tolerances.Parameter.Value`.
+this library. `epsL` is `Tolerances.Length.Value`; a parameter tolerance is the one at the point,
+layer 1's `ParameterToleranceAt`.
 
 | Law | Statement | Tolerance | Kind, severity |
 |---|---|---|---|
@@ -367,7 +379,7 @@ this library. `epsL` is `Tolerances.Length.Value`; the parameter floor is `Toler
 | `Law_ShellIsOrientable(m, s)` | reversing the faces `OrientationFlips` names makes every edge's two uses opposite | exact | structural, Error |
 | `Law_ReversingEveryFaceKeepsCoherence(m, s)` | reversing every face leaves the shell's coherence unchanged | exact | library, test |
 | `Law_SolidShellsAreDeclaredClosed(m, b)` | the outer and void shells of a solid are declared closed | exact | structural, Error |
-| `Law_EdgeDomainIsForward(m, e)` | the edge domain's start does not exceed its end | parameter floor | structural, Error |
+| `Law_EdgeDomainIsForward(m, e)` | the edge domain's start does not exceed its end | parameter tolerance at the start | structural, Error |
 | `Law_EdgeReversalKeepsEdgeDomain(m, e)` | reversing an edge leaves its domain unchanged, bit for bit | exact | library, test |
 | `Law_EdgeDomainEndsAtVertices(m, e, atStart)` | the curve at the domain end assigned to a vertex reproduces the vertex | `epsL` | geometric, W/E |
 | `Law_VertexCoincidesWithCurveEnd(m, e, atStart)` | a vertex lies on its edge's curve | `epsL` | geometric, W/E |
@@ -418,7 +430,7 @@ brief added (`Law_SeamUsesAreInOneFace`, `Law_EdgeDomainEndsAtVertices`,
 shell-free form), `SwappedEnds`, `WithUsesFlipped`, `WithEdgeReversed` (4, 8; adopted from layer 4's
 `belongs-in: 02-topology` stand-ins with the same signatures);
 `IsSeamEdgeOf`, `HasSeam`, `PcurvesOnFace`, `PcurveEdgeDomain`, `DomainEndParameter`,
-`FirstVertexAlongCurve`, `LastVertexAlongCurve`, `IsClosedEdge`, `IsOnPeriodicCurve` (4, 5);
+`FirstVertexAlongCurve`, `LastVertexAlongCurve`, `IsClosedEdge`, `IsOnClosedCurve`, `EdgeCurvePoint` (4, 5);
 `CornersAtVertex`, `CornersAroundVertex`, `FacesAroundVertex`, `LinkComponentCount` (5, 7);
 `RawCounts`, `EulerPoincare`, `ImpliedGenus`, `ShellEulerPoincare`, `ShellGenus` (7);
 `IsDegenerateEdge`, `IsCoincident`, `IsEveryIndexInRange(m)`, `ScaleToMetres`, the deviation
@@ -444,8 +456,9 @@ should move to VOCABULARY.md's fixed list. This layer relies on three properties
 is called; `PcurvesOf` returns at most two pcurves; a pcurve has the sense of its 3D curve.
 
 **Declared here on behalf of lower layers** (`// belongs-in:`), to be deleted once the owner
-declares them: for 00-foundation, `PeriodicRepresentativeAbove(t, reference, period)` and
-`IsPeriodicDomain(d)`. `NormalAgreesWithParameterization(g, s)`, the sign `epsilon`, was declared
+declares them: for 00-foundation, `PeriodicRepresentativeAbove(t, reference, period)`, which layer
+0's fix-wave commits had not yet declared when this layer's snapshot was taken. `IsPeriodicDomain(d)`
+is deleted: layer 0's `HasSeam(d)` replaces it. `NormalAgreesWithParameterization(g, s)`, the sign `epsilon`, was declared
 here for layer 1 and is now layer 1's alone (fix wave).
 
 **Obligations on 03-step**: fold `oriented_face`, `oriented_closed_shell` and void orientation into
@@ -466,12 +479,13 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
    agreement of the tangents, and that each pcurve's surface is a surface of a face citing the edge.
 5. **Parameter-space loop laws**: simplicity and nesting (`Law_LoopSimpleInParameterSpace`,
    `Law_InnerBoundInsideOuter`) belong to layer 5's region, or to this layer for plain faces.
-6. **The parameter tolerance for curve parameters.** `Law_EdgeDomainIsForward` uses the model's
-   parameter floor, the strictest choice. Layer 1's `ParameterToleranceAt(g, c, t, tol)` (not yet
-   fixed) gives a local one through the curve's speed, and should replace the floor once fixed.
-7. **Caching edge domains.** `EdgeDomain` recomputes two inverse evaluations on every call. Whether
-   `BrepModel` gains a side table, filled by the decoder, is open (research/STEP-BREP-MODEL.md 9.5).
-   It would need a law tying it to the rule.
+6. **The parameter tolerance for curve parameters.** Settled in the fix wave: layer 1's
+   `ParameterToleranceAt(g, c, t, tol)` at the range's start (review T8).
+7. **Caching edge domains.** Settled in the fix wave (review T9): not stored. `EdgeDomain` and
+   `PcurveEdgeDomain` are pure functions of the model, each the one definition of its range; an
+   implementation memoizes them per edge. A stored table would add a tenth field to `BrepModel`,
+   which every layer constructs, and a law saying the table equals the function, which is the
+   function again.
 8. **Severity of a repaired defect.** Settled in the fix wave: a Warning (decision 12).
 9. **Cross-shell pinches.** Per-shell link laws do not see two shells of a `ShellSet`, or two solids,
    touching at a vertex. That is legal for separate solids and suspect for one shell set.
@@ -493,7 +507,7 @@ closed curve; decode every index in range (`Law_IndicesInRange` as an `ensures` 
   (research/VALIDATION-MATH.md 3.3).
 - The sum checker cannot type a `match` whose subject is reached through an overloaded call chain:
   `match (m.Geometry.Domain(c).Periodicity)` gave CHK304 with no location. Bind the value through a
-  function with a declared parameter type (`IsPeriodicDomain`).
+  function with a declared parameter type (layer 0's `HasSeam(d: CurveDomain)` is one).
 - The type checker accepted `Boolean == 1` in a probe. Equality between unlike types is not caught,
   so every `==` here was checked by reading.
 - With a 32-bit `Number` (PLATO-PRIMER.md D.1), coordinates near 100 m in millimetres are about
@@ -577,3 +591,16 @@ Applied:
   this layer's (review C4: layer 4 renames its own meaning `IsClosedRegularEdge`). New library laws
   `Law_EdgeReversalKeepsCoedgeSense` and `Law_EdgeReversalKeepsEdgeDomain`, the second being the
   assumption of layer 4's theorem `EdgeReversalInvariance`.
+- **F4a, F4c, C1, T1 (edge domain and the `Closed` case).** A closed edge spans a period on a
+  `Periodic` or `Closed` curve and is degenerate, `[a, a]`, on any other, so no range is unbounded
+  and an arc across a closed B-spline's join is that arc. `TraversalDomain` gains the `Closed` arm;
+  `IsOnPeriodicCurve` becomes `IsOnClosedCurve` (layer 0's `HasSeam`); `EdgeCurvePoint` wraps a
+  parameter into a `Closed` curve's domain before evaluating; the spec's `EdgeDomain` contract and
+  the theorem `EdgeDomainEndsFollowFromVertexOnCurve` (its exclusion now covers only `Closed`
+  curves, by the closure gap) are restated. The stand-in `IsPeriodicDomain` is deleted; layer 0's
+  `HasSeam` replaces it. `PeriodicRepresentativeAbove` stays as a `belongs-in` stand-in until layer
+  0 declares it.
+- **T8.** `Law_EdgeDomainIsForward` is judged by layer 1's `ParameterToleranceAt` at the range's
+  start instead of the model-wide floor, so this layer no longer reads `Tolerances.Parameter`, which
+  layer 0 split.
+- **T9 (decided, not applied).** Edge and pcurve ranges are not stored at decode (open item 7).

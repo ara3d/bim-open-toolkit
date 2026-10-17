@@ -13,8 +13,8 @@
 // and callers establish it with the conditional, never with && (both operands
 // of && are evaluated). Typed empty arrays are written 0.MapRange(k => X(k)),
 // whose lambda never runs. Coincidence of points is the model's
-// Tolerances.Length. Tolerances.Parameter is the model-wide parameter floor of
-// 00-foundation, the strictest parameter tolerance anywhere. Linear searches
+// Tolerances.Length. A parameter comparison uses the tolerance at the point
+// (01-geometry's ParameterToleranceAt), never one model-wide floor. Linear searches
 // are the definitions; an implementation replaces them with one pass that
 // builds incidence tables (README, "Implementation notes").
 //
@@ -517,16 +517,21 @@ library BrepTopology
     // vertex met first along the curve's direction (Start when SameSense, else
     // End) gives the range's start, the other vertex its end, each by inverse
     // evaluation on the curve. The range always runs forward in the curve's
-    // parameter. See the README, "The edge domain".
+    // parameter and is always bounded. Closure is decided once, by the curve's
+    // periodicity (layer 3 decides Closed at decode): a closed edge spans one
+    // period on a curve that wraps (Periodic or Closed) and is degenerate,
+    // [a, a], on one that does not. See the README, "The edge domain".
 
     // Whether the edge starts and ends at the same vertex index: a closed edge.
     // Precondition: m.IsEdgeInRange(e).
     IsClosedEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
         => m.Edges[e].Start == m.Edges[e].End;
 
-    // Whether the edge's curve is periodic. Precondition: m.IsEdgeIntact(e).
-    IsOnPeriodicCurve(m: BrepModel, e: BrepEdgeIndex): Boolean
-        => m.Geometry.Domain(m.Edges[e].Curve).IsPeriodicDomain;
+    // Whether the edge's curve is a loop: its domain has a seam, Periodic (the
+    // formula wraps) or Closed (the range's ends are one point). Precondition:
+    // m.IsEdgeIntact(e).
+    IsOnClosedCurve(m: BrepModel, e: BrepEdgeIndex): Boolean
+        => m.Geometry.Domain(m.Edges[e].Curve).HasSeam;
 
     // The edge's Start vertex when atStart, else its End vertex. Precondition:
     // m.IsEdgeInRange(e).
@@ -549,17 +554,34 @@ library BrepTopology
         => m.Geometry.ClosestParameter(m.Edges[e].Curve, m.Vertices[v].Point);
 
     // The range an edge occupies on a curve with domain d, given the parameters
-    // of the first and last vertex along the curve. Aperiodic: [first, last], or
-    // the whole curve domain for a closed edge. Periodic: [first, first + w] with
-    // w in (0, period], the full period for a closed edge. The periodicity is
-    // copied from d.
+    // of the first and last vertex along the curve. Aperiodic: [first, last],
+    // and [first, first] for a closed edge, which on a curve that does not
+    // loop can only be degenerate; never the curve's own domain, which is
+    // unbounded on a line (review F4a). Periodic or Closed: [first, first + w]
+    // with w in (0, period], the full period for a closed edge, so an arc that
+    // crosses a closed B-spline's join gets that arc, not its complement
+    // (review F4c). Periodicity: Periodic is a property of the formula and is
+    // copied; Closed says the range's two ends are one point, so it is kept for
+    // a closed edge, whose range is one period, and an open arc is Aperiodic.
+    // A parameter of a range that crosses a Closed curve's join is wrapped
+    // into the curve's domain before evaluation (EdgeCurvePoint).
     TraversalDomain(d: CurveDomain, first: Number, last: Number, isClosed: Boolean): CurveDomain
         => match (d.Periodicity) {
-            Aperiodic => isClosed ? d : CurveDomain(NumberInterval(first, last), d.Periodicity);
+            Aperiodic => CurveDomain(NumberInterval(first, isClosed ? first : last), d.Periodicity);
             Periodic(period) => CurveDomain(
                 NumberInterval(first, isClosed ? first + period : last.PeriodicRepresentativeAbove(first, period)),
                 d.Periodicity);
+            Closed(period) => isClosed
+                ? CurveDomain(NumberInterval(first, first + period), d.Periodicity)
+                : CurveDomain(NumberInterval(first, last.PeriodicRepresentativeAbove(first, period)), Periodicity.Aperiodic);
         };
+
+    // The point of edge e's curve at parameter t of its edge domain: t wrapped
+    // into the curve's domain first (layer 0's Wrap; t itself on an aperiodic
+    // curve), because a Closed curve's formula is evaluated only inside its
+    // range. Precondition: m.IsEveryIndexInRange, m.IsEdgeInRange(e), t finite.
+    EdgeCurvePoint(m: BrepModel, e: BrepEdgeIndex, t: Number): Point3D
+        => m.Geometry.Eval(m.Edges[e].Curve, m.Geometry.Domain(m.Edges[e].Curve).Wrap(t));
 
     // The parameter range edge e occupies on its curve, in increasing parameter,
     // with the curve's periodicity. Precondition: m.IsEdgeIntact(e).
@@ -910,7 +932,7 @@ library BrepTopology
     // The point of edge e's curve at fraction t of its edge domain.
     // Precondition: m.IsEveryIndexInRange and m.IsEdgeInRange(e).
     CurvePointAt(m: BrepModel, e: BrepEdgeIndex, t: Number): Point3D
-        => m.Geometry.Eval(m.Edges[e].Curve, m.EdgeDomain(e).Range.Lerp(t.SampleFraction));
+        => m.EdgeCurvePoint(e, m.EdgeDomain(e).Range.Lerp(t.SampleFraction));
 
     // The distance from edge e's Start (atStart) or End vertex to the nearest
     // point of its curve. Precondition: m.IsEveryIndexInRange and
@@ -923,8 +945,7 @@ library BrepTopology
     // at the end of the edge domain assigned to it. Precondition:
     // m.IsEveryIndexInRange and m.IsEdgeInRange(e).
     DomainEndDeviation(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Number
-        => m.Vertices[m.EdgeVertex(e, atStart)].Point.Distance(
-            m.Geometry.Eval(m.Edges[e].Curve, m.DomainEndParameter(e, atStart)));
+        => m.Vertices[m.EdgeVertex(e, atStart)].Point.Distance(m.EdgeCurvePoint(e, m.DomainEndParameter(e, atStart)));
 
     // The distance from edge e's Start vertex to its curve point at fraction t.
     // Precondition: m.IsEveryIndexInRange and m.IsEdgeInRange(e).
@@ -997,16 +1018,6 @@ library BrepTopology
 
     //==
     // # Owed by 00-foundation
-
-    // belongs-in: 00-foundation
-    // Whether a curve domain is periodic. A separate function because the sum
-    // checker cannot type a match subject reached through an overloaded call
-    // chain (CHK304, found by this layer's gate run).
-    IsPeriodicDomain(d: CurveDomain): Boolean
-        => match (d.Periodicity) {
-            Aperiodic => false;
-            Periodic(period) => true;
-        };
 
     // belongs-in: 00-foundation
     // The value congruent to t modulo period in (reference, reference + period]:

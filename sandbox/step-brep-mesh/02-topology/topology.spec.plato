@@ -89,24 +89,26 @@ spec EdgeDomain(m: BrepModel, e: BrepEdgeIndex): CurveDomain
 {
     requires Law_IndicesInRange(m);
     requires m.IsEdgeInRange(e);
-    ensures result.Periodicity == m.Geometry.Domain(m.Edges[e].Curve).Periodicity;   // exact by construction
-    ensures (m.IsClosedEdge(e) && m.IsOnPeriodicCurve(e).Not)
-        ? result.Range == m.Geometry.Domain(m.Edges[e].Curve).Range   // exact by construction
-        : result.Range.Start == m.VertexParameter(e, m.FirstVertexAlongCurve(e));   // exact by construction
-    ensures m.IsClosedEdge(e)
-        ? true
-        : match (result.Periodicity) {
-            Aperiodic => result.Range.End == m.VertexParameter(e, m.LastVertexAlongCurve(e));   // exact by construction
-            Periodic(period) => result.Range.End
-                == m.VertexParameter(e, m.LastVertexAlongCurve(e)).PeriodicRepresentativeAbove(result.Range.Start, period);   // exact by construction
-        };
-    ensures m.IsClosedEdge(e)
-        ? match (result.Periodicity) {
-            Aperiodic => true;
-            Periodic(period) => result.Range.End == result.Range.Start + period;   // exact by construction
-        }
-        : true;
-    ensures m.IsOnPeriodicCurve(e) ? Law_EdgeDomainIsForward(m, e) : true;
+    ensures result.Range.Start == m.VertexParameter(e, m.FirstVertexAlongCurve(e));   // exact by construction
+    ensures match (m.Geometry.Domain(m.Edges[e].Curve).Periodicity) {
+        Aperiodic => result.Range.End
+            == (m.IsClosedEdge(e) ? result.Range.Start : m.VertexParameter(e, m.LastVertexAlongCurve(e)));   // exact by construction
+        Periodic(period) => result.Range.End
+            == (m.IsClosedEdge(e)
+                ? result.Range.Start + period
+                : m.VertexParameter(e, m.LastVertexAlongCurve(e)).PeriodicRepresentativeAbove(result.Range.Start, period));   // exact by construction
+        Closed(period) => result.Range.End
+            == (m.IsClosedEdge(e)
+                ? result.Range.Start + period
+                : m.VertexParameter(e, m.LastVertexAlongCurve(e)).PeriodicRepresentativeAbove(result.Range.Start, period));   // exact by construction
+    };
+    ensures result.Periodicity == match (m.Geometry.Domain(m.Edges[e].Curve).Periodicity) {
+        Aperiodic => Periodicity.Aperiodic;
+        Periodic(period) => Periodicity.Periodic(period);
+        Closed(period) => m.IsClosedEdge(e) ? Periodicity.Closed(period) : Periodicity.Aperiodic;
+    };
+    ensures result.Range.Start.IsFinite && result.Range.End.IsFinite;   // ClosestParameter is finite: no unbounded range (review F4a)
+    ensures m.IsOnClosedCurve(e) ? Law_EdgeDomainIsForward(m, e) : true;
     measure 1;
 }
 
@@ -269,17 +271,19 @@ theorem ReducedCountsEqualRawOnCleanShell
     because "The reduction does three things: contracts degenerate edges, drops vertex loops whose vertex is on another bound of the same face or repeats another vertex loop there, and identifies poly-loop points. With no degenerate edge there is nothing to contract or merge, so vertex classes are single vertices and every edge stays. A dropped vertex loop is exactly a redundant one (IsRedundantVertexLoop), which Law_NoRedundantVertexLoop excludes, so no vertex loop is dropped. With no poly loop nothing is identified. Every count is then the raw one.";
 }
 
-// The domain-end law follows from the vertex-on-curve law, except for a closed
-// edge on an aperiodic curve.
+// The domain-end law follows from the vertex-on-curve law, on every curve
+// whose formula wraps or does not loop. The case the first version excluded,
+// a closed edge on an aperiodic curve, now has the range [a, a] and is
+// covered (review F4c).
 theorem EdgeDomainEndsFollowFromVertexOnCurve
 {
     given m: BrepModel, e: BrepEdgeIndex, atStart: Boolean;
     assume Law_IndicesInRange(m);
     assume m.IsEdgeInRange(e);
-    assume m.IsClosedEdge(e) ? m.IsOnPeriodicCurve(e) : true;
+    assume m.Geometry.Domain(m.Edges[e].Curve).HasSeam ? m.Geometry.Domain(m.Edges[e].Curve).Periodicity.IsPeriodic : true;
     assume Law_VertexCoincidesWithCurveEnd(m, e, atStart);
     conclude Law_EdgeDomainEndsAtVertices(m, e, atStart);
-    because "EdgeDomain puts at the end that SameSense assigns to a vertex either that vertex's ClosestParameter value (the first vertex along the curve, at Range.Start; the last vertex on an aperiodic open edge, at Range.End) or a value congruent to it modulo the period (the last vertex on a periodic curve, by PeriodicRepresentativeAbove; a closed edge's single vertex at first + period). Eval is periodic in a periodic parameter, so the curve point at that end is the curve point VertexCurveDeviation measures, and the assumption bounds its distance to the vertex by Tolerances.Length. The excluded case takes the aperiodic curve's own domain ends, which reproduce the vertex only when the curve closes at it.";
+    because "EdgeDomain puts at the end that SameSense assigns to a vertex either that vertex's ClosestParameter value (the first vertex along the curve, at Range.Start; the last vertex on an aperiodic open edge, at Range.End) or a value congruent to it modulo the period (the last vertex on a periodic curve, by PeriodicRepresentativeAbove; a closed edge's single vertex at first + period). Eval is periodic in a periodic parameter, so the curve point at that end is the curve point VertexCurveDeviation measures, and the assumption bounds its distance to the vertex by Tolerances.Length. A closed edge on an aperiodic curve has both ends at the vertex's own parameter. The excluded case, a Closed curve, wraps first + period back into the curve's domain, and Wrap may land at the far end of the range, whose point is the near end's only within the closure gap layer 3 accepted when it decided Closed; the law then holds within Tolerances.Length plus that gap, which is why the third assumption is there.";
     tested by Law_EdgeDomainEndsAtVertices, Law_VertexCoincidesWithCurveEnd;
 }
 
