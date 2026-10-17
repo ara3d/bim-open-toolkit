@@ -346,6 +346,30 @@ proves it.
 8. **The pipeline's codes are functions, not a closed sum.** Layer 3 keeps its codes in one sum with
    one table (`StepDiagnosticCode`, `Diagnose`); eight codes did not seem to need it.
 
+## Corrections to research/VALIDATION-MATH.md
+
+The research file is kept as written; these two corrections hold for this design and its laws.
+
+1. **Section 6.4, first row: a rotation in the cube group is not exact.** The row calls it a law
+   on the ground that no pipeline decision depends on world axis directions. That is true of the
+   decisions, not of their arithmetic. Every dot product, cross product, and frame evaluation sums
+   three products in a fixed order (x, then y, then z). A cube rotation permutes the axes, so the
+   same three products are summed in another order, which rounds differently: in 64 bits,
+   `(1e16 + 1) - 1e16` is 0 while `(1e16 - 1e16) + 1` is 1. A decision at a tie (two equally
+   Delaunay diagonals of a square, two equal sagittas competing for a split) can then go the other
+   way. So the cube rotation belongs with the general rigid motion in the "witnesses only" rows:
+   connectivity compared by a harness, positions within `epsL` (`Law_RigidMotionMovesPositions`).
+   `Law_CubeRotationCommutes` is not adopted (contract table below).
+2. **Section 6.3, "Monotonicity of realized quantities ... holds only for nested refinement",
+   which the catalogue's monotone relations rest on: the realized deviation is not monotone even
+   under nested refinement.** On `y = h sin(2 pi x)` over one period the whole span's chord lies on
+   the axis with sagitta `h`; the nested sub-span from `x = 0` to `x = 3/4` has the chord from
+   `(0, 0)` to `(3/4, -h)`, from which the crest `(1/4, h)` lies about `1.33 h` away. Refining
+   raised the realized maximum. What holds is the bound, which 6.3's first bullet states: a mesh
+   made at `d' <= d` satisfies `d` wherever the criteria govern it
+   (`Law_TighterChordalStaysWithinLooserBound`, decision 12). Inscribed length stays monotone under
+   nesting, as 6.3 says.
+
 ## Implementation notes
 
 - **Cost.** Round 0 discretizes every edge and meshes every face. Each later round refines only the
@@ -491,11 +515,8 @@ Recorded here, not fixed there.
    for factors of at least 1 (theorem `PowerOfTwoScalingCommutes`); a model scaled down can let the
    floor bind on a length parameter where it did not before. Per-direction floors (one for
    length parameters, one for angles) would make scaling exact both ways.
-7. **Research 6.4 overstates two metamorphic relations.** A rotation in the cube group is not exact
-   in floating point: three-term dot products are summed in a fixed order, which a permutation of
-   the axes changes, so rounding differs and a tie can flip. And the realized deviation is not
-   monotone in the chordal bound (decision 12). Neither is a lower layer's defect; recorded so that
-   `research/VALIDATION-MATH.md` can be corrected.
+7. **Research 6.4 overstates two metamorphic relations.** The correction is the note
+   "Corrections to research/VALIDATION-MATH.md" below; the research file stays as written.
 8. **Layer 3 does not export the model size** it computes for the tolerance default, which a
    relative chordal default needs ("What is left open", item 1).
 9. **The type checker accepted `Integer >= Number`** in a negative control on this layer's files
@@ -554,3 +575,6 @@ Findings applied, one commit each, under `reviews/FIX-WAVE.md`:
    `ValidateBrep(o.Level)`, `ValidateModelMesh(m.Tolerances, o.Quality, o.Level)`,
    `CrossCheck(mesh, o.Level, o.Face)`; `Validated` takes the options; `MeshingOptions` gains
    `Quality`; `Law_CrossCheckIsIdempotent` becomes `Law_ValidationIsIdempotent` over `Validated`.
+2. **The note correcting research 6.4** (finding 7 of "Findings in lower layers"): section
+   "Corrections to research/VALIDATION-MATH.md". The research file is outside this layer's fence
+   and is not edited; a pointer from it to the note is the supervisor's to add.
