@@ -35,3 +35,24 @@ session accepts them.
 - **Status** recorded only. The owner said on 2026-10-17 that TKT-300 is **not to be tackled**;
   it stays as the record of the finding and leaves the ready list until the owner promotes it.
   Nothing in `03-step` changed.
+
+## F-2 to F-44: the mathematical review of layers 0 to 6
+
+- **Source** [MATH-REVIEW-layers-0-6.md](MATH-REVIEW-layers-0-6.md), a fresh reviewer, 2026-10-17.
+  Twelve false or imprecise laws, eleven missing laws, eleven cross-layer inconsistencies, nine
+  timid choices, four false theorems and seven needing a hypothesis, out of forty-four; the Euler
+  counting rule verified on nineteen worked examples and four boundary cases.
+- **Ranked by the reviewer** (file and name in the review): seams placed by continuity fail at
+  poles (layer 5 `Unwrap`, `AddMissingSeamsAndPoles`; use the left/right rule of
+  `research/STEP-BREP-MODEL.md` 4.3); closed non-periodic curves and surfaces ignored above layer 1
+  (add a `Closed(Period)` periodicity case decided at decode); mirrored placements and the inner
+  part of a lemon torus get the wrong normal sign; `EdgeDomain`'s closed-edge rule fails on pcurves
+  with unbounded domains; `ChartWindingIsFaceWinding` and `NormalTurnBoundsCentroidDeviation` are
+  false (a folded sliver on the unit sphere); `Law_ShellIsConnected` is missing; the derivative
+  laws exclude too few knots and borrow the file's angle tolerance for the library's own rounding;
+  the rounding floor is taken at the model's size, not its coordinates; no law says each boundary
+  segment of a face triangulation is an element edge, so tiling is not implied; several rounding
+  laws are judged by file tolerances and `Check` stores no bound.
+- **Status** accepted for a fix wave after wave B lands: one fixer per layer, one commit per
+  finding, a fixer may skip a finding with a stated reason (CODING.md, "Fix and Sweep"). Findings
+  that change a fixed name go through `VOCABULARY.md` revision 3.
