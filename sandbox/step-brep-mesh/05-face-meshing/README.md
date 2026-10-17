@@ -343,7 +343,7 @@ knots); offset and rectangular-trimmed last.
 | `UvPointSource.Pole(Side, Index)`: a domain side | the side of the face's parameter box along a collapsed iso-line (a cone apex lies inside the domain) | Layer 01 places the apex inside the cone's domain |
 | (unspecified signatures) | `LoopToUv(m, f, b: FaceBound, d)`, `Unwrap(m, f, l)`, `AddMissingSeamsAndPoles(m, f, loops, c)`, `OrientRegion(m, f, r)`, `TriangulateRegion(r, chart: FaceChart)`, `RefineToSurface(m, f, r, chart, t, c)`, `QuadGridIfRectangular(m, f, d, r, c): QuadGridOutcome` | Each takes what its contract needs |
 | (new, proposed) | types `UvSample`, `CoedgeUvRoute`, `FaceChart`, `QuadSides`, `QuadGridOutcome`; library block `UvRegions` beside `FaceMeshing`; functions `ChooseUvRoute`, `PcurveUv`, `ChartOf`, `MeanSpeed`, `RegionTolerance`, `UnorientedRegionOf`, `IdentifiedSources`, `IsOnCollapsedLine`, `QuadSidesOf`, `QuadGrid`, `MatchingFloors`, `IsBlocking`, `SharedPosition`, `ProvenanceOfSource`, `ElementDeviation`, `EdgeNormalTurn`, `WindingSign` | Named in the laws and contracts above |
-| layer 06 `IsOnFace(p: MeshVertexProvenance, f)` | this layer's `IsFaceInteriorProvenance` has the same meaning | Both belong in layer 00 beside `MeshVertexProvenance`; renamed here to avoid a duplicate signature until they merge |
+| layer 06 `IsOnFace(p: MeshVertexProvenance, f)` | this layer's `IsFaceInteriorProvenance` deleted; layer 00's `IsOnFace` used | Layer 00 now declares it beside `MeshVertexProvenance` (FIX-WAVE) |
 | `Unwrap`: every point by continuity | the second use of every seam segment by the left rule, every other point by continuity; ensures `Law_SeamUsesOnOppositeCopies` | Continuity puts both uses on one copy when they meet at a pole or an apex (review F1) |
 | `AddMissingSeamsAndPoles`: requires every step below half a period | requires `IsUnwrappedStep` (a step touching a collapsed line may jump) and the left rule; ensures the left rule on its loops; pole segments run from the arriving to the leaving free parameter, windings counted after | The free parameter at a pole passes from one seam copy to the other |
 | `AddMissingSeamsAndPoles(m, f, loops, c)`: one loop per bound | one loop per bound of `MeshedBounds(m, f)` | Layer 02's vertex-loop reduction (review C6) |
@@ -381,6 +381,8 @@ Applied:
   calls) moved from the laws block into `FaceMeshing`.
 - C1, T1 (FIX-WAVE "Closed directions"): `StepBelowHalfPeriod` and `Winding` gain the `Closed`
   arm, the same as `Periodic`; every seam function inherits it.
+- C10, layer 07 finding 2: `IsFaceInteriorProvenance` deleted; `ProvenanceAgrees` uses layer 00's
+  `IsOnFace`.
 - C6: the region skips a vertex loop that layer 02's `ReducedCounts` drops (`MeshedBounds`), so
   sphere B meshes.
 

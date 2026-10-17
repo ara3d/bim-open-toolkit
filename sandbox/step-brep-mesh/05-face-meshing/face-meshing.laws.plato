@@ -338,17 +338,9 @@ library FaceMeshingLaws
             FromEdge(e, k) => d.HasSample(e, k)
                 ? p == MeshVertexProvenance.OnEdge(e, d.ByEdge[e].Parameters[k])   // exact by construction
                 : true;
-            SeamCut(side, k) => p.IsFaceInteriorProvenance(f);
-            Pole(side, k) => p.IsFaceInteriorProvenance(f);
-            Interior => p.IsFaceInteriorProvenance(f);
-        };
-
-    // True when the provenance is a point of face f's interior.
-    IsFaceInteriorProvenance(p: MeshVertexProvenance, f: BrepFaceIndex): Boolean
-        => match (p) {
-            OnVertex(v) => false;
-            OnEdge(e, t) => false;
-            OnFace(g, uv) => g == f;
+            SeamCut(side, k) => p.IsOnFace(f);
+            Pole(side, k) => p.IsOnFace(f);
+            Interior => p.IsOnFace(f);
         };
 
     // The normal stored for a parameter-space point off the collapsed lines is the face normal
