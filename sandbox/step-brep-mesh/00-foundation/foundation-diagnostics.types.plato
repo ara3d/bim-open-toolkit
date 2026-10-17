@@ -26,12 +26,19 @@ type MeshVertexProvenance
     | OnEdge(Edge: BrepEdgeIndex, Parameter: Number)
     | OnFace(Face: BrepFaceIndex, Uv: UvCoordinate);
 
-// What a check or diagnostic is about: nothing in particular, a STEP instance,
-// a kernel object, or a mesh vertex or element. Every finding carries one so a
-// user can go from the finding to the entity in the file.
+// What a check or diagnostic is about: nothing yet (Nowhere, a placeholder
+// that Located replaces), the input as a whole (a text that is not Part 21,
+// options that cannot be honoured, a model with no faces), a STEP instance, a
+// curve or surface of the geometry arena (a defect in the geometry record
+// itself, reported once and not at every edge or face that cites it), a
+// topology object, or a mesh vertex or element. Every finding carries one so
+// a user can go from the finding to the entity in the file.
 type Provenance
     = Nowhere
+    | WholeInput
     | StepInstance(Id: StepInstanceId)
+    | KernelCurve(Index: CurveIndex)
+    | KernelSurface(Index: SurfaceIndex)
     | KernelVertex(Index: BrepVertexIndex)
     | KernelEdge(Index: BrepEdgeIndex)
     | KernelLoop(Index: BrepLoopIndex)
@@ -100,7 +107,7 @@ type Diagnostic
 }
 
 // The checks and diagnostics of one validation. Built only by Empty, Merge,
-// and ReportOf, so that every failed check has a diagnostic
+// ReportOf, and Located, so that every failed check has a diagnostic
 // (Law_FailedCheckHasDiagnostic). Reports form a monoid under Merge with
 // Empty as identity.
 type Report

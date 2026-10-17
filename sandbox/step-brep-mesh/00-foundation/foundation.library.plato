@@ -690,6 +690,22 @@ library BrepFoundation
     IsClean(r: Report): Boolean
         => !r.Diagnostics.Any(d => d.Severity.IsError);
 
+    // The diagnostic located at where when its own provenance is Nowhere;
+    // unchanged otherwise. A stage that knows what a finding is about (the
+    // face it was meshing, the whole input) locates the findings of the
+    // functions it called.
+    Located(d: Diagnostic, where: Provenance): Diagnostic
+        => d.Where == Provenance.Nowhere
+            ? Diagnostic(d.Severity, d.Code, d.Message, where, d.Measure)
+            : d;
+
+    // The report with every diagnostic whose provenance is Nowhere located at
+    // where. Checks, codes, and severities are kept, so every failed check
+    // keeps its diagnostic and IsClean is unchanged: the fourth constructor of
+    // Report beside Empty, Merge, and ReportOf.
+    Located(r: Report, where: Provenance): Report
+        => Report(r.Checks, r.Diagnostics.Map(d => d.Located(where)));
+
     //==
     // # Identity of copied values
     //

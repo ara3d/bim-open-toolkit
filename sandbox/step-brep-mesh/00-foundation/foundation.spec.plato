@@ -91,6 +91,7 @@ spec Report
     constructor Empty;
     constructor Merge;
     constructor ReportOf;
+    constructor Located;
 }
 
 //==
@@ -307,6 +308,15 @@ spec ReportOf(c: Check, g: ConstraintGroup, message: String): Report
     ensures result.Checks.Count == 1;
     ensures result.Diagnostics.Count == (c.Holds ? 0 : 1);
     ensures Law_FailedCheckHasDiagnostic(result, 0);
+}
+
+spec Located(r: Report, where: Provenance): Report
+{
+    ensures result.Checks.Count == r.Checks.Count;
+    ensures result.Diagnostics.Count == r.Diagnostics.Count;
+    ensures Law_LocatedKeepsVerdict(r, where);
+    ensures forall (k: Integer) in r.Diagnostics.Count.Range : Law_LocatedKeepsFindings(r, where, k);
+    ensures forall (k: Integer) in r.Checks.Count.Range : Law_FailedCheckHasDiagnostic(r, k) ? Law_FailedCheckHasDiagnostic(result, k) : true;
 }
 
 spec Merge(a: Report, b: Report): Report

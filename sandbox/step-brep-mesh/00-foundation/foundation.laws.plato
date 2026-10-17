@@ -272,10 +272,25 @@ library BrepFoundationLaws
         => Merge(a, b).IsClean == (a.IsClean && b.IsClean);
 
     // Every failed check of a report has a diagnostic carrying its law's name.
-    // Convention law over reports built by Empty, Merge, and ReportOf.
+    // Convention law over reports built by Empty, Merge, ReportOf, and Located.
     Law_FailedCheckHasDiagnostic(r: Report, k: Integer): Boolean
         => r.Checks.IsValidIndex(k)
             ? (r.Checks[k].Holds ? true : r.Diagnostics.Any(d => d.Code == r.Checks[k].Law))
+            : true;
+
+    // Locating a report keeps its verdict. Library law, exact.
+    Law_LocatedKeepsVerdict(r: Report, where: Provenance): Boolean
+        => r.Located(where).IsClean == r.IsClean;
+
+    // Locating a report keeps every diagnostic's code and severity, in order,
+    // and gives a Nowhere diagnostic the new provenance. Library law, exact.
+    Law_LocatedKeepsFindings(r: Report, where: Provenance, k: Integer): Boolean
+        => r.Diagnostics.IsValidIndex(k)
+            ? r.Located(where).Diagnostics[k].Code == r.Diagnostics[k].Code
+                && r.Located(where).Diagnostics[k].Severity == r.Diagnostics[k].Severity
+                && (r.Diagnostics[k].Where == Provenance.Nowhere
+                    ? r.Located(where).Diagnostics[k].Where == where
+                    : r.Located(where).Diagnostics[k].Where == r.Diagnostics[k].Where)
             : true;
 
     //==

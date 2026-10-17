@@ -200,8 +200,14 @@ Provenance is the map from a result back to its source. For a mesh vertex,
 its parameter on that cell: `OnVertex(v)`, `OnEdge(e, t)`, `OnFace(f, uv)`. Re-evaluating the
 carrier at the parameter must give the vertex position within the length tolerance (layer 7,
 `Law_VertexReevaluatesFromProvenance`); `CarrierDimension` (0, 1, 2) is the order of layer 6's
-vertex numbering. For a finding, `Provenance` names what it is about, from a STEP instance number
-to a mesh element, so a user can go from a diagnostic to the entity in the file.
+vertex numbering. For a finding, `Provenance` names what it is about, so a user can go from a
+diagnostic to the entity in the file: `WholeInput` for a finding about the input as a whole (a
+text that is not Part 21, a model with no faces), a STEP instance number, a curve or surface of the
+geometry arena (`KernelCurve`, `KernelSurface`: a defect in the geometry record, reported once
+rather than at every edge or face citing it), a topology object, or a mesh vertex or element.
+`Nowhere` is a placeholder: a stage that knows what its callee's findings are about replaces it
+with `Located(report, where)`, which keeps every check, code and severity, so the verdict is
+unchanged (`Law_LocatedKeepsVerdict`).
 
 ### Checks, diagnostics, reports
 
@@ -227,6 +233,8 @@ Law_X  ->  Check (CheckWithin, CheckExact, folded by WorseOf)  ->  ReportOf  -> 
   when it failed, a `Diagnostic` whose `Code` is the law's name and whose severity comes from
   `SeverityOf` of the check's own `Worst` and `Bound`. `ReportOf(diagnostics)` wraps findings that
   no check produced.
+- `Located(report, where)` is the fourth constructor of `Report`: it gives every `Nowhere`
+  diagnostic the provenance `where` and keeps the rest.
 - `Report` is a monoid under `Merge` (concatenation of both arrays) with `Report.Empty` as
   identity, and `IsClean` is a monoid homomorphism into Booleans under "and": a validation assembled
   piece by piece is clean exactly when every piece is.
@@ -312,6 +320,8 @@ to be at least that rounding bound.
 | `Law_IsCleanExactlyWhenNoError` | `IsClean` exactly when `ErrorCount` is 0 | exact | library, test |
 | `Law_MergeIsCleanExactlyWhenBothClean` | a merged report is clean exactly when both parts are | exact | library, test |
 | `Law_FailedCheckHasDiagnostic` | every failed check has a diagnostic with its law's name | exact | convention, test |
+| `Law_LocatedKeepsVerdict` | `Located(r, where)` is clean exactly when `r` is | exact | library, test |
+| `Law_LocatedKeepsFindings` | `Located` keeps each diagnostic's code and severity and fills only `Nowhere` | exact | library, test |
 | `Law_IsNoneExactlyWhenNegative` | `IsNone` exactly when `Value < 0`, for every `IIndex` type | exact | library, test |
 | `Law_OppositeSideIsInvolution` | the opposite of the opposite side is the side | exact | library, test |
 
@@ -440,3 +450,7 @@ Applied:
    the check's. `Law_HoldingCheckIsWithinBound(c, bound)`, false for any bound but the check's own,
    is replaced by `Law_HoldsExactlyWhenWithinBound(c)`, now a type invariant; new
    `Law_CheckBoundIsNonNegative`, `Law_WorseOfKeepsTheGreaterExceedance`, `Exceedance`.
+3. **Layer 7 finding 3, layer 8 finding 5: `Provenance` cases and `Located`.** `WholeInput`,
+   `KernelCurve(Index: CurveIndex)`, `KernelSurface(Index: SurfaceIndex)`; `Located(d: Diagnostic,
+   where)` and `Located(r: Report, where)`, moved from layer 8 and listed as a constructor of
+   `Report`. New laws `Law_LocatedKeepsVerdict`, `Law_LocatedKeepsFindings`.
