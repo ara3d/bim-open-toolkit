@@ -1,0 +1,145 @@
+//==
+// # Model mesh topology: laws
+//
+// Three kinds, told apart by their comments. Table laws state what EdgeTableOf, ComponentsOf, and
+// ComponentCountsOf promise for every mesh (library laws: a failure is a defect in this layer).
+// Characterization laws tie each aggregate predicate to its pointwise meaning. Model laws state
+// what a correct mesh of a valid closed shell satisfies (a failure is a finding about the mesh or
+// the model, severity Error). All exact: integers and indices only.
+//
+// Sections, in order:
+//  - The edge table
+//  - Closed, manifold, consistently oriented
+//  - Components
+//  - Euler characteristic and genus
+//  - Helpers
+
+library ModelMeshTopologyLaws
+{
+    //==
+    // # The edge table
+
+    // Table law: ElementCounts has one entry per edge.
+    Law_EdgeTableHasOneCountPerEdge(t: MeshEdgeTable): Boolean
+        => t.ElementCounts.Count == t.CountEdges;
+
+    // Table law: DirectionSums has one entry per edge.
+    Law_EdgeTableHasOneDirectionSumPerEdge(t: MeshEdgeTable): Boolean
+        => t.DirectionSums.Count == t.CountEdges;
+
+    // Table law: every listed edge is canonical, its lower vertex index first.
+    Law_EdgeTableEdgeIsCanonical(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => t.Edges.UndirectedEdges.IsValidIndex(k)
+            ? t.Edges.UndirectedEdges[k].A.Value < t.Edges.UndirectedEdges[k].B.Value
+            : true;
+
+    // Table law: the edges are in strictly increasing lexicographic order, so none is listed twice
+    // and an edge's position is its UndirectedEdgeIndex.
+    Law_EdgeTableIsStrictlySorted(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => (k.Value >= 0 && k.Value + 1 < t.CountEdges)
+            ? IsLexicographicallyBefore(t.Edges.UndirectedEdges[k.Value], t.Edges.UndirectedEdges[k.Value + 1])
+            : true;
+
+    // Table law: every listed edge has at least one element side on it.
+    Law_EdgeTableListsOnlyUsedEdges(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => t.ElementCounts.IsValidIndex(k) ? t.SidesOn(k) >= 1 : true;
+
+    // Table law: the counts add up to the number of element sides with two distinct ends, so every
+    // such side is counted once.
+    Law_EdgeTableCountsEveryProperSide(mesh: ModelMesh): Boolean
+        => mesh.EdgeTableOf.ElementCounts.IntegerTotal == mesh.ProperSideCount;
+
+    // Table law: every proper element side lies on a listed edge.
+    Law_EdgeTableListsEveryProperSide(mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+        => (mesh.IsElementInRange(e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
+            ? (mesh.ElementSide(e, slot).IsProper ? mesh.EdgeTableOf.ListsEdge(mesh.ElementSide(e, slot).Canonical) : true)
+            : true;
+
+    // Table law: edge k's count is the number of element sides on it, counted directly
+    // (SideCountOf), independently of the sort that built the table.
+    Law_EdgeTableCountMatchesItsSides(mesh: ModelMesh, k: UndirectedEdgeIndex): Boolean
+        => mesh.EdgeTableOf.Edges.UndirectedEdges.IsValidIndex(k)
+            ? mesh.EdgeTableOf.SidesOn(k) == mesh.SideCountOf(mesh.EdgeTableOf.Edges.UndirectedEdges[k])
+            : true;
+
+    // Table law: edge k's direction sum is the sum of its sides' directions, counted directly
+    // (DirectionSumOf).
+    Law_EdgeTableDirectionSumMatchesItsSides(mesh: ModelMesh, k: UndirectedEdgeIndex): Boolean
+        => mesh.EdgeTableOf.Edges.UndirectedEdges.IsValidIndex(k)
+            ? mesh.EdgeTableOf.DirectionSumOn(k) == mesh.DirectionSumOf(mesh.EdgeTableOf.Edges.UndirectedEdges[k])
+            : true;
+
+    // Table law: a direction sum never exceeds its edge's side count in magnitude.
+    Law_DirectionSumIsBoundedByCount(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => t.DirectionSumOn(k).Abs <= t.SidesOn(k);
+
+    // Table law: a direction sum has the parity of its edge's side count, each side adding +1 or -1.
+    Law_DirectionSumHasTheParityOfCount(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => (t.SidesOn(k) - t.DirectionSumOn(k)) % 2 == 0;
+
+    // Table law: reversing every element negates every direction sum and changes nothing else, so
+    // the reversed mesh is closed and manifold exactly when the mesh is.
+    Law_ReversalNegatesEveryDirectionSum(mesh: ModelMesh, k: UndirectedEdgeIndex): Boolean
+        => mesh.Reversed.EdgeTableOf.DirectionSumOn(k) == 0 - mesh.EdgeTableOf.DirectionSumOn(k);
+
+    //==
+    // # Closed, manifold, consistently oriented
+
+    // Characterization: a closed mesh has exactly two element sides on every edge.
+    Law_ClosedMeansEveryEdgeHasTwoSides(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => (t.IsClosed ? t.ElementCounts.IsValidIndex(k) : false) ? t.SidesOn(k) == 2 : true;
+
+    // Characterization: a manifold mesh has at most two element sides on every edge.
+    Law_ManifoldMeansNoEdgeHasMoreThanTwoSides(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => (t.IsManifold ? t.ElementCounts.IsValidIndex(k) : false) ? t.SidesOn(k) <= 2 : true;
+
+    // Characterization: a mesh is consistently oriented exactly when no edge with two sides has both
+    // traversing it in one direction.
+    Law_OrientedExactlyWhenNoEdgeIsMisoriented(t: MeshEdgeTable): Boolean
+        => t.IsConsistentlyOriented == (t.CountMisorientedEdges == 0);
+
+    // Model law: a closed mesh has no pinched vertex: around every vertex the elements form one
+    // fan, so a small sphere about the vertex meets the mesh in one circle.
+    Law_ClosedMeshHasNoPinchedVertex(mesh: ModelMesh, v: VertexIndex): Boolean
+        => (mesh.Positions.IsValidIndex(v) ? mesh.IsClosed : false) ? mesh.IsPinchedVertex(v).Not : true;
+
+    //==
+    // # Components
+
+    // Table law: every corner of an element lies in the element's component.
+    Law_ElementCornersShareItsComponent(mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+        => (mesh.IsElementInRange(e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
+            ? mesh.ComponentsOf.VertexComponentOf(mesh.ElementCorner(e, slot)).Value
+                == mesh.ComponentsOf.ElementComponentOf(e).Value
+            : true;
+
+    // Table law: the components' Euler characteristics, plus one for each unreferenced vertex (a
+    // point is its own component), add up to the mesh's.
+    Law_ComponentEulerCharacteristicsAddUp(mesh: ModelMesh): Boolean
+        => mesh.ComponentCountsOf(mesh.EdgeTableOf, mesh.ComponentsOf).Map(c => c.EulerCharacteristic).IntegerTotal
+            + mesh.ComponentsOf.UnreferencedVertexCount
+            == mesh.EulerCharacteristic;
+
+    //==
+    // # Euler characteristic and genus
+
+    // Model law, by the classification of surfaces: a connected, closed, consistently oriented
+    // surface has an even Euler characteristic of at most 2, so it has a genus. Failing it means
+    // the counts are wrong, since no such surface exists.
+    Law_ClosedOrientedSurfaceHasGenus(mesh: ModelMesh, c: MeshComponentIndex): Boolean
+        => (mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).IsConsistentlyOriented && mesh.CountsOf(c).IsSurface)
+            ? mesh.CountsOf(c).HasGenus
+            : true;
+
+    // Library law: the Euler characteristic of a closed connected component with a genus is 2 minus
+    // twice its genus. Holds for every counts record, so the runner can check it on random ones.
+    Law_ClosedComponentEulerIsTwoMinusTwiceGenus(c: MeshComponentCounts): Boolean
+        => c.HasGenus ? c.EulerCharacteristic == 2 - 2 * c.Genus(0) : true;
+
+    //==
+    // # Helpers
+
+    // Whether pair a comes strictly before pair b: by A, then by B.
+    IsLexicographicallyBefore(a: VertexPair, b: VertexPair): Boolean
+        => a.A.Value < b.A.Value || (a.A.Value == b.A.Value && a.B.Value < b.B.Value);
+}

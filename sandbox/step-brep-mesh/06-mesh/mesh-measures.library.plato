@@ -1,0 +1,219 @@
+//==
+// # Model mesh measures: area, volume, angles, degeneracy, folds
+//
+// Geometry read from the positions. A quad is the two triangles of its A-C split throughout (the
+// stdlib's Area(Quad3D) and FanTriangles use the same split), so the area and volume of a model
+// mesh equal those of its ToTriangleMesh3D. Angles are measured as atan2(|u x v|, u . v), which
+// stays accurate near 0 and pi where acos does not (research/VALIDATION-MATH.md 4.5). Functions that
+// read positions require valid corners (HasValidCorners), which every law guards.
+//
+// Sections, in order:
+//  - Area
+//  - Signed volume
+//  - Corner angles and angle defects
+//  - Degenerate elements and coincident vertices
+//  - Element normals and folds
+
+library ModelMeshMeasures
+{
+    //==
+    // # Area
+
+    // The area of element e: a triangle's, or the sum of the two triangles of a quad's A-C split.
+    ElementArea(mesh: ModelMesh, e: ElementIndex): Number
+        => mesh.ElementTriangles(e).Map(t => t.Area).SumOf;
+
+    // The total area of the mesh, element by element in element order.
+    Area(mesh: ModelMesh): Number
+        => mesh.ElementCount.MapRange(k => mesh.ElementArea(ElementIndex(k))).SumOf;
+
+    // The 3D position of parameter-space point i of a face mesh: the position of its local vertex.
+    FaceMeshPoint(fm: FaceMesh, i: VertexIndex): Point3D
+        => fm.Positions[fm.LocalVertex[i]];
+
+    // The area of a face mesh's elements in 3D, quads split along A-C. Named apart from Area so that
+    // it cannot collide with an Area over FaceMesh that 05-face-meshing may declare.
+    FaceMeshArea(fm: FaceMesh): Number
+        => fm.Triangles.Map(t => Triangle3D(fm.FaceMeshPoint(t.A), fm.FaceMeshPoint(t.B), fm.FaceMeshPoint(t.C)).Area).SumOf
+            + fm.Quads.Map(q => Quad3D(fm.FaceMeshPoint(q.A), fm.FaceMeshPoint(q.B), fm.FaceMeshPoint(q.C),
+                fm.FaceMeshPoint(q.D)).Area).SumOf;
+
+    //==
+    // # Signed volume
+    //
+    // The divergence theorem with the field x / 3: the volume enclosed by a closed oriented surface is
+    // the sum over its triangles (a, b, c) of the signed volume of the tetrahedron (O, a, b, c), for
+    // any origin O. O is taken at the centre of the mesh's bounding box, which keeps the products
+    // small when the model sits far from the world origin (research/VALIDATION-MATH.md 4.7).
+
+    // The origin the volume sums use: the centre of the bounding box of the positions.
+    VolumeOrigin(mesh: ModelMesh): Point3D
+        => mesh.Positions.Reduce(Bounds3D.Empty, (b, p) => b.Union(p)).Center;
+
+    // The signed volume of the cone from origin o over element e: one tetrahedron per triangle of
+    // ElementTriangles. Positive when o lies behind the element, on the side its right-hand-rule
+    // normal points away from.
+    ElementSignedVolume(mesh: ModelMesh, e: ElementIndex, o: Point3D): Number
+        => mesh.ElementTriangles(e).Map(t => Tetrahedron(o, t.A, t.B, t.C).SignedVolume).SumOf;
+
+    // The signed volume of the whole mesh. For a closed, consistently oriented mesh it does not
+    // depend on the origin, and it is positive when the elements face out of the region they
+    // enclose (theorem SignedVolumeSignIsOrientation).
+    SignedVolume(mesh: ModelMesh): Number
+        => mesh.ElementCount.MapRange(k => mesh.ElementSignedVolume(ElementIndex(k), mesh.VolumeOrigin)).SumOf;
+
+    // The signed solid angle the triangle (a, b, c) subtends at q, in steradians, positive when q
+    // lies on the side the triangle's right-hand-rule normal points away from; by the formula of
+    // Van Oosterom and Strackee, with a, b, c taken relative to q.
+    SolidAngle(q: Point3D, a: Point3D, b: Point3D, c: Point3D): Number
+        => 2.0 * (a - q).Dot((b - q).Cross(c - q))
+            .Atan2((a - q).Length * (b - q).Length * (c - q).Length
+                + (a - q).Dot(b - q) * (c - q).Length
+                + (a - q).Dot(c - q) * (b - q).Length
+                + (b - q).Dot(c - q) * (a - q).Length)
+            .Radians;
+
+    // The generalized winding number of the mesh about q: the solid angles of its elements' flat
+    // triangles summed and divided by 4 pi. For a closed, consistently oriented mesh it is an
+    // integer at every point off the mesh: 1 inside a region the elements face out of, -1 inside
+    // one they face into, 0 outside. It states what "outward" means for the volume theorem.
+    // Precondition: mesh.HasAllValidCorners.
+    WindingNumber(mesh: ModelMesh, q: Point3D): Number
+        => mesh.ElementCount.MapRange(k => mesh.ElementTriangles(ElementIndex(k))
+                .Map(t => SolidAngle(q, t.A, t.B, t.C)).SumOf)
+            .SumOf / (2.0 * Number.Tau);
+
+    // The signed volume of component c alone, about the same origin as the whole mesh's.
+    SignedVolume(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Number
+        => mesh.ElementCount.MapRange(k => comps.ElementComponentOf(ElementIndex(k)).Value == c.Value
+                ? mesh.ElementSignedVolume(ElementIndex(k), mesh.VolumeOrigin)
+                : 0.0)
+            .SumOf;
+
+    //==
+    // # Corner angles and angle defects
+
+    // The angle at p between the rays to a and to b, in [0, pi]. 0 when either ray has zero length.
+    AngleAt(p: Point3D, a: Point3D, b: Point3D): Angle
+        => (a - p).Cross(b - p).Length.Atan2((a - p).Dot(b - p));
+
+    // The interior angle of element e at corner slot, between the sides to the next and the
+    // previous corner. Precondition: mesh.HasValidCorners(e).
+    CornerAngle(mesh: ModelMesh, e: ElementIndex, slot: Integer): Angle
+        => AngleAt(mesh.CornerPoint(e, slot),
+            mesh.CornerPoint(e, (slot + 1) % mesh.ElementArity(e)),
+            mesh.CornerPoint(e, (slot + mesh.ElementArity(e) - 1) % mesh.ElementArity(e)));
+
+    // The sum of element e's interior angles, in radians: pi for a non-degenerate triangle, at most
+    // 2 pi for a quad (research/VALIDATION-MATH.md 4.5).
+    ElementAngleSum(mesh: ModelMesh, e: ElementIndex): Number
+        => mesh.ElementArity(e).MapRange(s => mesh.CornerAngle(e, s).Radians).SumOf;
+
+    // The angle defect of quad e, 2 pi minus its angle sum: 0 exactly when the quad is planar and
+    // convex, positive otherwise.
+    QuadAngleDefect(mesh: ModelMesh, e: ElementIndex): Angle
+        => Angle(Number.Tau - mesh.ElementAngleSum(e));
+
+    // The number of vertices in component c.
+    ComponentVertexCount(comps: MeshComponents, c: MeshComponentIndex): Integer
+        => comps.VertexComponent.Map(x => x.Value == c.Value).CountTrue;
+
+    // Whether element e lies in component c.
+    IsInComponent(comps: MeshComponents, e: ElementIndex, c: MeshComponentIndex): Boolean
+        => comps.ElementComponentOf(e).Value == c.Value;
+
+    // The total angle defect of component c: the sum over its vertices of 2 pi minus the angles of
+    // the element corners there, which is 2 pi times its vertex count minus the angle sums of its
+    // elements.
+    AngleDefectSum(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Angle
+        => Angle(Number.Tau * comps.ComponentVertexCount(c).ToNumber
+            - mesh.ElementCount.MapRange(k => comps.IsInComponent(ElementIndex(k), c)
+                    ? mesh.ElementAngleSum(ElementIndex(k))
+                    : 0.0)
+                .SumOf);
+
+    // The sum of the angle defects of the quads of component c.
+    QuadAngleDefectSum(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Angle
+        => Angle(mesh.ElementCount.MapRange(k => (comps.IsInComponent(ElementIndex(k), c) && mesh.IsQuad(ElementIndex(k)))
+                ? mesh.QuadAngleDefect(ElementIndex(k)).Radians
+                : 0.0)
+            .SumOf);
+
+    //==
+    // # Degenerate elements and coincident vertices
+
+    // Whether element e names one vertex at two of its corners: a topological degeneracy that no
+    // tolerance excuses (3MF and glTF both forbid it).
+    HasRepeatedCorner(mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.ElementArity(e).MapRange(s => mesh.ElementSide(e, s))
+                .Any(p => p.A.Value == p.B.Value)
+            || (mesh.IsQuad(e)
+                ? (mesh.ElementCorner(e, 0).Value == mesh.ElementCorner(e, 2).Value
+                    || mesh.ElementCorner(e, 1).Value == mesh.ElementCorner(e, 3).Value)
+                : false);
+
+    // The elements that repeat a vertex, in element order.
+    ElementsWithRepeatedCorners(mesh: ModelMesh): Array<ElementIndex>
+        => mesh.ElementCount.MapRange(k => ElementIndex(k))
+            .FlatMap(e => mesh.HasRepeatedCorner(e) ? [e] : []);
+
+    // The smallest altitude of a triangle, 2 * area / longest side: one number that is small both
+    // for a collapsed triangle (all sides short) and for a needle (corners collinear). 0 when every
+    // side has zero length.
+    SmallestAltitude(t: Triangle3D): Number
+    {
+        var longest = t.A.Distance(t.B).Max(t.B.Distance(t.C)).Max(t.C.Distance(t.A));
+        return longest > 0.0 ? 2.0 * t.Area / longest : 0.0;
+    }
+
+    // The smallest altitude over the four corner triangles of a quad, the triangles of both diagonal
+    // splits: a quad is degenerate when either split is.
+    SmallestAltitude(q: Quad3D): Number
+        => Triangle3D(q.A, q.B, q.C).SmallestAltitude
+            .Min(Triangle3D(q.A, q.C, q.D).SmallestAltitude)
+            .Min(Triangle3D(q.A, q.B, q.D).SmallestAltitude)
+            .Min(Triangle3D(q.B, q.C, q.D).SmallestAltitude);
+
+    // The smallest altitude of element e. Precondition: mesh.HasValidCorners(e).
+    ElementSmallestAltitude(mesh: ModelMesh, e: ElementIndex): Number
+        => mesh.IsTriangle(e) ? mesh.TriangleShapeAt(e).SmallestAltitude : mesh.QuadShapeAt(e).SmallestAltitude;
+
+    // Whether element e is degenerate: its smallest altitude is at most the model's length tolerance
+    // (research/VALIDATION-MATH.md 4.2). Precondition: mesh.HasValidCorners(e).
+    IsDegenerate(mesh: ModelMesh, e: ElementIndex, tol: LengthTolerance): Boolean
+        => mesh.ElementSmallestAltitude(e) <= tol.Value;
+
+    // The degenerate elements, in element order. Elements with invalid corners are skipped; the
+    // corner-range law reports them.
+    DegenerateElements(mesh: ModelMesh, tol: LengthTolerance): Array<ElementIndex>
+        => mesh.ElementCount.MapRange(k => ElementIndex(k))
+            .FlatMap(e => (mesh.HasValidCorners(e) ? mesh.IsDegenerate(e, tol) : false)
+                ? [e]
+                : []);
+
+    // deferred: hash every vertex into a grid of cell size tol.Value and compare each vertex with
+    // those of the 27 cells around it; report each pair (a, b), a < b, in one component, whose
+    // distance is at most tol.Value, in lexicographic order. Expected linear time. A pair it reports
+    // is a crack that index identity left open: it is reported, never merged.
+    CoincidentVertexPairs(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Array<VertexPair>;
+
+    //==
+    // # Element normals and folds
+
+    // Twice the vector area of element e, the direction of its right-hand-rule normal: (b - a) x
+    // (c - a) for a triangle, (c - a) x (d - b) for a quad (the normal of its mid-plane).
+    // Precondition: mesh.HasValidCorners(e).
+    ElementNormalVector(mesh: ModelMesh, e: ElementIndex): Vector3D
+        => mesh.IsTriangle(e)
+            ? (mesh.CornerPoint(e, 1) - mesh.CornerPoint(e, 0)).Cross(mesh.CornerPoint(e, 2) - mesh.CornerPoint(e, 0))
+            : (mesh.CornerPoint(e, 2) - mesh.CornerPoint(e, 0)).Cross(mesh.CornerPoint(e, 3) - mesh.CornerPoint(e, 1));
+
+    // The smallest cosine between element e's normal and the face normals at its corners: 1 when
+    // they agree, negative when the element faces against the surface it approximates (a fold).
+    // Preconditions: valid corners and corner attributes.
+    SurfaceAlignmentAt(mesh: ModelMesh, e: ElementIndex): Number
+        => mesh.ElementArity(e)
+            .MapRange(s => mesh.ElementNormalVector(e).Dot(mesh.CornerNormalAt(e, s).Vector)
+                / mesh.ElementNormalVector(e).Length)
+            .Reduce(1.0, (a, b) => a.Min(b));
+}

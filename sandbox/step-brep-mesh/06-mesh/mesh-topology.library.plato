@@ -1,0 +1,232 @@
+//==
+// # Model mesh topology: functions
+//
+// The edge table, the components, the per-component counts, and the vertex-link test are deferred
+// (sorting, union-find, one counting pass, a small graph walk per vertex). The predicates over them
+// are written out, because each is the definition of the property it names.
+//
+// Sections, in order:
+//  - The edge table
+//  - Manifold, closed, consistently oriented
+//  - Components
+//  - Euler characteristic and genus of a component
+
+library ModelMeshTopology
+{
+    //==
+    // # The edge table
+
+    // deferred: list the 3T + 4Q directed element sides (ElementSide), drop the sides whose two ends
+    // are one vertex, key each side by its canonical pair, sort by key, and count each run of equal
+    // keys, adding +1 to the run's direction sum for a side that runs from the lower index to the
+    // higher and -1 otherwise. O(S log S) for S sides; a hash table makes it O(S) expected.
+    EdgeTableOf(mesh: ModelMesh): MeshEdgeTable;
+
+    // The number of undirected edges.
+    CountEdges(t: MeshEdgeTable): Integer
+        => t.Edges.UndirectedEdges.Count;
+
+    // The number of element sides on edge k; 0 when k names no edge.
+    SidesOn(t: MeshEdgeTable, k: UndirectedEdgeIndex): Integer
+        => t.ElementCounts.IsValidIndex(k) ? t.ElementCounts[k] : 0;
+
+    // The direction sum of edge k; 0 when k names no edge.
+    DirectionSumOn(t: MeshEdgeTable, k: UndirectedEdgeIndex): Integer
+        => t.DirectionSums.IsValidIndex(k) ? t.DirectionSums[k] : 0;
+
+    // Whether edge k bounds one element side only: a hole in the surface.
+    IsBoundaryEdge(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => t.SidesOn(k) == 1;
+
+    // Whether more than two element sides lie on edge k.
+    IsNonManifoldEdge(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => t.SidesOn(k) > 2;
+
+    // Whether edge k has two element sides traversing it in the same direction.
+    IsMisorientedEdge(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+        => t.SidesOn(k) == 2 && t.DirectionSumOn(k) != 0;
+
+    // The number of boundary edges.
+    CountBoundaryEdges(t: MeshEdgeTable): Integer
+        => t.CountEdges.MapRange(k => t.IsBoundaryEdge(UndirectedEdgeIndex(k))).CountTrue;
+
+    // The number of non-manifold edges.
+    CountNonManifoldEdges(t: MeshEdgeTable): Integer
+        => t.CountEdges.MapRange(k => t.IsNonManifoldEdge(UndirectedEdgeIndex(k))).CountTrue;
+
+    // The number of misoriented edges.
+    CountMisorientedEdges(t: MeshEdgeTable): Integer
+        => t.CountEdges.MapRange(k => t.IsMisorientedEdge(UndirectedEdgeIndex(k))).CountTrue;
+
+    // Every directed element side, element by element in winding order: 3T + 4Q pairs.
+    AllSides(mesh: ModelMesh): Array<VertexPair>
+        => mesh.ElementCount.MapRange(k => ElementIndex(k))
+            .FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.ElementSide(e, s)));
+
+    // Whether a side joins two distinct vertices, and so is an edge of the complex.
+    IsProper(p: VertexPair): Boolean
+        => p.A.Value != p.B.Value;
+
+    // A side as an undirected edge: its ends in increasing order.
+    Canonical(p: VertexPair): VertexPair
+        => p.A.Value <= p.B.Value ? p : VertexPair(p.B, p.A);
+
+    // The number of element sides whose two ends are distinct vertices: the sides the edge table
+    // counts.
+    ProperSideCount(mesh: ModelMesh): Integer
+        => mesh.AllSides.Map(p => p.IsProper).CountTrue;
+
+    // The number of proper element sides on the undirected edge p (canonical): the reference value
+    // of the edge table's count, by a quadratic route independent of the sort.
+    SideCountOf(mesh: ModelMesh, p: VertexPair): Integer
+        => mesh.AllSides.Map(x => x.IsProper ? x.Canonical == p : false).CountTrue;
+
+    // The direction sum of the undirected edge p (canonical): +1 for each side from p.A to p.B, -1
+    // for each side back. The reference value of the edge table's direction sum.
+    DirectionSumOf(mesh: ModelMesh, p: VertexPair): Integer
+        => mesh.AllSides.Map(x => x.IsProper ? (x == p ? 1 : (x.Canonical == p ? -1 : 0)) : 0).IntegerTotal;
+
+    // Whether the table lists the undirected edge p (canonical).
+    ListsEdge(t: MeshEdgeTable, p: VertexPair): Boolean
+        => t.Edges.UndirectedEdges.Any(x => x == p);
+
+    //==
+    // # Manifold, closed, consistently oriented
+    //
+    // These are the edge conditions. A closed, consistently oriented, edge-manifold mesh can still
+    // be pinched at a vertex (two spheres touching at a point); the vertex condition is
+    // IsPinchedVertex, counted per component.
+
+    // Whether no edge has more than two element sides.
+    IsManifold(t: MeshEdgeTable): Boolean
+        => t.ElementCounts.All(c => c <= 2);
+
+    // Whether every edge has exactly two element sides: a 2-complex without boundary whose edges
+    // are manifold.
+    IsClosed(t: MeshEdgeTable): Boolean
+        => t.ElementCounts.All(c => c == 2);
+
+    // Whether every edge with two element sides is traversed in opposite directions. Boundary edges
+    // satisfy it trivially; non-manifold edges are IsManifold's concern.
+    IsConsistentlyOriented(t: MeshEdgeTable): Boolean
+        => t.ElementCounts.Zip(t.DirectionSums, (c, s) => c == 2 ? s == 0 : true).All(b => b);
+
+    // IsManifold of the mesh's edge table.
+    IsManifold(mesh: ModelMesh): Boolean
+        => mesh.EdgeTableOf.IsManifold;
+
+    // IsClosed of the mesh's edge table.
+    IsClosed(mesh: ModelMesh): Boolean
+        => mesh.EdgeTableOf.IsClosed;
+
+    // IsConsistentlyOriented of the mesh's edge table.
+    IsConsistentlyOriented(mesh: ModelMesh): Boolean
+        => mesh.EdgeTableOf.IsConsistentlyOriented;
+
+    // The Euler characteristic of the whole mesh as a 2-complex, V - E + F with F = T + Q,
+    // unreferenced vertices included (each counts as a point component).
+    EulerCharacteristic(mesh: ModelMesh): Integer
+        => mesh.Positions.Count - mesh.EdgeTableOf.CountEdges + mesh.ElementCount;
+
+    //==
+    // # Components
+
+    // deferred: union-find over the element-vertex incidence (each element unites its corners),
+    // then number the roots in order of their lowest element. Near-linear in 3T + 4Q.
+    ComponentsOf(mesh: ModelMesh): MeshComponents;
+
+    // Whether c names a component.
+    IsComponentInRange(comps: MeshComponents, c: MeshComponentIndex): Boolean
+        => c.Value >= 0 && c.Value < comps.ComponentCount;
+
+    // The component of element e; -1 when e names no element.
+    ElementComponentOf(comps: MeshComponents, e: ElementIndex): MeshComponentIndex
+        => comps.ElementComponent.IsValidIndex(e) ? comps.ElementComponent[e] : MeshComponentIndex(-1);
+
+    // The component of vertex v; -1 when v names no vertex or no element references it.
+    VertexComponentOf(comps: MeshComponents, v: VertexIndex): MeshComponentIndex
+        => comps.VertexComponent.IsValidIndex(v) ? comps.VertexComponent[v] : MeshComponentIndex(-1);
+
+    // The number of vertices no element references.
+    UnreferencedVertexCount(comps: MeshComponents): Integer
+        => comps.VertexComponent.Map(c => c.Value < 0).CountTrue;
+
+    // Whether every vertex is a corner of some element.
+    IsEveryVertexReferenced(mesh: ModelMesh): Boolean
+        => mesh.ComponentsOf.UnreferencedVertexCount == 0;
+
+    // The edges of the link of v: for each element corner at v, the pair (the corner before it, the
+    // corner after it). The link is a graph on the vertices around v; in a 2-manifold it is one
+    // cycle when v is interior and one path when v is on the boundary.
+    LinkEdges(mesh: ModelMesh, v: VertexIndex): Array<VertexPair>
+        => mesh.ElementCount.MapRange(k => ElementIndex(k))
+            .FlatMap(e => mesh.ElementArity(e).MapRange(s => s)
+                .FlatMap(s => mesh.ElementCorner(e, s).Value == v.Value
+                    ? [VertexPair(mesh.ElementCorner(e, (s + mesh.ElementArity(e) - 1) % mesh.ElementArity(e)),
+                        mesh.ElementCorner(e, (s + 1) % mesh.ElementArity(e)))]
+                    : []));
+
+    // The largest number of link edges at one vertex of the link of v; 0 for an empty link. Above
+    // 2, the link is neither a cycle nor a path.
+    LinkMaxDegree(mesh: ModelMesh, v: VertexIndex): Integer
+        => mesh.LinkEdges(v).FlatMap(p => [p.A, p.B])
+            .Map(w => mesh.LinkEdges(v).Map(q => q.A.Value == w.Value || q.B.Value == w.Value).CountTrue)
+            .Reduce(0, (a, b) => a.Max(b));
+
+    // deferred: walk the link of v (LinkEdges): v is pinched when the link is not one cycle (v
+    // interior) and not one path (v on the boundary), that is, when some link vertex has degree
+    // above 2 or the link falls into more than one piece. An unreferenced vertex is not pinched.
+    // Linear in the elements at v once vertex-to-element incidence is built.
+    IsPinchedVertex(mesh: ModelMesh, v: VertexIndex): Boolean;
+
+    // deferred: one pass over vertices (counting Vertices and PinchedVertices per component), over
+    // the edge table (an edge's component is that of its first vertex; counting Edges and the three
+    // edge defects), and over elements (counting Triangles and Quads). One entry per component.
+    ComponentCountsOf(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents): Array<MeshComponentCounts>;
+
+    // The counts of a component with no cells: the value CountsOf returns for a component index
+    // that names none.
+    NoCells(_: MeshComponentCounts): MeshComponentCounts
+        => (0, 0, 0, 0, 0, 0, 0, 0);
+
+    // The counts of component c of a mesh; NoCells when c names no component.
+    CountsOf(mesh: ModelMesh, c: MeshComponentIndex): MeshComponentCounts
+    {
+        var counts = mesh.ComponentCountsOf(mesh.EdgeTableOf, mesh.ComponentsOf);
+        return counts.IsValidIndex(c) ? counts[c] : MeshComponentCounts.NoCells;
+    }
+
+    //==
+    // # Euler characteristic and genus of a component
+
+    // V - E + F of a component, with F = Triangles + Quads.
+    EulerCharacteristic(c: MeshComponentCounts): Integer
+        => c.Vertices - c.Edges + c.Triangles + c.Quads;
+
+    // Whether every edge of the component has exactly two element sides.
+    IsClosed(c: MeshComponentCounts): Boolean
+        => c.BoundaryEdges == 0 && c.NonManifoldEdges == 0;
+
+    // Whether no edge of the component is misoriented.
+    IsConsistentlyOriented(c: MeshComponentCounts): Boolean
+        => c.MisorientedEdges == 0;
+
+    // Whether the component is a 2-manifold, possibly with boundary: no non-manifold edge and no
+    // pinched vertex.
+    IsSurface(c: MeshComponentCounts): Boolean
+        => c.NonManifoldEdges == 0 && c.PinchedVertices == 0;
+
+    // Whether the component is a closed, oriented surface whose Euler characteristic is even and at
+    // most 2, so that it has a genus. By the classification of surfaces every connected closed
+    // oriented surface has such an Euler characteristic; Law_ClosedOrientedSurfaceHasGenus checks
+    // that the counts agree.
+    HasGenus(c: MeshComponentCounts): Boolean
+        => c.IsClosed && c.IsConsistentlyOriented && c.IsSurface
+            && c.EulerCharacteristic <= 2 && (2 - c.EulerCharacteristic) % 2 == 0;
+
+    // The genus of the component, (2 - chi) / 2, the number of handles: 0 for a sphere, 1 for a
+    // torus or a block with a through hole. The fallback when HasGenus is false, which includes
+    // every component with a boundary (whose genus needs its boundary cycle count, left open).
+    Genus(c: MeshComponentCounts, fallback: Integer): Integer
+        => c.HasGenus ? (2 - c.EulerCharacteristic) / 2 : fallback;
+}

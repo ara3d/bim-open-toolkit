@@ -1,0 +1,48 @@
+//==
+// # Mesh vertex numbering: types
+//
+// The vertex set of a model mesh is a disjoint union: the model's vertices, the interior points of
+// each edge's discretization, and the interior vertices of each face mesh. A site names one element
+// of that union combinatorially; the numbering is a bijection from the sites onto the global vertex
+// indices 0 to N - 1. Shared boundary vertices coincide because two faces that cite one edge sample
+// cite one site, and one site has one index. No position is compared anywhere in this mechanism.
+//
+// Sections, in order:
+//  - Sites
+//  - The numbering
+
+//==
+// # Sites
+
+// The combinatorial identity of a global mesh vertex: which cell of the model's decomposition it
+// samples and which sample it is. ModelVertex is a model vertex itself. EdgeInterior is the Slot-th
+// interior point of an edge's discretization, counted from zero in the edge's forward direction, so
+// Slot k is discretization point k + 1 (point 0 is the start vertex). FaceInterior is the Slot-th
+// face-interior vertex of the face's mesh, counted from zero in the face mesh's local vertex order
+// over the local vertices whose provenance is OnFace (refinement points, synthetic seam and pole
+// points). A site carries no parameter, uv, or position: those are attributes, not identity.
+type MeshVertexSite
+    implements IValue
+    = ModelVertex(Vertex: BrepVertexIndex)
+    | EdgeInterior(Edge: BrepEdgeIndex, Slot: Integer)
+    | FaceInterior(Face: BrepFaceIndex, Slot: Integer);
+
+//==
+// # The numbering
+
+// The global numbering of mesh vertices (fixed by VOCABULARY.md): model vertices first, in
+// BrepVertexIndex order, so mesh vertex v is model vertex v; then the interior points of each edge,
+// edge by edge; then the face-interior vertices of each face, face by face. EdgeInteriorStart and
+// FaceInteriorStart are offset arrays in the CSR form of JaggedArray.Offsets: EdgeInteriorStart has
+// one entry per model edge plus one, edge e owns the indices from EdgeInteriorStart[e] up to, not
+// including, EdgeInteriorStart[e + 1], and its last entry is where face interiors begin.
+// FaceInteriorStart has one entry per model face plus one, the same way, and its last entry is the
+// vertex count. The starts are non-decreasing, not increasing: a straight edge discretized by its
+// two vertices owns an empty run, and so does a planar face with no interior vertex.
+type MeshVertexNumbering
+    implements IValue
+{
+    ModelVertexCount: Integer;
+    EdgeInteriorStart: Array<Integer>;
+    FaceInteriorStart: Array<Integer>;
+}

@@ -1,0 +1,115 @@
+//==
+// # Element quality: functions
+//
+// The metrics are computed from the stdlib's Triangle3D and Quad3D, so they are defined for any
+// three or four points and the laws over them can run on pseudorandom triangles. The model mesh
+// accessors only gather the element's corners. Every body is its own specification.
+//
+// Sections, in order:
+//  - Thresholds
+//  - Triangle metrics
+//  - Quad metrics
+//  - Acceptance
+
+library ModelMeshQuality
+{
+    //==
+    // # Thresholds
+
+    // The Cubit manual's "acceptable" ranges (research/MESHING-REQUIREMENTS.md 1.3): triangle
+    // angles from 30 to 90 degrees, radius ratio and aspect ratio at most 3, quad skew at most 0.5,
+    // quad warp cosine at least 0.9, quad scaled Jacobian at least 0.5. The 5 degree bound on a
+    // quad's angle defect is chosen here and has no source (README, open questions).
+    CubitAcceptable(_: MeshQualityThresholds): MeshQualityThresholds
+        => (30.0.Degrees, 90.0.Degrees, 3.0, 3.0, 0.5, 0.9, 5.0.Degrees, 0.5);
+
+    //==
+    // # Triangle metrics
+
+    // The metrics of a triangle. Inradius is area over semi-perimeter; circumradius is the product
+    // of the sides over four times the area.
+    TriangleQualityOf(t: Triangle3D): TriangleQuality
+    {
+        var ab = t.A.Distance(t.B);
+        var bc = t.B.Distance(t.C);
+        var ca = t.C.Distance(t.A);
+        var longest = ab.Max(bc).Max(ca);
+        var area = t.Area;
+        var inradius = 2.0 * area / (ab + bc + ca);
+        var circumradius = ab * bc * ca / (4.0 * area);
+        var a = AngleAt(t.A, t.B, t.C).Radians;
+        var b = AngleAt(t.B, t.C, t.A).Radians;
+        var c = AngleAt(t.C, t.A, t.B).Radians;
+        return (Angle(a.Min(b).Min(c)),
+                Angle(a.Max(b).Max(c)),
+                circumradius / (2.0 * inradius),
+                3.0.Sqrt / 6.0 * longest / inradius,
+                t.SmallestAltitude);
+    }
+
+    // Circumradius over shortest side, the test Delaunay refinement uses: 1 / (2 sin(MinAngle)) by
+    // the law of sines; sqrt(2) corresponds to Ruppert's 20.7 degree bound.
+    CircumradiusToShortestEdge(q: TriangleQuality): Number
+        => 1.0 / (2.0 * q.MinAngle.Sin);
+
+    // The metrics of triangle e of a model mesh. Precondition: e is a triangle with valid corners.
+    TriangleQualityAt(mesh: ModelMesh, e: ElementIndex): TriangleQuality
+        => mesh.TriangleShapeAt(e).TriangleQualityOf;
+
+    //==
+    // # Quad metrics
+
+    // The cosine of the angle between u and v; undefined when either has zero length.
+    CosineBetween(u: Vector3D, v: Vector3D): Number
+        => u.Dot(v) / (u.Length * v.Length);
+
+    // The scaled Jacobian at corner p with neighbours next and prev: the component of
+    // (next - p) x (prev - p) along unitNormal over the product of the two side lengths.
+    ScaledJacobianAt(p: Point3D, next: Point3D, prev: Point3D, unitNormal: Vector3D): Number
+        => (next - p).Cross(prev - p).Dot(unitNormal) / ((next - p).Length * (prev - p).Length);
+
+    // The metrics of a quad, corners A, B, C, D in winding order.
+    QuadQualityOf(q: Quad3D): QuadQuality
+    {
+        var a = AngleAt(q.A, q.B, q.D).Radians;
+        var b = AngleAt(q.B, q.C, q.A).Radians;
+        var c = AngleAt(q.C, q.D, q.B).Radians;
+        var d = AngleAt(q.D, q.A, q.C).Radians;
+        var unit = (q.C - q.A).Cross(q.D - q.B).Normalize;
+        var skew = CosineBetween(MidPoint(q.C, q.D) - MidPoint(q.A, q.B), MidPoint(q.D, q.A) - MidPoint(q.B, q.C)).Abs;
+        var warpAC = CosineBetween((q.B - q.A).Cross(q.C - q.A), (q.C - q.A).Cross(q.D - q.A));
+        var warpBD = CosineBetween((q.B - q.A).Cross(q.D - q.A), (q.C - q.B).Cross(q.D - q.B));
+        var jacobian = ScaledJacobianAt(q.A, q.B, q.D, unit)
+            .Min(ScaledJacobianAt(q.B, q.C, q.A, unit))
+            .Min(ScaledJacobianAt(q.C, q.D, q.B, unit))
+            .Min(ScaledJacobianAt(q.D, q.A, q.C, unit));
+        return (Angle(a.Min(b).Min(c).Min(d)),
+                Angle(a.Max(b).Max(c).Max(d)),
+                Angle(Number.Tau - (a + b + c + d)),
+                skew,
+                warpAC.Min(warpBD),
+                jacobian,
+                q.SmallestAltitude);
+    }
+
+    // The metrics of quad e of a model mesh. Precondition: e is a quad with valid corners.
+    QuadQualityAt(mesh: ModelMesh, e: ElementIndex): QuadQuality
+        => mesh.QuadShapeAt(e).QuadQualityOf;
+
+    //==
+    // # Acceptance
+
+    // Whether a triangle meets every triangle threshold.
+    IsAcceptable(q: TriangleQuality, th: MeshQualityThresholds): Boolean
+        => q.MinAngle.Radians >= th.TriangleMinAngle.Radians
+            && q.MaxAngle.Radians <= th.TriangleMaxAngle.Radians
+            && q.RadiusRatio <= th.MaxRadiusRatio
+            && q.AspectRatio <= th.MaxAspectRatio;
+
+    // Whether a quad meets every quad threshold.
+    IsAcceptable(q: QuadQuality, th: MeshQualityThresholds): Boolean
+        => q.Skew <= th.MaxQuadSkew
+            && q.WarpCosine >= th.MinQuadWarpCosine
+            && q.AngleDefect.Radians <= th.MaxQuadAngleDefect.Radians
+            && q.ScaledJacobian >= th.MinQuadScaledJacobian;
+}

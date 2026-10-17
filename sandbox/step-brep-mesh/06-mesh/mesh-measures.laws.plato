@@ -1,0 +1,145 @@
+//==
+// # Model mesh measures: laws
+//
+// Approximate laws name their tolerance in their parameters (a LengthTolerance or AngleTolerance
+// from 00-foundation, normally the model's own) and state how it scales. Exact laws compare
+// integers, indices, or signs. Each law guards the element or component it reads, so it is total.
+//
+// Sections, in order:
+//  - Area and volume
+//  - Angles and the discrete Gauss-Bonnet identity
+//  - Degenerate elements, coincident vertices, folds
+//  - Helpers
+
+library ModelMeshMeasuresLaws
+{
+    //==
+    // # Area and volume
+
+    // The assembled mesh's area is the sum of its face meshes' areas. Exact by construction: the
+    // assembly copies every position and keeps every element, so the element areas are the same
+    // numbers and only the order of the sum differs. Tolerance: tol.Value squared per element, far
+    // above that rounding in 64-bit arithmetic (not in 32-bit; README, Number precision).
+    Law_AreaIsSumOfFaceMeshAreas(m: BrepModel, faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering,
+        tol: LengthTolerance): Boolean
+        => (m.CanAssemble(faceMeshes, n) ? m.AssembleModelMesh(faceMeshes, n).HasAllValidCorners : false)
+            ? (m.AssembleModelMesh(faceMeshes, n).Area - faceMeshes.Map(fm => fm.FaceMeshArea).SumOf).Abs
+                <= tol.Value * tol.Value * m.AssembleModelMesh(faceMeshes, n).ElementCount.ToNumber
+            : true;
+
+    // Reversing every element changes the sign of the signed volume. Each tetrahedron's volume is
+    // negated exactly in real arithmetic; in floating point the products round differently, so the
+    // sum may differ by up to tol.Value times the area (the volume swept by moving the surface by
+    // the tolerance).
+    Law_ReversalNegatesSignedVolume(mesh: ModelMesh, tol: LengthTolerance): Boolean
+        => mesh.HasAllValidCorners
+            ? (mesh.Reversed.SignedVolume + mesh.SignedVolume).Abs <= tol.Value * mesh.Area
+            : true;
+
+    // The outward-wound unit tetrahedron has positive signed volume (1/6): the sign convention, on
+    // a witness whose orientation is known independently of the code.
+    Law_OutwardTetrahedronHasPositiveVolume(_: ModelMesh): Boolean
+        => ModelMesh.Witness_UnitTetrahedron.SignedVolume > 0.0;
+
+    //==
+    // # Angles and the discrete Gauss-Bonnet identity
+
+    // A triangle's angles sum to pi, within the angular tolerance. Fails on a triangle with a
+    // zero-length side, whose angles at that side are 0.
+    Law_TriangleAngleSumIsPi(mesh: ModelMesh, e: ElementIndex, tol: AngleTolerance): Boolean
+        => (mesh.IsTriangle(e) ? mesh.HasValidCorners(e) : false)
+            ? (mesh.ElementAngleSum(e) - Number.Pi).Abs <= tol.Value.Radians
+            : true;
+
+    // A quad's angle defect is not negative: its angles sum to at most 2 pi
+    // (research/VALIDATION-MATH.md 4.5, lemma), within the angular tolerance.
+    Law_QuadAngleDefectIsNotNegative(mesh: ModelMesh, e: ElementIndex, tol: AngleTolerance): Boolean
+        => (mesh.IsQuad(e) ? mesh.HasValidCorners(e) : false)
+            ? mesh.QuadAngleDefect(e).Radians >= 0.0 - tol.Value.Radians
+            : true;
+
+    // Discrete Gauss-Bonnet on a closed all-triangle component: its angle defects sum to 2 pi times
+    // its Euler characteristic, within the angular tolerance times its vertex count (one rounding
+    // budget per vertex). What it checks, and what it does not: the proof uses only that each
+    // triangle's angles sum to pi and that 3T = 2E, so it holds for any vertex positions at all. It
+    // cannot detect wrong geometry, a wrong Euler characteristic relative to the model (comparing
+    // with the B-rep's is 07-validation's Law_AngleDefectMatchesBrepEuler), or a pinched vertex. It
+    // does detect a degenerate triangle, an element list inconsistent with the counts behind chi,
+    // and an error in either of two independently written computations.
+    Law_AngleDefectSumIsTwoPiTimesEuler(mesh: ModelMesh, c: MeshComponentIndex, tol: AngleTolerance): Boolean
+        => (mesh.HasAllValidCorners && mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).Quads == 0
+                && mesh.CountsOf(c).Vertices > 0)
+            ? (mesh.AngleDefectSum(mesh.ComponentsOf, c).Radians
+                    - Number.Tau * mesh.CountsOf(c).EulerCharacteristic.ToNumber).Abs
+                <= tol.Value.Radians * mesh.CountsOf(c).Vertices.ToNumber
+            : true;
+
+    // Discrete Gauss-Bonnet on a closed component with quads: the angle defects sum to 2 pi times
+    // the Euler characteristic plus the quads' own angle defects, within the angular tolerance
+    // times the vertex count plus the quad count. Since a quad's defect is 0 exactly when it is
+    // planar and convex, the excess measures the total non-planarity of the quads.
+    Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh: ModelMesh, c: MeshComponentIndex,
+        tol: AngleTolerance): Boolean
+        => (mesh.HasAllValidCorners && mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).Vertices > 0)
+            ? (mesh.AngleDefectSum(mesh.ComponentsOf, c).Radians
+                    - mesh.QuadAngleDefectSum(mesh.ComponentsOf, c).Radians
+                    - Number.Tau * mesh.CountsOf(c).EulerCharacteristic.ToNumber).Abs
+                <= tol.Value.Radians * (mesh.CountsOf(c).Vertices + mesh.CountsOf(c).Quads).ToNumber
+            : true;
+
+    //==
+    // # Degenerate elements, coincident vertices, folds
+
+    // Model law (Error): no element names one vertex at two corners.
+    Law_ElementHasNoRepeatedCorner(mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e) ? mesh.HasRepeatedCorner(e).Not : true;
+
+    // Model law (Error): every element's smallest altitude exceeds the model's length tolerance
+    // (research/VALIDATION-MATH.md 4.2), which excludes both collapsed elements and needles.
+    Law_ElementIsNotDegenerate(mesh: ModelMesh, e: ElementIndex, tol: LengthTolerance): Boolean
+        => mesh.HasValidCorners(e) ? mesh.ElementSmallestAltitude(e) > tol.Value : true;
+
+    // Model law (Error): two distinct vertices of one component are farther apart than the model's
+    // length tolerance. With one discretization per edge a correct mesh has no coincident vertices
+    // inside a component; a pair that is coincident is a crack that index identity left open.
+    Law_VerticesOfOneComponentAreApart(mesh: ModelMesh, a: VertexIndex, b: VertexIndex,
+        tol: LengthTolerance): Boolean
+        => (mesh.Positions.IsValidIndex(a) && mesh.Positions.IsValidIndex(b) && a.Value != b.Value
+                && mesh.ComponentsOf.VertexComponentOf(a).Value >= 0
+                && mesh.ComponentsOf.VertexComponentOf(a).Value == mesh.ComponentsOf.VertexComponentOf(b).Value)
+            ? mesh.Positions[a].Distance(mesh.Positions[b]) > tol.Value
+            : true;
+
+    // Library law: every pair CoincidentVertexPairs reports is two vertices of one component, the
+    // first lower, within the tolerance.
+    Law_ReportedPairIsCoincident(mesh: ModelMesh, k: Integer, tol: LengthTolerance): Boolean
+        => mesh.CoincidentVertexPairs(mesh.ComponentsOf, tol).IsValidIndex(k)
+            ? mesh.IsCoincidentPair(mesh.CoincidentVertexPairs(mesh.ComponentsOf, tol)[k], tol)
+            : true;
+
+    // Library law: every coincident pair is reported.
+    Law_CoincidentPairIsReported(mesh: ModelMesh, a: VertexIndex, b: VertexIndex,
+        tol: LengthTolerance): Boolean
+        => mesh.IsCoincidentPair(VertexPair(a, b), tol)
+            ? mesh.CoincidentVertexPairs(mesh.ComponentsOf, tol).Any(p => p.A.Value == a.Value && p.B.Value == b.Value)
+            : true;
+
+    // Model law (Error): no element is folded: its normal agrees in direction with the face normal
+    // at each of its corners.
+    Law_ElementIsNotFolded(mesh: ModelMesh, e: ElementIndex): Boolean
+        => (mesh.HasValidCorners(e) ? mesh.HasValidCornerAttributes(e) : false)
+            ? mesh.SurfaceAlignmentAt(e) > 0.0
+            : true;
+
+    //==
+    // # Helpers
+
+    // Whether a pair names two vertices of the mesh in one component, the first lower, whose
+    // distance is at most the tolerance.
+    IsCoincidentPair(mesh: ModelMesh, p: VertexPair, tol: LengthTolerance): Boolean
+        => (mesh.Positions.IsValidIndex(p.A) && mesh.Positions.IsValidIndex(p.B) && p.A.Value < p.B.Value
+                && mesh.ComponentsOf.VertexComponentOf(p.A).Value >= 0
+                && mesh.ComponentsOf.VertexComponentOf(p.A).Value == mesh.ComponentsOf.VertexComponentOf(p.B).Value)
+            ? mesh.Positions[p.A].Distance(mesh.Positions[p.B]) <= tol.Value
+            : false;
+}

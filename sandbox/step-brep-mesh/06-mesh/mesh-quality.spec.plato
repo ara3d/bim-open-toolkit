@@ -1,0 +1,36 @@
+//==
+// # Element quality: specification
+//
+// The quality records are plain data, so they carry no invariants; the theorems below are the
+// facts about the metrics that the identity laws test.
+//
+// Sections, in order:
+//  - Theorems
+
+//==
+// # Theorems
+
+// Euler's inequality: a triangle's circumradius is at least twice its inradius.
+theorem RadiusRatioIsAtLeastOne
+{
+    given t: Triangle3D;
+    assume t.Area > 0.0;
+    conclude t.TriangleQualityOf.RadiusRatio >= 1.0;
+    because "Euler's theorem in geometry: the distance d between the circumcentre and the incentre
+             satisfies d^2 = R (R - 2r), so R >= 2r, with equality exactly for an equilateral
+             triangle.";
+    tested by Law_RadiusRatioIsAtLeastOne, Law_EquilateralTriangleHasUnitRadiusRatio;
+}
+
+// Among triangles with a given inradius, the equilateral one has the shortest longest side.
+theorem AspectRatioIsAtLeastOne
+{
+    given t: Triangle3D;
+    assume t.Area > 0.0;
+    conclude t.TriangleQualityOf.AspectRatio >= 1.0;
+    because "The inradius is r = A / s with s the semi-perimeter, and A <= s^2 / (3 sqrt(3)) with
+             equality for the equilateral triangle, so r <= s / (3 sqrt(3)). The longest side h is at
+             least 2s / 3, so h / r >= (2s / 3) * 3 sqrt(3) / s = 2 sqrt(3), and
+             (sqrt(3) / 6) * h / r >= 1.";
+    tested by Law_AspectRatioIsAtLeastOne, Law_EquilateralTriangleHasUnitAspectRatio;
+}

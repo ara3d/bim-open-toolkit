@@ -1,0 +1,151 @@
+//==
+// # Model mesh topology: specification
+//
+// The contracts of the four deferred topology functions, the invariants of the edge table and the
+// components, and the theorem the genus rests on.
+//
+// Sections, in order:
+//  - The edge table
+//  - Components and their counts
+//  - Theorems
+
+//==
+// # The edge table
+
+// Every edge table lists each undirected edge once, canonically, in order, with one count and one
+// direction sum each, the sums consistent with the counts.
+spec MeshEdgeTable
+{
+    invariant Law_EdgeTableHasOneCountPerEdge(self);
+    invariant Law_EdgeTableHasOneDirectionSumPerEdge(self);
+    invariant forall (k: UndirectedEdgeIndex) : Law_EdgeTableEdgeIsCanonical(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : Law_EdgeTableIsStrictlySorted(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : Law_EdgeTableListsOnlyUsedEdges(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : Law_DirectionSumIsBoundedByCount(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : Law_DirectionSumHasTheParityOfCount(self, k);
+    constructor EdgeTableOf;
+}
+
+// The 1-skeleton of a mesh with its incidence.
+spec EdgeTableOf(mesh: ModelMesh): MeshEdgeTable
+{
+    requires forall (e: ElementIndex) : Law_ElementCornersInRange(mesh, e);
+    ensures Law_EdgeTableHasOneCountPerEdge(result);
+    ensures Law_EdgeTableHasOneDirectionSumPerEdge(result);
+    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableEdgeIsCanonical(result, k);
+    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableIsStrictlySorted(result, k);
+    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableListsOnlyUsedEdges(result, k);
+    ensures forall (e: ElementIndex) : forall (slot: Integer) : Law_EdgeTableListsEveryProperSide(mesh, e, slot);
+    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableCountMatchesItsSides(mesh, k);
+    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableDirectionSumMatchesItsSides(mesh, k);
+    ensures Law_EdgeTableCountsEveryProperSide(mesh);
+    measure mesh.CornerCount;
+    deferred "sort the directed element sides by canonical pair and count runs, or hash them";
+}
+
+//==
+// # Components and their counts
+
+// Every component labelling labels every element and every vertex, with labels in range or -1 for
+// an unreferenced vertex.
+spec MeshComponents
+{
+    invariant self.ComponentCount >= 0;
+    invariant forall (k: Integer) in self.ElementComponent.Count.Range :
+        self.IsComponentInRange(self.ElementComponent[k]);
+    invariant forall (k: Integer) in self.VertexComponent.Count.Range :
+        self.VertexComponent[k].Value >= -1 && self.VertexComponent[k].Value < self.ComponentCount;
+    constructor ComponentsOf;
+}
+
+// The connected components of a mesh, by shared vertices. The contract forces elements that share
+// a vertex into one component; it does not force elements joined by no chain into different ones,
+// which needs a reachability statement the specification language has no form for. The deferred
+// algorithm gives the finest labelling.
+spec ComponentsOf(mesh: ModelMesh): MeshComponents
+{
+    requires forall (e: ElementIndex) : Law_ElementCornersInRange(mesh, e);
+    ensures result.ElementComponent.Count == mesh.ElementCount;
+    ensures result.VertexComponent.Count == mesh.Positions.Count;
+    ensures forall (e: ElementIndex) : forall (slot: Integer) : Law_ElementCornersShareItsComponent(mesh, e, slot);
+    ensures forall (k: Integer) in mesh.Positions.Count.Range :
+        (result.VertexComponent[k].Value < 0) == mesh.LinkEdges(VertexIndex(k)).IsEmpty;
+    ensures forall (k: Integer) in mesh.ElementCount.Range :
+        result.ElementComponent[k].Value <= k.Range.Map(j => result.ElementComponent[j].Value).Reduce(-1, (a, b) => a.Max(b)) + 1;
+    ensures forall (c: Integer) in result.ComponentCount.Range :
+        result.ElementComponent.Any(x => x.Value == c);
+    measure mesh.CornerCount;
+    deferred "union-find over element-vertex incidence, roots numbered by first element";
+}
+
+// Whether a vertex is pinched: its link is neither one cycle nor one path. The contract is
+// partial: it pins the two cases the link's degrees decide, and the deferred note gives the
+// connectivity case, which needs a walk of the link.
+spec IsPinchedVertex(mesh: ModelMesh, v: VertexIndex): Boolean
+{
+    requires mesh.Positions.IsValidIndex(v);
+    requires forall (e: ElementIndex) : Law_ElementCornersInRange(mesh, e);
+    ensures mesh.LinkEdges(v).IsEmpty ? result == false : true;
+    ensures mesh.LinkMaxDegree(v) > 2 ? result : true;
+    measure mesh.LinkEdges(v).Count;
+    deferred "walk the link graph from one vertex; pinched when a degree exceeds 2 or the walk misses a link edge";
+}
+
+// The counts of each component, one entry per component.
+spec ComponentCountsOf(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents): Array<MeshComponentCounts>
+{
+    requires t == mesh.EdgeTableOf;
+    requires comps == mesh.ComponentsOf;
+    ensures result.Count == comps.ComponentCount;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].Vertices == comps.ComponentVertexCount(MeshComponentIndex(c));
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].Edges == t.CountEdges.Range
+            .Map(k => comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c).CountTrue;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].Triangles == mesh.Triangles.Count.Range
+            .Map(k => comps.ElementComponentOf(ElementIndex(k)).Value == c).CountTrue;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].Quads == mesh.Quads.Count.Range
+            .Map(k => comps.ElementComponentOf(ElementIndex(mesh.Triangles.Count + k)).Value == c).CountTrue;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].BoundaryEdges == t.CountEdges.Range
+            .Map(k => comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c
+                && t.IsBoundaryEdge(UndirectedEdgeIndex(k))).CountTrue;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].NonManifoldEdges == t.CountEdges.Range
+            .Map(k => comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c
+                && t.IsNonManifoldEdge(UndirectedEdgeIndex(k))).CountTrue;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].MisorientedEdges == t.CountEdges.Range
+            .Map(k => comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c
+                && t.IsMisorientedEdge(UndirectedEdgeIndex(k))).CountTrue;
+    ensures forall (c: Integer) in comps.ComponentCount.Range :
+        result[c].PinchedVertices == mesh.Positions.Count.Range
+            .Map(k => comps.VertexComponentOf(VertexIndex(k)).Value == c
+                && mesh.IsPinchedVertex(VertexIndex(k))).CountTrue;
+    ensures Law_ComponentEulerCharacteristicsAddUp(mesh);
+    measure mesh.Positions.Count + t.CountEdges + mesh.ElementCount;
+    deferred "one pass each over vertices, table edges, and elements, accumulating by component";
+}
+
+//==
+// # Theorems
+
+// A connected, closed, consistently oriented surface has an even Euler characteristic of at most
+// 2, and so a genus.
+theorem ClosedOrientedSurfacesHaveAGenus
+{
+    given mesh: ModelMesh, c: MeshComponentIndex;
+    assume mesh.CountsOf(c).IsClosed;
+    assume mesh.CountsOf(c).IsConsistentlyOriented;
+    assume mesh.CountsOf(c).IsSurface;
+    conclude mesh.CountsOf(c).HasGenus;
+    because "Closed with no non-manifold edge means every edge has two sides; no pinched vertex means
+             every vertex link is one cycle; so the component is a closed 2-manifold, connected by
+             construction of the components. Consistent orientation makes it orientable. By the
+             classification of surfaces it is a sphere with g handles, whose Euler characteristic,
+             computed from any cell decomposition (here V - E + F of the mesh), is 2 - 2g: even and
+             at most 2.";
+    tested by Law_ClosedOrientedSurfaceHasGenus, Law_ClosedComponentEulerIsTwoMinusTwiceGenus;
+}

@@ -1,0 +1,103 @@
+//==
+// # The model mesh: laws
+//
+// The structural invariants of ModelMesh, the laws of reversal, and the one witness this layer
+// builds. All exact; all Error when they fail on a model (structural group). Equalities on copied
+// numbers carry the comment "exact by construction" (SPEC-DSL.md section 2).
+//
+// Sections, in order:
+//  - Array lengths
+//  - Ranges and provenance
+//  - Reversal
+//  - Witness
+
+library ModelMeshesLaws
+{
+    //==
+    // # Array lengths
+
+    // ElementFace has one entry per element.
+    Law_ElementFaceHasOneEntryPerElement(mesh: ModelMesh): Boolean
+        => mesh.ElementFace.Count == mesh.ElementCount;
+
+    // CornerNormals has one entry per element corner: 3T + 4Q.
+    Law_CornerNormalsHaveOneEntryPerCorner(mesh: ModelMesh): Boolean
+        => mesh.CornerNormals.Count == mesh.CornerCount;
+
+    // CornerUvs has one entry per element corner: 3T + 4Q.
+    Law_CornerUvsHaveOneEntryPerCorner(mesh: ModelMesh): Boolean
+        => mesh.CornerUvs.Count == mesh.CornerCount;
+
+    // VertexProvenance has one entry per vertex.
+    Law_VertexProvenanceHasOneEntryPerVertex(mesh: ModelMesh): Boolean
+        => mesh.VertexProvenance.Count == mesh.Positions.Count;
+
+    //==
+    // # Ranges and provenance
+
+    // Every corner of element e names a vertex of the mesh.
+    Law_ElementCornersInRange(mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e) ? mesh.ElementCorners(e).All(v => mesh.Positions.IsValidIndex(v)) : true;
+
+    // The face element e approximates is a face of the model.
+    Law_ElementFaceIsModelFace(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.ElementFace.IsValidIndex(e) ? m.Faces.IsValidIndex(mesh.ElementFace[e]) : true;
+
+    // A vertex's provenance names the model cell its index's site names, so the cell a vertex
+    // samples can be read from its index alone.
+    Law_VertexProvenanceMatchesNumbering(mesh: ModelMesh, v: VertexIndex): Boolean
+        => mesh.VertexProvenance.IsValidIndex(v)
+            ? mesh.Numbering.SiteAt(v).IsSiteOf(mesh.VertexProvenance[v])
+            : true;
+
+    //==
+    // # Reversal
+
+    // Slot s of a reversed element is slot ReversedSlot(arity, s) of the original.
+    Law_ReversalPermutesCorners(mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+        => (mesh.IsElementInRange(e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
+            ? mesh.Reversed.ElementCorner(e, slot).Value
+                == mesh.ElementCorner(e, ReversedSlot(mesh.ElementArity(e), slot)).Value
+            : true;
+
+    // A corner's uv moves with its corner when the element is reversed.
+    Law_ReversalMovesCornerUvWithCorner(mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+        => ((mesh.IsElementInRange(e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
+                ? mesh.HasValidCornerAttributes(e)
+                : false)
+            ? mesh.Reversed.CornerUvAt(e, slot)
+                == mesh.CornerUvAt(e, ReversedSlot(mesh.ElementArity(e), slot))   // exact by construction
+            : true;
+
+    //==
+    // # Witness
+
+    // The mesh of a unit tetrahedron B-rep with 4 vertices, 6 straight edges, and 4 planar faces,
+    // meshed with no interior points: positions (0,0,0), (1,0,0), (0,1,0), (0,0,1); one triangle per
+    // face, numbered as the faces, each wound counter-clockwise seen from outside (normals -z, -y,
+    // -x, and (1,1,1) / sqrt(3)). Each face's uvs are its corners' coordinates on the two world
+    // axes its plane is a graph over. Euler characteristic 2, genus 0, closed, consistently
+    // oriented, signed volume 1/6.
+    Witness_UnitTetrahedron(_: ModelMesh): ModelMesh
+    {
+        var down = Direction3D(Vector3D(0.0, 0.0, -1.0));
+        var front = Direction3D(Vector3D(0.0, -1.0, 0.0));
+        var left = Direction3D(Vector3D(-1.0, 0.0, 0.0));
+        var slant = Direction3D(Vector3D(1.0, 1.0, 1.0).Normalize);
+        return ([Point3D(0.0, 0.0, 0.0), Point3D(1.0, 0.0, 0.0), Point3D(0.0, 1.0, 0.0), Point3D(0.0, 0.0, 1.0)],
+                [TriangleFace(VertexIndex(0), VertexIndex(2), VertexIndex(1)),
+                 TriangleFace(VertexIndex(0), VertexIndex(1), VertexIndex(3)),
+                 TriangleFace(VertexIndex(0), VertexIndex(3), VertexIndex(2)),
+                 TriangleFace(VertexIndex(1), VertexIndex(2), VertexIndex(3))],
+                [],
+                [down, down, down, front, front, front, left, left, left, slant, slant, slant],
+                [UvCoordinate(0.0, 0.0), UvCoordinate(0.0, 1.0), UvCoordinate(1.0, 0.0),
+                 UvCoordinate(0.0, 0.0), UvCoordinate(1.0, 0.0), UvCoordinate(0.0, 1.0),
+                 UvCoordinate(0.0, 0.0), UvCoordinate(0.0, 1.0), UvCoordinate(1.0, 0.0),
+                 UvCoordinate(1.0, 0.0), UvCoordinate(0.0, 1.0), UvCoordinate(0.0, 0.0)],
+                [BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2), BrepFaceIndex(3)],
+                [MeshVertexProvenance.OnVertex(BrepVertexIndex(0)), MeshVertexProvenance.OnVertex(BrepVertexIndex(1)),
+                 MeshVertexProvenance.OnVertex(BrepVertexIndex(2)), MeshVertexProvenance.OnVertex(BrepVertexIndex(3))],
+                MeshVertexNumbering(4, [4, 4, 4, 4, 4, 4, 4], [4, 4, 4, 4, 4]));
+    }
+}

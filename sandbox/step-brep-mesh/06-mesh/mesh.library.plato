@@ -1,0 +1,202 @@
+//==
+// # The model mesh: element and corner access, element geometry, reversal
+//
+// Every body here is its own specification. Accessors that cannot name a vertex or a corner
+// return the index -1 (none); accessors that read a position or an attribute require their
+// element and corner to be valid, and every law guards them first (HasValidCorners).
+//
+// Sections, in order:
+//  - Elements over a triangle array and a quad array
+//  - Elements and corners of a model mesh
+//  - Element geometry and corner attributes
+//  - Orientation reversal
+
+library ModelMeshes
+{
+    //==
+    // # Elements over a triangle array and a quad array
+    //
+    // The element convention, stated once for every holder of a triangle array and a quad array
+    // (ModelMesh here, FaceMesh in 05-face-meshing): element e is triangle e when e is below the
+    // triangle count T, else quad e - T. Corner slots run from 0 to 2 on a triangle and from 0 to 3
+    // on a quad, in winding order.
+
+    // The number of corners of element e: 3 for a triangle, 4 for a quad, 0 when e names neither.
+    ArityOf(triangles: Array<TriangleFace>, quads: Array<QuadFace>, e: ElementIndex): Integer
+        => e.Value < 0
+            ? 0
+            : (e.Value < triangles.Count ? 3 : (e.Value < triangles.Count + quads.Count ? 4 : 0));
+
+    // The vertex at corner slot of element e; -1 when e or slot names no corner.
+    CornerVertexOf(triangles: Array<TriangleFace>, quads: Array<QuadFace>, e: ElementIndex,
+        slot: Integer): VertexIndex
+        => (slot < 0 || slot >= ArityOf(triangles, quads, e))
+            ? VertexIndex(-1)
+            : (e.Value < triangles.Count
+                ? triangles[e.Value].At(slot)
+                : quads[e.Value - triangles.Count].At(slot));
+
+    //==
+    // # Elements and corners of a model mesh
+
+    // The number of elements, triangles and quads together.
+    ElementCount(mesh: ModelMesh): Integer
+        => mesh.Triangles.Count + mesh.Quads.Count;
+
+    // The number of element corners, 3T + 4Q: the length every corner attribute array must have.
+    CornerCount(mesh: ModelMesh): Integer
+        => 3 * mesh.Triangles.Count + 4 * mesh.Quads.Count;
+
+    // Whether e names an element of the mesh.
+    IsElementInRange(mesh: ModelMesh, e: ElementIndex): Boolean
+        => e.Value >= 0 && e.Value < mesh.ElementCount;
+
+    // Whether e names a triangle of the mesh.
+    IsTriangle(mesh: ModelMesh, e: ElementIndex): Boolean
+        => e.Value >= 0 && e.Value < mesh.Triangles.Count;
+
+    // Whether e names a quad of the mesh.
+    IsQuad(mesh: ModelMesh, e: ElementIndex): Boolean
+        => e.Value >= mesh.Triangles.Count && e.Value < mesh.ElementCount;
+
+    // The number of corners of element e; 0 when e names no element.
+    ElementArity(mesh: ModelMesh, e: ElementIndex): Integer
+        => ArityOf(mesh.Triangles, mesh.Quads, e);
+
+    // The vertex at corner slot of element e; -1 when e or slot names no corner.
+    ElementCorner(mesh: ModelMesh, e: ElementIndex, slot: Integer): VertexIndex
+        => CornerVertexOf(mesh.Triangles, mesh.Quads, e, slot);
+
+    // The corner vertices of element e in winding order; empty when e names no element.
+    ElementCorners(mesh: ModelMesh, e: ElementIndex): Array<VertexIndex>
+        => mesh.ElementArity(e).MapRange(s => mesh.ElementCorner(e, s));
+
+    // The corner index of slot of element e, into CornerNormals and CornerUvs: 3e + slot for a
+    // triangle, 3T + 4(e - T) + slot for a quad; -1 when e or slot names no corner.
+    CornerOf(mesh: ModelMesh, e: ElementIndex, slot: Integer): CornerIndex
+        => (slot < 0 || slot >= mesh.ElementArity(e))
+            ? CornerIndex(-1)
+            : (mesh.IsTriangle(e)
+                ? CornerIndex(3 * e.Value + slot)
+                : CornerIndex(3 * mesh.Triangles.Count + 4 * (e.Value - mesh.Triangles.Count) + slot));
+
+    // The vertex at flat corner c (the CornerIndex of CornerNormals and CornerUvs): slot c mod 3 of
+    // triangle c / 3 below 3T, else slot (c - 3T) mod 4 of quad (c - 3T) / 4. -1 when c names no
+    // corner.
+    CornerVertex(mesh: ModelMesh, c: CornerIndex): VertexIndex
+        => (c.Value < 0 || c.Value >= mesh.CornerCount)
+            ? VertexIndex(-1)
+            : (c.Value < 3 * mesh.Triangles.Count
+                ? mesh.Triangles[c.Value / 3].At(c.Value % 3)
+                : mesh.Quads[(c.Value - 3 * mesh.Triangles.Count) / 4].At((c.Value - 3 * mesh.Triangles.Count) % 4));
+
+    // The directed side of element e that leaves corner slot, in winding order (not canonical: A
+    // may exceed B). Both ends are -1 when e names no element.
+    ElementSide(mesh: ModelMesh, e: ElementIndex, slot: Integer): VertexPair
+        => mesh.ElementArity(e) == 0
+            ? VertexPair(VertexIndex(-1), VertexIndex(-1))
+            : VertexPair(mesh.ElementCorner(e, slot), mesh.ElementCorner(e, (slot + 1) % mesh.ElementArity(e)));
+
+    // Whether e names an element whose corners all name positions: the guard every law over
+    // element geometry applies first.
+    HasValidCorners(mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e)
+            ? mesh.ElementCorners(e).All(v => mesh.Positions.IsValidIndex(v))
+            : false;
+
+    // Whether every element's corners name positions: the guard of every law that reads the
+    // geometry of many elements at once (area, volume, angle defect sums).
+    HasAllValidCorners(mesh: ModelMesh): Boolean
+        => mesh.ElementCount.MapRange(k => mesh.HasValidCorners(ElementIndex(k))).All(x => x);
+
+    // Whether e names an element whose corners all have a normal and a uv.
+    HasValidCornerAttributes(mesh: ModelMesh, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e)
+            ? mesh.ElementArity(e).MapRange(s => mesh.CornerOf(e, s))
+                .All(c => mesh.CornerNormals.IsValidIndex(c) && mesh.CornerUvs.IsValidIndex(c))
+            : false;
+
+    //==
+    // # Element geometry and corner attributes
+
+    // The position at corner slot of element e. Precondition: mesh.HasValidCorners(e).
+    CornerPoint(mesh: ModelMesh, e: ElementIndex, slot: Integer): Point3D
+        => mesh.Positions[mesh.ElementCorner(e, slot)];
+
+    // Triangle e as a stdlib Triangle3D, corners in winding order. Precondition: e is a triangle
+    // with valid corners.
+    TriangleShapeAt(mesh: ModelMesh, e: ElementIndex): Triangle3D
+        => Triangle3D(mesh.CornerPoint(e, 0), mesh.CornerPoint(e, 1), mesh.CornerPoint(e, 2));
+
+    // Quad e as a stdlib Quad3D, corners in winding order. Precondition: e is a quad with valid
+    // corners.
+    QuadShapeAt(mesh: ModelMesh, e: ElementIndex): Quad3D
+        => Quad3D(mesh.CornerPoint(e, 0), mesh.CornerPoint(e, 1), mesh.CornerPoint(e, 2), mesh.CornerPoint(e, 3));
+
+    // Element e as flat triangles: itself for a triangle, the two triangles (A, B, C) and (A, C, D)
+    // of the A-C split for a quad. The one place the split is stated for area, volume, and solid
+    // angle. Precondition: mesh.HasValidCorners(e).
+    ElementTriangles(mesh: ModelMesh, e: ElementIndex): Array<Triangle3D>
+        => mesh.IsTriangle(e)
+            ? [mesh.TriangleShapeAt(e)]
+            : [Triangle3D(mesh.CornerPoint(e, 0), mesh.CornerPoint(e, 1), mesh.CornerPoint(e, 2)),
+               Triangle3D(mesh.CornerPoint(e, 0), mesh.CornerPoint(e, 2), mesh.CornerPoint(e, 3))];
+
+    // The outward face normal at corner slot of element e. Precondition:
+    // mesh.HasValidCornerAttributes(e).
+    CornerNormalAt(mesh: ModelMesh, e: ElementIndex, slot: Integer): Direction3D
+        => mesh.CornerNormals[mesh.CornerOf(e, slot)];
+
+    // The face parameters at corner slot of element e. Precondition:
+    // mesh.HasValidCornerAttributes(e).
+    CornerUvAt(mesh: ModelMesh, e: ElementIndex, slot: Integer): UvCoordinate
+        => mesh.CornerUvs[mesh.CornerOf(e, slot)];
+
+    //==
+    // # Orientation reversal
+    //
+    // Reversing every element is the other orientation of the same 2-complex: each side's
+    // direction flips, so every DirectionSum of the edge table changes sign, closedness and
+    // manifoldness are unchanged, and the signed volume changes sign.
+
+    // The slot of the original element that slot s of the reversed element reads: reversal keeps
+    // slot 0 and runs the rest backwards, so triangle (A, B, C) becomes (A, C, B) and quad
+    // (A, B, C, D) becomes (A, D, C, B). An arity of 0 leaves the slot unchanged.
+    ReversedSlot(arity: Integer, s: Integer): Integer
+        => arity == 0 ? s : (arity - s) % arity;
+
+    // The corner whose attributes corner c of the reversed mesh carries: the same element, slot
+    // ReversedSlot. A corner outside 0 to CornerCount - 1 maps to itself.
+    ReversedCornerSource(mesh: ModelMesh, c: CornerIndex): CornerIndex
+        => (c.Value < 0 || c.Value >= mesh.CornerCount)
+            ? c
+            : (c.Value < 3 * mesh.Triangles.Count
+                ? CornerIndex(c.Value - c.Value % 3 + ReversedSlot(3, c.Value % 3))
+                : CornerIndex(c.Value - (c.Value - 3 * mesh.Triangles.Count) % 4
+                    + ReversedSlot(4, (c.Value - 3 * mesh.Triangles.Count) % 4)));
+
+    // A corner attribute array permuted as Reversed permutes corners. An entry whose source lies
+    // outside the array keeps its own value, so a malformed array stays the same length.
+    PermutedForReversal(mesh: ModelMesh, xs: Array<$T>): Array<$T>
+        => xs.Count.MapRange(c => xs.IsValidIndex(mesh.ReversedCornerSource(CornerIndex(c)))
+            ? xs[mesh.ReversedCornerSource(CornerIndex(c))]
+            : xs[c]);
+
+    // The direction opposite to d.
+    FlippedNormal(d: Direction3D): Direction3D
+        => Direction3D(d.Vector * -1.0);
+
+    // The mesh with every element's orientation reversed: triangle (A, B, C) becomes (A, C, B), quad
+    // (A, B, C, D) becomes (A, D, C, B), corner attributes move with their corners, and every corner
+    // normal is flipped so that it stays on the side its element faces. Positions, element faces,
+    // provenance, and numbering are unchanged.
+    Reversed(mesh: ModelMesh): ModelMesh
+        => (mesh.Positions,
+            mesh.Triangles.Map(t => TriangleFace(t.A, t.C, t.B)),
+            mesh.Quads.Map(q => QuadFace(q.A, q.D, q.C, q.B)),
+            mesh.PermutedForReversal(mesh.CornerNormals).Map(d => d.FlippedNormal),
+            mesh.PermutedForReversal(mesh.CornerUvs),
+            mesh.ElementFace,
+            mesh.VertexProvenance,
+            mesh.Numbering);
+}

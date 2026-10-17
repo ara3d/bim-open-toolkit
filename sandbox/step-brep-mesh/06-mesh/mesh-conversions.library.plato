@@ -1,0 +1,55 @@
+//==
+// # Conversions to the stdlib mesh types: functions
+//
+// All four are To* functions, because each drops something: provenance and corner attributes
+// (ToTriangleMesh3D, ToQuadMesh3D, ToPolygonMesh3D) or index identity of vertices
+// (ToSplitTriangleMesh3D). Positions are copied, never recomputed. A quad is split along its A-C
+// diagonal, into (A, B, C) and (A, C, D), the split the stdlib's FanTriangles makes, so element k
+// of the triangulation is triangle k for k < T, and the two halves of quad q are elements
+// T + 2q and T + 2q + 1.
+//
+// Sections, in order:
+//  - Positions and connectivity
+//  - Split vertices for per-vertex attributes
+
+library ModelMeshConversions
+{
+    //==
+    // # Positions and connectivity
+
+    // The mesh as a TriangleMesh3D: the positions unchanged, the triangles in order, then each quad
+    // as the two triangles of its A-C split.
+    ToTriangleMesh3D(mesh: ModelMesh): TriangleMesh3D
+        => TriangleMesh3D(mesh.Positions, mesh.Triangles.Concatenate(mesh.Quads.FlatMap(q => q.FanTriangles)));
+
+    // The mesh as a QuadMesh3D when it has no triangles (QuadMeshOutcome says what happens
+    // otherwise): the positions unchanged and the quads in order.
+    ToQuadMesh3D(mesh: ModelMesh): QuadMeshOutcome
+        => QuadMeshOutcome(mesh.Triangles.IsEmpty, QuadMesh3D(mesh.Positions, mesh.Quads));
+
+    // The mesh as a PolygonMesh3D, which holds triangles and quads together: the positions
+    // unchanged, one face row per element in element order, corners in winding order.
+    ToPolygonMesh3D(mesh: ModelMesh): PolygonMesh3D
+        => PolygonMesh3D(mesh.Positions, FromRows(mesh.ElementCount.MapRange(k => mesh.ElementCorners(ElementIndex(k)))));
+
+    // The model mesh corner that slot s of triangle k of ToTriangleMesh3D(mesh) comes from: corner
+    // 3k + s for k < T; for half h of quad q (k = T + 2q + h), quad slot s for h = 0 and quad slot 0,
+    // 2, 3 for s = 0, 1, 2 when h = 1. -1 when k or s names no corner.
+    TriangulatedCorner(mesh: ModelMesh, k: Integer, s: Integer): CornerIndex
+        => (k < 0 || k >= mesh.Triangles.Count + 2 * mesh.Quads.Count || s < 0 || s > 2)
+            ? CornerIndex(-1)
+            : (k < mesh.Triangles.Count
+                ? CornerIndex(3 * k + s)
+                : CornerIndex(3 * mesh.Triangles.Count + 4 * ((k - mesh.Triangles.Count) / 2)
+                    + ((k - mesh.Triangles.Count) % 2 == 0 ? s : (s == 0 ? 0 : s + 1))));
+
+    //==
+    // # Split vertices for per-vertex attributes
+
+    // deferred: group the corners of each vertex by their (normal, uv) pair, compared exactly,
+    // which is sound because two corners carry equal attributes only when both were copied from one
+    // parameter-space point of one face mesh. Emit one split vertex per group, ordered by source
+    // vertex and then by the group's first corner; then emit ToTriangleMesh3D's triangles with each
+    // corner replaced by its group's split vertex. Linear after sorting each vertex's corners.
+    ToSplitTriangleMesh3D(mesh: ModelMesh): SplitTriangleMesh3D;
+}
