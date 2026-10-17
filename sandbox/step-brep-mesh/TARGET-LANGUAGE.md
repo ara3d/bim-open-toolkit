@@ -432,6 +432,77 @@ Two checks belong in the host harness, because one Plato compilation cannot expr
    builds and passes when driven directly. Settled by whether the sandbox gate of section 4.2, step 2,
    replaces the studio driver script.
 
+## 7. Sized types: a storage vocabulary beside `Number`, not a second arithmetic one
+
+Added 2026-10-17 after the owner asked whether Plato needs explicitly sized scalars, as C++ has,
+beside an implementation-dependent `Number` and `Integer`, for cases where layout and scale must be
+predictable.
+
+### 7.1 Where width and layout matter
+
+The cases split in two.
+
+- **Arithmetic inside algorithms.** Section 5 applies. The stdlib is written over `Number` and is not
+  scalar-polymorphic (`plato-252` calls generalizing `Vector3` over its scalar "a large, invasive
+  library change"). A `Number64` used in library bodies is option B of section 5.3 under another
+  name: every type over `Number`, from `Point3D` to `TriangleMesh3D`, needs a twin or a conversion
+  at every call. The arithmetic scalar stays `Number`, one width per compilation, guarded by
+  `Law_NumberIsBinary64`.
+- **Boundaries, where bytes have a fixed shape.** GLB vertex buffers are float32. BOS geometry is
+  int32 fixed point (`BimGeometry.cs:63`). glTF indices are uint32. GPU uploads, JSON witnesses,
+  content hashes and a Philox round (`plato-451`, gpu-accel) all need a width that does not move
+  with the compilation. Today Plato cannot name these, which is why section 5.5 pushes output
+  quantization and number parsing to the host harness.
+
+### 7.2 Proposal
+
+Add sized types as storage and boundary types, not as a second vocabulary.
+
+- **A small set of primitives:** `Float32`, `Float64`, `Integer32`, `Integer64`, `Unsigned32`;
+  `Unsigned64` only if hashing moves into Plato. Each costs every backend a name (`plato-365` keeps
+  the primitive set small), so the set stops there.
+- **No literal syntax.** A sized value is made from `Number` or `Integer` by an explicit conversion
+  and read back the same way. Narrowing and widening are both explicit: in a 32-bit GPU compilation
+  `Float64` to `Number` is the lossy direction. The explicit step is also what a law can name.
+- **Arithmetic only where the width fixes the semantics:** wraparound on `Integer32` and
+  `Unsigned32`, bitwise operations, comparison. No `IReal` arithmetic on `Float32` or `Float64`;
+  computation happens in `Number`.
+- **Containers fall out of the existing generics.** `Array<Float32>` and `Buffer<Float32>` need no
+  new machinery. The wrapper-scalar decision
+  (`tracker/decisions/2026-08-01-wrapper-scalars-are-the-only-representation.md`) already relies on
+  a single-field struct being layout-sound to reinterpret, so a `Float32` wrapper over `float` is a
+  free view onto a GPU or GLB buffer whatever width `Number` has.
+- **A backend without a width reports the type unsupported**, as GLSL does for `String`. A GLSL
+  build that touches `Float64` fails, which is the honest outcome.
+
+### 7.3 What it buys this library
+
+The two host-side checks of section 5.5 become Plato laws: quantization to `Float32`, or to BOS
+fixed point relative to a stated origin, stays within `LengthTolerance`, written once and judged in
+every backend. The `ModelMesh` that leaves the kernel declares its wire layout in its own type instead
+of in C# marshalling code. Nothing in `01-geometry` through `06-mesh` changes.
+
+### 7.4 Guards
+
+- **Drift back to option B.** Once `Float64` exists, a kernel type will be written over it "to be
+  safe". A rule in `SPEC-DSL.md` that sized types appear only in boundary records, and a lint for it,
+  keeps the arithmetic scalar single.
+- **`Integer` is the weaker contract.** It wraps at 32 bits in C#, is exact to 53 bits in TypeScript,
+  and is 64 bits in Rust, so no law may touch overflow. Stating in `SEMANTICS.md` that `Integer` is
+  at least 32 bits with unspecified overflow, beside sized types that do define wraparound, settles
+  question 4 of section 6 without a width decision.
+
+### 7.5 Rejected alternative: a field annotation
+
+`X: Number @float32`, in the style of GLSL precision qualifiers, solves layout but hides the rounding,
+since a read silently widens again. A type makes the conversion a visible step that a law can name.
+
+### 7.6 Effect on TKT-299
+
+None on the critical path. The compilation-width change in C# (section 4.1) still blocks the first
+algorithm body. Sized types block only the quantization laws, which arrive with `06-mesh`. The
+proposal is filed under `plato-271` in the Plato tracker.
+
 ## Sources for external claims
 
 - occt-import-js: <https://www.npmjs.com/package/occt-import-js>; opencascade.js: <https://ocjs.org>;
