@@ -91,6 +91,7 @@ spec RefineEdge(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, 
     ensures forall (i: Integer) : Law_ParametersStrictlyIncreasing(result, i);
     ensures forall (k: Integer) in 0.UpTo(d.Parameters.Count) : result.ContainsParameter(d.Parameters[k]);
     ensures m.IsDegenerateEdge(d.Edge) ? result.SegmentCount == 1 : result.SegmentCount >= segments;
+    ensures (!m.IsDegenerateEdge(d.Edge) && m.MeetsCriteria(d, c)) ? result.SegmentCount == d.SegmentCount.Max(segments) : true;
     ensures Law_LowestParameterIsDomainStart(m, result);
     ensures Law_HighestParameterIsDomainEnd(m, result);
     ensures forall (i: Integer) : Law_PointsLieOnCurve(m, result, i);
@@ -281,4 +282,21 @@ theorem EdgeReversalInvariance
     conclude m.WithEdgeReversed(e).Discretize(e, c, floors).SameDiscretization(m.Discretize(e, c, floors));
     because "Discretize reads the edge's curve, its domain in the curve's parameter, its seeds, its minimum segment count (closedness, degeneracy, the loops it is in, the floors, the total turning), and its parameter-space images (the faces that use it, the pcurves of its curve). WithEdgeReversed swaps the vertices, flips SameSense, and flips the citations; it changes none of those, given that layer 2 derives the edge domain in the curve's parameter independently of the sense (the second assumption). The end points are the domain-start and domain-end vertices, which the reversal swaps together with the sense, so they are the same two points. The algorithm is deterministic, so the arrays are bit-identical. Exactness does not rest on rounding symmetry, because the computation runs in the same direction both times.";
     tested by Law_EdgeReversalLeavesDiscretization;
+}
+
+// Count requests settle: quad count matching reaches equal counts in a bounded number of rounds.
+// Layer 5 turns a count mismatch into requests (each edge of an equality class asks for the
+// class's largest count, with its current chordal bound); layer 8 raises the floors to the counts
+// reached (RaisedFloors). This theorem is the per-edge step; the because gives the round bound
+// MaxRefinementRounds is chosen from.
+theorem CountRequestsReachTheirCount
+{
+    given m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria, e: BrepEdgeIndex;
+    assume Law_IndicesInRange(m) && c.IsWellFormed && m.IsRefinable(d, requests, c);
+    assume d.ByEdge.IsValidIndex(e) && !m.IsDegenerateEdge(e);
+    assume requests.RequestedChordal(e, c.Chordal) == c.Chordal;
+    assume m.MeetsCriteria(d.ByEdge[e], c);
+    conclude m.Refine(d, requests, c).ByEdge[e].SegmentCount == d.ByEdge[e].SegmentCount.Max(requests.RequestedSegments(e));
+    because "A count request carries the current chordal bound, so Refine calls RefineEdge with the criteria the entry already meets: the bisection pass splits nothing, and the count pass halves the segment longest in parameter one at a time until the count is reached, since count-floor splits beat MinLength; so the count is exactly the larger of the old count and the request (RefineEdge's second count ensures). Round bound: join two edges when one structured face needs them to have equal counts (opposite sides of a quad grid); the components are the equality classes. If each face asks, for each of its sides, the largest count among the sides it pairs, then by this theorem every edge's count after a round is the maximum over its neighbours' counts before it (counts never fall, Law_RefineNeverCoarsens). By induction, after r rounds an edge's count is the maximum over the edges within r joins of it, so after as many rounds as the class's diameter, which is less than its edge count, every edge of the class has the class maximum. MaxRefinementRounds at least the largest class's edge count less one therefore settles every count request.";
+    tested by Law_RefineMeetsRequestedSegments;
 }

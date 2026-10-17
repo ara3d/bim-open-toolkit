@@ -523,6 +523,19 @@ library EdgeDiscretizing
     // times. Refinement continues from the existing polyline, so it only ever adds points, and the
     // edge still has exactly one discretization at every moment.
 
+    // True when the canonical discretization already meets the criteria the bisection tests on
+    // every segment: the certified sagitta, the tangent deviation, the length limit, and every
+    // image chord, each widened as in the laws or at the floor. `RefineEdge` then splits nothing
+    // for the criteria, and only the count pass can add points.
+    MeetsCriteria(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
+        => m.IsEvaluable(d)
+            ? d.SegmentCount.MapRange(i =>
+                m.Law_CertifiedSagittaWithinChordal(d, c, i)
+                && m.Law_TangentDeviationWithinHalfAngular(d, c, SamplePlan.DiscretizationPlan, i)
+                && m.Law_SegmentWithinMaxLength(d, c, i)
+                && m.EdgeImages(d.Edge).All(img => m.Law_ImageChordWithinChordal(d, c, img, SamplePlan.DiscretizationPlan, i))).All(x => x)
+            : false;
+
     // True when some request names the edge.
     IsRequested(requests: Array<EdgeRefinementRequest>, e: BrepEdgeIndex): Boolean
         => requests.Any(r => r.Edge == e);
