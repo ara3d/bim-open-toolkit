@@ -25,7 +25,7 @@ mathematics, on hand-written witnesses, and on public files.
 | `validation-checks-reports.library.plato` | `BrepCheckingReports` | one report per layer and input, split by `CheckFamily`; generated (see "Implementation notes") |
 | `validation-oracles.library.plato` | `BrepOracles` | closed forms, the Green's-theorem area, the divergence volume, the Euler and angle-defect oracles, the area envelope |
 | `validation-witnesses.library.plato` | `BrepWitnesses` | the witness models written out as `BrepModel` values, and their facts |
-| `validation-transforms.library.plato` | `BrepTransforms` | rigid motion and scaling of a model (declarations that belong in layers 1, 2, 4, 5), one-shot meshing, comparisons |
+| `validation-comparisons.library.plato` | `BrepComparisons` | meshing a witness through layer 8's `MeshModel` (`WitnessOptions`, `WitnessOutcome`, `WitnessMesh`), model comparisons |
 | `validation-corpus.library.plato` | `BrepCorpus` | the public STEP corpus as data |
 | `validation.laws.plato` | `BrepCheckingLaws` | cross-check laws, oracle-against-closed-form laws, check-and-law agreement, levels, corpus |
 | `validation-witnesses.laws.plato` | `BrepWitnessesLaws` | witness, negative-witness and metamorphic laws |
@@ -301,39 +301,31 @@ Exact.
 | `Law_WitnessGreenAreaMatchesFacts` | each face's Green area equals its stated area | allowance |
 | `Law_WitnessDivergenceVolumeMatchesFacts` | each shell's divergence volume equals its stated signed volume | allowance |
 | `Law_BSplineTopAreaInBracket` | the Bezier top's area lies in its bracket | allowance |
-| `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean` | each witness meshed once is clean at Oracle | (the checks' own) |
+| `Law_WitnessMeshesOk`, `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean` | each witness meshed by layer 8's `MeshModel` is Ok and clean at Oracle | (the checks' own) |
 | `Law_HollowBoxVoidMeshVolumeNegative`, `...OuterMeshVolumePositive` | volume signs after meshing | `VolumeRoundoff` |
 | `Law_HollowBoxMeshVolumeIsDifference` | meshed volume a^3 - b^3 | 2 `VolumeRoundoff` |
 | `Law_RedundantPoleLoops...`, `Law_FlippedFace...`, `Law_SharedCorner...` (9) | each named check fails; the structure family has exactly that many diagnostics | exact |
-| `Law_RigidMotionKeepsConnectivity` | moving a witness keeps its mesh's connectivity | exact |
-| `Law_RigidMotionMovesMesh` | each mesh vertex moves with the frame | Length |
-| `Law_PowerOfTwoScalingKeepsConnectivity` | scaling model and length criteria by 2^e, \|e\| <= 8, keeps connectivity | exact |
+| `Law_WitnessRigidMotionMovesPositions` | layer 8's `Law_RigidMotionMovesPositions` on each witness | Length |
+| `Law_WitnessPowerOfTwoScalingKeepsConnectivity`, `...ScalesPositions` | layer 8's scaling laws on each witness | exact |
+| `Law_WitnessEdgeReversalPreservesMesh`, `Law_WitnessShellReversalNegatesVolume` | layer 8's reversal laws on each witness | exact; Length times area |
 | `Law_TighterChordalNeverIncreasesSagitta` | on line-and-circle witnesses, a tighter chordal never raises the largest sagitta | `ResolutionAt(size)` |
 
 Theorems in `validation.spec.plato`: `SampledCheckAgreesWithLaw`, `HigherLevelCleanImpliesLowerClean`,
 `GreenAreaExactOnStraightLoops`, `MeshAreaWithinEnvelope`, `MeshEulerEqualsBrepEulerByConstruction`,
-`ReducedEulerOracleAgrees`, `SolidShellVolumeSigns`, `RigidMotionCommutesWithMeshing`. Conjectures:
-`ScalingByAnyFactorKeepsConnectivity`, `TighterChordalNeverIncreasesDeviation`.
+`ReducedEulerOracleAgrees`, `SolidShellVolumeSigns`. Conjecture: `TighterChordalNeverIncreasesDeviation`.
 
 ## Open items
 
-1. **Scaling with pcurves on planes.** `ScaledBy` keeps parameter-plane curves and pcurves, exact
-   for every surface whose parameters are angles, not for a plane's lengths. The witnesses carry no
-   pcurves; a corpus model would need them scaled.
-2. **Meshing in the witness laws.** `MeshOnce` runs layers 4 to 6 once with no refinement loop.
-   Layer 8's `MeshModel` exists; the meshed witness laws should also run over its mesh once the
-   whole stack is in one compile. They are kept on `MeshOnce` so the gate over layers 0 to 7 passes
-   without layer 8.
-3. **The short entry points.** `ValidateDiscretizations(m, d)` and `ValidateFaceMesh(m, fm)` run the
+1. **The short entry points.** `ValidateDiscretizations(m, d)` and `ValidateFaceMesh(m, fm)` run the
    structural family only, since the criteria are not in their arguments; `ValidateModelMesh(mesh)`
    uses tolerances at sixteen times the mesh's floating-point resolution. Callers with criteria should
    use the long forms.
-4. **Sphere witness reading.** VOCABULARY.md's "two poles" is read as poles at the seam's ends
+2. **Sphere witness reading.** VOCABULARY.md's "two poles" is read as poles at the seam's ends
    (`Witness_Sphere`); the vertex-loop variant is `Witness_SphereByPoleLoops`, and the variant with
    both is a negative witness.
-5. **NIST validation properties.** Reading them needs a decoder for AP242's
+3. **NIST validation properties.** Reading them needs a decoder for AP242's
    `geometric_validation_property`; not in layer 3.
-6. **Messages.** Report messages of the generated reports are the law's name in words. A message
+4. **Messages.** Report messages of the generated reports are the law's name in words. A message
    per law, written by hand, would read better.
 
 ## Implementation notes
@@ -373,7 +365,7 @@ library was added). Over layers 00 to 08: PASS, 0 errors, 6,357 functions.
 | (none) | `Oracle_SphereZoneArea`, `Oracle_TorusPatchArea`, `Oracle_BodyVolume`, `Oracle_QuadDefectSum`, `Oracle_EdgeLength`, `Oracle_FacePerimeter`, `GreenAllowance`, `DivergenceAllowance`, `FaceAreaTolerance` | the envelopes the cross laws need |
 | witnesses, counts stated | as stated, plus `Witness_Box(w, d, h)`, `Witness_Cylinder(r, h, sweep)`, sized forms of every witness, `Witness_SphereByPoleLoops` and three negative witnesses; the default forms call the sized ones | parameterized laws and negative controls |
 | (none) | `WitnessFacts`, `WitnessAt`, `FactsAt`, `CorpusEntry` and its records, `Corpus` | witnesses and corpus as data |
-| (none) | `MovedBy`, `ScaledBy` and their curve and surface parts, `ScaledCriteria`, `MeshOnce`, `SameModel`, `SameConnectivity` | the metamorphic laws; marked `belongs-in` lower layers |
+| (none) | `WitnessOptions`, `WitnessOutcome`, `WitnessMesh`, `SameModel` | the witness laws mesh through layer 8; the transforms are layer 2's and `SameConnectivity` layer 6's (fix wave) |
 
 ## Findings in lower layers
 
@@ -411,3 +403,5 @@ one commit each.
 | Finding | Done |
 |---|---|
 | Torus volume over a boundary that winds in v (open item 1) | `FaceVolumeTerm` integrates the area's boundary with its cut pairs and adds `ClosedSurfaceVolume` where the region is fixed only up to the whole surface; `WindsInV` deleted; `Law_DivergenceEqualsTorusVolume` added |
+| The transforms and `SameConnectivity` (FIX-WAVE ownership table); meshed witness laws through layer 8's `MeshModel` (open items 2 and 3) | `validation-transforms.library.plato` becomes `validation-comparisons.library.plato` (`BrepComparisons`): `MovedBy`, `ScaledBy`, `ScaledPoint`, their curve and surface parts, `ScaledLimit`, `ScaledCriteria`, `MeshOnce`, `WitnessCriteria` and `SameConnectivity` deleted. The witness laws mesh with `MeshModel` under layer 8's `Witness_UnitScaleOptions`, and the metamorphic laws are layer 8's laws run over the witnesses, so this layer needs no transform of its own |
+| `Law_RigidMotionKeepsConnectivity` and theorem `RigidMotionCommutesWithMeshing` are false (layer 8, decision 11: the unit box's square faces have two equally Delaunay diagonals, and a rotation that is not a quarter turn can pick the other) | dropped, with conjecture `ScalingByAnyFactorKeepsConnectivity`, which a tie refutes the same way |

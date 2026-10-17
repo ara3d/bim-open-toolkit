@@ -1,0 +1,64 @@
+//==
+// # BrepComparisons
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): how
+// the witness laws mesh a witness, and the comparisons they make. A witness
+// is meshed by layer 8's MeshModel, refinement loop included, under layer 8's
+// Witness_UnitScaleOptions. The metamorphic relations (rigid motion, scaling
+// by a power of two, edge and face reversal) are layer 8's laws, run here
+// over the witnesses; the transforms they need are layer 2's (RigidlyMoved,
+// ScaledBy) and the mesh comparison layer 6's (SameConnectivity).
+//
+// Sections, in order:
+//  - Meshing a witness
+//  - Comparisons
+
+library BrepComparisons
+{
+    //==
+    // # Meshing a witness
+
+    // The options the witness laws mesh with: layer 8's options for unit-sized
+    // witnesses (chordal 1/100 of a unit, 15 degrees, triangles, validation
+    // at the Oracle level).
+    WitnessOptions(_: MeshingOptions): MeshingOptions
+        => MeshingOptions.Witness_UnitScaleOptions;
+
+    // The outcome of meshing model m with the witness options.
+    WitnessOutcome(m: BrepModel): MeshOutcome
+        => m.MeshModel(MeshingOptions.WitnessOptions);
+
+    // The mesh of model m under the witness options.
+    WitnessMesh(m: BrepModel): ModelMesh
+        => m.WitnessOutcome.Mesh;
+
+    //==
+    // # Comparisons
+
+    // True when two models hold the same tables value for value: points,
+    // records and geometry compared exactly (every value is copied or computed
+    // the same way in both), arrays compared element by element.
+    SameModel(a: BrepModel, b: BrepModel): Boolean
+        => a.Geometry.Curves.Corresponds(b.Geometry.Curves, (x, y) => x == y)
+            && a.Geometry.Surfaces.Corresponds(b.Geometry.Surfaces, (x, y) => x == y)
+            && a.Vertices.Corresponds(b.Vertices, (x, y) => x == y)
+            && a.Edges.Corresponds(b.Edges, (x, y) => x == y)
+            && a.Loops.Corresponds(b.Loops, (x, y) => x.CoedgesOf.Corresponds(y.CoedgesOf, (p, q) => p == q)
+                && x.VertexLoopVertexOf.Corresponds(y.VertexLoopVertexOf, (p, q) => p == q))
+            && a.Faces.Corresponds(b.Faces, (x, y) => x.Surface == y.Surface && x.SameSense == y.SameSense
+                && x.Bounds.Corresponds(y.Bounds, (p, q) => p == q))
+            && a.Shells.Corresponds(b.Shells, (x, y) => x.DeclaredClosed == y.DeclaredClosed
+                && x.Faces.Corresponds(y.Faces, (p, q) => p == q))
+            && a.Bodies.Corresponds(b.Bodies, (x, y) => x.ShellsOfBody.Corresponds(y.ShellsOfBody, (p, q) => p == q))
+            && a.Tolerances == b.Tolerances
+            && a.Unit == b.Unit;
+
+    // True when every curve of the model is a line or a circle.
+    HasOnlyLinesAndCircles(m: BrepModel): Boolean
+        => m.Geometry.Curves.All(c => c.IsLineCase || c.IsCircleCase);
+
+    // The largest sampled sagitta over every segment of every entry.
+    MaxEdgeSagitta(m: BrepModel, d: EdgeDiscretizations, plan: SamplePlan): Number
+        => d.ByEdge.Reduce(0.0, (worst, x) => x.SegmentCount.Max(0).Range.Reduce(worst, (w, i) =>
+            m.IsEvaluableSegment(x, i) ? w.Max(m.SampledSagitta(x, plan, i)) : w));
+}

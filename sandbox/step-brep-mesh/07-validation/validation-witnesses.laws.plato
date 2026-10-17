@@ -3,7 +3,7 @@
 //
 // Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
 // laws the witness models satisfy, the laws the negative witnesses break, and
-// the metamorphic relations of meshing over the witnesses. A witness is
+// layer 8's metamorphic relations run over the witnesses. A witness is
 // chosen by an Integer through WitnessAt, so a law quantifies over all ten
 // positive witnesses (k modulo 10), and its facts come from FactsAt in the
 // same order. Every approximate comparison names its bound: an oracle's own
@@ -139,49 +139,53 @@ library BrepWitnessesLaws
     //==
     // # Positive witnesses: meshed
     //
-    // Meshed once with the witness criteria (MeshOnce, WitnessCriteria):
-    // layers 4 to 6 with no refinement loop. Layer 8's MeshModel adds the loop
-    // and the same laws hold of its mesh (README, "Open items").
+    // Meshed by layer 8's MeshModel under the witness options (WitnessMesh,
+    // WitnessOptions): the refinement loop included, validated at Oracle.
+
+    // Witness k meshes with Ok: no Error in the meshing or in the validation
+    // the pipeline runs at the Oracle level.
+    Law_WitnessMeshesOk(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).WitnessOutcome.Ok;
 
     // The mesh of witness k passes CrossCheck at the Oracle level with the
     // criteria it was made with.
     Law_WitnessMeshCrossChecksClean(k: Integer): Boolean
         => BrepModel.WitnessAt(k).CrossCheck(
-                BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria),
+                BrepModel.WitnessAt(k).WitnessMesh,
                 ConformanceLevel.Oracle,
-                FaceMeshingCriteria.WitnessCriteria)
+                MeshingOptions.WitnessOptions.Face)
             .IsClean;
 
-    // The mesh of witness k passes ValidateModelMesh.
+    // The mesh of witness k passes ValidateModelMesh at the Oracle level with
+    // the witness's tolerances and Cubit's acceptable quality thresholds.
     Law_WitnessMeshValidatesClean(k: Integer): Boolean
-        => BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria).ValidateModelMesh.IsClean;
+        => BrepModel.WitnessAt(k).WitnessMesh.ValidateModelMesh(
+                BrepModel.WitnessAt(k).Tolerances, MeshQualityThresholds.CubitAcceptable, ConformanceLevel.Oracle)
+            .IsClean;
 
     // After meshing the hollow box a x a x a around a void b x b x b, the
     // void's mesh encloses a negative volume beyond its rounding.
     Law_HollowBoxVoidMeshVolumeNegative(a: Number, b: Number): Boolean
         => (b > 0.0 && a > b && a.IsFinite)
-            ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(
-                    BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria), ShellIndex(1))
-                < 0.0 - BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria).VolumeRoundoff
+            ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(BrepModel.Witness_HollowBox(a, b).WitnessMesh, ShellIndex(1))
+                < 0.0 - BrepModel.Witness_HollowBox(a, b).WitnessMesh.VolumeRoundoff
             : true;
 
     // After meshing the hollow box, the outer shell's mesh encloses a
     // positive volume beyond its rounding.
     Law_HollowBoxOuterMeshVolumePositive(a: Number, b: Number): Boolean
         => (b > 0.0 && a > b && a.IsFinite)
-            ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(
-                    BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria), ShellIndex(0))
-                > BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria).VolumeRoundoff
+            ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(BrepModel.Witness_HollowBox(a, b).WitnessMesh, ShellIndex(0))
+                > BrepModel.Witness_HollowBox(a, b).WitnessMesh.VolumeRoundoff
             : true;
 
     // The hollow box's meshed solid volume is a^3 - b^3: every face is
     // planar and bounded by lines, so the mesh is exact up to rounding.
     Law_HollowBoxMeshVolumeIsDifference(a: Number, b: Number): Boolean
         => (b > 0.0 && a > b && a.IsFinite)
-            ? (BrepModel.Witness_HollowBox(a, b).BodyMeshVolume(
-                    BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria), BodyIndex(0))
+            ? (BrepModel.Witness_HollowBox(a, b).BodyMeshVolume(BrepModel.Witness_HollowBox(a, b).WitnessMesh, BodyIndex(0))
                     - (a * a * a - b * b * b)).Abs
-                <= 2.0 * BrepModel.Witness_HollowBox(a, b).MeshOnce(FaceMeshingCriteria.WitnessCriteria).VolumeRoundoff
+                <= 2.0 * BrepModel.Witness_HollowBox(a, b).WitnessMesh.VolumeRoundoff
             : true;
 
     //==
@@ -233,40 +237,33 @@ library BrepWitnessesLaws
     //==
     // # Metamorphic relations
     //
-    // Over the witnesses, meshed once with the witness criteria. A rigid
-    // motion is a frame orthonormal within 1e-12 radians; a scaling is a
-    // power of two, which is exact in binary floating point, so every
-    // decision the mesher makes on a scaled model compares the same
-    // mantissas.
+    // Layer 8's metamorphic laws over the witnesses, under the witness
+    // options. Only exact relations are laws (layer 8, decision 11): a general
+    // rigid motion can flip a tie (a square face's two Delaunay diagonals),
+    // so connectivity under it is not stated; positions are, when the
+    // connectivity agrees.
 
-    // Moving witness k rigidly by frame f leaves its mesh's connectivity
-    // unchanged: elements, element faces and vertex count.
-    Law_RigidMotionKeepsConnectivity(k: Integer, f: Frame3D): Boolean
-        => f.IsOrthonormalWithin(AngleTolerance(Angle(1e-12)))
-            ? BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria)
-                .SameConnectivity(BrepModel.WitnessAt(k).MovedBy(f).MeshOnce(FaceMeshingCriteria.WitnessCriteria))
-            : true;
+    // Moving witness k rigidly by a frame moves mesh vertex v with it, when
+    // the two meshes have the same connectivity.
+    Law_WitnessRigidMotionMovesPositions(k: Integer, motion: Frame3D, v: Integer): Boolean
+        => BrepModel.WitnessAt(k).Law_RigidMotionMovesPositions(MeshingOptions.WitnessOptions, motion, VertexIndex(v));
 
-    // Moving witness k rigidly by frame f moves each mesh vertex by f, within
-    // the witness's length tolerance.
-    Law_RigidMotionMovesMesh(k: Integer, f: Frame3D, v: Integer): Boolean
-        => (f.IsOrthonormalWithin(AngleTolerance(Angle(1e-12)))
-                ? (BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions.IsValidIndex(v)
-                    && BrepModel.WitnessAt(k).MovedBy(f).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions.IsValidIndex(v))
-                : false)
-            ? BrepModel.WitnessAt(k).MovedBy(f).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions[v]
-                .Distance(f.MovedPoint(BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria).Positions[v]))
-                <= BrepModel.WitnessAt(k).Tolerances.Length.Value
-            : true;
+    // Scaling witness k and the length criteria by 2^e keeps the mesh's
+    // connectivity, over the exponents layer 8's law admits.
+    Law_WitnessPowerOfTwoScalingKeepsConnectivity(k: Integer, e: Integer): Boolean
+        => BrepModel.WitnessAt(k).Law_PowerOfTwoScalingKeepsConnectivity(MeshingOptions.WitnessOptions, e);
 
-    // Scaling witness k and the length criteria by 2^e, e in [-8, 8], leaves
-    // its mesh's connectivity unchanged.
-    Law_PowerOfTwoScalingKeepsConnectivity(k: Integer, e: Integer): Boolean
-        => (e >= -8 && e <= 8)
-            ? BrepModel.WitnessAt(k).MeshOnce(FaceMeshingCriteria.WitnessCriteria)
-                .SameConnectivity(BrepModel.WitnessAt(k).ScaledBy(2.0.Pow(e.ToNumber))
-                    .MeshOnce(FaceMeshingCriteria.WitnessCriteria.ScaledCriteria(2.0.Pow(e.ToNumber))))
-            : true;
+    // Scaling witness k by 2^e scales mesh vertex v's position by 2^e exactly.
+    Law_WitnessPowerOfTwoScalingScalesPositions(k: Integer, e: Integer, v: Integer): Boolean
+        => BrepModel.WitnessAt(k).Law_PowerOfTwoScalingScalesPositions(MeshingOptions.WitnessOptions, e, VertexIndex(v));
+
+    // Reversing edge e of witness k gives the same mesh, bit for bit.
+    Law_WitnessEdgeReversalPreservesMesh(k: Integer, e: Integer): Boolean
+        => BrepModel.WitnessAt(k).Law_EdgeReversalPreservesMesh(MeshingOptions.WitnessOptions, BrepEdgeIndex(e));
+
+    // Reversing every face of witness k negates its mesh's signed volume.
+    Law_WitnessShellReversalNegatesVolume(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).Law_ShellReversalNegatesVolume(MeshingOptions.WitnessOptions);
 
     // On a witness whose curves are lines and circles, a tighter chordal
     // bound, all else equal, never increases the largest sagitta of any edge

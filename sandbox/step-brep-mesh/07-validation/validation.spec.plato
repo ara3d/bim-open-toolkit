@@ -463,31 +463,8 @@ theorem SolidShellVolumeSigns
     tested by Law_OuterShellExactVolumePositive, Law_VoidShellExactVolumeNegative, Law_WitnessDivergenceVolumeMatchesFacts, Law_HollowBoxVoidMeshVolumeNegative;
 }
 
-// Moving a model rigidly by a frame moves its mesh and keeps its
-// connectivity, for the witnesses whose meshing decisions do not sit on a
-// rounding boundary.
-theorem RigidMotionCommutesWithMeshing
-{
-    given k: Integer, f: Frame3D;
-    assume f.IsOrthonormalWithin(AngleTolerance(Angle(1e-12)));
-    conclude Law_RigidMotionKeepsConnectivity(k, f);
-    because "Every decision of layers 4 to 6 is a function of parameters, lengths and angles, all invariant under a rigid motion; positions enter only through distances and angles. The witnesses' decisions are far from their thresholds (sagittas on circles of radius 1 at chordal 1/100), so rounding of order 1e-15 cannot flip one.";
-    tested by Law_RigidMotionKeepsConnectivity, Law_RigidMotionMovesMesh;
-}
-
 //==
 // # Conjectures
-
-// Scaling by any positive factor, not only a power of two, keeps the
-// connectivity of every corpus model's mesh.
-conjecture ScalingByAnyFactorKeepsConnectivity
-{
-    given m: BrepModel, factor: Number;
-    assume factor > 0.0;
-    assume m.ValidateBrep.IsClean;
-    conclude m.MeshOnce(FaceMeshingCriteria.WitnessCriteria).SameConnectivity(m.ScaledBy(factor).MeshOnce(FaceMeshingCriteria.WitnessCriteria.ScaledCriteria(factor)));
-    tested by Law_PowerOfTwoScalingKeepsConnectivity;
-}
 
 // A tighter chordal bound never increases the measured deviation of any
 // edge, on every curve, not only lines and circles.
