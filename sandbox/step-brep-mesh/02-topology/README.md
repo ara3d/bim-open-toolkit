@@ -14,9 +14,9 @@ every algorithm is bodiless with a `// deferred:` note and a contract in the spe
 |---|---|
 | `topology-elements.types.plato` | `EdgeOrientation`, `Coedge`, `BrepVertex`, `BrepEdge`, `BrepLoop`, `FaceBound`, `BrepFace`, `BrepShell`, `BrepBody` |
 | `topology-model.types.plato` | `LengthUnit`, `BrepModel`, `ShellCounts`, `CoedgeSite`, `EdgeEnd` |
-| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge domains, vertex links, counts, coupling measures; six deferred algorithms; three declarations owed by layers 0 and 1 |
-| `topology.laws.plato` | library `BrepTopologyLaws`: 24 laws |
-| `topology.spec.plato` | invariants of `BrepModel` and `ShellCounts`, 8 function contracts, 3 theorems |
+| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms; eleven deferred algorithms; eight declarations marked `belongs-in` layers 0 and 1 |
+| `topology.laws.plato` | library `BrepTopologyLaws`: 41 laws |
+| `topology.spec.plato` | invariants of `BrepModel` and `ShellCounts`, 13 function contracts, 4 theorems |
 
 ## The objects
 
@@ -152,7 +152,12 @@ vertices. `EdgeDomain(m, e)` derives the range:
    parameter beyond a `Closed` curve's range is wrapped into it before evaluation
    (`EdgeCurvePoint`, through layer 0's `Wrap`).
 
-The range is always bounded: both ends are inverse-evaluation results.
+The range is always bounded: both ends are inverse-evaluation results. Two worked examples. A
+closed edge on a `Line` (one vertex at parameter 3) had the range `[-1.8e308, 1.8e308]`; now it is
+`[3, 3]`, and `Law_EdgeHasPositiveExtent` reports it as degenerate. An open edge on a clamped closed
+B-spline over knots `[0, 3]` (`Closed(3)`), from parameter 2.5 to 0.5 with `SameSense` true, had the
+complementary arc `[0.5, 2.5]` read backwards; now it is `[2.5, 3.5]`, and 3.5 is evaluated at
+`Wrap` = 0.5.
 
 The range therefore always runs forward in the curve's parameter, which is what layer 4's
 discretization needs (`EdgeDiscretization.Parameters` strictly increasing from `Range.Start` to
@@ -493,9 +498,17 @@ shell-free form), `SwappedEnds`, `WithUsesFlipped`, `WithEdgeReversed` (4, 8; ad
 `IsDegenerateEdge`, `IsCoincident`, `IsEveryIndexInRange(m)`, `ScaleToMetres`, the deviation
 measures (7, 8); and the seven laws beyond the contract's list, in the table above.
 
+**Used from other layers' fix-wave declarations**: from layer 0, `Periodicity.Closed`, `HasSeam(d)`,
+`Wrap(d, t)`, `PeriodicRepresentativeAbove`, `Tolerances.LengthParameter` and `AngleParameter`,
+`ResolutionAt`; from layer 1, `PcurveRangeOver`, `PcurveParameterPeriod`, `ScaledGeometry`,
+`GeometrySet.Closures`, `ParameterToleranceAt(g, c, t, tol)`, `NormalAgreesWithParameterization`
+(one sign per surface, mirrored frames and the full torus included), `FrameVector`, `Derivative`
+over curves and pcurves. Layer 1's `PlacementHandedness` is deliberately not read: layer 3 folds it
+into `SameSense` ("Sense and orientation, composed").
+
 **Used from 00-foundation (fixed)**: `CurveIndex`, `PcurveIndex`, `SurfaceIndex`, `BrepVertexIndex`,
 `BrepEdgeIndex`, `BrepLoopIndex`, `BrepFaceIndex`, `ShellIndex`, `BodyIndex` (each with `IValue`, so
-`==` works, as layer 0 declares them); `Tolerances` with `Length` and `Parameter`;
+`==` works, as layer 0 declares them); `Tolerances` with `Length`;
 `CurveDomain`, `Periodicity` (`Aperiodic`, `Periodic`). The spec file also uses `SurfaceDomain` and
 `DomainSide`, and the README names `SamplePlan` (proposed).
 
@@ -594,6 +607,14 @@ Run on 2026-10-17 with the PLATO-PRIMER.md E.3 driver, built in the scratch fold
 - One finding was fixed on the way: CHK304 on a `match` over a chained, overloaded call (see
   "Implementation notes").
 
+Fix wave, 2026-10-17: every finding was gated with the same driver over this folder and a snapshot
+of the other layers taken at the start of the wave, extended with the declarations their owners
+committed during the wave (the `Closed` case, `HasSeam`, `PeriodicRepresentativeAbove`, the
+`Tolerances` split, `GeometrySet.Closures`, layer 1's `PcurveRangeOver`, `PcurveParameterPeriod`
+and `ScaledGeometry`): 0 findings in this folder each time. Before the last commit, all nine layers
+as committed on `main`, with this folder: `PASS: 0 error(s) in scope; 6647 functions
+type-checked`.
+
 ## Changes to the contract
 
 | Old | New | Reason |
@@ -611,6 +632,17 @@ Run on 2026-10-17 with the PLATO-PRIMER.md E.3 driver, built in the scratch fold
 | (none) | requested of 00-foundation: `PeriodicRepresentativeAbove`, `IsPeriodicDomain` | periodic arithmetic on layer 0's types; `Wrap` exists there but is proposed and gives `[0, P)`, not `(0, P]` |
 | (none) | requested of 01-geometry: `NormalAgreesWithParameterization(g, s)` | the sign `epsilon` that the `Lemon` torus case needs |
 | (proposed in layer 1's files) | to be fixed: `IsEveryIndexInRange(g)`, `PcurvesOf(g, c)`, `Domain`, `Eval`, `ClosestParameter` over `PcurveIndex` | this layer calls them for arena totality and for pcurves found through the curve |
+| `EdgeDomain`: a closed edge on an aperiodic curve spans the curve's domain | spans a period on a `Periodic` or `Closed` curve, `[a, a]` otherwise; `Closed` kept only for a closed edge | review F4a, F4c, T1 (fix wave) |
+| `PcurveEdgeDomain` by the `EdgeDomain` rule on the pcurve's own domain | layer 1's `PcurveRangeOver` over the edge domain; one parameter period for a closed edge | review F4b (fix wave) |
+| `IsOnPeriodicCurve(m, e)` | `IsOnClosedCurve(m, e)` over layer 0's `HasSeam` | `Closed` counts as a seam (fix wave) |
+| `Law_FaceBoundsShareNoVertex` covers redundant vertex loops; `Law_EdgeHasPositiveExtent` Error | `Law_NoRedundantVertexLoop` (Warning) split out; `Law_EdgeHasPositiveExtent` Warning; use-count laws and `FreeEdgeCount` exempt degenerate edges (`CountsAsEdge`) | decision 12 (fix wave) |
+| `Law_EdgeDomainIsForward` by `Tolerances.Parameter` | by layer 1's `ParameterToleranceAt` at the range's start | review T8; layer 0 split the floor (fix wave) |
+| (none) | laws `Law_ShellIsConnected`, `Law_ShellIsOrientable`, `Law_OpenShellEulerEvenAndBounded`, `Law_OpenShellVertexLinkIsCycleOrPath`, `Law_PolyLoopEdgesPairUp`, `Law_PolyLoopHasThreePoints`, `Law_CurveAgreesWithPcurve`, `Law_PcurveRunsWithCurve`, `Law_PcurveSurfaceIsAFaceSurface`, `Law_NoRedundantVertexLoop`, and seven library laws | review M1, M2, M3, T3, open item 3 (fix wave) |
+| (layer 4's and 8's `belongs-in: 02-topology`) | `Opposite`, `CoedgeCount`, `CitesEdge`, `LoopUsesEdge`, `FaceUsesEdge`, `FacesOfEdge(m, e)`, `SwappedEnds`, `WithUsesFlipped`, `WithEdgeReversed`, `WithEveryFaceReversed` | one owner per declaration (fix wave) |
+| (layers 7's and 8's copies) | `ScaledBy(m, factor)`, `RigidlyMoved(m, motion)`, `ScaledPoint(p, factor)` with bodies | one owner; pcurves scaled (fix wave) |
+| (none) | `ModelSize(m)`, `CoordinateExtent(m)` | layer 0 takes the rounding floor at the extent; layer 3 exports both (fix wave) |
+| (none) | `IsRedundantVertexLoop`, `KeptBounds`, `SharesCurveParameter`, `OrientationFlips`, `ShellComponentCount`, `BoundaryCycleCount`, `PolyEdgeUseDefects` | for layers 5 and 7 (review C5, C6) and the new laws (fix wave) |
+| requested of 01-geometry: `NormalAgreesWithParameterization`; of 00-foundation: `PeriodicRepresentativeAbove`, `IsPeriodicDomain` | deleted here; owned by layers 1 and 0 | fix wave |
 
 ## Fix wave, 2026-10-17
 
