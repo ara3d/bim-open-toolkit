@@ -416,19 +416,23 @@ theorem WrapIsTheCanonicalRepresentative
 
 theorem ParameterToleranceBoundsMotion
 {
-    given t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number;
+    given t: Tolerances, floor: ParameterTolerance, speed: Number, cap: Number, h: Number;
     assume t.IsWellFormed;
     assume Law_ParameterTolerancePositive(floor);
     assume IsSpeedAndCap(speed, cap);
-    conclude speed * t.ParameterToleranceAt(floor, speed, cap).Value
+    assume h.Abs <= t.ParameterToleranceAt(floor, speed, cap).Value;
+    conclude speed * h.Abs
         <= t.Length.Value.Max(speed * floor.Value) + ResolutionAt(t.Length.Value.Max(speed * floor.Value));
-    because "For a C2 curve c with |c'(t0)| = speed, c(t0 + h) - c(t0) = h c'(t0) + O(h^2), so a
-             step |h| <= Length / speed moves the point by at most Length to first order. The cap
-             only lowers the tolerance, and where it binds speed * cap <= Length. The floor raises
-             it, and then the motion is speed * floor. The second-order term K h^2 / 2 (K a bound
-             on |c''|) stays below Length while h <= sqrt(2 Length / K), which holds for every
-             analytic STEP curve at tolerances below its radius; a B-spline span shorter than the
-             floor is where the first-order statement fails, and layer 1 reports it.";
+    because "The conclusion is the first-order motion of a step h within the tolerance: for a C2
+             curve c with |c'(t0)| = speed, c(t0 + h) - c(t0) = h c'(t0) + O(h^2), and the linear
+             term has length speed |h|. Where the quotient Length / speed is taken, speed |h| <=
+             Length. The cap only lowers the tolerance, and where it binds speed * cap <= Length.
+             The floor raises it, and then the motion is speed * floor. The second-order term
+             K h^2 / 2 (K a bound on |c''|) stays below Length while h <= sqrt(2 Length / K), which
+             holds for every analytic STEP curve at tolerances below its radius; a B-spline span
+             shorter than the floor is where the first-order statement fails, and layer 1 reports
+             it. Before the fix wave the conclusion was the bare inequality on the tolerance, with
+             the motion only in this text (review, section 5).";
     tested by Law_ParameterToleranceAtMovesWithinLength, Law_ParameterToleranceAtNeverBelowFloor;
 }
 
@@ -451,6 +455,7 @@ theorem UvToleranceBoundsMotion
              |S_v| |dv| by the triangle inequality, whatever the angle between S_u and S_v. The box
              is conservative: on an orthogonal parameterization the true bound is the disc
              inscribed in it, smaller by a factor of up to sqrt(2).";
+    tested by Law_ParameterToleranceAtMovesWithinLength;   // applied per direction, with speed 2 |S_u| and 2 |S_v|, as UvToleranceAt's contract does
 }
 
 theorem ReportsFormAMonoid

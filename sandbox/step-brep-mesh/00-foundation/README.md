@@ -380,8 +380,8 @@ count as vacuous.
 
 The theorems in `foundation.spec.plato`: `CoincidenceIsNotTransitive`, `CoincidenceChainBound`,
 `WrapIsTheCanonicalRepresentative`, `ParameterToleranceBoundsMotion`, `UvToleranceBoundsMotion`,
-`ReportsFormAMonoid`, `IsCleanIsAMonoidHomomorphism`, `WorseOfFoldIsWellDefined`. All but
-`UvToleranceBoundsMotion` name the laws that test them.
+`ReportsFormAMonoid`, `IsCleanIsAMonoidHomomorphism`, `WorseOfFoldIsWellDefined`. Each names the
+laws that test it.
 
 ## Open questions
 
@@ -526,3 +526,8 @@ Applied:
    rounding corrections; `IsPeriodicDomain` is false for `Closed` (it is `IsPeriodic` on a
    domain; seam reasoning calls `HasSeam(d)`). `Located` and `WholeInput` moved in item 3.
    Four laws state them.
+8. **Review section 5: the two motion theorems.** `ParameterToleranceBoundsMotion` concluded only
+   the inequality on the tolerance, with the motion claim in its `because`; it now takes a step
+   `h` within the tolerance and concludes the first-order motion `speed * abs(h)`.
+   `UvToleranceBoundsMotion` gains `tested by Law_ParameterToleranceAtMovesWithinLength`, applied
+   per direction. The name stays, because SPEC-EXECUTION.md cites it.
