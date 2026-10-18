@@ -1221,7 +1221,7 @@ The bcf.* pack: an issue or verdict table previewed as BCF topics, written as a 
 
 ### `bcf.issue` (v1) — Pure
 
-One reviewer's comment as an issue table: columns GlobalId, Title, Description, Status, Priority, Type, Comment, Author, CreationDate, with one row per distinct GlobalId in 'ids' (the elements the issue is about; one row with an empty GlobalId when there are none, a comment on the model as a whole). Wire a view3d.camera table into 'camera' and each row also carries the camera columns CameraX..CameraZ, DirectionX..DirectionZ, UpX..UpZ, FieldOfView and AspectRatio, which bcf.write turns into the topic's viewpoint (direction is target minus position, normalised; up is the z axis made perpendicular to it; aspect ratio 1). The 3D pane's 'Comment' button adds this node with its title, comment and author, the current selection in 'ids' and the time in 'created' (UTC, yyyy-MM-ddTHH:mm:ssZ; the node reads no clock). 'title' is required. Wire the table into bcf.topics to preview the topic and bcf.write to write the BCF file on Run.
+One reviewer's comment as an issue table: columns GlobalId, Title, Description, Status, Priority, Type, Comment, CommentAuthor, CommentDate, Author, CreationDate, with one row per distinct GlobalId in 'ids' (the elements the issue is about; one row with an empty GlobalId when there are none, a comment on the model as a whole). Author and CreationDate belong to the topic; CommentAuthor and CommentDate to its comment, and here carry the same values (the author and the time of creation). Wire a view3d.camera table into 'camera' and each row also carries the camera columns CameraX..CameraZ, DirectionX..DirectionZ, UpX..UpZ, FieldOfView and AspectRatio, which bcf.write turns into the topic's viewpoint (direction is target minus position, normalised; up is the z axis made perpendicular to it; aspect ratio 1). The 3D pane's 'Comment' button adds this node with its title, comment and author, the current selection in 'ids' and the time in 'created' (UTC, yyyy-MM-ddTHH:mm:ssZ; the node reads no clock). 'title' is required. Wire the table into bcf.topics to preview the topic and bcf.write to write the BCF file on Run.
 
 **Inputs**
 
@@ -1332,7 +1332,7 @@ An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (d
 
 ### `bcf.read` (v1) — Pure
 
-Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId, the camera columns CameraX..AspectRatio, Comments (the topic's comment count); one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count) and a comments table (TopicGuid, Title, Author, CreationDate, Comment; one row per comment). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.
+Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId, the camera columns CameraX..AspectRatio (empty when the topic has no viewpoint camera, and FieldOfView and AspectRatio empty when the file gave none), Comments (the topic's comment count); one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count) and a comments table (TopicGuid, Title, CommentAuthor, CommentDate, Comment; one row per comment). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.
 
 Reads markup.bcf per topic and the elements its viewpoints select; a topic written without geometry gets its GlobalIds back from its description. Comments, snapshots and cameras are not read.
 
@@ -1398,8 +1398,8 @@ Reads markup.bcf per topic and the elements its viewpoints select; a topic writt
 |---|---|---|---|---|
 | `TopicGuid` | Text | yes | `TopicGuid` | The BCF topic's guid. |
 | `Title` | Text | yes | `Title` | The issue's title; rows with one title form one issue (one BCF topic). |
-| `Author` | Text | yes | `Author` | Who created the BCF topic. |
-| `CreationDate` | Text | yes | `CreationDate` | When the BCF topic was created, as UTC ISO text (yyyy-MM-ddTHH:mm:ssZ); empty when the file gives none. |
+| `CommentAuthor` | Text | yes | — | — |
+| `CommentDate` | Text | yes | — | — |
 | `Comment` | Text | no | — | — |
 
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
