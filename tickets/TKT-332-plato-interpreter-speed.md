@@ -1,14 +1,16 @@
 ---
 id: TKT-332
 title: Plato interpreter speed: whole-model meshing laws run in seconds, and defect D5 (a conditional's condition evaluates to null) is fixed
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 2b20f2f0
+session: 2b20f2f0-4d99-4684-a062-1b2db12618c7
 fence: [../plato/src/Plato.Interpreter/**, ../plato/tests/Plato.Interpreter.Tests/**, ../plato/docs/reports/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-317, TKT-314, TKT-328]
 confidence: high
 created: 2026-10-18
+claimed: 2026-10-18
 ---
 
 ## Acceptance criteria
