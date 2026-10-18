@@ -147,7 +147,7 @@ spec MeshChosenFaces(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): M
     ensures m.IsRunnable(o) ? result.Rounds == m.FinalState(o, chosen).Round : result.Rounds == 0;
     ensures m.IsRunnable(o) ? true : !result.Ok;
     ensures m.IsRunnable(o) ? true : result.Mesh.ElementCount == 0;
-    ensures Law_NumberingCoversPositions(result.Mesh);
+    ensures NumberingCoversPositions(result.Mesh);
     measure m.Edges.Count + m.Faces.Count + o.MaxRefinementRounds.Max(0) * m.Faces.Count;
 }
 
@@ -229,7 +229,7 @@ theorem WatertightByConstruction
     assume m.CanAssemble(m.FinalState(o, m.AllFaces).FaceMeshesOf, m.NumberMeshVertices(m.FinalState(o, m.AllFaces).Discretizations, m.FinalState(o, m.AllFaces).FaceMeshesOf));
     conclude m.MeshModel(o).Mesh.IsClosed;
     because "Take any mesh edge {a, b} of the assembled mesh. Case 1, it lies along a model edge e: a and b are consecutive points of e's one discretization (Law_DiscretizationsIndexedByEdge), and each face citing e emits the segment between them once per use, because LoopToUv draws every coedge's points once (Law_LoopToUvCountMatchesDiscretization) and the element sides along the boundary are the boundary segments (layer 5's TriangulateRegion fixes every boundary segment as a constraint, and the elements tile the region: layer 5's theorem ElementsTileRegion, from Law_BoundarySegmentIsElementSide and Law_InteriorSideIsShared, which TriangulateRegion, RefineToSurface, and QuadGrid ensure). Every edge of a closed shell has exactly two uses (Law_EveryEdgeUsedTwiceInClosedShell, Law_DeclaredClosedIsClosed), and the two uses read the same points in opposite orders (Law_OppositeUsesSeeReversedPoints, layer 4's SharedPolylineClosesEveryEdge). The points cite one site each, so the two faces' corners are one assembled vertex (layer 6's WatertightByNumbering, through Law_SharedPositionIsCopied and Law_ProvenanceMatchesSource), and the side {a, b} has exactly two element sides, one per use. A seam is the case of two uses in one face (layer 2's Law_SeamUsesRunOpposite); its two parameter-space copies share one local vertex (Law_LocalVertexFibresAreIdentifications), so the same count holds. Case 2, it lies inside a face: the tiling puts exactly two elements on every interior segment of the parameter region, and lifting identifies only seam copies and pole points (Law_LocalVertexFibresAreIdentifications), whose segments are boundary segments of the region glued in pairs (seam) or collapsed with their element (pole, layer 5's DroppedTrianglesArePoleSegments). Every face belongs to a shell and none is empty, so no boundary segment of the model lacks its second side. Hence every mesh edge has exactly two element sides: IsClosed.";
-    tested by Law_ClosedWhenEveryShellClosedAndNoFaceEmpty, Law_AssembledSharedBoundaryCornersCoincide, Law_SharedBoundarySampleHasOneGlobalVertex, Law_OppositeUsesSeeReversedPoints, Law_SharedPositionIsCopied, Law_LoopToUvCountMatchesDiscretization;
+    tested by Law_ClosedWhenEveryShellClosedAndNoFaceEmpty, Law_AssembledSharedBoundaryCornersCoincide, SharedBoundarySampleHasOneGlobalVertex, Law_OppositeUsesSeeReversedPoints, Law_SharedPositionIsCopied, Law_LoopToUvCountMatchesDiscretization;
 }
 
 // The loop stops, after at most MaxRefinementRounds steps, with nothing

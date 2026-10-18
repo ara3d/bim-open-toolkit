@@ -107,18 +107,18 @@ library ModelMeshMeasuresLaws
     // # Degenerate elements, coincident vertices, folds
 
     // Model law (Error): no element names one vertex at two corners.
-    Law_ElementHasNoRepeatedCorner(mesh: ModelMesh, e: ElementIndex): Boolean
+    ElementHasNoRepeatedCorner(mesh: ModelMesh, e: ElementIndex): Boolean
         => mesh.IsElementInRange(e) ? mesh.HasRepeatedCorner(e).Not : true;
 
     // Model law (Error): every element's smallest altitude exceeds the model's length tolerance
     // (research/VALIDATION-MATH.md 4.2), which excludes both collapsed elements and needles.
-    Law_ElementIsNotDegenerate(mesh: ModelMesh, e: ElementIndex, tol: LengthTolerance): Boolean
+    ElementIsNotDegenerate(mesh: ModelMesh, e: ElementIndex, tol: LengthTolerance): Boolean
         => mesh.HasValidCorners(e) ? mesh.ElementSmallestAltitude(e) > tol.Value : true;
 
     // Model law (Error): two distinct vertices of one component are farther apart than the model's
     // length tolerance. With one discretization per edge a correct mesh has no coincident vertices
     // inside a component; a pair that is coincident is a crack that index identity left open.
-    Law_VerticesOfOneComponentAreApart(mesh: ModelMesh, a: VertexIndex, b: VertexIndex,
+    VerticesOfOneComponentAreApart(mesh: ModelMesh, a: VertexIndex, b: VertexIndex,
         tol: LengthTolerance): Boolean
         => (mesh.Positions.IsValidIndex(a) && mesh.Positions.IsValidIndex(b) && a.Value != b.Value
                 && mesh.ComponentsOf.VertexComponentOf(a).Value >= 0
@@ -142,7 +142,7 @@ library ModelMeshMeasuresLaws
 
     // Model law (Error): no element is folded: its normal agrees in direction with the face normal
     // at each of its corners.
-    Law_ElementIsNotFolded(mesh: ModelMesh, e: ElementIndex): Boolean
+    ElementIsNotFolded(mesh: ModelMesh, e: ElementIndex): Boolean
         => (mesh.HasValidCorners(e) ? mesh.HasValidCornerAttributes(e) : false)
             ? mesh.SurfaceAlignmentAt(e) > 0.0
             : true;

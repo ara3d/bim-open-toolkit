@@ -19,10 +19,10 @@ spec MeshVertexNumbering
     invariant self.ModelVertexCount >= 0;
     invariant self.EdgeInteriorStart.Count >= 1;
     invariant self.FaceInteriorStart.Count >= 1;
-    invariant Law_EdgeRunsFollowModelVertices(self);
-    invariant Law_FaceRunsFollowEdgeRuns(self);
-    invariant forall (e: BrepEdgeIndex) : Law_EdgeRunHasNonNegativeLength(self, e);
-    invariant forall (f: BrepFaceIndex) : Law_FaceRunHasNonNegativeLength(self, f);
+    invariant EdgeRunsFollowModelVertices(self);
+    invariant FaceRunsFollowEdgeRuns(self);
+    invariant forall (e: BrepEdgeIndex) : EdgeRunHasNonNegativeLength(self, e);
+    invariant forall (f: BrepFaceIndex) : FaceRunHasNonNegativeLength(self, f);
     constructor NumberMeshVertices;
     constructor Witness_UnitTetrahedron;
 }
@@ -32,13 +32,13 @@ spec NumberMeshVertices(m: BrepModel, d: EdgeDiscretizations, faceMeshes: Array<
 {
     requires faceMeshes.Count == m.Faces.Count;
     requires forall (k: Integer) in faceMeshes.Count.Range : faceMeshes[k].Face.Value == k;
-    ensures Law_NumberingHasOneEdgeRunPerEdge(m, result);
-    ensures Law_NumberingHasOneFaceRunPerFace(m, result);
-    ensures Law_NumberingCountsEveryModelVertex(m, result);
-    ensures Law_EdgeRunsFollowModelVertices(result);
-    ensures Law_FaceRunsFollowEdgeRuns(result);
-    ensures forall (e: BrepEdgeIndex) : Law_EdgeRunHasNonNegativeLength(result, e);
-    ensures forall (f: BrepFaceIndex) : Law_FaceRunHasNonNegativeLength(result, f);
+    ensures NumberingHasOneEdgeRunPerEdge(m, result);
+    ensures NumberingHasOneFaceRunPerFace(m, result);
+    ensures NumberingCountsEveryModelVertex(m, result);
+    ensures EdgeRunsFollowModelVertices(result);
+    ensures FaceRunsFollowEdgeRuns(result);
+    ensures forall (e: BrepEdgeIndex) : EdgeRunHasNonNegativeLength(result, e);
+    ensures forall (f: BrepFaceIndex) : FaceRunHasNonNegativeLength(result, f);
     ensures forall (e: BrepEdgeIndex) : Law_NumberingCountsCitedEdgeInteriors(m, d, faceMeshes, e);
     ensures forall (k: Integer) in m.Edges.Count.Range :
         faceMeshes.CitesEdge(BrepEdgeIndex(k)) ? true : result.EdgeInteriorCount(BrepEdgeIndex(k)) == 0;
@@ -55,10 +55,10 @@ spec NumberMeshVertices(m: BrepModel, d: EdgeDiscretizations, faceMeshes: Array<
 theorem NumberedSitesHaveDistinctIndices
 {
     given n: MeshVertexNumbering, s: MeshVertexSite;
-    assume Law_EdgeRunsFollowModelVertices(n);
-    assume Law_FaceRunsFollowEdgeRuns(n);
-    assume forall (e: BrepEdgeIndex) : Law_EdgeRunHasNonNegativeLength(n, e);
-    assume forall (f: BrepFaceIndex) : Law_FaceRunHasNonNegativeLength(n, f);
+    assume EdgeRunsFollowModelVertices(n);
+    assume FaceRunsFollowEdgeRuns(n);
+    assume forall (e: BrepEdgeIndex) : EdgeRunHasNonNegativeLength(n, e);
+    assume forall (f: BrepFaceIndex) : FaceRunHasNonNegativeLength(n, f);
     conclude Law_SiteAtInvertsIndexOfSite(n, s);
     because "The runs are consecutive (each kind starts where the previous ends) and non-decreasing,
              so they cut 0 to N - 1 into disjoint intervals, one per model vertex, edge, and face.
@@ -76,10 +76,10 @@ theorem NumberedSitesHaveDistinctIndices
 theorem EveryIndexHasASite
 {
     given n: MeshVertexNumbering, i: VertexIndex;
-    assume Law_EdgeRunsFollowModelVertices(n);
-    assume Law_FaceRunsFollowEdgeRuns(n);
-    assume forall (e: BrepEdgeIndex) : Law_EdgeRunHasNonNegativeLength(n, e);
-    assume forall (f: BrepFaceIndex) : Law_FaceRunHasNonNegativeLength(n, f);
+    assume EdgeRunsFollowModelVertices(n);
+    assume FaceRunsFollowEdgeRuns(n);
+    assume forall (e: BrepEdgeIndex) : EdgeRunHasNonNegativeLength(n, e);
+    assume forall (f: BrepFaceIndex) : FaceRunHasNonNegativeLength(n, f);
     conclude Law_IndexOfSiteInvertsSiteAt(n, i);
     because "As in NumberedSitesHaveDistinctIndices, the intervals cover 0 to N - 1, so SiteAt finds
              the interval of every index in range and returns a site whose slot is the offset in
@@ -102,5 +102,5 @@ theorem SharedSamplesShareAnIndex
              sites are equal. GlobalVertexOf is IndexOfSite of the site, a function of the site and
              the numbering only, so the two indices are equal. No position, parameter, or tolerance
              enters.";
-    tested by Law_SharedBoundarySampleHasOneGlobalVertex;
+    tested by SharedBoundarySampleHasOneGlobalVertex;
 }

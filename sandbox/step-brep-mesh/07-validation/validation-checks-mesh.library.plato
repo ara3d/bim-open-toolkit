@@ -31,55 +31,55 @@ library BrepCheckingMesh
     //==
     // # Array lengths, ranges, provenance (structure)
 
-    // Law_ElementFaceHasOneEntryPerElement. Structure: Error.
+    // ElementFaceHasOneEntryPerElement. Structure: Error.
     Check_ElementFaceHasOneEntryPerElement(mesh: ModelMesh): Check
-        => CheckOnce("Law_ElementFaceHasOneEntryPerElement", Law_ElementFaceHasOneEntryPerElement(mesh));
+        => CheckOnce("ElementFaceHasOneEntryPerElement", ElementFaceHasOneEntryPerElement(mesh));
 
-    // Law_CornerNormalsHaveOneEntryPerCorner. Structure: Error.
+    // CornerNormalsHaveOneEntryPerCorner. Structure: Error.
     Check_CornerNormalsHaveOneEntryPerCorner(mesh: ModelMesh): Check
-        => CheckOnce("Law_CornerNormalsHaveOneEntryPerCorner", Law_CornerNormalsHaveOneEntryPerCorner(mesh));
+        => CheckOnce("CornerNormalsHaveOneEntryPerCorner", CornerNormalsHaveOneEntryPerCorner(mesh));
 
-    // Law_CornerUvsHaveOneEntryPerCorner. Structure: Error.
+    // CornerUvsHaveOneEntryPerCorner. Structure: Error.
     Check_CornerUvsHaveOneEntryPerCorner(mesh: ModelMesh): Check
-        => CheckOnce("Law_CornerUvsHaveOneEntryPerCorner", Law_CornerUvsHaveOneEntryPerCorner(mesh));
+        => CheckOnce("CornerUvsHaveOneEntryPerCorner", CornerUvsHaveOneEntryPerCorner(mesh));
 
-    // Law_VertexProvenanceHasOneEntryPerVertex. Structure: Error.
+    // VertexProvenanceHasOneEntryPerVertex. Structure: Error.
     Check_VertexProvenanceHasOneEntryPerVertex(mesh: ModelMesh): Check
-        => CheckOnce("Law_VertexProvenanceHasOneEntryPerVertex", Law_VertexProvenanceHasOneEntryPerVertex(mesh));
+        => CheckOnce("VertexProvenanceHasOneEntryPerVertex", VertexProvenanceHasOneEntryPerVertex(mesh));
 
-    // Law_ElementCornersInRange at every element. Structure: Error.
+    // ElementCornersInRange at every element. Structure: Error.
     Check_ElementCornersInRange(mesh: ModelMesh): Check
-        => mesh.CheckMeshElements("Law_ElementCornersInRange", e => Law_ElementCornersInRange(mesh, e));
+        => mesh.CheckMeshElements("ElementCornersInRange", e => ElementCornersInRange(mesh, e));
 
-    // Law_VertexProvenanceMatchesNumbering at every vertex. Structure: Error.
+    // VertexProvenanceMatchesNumbering at every vertex. Structure: Error.
     Check_VertexProvenanceMatchesNumbering(mesh: ModelMesh): Check
-        => mesh.CheckMeshVertices("Law_VertexProvenanceMatchesNumbering", v => Law_VertexProvenanceMatchesNumbering(mesh, v));
+        => mesh.CheckMeshVertices("VertexProvenanceMatchesNumbering", v => VertexProvenanceMatchesNumbering(mesh, v));
 
     //==
     // # Numbering (structure)
 
-    // Law_EdgeRunsFollowModelVertices on the mesh's numbering. Structure:
+    // EdgeRunsFollowModelVertices on the mesh's numbering. Structure:
     // Error.
     Check_EdgeRunsFollowModelVertices(mesh: ModelMesh): Check
-        => CheckOnce("Law_EdgeRunsFollowModelVertices", Law_EdgeRunsFollowModelVertices(mesh.Numbering));
+        => CheckOnce("EdgeRunsFollowModelVertices", EdgeRunsFollowModelVertices(mesh.Numbering));
 
-    // Law_FaceRunsFollowEdgeRuns on the mesh's numbering. Structure: Error.
+    // FaceRunsFollowEdgeRuns on the mesh's numbering. Structure: Error.
     Check_FaceRunsFollowEdgeRuns(mesh: ModelMesh): Check
-        => CheckOnce("Law_FaceRunsFollowEdgeRuns", Law_FaceRunsFollowEdgeRuns(mesh.Numbering));
+        => CheckOnce("FaceRunsFollowEdgeRuns", FaceRunsFollowEdgeRuns(mesh.Numbering));
 
-    // Law_EdgeRunHasNonNegativeLength at every edge run. Structure: Error.
+    // EdgeRunHasNonNegativeLength at every edge run. Structure: Error.
     Check_EdgeRunHasNonNegativeLength(mesh: ModelMesh): Check
-        => CheckAll("Law_EdgeRunHasNonNegativeLength", mesh.Numbering.EdgeInteriorStart.Count,
-            e => Law_EdgeRunHasNonNegativeLength(mesh.Numbering, BrepEdgeIndex(e)), e => AtEdge(e));
+        => CheckAll("EdgeRunHasNonNegativeLength", mesh.Numbering.EdgeInteriorStart.Count,
+            e => EdgeRunHasNonNegativeLength(mesh.Numbering, BrepEdgeIndex(e)), e => AtEdge(e));
 
-    // Law_FaceRunHasNonNegativeLength at every face run. Structure: Error.
+    // FaceRunHasNonNegativeLength at every face run. Structure: Error.
     Check_FaceRunHasNonNegativeLength(mesh: ModelMesh): Check
-        => CheckAll("Law_FaceRunHasNonNegativeLength", mesh.Numbering.FaceInteriorStart.Count,
-            f => Law_FaceRunHasNonNegativeLength(mesh.Numbering, BrepFaceIndex(f)), f => AtFace(f));
+        => CheckAll("FaceRunHasNonNegativeLength", mesh.Numbering.FaceInteriorStart.Count,
+            f => FaceRunHasNonNegativeLength(mesh.Numbering, BrepFaceIndex(f)), f => AtFace(f));
 
-    // Law_NumberingCoversPositions. Structure: Error.
+    // NumberingCoversPositions. Structure: Error.
     Check_NumberingCoversPositions(mesh: ModelMesh): Check
-        => CheckOnce("Law_NumberingCoversPositions", Law_NumberingCoversPositions(mesh));
+        => CheckOnce("NumberingCoversPositions", NumberingCoversPositions(mesh));
 
     //==
     // # Topology and genus (structure)
@@ -132,18 +132,18 @@ library BrepCheckingMesh
     //==
     // # Angles, degeneracy, folds (structure)
 
-    // Law_ElementHasNoRepeatedCorner at every element. Structure: Error.
+    // ElementHasNoRepeatedCorner at every element. Structure: Error.
     Check_ElementHasNoRepeatedCorner(mesh: ModelMesh): Check
-        => mesh.CheckMeshElements("Law_ElementHasNoRepeatedCorner", e => Law_ElementHasNoRepeatedCorner(mesh, e));
+        => mesh.CheckMeshElements("ElementHasNoRepeatedCorner", e => ElementHasNoRepeatedCorner(mesh, e));
 
-    // Law_ElementIsNotFolded at every element. Structure (an exact sign):
+    // ElementIsNotFolded at every element. Structure (an exact sign):
     // Error.
     Check_ElementIsNotFolded(mesh: ModelMesh): Check
-        => mesh.CheckMeshElements("Law_ElementIsNotFolded", e => Law_ElementIsNotFolded(mesh, e));
+        => mesh.CheckMeshElements("ElementIsNotFolded", e => ElementIsNotFolded(mesh, e));
 
-    // Law_QuadIsConvex at every element. Structure (an exact sign): Error.
+    // QuadIsConvex at every element. Structure (an exact sign): Error.
     Check_QuadIsConvex(mesh: ModelMesh): Check
-        => mesh.CheckMeshElements("Law_QuadIsConvex", e => Law_QuadIsConvex(mesh, e));
+        => mesh.CheckMeshElements("QuadIsConvex", e => QuadIsConvex(mesh, e));
 
     // Law_TriangleAngleSumIsPi at every element, judged by layer 6's own
     // rounding bound. Structure: Error.
@@ -160,18 +160,18 @@ library BrepCheckingMesh
     Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh: ModelMesh): Check
         => mesh.CheckComponents("Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects", c => Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c));
 
-    // Law_ElementIsNotDegenerate at every element, with the model's length
+    // ElementIsNotDegenerate at every element, with the model's length
     // tolerance. Structure: Error.
     Check_ElementIsNotDegenerate(mesh: ModelMesh, t: Tolerances): Check
-        => mesh.CheckMeshElements("Law_ElementIsNotDegenerate", e => Law_ElementIsNotDegenerate(mesh, e, t.Length));
+        => mesh.CheckMeshElements("ElementIsNotDegenerate", e => ElementIsNotDegenerate(mesh, e, t.Length));
 
-    // Law_VerticesOfOneComponentAreApart at every pair CoincidentVertexPairs
+    // VerticesOfOneComponentAreApart at every pair CoincidentVertexPairs
     // reports. The check samples those pairs only, so it agrees with the law
     // over all pairs exactly when the report is complete
     // (Law_CoincidentPairIsReported, a self-test below). Structure: Error.
     Check_VerticesOfOneComponentAreApart(mesh: ModelMesh, t: Tolerances): Check
-        => CheckAll("Law_VerticesOfOneComponentAreApart", mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length).Count,
-            k => Law_VerticesOfOneComponentAreApart(mesh,
+        => CheckAll("VerticesOfOneComponentAreApart", mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length).Count,
+            k => VerticesOfOneComponentAreApart(mesh,
                 mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length)[k].A,
                 mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length)[k].B, t.Length),
             k => AtMeshVertex(mesh.CoincidentVertexPairs(mesh.ComponentsOf, t.Length)[k].A.Value));
@@ -181,65 +181,65 @@ library BrepCheckingMesh
     //
     // Info on failure; the thresholds are normally CubitAcceptable.
 
-    // Law_TriangleMinAngleMeetsThreshold at every element.
+    // TriangleMinAngleMeetsThreshold at every element.
     Check_TriangleMinAngleMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
-        => mesh.CheckMeshElements("Law_TriangleMinAngleMeetsThreshold", e => Law_TriangleMinAngleMeetsThreshold(mesh, e, th));
+        => mesh.CheckMeshElements("TriangleMinAngleMeetsThreshold", e => TriangleMinAngleMeetsThreshold(mesh, e, th));
 
-    // Law_TriangleMaxAngleMeetsThreshold at every element.
+    // TriangleMaxAngleMeetsThreshold at every element.
     Check_TriangleMaxAngleMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
-        => mesh.CheckMeshElements("Law_TriangleMaxAngleMeetsThreshold", e => Law_TriangleMaxAngleMeetsThreshold(mesh, e, th));
+        => mesh.CheckMeshElements("TriangleMaxAngleMeetsThreshold", e => TriangleMaxAngleMeetsThreshold(mesh, e, th));
 
-    // Law_TriangleRadiusRatioMeetsThreshold at every element.
+    // TriangleRadiusRatioMeetsThreshold at every element.
     Check_TriangleRadiusRatioMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
-        => mesh.CheckMeshElements("Law_TriangleRadiusRatioMeetsThreshold", e => Law_TriangleRadiusRatioMeetsThreshold(mesh, e, th));
+        => mesh.CheckMeshElements("TriangleRadiusRatioMeetsThreshold", e => TriangleRadiusRatioMeetsThreshold(mesh, e, th));
 
     // Law_TriangleAspectRatioMeetsThreshold at every element.
     Check_TriangleAspectRatioMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
         => mesh.CheckMeshElements("Law_TriangleAspectRatioMeetsThreshold", e => Law_TriangleAspectRatioMeetsThreshold(mesh, e, th));
 
-    // Law_QuadSkewMeetsThreshold at every element.
+    // QuadSkewMeetsThreshold at every element.
     Check_QuadSkewMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
-        => mesh.CheckMeshElements("Law_QuadSkewMeetsThreshold", e => Law_QuadSkewMeetsThreshold(mesh, e, th));
+        => mesh.CheckMeshElements("QuadSkewMeetsThreshold", e => QuadSkewMeetsThreshold(mesh, e, th));
 
-    // Law_QuadWarpMeetsThreshold at every element.
+    // QuadWarpMeetsThreshold at every element.
     Check_QuadWarpMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
-        => mesh.CheckMeshElements("Law_QuadWarpMeetsThreshold", e => Law_QuadWarpMeetsThreshold(mesh, e, th));
+        => mesh.CheckMeshElements("QuadWarpMeetsThreshold", e => QuadWarpMeetsThreshold(mesh, e, th));
 
-    // Law_QuadAngleDefectMeetsThreshold at every element.
+    // QuadAngleDefectMeetsThreshold at every element.
     Check_QuadAngleDefectMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
-        => mesh.CheckMeshElements("Law_QuadAngleDefectMeetsThreshold", e => Law_QuadAngleDefectMeetsThreshold(mesh, e, th));
+        => mesh.CheckMeshElements("QuadAngleDefectMeetsThreshold", e => QuadAngleDefectMeetsThreshold(mesh, e, th));
 
-    // Law_QuadScaledJacobianMeetsThreshold at every element.
+    // QuadScaledJacobianMeetsThreshold at every element.
     Check_QuadScaledJacobianMeetsThreshold(mesh: ModelMesh, th: MeshQualityThresholds): Check
-        => mesh.CheckMeshElements("Law_QuadScaledJacobianMeetsThreshold", e => Law_QuadScaledJacobianMeetsThreshold(mesh, e, th));
+        => mesh.CheckMeshElements("QuadScaledJacobianMeetsThreshold", e => QuadScaledJacobianMeetsThreshold(mesh, e, th));
 
     //==
     // # Against the model (structure)
 
-    // Law_ElementFaceIsModelFace at every element. Structure: Error.
+    // ElementFaceIsModelFace at every element. Structure: Error.
     Check_ElementFaceIsModelFace(m: BrepModel, mesh: ModelMesh): Check
-        => mesh.CheckMeshElements("Law_ElementFaceIsModelFace", e => Law_ElementFaceIsModelFace(m, mesh, e));
+        => mesh.CheckMeshElements("ElementFaceIsModelFace", e => ElementFaceIsModelFace(m, mesh, e));
 
-    // Law_CornerProvenanceIsOnItsElementFace at every element and corner slot
+    // CornerProvenanceIsOnItsElementFace at every element and corner slot
     // (review M9: the map is cellular). Structure: Error.
     Check_CornerProvenanceIsOnItsElementFace(m: BrepModel, mesh: ModelMesh): Check
-        => CheckGrid("Law_CornerProvenanceIsOnItsElementFace", mesh.ElementCount, 4,
-            (e, s) => Law_CornerProvenanceIsOnItsElementFace(m, mesh, ElementIndex(e), s), (e, s) => AtElement(e));
+        => CheckGrid("CornerProvenanceIsOnItsElementFace", mesh.ElementCount, 4,
+            (e, s) => CornerProvenanceIsOnItsElementFace(m, mesh, ElementIndex(e), s), (e, s) => AtElement(e));
 
-    // Law_NumberingHasOneEdgeRunPerEdge on the mesh's numbering. Structure:
+    // NumberingHasOneEdgeRunPerEdge on the mesh's numbering. Structure:
     // Error.
     Check_NumberingHasOneEdgeRunPerEdge(m: BrepModel, mesh: ModelMesh): Check
-        => CheckOnce("Law_NumberingHasOneEdgeRunPerEdge", Law_NumberingHasOneEdgeRunPerEdge(m, mesh.Numbering));
+        => CheckOnce("NumberingHasOneEdgeRunPerEdge", NumberingHasOneEdgeRunPerEdge(m, mesh.Numbering));
 
-    // Law_NumberingHasOneFaceRunPerFace on the mesh's numbering. Structure:
+    // NumberingHasOneFaceRunPerFace on the mesh's numbering. Structure:
     // Error.
     Check_NumberingHasOneFaceRunPerFace(m: BrepModel, mesh: ModelMesh): Check
-        => CheckOnce("Law_NumberingHasOneFaceRunPerFace", Law_NumberingHasOneFaceRunPerFace(m, mesh.Numbering));
+        => CheckOnce("NumberingHasOneFaceRunPerFace", NumberingHasOneFaceRunPerFace(m, mesh.Numbering));
 
-    // Law_NumberingCountsEveryModelVertex on the mesh's numbering. Structure:
+    // NumberingCountsEveryModelVertex on the mesh's numbering. Structure:
     // Error.
     Check_NumberingCountsEveryModelVertex(m: BrepModel, mesh: ModelMesh): Check
-        => CheckOnce("Law_NumberingCountsEveryModelVertex", Law_NumberingCountsEveryModelVertex(m, mesh.Numbering));
+        => CheckOnce("NumberingCountsEveryModelVertex", NumberingCountsEveryModelVertex(m, mesh.Numbering));
 
     //==
     // # Assembly inputs (structure)
@@ -261,25 +261,25 @@ library BrepCheckingMesh
     Check_FaceMeshModelVertexIsModelPoint(m: BrepModel, faceMeshes: Array<FaceMesh>): Check
         => faceMeshes.CheckFaceMeshPoints("Law_FaceMeshModelVertexIsModelPoint", (fm, i) => Law_FaceMeshModelVertexIsModelPoint(m, fm, i));
 
-    // Law_FaceMeshPointHasNumberedSite at every point of every face mesh.
+    // FaceMeshPointHasNumberedSite at every point of every face mesh.
     // Structure: Error.
     Check_FaceMeshPointHasNumberedSite(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
-        => faceMeshes.CheckFaceMeshPoints("Law_FaceMeshPointHasNumberedSite", (fm, i) => Law_FaceMeshPointHasNumberedSite(n, fm, i));
+        => faceMeshes.CheckFaceMeshPoints("FaceMeshPointHasNumberedSite", (fm, i) => FaceMeshPointHasNumberedSite(n, fm, i));
 
-    // Law_FaceMeshSourceAgreesWithProvenance at every point of every face
+    // FaceMeshSourceAgreesWithProvenance at every point of every face
     // mesh. Structure: Error.
     Check_FaceMeshSourceAgreesWithProvenance(faceMeshes: Array<FaceMesh>): Check
-        => faceMeshes.CheckFaceMeshPoints("Law_FaceMeshSourceAgreesWithProvenance", (fm, i) => Law_FaceMeshSourceAgreesWithProvenance(fm, i));
+        => faceMeshes.CheckFaceMeshPoints("FaceMeshSourceAgreesWithProvenance", (fm, i) => FaceMeshSourceAgreesWithProvenance(fm, i));
 
-    // Law_SeamCopiesShareOneGlobalVertex at every pair of points of every face
+    // SeamCopiesShareOneGlobalVertex at every pair of points of every face
     // mesh. Structure: Error.
     Check_SeamCopiesShareOneGlobalVertex(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
-        => faceMeshes.CheckFaceMeshPointPairs("Law_SeamCopiesShareOneGlobalVertex", (fm, i, j) => Law_SeamCopiesShareOneGlobalVertex(n, fm, i, j));
+        => faceMeshes.CheckFaceMeshPointPairs("SeamCopiesShareOneGlobalVertex", (fm, i, j) => SeamCopiesShareOneGlobalVertex(n, fm, i, j));
 
-    // Law_DistinctLocalVerticesHaveDistinctGlobalVertices at every pair of
+    // DistinctLocalVerticesHaveDistinctGlobalVertices at every pair of
     // points of every face mesh. Structure: Error.
     Check_DistinctLocalVerticesHaveDistinctGlobalVertices(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
-        => faceMeshes.CheckFaceMeshPointPairs("Law_DistinctLocalVerticesHaveDistinctGlobalVertices", (fm, i, j) => Law_DistinctLocalVerticesHaveDistinctGlobalVertices(n, fm, i, j));
+        => faceMeshes.CheckFaceMeshPointPairs("DistinctLocalVerticesHaveDistinctGlobalVertices", (fm, i, j) => DistinctLocalVerticesHaveDistinctGlobalVertices(n, fm, i, j));
 
     //==
     // # Self-tests: reversal, numbering, edge table, components
@@ -311,25 +311,25 @@ library BrepCheckingMesh
         => CheckAll("Law_ModelVertexKeepsItsIndex", mesh.Numbering.ModelVertexCount,
             v => Law_ModelVertexKeepsItsIndex(mesh.Numbering, BrepVertexIndex(v)), v => AtVertex(v));
 
-    // Law_EdgeTableHasOneCountPerEdge on the mesh's edge table.
+    // EdgeTableHasOneCountPerEdge on the mesh's edge table.
     Check_EdgeTableHasOneCountPerEdge(mesh: ModelMesh): Check
-        => CheckOnce("Law_EdgeTableHasOneCountPerEdge", Law_EdgeTableHasOneCountPerEdge(mesh.EdgeTableOf));
+        => CheckOnce("EdgeTableHasOneCountPerEdge", EdgeTableHasOneCountPerEdge(mesh.EdgeTableOf));
 
-    // Law_EdgeTableHasOneDirectionSumPerEdge on the mesh's edge table.
+    // EdgeTableHasOneDirectionSumPerEdge on the mesh's edge table.
     Check_EdgeTableHasOneDirectionSumPerEdge(mesh: ModelMesh): Check
-        => CheckOnce("Law_EdgeTableHasOneDirectionSumPerEdge", Law_EdgeTableHasOneDirectionSumPerEdge(mesh.EdgeTableOf));
+        => CheckOnce("EdgeTableHasOneDirectionSumPerEdge", EdgeTableHasOneDirectionSumPerEdge(mesh.EdgeTableOf));
 
-    // Law_EdgeTableEdgeIsCanonical at every listed edge.
+    // EdgeTableEdgeIsCanonical at every listed edge.
     Check_EdgeTableEdgeIsCanonical(mesh: ModelMesh): Check
-        => mesh.CheckTableEdges("Law_EdgeTableEdgeIsCanonical", k => Law_EdgeTableEdgeIsCanonical(mesh.EdgeTableOf, k));
+        => mesh.CheckTableEdges("EdgeTableEdgeIsCanonical", k => EdgeTableEdgeIsCanonical(mesh.EdgeTableOf, k));
 
-    // Law_EdgeTableIsStrictlySorted at every listed edge.
+    // EdgeTableIsStrictlySorted at every listed edge.
     Check_EdgeTableIsStrictlySorted(mesh: ModelMesh): Check
-        => mesh.CheckTableEdges("Law_EdgeTableIsStrictlySorted", k => Law_EdgeTableIsStrictlySorted(mesh.EdgeTableOf, k));
+        => mesh.CheckTableEdges("EdgeTableIsStrictlySorted", k => EdgeTableIsStrictlySorted(mesh.EdgeTableOf, k));
 
-    // Law_EdgeTableListsOnlyUsedEdges at every listed edge.
+    // EdgeTableListsOnlyUsedEdges at every listed edge.
     Check_EdgeTableListsOnlyUsedEdges(mesh: ModelMesh): Check
-        => mesh.CheckTableEdges("Law_EdgeTableListsOnlyUsedEdges", k => Law_EdgeTableListsOnlyUsedEdges(mesh.EdgeTableOf, k));
+        => mesh.CheckTableEdges("EdgeTableListsOnlyUsedEdges", k => EdgeTableListsOnlyUsedEdges(mesh.EdgeTableOf, k));
 
     // Law_EdgeTableCountsEveryProperSide.
     Check_EdgeTableCountsEveryProperSide(mesh: ModelMesh): Check
@@ -347,13 +347,13 @@ library BrepCheckingMesh
     Check_EdgeTableDirectionSumMatchesItsSides(mesh: ModelMesh): Check
         => mesh.CheckTableEdges("Law_EdgeTableDirectionSumMatchesItsSides", k => Law_EdgeTableDirectionSumMatchesItsSides(mesh, k));
 
-    // Law_DirectionSumIsBoundedByCount at every listed edge.
+    // DirectionSumIsBoundedByCount at every listed edge.
     Check_DirectionSumIsBoundedByCount(mesh: ModelMesh): Check
-        => mesh.CheckTableEdges("Law_DirectionSumIsBoundedByCount", k => Law_DirectionSumIsBoundedByCount(mesh.EdgeTableOf, k));
+        => mesh.CheckTableEdges("DirectionSumIsBoundedByCount", k => DirectionSumIsBoundedByCount(mesh.EdgeTableOf, k));
 
-    // Law_DirectionSumHasTheParityOfCount at every listed edge.
+    // DirectionSumHasTheParityOfCount at every listed edge.
     Check_DirectionSumHasTheParityOfCount(mesh: ModelMesh): Check
-        => mesh.CheckTableEdges("Law_DirectionSumHasTheParityOfCount", k => Law_DirectionSumHasTheParityOfCount(mesh.EdgeTableOf, k));
+        => mesh.CheckTableEdges("DirectionSumHasTheParityOfCount", k => DirectionSumHasTheParityOfCount(mesh.EdgeTableOf, k));
 
     // Law_ReversalNegatesEveryDirectionSum at every listed edge.
     Check_ReversalNegatesEveryDirectionSum(mesh: ModelMesh): Check
@@ -539,11 +539,11 @@ library BrepCheckingMesh
     Check_NumberingCountsCitedEdgeInteriors(m: BrepModel, d: EdgeDiscretizations, faceMeshes: Array<FaceMesh>): Check
         => m.CheckEdges("Law_NumberingCountsCitedEdgeInteriors", e => Law_NumberingCountsCitedEdgeInteriors(m, d, faceMeshes, e));
 
-    // Law_SharedBoundarySampleHasOneGlobalVertex at every pair of points of
+    // SharedBoundarySampleHasOneGlobalVertex at every pair of points of
     // every pair of face meshes (quadratic as written).
     Check_SharedBoundarySampleHasOneGlobalVertex(n: MeshVertexNumbering, faceMeshes: Array<FaceMesh>): Check
-        => CheckGrid("Law_SharedBoundarySampleHasOneGlobalVertex", faceMeshes.Count * faceMeshes.Count, faceMeshes.MostFaceMeshPoints * faceMeshes.MostFaceMeshPoints,
-            (ab, ij) => Law_SharedBoundarySampleHasOneGlobalVertex(n, faceMeshes[ab / faceMeshes.Count], faceMeshes[ab % faceMeshes.Count],
+        => CheckGrid("SharedBoundarySampleHasOneGlobalVertex", faceMeshes.Count * faceMeshes.Count, faceMeshes.MostFaceMeshPoints * faceMeshes.MostFaceMeshPoints,
+            (ab, ij) => SharedBoundarySampleHasOneGlobalVertex(n, faceMeshes[ab / faceMeshes.Count], faceMeshes[ab % faceMeshes.Count],
                 VertexIndex(ij / faceMeshes.MostFaceMeshPoints), VertexIndex(ij % faceMeshes.MostFaceMeshPoints)),
             (ab, ij) => Provenance.KernelFace(faceMeshes[ab / faceMeshes.Count].Face));
 

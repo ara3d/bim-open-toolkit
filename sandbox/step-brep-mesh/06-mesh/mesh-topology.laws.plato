@@ -19,29 +19,29 @@ library ModelMeshTopologyLaws
     //==
     // # The edge table
 
-    // Table law: ElementCounts has one entry per edge.
-    Law_EdgeTableHasOneCountPerEdge(t: MeshEdgeTable): Boolean
+    // Table invariant: ElementCounts has one entry per edge.
+    EdgeTableHasOneCountPerEdge(t: MeshEdgeTable): Boolean
         => t.ElementCounts.Count == t.CountEdges;
 
-    // Table law: DirectionSums has one entry per edge.
-    Law_EdgeTableHasOneDirectionSumPerEdge(t: MeshEdgeTable): Boolean
+    // Table invariant: DirectionSums has one entry per edge.
+    EdgeTableHasOneDirectionSumPerEdge(t: MeshEdgeTable): Boolean
         => t.DirectionSums.Count == t.CountEdges;
 
-    // Table law: every listed edge is canonical, its lower vertex index first.
-    Law_EdgeTableEdgeIsCanonical(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+    // Table invariant: every listed edge is canonical, its lower vertex index first.
+    EdgeTableEdgeIsCanonical(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
         => t.Edges.UndirectedEdges.IsValidIndex(k)
             ? t.Edges.UndirectedEdges[k].A.Value < t.Edges.UndirectedEdges[k].B.Value
             : true;
 
-    // Table law: the edges are in strictly increasing lexicographic order, so none is listed twice
+    // Table invariant: the edges are in strictly increasing lexicographic order, so none is listed twice
     // and an edge's position is its UndirectedEdgeIndex.
-    Law_EdgeTableIsStrictlySorted(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+    EdgeTableIsStrictlySorted(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
         => (k.Value >= 0 && k.Value + 1 < t.CountEdges)
             ? IsLexicographicallyBefore(t.Edges.UndirectedEdges[k.Value], t.Edges.UndirectedEdges[k.Value + 1])
             : true;
 
-    // Table law: every listed edge has at least one element side on it.
-    Law_EdgeTableListsOnlyUsedEdges(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+    // Table invariant: every listed edge has at least one element side on it.
+    EdgeTableListsOnlyUsedEdges(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
         => t.ElementCounts.IsValidIndex(k) ? t.SidesOn(k) >= 1 : true;
 
     // Table law: the counts add up to the number of element sides with two distinct ends, so every
@@ -69,13 +69,29 @@ library ModelMeshTopologyLaws
             ? mesh.EdgeTableOf.DirectionSumOn(k) == mesh.DirectionSumOf(mesh.EdgeTableOf.Edges.UndirectedEdges[k])
             : true;
 
-    // Table law: a direction sum never exceeds its edge's side count in magnitude.
-    Law_DirectionSumIsBoundedByCount(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+    // Table invariant: a direction sum never exceeds its edge's side count in magnitude.
+    DirectionSumIsBoundedByCount(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
         => t.DirectionSumOn(k).Abs <= t.SidesOn(k);
 
-    // Table law: a direction sum has the parity of its edge's side count, each side adding +1 or -1.
-    Law_DirectionSumHasTheParityOfCount(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
+    // Table invariant: a direction sum has the parity of its edge's side count, each side adding +1 or -1.
+    DirectionSumHasTheParityOfCount(t: MeshEdgeTable, k: UndirectedEdgeIndex): Boolean
         => (t.SidesOn(k) - t.DirectionSumOn(k)) % 2 == 0;
+
+    // Whether the edge table meets its invariants above: one count and one direction sum per edge,
+    // every edge canonical and used, the edges strictly sorted, every direction sum bounded by its
+    // count and of its parity. EdgeTableOf builds a table that does, from any mesh meeting the
+    // ModelMesh invariants (Law_EdgeTableOfIsWellFormed); a generated table need not.
+    IsWellFormed(t: MeshEdgeTable): Boolean
+        => EdgeTableHasOneCountPerEdge(t) && EdgeTableHasOneDirectionSumPerEdge(t)
+            && t.CountEdges.Range.All(i => EdgeTableEdgeIsCanonical(t, UndirectedEdgeIndex(i))
+                && EdgeTableIsStrictlySorted(t, UndirectedEdgeIndex(i))
+                && EdgeTableListsOnlyUsedEdges(t, UndirectedEdgeIndex(i))
+                && DirectionSumIsBoundedByCount(t, UndirectedEdgeIndex(i))
+                && DirectionSumHasTheParityOfCount(t, UndirectedEdgeIndex(i)));
+
+    // Table law: the edge table of a mesh meeting the ModelMesh invariants meets its own.
+    Law_EdgeTableOfIsWellFormed(mesh: ModelMesh): Boolean
+        => mesh.IsWellFormed ? mesh.EdgeTableOf.IsWellFormed : true;
 
     // Table law: reversing every element negates every direction sum and changes nothing else, so
     // the reversed mesh is closed and manifold exactly when the mesh is.
@@ -166,9 +182,11 @@ library ModelMeshTopologyLaws
     // Table law: the components' Euler characteristics, plus one for each unreferenced vertex (a
     // point is its own component), add up to the mesh's.
     Law_ComponentEulerCharacteristicsAddUp(mesh: ModelMesh): Boolean
-        => mesh.ComponentCountsOf(mesh.EdgeTableOf, mesh.ComponentsOf).Map(c => c.EulerCharacteristic).IntegerTotal
-            + mesh.ComponentsOf.UnreferencedVertexCount
-            == mesh.EulerCharacteristic;
+        => mesh.IsWellFormed
+            ? (mesh.ComponentCountsOf(mesh.EdgeTableOf, mesh.ComponentsOf).Map(c => c.EulerCharacteristic).IntegerTotal
+                + mesh.ComponentsOf.UnreferencedVertexCount
+                == mesh.EulerCharacteristic)
+            : true;
 
     //==
     // # Euler characteristic and genus
@@ -177,8 +195,10 @@ library ModelMeshTopologyLaws
     // surface has an even Euler characteristic of at most 2, so it has a genus. Failing it means
     // the counts are wrong, since no such surface exists.
     Law_ClosedOrientedSurfaceHasGenus(mesh: ModelMesh, c: MeshComponentIndex): Boolean
-        => (mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).IsConsistentlyOriented && mesh.CountsOf(c).IsSurface)
-            ? mesh.CountsOf(c).HasGenus
+        => mesh.IsWellFormed
+            ? ((mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).IsConsistentlyOriented && mesh.CountsOf(c).IsSurface)
+                ? mesh.CountsOf(c).HasGenus
+                : true)
             : true;
 
     // Model law, by the classification of compact surfaces with boundary: a connected, consistently

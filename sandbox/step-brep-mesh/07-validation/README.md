@@ -508,7 +508,7 @@ spline faces, chunks B, C, F). Three changes:
 Results, provisional (scratch compiler): validating the meshed unit box and `Witness_Box(2, 3, 4)`
 at the Oracle level gives 260 checks each, every Error-family check holding. The one false check is
 `Law_LengthToleranceResolvable` (a Warning: 1e-6 is below 32-bit resolution at coordinate 1), and on
-the 2 x 3 x 4 box also `Law_TriangleMinAngleMeetsThreshold` (Info: ear clipping's diagonal of a
+the 2 x 3 x 4 box also `TriangleMinAngleMeetsThreshold` (Info: ear clipping's diagonal of a
 3 x 4 face). On `Witness_BoxWithPolyLoopSheet` the Errors are exactly `FACE-POLY-LOOP` and
 `Law_EveryFaceIsMeshed` at face 6, and `Law_OpenShellEulerEvenAndBounded` at shell 1 (see layer
 2's README), all inside the sheet.

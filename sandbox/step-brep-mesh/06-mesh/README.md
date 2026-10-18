@@ -69,7 +69,7 @@ counts against.
 approximates (`ElementFace`), and every element corner to that face's parameters and outward normal
 at the corner (`CornerUvs`, `CornerNormals`). The map is cellular: a vertex inside an edge's
 discretization maps into that edge, never into a face, and every corner of an element of face f maps
-into the closure of f (`Law_CornerProvenanceIsOnItsElementFace`). `07-validation` checks it geometrically by
+into the closure of f (`CornerProvenanceIsOnItsElementFace`). `07-validation` checks it geometrically by
 re-evaluating the model at each provenance (`Law_VertexReevaluatesFromProvenance`).
 
 **The numbering is a bijection from sites to indices.** The vertex set is a disjoint union: model
@@ -118,8 +118,8 @@ shared boundary samples exactly as the B-rep glues faces along edges, combinator
   touching at a point.
 - **Quality is measured, never promised.** With the boundary locked no triangulator guarantees an
   angle (research/MESHING-REQUIREMENTS.md finding 8). Threshold laws are Info. Two shape conditions
-  break the mesh as a surface and are Error: a non-convex quad (`Law_QuadIsConvex`) and a fold
-  (`Law_ElementIsNotFolded`). The metrics are functions of the stdlib's `Triangle3D` and `Quad3D`, so
+  break the mesh as a surface and are Error: a non-convex quad (`QuadIsConvex`) and a fold
+  (`ElementIsNotFolded`). The metrics are functions of the stdlib's `Triangle3D` and `Quad3D`, so
   their identity laws (Euler's inequality, normalizations) can run on pseudorandom triangles.
 - **Partial operations use the stdlib's styles.** `ToQuadMesh3D` returns a `QuadMeshOutcome` (style 1:
   `Ok` is true exactly when there are no triangles; otherwise `Mesh` holds every position and every
@@ -163,37 +163,37 @@ outside its range makes it vacuously true, and the range is another law's statem
 
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
-| `Law_NumberingHasOneEdgeRunPerEdge` | `EdgeInteriorStart` has E + 1 entries | exact | Error |
-| `Law_NumberingHasOneFaceRunPerFace` | `FaceInteriorStart` has F + 1 entries | exact | Error |
-| `Law_NumberingCountsEveryModelVertex` | `ModelVertexCount` is the model's vertex count; model vertices come first | exact | Error |
-| `Law_EdgeRunsFollowModelVertices` | the first edge start is `ModelVertexCount` | exact | Error |
-| `Law_FaceRunsFollowEdgeRuns` | the first face start is the last edge start | exact | Error |
-| `Law_EdgeRunHasNonNegativeLength` | edge starts do not decrease | exact | Error |
-| `Law_FaceRunHasNonNegativeLength` | face starts do not decrease | exact | Error |
-| `Law_NumberingCoversPositions` | the runs and model vertices sum to the position count | exact | Error |
+| `NumberingHasOneEdgeRunPerEdge` | `EdgeInteriorStart` has E + 1 entries | exact | Error |
+| `NumberingHasOneFaceRunPerFace` | `FaceInteriorStart` has F + 1 entries | exact | Error |
+| `NumberingCountsEveryModelVertex` | `ModelVertexCount` is the model's vertex count; model vertices come first | exact | Error |
+| `EdgeRunsFollowModelVertices` | the first edge start is `ModelVertexCount` | exact | Error |
+| `FaceRunsFollowEdgeRuns` | the first face start is the last edge start | exact | Error |
+| `EdgeRunHasNonNegativeLength` | edge starts do not decrease | exact | Error |
+| `FaceRunHasNonNegativeLength` | face starts do not decrease | exact | Error |
+| `NumberingCoversPositions` | the runs and model vertices sum to the position count | exact | Error |
 | `Law_IndexOfSiteIsInRange` | a numbered site's index is in 0 to N - 1 | exact | test |
 | `Law_SiteAtInvertsIndexOfSite` | `SiteAt` undoes `IndexOfSite`: every site has exactly one index | exact | test |
 | `Law_IndexOfSiteInvertsSiteAt` | `IndexOfSite` undoes `SiteAt`: every index has a site | exact | test |
 | `Law_ModelVertexKeepsItsIndex` | `GlobalIndex(OnVertex(v))` is v | exact | test |
 | `Law_NumberingCountsCitedEdgeInteriors` | a cited edge's run has one slot per interior discretization point | exact | test |
-| `Law_FaceMeshPointHasNumberedSite` | every face mesh point's site has a slot | exact | Error |
-| `Law_FaceMeshSourceAgreesWithProvenance` | a point's source and its local vertex's provenance name one cell | exact | Error |
-| `Law_SeamCopiesShareOneGlobalVertex` | the two copies of a seam point reach one global vertex | exact | Error |
-| `Law_DistinctLocalVerticesHaveDistinctGlobalVertices` | a face mesh holds no two copies of one model point | exact | Error |
-| `Law_SharedBoundarySampleHasOneGlobalVertex` | points citing one model vertex or one edge sample reach one global vertex | exact | test |
+| `FaceMeshPointHasNumberedSite` | every face mesh point's site has a slot | exact | Error |
+| `FaceMeshSourceAgreesWithProvenance` | a point's source and its local vertex's provenance name one cell | exact | Error |
+| `SeamCopiesShareOneGlobalVertex` | the two copies of a seam point reach one global vertex | exact | Error |
+| `DistinctLocalVerticesHaveDistinctGlobalVertices` | a face mesh holds no two copies of one model point | exact | Error |
+| `SharedBoundarySampleHasOneGlobalVertex` | points citing one model vertex or one edge sample reach one global vertex | exact | test |
 
 ### Model mesh (`mesh.laws.plato`)
 
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
-| `Law_ElementFaceHasOneEntryPerElement` | `ElementFace` has T + Q entries | exact | Error |
-| `Law_CornerNormalsHaveOneEntryPerCorner` | `CornerNormals` has 3T + 4Q entries | exact | Error |
-| `Law_CornerUvsHaveOneEntryPerCorner` | `CornerUvs` has 3T + 4Q entries | exact | Error |
-| `Law_VertexProvenanceHasOneEntryPerVertex` | `VertexProvenance` has one entry per position | exact | Error |
-| `Law_ElementCornersInRange` | every element corner names a vertex | exact | Error |
-| `Law_ElementFaceIsModelFace` | every `ElementFace` entry is a model face | exact | Error |
-| `Law_VertexProvenanceMatchesNumbering` | a vertex's provenance names its index's site's cell | exact | Error |
-| `Law_CornerProvenanceIsOnItsElementFace` | every corner of an element of face f maps into the closure of f: the cellular map | exact | Error |
+| `ElementFaceHasOneEntryPerElement` | `ElementFace` has T + Q entries | exact | Error |
+| `CornerNormalsHaveOneEntryPerCorner` | `CornerNormals` has 3T + 4Q entries | exact | Error |
+| `CornerUvsHaveOneEntryPerCorner` | `CornerUvs` has 3T + 4Q entries | exact | Error |
+| `VertexProvenanceHasOneEntryPerVertex` | `VertexProvenance` has one entry per position | exact | Error |
+| `ElementCornersInRange` | every element corner names a vertex | exact | Error |
+| `ElementFaceIsModelFace` | every `ElementFace` entry is a model face | exact | Error |
+| `VertexProvenanceMatchesNumbering` | a vertex's provenance names its index's site's cell | exact | Error |
+| `CornerProvenanceIsOnItsElementFace` | every corner of an element of face f maps into the closure of f: the cellular map | exact | Error |
 | `Law_ReversalPermutesCorners` | reversed slot s is original slot `ReversedSlot(arity, s)` | exact | test |
 | `Law_ReversalMovesCornerUvWithCorner` | a corner's uv moves with its corner under reversal | exact by construction | test |
 | `Law_RestrictionKeepsTheElementsOfTheFaces` | the restriction to a set of faces has exactly their elements | exact | test |
@@ -222,17 +222,17 @@ outside its range makes it vacuously true, and the range is another law's statem
 
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
-| `Law_EdgeTableHasOneCountPerEdge` | one count per listed edge | exact | test |
-| `Law_EdgeTableHasOneDirectionSumPerEdge` | one direction sum per listed edge | exact | test |
-| `Law_EdgeTableEdgeIsCanonical` | each listed pair has A < B | exact | test |
-| `Law_EdgeTableIsStrictlySorted` | listed pairs strictly increase, so none repeats | exact | test |
-| `Law_EdgeTableListsOnlyUsedEdges` | every listed edge has a side | exact | test |
+| `EdgeTableHasOneCountPerEdge` | one count per listed edge | exact | test |
+| `EdgeTableHasOneDirectionSumPerEdge` | one direction sum per listed edge | exact | test |
+| `EdgeTableEdgeIsCanonical` | each listed pair has A < B | exact | test |
+| `EdgeTableIsStrictlySorted` | listed pairs strictly increase, so none repeats | exact | test |
+| `EdgeTableListsOnlyUsedEdges` | every listed edge has a side | exact | test |
 | `Law_EdgeTableCountsEveryProperSide` | the counts sum to the number of proper sides | exact | test |
 | `Law_EdgeTableListsEveryProperSide` | every proper side lies on a listed edge | exact | test |
 | `Law_EdgeTableCountMatchesItsSides` | each count equals a direct count of its sides | exact | test |
 | `Law_EdgeTableDirectionSumMatchesItsSides` | each direction sum equals a direct sum over its sides | exact | test |
-| `Law_DirectionSumIsBoundedByCount` | the direction sum's magnitude is at most the count | exact | test |
-| `Law_DirectionSumHasTheParityOfCount` | count minus direction sum is even | exact | test |
+| `DirectionSumIsBoundedByCount` | the direction sum's magnitude is at most the count | exact | test |
+| `DirectionSumHasTheParityOfCount` | count minus direction sum is even | exact | test |
 | `Law_ReversalNegatesEveryDirectionSum` | reversal negates each direction sum | exact | test |
 | `Law_ClosedMeansEveryEdgeHasTwoSides` | closed implies every edge has two sides | exact | test |
 | `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides` | manifold implies no edge has more than two sides | exact | test |
@@ -264,12 +264,12 @@ outside its range makes it vacuously true, and the range is another law's statem
 | `Law_QuadAngleDefectIsNotNegative` | a quad's angles sum to at most 2 pi | `AngleSumResolution` | test |
 | `Law_AngleDefectSumIsTwoPiTimesEuler` | discrete Gauss-Bonnet on a closed all-triangle component; checks angle sums and counts, not geometry (see below) | `DefectSumResolution`: `ResolutionAt(2 pi V + pi K)`, K the corners | Error |
 | `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects` | the same with quads: defects = 2 pi chi + the quads' own defects | `DefectSumResolution`: `ResolutionAt(2 pi (V + Q) + pi K)` | Error |
-| `Law_ElementHasNoRepeatedCorner` | no element names a vertex twice | exact | Error |
-| `Law_ElementIsNotDegenerate` | every element's smallest altitude exceeds the length tolerance | `LengthTolerance` | Error |
-| `Law_VerticesOfOneComponentAreApart` | distinct vertices of one component are farther apart than the length tolerance | `LengthTolerance` | Error |
+| `ElementHasNoRepeatedCorner` | no element names a vertex twice | exact | Error |
+| `ElementIsNotDegenerate` | every element's smallest altitude exceeds the length tolerance | `LengthTolerance` | Error |
+| `VerticesOfOneComponentAreApart` | distinct vertices of one component are farther apart than the length tolerance | `LengthTolerance` | Error |
 | `Law_ReportedPairIsCoincident` | every reported coincident pair is coincident | `LengthTolerance` | test |
 | `Law_CoincidentPairIsReported` | every coincident pair is reported | `LengthTolerance` | test |
-| `Law_ElementIsNotFolded` | each element's normal agrees in sign with the face normal at its corners | exact sign | Error |
+| `ElementIsNotFolded` | each element's normal agrees in sign with the face normal at its corners | exact sign | Error |
 
 What the Gauss-Bonnet laws check, and what they do not: the proof uses only that each triangle's
 angles sum to pi and that 3T = 2E on a closed component, so the identity holds for any positions. It
@@ -292,15 +292,15 @@ degrees, chosen here).
 
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
-| `Law_TriangleMinAngleMeetsThreshold` | smallest triangle angle at least the threshold | threshold | Info |
-| `Law_TriangleMaxAngleMeetsThreshold` | largest triangle angle at most the threshold | threshold | Info |
-| `Law_TriangleRadiusRatioMeetsThreshold` | radius ratio at most the threshold | threshold | Info |
+| `TriangleMinAngleMeetsThreshold` | smallest triangle angle at least the threshold | threshold | Info |
+| `TriangleMaxAngleMeetsThreshold` | largest triangle angle at most the threshold | threshold | Info |
+| `TriangleRadiusRatioMeetsThreshold` | radius ratio at most the threshold | threshold | Info |
 | `Law_TriangleAspectRatioMeetsThreshold` | aspect ratio at most the threshold | threshold | Info |
-| `Law_QuadSkewMeetsThreshold` | quad skew at most the threshold | threshold | Info |
-| `Law_QuadWarpMeetsThreshold` | quad warp cosine at least the threshold | threshold | Info |
-| `Law_QuadAngleDefectMeetsThreshold` | quad angle defect at most the threshold | threshold | Info |
-| `Law_QuadScaledJacobianMeetsThreshold` | quad scaled Jacobian at least the threshold | threshold | Info |
-| `Law_QuadIsConvex` | quad scaled Jacobian positive | exact sign | Error |
+| `QuadSkewMeetsThreshold` | quad skew at most the threshold | threshold | Info |
+| `QuadWarpMeetsThreshold` | quad warp cosine at least the threshold | threshold | Info |
+| `QuadAngleDefectMeetsThreshold` | quad angle defect at most the threshold | threshold | Info |
+| `QuadScaledJacobianMeetsThreshold` | quad scaled Jacobian at least the threshold | threshold | Info |
+| `QuadIsConvex` | quad scaled Jacobian positive | exact sign | Error |
 | `Law_RadiusRatioIsAtLeastOne` | Euler's inequality R >= 2r | `ComparisonTolerance` | test (random triangles) |
 | `Law_AspectRatioIsAtLeastOne` | aspect ratio at least the equilateral's | `ComparisonTolerance` | test (random triangles) |
 | `Law_EquilateralTriangleHasUnitRadiusRatio` | normalization of R / 2r | `ComparisonTolerance` | test |
@@ -370,7 +370,7 @@ Readings of those names this layer depends on, for the owning authors to confirm
 - **The 5 degree quad angle-defect threshold** has no source.
 - **Degenerate model edges.** A degenerate edge (a pole or an apex) should be discretized by its two
   vertex points only; if it had interior points they would be distinct coincident vertices, which
-  `Law_VerticesOfOneComponentAreApart` reports. `04-discretization` to confirm.
+  `VerticesOfOneComponentAreApart` reports. `04-discretization` to confirm.
 
 ## Implementation notes
 
@@ -426,7 +426,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `AngleDefectSum(mesh)`, `SignedVolume(mesh)` | also per component: `AngleDefectSum(mesh, comps, c)`, `SignedVolume(mesh, comps, c)`; `AngleDefectSum` returns `Angle` | Gauss-Bonnet and the volume sign are per closed component and per shell |
 | `TriangleQuality`, `QuadQuality` functions unnamed | `TriangleQualityOf(Triangle3D)`, `QuadQualityOf(Quad3D)`, `TriangleQualityAt`, `QuadQualityAt`, `MeshQualityThresholds` with `CubitAcceptable` | metrics on stdlib shapes so identity laws run on random triangles |
 | (none) | `Reversed(mesh)`, `WindingNumber`, `CoincidentVertexPairs`, `DegenerateElements`, `ElementsWithRepeatedCorners`, `IsPinchedVertex`, `Witness_UnitTetrahedron` | the reversal, outward-orientation, detection, and witness the laws need |
-| research catalogue names for layer 6 | `Law_MeshEdgeAtMostTwoElements` is `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides`; `Law_MeshEdgeExactlyTwoElements` is `Law_ClosedMeansEveryEdgeHasTwoSides`; `Law_MeshEdgeOppositeTraversal` is `Law_OrientedExactlyWhenNoEdgeIsMisoriented`; `Law_MeshVertexLinkIsSingleCycle` is `Law_ClosedMeshHasNoPinchedVertex`; `Law_MeshNoCoincidentVertices` is `Law_VerticesOfOneComponentAreApart`; `Law_MeshElementNotDegenerate` is `Law_ElementIsNotDegenerate`; `Law_MeshComponentEulerEvenAtMostTwo` is `Law_ClosedOrientedSurfaceHasGenus`; `Law_AngleDefectSumIdentity` is `Law_AngleDefectSumIsTwoPiTimesEuler`; `Law_QuadAngleDefectWithinTolerance` is `Law_QuadAngleDefectMeetsThreshold` | names that say the statement; the catalogue's were proposals, not fixed names |
+| research catalogue names for layer 6 | `Law_MeshEdgeAtMostTwoElements` is `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides`; `Law_MeshEdgeExactlyTwoElements` is `Law_ClosedMeansEveryEdgeHasTwoSides`; `Law_MeshEdgeOppositeTraversal` is `Law_OrientedExactlyWhenNoEdgeIsMisoriented`; `Law_MeshVertexLinkIsSingleCycle` is `Law_ClosedMeshHasNoPinchedVertex`; `Law_MeshNoCoincidentVertices` is `VerticesOfOneComponentAreApart`; `Law_MeshElementNotDegenerate` is `ElementIsNotDegenerate`; `Law_MeshComponentEulerEvenAtMostTwo` is `Law_ClosedOrientedSurfaceHasGenus`; `Law_AngleDefectSumIdentity` is `Law_AngleDefectSumIsTwoPiTimesEuler`; `Law_QuadAngleDefectWithinTolerance` is `QuadAngleDefectMeetsThreshold` | names that say the statement; the catalogue's were proposals, not fixed names |
 | (none) | `CompensatedSum(values)`, `TotalsAgree(a, b)` | the summation and the yardstick of every law comparing two totals |
 | `Law_AreaIsSumOfFaceMeshAreas(m, faceMeshes, n, tol)`, `Law_TriangleMeshKeepsArea(mesh, tol)`, `Law_QuadMeshKeepsAreaWhenOk(mesh, tol)`, `Law_PolygonMeshKeepsArea(mesh, tol)` | the same without `tol` | rounding laws judged by `ResolutionAt`, not by the model's length tolerance; 07-validation's four `Check_` calls drop the argument |
 | `Law_ReversalNegatesSignedVolume(mesh, tol)`, `Law_TriangleAngleSumIsPi(mesh, e, tol)`, `Law_QuadAngleDefectIsNotNegative(mesh, e, tol)`, `Law_AngleDefectSumIsTwoPiTimesEuler(mesh, c, tol)`, `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh, c, tol)` | the same without `tol`; `VolumeRoundingMagnitude`, `AngleSumResolution`, `DefectSumResolution` added | rounding laws judged by `ResolutionAt`; 07-validation's five `Check_` calls drop the argument |
@@ -434,7 +434,7 @@ Run 2026-10-17 with the driver of PLATO-PRIMER.md E.3, built in scratch:
 | `IsPinchedVertex` deferred, contract partial | written out over `PieceCount` (with `FirstPositionOf`, `DistinctEnds`, `PieceLabelRound`, `PieceLabels`) | the definition is a degree test and a piece count; the body is total and exact |
 | `MeshComponentCounts` with eight fields; `Genus` for closed components only | adds `BoundaryCycles`; `HasGenus` and `Genus` use 2 - chi - B; `BoundaryEdgesOf` | the genus of a component with boundary (an open shell, a face that failed to mesh) is defined |
 | (none) | `RestrictedToFaces(mesh, faces)`, `IsElementOfFaces`, `ElementsOfFaces`, `ReferencedEulerCharacteristic(mesh)` | per-shell counts (review M10, section 6): the mesh of a shell is a valid `ModelMesh`, and its Euler characteristic counts only referenced vertices |
-| (none) | `Law_CornerProvenanceIsOnItsElementFace`, `IsOnClosureOfFace` | the cellular map stated as a law (review M9); 07-validation can add its `Check_` |
+| (none) | `CornerProvenanceIsOnItsElementFace`, `IsOnClosureOfFace` | the cellular map stated as a law (review M9); 07-validation can add its `Check_` |
 | (none) | `Law_VectorAreaVanishes`, `ComponentVectorArea`, `VectorAreaRoundingMagnitude` | research 4.6's law with an a-priori rounding bound (review M11) |
 | face mesh area | `FaceMeshArea(fm)` declared here | this layer's area law needs it; named apart from `Area` so it cannot collide with one `05-face-meshing` may declare |
 | `SameConnectivity` in 07-validation (vertex count) and 08-pipeline (numbering) | `SameConnectivity(a, b)` here, in `ModelMeshes`: same triangles, quads, element faces, vertex count, and numbering (`IsSameNumbering`, moved from the assembly laws to `ModelMeshNumbering`) | one declaration, in the layer that owns `ModelMesh`; layer 8's meaning, which two numberings with one vertex total do not pass |
@@ -458,7 +458,7 @@ Applied:
   magnitude; the signed volume and the angle sums are compensated. The model's angle tolerance
   (1e-9 rad by layer 3's policy) was the wrong kind of bound for an identity about rounding.
 - **No ill-formed tolerance in the Gauss-Bonnet theorems** (review F12). `DiscreteGaussBonnet` and
-  `MixedGaussBonnet` assumed `Law_ElementIsNotDegenerate` at `LengthTolerance(0.0)`, below layer 0's
+  `MixedGaussBonnet` assumed `ElementIsNotDegenerate` at `LengthTolerance(0.0)`, below layer 0's
   smallest well-formed tolerance; they now assume a positive smallest altitude directly.
 - **`ComponentsOf` contract exact** (FIX-WAVE layer 6; README "Left open"). `MeshComponents` carries a
   spanning forest (`ElementParent`, `ElementDepth`) whose laws certify that each component is
@@ -483,7 +483,7 @@ Applied:
   `RestrictedToFaces`. Conditions 2 (C6, vertex loops on a seam's pole) and 3 (F1 and C1, seams by
   the left rule and `Closed` directions) are layer 5's fixes: until they land, sphere A and B, the
   seamed cone, and closed B-spline faces produce no mesh and the identity is vacuous there.
-- **A cellular provenance law** (review M9). `Law_CornerProvenanceIsOnItsElementFace`: every corner
+- **A cellular provenance law** (review M9). `CornerProvenanceIsOnItsElementFace`: every corner
   of an element of face f has provenance `OnFace(f)`, `OnEdge(e)` with e cited by f, or
   `OnVertex(v)` with v on f's bounds (02-topology's `FaceUsesEdge`, `BoundVertices`).
 - **`Law_VectorAreaVanishes` stated** (review M11). The vector area of a closed, consistently
@@ -514,7 +514,7 @@ Follow-ups owed by other layers: 07-validation drops the tolerance argument from
 `Law_TriangleAngleSumIsPi`, `Law_QuadAngleDefectIsNotNegative`,
 `Law_AngleDefectSumIsTwoPiTimesEuler`, and `Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects`;
 layers 7 and 8 delete their `SameConnectivity`; layer 7's `RestrictedToShell` becomes
-`RestrictedToFaces`, and it may add `Check_`s for `Law_CornerProvenanceIsOnItsElementFace`,
+`RestrictedToFaces`, and it may add `Check_`s for `CornerProvenanceIsOnItsElementFace`,
 `Law_VectorAreaVanishes`, and `Law_OrientedSurfaceWithBoundaryHasGenus`. `CompensatedSum` could
 move to layer 0 if a second layer needs it.
 
@@ -533,3 +533,24 @@ reaches it, so the unit box could not validate without it.
 | `CoincidentVertexPairs` | contract `CoincidentVertexPairs`: every pair a < b of referenced vertices of one component within the tolerance, lexicographic by construction (quadratic where the note hashes) |
 | `ToSplitTriangleMesh3D` | contract `ToSplitTriangleMesh3D`: corners of a vertex grouped by exact (normal, uv), compared with layer 0's `Identical` per component; split vertices by source vertex then first corner |
 
+
+## Invariants as predicates (finding F-54)
+
+2026-10-18. The law runner draws arbitrary `ModelMesh`, `MeshEdgeTable`, `MeshVertexNumbering` and
+`FaceMesh` values, and every law must hold for every value it can draw (F-54's decision). The
+invariants of those types, and the properties a mesh the library produced has (no repeated corner,
+no degenerate or folded element, distinct vertices, quality thresholds), are therefore predicates,
+not laws: the names above without the `Law_` prefix, still checked one by one by layer 7's
+`Check_` functions over the meshes it validates, with the predicate's name as the diagnostic code.
+`IsWellFormed(mesh)` bundles the seven `ModelMesh` invariants and `IsWellFormed(t)` the seven of the
+edge table. The laws that state them:
+
+| Law | States |
+|---|---|
+| `Law_MeshWitnessIsWellFormed(k)` | every literal mesh (`MeshWitnessAt(k)`: the unit tetrahedron, its reversal) meets the `ModelMesh` invariants |
+| `Law_EdgeTableOfIsWellFormed(mesh)` | `EdgeTableOf` builds a well-formed table from any well-formed mesh |
+| layer 8's laws over `MeshModel`'s inputs | the mesh, its numbering and its face meshes as the pipeline produces them meet every predicate (layer 8 README) |
+
+The laws over a function of a mesh (the split-mesh laws, `Law_ComponentEulerCharacteristicsAddUp`,
+`Law_ClosedOrientedSurfaceHasGenus`, the restriction laws) are guarded by `IsWellFormed(mesh)`, the
+function's precondition.

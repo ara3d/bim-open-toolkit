@@ -23,38 +23,38 @@ library ModelMeshNumberingLaws
     // runs cut 0 to N - 1 into consecutive, disjoint pieces, one per model vertex, edge, and face.
 
     // EdgeInteriorStart has one entry per model edge plus one.
-    Law_NumberingHasOneEdgeRunPerEdge(m: BrepModel, n: MeshVertexNumbering): Boolean
+    NumberingHasOneEdgeRunPerEdge(m: BrepModel, n: MeshVertexNumbering): Boolean
         => n.EdgeInteriorStart.Count == m.Edges.Count + 1;
 
     // FaceInteriorStart has one entry per model face plus one.
-    Law_NumberingHasOneFaceRunPerFace(m: BrepModel, n: MeshVertexNumbering): Boolean
+    NumberingHasOneFaceRunPerFace(m: BrepModel, n: MeshVertexNumbering): Boolean
         => n.FaceInteriorStart.Count == m.Faces.Count + 1;
 
     // Every model vertex has a global index, and they come first.
-    Law_NumberingCountsEveryModelVertex(m: BrepModel, n: MeshVertexNumbering): Boolean
+    NumberingCountsEveryModelVertex(m: BrepModel, n: MeshVertexNumbering): Boolean
         => n.ModelVertexCount == m.Vertices.Count;
 
     // The edge runs begin where the model vertices end.
-    Law_EdgeRunsFollowModelVertices(n: MeshVertexNumbering): Boolean
+    EdgeRunsFollowModelVertices(n: MeshVertexNumbering): Boolean
         => n.EdgeInteriorStart.IsEmpty ? true : n.EdgeInteriorStart[0] == n.ModelVertexCount;
 
     // The face runs begin where the edge runs end.
-    Law_FaceRunsFollowEdgeRuns(n: MeshVertexNumbering): Boolean
+    FaceRunsFollowEdgeRuns(n: MeshVertexNumbering): Boolean
         => (n.EdgeInteriorStart.IsEmpty || n.FaceInteriorStart.IsEmpty)
             ? true
             : n.FaceInteriorStart[0] == n.EdgeInteriorStart.Last;
 
     // No edge run has negative length: the edge starts do not decrease.
-    Law_EdgeRunHasNonNegativeLength(n: MeshVertexNumbering, e: BrepEdgeIndex): Boolean
+    EdgeRunHasNonNegativeLength(n: MeshVertexNumbering, e: BrepEdgeIndex): Boolean
         => n.EdgeInteriorCount(e) >= 0;
 
     // No face run has negative length: the face starts do not decrease.
-    Law_FaceRunHasNonNegativeLength(n: MeshVertexNumbering, f: BrepFaceIndex): Boolean
+    FaceRunHasNonNegativeLength(n: MeshVertexNumbering, f: BrepFaceIndex): Boolean
         => n.FaceInteriorCount(f) >= 0;
 
     // The numbering covers exactly the mesh's positions: the run lengths and the model vertex count
     // sum to the position count.
-    Law_NumberingCoversPositions(mesh: ModelMesh): Boolean
+    NumberingCoversPositions(mesh: ModelMesh): Boolean
         => mesh.Numbering.NumberedVertexCount == mesh.Positions.Count;
 
     //==
@@ -102,13 +102,13 @@ library ModelMeshNumberingLaws
     // Every parameter-space point of a face mesh has a site the numbering has a slot for: an edge
     // point cites an interior point of its edge (discretization points 1 to n - 2), and the face
     // run has room for every face-interior local vertex.
-    Law_FaceMeshPointHasNumberedSite(n: MeshVertexNumbering, fm: FaceMesh, i: VertexIndex): Boolean
+    FaceMeshPointHasNumberedSite(n: MeshVertexNumbering, fm: FaceMesh, i: VertexIndex): Boolean
         => fm.Sources.IsValidIndex(i) ? n.HasSite(fm.SiteOfUvPoint(i)) : true;
 
     // A point's source and its local vertex's provenance name the same model cell: a FromVertex
     // point has an OnVertex vertex of that model vertex, a FromEdge point an OnEdge vertex of that
     // edge, and every other point an OnFace vertex of the face mesh's face.
-    Law_FaceMeshSourceAgreesWithProvenance(fm: FaceMesh, i: VertexIndex): Boolean
+    FaceMeshSourceAgreesWithProvenance(fm: FaceMesh, i: VertexIndex): Boolean
         => (fm.Sources.IsValidIndex(i) ? fm.LocalVertex.IsValidIndex(i) : false)
             ? (fm.Provenance.IsValidIndex(fm.LocalVertex[i])
                 ? fm.SiteOfUvPoint(i).IsSiteOf(fm.Provenance[fm.LocalVertex[i]])
@@ -117,7 +117,7 @@ library ModelMeshNumberingLaws
 
     // Two parameter-space copies of one local vertex (the two sides of a seam) reach one global
     // vertex.
-    Law_SeamCopiesShareOneGlobalVertex(n: MeshVertexNumbering, fm: FaceMesh, i: VertexIndex,
+    SeamCopiesShareOneGlobalVertex(n: MeshVertexNumbering, fm: FaceMesh, i: VertexIndex,
         j: VertexIndex): Boolean
         => (fm.LocalVertex.IsValidIndex(i) ? fm.LocalVertex.IsValidIndex(j) : false)
             ? (fm.LocalVertex[i].Value == fm.LocalVertex[j].Value
@@ -127,7 +127,7 @@ library ModelMeshNumberingLaws
 
     // Two distinct local vertices of one face mesh reach distinct global vertices: a face mesh does
     // not hold two copies of one model point.
-    Law_DistinctLocalVerticesHaveDistinctGlobalVertices(n: MeshVertexNumbering, fm: FaceMesh,
+    DistinctLocalVerticesHaveDistinctGlobalVertices(n: MeshVertexNumbering, fm: FaceMesh,
         i: VertexIndex, j: VertexIndex): Boolean
         => (fm.LocalVertex.IsValidIndex(i) ? fm.LocalVertex.IsValidIndex(j) : false)
             ? (fm.LocalVertex[i].Value != fm.LocalVertex[j].Value
@@ -142,7 +142,7 @@ library ModelMeshNumberingLaws
     // vertex or the same point of one edge's discretization reach one global vertex. This is the
     // mechanism that makes the assembled mesh watertight; mesh-assembly.laws.plato states its
     // consequence for the assembled elements.
-    Law_SharedBoundarySampleHasOneGlobalVertex(n: MeshVertexNumbering, fa: FaceMesh, fb: FaceMesh,
+    SharedBoundarySampleHasOneGlobalVertex(n: MeshVertexNumbering, fa: FaceMesh, fb: FaceMesh,
         i: VertexIndex, j: VertexIndex): Boolean
         => (fa.Sources.IsValidIndex(i) ? fb.Sources.IsValidIndex(j) : false)
             ? (IsSameBoundarySample(fa.Sources[i], fb.Sources[j])

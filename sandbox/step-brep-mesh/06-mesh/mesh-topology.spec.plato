@@ -16,25 +16,25 @@
 // direction sum each, the sums consistent with the counts.
 spec MeshEdgeTable
 {
-    invariant Law_EdgeTableHasOneCountPerEdge(self);
-    invariant Law_EdgeTableHasOneDirectionSumPerEdge(self);
-    invariant forall (k: UndirectedEdgeIndex) : Law_EdgeTableEdgeIsCanonical(self, k);
-    invariant forall (k: UndirectedEdgeIndex) : Law_EdgeTableIsStrictlySorted(self, k);
-    invariant forall (k: UndirectedEdgeIndex) : Law_EdgeTableListsOnlyUsedEdges(self, k);
-    invariant forall (k: UndirectedEdgeIndex) : Law_DirectionSumIsBoundedByCount(self, k);
-    invariant forall (k: UndirectedEdgeIndex) : Law_DirectionSumHasTheParityOfCount(self, k);
+    invariant EdgeTableHasOneCountPerEdge(self);
+    invariant EdgeTableHasOneDirectionSumPerEdge(self);
+    invariant forall (k: UndirectedEdgeIndex) : EdgeTableEdgeIsCanonical(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : EdgeTableIsStrictlySorted(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : EdgeTableListsOnlyUsedEdges(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : DirectionSumIsBoundedByCount(self, k);
+    invariant forall (k: UndirectedEdgeIndex) : DirectionSumHasTheParityOfCount(self, k);
     constructor EdgeTableOf;
 }
 
 // The 1-skeleton of a mesh with its incidence.
 spec EdgeTableOf(mesh: ModelMesh): MeshEdgeTable
 {
-    requires forall (e: ElementIndex) : Law_ElementCornersInRange(mesh, e);
-    ensures Law_EdgeTableHasOneCountPerEdge(result);
-    ensures Law_EdgeTableHasOneDirectionSumPerEdge(result);
-    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableEdgeIsCanonical(result, k);
-    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableIsStrictlySorted(result, k);
-    ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableListsOnlyUsedEdges(result, k);
+    requires forall (e: ElementIndex) : ElementCornersInRange(mesh, e);
+    ensures EdgeTableHasOneCountPerEdge(result);
+    ensures EdgeTableHasOneDirectionSumPerEdge(result);
+    ensures forall (k: UndirectedEdgeIndex) : EdgeTableEdgeIsCanonical(result, k);
+    ensures forall (k: UndirectedEdgeIndex) : EdgeTableIsStrictlySorted(result, k);
+    ensures forall (k: UndirectedEdgeIndex) : EdgeTableListsOnlyUsedEdges(result, k);
     ensures forall (e: ElementIndex) : forall (slot: Integer) : Law_EdgeTableListsEveryProperSide(mesh, e, slot);
     ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableCountMatchesItsSides(mesh, k);
     ensures forall (k: UndirectedEdgeIndex) : Law_EdgeTableDirectionSumMatchesItsSides(mesh, k);
@@ -67,7 +67,7 @@ spec MeshComponents
 // so no coarser labelling satisfies it. The numbering by lowest element is pinned by the roots.
 spec ComponentsOf(mesh: ModelMesh): MeshComponents
 {
-    requires forall (e: ElementIndex) : Law_ElementCornersInRange(mesh, e);
+    requires forall (e: ElementIndex) : ElementCornersInRange(mesh, e);
     ensures result.ElementComponent.Count == mesh.ElementCount;
     ensures result.VertexComponent.Count == mesh.Positions.Count;
     ensures result.ElementParent.Count == mesh.ElementCount;

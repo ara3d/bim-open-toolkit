@@ -55,8 +55,8 @@ spec SplitTriangleMesh3D
 // Vertices duplicated exactly where corner attributes differ.
 spec ToSplitTriangleMesh3D(mesh: ModelMesh): SplitTriangleMesh3D
 {
-    requires Law_CornerNormalsHaveOneEntryPerCorner(mesh);
-    requires Law_CornerUvsHaveOneEntryPerCorner(mesh);
+    requires CornerNormalsHaveOneEntryPerCorner(mesh);
+    requires CornerUvsHaveOneEntryPerCorner(mesh);
     ensures Law_SplitHasOneNormalPerVertex(mesh);
     ensures Law_SplitHasOneUvPerVertex(mesh);
     ensures Law_SplitHasOneSourcePerVertex(mesh);

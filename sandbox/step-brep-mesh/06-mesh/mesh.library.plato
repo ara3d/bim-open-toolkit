@@ -118,13 +118,13 @@ library ModelMeshes
     // The guard of a law that hands a whole mesh to functions assuming them, such as
     // RestrictedToFaces.
     IsWellFormed(mesh: ModelMesh): Boolean
-        => Law_ElementFaceHasOneEntryPerElement(mesh)
-            && Law_CornerNormalsHaveOneEntryPerCorner(mesh)
-            && Law_CornerUvsHaveOneEntryPerCorner(mesh)
-            && Law_VertexProvenanceHasOneEntryPerVertex(mesh)
-            && Law_NumberingCoversPositions(mesh)
+        => ElementFaceHasOneEntryPerElement(mesh)
+            && CornerNormalsHaveOneEntryPerCorner(mesh)
+            && CornerUvsHaveOneEntryPerCorner(mesh)
+            && VertexProvenanceHasOneEntryPerVertex(mesh)
+            && NumberingCoversPositions(mesh)
             && mesh.HasAllValidCorners
-            && mesh.Positions.Count.Range.All(v => Law_VertexProvenanceMatchesNumbering(mesh, VertexIndex(v)));
+            && mesh.Positions.Count.Range.All(v => VertexProvenanceMatchesNumbering(mesh, VertexIndex(v)));
 
     // Whether e names an element whose corners all have a normal and a uv.
     HasValidCornerAttributes(mesh: ModelMesh, e: ElementIndex): Boolean

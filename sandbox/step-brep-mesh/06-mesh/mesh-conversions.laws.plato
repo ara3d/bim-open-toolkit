@@ -83,62 +83,82 @@ library ModelMeshConversionsLaws
     // unreferenced vertex has no corner and so no attributes, and is dropped rather than given
     // invented ones.
     Law_SplitHasAtLeastAsManyVertices(mesh: ModelMesh): Boolean
-        => mesh.IsEveryVertexReferenced
-            ? mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count >= mesh.Positions.Count
+        => mesh.IsWellFormed
+            ? (mesh.IsEveryVertexReferenced
+                ? mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count >= mesh.Positions.Count
+                : true)
             : true;
 
     // The split mesh has the same elements as ToTriangleMesh3D: the triangles plus two per quad.
     Law_SplitSplitsEachQuadInTwo(mesh: ModelMesh): Boolean
-        => mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count == mesh.Triangles.Count + 2 * mesh.Quads.Count;
+        => mesh.IsWellFormed
+            ? (mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count == mesh.Triangles.Count + 2 * mesh.Quads.Count)
+            : true;
 
     // The split mesh has one normal per vertex.
     Law_SplitHasOneNormalPerVertex(mesh: ModelMesh): Boolean
-        => mesh.ToSplitTriangleMesh3D.Normals.Count == mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count;
+        => mesh.IsWellFormed
+            ? (mesh.ToSplitTriangleMesh3D.Normals.Count == mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count)
+            : true;
 
     // The split mesh has one uv per vertex.
     Law_SplitHasOneUvPerVertex(mesh: ModelMesh): Boolean
-        => mesh.ToSplitTriangleMesh3D.Uvs.Count == mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count;
+        => mesh.IsWellFormed
+            ? (mesh.ToSplitTriangleMesh3D.Uvs.Count == mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count)
+            : true;
 
     // The split mesh has one source vertex per vertex.
     Law_SplitHasOneSourcePerVertex(mesh: ModelMesh): Boolean
-        => mesh.ToSplitTriangleMesh3D.SourceVertex.Count == mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count;
+        => mesh.IsWellFormed
+            ? (mesh.ToSplitTriangleMesh3D.SourceVertex.Count == mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count)
+            : true;
 
     // A split vertex sits at its source vertex's position.
     Law_SplitVertexKeepsItsSourcePosition(mesh: ModelMesh, v: VertexIndex): Boolean
-        => (mesh.ToSplitTriangleMesh3D.Mesh.Positions.IsValidIndex(v)
-                ? mesh.ToSplitTriangleMesh3D.SourceVertex.IsValidIndex(v)
-                : false)
-            ? mesh.PositionIs(mesh.ToSplitTriangleMesh3D.SourceVertex[v], mesh.ToSplitTriangleMesh3D.Mesh.Positions[v])
+        => mesh.IsWellFormed
+            ? ((mesh.ToSplitTriangleMesh3D.Mesh.Positions.IsValidIndex(v)
+                    ? mesh.ToSplitTriangleMesh3D.SourceVertex.IsValidIndex(v)
+                    : false)
+                ? mesh.PositionIs(mesh.ToSplitTriangleMesh3D.SourceVertex[v], mesh.ToSplitTriangleMesh3D.Mesh.Positions[v])
+                : true)
             : true;
 
     // Under SourceVertex the split mesh's triangles are ToTriangleMesh3D's: splitting changes which
     // vertex a corner names, never which model vertex it stands for.
     Law_SplitFollowsTheTriangulation(mesh: ModelMesh, k: Integer, s: Integer): Boolean
-        => (mesh.ToSplitTriangleMesh3D.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
-            ? mesh.ToSplitTriangleMesh3D.SourceOfCorner(k, s).Value == mesh.CornerVertex(mesh.TriangulatedCorner(k, s)).Value
+        => mesh.IsWellFormed
+            ? ((mesh.ToSplitTriangleMesh3D.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+                ? mesh.ToSplitTriangleMesh3D.SourceOfCorner(k, s).Value == mesh.CornerVertex(mesh.TriangulatedCorner(k, s)).Value
+                : true)
             : true;
 
     // The split vertex at slot s of triangle k carries that corner's normal.
     Law_SplitVertexCarriesItsCornerNormal(mesh: ModelMesh, k: Integer, s: Integer): Boolean
-        => (mesh.ToSplitTriangleMesh3D.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
-            ? mesh.ToSplitTriangleMesh3D.NormalIs(mesh.ToSplitTriangleMesh3D.Mesh.Faces[k].At(s),
-                mesh.CornerNormals, mesh.TriangulatedCorner(k, s))
+        => mesh.IsWellFormed
+            ? ((mesh.ToSplitTriangleMesh3D.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+                ? mesh.ToSplitTriangleMesh3D.NormalIs(mesh.ToSplitTriangleMesh3D.Mesh.Faces[k].At(s),
+                    mesh.CornerNormals, mesh.TriangulatedCorner(k, s))
+                : true)
             : true;
 
     // The split vertex at slot s of triangle k carries that corner's uv.
     Law_SplitVertexCarriesItsCornerUv(mesh: ModelMesh, k: Integer, s: Integer): Boolean
-        => (mesh.ToSplitTriangleMesh3D.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
-            ? mesh.ToSplitTriangleMesh3D.UvIs(mesh.ToSplitTriangleMesh3D.Mesh.Faces[k].At(s),
-                mesh.CornerUvs, mesh.TriangulatedCorner(k, s))
+        => mesh.IsWellFormed
+            ? ((mesh.ToSplitTriangleMesh3D.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+                ? mesh.ToSplitTriangleMesh3D.UvIs(mesh.ToSplitTriangleMesh3D.Mesh.Faces[k].At(s),
+                    mesh.CornerUvs, mesh.TriangulatedCorner(k, s))
+                : true)
             : true;
 
     // No vertex is split needlessly: two split vertices differ in their source vertex, their normal,
     // or their uv.
     Law_SplitVerticesDiffer(mesh: ModelMesh, a: VertexIndex, b: VertexIndex): Boolean
-        => (a.Value != b.Value && mesh.ToSplitTriangleMesh3D.HasVertexRecord(a) && mesh.ToSplitTriangleMesh3D.HasVertexRecord(b))
-            ? (mesh.ToSplitTriangleMesh3D.SourceVertex[a].Value != mesh.ToSplitTriangleMesh3D.SourceVertex[b].Value
-                || mesh.ToSplitTriangleMesh3D.Normals[a] != mesh.ToSplitTriangleMesh3D.Normals[b]   // exact by construction
-                || mesh.ToSplitTriangleMesh3D.Uvs[a] != mesh.ToSplitTriangleMesh3D.Uvs[b])          // exact by construction
+        => mesh.IsWellFormed
+            ? ((a.Value != b.Value && mesh.ToSplitTriangleMesh3D.HasVertexRecord(a) && mesh.ToSplitTriangleMesh3D.HasVertexRecord(b))
+                ? (mesh.ToSplitTriangleMesh3D.SourceVertex[a].Value != mesh.ToSplitTriangleMesh3D.SourceVertex[b].Value
+                    || mesh.ToSplitTriangleMesh3D.Normals[a] != mesh.ToSplitTriangleMesh3D.Normals[b]   // exact by construction
+                    || mesh.ToSplitTriangleMesh3D.Uvs[a] != mesh.ToSplitTriangleMesh3D.Uvs[b])          // exact by construction
+                : true)
             : true;
 
     //==

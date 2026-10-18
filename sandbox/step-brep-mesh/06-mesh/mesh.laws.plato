@@ -18,35 +18,35 @@ library ModelMeshesLaws
     // # Array lengths
 
     // ElementFace has one entry per element.
-    Law_ElementFaceHasOneEntryPerElement(mesh: ModelMesh): Boolean
+    ElementFaceHasOneEntryPerElement(mesh: ModelMesh): Boolean
         => mesh.ElementFace.Count == mesh.ElementCount;
 
     // CornerNormals has one entry per element corner: 3T + 4Q.
-    Law_CornerNormalsHaveOneEntryPerCorner(mesh: ModelMesh): Boolean
+    CornerNormalsHaveOneEntryPerCorner(mesh: ModelMesh): Boolean
         => mesh.CornerNormals.Count == mesh.CornerCount;
 
     // CornerUvs has one entry per element corner: 3T + 4Q.
-    Law_CornerUvsHaveOneEntryPerCorner(mesh: ModelMesh): Boolean
+    CornerUvsHaveOneEntryPerCorner(mesh: ModelMesh): Boolean
         => mesh.CornerUvs.Count == mesh.CornerCount;
 
     // VertexProvenance has one entry per vertex.
-    Law_VertexProvenanceHasOneEntryPerVertex(mesh: ModelMesh): Boolean
+    VertexProvenanceHasOneEntryPerVertex(mesh: ModelMesh): Boolean
         => mesh.VertexProvenance.Count == mesh.Positions.Count;
 
     //==
     // # Ranges and provenance
 
     // Every corner of element e names a vertex of the mesh.
-    Law_ElementCornersInRange(mesh: ModelMesh, e: ElementIndex): Boolean
+    ElementCornersInRange(mesh: ModelMesh, e: ElementIndex): Boolean
         => mesh.IsElementInRange(e) ? mesh.ElementCorners(e).All(v => mesh.Positions.IsValidIndex(v)) : true;
 
     // The face element e approximates is a face of the model.
-    Law_ElementFaceIsModelFace(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Boolean
+    ElementFaceIsModelFace(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Boolean
         => mesh.ElementFace.IsValidIndex(e) ? m.Faces.IsValidIndex(mesh.ElementFace[e]) : true;
 
     // A vertex's provenance names the model cell its index's site names, so the cell a vertex
     // samples can be read from its index alone.
-    Law_VertexProvenanceMatchesNumbering(mesh: ModelMesh, v: VertexIndex): Boolean
+    VertexProvenanceMatchesNumbering(mesh: ModelMesh, v: VertexIndex): Boolean
         => mesh.VertexProvenance.IsValidIndex(v)
             ? mesh.Numbering.SiteAt(v).IsSiteOf(mesh.VertexProvenance[v])
             : true;
@@ -56,7 +56,7 @@ library ModelMeshesLaws
     // or to a vertex f's bounds reference. Exact. Error: a corner elsewhere is a vertex glued to the
     // wrong cell, which the geometric re-evaluation in 07-validation may not notice when the two
     // cells meet.
-    Law_CornerProvenanceIsOnItsElementFace(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+    CornerProvenanceIsOnItsElementFace(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
     {
         var v = mesh.ElementCorner(e, slot);
         return (mesh.VertexProvenance.IsValidIndex(v)
@@ -118,10 +118,15 @@ library ModelMeshesLaws
     //==
     // # Witness
 
-    // The witness mesh and its reversal meet the ModelMesh invariants (IsWellFormed), so a law
-    // guarded by IsWellFormed is not vacuous on them.
-    Law_WitnessMeshIsWellFormed(_: ModelMesh): Boolean
-        => ModelMesh.Witness_UnitTetrahedron.IsWellFormed && ModelMesh.Witness_UnitTetrahedron.Reversed.IsWellFormed;
+    // The literal meshes, chosen by an Integer as layer 7's WitnessAt chooses a model, so a law
+    // over them takes an Integer the runner exhausts: 0 the unit tetrahedron, 1 its reversal.
+    MeshWitnessAt(_: ModelMesh, k: Integer): ModelMesh
+        => ((k % 2) + 2) % 2 == 0 ? ModelMesh.Witness_UnitTetrahedron : ModelMesh.Witness_UnitTetrahedron.Reversed;
+
+    // Every literal mesh meets the ModelMesh invariants (IsWellFormed), so a law guarded by
+    // IsWellFormed is not vacuous on them.
+    Law_MeshWitnessIsWellFormed(k: Integer): Boolean
+        => ModelMesh.MeshWitnessAt(k).IsWellFormed;
 
     // The mesh of a unit tetrahedron B-rep with 4 vertices, 6 straight edges, and 4 planar faces,
     // meshed with no interior points: positions (0,0,0), (1,0,0), (0,1,0), (0,0,1); one triangle per
