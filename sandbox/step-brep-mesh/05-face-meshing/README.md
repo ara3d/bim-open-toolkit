@@ -8,7 +8,7 @@ faces again.
 
 The design is written against [VOCABULARY.md](../VOCABULARY.md) revision 2 and against the names
 layers 00 to 04 export as they stood on 2026-10-17 (listed under "Names used from layers 00 to 04").
-Algorithms are deferred; every deferred function has a contract in `face-meshing.spec.plato`.
+Algorithms were deferred by the design pass, every one with a contract in `face-meshing.spec.plato`; implementation chunk A gave six of them bodies (see "Implementation, chunk A"). Still bodiless: `QuadSidesOf`, `QuadGrid`, `MatchingFloors` (chunk B) and `CompletePeriodicRegion`, the seam-and-pole half of `AddMissingSeamsAndPoles` (chunks B and C).
 
 ## Files
 
@@ -448,3 +448,21 @@ The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) cha
 
 - Deleted `IsRedundantVertexLoop(m, f, k)`, a copy of layer 2's with the same signature and meaning; `MeshedBounds` is now layer 2's `KeptBounds` mapped to the bounds.
 - Took `ScaledBy(c: FaceMeshingCriteria, factor)` from layer 8, where it stood in (`belongs-in: 05-face-meshing`), into the Criteria section.
+
+## Implementation, chunk A
+
+TKT-314, 2026-10-17. Six bodies, each from its contract in `face-meshing.spec.plato`:
+
+| Body | Derived from | Scope in chunk A |
+|---|---|---|
+| `Unwrap` | contract `Unwrap` and its note: first point wrapped; a seam use whose twin step is placed takes the twin end's copy a period away with the twin to its left (the test of `FollowsLeftRule`); otherwise `NearestUnwrapped`; a collapsed-line point takes its neighbour's free parameter | general; exercised only on planes in chunk A |
+| `AddMissingSeamsAndPoles` | contract `AddMissingSeamsAndPoles`, the plain case: a surface with no seam direction and no collapsed line keeps its loops, the outer chosen by containment (`OuterByContainment`). Every other face calls `CompletePeriodicRegion`, a new bodiless function holding windings, pole segments and synthetic seam cuts | planes; cylinders, cones, spheres and tori throw until chunks B and C |
+| `MeanSpeed` | contract `MeanSpeed`: mean of the partial's length at 21 points on each of three iso-lines across the region's box, collapsed-line samples skipped, floored at the length tolerance over the box extent | general |
+| `TriangulateRegion` | contract `TriangulateRegion`, which keeps the boundary, needs positive chart areas, every point a corner, boundary segments as sides, interior sides shared, no quads. Ear clipping in the chart (not the constrained Delaunay triangulation the design names; the contract does not require the Delaunay property): holes bridged at a visible vertex, a vertex an ear when its chart area is positive and no other ring point is in the closed triangle, point holes inserted by splitting their triangle; a collinear vertex is never an ear, so collinear boundary points stay corners | general; quality not optimized |
+| `RefineToSurface` | contract `RefineToSurface`: a plane needs no interior point; otherwise up to twelve passes splitting every triangle that exceeds `SurfaceChordal` at its centroid, `SurfaceAngular` between corner normals, or folds, at its parameter centroid, unless the new point is within `MinLength` of a corner. Centroid splits do not shorten sides, so curved faces need chunk B's edge insertion with flips | planes exact; curved faces not to the criteria |
+| `Lift` | contract `Lift`: local vertices the classes of `IdentifiedSources` (layer 0's `ClassRoots`), numbered by first appearance; `SharedPosition` of the first member; `FaceNormalAt`, or `LimitNormal` on a collapsed line; provenance of the first member; collapsed triangles dropped, a quad losing one corner made a triangle | general (`LimitNormal` is layer 1's, still deferred, chunk C) |
+
+Law results, provisional: on the unit box every face meshes to two triangles from its four
+boundary points, and the assembled mesh is closed and consistently oriented (layer 8's results in
+its README).
+

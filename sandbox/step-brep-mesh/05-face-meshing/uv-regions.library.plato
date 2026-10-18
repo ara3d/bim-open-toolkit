@@ -245,33 +245,117 @@ library UvRegions
             cs.Take(i).Any(c => c.Edge == cs[i].Edge) ? BrepEdgeIndex.NoEdges : [cs[i].Edge]);
     }
 
-    // deferred: one scan along the loop. The first point is wrapped into the domain's window in
-    // each periodic direction (layer 00's Wrap). A point that starts a step of a seam use whose
-    // twin step (the other use of the same seam segment, AreTwinSteps) is already placed takes
-    // the copy the left rule gives: its twin copy lies one period away and to the left of the
-    // step in the face's chart (FollowsLeftRule). Every other point takes its copy nearest its
-    // predecessor (layer 00's NearestUnwrapped). A point on a collapsed line takes the free
-    // parameter (u at a sphere pole) from its predecessor, or from its successor when it is the
-    // first point. Continuity alone is not enough: when the two uses of a seam meet at a pole or
-    // an apex nothing between them winds around the period, and both would land on one copy.
-    Unwrap(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvLoop;
+    // Chunk A body, from the contract Unwrap and its deferred note: one scan.
+    // The first point is wrapped into the domain's window (layer 0's Wrap). A
+    // point that starts a step of a seam use whose twin step is already
+    // placed takes the copy of the twin's end, a whole period away, for which
+    // that twin copy lies to the left of the step (FollowsLeftRule's test);
+    // every other point takes its copy nearest its predecessor
+    // (NearestUnwrapped). A point on a collapsed line takes the free
+    // parameter from its predecessor, or from its successor when it is first.
+    Unwrap(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvLoop
+    {
+        var dom = m.SurfaceDomainOf(f);
+        var n = l.Points.Count;
+        var placed = new List<UvCoordinate>();
+        var i = 0;
+        while (i < n)
+        {
+            var raw = m.WithPoleFreeParameter(f, l, i);
+            var continued = i == 0 ? dom.Wrap(raw) : dom.NearestUnwrapped(raw, placed.At(i - 1));
+            var twin = i == 0 ? -1 : m.PlacedTwinStep(f, l, i);
+            var point = twin < 0 ? continued : m.LeftRuleCopy(f, dom, l, i, placed.At(twin + 1), continued);
+            placed = placed.Add(point);
+            i = i + 1;
+        }
+        return UvLoop(placed.Freeze(), l.Sources);
+    }
 
-    // deferred: completes the face's unwrapped loops into closed ones
-    // (research/MESHING-REQUIREMENTS.md sections 4.3, 4.4). Shifts whole loops by periods into one
-    // window. Replaces each loop point on a collapsed line by the pole segment from the arriving
-    // free parameter (its predecessor's) to the leaving one (its successor's, cyclically), its
-    // points FromVertex (the pole is that model vertex); with the seam uses on their copies by the
-    // left rule, a loop through a pole or an apex then closes in the plane, and the windings that
-    // decide synthetic cuts are counted after this replacement. Adds
-    // the whole pole segment where loops wind around a collapsed line no loop reaches (Pole
-    // points). Expands a vertex loop on a collapsed line into that segment. Cuts one synthetic
-    // seam per periodic direction in which loops wind, joining two winding loops, or a winding
-    // loop and a pole segment, by a straight parameter segment sampled under the criteria
-    // (SeamCut points, the same Index on both copies). Chooses as outer the loop the others lie
-    // inside, whatever the file marks. Which side of a winding loop the face lies on is read from
-    // the loop's direction (the face is on its left about the face normal). A face with no edges
-    // (a whole sphere or torus) gets every side here.
-    AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion;
+    // Point i of loop l, with its free parameter taken from its predecessor
+    // (its successor for the first point) when it lies on a collapsed line of
+    // face f's surface: the parameter along the line, which Project leaves
+    // arbitrary there. Unchanged otherwise.
+    WithPoleFreeParameter(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): UvCoordinate
+    {
+        var uv = l.Points[i];
+        var neighbour = l.Points.AtModulo(i == 0 ? 1 : i - 1);
+        var onU = m.IsOnCollapsedLineAlong(f, uv, SurfaceParameter.ParameterU);
+        var onV = m.IsOnCollapsedLineAlong(f, uv, SurfaceParameter.ParameterV);
+        return onV ? UvCoordinate(neighbour.U, uv.V) : (onU ? UvCoordinate(uv.U, neighbour.V) : uv);
+    }
+
+    // The step j < i - 1 of loop l that is the twin of step i (AreTwinSteps
+    // along a seam of face f): its two ends are already placed. -1 when there
+    // is none.
+    PlacedTwinStep(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Integer
+        => (i - 1).Range.Reduce(-1, (found, j) =>
+            found >= 0 ? found : (m.FaceEdges(f).Any(e => m.AreTwinSteps(f, e, l, i, j)) ? j : -1));
+
+    // The copy of point i under the left rule: among the copies of the twin
+    // end a whole period away in each periodic direction, the first that has
+    // the twin end strictly to the left of the step to its successor (that
+    // successor unwrapped next to the copy); the continued copy when none
+    // has, or when either lies on a collapsed line (the rule's exemption).
+    LeftRuleCopy(m: BrepModel, f: BrepFaceIndex, dom: SurfaceDomain, l: UvLoop, i: Integer, twinEnd: UvCoordinate, continued: UvCoordinate): UvCoordinate
+    {
+        var pu = dom.U.Periodicity.PeriodOr(0.0);
+        var pv = dom.V.Periodicity.PeriodOr(0.0);
+        var alongU = pu > 0.0 ? [UvCoordinate(twinEnd.U + pu, twinEnd.V), UvCoordinate(twinEnd.U - pu, twinEnd.V)] : [twinEnd].Take(0);
+        var alongV = pv > 0.0 ? [UvCoordinate(twinEnd.U, twinEnd.V + pv), UvCoordinate(twinEnd.U, twinEnd.V - pv)] : [twinEnd].Take(0);
+        var candidates = alongU.Concatenate(alongV);
+        var exempt = m.IsOnCollapsedLine(f, twinEnd) || m.IsOnCollapsedLine(f, continued);
+        var good = candidates.FlatMap(c =>
+            m.IsLeftOfStep(f, c, dom.NearestUnwrapped(l.Points.AtModulo(i + 1), c), twinEnd) ? [c] : candidates.Take(0));
+        return (exempt || good.Count == 0) ? continued : good[0];
+    }
+
+    // Chunk A body, from the contract AddMissingSeamsAndPoles, for a face
+    // whose surface has no periodic or closed direction and no collapsed line
+    // (planes; the unbounded directions of extrusions): there is no seam to
+    // cut and no pole to expand, so the region is the loops as they are, the
+    // outer chosen by containment whatever the file marks (OuterByContainment).
+    // Every other face goes to CompletePeriodicRegion, which keeps the rest of
+    // the deferred algorithm (chunks B and C).
+    AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion
+        => m.IsPlainSurfaceOf(f)
+            ? loops.OuterByContainment
+            : m.CompletePeriodicRegion(f, loops, c);
+
+    // Whether face f's surface has no direction with a seam (Periodic or
+    // Closed) and no collapsed line.
+    IsPlainSurfaceOf(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.SurfaceDomainOf(f).U.HasSeam.Not
+            && m.SurfaceDomainOf(f).V.HasSeam.Not
+            && m.CollapsedLines(f, SurfaceParameter.ParameterU).Count == 0
+            && m.CollapsedLines(f, SurfaceParameter.ParameterV).Count == 0;
+
+    // The region of the loops with the first loop that contains every other
+    // loop's first point (even-odd) as the outer, the rest as holes in their
+    // order; the first loop when none contains the others. An empty region
+    // for no loops.
+    OuterByContainment(loops: Array<UvLoop>): UvRegion
+    {
+        var outer = loops.Count.Range.Reduce(-1, (found, k) =>
+            found >= 0 ? found : (loops.ContainsOtherLoops(k) ? k : -1));
+        var chosen = outer < 0 ? 0 : outer;
+        return loops.Count == 0
+            ? UvRegion(UvLoop([], []), [])
+            : UvRegion(loops[chosen], loops.Count.Range.FlatMap(k => k == chosen ? loops.Take(0) : [loops[k]]));
+    }
+
+    // Whether loop k contains the first point of every other non-empty loop.
+    ContainsOtherLoops(loops: Array<UvLoop>, k: Integer): Boolean
+        => loops.Count.Range.All(j => (j == k ? true : loops[j].Points.Count == 0)
+            ? true
+            : loops[k].LoopContains(loops[j].Points[0]));
+
+    // The region of a face whose surface has a seam or a collapsed line: the
+    // contract of AddMissingSeamsAndPoles beyond the plain case (whole-loop
+    // period shifts, pole segments from the arriving to the leaving free
+    // parameter, synthetic seam cuts between winding loops, whole pole
+    // segments for faces with no edges, outer by containment).
+    // deferred: windings, pole segments and synthetic seam cuts (chunks B and C).
+    CompletePeriodicRegion(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion;
 
     //==
     // # The chart, tolerances, and signed areas
@@ -292,11 +376,28 @@ library UvRegions
     ChartOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): FaceChart
         => FaceChart(m.IsChartMirrored(f), m.MeanSpeed(f, r, SurfaceParameter.ParameterU), m.MeanSpeed(f, r, SurfaceParameter.ParameterV));
 
-    // deferred: the mean of |PartialU| (ParameterU) or |PartialV| over three iso-lines of twenty
-    // steps across the region's parameter box (OpenCascade's sampling), skipping samples on a
-    // collapsed line, never below the model's length tolerance over the box's extent in that
-    // parameter.
-    MeanSpeed(m: BrepModel, f: BrepFaceIndex, r: UvRegion, which: SurfaceParameter): Number;
+    // Chunk A body, from the contract MeanSpeed: the mean of |PartialU|
+    // (ParameterU) or |PartialV| at twenty-one points along each of three
+    // iso-lines across the region's parameter box (its quarter, half and
+    // three-quarter lines in the other parameter), samples on a collapsed
+    // line skipped, never below the length tolerance over the box's extent in
+    // that parameter (so a box of zero extent gives a finite positive speed).
+    MeanSpeed(m: BrepModel, f: BrepFaceIndex, r: UvRegion, which: SurfaceParameter): Number
+    {
+        var points = r.BoundaryPoints;
+        var lo = points.Reduce(UvCoordinate(Number.MaxValue, Number.MaxValue), (a, p) => UvCoordinate(a.U.Min(p.U), a.V.Min(p.V)));
+        var hi = points.Reduce(UvCoordinate(0.0 - Number.MaxValue, 0.0 - Number.MaxValue), (a, p) => UvCoordinate(a.U.Max(p.U), a.V.Max(p.V)));
+        var s = m.SurfaceOf(f);
+        var samples = 63.MapRange(k => UvCoordinate(
+            lo.U + (hi.U - lo.U) * which.Along((k % 21).ToNumber / 20.0, (k / 21 + 1).ToNumber * 0.25),
+            lo.V + (hi.V - lo.V) * which.Along((k / 21 + 1).ToNumber * 0.25, (k % 21).ToNumber / 20.0)));
+        var kept = samples.FlatMap(uv => m.IsOnCollapsedLine(f, uv) ? samples.Take(0) : [uv]);
+        var speeds = kept.Map(uv => which.Along(m.Geometry.PartialU(s, uv).Length, m.Geometry.PartialV(s, uv).Length));
+        var extent = which.Along(hi.U - lo.U, hi.V - lo.V);
+        var floor = points.Count == 0 ? 1.0 : (extent > 0.0 ? m.Tolerances.Length.Value / extent : 1.0);
+        var mean = speeds.Count == 0 ? 0.0 : speeds.SumOf / speeds.Count.ToNumber;
+        return mean.IsFinite ? mean.Max(floor) : floor;
+    }
 
     // The parameter tolerance of face f's region: layer 00's UvToleranceAt at the chart's mean
     // speeds, so a boundary displacement within it moves the surface point by about the length
