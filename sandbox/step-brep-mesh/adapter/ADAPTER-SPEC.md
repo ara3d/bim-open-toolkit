@@ -20,7 +20,7 @@ and the file laws every output must satisfy.
 
 | `StepDocument` | `Part21File` | The adapter |
 |---|---|---|
-| `Definitions` in file order | `Instances` in ascending `Id` | Stable sort by `Id`. A second definition with a used id is dropped with one `DuplicateInstanceId` Error at `StepInstance(id)`. |
+| `Definitions` in file order | `Instances` in ascending `Id` | Stable sort by `Id`. A second definition with a used id is dropped with one `DuplicateInstanceId` Error at `AtInstance(id)`. |
 | One token arena, each list token before its items (parent first) | `Attributes` children first | Re-emit each definition's tokens in the layout below. Linear in the token count. |
 | Tokens are raw byte spans: strings with quotes and escape directives, keywords as written | Strings decoded, keywords and enumeration names upper case | Decode strings by the rules below; upper-case keywords (record names, typed-parameter names) and the name between the dots of an enumeration. |
 | `Diagnostics` (since TKT-310, ara3d-sdk 002784d): `StepDiagnostic(Severity, Code, Offset, Expected, DefinitionId, DefinitionOffset)` in file order; an Error means parsing stopped there and the definitions before it are kept | `Ok` false exactly when a Diagnostic is an Error; `File` the parsed prefix; `Diagnostics` in layer 3's codes | Map each `StepDiagnostic` by the table below; `Ok` is the absence of an Error. |
@@ -37,7 +37,7 @@ as its tests.
 |---|---|---|---|---|
 | `NotStepFile` | `P21-NOT-A-FILE` (`NotPart21File`) | Error | `WholeInput` | `Offset` |
 | `HeaderIncomplete` | `P21-HEADER-INCOMPLETE` | Warning | `WholeInput` | `Offset` |
-| `Syntax` with `DefinitionId` > 0 | `P21-SYNTAX` (`SyntaxError`) | Error | `StepInstance(DefinitionId)` | `Offset` |
+| `Syntax` with `DefinitionId` > 0 | `P21-SYNTAX` (`SyntaxError`) | Error | `AtInstance(DefinitionId)` | `Offset` |
 | `Syntax` with `DefinitionId` = 0 (a cut header, a missing `DATA;` or `ENDSEC;`, text between instances) | `P21-SYNTAX-OUTSIDE-INSTANCE` (new in layer 3, TASKS.md chunk D) | Error | `WholeInput` | `Offset` |
 
 `Expected` becomes the diagnostic's message. `Law_ParseFindingsPointAtTheirSubject` keeps requiring
@@ -78,8 +78,8 @@ Each row: read the fixture, run the adapter, and require `IsSameFile(result.File
 |---|---|---|---|---|---|
 | `unit-cube.stp` | 5439 | 1 mm cube, AP214 product, B-rep, units, uncertainty | `Witness_Part21UnitBox` (142, 588) | true | none |
 | `unit-cube-no-shape.stp` | 5324 | the same without #141 `ADVANCED_BREP_SHAPE_REPRESENTATION` and #142 `SHAPE_DEFINITION_REPRESENTATION` | `Witness_Part21UnitBoxNoShape` (140, 581) | true | none: `STEP-NO-SHAPE` belongs to the decoder, not the parse |
-| `unit-cube-dangling.stp` | 5440 | the same with #65 `ORIENTED_EDGE` naming #999 instead of #56 | `Witness_Part21UnitBoxDangling` (142, 588; value 251 is `Reference(999)`) | true | `Witness_Part21UnitBoxDanglingDiagnostics`: one Warning `P21-DANGLING-REFERENCE` at `StepInstance(65)` |
-| `unit-cube-truncated.stp` | 4232 | the first 4232 bytes of `unit-cube.stp` | `Witness_Part21UnitBoxTruncatedPrefix` (124, 518) | false | `Witness_Part21UnitBoxTruncatedDiagnostics`: one Error `P21-SYNTAX` at `StepInstance(125)` |
+| `unit-cube-dangling.stp` | 5440 | the same with #65 `ORIENTED_EDGE` naming #999 instead of #56 | `Witness_Part21UnitBoxDangling` (142, 588; value 251 is `Reference(999)`) | true | `Witness_Part21UnitBoxDanglingDiagnostics`: one Warning `P21-DANGLING-REFERENCE` at `AtInstance(65)` |
+| `unit-cube-truncated.stp` | 4232 | the first 4232 bytes of `unit-cube.stp` | `Witness_Part21UnitBoxTruncatedPrefix` (124, 518) | false | `Witness_Part21UnitBoxTruncatedDiagnostics`: one Error `P21-SYNTAX` at `AtInstance(125)` |
 | `two-cubes-assembly.stp` | 6778 | the cube's 142 instances, then ids 143 to 162 placing it twice | `Witness_Part21TwoCubes` (162, 672) | true | none |
 
 Notes on the fixtures:

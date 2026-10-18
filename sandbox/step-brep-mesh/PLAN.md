@@ -180,6 +180,20 @@ Recorded as they arise; the ticket carries the same list.
   offsets, ten header fields); the adapter spec carries the mapping. Phase 4: README status,
   ticket acceptance boxes ticked, final report to the owner. The design pass is done.
 
+- 2026-10-17 Implementation started. Chunk A (TKT-314) landed in nine commits (d80f3e89 to
+  36c893f8): bodies in layers 0, 2, 4, 5, 6 derived from their contracts (layer 2's deferred count
+  11 to 1), the F-47 and F-48 mechanical items, `SameModel` compares every table. Provisional
+  results through the builder's scratch harness (the writer fixes were landing underneath it):
+  `Witness_UnitBox` meshes to 8 vertices and 12 triangles, closed, oriented, reduced Euler
+  characteristic 2, volume 1, `Rounds` 0, `Ok` true; all 317 chunk A law evaluations true; layer 2's
+  laws true on nine positive witnesses (the B-spline solid reaches chunk F's deferred
+  `BSplinePoint`) and the three negatives fail exactly their named laws; layer 4's hold except
+  `Law_TurningAngleWithinAngular` on full circles at 32 bits. Gate `PASS: 0 error(s) in scope; 7112
+  functions type-checked`. The tooling layer `09-tooling` (TKT-316) landed in six commits: law
+  runner, diffs, dumps, generators, nothing run yet. TKT-315: five of six writer fixes on Plato main
+  (nested conditionals 5c2ad367), the whole-library build at 8 errors. The parser session resumed
+  TKT-312 against the fixed types. Leftovers in F-52.
+
 ## Decided by the owner during the pass
 
 - 2026-10-17, governing: **Specifications and laws drive development; the aim is a high likelihood

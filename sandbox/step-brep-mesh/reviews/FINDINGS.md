@@ -224,3 +224,29 @@ session accepts them.
   days.
 - **Status** 1 to the chunk A builder; 2 per chunk; 3 to the Plato repository (with F-50's
   writer defects); 4 and 5 are design facts, recorded in the tooling README.
+
+## F-52: what chunk A left for the next chunks
+
+- **Raised** 2026-10-17 by the chunk A builder (TKT-314, commits d80f3e89 to 36c893f8).
+  1. `TriangulateRegion` is ear clipping with hole bridging, not constrained Delaunay; the contract
+     does not require Delaunay, but `Law_TriangleMinAngleMeetsThreshold` (Info) fails on the 2x3x4
+     box. Chunk B replaces it.
+  2. `RefineToSurface` splits failing triangles at their centroids; that does not meet the
+     criteria on curved faces. Chunk B needs edge insertion with flips.
+  3. `AddMissingSeamsAndPoles` handles faces with no seam or pole only; `CompletePeriodicRegion`
+     is new and bodiless for chunks B and C. `SagittaByHullBound` likewise for chunk F.
+  4. `BoundaryCycleCount` counts indexed free edges only, so the planted poly-loop sheet also
+     fails `Law_OpenShellEulerEvenAndBounded` at its shell; decide whether implicit edges of
+     faceted shells count.
+  5. Two 32-bit effects, both resolved by TKT-315: `Law_LengthToleranceResolvable` warns on every
+     box; `Law_TurningAngleWithinAngular` fails on full circles whose segment count lands exactly
+     on the 15 degree bound. `Law_AngleDefectMatchesBrepEuler` now allows `ResolutionAt` in its
+     sum (4 pi off by 1e-6 against 1e-8 per vertex in 32 bits).
+  6. `ParameterizationSignAt` at a 32-bit sphere pole was rounding noise; changed.
+  7. `SharesCurveParameter` remains the one deferred body in layer 2.
+  8. The `09-tooling` runner may not reach the layer 4 to 6 laws the harness ran; the builder
+     ran laws by direct calls. Chunk B wires those into the runner.
+  9. Results are provisional until the whole-library build is green under the fixed writer and
+     the laws are rerun through it; TKT-314's boxes 2 and 3 stay unticked until then.
+- **Status** 1, 2, 3, 8 to chunk B; 4 and 7 to chunk A's close; 5 and 6 closed by TKT-315; 9 gates
+  TKT-314's close.

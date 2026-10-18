@@ -169,13 +169,13 @@ library StepWitnessesLaws
     // instance the text stops inside. Its File is the truncated prefix and
     // its Ok is false.
     Witness_Part21UnitBoxTruncatedDiagnostics(_: Diagnostic): Array<Diagnostic>
-        => [Diagnose(StepDiagnosticCode.SyntaxError, Provenance.StepInstance(StepInstanceId(125)), Number.Unmeasured)];
+        => [Diagnose(StepDiagnosticCode.SyntaxError, Provenance.AtInstance(StepInstanceId(125)), Number.Unmeasured)];
 
     // The parse of the dangling fixture: one Warning,
     // P21-DANGLING-REFERENCE, at the instance holding the reference. Its Ok
     // is true.
     Witness_Part21UnitBoxDanglingDiagnostics(_: Diagnostic): Array<Diagnostic>
-        => [Diagnose(StepDiagnosticCode.DanglingReference, Provenance.StepInstance(StepInstanceId(65)), Number.Unmeasured)];
+        => [Diagnose(StepDiagnosticCode.DanglingReference, Provenance.AtInstance(StepInstanceId(65)), Number.Unmeasured)];
 
     //==
     // # Invariants
@@ -205,7 +205,7 @@ library StepWitnessesLaws
     // Every witness file satisfies the Part21File invariants and names a
     // schema; every reference resolves except the one planted in the
     // dangling witness. Needs a body for InstancePosition (TASKS.md chunk D).
-    Law_WitnessFilesSatisfyInvariants(): Boolean
+    Law_WitnessFilesSatisfyInvariants(_: Part21File): Boolean
     {
         var box = Part21File.Witness_Part21UnitBox;
         var noShape = Part21File.Witness_Part21UnitBoxNoShape;
