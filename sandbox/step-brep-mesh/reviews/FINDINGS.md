@@ -153,3 +153,24 @@ session accepts them.
      uses.
 - **Status** open; 1, 2, 4, 5 go to `TASKS.md` chunk A's first commit (they are mechanical once
   decided); 3 is a note for the C# writer.
+
+## F-49: what the RawDecodedModel boundary showed
+
+- **Raised** 2026-10-17 by the builder of the boundary type (commits 44aa7687, a4b2cffa).
+  1. `spec FindOccurrences` requires that an occurrence has no placing instance exactly when it
+     has no parent. `two-cubes-assembly.stp` breaks it legitimately: the assembly's
+     `SHAPE_REPRESENTATION` #147 holds no B-rep, so both cubes are roots placed by #161 and #162.
+     Relax the contract to "a root occurrence may be placed when its parent representation holds
+     no body".
+  2. The file's `closed_curve`, `u_closed` and `v_closed` flags have no field in `RawDecodedModel`,
+     so `ClosedFlagWithoutClosure` and `ClosureWithoutClosedFlag` cannot be raised from a C#
+     decode. Add `ClosedFlags` per curve and surface direction to the raw geometry records, or
+     drop the two codes.
+  3. `ContextUnits` has no steradian field; `AngleFactor` covers the root context only.
+  4. `Law_DecodeErrorMeansNotOk`, named in `TASKS.md` and layer 8's law list, does not exist:
+     `DecodedModel` has no `Ok`. Either add `Ok` to `DecodedModel` (false exactly when a
+     Diagnostic is an Error, like `ParsedFile`) and the law, or strike the name from layer 8.
+  5. `ModelSize` and `CoordinateExtent` are now taken from the raw model, before the merges, so
+     `Law_PrepareIsIdempotent` holds only when the second pass gives the same numbers; the two
+     `spec DecodedModel` invariants that said otherwise were dropped.
+- **Status** 1, 2 and 4 to `TASKS.md` chunk D's first commit; 3 and 5 are notes.

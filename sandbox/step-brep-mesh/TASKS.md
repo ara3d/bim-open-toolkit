@@ -132,8 +132,8 @@ This chunk gives `PrepareModel` and the functions it composes their bodies and m
 `Law_PrepareIsIdempotent`, `Law_PrepareKeepsPointSet`, `Law_RawHasNoClosures`,
 `Law_RawHasNoClosedPeriodicity`, `Law_UnitsFactorsAgree`, `Law_CurveClosureDecidedByEnds`,
 `Law_SurfaceClosureDecidedBySides`, `Law_ClosureMarksAreTheDecisions`, the fold laws,
-`Law_DecodeErrorMeansNotOk`, and the two witness laws `Law_RawUnitCubePreparesToUnitBox`
-(`Witness_RawUnitCube`, from `adapter/fixtures/unit-cube.stp`, against `Witness_UnitBoxMillimetres`)
+and the two witness laws `Law_RawUnitCubePreparesToUnitBox`
+(`Witness_RawUnitCube`, from `adapter/fixtures/unit-cube.stp`, against `Witness_UnitBoxMillimetres`, the unit box relabelled in millimetres: the fixture is a 1 mm cube)
 and `Law_RawTwoCubesPreparesToTwoBodies` (`Witness_RawTwoCubes`). It depends on chunk A for
 `ScaledBy`, `RigidlyMoved`, `ReducedCounts` and `IsSameModel` bodies. The `Part21File` witnesses
 of `03-step/step-witnesses.laws.plato` and `adapter/` stay as the C# parser's and decoder's test
@@ -144,7 +144,7 @@ fixtures, not as Plato tests.
 TKT-312 (the parser session): `DecodeRaw(file, policy): RawDecodedModel` in C#, from
 `Ara3D.IO.StepParser` through the generated `Ara3D.StepTypes`. Its acceptance is chunk D's two
 witnesses: decoding `unit-cube.stp` and `two-cubes-assembly.stp` gives values equal to
-`Witness_RawUnitCube` and `Witness_RawTwoCubes`, and `PrepareModel` of each equals the expected
+`Witness_RawUnitCube` and `Witness_RawTwoCubes` under `SameRawModel`, and `PrepareModel` of each equals the expected
 `DecodedModel`, run from C# against the compiled Plato (TKT-313). Then
 `Law_MeshStepTextIsDeterministic`, `Law_StepTextOkExactlyWhenClean`,
 `Law_EveryStepTextDiagnosticIsLocated`, `Law_ParseErrorMeansNotOk` run through `MeshStepText`.
