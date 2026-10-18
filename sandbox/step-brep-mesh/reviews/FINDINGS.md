@@ -290,3 +290,7 @@ session accepts them.
   Plato change (TKT-331's fence) and leaves a law that is false for some values of its declared
   types.
 - **Status** topology session (layers 06 to 08).
+- **2026-10-18, also under F-54:** step B reports layer 4's `Law_SeedsAreSampled` failing on a
+  generated `EdgeDiscretization` (one parameter, four points); only `Discretize`'s output promises
+  every seed. Same pattern: the law takes `Discretize`'s inputs. Step B (TKT-324) applies it in
+  layers 4 and 5.
