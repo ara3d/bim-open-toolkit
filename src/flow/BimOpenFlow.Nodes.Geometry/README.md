@@ -32,6 +32,7 @@ local setup, verification and limits.
 | `view3d.instances` | — | `path` (FilePath) | instance table |
 | `view3d.measures` | — | `path` (FilePath) | measures table: instance keys + `surfaceArea`, `meshVolume`, `triangleCount` |
 | `view3d.color` | instances, values, scale (optional) | `joinColumn`, `valueColumn`, `colorMap` (viridis \| category10 \| redgreen), `auto`, `min`, `max` | instance table + `r g b a`, `legend` |
+| `view3d.label` | instances, values (optional) | `joinColumn` (default `entityId`), `format`, `groupColumn`, `limit` (default 200) | instance table + `label labelX labelY labelZ` |
 | `view3d.isolate` | instances, ids | `joinColumn` | filtered instance table |
 | `view3d.hide` | instances, ids | `joinColumn` | filtered instance table (inverse of isolate) |
 | `view3d.opacity` | instances, ids (optional) | `alpha`, `joinColumn`, `scope` (matched \| others) | instance table + `a` |
@@ -73,6 +74,33 @@ gray (0.5, 0.5, 0.5, 1).
 Joins compare canonical invariant text of cells (integers plain, doubles
 round-trip "R", booleans `true`/`false`), so an Integer `entityId` joins a Text
 id column holding `"42"`.
+
+### Labels
+
+`view3d.label` appends `label` (Text) and `labelX labelY labelZ` (Number) to an
+instance table; the 3D pane reads only these four columns and draws every row
+whose `label` is non-null as screen-space text at its anchor. All four are null
+where a row has no label.
+
+- `format` is text with `{Column}` or `{Column:0.0}` placeholders (.NET numeric
+  format strings, invariant culture; `{{` and `}}` are literal braces), for
+  example `{Name}: {OverallWidth:0} mm`. Placeholders read the `values` table,
+  or the instance table when `values` is not connected. A placeholder naming a
+  missing column is an error that lists the columns.
+- Values join to instances on `joinColumn` by canonical text, as in
+  `view3d.color`. Without `groupColumn` there is one label per distinct join
+  value, written on that value's first instance row. With `groupColumn` (a
+  column of the instance table, else of the values table after the join) there
+  is one label per group value, written on the group's first instance row, with
+  its placeholders read from the first matched values row of the group. A
+  per-storey total table joined on the storey is the intended use.
+- The anchor is the top centre of the union of the labelled instances' boxes:
+  `labelX`, `labelY` the box centre, `labelZ` the box's `maxZ`. It is in the
+  frame of the table's `minX..maxZ` columns, so it follows `view3d.spacing` and
+  `view3d.arrange` offsets. Models are z-up, as for `view3d.boundingBoxes`.
+- A row whose placeholder cell is null, or whose join value has no values row,
+  gets no label. Past `limit` labels the rest get none and the node warns once
+  with how many were dropped.
 
 ### Alpha
 

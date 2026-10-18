@@ -232,6 +232,14 @@ public sealed class DeclaredSchemaTests
             Add("bcf.issue", [null], name: "bcf.issue (no camera)", ps: [("title", "Swap handle"), ("ids", "D1,D2")]);
             Add("bcf.issue", [camera], ps: [("title", "Swap handle"), ("comment", "Wrong side"), ("ids", "D1,D2")]);
 
+            var labelInstances = LabelInstances();
+            var labelValues = new DataTableBuilder("values");
+            labelValues.AddColumn(new long[] { 1, 2 }, "entityId");
+            labelValues.AddColumn(new[] { 900.0, 800.0 }, "width");
+            Add("view3d.label", [labelInstances, labelValues.Build()], ps: [("format", "{width:0} mm")]);
+            Add("view3d.label", [labelInstances, null], name: "view3d.label (no values, grouped)",
+                ps: [("format", "{storey}"), ("groupColumn", "storey")]);
+
             var idsPath = Path.Combine(folder, "doors.ids");
             File.WriteAllText(idsPath, DoorsIds);
             Add("ids.specifications", [], ps: [("ids", idsPath)]);
@@ -240,6 +248,18 @@ public sealed class DeclaredSchemaTests
             var required = Add("check.required", [elements], ps: [("checkId", "R1"), ("title", "Rooms"), ("citation", "c"), ("columns", "Name,Room")])["out"];
             Add("check.rollup", [required]);
             return runs;
+        }
+
+        private static IDataTable LabelInstances()
+        {
+            var builder = new DataTableBuilder("instances");
+            builder.AddColumn(new long[] { 1, 2 }, "entityId");
+            builder.AddColumn(new[] { "S1", "S1" }, "storey");
+            foreach (var (name, cells) in new[]
+                { ("minX", new[] { 0.0, 4 }), ("minY", new[] { 0.0, 0 }), ("minZ", new[] { 0.0, 0 }),
+                  ("maxX", new[] { 2.0, 6 }), ("maxY", new[] { 2.0, 2 }), ("maxZ", new[] { 3.0, 4 }) })
+                builder.AddColumn(cells, name);
+            return builder.Build();
         }
 
         private static string FirstRoom(IDataTable nav)

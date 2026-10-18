@@ -476,9 +476,19 @@
           "name": "guidSeed",
           "kind": "Text",
           "default": ""
+        },
+        {
+          "name": "created",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "modelDate",
+          "kind": "Text",
+          "default": ""
         }
       ],
-      "description": "Writes the input issue or verdict table as a BCF 3.0 file at \u0027path\u0027 that Revit, Solibri and BIMcollab open as topics. With \u0027model\u0027 (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic\u0027s description. \u0027model\u0027 also names the model file in the BCF header (file name, path and last-write date), so a viewer can match the topic to its model. A camera in the input (the CameraX..AspectRatio columns, as bcf.issue makes them) becomes the viewpoint\u0027s camera, and a Comment column becomes the topic\u0027s comments. \u0027guidSeed\u0027 keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row.",
+      "description": "Writes the input issue or verdict table as a BCF 3.0 file at \u0027path\u0027 that Revit, Solibri and BIMcollab open as topics. With \u0027model\u0027 (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic\u0027s description. \u0027model\u0027 also names the model file in the BCF header (file name and path), so a viewer can match the topic to its model; \u0027modelDate\u0027 (UTC, yyyy-MM-ddTHH:mm:ssZ) adds the file\u0027s date there, and is left out when empty because a file\u0027s last-write time changes with every checkout. \u0027created\u0027 (UTC, yyyy-MM-ddTHH:mm:ssZ) sets every topic\u0027s creation date and the zip entries\u0027 timestamps; empty uses the time of the Run, so two Runs differ, and set it to get the same bytes (and SHA-256) every time. A camera in the input (the CameraX..AspectRatio columns, as bcf.issue makes them) becomes the viewpoint\u0027s camera, and a Comment column becomes the topic\u0027s comments. \u0027guidSeed\u0027 keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row.",
       "schemas": [
         {
           "output": "out",
@@ -7005,6 +7015,63 @@
         }
       ],
       "description": "Keeps only the instance rows whose join column value appears in the ids table."
+    },
+    {
+      "kind": "view3d.label",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [
+        {
+          "name": "instances",
+          "type": "Table",
+          "optional": false
+        },
+        {
+          "name": "values",
+          "type": "Table",
+          "optional": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "instances",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "joinColumn",
+          "kind": "Text",
+          "default": "entityId",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "instances",
+            "use": "JoinKey",
+            "sharedWith": "values"
+          }
+        },
+        {
+          "name": "format",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "groupColumn",
+          "kind": "Text",
+          "default": "",
+          "suggest": {
+            "kind": "ColumnsOfInput",
+            "source": "instances"
+          }
+        },
+        {
+          "name": "limit",
+          "kind": "Integer",
+          "default": "200"
+        }
+      ],
+      "description": "Writes text on elements in the 3D view. Adds label, labelX, labelY, labelZ columns to an instance table; the 3D pane draws every non-null label as text at its anchor. \u0060format\u0060 is the text with {Column} or {Column:0.0} placeholders (.NET numeric formats, invariant culture), for example \u0022{Name}: {OverallWidth:0} mm\u0022, filled from the \u0060values\u0060 table joined to the instances on \u0060joinColumn\u0060; with no \u0060values\u0060 input the placeholders read the instance table\u0027s own columns. Without \u0060groupColumn\u0060 there is one label per distinct join value, anchored at the top centre of the union of that value\u0027s instance boxes; with \u0060groupColumn\u0060 (an instance or values column, such as the storey) there is one label per group, anchored over the union of the group\u0027s boxes, its placeholders read from the group\u0027s first values row (a per-storey total table is the intended use). A row whose placeholder value is empty gets no label, never invented text. A placeholder naming a column that does not exist is an error. Past \u0060limit\u0060 labels the rest get none and the node warns with how many were dropped."
     },
     {
       "kind": "view3d.measures",

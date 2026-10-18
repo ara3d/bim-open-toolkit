@@ -10,6 +10,7 @@ public static class GeometryNodes
         new InstancesNode(),
         new MeasuresNode(),
         new ColorNode(),
+        new LabelNode(),
         new IsolateNode(),
         new HideNode(),
         new OpacityNode(),

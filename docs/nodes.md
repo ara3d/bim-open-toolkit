@@ -50,7 +50,7 @@ is the content itself, not the path or a timestamp.
 |---|---|---|
 | BOS — `BimOpenFlow.Nodes.Bos` | 2 | `bos.load`, `bos.query` |
 | BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 15 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops`, `bim.orientation`, `bim.buildSequence`, `bim.selection` |
-| Geometry — `BimOpenFlow.Nodes.Geometry` | 21 | `view3d.instances`, `view3d.measures`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
+| Geometry — `BimOpenFlow.Nodes.Geometry` | 22 | `view3d.instances`, `view3d.measures`, `view3d.color`, `view3d.label`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
 | IDS — `BimOpenFlow.Nodes.Ids` | 2 | `ids.check`, `ids.specifications` |
 | BCF — `BimOpenFlow.Nodes.Bcf` | 4 | `bcf.issue`, `bcf.topics`, `bcf.write`, `bcf.read` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
@@ -704,6 +704,32 @@ Numeric value columns map through a gradient normalized over the column's min..m
 | `min` | Number | — | `0` | — | — |
 | `max` | Number | — | `1` | — | — |
 
+### `view3d.label` (v1) — Pure
+
+Writes text on elements in the 3D view. Adds label, labelX, labelY, labelZ columns to an instance table; the 3D pane draws every non-null label as text at its anchor. `format` is the text with {Column} or {Column:0.0} placeholders (.NET numeric formats, invariant culture), for example "{Name}: {OverallWidth:0} mm", filled from the `values` table joined to the instances on `joinColumn`; with no `values` input the placeholders read the instance table's own columns. Without `groupColumn` there is one label per distinct join value, anchored at the top centre of the union of that value's instance boxes; with `groupColumn` (an instance or values column, such as the storey) there is one label per group, anchored over the union of the group's boxes, its placeholders read from the group's first values row (a per-storey total table is the intended use). A row whose placeholder value is empty gets no label, never invented text. A placeholder naming a column that does not exist is an error. Past `limit` labels the rest get none and the node warns with how many were dropped.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `instances` | Table | required |
+| `values` | Table | optional |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `instances` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `joinColumn` | Text | — | `entityId` | — | columns of input `instances`, keys shared with `values` first |
+| `format` | Text | — | — | — | — |
+| `groupColumn` | Text | — | — | — | columns of input `instances` |
+| `limit` | Integer | — | `200` | — | — |
+
 ### `view3d.isolate` (v1) — Pure
 
 Keeps only the instance rows whose join column value appears in the ids table.
@@ -1304,7 +1330,7 @@ The same grouping `bcf.write` applies, as a table: a preview of the file before 
 
 ### `bcf.write` (v1) — Effect
 
-Writes the input issue or verdict table as a BCF 3.0 file at 'path' that Revit, Solibri and BIMcollab open as topics. With 'model' (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic's description. 'model' also names the model file in the BCF header (file name, path and last-write date), so a viewer can match the topic to its model. A camera in the input (the CameraX..AspectRatio columns, as bcf.issue makes them) becomes the viewpoint's camera, and a Comment column becomes the topic's comments. 'guidSeed' keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
+Writes the input issue or verdict table as a BCF 3.0 file at 'path' that Revit, Solibri and BIMcollab open as topics. With 'model' (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic's description. 'model' also names the model file in the BCF header (file name and path), so a viewer can match the topic to its model; 'modelDate' (UTC, yyyy-MM-ddTHH:mm:ssZ) adds the file's date there, and is left out when empty because a file's last-write time changes with every checkout. 'created' (UTC, yyyy-MM-ddTHH:mm:ssZ) sets every topic's creation date and the zip entries' timestamps; empty uses the time of the Run, so two Runs differ, and set it to get the same bytes (and SHA-256) every time. A camera in the input (the CameraX..AspectRatio columns, as bcf.issue makes them) becomes the viewpoint's camera, and a Comment column becomes the topic's comments. 'guidSeed' keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
 
 An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (default the file name) and the title, so a rerun with the same seed updates the same topics in a BCF reader instead of adding new ones. With `model`, a .bos file, each topic whose elements have geometry gets a viewpoint selecting them under a perspective camera framing their bounding box; the model's element boxes are cached by file content. A topic with no geometry has no viewpoint (BCF 3.0 requires a camera) and lists its GlobalIds at the end of its description. The file is written beside the target and moved into place when complete.
 
@@ -1330,6 +1356,8 @@ An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (d
 | `verdicts` | Text (list) | — | `Fail` | — | — |
 | `author` | Text | — | — | — | — |
 | `guidSeed` | Text | — | — | — | — |
+| `created` | Text | — | — | — | — |
+| `modelDate` | Text | — | — | — | — |
 
 **Columns of `out`**
 
