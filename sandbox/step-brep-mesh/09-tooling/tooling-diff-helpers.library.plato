@@ -30,36 +30,36 @@ library ToolingDiffHelpers
 
     // Two integers under field name field, compared exactly.
     CompareWhole(field: String, a: Integer, b: Integer): Array<Difference>
-        => Unless(a == b, Difference(field, DiffValue.Whole(a), DiffValue.Whole(b), 0.0));
+        => Unless(a == b, Difference(field, CellValue.Whole(a), CellValue.Whole(b), 0.0));
 
     // Two Booleans, compared exactly.
     CompareFlag(field: String, a: Boolean, b: Boolean): Array<Difference>
-        => Unless(a == b, Difference(field, DiffValue.Flag(a), DiffValue.Flag(b), 0.0));
+        => Unless(a == b, Difference(field, CellValue.Flag(a), CellValue.Flag(b), 0.0));
 
     // Two strings, compared exactly.
     CompareText(field: String, a: String, b: String): Array<Difference>
-        => Unless(a == b, Difference(field, DiffValue.Text(a), DiffValue.Text(b), 0.0));
+        => Unless(a == b, Difference(field, CellValue.Text(a), CellValue.Text(b), 0.0));
 
     // Two provenances, compared exactly.
     ComparePlace(field: String, a: Provenance, b: Provenance): Array<Difference>
-        => Unless(a == b, Difference(field, DiffValue.Place(a), DiffValue.Place(b), 0.0));
+        => Unless(a == b, Difference(field, CellValue.Place(a), CellValue.Place(b), 0.0));
 
     // Two numbers within an absolute tolerance. Equal values always agree (so
     // equal infinities do, and tol 0.0 is exactly ==); a NaN agrees with
     // nothing, as under ==.
     CompareReal(field: String, a: Number, b: Number, tol: Number): Array<Difference>
-        => Unless(a == b || (a - b).Abs <= tol, Difference(field, DiffValue.Real(a), DiffValue.Real(b), tol));
+        => Unless(a == b || (a - b).Abs <= tol, Difference(field, CellValue.Real(a), CellValue.Real(b), tol));
 
     // Two numbers under layer 0's Identical: equal, or both NaN. The
     // comparison reports use for copied values.
     CompareIdentical(field: String, a: Number, b: Number): Array<Difference>
-        => Unless(a.Identical(b), Difference(field, DiffValue.Real(a), DiffValue.Real(b), 0.0));
+        => Unless(a.Identical(b), Difference(field, CellValue.Real(a), CellValue.Real(b), 0.0));
 
     // Two values of one sum, already compared with == into same, printed by
     // their case names: field "Case" when the cases differ, "Payload" when
     // the case is the same and the payload is not.
     CompareCase(same: Boolean, left: String, right: String): Array<Difference>
-        => Unless(same, Difference(left == right ? "Payload" : "Case", DiffValue.Text(left), DiffValue.Text(right), 0.0));
+        => Unless(same, Difference(left == right ? "Payload" : "Case", CellValue.Text(left), CellValue.Text(right), 0.0));
 
     // Two points, field by field, within tol.
     ComparePoint(a: Point3D, b: Point3D, tol: Number): Array<Difference>

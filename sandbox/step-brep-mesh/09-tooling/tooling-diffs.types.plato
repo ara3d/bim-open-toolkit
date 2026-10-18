@@ -23,7 +23,7 @@
 // measures; Flag for Booleans; Text for strings and for the case name of a
 // sum-typed field (Plato cannot compose strings, so a sum's payload is not
 // printed: the developer dumps the row); Place for a provenance.
-type DiffValue
+type CellValue
     = Whole(Value: Integer)
     | Real(Value: Number)
     | Flag(Value: Boolean)
@@ -38,8 +38,8 @@ type DiffValue
 type Difference
 {
     Field: String;
-    Left: DiffValue;
-    Right: DiffValue;
+    Left: CellValue;
+    Right: CellValue;
     Tolerance: Number;
 }
 

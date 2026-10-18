@@ -1,0 +1,100 @@
+//==
+// # Tooling: law runner types
+//
+// Layer 9 of the STEP B-rep to mesh design (README.md beside this file): what
+// a run of the laws produces. Laws compile to Boolean functions, but nothing
+// in a backend builds their witness arguments and calls them (TKT-311's
+// finding); the runner does that in Plato, and the host only calls
+// LawReportOf and prints. A run is one law over one witness: held, failed,
+// failed where the witness was built to fail it, held where it should have
+// failed, or skipped with the reason.
+//
+// Sections, in order:
+//  - Verdicts and runs
+//  - Named witnesses
+//  - Tables
+
+//==
+// # Verdicts and runs
+
+// The verdict of one law over one witness. FailedAsExpected: a negative
+// witness fails a law it was built to fail (layer 7's table of negative
+// witnesses). HeldUnexpectedly: it holds one of those laws, which is a
+// defect in the witness or the law. Skipped: the law was not evaluated,
+// and Reason says why (a parameter only a generator supplies, or a cost
+// the runner does not pay per call).
+type LawVerdict
+    = Held
+    | Failed
+    | FailedAsExpected
+    | HeldUnexpectedly
+    | Skipped(Reason: String);
+
+// Where in the pipeline a run looked at its witness. ModelStage: the
+// model's own validation (ValidateBrep at Oracle level). MeshedStage: the
+// report of meshing the witness under layer 8's witness options (model,
+// mesh and cross checks). MeshStage: a mesh witness's own validation.
+// SelectorStage: a Law_ called directly with Integer selectors.
+type RunStage
+    = ModelStage
+    | MeshedStage
+    | MeshStage
+    | SelectorStage;
+
+// One law over one witness. Measure is the law's worst measure where it
+// exports one (a Check's Worst), the first failing index for a law
+// quantified over indices, and NaN where neither exists (layer 0's
+// convention for an absent measure). Where is the check's location, or
+// Nowhere.
+type LawRun
+{
+    Law: String;
+    Witness: String;
+    Stage: RunStage;
+    Verdict: LawVerdict;
+    Measure: Number;
+    Where: Provenance;
+}
+
+// Every run, with the backend it ran under. Backend is supplied by the
+// host entry point: the writer and compiler version that produced the code
+// that ran (until TKT-315's writer fixes land, nested conditionals
+// miscompile in the C# backend, so a result is only as good as the writer
+// named here).
+type LawReport
+{
+    Backend: String;
+    Runs: Array<LawRun>;
+}
+
+//==
+// # Named witnesses
+
+// A model witness with the name a report prints and the laws it is built
+// to fail (empty for a positive witness).
+type NamedModel
+{
+    Name: String;
+    Model: BrepModel;
+    ExpectedFailures: Array<String>;
+}
+
+// A mesh witness with the name a report prints.
+type NamedMesh
+{
+    Name: String;
+    Mesh: ModelMesh;
+}
+
+//==
+// # Tables
+
+// A table the host writes as CSV for the notebook (the toolkit's CSV
+// source reads it): a title, column names, and rows of cells, each row as
+// long as Columns.
+type ResultTable
+{
+    Title: String;
+    Columns: Array<String>;
+    Rows: Array<Array<CellValue>>;
+}

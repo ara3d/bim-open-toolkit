@@ -1,0 +1,396 @@
+//==
+// # ToolingLawRunner
+//
+// Layer 9 of the STEP B-rep to mesh design (README.md beside this file): the
+// law runner. Plato has no reflection, so the runner reaches the laws two
+// ways. Most laws over a model or a mesh already have a Check_ form that
+// layer 7's validators evaluate over every index (ValidateBrep,
+// ValidateModelMesh, and the report of meshing a witness, which adds the
+// cross checks); the runner turns each Check of those reports into a
+// LawRun, so those laws are enumerated once, by layer 7, and never listed
+// here. The laws written over Integer selectors (the witness laws of layers
+// 3, 7, 8 and 9) are listed by hand below, one line each, through
+// quantifiers that sweep every witness and every shell, face or edge of
+// it. A law whose parameters only a generator supplies is either swept
+// over drawn samples (ToolingGenerators) or listed as Skipped with the
+// reason. Laws of other shapes (layers 0, 1, 3's WHERE rules, 4 and 5 over
+// scalars and curve data) are not enumerated: the host entry point compares
+// the Law_ methods it finds by reflection with the names in the report and
+// prints the rest as "not enumerated" (README.md, "Host shims").
+//
+// Sections, in order:
+//  - Witnesses
+//  - Runs from checks
+//  - Quantifiers
+//  - Layer 3: decode witnesses
+//  - Layer 7: validation witnesses
+//  - Layer 8: pipeline witnesses
+//  - Layer 9: tooling
+//  - The report
+//  - Tables
+
+library ToolingLawRunner
+{
+    //==
+    // # Witnesses
+
+    // The thirteen model witnesses of layer 7: the ten positive ones in
+    // WitnessAt's order, then the three negative ones with the laws each is
+    // built to fail (07-validation/README.md, "Witnesses").
+    ModelWitnesses(_: NamedModel): Array<NamedModel>
+        => [
+            NamedModel("UnitBox", BrepModel.WitnessAt(0), []),
+            NamedModel("Cylinder", BrepModel.WitnessAt(1), []),
+            NamedModel("Sphere", BrepModel.WitnessAt(2), []),
+            NamedModel("Torus", BrepModel.WitnessAt(3), []),
+            NamedModel("Cone", BrepModel.WitnessAt(4), []),
+            NamedModel("BlockWithThroughHole", BrepModel.WitnessAt(5), []),
+            NamedModel("HollowBox", BrepModel.WitnessAt(6), []),
+            NamedModel("BSplinePatchSolid", BrepModel.WitnessAt(7), []),
+            NamedModel("CylinderSector", BrepModel.WitnessAt(8), []),
+            NamedModel("SphereByPoleLoops", BrepModel.WitnessAt(9), []),
+            NamedModel("SphereWithRedundantPoleLoops", BrepModel.Witness_SphereWithRedundantPoleLoops(1.0),
+                ["Law_NoRedundantVertexLoop", "Law_VertexLoopVertexIsIsolated"]),
+            NamedModel("BoxWithFlippedFace", BrepModel.Witness_BoxWithFlippedFace,
+                ["Law_LoopWindingMatchesSameSense"]),
+            NamedModel("TwoBoxesSharingCorner", BrepModel.Witness_TwoBoxesSharingCorner,
+                ["Law_EulerPoincareEvenAndBounded", "Law_VertexLinkIsOneCycle"])];
+
+    // The mesh witnesses of layer 6.
+    MeshWitnesses(_: NamedMesh): Array<NamedMesh>
+        => [NamedMesh("UnitTetrahedron", ModelMesh.Witness_UnitTetrahedron)];
+
+    // The name of positive witness k (k modulo 10, as WitnessAt reads it).
+    WitnessName(k: Integer): String
+        => NamedModel.ModelWitnesses[((k % 10) + 10) % 10].Name;
+
+    // The number of positive witnesses the selector laws sweep.
+    PositiveWitnessCount(_: NamedModel): Integer
+        => BrepModel.WitnessCount;
+
+    //==
+    // # Runs from checks
+
+    // The run of one check over a witness: Held or Failed by the check,
+    // turned into FailedAsExpected or HeldUnexpectedly for a law the
+    // witness is built to fail. The check's worst measure and location are
+    // kept.
+    RunOfCheck(c: Check, witness: String, stage: RunStage, expected: Array<String>): LawRun
+        => LawRun(c.Law, witness, stage,
+            expected.Any(x => x == c.Law)
+                ? (c.Holds ? LawVerdict.HeldUnexpectedly : LawVerdict.FailedAsExpected)
+                : (c.Holds ? LawVerdict.Held : LawVerdict.Failed),
+            c.Worst, c.Where);
+
+    // The model's own laws (layers 0, 1, 2 and the model oracles of layer 7)
+    // through ValidateBrep at the Oracle level.
+    ModelRuns(w: NamedModel): Array<LawRun>
+        => w.Model.ValidateBrep(ConformanceLevel.Oracle).Checks
+            .Map(c => RunOfCheck(c, w.Name, RunStage.ModelStage, w.ExpectedFailures));
+
+    // The laws checked when the witness is meshed under layer 8's witness
+    // options: the model, the mesh (layer 6) and the cross checks (layer 7)
+    // at the options' level.
+    MeshedRuns(w: NamedModel): Array<LawRun>
+        => w.Model.WitnessOutcome.Report.Checks
+            .Map(c => RunOfCheck(c, w.Name, RunStage.MeshedStage, w.ExpectedFailures));
+
+    // A mesh witness's own laws through ValidateModelMesh.
+    MeshRuns(w: NamedMesh): Array<LawRun>
+        => w.Mesh.ValidateModelMesh.Checks.Map(c => RunOfCheck(c, w.Name, RunStage.MeshStage, []));
+
+    // Every run from checks: each model witness's own laws and its meshed
+    // laws, then each mesh witness's.
+    CheckRuns(_: LawRun): Array<LawRun>
+        => NamedModel.ModelWitnesses.FlatMap(w => w.ModelRuns.Concatenate(w.MeshedRuns))
+            .Concatenate(NamedMesh.MeshWitnesses.FlatMap(w => w.MeshRuns));
+
+    //==
+    // # Quantifiers
+    //
+    // Each sweeps a law over a range and makes one run: Held when it holds
+    // everywhere, else Failed with the first failing index as the measure.
+
+    // The measure of a run with none: NaN (layer 0's convention).
+    NoMeasure(_: LawRun): Number
+        => 0.0 / 0.0;
+
+    // Law over i in [0, count), one run for witness.
+    OverRange(law: String, witness: String, count: Integer, holds: Function1<Integer, Boolean>): LawRun
+    {
+        var failing = count.Max(0).Range.FlatMap(i => holds(i) ? 0.MapRange(j => j) : [i]);
+        return LawRun(law, witness, RunStage.SelectorStage,
+            failing.Count == 0 ? LawVerdict.Held : LawVerdict.Failed,
+            failing.Count == 0 ? LawRun.NoMeasure : failing[0].ToNumber,
+            Provenance.Nowhere);
+    }
+
+    // Law evaluated once on a named witness.
+    Once(law: String, witness: String, holds: Boolean): LawRun
+        => LawRun(law, witness, RunStage.SelectorStage,
+            holds ? LawVerdict.Held : LawVerdict.Failed, LawRun.NoMeasure, Provenance.Nowhere);
+
+    // A law the runner does not evaluate, with the reason.
+    NotRun(law: String, reason: String): LawRun
+        => LawRun(law, "", RunStage.SelectorStage, LawVerdict.Skipped(reason), LawRun.NoMeasure, Provenance.Nowhere);
+
+    // Law(k) for every positive witness k, one run each.
+    OverWitnesses(law: String, holds: Function1<Integer, Boolean>): Array<LawRun>
+        => NamedModel.PositiveWitnessCount.MapRange(k => Once(law, WitnessName(k), holds(k)));
+
+    // Law(k, s) for every shell s of every positive witness k.
+    OverWitnessShells(law: String, holds: Function2<Integer, Integer, Boolean>): Array<LawRun>
+        => NamedModel.PositiveWitnessCount.MapRange(k =>
+            OverRange(law, WitnessName(k), BrepModel.WitnessAt(k).Shells.Count, s => holds(k, s)));
+
+    // Law(k, f) for every face f of every positive witness k.
+    OverWitnessFaces(law: String, holds: Function2<Integer, Integer, Boolean>): Array<LawRun>
+        => NamedModel.PositiveWitnessCount.MapRange(k =>
+            OverRange(law, WitnessName(k), BrepModel.WitnessAt(k).Faces.Count, f => holds(k, f)));
+
+    // Law(k, e) for every edge e of every positive witness k.
+    OverWitnessEdges(law: String, holds: Function2<Integer, Integer, Boolean>): Array<LawRun>
+        => NamedModel.PositiveWitnessCount.MapRange(k =>
+            OverRange(law, WitnessName(k), BrepModel.WitnessAt(k).Edges.Count, e => holds(k, e)));
+
+    // Law(k, v) for every vertex v of every positive witness k.
+    OverWitnessVertices(law: String, holds: Function2<Integer, Integer, Boolean>): Array<LawRun>
+        => NamedModel.PositiveWitnessCount.MapRange(k =>
+            OverRange(law, WitnessName(k), BrepModel.WitnessAt(k).Vertices.Count, v => holds(k, v)));
+
+    // The number of samples a law over drawn parameters is swept across.
+    SampleCount(_: LawRun): Integer
+        => 8;
+
+    // Law over the parameters of SampleCount samples of a family (seed 0).
+    OverSamples(law: String, family: String, holds: Function1<Integer, Boolean>): LawRun
+        => OverRange(law, family, LawRun.SampleCount, holds);
+
+    //==
+    // # Layer 3: decode witnesses
+
+    // The raw decode witnesses prepare to their expected models.
+    DecodeWitnessRuns(_: LawRun): Array<LawRun>
+        => [
+            Once("Law_RawUnitCubePreparesToUnitBox", "RawUnitCube", RawDecodedModel.Law_RawUnitCubePreparesToUnitBox),
+            Once("Law_RawTwoCubesPreparesToTwoBodies", "RawTwoCubes", RawDecodedModel.Law_RawTwoCubesPreparesToTwoBodies)];
+
+    //==
+    // # Layer 7: validation witnesses
+
+    // The witness laws of 07-validation/validation-witnesses.laws.plato.
+    ValidationWitnessRuns(_: LawRun): Array<LawRun>
+        => Flattened([
+            OverWitnessShells("Law_WitnessHasStatedCounts", (k, s) => Law_WitnessHasStatedCounts(k, s)),
+            OverWitnessShells("Law_WitnessStatedCountsImplyStatedGenus", (k, s) => Law_WitnessStatedCountsImplyStatedGenus(k, s)),
+            OverWitnessShells("Law_WitnessEulerIsTwoMinusTwiceGenus", (k, s) => Law_WitnessEulerIsTwoMinusTwiceGenus(k, s)),
+            OverWitnessShells("Law_WitnessOracleEulerMatchesLayerTwo", (k, s) => Law_WitnessOracleEulerMatchesLayerTwo(k, s)),
+            OverWitnesses("Law_WitnessHasStatedShellCount", k => Law_WitnessHasStatedShellCount(k)),
+            OverWitnesses("Law_WitnessIsStructurallyClean", k => Law_WitnessIsStructurallyClean(k)),
+            OverWitnesses("Law_WitnessValidatesClean", k => Law_WitnessValidatesClean(k)),
+            OverWitnesses("Law_WitnessIsOracleClean", k => Law_WitnessIsOracleClean(k)),
+            [Once("Law_UnitBoxIsBoxOfOnes", "UnitBox", BrepModel.Law_UnitBoxIsBoxOfOnes)],
+            [OverSamples("Law_BoxHasStatedCounts", "BoxFamily", i => BoxDraw(i).BoxHasStatedCountsAt),
+             OverSamples("Law_BoxValidatesClean", "BoxFamily", i => BoxDraw(i).BoxValidatesCleanAt),
+             OverSamples("Law_CylinderValidatesClean", "CylinderFamily", i => CylinderDraw(i).CylinderValidatesCleanAt),
+             OverSamples("Law_CylinderHasStatedCounts", "CylinderFamily", i => CylinderDraw(i).CylinderHasStatedCountsAt)],
+            OverWitnessFaces("Law_WitnessGreenAreaMatchesFacts", (k, f) => Law_WitnessGreenAreaMatchesFacts(k, f)),
+            OverWitnesses("Law_WitnessHasStatedFaceCount", k => Law_WitnessHasStatedFaceCount(k)),
+            OverWitnessShells("Law_WitnessDivergenceVolumeMatchesFacts", (k, s) => Law_WitnessDivergenceVolumeMatchesFacts(k, s)),
+            [OverSamples("Law_BSplineTopAreaInBracket", "BSplinePatchFamily",
+                i => Law_BSplineTopAreaInBracket(BSplinePatchFamily(NumberInterval(0.0, 0.5)).FamilyParameters(0, i)[0])),
+             OverSamples("Law_RedundantPoleLoopsAreRedundant", "SphereFamily", i => Law_RedundantPoleLoopsAreRedundant(RadiusDraw(i))),
+             OverSamples("Law_RedundantPoleLoopVertexIsNotIsolated", "SphereFamily", i => Law_RedundantPoleLoopVertexIsNotIsolated(RadiusDraw(i))),
+             OverSamples("Law_RedundantPoleLoopsFailExactlyTwoLaws", "SphereFamily", i => Law_RedundantPoleLoopsFailExactlyTwoLaws(RadiusDraw(i))),
+             OverSamples("Law_RedundantPoleLoopsReduceToSphere", "SphereFamily", i => Law_RedundantPoleLoopsReduceToSphere(RadiusDraw(i))),
+             Once("Law_FlippedFaceBreaksWinding", "BoxWithFlippedFace", BrepModel.Law_FlippedFaceBreaksWinding),
+             Once("Law_FlippedFaceFailsExactlyOneLaw", "BoxWithFlippedFace", BrepModel.Law_FlippedFaceFailsExactlyOneLaw),
+             Once("Law_SharedCornerBreaksEuler", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerBreaksEuler),
+             Once("Law_SharedCornerBreaksVertexLink", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerBreaksVertexLink),
+             Once("Law_SharedCornerFailsExactlyTwoLaws", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerFailsExactlyTwoLaws),
+             NotRun("Law_TighterChordalNeverIncreasesSagitta", "needs a pair of drawn chordal bounds per witness; no generator for criteria yet")]]);
+
+    // Box side lengths of sample i of the default box family (seed 0).
+    BoxDraw(i: Integer): Array<Number>
+        => BoxFamily(DefaultLengths, DefaultLengths, DefaultLengths).FamilyParameters(0, i);
+
+    // Radius, height and sweep of sample i of a cylinder family whose sweep
+    // runs from a quarter radian to a whole turn (seed 0).
+    CylinderDraw(i: Integer): Array<Number>
+        => CylinderFamily(DefaultLengths, DefaultLengths, AngleInterval(Angle(0.25), Angle(Number.Tau))).FamilyParameters(0, i);
+
+    // Radius of sample i of the default sphere family (seed 0).
+    RadiusDraw(i: Integer): Number
+        => SphereFamily(DefaultLengths, SphereForm.SeamedSphere).FamilyParameters(0, i)[0];
+
+    // Side and void side of sample i of the default hollow-box family.
+    HollowBoxDraw(i: Integer): Array<Number>
+        => HollowBoxFamily(DefaultSides, DefaultRatios).FamilyParameters(0, i);
+
+    // The box and cylinder laws over drawn parameters p, named without the
+    // Law_ prefix so no runner mistakes them for laws.
+    BoxHasStatedCountsAt(p: Array<Number>): Boolean
+        => Law_BoxHasStatedCounts(p[0], p[1], p[2]);
+
+    // As above.
+    BoxValidatesCleanAt(p: Array<Number>): Boolean
+        => Law_BoxValidatesClean(p[0], p[1], p[2]);
+
+    // The cylinder laws over drawn parameters.
+    CylinderValidatesCleanAt(p: Array<Number>): Boolean
+        => Law_CylinderValidatesClean(p[0], p[1], p[2]);
+
+    // As above.
+    CylinderHasStatedCountsAt(p: Array<Number>): Boolean
+        => Law_CylinderHasStatedCounts(p[0], p[1], p[2]);
+
+    //==
+    // # Layer 8: pipeline witnesses
+
+    // The witness laws of 08-pipeline/pipeline-witnesses.laws.plato.
+    PipelineWitnessRuns(_: LawRun): Array<LawRun>
+        => Flattened([
+            OverWitnesses("Law_WitnessMeshesOk", k => Law_WitnessMeshesOk(k)),
+            OverWitnesses("Law_WitnessMeshCrossChecksClean", k => Law_WitnessMeshCrossChecksClean(k)),
+            OverWitnesses("Law_WitnessMeshValidatesClean", k => Law_WitnessMeshValidatesClean(k)),
+            [OverSamples("Law_HollowBoxVoidMeshVolumeNegative", "HollowBoxFamily",
+                i => Law_HollowBoxVoidMeshVolumeNegative(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
+             OverSamples("Law_HollowBoxOuterMeshVolumePositive", "HollowBoxFamily",
+                i => Law_HollowBoxOuterMeshVolumePositive(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
+             OverSamples("Law_HollowBoxMeshVolumeIsDifference", "HollowBoxFamily",
+                i => Law_HollowBoxMeshVolumeIsDifference(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
+             Once("Law_PlantedBadFaceFailsSilently", "BoxWithPolyLoopSheet", BrepModel.Law_PlantedBadFaceFailsSilently),
+             OverRange("Law_PlantedBadFaceLeavesOthersUnchanged", "BoxWithPolyLoopSheet",
+                BrepModel.Witness_BoxWithPolyLoopSheet.Faces.Count, g => Law_PlantedBadFaceLeavesOthersUnchanged(g)),
+             Once("Law_PlantedBadFaceIsDiagnosed", "BoxWithPolyLoopSheet", BrepModel.Law_PlantedBadFaceIsDiagnosed),
+             OverRange("Law_PlantedBadFaceErrorsStayInTheSheet", "BoxWithPolyLoopSheet",
+                BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Count,
+                k => Law_PlantedBadFaceErrorsStayInTheSheet(k)),
+             Once("Law_PlantedBadFaceHasTwoErrors", "BoxWithPolyLoopSheet", BrepModel.Law_PlantedBadFaceHasTwoErrors),
+             NotRun("Law_WitnessRigidMotionMovesPositions", "needs drawn frames and re-meshes per vertex; run through ToolingGenerators' DrawMotion once meshing has bodies")],
+            OverWitnesses("Law_WitnessPowerOfTwoScalingKeepsConnectivity", k => Law_WitnessPowerOfTwoScalingKeepsConnectivity(k, 1)),
+            [NotRun("Law_WitnessPowerOfTwoScalingScalesPositions", "re-meshes the witness for every vertex; sweep it when a run is cheap")],
+            OverWitnessEdges("Law_WitnessEdgeReversalPreservesMesh", (k, e) => Law_WitnessEdgeReversalPreservesMesh(k, e)),
+            OverWitnesses("Law_WitnessShellReversalNegatesVolume", k => Law_WitnessShellReversalNegatesVolume(k))]);
+
+    //==
+    // # Layer 9: tooling
+
+    // The laws of this layer that take selectors, over the witnesses, the
+    // default families, and the six perturbation kinds (indices 0 to 5).
+    ToolingRuns(_: LawRun): Array<LawRun>
+        => Flattened([
+            OverWitnesses("Law_WitnessModelDiffIsSameExactlyWhenSameModel",
+                k => Law_WitnessModelDiffIsSameExactlyWhenSameModel(k, k + 1) && Law_WitnessModelDiffIsSameExactlyWhenSameModel(k, k)),
+            OverWitnesses("Law_WitnessIsSameAsItself", k => Law_WitnessIsSameAsItself(k)),
+            OverWitnesses("Law_DistinctWitnessesDiffer", k => Law_DistinctWitnessesDiffer(k, k + 1)),
+            [Once("Law_MeshDiffIsSameExactlyWhenSameModelMesh", "UnitTetrahedron",
+                Law_MeshDiffIsSameExactlyWhenSameModelMesh(ModelMesh.Witness_UnitTetrahedron, ModelMesh.Witness_UnitTetrahedron.Reversed)),
+             Once("Law_ConnectivityDiffIsSameExactlyWhenSameConnectivity", "UnitTetrahedron",
+                Law_ConnectivityDiffIsSameExactlyWhenSameConnectivity(ModelMesh.Witness_UnitTetrahedron, ModelMesh.Witness_UnitTetrahedron.Reversed)),
+             OverRange("Law_UnitDrawIsInUnitInterval", "draws", 64, i => Law_UnitDrawIsInUnitInterval(i, i * 7, i % 5)),
+             OverRange("Law_SampleHasStatedCounts", "DefaultFamilies", WitnessFamily.DefaultFamilies.Count,
+                j => 4.Range.All(s => LawRun.SampleCount.Range.All(i => Law_SampleHasStatedCounts(j, s, 0, i))))],
+            OverWitnesses("Law_PerturbationKeepsTableSizes", k => 6.Range.All(i => Law_PerturbationKeepsTableSizes(k, 0, i))),
+            OverWitnessShells("Law_PerturbationKeepsRawCounts", (k, s) => 6.Range.All(i => Law_PerturbationKeepsRawCounts(k, s, 0, i))),
+            OverWitnesses("Law_MotionKeepsTopologyRows", k => 6.Range.All(i => Law_MotionKeepsTopologyRows(k, 0, i))),
+            OverWitnesses("Law_ReversalIsAnInvolution", k => 6.Range.All(i => Law_ReversalIsAnInvolution(k, 0, i))),
+            OverWitnessVertices("Law_JitterStaysWithinLengthTolerance", (k, v) => Law_JitterStaysWithinLengthTolerance(k, 0, v, 0.5)),
+            OverWitnessShells("Law_PerturbedShellVolumeFollowsFactor", (k, s) => 6.Range.All(i => Law_PerturbedShellVolumeFollowsFactor(k, s, 0, i)))]);
+
+    //==
+    // # The report
+
+    // Every run, under the backend the host names: the check runs, then the
+    // selector laws layer by layer.
+    LawReportOf(backend: String): LawReport
+        => LawReport(backend, Flattened([
+            LawRun.CheckRuns,
+            LawRun.DecodeWitnessRuns,
+            LawRun.ValidationWitnessRuns,
+            LawRun.PipelineWitnessRuns,
+            LawRun.ToolingRuns]));
+
+    // True when the run is a defect: a law failed that should hold, or a law
+    // held that the witness was built to fail.
+    IsDefect(r: LawRun): Boolean
+        => r.Verdict.IsDefectVerdict;
+
+    // True for Failed and HeldUnexpectedly.
+    IsDefectVerdict(v: LawVerdict): Boolean
+        => match (v) {
+            Held => false;
+            Failed => true;
+            FailedAsExpected => false;
+            HeldUnexpectedly => true;
+            Skipped(reason) => false;
+        };
+
+    // True when no run is a defect: the runner's exit status.
+    IsPassing(r: LawReport): Boolean
+        => !r.Runs.Any(x => x.IsDefect);
+
+    //==
+    // # Tables
+
+    // The name of a verdict.
+    VerdictName(v: LawVerdict): String
+        => match (v) {
+            Held => "Held";
+            Failed => "Failed";
+            FailedAsExpected => "FailedAsExpected";
+            HeldUnexpectedly => "HeldUnexpectedly";
+            Skipped(reason) => "Skipped";
+        };
+
+    // The reason a run was skipped; "" for a run that was evaluated.
+    SkipReason(v: LawVerdict): String
+        => match (v) {
+            Held => "";
+            Failed => "";
+            FailedAsExpected => "";
+            HeldUnexpectedly => "";
+            Skipped(reason) => reason;
+        };
+
+    // The name of a stage.
+    StageName(s: RunStage): String
+        => match (s) {
+            ModelStage => "Model";
+            MeshedStage => "Meshed";
+            MeshStage => "Mesh";
+            SelectorStage => "Selector";
+        };
+
+    // The report as a table, one row per run, defects first so the notebook
+    // shows them at the top.
+    LawReportTable(r: LawReport): ResultTable
+        => ResultTable("Law runs",
+            ["Law", "Witness", "Stage", "Verdict", "Reason", "Measure", "Where", "Backend"],
+            r.Runs.DefectsFirst.Map(x => [
+                    CellValue.Text(x.Law),
+                    CellValue.Text(x.Witness),
+                    CellValue.Text(x.Stage.StageName),
+                    CellValue.Text(x.Verdict.VerdictName),
+                    CellValue.Text(x.Verdict.SkipReason),
+                    CellValue.Real(x.Measure),
+                    CellValue.Place(x.Where),
+                    CellValue.Text(r.Backend)]));
+
+    // The runs with every defect first, the order otherwise kept (the sort is
+    // stable).
+    DefectsFirst(runs: Array<LawRun>): Array<LawRun>
+        => runs.Map(x => x.IsDefect ? 0 : 1).SortedIndices((a, b) => a <= b).Map(i => runs[i]);
+
+    // How many runs have each verdict, as a one-row table.
+    LawSummaryTable(r: LawReport): ResultTable
+        => ResultTable("Law run summary",
+            ["Held", "Failed", "FailedAsExpected", "HeldUnexpectedly", "Skipped", "Backend"],
+            [[
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Held" ? 1 : 0).IntegerTotal),
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Failed" ? 1 : 0).IntegerTotal),
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "FailedAsExpected" ? 1 : 0).IntegerTotal),
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "HeldUnexpectedly" ? 1 : 0).IntegerTotal),
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Skipped" ? 1 : 0).IntegerTotal),
+                CellValue.Text(r.Backend)]]);
+}

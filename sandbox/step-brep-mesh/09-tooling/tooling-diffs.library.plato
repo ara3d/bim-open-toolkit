@@ -285,11 +285,11 @@ library ToolingDiffs
     FileDifferences(a: Part21File, b: Part21File): Array<LocatedDifference<FileTable>>
         => Flattened([
             FieldRowDifferences([a.Header], [b.Header], (x, y) => Unless(x.IsSameHeader(y),
-                Difference("Header", DiffValue.Text(x.Name), DiffValue.Text(y.Name), 0.0))).InTable(FileTable.HeaderRow),
+                Difference("Header", CellValue.Text(x.Name), CellValue.Text(y.Name), 0.0))).InTable(FileTable.HeaderRow),
             FieldRowDifferences(a.Instances, b.Instances, (x, y) => Unless(x.IsSameInstance(y),
-                Difference("Instance", DiffValue.Whole(x.Id.Value), DiffValue.Whole(y.Id.Value), 0.0))).InTable(FileTable.InstanceRows),
+                Difference("Instance", CellValue.Whole(x.Id.Value), CellValue.Whole(y.Id.Value), 0.0))).InTable(FileTable.InstanceRows),
             FieldRowDifferences(a.Attributes, b.Attributes, (x, y) => Unless(x.IsSameAttribute(y),
-                Difference("Attribute", DiffValue.Whole(x.AttributeTag), DiffValue.Whole(y.AttributeTag), 0.0))).InTable(FileTable.AttributeRows)]);
+                Difference("Attribute", CellValue.Whole(x.AttributeTag), CellValue.Whole(y.AttributeTag), 0.0))).InTable(FileTable.AttributeRows)]);
 
     //==
     // # Diff sums

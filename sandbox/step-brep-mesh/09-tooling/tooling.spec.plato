@@ -11,7 +11,22 @@
 // this file.
 //
 // Sections, in order:
+//  - The law runner's entry point
 //  - Contracts: reading
+
+//==
+// # The law runner's entry point
+//
+// Not a Plato function: the host program's Main. It calls
+// LawReportOf(backend) with backend naming the Plato compiler commit, the
+// writer (C# backend and its Number profile, TKT-315) and the date; writes
+// LawReportTable and LawSummaryTable as CSV beside each other; then
+// reflects over the compiled assemblies for every method whose name starts
+// with Law_, and prints each name that no LawRun carries as "not
+// enumerated", so a law added to a layer without a check or a runner line
+// is visible on the next run. Exit status 0 exactly when IsPassing holds.
+// Until TKT-315's writer fixes land, it prints a warning line that nested
+// conditionals miscompile and the verdicts are untrusted.
 
 //==
 // # Contracts: reading
