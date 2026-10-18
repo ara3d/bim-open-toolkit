@@ -19,7 +19,6 @@
 //  - The refinement loop
 //  - Assembly, validation, outcomes
 //  - Entry points
-//  - Declarations owed by lower layers
 
 library StepToMesh
 {
@@ -398,30 +397,4 @@ library StepToMesh
     // decode.
     MeshStepText(text: String, o: MeshingOptions): MeshOutcome
         => text.MeshStepTextTraced(o).Meshed;
-
-    //==
-    // # Declarations owed by lower layers
-
-    // belongs-in: 04-discretization
-    // The edge criteria with every length multiplied by factor: the chordal
-    // bound, the length limit, the minimum length. The angle and the segment
-    // count are kept.
-    ScaledBy(c: DiscretizationCriteria, factor: Number): DiscretizationCriteria
-        => DiscretizationCriteria(c.Chordal * factor, c.Angular, c.MaxLength.ScaledBy(factor), c.MinLength * factor, c.MinSegments);
-
-    // belongs-in: 04-discretization
-    // The limit multiplied by factor; Unlimited stays Unlimited.
-    ScaledBy(l: Limit, factor: Number): Limit
-        => match (l)
-        {
-            Unlimited => Limit.Unlimited;
-            AtMost(v) => Limit.AtMost(v * factor);
-        };
-
-    // belongs-in: 05-face-meshing
-    // The face criteria with every length multiplied by factor: the edge
-    // criteria's lengths and the surface chordal bound. The surface angle and
-    // the quad preference are kept.
-    ScaledBy(c: FaceMeshingCriteria, factor: Number): FaceMeshingCriteria
-        => FaceMeshingCriteria(c.Discretization.ScaledBy(factor), c.SurfaceChordal * factor, c.SurfaceAngular, c.PreferQuads);
 }

@@ -10,7 +10,6 @@
 //  - Type invariants
 //  - Contracts: the refinement loop
 //  - Contracts: outcomes and entry points
-//  - Contracts: declarations owed by lower layers
 //  - Theorems
 
 //==
@@ -196,54 +195,6 @@ spec MeshStepText(text: String, o: MeshingOptions): MeshOutcome
     ensures Law_StepTextOkExactlyWhenClean(text, o);
     ensures forall (k: Integer) : Law_EveryStepTextDiagnosticIsLocated(text, o, k);
     measure text.ParseStep.File.Instances.Count + text.ParseStep.File.Attributes.Count;
-}
-
-//==
-// # Contracts: declarations owed by lower layers
-
-// A rigid motion of the model: tables and parameters kept, points moved.
-// The function is layer 2's (with a body since the fix wave); this contract,
-// which this layer's Law_RigidMotionMovesPositions relies on, belongs in
-// 02-topology's spec and moves there when layer 2 writes one.
-spec RigidlyMoved(m: BrepModel, motion: Frame3D): BrepModel
-{
-    requires motion.IsOrthonormalWithin(m.Tolerances.Angle);
-    ensures result.Vertices.Count == m.Vertices.Count;
-    ensures result.Edges.Count == m.Edges.Count && result.Loops.Count == m.Loops.Count && result.Faces.Count == m.Faces.Count;
-    ensures result.Shells.Count == m.Shells.Count && result.Bodies.Count == m.Bodies.Count;
-    ensures result.Tolerances == m.Tolerances;
-    ensures forall (v: Integer) in m.Vertices.Count.Range : result.Vertices[v].Point.Coincident(motion.PointInFrame(m.Vertices[v].Point), m.Tolerances.Length);
-    ensures forall (s: Integer) in m.Geometry.Surfaces.Count.Range : forall (uv: UvCoordinate) : result.Geometry.Eval(SurfaceIndex(s), uv).Coincident(motion.PointInFrame(m.Geometry.Eval(SurfaceIndex(s), uv)), m.Tolerances.Length);
-    ensures forall (c: Integer) in m.Geometry.Curves.Count.Range : forall (t: Number) : result.Geometry.Eval(CurveIndex(c), t).Coincident(motion.PointInFrame(m.Geometry.Eval(CurveIndex(c), t)), m.Tolerances.Length);
-    measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
-}
-
-// The model scaled by factor: tables kept, lengths multiplied. The function
-// is layer 2's (with a body since the fix wave); this contract, which the
-// scaling laws rely on, belongs in 02-topology's spec and moves there when
-// layer 2 writes one.
-spec ScaledBy(m: BrepModel, factor: Number): BrepModel
-{
-    requires factor > 0.0 && factor.IsFinite;
-    ensures result.Vertices.Count == m.Vertices.Count;
-    ensures result.Edges.Count == m.Edges.Count && result.Loops.Count == m.Loops.Count && result.Faces.Count == m.Faces.Count;
-    ensures result.Shells.Count == m.Shells.Count && result.Bodies.Count == m.Bodies.Count;
-    ensures result.Tolerances.Length.Value == m.Tolerances.Length.Value * factor;   // exact by construction: the same product
-    ensures result.Tolerances.Angle == m.Tolerances.Angle;
-    ensures result.Tolerances.LengthParameter.Value == m.Tolerances.LengthParameter.Value * factor;   // exact by construction: the same product
-    ensures result.Tolerances.AngleParameter == m.Tolerances.AngleParameter;
-    ensures forall (v: Integer) in m.Vertices.Count.Range : result.Vertices[v].Point.Coincident(m.Vertices[v].Point.ScaledPoint(factor), result.Tolerances.Length);
-    measure m.Vertices.Count + m.Geometry.Curves.Count + m.Geometry.Curves2D.Count + m.Geometry.Surfaces.Count;
-}
-
-// Reversal keeps every table but the faces' flags.
-spec WithEveryFaceReversed(m: BrepModel): BrepModel
-{
-    ensures result.Faces.Count == m.Faces.Count;
-    ensures forall (f: Integer) in m.Faces.Count.Range : result.Faces[f].SameSense == !m.Faces[f].SameSense;
-    ensures forall (f: Integer) in m.Faces.Count.Range : forall (j: Integer) in m.Faces[f].Bounds.Count.Range : result.Faces[f].Bounds[j].Orientation == !m.Faces[f].Bounds[j].Orientation;
-    ensures forall (f: Integer) in m.Faces.Count.Range : m.FaceNormalSign(BrepFaceIndex(f)) == -result.FaceNormalSign(BrepFaceIndex(f));
-    measure m.Faces.Count;
 }
 
 //==

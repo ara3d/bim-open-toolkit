@@ -19,6 +19,7 @@
 //  - Placements
 //  - Pieces laid end to end
 //  - Views
+//  - Defining points
 
 library BrepGeometry
 {
@@ -643,4 +644,47 @@ library BrepGeometry
     // The sides of the surface's domain it collapses to a point.
     DegenerateSides(x: ArenaSurface, tol: Tolerances): Array<DomainSide>
         => x.Geometry.DegenerateSides(x.Surface, tol);
+
+    //==
+    // # Defining points
+    //
+    // The points a curve or surface record stores. A model's size and its
+    // coordinate extent are measured over them (layer 2).
+
+    // The points that define curve c's shape and position: its placement
+    // origin, a line's origin, a polyline's points, a B-spline's control
+    // points; none for a curve built on others by index, whose basis
+    // contributes its own.
+    DefiningPoints(curve: BrepCurve): Array<Point3D>
+        => match (curve) {
+            Line(origin, velocity) => [origin];
+            Circle(placement, radius) => [placement.Origin];
+            Ellipse(placement, semiAxis1, semiAxis2) => [placement.Origin];
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => [placement.Origin];
+            Parabola(placement, focalDistance) => [placement.Origin];
+            Polyline(points) => points;
+            BSpline(data) => data.ControlPoints;
+            Trimmed(basis, range, sameSense) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            Composite(segments) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            Offset(basis, distance, reference) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            OnSurface(spaceCurve, supports, master) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+        };
+
+    // The points that define surface s's shape and position: its placement
+    // origin, a revolution axis's origin, a B-spline's control points; none
+    // for a surface built on another by index or on a profile curve.
+    DefiningPoints(surface: BrepSurface): Array<Point3D>
+        => match (surface) {
+            Plane(placement) => [placement.Origin];
+            Cylinder(placement, radius) => [placement.Origin];
+            Cone(placement, radius, semiAngle) => [placement.Origin];
+            Sphere(placement, radius) => [placement.Origin];
+            Torus(placement, major, minor, part) => [placement.Origin];
+            Revolution(profile, axis) => [axis.Origin];
+            LinearExtrusion(profile, extrusion) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            BSpline(data) => data.ControlPoints.ColumnCount.Range.FlatMap(i =>
+                data.ControlPoints.RowCount.Range.Map(j => data.ControlPoints.At(i, j)));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+            Offset(basis, distance) => 0.MapRange(k => Point3D(0.0, 0.0, 0.0));
+        };
 }

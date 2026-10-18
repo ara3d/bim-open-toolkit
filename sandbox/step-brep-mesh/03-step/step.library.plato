@@ -158,13 +158,6 @@ library StepReading
         return Tolerances(length, policy.AngleCoincidence, length.LengthParameterFloor(extent), length.AngleParameterFloor(modelSize, extent));
     }
 
-    // The diagonal of the bounding box of the points, 0 for none: layer 2's
-    // BoundingDiagonal under the name layer 7's callers use. The decoder
-    // itself reads layer 2's ModelSize(m) and CoordinateExtent(m) of the
-    // decoded, placed model. Delete when layer 7 calls BoundingDiagonal.
-    ModelSize(points: Array<Point3D>): Number
-        => points.BoundingDiagonal;
-
     // The contexts some occurrence uses.
     UsedContexts(contexts: Array<ContextUnits>, map: ProvenanceMap): Array<ContextUnits>
         => contexts.FlatMap(c => map.Occurrences.Any(o => o.Context == c.Context) ? [c] : contexts.Take(0));

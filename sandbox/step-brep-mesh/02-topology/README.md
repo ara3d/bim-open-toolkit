@@ -748,3 +748,4 @@ Skipped:
 The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
 
 - `WithEveryFaceReversed`'s comment no longer names layer 8's copy, which the review deleted.
+- Gave away its stand-ins: `ScaledTolerances` to layer 0; `DefiningPoints`, `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` to layer 1. `ModelPoints`, `RigidlyMoved` and `ScaledBy` call them there. The contracts of `RigidlyMoved`, `ScaledBy(m, factor)` and `WithEveryFaceReversed` moved here from layer 8's spec (new spec section "Model transforms").

@@ -447,3 +447,4 @@ PLATO-PRIMER.md section E.3, run 2026-10-17 from the scratch copy of `tools/Plat
 The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
 
 - Deleted `IsRedundantVertexLoop(m, f, k)`, a copy of layer 2's with the same signature and meaning; `MeshedBounds` is now layer 2's `KeptBounds` mapped to the bounds.
+- Took `ScaledBy(c: FaceMeshingCriteria, factor)` from layer 8, where it stood in (`belongs-in: 05-face-meshing`), into the Criteria section.

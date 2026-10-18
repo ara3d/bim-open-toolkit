@@ -352,3 +352,9 @@ Other layers now depend on: layer 7 renames its `Law_AtLeastTwoParameters` check
 `Law_ImageFollowsPcurve` check and `PcurveGapAt`; layer 8 deletes `DiscretizeUsable` and its
 `Undiscretized` (same signature as layer 4's) and calls `DiscretizeAll`; layer 5 draws loops with
 `ImagePoints`.
+
+## Name review, 2026-10-17
+
+The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
+
+- Took `ScaledBy(c: DiscretizationCriteria, factor)` and `ScaledBy(l: Limit, factor)` from layer 8, where they stood in (`belongs-in: 04-discretization`), into the Criteria section.

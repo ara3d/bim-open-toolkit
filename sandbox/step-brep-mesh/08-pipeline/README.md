@@ -14,10 +14,10 @@ and `CrossCheck(mesh, level, criteria)`, all at the options' `ConformanceLevel` 
 | File | Holds |
 |---|---|
 | `pipeline.types.plato` | `MeshingOptions`, `PipelineState`, `MeshOutcome`, `StepMeshOutcome` |
-| `pipeline.library.plato` | library `StepToMesh`: options, the pipeline's findings, edges, faces, the loop, assembly and validation, the entry points; 4 of its functions are owed by layers 2, 4, 5 and marked `// belongs-in:` (`ScaledBy` on the two criteria and a limit, `WithEveryFaceReversed`) |
+| `pipeline.library.plato` | library `StepToMesh`: options, the pipeline's findings, edges, faces, the loop, assembly and validation, the entry points |
 | `pipeline.laws.plato` | library `StepToMeshLaws`: 34 laws, 1 witness, 9 helpers |
 | `pipeline-witnesses.laws.plato` | library `StepToMeshWitnessesLaws`: the laws that mesh layer 7's witnesses (moved from layer 7 in the name review), 3 helpers and 16 laws |
-| `pipeline.spec.plato` | invariants of the 4 types, 12 function contracts, 5 theorems |
+| `pipeline.spec.plato` | invariants of the 4 types, 9 function contracts, 5 theorems |
 
 Counts after the fix wave: 4 types; 48 library functions, every one with a body; 34 laws; 16
 `spec` blocks; 5 theorems.
@@ -662,3 +662,4 @@ The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) cha
   | `Law_WitnessRigidMotionMovesPositions` | layer 8's `Law_RigidMotionMovesPositions` on each witness | Length |
   | `Law_WitnessPowerOfTwoScalingKeepsConnectivity`, `...ScalesPositions` | layer 8's scaling laws on each witness | exact |
   | `Law_WitnessEdgeReversalPreservesMesh`, `Law_WitnessShellReversalNegatesVolume` | layer 8's reversal laws on each witness | exact; Length times area |
+- Gave away its last stand-ins: `ScaledBy` on `DiscretizationCriteria` and `Limit` to layer 4, on `FaceMeshingCriteria` to layer 5; the section "Declarations owed by lower layers" is gone. The spec's contracts of `RigidlyMoved`, `ScaledBy(m, factor)` and `WithEveryFaceReversed` moved to layer 2's spec.

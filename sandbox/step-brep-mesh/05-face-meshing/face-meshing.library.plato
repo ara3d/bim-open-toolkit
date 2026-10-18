@@ -64,6 +64,12 @@ library FaceMeshing
         => c.Discretization.IsWellFormed
             && c.SurfaceChordal > 0.0 && c.SurfaceAngular.Radians > 0.0 && c.SurfaceAngular.Radians < Number.HalfPi;
 
+    // The face criteria with every length multiplied by factor: the edge
+    // criteria's lengths and the surface chordal bound. The surface angle and
+    // the quad preference are kept.
+    ScaledBy(c: FaceMeshingCriteria, factor: Number): FaceMeshingCriteria
+        => FaceMeshingCriteria(c.Discretization.ScaledBy(factor), c.SurfaceChordal * factor, c.SurfaceAngular, c.PreferQuads);
+
     //==
     // # Triangulation and refinement
 

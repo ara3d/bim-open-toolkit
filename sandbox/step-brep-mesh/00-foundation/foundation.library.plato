@@ -156,6 +156,17 @@ library BrepFoundation
         return ParameterTolerance((r / modelSize.Max(r)).Max(ResolutionAt(Number.Tau * 2.0)));
     }
 
+    // The tolerances of a model scaled by factor: the length tolerance and the
+    // length parameter floor scaled (LengthParameterFloor doubles
+    // when the length and the extent double), the angle tolerance and the
+    // angle parameter floor kept (AngleParameterFloor ignores scale).
+    ScaledTolerances(t: Tolerances, factor: Number): Tolerances
+        => Tolerances(
+            LengthTolerance(t.Length.Value * factor),
+            t.Angle,
+            ParameterTolerance(t.LengthParameter.Value * factor),
+            t.AngleParameter);
+
     //==
     // # Parameter tolerance at a point
     //

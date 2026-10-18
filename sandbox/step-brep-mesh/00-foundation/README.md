@@ -580,3 +580,9 @@ Skipped, with the reason:
 Names this layer now expects from other fixers: layer 2's `CoordinateExtent(m)` and
 `ModelSize(m)`, which layer 3 passes to the two floor functions; layer 1's choice of floor per
 direction kind in its `ParameterToleranceAt(g, c, t, tol)` and `UvToleranceAt(g, s, uv, tol)`.
+
+## Name review, 2026-10-17
+
+The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
+
+- Took `ScaledTolerances(t, factor)` from layer 2, where it stood in (`belongs-in: 00-foundation`), into the Tolerances section.

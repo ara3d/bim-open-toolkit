@@ -1,0 +1,83 @@
+//==
+// # BrepGeometryMotion
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file): the
+// arena carried by a rigid motion, record by record. Layer 2's
+// RigidlyMoved(m, motion) builds on it, as its ScaledBy builds on
+// BrepGeometryScaling. A motion is an orthonormal right-handed Frame3D: a
+// point goes to motion.PointInFrame(p), a vector or direction turns with the
+// frame's axes, and every parameter is kept, so 2D curves and pcurves need no
+// change. The name review of 2026-10-17 moved these functions here from layer
+// 2, where they stood in for this layer.
+//
+// Sections, in order:
+//  - Vectors, directions, frames
+//  - Curves, surfaces, the arena
+
+library BrepGeometryMotion
+{
+    //==
+    // # Vectors, directions, frames
+
+    // The vector v of the frame motion's rotation: its components taken along
+    // motion's axes.
+    MovedVector(v: Vector3D, motion: Frame3D): Vector3D
+        => motion.FrameVector(v.X, v.Y, v.Z);
+
+    // The direction d turned by motion's rotation.
+    MovedDirection(d: Direction3D, motion: Frame3D): Direction3D
+        => Direction3D(d.Vector.MovedVector(motion));
+
+    // The frame f carried by motion: its origin moved, its axes turned.
+    MovedFrame(f: Frame3D, motion: Frame3D): Frame3D
+        => Frame3D(motion.PointInFrame(f.Origin), f.XAxis.MovedDirection(motion),
+            f.YAxis.MovedDirection(motion), f.ZAxis.MovedDirection(motion));
+
+    //==
+    // # Curves, surfaces, the arena
+
+    // A curve carried by the rigid motion: every point, frame, direction and
+    // vector it stores moved; radii, weights, knots and parameters kept. A
+    // curve built on others by index moves through them.
+    Moved(curve: BrepCurve, motion: Frame3D): BrepCurve
+        => match (curve) {
+            Line(origin, velocity) => BrepCurve.Line(motion.PointInFrame(origin), velocity.MovedVector(motion));
+            Circle(placement, radius) => BrepCurve.Circle(placement.MovedFrame(motion), radius);
+            Ellipse(placement, semiAxis1, semiAxis2) => BrepCurve.Ellipse(placement.MovedFrame(motion), semiAxis1, semiAxis2);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => BrepCurve.Hyperbola(placement.MovedFrame(motion), semiAxis, semiImaginaryAxis);
+            Parabola(placement, focalDistance) => BrepCurve.Parabola(placement.MovedFrame(motion), focalDistance);
+            Polyline(points) => BrepCurve.Polyline(points.Map(p => motion.PointInFrame(p)));
+            BSpline(data) => BrepCurve.BSpline(BSplineCurveData(data.Basis, data.ControlPoints.Map(p => motion.PointInFrame(p)), data.Weights));
+            Trimmed(basis, range, sameSense) => curve;
+            Composite(segments) => curve;
+            Offset(basis, distance, reference) => BrepCurve.Offset(basis, distance, reference.MovedDirection(motion));
+            OnSurface(spaceCurve, supports, master) => curve;
+        };
+
+    // A surface carried by the rigid motion, as for curves. Parameters are
+    // kept, so parameter-plane curves and pcurves need no change.
+    Moved(surface: BrepSurface, motion: Frame3D): BrepSurface
+        => match (surface) {
+            Plane(placement) => BrepSurface.Plane(placement.MovedFrame(motion));
+            Cylinder(placement, radius) => BrepSurface.Cylinder(placement.MovedFrame(motion), radius);
+            Cone(placement, radius, semiAngle) => BrepSurface.Cone(placement.MovedFrame(motion), radius, semiAngle);
+            Sphere(placement, radius) => BrepSurface.Sphere(placement.MovedFrame(motion), radius);
+            Torus(placement, major, minor, part) => BrepSurface.Torus(placement.MovedFrame(motion), major, minor, part);
+            Revolution(profile, axis) => BrepSurface.Revolution(profile,
+                InfiniteLine3D(motion.PointInFrame(axis.Origin), axis.Direction.MovedDirection(motion)));
+            LinearExtrusion(profile, extrusion) => BrepSurface.LinearExtrusion(profile, extrusion.MovedVector(motion));
+            BSpline(data) => BrepSurface.BSpline(BSplineSurfaceData(data.U, data.V,
+                MakeArray2D(data.ControlPoints.ColumnCount, data.ControlPoints.RowCount,
+                    (i, j) => motion.PointInFrame(data.ControlPoints.At(i, j))),
+                data.Weights));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => surface;
+            Offset(basis, distance) => surface;
+        };
+
+    // The arena carried by the rigid motion: every curve and surface moved,
+    // the 2D curves, pcurve records and closure marks kept (parameters and
+    // indices).
+    MovedGeometry(g: GeometrySet, motion: Frame3D): GeometrySet
+        => GeometrySet(g.Curves.Map(c => c.Moved(motion)), g.Curves2D, g.Pcurves,
+            g.Surfaces.Map(s => s.Moved(motion)), g.Closures);
+}

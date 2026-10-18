@@ -76,6 +76,20 @@ library EdgeDiscretizing
     ClosedEdgeMinimum(c: DiscretizationCriteria): Integer
         => c.MinSegments.Max(3);
 
+    // The edge criteria with every length multiplied by factor: the chordal
+    // bound, the length limit, the minimum length. The angle and the segment
+    // count are kept.
+    ScaledBy(c: DiscretizationCriteria, factor: Number): DiscretizationCriteria
+        => DiscretizationCriteria(c.Chordal * factor, c.Angular, c.MaxLength.ScaledBy(factor), c.MinLength * factor, c.MinSegments);
+
+    // The limit multiplied by factor; Unlimited stays Unlimited.
+    ScaledBy(l: Limit, factor: Number): Limit
+        => match (l)
+        {
+            Unlimited => Limit.Unlimited;
+            AtMost(v) => Limit.AtMost(v * factor);
+        };
+
     //==
     // # Edge facts
     //

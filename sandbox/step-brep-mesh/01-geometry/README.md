@@ -16,10 +16,11 @@ files present that day.
 | `geometry-splines.types.plato` | `SplineBasis`, `BSplineCurveData`, `BSplineCurve2DData`, `BSplineSurfaceData` | |
 | `geometry-set.types.plato` | `GeometrySet` and the views `ArenaCurve`, `ArenaCurve2D`, `ArenaSurface` | |
 | `geometry.concepts.plato` | `INaturalCurve3D`, `INaturalCurve2D`, `INaturalSurface` | |
-| `geometry.library.plato` | the arena: index ranges, accessors, reference graph, well-formedness, placements, piece arithmetic, views | `BrepGeometry` |
+| `geometry.library.plato` | the arena: index ranges, accessors, reference graph, well-formedness, placements, piece arithmetic, views, defining points | `BrepGeometry` |
 | `geometry-curves.library.plato` | space curves, parameter-plane curves, pcurves | `BrepGeometryCurves` |
 | `geometry-surfaces.library.plato` | surfaces | `BrepGeometrySurfaces` |
 | `geometry-scaling.library.plato` | the arena scaled about the origin: `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, `ParameterScaleFactor`, `ScaledGeometry` | `BrepGeometryScaling` |
+| `geometry-motion.library.plato` | the arena carried by a rigid motion: `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` (from layer 2 in the name review) | `BrepGeometryMotion` |
 | `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; de Boor deferred | `BrepGeometrySplines` |
 | `geometry.laws.plato` | 95 laws, 3 oracles, their helpers and measures | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
@@ -506,3 +507,9 @@ Names this layer now depends on from other layers' fixes: layer 0's `Closed`, `H
 arguments of `ParameterToleranceAt` and `UvToleranceAt`. Layer 3 must write `ClosureMark`s into
 `GeometrySet.Closures` and fold `PlacementHandedness`; layer 2 can build `ScaledBy` on
 `ScaledGeometry` and `PcurveEdgeDomain` on `PcurveRangeOver`.
+
+## Name review, 2026-10-17
+
+The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
+
+- Took layer 2's stand-ins (`belongs-in: 01-geometry`): `DefiningPoints` (curve, surface) into `geometry.library.plato` (new section "Defining points"), and `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` into the new `geometry-motion.library.plato` (`BrepGeometryMotion`), beside `BrepGeometryScaling`.

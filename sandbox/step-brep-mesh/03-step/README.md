@@ -718,3 +718,9 @@ Skipped, with reasons:
 | periodicity of decoded curves and surfaces: layer 1's case alone | `Closed(Period)` decided at decode from the ends at the length tolerance | review T1/C1; layer 1 stores the decision in its aperiodic records |
 | (none) | `StepFindingSubject`, `SubjectOf`, `FitsSubject`, `PointsAtSubject`; codes `ClosedFlagWithoutClosure`, `ClosureWithoutClosedFlag` | each finding's `Where` fixed per code; closure flags diagnosed |
 | (none) | `IsMirroredSource` | the mirror test the fold laws share |
+
+## Name review, 2026-10-17
+
+The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
+
+- Deleted `ModelSize(points: Array<Point3D>)`, the forwarder to layer 2's `BoundingDiagonal`; it had no callers after layer 7's fix wave.
