@@ -17,3 +17,7 @@ kind: defect
 - [ ] node gates/web-smoke.mjs prints WEB SMOKE: PASS
 
 Found 2026-10-18 while running the web smoke gate for TKT-320 (the bidirectional viewer). None of the failures touch files that ticket changed: nrc-rollup.json was last changed on 2026-10-11, the nrc-web tests on 2026-10-11, and the README text the catalog test expects ('total operational carbon and element count') was reworded by the nrc-analyses passes. The gate's report is piped through tail in gates/web-smoke.mjs callers; run the four toolkit steps by hand to see each failure.
+
+## Notes
+
+- 2026-10-18: the layout tool (`relayout-samples` over samples/nrc-analyses) rewrote nrc-rollup.json and nrc-enrich-run.json but left the faults (1 and 10 wires behind cards); the rewrite was discarded. A hand move or a graph change (an extra column, a reordered row) is needed, not a rerun of the tool.
