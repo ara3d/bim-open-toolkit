@@ -14,7 +14,7 @@ and states the rules both faces of the edge rely on when they consume it. It own
 | `discretization.types.plato` | `Limit`, `DiscretizationCriteria`, `SegmentFloors`, `EdgeDiscretization`, `EdgeDiscretizations`, `EdgeImage`, `RefinementReason`, `EdgeRefinementRequest` |
 | `discretization.library.plato` | criteria, edge facts, count floors, closed forms for arcs, segment measures, parameter-space images, `Discretize`, `DiscretizeAll`, `Undiscretized`, `Reversed`, `AlongCoedge`, `SameDiscretization`, `IsRefinable`, `MeetsCriteria`, `Refine` |
 | `discretization.laws.plato` | 36 laws: shape, agreement with the model, criteria, counts, images, reversal and sharing, monotonicity and refinement, arcs |
-| `discretization.spec.plato` | type invariants, contracts of the 6 deferred functions and 4 constructors, 6 theorems |
+| `discretization.spec.plato` | type invariants, contracts of the 6 functions the design pass deferred and 4 constructors, 6 theorems. Since chunk A, `RefineEdge` and `SagittaByHullBound` (the non-closed-form half of `Sagitta`) are the two still bodiless |
 
 ## The objects
 
@@ -358,3 +358,29 @@ Other layers now depend on: layer 7 renames its `Law_AtLeastTwoParameters` check
 The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
 
 - Took `ScaledBy(c: DiscretizationCriteria, factor)` and `ScaledBy(l: Limit, factor)` from layer 8, where they stood in (`belongs-in: 04-discretization`), into the Criteria section.
+
+## Implementation, chunk A
+
+TKT-314, 2026-10-17. Five bodies, each from its contract in `discretization.spec.plato`:
+
+| Body | Derived from | Laws that read it |
+|---|---|---|
+| `EdgeSeeds` | contract `EdgeSeeds`: domain ends copied from `EdgeDomain`; every copy inside the domain of layer 1's `Breakpoints` and, on a `Closed` curve, of the join; sorted; a candidate within `ParameterToleranceAt` of the last kept seed or of the end dropped | `Law_SeedsAreSampled`, `Law_TurningAngleWithinAngular`, `Law_ShortSegmentIsForced` |
+| `TotalTurning` | contract `TotalTurning`: 0 for a line, the domain length for a circle; otherwise the sum of angles between tangents sampled at 65 points per seed span, the jumps at seeds crossed between spans | `TurnFloor`, `Law_SegmentFloorMet` |
+| `Sagitta` | contract `Sagitta`, its closed forms: 0 for a line, `R (1 - cos(dt / 2))` for a circle, the parametric midpoint's distance for an ellipse arc under half a turn. Every other case calls `SagittaByHullBound`, a new bodiless function holding the control-hull certificate for chunk F | `Law_CertifiedSagittaWithinChordal`, `Discretize`'s bisection |
+| `ImagePoints` | contract `ImagePoints`: canonical order, reversed with `d`; the pcurve's 2D curve at layer 1's `ClosestParameter` on the pcurve, or `Project` with a pole's free coordinate taken from its neighbour; unwrapped by `NearestUnwrapped` | `Law_ImageHasOnePointPerPoint`, `Law_ImagePointReevaluates`, `Law_ImageStepsAreUnwrapped`, `Law_ImageChordWithinChordal` |
+| `Discretize` | contract `Discretize` and its deferred note: degenerate edge two samples; line, circle, ellipse uniform at the closed-form count (`ConicCount`), raised while an image chord exceeds the bound and the minimum length allows; other curves bisected at parameter midpoints per seed span (depth at most 40), then the widest parameter span halved until `MinimumSegmentCount` | every law of the "Samples", "Criteria" and "Counts" sections, `Law_EdgeReversalLeavesDiscretization` |
+
+The image path with a pcurve reaches layer 1's `ClosestParameter(g, p: PcurveIndex, q)`, still
+deferred; no witness of chunk A has a pcurve.
+
+Law results, provisional (scratch compiler, see layer 2's README): over every edge of the ten
+positive and three negative witnesses, discretized under `Witness_UnitScaleOptions` (chordal 0.01,
+15 degrees), 7,704 evaluations. All hold except: `Law_TurningAngleWithinAngular` on the full circles
+of `Witness_Cylinder`, `Witness_Torus`, `Witness_Cone` and the arcs of the sector, where the uniform
+count lands exactly on the bound (24 segments of 15 degrees) and the 32-bit turning angle exceeds it
+by more than the witness's angle tolerance of `1e-8` rad, which a 32-bit `Number` cannot honour
+(PLATO-PRIMER.md D.1); chunk B, with TKT-315's 64-bit profile, is where circles are judged. The box,
+the hollow box and the block with a hole get one segment per edge. `Witness_BSplinePatchSolid`'s four
+spline edges throw in layer 1's deferred `BSplinePoint` (chunk F).
+

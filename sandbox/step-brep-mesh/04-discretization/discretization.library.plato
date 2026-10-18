@@ -133,26 +133,127 @@ library EdgeDiscretizing
     DomainEndVertex(m: BrepModel, e: BrepEdgeIndex): BrepVertexIndex
         => m.Edges[e].SameSense ? m.Edges[e].End : m.Edges[e].Start;
 
-    // deferred: the parameters at which every discretization of the edge must sample, sorted
-    // increasing: the domain start, every polyline vertex, composite-segment joint, and distinct
-    // B-spline knot strictly inside the domain, on a `Closed` curve every copy of the join (the
-    // range's start moved by whole periods) strictly inside the domain, where the point set
-    // closes but the tangent may jump, and the domain end. Interior seeds closer than the
-    // curve's parameter tolerance at the seed (layer 1's `ParameterToleranceAt(g, c, t, tol)`,
-    // whose floor is `Tolerances.LengthParameter` or `Tolerances.AngleParameter` by the
-    // parameter's kind) to a neighbour are dropped. Depends on the curve and the domain only.
-    EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>;
+    // Chunk A body, from the contract EdgeSeeds: the domain's two ends, and
+    // strictly inside the domain every copy of a curve breakpoint (layer 1's
+    // Breakpoints: polyline vertices, composite joints, spline knots of full
+    // multiplicity) and on a Closed curve every copy of the join, sorted; an
+    // interior candidate within the curve's parameter tolerance at it
+    // (ParameterToleranceAt) of the last kept seed or of the domain end is
+    // dropped. The ends are copied from EdgeDomain, never recomputed.
+    EdgeSeeds(m: BrepModel, e: BrepEdgeIndex): Array<Number>
+    {
+        var range = m.EdgeDomain(e).Range;
+        var candidates = m.SeedCandidates(e).Sort((a, b) => a <= b);
+        var seeds = new List<Number>().Add(range.Start);
+        var last = range.Start;
+        var k = 0;
+        while (k < candidates.Count)
+        {
+            var t = candidates[k];
+            var tol = m.SeedTolerance(e, t);
+            if (t - last > tol)
+            {
+                if (range.End - t > tol)
+                {
+                    seeds = seeds.Add(t);
+                    last = t;
+                }
+            }
+            k = k + 1;
+        }
+        return seeds.Add(range.End).Freeze();
+    }
+
+    // The interior seed candidates of edge e, unsorted: every copy of a
+    // breakpoint of its curve inside the edge domain, and on a Closed curve
+    // every copy of the curve range's start (the join). Precondition: the
+    // edge is evaluable.
+    SeedCandidates(m: BrepModel, e: BrepEdgeIndex): Array<Number>
+    {
+        var curveDomain = m.Geometry.Domain(m.Edges[e].Curve);
+        var range = m.EdgeDomain(e).Range;
+        var joins = curveDomain.Periodicity.IsClosedDirection ? [curveDomain.Range.Start] : [0.0].Take(0);
+        return m.Geometry.Breakpoints(m.Edges[e].Curve).Concatenate(joins)
+            .FlatMap(b => curveDomain.CopiesInside(b, range));
+    }
+
+    // Whether a periodicity is Closed: a seam whose formula does not wrap.
+    IsClosedDirection(p: Periodicity): Boolean
+        => match (p)
+        {
+            Aperiodic => false;
+            Periodic(period) => false;
+            Closed(period) => true;
+        };
+
+    // The copies of parameter b strictly inside the range r: b itself on an
+    // aperiodic domain when inside, and on a domain with a seam every b + k
+    // period inside (at most two, since an edge domain spans at most one
+    // period).
+    CopiesInside(d: CurveDomain, b: Number, r: NumberInterval): Array<Number>
+    {
+        var period = d.Periodicity.PeriodOr(0.0);
+        var first = period > 0.0 ? b.PeriodicRepresentativeAbove(r.Start, period) : b;
+        var copies = period > 0.0 ? [first, first + period] : [first];
+        return copies.FlatMap(t => (t > r.Start && t < r.End) ? [t] : copies.Take(0));
+    }
+
+    // The curve's parameter tolerance at seed t of edge e, t first wrapped
+    // into the curve's domain (layer 1's ParameterToleranceAt).
+    SeedTolerance(m: BrepModel, e: BrepEdgeIndex, t: Number): Number
+        => m.Geometry.ParameterToleranceAt(m.Edges[e].Curve, m.Geometry.Domain(m.Edges[e].Curve).Wrap(t), m.Tolerances).Value;
 
     // True when t is one of the edge's seeds. Exact equality: a seed is copied into the
     // discretization, never recomputed.
     IsSeedParameter(m: BrepModel, e: BrepEdgeIndex, t: Number): Boolean
         => m.EdgeSeeds(e).Any(s => s == t);
 
-    // deferred: the total turning of the curve's tangent over the edge domain (the integral of
-    // curvature with respect to arc length): the swept angle for a circle, the angle between the
-    // end tangents for a convex ellipse arc, zero for a line, a quadrature over the seed spans
-    // otherwise.
-    TotalTurning(m: BrepModel, e: BrepEdgeIndex): Angle;
+    // Chunk A body, from the contract TotalTurning: zero for a line, the swept
+    // angle (the edge domain's length) for a circle, and for every other curve
+    // the sum of the angles between consecutive tangents sampled at 65 points
+    // of each seed span, the ends pulled a millionth of the span inside so a
+    // corner at a seed is crossed between spans, never inside one: the
+    // tangent jumps at the seeds included (a quadrature of the contract's
+    // integral of curvature, with steps a small fraction of a turn).
+    TotalTurning(m: BrepModel, e: BrepEdgeIndex): Angle
+        => m.Geometry.CurveAt(m.Edges[e].Curve).ClosedFormTurning(m.EdgeDomain(e).Range).Radians >= 0.0
+            ? m.Geometry.CurveAt(m.Edges[e].Curve).ClosedFormTurning(m.EdgeDomain(e).Range)
+            : m.SampledTurning(e);
+
+    // The total turning over r in closed form: 0 for a line, r's length for a
+    // circle; a negative angle for every other case, which has none.
+    ClosedFormTurning(curve: BrepCurve, r: NumberInterval): Angle
+        => match (curve)
+        {
+            Line(origin, velocity) => Angle(0.0);
+            Circle(placement, radius) => Angle(r.End - r.Start);
+            Ellipse(placement, semiAxis1, semiAxis2) => Angle(-1.0);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => Angle(-1.0);
+            Parabola(placement, focalDistance) => Angle(-1.0);
+            Polyline(points) => Angle(-1.0);
+            BSpline(data) => Angle(-1.0);
+            Trimmed(basis, range, sameSense) => Angle(-1.0);
+            Composite(segments) => Angle(-1.0);
+            Offset(basis, distance, reference) => Angle(-1.0);
+            OnSurface(spaceCurve, supports, master) => Angle(-1.0);
+        };
+
+    // The sampled total turning of edge e: the sum of the angles between
+    // consecutive sampled tangents, seed span by seed span.
+    SampledTurning(m: BrepModel, e: BrepEdgeIndex): Angle
+    {
+        var seeds = m.EdgeSeeds(e);
+        var tangents = (seeds.Count - 1).Range.FlatMap(k => m.SpanTangents(e, seeds[k], seeds[k + 1]));
+        return Angle((tangents.Count - 1).Max(0).MapRange(i => tangents[i].AngleOrZero(tangents[i + 1]).Radians).SumOf);
+    }
+
+    // The curve's tangents at 65 equally spaced parameters of [a, b], the two
+    // ends a millionth of the span inside.
+    SpanTangents(m: BrepModel, e: BrepEdgeIndex, a: Number, b: Number): Array<Vector3D>
+    {
+        var inset = (b - a) * 0.000001;
+        return NumberInterval(a + inset, b - inset).Samples(65).Map(t => m.TangentOnEdge(e, t));
+    }
 
     // A closed edge that is not degenerate: one vertex at both ends (layer 2's `IsClosedEdge`)
     // and a curve that does not collapse to that vertex (layer 2's `IsDegenerateEdge`). Its domain
@@ -278,17 +379,48 @@ library EdgeDiscretizing
     DiscretizationPlan(_: SamplePlan): SamplePlan
         => SamplePlan(5);
 
-    // deferred: the Hausdorff distance between the chord from C(t0) to C(t1) and the arc
-    // C([t0, t1]) of the edge's curve. For a convex arc turning less than half a turn it is the
-    // largest distance from the arc to the chord's line. Closed form for a line (0), a circle
-    // (R (1 - cos(dt / 2))), and an ellipse (the distance of the parametric midpoint from the
-    // chord's line, an affine image of the circle case). Every other curve: per Bezier span,
-    // polynomial or rational, the largest distance of a control point from the chord bounds the
-    // sagitta, since a span with positive weights (which ISO 10303-42 requires) lies in the
-    // convex hull of its control points and the distance to a segment is convex, so its maximum
-    // over the hull is at a control point; spans are subdivided until that bound is within the
-    // length tolerance of the sampled maximum. No curve is left with a sampled value only.
-    Sagitta(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number;
+    // Chunk A body, the closed forms of the contract Sagitta: 0 for a line; R
+    // (1 - cos(dt / 2)) for a circle, which holds for an arc of any sweep (the
+    // chord's line lies R cos(dt / 2) from the centre); the distance of the
+    // parametric midpoint from the chord for an ellipse arc of less than half
+    // a turn (an affine image of the circle case). Every other curve, and an
+    // ellipse arc of half a turn or more, goes to SagittaByHullBound, the
+    // control-hull certificate, still deferred (chunk F).
+    Sagitta(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number
+        => m.Geometry.CurveAt(m.Edges[e].Curve).ClosedFormSagitta(t0, t1) >= 0.0
+            ? m.Geometry.CurveAt(m.Edges[e].Curve).ClosedFormSagitta(t0, t1)
+            : m.SagittaByHullBound(e, t0, t1);
+
+    // The sagitta of the arc over [t0, t1] in closed form, or -1 when the
+    // case has none.
+    ClosedFormSagitta(curve: BrepCurve, t0: Number, t1: Number): Number
+        => match (curve)
+        {
+            Line(origin, velocity) => 0.0;
+            Circle(placement, radius) => radius.ArcSagitta(Angle((t1 - t0).Abs));
+            Ellipse(placement, semiAxis1, semiAxis2) => (t1 - t0).Abs < Number.Pi
+                ? DistanceToSegment(
+                    placement.FramePoint(semiAxis1 * t0.Cos, semiAxis2 * t0.Sin, 0.0),
+                    placement.FramePoint(semiAxis1 * t1.Cos, semiAxis2 * t1.Sin, 0.0),
+                    placement.FramePoint(semiAxis1 * ((t0 + t1) * 0.5).Cos, semiAxis2 * ((t0 + t1) * 0.5).Sin, 0.0))
+                : -1.0;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => -1.0;
+            Parabola(placement, focalDistance) => -1.0;
+            Polyline(points) => -1.0;
+            BSpline(data) => -1.0;
+            Trimmed(basis, range, sameSense) => -1.0;
+            Composite(segments) => -1.0;
+            Offset(basis, distance, reference) => -1.0;
+            OnSurface(spaceCurve, supports, master) => -1.0;
+        };
+
+    // The sagitta of edge e's arc over [t0, t1] by the control-hull bound of
+    // the contract Sagitta: per Bezier span, polynomial or rational with
+    // positive weights, the largest distance of a control point from the
+    // chord, spans subdivided until within the length tolerance of the
+    // sampled maximum.
+    // deferred: control-hull certificate with Bezier extraction and subdivision (chunk F).
+    SagittaByHullBound(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number;
 
     // The largest distance from the curve, at the plan's interior samples of segment i, to the
     // segment's chord. A lower bound on the segment's sagitta, exact on circles at the midpoint.
@@ -378,21 +510,68 @@ library EdgeDiscretizing
                 : false)
             : false;
 
-    // deferred: the polyline's points drawn in the image's parameter space, one per point. With a
-    // pcurve: the pcurve's 2D curve at the pcurve's own parameter nearest the point
-    // (`ClosestParameter(g, p, P_i)`, seeded by the previous point's), since STEP lets a pcurve
-    // agree with its curve only as a point set (layer 1 decision 8); when the pcurve does share
-    // the curve's parameter that parameter is t_i. Without: `Project` of each point onto the
-    // surface, each result unwrapped to
-    // within half a period of its predecessor, and a point on a degenerate side of the surface (a
-    // pole) given the `U` (or `V`) of its neighbour along the polyline, since `Project` leaves it
-    // arbitrary there. Unwrapping uses layer 0's `NearestUnwrapped`, which treats a `Closed`
-    // direction like a periodic one, so a loop across the join of a clamped closed B-spline face
-    // does not zig-zag. This is the one image function: face meshing draws its loops with it, so
-    // the image this layer certifies is the polygon face meshing triangulates. Always computed over the canonical (increasing-parameter) order of the
-    // points and listed in d's order, so the image of `Reversed(d)` is this image reversed, bit
-    // for bit: the same canonical-direction symmetry as `Discretize`.
-    ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvCoordinate>;
+    // Chunk A body, from the contract ImagePoints, computed over the canonical
+    // (increasing-parameter) order and reversed with d. With a pcurve: the 2D
+    // curve at the pcurve's parameter nearest each point (layer 1's
+    // ClosestParameter on the pcurve). Without: Project onto the face's
+    // surface, a point on a degenerate side given its neighbour's free
+    // coordinate. Then every point unwrapped to the copy nearest its
+    // predecessor (layer 0's NearestUnwrapped on the surface domain).
+    ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvCoordinate>
+    {
+        var forward = d.RunsAlongCurve;
+        var canonical = forward ? d : d.Reversed;
+        var image = m.CanonicalImagePoints(canonical, img);
+        return forward ? image : image.Count.MapRange(i => image[image.Count - 1 - i]);
+    }
+
+    // ImagePoints over a discretization in the canonical order.
+    CanonicalImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvCoordinate>
+    {
+        var s = m.ImageSurface(img);
+        var raw = img.Pcurve.IsNone
+            ? m.PolesFilled(s, d.Points.Map(p => m.Geometry.Project(s, p)))
+            : d.Points.Map(p => m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, m.Geometry.ClosestParameter(img.Pcurve, p)));
+        return m.Geometry.Domain(s).UnwrappedByContinuity(raw);
+    }
+
+    // The points with each one unwrapped to the copy nearest its predecessor,
+    // the first kept.
+    UnwrappedByContinuity(dom: SurfaceDomain, raw: Array<UvCoordinate>): Array<UvCoordinate>
+    {
+        var lifted = new List<UvCoordinate>();
+        var i = 0;
+        while (i < raw.Count)
+        {
+            lifted = lifted.Add(i == 0 ? raw[0] : dom.NearestUnwrapped(raw[i], lifted.At(i - 1)));
+            i = i + 1;
+        }
+        return lifted.Freeze();
+    }
+
+    // The projected points with every point on a degenerate side of surface s
+    // (a pole, where Project leaves the free coordinate arbitrary) given the
+    // free coordinate of its predecessor, or of its successor for the first.
+    PolesFilled(m: BrepModel, s: SurfaceIndex, raw: Array<UvCoordinate>): Array<UvCoordinate>
+    {
+        var dom = m.Geometry.Domain(s);
+        var sides = m.Geometry.DegenerateSides(s, m.Tolerances);
+        var filled = new List<UvCoordinate>();
+        var i = 0;
+        while (i < raw.Count)
+        {
+            var uv = raw[i];
+            var neighbour = i > 0 ? filled.At(i - 1) : (raw.Count > 1 ? raw[1] : uv);
+            var onSides = sides.FlatMap(side =>
+                m.IsOffSide(dom, side, uv, m.Geometry.UvToleranceAt(s, uv, m.Tolerances)) ? sides.Take(0) : [side]);
+            var fixedUv = onSides.Count == 0
+                ? uv
+                : (onSides[0].IsUSide ? UvCoordinate(uv.U, neighbour.V) : UvCoordinate(neighbour.U, uv.V));
+            filled = filled.Add(fixedUv);
+            i = i + 1;
+        }
+        return filled.Freeze();
+    }
 
     // True when the step from a to b is unwrapped: in each periodic direction it is at most half
     // a period long.
@@ -460,19 +639,169 @@ library EdgeDiscretizing
             ? m.EdgeDomain(e).Range.Start < m.EdgeDomain(e).Range.End
             : false;
 
-    // deferred: the canonical discretization of one edge. Seeds first (`EdgeSeeds`). A line,
-    // circle, or ellipse is split uniformly in its parameter into a closed-form count
-    // (`ArcSegmentCount`; for an ellipse with semi-axes a > b, the circle formulas at its worst
-    // points: radius a for the chordal and length bounds, the angular bound scaled by b / a, radius
-    // b for the length cap), raised one at a time until every image criterion holds or the length
-    // cap is reached. Every other curve is bisected at parameter midpoints, seed span by
-    // seed span, while a criterion fails on a segment (the sagitta by `Sagitta`'s certificate,
-    // polynomial or rational; the angles with `DiscretizationPlan`; the image chords) and both
-    // halves would be at least the effective minimum length, a rule every split obeys, the image
-    // criterion's included, which is what makes `DiscretizeTerminates` hold; then the segment longest in parameter is halved, one at a time,
-    // until `MinimumSegmentCount` is reached. A degenerate edge gets its two domain ends and its
-    // vertex point twice.
-    Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization;
+    // Chunk A body, from the contract Discretize. A degenerate edge gets its
+    // two domain ends and its two vertex points. A line, circle or ellipse is
+    // split uniformly into its closed-form count (ConicSegmentCount, never
+    // below MinimumSegmentCount), raised one segment at a time while an image
+    // chord exceeds the chordal bound and the minimum length allows. Every
+    // other curve is bisected at parameter midpoints, seed span by seed span,
+    // while a criterion fails on a segment and both halves keep the effective
+    // minimum length; then the segment longest in parameter is halved until
+    // the count reaches MinimumSegmentCount. The domain's end points are the
+    // vertex points, copied; interior points are curve evaluations.
+    Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization
+    {
+        var range = m.EdgeDomain(e).Range;
+        var least = m.MinimumSegmentCount(e, c, floors);
+        var conic = m.ConicSegmentCount(e, c, least);
+        var parameters = m.IsDegenerateEdge(e)
+            ? [range.Start, range.End]
+            : (conic > 0
+                ? range.Samples(m.RaisedForImages(e, c, conic, m.ConicSegmentCap(e, c, least)) + 1)
+                : m.RaisedToCount(m.BisectedParameters(e, c), least));
+        return m.DiscretizationAt(e, parameters);
+    }
+
+    // The discretization of edge e at the given increasing parameters: the
+    // domain-start and domain-end vertex points at the two ends, copied, and
+    // the curve's points between.
+    DiscretizationAt(m: BrepModel, e: BrepEdgeIndex, parameters: Array<Number>): EdgeDiscretization
+        => EdgeDiscretization(e, parameters, parameters.Count.MapRange(i =>
+            i == 0
+                ? m.Vertices[m.DomainStartVertex(e)].Point
+                : (i == parameters.Count - 1 ? m.Vertices[m.DomainEndVertex(e)].Point : m.PointOnEdge(e, parameters[i]))));
+
+    // The closed-form uniform segment count of a line, circle or ellipse edge,
+    // never below least; 0 for every other curve, which is bisected.
+    ConicSegmentCount(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, least: Integer): Integer
+        => m.Geometry.CurveAt(m.Edges[e].Curve).ConicCount(m.EdgeDomain(e).Range, c, m.Tolerances, least, false);
+
+    // The largest uniform count the minimum length allows on a line, circle or
+    // ellipse edge, never below least; 0 for every other curve.
+    ConicSegmentCap(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, least: Integer): Integer
+        => m.Geometry.CurveAt(m.Edges[e].Curve).ConicCount(m.EdgeDomain(e).Range, c, m.Tolerances, least, true);
+
+    // The uniform count of a conic record over the range r (cap false), or
+    // the largest count its minimum length allows (cap true), never below
+    // least. A line: one segment per length limit, the cap its length over
+    // the effective minimum length. A circle: layer 4's ArcSegmentCount, the
+    // cap ArcLengthCap. An ellipse with semi-axes a >= b: the circle formulas
+    // at radius a with the angular bound scaled by b / a, the cap at radius b
+    // (README, "Implementation notes"). 0 for every other case.
+    ConicCount(curve: BrepCurve, r: NumberInterval, c: DiscretizationCriteria, t: Tolerances, least: Integer, cap: Boolean): Integer
+        => match (curve)
+        {
+            Line(origin, velocity) => cap
+                ? least.Max((velocity.Length * (r.End - r.Start) / c.EffectiveMinLength(t)).Floor.ToInteger.Max(1))
+                : least.Max(LineCriteriaCount(velocity.Length * (r.End - r.Start), c)
+                    .Min((velocity.Length * (r.End - r.Start) / c.EffectiveMinLength(t)).Floor.ToInteger.Max(1)));
+            Circle(placement, radius) => cap
+                ? least.Max(radius.ArcLengthCap(Angle(r.End - r.Start), c, t))
+                : radius.ArcSegmentCount(Angle(r.End - r.Start), c, t, least);
+            Ellipse(placement, semiAxis1, semiAxis2) => cap
+                ? least.Max(semiAxis1.Min(semiAxis2).ArcLengthCap(Angle(r.End - r.Start), c, t))
+                : least.Max(semiAxis1.Max(semiAxis2).ArcCriteriaCount(Angle(r.End - r.Start),
+                        DiscretizationCriteria(c.Chordal, c.Angular * (semiAxis1.Min(semiAxis2) / semiAxis1.Max(semiAxis2)), c.MaxLength, c.MinLength, c.MinSegments), t)
+                    .Min(semiAxis1.Min(semiAxis2).ArcLengthCap(Angle(r.End - r.Start), c, t)));
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => 0;
+            Parabola(placement, focalDistance) => 0;
+            Polyline(points) => 0;
+            BSpline(data) => 0;
+            Trimmed(basis, range, sameSense) => 0;
+            Composite(segments) => 0;
+            Offset(basis, distance, reference) => 0;
+            OnSurface(spaceCurve, supports, master) => 0;
+        };
+
+    // The segment count a straight chord of the given length needs under the
+    // length limit: 1 when unlimited.
+    LineCriteriaCount(length: Number, c: DiscretizationCriteria): Integer
+        => match (c.MaxLength)
+        {
+            Unlimited => 1;
+            AtMost(v) => (length / v).Ceiling.ToInteger.Max(1);
+        };
+
+    // The uniform count n raised one at a time, up to cap, while some image
+    // chord of the uniform split exceeds the effective chordal bound widened
+    // by twice the length tolerance (Law_ImageChordWithinChordal's bound).
+    RaisedForImages(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, n: Integer, cap: Integer): Integer
+    {
+        var count = n;
+        while (count < cap && m.ImagesExceedChordal(m.DiscretizationAt(e, m.EdgeDomain(e).Range.Samples(count + 1)), c))
+        {
+            count = count + 1;
+        }
+        return count;
+    }
+
+    // Whether some image chord of the discretization exceeds the effective
+    // chordal bound widened by twice the length tolerance.
+    ImagesExceedChordal(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
+        => m.EdgeImages(d.Edge).Any(img => m.IsImageEvaluable(img)
+            ? m.ImageChordDeviations(d, img, SamplePlan.DiscretizationPlan).Any(x =>
+                x > c.EffectiveChordal(m.Tolerances) + 2.0 * m.Tolerances.Length.Value)
+            : false);
+
+    // The seeds of edge e with every seed span bisected (SplitSpan), in
+    // increasing order.
+    BisectedParameters(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Array<Number>
+    {
+        var seeds = m.EdgeSeeds(e);
+        return [seeds[0]].Concatenate((seeds.Count - 1).Range.FlatMap(k =>
+            m.SplitSpan(e, c, seeds[k], seeds[k + 1], 0).Concatenate([seeds[k + 1]])));
+    }
+
+    // The parameters strictly inside [a, b] that bisection adds: none when
+    // the segment meets every criterion, when a half would be shorter than
+    // the effective minimum length, or at depth 40 (2^-40 of the span,
+    // below any parameter tolerance); otherwise the midpoint with both
+    // halves' own.
+    SplitSpan(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, depth: Integer): Array<Number>
+        => (depth < 40 ? (m.SegmentFails(e, c, a, b) ? m.HalvesKeepMinLength(e, c, a, b) : false) : false)
+            ? m.SplitSpan(e, c, a, (a + b) * 0.5, depth + 1)
+                .Concatenate([(a + b) * 0.5])
+                .Concatenate(m.SplitSpan(e, c, (a + b) * 0.5, b, depth + 1))
+            : [a].Take(0);
+
+    // The one-segment piece of edge e over [a, b], points on the curve.
+    PieceOf(m: BrepModel, e: BrepEdgeIndex, a: Number, b: Number): EdgeDiscretization
+        => EdgeDiscretization(e, [a, b], [m.PointOnEdge(e, a), m.PointOnEdge(e, b)]);
+
+    // Whether the segment [a, b] fails a criterion the bisection tests: the
+    // certified sagitta, the tangent deviation at the discretization plan's
+    // samples, the length limit, an image chord.
+    SegmentFails(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number): Boolean
+    {
+        var piece = m.PieceOf(e, a, b);
+        return m.Sagitta(e, a, b) > c.EffectiveChordal(m.Tolerances)
+            || m.TangentDeviation(piece, SamplePlan.DiscretizationPlan, 0) > c.EffectiveAngular * 0.5
+            || piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not
+            || m.ImagesExceedChordal(piece, c);
+    }
+
+    // Whether halving [a, b] at its parameter midpoint leaves both chords at
+    // least the effective minimum length.
+    HalvesKeepMinLength(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number): Boolean
+    {
+        var middle = m.PointOnEdge(e, (a + b) * 0.5);
+        var shortest = c.EffectiveMinLength(m.Tolerances);
+        return m.PointOnEdge(e, a).Distance(middle) >= shortest && middle.Distance(m.PointOnEdge(e, b)) >= shortest;
+    }
+
+    // The increasing parameters with the segment longest in parameter halved,
+    // one at a time (the first such on a tie), until there are at least
+    // `least` segments.
+    RaisedToCount(m: BrepModel, parameters: Array<Number>, least: Integer): Array<Number>
+    {
+        var ts = parameters;
+        while (ts.Count - 1 < least)
+        {
+            var widest = (ts.Count - 1).Range.Reduce(0, (w, i) => ts[i + 1] - ts[i] > ts[w + 1] - ts[w] ? i : w);
+            ts = ts.Take(widest + 1).Concatenate([(ts[widest] + ts[widest + 1]) * 0.5]).Concatenate(ts.Skip(widest + 1));
+        }
+        return ts;
+    }
 
     // The entry of an edge that `CanDiscretize` rejects: no parameters and no points. It keeps the
     // table at one entry per edge; every law is vacuous on it (`IsEvaluable` needs two samples),
