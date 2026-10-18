@@ -259,22 +259,66 @@ library BrepWitnesses
     CylinderSolid(r: Number, h: Number): BrepModel
         => BrepModel(
             GeometrySet(
-                [BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
-                 BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, h)), r),
-                 LineBetween(Point3D(r, 0.0, 0.0), Point3D(r, 0.0, h))],
+                CylinderCircles(r, h).Concatenate([LineBetween(Point3D(r, 0.0, 0.0), Point3D(r, 0.0, h))]),
                 [],
                 [],
-                [BrepSurface.Cylinder(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
-                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 0)),
-                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, h), 1))], []),
-            [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(r, 0.0, h))],
-            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
-             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(1), CurveIndex(1), true),
-             BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(2), true)],
+                CylinderSurfaces(r, h), []),
+            CylinderRimVertices(r, h),
+            CylinderRimEdges(0).Concatenate([BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(2), true)]),
             [BrepLoop.EdgeLoop([CoedgeOf(0, true), CoedgeOf(2, true), CoedgeOf(1, false), CoedgeOf(2, false)]),
              BrepLoop.EdgeLoop([CoedgeOf(0, false)]),
              BrepLoop.EdgeLoop([CoedgeOf(1, true)])],
             [SingleLoopFace(0, 0, true), SingleLoopFace(1, 1, true), SingleLoopFace(2, 2, true)],
+            [ClosedShellOf([0, 1, 2])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The bottom circle (world frame) and the top circle (at height h) of
+    // the cylinder of radius r about the z axis.
+    CylinderCircles(r: Number, h: Number): Array<BrepCurve>
+        => [BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+            BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, h)), r)];
+
+    // The cylinder (world frame), the bottom plane (normal -z) and the top
+    // plane (normal +z) of the solid cylinder of radius r and height h.
+    CylinderSurfaces(r: Number, h: Number): Array<BrepSurface>
+        => [BrepSurface.Cylinder(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+            BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 0)),
+            BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, h), 1))];
+
+    // The two rim vertices, (r, 0, 0) and (r, 0, h).
+    CylinderRimVertices(r: Number, h: Number): Array<BrepVertex>
+        => [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(r, 0.0, h))];
+
+    // The two rim edges: the bottom circle closed at vertex 0 and the top
+    // circle closed at vertex 1, both same sense, on curves 0 and 1.
+    CylinderRimEdges(_: Integer): Array<BrepEdge>
+        => [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
+            BrepEdge(BrepVertexIndex(1), BrepVertexIndex(1), CurveIndex(1), true)];
+
+    // The cylinder band: the solid cylinder of radius r and height h
+    // (CylinderSolid) without its seam edge, the side face bounded by its two
+    // rim circles alone. Edges E0 the bottom circle closed at P0 = (r, 0, 0)
+    // and E1 the top circle closed at P1 = (r, 0, h); loops [E0+] and [E1-]
+    // bound the side face, neither outer (in (u, v) the lines v = 0 run with
+    // u and v = h run against it, the face between them on their left), [E0-]
+    // the bottom face and [E1+] the top. Face mesher's case with no seam on a
+    // periodic face: layer 5 must cut one (step B, TKT-324). V = 2, E = 2,
+    // F = 3, L = 4, chi = 2, genus 0, area 2 pi r (r + h), volume pi r^2 h.
+    // Positive r and h.
+    Witness_CylinderBand(_: BrepModel, r: Number, h: Number): BrepModel
+        => BrepModel(
+            GeometrySet(CylinderCircles(r, h), [], [], CylinderSurfaces(r, h), []),
+            CylinderRimVertices(r, h),
+            CylinderRimEdges(0),
+            [BrepLoop.EdgeLoop([CoedgeOf(0, true)]),
+             BrepLoop.EdgeLoop([CoedgeOf(1, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(0, false)]),
+             BrepLoop.EdgeLoop([CoedgeOf(1, true)])],
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, false), FaceBound(BrepLoopIndex(1), true, false)]),
+             SingleLoopFace(1, 2, true),
+             SingleLoopFace(2, 3, true)],
             [ClosedShellOf([0, 1, 2])],
             [BrepBody.ManifoldSolid(ShellIndex(0))],
             Tolerances.Witness_Tolerances,
@@ -701,6 +745,10 @@ library BrepWitnesses
             : WitnessFacts([CountsOf(6, 9, 5, 5)], [0],
                 [sweep.Radians * r * r * 0.5, sweep.Radians * r * r * 0.5, sweep.Radians * r * h, r * h, r * h],
                 [sweep.Radians * r * r * h * 0.5]);
+
+    // The facts of the cylinder band: faces side, bottom, top.
+    CylinderBandFacts(r: Number, h: Number): WitnessFacts
+        => WitnessFacts([CountsOf(2, 2, 3, 4)], [0], [Number.Tau * r * h, Number.Pi * r * r, Number.Pi * r * r], [Number.Pi * r * r * h]);
 
     // The facts of the sphere witness of radius r.
     SphereFacts(r: Number): WitnessFacts

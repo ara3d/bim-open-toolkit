@@ -100,6 +100,32 @@ library BrepWitnessesLaws
             ? BrepModel.Witness_Cylinder(r, h, Angle(sweep)).RawCounts(ShellIndex(0)) == CylinderFacts(r, h, Angle(sweep)).Shells[0]
             : true;
 
+    // The cylinder band of radius r and height h (no seam edge) has its
+    // stated raw counts.
+    Law_CylinderBandHasStatedCounts(r: Number, h: Number): Boolean
+        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_CylinderBand(r, h).RawCounts(ShellIndex(0)) == CylinderBandFacts(r, h).Shells[0]
+            : true;
+
+    // The cylinder band has reduced Euler characteristic 2: its two rim
+    // loops on the side face count as two bounds of one face.
+    Law_CylinderBandEulerIsTwo(r: Number, h: Number): Boolean
+        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_CylinderBand(r, h).ShellEulerPoincare(ShellIndex(0)) == 2
+            : true;
+
+    // The cylinder band passes every structural check.
+    Law_CylinderBandIsStructurallyClean(r: Number, h: Number): Boolean
+        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_CylinderBand(r, h).ValidateBrep(ConformanceLevel.Structural).IsClean
+            : true;
+
+    // The cylinder band passes ValidateBrep at its default (Geometric) level.
+    Law_CylinderBandValidatesClean(r: Number, h: Number): Boolean
+        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
+            ? BrepModel.Witness_CylinderBand(r, h).ValidateBrep.IsClean
+            : true;
+
     //==
     // # Positive witnesses: areas and volumes
 
