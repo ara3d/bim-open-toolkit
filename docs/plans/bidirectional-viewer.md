@@ -39,8 +39,9 @@ check's verdicts (`samples/checking-analyses`).
    extension. The sink says it will write on Run; Run writes the byte-exact copy.
 
 Failure path: a pick on a GLB model (no entity mapping) selects nothing and the
-status says so; **Use selection** and **Comment** stay disabled until something
-is selected and a model is loaded; a form left empty does nothing; a model whose
+status says so; **Use selection** stays disabled until something is selected and
+**Comment** until a model is loaded (a comment with no selection is a
+model-level topic); a form left empty does nothing; a model whose
 path is not an IFC file leaves `sourcePath` blank, and the card's own warning
 asks for it.
 

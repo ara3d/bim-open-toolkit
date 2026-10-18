@@ -77,8 +77,9 @@ writes a file until Run.
 | **Edit property** (in the property panel) | A form asks for a property set, a property name and a value. **Add to graph** adds a `table.inline` row wired into `sink.writePsets`, with `sourcePath` set to the model path when it is an IFC file and `targetPath` beside it with `-reviewed` in the name. Run performs the byte-exact write-back. |
 
 A GLB model carries no entity mapping, so a pick selects nothing and the status
-says so; **Use selection** and **Comment** stay disabled until an element is
-selected and a model is loaded.
+says so. **Use selection** stays disabled until an element is selected, and
+**Comment** until a model is loaded; a comment with nothing selected is a
+model-level topic with no element.
 
 ## Run locally
 
