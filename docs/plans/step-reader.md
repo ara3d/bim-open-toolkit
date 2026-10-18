@@ -137,3 +137,23 @@ STEP reader look nearly line for line like the IFC one.
   (unit-cube-truncated.stp: #1 to #124, one Error `Syntax` at byte 4232 in #125, which starts at 4198). `StepHeader`
   keeps its ten fields as written. The u-blox 88 open with zero diagnostics and 5,708,101 definitions, as before;
   Ara3D.Ifc.Tests 38 passed, 11 skipped, before and after.
+- 2026-10-17, TKT-303 done in parakeet 278d154 and bim-open-data edb944a. The spike's "every block parses" was
+  wrong: `ExpressGrammar` recovers from a failed rule by jumping to the end of the block and recording
+  `ParserState.LastError`, so `AtEnd` held even when the tail was lost. Counted with `LastError`, 697 of 2,140 AP242
+  entities, 108 of 915 AP214 and 111 of 1,006 AP203 were read only in part (an `ANDOR` supertype lost
+  `b_spline_curve`'s `SUBTYPE OF` and all five attributes; a `SELF\x.y` redeclaration in the explicit list dropped
+  every attribute after it). The grammar now reads ANDOR / AND / nested ONEOF supertype expressions, explicit
+  `SELF\x.y [RENAMED z]` redeclarations, DERIVE attribute names, expression bounds (`LIST [1 : segments]`),
+  `STRING(n)`/`BINARY(n) FIXED`, `TYPE ... WHERE` and `--` comments: 0 blocks with an error in the three long forms and
+  in IFC2X3, IFC4, IFC4X3. The block scan started a TYPE block at every `SUBTYPE` and `TYPEOF` and rescanned to the end
+  of the file each time; splitting AP242 took over ten minutes and now takes about 9 s. No `EXTENSIBLE` or `BASED_ON`
+  select occurs in the three long forms, so none was needed.
+  The generator's model (`ExpressSchema.cs`, renamed from the `Ifc*` records) keeps every supertype, own explicit
+  attributes and DERIVE redeclarations; `ExpressAttributeLayout.Layout(entities)` gives each attribute's `Position` in
+  a simple-instance record, its `OwnPosition` in its partial-entity record, and `IsDerived` for a `*` slot. 26 AP242
+  records match `STEP-BREP-MODEL.md` section 3, as do two complex instances' partial records and the AP214/AP203
+  difference in `conversion_based_unit`; every entity of the three schemas has a layout (33 tests, skipped when the
+  schemas are absent). `TestGenerate` was writing to the stale `src/Ara3D.IfcTypes`; it now writes
+  `src/data/Ara3D.IfcTypes`, byte-identical, in about 25 s. For TKT-304: a C# class has one base, so the IFC emitter
+  throws on several supertypes; StepTypes needs interfaces or flattened attribute lists, and descriptors addressed by
+  (partial entity, `OwnPosition`) for complex instances and by `Position` for simple ones.
