@@ -182,6 +182,17 @@ Recorded as they arise; the ticket carries the same list.
 
 ## Decided by the owner during the pass
 
+- 2026-10-17, governing: **Specifications and laws drive development; the aim is a high likelihood
+  of working out of the box.** The owner stated this as the project's philosophy after the
+  discussion of development turnaround. Consequences for the implementation: a body is derived
+  from its contract and laws, in Plato, and the laws run over the witnesses before and after it
+  is written, so the law runner exists before the first body; existing C# routines (the Ara 3D
+  SDK's Delaunay, earcut, welding, topology) are oracles, second implementations the laws compare
+  against, not the bodies; C# first is reserved for exploration where the specification is not
+  yet known, and such a body is replaced, not ported, once the specification is written; the C#
+  writer's correctness is itself a precondition (F-50), so a writer regression test and the
+  interpreter-versus-backend differential test (TKT-317) come before backend law results count
+  as evidence. `TASKS.md` "Development mode" states the same.
 - 2026-10-17, last: **Parsing and decoding in C#, geometry in Plato; implementation starts.**
   TKT-306 was decided in the parser session ("reuse the C# reader and parser but write the
   geometry algorithms in Plato") and relayed here; the owner then approved this session's

@@ -44,6 +44,28 @@ two meet and keeps every other chunk independent of it.
 M0 to M7 can be built and tested with no parser at all. MP can be built against the type
 declarations alone. ME is the only place the two meet.
 
+## Development mode
+
+The owner's philosophy, stated 2026-10-17: specifications and laws drive development, and the aim
+is a high likelihood of working out of the box. In practice:
+
+- **Laws before bodies.** The law runner over the witnesses (TKT-316's first deliverable) exists
+  before the first body, so every body is written against laws that already run and fail.
+- **Bodies from contracts, in Plato.** A body is derived from its `spec` contract and the laws
+  that name it. The layer README records, per body, which contract and laws it came from.
+- **Existing code is an oracle, not a body.** The Ara 3D SDK's routines (Delaunay, earcut,
+  welding, half-edge topology) are second implementations the laws compare against, declared as
+  host obligations with contracts; they are not wrapped as the library's bodies.
+- **C# first only for exploration.** Where a specification is not yet known, a throwaway C# body
+  may be used to find it; it is replaced by a Plato body derived from the specification it helped
+  write, not ported.
+- **The writer is part of the trusted base.** Backend law results are evidence only once the
+  writer has a regression test for each defect of F-50 and the interpreter-versus-backend
+  differential test (TKT-317) agrees; until then the front-end gate and reading a body against
+  its contract are the checks.
+- **A chunk closes** when every body it owns is in Plato, its laws pass over the witnesses, and no
+  throwaway code remains.
+
 ## Preconditions, none of which blocks the first chunk
 
 - **64-bit `Number`.** `TARGET-LANGUAGE.md` recommends a per-compilation profile with `cpu64`
