@@ -167,6 +167,18 @@ Recorded as they arise; the ticket carries the same list.
   (F-46); the parser session took its two parser-side asks as TKT-310. The name-and-dependency
   reviewer is launched: single declarations, no upward references, stand-ins resolved,
   `VOCABULARY.md` revision 3, the adapter witnesses' home, the final gate.
+- 2026-10-17 Name-and-dependency review complete, six commits (81a4f6b2 to be3a8848): three
+  same-signature duplicates deleted (`IsRedundantVertexLoop` in layers 5 and 7, `LoopOfBoundaryPoint`
+  in 7, `WithEveryFaceReversed` in 8); one upward reference removed (layer 7's witness laws that
+  meshed through layer 8 moved to `08-pipeline/pipeline-witnesses.laws.plato`); every `belongs-in`
+  stand-in moved to its owner (`ScaledTolerances` to 0, `DefiningPoints` and the `Moved*` family to
+  1, criteria `ScaledBy` to 4 and 5); `Law_SeamUsesAreInOneFace` renamed `Law_SeamUsesRunOpposite`
+  in layers 2, 7, 8; the adapter witnesses moved to `03-step/step-witnesses.laws.plato`
+  (`StepWitnessesLaws`, generator output matches byte for byte); `VOCABULARY.md` revision 3 with
+  72 contract-change lines. Final gate `PASS: 0 error(s) in scope; 6710 functions type-checked`.
+  Five design questions recorded as F-48. The parser's TKT-310 landed (diagnostics with byte
+  offsets, ten header fields); the adapter spec carries the mapping. Phase 4: README status,
+  ticket acceptance boxes ticked, final report to the owner. The design pass is done.
 
 ## Decided by the owner during the pass
 

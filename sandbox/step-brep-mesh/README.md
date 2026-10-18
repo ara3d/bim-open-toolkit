@@ -155,5 +155,18 @@ reconciliation is a task in [TASKS.md](TASKS.md), not something this sandbox doe
 
 ## Status
 
-See [PLAN.md](PLAN.md) for the phase log, and each layer's README for what it decided and what it
-left open.
+Design pass complete, 2026-10-17. All nine layers are written, reviewed by a fresh mathematical
+reviewer (layers 0 to 6) and by the authors of layers 7 and 8 reading downward, fixed in a wave of
+125 commits, and name-reviewed: every name declared once, no upward reference, no stand-in left.
+The Plato front end over the whole folder, stdlib `brep.*` excluded, reports
+`PASS: 0 error(s) in scope; 6710 functions type-checked`. [TASKS.md](TASKS.md) orders the
+implementation into eight chunks; seven of its eight test modules need no STEP parser. The C#
+parser is `Ara3D.IO.StepParser` in a separate effort (`docs/plans/step-reader.md`); it meets this
+design through the adapter specified in [adapter/ADAPTER-SPEC.md](adapter/ADAPTER-SPEC.md), with
+five text fixtures and their expected `Part21File` values.
+
+Open: `reviews/FINDINGS.md` F-1 (string-typed STEP, on hold by the owner), F-45 to F-48 (what the
+adapter spec and the reviews left to the first implementation chunks), and the owner's questions in
+[PLAN.md](PLAN.md) (`Number` width, the v1 stdlib reconciliation, where the library and gate
+driver live). See [PLAN.md](PLAN.md) for the phase log, and each layer's README for what it
+decided and what it left open.

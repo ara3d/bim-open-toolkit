@@ -23,12 +23,28 @@ and the file laws every output must satisfy.
 | `Definitions` in file order | `Instances` in ascending `Id` | Stable sort by `Id`. A second definition with a used id is dropped with one `DuplicateInstanceId` Error at `StepInstance(id)`. |
 | One token arena, each list token before its items (parent first) | `Attributes` children first | Re-emit each definition's tokens in the layout below. Linear in the token count. |
 | Tokens are raw byte spans: strings with quotes and escape directives, keywords as written | Strings decoded, keywords and enumeration names upper case | Decode strings by the rules below; upper-case keywords (record names, typed-parameter names) and the name between the dots of an enumeration. |
-| Throws on malformed input | `Ok` false, `File` the parsed prefix, one Error | Until the parser reports where it stopped: the accepted first step below. After: the instances complete before the error, one `SyntaxError` at the instance being read. |
-| `StepHeader` keeps three strings: the description strings joined with `" \| "`, the first string of `FILE_NAME`, the first schema normalized for IFC | `StepHeader` has ten fields, list fields as lists | Read the header section (from `DataStart` to `DATA;`) with the same token rules and fill the ten fields from `FILE_DESCRIPTION`, `FILE_NAME`, `FILE_SCHEMA`. A missing entity leaves its fields empty with one `HeaderIncomplete` Warning. |
+| `Diagnostics` (since TKT-310, ara3d-sdk 002784d): `StepDiagnostic(Severity, Code, Offset, Expected, DefinitionId, DefinitionOffset)` in file order; an Error means parsing stopped there and the definitions before it are kept | `Ok` false exactly when a Diagnostic is an Error; `File` the parsed prefix; `Diagnostics` in layer 3's codes | Map each `StepDiagnostic` by the table below; `Ok` is the absence of an Error. |
+| `StepHeader` keeps the ten header fields raw (text between the quotes, escape directives and doubled apostrophes as written, `""` for `$` or a missing entity), `SchemaIdentifiers` as a list | `StepHeader` has the same ten fields, strings decoded | Decode each string by the rules below; copy the lists. A missing header entity arrives as a `HeaderIncomplete` Warning from the parser (mapped below). |
 
-The fifth row was found while writing this spec: `StepHeader.Parse` in
-`deps/ara3d-sdk/src/Ara3D.IO.StepParser/StepHeader.cs` discards the fields the decoder keys on
-(`OriginatingSystem`, `PreprocessorVersion`) and rewrites the schema name.
+Row 4 and row 5 were different before 2026-10-17: the parser threw on malformed input and its
+header kept three strings. TKT-310 changed both; the two fixtures `unit-cube.stp` and
+`unit-cube-truncated.stp` are copied byte-exact into `ara3d-sdk/tests/Ara3D.SDK.Tests/StepFixtures/`
+as its tests.
+
+### Mapping `StepDocument.Diagnostics`
+
+| `StepDiagnostic` | Layer 3 code | Severity | `Where` | `Measure` |
+|---|---|---|---|---|
+| `NotStepFile` | `P21-NOT-A-FILE` (`NotPart21File`) | Error | `WholeInput` | `Offset` |
+| `HeaderIncomplete` | `P21-HEADER-INCOMPLETE` | Warning | `WholeInput` | `Offset` |
+| `Syntax` with `DefinitionId` > 0 | `P21-SYNTAX` (`SyntaxError`) | Error | `StepInstance(DefinitionId)` | `Offset` |
+| `Syntax` with `DefinitionId` = 0 (a cut header, a missing `DATA;` or `ENDSEC;`, text between instances) | `P21-SYNTAX-OUTSIDE-INSTANCE` (new in layer 3, TASKS.md chunk D) | Error | `WholeInput` | `Offset` |
+
+`Expected` becomes the diagnostic's message. `Law_ParseFindingsPointAtTheirSubject` keeps requiring
+`P21-SYNTAX` to name an instance; the fourth row is the code for the case where none exists. On
+`unit-cube-truncated.stp` the parser keeps #1 to #124 and reports one `Syntax` Error at byte 4232
+in #125 (which starts at byte 4198), expected `')' closing the list`; the adapter output is the
+truncated row of the acceptance table.
 
 ### Arena layout
 
@@ -183,22 +199,11 @@ Applied to the text between the quotes, left to right; the result is Unicode tex
 | `\S\c` | the character of the selected page at the octet of c plus 128 |
 | a line break inside the string | dropped (P21 5.6) |
 
-## Accepted first step
+## Parser-side changes
 
-Until the parser reports where it stopped, the adapter may catch the parser's exception and
-return `Ok` false, an empty `Part21File` (every header field empty, no instances, an empty arena),
-and one Error `NotPart21File` (`P21-NOT-A-FILE`) at `WholeInput`. `SyntaxError` cannot be used:
-`Law_ParseFindingsPointAtTheirSubject` requires it to name an instance, and the adapter does not
-know which. Under this step the truncated row fails and is marked pending; the other four rows
-and every file law must pass.
-
-## What the parser session should change
-
-Only these two, in `Ara3D.IO.StepParser`:
-
-1. Stop throwing on malformed input in the data section: return the definitions complete so far.
-2. Report the position: the byte offset where reading stopped and the id of the definition being
-   read, if its `#n=` was read.
+Both asks of the first version of this spec landed as TKT-310 (ara3d-sdk 002784d, 2026-10-17):
+the parser reports a malformed or truncated file as a diagnostic with a byte offset and keeps the
+parsed prefix, and `StepHeader` keeps all ten fields. Nothing is asked of the parser now.
 
 ## Findings for the supervising session
 
@@ -208,7 +213,7 @@ Only these two, in `Ara3D.IO.StepParser`:
   quantifiers; `../03-step/step-witnesses.laws.plato` writes them as folds (`SatisfiesFileInvariants`).
   Layer 3 could own that function, so the C# tests and chunk D call one definition.
 - **No code for a parse that stopped at an unknown place.** `P21-NOT-A-FILE` ("nothing was read")
-  is the closest that points at `WholeInput`; the accepted first step borrows it.
+  is the closest that points at `WholeInput`; superseded by `P21-SYNTAX-OUTSIDE-INSTANCE` (mapping table above).
 - **Units differ from the kernel witness.** The fixtures are in millimetres (the task asked for
   that, and AP214 exporters write it); layer 7's `Witness_UnitBox` is in metres. Chunk D's law
   "decoding `Witness_Part21UnitBox` gives `Witness_UnitBox`" must either compare in millimetres

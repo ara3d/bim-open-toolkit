@@ -231,7 +231,7 @@ the derivative laws already use.
   without a tolerance, and write "smallest altitude > 0".
 - `01-geometry`, `spec ProjectNear` ensures `result == NearestUnwrapped(result, seed)`. That is an exact
   `==` on a computed value; `seed + ShortestDifference(seed, x)` is not bitwise `x`.
-- `02-topology`, `Law_SeamUsesAreInOneFace`: its name says "in one face"; its statement says "run
+- `02-topology`, `Law_SeamUsesRunOpposite`: its name says "in one face"; its statement says "run
   opposite". Within a shell it repeats `Law_EdgeUsesHaveOppositeOrientation`.
 
 ## 2. Missing laws

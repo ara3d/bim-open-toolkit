@@ -127,3 +127,29 @@ session accepts them.
      The brief should not name a model.
 - **Status** 1 to 5 carried by `TASKS.md` chunk A and the name review; 6 to 8 to be folded into
   the next wave brief.
+
+## F-48: design questions from the name-and-dependency review
+
+- **Raised** 2026-10-17 by the name reviewer (six commits, 81a4f6b2 to be3a8848; gate
+  `PASS: 0 error(s) in scope; 6710 functions type-checked`), not fixed because they are design
+  choices, not naming defects.
+  1. **Euler oracle independence.** `RedundantVertexLoopCount` and `RedundantVertexLoops` in
+     `07-validation/validation-oracles.library.plato` now call layer 2's `IsRedundantVertexLoop`
+     (the duplicate was deleted). An oracle that checks layer 2's rule needs its own rule under
+     another name, or the check is not independent.
+  2. **Planted-face facts.** `Witness_BoxWithPolyLoopSheet`'s meshing facts left layer 7's spec
+     when the laws that used layer 8 moved to `08-pipeline/pipeline-witnesses.laws.plato`; no
+     theorem ties witness and laws together now.
+  3. **Field and function with one name** (gate Info LINT014; the C# writer picks property or
+     method syntax by name): `ModelSize`, `CoordinateExtent` (fields of `DecodedModel`, functions
+     on `BrepModel`); `Handedness` (`TangentBasis` field, `Frame3D` function);
+     `EulerCharacteristic` (`TopologySummary` field, functions on `ModelMesh` and
+     `MeshComponentCounts`); `Domain`, `CircleRadius` against stdlib fields. Rename the fields or
+     fix the writer; a language question for `TARGET-LANGUAGE.md`.
+  4. **Case name equal to a type name.** `Provenance.StepInstance` (layer 0) and layer 3's type
+     `StepInstance`. Rename the case `AtInstance`.
+  5. **Law with no parameter.** `Law_WitnessFilesSatisfyInvariants()` in
+     `03-step/step-witnesses.laws.plato` should take the `(_: T)` form every other input-free law
+     uses.
+- **Status** open; 1, 2, 4, 5 go to `TASKS.md` chunk A's first commit (they are mechanical once
+  decided); 3 is a note for the C# writer.
