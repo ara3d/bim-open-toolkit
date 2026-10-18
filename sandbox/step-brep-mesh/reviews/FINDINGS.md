@@ -269,3 +269,24 @@ session accepts them.
   3. `Law_WitnessEdgeReversalPreservesMesh` and `Law_EveryDiagnosticIsLocated` reach the bodiless
      `ExpandedPoles` under `CompletePeriodicRegion`: step B and C work (TKT-324, TKT-325).
 - **Status** 1 TKT-335; 2 topology session; 3 step B session.
+
+## F-54: laws over derived values, and type invariants, under a runner that generates arbitrary values
+
+- **Raised** 2026-10-18 by the topology session (TKT-314). Since Plato acbc9b94 the law runner
+  generates arbitrary `ModelMesh` values. (1) Layer 7 laws over `(m: BrepModel, mesh: ModelMesh)`
+  assume the mesh was made from `m`, and nothing guards that: `Law_MeshClosedExactlyWhenShellClosed`
+  fails on `Witness_Cylinder` paired with the tetrahedron mesh. (2) Layer 6's invariant laws
+  (`Law_ElementFaceHasOneEntryPerElement`, `Law_ElementCornersInRange`, the other length laws) fail
+  on meshes no constructor made; they are invariants of the type, not properties of every value.
+- **Decision** (supervisor of `docs/plans/step-mesher-parallel.md`, 2026-10-18; the owner may
+  revise): a law about a value that only a function produces takes that function's inputs and
+  computes the value inside, guarded by the function's own precondition. For example
+  `Law_MeshClosedExactlyWhenShellClosed(m, o)` with `mesh = m.MeshModel(o).Mesh` under
+  `m.IsRunnable(o)`. The invariants of a type become predicates (bundled in layer 6's
+  `IsWellFormed(mesh)`, 31a70b02), asserted by laws over the producing function's inputs and over
+  the literal mesh witnesses by index, like `WitnessAt`. No runner change and no new law form:
+  every law stays true for every value the runner can generate.
+- **Rejected for now:** an `Invariant_*` law form that the runner draws only from witnesses. It needs a
+  Plato change (TKT-331's fence) and leaves a law that is false for some values of its declared
+  types.
+- **Status** topology session (layers 06 to 08).
