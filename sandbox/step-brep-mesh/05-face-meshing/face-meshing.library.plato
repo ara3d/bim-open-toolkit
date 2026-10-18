@@ -73,19 +73,19 @@ library FaceMeshing
     //==
     // # Triangulation and refinement
 
-    // Chunk A body, from the contract TriangulateRegion: every boundary point
-    // kept in BoundaryPoints order, every element positive in the chart,
-    // every point a corner, every boundary segment an element side, every
-    // interior side shared, no quads, no point added. The algorithm is ear
-    // clipping in the chart (ChartPoint), not the constrained Delaunay
-    // triangulation the design names, which the contract does not require:
-    // each hole of three or more points is bridged into the outer ring at
-    // a vertex the bridge can see (HoleBridged), a vertex is an ear when its
-    // triangle has positive chart area and no other ring point lies in it or
-    // on it, and a point hole is inserted afterwards by splitting the
-    // triangle that holds it. A flat (collinear) vertex is never an ear, so
-    // collinear boundary points stay corners. Quality is not optimized; that
-    // is the Delaunay version's job.
+    // Chunk A body, from the contract TriangulateRegion, made constrained
+    // Delaunay in chunk B: every boundary point kept in BoundaryPoints order,
+    // every element positive in the chart, every point a corner, every
+    // boundary segment an element side, every interior side shared, no quads,
+    // no point added. Ear clipping in the chart (ChartPoint) gives a first
+    // triangulation: each hole of three or more points is bridged into the
+    // outer ring at a vertex the bridge can see (HoleBridged), a vertex is an
+    // ear when its triangle has positive chart area and no other ring point
+    // lies in it or on it, and a point hole is inserted afterwards by
+    // splitting the triangle that holds it. A flat (collinear) vertex is never
+    // an ear, so collinear boundary points stay corners. Lawson's flips then
+    // make it the constrained Delaunay triangulation of the boundary points in
+    // the chart (UvDelaunay's Delaunayed), which changes no point.
     TriangulateRegion(r: UvRegion, chart: FaceChart): UvTriangulation
     {
         var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
@@ -97,7 +97,7 @@ library FaceMeshing
         var clipped = ring.EarClipped(points);
         var pointHoles = r.Holes.Count.Range.FlatMap(h =>
             r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : r.Holes.Count.Range.Take(0));
-        var triangles = pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points));
+        var triangles = r.Delaunayed(points, pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points)));
         return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
     }
 
@@ -209,27 +209,32 @@ library FaceMeshing
         return at < 0 ? triangles : triangles.Take(at).Concatenate(split).Concatenate(triangles.Skip(at + 1));
     }
 
-    // Chunk A body, from the contract RefineToSurface. A plane needs no
+    // Chunk B body, from the contract RefineToSurface. A plane needs no
     // interior point (its elements lie on it and its normal is constant).
-    // Otherwise up to twelve passes, each splitting every element that
-    // exceeds the surface criteria (ElementNeedsRefinement: the surface point
-    // at its parameter centroid farther than SurfaceChordal from its flat
-    // triangle, a corner normal turning more than SurfaceAngular along a
-    // side, or a fold when lifted) at its parameter centroid, unless the new
-    // point would lie closer than MinLength in 3D to a corner. Boundary points
-    // are never added, moved or removed; a centroid split keeps every element
-    // positive in the chart and every interior side shared. Not the Delaunay
-    // insertion the design names: centroid splits do not shorten an
-    // element's sides, so on a curved face the side midpoints keep their
-    // deviation; edge insertion with flips is chunk B's (cylinders).
+    // Otherwise up to forty passes of UvDelaunay's SplitPass while a pass adds
+    // a point: each triangle exceeding a surface criterion
+    // (TriangleNeedsRefinement: SurfaceChordal at its side midpoints, corner
+    // mean and parameter centroid, both ways between surface and element;
+    // SurfaceAngular along its sides and against its normal; a fold when
+    // lifted) is split at the parameter midpoint of its longest side that is
+    // not a boundary segment, or at its centroid when every side is one,
+    // unless the new point would come within the effective minimum length of
+    // a corner it joins or within the region's tolerance of the boundary; the
+    // pass ends with Lawson's flips. A triangle found to meet the criteria is
+    // not tested again while it is unchanged (NeedsRefinement, KnownGood).
+    // Boundary points are never added, moved or removed, and every element
+    // stays positive in the chart.
     RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
     {
         var current = t;
+        var known = t.Triangles.Map(x => false);
         var pass = 0;
         var changed = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord.Not;
-        while (pass < 12 && changed)
+        while (pass < 40 && changed)
         {
-            var next = m.CentroidSplitPass(f, current, c);
+            var needs = m.NeedsRefinement(f, r, current, known, c);
+            var next = m.SplitPass(f, r, chart, current, needs, c);
+            known = KnownGood(current, needs, next);
             changed = next.Points.Count > current.Points.Count;
             current = next;
             pass = pass + 1;
@@ -252,63 +257,6 @@ library FaceMeshing
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => false;
             Offset(basis, distance) => false;
         };
-
-    // One refinement pass: every triangle that ElementNeedsRefinement and
-    // whose centroid lies at least MinLength in 3D from its corners split
-    // into three at its parameter centroid, a new Interior point; quads kept.
-    CentroidSplitPass(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var split = t.Triangles.Count.Range.FlatMap(k =>
-            (m.ElementNeedsRefinement(f, t, k, c) ? m.CentroidIsFarEnough(f, t, k, c) : false) ? [k] : t.Triangles.Count.Range.Take(0));
-        var base = t.Points.Count;
-        var newPoints = split.Map(k => t.ElementUvCentroid(ElementIndex(k)));
-        var triangles = t.Triangles.Count.Range.FlatMap(k => t.SplitOrKept(split, base, k));
-        return UvTriangulation(
-            t.Points.Concatenate(newPoints),
-            t.Sources.Concatenate(newPoints.Map(p => UvPointSource.Interior)),
-            triangles,
-            t.Quads);
-    }
-
-    // Triangle k, or its three parts around the new point base + j when it is
-    // split[j].
-    SplitOrKept(t: UvTriangulation, split: Array<Integer>, base: Integer, k: Integer): Array<TriangleFace>
-    {
-        var j = split.Count.Range.Reduce(-1, (found, i) => found >= 0 ? found : (split[i] == k ? i : -1));
-        var tri = t.Triangles[k];
-        var p = VertexIndex(base + j.Max(0));
-        return j < 0 ? [tri] : [TriangleFace(tri.A, tri.B, p), TriangleFace(tri.B, tri.C, p), TriangleFace(tri.C, tri.A, p)];
-    }
-
-    // Whether triangle k exceeds the surface criteria: its parameter
-    // centroid's surface point farther than SurfaceChordal from its lifted
-    // flat triangle; the face normals at two of its corners more than
-    // SurfaceAngular apart; or it folds when lifted (LiftsFacingFaceNormal).
-    ElementNeedsRefinement(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: Integer, c: FaceMeshingCriteria): Boolean
-    {
-        var s = m.SurfaceOf(f);
-        var tri = t.Triangles[k];
-        var a = m.Geometry.Eval(s, t.Points[tri.A]);
-        var b = m.Geometry.Eval(s, t.Points[tri.B]);
-        var p = m.Geometry.Eval(s, t.Points[tri.C]);
-        var centre = m.Geometry.Eval(s, t.ElementUvCentroid(ElementIndex(k)));
-        var na = m.FaceNormalAt(f, t.Points[tri.A], Vector3D.UnitZ);
-        var nb = m.FaceNormalAt(f, t.Points[tri.B], Vector3D.UnitZ);
-        var nc = m.FaceNormalAt(f, t.Points[tri.C], Vector3D.UnitZ);
-        var turn = na.AngleBetween(nb).Radians.Max(nb.AngleBetween(nc).Radians).Max(nc.AngleBetween(na).Radians);
-        return UnsignedDistanceToTriangle(centre, a, b, p) > c.SurfaceChordal
-            || turn > c.SurfaceAngular.Radians
-            || m.LiftsFacingFaceNormal(f, t, ElementIndex(k)).Not;
-    }
-
-    // Whether triangle k's centroid lifts at least MinLength in 3D from each
-    // of its lifted corners.
-    CentroidIsFarEnough(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, k: Integer, c: FaceMeshingCriteria): Boolean
-    {
-        var s = m.SurfaceOf(f);
-        var centre = m.Geometry.Eval(s, t.ElementUvCentroid(ElementIndex(k)));
-        return t.Triangles[k].Vertices.All(v => m.Geometry.Eval(s, t.Points[v]).Distance(centre) >= c.Discretization.MinLength);
-    }
 
     // The region's constrained triangulation, refined against the surface.
     RefinedTriangulation(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, c: FaceMeshingCriteria): UvTriangulation
@@ -689,21 +637,28 @@ library FaceMeshing
     QuadPositions(fm: FaceMesh, q: FaceIndex): Array<Point3D>
         => fm.Quads[q].Vertices.Map(i => fm.PositionOf(i));
 
-    // The largest distance from quad q's corners to its mid-plane: the plane through the mean of
-    // its corners whose normal is its Newell normal. Zero for a planar quad.
+    // The largest distance from quad q's corners to its mid-plane (QuadWarpOf). Zero for a
+    // planar quad.
     QuadWarp(fm: FaceMesh, q: FaceIndex): Number
+        => fm.QuadPositions(q).QuadWarpOf;
+
+    // True when quad q is strictly convex (IsConvexQuadOf).
+    IsConvexQuad(fm: FaceMesh, q: FaceIndex): Boolean
+        => fm.QuadPositions(q).IsConvexQuadOf;
+
+    // The largest distance from the four corners ps to their mid-plane: the plane through their
+    // mean whose normal is their Newell normal.
+    QuadWarpOf(ps: Array<Point3D>): Number
     {
-        var ps = fm.QuadPositions(q);
         var n = ps.VectorArea.Normalize;
         var centre = ps.AverageOfPoints;
         return ps.Reduce(0.0, (worst, p) => worst.Max((p - centre).Dot(n).Abs));
     }
 
-    // True when quad q is strictly convex: the turn at every corner points along its Newell
-    // normal.
-    IsConvexQuad(fm: FaceMesh, q: FaceIndex): Boolean
+    // True when the quad on the four corners ps is strictly convex: the turn at every corner
+    // points along its Newell normal.
+    IsConvexQuadOf(ps: Array<Point3D>): Boolean
     {
-        var ps = fm.QuadPositions(q);
         var n = ps.VectorArea;
         return 4.Range.All(j => (ps[j] - ps.AtModulo(j + 3)).Cross(ps.AtModulo(j + 1) - ps[j]).Dot(n) > 0.0);
     }
@@ -731,17 +686,118 @@ library FaceMeshing
             ? QuadGridOutcome.Grid(g)
             : QuadGridOutcome.NoGrid;
 
-    // deferred: transfinite (Coons) interpolation in parameter space between the four sides,
-    // whose points are the region's boundary points unchanged (the boundary prefix); rows that
-    // touch a pole segment end in triangles; a quad that after lifting fails QuadWarp <=
-    // SurfaceChordal or IsConvexQuad is split along the diagonal whose triangles have the larger
-    // minimum angle.
-    QuadGrid(m: BrepModel, f: BrepFaceIndex, r: UvRegion, corners: Array<VertexIndex>, c: FaceMeshingCriteria): UvTriangulation;
+    // Chunk B body, from the contract QuadGrid and its deferred note. Grid
+    // node (i, j), 0 <= i <= n0 along side 0 and 0 <= j <= n1 along side 1
+    // (n0, n1 the side segment counts; sides 2 and 3 match them), is on the
+    // border the region's own point unchanged (GridNodeIndex), and inside an
+    // Interior point placed by transfinite (Coons) interpolation of the four
+    // side polylines at s = i / n0, t = j / n1 (GridNodePoint), numbered after
+    // the boundary in row order. Cell (i, j) is the quad (i, j), (i + 1, j),
+    // (i + 1, j + 1), (i, j + 1), counter-clockwise in the chart because the
+    // outer loop is; a cell whose lifted corners are not planar within
+    // SurfaceChordal or not strictly convex becomes two triangles on the
+    // diagonal with the larger minimum angle in 3D (CellTriangles). Rows
+    // touching a pole segment are collapsed by Lift (chunk C).
+    QuadGrid(m: BrepModel, f: BrepFaceIndex, r: UvRegion, corners: Array<VertexIndex>, c: FaceMeshingCriteria): UvTriangulation
+    {
+        var n0 = r.SideSegmentCount(corners, 0);
+        var n1 = r.SideSegmentCount(corners, 1);
+        var interior = ((n0 - 1) * (n1 - 1)).MapRange(k => r.GridNodePoint(corners, n0, n1, k % (n0 - 1) + 1, k / (n0 - 1) + 1));
+        var points = r.Outer.Points.Concatenate(interior);
+        var cells = (n0 * n1).MapRange(k => 4.MapRange(q => VertexIndex(r.GridNodeIndex(corners, n0, n1,
+            k % n0 + ((q == 1 || q == 2) ? 1 : 0), k / n0 + (q >= 2 ? 1 : 0)))));
+        var lifted = cells.Map(cell => cell.Map(v => m.Geometry.Eval(m.SurfaceOf(f), points[v])));
+        var kept = (n0 * n1).Range.FlatMap(k => lifted[k].IsKeptQuad(c) ? [k] : [k].Take(0));
+        var triangles = (n0 * n1).Range.FlatMap(k => lifted[k].IsKeptQuad(c) ? CellTriangles(cells[k], lifted[k]).Take(0) : CellTriangles(cells[k], lifted[k]));
+        return UvTriangulation(
+            points,
+            r.Outer.Sources.Concatenate(interior.Map(uv => UvPointSource.Interior)),
+            triangles,
+            kept.Map(k => QuadFace(cells[k][0], cells[k][1], cells[k][2], cells[k][3])));
+    }
 
-    // deferred: for each pair of opposite sides with different segment counts, the floor of the
-    // shorter side's edge is the longer side's count; a side that is a seam use, a seam cut or a
-    // pole segment has no edge to floor. Indexed by BrepEdgeIndex, zero elsewhere.
-    MatchingFloors(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, corners: Array<VertexIndex>): SegmentFloors;
+    // Whether a grid cell with lifted corners ps is kept as a quad: planar within SurfaceChordal
+    // and strictly convex.
+    IsKeptQuad(ps: Array<Point3D>, c: FaceMeshingCriteria): Boolean
+        => ps.QuadWarpOf <= c.SurfaceChordal && ps.IsConvexQuadOf;
+
+    // The cell (corners v, lifted ps) as two triangles on the diagonal whose triangles have the
+    // larger minimum angle in 3D: (0, 1, 2) and (0, 2, 3), or (0, 1, 3) and (1, 2, 3).
+    CellTriangles(v: Array<VertexIndex>, ps: Array<Point3D>): Array<TriangleFace>
+        => MinimumAngle(ps[0], ps[1], ps[2]).Min(MinimumAngle(ps[0], ps[2], ps[3]))
+                >= MinimumAngle(ps[0], ps[1], ps[3]).Min(MinimumAngle(ps[1], ps[2], ps[3]))
+            ? [TriangleFace(v[0], v[1], v[2]), TriangleFace(v[0], v[2], v[3])]
+            : [TriangleFace(v[0], v[1], v[3]), TriangleFace(v[1], v[2], v[3])];
+
+    // The smallest angle, in radians, of the triangle (a, b, c) in space.
+    MinimumAngle(a: Point3D, b: Point3D, c: Point3D): Number
+        => (b - a).AngleBetween(c - a).Radians.Min((a - b).AngleBetween(c - b).Radians).Min((a - c).AngleBetween(b - c).Radians);
+
+    // The index of grid node (i, j) among the grid's points: on the border, its position in the
+    // outer loop (side 0 runs from corner 0 with i, side 1 from corner 1 with j, side 2 from
+    // corner 2 with n0 - i, side 3 from corner 3 with n1 - j); inside, the outer loop's count plus
+    // its row-order position among the interior nodes.
+    GridNodeIndex(r: UvRegion, corners: Array<VertexIndex>, n0: Integer, n1: Integer, i: Integer, j: Integer): Integer
+    {
+        var n = r.Outer.Points.Count;
+        return j == 0 ? (corners[0].Value + i) % n
+            : (i == n0 ? (corners[1].Value + j) % n
+            : (j == n1 ? (corners[2].Value + n0 - i) % n
+            : (i == 0 ? (corners[3].Value + n1 - j) % n
+            : n + (j - 1) * (n0 - 1) + (i - 1))));
+    }
+
+    // The outer loop's point at grid border node (i, j).
+    GridBorderPoint(r: UvRegion, corners: Array<VertexIndex>, n0: Integer, n1: Integer, i: Integer, j: Integer): UvCoordinate
+        => r.Outer.Points[r.GridNodeIndex(corners, n0, n1, i, j)];
+
+    // The transfinite (Coons) interpolation of the four sides at interior node (i, j): the
+    // blend of the two sides across u and the two across v, less the bilinear blend of the
+    // corners. It reproduces every border point exactly.
+    GridNodePoint(r: UvRegion, corners: Array<VertexIndex>, n0: Integer, n1: Integer, i: Integer, j: Integer): UvCoordinate
+    {
+        var s = i.ToNumber / n0.ToNumber;
+        var t = j.ToNumber / n1.ToNumber;
+        var bottom = r.GridBorderPoint(corners, n0, n1, i, 0);
+        var top = r.GridBorderPoint(corners, n0, n1, i, n1);
+        var left = r.GridBorderPoint(corners, n0, n1, 0, j);
+        var right = r.GridBorderPoint(corners, n0, n1, n0, j);
+        var c00 = r.GridBorderPoint(corners, n0, n1, 0, 0);
+        var c10 = r.GridBorderPoint(corners, n0, n1, n0, 0);
+        var c11 = r.GridBorderPoint(corners, n0, n1, n0, n1);
+        var c01 = r.GridBorderPoint(corners, n0, n1, 0, n1);
+        return UvCoordinate(
+            (1.0 - t) * bottom.U + t * top.U + (1.0 - s) * left.U + s * right.U
+                - ((1.0 - s) * (1.0 - t) * c00.U + s * (1.0 - t) * c10.U + s * t * c11.U + (1.0 - s) * t * c01.U),
+            (1.0 - t) * bottom.V + t * top.V + (1.0 - s) * left.V + s * right.V
+                - ((1.0 - s) * (1.0 - t) * c00.V + s * (1.0 - t) * c10.V + s * t * c11.V + (1.0 - s) * t * c01.V));
+    }
+
+    // Chunk B body, from the contract MatchingFloors and its deferred note:
+    // for each pair of opposite sides with different segment counts, the edge
+    // of the side with fewer segments (SideEdge) gets the other side's count
+    // as its floor; a side that is a seam use, a seam cut or a pole segment
+    // has no edge to floor. One entry per model edge, zero where no side asks.
+    MatchingFloors(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, corners: Array<VertexIndex>): SegmentFloors
+    {
+        var counts = 4.MapRange(k => r.SideSegmentCount(corners, k));
+        var edges = 4.MapRange(k => m.SideEdge(f, d, r, corners, k));
+        return SegmentFloors(m.Edges.Count.MapRange(e => 4.Range.Reduce(0, (floor, k) =>
+            (edges[k] == e && counts[k] < counts[(k + 2) % 4]) ? floor.Max(counts[(k + 2) % 4]) : floor)));
+    }
+
+    // The model edge side k of the four-sided outer loop runs along, as an integer: the face edge
+    // whose discretization segment joins the side's first two points; -1 for a seam of the face,
+    // a seam cut, a pole segment, or no edge. A side is one carrier (QuadSidesOf), so its first
+    // segment names it.
+    SideEdge(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, corners: Array<VertexIndex>, k: Integer): Integer
+    {
+        var start = corners[k % 4].Value;
+        var a = r.Outer.Sources.AtModulo(start);
+        var b = r.Outer.Sources.AtModulo(start + 1);
+        var carriers = m.FaceEdges(f).FlatMap(e => (m.IsSeamEdgeOf(f, e).Not && m.IsDiscretizationSegment(d, e, a, b)) ? [e.Value] : [e.Value].Take(0));
+        return carriers.Count == 0 ? -1 : carriers[0];
+    }
 
     // The QuadCountMismatch request for edge e under the floors, when its floor exceeds its
     // current segment count: the count in Segments, the criteria's chordal unchanged.

@@ -1120,11 +1120,65 @@ library UvRegions
     //==
     // # Four-sided regions
 
-    // deferred: walk the outer loop of a region without holes, find the points where it turns
-    // from a run along one parameter to a run along the other (within RegionTolerance), and accept
-    // exactly four such corners whose sides are each one coedge, seam use, seam cut, or pole
-    // segment.
-    QuadSidesOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): QuadSides;
+    // Chunk B body, from the contract QuadSidesOf and its deferred note: one
+    // walk of the outer loop of a region without holes. Each step is classed
+    // as a run along u (v constant within the region's tolerance), along v,
+    // or neither (StepClass); a corner is a point where the class of the step
+    // arriving differs from the class of the step leaving. Four-sided when
+    // every step runs along u or v, there are exactly four corners, and each
+    // side is one carrier (SideIsOneCarrier): one coedge, seam use, seam cut
+    // or pole segment.
+    QuadSidesOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): QuadSides
+    {
+        var tol = m.RegionTolerance(f, m.ChartOf(f, r));
+        var n = r.Outer.Points.Count;
+        var classes = n.MapRange(i => r.Outer.Points[i].StepClass(r.Outer.Points.AtModulo(i + 1), tol));
+        var corners = n.Range.FlatMap(i => classes[i] != classes[(i + n - 1) % n] ? [VertexIndex(i)] : [VertexIndex(i)].Take(0));
+        return (r.Holes.IsEmpty && n >= 4 && classes.All(x => x != 0) && corners.Count == 4)
+            ? (4.Range.All(k => r.SideIsOneCarrier(corners, k)) ? QuadSides.FourSided(corners) : QuadSides.NotFourSided)
+            : QuadSides.NotFourSided;
+    }
+
+    // The class of the step from a to b: 1 when it runs along u (v constant within the
+    // tolerance), 2 along v, 0 neither (or a step shorter than the tolerance both ways).
+    StepClass(a: UvCoordinate, b: UvCoordinate, tol: UvTolerance): Integer
+    {
+        var alongU = (b.V - a.V).Abs <= tol.V.Value;
+        var alongV = (b.U - a.U).Abs <= tol.U.Value;
+        return alongU == alongV ? 0 : (alongU ? 1 : 2);
+    }
+
+    // Whether side k of the four-sided outer loop is one carrier: every point strictly between
+    // its two corners is a sample of one edge, a point of one seam-cut copy, or a point of one
+    // pole segment. A side of one segment has no such point and is one coedge or one cut step.
+    SideIsOneCarrier(r: UvRegion, corners: Array<VertexIndex>, k: Integer): Boolean
+    {
+        var start = corners[k % 4].Value;
+        var count = r.SideSegmentCount(corners, k);
+        var inner = (count - 1).MapRange(i => r.Outer.Sources.AtModulo(start + 1 + i));
+        return inner.Count == 0 ? true : inner.All(s => s.SameCarrier(inner[0]));
+    }
+
+    // Whether two sources lie on one carrier: samples of one edge, points of one seam-cut copy,
+    // or points of one pole segment. A vertex or an interior point is no carrier's.
+    SameCarrier(a: UvPointSource, b: UvPointSource): Boolean
+        => match (a) {
+            FromVertex(v) => false;
+            FromEdge(e, k) => b.IsSampleOfEdge(e);
+            SeamCut(side, k) => b.IsSeamCutOn(side);
+            Pole(side, k) => b.IsPoleOn(side);
+            Interior => false;
+        };
+
+    // True when s is a point of the seam-cut copy along `side`.
+    IsSeamCutOn(s: UvPointSource, side: DomainSide): Boolean
+        => match (s) {
+            FromVertex(w) => false;
+            FromEdge(e, k) => false;
+            SeamCut(side2, k) => side2 == side;
+            Pole(side2, k) => false;
+            Interior => false;
+        };
 
     // The number of corners a classification names: four for a four-sided region, none otherwise.
     CornerCount(q: QuadSides): Integer

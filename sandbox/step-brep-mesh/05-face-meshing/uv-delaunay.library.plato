@@ -1,0 +1,300 @@
+//==
+// # Constrained Delaunay flips and refinement in a face's chart
+//
+// Layer 05-face-meshing, the machinery TriangulateRegion and RefineToSurface share (chunk B,
+// TKT-324). A triangulation of a region is made constrained Delaunay in the face's chart by
+// Lawson's flips: an edge that is not a boundary segment of the region is flipped while the two
+// angles opposite it sum to more than pi and the quadrilateral around it is strictly convex.
+// From any triangulation that keeps the boundary segments, the flips reach the constrained
+// Delaunay triangulation (Lawson 1977; de Berg et al., Computational Geometry, 9.1 and 9.6), and
+// they change no point, so every contract of the triangulation that does not name the
+// connectivity still holds. Refinement against the surface splits the longest interior edge of
+// each element that fails a surface criterion at its parameter midpoint (Rivara's longest-edge
+// bisection), or the element at its parameter centroid when every side is a boundary segment,
+// then flips again. Both keep every element positive in the chart: a flip happens only on a
+// strictly convex quadrilateral, and a split point lies on the split edge or inside the
+// element.
+//
+// Directed edge j of a triangle runs from its corner j to corner j + 1 (A to B, B to C, C to A);
+// its slot in a neighbour table is 3 t + j.
+//
+// Sections, in order:
+//  - Corners and edges
+//  - The neighbour table
+//  - Lawson's flips
+//  - Refinement against the surface
+
+library UvDelaunay
+{
+    //==
+    // # Corners and edges
+
+    // Corner j (0, 1 or 2, modulo three) of triangle t, as a point index.
+    Corner(t: TriangleFace, j: Integer): Integer
+        => j % 3 == 0 ? t.A.Value : (j % 3 == 1 ? t.B.Value : t.C.Value);
+
+    // The code of the directed edge from point a to point b among n points.
+    EdgeCode(a: Integer, b: Integer, n: Integer): Integer
+        => a * n + b;
+
+    // The corner of triangle t that is neither a nor b.
+    OppositeCorner(t: TriangleFace, a: Integer, b: Integer): Integer
+        => 3.Range.Reduce(-1, (found, j) =>
+            found >= 0 ? found : ((t.Corner(j) != a && t.Corner(j) != b) ? t.Corner(j) : -1));
+
+    // The triangle (a, b, c).
+    TriangleOf(a: Integer, b: Integer, c: Integer): TriangleFace
+        => TriangleFace(VertexIndex(a), VertexIndex(b), VertexIndex(c));
+
+    // Whether the segment between points a and b is a boundary segment of the region, in either
+    // direction: an edge no flip or split may touch.
+    IsConstrained(r: UvRegion, a: Integer, b: Integer): Boolean
+        => r.IsBoundarySegment(a, b) || r.IsBoundarySegment(b, a);
+
+    //==
+    // # The neighbour table
+
+    // The position of the first entry of the increasing array xs that is at least x; xs.Count
+    // when none is.
+    LowerBound(xs: Array<Integer>, x: Integer): Integer
+    {
+        var lo = 0;
+        var hi = xs.Count;
+        while (lo < hi)
+        {
+            var mid = (lo + hi) / 2;
+            if (xs[mid] < x)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+        return lo;
+    }
+
+    // For each directed edge slot 3 t + j of the triangles over n points, the triangle that holds
+    // the same edge the other way round, or -1 when none does (a boundary segment).
+    NeighbourTable(tris: Array<TriangleFace>, n: Integer): Array<Integer>
+    {
+        var codes = (3 * tris.Count).MapRange(s => EdgeCode(tris[s / 3].Corner(s % 3), tris[s / 3].Corner(s % 3 + 1), n));
+        var order = codes.SortedIndices((x, y) => x <= y);
+        var sorted = order.Map(s => codes[s]);
+        return (3 * tris.Count).MapRange(s => NeighbourAt(sorted, order,
+            EdgeCode(tris[s / 3].Corner(s % 3 + 1), tris[s / 3].Corner(s % 3), n)));
+    }
+
+    // The triangle holding the directed edge `code`, given the codes sorted and the slots in
+    // that order; -1 when no slot has it.
+    NeighbourAt(sorted: Array<Integer>, order: Array<Integer>, code: Integer): Integer
+    {
+        var at = sorted.LowerBound(code);
+        return at < sorted.Count ? (sorted[at] == code ? order[at] / 3 : -1) : -1;
+    }
+
+    //==
+    // # Lawson's flips
+
+    // The angle at `apex` between the directions to p and q, in [0, pi].
+    AngleAt(apex: Point2D, p: Point2D, q: Point2D): Number
+    {
+        var ux = p.X - apex.X;
+        var uy = p.Y - apex.Y;
+        var vx = q.X - apex.X;
+        var vy = q.Y - apex.Y;
+        return Atan2Radians((ux * vy - uy * vx).Abs, ux * vx + uy * vy);
+    }
+
+    // Whether edge j of triangle t (from a to b, c opposite), shared with triangle u (d
+    // opposite), should be flipped to the edge from c to d: not a boundary segment, the
+    // quadrilateral (a, d, b, c) strictly convex in the chart, and the angles at c and d summing
+    // to more than pi by more than rounding (so cocircular points never flip back and forth).
+    IsFlippable(r: UvRegion, points: Array<Point2D>, t: TriangleFace, j: Integer, u: TriangleFace): Boolean
+    {
+        var a = t.Corner(j);
+        var b = t.Corner(j + 1);
+        var c = t.Corner(j + 2);
+        var d = u.OppositeCorner(a, b);
+        return (d < 0 || r.IsConstrained(a, b))
+            ? false
+            : (TwiceSignedArea(points[a], points[d], points[c]) > 0.0
+                && TwiceSignedArea(points[d], points[b], points[c]) > 0.0
+                && AngleAt(points[c], points[a], points[b]) + AngleAt(points[d], points[b], points[a]) > Number.Pi + 1e-9);
+    }
+
+    // One pass of flips: every flippable edge whose two triangles no earlier flip of the pass
+    // touched is flipped; (a, b, c) and (b, a, d) become (a, d, c) and (d, b, c).
+    FlipPass(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
+    {
+        var nb = NeighbourTable(tris, points.Count);
+        var result = tris.EmptyList.AddRange(tris);
+        var used = new List<Boolean>().AddRange(tris.Count.MapRange(i => false));
+        var s = 0;
+        while (s < 3 * tris.Count)
+        {
+            var t = s / 3;
+            var u = nb[s];
+            var free = u > t ? (used.At(t).Not && used.At(u).Not) : false;
+            if (free ? r.IsFlippable(points, tris[t], s % 3, tris[u]) : false)
+            {
+                var a = tris[t].Corner(s % 3);
+                var b = tris[t].Corner(s % 3 + 1);
+                var c = tris[t].Corner(s % 3 + 2);
+                var d = tris[u].OppositeCorner(a, b);
+                result = result.Set(t, TriangleOf(a, d, c)).Set(u, TriangleOf(d, b, c));
+                used = used.Set(t, true).Set(u, true);
+            }
+            s = s + 1;
+        }
+        return result.Freeze();
+    }
+
+    // The triangles flipped until no edge is flippable (at most 200 passes): the constrained
+    // Delaunay triangulation of their points in the chart, the region's boundary segments kept.
+    Delaunayed(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
+    {
+        var current = tris;
+        var changed = true;
+        var pass = 0;
+        while (changed && pass < 200)
+        {
+            var next = r.FlipPass(points, current);
+            changed = next.Corresponds(current, (x, y) => x == y).Not;
+            current = next;
+            pass = pass + 1;
+        }
+        return current;
+    }
+
+    //==
+    // # Refinement against the surface
+    //
+    // The tests mirror the surface laws of face-meshing.laws.plato on the element lifted through
+    // the surface, with the bounds unwidened, so an element refinement accepts meets the laws
+    // with the length tolerance to spare. Boundary segments are not tested: a model edge's
+    // segment is bounded by layer 04's criteria and a synthetic cut's step by CutSegmentCount,
+    // and neither can be split.
+
+    // Whether triangle k of t on face f exceeds a surface criterion: it folds when lifted; its
+    // normal is more than SurfaceAngular from the face normal at its parameter centroid (off
+    // collapsed lines); the corner mean or the surface point at its parameter centroid is
+    // farther than SurfaceChordal from the surface or from the flat triangle; or along some side
+    // that is not a boundary segment, the chord midpoint or the surface point at the parameter
+    // midpoint is that far off, or the face normal turns by more than SurfaceAngular.
+    TriangleNeedsRefinement(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation, k: Integer, c: FaceMeshingCriteria): Boolean
+    {
+        var s = m.SurfaceOf(f);
+        var tri = t.Triangles[k];
+        var uvs = 3.MapRange(j => t.Points[tri.Corner(j)]);
+        var ps = uvs.Map(uv => m.Geometry.Eval(s, uv));
+        var ns = uvs.Map(uv => m.FaceNormalAt(f, uv, Vector3D.UnitZ));
+        var centroid = t.ElementUvCentroid(ElementIndex(k));
+        var area = ps.VectorArea;
+        var onPole = uvs.Any(uv => m.IsOnCollapsedLine(f, uv));
+        return m.LiftsFacingFaceNormal(f, t, ElementIndex(k)).Not
+            || (onPole ? false : area.AngleBetween(m.FaceNormalAt(f, centroid, area)).Radians > c.SurfaceAngular.Radians)
+            || m.SurfaceDistance(f, ps.AverageOfPoints) > c.SurfaceChordal
+            || UnsignedDistanceToTriangle(m.Geometry.Eval(s, centroid), ps[0], ps[1], ps[2]) > c.SurfaceChordal
+            || 3.Range.Any(j => r.IsConstrained(tri.Corner(j), tri.Corner(j + 1))
+                ? false
+                : (m.SurfaceDistance(f, ps[j].HalfwayPoint(ps[(j + 1) % 3])) > c.SurfaceChordal
+                    || UnsignedDistanceToTriangle(m.Geometry.Eval(s, uvs[j].UvMidpoint(uvs[(j + 1) % 3])), ps[0], ps[1], ps[2]) > c.SurfaceChordal
+                    || ns[j].AngleBetween(ns[(j + 1) % 3]).Radians > c.SurfaceAngular.Radians));
+    }
+
+    // The side of triangle `tri` refinement splits: the longest in the chart that is not a
+    // boundary segment and has a neighbour (slot k * 3 + j in nb); -1 when every side is a
+    // boundary segment, and the triangle is split at its centroid instead.
+    SplitSide(r: UvRegion, points: Array<Point2D>, tri: TriangleFace, nb: Array<Integer>, k: Integer): Integer
+        => 3.Range.Reduce(-1, (best, j) =>
+            (r.IsConstrained(tri.Corner(j), tri.Corner(j + 1)) || nb[3 * k + j] < 0)
+                ? best
+                : (best < 0 ? j : (points[tri.Corner(j)].Distance(points[tri.Corner(j + 1)])
+                    > points[tri.Corner(best)].Distance(points[tri.Corner(best + 1)]) ? j : best)));
+
+    // Whether the new point uv may be inserted: strictly inside the region (farther than its
+    // tolerance from the boundary), and its surface point at least the effective minimum length
+    // from the surface points of the corners it will join.
+    IsGoodInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, tol: UvTolerance, t: UvTriangulation, corners: Array<Integer>, uv: UvCoordinate, c: FaceMeshingCriteria): Boolean
+    {
+        var s = m.SurfaceOf(f);
+        var p = m.Geometry.Eval(s, uv);
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        return r.IsStrictlyInside(uv, tol)
+            && corners.All(v => m.Geometry.Eval(s, t.Points[v]).Distance(p) >= least);
+    }
+
+    // Which triangles of t need refinement: those not already known to meet the criteria
+    // (known[k], from an earlier pass whose triangle k is unchanged) that TriangleNeedsRefinement
+    // finds wanting. A triangle's verdict depends on its corners alone, so it is kept while they
+    // are.
+    NeedsRefinement(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation, known: Array<Boolean>, c: FaceMeshingCriteria): Array<Boolean>
+        => t.Triangles.Count.MapRange(k => (k < known.Count ? known[k] : false) ? false : m.TriangleNeedsRefinement(f, r, t, k, c));
+
+    // What is known to meet the criteria after a pass from `before` (whose triangles needed
+    // refinement as `needs` says) to `after`: triangle k when it is unchanged at its index and
+    // did not need refinement. Flips and splits rewrite triangles in place or append, so an
+    // unchanged index is an unchanged triangle.
+    KnownGood(before: UvTriangulation, needs: Array<Boolean>, after: UvTriangulation): Array<Boolean>
+        => after.Triangles.Count.MapRange(k => k < before.Triangles.Count
+            ? (needs[k] ? false : after.Triangles[k] == before.Triangles[k])
+            : false);
+
+    // One refinement pass over the triangles of t: each triangle that needs refinement (needs[k])
+    // and that no earlier split of the pass touched is split, at the parameter midpoint of its SplitSide
+    // with the neighbour across it ((a, b, c) and (b, a, d) become (a, p, c), (p, b, c),
+    // (b, p, d), (p, a, d)), or at its parameter centroid; the new points are Interior and come
+    // after every existing point; quads are kept. Then Lawson's flips.
+    SplitPass(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, needs: Array<Boolean>, c: FaceMeshingCriteria): UvTriangulation
+    {
+        var points = t.Points.Map(uv => chart.ChartPoint(uv));
+        var tol = m.RegionTolerance(f, chart);
+        var nb = NeighbourTable(t.Triangles, t.Points.Count);
+        var tris = t.Triangles.EmptyList.AddRange(t.Triangles);
+        var used = new List<Boolean>().AddRange(t.Triangles.Count.MapRange(i => false));
+        var added = new List<UvCoordinate>();
+        var k = 0;
+        while (k < t.Triangles.Count)
+        {
+            var tri = t.Triangles[k];
+            if (used.At(k) ? false : needs[k])
+            {
+                var j = r.SplitSide(points, tri, nb, k);
+                var u = j < 0 ? -1 : nb[3 * k + j];
+                var a = tri.Corner(j.Max(0));
+                var b = tri.Corner(j.Max(0) + 1);
+                var e = tri.Corner(j.Max(0) + 2);
+                var d = u < 0 ? -1 : t.Triangles[u].OppositeCorner(a, b);
+                var uv = j < 0 ? t.ElementUvCentroid(ElementIndex(k)) : t.Points[a].UvMidpoint(t.Points[b]);
+                var corners = d < 0 ? [a, b, e] : [a, b, e, d];
+                var free = u < 0 ? j < 0 : used.At(u).Not;
+                if (free ? m.IsGoodInsertion(f, r, tol, t, corners, uv, c) : false)
+                {
+                    var p = t.Points.Count + added.Count;
+                    added = added.Add(uv);
+                    if (j < 0)
+                    {
+                        tris = tris.Set(k, TriangleOf(a, b, p)).Add(TriangleOf(b, e, p)).Add(TriangleOf(e, a, p));
+                        used = used.Set(k, true);
+                    }
+                    else
+                    {
+                        tris = tris.Set(k, TriangleOf(a, p, e)).Add(TriangleOf(p, b, e))
+                            .Set(u, TriangleOf(b, p, d)).Add(TriangleOf(p, a, d));
+                        used = used.Set(k, true).Set(u, true);
+                    }
+                }
+            }
+            k = k + 1;
+        }
+        var newPoints = added.Freeze();
+        var allPoints = t.Points.Concatenate(newPoints);
+        return UvTriangulation(
+            allPoints,
+            t.Sources.Concatenate(newPoints.Map(uv => UvPointSource.Interior)),
+            r.Delaunayed(allPoints.Map(uv => chart.ChartPoint(uv)), tris.Freeze()),
+            t.Quads);
+    }
+}

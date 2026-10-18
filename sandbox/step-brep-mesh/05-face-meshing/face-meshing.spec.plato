@@ -163,6 +163,35 @@ spec AddMissingSeamsAndPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop
     deferred "whole-loop period shifts, pole-segment insertion from the arriving to the leaving free parameter, synthetic seam cut between winding loops, outer loop by containment";
 }
 
+// The pole half of AddMissingSeamsAndPoles (chunk C): on a surface that collapses an iso-line,
+// every loop point on a collapsed line becomes that line's segment from the free parameter where
+// the loop arrives to the one where it leaves; a face with no edge at a pole gets the whole
+// segment. Loops keep their sources and gain Pole points (or the pole vertex's) on the line.
+spec ExpandedPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+{
+    requires m.IsFaceIntact(f);
+    requires c.IsWellFormed;
+    requires m.HasCollapsedLine(f);
+    ensures result.Count == loops.Count;
+    ensures forall (k: Integer) in result.Count.Range:
+        forall (i: Integer) in result[k].Points.Count.Range:
+            result[k].Sources[i].IsPolePoint ? m.IsOnCollapsedLine(f, result[k].Points[i]) : true;
+    measure SumOf(loops.Map(l => l.Points.Count.ToNumber));
+    deferred "per loop point on a collapsed line, the pole segment from the arriving to the leaving free parameter, sampled under the criteria";
+}
+
+// The synthetic cuts of the arrangements of winding loops WithSeamCut does not join (chunk C): a
+// whole-period region (a whole torus, with no loop, two cuts) and loops winding round both
+// directions. Every loop of the result closes in the plane.
+spec CutWholePeriods(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+{
+    requires m.IsFaceIntact(f);
+    requires c.IsWellFormed;
+    ensures forall (k: Integer) in result.Count.Range: m.IsWindingLoop(f, result[k]) == false;
+    measure SumOf(loops.Map(l => l.Points.Count.ToNumber));
+    deferred "one straight cut per periodic direction the region wraps, joining the winding loops into loops that close";
+}
+
 spec OrientRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): UvRegion
 {
     requires m.IsFaceIntact(f);
