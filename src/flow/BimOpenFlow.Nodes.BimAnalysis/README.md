@@ -15,6 +15,9 @@ answers the questions people otherwise write code for:
   `bim.classifyRooms` (room names to room classes by regex rules).
 - **Navigation** — `bim.navGraph` (door-connectivity edges between rooms),
   `bim.hops` (breadth-first reachability from a start room).
+- **Selection** — `bim.selection` (the elements picked in the 3D pane, from its
+  "Use selection" button, as a one-column `GlobalId` table that any join on
+  `GlobalId` takes; it reads no model).
 
 Source nodes read a `.bos` file through `BimModel`, cached per content hash.
 All outputs are plain tables, so results feed directly into the generic table

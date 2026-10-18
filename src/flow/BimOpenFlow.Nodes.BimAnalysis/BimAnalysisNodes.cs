@@ -23,5 +23,6 @@ public static class BimAnalysisNodes
         new BimHopsNode(),
         new BimOrientationNode(),
         new BimBuildSequenceNode(),
+        new BimSelectionNode(),
     ];
 }
