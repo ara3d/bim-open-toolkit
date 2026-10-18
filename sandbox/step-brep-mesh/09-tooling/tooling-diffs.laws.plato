@@ -1,0 +1,110 @@
+//==
+// # ToolingDiffsLaws
+//
+// Layer 9 of the STEP B-rep to mesh design (README.md beside this file): the
+// laws that make each diff and the Boolean equality it replaces one
+// definition. Each says: the lower layer's equality holds exactly when the
+// exact diff is Same. They are what allows chunk A's owner to replace the
+// bodies of SameModel, SameDiscretization, SameFaceMesh,
+// SameFaceMeshOutcome, SameConnectivity and IsSameFile with "the diff is
+// Same" without changing a single verdict; until then the laws catch either
+// side drifting.
+//
+// One exception is stated rather than hidden: SameModel does not compare the
+// parameter-plane curves, the pcurves, a loop's or a body's case, or a poly
+// loop's points (it compares loops through CoedgesOf and VertexLoopVertexOf,
+// bodies through ShellsOfBody), and the model diff does. The model law
+// therefore names those parts in SameBeyondSameModel; README.md beside this
+// file lists the gap for chunk A's owner.
+//
+// The laws assume the generated record equality of Point3D, Vector3D and
+// the index types compares fields with ==, as Plato's IValue does. A backend
+// whose record Equals treats NaN as equal to itself (C#'s float.Equals does)
+// makes the laws fail on a NaN coordinate; that failure is a real
+// disagreement between the equality and the diff, and the diff is the one
+// that follows SPEC-DSL.md (a NaN equals nothing).
+//
+// All laws but the witness ones take arrays, so the random-instance runner
+// skips them (PLATO-PRIMER.md B.2); they run over witnesses and generated
+// samples (tooling-generators.library.plato).
+//
+// Sections, in order:
+//  - Each diff is its equality
+//  - Witness forms
+//  - Tolerance
+
+library ToolingDiffsLaws
+{
+    //==
+    // # Each diff is its equality
+
+    // The model diff is Same exactly when SameModel holds and the parts of a
+    // model SameModel does not compare agree too.
+    Law_ModelDiffIsSameExactlyWhenSameModel(a: BrepModel, b: BrepModel): Boolean
+        => a.DiffModels(b).IsSame == (a.SameModel(b) && a.SameBeyondSameModel(b));
+
+    // The discretization diff is Same exactly when SameDiscretization holds.
+    Law_DiscretizationDiffIsSameExactlyWhenSameDiscretization(a: EdgeDiscretization, b: EdgeDiscretization): Boolean
+        => a.DiffDiscretizations(b).IsSame == a.SameDiscretization(b);
+
+    // The face mesh diff is Same exactly when SameFaceMesh holds.
+    Law_FaceMeshDiffIsSameExactlyWhenSameFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
+        => a.DiffFaceMeshes(b).IsSame == a.SameFaceMesh(b);
+
+    // The face mesh outcome diff is Same exactly when SameFaceMeshOutcome
+    // holds.
+    Law_FaceMeshOutcomeDiffIsSameExactlyWhenSameFaceMeshOutcome(a: FaceMeshOutcome, b: FaceMeshOutcome): Boolean
+        => a.DiffFaceMeshOutcomes(b).IsSame == a.SameFaceMeshOutcome(b);
+
+    // The connectivity diff is Same exactly when SameConnectivity holds.
+    Law_ConnectivityDiffIsSameExactlyWhenSameConnectivity(a: ModelMesh, b: ModelMesh): Boolean
+        => a.DiffConnectivity(b).IsSame == a.SameConnectivity(b);
+
+    // The report diff is Same exactly when the reports are Identical.
+    Law_ReportDiffIsSameExactlyWhenIdentical(a: Report, b: Report): Boolean
+        => a.DiffReports(b).IsSame == a.Identical(b);
+
+    // The file diff is Same exactly when IsSameFile holds.
+    Law_FileDiffIsSameExactlyWhenIsSameFile(a: Part21File, b: Part21File): Boolean
+        => a.DiffFiles(b).IsSame == a.IsSameFile(b);
+
+    // The parts of two models the model diff compares and SameModel does not:
+    // parameter-plane curves and pcurves, loop cases and poly loop points,
+    // body cases. Not a law; the model law's second conjunct.
+    SameBeyondSameModel(a: BrepModel, b: BrepModel): Boolean
+        => a.Geometry.Curves2D.Corresponds(b.Geometry.Curves2D, (x, y) => x == y)
+            && a.Geometry.Pcurves.Corresponds(b.Geometry.Pcurves, (x, y) => x == y)
+            && a.Loops.Corresponds(b.Loops, (x, y) => x.LoopCaseName == y.LoopCaseName
+                && x.PolyLoopPointsOf.Corresponds(y.PolyLoopPointsOf, (p, q) => p == q))
+            && a.Bodies.Corresponds(b.Bodies, (x, y) => x.BodyCaseName == y.BodyCaseName);
+
+    //==
+    // # Witness forms
+    //
+    // The same statements over layer 7's positive witnesses, chosen by an
+    // Integer, so the random-instance runner reaches them.
+
+    // The model law over witnesses j and k.
+    Law_WitnessModelDiffIsSameExactlyWhenSameModel(j: Integer, k: Integer): Boolean
+        => Law_ModelDiffIsSameExactlyWhenSameModel(BrepModel.WitnessAt(j), BrepModel.WitnessAt(k));
+
+    // A witness has no difference from itself (witnesses hold no NaN).
+    Law_WitnessIsSameAsItself(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).DiffModels(BrepModel.WitnessAt(k)).IsSame;
+
+    // Two different positive witnesses always differ somewhere.
+    Law_DistinctWitnessesDiffer(j: Integer, k: Integer): Boolean
+        => ((j % 10) + 10) % 10 != ((k % 10) + 10) % 10
+            ? !BrepModel.WitnessAt(j).DiffModels(BrepModel.WitnessAt(k)).IsSame
+            : true;
+
+    //==
+    // # Tolerance
+
+    // A wider tolerance never finds more differences: every field comparison
+    // that agrees within a tolerance agrees within a wider one.
+    Law_WiderToleranceFindsNoMoreMeshDifferences(a: ModelMesh, b: ModelMesh, narrow: Number, wide: Number): Boolean
+        => narrow <= wide
+            ? ModelMeshDifferences(a, b, wide).Count <= ModelMeshDifferences(a, b, narrow).Count
+            : true;
+}
