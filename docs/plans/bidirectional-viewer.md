@@ -228,4 +228,23 @@ strings in one module, `src/graphNodes.ts`, with their param names.
 
 ## Build log
 
-Filled as chunks land.
+- A1, bim-open-data `38df2e7`, `bd8c36e`, `b71b20b` (2026-10-18): `BcfComment`,
+  `BcfIssue.Camera` and `.Comments`, `BcfColumnNames`, `BcfOptions.ModelFile`
+  and `.ModelDate`, `BcfGuid.Comment`; the reader returns camera, comments and
+  the header file, `CommentsTable` is new; 42 tests became 54, every file
+  XSD-validated. Not done: BCF 2.1 comments (they sit beside the topic), the
+  orthogonal camera.
+- B1, bim-open-flow `da599ee`, `119719b`, `0d1918f`, `6c7c282`: `PlannedNode`,
+  `addNodes`, `setParams`, the model input's `path`; `app/src/paneEdits.ts`
+  reuses `addNodeActions` and `freeSpot`; the pane area pushes the remembered
+  selection into a pane it activates. Node ids come from the kind's last
+  segment (`selection1`), so a pane uses the returned ids. 251 app tests, 107
+  panes tests.
+- C1, toolkit `eae69397`, `9a79dd3c`, `d2228332`: `bim.selection`,
+  `view3d.camera.fov`, `bcf.issue`. The first commit missed the node file and
+  its test (untracked), fixed in the resumed session.
+- D1, bim-open-notebook `958ac68`, `9d86ea4`: `rig.select` and `rig.camera`,
+  the pick modifier, the selection map and the GlobalIds in the event.
+- Pins: `deps.json` moved to bim-open-data `b71b20b` and bim-open-flow
+  `6c7c282` before the notebook chunk landed, so the toolkit builds against the
+  library the nodes need.
