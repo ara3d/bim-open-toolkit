@@ -1,0 +1,67 @@
+# STEP mesher in Plato: how the work is split across agents
+
+Status: in progress
+Ticket: TKT-323
+
+Written 2026-10-18 by the session that filed the epic TKT-323 (the STEP mesher in Plato), at the owner's request: split the remaining work so several agents can work at once with as few errors, builds, and wasted test runs as possible. The library is `sandbox/step-brep-mesh` (Plato source, layers 00 to 09); its build order is `sandbox/step-brep-mesh/TASKS.md`, whose lettered steps A to H each add one harder kind of shape. This file says who works on what, with which files, and how each agent tests.
+
+## What the measurements say
+
+From Plato's `docs/reports/interpreter-turnaround-2026-10-17.md` and one run on 2026-10-18:
+
+- **A law check costs 20 to 35 seconds, and nearly all of it is compiling the program again.** `plato run --laws --filter=<name>` spent 32.5 s compiling 250 files and 0.3 s running the law (2026-10-18, machine shared with other sessions). A warm process that keeps the compiled program would cut this to a few seconds.
+- **A full sweep of the 734 laws takes about 14 minutes.** 600 s of the 802 s is ten laws that mesh a whole model (a hollow box, a planted bad face), each stopped by the 60 s budget. Those laws have no verdict today, so steps A and G cannot close.
+- **The C# path costs builds and gives no verdict yet.** Generating C# takes about 30 s, and the compiled library (`Ara3D.StepBrep`, 914 files in bim-open-data) builds on top of that. TKT-315 (the 64-bit number profile and the C# writer fixes) is paused by the owner, so backend results are not yet evidence (finding F-50 in `sandbox/step-brep-mesh/reviews/FINDINGS.md`).
+- **The interpreter already runs under the 64-bit profile** (`--profile=cpu64`), so steps B, C and F can be developed and checked without TKT-315. Only the final check that the C# backend agrees needs it.
+- **Rebuilding Plato under a running process breaks it.** The law runner, the gate (`sandbox/step-brep-mesh/tools/PlatoGate`, which references Plato's source) and the `plato-navigation` server (port 8768, shared by every session) all load Plato's binaries.
+
+## Rules for every agent
+
+1. **No builder builds bim-open-data, the gate, or Plato's default output.** Library builders check types with `plato_check` on the `plato-navigation` server (load the `plato-mcp` skill first) and run laws with the pinned command below. Agents changing Plato build into a private folder: `dotnet build <project> -c Release --artifacts-path <their scratchpad>/plato-build`.
+2. **One pinned Plato CLI for all law runs.** The supervisor copies a built CLI to `C:\Users\cdigg\.plato-cli\<plato commit>\` and announces the path. The current one is `C:\Users\cdigg\.plato-cli\062b8dc7\Plato.CLI.dll`. Run from `C:\Users\cdigg\git\plato`:
+
+   ```
+   dotnet C:/Users/cdigg/.plato-cli/062b8dc7/Plato.CLI.dll run stdlib/foundation stdlib/geometry stdlib/graphics C:/Users/cdigg/git/bim-open-toolkit/sandbox/step-brep-mesh --laws --recursive --exclude=brep.types.plato --exclude=brep.library.plato --exclude=brep.concepts.plato --profile=cpu64 --budget=60 --filter=<law name or class>
+   ```
+
+3. **Tests, by stage.**
+   - Each edit: `plato_check` (seconds).
+   - Before each commit: the laws the ticket names, by `--filter`. Leave out the ten slow laws listed in the report until TKT-332 makes them fast.
+   - When a step closes: the supervisor runs the full sweep once, compares it with the last committed results, and runs the C# backend once TKT-315 is done.
+   - Never: a full sweep or a C# build inside an edit loop.
+4. **Fences.** Each agent edits only its fence and commits by path. Shared files have one owner. `TASKS.md`, `VOCABULARY.md`, `reviews/FINDINGS.md` and this file belong to the supervisor. Builders record their findings and leftovers in their own ticket's log, and the supervisor moves them into FINDINGS.md.
+5. **A body needed outside the fence** is reported to the supervisor (SendMessage), never written. The supervisor routes it to the fence's owner or widens a fence while nobody else holds those files.
+6. **Laws before bodies, one commit per law group.** Each commit message names the laws it makes pass and the verdicts before and after.
+7. **Fresh review at each step's close.** A reviewer that did not write the code reads the step's diff against its contracts and laws (platonic `REVIEWING.md`) before the ticket closes.
+
+## Tracks
+
+Wave 1 starts on 2026-10-18. The fences are disjoint.
+
+| Track | Ticket | Fence | Why now |
+|---|---|---|---|
+| P1: warm law runs and verdict files | TKT-331 | `../plato/src/Plato.CLI/**`, `../plato/src/Plato.Navigation/**`, `../plato/src/Plato.Navigation.CLI/**`, `../plato/src/Plato.Interpreter/LawRunner.cs`, `../plato/tests/Plato.Interpreter.Tests/LawRunner*`, `../plato/docs/interpreter.md` | Cuts every builder's law check from about 30 s to a few seconds, and gives the supervisor a regression check |
+| P2: interpreter speed on whole-model laws, defect D5 | TKT-332 | `../plato/src/Plato.Interpreter/**` except `LawRunner.cs`, `../plato/tests/Plato.Interpreter.Tests/**` except `LawRunner*` | Ten laws have no verdict; steps A and G cannot close without them |
+| Topology and validation: close step A, then step G | TKT-314, then TKT-328 | `sandbox/step-brep-mesh/02-topology/**`, `06-mesh/**`, `07-validation/**`, `08-pipeline/**` | The cube's layer 2 laws run quickly today; the whole-box laws follow P2 |
+| Step D: `PrepareModel` | TKT-326 | `sandbox/step-brep-mesh/03-step/**` | Unblocks the C# decoder's last check (TKT-312) and every real STEP file |
+| Step B: the cylinder | TKT-324 | `sandbox/step-brep-mesh/01-geometry/**`, `04-discretization/**`, `05-face-meshing/**`, `00-foundation/**` | First step on the longest chain, B to C to F to H |
+
+Wave 2, started by the supervisor as wave 1 lands:
+
+- Step C (TKT-325) continues in step B's session, with the same fence and context.
+- Step F (TKT-327) after C, in the same session.
+- C# wiring (TKT-313) and the decoder's last check (TKT-312), after step D: the STEP parsing session (`STEP file geometry parsing with Ara 3D`), fence in `deps/bim-open-data`. This is the first C# build of the wave.
+- Test tooling host shims (TKT-316: glTF and SVG dumps) when step B or C needs pictures to debug a seam or a pole.
+- TKT-315 (the C# writer and the 64-bit Integer) only when the owner lifts the pause; until then, backend agreement is not checked.
+- Step H (the 88-file corpus, inside TKT-313) last.
+
+## Supervisor duties
+
+- Refresh the pinned CLI when P1 or P2 lands a commit (one build), and tell the running agents the new path.
+- After each step's commits, run the full sweep in the background, commit its verdict file (P1's format), and send each regression to the agent whose fence holds it.
+- Move each ticket's findings into `reviews/FINDINGS.md`, and update `TASKS.md` when a step's scope changes.
+- Start the reviewer for each step's close, and wave 2's tracks when their dependencies land.
+
+## Log
+
+- 2026-10-18: plan written; CLI pinned at Plato 062b8dc7; wave 1 started.
