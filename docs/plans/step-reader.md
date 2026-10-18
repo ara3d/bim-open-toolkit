@@ -125,3 +125,6 @@ STEP reader look nearly line for line like the IFC one.
   IReadOnlyList<Vector3> outer, IReadOnlyList<IReadOnlyList<Vector3>> holes, bool sameSense)` (`Faces/FaceMesher.cs`;
   `FaceRingTriangulation`, `FaceDrop` and `WeldedMeshBuilder` beside it). The IFC mesher keeps the reading and the
   diagnostics; Ara3D.Ifc.Mesher.Tests pass 164 before and after.
+- 2026-10-17, TKT-308, bim-open-data 02bb175: the congruent-ring band refuses a hole that runs against the outer
+  ring (it twisted: area 24 for a 12 face) and returns counter-clockwise triangles; earcut takes the refused face and
+  the 1 % area check covers both. Kernel tests 35+1 skipped to 38+1 skipped; mesher tests 164 before and after.
