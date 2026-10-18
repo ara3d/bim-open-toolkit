@@ -110,6 +110,29 @@ library StepToMeshWitnessesLaws
                 <= 2.0 * BrepModel.Witness_HollowBox(a, b).WitnessMesh.VolumeRoundoff
             : true;
 
+    // The block with a square through hole meshes to one component, closed,
+    // consistently oriented and unpinched, of Euler characteristic 0: a
+    // torus, genus 1, as its B-rep's reduced counts say (chunk G).
+    Law_BlockWithHoleMeshIsOneTorus(_: BrepModel): Boolean
+    {
+        var mesh = BrepModel.Witness_BlockWithThroughHole.WitnessMesh;
+        var c = mesh.CountsOf(MeshComponentIndex(0));
+        return mesh.ComponentsOf.ComponentCount == 1
+            && c.IsClosed && c.IsConsistentlyOriented && c.PinchedVertices == 0 && c.EulerCharacteristic == 0;
+    }
+
+    // The hollow box meshes to two components, the outer shell and the
+    // void, each closed, consistently oriented and unpinched, of Euler
+    // characteristic 2: two spheres, the void's sharing no vertex with the
+    // outer's (chunk G).
+    Law_HollowBoxMeshIsTwoSpheres(_: BrepModel): Boolean
+    {
+        var mesh = BrepModel.Witness_HollowBox.WitnessMesh;
+        return mesh.ComponentsOf.ComponentCount == 2
+            && 2.MapRange(k => mesh.CountsOf(MeshComponentIndex(k))).All(c =>
+                c.IsClosed && c.IsConsistentlyOriented && c.PinchedVertices == 0 && c.EulerCharacteristic == 2);
+    }
+
     //==
     // # The planted bad face
     //

@@ -1,14 +1,16 @@
 ---
 id: TKT-328
 title: STEP mesher in Plato, step G: solids with holes and hollow solids (genus and voids)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: topology fa587ba3-0ab9-4cde-8228-0725081e9a92
+session: fa587ba3-0ab9-4cde-8228-0725081e9a92
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-314, TKT-315]
 confidence: high
 created: 2026-10-18
+claimed: 2026-10-18
 ---
 
 ## Acceptance criteria
@@ -25,3 +27,9 @@ Dependencies changed 2026-10-18 (plan docs/plans/step-mesher-parallel.md): step 
 TKT-328 waits on TKT-332 (the interpreter speed fix): its hollow-box and through-hole laws mesh whole models, which hit the 60 s budget today.
 
 2026-10-18: dependency on TKT-332 dropped. Its speed work landed in Plato 93907bd7 (pinned for every builder): step A's whole-box laws ran in 171 s wall with nothing near the budget. TKT-332 stays open for its own reporting.
+
+Log 2026-10-18 (topology session fa587ba3). Interpreter verdicts, Plato 93907bd7, cpu64, `--budget=900`, one compile, 17:54:42 to 17:55:29 (47 s wall). C# half not checked (TKT-315).
+- New laws (this commit): `Law_BlockWithHoleMeshIsOneTorus` (one component, closed, consistently oriented, unpinched, Euler characteristic 0) pass; `Law_HollowBoxMeshIsTwoSpheres` (two components, each closed, oriented, unpinched, Euler 2) pass.
+- Pass: `Law_HollowBoxVoidMeshVolumeNegative`, `Law_HollowBoxOuterMeshVolumePositive`, `Law_HollowBoxMeshVolumeIsDifference` (25 sampled sizes each, 14.1 s the slowest); `Law_EulerPoincareEvenAndBounded`, `Law_VertexLinkIsOneCycle` (25 samples); `Law_SharedCornerBreaksEuler`, `Law_SharedCornerBreaksVertexLink`, `Law_SharedCornerFailsExactlyTwoLaws` (Witness_TwoBoxesSharingCorner fails exactly its two laws); `Law_WitnessEulerIsTwoMinusTwiceGenus` (196 cases).
+- Obligation on curved witnesses (steps B and F): `Law_WitnessDivergenceVolumeMatchesFacts`, `Law_WitnessMeshesOk`, `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean`. Per witness through scratch laws (32 s; copy in the supervisor's notes folder, topology-scratch-g.laws.plato): the hollow box (k = 6) passes all five of those and `Law_WitnessIsOracleClean`; the block with a hole (k = 5) passes CrossChecksClean, ValidatesClean and divergence volume, and fails `WitnessMeshesOk` and `WitnessIsOracleClean` on one Error only, `Law_DerivativeMatchesCentralDifference`: layer 1's rounding bound at x = 0 (F-53, with step B).
+- So no new body is needed in layers 2 and 6 to 8; box 1 waits on that layer 1 fix, box 2 on the backend.
