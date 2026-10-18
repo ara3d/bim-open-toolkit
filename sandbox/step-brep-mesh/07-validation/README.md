@@ -181,10 +181,13 @@ Every positive witness is written out as a `BrepModel` value: points, curves, su
 loops, faces, shells and bodies in literal tables or loops over small literal tables.
 `Witness_UnitBox` is fully literal; `Law_UnitBoxIsBoxOfOnes` checks it against the parameterized
 `Witness_Box(1, 1, 1)`. Counts are raw (V, E, F, L); chi is the reduced Euler characteristic.
+`Witness_UnitBoxMillimetres` is the same tables relabelled in millimetres, the 1 mm cube of
+`adapter/fixtures/unit-cube.stp` that layer 3's raw witnesses (`03-step/step-raw-witnesses.library.plato`) build on.
 
 | k | Witness | Shell counts V, E, F, L | chi | Face areas | Shell volumes |
 |---|---|---|---|---|---|
 | 0 | `Witness_UnitBox`, `Witness_Box(w, d, h)` | 8, 12, 6, 6 | 2 | w d (2), w h (2), d h (2) | w d h |
+| (none) | `Witness_UnitBoxMillimetres`: `Witness_UnitBox` with `Unit` Millimetre, coordinates kept (exact) | 8, 12, 6, 6 | 2 | 1 mm^2 (6) | 1 mm^3 |
 | 1 | `Witness_Cylinder(r, h, 2 pi)`: one seam, two circles, planar caps | 2, 3, 3, 3 | 2 | 2 pi r h, pi r^2 (2) | pi r^2 h |
 | 8 | `Witness_Cylinder(r, h, sweep)`, sweep below a turn: a sector | 6, 9, 5, 5 | 2 | sweep r^2 / 2 (2), sweep r h, r h (2) | sweep r^2 h / 2 |
 | 2 | `Witness_Sphere(r)`: one seam whose ends are the poles | 2, 1, 1, 1 | 2 | 4 pi r^2 | 4 pi r^3 / 3 |

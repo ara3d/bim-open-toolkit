@@ -130,6 +130,21 @@ library BrepWitnesses
             Tolerances.Witness_Tolerances,
             LengthUnit.Metre);
 
+    // The unit box in millimetres: Witness_UnitBox's tables with every
+    // coordinate kept and the unit relabelled Millimetre, a cube 1 mm on a
+    // side. It is the cube adapter/fixtures/unit-cube.stp writes (points with
+    // coordinates 0 and 1 in SI_UNIT(.MILLI.,.METRE.)), so layer 3's raw
+    // witnesses build on it. Exact: no number is computed. It is not
+    // Witness_UnitBox.ScaledBy(1000): ScaledBy keeps the unit, which would
+    // label a 1000 mm cube as metres, and the fixture's cube is 1 mm.
+    Witness_UnitBoxMillimetres(_: BrepModel): BrepModel
+        => BrepModel.Witness_UnitBox.InUnit(LengthUnit.Millimetre);
+
+    // The model with its length unit relabelled; every coordinate, length
+    // and tolerance kept as written.
+    InUnit(m: BrepModel, unit: LengthUnit): BrepModel
+        => BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, unit);
+
     //==
     // # Boxes from tables
     //

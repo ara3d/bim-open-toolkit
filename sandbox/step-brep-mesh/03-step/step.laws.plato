@@ -74,7 +74,8 @@ library StepReadingLaws
     }
 
     // Preparing a prepared model's raw view (RawOf) changes nothing: the same
-    // model (layer 7's SameModel), sources, folds and repairs. Guarded by the
+    // model (layer 7's SameModel), occurrences, sources, folds, repairs and
+    // magnitudes (SameDecodedModel, step-raw-witnesses.library.plato). Guarded by the
     // magnitudes: a vertex merge can remove a point on the bounding box,
     // within the length tolerance, and then the second pass derives its
     // tolerances from a slightly different size; with the magnitudes equal
@@ -84,10 +85,7 @@ library StepReadingLaws
         var d = raw.PrepareModel;
         var again = d.RawOf(raw).PrepareModel;
         return d.ModelSize == again.ModelSize && d.CoordinateExtent == again.CoordinateExtent
-            ? again.Model.SameModel(d.Model)
-                && again.Map.Sources.AllSources.Corresponds(d.Map.Sources.AllSources, (a, b) => a == b)
-                && again.Map.Folds.Corresponds(d.Map.Folds, (a, b) => a.Face == b.Face && a.Cause == b.Cause && a.Via == b.Via)
-                && again.Map.Repairs.Corresponds(d.Map.Repairs, (a, b) => a.Source == b.Source && a.Repair == b.Repair)
+            ? again.SameDecodedModel(d)
             : true;
     }
 

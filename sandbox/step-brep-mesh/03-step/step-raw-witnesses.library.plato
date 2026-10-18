@@ -1,0 +1,262 @@
+//==
+// # StepRawWitnesses
+//
+// Layer 3 of the STEP B-rep to mesh design. The RawDecodedModel the C#
+// decoder (DecodeRaw, TKT-312) must produce for the two adapter fixtures
+// ../adapter/fixtures/unit-cube.stp and two-cubes-assembly.stp, written as
+// literals, with the DecodedModel PrepareModel must make of each, and the
+// comparisons both sides use. TKT-312's acceptance is that the C# decoder's
+// output equals these witnesses (SameRawModel) and that PrepareModel, run
+// from C#, equals the expected decoded models (SameDecodedModel); the laws
+// are in step-raw-witnesses.laws.plato. Instance ids are the fixtures' own
+// (step-witnesses.laws.plato lists them).
+//
+// Table layout rule, required of the decoder because the comparisons go
+// table by table: occurrences in order; within an occurrence, each kernel
+// table's rows in ascending instance id of their sources; the occurrences'
+// rows one after the other, occurrence 0's first.
+//
+// Both fixtures are in millimetres (SI_UNIT(.MILLI.,.METRE.)), state a
+// length uncertainty of 1e-6 mm, and write the cube's points with
+// coordinates 0 and 1: the cube is 1 mm on a side. The steradian unit both
+// write has no field in ContextUnits and is not recorded.
+//
+// Sections, in order:
+//  - Sources and units
+//  - The unit cube
+//  - The two-cube assembly
+//  - Comparisons
+
+library StepRawWitnesses
+{
+    //==
+    // # Sources and units
+
+    // The sources of count consecutive instances first, first + 1, ... in
+    // occurrence occ.
+    SourcesFrom(occ: Integer, first: Integer, count: Integer): Array<StepSource>
+        => count.MapRange(i => StepSource(StepOccurrenceIndex(occ), StepInstanceId(first + i)));
+
+    // The sources of the cube's kernel rows in occurrence occ, as the
+    // fixtures number them: vertices #45 to #52 (vertex k is #45 + k), edges
+    // #53 to #64, loops #89 to #94, faces #119 to #124, the closed shell
+    // #125, the manifold solid #126, the twelve lines #33 to #44 (curve k is
+    // #33 + k), the six planes #113 to #118; no 2D curve, no pcurve. Kernel
+    // row k of each table is Witness_UnitBox's row k.
+    UnitCubeSources(occ: Integer): KernelSources
+        => KernelSources(
+            SourcesFrom(occ, 45, 8),
+            SourcesFrom(occ, 53, 12),
+            SourcesFrom(occ, 89, 6),
+            SourcesFrom(occ, 119, 6),
+            SourcesFrom(occ, 125, 1),
+            SourcesFrom(occ, 126, 1),
+            SourcesFrom(occ, 33, 12),
+            SourcesFrom(occ, 0, 0),
+            SourcesFrom(occ, 0, 0),
+            SourcesFrom(occ, 113, 6));
+
+    // The sources of two occurrences' rows, table by table: a's, then b's.
+    ConcatenatedSources(a: KernelSources, b: KernelSources): KernelSources
+        => KernelSources(
+            a.Vertices.Concatenate(b.Vertices),
+            a.Edges.Concatenate(b.Edges),
+            a.Loops.Concatenate(b.Loops),
+            a.Faces.Concatenate(b.Faces),
+            a.Shells.Concatenate(b.Shells),
+            a.Bodies.Concatenate(b.Bodies),
+            a.Curves.Concatenate(b.Curves),
+            a.Curves2D.Concatenate(b.Curves2D),
+            a.Pcurves.Concatenate(b.Pcurves),
+            a.Surfaces.Concatenate(b.Surfaces));
+
+    // The units of a fixture context, #132 or #143: millimetre and radian,
+    // both stated, and one stated length uncertainty of 1e-6 mm (#131).
+    FixtureContextUnits(id: Integer): ContextUnits
+        => ContextUnits(StepInstanceId(id), LengthUnit.Millimetre, true, 1.0, true, ContextUncertainty.StatedUncertainty(1e-6, 1));
+
+    // The occurrence of the cube's representation #141 in its context #132,
+    // placed by via (an instance id, -1 for none) with the given placement;
+    // no parent occurrence, since no representation above it holds a B-rep.
+    CubeOccurrence(via: Integer, placement: AffineTransform3D): StepOccurrence
+        => StepOccurrence(StepInstanceId(141), StepInstanceId(132), StepOccurrenceIndex(-1), StepInstanceId(via), placement);
+
+    // A finished model as the decoder writes it: no closure mark and the
+    // tolerances unset.
+    AsWritten(m: BrepModel): BrepModel
+        => m.WithGeometry(m.Geometry.WithClosures(ClosureMark.NoMarks)).WithTolerances(Tolerances.UnsetTolerances);
+
+    // The tolerances PrepareModel sets for a fixture model with the given
+    // size and extent: the stated 1e-6 mm, converted from the context's
+    // millimetre to the model's as ModelLengthTolerance converts it (a
+    // multiplication and a division by 1e-3, which need not give back the
+    // same Number), and above the resolution at either extent; the policy's
+    // 1e-9 rad; the two parameter floors of layer 0.
+    FixtureTolerances(modelSize: Number, extent: Number): Tolerances
+    {
+        var length = LengthTolerance(ConvertLength(1e-6, LengthUnit.Millimetre, LengthUnit.Millimetre));
+        return Tolerances(length, AngleTolerance(Angle(1e-9)), length.LengthParameterFloor(extent), length.AngleParameterFloor(modelSize, extent));
+    }
+
+    //==
+    // # The unit cube
+
+    // What the decoder produces for unit-cube.stp: the 1 mm cube of
+    // Witness_UnitBoxMillimetres as written (closures empty, tolerances
+    // unset), one root occurrence of #141 with the identity placement,
+    // sources per UnitCubeSources(0), no fold (no oriented face or shell, no
+    // mirror), no repair, the one context #132, factors 1 (millimetre and
+    // radian already), and no diagnostic compared (SameRawModel ignores
+    // them; the decoder's Info census is free to vary).
+    Witness_RawUnitCube(_: RawDecodedModel): RawDecodedModel
+        => RawDecodedModel(
+            BrepModel.Witness_UnitBoxMillimetres.AsWritten,
+            [CubeOccurrence(-1, AffineTransform3D.Identity)],
+            UnitCubeSources(0),
+            [],
+            [],
+            [FixtureContextUnits(132)],
+            1.0,
+            1.0,
+            []);
+
+    // What PrepareModel makes of Witness_RawUnitCube: Witness_UnitBoxMillimetres
+    // with the tolerances of a model of size sqrt 3 mm (the diagonal of
+    // [0, 1]^3) and extent 1 mm, the same occurrence and sources, no fold,
+    // no repair, no closure (lines and planes are unbounded).
+    ExpectedUnitCube(_: DecodedModel): DecodedModel
+    {
+        var raw = RawDecodedModel.Witness_RawUnitCube;
+        var size = 3.0.Sqrt;
+        return DecodedModel(
+            BrepModel.Witness_UnitBoxMillimetres.WithTolerances(FixtureTolerances(size, 1.0)),
+            ProvenanceMap(raw.Occurrences, raw.Sources, raw.Sources.ByInstanceOrder, [], []),
+            [],
+            size,
+            1.0);
+    }
+
+    //==
+    // # The two-cube assembly
+
+    // The two cubes of two-cubes-assembly.stp in one model: copy 0 is
+    // Witness_UnitBoxMillimetres; copy 1 is it moved by 2 mm in x (layer 2's
+    // RigidlyMoved, exact for a translation by a whole number of
+    // millimetres), its rows appended with indices offset by copy 0's counts
+    // (8 vertices, 12 edges and curves, 6 loops, faces and surfaces, one
+    // shell) through the box tables, which give Witness_UnitBox's topology
+    // (Law_UnitBoxIsBoxOfOnes). Two closed shells, two manifold solids.
+    // V = 16, E = 24, F = 12, L = 12; per shell 8, 12, 6, 6; each shell
+    // encloses 1 mm^3 (BoxFacts(1, 1, 1)), the model 2 mm^3; the bounding
+    // box is [0, 3] x [0, 1] x [0, 1] mm.
+    Witness_TwoUnitCubesMillimetres(_: BrepModel): BrepModel
+    {
+        var first = BrepModel.Witness_UnitBoxMillimetres;
+        var second = first.RigidlyMoved(WorldFrameAt(Point3D(2.0, 0.0, 0.0)));
+        return BrepModel(
+            GeometrySet(
+                first.Geometry.Curves.Concatenate(second.Geometry.Curves),
+                first.Geometry.Curves2D,
+                first.Geometry.Pcurves,
+                first.Geometry.Surfaces.Concatenate(second.Geometry.Surfaces),
+                first.Geometry.Closures),
+            first.Vertices.Concatenate(second.Vertices),
+            first.Edges.Concatenate(BoxEdges(8.MapRange(i => i + 8), 12)),
+            first.Loops.Concatenate(6.MapRange(k => BoxLoop(12.MapRange(e => e + 12), k))),
+            first.Faces.Concatenate(6.MapRange(k => SingleLoopFace(k + 6, k + 6, true))),
+            first.Shells.Concatenate([ClosedShellOf(6.MapRange(k => k + 6))]),
+            first.Bodies.Concatenate([BrepBody.ManifoldSolid(ShellIndex(1))]),
+            first.Tolerances,
+            first.Unit);
+    }
+
+    // What the decoder produces for two-cubes-assembly.stp: the two cubes as
+    // written; two occurrences of the one part #141, placed by the
+    // context_dependent_shape_representations #161 (identity, through
+    // item_defined_transformation #157) and #162 (2 mm in x, through #158),
+    // in that order; sources per occurrence, UnitCubeSources(0) then (1); no
+    // fold, no repair; both contexts, #132 (the cube's) and #143 (the
+    // assembly's, which no occurrence uses); factors 1. The assembly's own
+    // representation #147 holds no B-rep, so it is no occurrence, and both
+    // occurrences are roots placed by an instance (see README, "Boundary
+    // moved to RawDecodedModel, 2026-10-17", on FindOccurrences).
+    Witness_RawTwoCubes(_: RawDecodedModel): RawDecodedModel
+        => RawDecodedModel(
+            BrepModel.Witness_TwoUnitCubesMillimetres.AsWritten,
+            [CubeOccurrence(161, AffineTransform3D.Identity),
+             CubeOccurrence(162, Translation3D(Vector3D(2.0, 0.0, 0.0)).AffineTransform3D)],
+            ConcatenatedSources(UnitCubeSources(0), UnitCubeSources(1)),
+            [],
+            [],
+            [FixtureContextUnits(132), FixtureContextUnits(143)],
+            1.0,
+            1.0,
+            []);
+
+    // What PrepareModel makes of Witness_RawTwoCubes: the two cubes with the
+    // tolerances of a model of size sqrt 11 mm (the diagonal of
+    // [0, 3] x [0, 1] x [0, 1]) and extent 3 mm, the same occurrences and
+    // sources, no fold, no repair, no closure.
+    ExpectedTwoCubes(_: DecodedModel): DecodedModel
+    {
+        var raw = RawDecodedModel.Witness_RawTwoCubes;
+        var size = 11.0.Sqrt;
+        return DecodedModel(
+            BrepModel.Witness_TwoUnitCubesMillimetres.WithTolerances(FixtureTolerances(size, 3.0)),
+            ProvenanceMap(raw.Occurrences, raw.Sources, raw.Sources.ByInstanceOrder, [], []),
+            [],
+            size,
+            3.0);
+    }
+
+    //==
+    // # Comparisons
+
+    // True when two occurrences are the same, field by field.
+    SameOccurrence(a: StepOccurrence, b: StepOccurrence): Boolean
+        => a.Representation == b.Representation && a.Context == b.Context && a.Parent == b.Parent && a.Via == b.Via && a.Placement == b.Placement;
+
+    // True when two fold records are the same, field by field.
+    SameFold(a: FoldRecord, b: FoldRecord): Boolean
+        => a.Face == b.Face && a.Cause == b.Cause && a.Via == b.Via;
+
+    // True when two repair records are the same, field by field.
+    SameRepair(a: RepairRecord, b: RepairRecord): Boolean
+        => a.Source == b.Source && a.Repair == b.Repair;
+
+    // True when two context records are the same, field by field.
+    SameContextUnits(a: ContextUnits, b: ContextUnits): Boolean
+        => a.Context == b.Context && a.Length == b.Length && a.LengthStated == b.LengthStated
+            && a.RadiansPerAngleUnit == b.RadiansPerAngleUnit && a.AngleStated == b.AngleStated && a.Uncertainty == b.Uncertainty;
+
+    // True when two provenance maps list the same occurrences, sources, folds
+    // and repairs in the same order. ByInstance is derived from the sources,
+    // so it is not compared.
+    SameMap(a: ProvenanceMap, b: ProvenanceMap): Boolean
+        => a.Occurrences.Corresponds(b.Occurrences, (x, y) => x.SameOccurrence(y))
+            && a.Sources.AllSources.Corresponds(b.Sources.AllSources, (x, y) => x == y)
+            && a.Folds.Corresponds(b.Folds, (x, y) => x.SameFold(y))
+            && a.Repairs.Corresponds(b.Repairs, (x, y) => x.SameRepair(y));
+
+    // The raw model's occurrences, sources, folds and repairs as a
+    // provenance map, ByInstance left empty: what SameMap compares.
+    MapFields(raw: RawDecodedModel): ProvenanceMap
+        => ProvenanceMap(raw.Occurrences, raw.Sources, [], raw.Folds, raw.Repairs);
+
+    // True when two raw models are the same, field by field, except the
+    // diagnostics: the model by layer 7's SameModel, the rest exactly. The
+    // C# decoder's acceptance comparison (TKT-312).
+    SameRawModel(a: RawDecodedModel, b: RawDecodedModel): Boolean
+        => a.Model.SameModel(b.Model)
+            && a.MapFields.SameMap(b.MapFields)
+            && a.Units.Corresponds(b.Units, (x, y) => x.SameContextUnits(y))
+            && a.LengthFactor == b.LengthFactor
+            && a.AngleFactor == b.AngleFactor;
+
+    // True when two decoded models are the same except the diagnostics: the
+    // model by layer 7's SameModel, the map by SameMap, the two magnitudes
+    // exactly. With equal models, equal concatenated sources mean equal
+    // tables, since each table is as long as the model's.
+    SameDecodedModel(a: DecodedModel, b: DecodedModel): Boolean
+        => a.Model.SameModel(b.Model) && a.Map.SameMap(b.Map) && a.ModelSize == b.ModelSize && a.CoordinateExtent == b.CoordinateExtent;
+}
