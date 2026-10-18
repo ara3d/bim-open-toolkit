@@ -174,7 +174,9 @@ library BrepGeometryCurves
     // in [Range.Start, Range.Start + period); on a closed aperiodic curve whose
     // join is the nearest point, Range.Start; on a circle's axis, 0. Edge ranges
     // are derived from it (layer 2's EdgeDomain), so it is on the main path.
-    // Closed forms for lines, circles and polylines; a search for the rest.
+    // Closed forms for lines, circles and polylines, and for a surface curve
+    // whose master is its space curve (it is that curve, as Eval says); a
+    // search for the rest.
     ClosestParameter(g: GeometrySet, c: CurveIndex, p: Point3D): Number
         => g.CurveAt(c).ClosestParameter(g, p);
 
@@ -192,7 +194,9 @@ library BrepGeometryCurves
             Trimmed(basis, range, sameSense) => curve.ClosestParameterBySearch(g, p);
             Composite(segments) => curve.ClosestParameterBySearch(g, p);
             Offset(basis, distance, reference) => curve.ClosestParameterBySearch(g, p);
-            OnSurface(spaceCurve, supports, master) => curve.ClosestParameterBySearch(g, p);
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.ClosestParameter(spaceCurve, p)
+                : curve.ClosestParameterBySearch(g, p);
         };
 
     // deferred: global minimization of |Eval(t) - p|^2 over the domain:
