@@ -2,7 +2,7 @@
 id: TKT-323
 title: Epic: the STEP mesher in Plato, from the unit cube to the 88-file corpus, called from the C# STEP mesher and shown in the 3D pane
 status: open
-depends_on: [TKT-312, TKT-313, TKT-314, TKT-315, TKT-316]
+depends_on: [TKT-312, TKT-313, TKT-314, TKT-315, TKT-316, TKT-324, TKT-325, TKT-326, TKT-327, TKT-328]
 owner:
 fence: []
 workflow: [W3, W4]
@@ -39,13 +39,13 @@ The chunks are those of `sandbox/step-brep-mesh/TASKS.md`; that file lists each 
 | Plato interpreter, `plato run --laws` | TKT-317 | done |
 | Test tooling: generators, diffs, visual dumps (layer 09-tooling) | TKT-316 | open; the law runner is chunk A's first need |
 | Chunk A: the unit cube through every layer | TKT-314 | open; bodies written, laws not yet run through a trusted engine; leftovers F-52 |
-| Chunk B: the cylinder (circles, seams, refinement, quads) | none | not filed |
-| Chunk C: sphere, torus, cone (poles, two periodic directions, apex) | none | not filed |
-| Chunk D: `PrepareModel`, the Plato side of the decode | none | not filed; blocks TKT-312 criterion 2 (`Reduced` and `ToleranceDiagnostics` have no bodies) |
+| Chunk B: the cylinder (circles, seams, refinement, quads) | TKT-324 | open; waits on A and TKT-315 |
+| Chunk C: sphere, torus, cone (poles, two periodic directions, apex) | TKT-325 | open; waits on B |
+| Chunk D: `PrepareModel`, the Plato side of the decode | TKT-326 | open; waits on A; blocks TKT-312 criterion 2 (`Reduced` and `ToleranceDiagnostics` have no bodies) |
 | Chunk E: C# decoder to `RawDecodedModel` | TKT-312 | claimed; three of four criteria met |
 | Chunk E: `StepShapeMesher.MeshItem` calls compiled Plato | TKT-313 | open |
-| Chunk F: the B-spline face | none | not filed |
-| Chunk G: genus and voids | none | not filed |
+| Chunk F: the B-spline face | TKT-327 | open; waits on C |
+| Chunk G: genus and voids | TKT-328 | open; waits on A |
 | Chunk H: the 88-file u-blox corpus | TKT-313 criterion 3 | open |
 | Units, placements, assemblies, colours, entry point (C#) | TKT-305 | done |
 
