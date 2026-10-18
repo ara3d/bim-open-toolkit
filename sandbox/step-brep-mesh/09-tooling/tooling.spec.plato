@@ -46,3 +46,56 @@ spec LoadCorpusModel(root: String, entry: CorpusEntry): RawDecodedModel
     ensures Law_UnitsFactorsAgree(result);
     ensures result.Model.Unit == LengthUnit.Millimetre;
 }
+
+//==
+// # Contracts: writing
+//
+// Every writer is total: it never throws, and returns an empty Report when
+// the file was written, else a Report with one Error diagnostic, code
+// "TOOLING-WRITE-FAILED", at Provenance.WholeInput. Numbers are written in
+// round-trip form (C# "R"), a NaN as the text NaN in CSV and as a dropped
+// triangle in glTF.
+
+// path.glb: glTF 2.0 binary, one scene; per part one node named
+// "face <Face>", one mesh with one triangle-list primitive whose
+// attributes are POSITION (from Positions), NORMAL (from Normals, omitted
+// when empty), _VERTEX (SCALAR float, from Vertices) and _PROVENANCE (VEC4
+// float, Kind, Index, First, Second), no index buffer, and one
+// metallic-roughness material with baseColorFactor = Colour, metallic 0,
+// roughness 1, double-sided. path.obj and path.mtl: per part "o face_<Face>",
+// "usemtl face_<Face>", its vertices and normals, faces 3j+1..3j+3; Kd =
+// Colour. Coordinates are written as given, in the model's unit; the 3D pane
+// (deps/bim-open-viewer, loadGlb) opens the .glb unchanged.
+spec WriteMeshDump(path: String, dump: MeshDump): Report
+{
+    ensures result.Diagnostics.Count <= 1;
+}
+
+// An SVG 1.1 file: viewBox from View, width 800 pixels, height in
+// proportion; per layer a <g id="Name"> with stroke, fill (alpha 0 is
+// "none") and stroke-width = Width; Trace as <polyline> or <polygon>, Dot as
+// a <circle> of radius 3 Width, Label as <text> of height 10 Width holding
+// the integer. u maps to x and v to y with no flip.
+spec WriteSvg(path: String, drawing: SvgDocument): Report
+{
+    ensures result.Diagnostics.Count <= 1;
+}
+
+// A CSV file (RFC 4180, UTF-8): the header row Columns, then one line per
+// row. Whole as an integer, Real in round-trip form, Flag as true or false,
+// Text quoted, Place as the provenance case name and its index ("KernelFace
+// 3"). The toolkit's CSV source reads it, so the notebook shows it.
+spec WriteTable(path: String, table: ResultTable): Report
+{
+    ensures result.Diagnostics.Count <= 1;
+}
+
+// Into folder: model.json and options.json (the values, serialized by the
+// host's reflection serializer); mesh.glb, mesh.obj, mesh.mtl from
+// ModelMeshDump(dump.Outcome.Mesh); round-<k>.glb from RoundMeshDump(dump, k)
+// for every state; face-<f>.svg from StageFaceSvg(dump, f) for every face;
+// report.csv from ReportToTable(dump.Outcome.Report); rounds.csv from
+// StateTable(dump). The Reports of the parts merged.
+spec WriteStageDump(folder: String, dump: StageDump): Report
+{
+}

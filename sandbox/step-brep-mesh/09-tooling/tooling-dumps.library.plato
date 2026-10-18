@@ -1,0 +1,339 @@
+//==
+// # ToolingDumps
+//
+// Layer 9 of the STEP B-rep to mesh design (README.md beside this file): the
+// conversions from the library's values to what a person looks at, and the
+// host shims that write them. Each conversion is total: it works on a broken
+// mesh or a refused run as well as on a good one (an index out of range
+// gives a marked value, never a fault), since a dump is most needed when
+// something is wrong. Kept to what chunks A and B debug: a box and a
+// cylinder through every stage.
+//
+// Sections, in order:
+//  - Meshes for the 3D pane
+//  - Parameter-plane drawings
+//  - Tables
+//  - Every stage of one run
+//  - Host shims
+
+library ToolingDumps
+{
+    //==
+    // # Meshes for the 3D pane
+
+    // The four-number code of a provenance (ProvenanceCode).
+    ProvenanceCodeOf(p: MeshVertexProvenance): ProvenanceCode
+        => match (p) {
+            OnVertex(v) => ProvenanceCode(0, v.Value, 0.0, 0.0);
+            OnEdge(e, t) => ProvenanceCode(1, e.Value, t, 0.0);
+            OnFace(f, uv) => ProvenanceCode(2, f.Value, uv.U, uv.V);
+        };
+
+    // The code of a vertex with no provenance entry: kind -1.
+    UnknownProvenance(_: ProvenanceCode): ProvenanceCode
+        => ProvenanceCode(-1, -1, 0.0, 0.0);
+
+    // The colour of face f: hues a golden-ratio turn apart, so neighbouring
+    // indices differ strongly and a face keeps its colour across runs.
+    FaceColour(f: BrepFaceIndex): Color
+        => ColorHSV((f.Value.ToNumber * 0.618034).Modulo(1.0).Turns, 0.6, 0.9).ToColor;
+
+    // The corner slots of an element's triangles: (0, 1, 2), and for a quad
+    // also (0, 2, 3), the A-C split layer 6 realizes.
+    TriangleSlots(arity: Integer): Array<Integer>
+        => arity == 4 ? [0, 1, 2, 0, 2, 3] : [0, 1, 2];
+
+    // The elements of the mesh grouped by model face, in face order, each
+    // group in element order (a stable sort on ElementFace).
+    ElementsByFace(mesh: ModelMesh): Array<Array<ElementIndex>>
+    {
+        var order = mesh.ElementFace.SortedIndices((a, b) => a.Value <= b.Value);
+        var starts = order.Count.Range.FlatMap(k =>
+            (k == 0 ? true : mesh.ElementFace[order[k]].Value != mesh.ElementFace[order[k - 1]].Value)
+                ? [k] : 0.MapRange(j => j));
+        return starts.Count.MapRange(j =>
+            order.Slice(starts[j], j + 1 < starts.Count ? starts[j + 1] : order.Count).Map(i => ElementIndex(i)));
+    }
+
+    // The part of one face: elements, all of one face, as a triangle soup.
+    FacePartOf(mesh: ModelMesh, elements: Array<ElementIndex>): FacePart
+    {
+        var corners = elements.FlatMap(e => TriangleSlots(mesh.ElementArity(e)).Map(s => mesh.CornerOf(e, s)));
+        var face = mesh.ElementFace[elements[0]];
+        return FacePart(
+            face,
+            face.FaceColour,
+            corners.Map(c => mesh.PositionOrNaN(mesh.CornerVertex(c))),
+            corners.Take(mesh.CornerNormals.Count == mesh.CornerCount ? corners.Count : 0).Map(c => mesh.CornerNormals[c].Vector),
+            corners.Map(c => mesh.CornerVertex(c)),
+            corners.Map(c => mesh.VertexProvenance.IsValidIndex(mesh.CornerVertex(c))
+                ? mesh.VertexProvenance[mesh.CornerVertex(c)].ProvenanceCodeOf
+                : ProvenanceCode.UnknownProvenance));
+    }
+
+    // Position v, or a NaN point when v is out of range (the 3D pane drops
+    // the triangle).
+    PositionOrNaN(mesh: ModelMesh, v: VertexIndex): Point3D
+        => mesh.Positions.IsValidIndex(v) ? mesh.Positions[v] : Point3D(0.0 / 0.0, 0.0 / 0.0, 0.0 / 0.0);
+
+    // A model mesh as one part per face.
+    ModelMeshDump(mesh: ModelMesh): MeshDump
+        => MeshDump(mesh.ElementsByFace.Map(es => mesh.FacePartOf(es)));
+
+    // One face mesh as a part: its parameter-space points lifted through
+    // LocalVertex, normals per point, Vertices the local 3D vertex.
+    FaceMeshPart(fm: FaceMesh): FacePart
+    {
+        var points = fm.Triangles.FlatMap(t => [t.A, t.B, t.C])
+            .Concatenate(fm.Quads.FlatMap(q => [q.A, q.B, q.C, q.A, q.C, q.D]));
+        var local = points.Map(i => fm.LocalVertex.IsValidIndex(i) ? fm.LocalVertex[i] : VertexIndex(-1));
+        return FacePart(
+            fm.Face,
+            fm.Face.FaceColour,
+            local.Map(v => fm.Positions.IsValidIndex(v) ? fm.Positions[v] : Point3D(0.0 / 0.0, 0.0 / 0.0, 0.0 / 0.0)),
+            points.Take(fm.Normals.Count == fm.UvPoints.Count ? points.Count : 0).Map(i => fm.Normals[i].Vector),
+            local,
+            local.Map(v => fm.Provenance.IsValidIndex(v) ? fm.Provenance[v].ProvenanceCodeOf : ProvenanceCode.UnknownProvenance));
+    }
+
+    // Face meshes as one part each, the empty ones left out: what a round of
+    // the loop holds before assembly.
+    FaceMeshDump(meshes: Array<FaceMesh>): MeshDump
+        => MeshDump(meshes.FlatMap(fm => fm.ElementCount > 0 ? [fm.FaceMeshPart] : 0.MapRange(j => fm.FaceMeshPart)));
+
+    //==
+    // # Parameter-plane drawings
+
+    // A parameter-plane point as a drawing point.
+    DrawingPoint(uv: UvCoordinate): Point2D
+        => Point2D(uv.U, uv.V);
+
+    // b grown to hold p.
+    Grown(b: Bounds2D, p: Point2D): Bounds2D
+        => b.Union(p);
+
+    // b grown on every side by margin.
+    Padded(b: Bounds2D, margin: Number): Bounds2D
+        => Bounds2D(Point2D(b.Min.X - margin, b.Min.Y - margin), Point2D(b.Max.X + margin, b.Max.Y + margin));
+
+    // The face's parameter-space triangulation, read off its face mesh.
+    FaceMeshTriangulation(fm: FaceMesh): UvTriangulation
+        => UvTriangulation(fm.UvPoints, fm.Sources, fm.Triangles, fm.Quads);
+
+    // Every point of a loop with its source.
+    LoopSamples(l: UvLoop): Array<UvSample>
+        => l.Points.Zip(l.Sources, (p, s) => UvSample(p, s));
+
+    // True for a seam-cut point.
+    IsSeamSource(s: UvPointSource): Boolean
+        => match (s) {
+            FromVertex(v) => false;
+            FromEdge(e, i) => false;
+            SeamCut(side, i) => true;
+            Pole(side, i) => false;
+            Interior => false;
+        };
+
+    // True for a pole point.
+    IsPoleSource(s: UvPointSource): Boolean
+        => match (s) {
+            FromVertex(v) => false;
+            FromEdge(e, i) => false;
+            SeamCut(side, i) => false;
+            Pole(side, i) => true;
+            Interior => false;
+        };
+
+    // The model vertex of a point at one, -1 for every other source.
+    VertexOfSource(s: UvPointSource): Integer
+        => match (s) {
+            FromVertex(v) => v.Value;
+            FromEdge(e, i) => -1;
+            SeamCut(side, i) => -1;
+            Pole(side, i) => -1;
+            Interior => -1;
+        };
+
+    // A colour from linear channels, opaque.
+    Opaque(r: Number, g: Number, b: Number): Color
+        => Color(r, g, b, 1.0);
+
+    // No colour.
+    Clear(_: Color): Color
+        => Color(0.0, 0.0, 0.0, 0.0);
+
+    // The region and its triangulation drawn: the triangulation's elements
+    // thin and grey, the outer loop blue, the holes red, model vertices as
+    // black dots labelled with their index, seam-cut points green, pole
+    // points magenta. The view is every point's bounds with a 5% margin;
+    // widths scale with its diagonal, so radians and millimetres draw alike.
+    RegionToSvg(region: UvRegion, t: UvTriangulation): SvgDocument
+    {
+        var samples = [region.Outer].Concatenate(region.Holes).FlatMap(l => l.LoopSamples)
+            .Concatenate(t.Points.Zip(t.Sources, (p, s) => UvSample(p, s)));
+        var tight = samples.Reduce(Bounds2D.Empty, (b, x) => b.Grown(x.Point.DrawingPoint));
+        var diagonal = (tight.Max - tight.Min).Length;
+        var w = diagonal * 0.002;
+        return SvgDocument(tight.Padded(diagonal * 0.05), [
+            SvgLayer("triangulation", Opaque(0.5, 0.5, 0.5), Color.Clear, w,
+                t.Triangles.Map(f => SvgMark.Trace([f.A, f.B, f.C].Map(i => t.Points[i].DrawingPoint), true))
+                    .Concatenate(t.Quads.Map(f => SvgMark.Trace([f.A, f.B, f.C, f.D].Map(i => t.Points[i].DrawingPoint), true)))),
+            SvgLayer("outer", Opaque(0.1, 0.3, 0.9), Color.Clear, 2.0 * w,
+                [SvgMark.Trace(region.Outer.Points.Map(p => p.DrawingPoint), true)]),
+            SvgLayer("holes", Opaque(0.9, 0.2, 0.1), Color.Clear, 2.0 * w,
+                region.Holes.Map(h => SvgMark.Trace(h.Points.Map(p => p.DrawingPoint), true))),
+            SvgLayer("vertices", Opaque(0.0, 0.0, 0.0), Opaque(0.0, 0.0, 0.0), w,
+                samples.FlatMap(x => x.Source.VertexOfSource >= 0
+                    ? [SvgMark.Dot(x.Point.DrawingPoint), SvgMark.Label(x.Point.DrawingPoint, x.Source.VertexOfSource)]
+                    : 0.MapRange(j => SvgMark.Dot(x.Point.DrawingPoint)))),
+            SvgLayer("seams", Opaque(0.1, 0.7, 0.2), Opaque(0.1, 0.7, 0.2), w,
+                samples.FlatMap(x => x.Source.IsSeamSource ? [SvgMark.Dot(x.Point.DrawingPoint)] : 0.MapRange(j => SvgMark.Dot(x.Point.DrawingPoint)))),
+            SvgLayer("poles", Opaque(0.8, 0.1, 0.8), Opaque(0.8, 0.1, 0.8), w,
+                samples.FlatMap(x => x.Source.IsPoleSource ? [SvgMark.Dot(x.Point.DrawingPoint)] : 0.MapRange(j => SvgMark.Dot(x.Point.DrawingPoint))))]);
+    }
+
+    // A drawing with nothing in it, for a face the dump has no region for.
+    EmptyDrawing(_: SvgDocument): SvgDocument
+        => SvgDocument(Bounds2D.Empty, []);
+
+    //==
+    // # Tables
+
+    // A report as one table: every check (Name its law, Measure its worst,
+    // Bound its bound), then every diagnostic (Name its code, Measure its
+    // measure). Cells that do not apply are empty text.
+    ReportToTable(r: Report): ResultTable
+        => ResultTable("Report",
+            ["Kind", "Name", "Holds", "Severity", "Measure", "Bound", "Where", "Message"],
+            r.Checks.Map(c => [
+                CellValue.Text("Check"), CellValue.Text(c.Law), CellValue.Flag(c.Holds), CellValue.Text(""),
+                CellValue.Real(c.Worst), CellValue.Real(c.Bound), CellValue.Place(c.Where), CellValue.Text("")])
+            .Concatenate(r.Diagnostics.Map(d => [
+                CellValue.Text("Diagnostic"), CellValue.Text(d.Code), CellValue.Text(""), CellValue.Text(d.Severity.SeverityName),
+                CellValue.Real(d.Measure), CellValue.Text(""), CellValue.Place(d.Where), CellValue.Text(d.Message)])));
+
+    // Differences as a table, one row each, the table printed by name.
+    DifferencesTable(ds: Array<LocatedDifference<$T>>, name: Function1<$T, String>): ResultTable
+        => ResultTable("Differences",
+            ["Table", "Row", "Slot", "Field", "Left", "Right", "Tolerance"],
+            ds.Map(d => [
+                CellValue.Text(name(d.Table)), CellValue.Whole(d.Row), CellValue.Whole(d.Slot), CellValue.Text(d.What.Field),
+                d.What.Left, d.What.Right, CellValue.Real(d.What.Tolerance)]));
+
+    // Every difference between two models within tol, as a table.
+    ModelDifferencesTable(a: BrepModel, b: BrepModel, tol: Number): ResultTable
+        => ModelDifferences(a, b, tol).DifferencesTable(t => t.ModelTableName);
+
+    // Every difference between two model meshes within tol, as a table.
+    MeshDifferencesTable(a: ModelMesh, b: ModelMesh, tol: Number): ResultTable
+        => ModelMeshDifferences(a, b, tol).DifferencesTable(t => t.MeshTableName);
+
+    // The name of a model table.
+    ModelTableName(t: ModelTable): String
+        => match (t) {
+            CurveRows => "Curves";
+            Curve2DRows => "Curves2D";
+            PcurveRows => "Pcurves";
+            SurfaceRows => "Surfaces";
+            ClosureRows => "Closures";
+            VertexRows => "Vertices";
+            EdgeRows => "Edges";
+            LoopRows => "Loops";
+            FaceRows => "Faces";
+            ShellRows => "Shells";
+            BodyRows => "Bodies";
+            ToleranceRow => "Tolerances";
+            UnitRow => "Unit";
+        };
+
+    // The name of a mesh table.
+    MeshTableName(t: MeshTable): String
+        => match (t) {
+            PositionRows => "Positions";
+            TriangleRows => "Triangles";
+            QuadRows => "Quads";
+            CornerNormalRows => "CornerNormals";
+            CornerUvRows => "CornerUvs";
+            ElementFaceRows => "ElementFace";
+            ProvenanceRows => "Provenance";
+            NumberingRow => "Numbering";
+            EdgeInteriorStartRows => "EdgeInteriorStart";
+            FaceInteriorStartRows => "FaceInteriorStart";
+            FaceField => "Face";
+            UvPointRows => "UvPoints";
+            SourceRows => "Sources";
+            LocalVertexRows => "LocalVertex";
+            NormalRows => "Normals";
+            RequestRows => "Requests";
+            OutcomeDiagnosticRows => "Diagnostics";
+        };
+
+    //==
+    // # Every stage of one run
+
+    // Every stage of MeshModel(m, o): the states from round 0 to the final
+    // round through layer 8's own StateAfter, each face's region over the
+    // final discretizations through layer 5's RegionOf, and the outcome.
+    // States and Regions are empty when the run is refused.
+    DumpStages(m: BrepModel, o: MeshingOptions): StageDump
+    {
+        var rounds = m.IsRunnable(o) ? m.FinalState(o, m.AllFaces).Round + 1 : 0;
+        var states = rounds.MapRange(k => m.StateAfter(o, m.AllFaces, k));
+        var regions = (states.Count == 0 ? 0 : m.Faces.Count).MapRange(f =>
+            m.RegionOf(BrepFaceIndex(f), states[states.Count - 1].Discretizations, o.Face));
+        return StageDump(m, o, states, regions, m.MeshModel(o));
+    }
+
+    // Every stage of positive witness k under layer 8's witness options:
+    // what the host's dump command runs for --witness k.
+    DumpWitnessStages(_: StageDump, k: Integer): StageDump
+        => BrepModel.WitnessAt(k).DumpStages(MeshingOptions.WitnessOptions);
+
+    // The face meshes of round k as parts, before assembly; empty outside
+    // the rounds.
+    RoundMeshDump(d: StageDump, k: Integer): MeshDump
+        => d.States.IsValidIndex(k) ? d.States[k].FaceMeshesOf.FaceMeshDump : MeshDump([]);
+
+    // Face f's region and final parameter-space triangulation drawn; empty
+    // when the dump has no region or no outcome for f.
+    StageFaceSvg(d: StageDump, f: BrepFaceIndex): SvgDocument
+        => (d.Regions.IsValidIndex(f) ? (d.States.Count > 0 ? d.States[d.States.Count - 1].Outcomes.IsValidIndex(f) : false) : false)
+            ? d.Regions[f].RegionToSvg(d.States[d.States.Count - 1].Outcomes[f].Mesh.FaceMeshTriangulation)
+            : SvgDocument.EmptyDrawing;
+
+    // One row per round: the round, the discretization samples in all, the
+    // pending requests, the faces with elements, the elements in all, and
+    // the Error diagnostics of the face outcomes.
+    StateTable(d: StageDump): ResultTable
+        => ResultTable("Rounds",
+            ["Round", "EdgeSamples", "Pending", "MeshedFaces", "Elements", "FaceErrors"],
+            d.States.Map(s => [
+                CellValue.Whole(s.Round),
+                CellValue.Whole(s.Discretizations.ByEdge.Map(x => x.Parameters.Count).IntegerTotal),
+                CellValue.Whole(s.Pending.Count),
+                CellValue.Whole(s.Outcomes.Map(x => x.Mesh.ElementCount > 0 ? 1 : 0).IntegerTotal),
+                CellValue.Whole(s.Outcomes.Map(x => x.Mesh.ElementCount).IntegerTotal),
+                CellValue.Whole(s.Outcomes.Map(x => x.Diagnostics.Map(g => g.Severity.SeverityName == "Error" ? 1 : 0).IntegerTotal).IntegerTotal)]));
+
+    //==
+    // # Host shims
+    //
+    // Bodiless: the C# test host writes the file (contracts in
+    // tooling.spec.plato). Each returns layer 0's Report: empty when the
+    // file was written, one Error "TOOLING-WRITE-FAILED" at WholeInput when
+    // it was not; none throws.
+
+    // host: dump as path.glb (one node, mesh and material per part) and
+    // path.obj with path.mtl (one object and material per part).
+    WriteMeshDump(path: String, dump: MeshDump): Report;
+
+    // host: the drawing as an SVG file at path.
+    WriteSvg(path: String, drawing: SvgDocument): Report;
+
+    // host: the table as a CSV file at path (header row, then rows).
+    WriteTable(path: String, table: ResultTable): Report;
+
+    // host: every file of a stage dump into folder (tooling.spec.plato lists
+    // them), composed from the shims above.
+    WriteStageDump(folder: String, dump: StageDump): Report;
+}
