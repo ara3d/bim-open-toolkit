@@ -1,14 +1,16 @@
 ---
 id: TKT-320
 title: Bidirectional viewer: a pick highlights and reaches the table, the selection and a comment become graph nodes, BCF viewpoints save camera and selection, write-back from the property panel
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session e2aa2b2c
+session: e2aa2b2c-7acb-41a8-96ea-ad30e584b1f4
 fence: [deps/bim-open-data/src/data/Ara3D.BimOpenSchema.IO.Bcf/**, deps/bim-open-data/tests/data/Ara3D.BimOpenSchema.IO.Bcf.Tests/**, deps/bim-open-flow/bimopenflow/web/packages/panes/**, deps/bim-open-flow/bimopenflow/web/packages/app/src/app.ts, deps/bim-open-flow/bimopenflow/web/packages/app/src/paneArea.ts, deps/bim-open-flow/bimopenflow/web/packages/app/src/paneEdits.ts, deps/bim-open-flow/bimopenflow/web/packages/app/test/**, deps/bim-open-flow/bimopenflow/web/packages/client/src/**, deps/bim-open-notebook/bimopenflow/web/packages/pane-3d/**, src/flow/BimOpenFlow.Nodes.BimAnalysis/**, src/flow/BimOpenFlow.Nodes.Bcf/**, src/flow/BimOpenFlow.Nodes.Geometry/CameraNode.cs, src/flow/BimOpenFlow.Nodes.Geometry/README.md, tests/flow/**, docs/nodes.md, docs/nodes.catalog.json, docs/bim-flow-3d.md, docs/plans/bidirectional-viewer.md, deps.json]
 workflow: [W3, W2]
 related: [TKT-28, TKT-26, TKT-222, TKT-171, TKT-12]
 confidence: high
 created: 2026-10-18
+claimed: 2026-10-18
 ---
 
 ## Acceptance criteria
