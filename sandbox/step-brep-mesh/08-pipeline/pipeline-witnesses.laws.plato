@@ -34,6 +34,16 @@ library StepToMeshWitnessesLaws
     WitnessMesh(m: BrepModel): ModelMesh
         => m.WitnessOutcome.Mesh;
 
+    // The refinement loop's initial state on the unit box under the witness
+    // options, every face chosen: a PipelineState witness, so the runner gives
+    // the laws over a state (Law_OutcomeIsOfItsFace,
+    // Law_PendingRequestIsInSomeOutcome) a verdict instead of skipping them.
+    // The box's straight edges need no refinement, so Pending is empty and
+    // Law_PendingRequestIsInSomeOutcome holds on it vacuously; a curved
+    // witness's state with pending requests follows layer 5's chunk B bodies.
+    Witness_UnitBoxInitialState(_: PipelineState): PipelineState
+        => BrepModel.Witness_UnitBox.InitialState(MeshingOptions.WitnessOptions, BrepModel.Witness_UnitBox.AllFaces);
+
     //==
     // # Positive witnesses: meshed
     //
