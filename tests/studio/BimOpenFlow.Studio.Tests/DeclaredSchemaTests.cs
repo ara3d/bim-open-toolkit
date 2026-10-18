@@ -226,6 +226,12 @@ public sealed class DeclaredSchemaTests
             Add("bcf.write", [issues], isRun: true, ps: [("path", bcf)]);
             Add("bcf.read", [], ps: [("path", bcf)]);
 
+            Add("bim.selection", [], ps: [("ids", "D1,D2,,D1")]);
+            Add("bim.selection", [], name: "bim.selection (empty)");
+            var camera = Add("view3d.camera", [], ps: [("posX", "1"), ("targetX", "5"), ("targetZ", "1")])["camera"];
+            Add("bcf.issue", [null], name: "bcf.issue (no camera)", ps: [("title", "Swap handle"), ("ids", "D1,D2")]);
+            Add("bcf.issue", [camera], ps: [("title", "Swap handle"), ("comment", "Wrong side"), ("ids", "D1,D2")]);
+
             var idsPath = Path.Combine(folder, "doors.ids");
             File.WriteAllText(idsPath, DoorsIds);
             Add("ids.specifications", [], ps: [("ids", idsPath)]);
