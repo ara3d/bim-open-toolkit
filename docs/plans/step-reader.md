@@ -197,3 +197,27 @@ library's constructs today.
   `Vector`, `Plane`), so alias the namespace where they meet; strings are read raw (no `\X2\` decoding yet).
 - 2026-10-17: pivot recorded (section above); TKT-305 re-scoped to model assembly; TKT-311 (writer spike), TKT-312 (C# decode into BrepModel), TKT-313 (mesh through compiled Plato) filed.
 - 2026-10-17: boundary refined with the Plato session: C# produces `RawDecodedModel` (structural mapping only), Plato's `PrepareModel` makes the four geometric decisions. TKT-312 updated.
+- 2026-10-17, TKT-305 part B (model assembly), bim-open-data 04d0cc0 to 19dbf9e. `StepMesher.Mesh(path or
+  StepDocument)` returns a `StepMeshingResult` shaped like `IfcMeshingResult` plus `Placements` (every shape item at every
+  place, meshed or not), `ContextUnits`, `AssemblyDepth`, `StyledColours`, `GeometryPending`, `Cycles`, the parser's
+  `StepDocument.Diagnostics` and `Prefix` (instances read before a parse error). Units: length unit from SI prefix or
+  `conversion_based_unit` factor, smallest length uncertainty in file units. Placements: `axis2_placement_3d` by ISO
+  build_axes, `cartesian_transformation_operator_3d`; `mapped_item` origin onto target, mesh shared. Assemblies: NAUO,
+  CDSR, RRWT, `item_defined_transformation`, the component side decided by membership (M2-ZED-F9T-20B writes rep_1 as
+  the assembly's); a NAUO with no CDSR is skipped when a mapped item of its assembly placed it. Colours: the CAx-IF
+  chain to `colour_rgb` and `draughting_pre_defined_colour`, on solid, shell, face (most common, recorded approximate when
+  faces differ), mapped item or representation. `MeshItem`'s `NotImplementedException` is counted as geometry pending.
+  Tests: Ara3D.Step.Mesher.Tests 24 passed, 1 ignored (two instances of one mesh, until `MeshItem` has a body), including
+  unit-cube 0.001 m, inline inch 0.0254 m, the two-cubes assembly at +0.002 m, swapped transform items, product and
+  mapped-item cycles, and unit-cube-truncated.stp (Syntax error in #125, prefix of 124 instances).
+  Corpus check (throwaway program) over the 88 u-blox files, everything but triangles: 0 exceptions, 0 failed results,
+  0 parse diagnostics, 7.8 s in all (Release, first file 2.0 s with JIT warm-up); 18,771 placements of 10,881 distinct
+  shape items, all geometry pending; 81 files are assemblies, depth up to 6 (M2-MAYA-W271); 70 files in millimetres, 17
+  in metres, LENA-R8 mixes mm, inch and thou across 40 part contexts; 88,295 styled colours, 17,979 placements coloured,
+  8 files with uncoloured placements (the AP203 exports carry no styles); 18 files with approximate records, all faces
+  of one solid carrying several colours (NINA-B221-W1x1: 52 solids). Notable: LENA-R8 (a `shape_aspect` representation
+  repeats each part's solid; the first run placed 40 duplicates at the origin, fixed in 5b5bcbc), M2-ZED-F9T-20B
+  (component frame at 503, 764, 1259 mm in the assembly, as written; placement span 1.5 m), M2-JODY-W377-00C (1,092
+  distinct items, one placement each), NINA-B222-W1x2 (195 `geometric_curve_set` items counted unsupported),
+  ODIN-W262 (depth 5, a `brep_with_voids` with two face colours). Debts: per-face colour (one material per instance),
+  occurrence colours (`over_riding_styled_item`), a context without a length unit read as millimetres.
