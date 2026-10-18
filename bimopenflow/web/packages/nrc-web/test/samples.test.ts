@@ -43,7 +43,8 @@ function cell(snapshot: TableSnapshot, key: string, column: string): unknown {
 }
 
 function snapshotOf(embed: Embed | undefined): TableSnapshot {
-  if (!embed || !("snapshot" in embed)) throw new Error(`expected an embed with a snapshot, got ${embed?.kind}`);
+  // A view3d embed's snapshot is optional, so the check covers the value as well as the key.
+  if (!embed || !("snapshot" in embed) || !embed.snapshot) throw new Error(`expected an embed with a snapshot, got ${embed?.kind}`);
   return embed.snapshot;
 }
 
@@ -122,13 +123,26 @@ describe("sample notebooks", () => {
 describe("nrc-eight-questions", () => {
   const notebook = load("nrc-eight-questions");
 
-  it("asks the eight questions of samples/nrc/questions.txt verbatim, then one follow-up", () => {
+  // samples/nrc/questions.txt holds the paper's eight questions and a ninth on zones
+  // (e4354db9). The notebook records the eight as asked on 2026-09-27; Q4, Q5, and Q7
+  // (indices 3, 4, 6) were reworded on 2026-10-17 (59d0d231) so each has one unambiguous
+  // answer, and the notebook keeps its recorded run of the old wording.
+  const REWORDED = new Set([3, 4, 6]);
+
+  it("asks the eight questions of samples/nrc/questions.txt as recorded, then one follow-up", () => {
     const questions = readFileSync(join(ROOT, "samples", "nrc", "questions.txt"), "utf8")
       .split(/\r?\n/)
       .filter((line) => line !== "" && !line.startsWith("#"));
-    expect(questions).toHaveLength(8);
+    expect(questions).toHaveLength(9);
     expect(notebook.turns).toHaveLength(9);
-    expect(notebook.turns.slice(0, 8).map((t) => t.request.text)).toEqual(questions);
+    const asked = notebook.turns.slice(0, 8).map((t) => t.request.text);
+    const unchanged = (texts: string[]) => texts.filter((_, i) => !REWORDED.has(i));
+    expect(unchanged(asked)).toEqual(unchanged(questions.slice(0, 8)));
+    expect(asked.filter((_, i) => REWORDED.has(i))).toEqual([
+      "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
+      "How much operational carbon is in each category?",
+      "What is the embodied carbon of the roof?",
+    ]);
   });
 
   it("Q1 shows the total operational carbon as a value, 37,196.2 kgCO2e/yr", () => {

@@ -28,14 +28,14 @@ describe("parseGraphTable", () => {
 
   it("keeps the README's columns as text, code spans dropped", () => {
     const q1 = graphs.find((g) => g.id === "nrc-q1-building-total")!;
-    expect(q1.answers).toBe("total operational carbon and element count");
+    expect(q1.answers).toBe("total operational carbon (37,196.2 kgCO2e/yr) over 218 elements");
     expect(q1.profiles).toBe("tables, bim");
     expect(q1.viewer3d).toBe(false);
   });
 
   it("marks the graphs that colour the model for the 3D page", () => {
     const viewer = graphs.filter((g) => g.viewer3d).map((g) => g.id);
-    expect(viewer).toEqual(["nrc-dc-w1-verdicts", "nrc-color-operational-carbon"]);
+    expect(viewer).toEqual(["nrc-dc-w1-verdicts", "nrc-color-operational-carbon", "nrc-color-zone-eui", "nrc-join-analytics"]);
   });
 
   it("is empty without a Graph table", () => {
