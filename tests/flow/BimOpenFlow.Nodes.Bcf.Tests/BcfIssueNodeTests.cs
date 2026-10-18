@@ -1,5 +1,7 @@
 using Ara3D.DataFlowEngine.Abstractions;
+using Ara3D.BimOpenSchema.IO.Bcf;
 using BimOpenFlow.Nodes.Bcf;
+using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.Nodes.Bcf.Tests;
 
@@ -106,5 +108,59 @@ public sealed class BcfIssueNodeTests
         var topics = new BcfTopicsNode().EvalTable([new TableValue(issues)]);
         Assert.That(topics.Rows, Has.Count.EqualTo(1));
         Assert.That(topics.Cell("Elements", 0), Is.EqualTo(2L));
+    }
+
+    private sealed class RunContext : IEvalContext
+    {
+        public bool IsRun => true;
+        public CancellationToken Cancellation => CancellationToken.None;
+        public void Warn(string message) { }
+    }
+
+    [Test]
+    public void IssueWithCameraAndComment_SurvivesWriteAndRead()
+    {
+        var model = Path.Combine(RepoPaths.Root, "deps", "bim-open-data", "samples", "public", "duplex.bos");
+        if (!File.Exists(model))
+            Assert.Ignore("deps/bim-open-data/samples/public/duplex.bos is not fetched");
+        var folder = Path.Combine(Path.GetTempPath(), "bcf-issue-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var camera = NodeTestHelpers.Table(
+                ("posX", typeof(double), [1.0]), ("posY", typeof(double), [2.0]), ("posZ", typeof(double), [3.0]),
+                ("targetX", typeof(double), [4.0]), ("targetY", typeof(double), [6.0]), ("targetZ", typeof(double), [3.0]),
+                ("fov", typeof(double), [50.0]));
+            var issues = Node.EvalTable([camera], ("title", "Swap handle"), ("comment", "Wrong side"),
+                ("author", "ana"), ("created", "2026-10-18T09:30:00Z"),
+                ("ids", "1aj$VJZFn2TxepZUBcKp$i,1s1jVhK8z0pgKYcr9jt781"));
+
+            var path = Path.Combine(folder, "issue.bcf");
+            new BcfWriteNode().Eval(new RunContext(), [new TableValue(issues)],
+                NodeTestHelpers.Params(("path", path), ("model", model)));
+            var read = new BcfReadNode().Eval(NodeTestHelpers.Ctx, [], NodeTestHelpers.Params(("path", path)));
+
+            var table = ((TableValue)read[0]).Table;
+            Assert.That(table.ColumnCells("GlobalId"), Is.EquivalentTo(new object?[] { "1aj$VJZFn2TxepZUBcKp$i", "1s1jVhK8z0pgKYcr9jt781" }));
+            Assert.That((double)table.Cell("CameraX", 0)!, Is.EqualTo(1.0).Within(1e-5));
+            Assert.That((double)table.Cell("CameraY", 0)!, Is.EqualTo(2.0).Within(1e-5));
+            Assert.That((double)table.Cell("DirectionX", 0)!, Is.EqualTo(0.6).Within(1e-5));
+            Assert.That((double)table.Cell("DirectionY", 0)!, Is.EqualTo(0.8).Within(1e-5));
+            Assert.That((double)table.Cell("UpZ", 0)!, Is.EqualTo(1.0).Within(1e-5));
+            Assert.That((double)table.Cell("FieldOfView", 0)!, Is.EqualTo(50.0).Within(1e-5));
+            Assert.That((double)table.Cell("AspectRatio", 0)!, Is.EqualTo(1.0).Within(1e-5));
+
+            var comments = ((TableValue)read[2]).Table;
+            Assert.That(comments.Rows, Has.Count.EqualTo(1));
+            Assert.That(comments.Cell("Comment", 0), Is.EqualTo("Wrong side"));
+            Assert.That(comments.Cell("Author", 0), Is.EqualTo("ana"));
+            Assert.That(comments.Cell("Title", 0), Is.EqualTo("Swap handle"));
+
+            Assert.That(BcfReader.ReadFile(path).Topics[0].ModelFile, Is.EqualTo("duplex.bos"));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 }

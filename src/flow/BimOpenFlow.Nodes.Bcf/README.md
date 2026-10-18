@@ -9,7 +9,7 @@ exchange format) in and out of a graph. The writer and reader are
 | `bcf.issue` | pure | `camera` (optional) | `issues` | `title`, `description`, `comment`, `author`, `created`, `status`, `priority`, `type`, `ids` |
 | `bcf.topics` | pure | `issues` | `topics` | `preset`, `verdicts` |
 | `bcf.write` | effect | `issues` | `out` (summary) | `path`, `model`, `preset`, `verdicts`, `author`, `guidSeed` |
-| `bcf.read` | pure | none | `issues`, `topics` | `path` |
+| `bcf.read` | pure | none | `issues`, `topics`, `comments` | `path` |
 
 The input of `bcf.topics` and `bcf.write` is any table with a `GlobalId`
 column and a title column: an issue table (`Title`, optional `Description`,
@@ -35,6 +35,14 @@ pointing at the `.bos` file, each topic's viewpoint selects its elements under
 a camera that frames them; without geometry the GlobalIds go in the topic's
 description, because BCF 3.0 requires a camera in every viewpoint. The summary
 row names the file with its byte count and SHA-256.
+
+With `model` set, `bcf.write` also names the model file in the BCF header (file name, the path as
+given, and the file's last-write date in UTC). A camera in the input (`CameraX..AspectRatio`, as
+`bcf.issue` makes them) becomes the topic's viewpoint camera in place of the framed one, and a
+`Comment` column becomes the topic's comments (author and date from the row's `Author` and
+`CreationDate`). `bcf.read` returns the same columns: the `issues` output carries the camera
+columns (empty for a topic without a viewpoint camera) and a `Comments` count, and the `comments`
+output has one row per comment: `TopicGuid, Title, Author, CreationDate, Comment`.
 
 `bcf.topics` is the preview: the same grouping as `bcf.write`, as a table on the
 canvas. Its `GlobalIds` column lists the ids in IFC's 22-character form and

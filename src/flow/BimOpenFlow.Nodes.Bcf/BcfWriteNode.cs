@@ -31,7 +31,7 @@ public sealed class BcfWriteNode : IFlowNode
         "Writes the input issue or verdict table as a BCF 3.0 file at 'path' that Revit, Solibri and "
         + "BIMcollab open as topics. With 'model' (a .bos file) each topic gets a viewpoint selecting its "
         + "elements under a camera framing them; without it, or for elements with no geometry, the "
-        + "GlobalIds go in the topic's description. 'guidSeed' keeps topic GUIDs stable across reruns "
+        + "GlobalIds go in the topic's description. 'model' also names the model file in the BCF header (file name, path and last-write date), so a viewer can match the topic to its model. A camera in the input (the CameraX..AspectRatio columns, as bcf.issue makes them) becomes the viewpoint's camera, and a Comment column becomes the topic's comments. 'guidSeed' keeps topic GUIDs stable across reruns "
         + "(default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, "
         + "viewpoints, elements, elementsWithoutGeometry, bytes, sha256). " + BcfIssues.ParamsDescription,
         Schemas: [BcfIssues.SummarySchema("out")]);
@@ -49,6 +49,8 @@ public sealed class BcfWriteNode : IFlowNode
         var options = new BcfOptions
         {
             GuidSeed = parameters.GetText("guidSeed", "") is { Length: > 0 } seed ? seed : Path.GetFileNameWithoutExtension(path),
+            ModelFile = model,
+            ModelDate = model.Length > 0 ? new DateTimeOffset(File.GetLastWriteTimeUtc(model), TimeSpan.Zero) : null,
         };
         if (parameters.GetText("author", "") is { Length: > 0 } author)
             options = options with { Author = author };
