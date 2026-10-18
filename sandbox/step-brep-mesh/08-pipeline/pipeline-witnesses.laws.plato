@@ -71,6 +71,20 @@ library StepToMeshWitnessesLaws
                 BrepModel.WitnessAt(k).Tolerances, MeshingOptions.WitnessOptions.Quality, ConformanceLevel.Oracle)
             .IsClean;
 
+    // The unit box meshes as chunk A states (TASKS.md): 8 vertices and 12
+    // triangles, no quad, closed, consistently oriented, Euler characteristic
+    // 2, signed volume 1 within the mesh's volume rounding, no refinement
+    // round, Ok.
+    Law_UnitBoxMeshesAsStated(_: BrepModel): Boolean
+    {
+        var outcome = BrepModel.Witness_UnitBox.WitnessOutcome;
+        var mesh = outcome.Mesh;
+        return mesh.Positions.Count == 8 && mesh.Triangles.Count == 12 && mesh.Quads.Count == 0
+            && mesh.IsClosed && mesh.IsConsistentlyOriented && mesh.EulerCharacteristic == 2
+            && (mesh.SignedVolume - 1.0).Abs <= mesh.VolumeRoundoff
+            && outcome.Rounds == 0 && outcome.Ok;
+    }
+
     // After meshing the hollow box a x a x a around a void b x b x b, the
     // void's mesh encloses a negative volume beyond its rounding.
     Law_HollowBoxVoidMeshVolumeNegative(a: Number, b: Number): Boolean
