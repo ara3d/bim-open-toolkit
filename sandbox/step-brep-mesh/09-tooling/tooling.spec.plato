@@ -1,0 +1,33 @@
+//==
+// # 09-tooling: specifications
+//
+// The invented constructs of SPEC-DSL.md section 3 for layer 9: the
+// contracts of the host shims, the bodiless functions marked "// host:" in
+// the library files. A host shim is not a deferred algorithm: its body is C#
+// in the test host (README.md beside this file, "Host shims"), because it
+// reads or writes a file, and Plato functions are pure. Every shim is a
+// thin wrapper: the conversion to what is written is a Plato function with
+// a body, so the shim only moves bytes. Read, not parsed: the gate skips
+// this file.
+//
+// Sections, in order:
+//  - Contracts: reading
+
+//==
+// # Contracts: reading
+
+// The C# decoder of TKT-312 on one corpus file. The file is
+// <root>/<entry.Source>/<entry.Name>, the collection's folder and the
+// file's name within it (07-validation/README.md, "Corpus"). The result is
+// what DecodeRaw gives, so it obeys layer 3's raw laws. A file that cannot
+// be opened or parsed gives a RawDecodedModel whose model has no rows, unit
+// Millimetre, and whose Diagnostics hold one Error with code
+// "TOOLING-FILE-UNREADABLE" at Provenance.WholeInput; the shim never throws
+// (layer 0's rule: diagnostics, never exceptions).
+spec LoadCorpusModel(root: String, entry: CorpusEntry): RawDecodedModel
+{
+    ensures Law_RawHasNoClosures(result);
+    ensures Law_RawTolerancesUnset(result);
+    ensures Law_UnitsFactorsAgree(result);
+    ensures result.Model.Unit == LengthUnit.Millimetre;
+}

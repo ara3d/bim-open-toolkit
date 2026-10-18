@@ -1,0 +1,453 @@
+//==
+// # ToolingGenerators
+//
+// Layer 9 of the STEP B-rep to mesh design (README.md beside this file):
+// test models drawn from the parameter spaces of layer 7's witnesses, the
+// perturbations that vary them with a known effect, and the corpus loader.
+// Every sample is a pure function of its family, a seed and an index, so a
+// failing sample is reproduced by writing down three values. The draws come
+// from an integer hash, not a stream, so sample i never depends on samples
+// 0 to i - 1 and a law can address one sample directly.
+//
+// The hash relies on Integer multiplication wrapping at 32 bits, as the
+// stdlib's Hash functions already do (random.library.plato). The C#
+// backend wraps (unchecked is its default); a Rust backend must build these
+// with wrapping arithmetic.
+//
+// Sections, in order:
+//  - Draws
+//  - Family parameters
+//  - Samples and their facts
+//  - Default families
+//  - Perturbations
+//  - The corpus
+
+library ToolingGenerators
+{
+    //==
+    // # Draws
+
+    // A 31-bit integer hash of x (the 0x45d9f3b multiply-xorshift mix, with
+    // the sign bit cleared after each step so every shift is logical).
+    HashMix(x: Integer): Integer
+        => x.BitwiseAnd(2147483647).XorShift16.MultiplyMix.XorShift16.MultiplyMix.XorShift16;
+
+    // h with its high half folded into its low half.
+    XorShift16(h: Integer): Integer
+        => h.BitwiseXor(h.ShiftRight(16));
+
+    // h times the mix constant 0x45d9f3b, wrapped, sign bit cleared.
+    MultiplyMix(h: Integer): Integer
+        => (h * 73244475).BitwiseAnd(2147483647);
+
+    // A number in [0, 1) determined by seed, index and dimension: 23 bits of
+    // the hash, so it is exact in a 32-bit float as well as a 64-bit one.
+    UnitDraw(seed: Integer, index: Integer, dimension: Integer): Number
+        => HashMix(HashMix(HashMix(seed) + index) + dimension).BitwiseAnd(8388607).ToNumber / 8388608.0;
+
+    // A value of the range: its lerp at the unit draw.
+    Draw(range: NumberInterval, seed: Integer, index: Integer, dimension: Integer): Number
+        => range.Lerp(UnitDraw(seed, index, dimension));
+
+    // An angle of the range, in radians, by the same lerp.
+    Draw(range: AngleInterval, seed: Integer, index: Integer, dimension: Integer): Number
+        => range.Start.Radians + (range.End.Radians - range.Start.Radians) * UnitDraw(seed, index, dimension);
+
+    // An integer in [0, count), 0 when count is not positive.
+    DrawIndex(count: Integer, seed: Integer, index: Integer, dimension: Integer): Integer
+        => count <= 0 ? 0 : (UnitDraw(seed, index, dimension) * count.ToNumber).Floor.ToInteger.Min(count - 1);
+
+    //==
+    // # Family parameters
+    //
+    // The witness's arguments in its parameter order, each drawn on its own
+    // dimension; the single place a family's draws are made, read by both
+    // SampleModel and SampleFacts.
+
+    // Width, depth, height.
+    FamilyParameters(f: BoxFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Width.Draw(seed, index, 0), f.Depth.Draw(seed, index, 1), f.Height.Draw(seed, index, 2)];
+
+    // Radius, height, sweep in radians (at most a turn).
+    FamilyParameters(f: CylinderFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Radius.Draw(seed, index, 0), f.Height.Draw(seed, index, 1), f.Sweep.Draw(seed, index, 2).Min(Number.Tau)];
+
+    // Radius.
+    FamilyParameters(f: SphereFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Radius.Draw(seed, index, 0)];
+
+    // Major and minor radius.
+    FamilyParameters(f: TorusFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Major.Draw(seed, index, 0), f.Major.Draw(seed, index, 0) * f.MinorRatio.Draw(seed, index, 1)];
+
+    // Base radius, height.
+    FamilyParameters(f: ConeFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Radius.Draw(seed, index, 0), f.Height.Draw(seed, index, 1)];
+
+    // Side, thickness, hole side.
+    FamilyParameters(f: BlockWithHoleFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Side.Draw(seed, index, 0), f.Thickness.Draw(seed, index, 1), f.Side.Draw(seed, index, 0) * f.HoleRatio.Draw(seed, index, 2)];
+
+    // Side, void side.
+    FamilyParameters(f: HollowBoxFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Side.Draw(seed, index, 0), f.Side.Draw(seed, index, 0) * f.VoidRatio.Draw(seed, index, 1)];
+
+    // Bump.
+    FamilyParameters(f: BSplinePatchFamily, seed: Integer, index: Integer): Array<Number>
+        => [f.Bump.Draw(seed, index, 0)];
+
+    //==
+    // # Samples and their facts
+
+    // Sample index of the family under seed: a witness of layer 7 at drawn
+    // parameters.
+    SampleModel(f: WitnessFamily, seed: Integer, index: Integer): BrepModel
+        => match (f) {
+            Box(b) => b.SampleBox(seed, index);
+            Cylinder(c) => c.SampleCylinder(seed, index);
+            Sphere(s) => s.SampleSphere(seed, index);
+            Torus(t) => t.SampleTorus(seed, index);
+            Cone(c) => c.SampleCone(seed, index);
+            BlockWithHole(b) => b.SampleBlockWithHole(seed, index);
+            HollowBox(h) => h.SampleHollowBox(seed, index);
+            BSplinePatch(b) => b.SampleBSplinePatch(seed, index);
+            Fixed(w) => w.SampleFixed(seed, index);
+        };
+
+    // What sample index of the family is known to be, from layer 7's closed
+    // forms at the same parameters. Empty for the witnesses layer 7 states
+    // no facts for (the redundant-pole-loop sphere and the fixed negative
+    // witnesses): an absent fact stays absent.
+    SampleFacts(f: WitnessFamily, seed: Integer, index: Integer): WitnessFacts
+        => match (f) {
+            Box(b) => b.BoxSampleFacts(seed, index);
+            Cylinder(c) => c.CylinderSampleFacts(seed, index);
+            Sphere(s) => s.SphereSampleFacts(seed, index);
+            Torus(t) => t.TorusSampleFacts(seed, index);
+            Cone(c) => c.ConeSampleFacts(seed, index);
+            BlockWithHole(b) => b.BlockWithHoleSampleFacts(seed, index);
+            HollowBox(h) => h.HollowBoxSampleFacts(seed, index);
+            BSplinePatch(b) => b.BSplinePatchSampleFacts(seed, index);
+            Fixed(w) => NoFacts;
+        };
+
+    // Facts with no shells, faces or volumes.
+    NoFacts(): WitnessFacts
+        => WitnessFacts([], [], [], []);
+
+    // A box sample.
+    SampleBox(f: BoxFamily, seed: Integer, index: Integer): BrepModel
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BrepModel.Witness_Box(p[0], p[1], p[2]);
+    }
+
+    // A box sample's facts.
+    BoxSampleFacts(f: BoxFamily, seed: Integer, index: Integer): WitnessFacts
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BoxFacts(p[0], p[1], p[2]);
+    }
+
+    // A cylinder sample: seamed for a whole turn, a sector below.
+    SampleCylinder(f: CylinderFamily, seed: Integer, index: Integer): BrepModel
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BrepModel.Witness_Cylinder(p[0], p[1], Angle(p[2]));
+    }
+
+    // A cylinder sample's facts.
+    CylinderSampleFacts(f: CylinderFamily, seed: Integer, index: Integer): WitnessFacts
+    {
+        var p = f.FamilyParameters(seed, index);
+        return CylinderFacts(p[0], p[1], Angle(p[2]));
+    }
+
+    // A sphere sample in the family's form.
+    SampleSphere(f: SphereFamily, seed: Integer, index: Integer): BrepModel
+        => f.Form.SphereOfForm(f.FamilyParameters(seed, index)[0]);
+
+    // A sphere sample's facts; none for the negative form.
+    SphereSampleFacts(f: SphereFamily, seed: Integer, index: Integer): WitnessFacts
+        => f.Form.SphereFactsOfForm(f.FamilyParameters(seed, index)[0]);
+
+    // The sphere witness of the form and radius r.
+    SphereOfForm(form: SphereForm, r: Number): BrepModel
+        => match (form) {
+            SeamedSphere => BrepModel.Witness_Sphere(r);
+            PoleLoopSphere => BrepModel.Witness_SphereByPoleLoops(r);
+            RedundantPoleLoopSphere => BrepModel.Witness_SphereWithRedundantPoleLoops(r);
+        };
+
+    // The facts of the sphere witness of the form and radius r; none for
+    // the negative form.
+    SphereFactsOfForm(form: SphereForm, r: Number): WitnessFacts
+        => match (form) {
+            SeamedSphere => SphereFacts(r);
+            PoleLoopSphere => SphereByPoleLoopsFacts(r);
+            RedundantPoleLoopSphere => NoFacts;
+        };
+
+    // A torus sample.
+    SampleTorus(f: TorusFamily, seed: Integer, index: Integer): BrepModel
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BrepModel.Witness_Torus(p[0], p[1]);
+    }
+
+    // A torus sample's facts.
+    TorusSampleFacts(f: TorusFamily, seed: Integer, index: Integer): WitnessFacts
+    {
+        var p = f.FamilyParameters(seed, index);
+        return TorusFacts(p[0], p[1]);
+    }
+
+    // A cone sample.
+    SampleCone(f: ConeFamily, seed: Integer, index: Integer): BrepModel
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BrepModel.Witness_Cone(p[0], p[1]);
+    }
+
+    // A cone sample's facts.
+    ConeSampleFacts(f: ConeFamily, seed: Integer, index: Integer): WitnessFacts
+    {
+        var p = f.FamilyParameters(seed, index);
+        return ConeFacts(p[0], p[1]);
+    }
+
+    // A block-with-hole sample.
+    SampleBlockWithHole(f: BlockWithHoleFamily, seed: Integer, index: Integer): BrepModel
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BrepModel.Witness_BlockWithThroughHole(p[0], p[1], p[2]);
+    }
+
+    // A block-with-hole sample's facts.
+    BlockWithHoleSampleFacts(f: BlockWithHoleFamily, seed: Integer, index: Integer): WitnessFacts
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BlockWithThroughHoleFacts(p[0], p[1], p[2]);
+    }
+
+    // A hollow-box sample.
+    SampleHollowBox(f: HollowBoxFamily, seed: Integer, index: Integer): BrepModel
+    {
+        var p = f.FamilyParameters(seed, index);
+        return BrepModel.Witness_HollowBox(p[0], p[1]);
+    }
+
+    // A hollow-box sample's facts.
+    HollowBoxSampleFacts(f: HollowBoxFamily, seed: Integer, index: Integer): WitnessFacts
+    {
+        var p = f.FamilyParameters(seed, index);
+        return HollowBoxFacts(p[0], p[1]);
+    }
+
+    // A B-spline patch solid sample.
+    SampleBSplinePatch(f: BSplinePatchFamily, seed: Integer, index: Integer): BrepModel
+        => BrepModel.Witness_BSplinePatchSolid(f.FamilyParameters(seed, index)[0]);
+
+    // A B-spline patch solid sample's facts.
+    BSplinePatchSampleFacts(f: BSplinePatchFamily, seed: Integer, index: Integer): WitnessFacts
+        => BSplinePatchSolidFacts(f.FamilyParameters(seed, index)[0]);
+
+    // The fixed witness itself.
+    FixedModel(w: FixedWitness): BrepModel
+        => match (w) {
+            FlippedFaceBox => BrepModel.Witness_BoxWithFlippedFace;
+            TwoBoxesSharingCorner => BrepModel.Witness_TwoBoxesSharingCorner;
+            PolyLoopSheetBox => BrepModel.Witness_BoxWithPolyLoopSheet;
+        };
+
+    // A fixed witness moved by a drawn motion (rigid, power-of-two scale, or
+    // jitter), which keeps the defect it was built to have.
+    SampleFixed(w: FixedWitness, seed: Integer, index: Integer): BrepModel
+        => w.FixedModel.Perturbed(w.FixedModel.DrawMotion(seed, index));
+
+    //==
+    // # Default families
+    //
+    // One family per witness of layer 7, in WitnessAt's order for the ten
+    // positive ones, then the negative sphere and the three fixed
+    // witnesses. Ranges are wide enough to leave the unit cases (from 1/4 to
+    // 4 for lengths) and stay well inside each witness's validity.
+
+    // The default families, in the order above.
+    DefaultFamilies(_: WitnessFamily): Array<WitnessFamily>
+        => [
+            WitnessFamily.Box(BoxFamily(DefaultLengths, DefaultLengths, DefaultLengths)),
+            WitnessFamily.Cylinder(CylinderFamily(DefaultLengths, DefaultLengths, AngleInterval(Angle(Number.Tau), Angle(Number.Tau)))),
+            WitnessFamily.Sphere(SphereFamily(DefaultLengths, SphereForm.SeamedSphere)),
+            WitnessFamily.Torus(TorusFamily(DefaultSides, DefaultRatios)),
+            WitnessFamily.Cone(ConeFamily(DefaultLengths, DefaultLengths)),
+            WitnessFamily.BlockWithHole(BlockWithHoleFamily(DefaultSides, DefaultLengths, DefaultRatios)),
+            WitnessFamily.HollowBox(HollowBoxFamily(DefaultSides, DefaultRatios)),
+            WitnessFamily.BSplinePatch(BSplinePatchFamily(NumberInterval(0.0, 0.5))),
+            WitnessFamily.Cylinder(CylinderFamily(DefaultLengths, DefaultLengths, AngleInterval(Angle(0.25), Angle(6.0)))),
+            WitnessFamily.Sphere(SphereFamily(DefaultLengths, SphereForm.PoleLoopSphere)),
+            WitnessFamily.Sphere(SphereFamily(DefaultLengths, SphereForm.RedundantPoleLoopSphere)),
+            WitnessFamily.Fixed(FixedWitness.FlippedFaceBox),
+            WitnessFamily.Fixed(FixedWitness.TwoBoxesSharingCorner),
+            WitnessFamily.Fixed(FixedWitness.PolyLoopSheetBox)];
+
+    // Default family k modulo their count (k may be negative).
+    DefaultFamilyAt(_: WitnessFamily, k: Integer): WitnessFamily
+        => WitnessFamily.DefaultFamilies[((k % WitnessFamily.DefaultFamilies.Count) + WitnessFamily.DefaultFamilies.Count) % WitnessFamily.DefaultFamilies.Count];
+
+    // Lengths from 1/4 to 4.
+    DefaultLengths(): NumberInterval
+        => NumberInterval(0.25, 4.0);
+
+    // Lengths from 1 to 4, for the sides a hole, a void or a minor radius
+    // is a fraction of.
+    DefaultSides(): NumberInterval
+        => NumberInterval(1.0, 4.0);
+
+    // Ratios from 1/10 to 9/10.
+    DefaultRatios(): NumberInterval
+        => NumberInterval(0.1, 0.9);
+
+    //==
+    // # Perturbations
+
+    // The model changed by p (README "Generators" says what each keeps).
+    Perturbed(m: BrepModel, p: Perturbation): BrepModel
+        => match (p) {
+            RigidMotion(frame) => m.RigidlyMoved(frame);
+            Scale(k) => m.ScaledBy(PowerOfTwo(k));
+            Jitter(seed, fraction) => m.Jittered(seed, fraction);
+            FaceReversal(f) => m.WithFacesReversed([f]);
+            EdgeReversal(e) => m.WithEdgeReversed(e);
+            EveryFaceReversal => m.WithEveryFaceReversed;
+        };
+
+    // Perturbation index under seed for model m: the kind is index modulo 6
+    // in the order of the Perturbation sum, the payload drawn (a rotation
+    // and a translation within 2 units; an exponent in [-4, 4]; jitter up to
+    // half the length tolerance; a face or edge of m).
+    DrawPerturbation(m: BrepModel, seed: Integer, index: Integer): Perturbation
+    {
+        var kind = ((index % 6) + 6) % 6;
+        return kind < 3 ? m.DrawMotion(seed, index)
+            : (kind == 3 ? Perturbation.FaceReversal(BrepFaceIndex(DrawIndex(m.Faces.Count, seed, index, 0)))
+            : (kind == 4 ? Perturbation.EdgeReversal(BrepEdgeIndex(DrawIndex(m.Edges.Count, seed, index, 0)))
+            : Perturbation.EveryFaceReversal));
+    }
+
+    // A perturbation that keeps the topology tables: rigid motion, scale, or
+    // jitter, by index modulo 3.
+    DrawMotion(m: BrepModel, seed: Integer, index: Integer): Perturbation
+    {
+        var kind = ((index % 3) + 3) % 3;
+        return kind == 0
+            ? Perturbation.RigidMotion(MotionFrame(
+                UnitDraw(seed, index, 0) * Number.Tau,
+                UnitDraw(seed, index, 1) * Number.Pi,
+                Point3D(4.0 * UnitDraw(seed, index, 2) - 2.0, 4.0 * UnitDraw(seed, index, 3) - 2.0, 4.0 * UnitDraw(seed, index, 4) - 2.0)))
+            : (kind == 1
+                ? Perturbation.Scale(DrawIndex(9, seed, index, 0) - 4)
+                : Perturbation.Jitter(HashMix(seed + index), 0.5));
+    }
+
+    // The orthonormal right-handed frame at origin turned by spin about Z,
+    // then tilted by tilt about the turned X axis.
+    MotionFrame(spin: Number, tilt: Number, origin: Point3D): Frame3D
+        => Frame3D(
+            origin,
+            Direction3D(Vector3D(spin.Cos, spin.Sin, 0.0)),
+            Direction3D(Vector3D(0.0 - spin.Sin * tilt.Cos, spin.Cos * tilt.Cos, tilt.Sin)),
+            Direction3D(Vector3D(spin.Sin * tilt.Sin, 0.0 - spin.Cos * tilt.Sin, tilt.Cos)));
+
+    // The model with every vertex moved by at most fraction (clamped to
+    // [0, 1]) of its length tolerance, in a direction drawn from seed and
+    // the vertex index; every other table kept.
+    Jittered(m: BrepModel, seed: Integer, fraction: Number): BrepModel
+        => BrepModel(
+            m.Geometry,
+            m.Vertices.Count.MapRange(i => BrepVertex(m.Vertices[i].Point
+                + JitterOffset(seed, i, fraction.Clamp(0.0, 1.0) * m.Tolerances.Length.Value))),
+            m.Edges,
+            m.Loops,
+            m.Faces,
+            m.Shells,
+            m.Bodies,
+            m.Tolerances,
+            m.Unit);
+
+    // A vector of length below reach in a direction uniform on the sphere,
+    // drawn from seed and i.
+    JitterOffset(seed: Integer, i: Integer, reach: Number): Vector3D
+    {
+        var z = 2.0 * UnitDraw(seed, i, 0) - 1.0;
+        var phi = Number.Tau * UnitDraw(seed, i, 1);
+        var rho = (1.0 - z * z).Max(0.0).Sqrt;
+        var length = reach * UnitDraw(seed, i, 2);
+        return Vector3D(rho * phi.Cos * length, rho * phi.Sin * length, z * length);
+    }
+
+    // True when p has a known effect on every shell's volume (all but one
+    // face reversed and jitter, which moves vertices off their curves).
+    HasVolumeFactor(p: Perturbation): Boolean
+        => match (p) {
+            RigidMotion(frame) => true;
+            Scale(k) => true;
+            Jitter(seed, fraction) => false;
+            FaceReversal(f) => false;
+            EdgeReversal(e) => true;
+            EveryFaceReversal => true;
+        };
+
+    // The factor p multiplies every shell's signed volume by: 1 for a rigid
+    // motion and an edge reversal, 8^k for a scale by 2^k, -1 for every face
+    // reversed; fallback where HasVolumeFactor is false.
+    VolumeFactorOr(p: Perturbation, fallback: Number): Number
+        => match (p) {
+            RigidMotion(frame) => 1.0;
+            Scale(k) => PowerOfTwo(3 * k);
+            Jitter(seed, fraction) => fallback;
+            FaceReversal(f) => fallback;
+            EdgeReversal(e) => 1.0;
+            EveryFaceReversal => -1.0;
+        };
+
+    // True for the reversals, each its own inverse.
+    IsReversal(p: Perturbation): Boolean
+        => match (p) {
+            RigidMotion(frame) => false;
+            Scale(k) => false;
+            Jitter(seed, fraction) => false;
+            FaceReversal(f) => true;
+            EdgeReversal(e) => true;
+            EveryFaceReversal => true;
+        };
+
+    // True for the perturbations that keep every edge, face, shell and body
+    // row (rigid motion, scale, jitter).
+    IsMotion(p: Perturbation): Boolean
+        => match (p) {
+            RigidMotion(frame) => true;
+            Scale(k) => true;
+            Jitter(seed, fraction) => true;
+            FaceReversal(f) => false;
+            EdgeReversal(e) => false;
+            EveryFaceReversal => false;
+        };
+
+    //==
+    // # The corpus
+
+    // host: the C# decoder (TKT-312, DecodeRaw over Ara3D.IO.StepParser and
+    // the generated Ara3D.StepTypes) run on the file entry names, under the
+    // folder root where the corpus is checked out; contract in tooling.spec.plato.
+    LoadCorpusModel(root: String, entry: CorpusEntry): RawDecodedModel;
+
+    // The corpus entry index modulo the corpus size: the corpus as a
+    // sequence a law or a loop addresses by Integer, the same way it
+    // addresses witnesses.
+    CorpusEntryAt(_: CorpusEntry, index: Integer): CorpusEntry
+    {
+        var all = CorpusEntry.Corpus;
+        return all[((index % all.Count) + all.Count) % all.Count];
+    }
+}
