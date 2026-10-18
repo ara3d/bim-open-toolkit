@@ -390,4 +390,5 @@ plato = (plato.replace("@CUBE_INSTANCES@", pinstances(cube_rows))
               .replace("@NS_ARENA@", str(len(ns_arena)))
               .replace("@DANG_INDEX@", str(DANG_INDEX)))
 assert "@" not in plato.replace("@CUBE", "").replace("@ASM", "") or True
-with open(os.path.join(OUT, "part21-witnesses.laws.plato"), "w", newline="\n", encoding="utf-8") as f: f.write(plato)
+# The witnesses are layer 3's data: they live in 03-step beside the Part21File types and laws.
+with open(os.path.join(OUT, "..", "03-step", "step-witnesses.laws.plato"), "w", newline="\n", encoding="utf-8") as f: f.write(plato)

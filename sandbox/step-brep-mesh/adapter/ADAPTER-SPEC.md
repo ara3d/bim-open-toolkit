@@ -12,7 +12,8 @@ arena in which a list or a typed parameter stores its children at smaller indice
 C# parser `Ara3D.IO.StepParser` (in `deps/ara3d-sdk`) reads the text into a `StepDocument`, and
 the adapter turns that into a `ParsedFile`. This document gives the adapter's acceptance tests:
 five text fixtures under `fixtures/`, the `Part21File` each must produce (the literals in
-`part21-witnesses.laws.plato`, library `Part21Witnesses`), the expected `Ok` and diagnostics,
+`../03-step/step-witnesses.laws.plato`, library `StepWitnessesLaws`, layer 3's witnesses since
+the name review of 2026-10-17), the expected `Ok` and diagnostics,
 and the file laws every output must satisfy.
 
 ## What the adapter does about each difference
@@ -103,7 +104,7 @@ invariants in `03-step/step.spec.plato`, spec `ParsedFile`):
 | `Law_HeaderNamesASchema` (or `HeaderIncomplete`/`NotPart21File`) | all five name `AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }` |
 | `Law_ParsePrintParseIsIdentity` | stated, not run: no printer exists on either side |
 
-`Law_WitnessFilesSatisfyInvariants` in `part21-witnesses.laws.plato` checks the witnesses
+`Law_WitnessFilesSatisfyInvariants` in `../03-step/step-witnesses.laws.plato` checks the witnesses
 themselves against the same laws; it needs a body for `InstancePosition` (chunk D). One
 `DanglingReference` Warning is emitted per instance that holds a dangling reference. Diagnostics
 are ordered `WholeInput` findings first, then by instance id.
@@ -204,7 +205,7 @@ Only these two, in `Ara3D.IO.StepParser`:
 - **No `Diagnostic` equality.** Layer 3 has `IsSameFile` but no structural comparison of
   `Diagnostic` or `Provenance`, so the diagnostics column is compared by the test, field by field.
 - **No executable form of the `Part21File` invariants.** `spec Part21File` states them as bounded
-  quantifiers; `part21-witnesses.laws.plato` writes them as folds (`SatisfiesFileInvariants`).
+  quantifiers; `../03-step/step-witnesses.laws.plato` writes them as folds (`SatisfiesFileInvariants`).
   Layer 3 could own that function, so the C# tests and chunk D call one definition.
 - **No code for a parse that stopped at an unknown place.** `P21-NOT-A-FILE` ("nothing was read")
   is the closest that points at `WholeInput`; the accepted first step borrows it.
@@ -224,5 +225,8 @@ Only these two, in `Ara3D.IO.StepParser`:
 small Part 21 reader (not the C# one), builds every witness arena from `tools/witness_template.plato.txt`,
 asserts the hand-verification facts above (loops close, loop normals match the planes' outward
 axes, each edge is used once forward and once reversed, every reference resolves, each variant's
-arena is a prefix of the cube's), and rewrites `part21-witnesses.laws.plato`. Edit the generator,
-never the generated file. Run with `python -I`.
+arena is a prefix of the cube's), and rewrites `../03-step/step-witnesses.laws.plato` (the
+adapter folder's sibling `03-step`; the generator writes there, not beside itself, because the
+witnesses are layer 3's data). Edit the generator or the template, never the generated file. Run
+with `python -I` from outside the adapter folder, for example
+`python -I sandbox/step-brep-mesh/adapter/tools/gen_adapter.py sandbox/step-brep-mesh/adapter`.

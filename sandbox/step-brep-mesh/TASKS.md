@@ -117,11 +117,12 @@ mesh.
 ### Chunk D: decode from hand-built files (M3)
 
 Layer 3 had no `Part21File` witness (finding F-45 in `reviews/FINDINGS.md`). The adapter spec
-agent wrote the first ones in `adapter/part21-witnesses.laws.plato` (library `Part21Witnesses`):
+agent wrote the first ones, now in `03-step/step-witnesses.laws.plato` (library `StepWitnessesLaws`):
 `Witness_Part21UnitBox` (142 instances, 588 arena values), `Witness_Part21UnitBoxNoShape`,
 `Witness_Part21UnitBoxDangling`, `Witness_Part21UnitBoxTruncatedPrefix`, `Witness_Part21TwoCubes`,
-generated with their text fixtures by `adapter/tools/gen_adapter.py`. This chunk moves that file
-into `03-step` (the name review decides the home), adds `Witness_Part21Cylinder` and
+generated with their text fixtures by `adapter/tools/gen_adapter.py`. The name review of
+2026-10-17 moved that file from `adapter/` into `03-step`, since the witnesses are layer 3's data;
+the fixtures, the spec and the generator stay in `adapter/`. This chunk adds `Witness_Part21Cylinder` and
 `Witness_Part21Degrees` (plane angle in degrees) to the generator, and adds the law that decoding
 `Witness_Part21UnitBox` gives a model that `IsSameModel` as `Witness_UnitBox.ScaledBy(1000)` up to
 tolerance (the fixtures are in millimetres, the witness in metres, finding F-46.6). It also

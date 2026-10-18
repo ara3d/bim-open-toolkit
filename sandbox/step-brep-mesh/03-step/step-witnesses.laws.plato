@@ -1,12 +1,15 @@
 //==
-// # Part21Witnesses
+// # StepWitnessesLaws
 //
-// The expected values of the adapter tests (ADAPTER-SPEC.md beside this
-// file): for each text fixture under fixtures/, the Part21File a correct
-// parser gives, written as a literal. Layer 3's types and file laws are the
-// contract (03-step/step-part21.types.plato, step-part21.laws.plato); this
+// Layer 3's Part21File witnesses, and the expected values of the adapter
+// tests (../adapter/ADAPTER-SPEC.md): for each text fixture under
+// ../adapter/fixtures/, the Part21File a correct parser gives, written as a
+// literal. Layer 3's types and file laws are the contract
+// (step-part21.types.plato, step-part21.laws.plato beside this file); this
 // file only builds values and checks them against those laws. TASKS.md chunk
-// D reuses the same literals as the inputs of the decode tests.
+// D reuses the same literals as the inputs of the decode tests. Generated,
+// with the fixtures, by ../adapter/tools/gen_adapter.py from
+// ../adapter/tools/witness_template.plato.txt: edit those, not this file.
 //
 // Arena layout rule, used by every witness here and required of the adapter
 // (IsSameFile compares arenas element by element): visit the instances in
@@ -27,7 +30,7 @@
 //  - Expected diagnostics
 //  - Invariants
 
-library Part21Witnesses
+library StepWitnessesLaws
 {
     //==
     // # Building blocks
@@ -95,7 +98,7 @@ library Part21Witnesses
     //==
     // # The unit cube
 
-    // fixtures/unit-cube.stp: 142 instances, an arena of 588 values, laid
+    // adapter/fixtures/unit-cube.stp: 142 instances, an arena of 588 values, laid
     // out by the rule at the top of this file. Ids 1 to 8 are
     // the eight CARTESIAN_POINTs, written in the file as #5 to #8 then #1 to
     // #4; every other instance is written in ascending order.
@@ -534,7 +537,7 @@ library Part21Witnesses
     //==
     // # Variants of the unit cube
 
-    // fixtures/unit-cube-no-shape.stp: the unit cube without #141
+    // adapter/fixtures/unit-cube-no-shape.stp: the unit cube without #141
     // ADVANCED_BREP_SHAPE_REPRESENTATION and #142
     // SHAPE_DEFINITION_REPRESENTATION, the two highest ids. By the layout
     // rule its arena is the unit cube's first 581 values.
@@ -544,7 +547,7 @@ library Part21Witnesses
         return Part21File(box.Header, box.Instances.Take(140), box.Attributes.Take(581));
     }
 
-    // fixtures/unit-cube-dangling.stp: the unit cube with #65 ORIENTED_EDGE
+    // adapter/fixtures/unit-cube-dangling.stp: the unit cube with #65 ORIENTED_EDGE
     // naming #999 where it names #56. Same layout; only the value at index
     // 251 (the edge_element of #65) differs.
     Witness_Part21UnitBoxDangling(_: Part21File): Part21File
@@ -554,7 +557,7 @@ library Part21Witnesses
             box.Attributes.Count.MapRange(i => i == 251 ? P21Ref(999) : box.Attributes[i]));
     }
 
-    // fixtures/unit-cube-truncated.stp: the text stops inside #125
+    // adapter/fixtures/unit-cube-truncated.stp: the text stops inside #125
     // CLOSED_SHELL. The prefix is every instance complete before the cut,
     // ids 1 to 124 (the points, written out of order, all come before it).
     // By the layout rule its arena is the unit cube's first 518 values.
@@ -567,7 +570,7 @@ library Part21Witnesses
     //==
     // # The two-cube assembly
 
-    // fixtures/two-cubes-assembly.stp: the unit cube's 142 instances
+    // adapter/fixtures/two-cubes-assembly.stp: the unit cube's 142 instances
     // unchanged, then ids 143 to 162: a second geometric context, the
     // assembly product and its SHAPE_REPRESENTATION with two placements
     // (#145 at the origin, #146 at x = 2 mm), two NEXT_ASSEMBLY_USAGE_OCCURRENCEs
