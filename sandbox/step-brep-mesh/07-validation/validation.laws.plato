@@ -134,7 +134,11 @@ library BrepCheckingLaws
     // On a closed mesh of shell s, the angle defects less the quads' own
     // defects sum to 2 pi times the shell's reduced Euler characteristic
     // (discrete Gauss-Bonnet against the B-rep, research/VALIDATION-MATH.md
-    // 4.5), within the angle tolerance per referenced vertex and quad.
+    // 4.5), within the angle tolerance per referenced vertex and quad, plus
+    // the rounding of a sum of that many angles of up to 2 pi each
+    // (ResolutionAt, layer 6's rule for comparing totals): without it a
+    // 32-bit Number fails the unit box, whose sum of 4 pi errs by about
+    // 1e-6 against an angle tolerance of 1e-8 per vertex (chunk A).
     // Oracle family, Error.
     Law_AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
@@ -143,6 +147,8 @@ library BrepCheckingLaws
                         - Number.Tau * m.ShellEulerPoincare(s).ToNumber).Abs
                     <= m.Tolerances.Angle.Value.Radians
                         * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber
+                        + ResolutionAt(Number.Tau
+                            * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber)
                 : true)
             : true;
 

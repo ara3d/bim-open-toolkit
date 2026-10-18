@@ -664,3 +664,24 @@ The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) cha
   | `Law_WitnessEdgeReversalPreservesMesh`, `Law_WitnessShellReversalNegatesVolume` | layer 8's reversal laws on each witness | exact; Length times area |
 - Gave away its last stand-ins: `ScaledBy` on `DiscretizationCriteria` and `Limit` to layer 4, on `FaceMeshingCriteria` to layer 5; the section "Declarations owed by lower layers" is gone. The spec's contracts of `RigidlyMoved`, `ScaledBy(m, factor)` and `WithEveryFaceReversed` moved to layer 2's spec.
 - Theorem `WatertightByConstruction` cites layer 2's law by its new name, `Law_SeamUsesRunOpposite`.
+
+## Implementation, chunk A
+
+TKT-314, 2026-10-17. No body was needed here (TASKS.md: none). `MeshModel` over the unit box,
+under `Witness_UnitScaleOptions`, with layers 2, 4, 5 and 6's chunk A bodies: 8 vertices, 12
+triangles, no quads, closed, consistently oriented, reduced Euler characteristic 2, signed volume
+1, `Rounds` 0, `Ok` true. `Witness_Box(2, 3, 4)`: the same counts, volume 24, `Ok` true.
+
+Every law of TASKS.md's chunk A list holds on the unit box (and those not about the planted face on
+`Witness_Box(2, 3, 4)`): `Law_MeshModelIsDeterministic`, `Law_OkExactlyWhenClean`,
+`Law_RoundsWithinLimit`, `Law_EveryDiagnosticIsLocated`, `Law_LoopEndsTerminal`,
+`Law_MeasureIsNeverNegative`, `Law_OutcomeIsOfItsFace`, `Law_OutcomesAreCurrent`,
+`Law_EmptyDiscretizationExactlyWhenEdgeUnusable`, `Law_FinalDiscretizationsMeetFloors`,
+`Law_ClosedWhenEveryShellClosedAndNoFaceEmpty`, `Law_OrientedWhenEveryShellClosedAndNoFaceEmpty`,
+`Law_EdgeReversalPreservesMesh` on all 12 edges, `Law_ShellReversalNegatesVolume`,
+`Law_ValidationIsIdempotent`; with `Witness_BoxWithPolyLoopSheet` and `Witness_BoxWithFlippedFace`,
+`Law_EmptyFaceIsDiagnosed` and `Law_FailedFaceLeavesOthersUnchanged` at every face, and the five
+planted-face laws. 317 evaluations, none false, rounds 0 to 3 swept where a law takes a round.
+Provisional: the C# writer fixes of TKT-315 had not landed, and the run used a scratch copy of
+Plato's HEAD compiler with conditionals parenthesized (report of TKT-314).
+

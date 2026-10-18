@@ -488,3 +488,28 @@ The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) cha
 - Deleted `IsRedundantVertexLoop(m, f, j)` from `BrepOracles` (layer 2 owns it; two declarations with one signature left the call to the compiler's choice, so the oracle was never an independent route for this rule), and `LoopOfBoundaryPoint` and `LoopStart` from `BrepCheckingFaceMeshing` (layer 5's `LoopOfBoundaryPoint` and `LoopOffset`); `SlotOfBoundaryPoint` uses layer 5's.
 - Upward references removed: `WitnessOptions`, `WitnessOutcome`, `WitnessMesh` (from `BrepComparisons`) and the sixteen laws that mesh a witness (`Law_WitnessMeshesOk`, `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean`, the three `Law_HollowBox...Mesh...` laws, the five `Law_PlantedBadFace...` laws with `IsAboutPlantedSheet`, and the five `Law_Witness...` metamorphic laws) named layer 8's `MeshModel`, `MeshingOptions`, `FinalState` and laws. They moved to layer 8's `pipeline-witnesses.laws.plato`. `Witness_BoxWithPolyLoopSheet` and `PlantedBadFace` stay here; the spec's `ensures` lines and `tested by` entries that named the moved laws are dropped.
 - Renamed `Check_SeamUsesAreInOneFace` to `Check_SeamUsesRunOpposite`, following layer 2's rename of the law to `Law_SeamUsesRunOpposite`.
+
+## Implementation, chunk A
+
+TKT-314, 2026-10-17. TASKS.md listed `ValidateBrep`, `ValidateModelMesh` and `CrossCheck` at
+`Structural` and `Geometric`, and the planar area oracle at `Oracle`; all four already had bodies
+in the checks libraries, and on the box witnesses they reach no deferred function of this layer
+(`AreaSegmentByQuadrature`, `SampledCurvatureBound` and `EdgeLengthByQuadrature` serve curved and
+spline faces, chunks B, C, F). Three changes:
+
+- `SameModel` compares every table (finding F-51; commit 6409fa52): parameter-plane curves,
+  pcurves, loop and body cases, poly-loop points.
+- `Oracle_EulerCharacteristic` counts redundant vertex loops by its own rule,
+  `OracleDropsVertexLoop` (finding F-48.1).
+- `Law_AngleDefectMatchesBrepEuler` adds the rounding of its sum (`ResolutionAt` of 2 pi per
+  vertex and quad), layer 6's rule for comparing totals. Without it the unit box failed in 32 bits:
+  a sum of 4 pi errs by about 1e-6 against the witness's angle tolerance of 1e-8 rad per vertex.
+
+Results, provisional (scratch compiler): validating the meshed unit box and `Witness_Box(2, 3, 4)`
+at the Oracle level gives 260 checks each, every Error-family check holding. The one false check is
+`Law_LengthToleranceResolvable` (a Warning: 1e-6 is below 32-bit resolution at coordinate 1), and on
+the 2 x 3 x 4 box also `Law_TriangleMinAngleMeetsThreshold` (Info: ear clipping's diagonal of a
+3 x 4 face). On `Witness_BoxWithPolyLoopSheet` the Errors are exactly `FACE-POLY-LOOP` and
+`Law_EveryFaceIsMeshed` at face 6, and `Law_OpenShellEulerEvenAndBounded` at shell 1 (see layer
+2's README), all inside the sheet.
+
