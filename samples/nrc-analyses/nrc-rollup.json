@@ -75,11 +75,11 @@
         "to": "containers.t2"
       },
       {
-        "from": "values.relation",
+        "from": "containers.relation",
         "to": "inContainers.left"
       },
       {
-        "from": "containers.relation",
+        "from": "values.relation",
         "to": "inContainers.right"
       },
       {
@@ -211,7 +211,7 @@
   },
   "values": {
     "about": {
-      "text": "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows. zoneAnswer is a second output: the zone summary rows (zoneName instead of entityId, 28 values on the four zones of nrc-zones.csv), computed from the space values of nrc_analytics_spaces.csv by each metric's Rollup, the ratio rule dividing zone energy by zone floor area. nrc-enrich-run writes them on the IfcZone groups it creates."
+      "text": "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; inContainers joins the values to those placements (containers on the left so the layout keeps the values wire clear of the containers card); summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows. zoneAnswer is a second output: the zone summary rows (zoneName instead of entityId, 28 values on the four zones of nrc-zones.csv), computed from the space values of nrc_analytics_spaces.csv by each metric's Rollup, the ratio rule dividing zone energy by zone floor area. nrc-enrich-run writes them on the IfcZone groups it creates."
     },
     "values": {
       "path": "nrc_analytics_long.csv",
