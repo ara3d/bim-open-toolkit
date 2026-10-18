@@ -1,7 +1,7 @@
 ---
 id: TKT-321
 title: Builder build and test loops take 45 minutes to 3 hours: measure where the time goes, then narrow the inner loop and prebuild shared inputs
-status: claimed
+status: done
 depends_on: []
 owner: session c4298a2b
 session: c4298a2b-52b5-4c66-abfe-c7b982524e14
@@ -11,6 +11,7 @@ related: [TKT-303, TKT-310, TKT-312]
 confidence: medium
 created: 2026-10-18
 claimed: 2026-10-18
+closed: 2026-10-18
 kind: defect
 ---
 
