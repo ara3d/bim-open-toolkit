@@ -174,3 +174,26 @@ session accepts them.
      `Law_PrepareIsIdempotent` holds only when the second pass gives the same numbers; the two
      `spec DecodedModel` invariants that said otherwise were dropped.
 - **Status** 1, 2 and 4 to `TASKS.md` chunk D's first commit; 3 and 5 are notes.
+
+## F-50: the C# writer miscompiles the design (TKT-311)
+
+- **Raised** 2026-10-17 by the parser session's spike TKT-311 (`docs/plans/step-reader.md` build
+  log, 281b076d): the whole library through Plato 65d63c90's C# writer.
+- **Silent defect.** A conditional used as a condition, `(a ? b : false) ? x : y`, loses its
+  parentheses. 109 sites; about 97 compile with the wrong meaning. The design's own rule, guard an
+  index with `? :` because `&&` does not short-circuit (SPEC-DSL.md), is exactly the pattern hit,
+  so every law that guards before testing is affected. No front-end gate can see this; only a
+  writer test can.
+- **Compile stoppers.** Typed-index subscripts, `IIndexable` functions on arrays, C# keywords as
+  identifiers, sum-type `Equals` throwing on inactive cases (`SameModel` throws), inconsistent
+  bodiless stubs; two stdlib geometry sites.
+- **Also observed.** `.spec.plato` files halt the parser (excluded by convention, as designed);
+  `Number` compiles as 32-bit float (TKT-315); laws compile as Boolean functions but no runner
+  builds witness arguments (the law runner for static witnesses is a tooling task, TKT-316 or
+  TKT-317).
+- **With the six fixes shimmed:** `RawCounts` of the cube 8, 12, 6, 6, Euler-Poincare 2, four
+  layer 2 laws true on the cube, `CoedgeRunsForwardOnCurve` correct.
+- **Status** fixes assigned to the TKT-315 builder after the profile, fix 1 first with a
+  regression test; TKT-312 holds until 2, 3 and 5 land; the chunk A builder is told to distrust
+  backend law results until then. Lesson for `TARGET-LANGUAGE.md`: the writer needs a
+  differential test suite (interpreter versus backend, TKT-317) before law results are evidence.
