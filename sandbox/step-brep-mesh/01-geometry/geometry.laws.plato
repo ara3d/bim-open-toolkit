@@ -596,8 +596,15 @@ library BrepGeometryLaws
         return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
             : WithinRichardson(g.CentralDifference(c, x, h), g.CentralDifference(c, x, h * 0.5), g.Derivative(c, x),
-                ResolutionAt(g.EvaluationMagnitude(c, x)) / h);
+                ResolutionAt(g.MagnitudeAround(c, x, h)) / h);
     }
+
+    // The largest evaluation magnitude of curve c at x - h, x and x + h: what
+    // the rounding of a central difference over [x - h, x + h] scales with.
+    // The magnitude at x alone can be 0 (a line through the origin at its
+    // origin), which would allow no rounding at all (F-53 item 2).
+    MagnitudeAround(g: GeometrySet, c: CurveIndex, x: Number, h: Number): Number
+        => g.EvaluationMagnitude(c, x - h).Max(g.EvaluationMagnitude(c, x)).Max(g.EvaluationMagnitude(c, x + h));
 
     // SecondDerivative agrees with the central difference of Derivative
     // within Richardson's estimate, as Law_DerivativeMatchesCentralDifference;
@@ -617,7 +624,7 @@ library BrepGeometryLaws
         return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
             : WithinRichardson(g.CentralDifferenceOfDerivative(c, x, h), g.CentralDifferenceOfDerivative(c, x, h * 0.5),
-                g.SecondDerivative(c, x), ResolutionAt(g.EvaluationMagnitude(c, x) / scale) / h);
+                g.SecondDerivative(c, x), ResolutionAt(g.MagnitudeAround(c, x, h) / scale) / h);
     }
 
     //==
@@ -1055,8 +1062,13 @@ library BrepGeometryLaws
         return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
             : WithinRichardson(g.CentralDifference(c, x, h), g.CentralDifference(c, x, h * 0.5), g.Derivative(c, x),
-                ResolutionAt(g.EvaluationMagnitude(c, x)) / h);
+                ResolutionAt(g.MagnitudeAround(c, x, h)) / h);
     }
+
+    // The largest evaluation magnitude of 2D curve c at x - h, x and x + h
+    // (MagnitudeAround on a space curve).
+    MagnitudeAround(g: GeometrySet, c: Curve2DIndex, x: Number, h: Number): Number
+        => g.EvaluationMagnitude(c, x - h).Max(g.EvaluationMagnitude(c, x)).Max(g.EvaluationMagnitude(c, x + h));
 
     // A parameter-plane curve's SecondDerivative agrees with the central
     // difference of its Derivative within Richardson's estimate, as
@@ -1075,7 +1087,7 @@ library BrepGeometryLaws
         return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
             : WithinRichardson(g.CentralDifferenceOfDerivative(c, x, h), g.CentralDifferenceOfDerivative(c, x, h * 0.5),
-                g.SecondDerivative(c, x), ResolutionAt(g.EvaluationMagnitude(c, x) / scale) / h);
+                g.SecondDerivative(c, x), ResolutionAt(g.MagnitudeAround(c, x, h) / scale) / h);
     }
 
     // A pcurve's space velocity, by the chain rule, agrees with the central
@@ -1118,6 +1130,11 @@ library BrepGeometryLaws
                 + g.PartialV(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, x)).Length)
                 * ResolutionAt(g.EvaluationMagnitude(g.PcurveAt(p).Curve, x));
 
+    // The largest PcurveRounding at x - h, x and x + h (MagnitudeAround on a
+    // space curve).
+    PcurveRoundingAround(g: GeometrySet, p: PcurveIndex, x: Number, h: Number): Number
+        => g.PcurveRounding(p, x - h).Max(g.PcurveRounding(p, x)).Max(g.PcurveRounding(p, x + h));
+
     // The claim of Law_PcurveDerivativeMatchesCentralDifference.
     DerivativeAgrees(g: GeometrySet, p: PcurveIndex, t: Number): Boolean
     {
@@ -1128,7 +1145,7 @@ library BrepGeometryLaws
         return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h) || g.CrossesSurfaceBreak(p, x, h)
             ? true
             : WithinRichardson(g.CentralDifference(p, x, h), g.CentralDifference(p, x, h * 0.5), g.Derivative(p, x),
-                g.PcurveRounding(p, x) / h);
+                g.PcurveRoundingAround(p, x, h) / h);
     }
 
     // A pcurve's space acceleration agrees with the central difference of its
@@ -1148,7 +1165,7 @@ library BrepGeometryLaws
         return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h) || g.CrossesSurfaceBreak(p, x, h)
             ? true
             : WithinRichardson(g.CentralDifferenceOfDerivative(p, x, h), g.CentralDifferenceOfDerivative(p, x, h * 0.5),
-                g.SecondDerivative(p, x), g.PcurveRounding(p, x) / (scale * h));
+                g.SecondDerivative(p, x), g.PcurveRoundingAround(p, x, h) / (scale * h));
     }
 
     // ClosestParameter on a pcurve returns its bounded representative: on a
@@ -1229,8 +1246,15 @@ library BrepGeometryLaws
         return !d.HasInterior(h) || breaks.StraddlesBreakpoint(x, h)
             ? true
             : WithinRichardson(g.CentralDifference(s, w, which, h), g.CentralDifference(s, w, which, h * 0.5), g.Partial(s, w, which),
-                ResolutionAt(g.EvaluationMagnitude(s, w)) / h);
+                ResolutionAt(g.MagnitudeAround(s, w, which, h)) / h);
     }
+
+    // The largest evaluation magnitude of surface s at w moved by -h, 0 and
+    // +h along `which` (MagnitudeAround on a space curve).
+    MagnitudeAround(g: GeometrySet, s: SurfaceIndex, w: UvCoordinate, which: SurfaceParameter, h: Number): Number
+        => g.EvaluationMagnitude(s, w.WithCoordinate(which, w.Coordinate(which) - h))
+            .Max(g.EvaluationMagnitude(s, w))
+            .Max(g.EvaluationMagnitude(s, w.WithCoordinate(which, w.Coordinate(which) + h)));
 
     // True when uv lies on a collapsed line of the surface to within the
     // rounding of its coordinate, in either parameter, measured around the
