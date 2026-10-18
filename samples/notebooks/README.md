@@ -9,6 +9,7 @@ of the sessions in `docs/proposals/notebook-sessions.md`:
 | `nrc-eight-questions.notebook.json` | S3, the paper's eight questions | tables | the eight questions of `samples/nrc/questions.txt` in order, then a chart of carbon per storey |
 | `nrc-test-kit.notebook.json` | S2, the NRC IFC test kit, steps 1 to 5 | bim | join the CSV, colour by operational carbon, colour by category, totals per level, the storey chart, the written values read back |
 | `nrc-door-check.notebook.json` | S4, door compliance | bim | DC-W1 verdicts in a table and in 3D, then `samples/nrc/door_verdicts.csv` as a file |
+| `s14-door-bcf.notebook.json` | BCF round trip on NRC's door-clearance example | bim | DC-W1 verdicts in 3D, the comparison with NRC's ground truth (14 of 14), the 6 failing doors as BCF topics, the BCF written by a Run, a reviewer's comment with a camera, the architect's reply read back and the flagged doors coloured. Graphs in `graphs/s14-door-bcf`, the three BCF files in `samples/nrc/bcf` |
 
 These files are generated; do not edit them by hand. Each is written by
 `bimopenflow/web/packages/nrc-web/scripts/write-sample-notebooks.ts` (which runs
@@ -34,11 +35,18 @@ cd bimopenflow/web/packages/nrc-web
 npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5224 --outline ../../../../samples/notebooks/outlines/nrc-eight-questions.outline.json
 npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/nrc-test-kit.outline.json
 npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/nrc-door-check.outline.json
+
+# s14-door-bcf: its graphs carry {SAMPLES} and {ARTIFACTS}, so the placeholders are passed too
+npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/s14-door-bcf.outline.json --placeholder SAMPLES=<checkout>/samples/nrc --placeholder ARTIFACTS=<checkout>/artifacts
 ```
 
 On a cold start the bim host builds the Duplex DuckDB and BOS files in the
 background (about 30 s each); wait until `GET /api/analyses/nrc-dc-w1-verdicts/state`
-shows every node `Ok`. A graph change shows up as a diff in the regenerated
+shows every node `Ok`.
+
+The BCF files of `s14-door-bcf` are not regenerated with the notebook: `bcf.write` is an effect, so each is the file a Run of its graph wrote (`POST /api/analyses/{id}/runs`, then a copy from `artifacts/checking` to `samples/nrc/bcf`). The notebook embeds the committed file's size and SHA-256; a new Run gives other bytes, because the writer stamps the topic with the time of the Run.
+
+A graph change shows up as a diff in the regenerated
 file; reread the snapshots and update the outline's reply texts to match.
 
 A graph embed keeps its own copy of the graph, card positions included. After
