@@ -1,6 +1,80 @@
 {
   "nodes": [
     {
+      "kind": "bcf.issue",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [
+        {
+          "name": "camera",
+          "type": "Table",
+          "optional": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "issues",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "title",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "description",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "comment",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "author",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "created",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "status",
+          "kind": "Text",
+          "default": "Open"
+        },
+        {
+          "name": "priority",
+          "kind": "Text",
+          "default": ""
+        },
+        {
+          "name": "type",
+          "kind": "Text",
+          "default": "Issue"
+        },
+        {
+          "name": "ids",
+          "kind": "Text",
+          "default": "",
+          "list": true
+        }
+      ],
+      "description": "One reviewer\u0027s comment as an issue table: columns GlobalId, Title, Description, Status, Priority, Type, Comment, Author, CreationDate, with one row per distinct GlobalId in \u0027ids\u0027 (the elements the issue is about; one row with an empty GlobalId when there are none, a comment on the model as a whole). Wire a view3d.camera table into \u0027camera\u0027 and each row also carries the camera columns CameraX..CameraZ, DirectionX..DirectionZ, UpX..UpZ, FieldOfView and AspectRatio, which bcf.write turns into the topic\u0027s viewpoint (direction is target minus position, normalised; up is the z axis made perpendicular to it; aspect ratio 1). The 3D pane\u0027s \u0027Comment\u0027 button adds this node with its title, comment and author, the current selection in \u0027ids\u0027 and the time in \u0027created\u0027 (UTC, yyyy-MM-ddTHH:mm:ssZ; the node reads no clock). \u0027title\u0027 is required. Wire the table into bcf.topics to preview the topic and bcf.write to write the BCF file on Run.",
+      "schemas": [
+        {
+          "output": "issues",
+          "mode": "Inferred"
+        }
+      ]
+    },
+    {
       "kind": "bcf.read",
       "version": 1,
       "capability": "Pure",
@@ -13,6 +87,11 @@
         },
         {
           "name": "topics",
+          "type": "Table",
+          "optional": false
+        },
+        {
+          "name": "comments",
           "type": "Table",
           "optional": false
         }
@@ -29,7 +108,7 @@
           "bindable": "Text"
         }
       ],
-      "description": "Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId; one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.",
+      "description": "Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId, the camera columns CameraX..AspectRatio, Comments (the topic\u0027s comment count); one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count) and a comments table (TopicGuid, Title, Author, CreationDate, Comment; one row per comment). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.",
       "schemas": [
         {
           "output": "issues",
@@ -94,6 +173,66 @@
               "type": "Text",
               "nullable": true,
               "kind": "AuthoringToolId"
+            },
+            {
+              "name": "CameraX",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "CameraY",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "CameraZ",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "DirectionX",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "DirectionY",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "DirectionZ",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "UpX",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "UpY",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "UpZ",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "FieldOfView",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "AspectRatio",
+              "type": "Number",
+              "nullable": true
+            },
+            {
+              "name": "Comments",
+              "type": "Integer",
+              "nullable": false
             }
           ]
         },
@@ -145,6 +284,41 @@
             },
             {
               "name": "AuthoringToolIds",
+              "type": "Text",
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "output": "comments",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "TopicGuid",
+              "type": "Text",
+              "nullable": true,
+              "kind": "TopicGuid"
+            },
+            {
+              "name": "Title",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Title"
+            },
+            {
+              "name": "Author",
+              "type": "Text",
+              "nullable": true,
+              "kind": "Author"
+            },
+            {
+              "name": "CreationDate",
+              "type": "Text",
+              "nullable": true,
+              "kind": "CreationDate"
+            },
+            {
+              "name": "Comment",
               "type": "Text",
               "nullable": false
             }
@@ -306,7 +480,7 @@
           "default": ""
         }
       ],
-      "description": "Writes the input issue or verdict table as a BCF 3.0 file at \u0027path\u0027 that Revit, Solibri and BIMcollab open as topics. With \u0027model\u0027 (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic\u0027s description. \u0027guidSeed\u0027 keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row.",
+      "description": "Writes the input issue or verdict table as a BCF 3.0 file at \u0027path\u0027 that Revit, Solibri and BIMcollab open as topics. With \u0027model\u0027 (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic\u0027s description. \u0027model\u0027 also names the model file in the BCF header (file name, path and last-write date), so a viewer can match the topic to its model. A camera in the input (the CameraX..AspectRatio columns, as bcf.issue makes them) becomes the viewpoint\u0027s camera, and a Comment column becomes the topic\u0027s comments. \u0027guidSeed\u0027 keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). \u0027preset\u0027 names the topic columns: \u0027issue\u0027 reads Title and Description, \u0027verdict\u0027 reads CheckTitle and Citation, \u0027auto\u0027 picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in \u0027verdicts\u0027 (comma-separated; default Fail) are kept; an empty list keeps every row.",
       "schemas": [
         {
           "output": "out",
@@ -1679,6 +1853,42 @@
               "type": "Number",
               "nullable": true,
               "kind": "FootprintArea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "bim.selection",
+      "version": 1,
+      "capability": "Pure",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ids",
+          "type": "Table",
+          "optional": false
+        }
+      ],
+      "params": [
+        {
+          "name": "ids",
+          "kind": "Text",
+          "default": "",
+          "list": true
+        }
+      ],
+      "description": "The elements picked in the 3D pane, as a table with one column, GlobalId, and one row per distinct id in the order given. The 3D pane\u0027s \u0027Use selection\u0027 button adds this node (or updates the one it added) holding the current selection; \u0027ids\u0027 is the comma-separated GlobalIds, and may be typed by hand. Wire the table into a join or filter on GlobalId (table.filter, table.aggregate), into view3d.isolate or view3d.color, or into bcf.issue. Blank entries are dropped; with no ids the table has no rows.",
+      "schemas": [
+        {
+          "output": "ids",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "GlobalId",
+              "type": "Text",
+              "nullable": false,
+              "kind": "GlobalId"
             }
           ]
         }
@@ -3795,9 +4005,24 @@
           "name": "targetPath",
           "kind": "FilePath",
           "default": ""
+        },
+        {
+          "name": "documentPath",
+          "kind": "FilePath",
+          "default": ""
+        },
+        {
+          "name": "documentKey",
+          "kind": "Text",
+          "default": "GlobalId"
+        },
+        {
+          "name": "documentDescription",
+          "kind": "Text",
+          "default": ""
         }
       ],
-      "description": "Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Optional input zones (zoneName, spaceId) appends one IfcZone per name grouping those spaces; optional input zonePsets (zoneName, psetName, paramName, paramValue, optional valueType) attaches property sets to the zones by name. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten, zonesWritten)."
+      "description": "Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Optional input zones (zoneName, spaceId) appends one IfcZone per name grouping those spaces; optional input zonePsets (zoneName, psetName, paramName, paramValue, optional valueType) attaches property sets to the zones by name. Optional documentPath records that file (the long analytics table) as an IfcDocumentReference on the first IfcProject, with its file name, format, SHA-256, and the join key named by documentKey (default GlobalId); documentDescription adds a sentence about it. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten, zonesWritten, documentsWritten)."
     },
     {
       "kind": "spatial.contains",
@@ -6400,9 +6625,14 @@
           "name": "targetZ",
           "kind": "Number",
           "default": "0"
+        },
+        {
+          "name": "fov",
+          "kind": "Number",
+          "default": "60"
         }
       ],
-      "description": "A named camera as a one-row table: position and look-at target."
+      "description": "A named camera as a one-row table: position, look-at target, and the vertical field of view in degrees (fov, default 60). The 3D pane\u0027s Comment button adds one holding the current camera and wires it into bcf.issue, which turns it into a BCF viewpoint."
     },
     {
       "kind": "view3d.categoryStyle",

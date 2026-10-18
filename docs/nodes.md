@@ -49,10 +49,10 @@ is the content itself, not the path or a timestamp.
 | Pack | Nodes | Kinds |
 |---|---|---|
 | BOS — `BimOpenFlow.Nodes.Bos` | 2 | `bos.load`, `bos.query` |
-| BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 14 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops`, `bim.orientation`, `bim.buildSequence` |
+| BIM analysis — `BimOpenFlow.Nodes.BimAnalysis` | 15 | `bim.elements`, `bim.rooms`, `bim.levels`, `bim.bounds`, `bim.paramTable`, `bim.paramCoverage`, `bim.discipline`, `bim.classifyRooms`, `bim.containment`, `bim.nearest`, `bim.navGraph`, `bim.hops`, `bim.orientation`, `bim.buildSequence`, `bim.selection` |
 | Geometry — `BimOpenFlow.Nodes.Geometry` | 21 | `view3d.instances`, `view3d.measures`, `view3d.color`, `view3d.isolate`, `view3d.hide`, `view3d.opacity`, `view3d.spacing`, `view3d.arrange`, `view3d.decimate`, `view3d.boundingBoxes`, `view3d.voxelize`, `view3d.camera`, `view3d.scene`, `view3d.section`, `view3d.sectionBox`, `view3d.explode`, `view3d.projection`, `view3d.environment`, `view3d.categoryStyle`, `view3d.tint`, `view3d.sectionRange` |
 | IDS — `BimOpenFlow.Nodes.Ids` | 2 | `ids.check`, `ids.specifications` |
-| BCF — `BimOpenFlow.Nodes.Bcf` | 3 | `bcf.topics`, `bcf.write`, `bcf.read` |
+| BCF — `BimOpenFlow.Nodes.Bcf` | 4 | `bcf.issue`, `bcf.topics`, `bcf.write`, `bcf.read` |
 | Compliance — `BimOpenFlow.Nodes.Compliance` | 4 | `check.rule`, `check.required`, `check.rollup`, `check.union` |
 | Effects — `BimOpenFlow.Nodes.Effects` | 8 | `sink.exportCsv`, `sink.exportParquet`, `sink.exportJson`, `sink.exportXlsx`, `sink.exportSqlite`, `sink.exportDuckDb`, `sink.writePsets`, `sink.report` |
 | DuckDB — `BimOpenFlow.Nodes.DuckDb` | 9 | `duck.read`, `duck.source`, `duck.query`, `sql.query`, `csv.read`, `parquet.read`, `json.read`, `duck.table`, `duck.tables` |
@@ -606,6 +606,30 @@ A synthetic construction sequence (4D) for an element table such as bim.elements
 
 **Columns of `elements`**: inferred from the inputs
 
+### `bim.selection` (v1) — Pure
+
+The elements picked in the 3D pane, as a table with one column, GlobalId, and one row per distinct id in the order given. The 3D pane's 'Use selection' button adds this node (or updates the one it added) holding the current selection; 'ids' is the comma-separated GlobalIds, and may be typed by hand. Wire the table into a join or filter on GlobalId (table.filter, table.aggregate), into view3d.isolate or view3d.color, or into bcf.issue. Blank entries are dropped; with no ids the table has no rows.
+
+**Inputs**: none
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `ids` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `ids` | Text (list) | — | — | — | — |
+
+**Columns of `ids`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `GlobalId` | Text | no | `GlobalId` | The entity's globally unique id (an IfcGloballyUniqueId); empty when the source gave none. |
+
 ## Geometry — `BimOpenFlow.Nodes.Geometry`
 
 The view3d pack: the tables the 3D pane consumes — instances, colors, isolation, camera.
@@ -883,7 +907,7 @@ AABB rasterization, not triangle-accurate: every voxel overlapped by an instance
 
 ### `view3d.camera` (v1) — Pure
 
-A named camera as a one-row table: position and look-at target.
+A named camera as a one-row table: position, look-at target, and the vertical field of view in degrees (fov, default 60). The 3D pane's Comment button adds one holding the current camera and wires it into bcf.issue, which turns it into a BCF viewpoint.
 
 **Inputs**: none
 
@@ -904,6 +928,7 @@ A named camera as a one-row table: position and look-at target.
 | `targetX` | Number | — | `0` | — | — |
 | `targetY` | Number | — | `0` | — | — |
 | `targetZ` | Number | — | `0` | — | — |
+| `fov` | Number | — | `60` | — | — |
 
 ### `view3d.scene` (v1) — Pure
 
@@ -1194,6 +1219,38 @@ Reads only the IDS file. `Supported` is false when any facet of the specificatio
 
 The bcf.* pack: an issue or verdict table previewed as BCF topics, written as a BCF 3.0 file on Run, and a BCF file read back as an issues table.
 
+### `bcf.issue` (v1) — Pure
+
+One reviewer's comment as an issue table: columns GlobalId, Title, Description, Status, Priority, Type, Comment, Author, CreationDate, with one row per distinct GlobalId in 'ids' (the elements the issue is about; one row with an empty GlobalId when there are none, a comment on the model as a whole). Wire a view3d.camera table into 'camera' and each row also carries the camera columns CameraX..CameraZ, DirectionX..DirectionZ, UpX..UpZ, FieldOfView and AspectRatio, which bcf.write turns into the topic's viewpoint (direction is target minus position, normalised; up is the z axis made perpendicular to it; aspect ratio 1). The 3D pane's 'Comment' button adds this node with its title, comment and author, the current selection in 'ids' and the time in 'created' (UTC, yyyy-MM-ddTHH:mm:ssZ; the node reads no clock). 'title' is required. Wire the table into bcf.topics to preview the topic and bcf.write to write the BCF file on Run.
+
+**Inputs**
+
+| Name | Type | Required |
+|---|---|---|
+| `camera` | Table | optional |
+
+**Outputs**
+
+| Name | Type |
+|---|---|
+| `issues` | Table |
+
+**Params**
+
+| Name | Kind | Socket | Default | Allowed values | Suggestions |
+|---|---|---|---|---|---|
+| `title` | Text | — | — | — | — |
+| `description` | Text | — | — | — | — |
+| `comment` | Text | — | — | — | — |
+| `author` | Text | — | — | — | — |
+| `created` | Text | — | — | — | — |
+| `status` | Text | — | `Open` | — | — |
+| `priority` | Text | — | — | — | — |
+| `type` | Text | — | `Issue` | — | — |
+| `ids` | Text (list) | — | — | — | — |
+
+**Columns of `issues`**: inferred from the inputs
+
 ### `bcf.topics` (v1) — Pure
 
 Groups an issue or verdict table into the BCF topics bcf.write would write (one per distinct title: Title, Description, Status, Priority, Type, Elements, GlobalIds), so the file's contents can be checked before Run. 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
@@ -1234,7 +1291,7 @@ The same grouping `bcf.write` applies, as a table: a preview of the file before 
 
 ### `bcf.write` (v1) — Effect
 
-Writes the input issue or verdict table as a BCF 3.0 file at 'path' that Revit, Solibri and BIMcollab open as topics. With 'model' (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic's description. 'guidSeed' keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
+Writes the input issue or verdict table as a BCF 3.0 file at 'path' that Revit, Solibri and BIMcollab open as topics. With 'model' (a .bos file) each topic gets a viewpoint selecting its elements under a camera framing them; without it, or for elements with no geometry, the GlobalIds go in the topic's description. 'model' also names the model file in the BCF header (file name, path and last-write date), so a viewer can match the topic to its model. A camera in the input (the CameraX..AspectRatio columns, as bcf.issue makes them) becomes the viewpoint's camera, and a Comment column becomes the topic's comments. 'guidSeed' keeps topic GUIDs stable across reruns (default: the file name). Runs only inside a Run; outputs a one-row summary (path, topics, viewpoints, elements, elementsWithoutGeometry, bytes, sha256). 'preset' names the topic columns: 'issue' reads Title and Description, 'verdict' reads CheckTitle and Citation, 'auto' picks by the columns present. When the table has a Verdict column, only rows whose verdict is listed in 'verdicts' (comma-separated; default Fail) are kept; an empty list keeps every row.
 
 An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (default the file name) and the title, so a rerun with the same seed updates the same topics in a BCF reader instead of adding new ones. With `model`, a .bos file, each topic whose elements have geometry gets a viewpoint selecting them under a perspective camera framing their bounding box; the model's element boxes are cached by file content. A topic with no geometry has no viewpoint (BCF 3.0 requires a camera) and lists its GlobalIds at the end of its description. The file is written beside the target and moved into place when complete.
 
@@ -1275,7 +1332,7 @@ An Effect node: pending until Run. Topic GUIDs are name-based from `guidSeed` (d
 
 ### `bcf.read` (v1) — Pure
 
-Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId; one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.
+Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId, the camera columns CameraX..AspectRatio, Comments (the topic's comment count); one row per topic and selected element, with both ids empty for a topic that selects nothing) and a topics table (one row per topic with its element count) and a comments table (TopicGuid, Title, Author, CreationDate, Comment; one row per comment). A component BCF names only by AuthoringToolId (a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues table joins to a model on GlobalId, so view3d.color can colour the elements a colleague flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, is skipped with a warning; the other topics still come through.
 
 Reads markup.bcf per topic and the elements its viewpoints select; a topic written without geometry gets its GlobalIds back from its description. Comments, snapshots and cameras are not read.
 
@@ -1287,6 +1344,7 @@ Reads markup.bcf per topic and the elements its viewpoints select; a topic writt
 |---|---|
 | `issues` | Table |
 | `topics` | Table |
+| `comments` | Table |
 
 **Params**
 
@@ -1308,6 +1366,18 @@ Reads markup.bcf per topic and the elements its viewpoints select; a topic writt
 | `Author` | Text | yes | `Author` | Who created the BCF topic. |
 | `CreationDate` | Text | yes | `CreationDate` | When the BCF topic was created, as UTC ISO text (yyyy-MM-ddTHH:mm:ssZ); empty when the file gives none. |
 | `AuthoringToolId` | Text | yes | `AuthoringToolId` | An id the authoring tool gave the entity (a Revit UniqueId), set when a BCF names a component only by it; GlobalId is then empty. |
+| `CameraX` | Number | yes | — | — |
+| `CameraY` | Number | yes | — | — |
+| `CameraZ` | Number | yes | — | — |
+| `DirectionX` | Number | yes | — | — |
+| `DirectionY` | Number | yes | — | — |
+| `DirectionZ` | Number | yes | — | — |
+| `UpX` | Number | yes | — | — |
+| `UpY` | Number | yes | — | — |
+| `UpZ` | Number | yes | — | — |
+| `FieldOfView` | Number | yes | — | — |
+| `AspectRatio` | Number | yes | — | — |
+| `Comments` | Integer | no | — | — |
 
 **Columns of `topics`**
 
@@ -1321,6 +1391,16 @@ Reads markup.bcf per topic and the elements its viewpoints select; a topic writt
 | `Elements` | Integer | no | `Elements` | How many elements a BCF topic selects. |
 | `GlobalIds` | Text | no | `GlobalIds` | The GlobalIds of a BCF topic's elements, comma-separated. |
 | `AuthoringToolIds` | Text | no | — | — |
+
+**Columns of `comments`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `TopicGuid` | Text | yes | `TopicGuid` | The BCF topic's guid. |
+| `Title` | Text | yes | `Title` | The issue's title; rows with one title form one issue (one BCF topic). |
+| `Author` | Text | yes | `Author` | Who created the BCF topic. |
+| `CreationDate` | Text | yes | `CreationDate` | When the BCF topic was created, as UTC ISO text (yyyy-MM-ddTHH:mm:ssZ); empty when the file gives none. |
+| `Comment` | Text | no | — | — |
 
 ## Compliance — `BimOpenFlow.Nodes.Compliance`
 
@@ -1600,9 +1680,9 @@ Effect: runs only inside a Run. Writes the table into a DuckDB database file —
 
 ### `sink.writePsets` (v1) — Effect
 
-Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Optional input zones (zoneName, spaceId) appends one IfcZone per name grouping those spaces; optional input zonePsets (zoneName, psetName, paramName, paramValue, optional valueType) attaches property sets to the zones by name. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten, zonesWritten).
+Byte-exact pset write-back: reads sourcePath, appends psets from the input table, writes targetPath. An optional valueType column names the IFC value type of each row - Text, Label, Identifier, Integer, Number (Real is a synonym), or Boolean, case-insensitive - and paramValue is parsed from text with the invariant culture; an empty cell or an absent column means Text. Optional input zones (zoneName, spaceId) appends one IfcZone per name grouping those spaces; optional input zonePsets (zoneName, psetName, paramName, paramValue, optional valueType) attaches property sets to the zones by name. Optional documentPath records that file (the long analytics table) as an IfcDocumentReference on the first IfcProject, with its file name, format, SHA-256, and the join key named by documentKey (default GlobalId); documentDescription adds a sentence about it. Outputs a one-row summary (targetPath, entitiesTouched, valuesWritten, zonesWritten, documentsWritten).
 
-Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`, `paramValue`) are grouped by (entityId, psetName) in first-appearance order; each group becomes one IfcPropertySet attached to the entity, appended to a byte-exact copy of the source file. An entity id not present in the source file is an error. v1 limitation: every value is written as IFCTEXT; typed measures come later. The optional `zones` input (`zoneName`, `spaceId`) appends one IfcZone per name grouping those spaces through IfcRelAssignsToGroup, and the optional `zonePsets` input (`zoneName`, `psetName`, `paramName`, `paramValue`) attaches property sets to those zones by name, since a zone's id exists only once the Run allocates it.
+Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`, `paramValue`) are grouped by (entityId, psetName) in first-appearance order; each group becomes one IfcPropertySet attached to the entity, appended to a byte-exact copy of the source file. An entity id not present in the source file is an error. v1 limitation: every value is written as IFCTEXT; typed measures come later. The optional `zones` input (`zoneName`, `spaceId`) appends one IfcZone per name grouping those spaces through IfcRelAssignsToGroup, and the optional `zonePsets` input (`zoneName`, `psetName`, `paramName`, `paramValue`) attaches property sets to those zones by name, since a zone's id exists only once the Run allocates it. The optional `documentPath` parameter records that file (the long analytics table) as an IfcDocumentReference on the first IfcProject, carrying its file name, format, SHA-256, and the join key named by `documentKey` (default GlobalId).
 
 **Inputs**
 
@@ -1624,6 +1704,9 @@ Effect: runs only inside a Run. Input rows (`entityId`, `psetName`, `paramName`,
 |---|---|---|---|---|---|
 | `sourcePath` | FilePath | — | — | — | files under the model roots ending `.ifc` |
 | `targetPath` | FilePath | — | — | — | — |
+| `documentPath` | FilePath | — | — | — | — |
+| `documentKey` | Text | — | `GlobalId` | — | — |
+| `documentDescription` | Text | — | — | — | — |
 
 ### `sink.report` (v1) — Effect
 
