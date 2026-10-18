@@ -685,3 +685,23 @@ planted-face laws. 317 evaluations, none false, rounds 0 to 3 swept where a law 
 Provisional: the C# writer fixes of TKT-315 had not landed, and the run used a scratch copy of
 Plato's HEAD compiler with conditionals parenthesized (report of TKT-314).
 
+### Writer gaps found running chunk A's laws
+
+Generated from the design (layers 0 to 9, `*.spec.plato` left out) plus the stdlib's foundation,
+geometry and graphics tiers (brep files excluded) with Plato's CLI at HEAD `65d63c90`, built against
+`Plato.Intrinsics` at HEAD with `PLATO_FORWARD_CONCEPTS` defined and the old `Ara3D.Geometry`
+package's compile assets excluded (as `Plato.ForwardConformanceTests.csproj` does). The design was
+not changed for any of these; the harness worked around each in its own scratch copy.
+
+| Construct | Where | Error | Harness workaround |
+|---|---|---|---|
+| a conditional used as an operand, `(a ? b : false) ? x : y` | every library (`TirCSharpBodyWriter.cs`, case `TirConditional`, writes no parentheses) | none at compile time for most sites: the C# parses with another meaning; CS0029/CS1662 where the types differ | a scratch build of the CLI that parenthesizes every conditional |
+| a C# keyword as a parameter name: `base`, `short`, `explicit` | stdlib `sampling` (`base`); 03-step `step-schema-table.library.plato`, `step-schema.types.plato` (`short`, `explicit`) | CS1001, CS1003 | `@` prefixed in the generated files |
+| a typed index as an array subscript, `m.Faces[f]` | every layer | CS1503: no conversion from the index struct to `int` | an `implicit operator int` per index type |
+| `IsValidIndex(xs, idx)` on an `Array<T>` | every layer | CS1929: the `IIndexable` generic is monomorphized onto `TriangleFace` only | an `IsValidIndex<T>(IReadOnlyList<T>, Integer)` shim |
+| a bodiless function whose receiver is an array (`FlatRecord(schema: Array<EntityDefinition>, ...)`) | 03-step | CS1061: no stub is emitted at all | the calling statement replaced by a throw |
+| construction of a generic product without its type argument (`LocatedDifference(...)`) | 09-tooling | CS0305 | statement replaced by a throw |
+| stdlib only: `Constants.UniformWeights` missing, `Contains` on an existential SDF | stdlib `remeshing`, `extensions` | CS0117, CS1929 | statements replaced by throws |
+
+None of the throwing replacements is reached by a chunk A law.
+
