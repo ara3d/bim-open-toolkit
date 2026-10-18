@@ -283,3 +283,64 @@ library's constructs today.
   (TARGET-LANGUAGE.md 7.4; Plato's working tree has uncommitted plato-271 edits to `Plato.Intrinsics`, so the spike built
   against `git archive HEAD`). Items 2 to 4 were measured only as shims; item 1 is the one silent defect, and it
   affects about 97 laws and checks.
+- 2026-10-18, TKT-312, bim-open-data 9e645f4 to the tests commit below. **Layout.** `src/data/Ara3D.StepBrep`: the Plato
+  library compiled to C# (`Generated/`, 914 files) with a copy of Plato's runtime (`Intrinsics/`), written by
+  `tools/regen-step-brep.ps1`; `src/data/Ara3D.Step.Decode`: the decoder, referencing `Ara3D.Step.Entities` and
+  `Ara3D.StepBrep`; `tests/data/Ara3D.Step.Decode.Tests`. The script renames Plato's namespace `Ara3D.Geometry` to
+  `Ara3D.StepBrep`, so TKT-311's CS0433 cannot occur in any consumer (the mesher can reference both later) and no extern
+  alias is needed; the project references `Ara3D.Collections` only, because `Ara3D.SDK.Core` brings the
+  `Ara3D.Geometry` assembly and 2,500 CS0121 ambiguities with it. LINQ's `Any`/`Take` still meet the generated
+  `IReadOnlyList<T>` extensions in a file importing both (one call site in the decoder, written `Enumerable.Any`).
+  **Generation.** `powershell -File tools/regen-step-brep.ps1 -PlatoRoot <clone of Plato dbc065ea>`: stdlib foundation and
+  geometry tiers plus sandbox layers 00 to 07, spec files left out, `--profile=cpu64` (TKT-315's profile landed in Plato
+  b875bbc0; Number is binary64); headers name Plato 54a3996a and bim-open-toolkit a5df350e, the inputs' last commits; a
+  rerun is byte-identical. Layer 03's witnesses need layer 07 (`SameModel`, `Witness_UnitBoxMillimetres`), which needs 04
+  to 06, so 00 to 03 alone does not compile. Left out: 08 and 09, the graphics tier, `brep.*`, and `remeshing.*`/
+  `lattices.*` (two of the three stdlib defects; the third is in neither). The test `StepBrepGenerationTests` reruns the
+  script and compares; it is inconclusive while either checkout has uncommitted input changes (Plato's has today), and
+  its first run took 9 minutes, most of it building Plato's CLI (cached between runs).
+  **Writer defect, and the one deviation.** TKT-315 writer fix 6 was paused (plato-459, Plato afb1f304), so the generated
+  code calls `FlatRecord(this IReadOnlyList<EntityDefinition>, String)`, which the writer never emits:
+  `StepSchemaModel.g.cs(37,160)` and `_Integer.g.cs(114,141)`, CS1061. The note in TKT-312 that fix 6 does not affect
+  layers 0 to 3 was wrong: `FlatRecord` is 03-step's. `Ara3D.StepBrep/BodilessStubs.cs` holds the throwing stub the fixed
+  writer will emit; it is the only hand-written file and will collide (CS0121) with the regenerated one. **Library gap.**
+  `PrepareModelWith` calls `Reduced` and `ToleranceDiagnostics`, both bodiless in `step.library.plato` (TASKS.md chunk
+  D), so `PrepareModel` throws NotImplementedException from C#, and so do the library's own two laws over its witnesses.
+  **Results.** `SameRawModel(decoded, Witness_RawUnitCube)` and `(decoded, Witness_RawTwoCubes)` hold;
+  `Law_UnitsFactorsAgree` holds on both decoded models; the two prepare laws with the decoded values, and the library's
+  witness forms, are inconclusive on the NotImplementedException; diagnostics tests (truncated file, not Part 21, zero
+  direction, dangling reference, unsupported census) pass: 11 passed, 4 inconclusive. Mesher tests 24 passed, 1 ignored,
+  before and after. **Corpus** (throwaway program over the 88 u-blox files, Release): 0 exceptions, 33.1 s (NORA-W101 the
+  slowest at 2.7 s), 12,872 occurrences, 192,457 faces decoded, 12 folds, 0 skipped rows. Faces per occurrence equal the
+  file's `ADVANCED_FACE` count where there is one occurrence (c211_case_with_odin_v1 539, MAYA-W261 1,485).
+
+  | Diagnostic | Count | | Not represented (census) | Instances |
+  |---|---|---|---|---|
+  | STEP-LENGTH-UNIT, STEP-ANGLE-UNIT, STEP-UNCERTAINTY | 69,919 each | | GEOMETRIC_CURVE_SET | 195 |
+  | STEP-IGNORED-TYPE | 1,647 | | DERIVED_UNIT_ELEMENT | 168 |
+  | STEP-TWO-OUTER-BOUNDS | 263 | | DERIVED_UNIT | 167 |
+  | STEP-DEGREE-SNAPPED | 44 | | PRESENTATION_STYLE_BY_CONTEXT | 12 |
+  | STEP-UNSUPPORTED-TYPE | 10 | | GEOMETRIC_SET, GEOMETRICALLY_BOUNDED_SURFACE_SHAPE_REPRESENTATION | 5 each |
+  | STEP-UNREFERENCED | 7 | | MASS_UNIT+NAMED_UNIT+SI_UNIT | 1 |
+
+  Most affected: CEL/LENA-R8 (3,311 faces, 291 occurrences, 342 unsupported instances), SHO/NINA-B222-W1x2 (1,007 faces,
+  195), SHO/IRIS-W1x1 (1,830, 6), SHO/IRIS-W1x6 (1,992, 6), SHO/c211_case_with_odin_v1 (539, 4); none lost a row.
+  **Debts.** (1) The occurrence walk, the inverse-link index and the length-unit reading repeat Ara3D.Step.Mesher's
+  (`StepShapeCollector`, `StepModelIndex`, `StepUnitsReader`) in double precision and millimetres; moving them needs the
+  mesher's project file, and the mesher's copies go when TKT-313 meshes from the decoder's occurrences. (2)
+  `StepSelectReaders.TrimParameter` reads a mixed SELECT list by token; it belongs in `Ara3D.Step.Entities` beside the
+  readers TKT-318 moved there. (3) Not decoded, each a skipped row with a diagnostic: point-only trims, a 2D conic in a
+  parameter plane scaled unevenly (a degree file's cylinder), a pcurve as an edge's curve, `face` without a surface. (4)
+  Not emitted: the torus and non-orthogonal placement warnings; a surface curve without `curve_3d` is reported
+  (`MissingCurve3D`) and skipped rather than given its first pcurve as master. (5)
+  `tests/data/README.md` lacks a row for the new test project (outside this fence). (6) Performance: `StepEntity.Is<T>()`
+  lists the parts of a complex instance on every call, and each placed copy is read again.
+- 2026-10-18, TKT-312 criterion 2, bim-open-data 761c2cb. Step D of the STEP mesher epic (TKT-326, toolkit 72d36820) gave
+  `Reduced` and `ToleranceDiagnostics` bodies, so `PrepareModel` runs. `Ara3D.StepBrep` regenerated from the library at
+  6aee137d with the Plato compiler the epic's builders share (`C:/Users/cdigg/.plato-cli/acbc9b94`, a clean export of
+  Plato acbc9b94), passed to the script's new `-PlatoCli`; stdlib and runtime from a clone at the same commit.
+  `Ara3D.Step.Decode.Tests`: 14 passed, 0 inconclusive (generation test left out): both prepare laws hold with the decoded
+  unit cube and two cubes. Building the compiler from a copy fails (Parakeet eedf2f0 finds Ara3D.Utils through a sibling
+  `ara3d-sdk`), hence `-PlatoCli`; the script now prints the compiler's build errors. Timings for TKT-321: the same
+  regeneration took 945 s and the test build 927 s under heavy load, then 64 s and 71 s an hour later.
+  `BodilessStubs.cs` stays until Plato writer fix 6 (plato-459) lands.
