@@ -493,7 +493,7 @@ New exported names: the types `UvTolerance` and `ConstraintGroup`, and the funct
 `LengthParameterFloor`, `AngleParameterFloor`,
 `ParameterToleranceAt`, `IsSpeedAndCap`, `ParameterToleranceCap`, `UvToleranceAt`,
 `AngleBetweenDirections`, `CanWrap`, `PeriodicDistance`, `IsPeriodic`, `PeriodOr`,
-`ParameterLength`, `IsProper`, `IsFullPeriod`, `ContainsParameter`, `ContainsPeriodic`, `IsUSide`,
+`ParameterLength`, `IsProper`, `IsFullPeriod`, `ContainsParameter`, `ContainsPeriodic`, `CopiesInside` (from layer 4, 2026-10-18), `IsUSide`,
 `OppositeSide`, `SideValue`, `SideRange`, `SidePoint`, `StepsAreResolvable`, `ToProvenance`,
 `CarrierDimension`, `IsError`, `SeverityOf`, `CheckWithin`, `CheckExact`, `Outranks`, `WorseOf`,
 `DiagnosticOf`, `Empty` (on `Report`), `Merge`, `ReportOf`, `ErrorCount`, `IsClean`, `Identical`,

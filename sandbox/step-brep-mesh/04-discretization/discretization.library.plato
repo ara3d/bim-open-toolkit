@@ -186,18 +186,6 @@ library EdgeDiscretizing
             Closed(period) => true;
         };
 
-    // The copies of parameter b strictly inside the range r: b itself on an
-    // aperiodic domain when inside, and on a domain with a seam every b + k
-    // period inside (at most two, since an edge domain spans at most one
-    // period).
-    CopiesInside(d: CurveDomain, b: Number, r: NumberInterval): Array<Number>
-    {
-        var period = d.Periodicity.PeriodOr(0.0);
-        var first = period > 0.0 ? b.PeriodicRepresentativeAbove(r.Start, period) : b;
-        var copies = period > 0.0 ? [first, first + period] : [first];
-        return copies.FlatMap(t => (t > r.Start && t < r.End) ? [t] : copies.Take(0));
-    }
-
     // The curve's parameter tolerance at seed t of edge e, t first wrapped
     // into the curve's domain (layer 1's ParameterToleranceAt).
     SeedTolerance(m: BrepModel, e: BrepEdgeIndex, t: Number): Number

@@ -524,6 +524,18 @@ library BrepFoundation
         return w <= r.End + tol.Value || w - period >= r.Start - tol.Value;
     }
 
+    // The copies of parameter b strictly inside the range r: b itself on an
+    // aperiodic domain when inside, and on a domain with a seam every b + k
+    // period inside (at most two, since an edge domain spans at most one
+    // period). Moved from layer 4 on 2026-10-18 so that layer 2 can use it.
+    CopiesInside(d: CurveDomain, b: Number, r: NumberInterval): Array<Number>
+    {
+        var period = d.Periodicity.PeriodOr(0.0);
+        var first = period > 0.0 ? b.PeriodicRepresentativeAbove(r.Start, period) : b;
+        var copies = period > 0.0 ? [first, first + period] : [first];
+        return copies.FlatMap(t => (t > r.Start && t < r.End) ? [t] : copies.Take(0));
+    }
+
     //==
     // # Surface domains and their sides
 
