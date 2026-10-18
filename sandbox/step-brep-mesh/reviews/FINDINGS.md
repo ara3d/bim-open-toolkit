@@ -78,12 +78,16 @@ session accepts them.
 - **Where** `03-step` (diagnostics, invariants, equality), `07-validation` (witness units),
   `deps/ara3d-sdk/src/Ara3D.IO.StepParser/StepHeader.cs` (the parser session's code).
 - **Problems and fixes**, one line each:
-  1. The C# parser's header keeps three strings and drops `OriginatingSystem` and
-     `PreprocessorVersion`, which the decoder's repairs key on; the adapter re-reads the header
-     section itself (spec, fifth row). Reported to the parser session.
+  1. The C# parser's header kept three strings and dropped `OriginatingSystem` and
+     `PreprocessorVersion`, which the decoder's repairs key on. Fixed in TKT-310 (ara3d-sdk
+     002784d): `StepHeader` keeps all ten fields raw; the adapter decodes them. The spec's fifth
+     row lapses.
   2. No diagnostic code fits "the parse stopped at an unknown place": `SyntaxError` must name an
      instance (`Law_ParseFindingsPointAtTheirSubject`). The accepted first step uses
-     `NotPart21File` at `WholeInput`. Layer 3 should add a code or relax the subject for this case.
+     `NotPart21File` at `WholeInput`. Decided 2026-10-17 after TKT-310 landed in ara3d-sdk
+     (002784d; the parser now returns diagnostics with a byte offset instead of throwing): a new
+     layer 3 code `P21-SYNTAX-OUTSIDE-INSTANCE`, Error, at `WholeInput`, the byte offset in
+     `Measure`; `P21-SYNTAX` keeps its instance subject. Chunk D adds the code.
   3. Layer 3 has `IsSameFile` but no equality for `Diagnostic` or `Provenance`; the tests compare
      field by field. Layer 0 should own `IsSameDiagnostic`.
   4. The `Part21File` invariants exist only as quantifiers in `step.spec.plato`; the spec wrote
