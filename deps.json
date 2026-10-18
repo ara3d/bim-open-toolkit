@@ -13,7 +13,7 @@
   },
   "ara3d-sdk": {
     "url": "https://github.com/ara3d/ara3d-sdk",
-    "commit": "002784d24431cb7815eb3fe7b6cb4eb3bcd2a9e2"
+    "commit": "98a90590b7f3b964c2a9bdbd01dba24ffe33fab0"
   },
   "bim-open-data": {
     "url": "https://github.com/ara3d/bim-open-data",
