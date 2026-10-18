@@ -911,8 +911,7 @@ library BrepTopology
             m.Unit);
 
     // The model with every face reversed: each shell bounds the same region
-    // from the other side. Layer 8's metamorphic input (its copy is marked
-    // belongs-in: 02-topology and has the same signature).
+    // from the other side. Layer 8's metamorphic input.
     WithEveryFaceReversed(m: BrepModel): BrepModel
         => m.WithFacesReversed(m.Faces.Count.MapRange(i => BrepFaceIndex(i)));
 

@@ -392,18 +392,11 @@ library BrepCheckingFaceMeshing
         return m.GridOrTriangles(f, r, chart, grid, c);
     }
 
-    // The loop index (0 the outer loop, k the hole k - 1) of boundary point
-    // a of the region, in BoundaryPoints order.
-    LoopOfBoundaryPoint(r: UvRegion, a: Integer): Integer
-        => r.NumberOfLoops.Range.Reduce(0, (k, q) => a >= r.LoopStart(q) ? q : k);
-
-    // The position, inside its loop, of boundary point a of the region.
+    // The position, inside its loop, of boundary point a of the region
+    // (layer 5's LoopOfBoundaryPoint and LoopOffset). Precondition: a is a
+    // boundary point.
     SlotOfBoundaryPoint(r: UvRegion, a: Integer): Integer
-        => a - r.LoopStart(r.LoopOfBoundaryPoint(a));
-
-    // The position in BoundaryPoints of loop q's first point.
-    LoopStart(r: UvRegion, q: Integer): Integer
-        => q.Range.Reduce(0, (n, k) => n + r.LoopAt(k).Points.Count);
+        => a - r.LoopOffset(r.LoopOfBoundaryPoint(a));
 
     // ElementNormalDeviation in radians behind
     // Law_ElementNormalAgreesWithSurface's guard and exemption.

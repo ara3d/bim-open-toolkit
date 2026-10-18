@@ -742,3 +742,9 @@ Skipped:
   use elsewhere). The name is not changed: layer 7's `Check_SeamUsesAreInOneFace` and layer 8's
   theorem cite it, and a rename in this wave would be one FIX-WAVE.md does not predict. The name
   review should rename it `Law_SeamUsesRunOpposite` in all three layers at once.
+
+## Name review, 2026-10-17
+
+The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
+
+- `WithEveryFaceReversed`'s comment no longer names layer 8's copy, which the review deleted.

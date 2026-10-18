@@ -441,3 +441,9 @@ PLATO-PRIMER.md section E.3, run 2026-10-17 from the scratch copy of `tools/Plat
 - Fix wave, 2026-10-17, after the last layer-5 change: the nine layer folders from `origin/main`
   with this folder live, `PASS: 0 error(s) in scope; 6600 functions type-checked`. Each finding was
   gated before its commit, against the other layers as committed at the time.
+
+## Name review, 2026-10-17
+
+The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
+
+- Deleted `IsRedundantVertexLoop(m, f, k)`, a copy of layer 2's with the same signature and meaning; `MeshedBounds` is now layer 2's `KeptBounds` mapped to the bounds.

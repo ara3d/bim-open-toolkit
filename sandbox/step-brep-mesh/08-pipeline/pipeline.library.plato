@@ -402,23 +402,6 @@ library StepToMesh
     //==
     // # Declarations owed by lower layers
 
-    // belongs-in: 02-topology
-    // The model with every face reversed: each face's SameSense and each of
-    // its bounds' Orientation flipped. Every face keeps its point set and its
-    // normal turns over (layer 2, "Sense and orientation, composed"), so every
-    // shell bounds the same region from the other side.
-    WithEveryFaceReversed(m: BrepModel): BrepModel
-        => BrepModel(
-            m.Geometry,
-            m.Vertices,
-            m.Edges,
-            m.Loops,
-            m.Faces.Map(f => BrepFace(f.Surface, !f.SameSense, f.Bounds.Map(b => FaceBound(b.Loop, !b.Orientation, b.IsOuter)))),
-            m.Shells,
-            m.Bodies,
-            m.Tolerances,
-            m.Unit);
-
     // belongs-in: 04-discretization
     // The edge criteria with every length multiplied by factor: the chordal
     // bound, the length limit, the minimum length. The angle and the segment

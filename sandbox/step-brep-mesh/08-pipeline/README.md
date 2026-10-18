@@ -644,3 +644,9 @@ Kept, with the reason:
   splitting them needed an interactive add (principle: one commit per finding).
 - The pointer from `research/VALIDATION-MATH.md` to the corrections note is outside this layer's
   fence and is left to the supervising session.
+
+## Name review, 2026-10-17
+
+The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
+
+- Deleted `WithEveryFaceReversed(m)`, the `belongs-in: 02-topology` copy; layer 2 declares it with the same signature.

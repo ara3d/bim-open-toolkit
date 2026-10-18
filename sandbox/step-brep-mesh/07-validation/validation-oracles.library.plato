@@ -849,21 +849,6 @@ library BrepOracles
         => m.Faces[f].Bounds.Count.Range.Reduce(0, (n, j) =>
             m.IsRedundantVertexLoop(f, j) ? n + 1 : n);
 
-    // True when bound j of face f is a vertex loop whose vertex lies on
-    // another bound of the face that is not an earlier vertex loop of the same
-    // vertex counted already, or repeats an earlier vertex loop.
-    IsRedundantVertexLoop(m: BrepModel, f: BrepFaceIndex, j: Integer): Boolean
-    {
-        var mine = m.Loops[m.Faces[f].Bounds[j].Loop].VertexLoopVertexOf;
-        return mine.Count == 0
-            ? false
-            : m.Faces[f].Bounds.Count.Range.Any(k => k == j
-                ? false
-                : (m.Loops[m.Faces[f].Bounds[k].Loop].IsEdgeLoop
-                    ? m.BoundVertices(m.Faces[f].Bounds[k]).Any(v => v == mine[0])
-                    : (k < j ? m.Loops[m.Faces[f].Bounds[k].Loop].VertexLoopVertexOf.Any(v => v == mine[0]) : false)));
-    }
-
     // The sum over the mesh's referenced vertices of the angle defect 2 pi
     // minus the corner angles there, in radians, by its own route: corner
     // angles by layer 0's AngleBetweenDirections (atan2 of the cross and dot
