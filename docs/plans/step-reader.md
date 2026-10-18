@@ -221,3 +221,65 @@ library's constructs today.
   distinct items, one placement each), NINA-B222-W1x2 (195 `geometric_curve_set` items counted unsupported),
   ODIN-W262 (depth 5, a `brep_with_voids` with two face colours). Debts: per-face colour (one material per instance),
   occurrence colours (`over_riding_styled_item`), a context without a length unit read as millimetres.
+- 2026-10-17, TKT-311 spike (Plato `65d63c90`, sandbox `cc4ab928`; throwaway files in the session scratchpad, `tkt311\`).
+  Instead of a slice, the whole library compiled: the three stdlib tiers minus `brep.*`, plus all 86 non-spec sandbox
+  files flattened into one folder, `dotnet Plato.CLI.dll in/foundation in/geometry in/graphics in/design --out=<out>
+  --csharp-style=extensions` (18 s; 1,207 files, 148k lines; 1 degraded body, the stdlib's `Tween.Change`), then built
+  with a copy of `generated/Plato.Generated.Foundation.Unoptimized/*.csproj` (17 s). The generated C# does not compile
+  today. Construct by construct (counts from a regex over the 86 files):
+
+  | Construct | Count | C# writer today | Evidence |
+  |---|---|---|---|
+  | Product types | 99 | compiles, runs | constructors, fields, `With*` |
+  | Sum types and `match` | 41 sums, 251 matches | compiles, runs; equality wrong | sum `Equals` compares every flattened case field, so a null array of an inactive case throws: `Curves[0].Equals(Curves[0])` on a `Line` gives NullReferenceException, and so do `SameModel` and `Law_UnitBoxIsBoxOfOnes`. A `BrepCurve` is a 352-byte struct, a `BrepSurface` 416 |
+  | Typed index as subscript, `m.Faces[f]` | 290 errors | blocks | CS1503 "cannot convert from 'BrepFaceIndex' to 'int'": the writer emits the raw indexer, and C# will not chain `BrepFaceIndex` to `Integer` to `int` |
+  | `IIndexable<$T>` functions on `Array<T>` | 190 errors | blocks | CS1929 "'IReadOnlyList<Point3D>' does not contain a definition for 'IsValidIndex'": not instantiated for arrays; `First` and `Last` compile only because `System.Linq` supplies them |
+  | Conditional as condition, `(a ? b : false) ? x : y` | 109 sites | 12 block, about 97 compile wrong | `TirCSharpBodyWriter` drops the parentheses; `Law_TriangleMinAngleMeetsThreshold` becomes `IsTriangle(e) ? HasValidCorners(e) : (false ? ... : true)` and never tests the angle. It is the library's short-circuit idiom, since `&&` evaluates both sides |
+  | C# keywords as names | 2 in the library (`short`, `explicit`), 1 in stdlib (`base`) | blocks | CS1001 at `StepSchemaModel.g.cs`, `_EntityDefinition.g.cs`, `Sampling.g.cs` |
+  | `Array<T>`, lambdas, `Function1..9` | 531, 3,876, 71 | compiles, runs | `IReadOnlyList<T>`, `Func<>` |
+  | `Number`, `Integer`, `Boolean`, `String` | | compiles, runs | `Number` is float32: `Point3D` is 12 bytes |
+  | Block bodies, `while`, `List`, `Buffer` | 255, 9, 1, 1 | compiles, runs | the throwaway body below |
+  | Static `_` functions and witnesses | 121 | compiles, runs | `BrepModel.Witness_UnitBox()` |
+  | Generic `$T` functions, interfaces | 4, 3 | compiles | not run |
+  | Laws | 698, all with bodies | compile as Boolean functions | no runner builds witness arguments; a C# test calls them |
+  | Bodiless functions | 85 | stubs, unevenly | receiver a library type: throws NotImplementedException; receiver `Array<T>`: not emitted (`FlatRecord`, CS1061 at the call); receiver a scalar: calls itself (`ParseStep`, `NameOctetsPrecede`) |
+  | `spec` blocks | 231 in 15 files | blocks | the parser halts: "Parsing failed to reach end of input, stopped at: Ln:28 Ch:4" in `topology.spec.plato` |
+  | stdlib geometry tier | 3 defects | blocks | CS1929 `Contains` on an existential (`Extensions.g.cs`, 2), CS0117 `Constants.UniformWeights` (`Remeshing.g.cs`) |
+
+  Going around each blocker in the scratchpad: a copy of the compiler with the condition parenthesized (two lines
+  in `TirCSharpBodyWriter.cs`, the `TirConditional` case), a shim file adding `implicit operator int` to the 37 `IIndex`
+  structs plus two generic `IsValidIndex` extensions on `IReadOnlyList<T>`, an `@` on the three keywords, and throwing
+  stubs for `FlatRecord` and the three stdlib defects. With those, the whole library builds with 0 errors. A
+  throwaway C# program builds the unit cube through the generated types (`BrepCurve.Line`, `BrepSurface.Plane`,
+  `BrepLoop.EdgeLoop`, `BrepBody.ManifoldSolid`, `LengthUnit.Metre`, typed indices) and prints:
+
+  ```
+  RawCounts: V=8 E=12 F=6 L=6; EulerPoincare=2
+  Law_IndicesInRange: True
+  Law_LoopsChainEndToStart, all 6 loops: True
+  Law_EdgeUsesHaveOppositeOrientation, all 12 edges: True
+  Law_DeclaredClosedIsClosed: True
+  Witness_BoxWithFlippedFace edges failing Law_EdgeUsesHaveOppositeOrientation (expected none): []
+  Edge 0 orientation through match (CoedgeRunsForwardOnCurve) at face 0 slot 3 / face 2 slot 0: False / True
+  ShellComponentCount (throwaway while/Buffer/List body), cube shell 0: 1
+  ShellComponentCount, shell of bottom + top faces only (expected 2): 2
+  SameModel, Law_UnitBoxIsBoxOfOnes, Line Equals: NullReferenceException (sum equality)
+  Law_EveryEdgeUsedTwiceInClosedShell, Law_ShellIsOrientable, Law_EulerPoincareEvenAndBounded,
+  Law_LoopWindingMatchesSameSense: NotImplementedException (they reach chunk A's bodiless functions)
+  ```
+
+  `ShellComponentCount` is bodiless in the library; the spike gave it a flood-fill body in its copy only. A consumer
+  project must also exclude the compile assets of the `Ara3D.Geometry` 1.6.1 package (CS0433, two `Point3D`s), and the
+  generated `Take` extension on `IReadOnlyList<T>` collides with LINQ's (CS0121).
+
+  Writer work before chunk A runs in C#, all in `writers/Plato.CSharpWriter`: (1) parenthesize a conditional's
+  condition in `TirCSharpBodyWriter.cs` (done and verified in the copy); (2) typed-index subscripts, either `xs[i.Value]`
+  in the body writer or `implicit operator int` on single-`Integer` `IIndex` structs where the struct writer emits the
+  unwrap converter; (3) instantiate the `IIndexable<$T>` library functions (`IsValidIndex`, `At(IIndex)`, `LastIndex`,
+  `First`, `Last`) for `IReadOnlyList<T>`, as `Extensions.g.cs` already does for `Take` and `Map`; (4) escape C#
+  keywords with `@`; (5) sum `Equals` that switches on `Kind` and compares only the active case
+  (`CSharpConcreteTypeWriter.WriteSumType`), which chunk A's determinism and witness-equality laws need; (6) one stub
+  shape for every bodiless function. Outside the writer: the three stdlib geometry defects, and 64-bit `Number`
+  (TARGET-LANGUAGE.md 7.4; Plato's working tree has uncommitted plato-271 edits to `Plato.Intrinsics`, so the spike built
+  against `git archive HEAD`). Items 2 to 4 were measured only as shims; item 1 is the one silent defect, and it
+  affects about 97 laws and checks.
