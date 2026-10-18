@@ -8,6 +8,7 @@ public static class BcfNodes
 {
     public static IReadOnlyList<IFlowNode> All { get; } =
     [
+        new BcfIssueNode(),
         new BcfTopicsNode(),
         new BcfWriteNode(),
         new BcfReadNode(),

@@ -110,7 +110,7 @@ internal static class BcfIssues
         return builder.Build();
     }
 
-    private static int? Find(IDataTable table, string name)
+    internal static int? Find(IDataTable table, string name)
     {
         for (var i = 0; i < table.Columns.Count; i++)
             if (string.Equals(table.Columns[i].Descriptor.Name, name, StringComparison.OrdinalIgnoreCase))

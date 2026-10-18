@@ -6,6 +6,7 @@ exchange format) in and out of a graph. The writer and reader are
 
 | Node | Kind | Inputs | Outputs | Parameters |
 |---|---|---|---|---|
+| `bcf.issue` | pure | `camera` (optional) | `issues` | `title`, `description`, `comment`, `author`, `created`, `status`, `priority`, `type`, `ids` |
 | `bcf.topics` | pure | `issues` | `topics` | `preset`, `verdicts` |
 | `bcf.write` | effect | `issues` | `out` (summary) | `path`, `model`, `preset`, `verdicts`, `author`, `guidSeed` |
 | `bcf.read` | pure | none | `issues`, `topics` | `path` |
@@ -18,6 +19,16 @@ by the columns present), and when a `Verdict` column exists only the verdicts
 listed in `verdicts` are kept (default `Fail`; empty keeps all). Rows sharing a
 title become one topic. Column names match case-insensitively, so the
 compliance pack's camelCase columns work too.
+
+`bcf.issue` makes the issue table by hand or from the 3D pane: its "Comment" button adds a
+`view3d.camera` holding the current camera and a `bcf.issue` holding the title, comment, author,
+selected GlobalIds (`ids`) and creation time (`created`, UTC `yyyy-MM-ddTHH:mm:ssZ`; the node reads no
+clock). It gives one row per distinct id, or one row with an empty `GlobalId` when there are none
+(a comment on the whole model), the columns `GlobalId, Title, Description, Status, Priority, Type,
+Comment, Author, CreationDate`, and with a camera wired in also `CameraX..Z, DirectionX..Z, UpX..Z,
+FieldOfView, AspectRatio` (direction is target minus position, normalised; up is z made perpendicular
+to it; aspect 1). A blank `title` is an error. Wire it into `bcf.topics` to preview and `bcf.write`
+to write.
 
 `bcf.write` stays pending until Run (nothing writes until Run). With `model`
 pointing at the `.bos` file, each topic's viewpoint selects its elements under

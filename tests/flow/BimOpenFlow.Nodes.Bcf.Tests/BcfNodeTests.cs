@@ -206,9 +206,9 @@ public sealed class BcfNodeTests
             Throws.TypeOf<FileNotFoundException>());
 
     [Test]
-    public void Pack_ListsTheThreeNodes_WriteIsTheOnlyEffect()
+    public void Pack_ListsTheFourNodes_WriteIsTheOnlyEffect()
     {
-        Assert.That(BcfNodes.All.Select(n => n.Spec.Kind), Is.EqualTo(new[] { "bcf.topics", "bcf.write", "bcf.read" }));
+        Assert.That(BcfNodes.All.Select(n => n.Spec.Kind), Is.EqualTo(new[] { "bcf.issue", "bcf.topics", "bcf.write", "bcf.read" }));
         Assert.That(BcfNodes.All.Single(n => n.Spec.Capability == NodeCapability.Effect).Spec.Kind, Is.EqualTo("bcf.write"));
     }
 }
