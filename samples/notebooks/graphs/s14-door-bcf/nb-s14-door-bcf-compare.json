@@ -1,0 +1,444 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "modelPath": {
+      "x": 40,
+      "y": 40
+    },
+    "model": {
+      "x": 389,
+      "y": 40
+    },
+    "verdicts": {
+      "x": 738,
+      "y": 40
+    },
+    "doors": {
+      "x": 1087,
+      "y": 40
+    },
+    "doorCols": {
+      "x": 1436,
+      "y": 40
+    },
+    "overall": {
+      "x": 1785,
+      "y": 40
+    },
+    "overallCols": {
+      "x": 2134,
+      "y": 40
+    },
+    "doorWidth": {
+      "x": 2483,
+      "y": 40
+    },
+    "levelRows": {
+      "x": 2832,
+      "y": 40
+    },
+    "levelCols": {
+      "x": 3181,
+      "y": 40
+    },
+    "withLevel": {
+      "x": 3530,
+      "y": 40
+    },
+    "widthMm": {
+      "x": 3879,
+      "y": 40
+    },
+    "verdictCols": {
+      "x": 4228,
+      "y": 40
+    },
+    "checked": {
+      "x": 4577,
+      "y": 40
+    },
+    "margin": {
+      "x": 4926,
+      "y": 40
+    },
+    "columns": {
+      "x": 5275,
+      "y": 40
+    },
+    "sorted": {
+      "x": 5624,
+      "y": 40
+    },
+    "about": {
+      "x": 5973,
+      "y": 40
+    },
+    "truth": {
+      "x": 6322,
+      "y": 40
+    },
+    "truthCols": {
+      "x": 6671,
+      "y": 40
+    },
+    "compared": {
+      "x": 7020,
+      "y": 40
+    },
+    "agree": {
+      "x": 7369,
+      "y": 40
+    },
+    "answer": {
+      "x": 7718,
+      "y": 40
+    },
+    "tally": {
+      "x": 8067,
+      "y": 40
+    },
+    "agreement": {
+      "x": 8416,
+      "y": 40
+    }
+  },
+  "structure": {
+    "inputs": [
+      {
+        "name": "model",
+        "kind": "FilePath",
+        "default": "{SAMPLES}/duplex-enriched.bos",
+        "description": "The building's BIM Open Schema (.bos) file; the NRC Duplex by default, any .bos file works here."
+      }
+    ],
+    "edges": [
+      {
+        "from": "modelPath.path",
+        "to": "model.path"
+      },
+      {
+        "from": "model.entities",
+        "to": "verdicts.entities"
+      },
+      {
+        "from": "model.parameters",
+        "to": "verdicts.parameters"
+      },
+      {
+        "from": "model.entities",
+        "to": "doors.table"
+      },
+      {
+        "from": "doors.table",
+        "to": "doorCols.table"
+      },
+      {
+        "from": "model.parameters",
+        "to": "overall.table"
+      },
+      {
+        "from": "overall.table",
+        "to": "overallCols.table"
+      },
+      {
+        "from": "doorCols.table",
+        "to": "doorWidth.a"
+      },
+      {
+        "from": "overallCols.table",
+        "to": "doorWidth.b"
+      },
+      {
+        "from": "model.parameters",
+        "to": "levelRows.table"
+      },
+      {
+        "from": "levelRows.table",
+        "to": "levelCols.table"
+      },
+      {
+        "from": "doorWidth.table",
+        "to": "withLevel.a"
+      },
+      {
+        "from": "levelCols.table",
+        "to": "withLevel.b"
+      },
+      {
+        "from": "withLevel.table",
+        "to": "widthMm.table"
+      },
+      {
+        "from": "verdicts.verdicts",
+        "to": "verdictCols.table"
+      },
+      {
+        "from": "widthMm.table",
+        "to": "checked.a"
+      },
+      {
+        "from": "verdictCols.table",
+        "to": "checked.b"
+      },
+      {
+        "from": "checked.table",
+        "to": "margin.table"
+      },
+      {
+        "from": "margin.table",
+        "to": "columns.table"
+      },
+      {
+        "from": "columns.table",
+        "to": "sorted.table"
+      },
+      {
+        "from": "truth.table",
+        "to": "truthCols.table"
+      },
+      {
+        "from": "sorted.table",
+        "to": "compared.a"
+      },
+      {
+        "from": "truthCols.table",
+        "to": "compared.b"
+      },
+      {
+        "from": "compared.table",
+        "to": "agree.table"
+      },
+      {
+        "from": "agree.table",
+        "to": "answer.table"
+      },
+      {
+        "from": "agree.table",
+        "to": "tally.table"
+      },
+      {
+        "from": "tally.table",
+        "to": "agreement.table"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "modelPath",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "model",
+        "kind": "bos.load",
+        "version": 1
+      },
+      {
+        "id": "verdicts",
+        "kind": "ids.check",
+        "version": 1
+      },
+      {
+        "id": "doors",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "doorCols",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "overall",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "overallCols",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "doorWidth",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "levelRows",
+        "kind": "table.filter",
+        "version": 1
+      },
+      {
+        "id": "levelCols",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "withLevel",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "widthMm",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "verdictCols",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "checked",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "margin",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "columns",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "sorted",
+        "kind": "table.sort",
+        "version": 1
+      },
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "truth",
+        "kind": "csv.read",
+        "version": 1
+      },
+      {
+        "id": "truthCols",
+        "kind": "table.project",
+        "version": 1
+      },
+      {
+        "id": "compared",
+        "kind": "table.join",
+        "version": 1
+      },
+      {
+        "id": "agree",
+        "kind": "table.derive",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "tally",
+        "kind": "table.aggregate",
+        "version": 1
+      },
+      {
+        "id": "agreement",
+        "kind": "view.table",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "modelPath": {
+      "path": "$model"
+    },
+    "model": {
+      "harmonize": "false"
+    },
+    "verdicts": {
+      "ids": "{SAMPLES}/ids/dc-w1.ids"
+    },
+    "doors": {
+      "expr": "[Category] == 'IFCDOOR'"
+    },
+    "doorCols": {
+      "columns": "EntityIndex, GlobalId, Name"
+    },
+    "overall": {
+      "expr": "[Name] == 'Ifc:OverallWidth'"
+    },
+    "levelRows": {
+      "expr": "[Name] == 'Level' and [ParameterGroup] == 'PSet_Revit_Constraints'"
+    },
+    "levelCols": {
+      "columns": "EntityIndex, Value as Level"
+    },
+    "withLevel": {
+      "aKey": "EntityIndex",
+      "bKey": "EntityIndex",
+      "mode": "inner"
+    },
+    "overallCols": {
+      "columns": "EntityIndex, Value"
+    },
+    "doorWidth": {
+      "aKey": "EntityIndex",
+      "bKey": "EntityIndex",
+      "mode": "inner"
+    },
+    "widthMm": {
+      "name": "Width_mm",
+      "expr": "round(toNumber([Value]) * 1000)"
+    },
+    "verdictCols": {
+      "columns": "EntityIndex, Verdict"
+    },
+    "checked": {
+      "aKey": "EntityIndex",
+      "bKey": "EntityIndex",
+      "mode": "inner"
+    },
+    "margin": {
+      "name": "Margin_mm",
+      "expr": "[Width_mm] - 850"
+    },
+    "columns": {
+      "columns": "Name, Level, Width_mm, Margin_mm, Verdict, GlobalId"
+    },
+    "sorted": {
+      "A": "Verdict",
+      "B": "Width_mm",
+      "C": "Name"
+    },
+    "about": {
+      "text": "DC-W1 is the clear-width rule (a door leaf at least 850 mm wide, NBC 2020 3.8.3.12, illustrative, not legal text) with OverallWidth as the proxy, stated as an IDS (samples/nrc/ids/dc-w1.ids) and checked by ids.check over the Duplex. truth reads NRC's ground-truth file for the test kit (a copy of door_ground_truth.csv beside this graph); compared joins it to the graph's verdicts on GlobalId, and agree is true where the two verdicts are the same word. agreement counts the rows by agree."
+    },
+    "truth": {
+      "path": "{SAMPLES}/../notebooks/graphs/s14-door-bcf/door_ground_truth.csv"
+    },
+    "truthCols": {
+      "columns": "GlobalId, ExpectedVerdict_ClearWidth850 as Expected, OverallWidthMm as Truth_mm"
+    },
+    "compared": {
+      "aKey": "GlobalId",
+      "bKey": "GlobalId",
+      "mode": "inner"
+    },
+    "agree": {
+      "name": "Agree",
+      "expr": "lower([Verdict]) == lower([Expected])"
+    },
+    "answer": {
+      "title": "Verdict against NRC's ground truth",
+      "columns": "Name, Level, Width_mm, Truth_mm, Margin_mm, Verdict, Expected, Agree"
+    },
+    "tally": {
+      "groupBy": "Agree",
+      "aggregates": "count(*) as Doors"
+    },
+    "agreement": {
+      "title": "Doors where the verdict matches the ground truth"
+    }
+  }
+}

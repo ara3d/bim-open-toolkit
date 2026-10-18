@@ -1,0 +1,160 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40
+    },
+    "camera": {
+      "x": 389,
+      "y": 40
+    },
+    "review": {
+      "x": 738,
+      "y": 40
+    },
+    "reply": {
+      "x": 1087,
+      "y": 40
+    },
+    "thread": {
+      "x": 1436,
+      "y": 40
+    },
+    "answer": {
+      "x": 1785,
+      "y": 40
+    },
+    "topics": {
+      "x": 2134,
+      "y": 40
+    },
+    "bcf": {
+      "x": 2483,
+      "y": 40
+    }
+  },
+  "structure": {
+    "edges": [
+      {
+        "from": "camera.camera",
+        "to": "review.camera"
+      },
+      {
+        "from": "camera.camera",
+        "to": "reply.camera"
+      },
+      {
+        "from": "review.issues",
+        "to": "thread.a"
+      },
+      {
+        "from": "reply.issues",
+        "to": "thread.b"
+      },
+      {
+        "from": "thread.table",
+        "to": "answer.table"
+      },
+      {
+        "from": "thread.table",
+        "to": "topics.issues"
+      },
+      {
+        "from": "thread.table",
+        "to": "bcf.issues"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "camera",
+        "kind": "view3d.camera",
+        "version": 1
+      },
+      {
+        "id": "review",
+        "kind": "bcf.issue",
+        "version": 1
+      },
+      {
+        "id": "reply",
+        "kind": "bcf.issue",
+        "version": 1
+      },
+      {
+        "id": "thread",
+        "kind": "table.concat",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "topics",
+        "kind": "bcf.topics",
+        "version": 1
+      },
+      {
+        "id": "bcf",
+        "kind": "bcf.write",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "The BCF that comes back from the architect: the reviewer's issue from nb-s14-door-bcf-review and a reply on the same topic, as two bcf.issue nodes with the same title, doors and camera. thread joins their rows by column name; because the title, doors and camera agree, bcf.write makes one topic holding both comments, under the same guidSeed as the reviewer's file so a viewer treats it as the same topic. The architect's text is written for this walk-through; it is not a real colleague's reply. bcf writes artifacts/checking/s14-door-bcf-reply.bcf only when you press Run."
+    },
+    "camera": {
+      "name": "east-high",
+      "posX": "24",
+      "posY": "-24",
+      "posZ": "12",
+      "targetX": "4.4",
+      "targetY": "-8.9",
+      "targetZ": "1.25",
+      "fov": "60"
+    },
+    "review": {
+      "title": "813 mm doors: 37 mm under the 850 mm rule",
+      "description": "The two glazed exterior doors (M_Single-Glass 1, type 0813 x 2420mm) have an OverallWidth of 813 mm; rule DC-W1 asks for at least 850 mm.",
+      "comment": "Both doors miss the 850 mm minimum by 37 mm, the smallest shortfall on the project. Please widen the leaf or confirm an exemption.",
+      "author": "Reviewer",
+      "created": "2026-10-18T23:00:00Z",
+      "ids": "1s1jVhK8z0pgKYcr9jt781,1s1jVhK8z0pgKYcr9jt7AB"
+    },
+    "reply": {
+      "title": "813 mm doors: 37 mm under the 850 mm rule",
+      "description": "The two glazed exterior doors (M_Single-Glass 1, type 0813 x 2420mm) have an OverallWidth of 813 mm; rule DC-W1 asks for at least 850 mm.",
+      "comment": "Agreed. I will check both openings and issue a wider leaf type in the next revision of the model; please rerun DC-W1 on it.",
+      "author": "Architect",
+      "created": "2026-10-19T08:30:00Z",
+      "ids": "1s1jVhK8z0pgKYcr9jt781,1s1jVhK8z0pgKYcr9jt7AB"
+    },
+    "thread": {
+      "columns": "byName"
+    },
+    "answer": {
+      "title": "Both comments, one row per door and comment"
+    },
+    "topics": {
+      "preset": "issue",
+      "verdicts": ""
+    },
+    "bcf": {
+      "path": "{ARTIFACTS}/checking/s14-door-bcf-reply.bcf",
+      "model": "samples/nrc/duplex-enriched.bos",
+      "preset": "issue",
+      "verdicts": "",
+      "author": "Reviewer",
+      "guidSeed": "s14-door-review"
+    }
+  }
+}
