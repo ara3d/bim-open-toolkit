@@ -194,6 +194,17 @@ Recorded as they arise; the ticket carries the same list.
   (nested conditionals 5c2ad367), the whole-library build at 8 errors. The parser session resumed
   TKT-312 against the fixed types. Leftovers in F-52.
 
+- 2026-10-18 Paused by the owner. State at the pause: TKT-315 everything green committed (last
+  Plato commit afb1f304, ticket log ce393d3e); whole library under both profiles, 1,257 files,
+  8 errors (3 bodiless stubs, fix 6 reverted and kept as a patch at
+  `scratchpad/number-profile/fix6-bodiless-stubs.patch` because it also stubbed a scalar intrinsic
+  forwarder, plato-459; 3 stdlib-460 defects; 2 CS0305 generic constructor without type argument);
+  64-bit `Integer` and the cube-law run not started. The owner's interpreter experiment
+  (`src/Plato.Interpreter`, `Plato.CLI/RunCommand.cs`) is in the same checkout, untouched. The
+  parser session continues TKT-312 into bim-open-data (`Ara3D.StepBrep`) from an archived Plato
+  copy. Chunk B not launched. Decisions with the owner: STEP's purpose in PROJECT.md (ticket
+  review's first recommendation), chunk B, closing TKT-299 and TKT-300.
+
 ## Decided by the owner during the pass
 
 - 2026-10-17, governing: **Specifications and laws drive development; the aim is a high likelihood
