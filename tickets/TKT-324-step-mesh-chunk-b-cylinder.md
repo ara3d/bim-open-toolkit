@@ -1,14 +1,16 @@
 ---
 id: TKT-324
 title: STEP mesher in Plato, step B: mesh the cylinder (circles, curved faces, the seam cut, refinement to tolerance, quad meshes)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 81f546ae
+session: 81f546ae-4c48-48bb-aa18-dfabd21e83ad
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-316, TKT-314, TKT-315]
 confidence: high
 created: 2026-10-18
+claimed: 2026-10-18
 ---
 
 ## Acceptance criteria

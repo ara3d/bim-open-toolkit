@@ -12,9 +12,9 @@ and states the rules both faces of the edge rely on when they consume it. It own
 | File | Holds |
 |---|---|
 | `discretization.types.plato` | `Limit`, `DiscretizationCriteria`, `SegmentFloors`, `EdgeDiscretization`, `EdgeDiscretizations`, `EdgeImage`, `RefinementReason`, `EdgeRefinementRequest` |
-| `discretization.library.plato` | criteria, edge facts, count floors, closed forms for arcs, segment measures, parameter-space images, `Discretize`, `DiscretizeAll`, `Undiscretized`, `Reversed`, `AlongCoedge`, `SameDiscretization`, `IsRefinable`, `MeetsCriteria`, `Refine` |
+| `discretization.library.plato` | criteria, edge facts, count floors, closed forms for arcs, segment measures, parameter-space images, `Discretize`, `DiscretizeAll`, `Undiscretized`, `Reversed`, `AlongCoedge`, `SameDiscretization`, `IsRefinable`, `MeetsCriteria`, `SegmentMeetsCriteria`, `RefineEdge`, `Refine` |
 | `discretization.laws.plato` | 36 laws: shape, agreement with the model, criteria, counts, images, reversal and sharing, monotonicity and refinement, arcs |
-| `discretization.spec.plato` | type invariants, contracts of the 6 functions the design pass deferred and 4 constructors, 6 theorems. Since chunk A, `RefineEdge` and `SagittaByHullBound` (the non-closed-form half of `Sagitta`) are the two still bodiless |
+| `discretization.spec.plato` | type invariants, contracts of the 6 functions the design pass deferred and 4 constructors, 6 theorems. Since chunk B, `SagittaByHullBound` (the non-closed-form half of `Sagitta`, chunk F) is the one still bodiless |
 
 ## The objects
 
@@ -384,3 +384,17 @@ by more than the witness's angle tolerance of `1e-8` rad, which a 32-bit `Number
 the hollow box and the block with a hole get one segment per edge. `Witness_BSplinePatchSolid`'s four
 spline edges throw in layer 1's deferred `BSplinePoint` (chunk F).
 
+## Implementation, chunk B
+
+TKT-324, 2026-10-18. One body, from its contract in `discretization.spec.plato`:
+
+| Body | Derived from | Laws that read it |
+|---|---|---|
+| `RefineEdge` | contract `RefineEdge` and its deferred note: a degenerate edge kept; every segment failing `SegmentMeetsCriteria` (the per-segment test of `MeetsCriteria`, factored out so the two cannot drift: certified sagitta, tangent deviation, length limit, image chords, each widened as in its law or escaped at the length floor) bisected at its parameter midpoint, each half again while its piece fails the same test (depth at most 40); then `RaisedToCount` to the requested count | the contract's ensures, `Law_RefineNeverCoarsens`, `Law_RefineMeetsRequestedSegments`, layer 8's `Law_RefinementNeverCoarsens` |
+
+Because the split test is the one `MeetsCriteria` applies, a discretization that already meets the
+criteria gains only the count pass's points: the contract's `SegmentCount == d.SegmentCount.Max(segments)`
+holds by construction. Probe on the unit cylinder witnesses (interpreter, cpu64, chordal 0.01,
+15 degrees): the full circle goes from 24 to 48 segments at a third of the chordal bound, to 40
+segments when 40 are asked, and stays at 24 when nothing is asked; the quarter arc goes from 6 to 12;
+every old parameter is kept and the contract's laws hold on every result.
