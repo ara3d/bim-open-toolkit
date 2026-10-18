@@ -436,7 +436,7 @@
     },
     "commentsView": {
       "title": "Comments in the returned BCF",
-      "columns": "Author, CreationDate, Comment"
+      "columns": "CommentAuthor, CommentDate, Comment"
     },
     "flagCols": {
       "columns": "GlobalId, Title as Topic, Status, Comments"

@@ -442,7 +442,8 @@
       "preset": "issue",
       "verdicts": "",
       "author": "BIM Open Toolkit, rule DC-W1",
-      "guidSeed": "s14-door-bcf"
+      "guidSeed": "s14-door-bcf",
+      "created": "2026-10-18T22:00:00Z"
     }
   }
 }
