@@ -128,3 +128,7 @@ STEP reader look nearly line for line like the IFC one.
 - 2026-10-17, TKT-308, bim-open-data 02bb175: the congruent-ring band refuses a hole that runs against the outer
   ring (it twisted: area 24 for a 12 face) and returns counter-clockwise triangles; earcut takes the refused face and
   the 1 % area check covers both. Kernel tests 35+1 skipped to 38+1 skipped; mesher tests 164 before and after.
+- 2026-10-17, TKT-309, bim-open-data 9fa7674: curved faces meet a chordal deviation bound, `AddFace(...,
+  float maxDeviation = Tolerance.ChordDeviation)` (1 mm). A virtual `SurfaceMap.ChordDeviation` (planes answer 0) drives
+  boundary densification and interior flips then splits of earcut's triangles. Quarter cylinder: area 3.98 before,
+  pi - 3.8e-4 after, no interior point. Kernel tests 38+1 skipped to 41+1 skipped; mesher tests 164 before and after.
