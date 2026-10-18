@@ -1,5 +1,6 @@
 using System.Globalization;
 using Ara3D.BimOpenSchema;
+using Ara3D.BimOpenSchema.IO.Bcf;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.DataTable;
 using BimOpenFlow.Nodes.Support;
@@ -38,9 +39,10 @@ public sealed class BcfIssueNode : IFlowNode, ISchemaNode
             new ParamSpec("ids", ParamKind.Text, List: true),
         ],
         "One reviewer's comment as an issue table: columns GlobalId, Title, Description, Status, Priority, "
-        + "Type, Comment, Author, CreationDate, with one row per distinct GlobalId in 'ids' (the elements the "
+        + "Type, Comment, CommentAuthor, CommentDate, Author, CreationDate, with one row per distinct GlobalId in 'ids' (the elements the "
         + "issue is about; one row with an empty GlobalId when there are none, a comment on the model as a "
-        + "whole). Wire a view3d.camera table into 'camera' and each row also carries the camera columns "
+        + "whole). Author and CreationDate belong to the topic; CommentAuthor and CommentDate to its comment, "
+        + "and here carry the same values (the author and the time of creation). Wire a view3d.camera table into 'camera' and each row also carries the camera columns "
         + "CameraX..CameraZ, DirectionX..DirectionZ, UpX..UpZ, FieldOfView and AspectRatio, which bcf.write "
         + "turns into the topic's viewpoint (direction is target minus position, normalised; up is the z "
         + "axis made perpendicular to it; aspect ratio 1). The 3D pane's 'Comment' button adds this node "
@@ -69,8 +71,10 @@ public sealed class BcfIssueNode : IFlowNode, ISchemaNode
         b.AddColumn(Repeat(parameters.GetText("priority")), IssueColumns.Priority, typeof(string));
         b.AddColumn(Repeat(Or(parameters.GetText("type"), "Issue")), IssueColumns.Type, typeof(string));
         b.AddColumn(Repeat(parameters.GetText("comment")), CommentColumn, typeof(string));
-        b.AddColumn(Repeat(parameters.GetText("author")), "Author", typeof(string));
-        b.AddColumn(Repeat(parameters.GetText("created")), "CreationDate", typeof(string));
+        b.AddColumn(Repeat(parameters.GetText("author")), BcfColumnNames.CommentAuthor, typeof(string));
+        b.AddColumn(Repeat(parameters.GetText("created")), BcfColumnNames.CommentDate, typeof(string));
+        b.AddColumn(Repeat(parameters.GetText("author")), BcfColumnNames.Author, typeof(string));
+        b.AddColumn(Repeat(parameters.GetText("created")), BcfColumnNames.CreationDate, typeof(string));
         if (camera is not null)
             for (var i = 0; i < CameraColumns.Length; i++)
                 b.AddColumn(ids.Select(_ => (object?)camera[i]).ToArray(), CameraColumns[i], typeof(double));
@@ -85,6 +89,8 @@ public sealed class BcfIssueNode : IFlowNode, ISchemaNode
             ColumnKinds.GlobalId, ColumnKinds.Title.NotNull(), ColumnKinds.Description, ColumnKinds.Status.NotNull(),
             ColumnKinds.Priority, ColumnKinds.Type.NotNull(),
             KindColumn.Plain(CommentColumn, ColumnType.Text, nullable: true),
+            KindColumn.Plain(BcfColumnNames.CommentAuthor, ColumnType.Text, nullable: true),
+            KindColumn.Plain(BcfColumnNames.CommentDate, ColumnType.Text, nullable: true),
             ColumnKinds.Author, ColumnKinds.CreationDate,
         ];
 

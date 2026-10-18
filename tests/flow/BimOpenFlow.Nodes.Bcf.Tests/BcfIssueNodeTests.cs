@@ -12,7 +12,7 @@ public sealed class BcfIssueNodeTests
     private static readonly BcfIssueNode Node = new();
 
     private static readonly string[] IssueColumns =
-        ["GlobalId", "Title", "Description", "Status", "Priority", "Type", "Comment", "Author", "CreationDate"];
+        ["GlobalId", "Title", "Description", "Status", "Priority", "Type", "Comment", "CommentAuthor", "CommentDate", "Author", "CreationDate"];
 
     /// <summary>A view3d.camera row looking along +x from the origin, a little below the target.</summary>
     private static TableValue Camera(double fov = 60)
@@ -36,6 +36,8 @@ public sealed class BcfIssueNodeTests
         Assert.That(table.Cell("Type", 1), Is.EqualTo("Issue"));
         Assert.That(table.Cell("Comment", 0), Is.EqualTo("Wrong side"));
         Assert.That(table.Cell("Author", 1), Is.EqualTo("ana"));
+        Assert.That(table.Cell("CommentAuthor", 1), Is.EqualTo("ana"));
+        Assert.That(table.Cell("CommentDate", 0), Is.EqualTo("2026-10-18T09:30:00Z"));
         Assert.That(table.Cell("CreationDate", 0), Is.EqualTo("2026-10-18T09:30:00Z"));
         Assert.That(table.Cell("DirectionX", 0), Is.EqualTo(1.0));
         Assert.That(table.Cell("UpZ", 1), Is.EqualTo(1.0));
@@ -153,8 +155,9 @@ public sealed class BcfIssueNodeTests
             var comments = ((TableValue)read[2]).Table;
             Assert.That(comments.Rows, Has.Count.EqualTo(1));
             Assert.That(comments.Cell("Comment", 0), Is.EqualTo("Wrong side"));
-            Assert.That(comments.Cell("Author", 0), Is.EqualTo("ana"));
+            Assert.That(comments.Cell("CommentAuthor", 0), Is.EqualTo("ana"));
             Assert.That(comments.Cell("Title", 0), Is.EqualTo("Swap handle"));
+            Assert.That(comments.Cell("CommentDate", 0), Is.EqualTo("2026-10-18T09:30:00Z"));
 
             Assert.That(BcfReader.ReadFile(path).Topics[0].ModelFile, Is.EqualTo("duplex.bos"));
         }

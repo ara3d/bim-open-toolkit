@@ -21,9 +21,9 @@ public sealed class BcfReadNode : IFlowNode
         ],
         Params: [new ParamSpec("path", ParamKind.FilePath, Bindable: PortType.Text, Suggest: SuggestSource.FilesWith(".bcf"))],
         "Reads a BCF 3.0 (or 2.1) file into an issues table (GlobalId, Title, Description, Status, "
-        + "Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId, the camera columns CameraX..AspectRatio, Comments (the topic's comment count); one row per topic and "
+        + "Priority, Type, TopicGuid, Author, CreationDate, AuthoringToolId, the camera columns CameraX..AspectRatio (empty when the topic has no viewpoint camera, and FieldOfView and AspectRatio empty when the file gave none), Comments (the topic's comment count); one row per topic and "
         + "selected element, with both ids empty for a topic that selects nothing) and a topics table "
-        + "(one row per topic with its element count) and a comments table (TopicGuid, Title, Author, CreationDate, Comment; one row per comment). A component BCF names only by AuthoringToolId "
+        + "(one row per topic with its element count) and a comments table (TopicGuid, Title, CommentAuthor, CommentDate, Comment; one row per comment). A component BCF names only by AuthoringToolId "
         + "(a Revit UniqueId, say) has its id in AuthoringToolId and an empty GlobalId. The issues "
         + "table joins to a model on GlobalId, so view3d.color can colour the elements a colleague "
         + "flagged. A viewpoint or markup that cannot be read, or a viewpoint missing from the file, "
@@ -33,7 +33,9 @@ public sealed class BcfReadNode : IFlowNode
             KindSchemas.Static("issues", [.. IssueKinds, .. CameraKindColumns, KindColumn.Plain(BcfColumnNames.Comments, ColumnType.Integer, nullable: false)]),
             BcfIssues.TopicsSchema("topics"),
             KindSchemas.Static("comments",
-                ColumnKinds.TopicGuid, ColumnKinds.Title, ColumnKinds.Author, ColumnKinds.CreationDate,
+                ColumnKinds.TopicGuid, ColumnKinds.Title,
+                KindColumn.Plain(BcfColumnNames.CommentAuthor, ColumnType.Text),
+                KindColumn.Plain(BcfColumnNames.CommentDate, ColumnType.Text),
                 KindColumn.Plain(BcfColumnNames.Comment, ColumnType.Text, nullable: false)),
         ]);
 

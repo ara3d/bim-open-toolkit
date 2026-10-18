@@ -25,9 +25,9 @@ compliance pack's camelCase columns work too.
 selected GlobalIds (`ids`) and creation time (`created`, UTC `yyyy-MM-ddTHH:mm:ssZ`; the node reads no
 clock). It gives one row per distinct id, or one row with an empty `GlobalId` when there are none
 (a comment on the whole model), the columns `GlobalId, Title, Description, Status, Priority, Type,
-Comment, Author, CreationDate`, and with a camera wired in also `CameraX..Z, DirectionX..Z, UpX..Z,
+Comment, CommentAuthor, CommentDate, Author, CreationDate`, and with a camera wired in also `CameraX..Z, DirectionX..Z, UpX..Z,
 FieldOfView, AspectRatio` (direction is target minus position, normalised; up is z made perpendicular
-to it; aspect 1). A blank `title` is an error. Wire it into `bcf.topics` to preview and `bcf.write`
+to it; aspect 1). `CommentAuthor` and `CommentDate` hold the same values as `Author` and `CreationDate`: those two describe the topic, the others its comment. A blank `title` is an error. Wire it into `bcf.topics` to preview and `bcf.write`
 to write.
 
 `bcf.write` stays pending until Run (nothing writes until Run). With `model`
@@ -39,10 +39,10 @@ row names the file with its byte count and SHA-256.
 With `model` set, `bcf.write` also names the model file in the BCF header (file name, the path as
 given, and the file's last-write date in UTC). A camera in the input (`CameraX..AspectRatio`, as
 `bcf.issue` makes them) becomes the topic's viewpoint camera in place of the framed one, and a
-`Comment` column becomes the topic's comments (author and date from the row's `Author` and
-`CreationDate`). `bcf.read` returns the same columns: the `issues` output carries the camera
+`Comment` column becomes the topic's comments (author and date from the row's `CommentAuthor` and
+`CommentDate`). `bcf.read` returns the same columns: the `issues` output carries the camera
 columns (empty for a topic without a viewpoint camera) and a `Comments` count, and the `comments`
-output has one row per comment: `TopicGuid, Title, Author, CreationDate, Comment`.
+output has one row per comment: `TopicGuid, Title, CommentAuthor, CommentDate, Comment`.
 
 `bcf.topics` is the preview: the same grouping as `bcf.write`, as a table on the
 canvas. Its `GlobalIds` column lists the ids in IFC's 22-character form and
