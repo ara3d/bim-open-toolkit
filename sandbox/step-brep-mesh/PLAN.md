@@ -182,6 +182,17 @@ Recorded as they arise; the ticket carries the same list.
 
 ## Decided by the owner during the pass
 
+- 2026-10-17, last: **Parsing and decoding in C#, geometry in Plato; implementation starts.**
+  TKT-306 was decided in the parser session ("reuse the C# reader and parser but write the
+  geometry algorithms in Plato") and relayed here; the owner then approved this session's
+  recommendation to start implementing on four parallel tracks ("go for it"). The boundary moves
+  from `Part21File` to `RawDecodedModel`, the B-rep as written, with Plato's `PrepareModel`
+  making the four geometric decisions (closure, mirror fold, tolerance floors, reduction repairs).
+  Layer 3's schema table and WHERE laws become the specification for the C# typed layer's checks;
+  F-1 is resolved by generated types and TKT-300 is unnecessary. `TASKS.md` chunks D and E are
+  rewritten; TKT-312 (C# decoder), TKT-313 (call into compiled Plato) and TKT-311 (does the C#
+  writer compile the constructs) are the parser session's; chunk A and the `Number` profile are
+  this session's, under their own tickets.
 - 2026-10-17: **Tests depend on as little as possible; coordinate with the parser session.**
   The owner asked for speed, for tests that do not depend on too many other things, for
   development and testing from first principles, and for as much modularization as that needs.

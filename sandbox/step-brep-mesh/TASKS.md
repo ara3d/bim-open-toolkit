@@ -114,47 +114,43 @@ whole-period region with two seam cuts, the apex. Bodies: layer 1 `LimitNormal` 
 torus; the torus volume oracle over a boundary that wraps in v; Gauss-Bonnet on every closed
 mesh.
 
-### Chunk D: decode from hand-built files (M3)
+### Chunk D: PrepareModel, the Plato side of the decode (M3)
 
-Layer 3 had no `Part21File` witness (finding F-45 in `reviews/FINDINGS.md`). The adapter spec
-agent wrote the first ones, now in `03-step/step-witnesses.laws.plato` (library `StepWitnessesLaws`):
-`Witness_Part21UnitBox` (142 instances, 588 arena values), `Witness_Part21UnitBoxNoShape`,
-`Witness_Part21UnitBoxDangling`, `Witness_Part21UnitBoxTruncatedPrefix`, `Witness_Part21TwoCubes`,
-generated with their text fixtures by `adapter/tools/gen_adapter.py`. The name review of
-2026-10-17 moved that file from `adapter/` into `03-step`, since the witnesses are layer 3's data;
-the fixtures, the spec and the generator stay in `adapter/`. This chunk adds `Witness_Part21Cylinder` and
-`Witness_Part21Degrees` (plane angle in degrees) to the generator, and adds the law that decoding
-`Witness_Part21UnitBox` gives a model that `IsSameModel` as `Witness_UnitBox.ScaledBy(1000)` up to
-tolerance (the fixtures are in millimetres, the witness in metres, finding F-46.6). It also
-closes F-46.2 to F-46.5 in layer 3: a diagnostic code for a parse that stopped at an unknown
-place, `IsSameDiagnostic` (layer 0), `SatisfiesFileInvariants` as layer 3's executable form of the
-`Part21File` invariants, and a law fixing the count and order of parse diagnostics. Bodies: `InstancePosition`, `DecodeBrepWith`, `ClassificationDiagnostics`,
-`ResolveContexts`, `FindOccurrences`, `FlatRecord`, `SlotOf`, `ConformsTo`, `KernelOf`. Laws:
-every decode, schema, units and WHERE law of layer 3; `Law_DecodeErrorMeansNotOk`,
-`Law_NoFacesMeansNoMesh`, `Law_NoFacesMeansNotOk` through a `MeshParsedFile` entry in layer 8
-(the file-level entry that skips the parser; to be added to the contract). D depends on A only
-and runs beside B and C. The same literals are the expected values of the adapter test spec
-(chunk E), which is why they are written as `Part21File` and not as `BrepModel`.
+**Boundary moved on 2026-10-17** (owner decision in the parser session, confirmed here): parsing
+and decoding are C# from generated AP242 types (TKT-312), Plato does the geometry. The boundary is
+`RawDecodedModel` (`03-step/step-decode.types.plato`): the B-rep as written (faces with `SameSense`
+as in the file, `Periodicity` by surface family, never `Closed`, `Closures` empty), the
+occurrences and sources, per-context units and uncertainty in millimetres and radians with the
+factors recorded, and the decoder's diagnostics. Plato's `PrepareModel(raw): DecodedModel` makes
+the four decisions that are geometry and whose laws live here: closure from end coincidence
+(`ClosureMarks`), the mirror fold (`PlacementHandedness`), the tolerance floors at the coordinate
+extent, and the reduction repairs. The schema table and the 110 WHERE laws stay as the
+specification the C# typed layer's checks are written against (finding F-1 is resolved by the
+generated types; TKT-300 is unnecessary).
 
-### Chunk E: the parser meets the decode (MP, ME)
+This chunk gives `PrepareModel` and the functions it composes their bodies and makes pass:
+`Law_PrepareIsIdempotent`, `Law_PrepareKeepsPointSet`, `Law_RawHasNoClosures`,
+`Law_RawHasNoClosedPeriodicity`, `Law_UnitsFactorsAgree`, `Law_CurveClosureDecidedByEnds`,
+`Law_SurfaceClosureDecidedBySides`, `Law_ClosureMarksAreTheDecisions`, the fold laws,
+`Law_DecodeErrorMeansNotOk`, and the two witness laws `Law_RawUnitCubePreparesToUnitBox`
+(`Witness_RawUnitCube`, from `adapter/fixtures/unit-cube.stp`, against `Witness_UnitBoxMillimetres`)
+and `Law_RawTwoCubesPreparesToTwoBodies` (`Witness_RawTwoCubes`). It depends on chunk A for
+`ScaledBy`, `RigidlyMoved`, `ReducedCounts` and `IsSameModel` bodies. The `Part21File` witnesses
+of `03-step/step-witnesses.laws.plato` and `adapter/` stay as the C# parser's and decoder's test
+fixtures, not as Plato tests.
 
-The parser is `Ara3D.IO.StepParser` in `deps/ara3d-sdk` (`StepDocument`: header, definitions in
-file order, one flat token arena, parent before children, raw string spans). It differs from
-`Part21File` on four points, each cheap in an adapter and none worth changing the boundary for:
-instances sorted by id; children before parents (a post-order re-emission of the arena, linear);
-decoded strings (the `\X2\`, `\S\`, `\P\` rules); and it throws on malformed input where
-`ParsedFile` wants `Ok` false with the parsed prefix. The adapter is a C# function
-`StepDocument -> ParsedFile`; who writes it waits on the owner's answer to TKT-306.
+### Chunk E: the C# decoder meets PrepareModel (ME)
 
-The design side's deliverable, the **adapter test spec**, exists: `adapter/ADAPTER-SPEC.md`, the
-five text fixtures under `adapter/fixtures/`, the expected `Part21File` for each as the literal it
-must equal under `IsSameFile`, the expected `Ok` and diagnostics, and the file laws the output must
-satisfy. A fifth difference surfaced while writing it: the C# `StepHeader.Parse` keeps three
-strings and drops `OriginatingSystem` and `PreprocessorVersion`, so the adapter re-reads the header
-section (finding F-46.1). Whoever builds the adapter implements against the spec. Then `Law_MeshStepTextIsDeterministic`, `Law_StepTextOkExactlyWhenClean`,
+TKT-312 (the parser session): `DecodeRaw(file, policy): RawDecodedModel` in C#, from
+`Ara3D.IO.StepParser` through the generated `Ara3D.StepTypes`. Its acceptance is chunk D's two
+witnesses: decoding `unit-cube.stp` and `two-cubes-assembly.stp` gives values equal to
+`Witness_RawUnitCube` and `Witness_RawTwoCubes`, and `PrepareModel` of each equals the expected
+`DecodedModel`, run from C# against the compiled Plato (TKT-313). Then
+`Law_MeshStepTextIsDeterministic`, `Law_StepTextOkExactlyWhenClean`,
 `Law_EveryStepTextDiagnosticIsLocated`, `Law_ParseErrorMeansNotOk` run through `MeshStepText`.
-`Law_ParsePrintParseIsIdentity` runs once `PrintStep` exists on either side; until then it is
-stated and not executed.
+`adapter/ADAPTER-SPEC.md` remains the specification of the parser's `Part21File` view and its
+fixtures; the adapter it describes is no longer a deliverable, since C# decodes from its own typed
+layer.
 
 ### Chunk F: the B-spline face (M1, M4, M5 grow)
 
@@ -185,14 +181,13 @@ otherwise the reports must be clean.
 
 ```
 A ──┬── B ── C ── F ── H
-    ├── D ── E ─────────┘
+    ├── D ── E ─────────┘      (E is TKT-312 and TKT-313, C#, the parser session)
     └── G
 ```
 
-A first, alone, because every module's bodies start there. Then B, D and G in parallel (different
-layers' bodies, witness-driven). C after B; E after D and the adapter; F after C; H last. The 64-bit
-`Number` profile runs beside A; the adapter test spec of E can be written as soon as D's literals
-exist.
+A first, alone, because every module's bodies start there; the 64-bit `Number` profile (the Plato
+repository) runs beside it, as does TKT-311 (does the C# writer compile the library's constructs).
+Then B, D and G in parallel. C after B; E after D and TKT-312; F after C; H last.
 
 ## Coordination with the parser session
 
@@ -210,3 +205,9 @@ exist.
 - Open for the owner: TKT-306 (how the C# reader relates to this design). The design's answer is
   in chunk E: the adapter is small, the boundary stays, and the two meshing paths (TKT-305's and
   this one's) can share the adapter spec's fixtures as their common test set.
+- 2026-10-17, later: owner decision relayed by the parser session and confirmed by the owner in this
+  session ("go for it"): parsing and decoding in C# from generated types, geometry in Plato; the
+  boundary moves from `Part21File` to `RawDecodedModel` with Plato's `PrepareModel` finishing it
+  (chunk D above). TKT-312 is the C# decoder, TKT-313 the call into compiled Plato, TKT-311 the
+  check that the C# writer compiles the library's constructs. Chunk A starts now under this
+  session; the parser session starts TKT-312 when the type is committed.
