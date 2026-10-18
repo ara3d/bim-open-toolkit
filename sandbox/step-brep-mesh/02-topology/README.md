@@ -7,14 +7,15 @@ the result a closed, oriented 2-manifold whose cells sit on their geometry. Laye
 builds a `BrepModel`; layers 4 and 5 read edge domains, coedge senses and face normal signs from it;
 layer 7 turns its laws into checks.
 
-Written 2026-10-17 against VOCABULARY.md revision 2. Types, signatures, laws and contracts only:
-every algorithm is bodiless with a `// deferred:` note and a contract in the spec file.
+Written 2026-10-17 against VOCABULARY.md revision 2 as types, signatures, laws and contracts, every
+algorithm bodiless with a `// deferred:` note. Implementation chunk A (TKT-314) gave ten of the
+eleven algorithms bodies; `SharesCurveParameter` is still deferred (see "Implementation, chunk A").
 
 | File | Holds |
 |---|---|
 | `topology-elements.types.plato` | `EdgeOrientation`, `Coedge`, `BrepVertex`, `BrepEdge`, `BrepLoop`, `FaceBound`, `BrepFace`, `BrepShell`, `BrepBody` |
 | `topology-model.types.plato` | `LengthUnit`, `BrepModel`, `ShellCounts`, `CoedgeSite`, `EdgeEnd` |
-| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms; eleven deferred algorithms; eight declarations marked `belongs-in` layers 0 and 1 |
+| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms; one deferred algorithm (`SharesCurveParameter`; ten given bodies in chunk A); eight declarations marked `belongs-in` layers 0 and 1 |
 | `topology.laws.plato` | library `BrepTopologyLaws`: 41 laws |
 | `topology.spec.plato` | invariants of `BrepModel` and `ShellCounts`, 13 function contracts, 4 theorems |
 
@@ -460,6 +461,9 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 
 ## Deferred functions
 
+The algorithm families as the design pass wrote them. Since chunk A only `SharesCurveParameter` is
+still bodiless; the other ten have the bodies described in "Implementation, chunk A".
+
 | Function | Algorithm | Measure |
 |---|---|---|
 | `IsDegenerateEdge(m, e)` | largest distance from a point to a curve arc: closed form for lines and conics, span subdivision and Newton for splines | 1 per edge, span count for splines |
@@ -750,3 +754,46 @@ The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) cha
 - `WithEveryFaceReversed`'s comment no longer names layer 8's copy, which the review deleted.
 - Gave away its stand-ins: `ScaledTolerances` to layer 0; `DefiningPoints`, `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` to layer 1. `ModelPoints`, `RigidlyMoved` and `ScaledBy` call them there. The contracts of `RigidlyMoved`, `ScaledBy(m, factor)` and `WithEveryFaceReversed` moved here from layer 8's spec (new spec section "Model transforms").
 - Renamed `Law_SeamUsesAreInOneFace` to `Law_SeamUsesRunOpposite` (F12 above, review finding on the name), with layer 7's check and layer 8's theorem text in the same commit.
+
+## Implementation, chunk A
+
+TKT-314, 2026-10-17. Ten bodies, each derived from its contract in `topology.spec.plato` and the
+laws that name it. Every union-find goes through layer 0's `ClassRoots` and `ClassCount`
+(`foundation.library.plato`, section "Equivalence classes"), written once there because layers 2
+and 6 both need it; joins are found by testing every pair, quadratic where the deferred notes
+planned one pass (the witnesses have at most 24 edges).
+
+| Body | Derived from | Laws that read it |
+|---|---|---|
+| `IsDegenerateEdge` | contract `IsDegenerateEdge`: largest distance from the Start vertex to the curve over `EdgeDomain`; fast path of "Implementation notes" (ends more than twice the tolerance apart). Closed form for lines (an end) and circles (an end or the antipode of the vertex's polar angle); other curve cases sampled at 65 points, a lower bound, until chunks C and F give them the subdivision of the contract | `Law_DegenerateEdgeStaysAtStart`, `Law_DegenerateEdgeHasCoincidentVertices`, `Law_CoincidentEndsAreOneVertex`, `Law_EdgeHasPositiveExtent`, the use-count laws through `CountsAsEdge` |
+| `LinkComponentCount` | contract: classes of the corners at `v` under `CornersShareEnd` | `Law_VertexLinkIsOneCycle`, `Law_OpenShellVertexLinkIsCycleOrPath` |
+| `CornersAroundVertex` | contract: start at a corner with a free end, else the first; step to the first unvisited corner sharing an end | `FacesAroundVertex` |
+| `ReducedCounts` | contract and research/VALIDATION-MATH.md 1.4: vertex classes across degenerate edges; edges less degenerate ones; vertex-like bounds (vertex loops, edge loops of degenerate edges only) dropped when their class lies on another bound or an earlier vertex-like bound; poly-loop points identified by coincidence, implicit edges one per unordered class pair | `Law_EulerPoincareEvenAndBounded`, `Law_OpenShellEulerEvenAndBounded`, layer 7's witness Euler laws |
+| `BoundaryCycleCount` | contract: under its requirement (every link one cycle or one path) the free edges joined at shared vertex classes form disjoint cycles, so the classes are the cycles. Indexed free edges only, as `FreeEdgeCount` counts | `Law_OpenShellEulerEvenAndBounded` |
+| `PolyEdgeUseDefects` | contract: implicit edges keyed by unordered class pair, each use's direction from the loop order and the bound's `Orientation` | `Law_PolyLoopEdgesPairUp` |
+| `ShellComponentCount` | contract: classes of the shell's faces under `FacesTouch` | `Law_ShellIsConnected` |
+| `OrientationFlips` | contract: breadth-first two-colouring, parity 0 across an edge whose two uses (in two faces) run opposite | `Law_ShellIsOrientable` |
+| `IsPlainInParameters` | contract: edge loops only, no seam, a bound; each bound sampled 9 points per coedge in its composed direction, projected, unwrapped by `NearestUnwrapped`, closing within `UvToleranceAt`; no vertex on a `DegenerateSides` side | `Law_LoopWindingMatchesSameSense` |
+| `SignedParameterArea` | contract: shoelace over the lifted polygons | `Law_LoopWindingMatchesSameSense` |
+
+One existing body changed: `ParameterizationSignAt` now also returns 0 when a partial is shorter
+than the resolution at the surface's evaluation magnitude. At a sphere's pole `cos(-pi/2)` rounds
+to -4.4e-8 in 32 bits and the sign was rounding noise, which made
+`Law_ParameterizationSignIsConstantOnFace` false on `Witness_Sphere` at the two pole samples.
+
+Open: a faceted open shell's implicit free edges are not walked by `BoundaryCycleCount` (its
+contract bounds the result by the indexed `FreeEdgeCount`), so `Law_OpenShellEulerEvenAndBounded`
+is false on the planted sheet (shell 1) of layer 7's `Witness_BoxWithPolyLoopSheet`, which that
+witness's laws allow. Settling it means widening the contract to implicit edges.
+
+Law results, provisional (the C# writer fixes of TKT-315 had not landed; the run used a scratch
+copy of Plato's HEAD compiler with conditionals parenthesized, see the report of TKT-314): every
+layer 2 law, swept over every loop, face, shell, edge, vertex, coedge site, the two pcurve slots
+and five sample fractions, holds on nine of the ten positive witnesses (7,813 evaluations).
+`Witness_BSplinePatchSolid` throws in layer 1's deferred `BSplinePoint` (chunk F), 41 evaluations.
+The negative witnesses fail exactly their named laws: `Witness_SphereWithRedundantPoleLoops(1)`
+`Law_NoRedundantVertexLoop` at face 0 and `Law_VertexLoopVertexIsIsolated` at vertices 0 and 1;
+`Witness_BoxWithFlippedFace` `Law_LoopWindingMatchesSameSense` at face 0;
+`Witness_TwoBoxesSharingCorner` `Law_EulerPoincareEvenAndBounded` at shell 0 and
+`Law_VertexLinkIsOneCycle` at vertex 6.
+

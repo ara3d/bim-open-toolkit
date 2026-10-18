@@ -499,7 +499,12 @@ library BrepTopology
     // The sign of N . (PartialU x PartialV) on face f's surface at the
     // projection of the curve point at fraction t of the coedge at site: +1,
     // -1, or 0 where the area element there is below the arithmetic resolution
-    // of the partials, so that the sign is not rounding noise. Precondition:
+    // of the partials, so that the sign is not rounding noise. A partial
+    // shorter than the resolution at the surface's evaluation magnitude is
+    // rounding noise too: at a sphere's pole cos(-pi/2) rounds to -4.4e-8 in
+    // 32 bits, a PartialU of that length points the wrong way, and the cross
+    // product is not small relative to the product of the partials (found by
+    // chunk A's run over Witness_Sphere). Precondition:
     // m.IsEveryIndexInRange and m.IsCoedgeSiteInRange(site).
     ParameterizationSignAt(m: BrepModel, site: CoedgeSite, t: Number): Integer
     {
@@ -509,7 +514,9 @@ library BrepTopology
         var dv = m.Geometry.PartialV(s, uv);
         var cross = du.Cross(dv);
         var product = m.Geometry.NormalOr(s, uv, Direction3D(Vector3D.UnitZ)).Vector.Dot(cross);
-        return cross.Length <= ResolutionAt(du.Length * dv.Length) ? 0 : (product > 0.0 ? 1 : -1);
+        var scale = ResolutionAt(m.Geometry.EvaluationMagnitude(s, uv));
+        var noise = du.Length <= scale || dv.Length <= scale || cross.Length <= ResolutionAt(du.Length * dv.Length);
+        return noise ? 0 : (product > 0.0 ? 1 : -1);
     }
 
     //==
@@ -663,9 +670,65 @@ library BrepTopology
     // Whether edge e is degenerate: every point of its curve over EdgeDomain lies
     // within the length tolerance of its Start vertex. STEP forbids such edges;
     // the counts contract them.
-    // deferred: the largest distance from a point to a curve arc, closed form for
-    // lines and conics, subdivision with Newton refinement for splines.
-    IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean;
+    // Chunk A body, from the contract IsDegenerateEdge in topology.spec.plato
+    // and Law_DegenerateEdgeStaysAtStart: the largest distance from the Start
+    // vertex to the curve over EdgeDomain is within the length tolerance. The
+    // fast path of README "Implementation notes": ends more than twice the
+    // tolerance apart cannot both lie within it of one point.
+    IsDegenerateEdge(m: BrepModel, e: BrepEdgeIndex): Boolean
+    {
+        var start = m.Vertices[m.Edges[e].Start].Point;
+        var apart = start.Distance(m.Vertices[m.Edges[e].End].Point) > 2.0 * m.Tolerances.Length.Value;
+        return apart ? false : m.FarthestEdgePointFrom(e, start) <= m.Tolerances.Length.Value;
+    }
+
+    // The largest distance from p to edge e's curve over its edge domain.
+    // Precondition: m.IsEveryIndexInRange and m.IsEdgeInRange(e).
+    FarthestEdgePointFrom(m: BrepModel, e: BrepEdgeIndex, p: Point3D): Number
+        => m.Geometry.CurveAt(m.Edges[e].Curve).FarthestPointFrom(m.Geometry, m.EdgeDomain(e).Range, p);
+
+    // The largest distance from p to the curve record over the parameter range
+    // r. A line's distance to a point is convex in t, so its largest value is
+    // at an end. A circle's squared distance to p is |q|^2 + R^2 - 2 R rho
+    // cos(t - phi), q = p - centre and (rho, phi) the polar form of q in the
+    // circle's plane, largest at t = phi + pi when the range holds a copy of
+    // it, else at an end. Every other case is sampled at 65 points of r, ends
+    // included: a lower bound, exact for the cases chunk A meets (lines and
+    // circles); ellipses and splines get the subdivision of the contract with
+    // their chunks (C, F).
+    FarthestPointFrom(curve: BrepCurve, g: GeometrySet, r: NumberInterval, p: Point3D): Number
+        => match (curve)
+        {
+            Line(origin, velocity) => (origin + velocity * r.Start).Distance(p).Max((origin + velocity * r.End).Distance(p));
+            Circle(placement, radius) => placement.FarthestArcPointFrom(radius, r, p);
+            Ellipse(placement, semiAxis1, semiAxis2) => curve.SampledFarthestPointFrom(g, r, p);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => curve.SampledFarthestPointFrom(g, r, p);
+            Parabola(placement, focalDistance) => curve.SampledFarthestPointFrom(g, r, p);
+            Polyline(points) => curve.SampledFarthestPointFrom(g, r, p);
+            BSpline(data) => curve.SampledFarthestPointFrom(g, r, p);
+            Trimmed(basis, range, sameSense) => curve.SampledFarthestPointFrom(g, r, p);
+            Composite(segments) => curve.SampledFarthestPointFrom(g, r, p);
+            Offset(basis, distance, reference) => curve.SampledFarthestPointFrom(g, r, p);
+            OnSurface(spaceCurve, supports, master) => curve.SampledFarthestPointFrom(g, r, p);
+        };
+
+    // The largest distance from p to the arc of the circle of the given radius
+    // in the placement's XY plane over the angle range r: the two ends, and the
+    // antipode of p's polar angle when the range reaches a copy of it.
+    FarthestArcPointFrom(placement: Frame3D, radius: Number, r: NumberInterval, p: Point3D): Number
+    {
+        var q = p - placement.Origin;
+        var antipode = q.Dot(placement.YAxis.Vector).Atan2(q.Dot(placement.XAxis.Vector)).Radians + Number.Pi;
+        var ends = placement.FramePoint(radius * r.Start.Cos, radius * r.Start.Sin, 0.0).Distance(p)
+            .Max(placement.FramePoint(radius * r.End.Cos, radius * r.End.Sin, 0.0).Distance(p));
+        var inside = antipode.PeriodicRepresentativeAbove(r.Start, Number.Tau) <= r.End;
+        return inside ? ends.Max(placement.FramePoint(radius * antipode.Cos, radius * antipode.Sin, 0.0).Distance(p)) : ends;
+    }
+
+    // The largest distance from p to the curve record at 65 equally spaced
+    // parameters of r, each wrapped into the curve's domain first.
+    SampledFarthestPointFrom(curve: BrepCurve, g: GeometrySet, r: NumberInterval, p: Point3D): Number
+        => r.Samples(65).Reduce(0.0, (worst, t) => worst.Max(curve.Eval(g, curve.Domain(g).Wrap(t)).Distance(p)));
 
     // How many distinct edges of the shell are degenerate. Precondition:
     // m.IsEveryIndexInRange.
@@ -716,16 +779,80 @@ library BrepTopology
 
     // The number of connected components of the link of vertex v in shell s;
     // zero when v has no corners in s.
-    // deferred: union-find over the edge ends at v, joining the two ends of each
-    // corner.
-    LinkComponentCount(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Integer;
+    // Chunk A body, from the contract LinkComponentCount: the classes of the
+    // corners at v under the transitive closure of CornersShareEnd, by layer
+    // 0's ClassRoots over every pair of corners that share an edge end.
+    // Edge ends are keyed by (edge, IsStart), never by vertex (README,
+    // "Implementation notes"), which CornersShareEnd does.
+    LinkComponentCount(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Integer
+    {
+        var corners = m.CornersAtVertex(s, v);
+        var n = corners.Count;
+        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
+            (i < j ? m.CornersShareEnd(corners[i], corners[j]) : false) ? [i * n + j] : n.Range.Take(0)));
+        return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
+    }
 
     // The corners at v in cyclic order around the vertex when the link is one
     // cycle, or in path order from one free end when it is one path (an open
     // shell's boundary vertex).
-    // deferred: walk the link, from a corner across its leaving end to the other
-    // corner at that end, until the walk returns or reaches a free end.
-    CornersAroundVertex(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Array<CoedgeSite>;
+    // Chunk A body, from the contract CornersAroundVertex: start at a corner
+    // with a free end if one exists (a boundary vertex, whose link is a path),
+    // else at the first corner; then repeatedly step to the first unvisited
+    // corner that shares an edge end with the current one. Under the
+    // contract's requirements (one link component, no edge used more than
+    // twice) each corner shares ends with at most two others, so the walk
+    // visits the path or the cycle in order and every corner once.
+    CornersAroundVertex(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Array<CoedgeSite>
+    {
+        var corners = m.CornersAtVertex(s, v);
+        var n = corners.Count;
+        var withFreeEnd = n.Range.FlatMap(i => m.HasFreeEnd(corners, i) ? [i] : n.Range.Take(0));
+        var used = new Buffer<Boolean>(n);
+        var k = 0;
+        while (k < n)
+        {
+            used = used.Set(k, false);
+            k = k + 1;
+        }
+        var order = new List<CoedgeSite>();
+        var current = withFreeEnd.Count > 0 ? withFreeEnd[0] : (n > 0 ? 0 : -1);
+        while (current >= 0)
+        {
+            order = order.Add(corners[current]);
+            used = used.Set(current, true);
+            var next = -1;
+            var j = 0;
+            while (j < n)
+            {
+                if (next < 0)
+                {
+                    if (used.At(j).Not)
+                    {
+                        if (m.CornersShareEnd(corners[current], corners[j]))
+                        {
+                            next = j;
+                        }
+                    }
+                }
+                j = j + 1;
+            }
+            current = next;
+        }
+        return order.Freeze();
+    }
+
+    // Whether corner i of the given corners has an edge end no other of them
+    // has: the end of a link path. Precondition: every corner in range.
+    HasFreeEnd(m: BrepModel, corners: Array<CoedgeSite>, i: Integer): Boolean
+        => m.IsEndShared(corners, i, m.ArrivingEnd(corners[i])).Not
+            || m.IsEndShared(corners, i, m.LeavingEnd(corners[i])).Not;
+
+    // Whether a corner other than corner i arrives or leaves through the edge
+    // end. Precondition: every corner in range.
+    IsEndShared(m: BrepModel, corners: Array<CoedgeSite>, i: Integer, end: EdgeEnd): Boolean
+        => corners.Count.Range.Any(j =>
+            j == i ? false : (m.ArrivingEnd(corners[j]) == end || m.LeavingEnd(corners[j]) == end));
 
     // The faces around vertex v in s, one per corner, in the order of
     // CornersAroundVertex. A face appears once per corner it has at v: the side
@@ -752,10 +879,126 @@ library BrepTopology
     // bound of the same face or repeats another vertex loop there, and poly loop
     // points and implicit edges identified by coincidence within the length
     // tolerance.
-    // deferred: union-find over vertices joined by degenerate edges, then one pass
-    // over the bounds; poly loop points identified by coincidence through a
-    // spatial hash.
-    ReducedCounts(m: BrepModel, s: ShellIndex): ShellCounts;
+    // Chunk A body, from the contract ReducedCounts and the counting rule of
+    // research/VALIDATION-MATH.md 1.4: the model's vertices joined by layer
+    // 0's ClassRoots across the two ends of every degenerate edge of the
+    // shell; edges without the degenerate ones; faces as they are; bounds
+    // without the dropped vertex-like bounds (a vertex loop, or an edge loop
+    // all of whose coedges are degenerate, which collapses to the class of
+    // its vertices), a vertex-like bound being dropped when its class lies on
+    // another bound of the face that is not vertex-like, or on an earlier
+    // vertex-like bound; and the poly loops' points identified by coincidence
+    // within the length tolerance, with their implicit edges counted once per
+    // unordered pair of distinct classes.
+    ReducedCounts(m: BrepModel, s: ShellIndex): ShellCounts
+    {
+        var shellEdges = m.EdgesOfShell(s);
+        var degenerate = shellEdges.FlatMap(e => m.IsDegenerateEdge(e) ? [e] : shellEdges.Take(0));
+        var roots = ClassRoots(m.Vertices.Count,
+            degenerate.Map(e => m.Edges[e].Start.Value), degenerate.Map(e => m.Edges[e].End.Value));
+        var vertexClasses = m.VerticesOfShell(s).Map(v => roots[v.Value]);
+        var kept = m.ShellFaces(s).Reduce(0, (n, f) => n + m.KeptReducedBoundCount(f, roots));
+        var poly = m.ShellPolyBounds(s);
+        var points = poly.FlatMap(b => m.Loops[b.Loop].PolyLoopPointsOf);
+        var pointRoots = m.CoincidenceRoots(points);
+        return ShellCounts(
+            vertexClasses.DistinctCount + pointRoots.ClassCount,
+            shellEdges.Count - degenerate.Count + m.ImplicitEdgeKeys(poly, pointRoots).DistinctCount,
+            m.ShellFaces(s).Count,
+            kept);
+    }
+
+    // The number of distinct values of an integer array.
+    DistinctCount(xs: Array<Integer>): Integer
+    {
+        var sorted = xs.Sort((a, b) => a <= b);
+        return sorted.Count.Range.Reduce(0, (n, i) => (i == 0 ? true : sorted[i] != sorted[i - 1]) ? n + 1 : n);
+    }
+
+    // Whether the bound is vertex-like after the reduction: a vertex loop, or
+    // an edge loop every coedge of which cites an edge whose two ends lie in
+    // one class (a contracted, degenerate edge). Precondition: the bound's
+    // loop intact; roots indexed by vertex.
+    IsVertexLikeBound(m: BrepModel, b: FaceBound, roots: Array<Integer>): Boolean
+        => m.Loops[b.Loop].IsVertexLoop
+            || (m.Loops[b.Loop].IsEdgeLoop
+                ? m.LoopCoedges(b.Loop).All(c => roots[m.Edges[c.Edge].Start.Value] == roots[m.Edges[c.Edge].End.Value])
+                : false);
+
+    // The vertex classes a bound touches: both ends of every coedge, or a
+    // vertex loop's vertex; none for a poly loop.
+    BoundClasses(m: BrepModel, b: FaceBound, roots: Array<Integer>): Array<Integer>
+        => m.BoundVertices(b).Map(v => roots[v.Value]);
+
+    // Whether bound i of face f is a vertex-like bound the reduction drops:
+    // its class lies on another bound that is not vertex-like, or on an
+    // earlier vertex-like bound. Precondition: m.IsFaceIntact(f).
+    IsDroppedReducedBound(m: BrepModel, f: BrepFaceIndex, i: Integer, roots: Array<Integer>): Boolean
+        => m.IsVertexLikeBound(m.Faces[f].Bounds[i], roots)
+            ? m.BoundClasses(m.Faces[f].Bounds[i], roots).Any(c =>
+                m.Faces[f].Bounds.Count.Range.Any(j =>
+                    j == i
+                        ? false
+                        : ((m.IsVertexLikeBound(m.Faces[f].Bounds[j], roots) ? j < i : true)
+                            ? m.BoundClasses(m.Faces[f].Bounds[j], roots).Any(d => d == c)
+                            : false)))
+            : false;
+
+    // The number of face f's bounds the reduction keeps. Precondition:
+    // m.IsFaceIntact(f).
+    KeptReducedBoundCount(m: BrepModel, f: BrepFaceIndex, roots: Array<Integer>): Integer
+        => m.Faces[f].Bounds.Count.Range.Reduce(0, (n, i) => m.IsDroppedReducedBound(f, i, roots) ? n : n + 1);
+
+    // The poly-loop bounds of shell s's faces, face by face. Precondition:
+    // m.IsEveryIndexInRange.
+    ShellPolyBounds(m: BrepModel, s: ShellIndex): Array<FaceBound>
+        => m.ShellFaces(s).FlatMap(f => m.Faces[f].Bounds.FlatMap(b =>
+            m.Loops[b.Loop].IsPolyLoop ? [b] : m.Faces[f].Bounds.Take(0)));
+
+    // The class roots of the points under coincidence within the length
+    // tolerance, closed transitively (layer 0's ClassRoots over every
+    // coinciding pair; quadratic, where an implementation hashes).
+    CoincidenceRoots(m: BrepModel, points: Array<Point3D>): Array<Integer>
+    {
+        var n = points.Count;
+        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
+            (i < j ? m.IsCoincident(points[i], points[j]) : false) ? [i * n + j] : n.Range.Take(0)));
+        return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n));
+    }
+
+    // The position of the first point of poly bound k among the points of
+    // all the bounds, taken in order.
+    PolyPointOffset(m: BrepModel, poly: Array<FaceBound>, k: Integer): Integer
+        => poly.Take(k).Reduce(0, (n, b) => n + m.Loops[b.Loop].PolyLoopPointsOf.Count);
+
+    // The implicit edges of the poly bounds, one key per use: the unordered
+    // pair of point classes (a, b), a < b, of two consecutive points, keyed
+    // a * N + b with N the point count; a pair whose points share a class is
+    // no edge. Precondition: pointRoots indexes the bounds' points in order.
+    ImplicitEdgeKeys(m: BrepModel, poly: Array<FaceBound>, pointRoots: Array<Integer>): Array<Integer>
+        => m.ImplicitEdgeUses(poly, pointRoots).Map(u => u / 2);
+
+    // The implicit edge uses of the poly bounds: key * 2 + 1 when the face
+    // runs the use from the smaller class to the larger, key * 2 otherwise,
+    // the bound's Orientation composed with the loop's order.
+    ImplicitEdgeUses(m: BrepModel, poly: Array<FaceBound>, pointRoots: Array<Integer>): Array<Integer>
+        => poly.Count.Range.FlatMap(k => m.ImplicitEdgeUsesOf(poly[k], m.PolyPointOffset(poly, k), pointRoots));
+
+    // The implicit edge uses of one poly bound whose first point is at
+    // position offset.
+    ImplicitEdgeUsesOf(m: BrepModel, b: FaceBound, offset: Integer, pointRoots: Array<Integer>): Array<Integer>
+    {
+        var c = m.Loops[b.Loop].PolyLoopPointsOf.Count;
+        var n = pointRoots.Count;
+        return c.Range.FlatMap(i => m.ImplicitEdgeUse(pointRoots[offset + i], pointRoots[offset + (i + 1) % c], b.Orientation, n));
+    }
+
+    // The use of the implicit edge from class a to class b, as
+    // ImplicitEdgeUses encodes it; none when a == b.
+    ImplicitEdgeUse(m: BrepModel, a: Integer, b: Integer, orientation: Boolean, n: Integer): Array<Integer>
+        => a == b
+            ? [0].Take(0)
+            : [(a.Min(b) * n + a.Max(b)) * 2 + ((a < b) == orientation ? 1 : 0)];
 
     // V - E + 2F - L of the counts: the Euler characteristic of the shell when
     // its cells are open disks with holes, open arcs, and points.
@@ -797,10 +1040,36 @@ library BrepTopology
     // as in ReducedCounts). At a vertex the walk leaves along the free edge at
     // the other end of the vertex's link path. Zero for a shell with no free
     // edge.
-    // deferred: mark the free edges, then walk each unvisited one, at every
-    // vertex crossing the link path (CornersAroundVertex) to its other free
-    // end, until the walk returns; count the walks.
-    BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer;
+    // Chunk A body, from the contract BoundaryCycleCount. Under its
+    // requirement that every vertex link is one cycle or one path, a boundary
+    // vertex has exactly two free edge ends (the path's two ends), so the free
+    // edges, joined where they share a vertex class (degenerate edges
+    // contracted as in ReducedCounts), form disjoint cycles: the number of
+    // classes of free edges is the number of boundary cycles. Counts indexed
+    // edges only, as FreeEdgeCount does; a faceted open shell's implicit
+    // free edges are not walked (README, "Implementation, chunk A").
+    BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
+    {
+        var shellEdges = m.EdgesOfShell(s);
+        var degenerate = shellEdges.FlatMap(e => m.IsDegenerateEdge(e) ? [e] : shellEdges.Take(0));
+        var roots = ClassRoots(m.Vertices.Count,
+            degenerate.Map(e => m.Edges[e].Start.Value), degenerate.Map(e => m.Edges[e].End.Value));
+        var free = shellEdges.FlatMap(e => (m.UseCount(s, e) == 1 ? m.CountsAsEdge(e) : false) ? [e] : shellEdges.Take(0));
+        var n = free.Count;
+        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
+            (i < j ? m.EdgesShareClass(free[i], free[j], roots) : false) ? [i * n + j] : n.Range.Take(0)));
+        return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
+    }
+
+    // Whether two edges have an end in a common vertex class.
+    EdgesShareClass(m: BrepModel, a: BrepEdgeIndex, b: BrepEdgeIndex, roots: Array<Integer>): Boolean
+    {
+        var a0 = roots[m.Edges[a].Start.Value];
+        var a1 = roots[m.Edges[a].End.Value];
+        var b0 = roots[m.Edges[b].Start.Value];
+        var b1 = roots[m.Edges[b].End.Value];
+        return a0 == b0 || a0 == b1 || a1 == b0 || a1 == b1;
+    }
 
     // Whether a use count is zero or two.
     IsZeroOrTwo(n: Integer): Boolean
@@ -835,10 +1104,33 @@ library BrepTopology
     // points by coincidence (the transitive closure, as ReducedCounts takes
     // it), each use directed as its face runs its bound. Zero for a shell with
     // no poly loop.
-    // deferred: identify the poly-loop points through a spatial hash and
-    // union-find, then count each directed implicit edge per unordered pair in
-    // one pass.
-    PolyEdgeUseDefects(m: BrepModel, s: ShellIndex): Integer;
+    // Chunk A body, from the contract PolyEdgeUseDefects: the poly-loop points
+    // identified by coincidence (CoincidenceRoots), each implicit edge keyed
+    // by its unordered pair of classes with each use's direction
+    // (ImplicitEdgeUses), and the keys counted whose uses break the rule:
+    // declared closed, not exactly two uses in opposite directions; open,
+    // more than two uses, or two in the same direction.
+    PolyEdgeUseDefects(m: BrepModel, s: ShellIndex): Integer
+    {
+        var poly = m.ShellPolyBounds(s);
+        var uses = m.ImplicitEdgeUses(poly, m.CoincidenceRoots(poly.FlatMap(b => m.Loops[b.Loop].PolyLoopPointsOf)));
+        var keys = uses.Map(u => u / 2).Sort((a, b) => a <= b);
+        var closed = m.Shells[s].DeclaredClosed;
+        return keys.Count.Range.Reduce(0, (n, i) =>
+            (i == 0 ? true : keys[i] != keys[i - 1])
+                ? (m.IsDefectiveImplicitEdge(uses, keys[i], closed) ? n + 1 : n)
+                : n);
+    }
+
+    // Whether the uses of the implicit edge key break the edge-use rule for a
+    // shell declared closed or open.
+    IsDefectiveImplicitEdge(m: BrepModel, uses: Array<Integer>, key: Integer, closed: Boolean): Boolean
+    {
+        var total = uses.Reduce(0, (n, u) => u / 2 == key ? n + 1 : n);
+        var forward = uses.Reduce(0, (n, u) => u == key * 2 + 1 ? n + 1 : n);
+        var opposite = total == 2 ? forward == 1 : false;
+        return closed ? opposite.Not : (total > 2 || (total == 2 ? opposite.Not : false));
+    }
 
     //==
     // # Connectivity
@@ -875,10 +1167,18 @@ library BrepTopology
     // The number of connected components of shell s: the classes of its faces
     // under the transitive closure of FacesTouch. Zero when no face of the
     // shell is in range.
-    // deferred: union-find over the shell's faces, joining the faces that
-    // reference each vertex, and the faces whose poly-loop points share a cell
-    // of a spatial hash and coincide.
-    ShellComponentCount(m: BrepModel, s: ShellIndex): Integer;
+    // Chunk A body, from the contract ShellComponentCount: layer 0's
+    // ClassRoots over the shell's faces, joining every pair that FacesTouch
+    // (quadratic, where an implementation unites the faces at each vertex in
+    // one pass).
+    ShellComponentCount(m: BrepModel, s: ShellIndex): Integer
+    {
+        var faces = m.ShellFaces(s);
+        var n = faces.Count;
+        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
+            (i < j ? m.FacesTouch(faces[i], faces[j]) : false) ? [i * n + j] : n.Range.Take(0)));
+        return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
+    }
 
     //==
     // # Orientability
@@ -956,12 +1256,86 @@ library BrepTopology
     // faces the parity search colours "flip". Empty when the shell is already
     // coherent. When the shell is not orientable, the colouring of the search's
     // spanning forest, which leaves at least one edge incoherent.
-    // deferred: breadth-first two-colouring of each component of the graph on
-    // the shell's faces, an edge with two uses in different faces joining them
-    // with parity "same" when its uses run opposite and "differ" otherwise; a
-    // component's first face is coloured "keep", so a coherent shell gets no
-    // flip.
-    OrientationFlips(m: BrepModel, s: ShellIndex): Array<BrepFaceIndex>;
+    // Chunk A body, from the contract OrientationFlips: breadth-first
+    // two-colouring of each component of the shell's face graph. An edge with
+    // exactly two uses in two different faces joins them, parity 0 (same
+    // colour) when the uses run opposite and 1 otherwise. A component's first
+    // face, in shell order, is coloured 0 (keep); a conflict is left as found.
+    // The faces coloured 1, in shell order, are the result.
+    OrientationFlips(m: BrepModel, s: ShellIndex): Array<BrepFaceIndex>
+    {
+        var faces = m.ShellFaces(s);
+        var n = faces.Count;
+        var links = m.EdgesOfShell(s).FlatMap(e => m.FaceParityLink(s, e, faces));
+        var colour = new Buffer<Integer>(n);
+        var i = 0;
+        while (i < n)
+        {
+            colour = colour.Set(i, -1);
+            i = i + 1;
+        }
+        var root = 0;
+        while (root < n)
+        {
+            if (colour.At(root) < 0)
+            {
+                colour = colour.Set(root, 0);
+                var queue = new List<Integer>().Add(root);
+                var head = 0;
+                while (head < queue.Count)
+                {
+                    var face = queue.At(head);
+                    var k = 0;
+                    while (k < links.Count)
+                    {
+                        var a = links[k] / (2 * n);
+                        var b = (links[k] / 2) % n;
+                        var parity = links[k] % 2;
+                        if (a == face)
+                        {
+                            if (colour.At(b) < 0)
+                            {
+                                colour = colour.Set(b, (colour.At(face) + parity) % 2);
+                                queue = queue.Add(b);
+                            }
+                        }
+                        if (b == face)
+                        {
+                            if (colour.At(a) < 0)
+                            {
+                                colour = colour.Set(a, (colour.At(face) + parity) % 2);
+                                queue = queue.Add(a);
+                            }
+                        }
+                        k = k + 1;
+                    }
+                    head = head + 1;
+                }
+            }
+            root = root + 1;
+        }
+        var colours = colour.Freeze();
+        return n.Range.FlatMap(j => colours[j] == 1 ? [faces[j]] : faces.Take(0));
+    }
+
+    // The face-graph link edge e makes in shell s, encoded (a * n + b) * 2 +
+    // parity with a, b the positions of its two faces in faces (n of them):
+    // one link when e has exactly two uses in two different faces, none
+    // otherwise. Parity 0 when the uses run opposite. Precondition:
+    // m.IsEveryIndexInRange.
+    FaceParityLink(m: BrepModel, s: ShellIndex, e: BrepEdgeIndex, faces: Array<BrepFaceIndex>): Array<Integer>
+    {
+        var sites = m.CoedgeSitesOfEdge(s, e);
+        var n = faces.Count;
+        var twoFaces = sites.Count == 2 ? sites[0].Face != sites[1].Face : false;
+        return twoFaces
+            ? [(faces.PositionOf(sites[0].Face) * n + faces.PositionOf(sites[1].Face)) * 2 + (m.UsesRunOpposite(sites) ? 0 : 1)]
+            : [0].Take(0);
+    }
+
+    // The position of face f in faces; -1 when absent.
+    PositionOf(faces: Array<BrepFaceIndex>, f: BrepFaceIndex): Integer
+        => faces.Count.Range.Reduce(-1, (found, i) => found >= 0 ? found : (faces[i] == f ? i : -1));
 
     // Whether shell s is orientable: reversing OrientationFlips makes it
     // coherent. A seam whose two uses run the same way can never be repaired,
@@ -1097,10 +1471,82 @@ library BrepTopology
     // NearestUnwrapped on the surface domain): a band between two circles of a
     // clamped closed B-spline surface wraps its closed direction and is not
     // plain, though its formula does not wrap (review C1).
-    // deferred: sample each coedge's curve, map the samples with Project, unwrap
-    // by continuity across the periods of every direction with a seam, and test
-    // closure and pole contact.
-    IsPlainInParameters(m: BrepModel, f: BrepFaceIndex): Boolean;
+    // Chunk A body, from the contract IsPlainInParameters: only edge loops, no
+    // seam, at least one bound; then every bound's lifted polygon
+    // (LiftedBound) returns to its start within the parameter tolerance there,
+    // and no loop vertex lies on a side DegenerateSides names.
+    IsPlainInParameters(m: BrepModel, f: BrepFaceIndex): Boolean
+        => (m.Faces[f].Bounds.Count >= 1 ? (m.HasOnlyEdgeLoops(f) ? m.HasSeam(f).Not : false) : false)
+            ? m.Faces[f].Bounds.All(b => m.LiftedBoundCloses(f, b) && m.BoundAvoidsDegenerateSides(f, b))
+            : false;
+
+    // The number of samples per coedge the lifted polygons take, ends
+    // included.
+    LiftSamples(_: BrepModel): Integer
+        => 9;
+
+    // The points of bound b of face f mapped into the surface's parameter
+    // plane by Project and unwrapped by continuity (layer 0's NearestUnwrapped
+    // on the surface domain, every direction with a seam), each coedge
+    // sampled in its composed direction (CoedgeRunsForwardOnCurve) without its
+    // last sample, the next coedge's first; the loop's first point is
+    // appended again, unwrapped, at the end. Precondition:
+    // m.IsEveryIndexInRange, b a bound of f, every coedge's edge in range.
+    LiftedBound(m: BrepModel, f: BrepFaceIndex, b: FaceBound): Array<UvCoordinate>
+    {
+        var s = m.Faces[f].Surface;
+        var d = m.Geometry.Domain(s);
+        var coedges = m.LoopCoedges(b.Loop);
+        var ordered = b.Orientation ? coedges : coedges.Count.MapRange(i => coedges[coedges.Count - 1 - i]);
+        var raw = ordered.FlatMap(c => m.CoedgeSamples(b, c)).Map(p => m.Geometry.Project(s, p));
+        var n = raw.Count;
+        var lifted = new List<UvCoordinate>();
+        var i = 0;
+        while (i <= n && n > 0)
+        {
+            var uv = raw[i % n];
+            lifted = lifted.Add(i == 0 ? uv : d.NearestUnwrapped(uv, lifted.At(i - 1)));
+            i = i + 1;
+        }
+        return lifted.Freeze();
+    }
+
+    // The points of coedge c of bound b, LiftSamples of them less the last,
+    // in the coedge's composed direction along its edge domain.
+    CoedgeSamples(m: BrepModel, b: FaceBound, c: Coedge): Array<Point3D>
+    {
+        var ts = m.EdgeDomain(c.Edge).Range.Samples(BrepModel.LiftSamples);
+        var forward = m.CoedgeRunsForwardOnCurve(b, c);
+        return (ts.Count - 1).MapRange(i => m.EdgeCurvePoint(c.Edge, forward ? ts[i] : ts[ts.Count - 1 - i]));
+    }
+
+    // Whether bound b's lifted polygon returns to its start: its last point
+    // (the first, unwrapped) is its first within the parameter tolerance
+    // there.
+    LiftedBoundCloses(m: BrepModel, f: BrepFaceIndex, b: FaceBound): Boolean
+    {
+        var lifted = m.LiftedBound(f, b);
+        var s = m.Faces[f].Surface;
+        return lifted.Count == 0 ? false : lifted[0].SameParameter(lifted[lifted.Count - 1], m.Geometry.UvToleranceAt(s, lifted[0], m.Tolerances));
+    }
+
+    // Whether no vertex of bound b lies on a degenerate side of face f's
+    // surface, within the parameter tolerance at the vertex's projection.
+    BoundAvoidsDegenerateSides(m: BrepModel, f: BrepFaceIndex, b: FaceBound): Boolean
+    {
+        var s = m.Faces[f].Surface;
+        var d = m.Geometry.Domain(s);
+        var sides = m.Geometry.DegenerateSides(s, m.Tolerances);
+        return m.BoundVertices(b).All(v => sides.All(side =>
+            m.IsOffSide(d, side, m.Geometry.Project(s, m.Vertices[v].Point), m.Geometry.UvToleranceAt(s, m.Geometry.Project(s, m.Vertices[v].Point), m.Tolerances))));
+    }
+
+    // Whether uv is off the side: its constant coordinate differs from the
+    // side's value by more than the tolerance in that direction.
+    IsOffSide(m: BrepModel, d: SurfaceDomain, side: DomainSide, uv: UvCoordinate, t: UvTolerance): Boolean
+        => side.IsUSide
+            ? uv.U.SameParameter(d.SideValue(side), t.U).Not
+            : uv.V.SameParameter(d.SideValue(side), t.V).Not;
 
     // The signed area of face f's region in its parameter plane: the sum over
     // the bounds of (1/2) times the closed integral of (u dv - v du), each bound
@@ -1108,9 +1554,16 @@ library BrepTopology
     // points mapped to (u, v) by Project. Green's theorem with unit weight: the
     // same integral as layer 7's Oracle_FaceAreaByGreen without the area element.
     // Precondition: m.IsPlainInParameters(f).
-    // deferred: the shoelace formula over the polygons IsPlainInParameters builds,
-    // with enough samples per coedge that the sign is settled.
-    SignedParameterArea(m: BrepModel, f: BrepFaceIndex): Number;
+    // Chunk A body, from the contract SignedParameterArea: the shoelace sum,
+    // (1/2) sum of (u_i v_(i+1) - u_(i+1) v_i), over the lifted polygon of
+    // every bound (LiftedBound), each traversed as the face uses it.
+    SignedParameterArea(m: BrepModel, f: BrepFaceIndex): Number
+        => m.Faces[f].Bounds.Map(b => m.LiftedBound(f, b).ShoelaceSum).SumOf;
+
+    // Half the sum of u_i v_(i+1) - u_(i+1) v_i over consecutive points of a
+    // polygon whose last point repeats its first.
+    ShoelaceSum(points: Array<UvCoordinate>): Number
+        => (points.Count - 1).MapRange(i => points[i].U * points[i + 1].V - points[i + 1].U * points[i].V).SumOf * 0.5;
 
     // Whether face f's parameter-space area has the sign its normal sign
     // requires: positive when FaceNormalSign is +1, negative when -1.
