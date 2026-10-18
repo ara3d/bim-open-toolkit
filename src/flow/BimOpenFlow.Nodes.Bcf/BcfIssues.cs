@@ -118,6 +118,18 @@ internal static class BcfIssues
         return null;
     }
 
+    /// <summary>The UTC time in a date param (yyyy-MM-ddTHH:mm:ssZ), or null when the param is blank.</summary>
+    public static DateTimeOffset? UtcParam(ParamValues parameters, string name, string kind)
+    {
+        var text = parameters.GetText(name, "").Trim();
+        if (text.Length == 0)
+            return null;
+        return DateTimeOffset.TryParseExact(text, "yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var date)
+            ? date
+            : throw new ArgumentException($"{kind}: parameter '{name}' must be a UTC time like 2026-10-18T09:30:00Z, got '{text}'.");
+    }
+
     private static string Text(object? value)
         => value is { } v and not DBNull ? Convert.ToString(v, CultureInfo.InvariantCulture)?.Trim() ?? "" : "";
 }

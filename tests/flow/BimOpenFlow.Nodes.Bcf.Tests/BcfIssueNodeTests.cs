@@ -166,4 +166,54 @@ public sealed class BcfIssueNodeTests
             Directory.Delete(folder, recursive: true);
         }
     }
+
+    private static string Markup(string bcfPath)
+    {
+        using var zip = System.IO.Compression.ZipFile.OpenRead(bcfPath);
+        using var reader = new StreamReader(zip.Entries.First(e => e.FullName.EndsWith("markup.bcf")).Open());
+        return reader.ReadToEnd();
+    }
+
+    [Test]
+    public void Write_WithCreated_IsByteIdenticalAcrossRuns_AndModelDateIsOptIn()
+    {
+        var model = Path.Combine(RepoPaths.Root, "deps", "bim-open-data", "samples", "public", "duplex.bos");
+        if (!File.Exists(model))
+            Assert.Ignore("deps/bim-open-data/samples/public/duplex.bos is not fetched");
+        var folder = Path.Combine(Path.GetTempPath(), "bcf-stable-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var issues = new TableValue(Node.EvalTable([], ("title", "Note"), ("ids", "1aj$VJZFn2TxepZUBcKp$i")));
+            string Write(string name, params (string, string)[] extra)
+            {
+                var path = Path.Combine(folder, name);
+                new BcfWriteNode().Eval(new RunContext(), [issues],
+                    NodeTestHelpers.Params([("path", path), ("model", model), ("created", "2026-10-18T09:30:00Z"), ("guidSeed", "fixed"), .. extra]));
+                return path;
+            }
+
+            var a = Write("a.bcf");
+            Thread.Sleep(1100);
+            var b = Write("b.bcf");
+            Assert.That(File.ReadAllBytes(b), Is.EqualTo(File.ReadAllBytes(a)));
+            Assert.That(Markup(a), Does.Not.Contain("<Date>"));
+            Assert.That(Markup(a), Does.Contain("2026-10-18T09:30:00"));
+
+            var dated = Write("c.bcf", ("modelDate", "2026-01-02T03:04:05Z"));
+            Assert.That(Markup(dated), Does.Contain("2026-01-02T03:04:05"));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [TestCase("created", "yesterday")]
+    [TestCase("modelDate", "2026-10-18 09:30")]
+    public void Write_BadDateParam_IsAnErrorNamingTheParamAndForm(string param, string value)
+        => Assert.That(() => new BcfWriteNode().Eval(new RunContext(),
+                [new TableValue(Node.EvalTable([], ("title", "t")))],
+                NodeTestHelpers.Params(("path", Path.Combine(Path.GetTempPath(), "never.bcf")), (param, value))),
+            Throws.ArgumentException.With.Message.Contains($"'{param}'").And.Message.Contains("2026-10-18T09:30:00Z"));
 }
