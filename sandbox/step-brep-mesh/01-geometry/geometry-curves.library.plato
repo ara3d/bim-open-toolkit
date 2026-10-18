@@ -755,6 +755,60 @@ library BrepGeometryCurves
     // form, the rest by a central difference of the surface partials.
     SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D;
 
+    // The parameter of pcurve p's space point nearest to q (contract
+    // ClosestParameter on a pcurve). Chunk B body: a closed form where the
+    // pcurve's space image is a straight line run at constant velocity
+    // (IsStraightPcurve: a 2D line on a plane, or a 2D line along v on a
+    // cylinder or a cone, a ruling, as a seam's pcurve is), the foot of q on
+    // that line, which is the unique minimizer; every other pcurve goes to
+    // PcurveClosestParameterBySearch.
+    ClosestParameter(g: GeometrySet, p: PcurveIndex, q: Point3D): Number
+        => g.IsStraightPcurve(p)
+            ? (q - g.Eval(p, 0.0)).Dot(g.Derivative(p, 0.0)) / g.Derivative(p, 0.0).LengthSquared
+            : g.PcurveClosestParameterBySearch(p, q);
+
+    // Whether pcurve p's space image is a straight line run at constant
+    // velocity: its 2D curve a line with a nonzero velocity, on a plane, or
+    // along v (velocity.X exactly 0, as copied from the file) on a cylinder
+    // or a cone, whose v-lines are rulings.
+    IsStraightPcurve(g: GeometrySet, p: PcurveIndex): Boolean
+        => g.Curve2DAt(g.PcurveAt(p).Curve).IsStraightOn(g.SurfaceAt(g.PcurveAt(p).Surface));
+
+    // Whether the 2D curve, lying on the surface, lifts to a straight line run
+    // at constant velocity.
+    IsStraightOn(curve: BrepCurve2D, surface: BrepSurface): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => velocity.Length > 0.0 && surface.LiftsLineStraight(velocity);
+            Circle(placement, radius) => false;
+            Ellipse(placement, semiAxis1, semiAxis2) => false;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => false;
+            Parabola(placement, focalDistance) => false;
+            Polyline(points) => false;
+            BSpline(data) => false;
+            Trimmed(basis, range, sameSense) => false;
+            Composite(segments) => false;
+            Offset(basis, distance) => false;
+        };
+
+    // Whether the surface maps every 2D line of the given velocity to a
+    // straight line run at constant velocity: any line on a plane (an affine
+    // map), a line along v on a cylinder or a cone.
+    LiftsLineStraight(surface: BrepSurface, velocity: Vector2D): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => velocity.X == 0.0;
+            Cone(placement, radius, semiAngle) => velocity.X == 0.0;
+            Sphere(placement, radius) => false;
+            Torus(placement, major, minor, part) => false;
+            Revolution(profile, axis) => false;
+            LinearExtrusion(profile, extrusion) => false;
+            BSpline(data) => false;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => false;
+            Offset(basis, distance) => false;
+        };
+
     // deferred: ClosestParameterBySearch over the pcurve as a space curve:
     // the parameter of the pcurve's point nearest to q. Seeding from
     // Project(surface, q) and a closest parameter of that uv on the 2D curve
@@ -765,7 +819,7 @@ library BrepGeometryCurves
     // A 2D line along a periodic direction (the bottom circle of a cylinder,
     // v = 0) has the minimizers t + k T for every integer k, so without this
     // rule the answer is not determined on its unbounded domain (review F4).
-    ClosestParameter(g: GeometrySet, p: PcurveIndex, q: Point3D): Number;
+    PcurveClosestParameterBySearch(g: GeometrySet, p: PcurveIndex, q: Point3D): Number;
 
     // The shift of the pcurve's parameter after which its space point
     // repeats, or 0 when it never does: the 2D curve's own period when its

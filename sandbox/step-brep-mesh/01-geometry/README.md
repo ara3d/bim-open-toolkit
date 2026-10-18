@@ -365,7 +365,7 @@ Deferred, with their families (contracts in `geometry.spec.plato`):
 |---|---|
 | `BSplinePoint` (3D, 2D, surface), `BSplineDerivative` (3D, 2D), `BSplinePartial` | de Boor on homogeneous points; derivatives by the quotient rule (Piegl and Tiller, *The NURBS Book*, A3.2, A4.2 to A4.4) |
 | `BSplineSideCollapses`, `BSplineSidesCoincide` | knot insertion to multiplicity `Degree` at a side, then a control-row test (convex hull) |
-| `ClosestParameterBySearch`, `ClosestParameter` on a pcurve | bracket each smooth piece by curvature-paced samples, Newton with bisection fallback, compare ends |
+| `ClosestParameterBySearch`, `PcurveClosestParameterBySearch` (`ClosestParameter` on a pcurve that is not straight in space) | bracket each smooth piece by curvature-paced samples, Newton with bisection fallback, compare ends |
 | `ProjectBySearch`, `ProjectNearBySearch` | grid seeds per smooth patch, Newton on the two normal equations in a trust region; the near form starts at the seed and does not wrap |
 | `OffsetSecondDerivative` (3D, 2D), `SecondDerivative` on a pcurve | one more order of the chain rule; needs third derivatives or surface second partials |
 | `OffsetPartial`, `LimitNormal` | Weingarten equations; the normal's limit along the transverse parameter |
@@ -513,3 +513,23 @@ arguments of `ParameterToleranceAt` and `UvToleranceAt`. Layer 3 must write `Clo
 The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
 
 - Took layer 2's stand-ins (`belongs-in: 01-geometry`): `DefiningPoints` (curve, surface) into `geometry.library.plato` (new section "Defining points"), and `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` into the new `geometry-motion.library.plato` (`BrepGeometryMotion`), beside `BrepGeometryScaling`.
+
+## Implementation, chunk B
+
+TKT-324, 2026-10-18, two changes requested by the topology session (TKT-314) for edges that carry
+pcurves, which the cylinder's seam edges do:
+
+- `ClosestParameter` on a `BrepCurve`: the `OnSurface` arm whose master is the space curve (Eval's
+  own test, `MasterPcurve` none) returns the space curve's closed form instead of calling the
+  bodiless `ClosestParameterBySearch`.
+- `ClosestParameter(g, p: PcurveIndex, q)` gets a body: where the pcurve's space image is a straight
+  line run at constant velocity (`IsStraightPcurve`, `IsStraightOn`, `LiftsLineStraight`: a 2D line
+  on a plane, or a 2D line along v on a cylinder or a cone), the foot of q on that line, which is the
+  unique minimizer and satisfies the contract's bounds (such a pcurve has no parameter period).
+  Every other pcurve calls `PcurveClosestParameterBySearch`, the new name of the deferred search,
+  whose note is the old deferred note.
+
+Counts: four functions added with bodies (`IsStraightPcurve`, `IsStraightOn`, `LiftsLineStraight`,
+and `ClosestParameter` on a pcurve, which was deferred) and one deferred function renamed out of it,
+so 18 functions stay deferred. The circle and cylinder arms needed no new body: their evaluation,
+derivatives, normals, `ClosestParameter` and `Project` were closed forms already.
