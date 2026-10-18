@@ -1,0 +1,24 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "model": { "x": 40, "y": 40 },
+    "values": { "x": 40, "y": 270 },
+    "answer": { "x": 389, "y": 143 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "model.instances", "to": "answer.instances" },
+      { "from": "values.table", "to": "answer.values" }
+    ],
+    "nodes": [
+      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "values", "kind": "csv.read", "version": 1 },
+      { "id": "answer", "kind": "view3d.color", "version": 1 }
+    ]
+  },
+  "values": {
+    "model": { "path": "samples/nrc/duplex-enriched.ifc" },
+    "values": { "path": "samples/nrc/nrc_analytics_elements.csv" },
+    "answer": { "joinColumn": "globalId", "valueColumn": "OperationalCarbon_kgCO2e_per_year", "colorMap": "viridis" }
+  }
+}

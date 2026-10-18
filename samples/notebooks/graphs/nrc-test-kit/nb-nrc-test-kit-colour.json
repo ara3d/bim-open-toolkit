@@ -1,0 +1,33 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "analytics": { "x": 40, "y": 270 },
+    "analyticsRows": { "x": 389, "y": 270 },
+    "meshes": { "x": 40, "y": 40 },
+    "coloredCarbon": { "x": 807, "y": 40 },
+    "coloredCategory": { "x": 807, "y": 270 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "analytics.relation", "to": "analyticsRows.input" },
+      { "from": "meshes.instances", "to": "coloredCarbon.instances" },
+      { "from": "analyticsRows.table", "to": "coloredCarbon.values" },
+      { "from": "meshes.instances", "to": "coloredCategory.instances" },
+      { "from": "analyticsRows.table", "to": "coloredCategory.values" }
+    ],
+    "nodes": [
+      { "id": "meshes", "kind": "view3d.instances", "version": 1 },
+      { "id": "analytics", "kind": "rel.csv", "version": 1 },
+      { "id": "analyticsRows", "kind": "rel.materialize", "version": 1 },
+      { "id": "coloredCarbon", "kind": "view3d.color", "version": 1 },
+      { "id": "coloredCategory", "kind": "view3d.color", "version": 1 }
+    ]
+  },
+  "values": {
+    "meshes": { "path": "samples/nrc/duplex-base.ifc" },
+    "analytics": { "path": "test-kit/analytics_dataset_with_levels.csv", "source": "nrc" },
+    "analyticsRows": { "limit": "0" },
+    "coloredCarbon": { "joinColumn": "globalId", "valueColumn": "operational_carbon", "colorMap": "viridis" },
+    "coloredCategory": { "joinColumn": "globalId", "valueColumn": "category", "colorMap": "category10" }
+  }
+}
