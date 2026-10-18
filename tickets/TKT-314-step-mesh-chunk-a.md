@@ -3,7 +3,7 @@ id: TKT-314
 title: Implement chunk A of the STEP B-rep mesh library: the unit cube through every layer on witnesses
 status: open
 depends_on: [TKT-299]
-owner:
+owner: topology fa587ba3-0ab9-4cde-8228-0725081e9a92
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 confidence: high
@@ -20,3 +20,21 @@ created: 2026-10-17
 Owner approval 2026-10-17 ("go for it" on the recommendation in the TKT-299 session). The first implementation chunk of sandbox/step-brep-mesh/TASKS.md: witness-driven, no STEP file read, 32-bit Number suffices. Runs beside TKT-311 (does the C# writer compile the library's constructs), the 64-bit Number profile, and TKT-312 (the C# decoder to RawDecodedModel). The boundary agent of TKT-299 is editing 03-step and 07-validation/validation-witnesses.library.plato at the same time; chunk A touches those two last.
 
 Log 2026-10-17: nine commits (d80f3e89 to 36c893f8) landed; the unit box meshes as specified and every chunk A law evaluates true in the builder's scratch harness (a Plato copy with the conditional fix). Boxes 1 and 4 are met; boxes 2 and 3 wait for the laws to be rerun through the fixed C# writer (TKT-315, whole-library build at 8 errors). Leftovers in sandbox/step-brep-mesh/reviews/FINDINGS.md F-52.
+
+Log 2026-10-18 (topology and validation track, session fa587ba3; plan docs/plans/step-mesher-parallel.md). Claimed by hand: `ticket.py claim` refuses while TKT-299 is open. Every verdict below is from the pinned interpreter (Plato 062b8dc7, `plato run --laws`, cpu64, budget 60 s), one `--filter` per law group; none is from the C# backend, so boxes 2 and 3 stay unticked for the supervisor.
+
+Box 2, interpreter half. Layer 2's laws reach the witnesses through layer 7's `Check_` wrappers and witness laws:
+- pass, 196 cases exhaustive (k, s in -1..12, every positive witness and an out-of-range index): `Law_WitnessHasStatedCounts`, `Law_WitnessStatedCountsImplyStatedGenus`, `Law_WitnessEulerIsTwoMinusTwiceGenus`, `Law_WitnessOracleEulerMatchesLayerTwo`; pass, 14 cases: `Law_WitnessHasStatedShellCount`, `Law_WitnessHasStatedFaceCount`.
+- obligation: `Law_WitnessIsStructurallyClean` and `Law_WitnessValidatesClean` stop at witness 7 (`Witness_BSplinePatchSolid`) on layer 1's bodiless `ProjectBySearch` (reached through `IsPlainInParameters` in `Law_LoopWindingMatchesSameSense`). Chunk F's body, step B's fence.
+- So each other positive witness was run alone, through scratch laws in the session's scratchpad (`WitnessAt(k).ValidateBrep(Structural).IsClean` and `.ValidateBrep.IsClean`): pass for witnesses 0, 1, 2, 3, 4, 5, 6, 8, 9 at both levels (18 of 18).
+- Negative witnesses, all pass: `Law_RedundantPoleLoopsAreRedundant`, `Law_RedundantPoleLoopVertexIsNotIsolated`, `Law_RedundantPoleLoopsFailExactlyTwoLaws`, `Law_RedundantPoleLoopsReduceToSphere` (25 sampled radii each); `Law_FlippedFaceBreaksWinding`, `Law_FlippedFaceFailsExactlyOneLaw`; `Law_SharedCornerBreaksEuler`, `Law_SharedCornerBreaksVertexLink`, `Law_SharedCornerFailsExactlyTwoLaws`. Each negative witness fails exactly its named laws.
+- What is missing for box 2: witness 7 (needs `ProjectBySearch`, chunk F) and the C# backend run (TKT-315).
+
+F-52 item 4, settled (commit ca23e274): implicit free edges of a faceted shell count as boundary edges, as ReducedCounts already counts them as edges. `Law_PolyLoopSheetHasOneBoundaryCycle` and `Law_PolyLoopSheetPassesOpenShellEuler` (new): fail -> pass. `Law_OpenShellEulerEvenAndBounded`, `Law_PolyLoopEdgesPairUp`, `Law_WitnessEulerIsTwoMinusTwiceGenus`, `Law_WitnessHasStatedCounts`: pass -> pass. `Law_OpenShellEulerEvenAndBounded` alone is weak evidence: its 25 samples never draw the sheet's shell 1.
+
+F-52 item 7, open (commit 9c8f5dd4 has the laws, not the body): `Witness_UnitBoxWithBottomPcurve(speed)` and three laws, all obligation today. The body needs two changes in step B's fence, both sent to the supervisor: the OnSurface arm of layer 1's `ClosestParameter` calls the bodiless `ClosestParameterBySearch` even when the master is the space curve, so `EdgeDomain` faults on any edge with a pcurve; and `CopiesInside` (copies of a periodic parameter inside a range) sits in layer 4, which layer 2 may not call, and belongs in layer 0.
+
+F-51 item 1, done before this session in 6409fa52: `SameModel` compares every table (pcurves, parameter-plane curves, loop and body cases, poly-loop points). It stays in layer 7 with its own body, because layer 7 may not name 09-tooling's `DiffModels`; `Law_ModelDiffIsSameExactlyWhenSameModel` makes the two one equality, so a divergence fails a law instead of hiding. Verdicts today: `Law_ModelDiffIsSameExactlyWhenSameModel` pass (169 cases, every pair of model witnesses), `Law_WitnessModelDiffIsSameExactlyWhenSameModel` pass (196 cases), `Law_UnitBoxIsBoxOfOnes` pass. Left for the backend: `SameModel` compares curves and surfaces with `==`, and the generated C# compares a record's array field by reference (docs/interpreter.md, "Where the interpreter and the C# backend differ"), so two separately built B-spline curves would differ there.
+
+Box 3 waits on TKT-332: its whole-box laws hit the 60 s budget.
+
