@@ -34,7 +34,7 @@ spec BrepModel
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_FaceBoundsShareNoVertex(self, BrepFaceIndex(f));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_NoRedundantVertexLoop(self, BrepFaceIndex(f));
     invariant forall (f: Integer) in self.Faces.Count.Range :
-        forall (e: Integer) in self.Edges.Count.Range : Law_SeamUsesAreInOneFace(self, BrepFaceIndex(f), BrepEdgeIndex(e));
+        forall (e: Integer) in self.Edges.Count.Range : Law_SeamUsesRunOpposite(self, BrepFaceIndex(f), BrepEdgeIndex(e));
     invariant forall (f: Integer) in self.Faces.Count.Range : Law_LoopWindingMatchesSameSense(self, BrepFaceIndex(f));
     invariant forall (s: Integer) in self.Shells.Count.Range :
         forall (e: Integer) in self.Edges.Count.Range : Law_EveryEdgeUsedTwiceInClosedShell(self, ShellIndex(s), BrepEdgeIndex(e));

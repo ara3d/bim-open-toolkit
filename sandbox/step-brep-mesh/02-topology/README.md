@@ -53,7 +53,7 @@ and they cancel. Colour each coedge `+` when the face runs it in the curve's inc
 and `-` otherwise (`CoedgeRunsForwardOnCurve`). The surface is a coherently oriented 2-manifold
 along its edges exactly when every edge has two coedges of opposite colour. That is
 `Law_EveryEdgeUsedTwiceInClosedShell` and `Law_EdgeUsesHaveOppositeOrientation`. A seam is the case
-where both coedges of an edge belong to one face (`Law_SeamUsesAreInOneFace`): a point on a
+where both coedges of an edge belong to one face (`Law_SeamUsesRunOpposite`): a point on a
 cylinder's seam has a neighbourhood of two half-disks of the same face, glued along the seam.
 
 ### Loops, bounds and faces
@@ -423,7 +423,7 @@ layer 1's `ParameterToleranceAt`.
 | `Law_DeclaredClosedIsClosed(m, s)` | a shell declared closed has no non-degenerate edge used exactly once | exact | structural, Error |
 | `Law_EdgeUsesHaveOppositeOrientation(m, s, e)` | an edge's two uses in a shell have opposite composed senses | exact | structural, Error |
 | `Law_EdgeReversalKeepsCoedgeSense(m, site)` | reversing the coedge's edge leaves its composed sense unchanged | exact | library, test |
-| `Law_SeamUsesAreInOneFace(m, f, e)` | an edge's two uses in one face (a seam) have opposite composed senses, for every face, in a shell or not | exact | structural, Error |
+| `Law_SeamUsesRunOpposite(m, f, e)` | an edge's two uses in one face (a seam) have opposite composed senses, for every face, in a shell or not | exact | structural, Error |
 | `Law_VertexLinkIsOneCycle(m, s, v)` | in a shell declared closed, the link of a vertex with corners has one component | exact | structural, Error |
 | `Law_VertexLoopVertexIsIsolated(m, s, v)` | a vertex-loop vertex is an end of no edge the shell cites | exact | structural, Error |
 | `Law_EulerPoincareEvenAndBounded(m, s)` | in a shell declared closed, reduced `V - E + 2F - L` is even and at most 2 | exact | structural, Error |
@@ -481,7 +481,7 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 (`ManifoldSolid`, `SolidWithVoids`, `ShellSet`), `LengthUnit`, `BrepModel`, `ShellCounts`, the six
 range predicates, `StartVertex`, `EndVertex`, `EdgeDomain`, `CoedgeRunsForwardOnCurve`,
 `FaceNormalSign`, `ReducedCounts`, and 17 laws: the 13 VOCABULARY.md lists and the 4 the layer
-brief added (`Law_SeamUsesAreInOneFace`, `Law_EdgeDomainEndsAtVertices`,
+brief added (`Law_SeamUsesRunOpposite`, `Law_EdgeDomainEndsAtVertices`,
 `Law_LoopWindingMatchesSameSense`, `Law_OpenShellEdgesUsedAtMostTwice`).
 
 **Declared here, new** (proposed; the consumers most likely to use each in parentheses):
@@ -749,3 +749,4 @@ The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) cha
 
 - `WithEveryFaceReversed`'s comment no longer names layer 8's copy, which the review deleted.
 - Gave away its stand-ins: `ScaledTolerances` to layer 0; `DefiningPoints`, `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` to layer 1. `ModelPoints`, `RigidlyMoved` and `ScaledBy` call them there. The contracts of `RigidlyMoved`, `ScaledBy(m, factor)` and `WithEveryFaceReversed` moved here from layer 8's spec (new spec section "Model transforms").
+- Renamed `Law_SeamUsesAreInOneFace` to `Law_SeamUsesRunOpposite` (F12 above, review finding on the name), with layer 7's check and layer 8's theorem text in the same commit.

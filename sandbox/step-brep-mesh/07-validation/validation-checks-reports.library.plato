@@ -63,7 +63,7 @@ library BrepCheckingReports
                     "Declared closed is closed does not hold."),
                 ExactReport(m.Check_EdgeUsesHaveOppositeOrientation,
                     "Edge uses have opposite orientation does not hold."),
-                ExactReport(m.Check_SeamUsesAreInOneFace,
+                ExactReport(m.Check_SeamUsesRunOpposite,
                     "Seam uses are in one face does not hold."),
                 ExactReport(m.Check_VertexLinkIsOneCycle,
                     "Vertex link is one cycle does not hold."),

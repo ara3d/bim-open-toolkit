@@ -663,3 +663,4 @@ The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) cha
   | `Law_WitnessPowerOfTwoScalingKeepsConnectivity`, `...ScalesPositions` | layer 8's scaling laws on each witness | exact |
   | `Law_WitnessEdgeReversalPreservesMesh`, `Law_WitnessShellReversalNegatesVolume` | layer 8's reversal laws on each witness | exact; Length times area |
 - Gave away its last stand-ins: `ScaledBy` on `DiscretizationCriteria` and `Limit` to layer 4, on `FaceMeshingCriteria` to layer 5; the section "Declarations owed by lower layers" is gone. The spec's contracts of `RigidlyMoved`, `ScaledBy(m, factor)` and `WithEveryFaceReversed` moved to layer 2's spec.
+- Theorem `WatertightByConstruction` cites layer 2's law by its new name, `Law_SeamUsesRunOpposite`.

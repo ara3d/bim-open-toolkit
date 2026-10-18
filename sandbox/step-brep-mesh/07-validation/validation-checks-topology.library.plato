@@ -118,10 +118,10 @@ library BrepCheckingTopology
     Check_EdgeUsesHaveOppositeOrientation(m: BrepModel): Check
         => m.CheckShellEdges("Law_EdgeUsesHaveOppositeOrientation", (s, e) => Law_EdgeUsesHaveOppositeOrientation(m, s, e));
 
-    // Law_SeamUsesAreInOneFace at every face and edge. Topological group:
+    // Law_SeamUsesRunOpposite at every face and edge. Topological group:
     // Error.
-    Check_SeamUsesAreInOneFace(m: BrepModel): Check
-        => m.CheckFaceEdges("Law_SeamUsesAreInOneFace", (f, e) => Law_SeamUsesAreInOneFace(m, f, e));
+    Check_SeamUsesRunOpposite(m: BrepModel): Check
+        => m.CheckFaceEdges("Law_SeamUsesRunOpposite", (f, e) => Law_SeamUsesRunOpposite(m, f, e));
 
     // Law_VertexLinkIsOneCycle at every shell and vertex. Topological group:
     // Error.
