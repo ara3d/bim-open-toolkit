@@ -11,12 +11,8 @@
 // Same" without changing a single verdict; until then the laws catch either
 // side drifting.
 //
-// One exception is stated rather than hidden: SameModel does not compare the
-// parameter-plane curves, the pcurves, a loop's or a body's case, or a poly
-// loop's points (it compares loops through CoedgesOf and VertexLoopVertexOf,
-// bodies through ShellsOfBody), and the model diff does. The model law
-// therefore names those parts in SameBeyondSameModel; README.md beside this
-// file lists the gap for chunk A's owner.
+// SameModel compares every table of a model since chunk A (finding F-51),
+// so the model law is a plain equality like the others.
 //
 // The laws assume the generated record equality of Point3D, Vector3D and
 // the index types compares fields with ==, as Plato's IValue does. A backend
@@ -39,10 +35,9 @@ library ToolingDiffsLaws
     //==
     // # Each diff is its equality
 
-    // The model diff is Same exactly when SameModel holds and the parts of a
-    // model SameModel does not compare agree too.
+    // The model diff is Same exactly when SameModel holds.
     Law_ModelDiffIsSameExactlyWhenSameModel(a: BrepModel, b: BrepModel): Boolean
-        => a.DiffModels(b).IsSame == (a.SameModel(b) && a.SameBeyondSameModel(b));
+        => a.DiffModels(b).IsSame == a.SameModel(b);
 
     // The discretization diff is Same exactly when SameDiscretization holds.
     Law_DiscretizationDiffIsSameExactlyWhenSameDiscretization(a: EdgeDiscretization, b: EdgeDiscretization): Boolean
@@ -72,16 +67,6 @@ library ToolingDiffsLaws
     // The file diff is Same exactly when IsSameFile holds.
     Law_FileDiffIsSameExactlyWhenIsSameFile(a: Part21File, b: Part21File): Boolean
         => a.DiffFiles(b).IsSame == a.IsSameFile(b);
-
-    // The parts of two models the model diff compares and SameModel does not:
-    // parameter-plane curves and pcurves, loop cases and poly loop points,
-    // body cases. Not a law; the model law's second conjunct.
-    SameBeyondSameModel(a: BrepModel, b: BrepModel): Boolean
-        => a.Geometry.Curves2D.Corresponds(b.Geometry.Curves2D, (x, y) => x == y)
-            && a.Geometry.Pcurves.Corresponds(b.Geometry.Pcurves, (x, y) => x == y)
-            && a.Loops.Corresponds(b.Loops, (x, y) => x.LoopCaseName == y.LoopCaseName
-                && x.PolyLoopPointsOf.Corresponds(y.PolyLoopPointsOf, (p, q) => p == q))
-            && a.Bodies.Corresponds(b.Bodies, (x, y) => x.BodyCaseName == y.BodyCaseName);
 
     //==
     // # Witness forms

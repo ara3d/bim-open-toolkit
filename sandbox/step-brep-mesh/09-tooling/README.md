@@ -86,13 +86,11 @@ Laws in `tooling-diffs.laws.plato` make each diff and its Boolean equality one d
 diff is `Same`. Chunk A's owner may replace those bodies with "the diff is Same" without
 changing a verdict.
 
-**`SameModel` does not compare everything.** It skips the parameter-plane curves, the pcurves, a
-loop's and a body's case, and a poly loop's points (it reads loops through `CoedgesOf` and
-`VertexLoopVertexOf`, bodies through `ShellsOfBody`). An edge loop with no coedges and a poly
-loop are equal to it, and so are `ManifoldSolid(s)` and `ShellSet([s])`. The model diff
-compares them, and its law states the extra parts in `SameBeyondSameModel`. Recommendation for
-chunk A: make `SameModel` the model diff, after checking its callers (layer 7's witness laws,
-layer 3's `SameRawModel` and `SameDecodedModel`) for any that rely on the looser equality.
+**`SameModel` compares everything** since chunk A (finding F-51, TKT-314): the parameter-plane
+curves, the pcurves, a loop's and a body's case, and a poly loop's points were added to layer 7's
+body, `SameBeyondSameModel` was deleted, and the model law is the plain equality
+`DiffModels(a, b).IsSame == SameModel(a, b)`. `SameModel` keeps its own body rather than calling
+`DiffModels`, because layer 7 may not name layer 9; the law keeps the two in step.
 
 Sum-typed rows (curves, surfaces, provenances) are compared with `==` and printed by case name:
 Field `Case` when the cases differ, `Payload` when only the payload does. Plato cannot compose
