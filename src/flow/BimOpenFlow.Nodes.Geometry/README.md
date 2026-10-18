@@ -40,7 +40,7 @@ local setup, verification and limits.
 | `view3d.decimate` | instances | `keepFraction`, `minDiagonal` | thinned instance table |
 | `view3d.boundingBoxes` | instances | `groupColumn` (empty = per row) | boxes table |
 | `view3d.voxelize` | instances | `size` | boxes table with per-voxel `count` |
-| `view3d.camera` | — | `name`, `posX..posZ`, `targetX..targetZ` | camera table |
+| `view3d.camera` | — | `name`, `posX..posZ`, `targetX..targetZ`, `fov` | camera table |
 
 ## Instance table columns
 
@@ -112,3 +112,4 @@ One row per camera; the 3D pane consumes the first row.
 | `name` | Text |
 | `posX posY posZ` | Number |
 | `targetX targetY targetZ` | Number |
+| `fov` | Number (vertical field of view in degrees, default 60; bcf.issue reads it) |

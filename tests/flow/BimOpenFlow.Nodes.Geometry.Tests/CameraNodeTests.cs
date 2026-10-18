@@ -11,14 +11,15 @@ public sealed class CameraNodeTests
         var result = new CameraNode().EvalTable([],
             ("name", "overview"),
             ("posX", "1.5"), ("posY", "2"), ("posZ", "3"),
-            ("targetX", "-1"), ("targetY", "0"), ("targetZ", "0.5"));
+            ("targetX", "-1"), ("targetY", "0"), ("targetZ", "0.5"), ("fov", "45"));
 
         Assert.That(result.Rows, Has.Count.EqualTo(1));
         Assert.That(result.ColumnNames(),
-            Is.EqualTo(new[] { "name", "posX", "posY", "posZ", "targetX", "targetY", "targetZ" }));
+            Is.EqualTo(new[] { "name", "posX", "posY", "posZ", "targetX", "targetY", "targetZ", "fov" }));
         Assert.That(result.Cell("name", 0), Is.EqualTo("overview"));
         Assert.That(result.Cell("posX", 0), Is.EqualTo(1.5));
         Assert.That(result.Cell("targetZ", 0), Is.EqualTo(0.5));
+        Assert.That(result.Cell("fov", 0), Is.EqualTo(45.0));
     }
 
     [Test]
@@ -28,5 +29,6 @@ public sealed class CameraNodeTests
 
         Assert.That(result.Cell("name", 0), Is.EqualTo("default"));
         Assert.That(result.Cell("posX", 0), Is.EqualTo(0.0));
+        Assert.That(result.Cell("fov", 0), Is.EqualTo(60.0));
     }
 }
