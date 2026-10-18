@@ -40,6 +40,7 @@ two meet and keeps every other chunk independent of it.
 | M7 oracles and cross-checks | `07-validation` | witnesses meshed through layer 8's `MeshModel` | no | 0 to 8, witnesses only |
 | MP parser and adapter (C#) | layer 3's file laws: `Law_ParseOkIffNoError`, `Law_ReferencesResolve`, `Law_HeaderNamesASchema`, `Law_ChildrenPrecedeParent`, the `Part21File` invariants of `step.spec.plato`; `Law_ParsePrintParseIsIdentity` once a printer exists | text fixtures: a hand-written unit cube, the same truncated, the same without a shape representation, one complex instance, one assembly | is the parser | 0, 3's types |
 | ME end to end | `08-pipeline` over `MeshStepText` | text fixtures, then the corpus of `03-step/README.md` "Test files" | yes | all |
+| M9 tooling | `09-tooling`: the diff laws (each diff is its equality), the generator laws, and the law runner itself | layer 7's witnesses, generated samples (`DefaultFamilyAt`, seed, index), perturbations | no (the corpus loader needs TKT-312) | 0 to 9 |
 
 M0 to M7 can be built and tested with no parser at all. MP can be built against the type
 declarations alone. ME is the only place the two meet.
@@ -65,6 +66,20 @@ is a high likelihood of working out of the box. In practice:
   its contract are the checks.
 - **A chunk closes** when every body it owns is in Plato, its laws pass over the witnesses, and no
   throwaway code remains.
+
+## Tooling, by chunk
+
+`09-tooling` (TKT-316, README there) is a parallel track; each tool is first needed by the chunk
+named. Chunk A: the law runner (`LawReportOf`, before the first body), `DiffModels`,
+`DiffConnectivity`, `DiffMeshes` and `DiffReports` for the reversal, failure-isolation and
+idempotence laws, `ModelMeshDump`, `ReportToTable` and `DumpStages` for the box, the box family,
+and the edge and every-face reversal perturbations. Chunk B: `RegionToSvg` and `StageFaceSvg` for
+the seam cut, `RoundMeshDump` and `StateTable` for the first refinement rounds,
+`DiffDiscretizations` and `DiffFaceMeshes` for the refinement laws, the cylinder family. Chunk C:
+the sphere, torus and cone families. Chunk D: jitter (closure decided by end coincidence within
+the tolerance) and `DiffModels` on `RawDecodedModel.Model`. Chunk E: `DiffFiles` on the parser's
+fixtures. Chunk F: the B-spline patch family. Chunk G: the block-with-hole and hollow-box
+families. Chunk H: rigid motion and power-of-two scale, and `LoadCorpusModel`.
 
 ## Preconditions, none of which blocks the first chunk
 
