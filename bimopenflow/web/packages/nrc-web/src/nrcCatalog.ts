@@ -4,8 +4,22 @@
 // README table, so the README stays the one place a graph's one-line
 // description lives. Pure functions; nrc.ts fetches.
 
+import type { Notebook } from "@bimopenflow/bim-open-notebook";
+
 /** The three recorded NRC notebooks lead the landing page, in reading order; the reconstructed sessions follow by name. */
 export const NRC_LEAD = ["nrc-eight-questions", "nrc-test-kit", "nrc-door-check"] as const;
+
+/** The analysis ids of the graph and 3D embeds in `notebook`, current replies and earlier ones, each once. */
+export function analysesShownBy(notebook: Notebook): Set<string> {
+  const ids = new Set<string>();
+  for (const turn of notebook.turns)
+    for (const reply of [turn.reply, ...(turn.earlier ?? []).map((e) => e.reply)])
+      for (const embed of reply.embeds) {
+        if (embed.kind === "graph") ids.add(embed.analysisId);
+        else if (embed.kind === "view3d") ids.add(embed.source.analysisId);
+      }
+  return ids;
+}
 
 /** One row of the README table in samples/nrc-analyses. */
 export interface GraphEntry {

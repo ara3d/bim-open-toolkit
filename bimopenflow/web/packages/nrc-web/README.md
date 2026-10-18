@@ -13,6 +13,9 @@ The toolkit's notebook pages, over the notebook package
   graphs that colour the model. A green dot marks a graph the connected host
   holds.
 
+`npm run build:pages` makes the same two pages a static site, with no host: see
+"Static site" below.
+
 The pages live here, not in the notebook package, because they read
 `samples/nrc-analyses`, `samples/nrc`, and the private Snowdon model, all of
 which belong to this repository.
@@ -30,6 +33,40 @@ the tables profile); the request box needs the studio host, which serves
 `/api/ask`. `NOTEBOOK_PORT` changes the port. Editor links use
 `VITE_BOF_EDITOR` (default `http://127.0.0.1:5310/`). The `notebook-web` entry
 of `.claude/launch.json` starts the same server.
+
+## Static site
+
+```bash
+npm run build:pages -w @bimopenflow/nrc-web --prefix bimopenflow/web
+node gates/nrc-pages-smoke.mjs
+```
+
+`vite.pages.config.ts` writes `artifacts/nrc-site` (git-ignored), a folder that GitHub
+Pages serves as plain files under any path (the base is relative). It is published at
+https://ara3d.github.io/nrc-ifc-llm/ by the workflow in the `nrc-ifc-llm` repository. It
+holds `index.html` (a redirect to `nrc.html`), `nrc.html`, `notebook.html`, `graphs.md`
+(the graph list), `NOTICE.md` (the building licences), and `notebooks/`: every notebook
+in `samples/notebooks` except `s10-snowdon` (its model is private, CC BY-NC-SA 3.0; the
+landing page says so), `index.json`, `catalog.json`, `node-catalog.json` (a copy of
+`docs/nodes.catalog.json`, so graph cells draw their wires), and `models/` (the `.bos`
+file each 3D view names, looked up in `samples/nrc`, then in
+`deps/bim-open-data/samples/public`). The folder takes whatever notebooks are in
+`samples/notebooks`; there is no fixed list. `nrc.html` orders them with `NRC_LEAD` in
+`src/nrcCatalog.ts`, the rest by name.
+
+The notebook package's `bundleSamples` does the bundling and its page code turns the host
+features off in this mode (`src/page/site.ts`); `src/nrc.ts` does the same for the landing
+page: no host banner, and each graph row links to the notebooks that show it instead of to
+the editor and the 3D page, which need a host. The page says what is left out and gives the
+commands for a local host.
+
+A 3D view draws on the static site only when its notebook recorded the model file and the
+rows (`model` and `snapshot` on the embed). The notebook package's
+`write-sample-notebooks.ts` records them when a `.bos` sits beside the model's `.duckdb`.
+`samples/nrc/*.bos` are built by the host and not committed, so the build stops with a
+message when a notebook names one that is missing. `gates/nrc-pages-smoke.mjs` fails on a
+view that does not draw. `NRC_PAGES_SAMPLES=<folder>` builds from another folder of
+notebooks, to try one out.
 
 ## Sample notebooks
 
@@ -50,4 +87,5 @@ toolkit's arguments:
 | `src/nrc.ts`, `src/nrcCatalog.ts`, `src/nrcView.ts` | The NRC landing page: fetching, the graph table and the notebooks that lead the page, and the DOM |
 | `scripts/` | `snowdon.ts`, `notebookScript.ts` (finds and runs a notebook script under vite-node), and the two wrappers above |
 | `test/` | The landing page's tests, `snowdon.test.ts`, and `samples.test.ts`: the answer tests of the sample notebooks (Q1 37,196.2 kgCO2e/yr; DC-W1 8 Pass, 6 Fail) |
+| `vite.pages.config.ts` | The static site: `build:pages` (see above) |
 | `vite.config.ts` | Serves `samples/notebooks` with the notebook's `sampleNotebooks` plugin, and the graph README; port 5350 |

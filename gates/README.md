@@ -7,6 +7,7 @@ process, real HTTP, real npm builds. Run from the repo root with Node 18+.
 |---|---|
 | `node gates/host-smoke.mjs` | The host binary starts, serves the node catalog, accepts a graph PUT, evaluates it to Ok, pages results, records a run, and 404s unknown model bytes. |
 | `node gates/web-smoke.mjs` | Every web/viewer package typechecks and passes tests, and the editor app builds a production bundle. |
+| `node gates/nrc-pages-smoke.mjs` | The static NRC walkthrough site (`npm run build:pages -w @bimopenflow/nrc-web --prefix bimopenflow/web` writes `artifacts/nrc-site`) works as plain files under a sub-path: `nrc.html` and every notebook open in a headless browser (Edge, or `NRC_PAGES_BROWSER_CHANNEL=chrome`), no failed request, every notebook draws all its turns, every 3D view draws its recorded model, no link needs a host, and the private Snowdon notebook is absent. Needs `playwright-core`. |
 | `node gates/all.mjs` | Solution build + all C# tests, then both gates above. The full pre-release gate. |
 
 The host smoke uses temp dirs for models/cache/store and a random port, so it
