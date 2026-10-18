@@ -214,6 +214,35 @@ library BrepWitnesses
             Tolerances.Witness_Tolerances,
             LengthUnit.Metre);
 
+    // The unit box whose bottom edge, edge 0 from (0, 0, 0) to (1, 0, 0),
+    // is a surface curve: the line (curve 12, the master) with one pcurve on
+    // the bottom plane, the parameter-plane line from (0, 0) at velocity
+    // (speed, 0). The bottom plane's frame has its origin at (0, 0, 0) and its
+    // X axis along +x, so the pcurve's image is the edge's at every speed, and
+    // its parameter is the line's exactly when speed is 1: layer 2's
+    // SharesCurveParameter holds at speed 1 and fails at speed 2, where the
+    // two points at parameter t lie t apart.
+    Witness_UnitBoxWithBottomPcurve(_: BrepModel, speed: Number): BrepModel
+    {
+        var box = BrepModel.Witness_UnitBox;
+        var bottom = BrepCurve.OnSurface(CurveIndex(12), [CurveSupport.Parametric(PcurveIndex(0))], PreferredRepresentation.SpaceCurve);
+        return BrepModel(
+            GeometrySet(
+                [bottom].Concatenate(box.Geometry.Curves.Skip(1)).Concatenate([box.Geometry.Curves[0]]),
+                [BrepCurve2D.Line(UvCoordinate(0.0, 0.0), Vector2D(speed, 0.0))],
+                [Pcurve(SurfaceIndex(0), Curve2DIndex(0))],
+                box.Geometry.Surfaces,
+                box.Geometry.Closures),
+            box.Vertices,
+            box.Edges,
+            box.Loops,
+            box.Faces,
+            box.Shells,
+            box.Bodies,
+            box.Tolerances,
+            box.Unit);
+    }
+
     //==
     // # Cylinders
 

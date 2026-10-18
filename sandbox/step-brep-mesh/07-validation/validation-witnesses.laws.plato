@@ -16,7 +16,7 @@
 //  - Positive witnesses: counts, Euler characteristic, clean reports
 //  - Positive witnesses: areas and volumes
 //  - Negative witnesses
-//  - A faceted sheet
+//  - A faceted sheet and a surface curve
 //  - Chordal monotonicity
 
 library BrepWitnessesLaws
@@ -189,7 +189,7 @@ library BrepWitnessesLaws
         => BrepModel.Witness_TwoBoxesSharingCorner.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 2;
 
     //==
-    // # A faceted sheet
+    // # A faceted sheet and a surface curve
 
     // The faceted sheet of Witness_BoxWithPolyLoopSheet, a triangle alone in
     // open shell 1, has one boundary cycle: its three implicit edges, each
@@ -202,6 +202,22 @@ library BrepWitnessesLaws
     // faceted open shell is not a topology defect.
     Law_PolyLoopSheetPassesOpenShellEuler(_: BrepModel): Boolean
         => BrepModel.Witness_BoxWithPolyLoopSheet.Check_OpenShellEulerEvenAndBounded.Holds;
+
+    // A pcurve at the line's own speed shares the line's parameter.
+    Law_PcurveAtCurveSpeedSharesParameter(_: BrepModel): Boolean
+        => BrepModel.Witness_UnitBoxWithBottomPcurve(1.0).SharesCurveParameter(BrepEdgeIndex(0), 0);
+
+    // A pcurve at twice the line's speed has the same image and does not
+    // share its parameter: at the edge's midpoint the two points lie 1/2
+    // apart, far beyond the length tolerance.
+    Law_PcurveAtDoubleSpeedSharesNoParameter(_: BrepModel): Boolean
+        => BrepModel.Witness_UnitBoxWithBottomPcurve(2.0).SharesCurveParameter(BrepEdgeIndex(0), 0).Not;
+
+    // The box with a bottom pcurve at either speed passes ValidateBrep: the
+    // pcurve agrees with its edge as a point set, which is all STEP promises.
+    Law_BoxWithBottomPcurveValidatesClean(_: BrepModel): Boolean
+        => BrepModel.Witness_UnitBoxWithBottomPcurve(1.0).ValidateBrep.IsClean
+            && BrepModel.Witness_UnitBoxWithBottomPcurve(2.0).ValidateBrep.IsClean;
 
     //==
     // # Chordal monotonicity
