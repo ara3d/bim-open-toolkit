@@ -1,14 +1,16 @@
 ---
 id: TKT-312
 title: Decode a parsed STEP file into the Plato library's RawDecodedModel (the B-rep as written) through the generated AP242 types (C#); Plato's PrepareModel finishes it
-status: open
-depends_on: [TKT-311, TKT-315]
-owner:
+status: claimed
+depends_on: [TKT-311]
+owner: session 10b9c9c6
+session: 10b9c9c6-0052-40f3-a1c2-c12f2f8861d7
 fence: [deps/bim-open-data/src/data/Ara3D.Step.Mesher/Decode/**, deps/bim-open-data/tests/data/Ara3D.Step.Mesher.Tests/Decode/**, deps.json]
 workflow: [W3, W4]
 related: [TKT-299, TKT-304, TKT-305]
 confidence: high
 created: 2026-10-17
+claimed: 2026-10-17
 ---
 
 ## Acceptance criteria
@@ -25,3 +27,5 @@ Boundary agreed with the Plato session 2026-10-17: C# does the structural mappin
 Contract as committed by the Plato session, 2026-10-17 (bim-open-toolkit 44aa7687, a4b2cffa; sandbox/step-brep-mesh/03-step/step-decode.types.plato, step.library.plato where DecodeRaw(file, policy): RawDecodedModel is the bodiless C# obligation, step.laws.plato, README section "Boundary moved to RawDecodedModel, 2026-10-17"). RawDecodedModel = Model (BrepModel as written: millimetres and radians, SameSense as in the file, Closures empty, Tolerances = UnsetTolerances, Unit = Millimetre); Occurrences; Sources: KernelSources; Folds: Array<FoldRecord> (oriented_face / oriented_closed_shell flips the file asks for, recorded by C#, applied by Plato); Repairs: Array<RepairRecord> (only instances C# skipped); Units: Array<ContextUnits> (with uncertainty); LengthFactor, AngleFactor (root context); Diagnostics (not compared). Rows in ascending instance id within each occurrence, occurrences in order. Not carried yet, do not try: closed_curve / u_closed / v_closed flags, angle factors of non-root contexts (convert inside the decoder), steradian. Fixture fact: in two-cubes-assembly.stp SHAPE_REPRESENTATION #147 holds no B-rep, so both cubes are root occurrences placed by #161 and #162 (Plato finding F-49).
 
 Waits on TKT-315 (the Plato session's builder in the Plato repository): after the Number profile (plato-271) it applies TKT-311's six C# writer fixes and three stdlib fixes, one commit each. TKT-312 resumes when fixes 2 (typed-index subscripts), 3 (IIndexable functions on arrays) and 5 (sum-type equality) are in; the Plato session relays the commit ids.
+
+2026-10-17: the writer fixes this ticket needs are on Plato main (fix 2 3d5d21d9, fix 3 ced94312 + a2d41c7b, fix 5 54a3996a; also fix 1 5c2ad367, fix 4 cb274ffc, compiler-461 c0abb82a). TKT-315 stays open for fix 6, three stdlib defects and a CS0305 in layer 09-tooling, none of which affects layers 0 to 3, so the dependency on TKT-315 is dropped.
