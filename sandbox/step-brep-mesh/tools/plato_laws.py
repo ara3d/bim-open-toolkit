@@ -71,6 +71,12 @@ def main():
           f"{data.get('typeErrorCount', 0)} type errors; recompiled {timings.get('recompiled')}, "
           f"compile {timings.get('compileMs')} ms, laws {timings.get('lawsMs')} ms")
     counts = data.get("counts", {})
+    if args.filter != "none" and data.get("laws", 0) == 0:
+        # The server answers "0 laws, 0 type errors" when a file fails to parse (TKT-337), so an
+        # empty run is never a pass: check the parse with the pinned CLI.
+        print("no laws matched: a misspelled filter, or a file that does not parse. "
+              "Run the pinned CLI with the same --filter to see a parse error.")
+        return 2
     failed = result["result"].get("isError") or data.get("typeErrorCount", 0) > 0 \
         or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0
     return 1 if failed else 0
