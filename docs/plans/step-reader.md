@@ -157,3 +157,20 @@ STEP reader look nearly line for line like the IFC one.
   `src/data/Ara3D.IfcTypes`, byte-identical, in about 25 s. For TKT-304: a C# class has one base, so the IFC emitter
   throws on several supertypes; StepTypes needs interfaces or flattened attribute lists, and descriptors addressed by
   (partial entity, `OwnPosition`) for complex instances and by `Position` for simple ones.
+- 2026-10-17, TKT-304 done in bim-open-data 337a762. `StepCodeGenTest.TestGenerate` (explicit) writes
+  `src/data/Ara3D.StepTypes/*.g.cs` from the AP242 long form: all 2,140 entities, 39,077 lines, compiled by Csc in
+  6.9 s, so no closure rule was needed; a rerun is byte-identical and the normal test `GeneratedFilesAreCurrent` fails
+  when the committed files drift. Shape: per entity an interface extending its supertypes' interfaces and the SELECTs
+  that list it (`IAdvancedFace : IFaceSurface`), so membership is a type test that works with several supertypes; per
+  entity a sealed descriptor class with one `Instance` and a `StepAttribute<T>` field for every slot of its record,
+  inherited ones included, each carrying `Position` and (declaring `Entity`, `OwnPosition`); per SELECT an interface,
+  per ENUMERATION an enum. `Ara3D.Step.Entities` (net8.0, like `Ara3D.Ifc.Entities`) holds `StepModel`, `StepEntity`
+  (`Is<T>()`, `Parts`, `TryGet`) and typed readers; a complex instance is an X when any part is, and an attribute is read
+  from the part named by its declaring entity. Tests: Ara3D.StepTypes.Tests 23 passed, including reads from the u-blox
+  `SAM_AP214.STEP` (now a fixture in bim-open-data) of a millimetre prefix and a rational surface's weights from their
+  complex instances; Ara3D.IfcTypeGen 34 passed. A throwaway corpus check: the 88 u-blox files hold 5,708,101 instances,
+  307,599 complex, and no name AP242 does not declare; the five adapter fixtures, 710 instances, none either. Gap 4 is
+  narrower than stated: ten AP242 representation items have another first supertype, so `name` is not their first slot
+  (`rep_item_group`, `user_defined_curve_font`, `externally_defined_hatch_style`, ...); every Part 42/43 geometry and
+  topology entity starts with it. For TKT-305: names are EXPRESS names in Pascal case and some meet .NET ones (`Path`,
+  `Vector`, `Plane`), so alias the namespace where they meet; strings are read raw (no `\X2\` decoding yet).
