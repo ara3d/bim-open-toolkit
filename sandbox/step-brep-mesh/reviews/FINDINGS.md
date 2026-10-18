@@ -97,3 +97,29 @@ session accepts them.
      C# code generator keeps it intact is untested. A language note, not a design defect.
 - **Status** 1 reported to the parser session; 2 to 6 assigned to `TASKS.md` chunk D; 7 noted
   for `TARGET-LANGUAGE.md`.
+
+## F-47: what the fix wave left open
+
+- **Raised** 2026-10-17 by the supervising session from the nine fixers' return reports.
+- **Design items**
+  1. Four laws have no `Check_` because they need a harness input: `Law_RigidMotionKeepsCoedgeSense`,
+     `Law_MeshFaceReadsOnlyFaceEdges`, and layer 3's two findings-subject laws. Chunk A of
+     `TASKS.md` decides how a check receives a second input (a generator argument, per
+     `SPEC-EXECUTION.md`).
+  2. Layer 7's new measured checks (the eleven graded by layer 1's exported measures, the
+     per-face area and per-body volume envelopes) have no written agreement laws
+     (`Law_*CheckAgrees`) yet.
+  3. The two lower-bound angle laws stay exact Errors; there is no excess to grade.
+  4. Layer 1's library laws keep a `tol` parameter they no longer read, so layer 7's calls keep
+     their shape; the name review or chunk A removes the parameter in both layers at once.
+  5. `ScaledPcurve` has no exact result for a 2D offset curve on a cylinder or cone; its
+     precondition excludes the case, so `ScaledBy` on a model with such a pcurve is partial.
+- **Process items**, for the next wave's procedure (`reviews/FIX-WAVE.md` step 1)
+  6. All fixers shared one scratchpad and overwrote each other's gate scripts and snapshots
+     three times; each fixer must work in `scratchpad/<layer>/` from the start.
+  7. All fixers inherit the supervising session's `CLAUDE_CODE_SESSION_ID`, so every `Agent:`
+     trailer carries the same id; the agent id from the spawn result is the one to write.
+  8. Fixers reported the model that ran (Opus) in `Co-Authored-By`, not the line the brief gave.
+     The brief should not name a model.
+- **Status** 1 to 5 carried by `TASKS.md` chunk A and the name review; 6 to 8 to be folded into
+  the next wave brief.

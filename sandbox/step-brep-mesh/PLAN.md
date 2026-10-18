@@ -156,6 +156,17 @@ Recorded as they arise; the ticket carries the same list.
   layer 3) recorded. An agent writes the adapter test spec under `adapter/`: five STEP text
   fixtures, their expected `Part21File` literals, and `ADAPTER-SPEC.md` for whoever builds the
   `StepDocument -> ParsedFile` adapter.
+- 2026-10-17 Fix wave complete: 125 commits across the nine layers (9, 18, 19, 10, 18, 17, 13, 13,
+  14 for layers 0 to 8), each one finding, every fixer reporting no findings in its own folder;
+  layer 7 last, with the all-layer gate at `PASS: 0 error(s) in scope; 6716 functions
+  type-checked` (adapter folder included). Cross-layer changes landed as `FIX-WAVE.md` predicted
+  plus three it did not (the floor arguments of `ParameterToleranceAt` and `UvToleranceAt`,
+  `DiagnosticOf` and `ReportOf` without a bound, `GeometrySet.Closures`), relayed to the affected
+  fixers by message while they ran. Layer 3 was resumed once to write the `ClosureMark`s layer 1
+  reads. Leftovers in `reviews/FINDINGS.md` F-47. The adapter test spec landed under `adapter/`
+  (F-46); the parser session took its two parser-side asks as TKT-310. The name-and-dependency
+  reviewer is launched: single declarations, no upward references, stand-ins resolved,
+  `VOCABULARY.md` revision 3, the adapter witnesses' home, the final gate.
 
 ## Decided by the owner during the pass
 
