@@ -1,0 +1,47 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": { "x": 40, "y": 40, "w": 560, "h": 200 }
+  },
+  "structure": {
+    "edges": [
+      { "from": "entities.relation", "to": "slabs.input" },
+      { "from": "slabs.relation", "to": "slabStorey.t1" },
+      { "from": "storeyOf.relation", "to": "slabStorey.t2" },
+      { "from": "totals.relation", "to": "slabStorey.t3" },
+      { "from": "slabStorey.relation", "to": "rows.input" },
+      { "from": "model.instances", "to": "isolated.instances" },
+      { "from": "rows.table", "to": "isolated.ids" },
+      { "from": "isolated.instances", "to": "coloured.instances" },
+      { "from": "rows.table", "to": "coloured.values" },
+      { "from": "coloured.instances", "to": "answer.instances" },
+      { "from": "rows.table", "to": "answer.values" }
+    ],
+    "nodes": [
+      { "id": "about", "kind": "view.note", "version": 1 },
+      { "id": "entities", "kind": "rel.table", "version": 1 },
+      { "id": "slabs", "kind": "rel.filter", "version": 1 },
+      { "id": "storeyOf", "kind": "rel.table", "version": 1 },
+      { "id": "totals", "kind": "rel.csv", "version": 1 },
+      { "id": "slabStorey", "kind": "rel.sql", "version": 1 },
+      { "id": "rows", "kind": "rel.materialize", "version": 1 },
+      { "id": "model", "kind": "view3d.instances", "version": 1 },
+      { "id": "isolated", "kind": "view3d.isolate", "version": 1 },
+      { "id": "coloured", "kind": "view3d.color", "version": 1 },
+      { "id": "answer", "kind": "view3d.label", "version": 1 }
+    ]
+  },
+  "values": {
+    "about": { "text": "Each storey's total operational carbon (kgCO2e/yr, from nrc_analytics_storeys.csv) written over that storey's floor slabs. slabs keeps the IfcSlab entities of the enriched Duplex, slabStorey puts each on the one storey the model places it on (the smallest Depth, the rule nrc-rollup uses) and gives it that storey's total, isolated keeps only the slab instances in 3D, coloured paints them by the total on the viridis scale, and answer writes one label per storey (groupColumn StoreyName) over the union of that storey's slabs." },
+    "entities": { "source": "duplex-enriched", "table": "EntityText" },
+    "slabs": { "expr": "[Category] == 'IFCSLAB'" },
+    "storeyOf": { "source": "duplex-enriched", "table": "StoreyOfEntity" },
+    "totals": { "path": "nrc_analytics_storeys.csv", "source": "nrc" },
+    "slabStorey": { "sql": "SELECT s.GlobalId, s.Name, so.StoreyName, t.OperationalCarbon_kgCO2e_per_year AS StoreyOperationalCarbon\nFROM t1 s\nJOIN t2 so ON so.EntityIndex = s.EntityIndex\nJOIN t3 t ON t.Container = so.StoreyName\nQUALIFY row_number() OVER (PARTITION BY s.EntityIndex ORDER BY so.Depth, so.StoreyIndex) = 1" },
+    "rows": { "limit": "0" },
+    "model": { "path": "samples/nrc/duplex-enriched.ifc" },
+    "isolated": { "joinColumn": "globalId" },
+    "coloured": { "joinColumn": "globalId", "valueColumn": "StoreyOperationalCarbon", "colorMap": "viridis" },
+    "answer": { "joinColumn": "globalId", "groupColumn": "StoreyName", "format": "{StoreyName}: {StoreyOperationalCarbon:#,##0.0} kgCO2e/yr", "limit": "200" }
+  }
+}
