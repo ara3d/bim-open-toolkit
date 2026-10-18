@@ -75,7 +75,8 @@ The owner's intent was to reuse the C# reader and parser and write the geometry 
 |---|---|---|---|
 | Parse Part 21, diagnostics, header | C# | ara3d-sdk `Ara3D.IO.StepParser` | TKT-302, TKT-310 (done) |
 | Typed AP242 layer | C# (generated) | bim-open-data `Ara3D.StepTypes`, `Ara3D.Step.Entities` | TKT-303, TKT-304 (done) |
-| Decode into the Plato library's `BrepModel` | C# | `Ara3D.Step.Mesher/Decode` | TKT-312 |
+| Decode into the Plato library's `RawDecodedModel` (the B-rep as written; units in mm and radians) | C# | `Ara3D.Step.Mesher/Decode` | TKT-312 |
+| `PrepareModel`: closure, mirror folds, tolerance floors, reduction repairs, model size | Plato | `sandbox/step-brep-mesh` layer 3 | TKT-299 (a small chunk replacing D and E) |
 | Units, placements, mapped items, assemblies, colours, entry point | C# | `Ara3D.Step.Mesher/Model`, `StepMesher` | TKT-305 |
 | Geometry: discretization, face meshing, mesh assembly, validation | Plato, compiled to C# | `sandbox/step-brep-mesh` layers 1, 2, 4 to 8 | TKT-299 chunks, TKT-313 |
 
@@ -195,3 +196,4 @@ library's constructs today.
   topology entity starts with it. For TKT-305: names are EXPRESS names in Pascal case and some meet .NET ones (`Path`,
   `Vector`, `Plane`), so alias the namespace where they meet; strings are read raw (no `\X2\` decoding yet).
 - 2026-10-17: pivot recorded (section above); TKT-305 re-scoped to model assembly; TKT-311 (writer spike), TKT-312 (C# decode into BrepModel), TKT-313 (mesh through compiled Plato) filed.
+- 2026-10-17: boundary refined with the Plato session: C# produces `RawDecodedModel` (structural mapping only), Plato's `PrepareModel` makes the four geometric decisions. TKT-312 updated.
