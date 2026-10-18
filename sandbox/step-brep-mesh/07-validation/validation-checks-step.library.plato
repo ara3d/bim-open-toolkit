@@ -111,6 +111,44 @@ library BrepCheckingStep
     Check_DecodeIsTotal(f: Part21File): Check
         => CheckOnce("Law_DecodeIsTotal", Law_DecodeIsTotal(f));
 
+    // Law_DecodedMagnitudesAreTheModels.
+    Check_DecodedMagnitudesAreTheModels(f: Part21File): Check
+        => CheckOnce("Law_DecodedMagnitudesAreTheModels", Law_DecodedMagnitudesAreTheModels(f));
+
+    // Law_DecodedToleranceResolvable (review F6: at the coordinate extent).
+    Check_DecodedToleranceResolvable(f: Part21File): Check
+        => CheckOnce("Law_DecodedToleranceResolvable", Law_DecodedToleranceResolvable(f));
+
+    // Law_ParameterFloorsFollowLength.
+    Check_ParameterFloorsFollowLength(f: Part21File): Check
+        => CheckOnce("Law_ParameterFloorsFollowLength", Law_ParameterFloorsFollowLength(f));
+
+    // Law_ClosureMarksAreTheDecisions.
+    Check_ClosureMarksAreTheDecisions(f: Part21File): Check
+        => CheckOnce("Law_ClosureMarksAreTheDecisions", Law_ClosureMarksAreTheDecisions(f));
+
+    // Law_CurveClosureDecidedByEnds at every decoded curve.
+    Check_CurveClosureDecidedByEnds(f: Part21File): Check
+        => CheckAll("Law_CurveClosureDecidedByEnds", f.DecodeBrep.Model.Geometry.Curves.Count,
+            k => Law_CurveClosureDecidedByEnds(f, k), k => Provenance.KernelCurve(CurveIndex(k)));
+
+    // Law_SurfaceClosureDecidedBySides at every decoded surface and both
+    // parameters.
+    Check_SurfaceClosureDecidedBySides(f: Part21File): Check
+        => CheckGrid("Law_SurfaceClosureDecidedBySides", f.DecodeBrep.Model.Geometry.Surfaces.Count, 2,
+            (k, w) => Law_SurfaceClosureDecidedBySides(f, k, w == 0 ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV),
+            (k, w) => Provenance.KernelSurface(SurfaceIndex(k)));
+
+    // Law_MirrorFoldRecordedOnce at every decoded face.
+    Check_MirrorFoldRecordedOnce(f: Part21File): Check
+        => CheckAll("Law_MirrorFoldRecordedOnce", f.DecodeBrep.Model.Faces.Count,
+            k => Law_MirrorFoldRecordedOnce(f, k), k => AtFace(k));
+
+    // Law_LeftHandedSurfacesAreFolded at every decoded face (review F2).
+    Check_LeftHandedSurfacesAreFolded(f: Part21File): Check
+        => CheckAll("Law_LeftHandedSurfacesAreFolded", f.DecodeBrep.Model.Faces.Count,
+            k => Law_LeftHandedSurfacesAreFolded(f, k), k => AtFace(k));
+
     // Law_DecodedTolerancesWellFormed.
     Check_DecodedTolerancesWellFormed(f: Part21File): Check
         => CheckOnce("Law_DecodedTolerancesWellFormed", Law_DecodedTolerancesWellFormed(f));

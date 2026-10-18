@@ -92,6 +92,43 @@ library BrepCheckingMesh
     Check_ClosedOrientedSurfaceHasGenus(mesh: ModelMesh): Check
         => mesh.CheckComponents("Law_ClosedOrientedSurfaceHasGenus", c => Law_ClosedOrientedSurfaceHasGenus(mesh, c));
 
+    // Law_OrientedSurfaceWithBoundaryHasGenus at every component. Structure:
+    // Error.
+    Check_OrientedSurfaceWithBoundaryHasGenus(mesh: ModelMesh): Check
+        => mesh.CheckComponents("Law_OrientedSurfaceWithBoundaryHasGenus", c => Law_OrientedSurfaceWithBoundaryHasGenus(mesh, c));
+
+    // Law_ComponentCountIsRootCount over the component table. Structure:
+    // Error.
+    Check_ComponentCountIsRootCount(mesh: ModelMesh): Check
+        => CheckOnce("Law_ComponentCountIsRootCount", Law_ComponentCountIsRootCount(mesh));
+
+    // Law_ComponentParentIsInItsComponent at every element. Structure: Error.
+    Check_ComponentParentIsInItsComponent(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ComponentParentIsInItsComponent", e => Law_ComponentParentIsInItsComponent(mesh, e));
+
+    // Law_ComponentParentIsOneShallower at every element. Structure: Error.
+    Check_ComponentParentIsOneShallower(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ComponentParentIsOneShallower", e => Law_ComponentParentIsOneShallower(mesh, e));
+
+    // Law_ComponentParentSharesAVertex at every element. Structure: Error.
+    Check_ComponentParentSharesAVertex(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ComponentParentSharesAVertex", e => Law_ComponentParentSharesAVertex(mesh, e));
+
+    // Law_ComponentRootHasDepthZero at every element. Structure: Error.
+    Check_ComponentRootHasDepthZero(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ComponentRootHasDepthZero", e => Law_ComponentRootHasDepthZero(mesh, e));
+
+    // Law_ComponentsAreNumberedByRoot at every element as a candidate root.
+    // Structure: Error.
+    Check_ComponentsAreNumberedByRoot(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_ComponentsAreNumberedByRoot", r => Law_ComponentsAreNumberedByRoot(mesh, r));
+
+    // Law_ComponentRootIsItsLowestElement at every pair of elements
+    // (quadratic in the element count). Structure: Error.
+    Check_ComponentRootIsItsLowestElement(mesh: ModelMesh): Check
+        => CheckGrid("Law_ComponentRootIsItsLowestElement", mesh.ElementCount, mesh.ElementCount,
+            (r, e) => Law_ComponentRootIsItsLowestElement(mesh, ElementIndex(r), ElementIndex(e)), (r, e) => AtElement(r));
+
     //==
     // # Angles, degeneracy, folds (structure)
 
@@ -182,6 +219,12 @@ library BrepCheckingMesh
     // Law_ElementFaceIsModelFace at every element. Structure: Error.
     Check_ElementFaceIsModelFace(m: BrepModel, mesh: ModelMesh): Check
         => mesh.CheckMeshElements("Law_ElementFaceIsModelFace", e => Law_ElementFaceIsModelFace(m, mesh, e));
+
+    // Law_CornerProvenanceIsOnItsElementFace at every element and corner slot
+    // (review M9: the map is cellular). Structure: Error.
+    Check_CornerProvenanceIsOnItsElementFace(m: BrepModel, mesh: ModelMesh): Check
+        => CheckGrid("Law_CornerProvenanceIsOnItsElementFace", mesh.ElementCount, 4,
+            (e, s) => Law_CornerProvenanceIsOnItsElementFace(m, mesh, ElementIndex(e), s), (e, s) => AtElement(e));
 
     // Law_NumberingHasOneEdgeRunPerEdge on the mesh's numbering. Structure:
     // Error.
@@ -335,6 +378,38 @@ library BrepCheckingMesh
     // Law_ComponentEulerCharacteristicsAddUp.
     Check_ComponentEulerCharacteristicsAddUp(mesh: ModelMesh): Check
         => CheckOnce("Law_ComponentEulerCharacteristicsAddUp", Law_ComponentEulerCharacteristicsAddUp(mesh));
+
+    // Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles at every component's
+    // counts.
+    Check_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles(mesh: ModelMesh): Check
+        => mesh.CheckComponents("Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles",
+            c => Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles(mesh.CountsOf(c)));
+
+    // Law_VectorAreaVanishes at every component (review M11).
+    Check_VectorAreaVanishes(mesh: ModelMesh): Check
+        => mesh.CheckComponents("Law_VectorAreaVanishes", c => Law_VectorAreaVanishes(mesh, c));
+
+    // Law_RestrictionKeepsTheElementsOfTheFaces with the face of each
+    // element in turn.
+    Check_RestrictionKeepsTheElementsOfTheFaces(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_RestrictionKeepsTheElementsOfTheFaces",
+            e => Law_RestrictionKeepsTheElementsOfTheFaces(mesh, [mesh.ElementFace[e.Value]]));
+
+    // Law_RestrictionKeepsEachElementFace at every element of the
+    // restriction to the face of element 0, its first face.
+    Check_RestrictionKeepsEachElementFace(mesh: ModelMesh): Check
+        => mesh.CheckMeshElements("Law_RestrictionKeepsEachElementFace",
+            k => Law_RestrictionKeepsEachElementFace(mesh, mesh.ElementFace.Take(1), k.Value));
+
+    // Law_RestrictionKeepsEachCorner at every element and slot of the
+    // restriction to the face of element 0.
+    Check_RestrictionKeepsEachCorner(mesh: ModelMesh): Check
+        => CheckGrid("Law_RestrictionKeepsEachCorner", mesh.ElementCount, 4,
+            (k, s) => Law_RestrictionKeepsEachCorner(mesh, mesh.ElementFace.Take(1), k, s), (k, s) => AtElement(k));
+
+    // Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic.
+    Check_RestrictionToEveryFaceKeepsTheEulerCharacteristic(mesh: ModelMesh): Check
+        => CheckOnce("Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic", Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic(mesh));
 
     // Law_ClosedComponentEulerIsTwoMinusTwiceGenus at every component's
     // counts.

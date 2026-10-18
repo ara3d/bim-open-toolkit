@@ -14,13 +14,13 @@ mathematics, on hand-written witnesses, and on public files.
 | `validation.types.plato` | (types) | `ConformanceLevel`, `CheckFamily`, the Green oracle's `GreenSegment`, `GreenPath`, `TrigCoefficients`, `WitnessFacts`, the corpus records `ExpectedMeasure`, `CorpusFeature`, `CorpusCount`, `CorpusEntry` |
 | `validation-checks.library.plato` | `BrepChecking` | the entry points: `ValidateStep`, `ValidateBrep`, `ValidateDiscretizations`, `ValidateFaceMesh`, `ValidateFaceMeshOutcome`, `ValidateModelMesh`, `ValidateAssembly`, `CrossCheck`; levels as data |
 | `validation-checks-common.library.plato` | `BrepCheckingCommon` | the samplers every `Check_` is built from (`CheckAll`, `CheckAllWithin`, `CheckGrid`, `CheckGridWithin`), provenance helpers, report builders (`ExactReport`, `MeasuredReport`, `QualityReport`) |
-| `validation-checks-topology.library.plato` | `BrepCheckingTopology` | 28 checks: layer 0's model tolerances, layer 2's laws |
-| `validation-checks-geometry.library.plato` | `BrepCheckingGeometry` | 84 checks: layer 1's laws over the geometry arena, and its self-tests |
-| `validation-checks-step.library.plato` | `BrepCheckingStep` | 52 checks: layer 3's file, schema, decode and units laws |
+| `validation-checks-topology.library.plato` | `BrepCheckingTopology` | 44 checks: layer 0's model tolerances, layer 2's laws and self-tests |
+| `validation-checks-geometry.library.plato` | `BrepCheckingGeometry` | 95 checks: layer 1's laws over the geometry arena, and its self-tests |
+| `validation-checks-step.library.plato` | `BrepCheckingStep` | 60 checks: layer 3's file, schema, decode and units laws |
 | `validation-checks-where.library.plato` | `BrepCheckingWhere` | 110 checks, one per WHERE rule law of layer 3, generated from `step-where.laws.plato`; `WhereRulesReport` |
-| `validation-checks-discretization.library.plato` | `BrepCheckingDiscretization` | 35 checks: layer 4 |
-| `validation-checks-face-meshing.library.plato` | `BrepCheckingFaceMeshing` | 39 checks: layer 5 |
-| `validation-checks-mesh.library.plato` | `BrepCheckingMesh` | 108 checks: layer 6 |
+| `validation-checks-discretization.library.plato` | `BrepCheckingDiscretization` | 36 checks: layer 4 |
+| `validation-checks-face-meshing.library.plato` | `BrepCheckingFaceMeshing` | 45 checks: layer 5 |
+| `validation-checks-mesh.library.plato` | `BrepCheckingMesh` | 123 checks: layer 6 |
 | `validation-checks-cross.library.plato` | `BrepCrossChecking` | 17 cross checks of a mesh against its model; `CrossReport`, `ModelOracleReport` |
 | `validation-checks-reports.library.plato` | `BrepCheckingReports` | one report per layer and input, split by `CheckFamily`; generated (see "Implementation notes") |
 | `validation-oracles.library.plato` | `BrepOracles` | closed forms, the Green's-theorem area, the divergence volume, the Euler and angle-defect oracles, the area envelope |
@@ -42,7 +42,7 @@ known by at least one route that shares no code with the code under test.
    inverse evaluation and layer 2's domains and senses, never a discretization or a triangulation.
    Closed forms (`Oracle_CylinderPatchArea`, `Oracle_SphereArea`, `Oracle_TorusArea`,
    `Oracle_ConePatchArea`, `Oracle_PlanarFaceArea`) check the Green oracle in turn.
-2. **Witnesses.** Ten positive models and three negative ones, written out as values, each with
+2. **Witnesses.** Ten positive models, three negative ones and one with a planted bad face, written out as values, each with
    its counts, genus, face areas and shell volumes from closed forms (`WitnessFacts`). A negative
    witness breaks exactly the laws its comment names.
 3. **Public files.** Thirty-six STEP files from STEP Tools, OpenCascade's sample data, the u-blox
@@ -208,7 +208,7 @@ A planted bad face for layer 8's failure-isolation law:
 
 | Witness | Holds | Expected diagnostics when meshed |
 |---|---|---|
-| `Witness_BoxWithPolyLoopSheet` | the unit box (shell 0, body 0) and face 6, a triangle at z = 3 bounded by a poly loop, alone in open shell 1 (body 1, a shell set) | at face 6: layer 5's `FACE-POLY-LOOP` and `Law_EveryFaceIsMeshed`, both Errors; at shell 1: layer 2's open-shell Euler law (a poly loop has no indexed cell, so chi = 1 with no boundary cycle); nothing at the box |
+| `Witness_BoxWithPolyLoopSheet` | the unit box (shell 0, body 0) and face 6, a triangle at z = 3 bounded by a poly loop, alone in open shell 1 (body 1, a shell set) | at face 6: layer 5's `FACE-POLY-LOOP` and `Law_EveryFaceIsMeshed`, both Errors; at shell 1: whatever layer 2's poly-loop counting reports (finding 6); nothing at the box |
 
 `WitnessAt(k)` and `FactsAt(k)` index the positive witnesses by k modulo 10, so a law quantifies
 over all of them with one Integer.
@@ -291,7 +291,7 @@ Six sampler laws (`Law_CheckAllHoldsExactlyWhenEverySampleHolds`, `Law_FailingCh
 and the `Within` and `Grid` forms) state for every exact check at once that a check holds exactly
 when its law holds at every sample, and that a failing check names a failing sample. Measured checks
 fold a measure written beside the law, so each gets its own agreement law (17 for layers 0 to 6, 5
-for the cross checks), for example `Law_SagittaCheckAgrees`: when
+for the cross checks; the measured checks the fix wave added have none yet, open item 5), for example `Law_SagittaCheckAgrees`: when
 `Check_SagittaWithinChordal` holds, `Law_SagittaWithinChordal` holds at every entry and segment.
 Exact.
 
@@ -341,12 +341,23 @@ Theorems in `validation.spec.plato`: `SampledCheckAgreesWithLaw`, `HigherLevelCl
    `geometric_validation_property`; not in layer 3.
 4. **Messages.** Report messages of the generated reports are the law's name in words. A message
    per law, written by hand, would read better.
+5. **Agreement laws for the fix wave's measured checks.** The eleven layer 1 file-geometry checks,
+   `Check_CurveAgreesWithPcurve`, `Check_SurfaceWithinSurfaceChordalOfElement`,
+   `Check_CertifiedSagittaWithinChordal` and the two oracle checks fold a measure that is their law's
+   left side behind the law's own guard, so they agree with their laws by construction; each still
+   lacks the written agreement law the older measured checks have.
+6. **Laws without a check.** `Law_RigidMotionKeepsCoedgeSense` (layer 2) takes an arbitrary frame,
+   `Law_MeshFaceReadsOnlyFaceEdges` (layer 5) a second discretization set, and layer 3's
+   `Law_DecodeFindingsPointAtTheirSubject` and `Law_ParseFindingsPointAtTheirSubject` a diagnostic
+   code (no list of codes is exported) or the text; all four are harness inputs. Layer 0's library
+   laws over scalars and records are run by the random law runner, not by a `Check_`.
 
 ## Implementation notes
 
 - **Generated files.** `validation-checks-where.library.plato` was generated from the law signatures
   of `03-step/step-where.laws.plato`, and `validation-checks-reports.library.plato` from the check
-  libraries: a check's family comes from its section heading, a measured check's bound is taken from
+  libraries (the fix wave edited both by hand: a rerun must keep the `WarningReport` grades and the
+  hand-written messages): a check's family comes from its section heading, a measured check's bound is taken from
   a table of the 17 measured checks, the Warning and Info grades from the check's comment. Rerun the
   script (kept in the session scratchpad as `genreports.py`) whenever a check is added; it belongs
   under `tools/` once the design leaves the sandbox.
@@ -368,6 +379,10 @@ Run 2026-10-17 over copies of layers 00 to 07 with the driver of PLATO-PRIMER.md
 errors, 6,257 functions type-checked; one Info (LINT010 on `CorpusEntry`, cleared when the corpus
 library was added). Over layers 00 to 08: PASS, 0 errors, 6,357 functions.
 
+Fix wave, 2026-10-17: after each commit, over this folder and a snapshot of the other eight layers
+taken from `main`; the last run over all nine layers as committed on `main`, the other fixers
+finished: PASS, 0 errors in scope, 6,693 functions type-checked.
+
 ## Changes to the contract
 
 | Old | New | Reason |
@@ -380,6 +395,13 @@ library was added). Over layers 00 to 08: PASS, 0 errors, 6,357 functions.
 | witnesses, counts stated | as stated, plus `Witness_Box(w, d, h)`, `Witness_Cylinder(r, h, sweep)`, sized forms of every witness, `Witness_SphereByPoleLoops` and three negative witnesses; the default forms call the sized ones | parameterized laws and negative controls |
 | (none) | `WitnessFacts`, `WitnessAt`, `FactsAt`, `CorpusEntry` and its records, `Corpus` | witnesses and corpus as data |
 | (none) | `WitnessOptions`, `WitnessOutcome`, `WitnessMesh`, `SameModel` | the witness laws mesh through layer 8; the transforms are layer 2's and `SameConnectivity` layer 6's (fix wave) |
+| `ExactReport(c, msg)`, `MeasuredReport(c, bound, msg)`, `QualityReport(c, bound, msg)` | `MeasuredReport(c, msg)`, `QualityReport(c, msg)`; added `WarningReport(c, msg)`, `AsWarning(c)`, `CheckAllWithinEach`, `CheckGridWithinEach` | layer 0's `Check.Bound` (fix wave) |
+| `MovedBy`, `ScaledBy`, `ScaledPoint` and their parts, `ScaledCriteria`, `MeshOnce`, `WitnessCriteria`, `SameConnectivity`, `WindsInV`, `ModelSizeOf`, `IsShellElement` | deleted; `WitnessOptions`, `WitnessOutcome`, `WitnessMesh` mesh through layer 8; layers 2 and 6 own the transforms and the comparison | FIX-WAVE ownership table |
+| (none) | `Law_EveryFaceIsMeshed`, `HasMeshElements`, `IsCompleteShellMesh`, `IsFaceAreaJudged`, `IsSolidVolumeJudged` | one finding per refused face; per-face envelopes as check bounds |
+| (none) | `Witness_BoxWithPolyLoopSheet`, `PlantedBadFace`, five planted-face laws | layer 8's failure-isolation law |
+| (none) | `ClosedSurfaceVolume`, `Law_DivergenceEqualsTorusVolume` | the torus volume oracle is total |
+| (none) | `Curve2DSite`, `IsEdgeProvenance`, `CoordinateExtentOf`, `OffCurvePoint`, `OffSurfacePoint`, `ParameterOfSlot`, `CertifiedSagittaAt`, `CurvePcurveDeviation` | provenance, extents and the new checks |
+| witness laws `Law_RigidMotionKeepsConnectivity`, `Law_RigidMotionMovesMesh`, `Law_PowerOfTwoScalingKeepsConnectivity`; theorem `RigidMotionCommutesWithMeshing`; conjectures `ScalingByAnyFactorKeepsConnectivity`, `TighterChordalNeverIncreasesDeviation` | layer 8's metamorphic laws run over the witnesses (`Law_Witness...`); the theorem and both conjectures dropped as false | layer 8 decisions 11 and 12 |
 
 ## Findings in lower layers
 
@@ -401,11 +423,11 @@ library was added). Over layers 00 to 08: PASS, 0 errors, 6,357 functions.
 5. **Layer 1 exports Booleans only** for its file-geometry laws (placement orthonormality and the
    like), so they are graded as exact Errors here; exporting the measure would allow the ten-times
    Warning grading.
-6. **A shell of poly loops fails layer 2's Euler laws.** A poly loop's points are not indexed, so a
-   faceted shell counts no vertex and no edge: a single triangle sheet has chi = 1 and no free
-   edge, which layer 2's open-shell Euler law rejects, and a faceted tetrahedron has chi = 4. A
-   faceted B-rep is legal STEP; layer 2 should count a poly loop's points and implicit edges, or
-   exempt such shells as `ReducedCounts`' contract already does (`ShellHasPolyLoop`).
+6. **Poly-loop shells and layer 2's Euler laws.** Before the fix wave a poly loop's points were not
+   counted, so a single triangle sheet had chi = 1 with no free edge and failed the open-shell Euler
+   law. Layer 2's fix wave identifies poly-loop points by coincidence in `ReducedCounts`; whether
+   `BoundaryCycleCount` (deferred) walks a poly loop's implicit edges decides whether the sheet of
+   `Witness_BoxWithPolyLoopSheet` passes, so that witness's laws allow a finding at shell 1.
 7. **The gate skips lambda bodies** (see "Implementation notes").
 8. **Layer 6 cites `Law_AngleDefectMatchesBrepEuler`** as this layer's; it is declared here.
 9. **Layer 8's `Validated`** calls `m.ValidateBrep` (always Geometric, ignoring `o.Level`),
@@ -457,3 +479,4 @@ These two landed in one commit, since both edit the topology checks.
 | Layer 4's `Law_CertifiedSagittaWithinChordal` | `Check_CertifiedSagittaWithinChordal`, measured by layer 4's exact `Sagitta`, a self-test |
 | Layer 5's new laws | `Check_SurfaceWithinSurfaceChordalOfElement` (measured, review M6), and as self-tests `Check_SeamUsesOnOppositeCopies` (review M8), `Check_BoundarySegmentIsElementSide` (review M5), `Check_InteriorSideIsShared`, `Check_ElementLiftsFacingFaceNormal` (review H5), `Check_RequestsNameFaceEdges`; `Check_PointNormalIsFaceNormal`'s comment names the bound `ResolutionAt(1)`. Not checked: `Law_MeshFaceReadsOnlyFaceEdges`, which takes a second discretization set; layer 8's `Law_OutcomesAreCurrent` runs it over the loop's states |
 | Layer 1 exports the measures of its file-geometry laws (finding 5 of "Findings in lower layers") | eleven geometry checks fold the measures (`PlacementDeviation`, `TrimExcess`, `TrimBoxExcess`, `SegmentGap`, `SupportGap`, `PcurveToCurveGap`, `CurveToPcurveGap`, `PcurveDomainExcess`, `CollapsedLineSpread`) and are reported Warning below ten times the tolerance; per-kind parameter floors go in as per-sample bounds (`CheckGridWithinEach`). `OffsetReferenceAngle` and `ExtrusionProfileAngle` are lower bounds with no excess to grade, so those two stay exact Errors. `Law_WitnessMeshValidatesClean` takes layer 8's new `MeshingOptions.Quality` |
+| The remaining new laws of layers 1, 2, 3 and 6 | layer 1: off-curve and off-surface inverse evaluation (`Check_ClosestParameterNoWorseThanSample`, `...IsStationary`, `Check_ProjectNoWorseThanSample`, `...IsStationary`, review M4), `Check_ProjectNearRecoversFromNearbySeed` (seeded off the answer), `Check_PcurveClosestParameterIsBounded` (review F4b), the three scaling laws at factor 2, the two closure-mark laws; layer 2: `Check_ScalingScalesExtent`; layer 3: the closure, mirror-fold, magnitude, resolvability and floor laws of the decode; layer 6: the spanning-forest component laws, `Check_OrientedSurfaceWithBoundaryHasGenus`, `Check_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles`, `Check_VectorAreaVanishes` (review M11), the restriction laws, and `Check_CornerProvenanceIsOnItsElementFace` (review M9). Four laws stay unchecked (open item 6) |

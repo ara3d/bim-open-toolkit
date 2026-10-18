@@ -285,6 +285,11 @@ library BrepCheckingTopology
     Check_ReversingEveryFaceKeepsCoherence(m: BrepModel): Check
         => m.CheckShells("Law_ReversingEveryFaceKeepsCoherence", s => Law_ReversingEveryFaceKeepsCoherence(m, s));
 
+    // Law_ScalingScalesExtent over the whole model, scaling by 2. Self-test:
+    // Error.
+    Check_ScalingScalesExtent(m: BrepModel): Check
+        => CheckOnce("Law_ScalingScalesExtent", Law_ScalingScalesExtent(m, 2.0));
+
     // Law_ModelSizeWithinExtent over the whole model. Self-test: Error.
     Check_ModelSizeWithinExtent(m: BrepModel): Check
         => CheckOnce("Law_ModelSizeWithinExtent", Law_ModelSizeWithinExtent(m));

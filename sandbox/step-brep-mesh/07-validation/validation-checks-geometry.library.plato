@@ -375,6 +375,66 @@ library BrepCheckingGeometry
     Check_ClosestParameterIsCanonical(m: BrepModel, plan: SamplePlan): Check
         => m.CheckCurveSamples(plan, "Law_ClosestParameterIsCanonical", (c, t) => Law_ClosestParameterIsCanonical(m.Geometry, c, t, m.Tolerances));
 
+    // Law_ClosestParameterNoWorseThanSample at every curve, every sample i
+    // whose point, moved off the curve (OffCurvePoint), is the query, and
+    // every sample j as the competitor (review M4). Self-test: Error.
+    Check_ClosestParameterNoWorseThanSample(m: BrepModel, plan: SamplePlan): Check
+        => CheckGrid("Law_ClosestParameterNoWorseThanSample", m.Geometry.Curves.Count, plan.Count * plan.Count,
+            (c, ij) => Law_ClosestParameterNoWorseThanSample(m.Geometry, CurveIndex(c),
+                m.OffCurvePoint(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[ij / plan.Count]),
+                m.CurveSamples(CurveIndex(c), plan)[ij % plan.Count], m.Tolerances),
+            (c, ij) => m.CurveSite(CurveIndex(c)));
+
+    // Law_ClosestParameterIsStationary at every curve and the off-curve point
+    // of every sample. Self-test: Error.
+    Check_ClosestParameterIsStationary(m: BrepModel, plan: SamplePlan): Check
+        => m.CheckCurveSamples(plan, "Law_ClosestParameterIsStationary",
+            (c, t) => Law_ClosestParameterIsStationary(m.Geometry, c, m.OffCurvePoint(c, t), m.Tolerances));
+
+    // Law_PcurveClosestParameterIsBounded at every pcurve and sample (review
+    // F4b). Self-test: Error.
+    Check_PcurveClosestParameterIsBounded(m: BrepModel, plan: SamplePlan): Check
+        => m.CheckPcurveSamples(plan, "Law_PcurveClosestParameterIsBounded",
+            (p, t) => Law_PcurveClosestParameterIsBounded(m.Geometry, p, t, m.Tolerances));
+
+    // Law_ScaledCurvePointIsScaled at every curve and sample, scaling by 2.
+    // Self-test: Error.
+    Check_ScaledCurvePointIsScaled(m: BrepModel, plan: SamplePlan): Check
+        => m.CheckCurveSamples(plan, "Law_ScaledCurvePointIsScaled", (c, t) => Law_ScaledCurvePointIsScaled(m.Geometry, c, t, 2.0));
+
+    // Law_ScaledPcurvePointIsScaled at every pcurve and sample, scaling by 2.
+    // Self-test: Error.
+    Check_ScaledPcurvePointIsScaled(m: BrepModel, plan: SamplePlan): Check
+        => m.CheckPcurveSamples(plan, "Law_ScaledPcurvePointIsScaled", (p, t) => Law_ScaledPcurvePointIsScaled(m.Geometry, p, t, 2.0));
+
+    // Law_ClosureMarkInRange at every closure mark. Structure: Error.
+    Check_ClosureMarkInRange(m: BrepModel): Check
+        => CheckAll("Law_ClosureMarkInRange", m.Geometry.Closures.Count,
+            k => Law_ClosureMarkInRange(m.Geometry, k), k => Provenance.WholeInput);
+
+    // Law_ClosureMarkNamesBoundedAperiodic at every closure mark. Structure:
+    // Error.
+    Check_ClosureMarkNamesBoundedAperiodic(m: BrepModel): Check
+        => CheckAll("Law_ClosureMarkNamesBoundedAperiodic", m.Geometry.Closures.Count,
+            k => Law_ClosureMarkNamesBoundedAperiodic(m.Geometry, k), k => Provenance.WholeInput);
+
+    // Curve c's point at t moved off the curve by the length tolerance along
+    // each axis: a query point off the curve, as vertices and edge samples
+    // are (review M4); the origin where c cannot be evaluated (the law is
+    // vacuous there, and its argument is computed first).
+    OffCurvePoint(m: BrepModel, c: CurveIndex, t: Number): Point3D
+        => m.Geometry.CanEvaluate(c)
+            ? m.Geometry.Eval(c, m.Geometry.Domain(c).SampleIn(t))
+                + Vector3D(m.Tolerances.Length.Value, m.Tolerances.Length.Value, m.Tolerances.Length.Value)
+            : Point3D(0.0, 0.0, 0.0);
+
+    // Surface s's point at uv moved off the surface the same way.
+    OffSurfacePoint(m: BrepModel, s: SurfaceIndex, uv: UvCoordinate): Point3D
+        => m.Geometry.CanEvaluate(s)
+            ? m.Geometry.Eval(s, m.Geometry.Domain(s).SampleIn(uv))
+                + Vector3D(m.Tolerances.Length.Value, m.Tolerances.Length.Value, m.Tolerances.Length.Value)
+            : Point3D(0.0, 0.0, 0.0);
+
     // Law_TrimmedStartsAtSensedEnd at every curve.
     Check_TrimmedStartsAtSensedEnd(m: BrepModel): Check
         => m.CheckCurves("Law_TrimmedStartsAtSensedEnd", c => Law_TrimmedStartsAtSensedEnd(m.Geometry, c, m.Tolerances));
@@ -479,6 +539,39 @@ library BrepCheckingGeometry
     // Law_ProjectNearRecoversParameter at every surface and grid point.
     Check_ProjectNearRecoversParameter(m: BrepModel, plan: SamplePlan): Check
         => m.CheckSurfaceSamples(plan, "Law_ProjectNearRecoversParameter", (s, uv) => Law_ProjectNearRecoversParameter(m.Geometry, s, uv, m.Tolerances));
+
+    // Law_ProjectNoWorseThanSample at every surface, every grid point whose
+    // point, moved off the surface, is the query, and every grid point as the
+    // competitor (review M4). Self-test: Error.
+    Check_ProjectNoWorseThanSample(m: BrepModel, plan: SamplePlan): Check
+        => CheckGrid("Law_ProjectNoWorseThanSample", m.Geometry.Surfaces.Count, plan.Count * plan.Count * plan.Count * plan.Count,
+            (s, ij) => Law_ProjectNoWorseThanSample(m.Geometry, SurfaceIndex(s),
+                m.OffSurfacePoint(SurfaceIndex(s), m.SurfaceSamples(SurfaceIndex(s), plan)[ij / (plan.Count * plan.Count)]),
+                m.SurfaceSamples(SurfaceIndex(s), plan)[ij % (plan.Count * plan.Count)], m.Tolerances),
+            (s, ij) => m.SurfaceSite(SurfaceIndex(s)));
+
+    // Law_ProjectIsStationary at every surface, grid point (moved off the
+    // surface) and parameter. Self-test: Error.
+    Check_ProjectIsStationary(m: BrepModel, plan: SamplePlan): Check
+        => m.CheckSurfaceParameterSamples(plan, "Law_ProjectIsStationary",
+            (s, uv, which) => Law_ProjectIsStationary(m.Geometry, s, m.OffSurfacePoint(s, uv), which, m.Tolerances));
+
+    // Law_ProjectNearRecoversFromNearbySeed at every surface, grid point, and
+    // the four seeds offset by half the near-seed radius in each parameter
+    // (review section 5: seeded off the answer). Self-test: Error.
+    Check_ProjectNearRecoversFromNearbySeed(m: BrepModel, plan: SamplePlan): Check
+        => CheckGrid("Law_ProjectNearRecoversFromNearbySeed", m.Geometry.Surfaces.Count, 4 * plan.Count * plan.Count,
+            (s, j) => Law_ProjectNearRecoversFromNearbySeed(m.Geometry, SurfaceIndex(s),
+                m.SurfaceSamples(SurfaceIndex(s), plan)[j % (plan.Count * plan.Count)],
+                (j / (plan.Count * plan.Count)) % 2 == 0 ? 0.5 : -0.5,
+                j / (2 * plan.Count * plan.Count) == 0 ? 0.5 : -0.5,
+                m.Tolerances),
+            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+
+    // Law_ScaledSurfacePointIsScaled at every surface and grid point, scaling
+    // by 2. Self-test: Error.
+    Check_ScaledSurfacePointIsScaled(m: BrepModel, plan: SamplePlan): Check
+        => m.CheckSurfaceSamples(plan, "Law_ScaledSurfacePointIsScaled", (s, uv) => Law_ScaledSurfacePointIsScaled(m.Geometry, s, uv, 2.0));
 
     // Law_ProjectIsCanonical at every surface and grid point.
     Check_ProjectIsCanonical(m: BrepModel, plan: SamplePlan): Check
