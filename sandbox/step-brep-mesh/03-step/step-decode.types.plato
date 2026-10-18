@@ -13,6 +13,7 @@
 //  - The provenance map
 //  - Units
 //  - Policy and result
+//  - The raw model: the boundary the C# decoder produces
 
 //==
 // # Occurrences and sources
@@ -201,11 +202,14 @@ type DecodePolicy
 // occurrence's length unit, every angle in radians; the provenance map; every
 // diagnostic, decoding never stops on a bad instance; and the two magnitudes
 // the tolerances were derived from, in model units: ModelSize, layer 2's
-// ModelSize(Model) (the diagonal of the bounding box of the defining points),
-// and CoordinateExtent, layer 2's CoordinateExtent(Model) (the largest
-// absolute coordinate). They are exported so later layers (a relative chordal
-// default, the resolvability check) read the numbers the decoder used
-// without rescanning the model (Law_DecodedMagnitudesAreTheModels).
+// ModelSize (the diagonal of the bounding box of the defining points), and
+// CoordinateExtent, layer 2's CoordinateExtent (the largest absolute
+// coordinate), both of the raw model PrepareModel was given (the points as
+// the file wrote them, placed; a vertex merge can only remove a point within
+// the length tolerance of a kept one). They are exported so later layers (a
+// relative chordal default, the resolvability check) read the numbers the
+// decoder used without rescanning the model
+// (Law_DecodedMagnitudesAreTheModels).
 type DecodedModel
 {
     Model: BrepModel;
@@ -213,4 +217,52 @@ type DecodedModel
     Diagnostics: Array<Diagnostic>;
     ModelSize: Number;
     CoordinateExtent: Number;
+}
+
+//==
+// # The raw model: the boundary the C# decoder produces
+//
+// README, "Boundary moved to RawDecodedModel, 2026-10-17". The owner decided
+// that STEP parsing and decoding are C#, from generated AP242 types, and the
+// geometry is Plato. The C# decoder (DecodeRaw, TKT-312) produces a
+// RawDecodedModel: the structural mapping of typed records to kernel tables,
+// with no decision that needs a tolerance. Plato's PrepareModel finishes it
+// into a DecodedModel by making the four decisions that are geometry: the
+// tolerances and their floors, the reduction repairs, the orientation fold
+// (mirrors included), and closure.
+
+// The B-rep as the file wrote it, decoded and placed, before any geometric
+// decision: the input of PrepareModel and the output of the C# decoder.
+// Model: every occurrence's kernel elements in millimetres and radians;
+// each face's SameSense and each bound's Orientation as the face_surface and
+// face_bound write them (no fold applied); GeometrySet.Closures empty, so
+// every Periodicity is the one the curve or surface family gives, never
+// Closed; no vertex merged and no edge dropped; Tolerances is
+// UnsetTolerances (PrepareModel sets them); Unit is LengthUnit.Millimetre.
+// Occurrences: every placed copy, as FindOccurrences gives them, each
+// Placement including the conversion from its context's length unit to the
+// millimetre. Sources: the source of every kernel element of Model, one array
+// per table. Folds: the oriented_face and oriented shell flips the decoder
+// found (causes OrientedFace and OrientedShell), recorded but not applied;
+// PrepareModel adds the MirroredPlacement records and applies them all.
+// Repairs: the instances the decoder could not decode (Skipped); merges and
+// dropped edges are PrepareModel's. Units: every 3D context as
+// ResolveContexts gives it (the file's units, and the stated uncertainty in
+// the context's own unit). LengthFactor: millimetres per length unit of
+// occurrence 0's context, and AngleFactor: radians per plane-angle unit of
+// that context, the factors the decoder applied (1 and 1 when there is no
+// occurrence), so Law_UnitsFactorsAgree can check them against the stated
+// units. Diagnostics: the decoder's (classification, units, skipped
+// instances); PrepareModel appends its own.
+type RawDecodedModel
+{
+    Model: BrepModel;
+    Occurrences: Array<StepOccurrence>;
+    Sources: KernelSources;
+    Folds: Array<FoldRecord>;
+    Repairs: Array<RepairRecord>;
+    Units: Array<ContextUnits>;
+    LengthFactor: Number;
+    AngleFactor: Number;
+    Diagnostics: Array<Diagnostic>;
 }

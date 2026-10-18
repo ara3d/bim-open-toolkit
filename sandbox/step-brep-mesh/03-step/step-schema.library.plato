@@ -1,6 +1,13 @@
 //==
 // # StepSchemaModel
 //
+// Status since 2026-10-17 (README, "Boundary moved to RawDecodedModel,
+// 2026-10-17"): STEP decoding is C#, from the generated AP242 types
+// (TKT-304, TKT-312), so the schema model's functions here are the specification the
+// C# typed layer's checks are written against, not Plato code that runs
+// in the pipeline. Finding F-1 (attributes read by string name) is
+// resolved by the generated types. Kept, unchanged, as that specification.
+//
 // Layer 3 of the STEP B-rep to mesh design. Functions over the schema model
 // (step-schema.types.plato) and over a Part21File seen through it: which
 // entity a keyword names, whether an instance is of a kind, where an

@@ -78,17 +78,39 @@ spec ProvenanceMap
 }
 
 // A decode result: indices in range, one source per kernel element,
-// tolerances well formed. Built only by the two decode functions.
+// tolerances well formed. Built only by the decode and preparation
+// functions. ModelSize and CoordinateExtent are the raw model's (spec
+// PrepareModel), which the finished model need not repeat exactly after a
+// merge, so they are no invariant of this type.
 spec DecodedModel
 {
     invariant Law_IndicesInRange(self.Model);
     invariant self.Map.CoversModel(self.Model);
     invariant self.Model.Tolerances.IsWellFormed;
-    invariant self.ModelSize == self.Model.ModelSize;
-    invariant self.CoordinateExtent == self.Model.CoordinateExtent;
     invariant forall (r: Integer) in self.Map.Repairs.Count.Range : self.Diagnostics.Any(x => x.Where == Provenance.StepInstance(self.Map.Repairs[r].Source.Instance));
     constructor DecodeBrep;
     constructor DecodeBrepWith;
+    constructor PrepareModel;
+    constructor PrepareModelWith;
+}
+
+// The boundary the C# decoder produces (README, "Boundary moved to
+// RawDecodedModel, 2026-10-17"): the B-rep as written, in millimetres, no
+// closure, no tolerance, no fold applied, one source per kernel element,
+// only the decoder's own fold records (oriented faces and shells) and
+// repairs (skipped instances), and the root's unit factors.
+spec RawDecodedModel
+{
+    invariant Law_IndicesInRange(self.Model);
+    invariant ProvenanceMap(self.Occurrences, self.Sources, [], self.Folds, self.Repairs).CoversModel(self.Model);
+    invariant Law_RawHasNoClosures(self);
+    invariant forall (k: Integer) : Law_RawHasNoClosedPeriodicity(self, k);
+    invariant Law_RawTolerancesUnset(self);
+    invariant Law_UnitsFactorsAgree(self);
+    invariant forall (o: Integer) in self.Occurrences.Count.Range : self.Occurrences[o].Parent.Value < o;
+    invariant forall (r: Integer) in self.Folds.Count.Range : !(self.Folds[r].Cause == FoldCause.MirroredPlacement) && self.Sources.Faces.IsValidIndex(self.Folds[r].Face);
+    invariant forall (r: Integer) in self.Repairs.Count.Range : self.Repairs[r].Repair == StepRepair.Skipped;
+    constructor DecodeRaw;
 }
 
 //==
@@ -293,7 +315,90 @@ spec DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel
     ensures result.Map.Occurrences.Count == 0 ? result.Diagnostics.HasCode(StepDiagnosticCode.NoShapeFound) : true;
     ensures forall (d: Integer) in file.ClassificationDiagnostics.Count.Range : result.Diagnostics.Any(x => x.Code == file.ClassificationDiagnostics[d].Code && x.Where == file.ClassificationDiagnostics[d].Where);
     measure file.Instances.Count + file.Attributes.Count + result.Map.Occurrences.Count * file.Instances.Count;
-    deferred "classify; resolve contexts; find occurrences; decode each occurrence's reachable instances into the kernel tables, folding orientation and making the local repairs; set tolerances; decide closure from the ends at the length tolerance; build the map";
+}
+
+// Host obligation (C#, TKT-312): the structural half of the decode. Its
+// ensures are what the C# decoder's tests check; every ensures of
+// DecodeBrepWith follows from these and PrepareModelWith's.
+spec DecodeRaw(file: Part21File, policy: DecodePolicy): RawDecodedModel
+{
+    requires policy.DefaultRadiansPerAngleUnit > 0.0;
+    requires policy.DefaultLength.ScaleToMetres > 0.0;
+    ensures Law_IndicesInRange(result.Model);
+    ensures Law_RawHasNoClosures(result);
+    ensures forall (k: Integer) : Law_RawHasNoClosedPeriodicity(result, k);
+    ensures Law_RawTolerancesUnset(result);
+    ensures Law_UnitsFactorsAgree(result);
+    ensures forall (k: Integer) : forall (j: Integer) : Law_RawFaceFlagsAreTheFiles(file, k, j);
+    ensures result.Units.Count == file.ResolveContexts(policy).Count;
+    ensures result.Occurrences.Count == file.FindOccurrences(file.ResolveContexts(policy), policy).Count;
+    ensures forall (d: Integer) in file.ClassificationDiagnostics.Count.Range : result.Diagnostics.Any(x => x.Code == file.ClassificationDiagnostics[d].Code && x.Where == file.ClassificationDiagnostics[d].Where);
+    measure file.Instances.Count + file.Attributes.Count + result.Occurrences.Count * file.Instances.Count;
+    deferred "host obligation, C# from the generated AP242 types: classify; resolve contexts; find occurrences; map each occurrence's reachable typed records to kernel tables in millimetres and radians, flags as written, oriented flips recorded, undecodable instances skipped";
+}
+
+// The geometric half of the decode: the four decisions, at the tolerance it
+// derives. Total on every raw model the decoder can produce.
+spec PrepareModel(raw: RawDecodedModel): DecodedModel
+{
+    requires Law_IndicesInRange(raw.Model);
+    requires Law_RawHasNoClosures(raw);
+    ensures Law_IndicesInRange(result.Model);
+    ensures result.Map.CoversModel(result.Model);
+    ensures result.Model.Tolerances.IsWellFormed;
+    ensures result.Model.Unit == raw.Model.Unit;
+    ensures result.ModelSize == raw.Model.ModelSize;
+    ensures result.CoordinateExtent == raw.Model.CoordinateExtent;
+    ensures Law_PrepareIsIdempotent(raw);
+    ensures forall (k: Integer) : Law_PrepareKeepsPointSet(raw, k);
+    ensures Law_ClosureMarksAreTheDecisions(raw);
+    ensures forall (k: Integer) : Law_CurveClosureDecidedByEnds(raw, k);
+    ensures forall (k: Integer) : Law_SurfaceClosureDecidedBySides(raw, k, SurfaceParameter.ParameterU);
+    ensures forall (k: Integer) : Law_SurfaceClosureDecidedBySides(raw, k, SurfaceParameter.ParameterV);
+    ensures forall (k: Integer) : forall (j: Integer) : Law_FoldPreservesInteriorSide(raw, k, j);
+    ensures forall (k: Integer) : Law_FoldFlipsExactlyRecorded(raw, k);
+    ensures forall (k: Integer) : Law_MirrorFoldRecordedOnce(raw, k);
+    ensures forall (k: Integer) : Law_LeftHandedSurfacesAreFolded(raw, k);
+    ensures forall (d: Integer) in raw.Diagnostics.Count.Range : result.Diagnostics[d] == raw.Diagnostics[d];
+    measure raw.Model.Vertices.Count + raw.Model.Edges.Count + raw.Model.Faces.Count + raw.Model.Geometry.Curves.Count + raw.Model.Geometry.Surfaces.Count;
+}
+
+spec PrepareModelWith(raw: RawDecodedModel, policy: DecodePolicy): DecodedModel
+{
+    requires Law_IndicesInRange(raw.Model);
+    requires Law_RawHasNoClosures(raw);
+    requires policy.DefaultRelativeUncertainty > 0.0;
+    requires policy.AngleCoincidence.IsWellFormed;
+    ensures result.Model.Tolerances.Angle == policy.AngleCoincidence;
+    ensures result.Model.Tolerances == ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, raw.Model.ModelSize, raw.Model.CoordinateExtent, policy);
+    ensures result.Map.Occurrences.Count == raw.Occurrences.Count;
+    ensures result.Model.Faces.Count == raw.Model.Faces.Count;
+    measure raw.Model.Vertices.Count + raw.Model.Edges.Count + raw.Model.Faces.Count + raw.Model.Geometry.Curves.Count + raw.Model.Geometry.Surfaces.Count;
+}
+
+spec Reduced(raw: RawDecodedModel): RawDecodedModel
+{
+    requires raw.Model.Tolerances.Length.IsWellFormed;
+    ensures result.Model.Vertices.Count + result.Repairs.Count - raw.Repairs.Count >= raw.Model.Vertices.Count;
+    ensures result.Model.Vertices.Count <= raw.Model.Vertices.Count;
+    ensures result.Model.Edges.Count <= raw.Model.Edges.Count;
+    ensures result.Model.Faces.Count == raw.Model.Faces.Count;
+    ensures result.Model.Shells.Count == raw.Model.Shells.Count;
+    ensures result.Model.Bodies.Count == raw.Model.Bodies.Count;
+    ensures result.Model.Geometry.Curves.Count == raw.Model.Geometry.Curves.Count;
+    ensures result.Model.Geometry.Surfaces.Count == raw.Model.Geometry.Surfaces.Count;
+    ensures forall (r: Integer) in raw.Repairs.Count.Range : result.Repairs[r].Source == raw.Repairs[r].Source;
+    measure raw.Model.Vertices.Count * raw.Model.Edges.Count;
+    deferred "union-find over vertex pairs within the length tolerance at edges and loop joints; drop edges whose ends merged on an open curve; renumber vertices, edges and their sources";
+}
+
+spec ToleranceDiagnostics(raw: RawDecodedModel, tolerances: Tolerances, modelSize: Number, extent: Number, policy: DecodePolicy): Array<Diagnostic>
+{
+    requires tolerances.IsWellFormed;
+    ensures raw.Units.UsedContextsOf(raw.Occurrences).Any(c => c.HasStatedUncertainty) == !result.HasCode(StepDiagnosticCode.UncertaintyDefaulted);
+    ensures result.Count <= 3;
+    measure raw.Units.Count;
+    deferred "compare the used contexts' stated uncertainties with each other and with the resolvable length at the extent";
 }
 
 spec ClassificationDiagnostics(file: Part21File): Array<Diagnostic>
@@ -372,7 +477,8 @@ theorem FoldingKeepsFaceRegions
     assume k >= 0 && k < f.DecodeBrep.Model.Faces.Count && k < f.DecodeBrep.Map.Sources.Faces.Count;
     assume forall (j: Integer) : Law_FoldPreservesInteriorSide(f, k, j);
     assume Law_FoldFlipsExactlyRecorded(f, k);
+    assume forall (j: Integer) : Law_RawFaceFlagsAreTheFiles(f, k, j);
     conclude forall (j: Integer) in f.DecodeBrep.Model.Faces[k].Bounds.Count.Range : (f.DecodeBrep.Model.Faces[k].Bounds[j].Orientation == f.FileBoundOrientation(f.DecodeBrep.Map.Sources.Faces[k], j)) == !f.DecodeBrep.Map.IsFolded(BrepFaceIndex(k));
     because "research/STEP-BREP-MODEL.md 4.2: a coedge runs along its curve with sign s * o * b and the face lies to its left in the surface's (u, v) plane exactly when the face sign f (times the lemon-torus sign) is +1. A mirroring placement changes neither the (u, v) plane nor the pcurves, and layer 1 turns a left-handed surface's normal over with its handedness, so the sign that relates the normal to the parameterization is the same before and after the mirror for every surface family; the rule therefore reads the same f and b on the placed face as on the file face. Flipping f and every b together reverses every coedge and moves the face to the other side of it, so the region bounded is the same; the interior-side law says each product f * b is the file's. If the face flag is flipped (an odd number of folds), every bound flag must flip too to keep the product, and if not, none may: which is the conclusion. The face's surface and loops are the decoded images of the file's (the provenance map), so its point set is the file face's.";
-    tested by Law_FoldPreservesInteriorSide, Law_FoldFlipsExactlyRecorded;
+    tested by Law_FoldPreservesInteriorSide, Law_FoldFlipsExactlyRecorded, Law_RawFaceFlagsAreTheFiles;
 }

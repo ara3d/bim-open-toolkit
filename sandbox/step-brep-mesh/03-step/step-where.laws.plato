@@ -1,6 +1,13 @@
 //==
 // # StepWhereRulesLaws
 //
+// Status since 2026-10-17 (README, "Boundary moved to RawDecodedModel,
+// 2026-10-17"): STEP decoding is C#, from the generated AP242 types
+// (TKT-304, TKT-312), so the WHERE laws here are the specification the
+// C# typed layer's checks are written against, not Plato code that runs
+// in the pipeline. Finding F-1 (attributes read by string name) is
+// resolved by the generated types. Kept, unchanged, as that specification.
+//
 // Layer 3 of the STEP B-rep to mesh design. One law per WHERE rule of every
 // decoded entity in research/STEP-BREP-MODEL.md section 3, named
 // Law_Where_<Entity>_<Rule>, stated over a Part21File and the position i of

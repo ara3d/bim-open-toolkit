@@ -9,7 +9,15 @@
 // files"), since a random Part21File holds arrays and cannot be generated
 // (PLATO-PRIMER.md B.2). Every law is total.
 //
+// Since 2026-10-17 DecodeBrep is PrepareModel of the C# decoder's raw model
+// (README, "Boundary moved to RawDecodedModel, 2026-10-17"). The laws of the
+// geometric decisions, closure and the fold, are stated over a
+// RawDecodedModel and PrepareModel's output; each keeps its Part21File form,
+// which applies it to DecodeRaw of the file, so the checks that cite it are
+// unchanged. The first section holds the laws of the boundary itself.
+//
 // Sections, in order:
+//  - The raw boundary
 //  - Totality
 //  - The provenance map
 //  - Counts
@@ -20,6 +28,106 @@
 
 library StepReadingLaws
 {
+    //==
+    // # The raw boundary
+    //
+    // What the C# decoder must deliver (the preconditions, as laws over a
+    // RawDecodedModel) and what PrepareModel promises of every raw model.
+
+    // The raw model holds no closure mark: closure is PrepareModel's decision.
+    Law_RawHasNoClosures(raw: RawDecodedModel): Boolean
+        => raw.Model.Geometry.Closures.Count == 0;
+
+    // No raw curve or surface direction is Closed in layer 1's Domain: every
+    // Periodicity is the one its family gives (Periodic or Aperiodic). Follows
+    // from Law_RawHasNoClosures, since only a mark makes a direction Closed;
+    // stated so a decoder that grew a Closed case some other way fails here.
+    Law_RawHasNoClosedPeriodicity(raw: RawDecodedModel, k: Integer): Boolean
+    {
+        var g = raw.Model.Geometry;
+        var curve = k >= 0 && k < g.Curves.Count ? g.Domain(CurveIndex(k)).Periodicity : Periodicity.Aperiodic;
+        var u = k >= 0 && k < g.Surfaces.Count ? g.Domain(SurfaceIndex(k)).DomainAlong(SurfaceParameter.ParameterU).Periodicity : Periodicity.Aperiodic;
+        var v = k >= 0 && k < g.Surfaces.Count ? g.Domain(SurfaceIndex(k)).DomainAlong(SurfaceParameter.ParameterV).Periodicity : Periodicity.Aperiodic;
+        return !(curve.HasSeam && !curve.IsPeriodic) && !(u.HasSeam && !u.IsPeriodic) && !(v.HasSeam && !v.IsPeriodic);
+    }
+
+    // The raw model's tolerances are unset: the decoder decides none.
+    Law_RawTolerancesUnset(raw: RawDecodedModel): Boolean
+        => raw.Model.Tolerances == Tolerances.UnsetTolerances;
+
+    // The raw model is in millimetres, and the factors it records are the
+    // stated units of occurrence 0's context (the policy's defaults where the
+    // context is silent): LengthFactor is millimetres per its length unit,
+    // within the policy's unit-match tolerance, and AngleFactor its radians
+    // per plane-angle unit; both are 1 when there is no occurrence.
+    Law_UnitsFactorsAgree(raw: RawDecodedModel): Boolean
+    {
+        var policy = DecodePolicy.StandardPolicy;
+        if (raw.Occurrences.Count == 0)
+        {
+            return raw.Model.Unit == LengthUnit.Millimetre && raw.LengthFactor == 1.0 && raw.AngleFactor == 1.0;
+        }
+        var root = raw.Units.ContextUnitsOf(raw.Occurrences[0].Context, policy.DefaultContextUnits);
+        return raw.Model.Unit == LengthUnit.Millimetre
+            && raw.LengthFactor.AlmostEqual(root.Length.MillimetresPerUnit, policy.UnitMatch)
+            && raw.AngleFactor == root.RadiansPerAngleUnit;
+    }
+
+    // Preparing a prepared model's raw view (RawOf) changes nothing: the same
+    // model (layer 7's SameModel), sources, folds and repairs. Guarded by the
+    // magnitudes: a vertex merge can remove a point on the bounding box,
+    // within the length tolerance, and then the second pass derives its
+    // tolerances from a slightly different size; with the magnitudes equal
+    // every decision is taken again at the same tolerance.
+    Law_PrepareIsIdempotent(raw: RawDecodedModel): Boolean
+    {
+        var d = raw.PrepareModel;
+        var again = d.RawOf(raw).PrepareModel;
+        return d.ModelSize == again.ModelSize && d.CoordinateExtent == again.CoordinateExtent
+            ? again.Model.SameModel(d.Model)
+                && again.Map.Sources.AllSources.Corresponds(d.Map.Sources.AllSources, (a, b) => a == b)
+                && again.Map.Folds.Corresponds(d.Map.Folds, (a, b) => a.Face == b.Face && a.Cause == b.Cause && a.Via == b.Via)
+                && again.Map.Repairs.Corresponds(d.Map.Repairs, (a, b) => a.Source == b.Source && a.Repair == b.Repair)
+            : true;
+    }
+
+    // Preparing moves no point: the arena's curves and surfaces are the raw
+    // model's, and prepared vertex k has the point of the raw vertex with the
+    // same source. The fold changes flags, not points, and keeps each face's
+    // region (Law_FoldPreservesInteriorSide); a merge removes a vertex within
+    // the length tolerance of the one kept (Law_MergedVerticesCoincide). So
+    // the prepared model's point set is the raw model's.
+    Law_PrepareKeepsPointSet(raw: RawDecodedModel, k: Integer): Boolean
+    {
+        var d = raw.PrepareModel;
+        var arena = d.Model.Geometry.Curves.Corresponds(raw.Model.Geometry.Curves, (a, b) => a == b)
+            && d.Model.Geometry.Surfaces.Corresponds(raw.Model.Geometry.Surfaces, (a, b) => a == b);
+        if (k < 0 || k >= d.Model.Vertices.Count || k >= d.Map.Sources.Vertices.Count)
+        {
+            return arena;
+        }
+        var source = d.Map.Sources.Vertices[k];
+        var point = d.Model.Vertices[k].Point;
+        return arena && raw.Model.Vertices.Count.Range.Any(p => p < raw.Sources.Vertices.Count ? raw.Sources.Vertices[p] == source && raw.Model.Vertices[p].Point == point : false);
+    }
+
+    // The C# decoder's half of the fold laws: a raw face's same_sense, and
+    // the orientation of its bound j, are the file's (no fold applied). With
+    // it, the raw forms of the fold laws give their old statements against
+    // the file.
+    Law_RawFaceFlagsAreTheFiles(f: Part21File, k: Integer, j: Integer): Boolean
+    {
+        var raw = f.DecodeRaw(DecodePolicy.StandardPolicy);
+        if (k < 0 || k >= raw.Model.Faces.Count || k >= raw.Sources.Faces.Count)
+        {
+            return true;
+        }
+        var face = raw.Model.Faces[k];
+        var source = raw.Sources.Faces[k];
+        return face.SameSense == f.FileFaceSameSense(source)
+            && (j >= 0 && j < face.Bounds.Count ? face.Bounds[j].Orientation == f.FileBoundOrientation(source, j) : true);
+    }
+
     //==
     // # Totality
 
@@ -243,25 +351,23 @@ library StepReadingLaws
             : true;
     }
 
-    // The model's length unit is that of the first root occurrence's context;
-    // every other occurrence is converted to it.
+    // The model's length unit is the millimetre: since the boundary moved to
+    // RawDecodedModel the decoder converts every occurrence to it, and the
+    // root context's own unit survives as the raw model's LengthFactor
+    // (Law_UnitsFactorsAgree). The name is kept for the check that cites it.
     Law_ModelUnitIsRootUnit(f: Part21File): Boolean
-    {
-        var d = f.DecodeBrep;
-        var policy = DecodePolicy.StandardPolicy;
-        var fallback = ContextUnits(StepInstanceId(-1), policy.DefaultLength, false, policy.DefaultRadiansPerAngleUnit, false, ContextUncertainty.NoUncertainty);
-        return d.Map.Occurrences.Count == 0
-            ? true
-            : d.Model.Unit == f.ResolveContexts(policy).ContextUnitsOf(d.Map.Occurrences[0].Context, fallback).Length;
-    }
+        => f.DecodeBrep.Model.Unit == LengthUnit.Millimetre;
 
-    // The magnitudes the decode exports are the model's own: ModelSize and
-    // CoordinateExtent equal layer 2's functions of the decoded model, so a
-    // later layer reading them reads what the tolerances were built from.
+    // The magnitudes the decode exports are the raw model's: ModelSize and
+    // CoordinateExtent equal layer 2's functions of the model PrepareModel
+    // was given, so a later layer reading them reads what the tolerances were
+    // built from. They equal the finished model's unless a merge removed a
+    // point on the bounding box, within the length tolerance.
     Law_DecodedMagnitudesAreTheModels(f: Part21File): Boolean
     {
-        var d = f.DecodeBrep;
-        return d.ModelSize == d.Model.ModelSize && d.CoordinateExtent == d.Model.CoordinateExtent;
+        var raw = f.DecodeRaw(DecodePolicy.StandardPolicy);
+        var d = raw.PrepareModel;
+        return d.ModelSize == raw.Model.ModelSize && d.CoordinateExtent == raw.Model.CoordinateExtent;
     }
 
     // The length tolerance can be honoured at the model's coordinates: it is
@@ -293,16 +399,20 @@ library StepReadingLaws
     // closed_curve, u_closed and v_closed flags are information only (P42
     // 4.5.34 NOTE 10) and never decide; a disagreement is a diagnostic.
 
-    // The decode writes its closure decisions into the arena, and nothing
-    // else: the arena's marks are ClosureMarks of the decoded arena at the
+    // PrepareModel writes its closure decisions into the arena, and nothing
+    // else: the arena's marks are ClosureMarks of the prepared arena at the
     // model's tolerances, one per curve or surface direction whose natural
     // domain is bounded, does not wrap, and whose ends (or opposite sides)
     // coincide within the length tolerance; none when nothing closes.
-    Law_ClosureMarksAreTheDecisions(f: Part21File): Boolean
+    Law_ClosureMarksAreTheDecisions(raw: RawDecodedModel): Boolean
     {
-        var m = f.DecodeBrep.Model;
+        var m = raw.PrepareModel.Model;
         return m.Geometry.Closures.Corresponds(m.Geometry.ClosureMarks(m.Tolerances), (a, b) => a == b);
     }
+
+    // The same, for the decode of a file.
+    Law_ClosureMarksAreTheDecisions(f: Part21File): Boolean
+        => Law_ClosureMarksAreTheDecisions(f.DecodeRaw(DecodePolicy.StandardPolicy));
 
     // A decoded curve is Closed in layer 1's Domain exactly when the decode
     // decided it closed: its natural domain is bounded and does not wrap, and
@@ -310,9 +420,9 @@ library StepReadingLaws
     // B-spline whose first and last control points coincide, a polyline back
     // at its start, a trim spanning a whole circle). A periodic curve stays
     // Periodic and an open one Aperiodic.
-    Law_CurveClosureDecidedByEnds(f: Part21File, k: Integer): Boolean
+    Law_CurveClosureDecidedByEnds(raw: RawDecodedModel, k: Integer): Boolean
     {
-        var m = f.DecodeBrep.Model;
+        var m = raw.PrepareModel.Model;
         if (k < 0 || k >= m.Geometry.Curves.Count)
         {
             return true;
@@ -321,15 +431,19 @@ library StepReadingLaws
         return (p.HasSeam && !p.IsPeriodic) == m.Geometry.DecidesClosed(CurveIndex(k), m.Tolerances.Length);
     }
 
+    // The same, for the decode of a file.
+    Law_CurveClosureDecidedByEnds(f: Part21File, k: Integer): Boolean
+        => Law_CurveClosureDecidedByEnds(f.DecodeRaw(DecodePolicy.StandardPolicy), k);
+
     // A decoded surface is Closed in a parameter in layer 1's Domain exactly
     // when the decode decided it closed there: the natural domain in that
     // parameter is bounded and does not wrap, and the two opposite sides are
     // the same curve within the model's tolerances (a clamped B-spline
     // surface closed in u, a revolution of a closed profile, an extrusion of
     // a closed curve).
-    Law_SurfaceClosureDecidedBySides(f: Part21File, k: Integer, which: SurfaceParameter): Boolean
+    Law_SurfaceClosureDecidedBySides(raw: RawDecodedModel, k: Integer, which: SurfaceParameter): Boolean
     {
-        var m = f.DecodeBrep.Model;
+        var m = raw.PrepareModel.Model;
         if (k < 0 || k >= m.Geometry.Surfaces.Count)
         {
             return true;
@@ -337,6 +451,10 @@ library StepReadingLaws
         var p = m.Geometry.Domain(SurfaceIndex(k)).DomainAlong(which).Periodicity;
         return (p.HasSeam && !p.IsPeriodic) == m.Geometry.DecidesClosed(SurfaceIndex(k), which, m.Tolerances);
     }
+
+    // The same, for the decode of a file.
+    Law_SurfaceClosureDecidedBySides(f: Part21File, k: Integer, which: SurfaceParameter): Boolean
+        => Law_SurfaceClosureDecidedBySides(f.DecodeRaw(DecodePolicy.StandardPolicy), k, which);
 
     //==
     // # Copied flags and repairs
@@ -427,42 +545,51 @@ library StepReadingLaws
     // placement-based, swept and spline surfaces alike.
 
     // Folding preserves the point set of every face: for every bound, the
-    // product of the face's and the bound's signs is the file's. That product
-    // decides on which side of each loop the face lies
-    // (research/STEP-BREP-MODEL.md 4.2), so the region cut out of the surface
-    // is unchanged.
-    Law_FoldPreservesInteriorSide(f: Part21File, k: Integer, j: Integer): Boolean
+    // product of the face's and the bound's signs is the raw model's, which is
+    // the file's (Law_RawFaceFlagsAreTheFiles). That product decides on which
+    // side of each loop the face lies (research/STEP-BREP-MODEL.md 4.2), so
+    // the region cut out of the surface is unchanged. PrepareModel keeps face
+    // indices, so prepared face k is raw face k.
+    Law_FoldPreservesInteriorSide(raw: RawDecodedModel, k: Integer, j: Integer): Boolean
     {
-        var d = f.DecodeBrep;
-        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        var d = raw.PrepareModel;
+        if (k < 0 || k >= d.Model.Faces.Count || k >= raw.Model.Faces.Count)
         {
             return true;
         }
         var face = d.Model.Faces[k];
-        var source = d.Map.Sources.Faces[k];
-        return j >= 0 && j < face.Bounds.Count
-            ? (face.SameSense == face.Bounds[j].Orientation) == (f.FileFaceSameSense(source) == f.FileBoundOrientation(source, j))
+        var written = raw.Model.Faces[k];
+        return j >= 0 && j < face.Bounds.Count && j < written.Bounds.Count
+            ? (face.SameSense == face.Bounds[j].Orientation) == (written.SameSense == written.Bounds[j].Orientation)
             : true;
     }
 
+    // The same, for the decode of a file.
+    Law_FoldPreservesInteriorSide(f: Part21File, k: Integer, j: Integer): Boolean
+        => Law_FoldPreservesInteriorSide(f.DecodeRaw(DecodePolicy.StandardPolicy), k, j);
+
     // Folding flips exactly the recorded faces: a face's same_sense differs
-    // from the file's exactly when the map records an odd number of folds
-    // for it.
-    Law_FoldFlipsExactlyRecorded(f: Part21File, k: Integer): Boolean
+    // from the raw model's (the file's) exactly when the map records an odd
+    // number of folds for it.
+    Law_FoldFlipsExactlyRecorded(raw: RawDecodedModel, k: Integer): Boolean
     {
-        var d = f.DecodeBrep;
-        return k >= 0 && k < d.Model.Faces.Count && k < d.Map.Sources.Faces.Count
-            ? (d.Model.Faces[k].SameSense == f.FileFaceSameSense(d.Map.Sources.Faces[k])) == !d.Map.IsFolded(BrepFaceIndex(k))
+        var d = raw.PrepareModel;
+        return k >= 0 && k < d.Model.Faces.Count && k < raw.Model.Faces.Count
+            ? (d.Model.Faces[k].SameSense == raw.Model.Faces[k].SameSense) == !d.Map.IsFolded(BrepFaceIndex(k))
             : true;
     }
+
+    // The same, for the decode of a file.
+    Law_FoldFlipsExactlyRecorded(f: Part21File, k: Integer): Boolean
+        => Law_FoldFlipsExactlyRecorded(f.DecodeRaw(DecodePolicy.StandardPolicy), k);
 
     // A face of a mirrored occurrence has exactly one MirroredPlacement fold
     // record, and a face of an unmirrored one none: the occurrence's
     // placement is composed down the assembly before its determinant's sign
     // is taken, so two mirrorings cancel there and are never recorded twice.
-    Law_MirrorFoldRecordedOnce(f: Part21File, k: Integer): Boolean
+    Law_MirrorFoldRecordedOnce(raw: RawDecodedModel, k: Integer): Boolean
     {
-        var d = f.DecodeBrep;
+        var d = raw.PrepareModel;
         if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
         {
             return true;
@@ -470,6 +597,10 @@ library StepReadingLaws
         var mirrors = d.Map.Folds.Reduce(0, (n, r) => r.Face == BrepFaceIndex(k) && r.Cause == FoldCause.MirroredPlacement ? n + 1 : n);
         return mirrors == (d.Map.IsMirroredSource(d.Map.Sources.Faces[k]) ? 1 : 0);
     }
+
+    // The same, for the decode of a file.
+    Law_MirrorFoldRecordedOnce(f: Part21File, k: Integer): Boolean
+        => Law_MirrorFoldRecordedOnce(f.DecodeRaw(DecodePolicy.StandardPolicy), k);
 
     // The fold and layer 1's normal agree on the mirror: a face whose
     // surface's placement is left-handed (layer 1's PlacementHandedness is
@@ -479,9 +610,9 @@ library StepReadingLaws
     // as the cross product of its partials does, and the one fold, sense and
     // bounds times the determinant's sign, is right for every surface family
     // (review F2).
-    Law_LeftHandedSurfacesAreFolded(f: Part21File, k: Integer): Boolean
+    Law_LeftHandedSurfacesAreFolded(raw: RawDecodedModel, k: Integer): Boolean
     {
-        var d = f.DecodeBrep;
+        var d = raw.PrepareModel;
         if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
         {
             return true;
@@ -490,6 +621,10 @@ library StepReadingLaws
             ? d.Map.IsMirroredSource(d.Map.Sources.Faces[k])
             : true;
     }
+
+    // The same, for the decode of a file.
+    Law_LeftHandedSurfacesAreFolded(f: Part21File, k: Integer): Boolean
+        => Law_LeftHandedSurfacesAreFolded(f.DecodeRaw(DecodePolicy.StandardPolicy), k);
 
     // Every fold record names an instance that carries the flip: an
     // oriented_face or oriented shell whose orientation is .F., or an

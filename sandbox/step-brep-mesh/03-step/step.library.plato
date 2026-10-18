@@ -6,11 +6,15 @@
 // and tolerance resolution (every angle to radians here, once), occurrences
 // (where each B-rep-bearing representation sits in the model), the
 // provenance map's queries, and the file-side views the decode laws compare
-// against. The decode itself is deferred; its contract is in step.spec.plato
-// and its laws in step.laws.plato.
+// against. Since 2026-10-17 the decode is two stages (README, "Boundary moved
+// to RawDecodedModel, 2026-10-17"): DecodeRaw, a C# obligation that maps the
+// file's typed records to the B-rep as written, and PrepareModel, Plato,
+// which makes the geometric decisions. Contracts are in step.spec.plato and
+// laws in step.laws.plato.
 //
 // Sections, in order:
 //  - Entry points
+//  - Preparing the raw model
 //  - Policy
 //  - Units and tolerance
 //  - Closure
@@ -29,21 +33,25 @@ library StepReading
     DecodeBrep(file: Part21File): DecodedModel
         => file.DecodeBrepWith(DecodePolicy.StandardPolicy);
 
-    // deferred: the decode, in order: classify every instance
-    // (ClassificationDiagnostics); resolve every 3D context (ResolveContexts);
-    // find the occurrences (FindOccurrences); decode each occurrence's
-    // reachable instances into the kernel tables, folding orientation flags
-    // and making the local repairs of StepRepair, with placements and unit
-    // conversion applied to every point, frame and length (a mirroring
-    // placement leaves each placed frame left-handed, so layer 1's
-    // PlacementHandedness of the surface is the determinant's sign, and the
-    // face and its bounds are folded by it); set the tolerances
-    // (ModelTolerances, from layer 2's ModelSize and CoordinateExtent of the
-    // decoded model, both exported in the result); decide closure and write
-    // it into the arena (WithClosures(g, ClosureMarks(g, tolerances)), the
-    // empty array when nothing closes; README, "Closure at decode"); build
-    // the provenance map.
-    DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel;
+    // Decodes a parsed file with the policy: the C# decoder's raw model,
+    // finished by PrepareModelWith. Every decode law of step.laws.plato has
+    // this composition as its subject.
+    DecodeBrepWith(file: Part21File, policy: DecodePolicy): DecodedModel
+        => file.DecodeRaw(policy).PrepareModelWith(policy);
+
+    // Host obligation (C#, TKT-312), met from the generated AP242 types, not
+    // in Plato: the B-rep as the file writes it (RawDecodedModel). In order:
+    // classify every instance (ClassificationDiagnostics); resolve every 3D
+    // context (ResolveContexts); find the occurrences (FindOccurrences);
+    // decode each occurrence's reachable instances into the kernel tables,
+    // with placements and the conversion to the millimetre applied to every
+    // point, frame and length and every angle converted to radians
+    // (ToRadians); record the oriented_face and oriented shell flips as
+    // FoldRecords without applying them; skip what cannot be decoded
+    // (StepRepair.Skipped, diagnosed). No tolerance is read or set, no
+    // closure decided, no vertex merged. The three functions it names stay
+    // deferred here as its specification.
+    DecodeRaw(file: Part21File, policy: DecodePolicy): RawDecodedModel;
 
     // deferred: a census by keyword. One EntityTypeIgnored Info per ignored
     // type and one EntityTypeUnsupported Warning per unsupported type or
@@ -51,6 +59,128 @@ library StepReading
     // the instance count; plus ShortNamesUsed, ComplexPartsOutOfOrder,
     // ValueWhereDerived and SchemaUnrecognised where they apply.
     ClassificationDiagnostics(file: Part21File): Array<Diagnostic>;
+
+    //==
+    // # Preparing the raw model
+    //
+    // README, "Boundary moved to RawDecodedModel, 2026-10-17". PrepareModel
+    // makes the four decisions that need geometry and a tolerance, in order:
+    // the tolerances from the stated uncertainty, with the floors at the
+    // coordinate extent and the model size; the reduction repairs, which
+    // compare points at that tolerance; the orientation fold, mirrors
+    // included; and closure, decided at that tolerance.
+
+    // Finishes a raw model with the standard policy.
+    PrepareModel(raw: RawDecodedModel): DecodedModel
+        => raw.PrepareModelWith(DecodePolicy.StandardPolicy);
+
+    // Finishes a raw model: (1) the tolerances, ModelTolerances over the
+    // contexts the occurrences use, from layer 2's ModelSize and
+    // CoordinateExtent of the raw model, both exported in the result; (2) the
+    // reduction repairs (Reduced), each a RepairRecord; (3) the fold: the
+    // decoder's oriented flips plus one MirroredPlacement record per face of a
+    // mirrored occurrence (MirrorFolds; layer 1's PlacementHandedness turns
+    // such a face's normal with the frame, Law_LeftHandedSurfacesAreFolded),
+    // every face with an odd number of records reversed; (4) closure, written
+    // into the arena as WithClosures(g, ClosureMarks(g, tolerances)); then the
+    // provenance map, and the decoder's diagnostics followed by the
+    // preparation's.
+    PrepareModelWith(raw: RawDecodedModel, policy: DecodePolicy): DecodedModel
+    {
+        var size = raw.Model.ModelSize;
+        var extent = raw.Model.CoordinateExtent;
+        var tolerances = ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, size, extent, policy);
+        var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced;
+        var folds = reduced.Folds.Concatenate(reduced.MirrorFolds);
+        var folded = reduced.Model.WithFacesReversed(folds.FoldedFaces(reduced.Model.Faces.Count));
+        var model = folded.WithGeometry(folded.Geometry.WithClosures(folded.Geometry.ClosureMarks(tolerances)));
+        var map = ProvenanceMap(reduced.Occurrences, reduced.Sources, reduced.Sources.ByInstanceOrder, folds, reduced.Repairs);
+        return DecodedModel(model, map, reduced.Diagnostics.Concatenate(raw.ToleranceDiagnostics(tolerances, size, extent, policy)), size, extent);
+    }
+
+    // deferred: the reduction repairs of research/STEP-BREP-MODEL.md 6.6, at
+    // raw.Model.Tolerances.Length (set by PrepareModelWith before the call).
+    // Two vertices of one edge, or of one loop's head-to-tail joint, within
+    // the length tolerance are merged into the earlier (MergedInto); an edge
+    // whose two vertices coincide on an open curve is dropped from its loops
+    // (DroppedZeroLengthEdge). Removed rows leave the vertex and edge tables
+    // and their sources, the remaining indices are renumbered, and one
+    // RepairRecord and one diagnostic are appended per removal. Faces,
+    // shells, bodies and the arena keep their rows and indices. Deferred with
+    // the decode it came from; its contract is in step.spec.plato.
+    Reduced(raw: RawDecodedModel): RawDecodedModel;
+
+    // deferred: the tolerance findings of README "Units and uncertainty":
+    // UncertaintyDefaulted when no used context states an uncertainty,
+    // UncertaintiesDiffer when the used contexts disagree (largest over
+    // smallest), UncertaintyClamped when the stated value was raised to the
+    // resolution at the extent.
+    ToleranceDiagnostics(raw: RawDecodedModel, tolerances: Tolerances, modelSize: Number, extent: Number, policy: DecodePolicy): Array<Diagnostic>;
+
+    // The raw model's tolerances: every field zero, since none is decided
+    // before PrepareModel. The decoder writes this record; nothing reads it.
+    UnsetTolerances(_: Tolerances): Tolerances
+        => Tolerances(LengthTolerance(0.0), AngleTolerance(Angle(0.0)), ParameterTolerance(0.0), ParameterTolerance(0.0));
+
+    // One MirroredPlacement fold record per face whose occurrence's placement
+    // is mirrored, naming that occurrence's placing instance.
+    MirrorFolds(raw: RawDecodedModel): Array<FoldRecord>
+        => raw.Sources.Faces.Count.Range.FlatMap(k => raw.Occurrences.IsMirroredIn(raw.Sources.Faces[k])
+            ? [FoldRecord(BrepFaceIndex(k), FoldCause.MirroredPlacement, StepSource(raw.Sources.Faces[k].Occurrence, raw.Occurrences[raw.Sources.Faces[k].Occurrence.Value].Via))]
+            : raw.Folds.Take(0));
+
+    // The faces, of a model with faceCount faces, that an odd number of the
+    // fold records name: the faces the fold reverses.
+    FoldedFaces(folds: Array<FoldRecord>, faceCount: Integer): Array<BrepFaceIndex>
+        => faceCount.Range.FlatMap(k => folds.FoldCountIn(BrepFaceIndex(k)) % 2 == 1 ? [BrepFaceIndex(k)] : [BrepFaceIndex(0)].Take(0));
+
+    // How many of the fold records name face k.
+    FoldCountIn(folds: Array<FoldRecord>, k: BrepFaceIndex): Integer
+        => folds.Reduce(0, (n, r) => r.Face == k ? n + 1 : n);
+
+    // The positions of AllSources(s) in ascending (occurrence, instance id)
+    // order: ProvenanceMap.ByInstance.
+    ByInstanceOrder(s: KernelSources): Array<Integer>
+    {
+        var all = s.AllSources;
+        return all.Count.Range.Sort((a, b) => all[a].SourceAtMost(all[b]));
+    }
+
+    // True when a precedes or equals b in (occurrence, instance id) order.
+    SourceAtMost(a: StepSource, b: StepSource): Boolean
+        => a.Occurrence.Value < b.Occurrence.Value || (a.Occurrence.Value == b.Occurrence.Value && a.Instance.Value <= b.Instance.Value);
+
+    // The raw model with its model replaced; every other field kept.
+    WithModel(raw: RawDecodedModel, m: BrepModel): RawDecodedModel
+        => RawDecodedModel(m, raw.Occurrences, raw.Sources, raw.Folds, raw.Repairs, raw.Units, raw.LengthFactor, raw.AngleFactor, raw.Diagnostics);
+
+    // The model with its tolerances replaced; every other table kept.
+    WithTolerances(m: BrepModel, t: Tolerances): BrepModel
+        => BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, t, m.Unit);
+
+    // The model with its arena replaced; every other table kept.
+    WithGeometry(m: BrepModel, g: GeometrySet): BrepModel
+        => BrepModel(g, m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit);
+
+    // The raw view of a prepared model: what the decoder would have produced
+    // for it. The fold is undone (the folded faces reversed again), the
+    // closure marks emptied, the tolerances unset, the mirror records dropped
+    // (PrepareModel derives them again), the repairs kept; the units, factors
+    // and decoder diagnostics, which a DecodedModel does not carry, come from
+    // raw. Law_PrepareIsIdempotent prepares it again.
+    RawOf(d: DecodedModel, raw: RawDecodedModel): RawDecodedModel
+        => RawDecodedModel(
+            d.Model.WithFacesReversed(d.Map.Folds.FoldedFaces(d.Model.Faces.Count))
+                .WithGeometry(d.Model.Geometry.WithClosures(ClosureMark.NoMarks))
+                .WithTolerances(Tolerances.UnsetTolerances),
+            d.Map.Occurrences,
+            d.Map.Sources,
+            d.Map.Folds.FlatMap(r => r.Cause == FoldCause.MirroredPlacement ? d.Map.Folds.Take(0) : [r]),
+            d.Map.Repairs,
+            raw.Units,
+            raw.LengthFactor,
+            raw.AngleFactor,
+            raw.Diagnostics);
 
     //==
     // # Policy
@@ -158,9 +288,22 @@ library StepReading
         return Tolerances(length, policy.AngleCoincidence, length.LengthParameterFloor(extent), length.AngleParameterFloor(modelSize, extent));
     }
 
-    // The contexts some occurrence uses.
+    // The contexts some occurrence of the map uses.
     UsedContexts(contexts: Array<ContextUnits>, map: ProvenanceMap): Array<ContextUnits>
-        => contexts.FlatMap(c => map.Occurrences.Any(o => o.Context == c.Context) ? [c] : contexts.Take(0));
+        => contexts.UsedContextsOf(map.Occurrences);
+
+    // The contexts some occurrence uses.
+    UsedContextsOf(contexts: Array<ContextUnits>, occurrences: Array<StepOccurrence>): Array<ContextUnits>
+        => contexts.FlatMap(c => occurrences.Any(o => o.Context == c.Context) ? [c] : contexts.Take(0));
+
+    // The units of a context that states nothing: the policy's defaults and
+    // no uncertainty. What a lookup by an absent context id falls back to.
+    DefaultContextUnits(policy: DecodePolicy): ContextUnits
+        => ContextUnits(StepInstanceId(-1), policy.DefaultLength, false, policy.DefaultRadiansPerAngleUnit, false, ContextUncertainty.NoUncertainty);
+
+    // Millimetres per unit of the length unit (ScaleToMetres, layer 2).
+    MillimetresPerUnit(unit: LengthUnit): Number
+        => unit.ScaleToMetres * 1000.0;
 
     // The units of the context named id; fallback when contexts has none.
     ContextUnitsOf(contexts: Array<ContextUnits>, id: StepInstanceId, fallback: ContextUnits): ContextUnits
@@ -329,7 +472,7 @@ library StepReading
 
     // How many fold records name face k.
     FoldCount(map: ProvenanceMap, k: BrepFaceIndex): Integer
-        => map.Folds.Reduce(0, (n, r) => r.Face == k ? n + 1 : n);
+        => map.Folds.FoldCountIn(k);
 
     // True when face k's flags were flipped at decode: an odd number of folds.
     IsFolded(map: ProvenanceMap, k: BrepFaceIndex): Boolean
@@ -377,7 +520,12 @@ library StepReading
     // True when the occurrence of s is placed by a mirroring map (negative
     // determinant); false for a source with no occurrence.
     IsMirroredSource(map: ProvenanceMap, s: StepSource): Boolean
-        => map.Occurrences.IsValidIndex(s.Occurrence) ? map.Occurrences[s.Occurrence.Value].Placement.IsMirrored : false;
+        => map.Occurrences.IsMirroredIn(s);
+
+    // True when the occurrence of s, among occurrences, is placed by a
+    // mirroring map; false for a source with no occurrence.
+    IsMirroredIn(occurrences: Array<StepOccurrence>, s: StepSource): Boolean
+        => occurrences.IsValidIndex(s.Occurrence) ? occurrences[s.Occurrence.Value].Placement.IsMirrored : false;
 
     // The source of kernel face k; NoSource when k is out of range.
     FaceSource(map: ProvenanceMap, k: BrepFaceIndex): StepSource
