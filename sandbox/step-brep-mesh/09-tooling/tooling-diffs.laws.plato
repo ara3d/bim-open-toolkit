@@ -6,7 +6,8 @@
 // definition. Each says: the lower layer's equality holds exactly when the
 // exact diff is Same. They are what allows chunk A's owner to replace the
 // bodies of SameModel, SameDiscretization, SameFaceMesh,
-// SameFaceMeshOutcome, SameConnectivity and IsSameFile with "the diff is
+// SameFaceMeshOutcome, SameConnectivity, layer 8's SameModelMesh and
+// IsSameFile with "the diff is
 // Same" without changing a single verdict; until then the laws catch either
 // side drifting.
 //
@@ -59,6 +60,10 @@ library ToolingDiffsLaws
     // The connectivity diff is Same exactly when SameConnectivity holds.
     Law_ConnectivityDiffIsSameExactlyWhenSameConnectivity(a: ModelMesh, b: ModelMesh): Boolean
         => a.DiffConnectivity(b).IsSame == a.SameConnectivity(b);
+
+    // The model mesh diff is Same exactly when layer 8's SameModelMesh holds.
+    Law_MeshDiffIsSameExactlyWhenSameModelMesh(a: ModelMesh, b: ModelMesh): Boolean
+        => a.DiffMeshes(b).IsSame == a.SameModelMesh(b);
 
     // The report diff is Same exactly when the reports are Identical.
     Law_ReportDiffIsSameExactlyWhenIdentical(a: Report, b: Report): Boolean
