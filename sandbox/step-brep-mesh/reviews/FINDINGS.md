@@ -197,3 +197,30 @@ session accepts them.
   regression test; TKT-312 holds until 2, 3 and 5 land; the chunk A builder is told to distrust
   backend law results until then. Lesson for `TARGET-LANGUAGE.md`: the writer needs a
   differential test suite (interpreter versus backend, TKT-317) before law results are evidence.
+
+## F-51: what the tooling layer showed
+
+- **Raised** 2026-10-17 by the builder of `09-tooling` (TKT-316, commits 4836db8f to 26adc5db;
+  gate `PASS: 0 error(s) in scope; 7040 functions type-checked`).
+  1. **`SameModel` is too weak.** Layer 7's model equality ignores pcurves, parameter-plane
+     curves, loop and body cases, and poly-loop points: an empty edge loop equals a poly loop,
+     `ManifoldSolid(s)` equals `ShellSet([s])`. `DiffModels` in the tooling covers everything;
+     `SameModel` should become `DiffModels(a, b).IsSame`. Assigned to the chunk A builder.
+  2. **Most laws are not reached by any runner.** The runner reaches laws through layer 7's
+     `Check_` wrappers and the witness laws it lists by hand; layers 0, 1, 4, 5 and layer 3's
+     validity rules (most of 714 laws) have no run. The host entry point lists them as "not
+     enumerated" by reflection; each chunk enumerates its layer's laws as it reaches them.
+  3. **Front-end defects** (for the Plato repository): a conditional nested 13 deep fails to
+     parse and the error location is hundreds of lines early; `match` on a field read fails with
+     CHK304; a generic function cannot take `$T` as its first parameter.
+  4. **The 3D pane ignores vertex colours** (colours by material), so mesh dumps write one part
+     per B-rep face; provenance travels as `_VERTEX` and `_PROVENANCE` attributes.
+  5. **Strings.** Plato strings support literals and `==` only, so `RegionToSvg` returns an
+     `SvgDocument` record the host serializes; every text output of the design goes through the
+     host.
+- **Host shims the C# side owes** (contracts in `09-tooling/tooling.spec.plato`): the law runner
+  entry point, `LoadCorpusModel`, `WriteMeshDump`, `WriteSvg`, `WriteTable`, `WriteStageDump`, a
+  dump command. Roughly: entry point half a day once TKT-313 or TKT-317 exists, writers one to two
+  days.
+- **Status** 1 to the chunk A builder; 2 per chunk; 3 to the Plato repository (with F-50's
+  writer defects); 4 and 5 are design facts, recorded in the tooling README.
