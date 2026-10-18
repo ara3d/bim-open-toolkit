@@ -2,6 +2,7 @@ using Ara3D.DataFlowEngine.TestKit;
 using Ara3D.DataTable;
 using BimOpenFlow.Host;
 using BimOpenFlow.Studio;
+using BimOpenToolkit.TestSupport;
 
 namespace BimOpenFlow.NrcWorkflows.Tests;
 
@@ -22,7 +23,7 @@ public sealed class CheckingGraphTests
     private static readonly string[] Ids =
     [
         "check-ids-door-width", "check-ids-specifications", "check-ids-carbon-psets",
-        "bcf-from-ids-failures", "bcf-from-sql", "bcf-read-colour",
+        "bcf-from-ids-failures", "bcf-from-sql", "bcf-read-colour", "review-comment",
     ];
 
     /// <summary>samples/nrc/duplex-enriched.bos, rebuilt from the IFC when its stamp is stale.</summary>
@@ -214,6 +215,66 @@ public sealed class CheckingGraphTests
             Assert.That(answer.Cell("Elements", 0), Is.EqualTo(6L));
             Assert.That(Table(snapshot, "coloured").Rows, Is.Not.Empty);
         });
+    }
+
+    /// <summary>The graph the 3D pane's Comment control builds: a camera and a bcf.issue for the
+    /// Duplex's two narrow doors. Run writes a BCF that reads back with the comment, the author,
+    /// both doors and the camera the issue was given (south-east of the doors, bounds from
+    /// ElementBounds: door 1aj... at y -10.1, door 1s1... at y 0.0).</summary>
+    [Test]
+    public void ReviewComment_TwoDoorsOneCommentAndACamera_WrittenAndReadBack()
+    {
+        const string door1 = "1aj$VJZFn2TxepZUBcKp$i", door2 = "1s1jVhK8z0pgKYcr9jt781";
+        var path = TempBcf("review-comment.bcf");
+        var doc = WithParam(Document("review-comment"), "bcf", "path", path);
+        var snapshot = ModelGraphTests.RunGreen(doc, "review-comment", Fixture.Registry(Fixture.Runtime), "bcf");
+        var answer = Table(snapshot, "answer");
+        var topics = Table(snapshot, "topics");
+        var written = Table(snapshot, "bcf");
+        try
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(answer.Rows, Has.Count.EqualTo(2), "one row per door");
+                Assert.That(answer.ColumnNames(), Is.SupersetOf(new[]
+                {
+                    "GlobalId", "Title", "Comment", "Author", "CameraX", "CameraY", "CameraZ", "DirectionX", "DirectionY",
+                    "DirectionZ", "UpX", "UpY", "UpZ", "FieldOfView", "AspectRatio",
+                }));
+                Assert.That(answer.ColumnCells("GlobalId"), Is.EquivalentTo(new object?[] { door1, door2 }));
+                Assert.That(answer.ColumnCells("Title"), Has.All.EqualTo("Door leaf under 850 mm"));
+                Assert.That(answer.ColumnCells("Author"), Has.All.EqualTo("Reviewer"));
+                Assert.That(answer.Cell("Comment", 0)?.ToString(), Does.Contain("850 mm"));
+                Assert.That(Convert.ToDouble(answer.Cell("CameraX", 0)), Is.EqualTo(12.0).Within(1e-6));
+                Assert.That(Convert.ToDouble(answer.Cell("FieldOfView", 0)), Is.EqualTo(60.0).Within(1e-6));
+                Assert.That(topics.Rows, Has.Count.EqualTo(1));
+                Assert.That(topics.Cell("Elements", 0), Is.EqualTo(2L));
+                Assert.That(File.Exists(path));
+                Assert.That(written.Cell("topics", 0), Is.EqualTo(1L));
+                Assert.That(written.Cell("viewpoints", 0), Is.EqualTo(1L));
+                Assert.That(written.Cell("elements", 0), Is.EqualTo(2L));
+            });
+
+            var read = new BimOpenFlow.Nodes.Bcf.BcfReadNode().Eval(
+                NodeTestHelpers.Ctx, [], NodeTestHelpers.Params(("path", path)));
+            var issues = ((TableValue)read[0]).Table;
+            var comments = ((TableValue)read[2]).Table;
+            Assert.Multiple(() =>
+            {
+                Assert.That(issues.ColumnCells("GlobalId"), Is.EquivalentTo(new object?[] { door1, door2 }));
+                Assert.That(Convert.ToDouble(issues.Cell("CameraX", 0)), Is.EqualTo(12.0).Within(1e-4));
+                Assert.That(Convert.ToDouble(issues.Cell("CameraY", 0)), Is.EqualTo(-20.0).Within(1e-4));
+                Assert.That(Convert.ToDouble(issues.Cell("CameraZ", 0)), Is.EqualTo(7.0).Within(1e-4));
+                Assert.That(Convert.ToDouble(issues.Cell("FieldOfView", 0)), Is.EqualTo(60.0).Within(1e-4));
+                Assert.That(comments.Rows, Has.Count.EqualTo(1));
+                Assert.That(comments.Cell("Author", 0), Is.EqualTo("Reviewer"));
+                Assert.That(comments.Cell("Comment", 0)?.ToString(), Does.Contain("850 mm"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
+        }
     }
 
     /// <summary>Rewrites samples/nrc/bcf/dc-w1-failures.bcf, the file bcf-read-colour reads, from

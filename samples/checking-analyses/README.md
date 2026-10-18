@@ -27,6 +27,7 @@ building as IFC, and `bcf-read-colour`'s `model` is the IFC.
 | `bcf-from-ids-failures` | `bcf.topics` previews the failing doors as one topic, the file Run writes; `bcf.write` writes the BCF with a viewpoint framing them once Run | 1 topic, 6 elements, 1 viewpoint |
 | `bcf-from-sql` | table steps (filter, filter, join, derive, derive, project, sort) over the entity and parameter tables pick the external doors and become one BCF topic | 4 external doors, 1 topic |
 | `bcf-read-colour` | `bcf.read` over the committed `dc-w1-failures.bcf` (not the file `bcf-from-ids-failures` writes): its topics port in `answer`, the flagged doors coloured on the model | 1 topic, 6 doors |
+| `review-comment` | what the 3D pane's Comment control builds: `view3d.camera` (fixed, south-east of the Duplex) into `bcf.issue` for the two narrow doors, shown in `answer`, previewed by `bcf.topics`, written by `bcf.write` after Run with the comment, the viewpoint at the camera and the model named in the header | 2 doors (`1aj$VJZFn2TxepZUBcKp$i` 762 mm, `1s1jVhK8z0pgKYcr9jt781` 813 mm), 1 topic, 1 comment, 1 viewpoint; camera (12, -20, 7) looking at (2.99, -5.05, 2.6), 60 degrees, the centre of the two doors' union box |
 
 Tests: `tests/studio/BimOpenFlow.NrcWorkflows.Tests/CheckingGraphTests.cs`. The
 committed BCF is rewritten by its explicit test `RegenerateTheCommittedBcf`.

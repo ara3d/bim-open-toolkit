@@ -1,0 +1,27 @@
+dfg 0.1.0;
+// review-comment   graph 68f65b7c9096
+inputs model: FilePath = "{SAMPLES}/duplex-enriched.bos" now "{MODELS}/duplex-enriched.bos";
+about = view.note@1(text: "What the 3D pane's Comment button makes. A reviewer selected the Duplex's two narrow doors (762 and 813 mm leaves), pressed Comment and typed a title and a note: the pane added camera, which holds the camera as it was (south-east of the building, looking at the doors), and review, which holds the doors' GlobalIds, the texts, the author and the time, and turns the camera into columns. answer shows the issue; topics previews the BCF topic; bcf writes the file once Run, with the comment under the topic and the viewpoint at the camera.");
+  // Ok
+camera = view3d.camera@1(name: "southeast", posX: "12", posY: "-20", posZ: "7", targetX: "2.99", targetY: "-5.05", targetZ: "2.6", fov: "60");
+  // Ok  table 1 rows x 8 cols  sha 0589da1098eb
+  //   columns name:Text, posX:Number, posY:Number, posZ:Number, targetX:Number, targetY:Number, targetZ:Number, fov:Number
+  //   camera "southeast" at (12, -20, 7) looking at (2.99, -5.05, 2.6)
+modelPath = value.path@1(path: "$model");
+  // Ok  Text "{MODELS}/duplex-enriched.bos"
+review = bcf.issue@1(camera: camera.camera, title: "Door leaf under 850 mm", description: "", comment: "Both doors have a leaf narrower than the 850 mm the accessibility rule asks for; please widen them or confirm an exemption.", author: "Reviewer", created: "2026-10-18T12:00:00Z", ids: "1aj$VJZFn2TxepZUBcKp$i,1s1jVhK8z0pgKYcr9jt781");
+  // Ok  table 2 rows x 20 cols  sha 7f636e71ab0f
+  //   columns GlobalId:Text, Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Comment:Text, Author:Text, CreationDate:Text, CameraX:Number, CameraY:Number, CameraZ:Number, DirectionX:Number, DirectionY:Number, DirectionZ:Number, UpX:Number (+4 more)
+  //   [0] "1aj$VJZFn2TxepZUBcKp$i", "Door leaf under 850 mm", "", "Open", "", "Issue", "Both doors have a leaf narrower than the 850 mm "..., "Reviewer", "2026-10-18T12:00:00Z", 12, -20, 7, -0.5005, 0.8305, -0.2444, -0.1262, ...
+  //   [1] "1s1jVhK8z0pgKYcr9jt781", "Door leaf under 850 mm", "", "Open", "", "Issue", "Both doors have a leaf narrower than the 850 mm "..., "Reviewer", "2026-10-18T12:00:00Z", 12, -20, 7, -0.5005, 0.8305, -0.2444, -0.1262, ...
+answer = view.table@1(table: review.issues, title: "The reviewer's issue, one row per door");
+  // Ok  table 2 rows x 20 cols  sha 7f636e71ab0f
+  //   columns GlobalId:Text, Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Comment:Text, Author:Text, CreationDate:Text, CameraX:Number, CameraY:Number, CameraZ:Number, DirectionX:Number, DirectionY:Number, DirectionZ:Number, UpX:Number (+4 more)
+  //   [0] "1aj$VJZFn2TxepZUBcKp$i", "Door leaf under 850 mm", "", "Open", "", "Issue", "Both doors have a leaf narrower than the 850 mm "..., "Reviewer", "2026-10-18T12:00:00Z", 12, -20, 7, -0.5005, 0.8305, -0.2444, -0.1262, ...
+  //   [1] "1s1jVhK8z0pgKYcr9jt781", "Door leaf under 850 mm", "", "Open", "", "Issue", "Both doors have a leaf narrower than the 850 mm "..., "Reviewer", "2026-10-18T12:00:00Z", 12, -20, 7, -0.5005, 0.8305, -0.2444, -0.1262, ...
+bcf = bcf.write@1(issues: review.issues, model: modelPath.path, path: "{ARTIFACTS}/checking/review-comment.bcf", preset: "auto", author: "", guidSeed: "review-comment");
+  // EffectPending  not executed outside a Run
+topics = bcf.topics@1(issues: review.issues, preset: "auto");
+  // Ok  table 1 rows x 8 cols  sha 4fad080e7478
+  //   columns Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Elements:Integer, GlobalIds:Text, AuthoringToolIds:Text
+  //   [0] "Door leaf under 850 mm", "", "Open", "", "Issue", 2, "1aj$VJZFn2TxepZUBcKp$i, 1s1jVhK8z0pgKYcr9jt781", ""
