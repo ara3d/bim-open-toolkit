@@ -8,7 +8,7 @@ faces again.
 
 The design is written against [VOCABULARY.md](../VOCABULARY.md) revision 2 and against the names
 layers 00 to 04 export as they stood on 2026-10-17 (listed under "Names used from layers 00 to 04").
-Algorithms were deferred by the design pass, every one with a contract in `face-meshing.spec.plato`; implementation chunk A gave six of them bodies (see "Implementation, chunk A"). Still bodiless: `QuadSidesOf`, `QuadGrid`, `MatchingFloors` (chunk B) and `CompletePeriodicRegion`, the seam-and-pole half of `AddMissingSeamsAndPoles` (chunks B and C).
+Algorithms were deferred by the design pass, every one with a contract in `face-meshing.spec.plato`; implementation chunk A gave six of them bodies (see "Implementation, chunk A"). Chunk B gave `CompletePeriodicRegion` its body (see "Implementation, chunk B"). Still bodiless: `QuadSidesOf`, `QuadGrid`, `MatchingFloors` (chunk B), and `ExpandedPoles` and `CutWholePeriods`, the pole segments and the whole-period cuts of `CompletePeriodicRegion` (chunk C).
 
 ## Files
 
@@ -466,3 +466,16 @@ Law results, provisional: on the unit box every face meshes to two triangles fro
 boundary points, and the assembled mesh is closed and consistently oriented (layer 8's results in
 its README).
 
+## Implementation, chunk B
+
+TKT-324, 2026-10-18, each body from its contract in `face-meshing.spec.plato`:
+
+| Body | Derived from | Scope in chunk B |
+|---|---|---|
+| `CompletePeriodicRegion` | contract `AddMissingSeamsAndPoles` beyond the plain case, in three steps. Pole segments: `WithPoleSegments`, which leaves the loops of a surface with no collapsed line unchanged and otherwise calls `ExpandedPoles`, a new bodiless function (chunk C). The synthetic seam cut: when exactly two loops wind once round one direction in opposite senses (a band), `JoinedByCut` joins them into one loop along a straight parameter segment between their two boundary points nearest in 3D, sampled once under the criteria (`CutSegmentCount`: equal steps, the least count whose every step has its parameter midpoint within `SurfaceChordal` of its chord, a normal turn within `SurfaceAngular` and a chord within the length limit, never a step below the effective minimum length); its far copy carries `SeamCut(far side, k)` for k up, its near copy `SeamCut(near side, k)` for k down. Any other arrangement of winding loops calls `CutWholePeriods`, a new bodiless function (chunk C: a whole torus). The outer: the loop of largest absolute area, every other loop moved by the first whole-period shift that puts its first point inside it (`OuterByArea`, `ShiftedInside`) | cylinders: the seamed face, the sector patch, and the band between two circles; cones, spheres and tori reach the two chunk C functions |
+
+Probe (interpreter, cpu64, chordal 0.01, 15 degrees) on the seamed unit cylinder, the quarter sector and
+the seamless band (the seamed cylinder without its seam edge): every region is simple, every loop closes
+in the plane, the outer loop winds positive, the cut's copies run opposite, and every point lifts to its
+shared point. The seamed and the band regions both have 50 boundary points (two circles of 24 segments;
+the band's cut is one ruling, so it has no interior point); the sector patch has 14.

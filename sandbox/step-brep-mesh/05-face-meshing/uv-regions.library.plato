@@ -326,8 +326,12 @@ library UvRegions
     IsPlainSurfaceOf(m: BrepModel, f: BrepFaceIndex): Boolean
         => m.SurfaceDomainOf(f).U.HasSeam.Not
             && m.SurfaceDomainOf(f).V.HasSeam.Not
-            && m.CollapsedLines(f, SurfaceParameter.ParameterU).Count == 0
-            && m.CollapsedLines(f, SurfaceParameter.ParameterV).Count == 0;
+            && m.HasCollapsedLine(f).Not;
+
+    // Whether face f's surface collapses some iso-line to a point (a pole or an apex).
+    HasCollapsedLine(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.CollapsedLines(f, SurfaceParameter.ParameterU).Count > 0
+            || m.CollapsedLines(f, SurfaceParameter.ParameterV).Count > 0;
 
     // The region of the loops with the first loop that contains every other
     // loop's first point (even-odd) as the outer, the rest as holes in their
@@ -349,13 +353,211 @@ library UvRegions
             ? true
             : loops[k].LoopContains(loops[j].Points[0]));
 
-    // The region of a face whose surface has a seam or a collapsed line: the
-    // contract of AddMissingSeamsAndPoles beyond the plain case (whole-loop
-    // period shifts, pole segments from the arriving to the leaving free
-    // parameter, synthetic seam cuts between winding loops, whole pole
-    // segments for faces with no edges, outer by containment).
-    // deferred: windings, pole segments and synthetic seam cuts (chunks B and C).
-    CompletePeriodicRegion(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion;
+    // Chunk B body, from the contract AddMissingSeamsAndPoles beyond the
+    // plain case, for a face whose surface has a seam or a collapsed line, in
+    // three steps: every pole expanded into its segment (WithPoleSegments,
+    // chunk C); the two loops that wind the opposite way round one periodic
+    // direction joined by a synthetic seam cut (WithSeamCut: a cylinder band
+    // between two circles); the loop of largest area taken as the outer and
+    // every other loop moved by whole periods inside it (OuterByArea). A loop
+    // that closes in the plane, such as a seamed cylinder's, passes through
+    // the first two steps unchanged.
+    CompletePeriodicRegion(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): UvRegion
+        => m.OuterByArea(f, m.WithSeamCut(f, m.WithPoleSegments(f, loops, c), c));
+
+    // The loops with every pole expanded into its pole segment: unchanged on a
+    // surface that collapses no iso-line.
+    WithPoleSegments(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+        => m.HasCollapsedLine(f) ? m.ExpandedPoles(f, loops, c) : loops;
+
+    // deferred (chunk C): the pole segments of the contract: a loop point on a
+    // collapsed line replaced by the segment of that line from the free
+    // parameter where the loop arrives to the one where it leaves, its points
+    // Pole sources (or the pole vertex's) sampled under the criteria; a face
+    // with no edges at a pole given the whole segment.
+    ExpandedPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>;
+
+    // How far one traversal of loop l moves it in face f's parameter plane:
+    // its winding times the period, in each direction.
+    LoopDisplacement(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvCoordinate
+        => UvCoordinate(
+            m.UWinding(f, l).ToNumber * m.SurfaceDomainOf(f).U.Periodicity.PeriodOr(0.0),
+            m.VWinding(f, l).ToNumber * m.SurfaceDomainOf(f).V.Periodicity.PeriodOr(0.0));
+
+    // Whether loop l winds round some periodic direction of face f.
+    IsWindingLoop(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Boolean
+        => m.UWinding(f, l) != 0 || m.VWinding(f, l) != 0;
+
+    // The parameters uv moved by `by`.
+    ShiftedBy(uv: UvCoordinate, by: UvCoordinate): UvCoordinate
+        => UvCoordinate(uv.U + by.U, uv.V + by.V);
+
+    // Loop l moved by `by`, sources unchanged.
+    ShiftedLoop(l: UvLoop, by: UvCoordinate): UvLoop
+        => UvLoop(l.Points.Map(p => p.ShiftedBy(by)), l.Sources);
+
+    // Loop l traversed from position i, continued past its last point by the
+    // displacement d of one traversal, so the result runs as continuously as
+    // l and ends one closing step before l.Points[i] moved by d.
+    RotatedFrom(l: UvLoop, i: Integer, d: UvCoordinate): UvLoop
+        => UvLoop(
+            l.Points.Count.MapRange(t => i + t < l.Points.Count ? l.Points[i + t] : l.Points[i + t - l.Points.Count].ShiftedBy(d)),
+            l.Sources.Count.MapRange(t => l.Sources[(i + t) % l.Sources.Count]));
+
+    // The positions in `loops` of the loops that wind.
+    WindingLoops(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>): Array<Integer>
+        => loops.Count.Range.FlatMap(k => m.IsWindingLoop(f, loops[k]) ? [k] : loops.Count.Range.Take(0));
+
+    // Whether exactly two loops wind, once each round one direction and the
+    // opposite way: the two boundary circles of a band.
+    IsBandPair(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, winding: Array<Integer>): Boolean
+        => winding.Count == 2
+            && m.UWinding(f, loops[winding[0]]).Abs + m.VWinding(f, loops[winding[0]]).Abs == 1
+            && m.UWinding(f, loops[winding[0]]) + m.UWinding(f, loops[winding[1]]) == 0
+            && m.VWinding(f, loops[winding[0]]) + m.VWinding(f, loops[winding[1]]) == 0;
+
+    // The loops with the band pair, when there is one, replaced by one loop
+    // joined along a synthetic seam cut (JoinedByCut), first; unchanged when
+    // no loop winds. Every other arrangement of winding loops (a whole torus,
+    // several bands) goes to CutWholePeriods.
+    WithSeamCut(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+    {
+        var winding = m.WindingLoops(f, loops);
+        var others = loops.Count.Range.FlatMap(k => winding.Any(w => w == k) ? loops.Take(0) : [loops[k]]);
+        return winding.Count == 0
+            ? loops
+            : (m.IsBandPair(f, loops, winding)
+                ? [m.JoinedByCut(f, loops[winding[0]], loops[winding[1]], c)].Concatenate(others)
+                : m.CutWholePeriods(f, loops, c));
+    }
+
+    // deferred (chunk C): the synthetic cuts of the other arrangements of
+    // winding loops: a whole-period region with no loop (a whole torus, two
+    // cuts), and loops that wind round both directions.
+    CutWholePeriods(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>;
+
+    // The pair of positions (i in a, j in b), coded i * b.Count + j, whose
+    // surface points are nearest in 3D: where the cut between the two loops
+    // is shortest.
+    NearestPair(m: BrepModel, f: BrepFaceIndex, a: UvLoop, b: UvLoop): Integer
+    {
+        var s = m.SurfaceOf(f);
+        var pa = a.Points.Map(uv => m.Geometry.Eval(s, uv));
+        var pb = b.Points.Map(uv => m.Geometry.Eval(s, uv));
+        var nb = b.Points.Count;
+        return (a.Points.Count * nb).Range.Reduce(0, (best, k) =>
+            pa[k / nb].Distance(pb[k % nb]) < pa[best / nb].Distance(pb[best % nb]) ? k : best);
+    }
+
+    // The two winding loops a and b of a band pair as one loop that closes in
+    // the plane. The cut runs straight in parameters from a's point `start`
+    // to the copy `end` of b's point nearest it (NearestPair); its interior
+    // points split it into CutSegmentCount equal steps. The loop is: a from
+    // start round to its continued copy start + D (D = a's displacement);
+    // the far copy of the cut, its points SeamCut(far side, k) for k up; b
+    // from end + D round to end; the near copy of the cut back to start, its
+    // points SeamCut(near side, k) for k down. The two copies of the cut are
+    // one period apart and run in opposite orders, start and its copy share
+    // a's source, end and its copy b's, so Lift identifies each pair. The far
+    // side is the domain side the displacement points to.
+    JoinedByCut(m: BrepModel, f: BrepFaceIndex, a: UvLoop, b: UvLoop, c: FaceMeshingCriteria): UvLoop
+    {
+        var pair = m.NearestPair(f, a, b);
+        var i = pair / b.Points.Count;
+        var j = pair % b.Points.Count;
+        var d = m.LoopDisplacement(f, a);
+        var start = a.Points[i];
+        var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);
+        var n = m.CutSegmentCount(f, start, end, c);
+        var far = d.U != 0.0 ? (d.U > 0.0 ? DomainSide.UMax : DomainSide.UMin) : (d.V > 0.0 ? DomainSide.VMax : DomainSide.VMin);
+        var cut = (n - 1).MapRange(k => start.CutPoint(end, n, k + 1));
+        var ra = a.RotatedFrom(i, d);
+        var rb = b.RotatedFrom(j, m.LoopDisplacement(f, b)).ShiftedLoop(UvCoordinate(end.U + d.U - b.Points[j].U, end.V + d.V - b.Points[j].V));
+        return UvLoop(
+            ra.Points
+                .Concatenate([start.ShiftedBy(d)])
+                .Concatenate(cut.Map(p => p.ShiftedBy(d)))
+                .Concatenate(rb.Points)
+                .Concatenate([end])
+                .Concatenate((n - 1).MapRange(k => cut[n - 2 - k])),
+            ra.Sources
+                .Concatenate([a.Sources[i]])
+                .Concatenate((n - 1).MapRange(k => UvPointSource.SeamCut(far, k + 1)))
+                .Concatenate(rb.Sources)
+                .Concatenate([b.Sources[j]])
+                .Concatenate((n - 1).MapRange(k => UvPointSource.SeamCut(far.OppositeSide, n - 1 - k))));
+    }
+
+    // Point k of n equal steps from a to b in parameters.
+    CutPoint(a: UvCoordinate, b: UvCoordinate, n: Integer, k: Integer): UvCoordinate
+        => UvCoordinate(a.U + (b.U - a.U) * k.ToNumber / n.ToNumber, a.V + (b.V - a.V) * k.ToNumber / n.ToNumber);
+
+    // The number of equal parameter steps a synthetic cut from a to b on face
+    // f is sampled with, under the criteria: the least n (at most 64) for
+    // which every step meets CutStepMeetsCriteria, or the last n whose
+    // shortest step is at least the effective minimum length. Cut points are
+    // boundary points, so refinement can add none later: this is their one
+    // sampling (the reason RegionOf takes the criteria).
+    CutSegmentCount(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, c: FaceMeshingCriteria): Integer
+    {
+        var n = 1;
+        while (n < 64 && m.CutStepsMeetCriteria(f, a, b, n, c).Not && m.ShortestCutStep(f, a, b, n + 1) >= c.Discretization.EffectiveMinLength(m.Tolerances))
+        {
+            n = n + 1;
+        }
+        return n;
+    }
+
+    // Whether every one of the n equal steps from a to b meets the criteria.
+    CutStepsMeetCriteria(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, n: Integer, c: FaceMeshingCriteria): Boolean
+        => n.Range.All(k => m.CutStepMeetsCriteria(f, a.CutPoint(b, n, k), a.CutPoint(b, n, k + 1), c));
+
+    // Whether the cut step from p to q meets what a model edge's segment
+    // would: its parameter midpoint's surface point within SurfaceChordal of
+    // its 3D chord's midpoint, the face normal turning by at most
+    // SurfaceAngular along it, and its chord within the length limit.
+    CutStepMeetsCriteria(m: BrepModel, f: BrepFaceIndex, p: UvCoordinate, q: UvCoordinate, c: FaceMeshingCriteria): Boolean
+    {
+        var s = m.SurfaceOf(f);
+        var a = m.Geometry.Eval(s, p);
+        var b = m.Geometry.Eval(s, q);
+        var middle = m.Geometry.Eval(s, p.UvMidpoint(q));
+        var turn = m.FaceNormalAt(f, p, Vector3D.UnitZ).AngleBetween(m.FaceNormalAt(f, q, Vector3D.UnitZ));
+        return middle.Distance(a.HalfwayPoint(b)) <= c.SurfaceChordal
+            && turn.Radians <= c.SurfaceAngular.Radians
+            && a.Distance(b).IsWithinLimit(c.Discretization.MaxLength);
+    }
+
+    // The shortest 3D chord of the n equal steps from a to b.
+    ShortestCutStep(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, n: Integer): Number
+        => n.Range.Reduce(Number.MaxValue, (shortest, k) => shortest.Min(
+            m.Geometry.Eval(m.SurfaceOf(f), a.CutPoint(b, n, k)).Distance(m.Geometry.Eval(m.SurfaceOf(f), a.CutPoint(b, n, k + 1)))));
+
+    // The region of the loops: the loop of largest absolute area in natural
+    // parameters is the outer, every other a hole moved by whole periods so
+    // that it lies inside the outer (ShiftedInside). An empty region for no
+    // loops.
+    OuterByArea(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>): UvRegion
+    {
+        var areas = loops.Map(l => l.Points.Map(p => p.ToPoint2D).ShoelaceArea.Abs);
+        var outer = loops.Count.Range.Reduce(0, (best, k) => areas[k] > areas[best] ? k : best);
+        return loops.Count == 0
+            ? UvRegion(UvLoop([], []), [])
+            : UvRegion(loops[outer], loops.Count.Range.FlatMap(k =>
+                k == outer ? loops.Take(0) : [m.ShiftedInside(f, loops[outer], loops[k])]));
+    }
+
+    // Hole h moved by the first whole-period shift (none, then one period
+    // either way in u, in v, and in both) that puts its first point inside
+    // the outer loop; unchanged when none does.
+    ShiftedInside(m: BrepModel, f: BrepFaceIndex, outer: UvLoop, h: UvLoop): UvLoop
+    {
+        var pu = m.SurfaceDomainOf(f).U.Periodicity.PeriodOr(0.0);
+        var pv = m.SurfaceDomainOf(f).V.Periodicity.PeriodOr(0.0);
+        var shifts = 9.MapRange(k => UvCoordinate(pu * ((k % 3 + 1) % 3 - 1).ToNumber, pv * ((k / 3 + 1) % 3 - 1).ToNumber));
+        var fits = h.Points.Count == 0 ? shifts.Take(0) : shifts.FlatMap(s => outer.LoopContains(h.Points[0].ShiftedBy(s)) ? [s] : shifts.Take(0));
+        return fits.Count == 0 ? h : h.ShiftedLoop(fits[0]);
+    }
 
     //==
     // # The chart, tolerances, and signed areas
