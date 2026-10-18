@@ -22,7 +22,7 @@ const parsed = parseNotebook(readFileSync(NOTEBOOK, "utf8"));
 if (!parsed.ok) throw new Error(parsed.errors.join("\n"));
 const notebook: Notebook = parsed.notebook;
 
-const embedsOfTurn = (turn: number): Embed[] => notebook.turns[turn]!.reply.embeds;
+const embedsOfTurn = (turn: number): readonly Embed[] => notebook.turns[turn]!.reply.embeds;
 
 function tableOf(turn: number, caption: string): TableSnapshot {
   const embed = embedsOfTurn(turn).find((e) => e.kind === "table" && e.caption === caption);
