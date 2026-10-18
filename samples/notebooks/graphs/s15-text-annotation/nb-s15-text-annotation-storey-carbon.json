@@ -1,6 +1,16 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "answer": { "x": 2394, "y": 926 },
+    "coloured": { "x": 2045, "y": 386 },
+    "isolated": { "x": 1696, "y": 280 },
+    "rows": { "x": 1347, "y": 730 },
+    "model": { "x": 1343, "y": 341 },
+    "slabStorey": { "x": 738, "y": 730 },
+    "totals": { "x": 385, "y": 1041 },
+    "storeyOf": { "x": 385, "y": 757 },
+    "slabs": { "x": 389, "y": 465 },
+    "entities": { "x": 40, "y": 465 },
     "about": { "x": 40, "y": 40, "w": 560, "h": 200 }
   },
   "structure": {

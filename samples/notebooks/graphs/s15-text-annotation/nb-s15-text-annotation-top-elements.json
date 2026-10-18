@@ -1,6 +1,16 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
+    "capped": { "x": 2860, "y": 678 },
+    "answer": { "x": 2860, "y": 280 },
+    "ghosted": { "x": 2511, "y": 755 },
+    "model": { "x": 2158, "y": 695 },
+    "renamed": { "x": 2162, "y": 479 },
+    "materialized": { "x": 1813, "y": 479 },
+    "top": { "x": 1464, "y": 479 },
+    "ranked": { "x": 969, "y": 479 },
+    "columns": { "x": 389, "y": 479 },
+    "elements": { "x": 40, "y": 479 },
     "about": { "x": 40, "y": 40, "w": 560, "h": 200 }
   },
   "structure": {
