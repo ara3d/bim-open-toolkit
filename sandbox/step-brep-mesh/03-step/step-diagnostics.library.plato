@@ -146,7 +146,7 @@ library StepDiagnostics
         => match (p) {
             Nowhere => false;
             WholeInput => s == StepFindingSubject.AboutInput;
-            StepInstance(id) => s == StepFindingSubject.AboutInstance || s == StepFindingSubject.AboutGeometry;
+            AtInstance(id) => s == StepFindingSubject.AboutInstance || s == StepFindingSubject.AboutGeometry;
             KernelCurve(index) => s == StepFindingSubject.AboutGeometry;
             KernelSurface(index) => s == StepFindingSubject.AboutGeometry;
             KernelVertex(index) => false;
@@ -173,5 +173,5 @@ library StepDiagnostics
 
     // True when ds holds a diagnostic with c's code about instance id.
     HasCodeAt(ds: Array<Diagnostic>, c: StepDiagnosticCode, id: StepInstanceId): Boolean
-        => ds.Any(d => d.Code == c.CodeOf && d.Where == Provenance.StepInstance(id));
+        => ds.Any(d => d.Code == c.CodeOf && d.Where == Provenance.AtInstance(id));
 }

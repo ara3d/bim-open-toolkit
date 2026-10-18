@@ -130,7 +130,7 @@ layer's own and may change inside the layer.
   `CornerIndex` is the stdlib's; a corner slot is an `Integer`.
 - `MeshVertexProvenance = OnVertex(Vertex: BrepVertexIndex) | OnEdge(Edge: BrepEdgeIndex, Parameter: Number) | OnFace(Face: BrepFaceIndex, Uv: UvCoordinate)`,
   with `IsOnFace(p, f)`.
-- `Provenance = Nowhere | WholeInput | StepInstance(Id: StepInstanceId) | KernelCurve(Index: CurveIndex) | KernelSurface(Index: SurfaceIndex) | KernelVertex(Index: BrepVertexIndex) | KernelEdge(Index: BrepEdgeIndex) | KernelLoop(Index: BrepLoopIndex) | KernelFace(Index: BrepFaceIndex) | KernelShell(Index: ShellIndex) | KernelBody(Index: BodyIndex) | MeshVertex(Index: VertexIndex) | MeshElement(Index: ElementIndex)`.
+- `Provenance = Nowhere | WholeInput | AtInstance(Id: StepInstanceId) | KernelCurve(Index: CurveIndex) | KernelSurface(Index: SurfaceIndex) | KernelVertex(Index: BrepVertexIndex) | KernelEdge(Index: BrepEdgeIndex) | KernelLoop(Index: BrepLoopIndex) | KernelFace(Index: BrepFaceIndex) | KernelShell(Index: ShellIndex) | KernelBody(Index: BodyIndex) | MeshVertex(Index: VertexIndex) | MeshElement(Index: ElementIndex)`.
 - `Severity = Error | Warning | Info`, `ConstraintGroup = Topological | Geometric | Quality`.
 - `Check { Law: String; Holds: Boolean; Worst: Number; Bound: Number; Where: Provenance }`, built
   only by `CheckWithin(law, worst, bound, where)`, `CheckExact(law, holds, where)` and `WorseOf`;

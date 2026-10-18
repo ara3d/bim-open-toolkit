@@ -143,7 +143,7 @@ library StepReadingLaws
     Law_RepairsAreDiagnosed(f: Part21File, r: Integer): Boolean
     {
         var d = f.DecodeBrep;
-        return r >= 0 && r < d.Map.Repairs.Count ? d.Diagnostics.Any(x => x.Where == Provenance.StepInstance(d.Map.Repairs[r].Source.Instance)) : true;
+        return r >= 0 && r < d.Map.Repairs.Count ? d.Diagnostics.Any(x => x.Where == Provenance.AtInstance(d.Map.Repairs[r].Source.Instance)) : true;
     }
 
     // Every finding of the decode points at its code's subject (SubjectOf):

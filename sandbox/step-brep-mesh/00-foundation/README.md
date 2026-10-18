@@ -404,10 +404,11 @@ laws that test it.
 6. **The name `SameParameter`.** In Open CASCADE "same parameter" is a property of an edge whose
    pcurve and 3D curve share a parameterization, which STEP has no flag for. Kept as VOCABULARY.md
    proposed, to spare concurrent authors a rename; `CoincidentParameter` would avoid the clash.
-7. **Overlapping case names.** `Provenance.StepInstance` shares its name with layer 3's type
-   `StepInstance`; `ConstraintGroup.Geometric` with layer 7's `ConformanceLevel.Geometric`. Both
-   compile when qualified (PLATO-PRIMER.md probes L08, L09), and SPEC-DSL.md already requires the
-   qualified form.
+7. **Overlapping case names.** `Provenance.StepInstance` shared its name with layer 3's type
+   `StepInstance` and was renamed `AtInstance` in implementation chunk A (finding F-48.4);
+   `ConstraintGroup.Geometric` still shares its name with layer 7's `ConformanceLevel.Geometric`,
+   which compiles when qualified (PLATO-PRIMER.md probes L08, L09), and SPEC-DSL.md already
+   requires the qualified form.
 8. **Constructor discipline** (answered in the fix wave). A search of layers 1 to 8 on 2026-10-17
    found no direct `Check(...)` construction and one direct `Report(...)`, layer 8's `Located`,
    which moved here and is now the fourth listed constructor. Adding the `Bound` field makes any

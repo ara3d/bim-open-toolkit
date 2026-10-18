@@ -547,7 +547,7 @@ library BrepCheckingLaws
         {
             Nowhere => VertexIndex(-1);
             WholeInput => VertexIndex(-1);
-            StepInstance(id) => VertexIndex(-1);
+            AtInstance(id) => VertexIndex(-1);
             KernelCurve(index) => VertexIndex(-1);
             KernelSurface(index) => VertexIndex(-1);
             KernelVertex(index) => VertexIndex(-1);
@@ -566,7 +566,7 @@ library BrepCheckingLaws
         {
             Nowhere => ElementIndex(-1);
             WholeInput => ElementIndex(-1);
-            StepInstance(id) => ElementIndex(-1);
+            AtInstance(id) => ElementIndex(-1);
             KernelCurve(index) => ElementIndex(-1);
             KernelSurface(index) => ElementIndex(-1);
             KernelVertex(index) => ElementIndex(-1);

@@ -87,7 +87,7 @@ spec DecodedModel
     invariant Law_IndicesInRange(self.Model);
     invariant self.Map.CoversModel(self.Model);
     invariant self.Model.Tolerances.IsWellFormed;
-    invariant forall (r: Integer) in self.Map.Repairs.Count.Range : self.Diagnostics.Any(x => x.Where == Provenance.StepInstance(self.Map.Repairs[r].Source.Instance));
+    invariant forall (r: Integer) in self.Map.Repairs.Count.Range : self.Diagnostics.Any(x => x.Where == Provenance.AtInstance(self.Map.Repairs[r].Source.Instance));
     constructor DecodeBrep;
     constructor DecodeBrepWith;
     constructor PrepareModel;

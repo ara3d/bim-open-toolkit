@@ -207,7 +207,7 @@ library BrepCheckingCommon
         {
             Nowhere => false;
             WholeInput => false;
-            StepInstance(id) => false;
+            AtInstance(id) => false;
             KernelCurve(index) => false;
             KernelSurface(index) => false;
             KernelVertex(index) => false;
@@ -380,7 +380,7 @@ library BrepCheckingCommon
     // Instance position i of a file as a provenance: its instance name.
     // Precondition: i is a position of f.Instances.
     AtInstance(f: Part21File, i: Integer): Provenance
-        => Provenance.StepInstance(f.IdAt(i));
+        => Provenance.AtInstance(f.IdAt(i));
 
     // An exact law at every instance position of a file.
     CheckInstances(f: Part21File, law: String, holds: Function1<Integer, Boolean>): Check
