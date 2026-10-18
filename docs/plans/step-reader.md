@@ -132,3 +132,8 @@ STEP reader look nearly line for line like the IFC one.
   float maxDeviation = Tolerance.ChordDeviation)` (1 mm). A virtual `SurfaceMap.ChordDeviation` (planes answer 0) drives
   boundary densification and interior flips then splits of earcut's triangles. Quarter cylinder: area 3.98 before,
   pi - 3.8e-4 after, no interior point. Kernel tests 38+1 skipped to 41+1 skipped; mesher tests 164 before and after.
+- 2026-10-17, TKT-310, ara3d-sdk 002784d: `StepDocument.Diagnostics` lists `StepDiagnostic(Severity, Code, Offset,
+  Expected, DefinitionId, DefinitionOffset)` instead of throwing; a fault keeps every instance completed before it
+  (unit-cube-truncated.stp: #1 to #124, one Error `Syntax` at byte 4232 in #125, which starts at 4198). `StepHeader`
+  keeps its ten fields as written. The u-blox 88 open with zero diagnostics and 5,708,101 definitions, as before;
+  Ara3D.Ifc.Tests 38 passed, 11 skipped, before and after.
