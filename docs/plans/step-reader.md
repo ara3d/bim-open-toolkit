@@ -66,6 +66,26 @@ STEP reader look nearly line for line like the IFC one.
 - `PROJECT.md` does not mention STEP. The working guess is product models (equipment, fixtures) shown with the
   building in the 3D view.
 
+## Pivot: geometry in Plato (owner decision, 2026-10-17)
+
+The owner's intent was to reuse the C# reader and parser and write the geometry algorithms in Plato
+(TKT-306). The split:
+
+| Stage | Language | Where | Ticket |
+|---|---|---|---|
+| Parse Part 21, diagnostics, header | C# | ara3d-sdk `Ara3D.IO.StepParser` | TKT-302, TKT-310 (done) |
+| Typed AP242 layer | C# (generated) | bim-open-data `Ara3D.StepTypes`, `Ara3D.Step.Entities` | TKT-303, TKT-304 (done) |
+| Decode into the Plato library's `BrepModel` | C# | `Ara3D.Step.Mesher/Decode` | TKT-312 |
+| Units, placements, mapped items, assemblies, colours, entry point | C# | `Ara3D.Step.Mesher/Model`, `StepMesher` | TKT-305 |
+| Geometry: discretization, face meshing, mesh assembly, validation | Plato, compiled to C# | `sandbox/step-brep-mesh` layers 1, 2, 4 to 8 | TKT-299 chunks, TKT-313 |
+
+The boundary moves from `Part21File` to `BrepModel`, so decoding happens in compiler-checked
+generated C# instead of by string name in Plato (finding F-1; TKT-300 is not needed). The Plato
+library's decode chunks D and E are replaced by TKT-312. The C# geometry builder (TKT-305 part A) was
+stopped before it committed anything. The kernel fixes TKT-308 and TKT-309 stay: they serve the IFC
+mesher, which remains in C#. First risk to retire: TKT-311, whether Plato's C# writer compiles the
+library's constructs today.
+
 ## Build log
 
 - 2026-10-17: plan and tickets written.
@@ -174,3 +194,4 @@ STEP reader look nearly line for line like the IFC one.
   (`rep_item_group`, `user_defined_curve_font`, `externally_defined_hatch_style`, ...); every Part 42/43 geometry and
   topology entity starts with it. For TKT-305: names are EXPRESS names in Pascal case and some meet .NET ones (`Path`,
   `Vector`, `Plane`), so alias the namespace where they meet; strings are read raw (no `\X2\` decoding yet).
+- 2026-10-17: pivot recorded (section above); TKT-305 re-scoped to model assembly; TKT-311 (writer spike), TKT-312 (C# decode into BrepModel), TKT-313 (mesh through compiled Plato) filed.
