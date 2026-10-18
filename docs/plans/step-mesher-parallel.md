@@ -18,10 +18,10 @@ From Plato's `docs/reports/interpreter-turnaround-2026-10-17.md` and one run on 
 ## Rules for every agent
 
 1. **No builder builds bim-open-data, the gate, or Plato's default output.** Library builders check types and run laws with the pinned command below; its compile step reports type errors before any law runs. The `plato-navigation` server's `plato_check` does not help here: the server indexes only Plato's stdlib, not this library (found 2026-10-18 by the topology builder). TKT-331's warm tool is to load the library's folders. Agents changing Plato build into a private folder: `dotnet build <project> -c Release --artifacts-path <their scratchpad>/plato-build`.
-2. **One pinned Plato CLI for all law runs.** The supervisor copies a built CLI to `C:\Users\cdigg\.plato-cli\<plato commit>\` and announces the path. The current one is `C:\Users\cdigg\.plato-cli\062b8dc7\Plato.CLI.dll`. Run from `C:\Users\cdigg\git\plato`:
+2. **One pinned Plato CLI for all law runs.** The supervisor copies a built CLI to `C:\Users\cdigg\.plato-cli\<plato commit>\` and announces the path. The current one is `C:\Users\cdigg\.plato-cli\acbc9b94\Plato.CLI.dll` (Plato acbc9b94). It takes `--filter=A,B,C`, a comma list of law or class names; `--laws-from=<file>`, one name per line; `--report=<file>`, one verdict line per law; and `--baseline=<file>`, which prints changed verdicts and exits 1 when a passing law stops passing. Run from `C:\Users\cdigg\git\plato`:
 
    ```
-   dotnet C:/Users/cdigg/.plato-cli/062b8dc7/Plato.CLI.dll run stdlib/foundation stdlib/geometry stdlib/graphics C:/Users/cdigg/git/bim-open-toolkit/sandbox/step-brep-mesh --laws --recursive --exclude=brep.types.plato --exclude=brep.library.plato --exclude=brep.concepts.plato --profile=cpu64 --budget=60 --filter=<law name or class>
+   dotnet C:/Users/cdigg/.plato-cli/acbc9b94/Plato.CLI.dll run stdlib/foundation stdlib/geometry stdlib/graphics C:/Users/cdigg/git/bim-open-toolkit/sandbox/step-brep-mesh --laws --recursive --exclude=brep.types.plato --exclude=brep.library.plato --exclude=brep.concepts.plato --profile=cpu64 --budget=60 --filter=<law name or class>
    ```
 
 3. **Tests, by stage.**
@@ -66,3 +66,4 @@ Wave 2, started by the supervisor as wave 1 lands:
 
 - 2026-10-18: plan written; CLI pinned at Plato 062b8dc7; wave 1 started.
 - 2026-10-18: TKT-331's fence widened to studio/labs/PlatoNavigationMcp/LawMcpTools.cs, its Program.cs (one Register line) and README.md, because the server on 8768 is built from the studio repository. Step B asked to move `CopiesInside` from 04-discretization to 00-foundation, so layer 2's `SharesCurveParameter` (TKT-314) can use it without calling layer 4. `plato_check` found not to see the library; rule 1 corrected.
+- 2026-10-18: CLI re-pinned at Plato acbc9b94 (TKT-331 steps 1 and 2), built from a clean export so it excludes uncommitted interpreter edits; a comma-filter run over two laws took 23.7 s, all compile.
