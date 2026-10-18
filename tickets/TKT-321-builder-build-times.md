@@ -1,14 +1,16 @@
 ---
 id: TKT-321
 title: Builder build and test loops take 45 minutes to 3 hours: measure where the time goes, then narrow the inner loop and prebuild shared inputs
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session c4298a2b
+session: c4298a2b-52b5-4c66-abfe-c7b982524e14
 fence: [docs/plans/build-times.md, Directory.Build.props, Directory.Build.targets, deps/bim-open-data/Directory.Build.props, deps/bim-open-data/Directory.Build.targets, scripts/**, docs/plans/visualization/TOOLING-LEDGER.md]
 workflow: [process]
 related: [TKT-303, TKT-310, TKT-312]
 confidence: medium
 created: 2026-10-18
+claimed: 2026-10-18
 kind: defect
 ---
 
@@ -64,3 +66,7 @@ Decisions for the user:
 - How many builders may run at once on this machine? Default: three.
 - May builders consume the pinned Ara3D SDK as local packages when their fence does not include `deps/ara3d-sdk`? Default: yes.
 - Should build output folders be excluded from Windows Defender scanning? Default: ask the owner to do it, since it is a security setting only the owner may change.
+
+## Progress
+
+- 2026-10-18, idea 6 (solution filters per area), builder session 10b9c9c6: measured and dropped. Builders build one test project in about 9 of 10 runs (transcripts of 2026-10-14 to 18: 158 project builds, 17 whole-solution builds). For the step and ifc areas of bim-open-data, a filter's build and its tests take 1 to 3 times as long as that single project's; they are 2 to 5 times faster than the whole solution's. No filter, script, or README text was added. Numbers in `docs/plans/build-times.md`; ledger row marked off. Found on the way: in this checkout, a warm build of `BimOpenData.sln` is no faster than a cold one (43 to 57 s against 49 to 56 s), because the solution lists the SDK, schema and Parakeet projects through the `deps/bim-open-data/deps` junctions while `DepsRoot` reaches them through the toolkit's `deps/`, so MSBuild builds each twice into the same folders.
