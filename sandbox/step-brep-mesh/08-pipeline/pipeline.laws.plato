@@ -529,7 +529,12 @@ library StepToMeshLaws
     // Validating a mesh against its model twice, as the pipeline does
     // (Validated: the model, the mesh, and the cross check with the
     // criteria, at the options' level), gives identical reports: validation
-    // reads its inputs and nothing else. Library, exact.
+    // reads its inputs and nothing else. Over a runnable model and options and
+    // a mesh meeting the ModelMesh invariants (layer 6's IsWellFormed), the
+    // inputs the pipeline validates; the cross check's RestrictedToFaces
+    // assumes them. Library, exact.
     Law_ValidationIsIdempotent(m: BrepModel, mesh: ModelMesh, o: MeshingOptions): Boolean
-        => m.Validated(mesh, o).Identical(m.Validated(mesh, o));
+        => (m.IsRunnable(o) && mesh.IsWellFormed)
+            ? m.Validated(mesh, o).Identical(m.Validated(mesh, o))
+            : true;
 }

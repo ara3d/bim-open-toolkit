@@ -87,33 +87,41 @@ library ModelMeshesLaws
 
     //==
     // # Restriction
+    //
+    // Every restriction law is over a mesh meeting the ModelMesh invariants (IsWellFormed),
+    // RestrictedToFaces' precondition.
 
     // Library law: restricting to a set of faces keeps exactly the elements of those faces.
     Law_RestrictionKeepsTheElementsOfTheFaces(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Boolean
-        => mesh.RestrictedToFaces(faces).ElementCount == mesh.ElementsOfFaces(faces).Count;
+        => mesh.IsWellFormed ? mesh.RestrictedToFaces(faces).ElementCount == mesh.ElementsOfFaces(faces).Count : true;
 
     // Library law: corner slot of element k of the restriction is that corner of the k-th kept
     // element.
     Law_RestrictionKeepsEachCorner(mesh: ModelMesh, faces: Array<BrepFaceIndex>, k: Integer, slot: Integer): Boolean
-        => mesh.ElementsOfFaces(faces).IsValidIndex(k)
+        => (mesh.IsWellFormed && mesh.ElementsOfFaces(faces).IsValidIndex(k))
             ? mesh.RestrictedToFaces(faces).ElementCorner(ElementIndex(k), slot).Value
                 == mesh.ElementCorner(mesh.ElementsOfFaces(faces)[k], slot).Value
             : true;
 
     // Library law: element k of the restriction approximates the face of the k-th kept element.
     Law_RestrictionKeepsEachElementFace(mesh: ModelMesh, faces: Array<BrepFaceIndex>, k: Integer): Boolean
-        => mesh.ElementsOfFaces(faces).IsValidIndex(k)
+        => (mesh.IsWellFormed && mesh.ElementsOfFaces(faces).IsValidIndex(k))
             ? mesh.RestrictedToFaces(faces).ElementFaceIs(ElementIndex(k), mesh.ElementFace[mesh.ElementsOfFaces(faces)[k]])
             : true;
 
     // Library law: restricting to every face of the mesh changes nothing about its counts.
     Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic(mesh: ModelMesh): Boolean
-        => Law_ElementFaceHasOneEntryPerElement(mesh)
+        => mesh.IsWellFormed
             ? mesh.RestrictedToFaces(mesh.ElementFace).EulerCharacteristic == mesh.EulerCharacteristic
             : true;
 
     //==
     // # Witness
+
+    // The witness mesh and its reversal meet the ModelMesh invariants (IsWellFormed), so a law
+    // guarded by IsWellFormed is not vacuous on them.
+    Law_WitnessMeshIsWellFormed(_: ModelMesh): Boolean
+        => ModelMesh.Witness_UnitTetrahedron.IsWellFormed && ModelMesh.Witness_UnitTetrahedron.Reversed.IsWellFormed;
 
     // The mesh of a unit tetrahedron B-rep with 4 vertices, 6 straight edges, and 4 planar faces,
     // meshed with no interior points: positions (0,0,0), (1,0,0), (0,1,0), (0,0,1); one triangle per

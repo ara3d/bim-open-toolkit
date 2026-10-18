@@ -310,7 +310,7 @@ hand-written texts of "Implementation order", and over the corpus.
 | `Law_EdgeReversalPreservesMesh` | reversing an edge gives the same mesh bit for bit | exact | library |
 | `Law_ShellReversalNegatesVolume` | reversing every face negates the signed volume | `LengthTolerance` times the area | library |
 | `Law_TighterChordalStaysWithinLooserBound` | a tighter chordal bound's governed deviation is within the looser bound | `LengthTolerance` | library |
-| `Law_ValidationIsIdempotent` | `Validated` twice gives identical reports | exact | library |
+| `Law_ValidationIsIdempotent` | `Validated` twice gives identical reports, over a runnable model and a mesh meeting the `ModelMesh` invariants (`IsWellFormed`) | exact | library |
 
 The requested laws map to these as follows. Determinism: the first two, over witnesses, since the
 runner cannot build their inputs. Failure isolation: `Law_FailedFaceLeavesOthersUnchanged`, with

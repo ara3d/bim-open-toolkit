@@ -111,6 +111,21 @@ library ModelMeshes
     HasAllValidCorners(mesh: ModelMesh): Boolean
         => mesh.ElementCount.MapRange(k => mesh.HasValidCorners(ElementIndex(k))).All(x => x);
 
+    // Whether the mesh meets the ModelMesh invariants of mesh.spec.plato: one entry per element,
+    // corner and vertex in ElementFace, CornerNormals, CornerUvs and VertexProvenance, a numbering
+    // that covers the positions, every corner naming a position, and every vertex's provenance
+    // matching its numbering. Every mesh the library builds meets them; a generated one need not.
+    // The guard of a law that hands a whole mesh to functions assuming them, such as
+    // RestrictedToFaces.
+    IsWellFormed(mesh: ModelMesh): Boolean
+        => Law_ElementFaceHasOneEntryPerElement(mesh)
+            && Law_CornerNormalsHaveOneEntryPerCorner(mesh)
+            && Law_CornerUvsHaveOneEntryPerCorner(mesh)
+            && Law_VertexProvenanceHasOneEntryPerVertex(mesh)
+            && Law_NumberingCoversPositions(mesh)
+            && mesh.HasAllValidCorners
+            && mesh.Positions.Count.Range.All(v => Law_VertexProvenanceMatchesNumbering(mesh, VertexIndex(v)));
+
     // Whether e names an element whose corners all have a normal and a uv.
     HasValidCornerAttributes(mesh: ModelMesh, e: ElementIndex): Boolean
         => mesh.IsElementInRange(e)

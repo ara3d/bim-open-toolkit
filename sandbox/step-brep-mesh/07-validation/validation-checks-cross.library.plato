@@ -42,13 +42,16 @@ library BrepCrossChecking
     HasMeshElements(mesh: ModelMesh, f: BrepFaceIndex): Boolean
         => mesh.ElementFace.Any(x => x == f);
 
-    // True when every face of shell s has an element: the hypothesis of the
-    // laws that compare a shell's mesh with the shell as a whole (Euler
+    // True when the mesh meets the ModelMesh invariants (layer 6's
+    // IsWellFormed) and every face of shell s has an element: the hypothesis
+    // of the laws that compare a shell's mesh with the shell as a whole (Euler
     // characteristic, closure, angle defects, volume signs), which say
     // nothing more about a shell with a face missing than that face's own
-    // finding does.
+    // finding does. RestrictedToShell assumes the invariants; a mesh that
+    // breaks them is reported by layer 6's structure checks
+    // (ValidateModelMesh), not here.
     IsCompleteShellMesh(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
-        => m.ShellFaces(s).All(f => mesh.HasMeshElements(f));
+        => mesh.IsWellFormed && m.ShellFaces(s).All(f => mesh.HasMeshElements(f));
 
     // The Euler characteristic V - E + F of the shell's mesh counting only
     // the vertices its elements reference (layer 6's
