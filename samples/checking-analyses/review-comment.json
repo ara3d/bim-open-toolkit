@@ -1,0 +1,140 @@
+{
+  "formatVersion": "0.1.0",
+  "layout": {
+    "about": {
+      "x": 40,
+      "y": 40
+    },
+    "modelPath": {
+      "x": 40,
+      "y": 40
+    },
+    "camera": {
+      "x": 40,
+      "y": 40
+    },
+    "review": {
+      "x": 40,
+      "y": 40
+    },
+    "answer": {
+      "x": 40,
+      "y": 40
+    },
+    "topics": {
+      "x": 40,
+      "y": 40
+    },
+    "bcf": {
+      "x": 40,
+      "y": 40
+    }
+  },
+  "structure": {
+    "inputs": [
+      {
+        "name": "model",
+        "kind": "FilePath",
+        "default": "{SAMPLES}/duplex-enriched.bos",
+        "description": "The building's BIM Open Schema (.bos) file; the NRC Duplex by default. bcf.write reads the model's file name and date for the BCF header and the elements' places for the viewpoint's selection."
+      }
+    ],
+    "edges": [
+      {
+        "from": "camera.camera",
+        "to": "review.camera"
+      },
+      {
+        "from": "review.issues",
+        "to": "answer.table"
+      },
+      {
+        "from": "review.issues",
+        "to": "topics.issues"
+      },
+      {
+        "from": "review.issues",
+        "to": "bcf.issues"
+      },
+      {
+        "from": "modelPath.path",
+        "to": "bcf.model"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "about",
+        "kind": "view.note",
+        "version": 1
+      },
+      {
+        "id": "modelPath",
+        "kind": "value.path",
+        "version": 1
+      },
+      {
+        "id": "camera",
+        "kind": "view3d.camera",
+        "version": 1
+      },
+      {
+        "id": "review",
+        "kind": "bcf.issue",
+        "version": 1
+      },
+      {
+        "id": "answer",
+        "kind": "view.table",
+        "version": 1
+      },
+      {
+        "id": "topics",
+        "kind": "bcf.topics",
+        "version": 1
+      },
+      {
+        "id": "bcf",
+        "kind": "bcf.write",
+        "version": 1
+      }
+    ]
+  },
+  "values": {
+    "about": {
+      "text": "What the 3D pane's Comment button makes. A reviewer selected the Duplex's two narrow doors (762 and 813 mm leaves), pressed Comment and typed a title and a note: the pane added camera, which holds the camera as it was (south-east of the building, looking at the doors), and review, which holds the doors' GlobalIds, the texts, the author and the time, and turns the camera into columns. answer shows the issue; topics previews the BCF topic; bcf writes the file once Run, with the comment under the topic and the viewpoint at the camera."
+    },
+    "modelPath": {
+      "path": "$model"
+    },
+    "camera": {
+      "name": "southeast",
+      "posX": "12",
+      "posY": "-20",
+      "posZ": "7",
+      "targetX": "2.99",
+      "targetY": "-5.05",
+      "targetZ": "2.6",
+      "fov": "60"
+    },
+    "review": {
+      "title": "Door leaf under 850 mm",
+      "description": "",
+      "comment": "Both doors have a leaf narrower than the 850 mm the accessibility rule asks for; please widen them or confirm an exemption.",
+      "author": "Reviewer",
+      "created": "2026-10-18T12:00:00Z",
+      "ids": "1aj$VJZFn2TxepZUBcKp$i,1s1jVhK8z0pgKYcr9jt781"
+    },
+    "answer": {
+      "title": "The reviewer's issue, one row per door"
+    },
+    "topics": {
+      "preset": "auto"
+    },
+    "bcf": {
+      "path": "{ARTIFACTS}/checking/review-comment.bcf",
+      "preset": "auto",
+      "author": "",
+      "guidSeed": "review-comment"
+    }
+  }
+}
