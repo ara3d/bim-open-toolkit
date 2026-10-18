@@ -98,7 +98,7 @@ library StepReading
         return DecodedModel(model, map, reduced.Diagnostics.Concatenate(raw.ToleranceDiagnostics(tolerances, size, extent, policy)), size, extent);
     }
 
-    // deferred: the reduction repairs of research/STEP-BREP-MODEL.md 6.6, at
+    // The reduction repairs of research/STEP-BREP-MODEL.md 6.6, at
     // raw.Model.Tolerances.Length (set by PrepareModelWith before the call).
     // Two vertices of one edge, or of one loop's head-to-tail joint, within
     // the length tolerance are merged into the earlier (MergedInto); an edge
@@ -106,16 +106,161 @@ library StepReading
     // (DroppedZeroLengthEdge). Removed rows leave the vertex and edge tables
     // and their sources, the remaining indices are renumbered, and one
     // RepairRecord and one diagnostic are appended per removal. Faces,
-    // shells, bodies and the arena keep their rows and indices. Deferred with
-    // the decode it came from; its contract is in step.spec.plato.
-    Reduced(raw: RawDecodedModel): RawDecodedModel;
+    // shells, bodies and the arena keep their rows and indices.
+    // Chunk D body, from the contract Reduced in step.spec.plato: layer 0's
+    // ClassRoots over the coincident VertexJoints, so each class keeps its
+    // smallest vertex whatever the join order; an edge is dropped when its
+    // two ends fall in one class and its curve does not run back to its
+    // start (RunsBackToStart). An edge loop whose every coedge is dropped
+    // becomes a vertex loop on the class of its first edge's start, as
+    // layer 2's ReducedCounts counts it. Repairs and diagnostics: the raw
+    // model's first, then one per merged vertex in index order
+    // (ClosedEdgeVerticesMerged when an edge on a curve that runs back to
+    // its start joined it, DuplicateVertexMerged otherwise; Measure the
+    // distance to the vertex kept), then one per dropped edge
+    // (ZeroLengthEdgeDropped; Measure the distance between its raw ends).
+    // The classes are transitive: a chain of joints each within the
+    // tolerance can merge two vertices farther apart than it, which
+    // Law_MergedVerticesCoincide would then report.
+    Reduced(raw: RawDecodedModel): RawDecodedModel
+    {
+        var m = raw.Model;
+        var g = m.Geometry;
+        var tol = m.Tolerances.Length;
+        var n = m.Vertices.Count;
+        var candidates = m.VertexJoints;
+        var joints = candidates.FlatMap(p => p[0] != p[1] && m.Vertices[p[0]].Point.Coincident(m.Vertices[p[1]].Point, tol) ? [p] : candidates.Take(0));
+        var roots = ClassRoots(n, joints.Map(p => p[0]), joints.Map(p => p[1]));
+        var vertexAt = n.MapRange(v => roots[v] == v).Renumbering;
+        var closes = m.Edges.Map(e => g.RunsBackToStart(e.Curve, tol));
+        var dropped = m.Edges.Count.MapRange(e => roots[m.Edges[e].Start.Value] == roots[m.Edges[e].End.Value] && !closes[e]);
+        var edgeAt = dropped.Map(d => !d).Renumbering;
+        var closedJoin = new Buffer<Boolean>(n);
+        var i = 0;
+        while (i < n)
+        {
+            closedJoin = closedJoin.Set(i, false);
+            i = i + 1;
+        }
+        var j = 0;
+        while (j < m.Edges.Count)
+        {
+            var start = m.Edges[j].Start.Value;
+            var end = m.Edges[j].End.Value;
+            if (closes[j] && start != end && roots[start] == roots[end])
+            {
+                closedJoin = closedJoin.Set(start, true);
+                closedJoin = closedJoin.Set(end, true);
+            }
+            j = j + 1;
+        }
+        var joinedByClosedEdge = closedJoin.Freeze();
+        var merged = n.Range.FlatMap(k => roots[k] == k ? n.Range.Take(0) : [k]);
+        var drops = m.Edges.Count.Range.FlatMap(k => dropped[k] ? [k] : m.Edges.Count.Range.Take(0));
+        var mergeRepairs = merged.Map(k => RepairRecord(raw.Sources.Vertices[k], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[k]]))));
+        var dropRepairs = drops.Map(k => RepairRecord(raw.Sources.Edges[k], StepRepair.DroppedZeroLengthEdge));
+        var mergeFindings = merged.Map(k => Diagnose(
+            joinedByClosedEdge[k] ? StepDiagnosticCode.ClosedEdgeVerticesMerged : StepDiagnosticCode.DuplicateVertexMerged,
+            Provenance.AtInstance(raw.Sources.Vertices[k].Instance),
+            m.Vertices[k].Point.Distance(m.Vertices[roots[k]].Point)));
+        var dropFindings = drops.Map(k => Diagnose(
+            StepDiagnosticCode.ZeroLengthEdgeDropped,
+            Provenance.AtInstance(raw.Sources.Edges[k].Instance),
+            m.Vertices[m.Edges[k].Start.Value].Point.Distance(m.Vertices[m.Edges[k].End.Value].Point)));
+        var vertices = n.Range.FlatMap(k => roots[k] == k ? [m.Vertices[k]] : m.Vertices.Take(0));
+        var edges = drops.Count == 0 && merged.Count == 0 ? m.Edges
+            : m.Edges.Count.Range.FlatMap(k => dropped[k] ? m.Edges.Take(0)
+                : [BrepEdge(BrepVertexIndex(vertexAt[roots[m.Edges[k].Start.Value]]), BrepVertexIndex(vertexAt[roots[m.Edges[k].End.Value]]), m.Edges[k].Curve, m.Edges[k].SameSense)]);
+        var loops = drops.Count == 0 && merged.Count == 0 ? m.Loops
+            : m.Loops.Map(l => m.ReducedLoop(l, roots, vertexAt, dropped, edgeAt));
+        var s = raw.Sources;
+        var sources = KernelSources(
+            n.Range.FlatMap(k => roots[k] == k ? [s.Vertices[k]] : s.Vertices.Take(0)),
+            m.Edges.Count.Range.FlatMap(k => dropped[k] ? s.Edges.Take(0) : [s.Edges[k]]),
+            s.Loops, s.Faces, s.Shells, s.Bodies, s.Curves, s.Curves2D, s.Pcurves, s.Surfaces);
+        return RawDecodedModel(
+            BrepModel(g, vertices, edges, loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit),
+            raw.Occurrences,
+            sources,
+            raw.Folds,
+            raw.Repairs.Concatenate(mergeRepairs).Concatenate(dropRepairs),
+            raw.Units,
+            raw.LengthFactor,
+            raw.AngleFactor,
+            raw.Diagnostics.Concatenate(mergeFindings).Concatenate(dropFindings));
+    }
 
-    // deferred: the tolerance findings of README "Units and uncertainty":
-    // UncertaintyDefaulted when no used context states an uncertainty,
-    // UncertaintiesDiffer when the used contexts disagree (largest over
-    // smallest), UncertaintyClamped when the stated value was raised to the
-    // resolution at the extent.
-    ToleranceDiagnostics(raw: RawDecodedModel, tolerances: Tolerances, modelSize: Number, extent: Number, policy: DecodePolicy): Array<Diagnostic>;
+    // The vertex pairs a merge may join, each as [a, b]: every edge's two
+    // ends, then every edge loop's head-to-tail joints (the vertex a coedge
+    // reaches and the one the next coedge leaves, the last wrapping to the
+    // first), in table order. Precondition: Law_IndicesInRange(m).
+    VertexJoints(m: BrepModel): Array<Array<Integer>>
+        => m.Edges.Map(e => [e.Start.Value, e.End.Value])
+            .Concatenate(m.Loops.FlatMap(l => m.LoopJoints(l.CoedgesOf)));
+
+    // The head-to-tail joints of one loop's coedges, each as [a, b].
+    LoopJoints(m: BrepModel, coedges: Array<Coedge>): Array<Array<Integer>>
+        => coedges.Count.MapRange(i => [m.EndVertex(coedges[i]).Value, m.StartVertex(coedges[(i + 1) % coedges.Count]).Value]);
+
+    // True when curve c runs back to its start, so an edge on it whose two
+    // vertices coincide is a whole closed edge, not one of zero length: its
+    // family wraps (a circle, an ellipse) or the decode closes it
+    // (DecidesClosed, at the same tolerance).
+    RunsBackToStart(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
+        => g.CurveAt(c).Domain(g).Periodicity.HasSeam || g.DecidesClosed(c, tol);
+
+    // Each item's position among the kept items (keep[k] true), -1 for an
+    // item not kept: the renumbering of a table that drops rows.
+    Renumbering(keep: Array<Boolean>): Array<Integer>
+    {
+        var positions = new Buffer<Integer>(keep.Count);
+        var next = 0;
+        var k = 0;
+        while (k < keep.Count)
+        {
+            positions = positions.Set(k, keep[k] ? next : -1);
+            next = keep[k] ? next + 1 : next;
+            k = k + 1;
+        }
+        return positions.Freeze();
+    }
+
+    // Loop l after the reduction: an edge loop keeps its coedges whose edge
+    // is not dropped, renumbered (edgeAt), and becomes a vertex loop on the
+    // class of its first edge's start when every coedge is dropped; a vertex
+    // loop moves to its vertex's class (roots, then vertexAt); a poly loop is
+    // unchanged.
+    ReducedLoop(m: BrepModel, l: BrepLoop, roots: Array<Integer>, vertexAt: Array<Integer>, dropped: Array<Boolean>, edgeAt: Array<Integer>): BrepLoop
+        => match (l) {
+            EdgeLoop(coedges) => coedges.Count > 0 && coedges.All(c => dropped[c.Edge.Value])
+                ? BrepLoop.VertexLoop(BrepVertexIndex(vertexAt[roots[m.Edges[coedges[0].Edge].Start.Value]]))
+                : BrepLoop.EdgeLoop(coedges.FlatMap(c => dropped[c.Edge.Value] ? coedges.Take(0) : [Coedge(BrepEdgeIndex(edgeAt[c.Edge.Value]), c.Orientation)]));
+            VertexLoop(vertex) => BrepLoop.VertexLoop(BrepVertexIndex(vertexAt[roots[vertex.Value]]));
+            PolyLoop(points) => l;
+        };
+
+    // Chunk D body, from the contract ToleranceDiagnostics: the tolerance
+    // findings of README "Units and uncertainty", each about the whole
+    // input. UncertaintyDefaulted (Measure the tolerance applied) when no
+    // used context states an uncertainty; UncertaintiesDiffer (Measure the
+    // largest over the smallest) when two used contexts' stated values, in
+    // the model unit, differ beyond the policy's unit-match tolerance, so a
+    // unit conversion's rounding is no disagreement; UncertaintyClamped
+    // (Measure the tolerance applied) when the value before the clamp,
+    // stated or the policy default, was below the resolution at the extent.
+    ToleranceDiagnostics(raw: RawDecodedModel, tolerances: Tolerances, modelSize: Number, extent: Number, policy: DecodePolicy): Array<Diagnostic>
+    {
+        var used = raw.Units.UsedContextsOf(raw.Occurrences);
+        var stated = used.FlatMap(c => c.StatedUncertaintyIn(raw.Model.Unit));
+        var largest = stated.Reduce(0.0, (a, b) => a.Max(b));
+        var smallest = stated.Reduce(largest, (a, b) => a.Min(b));
+        var applied = tolerances.Length.Value;
+        var defaulted = [Diagnose(StepDiagnosticCode.UncertaintyDefaulted, Provenance.WholeInput, applied)];
+        var none = defaulted.Take(0);
+        return (stated.Count == 0 ? defaulted : none)
+            .Concatenate(stated.Count > 1 && !largest.AlmostEqual(smallest, policy.UnitMatch) ? [Diagnose(StepDiagnosticCode.UncertaintiesDiffer, Provenance.WholeInput, largest / smallest)] : none)
+            .Concatenate(UnclampedLengthTolerance(used, raw.Model.Unit, modelSize, policy) < applied ? [Diagnose(StepDiagnosticCode.UncertaintyClamped, Provenance.WholeInput, applied)] : none);
+    }
 
     // The raw model's tolerances: every field zero, since none is decided
     // before PrepareModel. The decoder writes this record; nothing reads it.
@@ -269,11 +414,18 @@ library StepReading
     // coordinates near 5e9 mm cannot honour a 1e-6 mm tolerance whatever its
     // size (review F6). A 1e-13 mm uncertainty is raised the same way.
     ModelLengthTolerance(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, extent: Number, policy: DecodePolicy): LengthTolerance
+        => LengthTolerance(LengthTolerance(UnclampedLengthTolerance(used, unit, modelSize, policy)).ResolvableLength(extent));
+
+    // The length tolerance before the clamp at the coordinate extent: the
+    // largest stated uncertainty of the used contexts in unit, or, when none
+    // states one, the policy fraction of the model size (the fallback when
+    // the size is zero). ToleranceDiagnostics compares it with the clamped
+    // value.
+    UnclampedLengthTolerance(used: Array<ContextUnits>, unit: LengthUnit, modelSize: Number, policy: DecodePolicy): Number
     {
         var stated = used.FlatMap(c => c.StatedUncertaintyIn(unit));
         var fallback = modelSize > 0.0 ? policy.DefaultRelativeUncertainty * modelSize : ConvertLength(policy.FallbackUncertaintyMetres, LengthUnit.Metre, unit);
-        var value = stated.Count == 0 ? fallback : stated.Reduce(0.0, (a, b) => a.Max(b));
-        return LengthTolerance(LengthTolerance(value).ResolvableLength(extent));
+        return stated.Count == 0 ? fallback : stated.Reduce(0.0, (a, b) => a.Max(b));
     }
 
     // The model's tolerances: the length tolerance above, the policy's angle

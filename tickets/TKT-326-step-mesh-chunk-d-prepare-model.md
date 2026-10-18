@@ -1,14 +1,16 @@
 ---
 id: TKT-326
 title: STEP mesher in Plato, step D: PrepareModel, the Plato half of reading a file (closure, mirrored parts, tolerances, repairs)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 0e4f63ff
+session: 0e4f63ff-c9b9-4b15-94b8-0d538d7cb10d
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-312, TKT-314, TKT-315]
 confidence: high
 created: 2026-10-18
+claimed: 2026-10-18
 ---
 
 ## Acceptance criteria
