@@ -317,8 +317,6 @@ spec Witness_HollowBox(_: BrepModel, a: Number, b: Number): BrepModel
     ensures result.ValidateBrep.IsClean;
     ensures Law_OuterShellExactVolumePositive(result, BodyIndex(0));
     ensures Law_VoidShellExactVolumeNegative(result, BodyIndex(0), 0);
-    ensures Law_HollowBoxVoidMeshVolumeNegative(a, b);
-    ensures Law_HollowBoxMeshVolumeIsDifference(a, b);
     measure result.Faces.Count;
 }
 
@@ -378,16 +376,12 @@ spec Witness_BoxWithFlippedFace(_: BrepModel): BrepModel
 // The unit box beside a faceted sheet: a valid model whose face 6, bounded
 // by a poly loop, layer 5 does not mesh; the planted bad face of layer 8's
 // failure-isolation law, with exactly two Errors at the face and none
-// outside the sheet.
+// outside the sheet. What meshing it gives is stated by layer 8's
+// StepToMeshWitnessesLaws, since meshing is layer 8's.
 spec Witness_BoxWithPolyLoopSheet(_: BrepModel): BrepModel
 {
     ensures result.Faces.Count == 7;
     ensures result.RawCounts(ShellIndex(1)) == ShellCounts(0, 0, 1, 1);
-    ensures Law_PlantedBadFaceFailsSilently(result);
-    ensures Law_PlantedBadFaceIsDiagnosed(result);
-    ensures Law_PlantedBadFaceHasTwoErrors(result);
-    ensures forall (g: Integer) : Law_PlantedBadFaceLeavesOthersUnchanged(g);
-    ensures forall (k: Integer) : Law_PlantedBadFaceErrorsStayInTheSheet(k);
     measure result.Faces.Count;
 }
 
@@ -444,7 +438,7 @@ theorem MeshAreaWithinEnvelope
     assume m.Oracle_FaceAreaByGreen(f).IsFinite;
     conclude Law_FaceAreaMatchesOracle(m, mesh, c, f);
     because "Each element lies within d = SurfaceChordal + Length of the surface along normals, and its normal within 2 SurfaceAngular of the surface's (element normal law plus the corner normals). Projecting an element onto the surface along the normal field scales area by at most (1 + kappa d)^2 and tilts it by at most 2 SurfaceAngular, so the element's area is at most the patch's times (1 + kappa d)^2 / cos(2 SurfaceAngular) and at least it divided by that. Chordal alone does not bound area: a fine zigzag within d of the surface has unbounded area. The boundary chords differ from the exact boundary by at most d_e = EffectiveChordal + Length, sweeping at most d_e P. The oracle adds its own allowance.";
-    tested by Law_FaceAreaMatchesOracle, Law_WitnessMeshCrossChecksClean;
+    tested by Law_FaceAreaMatchesOracle;
 }
 
 // The mesh of a shell has the shell's reduced Euler characteristic.
@@ -455,7 +449,7 @@ theorem MeshEulerEqualsBrepEulerByConstruction
     assume m.CrossCheck(mesh, ConformanceLevel.Structural).IsClean;
     conclude Law_MeshEulerEqualsBrepEuler(m, mesh, s);
     because "Each face's mesh is a triangulation of a disk-with-holes region whose boundary vertices are the discretization points of its bounds; numbering by site glues faces along shared edges exactly as the B-rep's edges glue them. Every reduced face is a disk-with-holes cell complex refined by its mesh, and refinement does not change the Euler characteristic. The reduced counts drop redundant vertex loops and closed degenerate edges, which the mesh does not represent.";
-    tested by Law_MeshEulerEqualsBrepEuler, Law_AngleDefectMatchesBrepEuler, Law_WitnessMeshCrossChecksClean;
+    tested by Law_MeshEulerEqualsBrepEuler, Law_AngleDefectMatchesBrepEuler;
 }
 
 // Two routes to the reduced Euler characteristic agree.
@@ -477,5 +471,5 @@ theorem SolidShellVolumeSigns
     assume m.ValidateBrep(ConformanceLevel.Geometric).IsClean;
     conclude Law_OuterShellExactVolumePositive(m, b) && Law_VoidShellExactVolumeNegative(m, b, k);
     because "Layer 3 folds every shell so its faces point out of the material; by the divergence theorem the flux of x/3 through an outward closed surface is the enclosed volume, positive; a void's faces point into the void, so its flux is minus the void's volume. A shell thinner than 2 Length A would be within the file's own tolerance of zero volume.";
-    tested by Law_OuterShellExactVolumePositive, Law_VoidShellExactVolumeNegative, Law_WitnessDivergenceVolumeMatchesFacts, Law_HollowBoxVoidMeshVolumeNegative;
+    tested by Law_OuterShellExactVolumePositive, Law_VoidShellExactVolumeNegative, Law_WitnessDivergenceVolumeMatchesFacts;
 }

@@ -25,10 +25,10 @@ mathematics, on hand-written witnesses, and on public files.
 | `validation-checks-reports.library.plato` | `BrepCheckingReports` | one report per layer and input, split by `CheckFamily`; generated (see "Implementation notes") |
 | `validation-oracles.library.plato` | `BrepOracles` | closed forms, the Green's-theorem area, the divergence volume, the Euler and angle-defect oracles, the area envelope |
 | `validation-witnesses.library.plato` | `BrepWitnesses` | the witness models written out as `BrepModel` values, and their facts |
-| `validation-comparisons.library.plato` | `BrepComparisons` | meshing a witness through layer 8's `MeshModel` (`WitnessOptions`, `WitnessOutcome`, `WitnessMesh`), model comparisons |
+| `validation-comparisons.library.plato` | `BrepComparisons` | model comparisons (`SameModel`) and the sagitta measure of the chordal law |
 | `validation-corpus.library.plato` | `BrepCorpus` | the public STEP corpus as data |
 | `validation.laws.plato` | `BrepCheckingLaws` | cross-check laws, oracle-against-closed-form laws, check-and-law agreement, levels, corpus |
-| `validation-witnesses.laws.plato` | `BrepWitnessesLaws` | witness, negative-witness and metamorphic laws |
+| `validation-witnesses.laws.plato` | `BrepWitnessesLaws` | witness and negative-witness laws; the laws that mesh a witness are layer 8's `pipeline-witnesses.laws.plato` |
 | `validation.spec.plato` | (spec) | invariants, entry-point and oracle contracts, the three deferred functions, every witness, theorems, conjectures |
 
 ## Three independent sources of truth
@@ -303,6 +303,10 @@ Exact.
 
 ### Witnesses (`validation-witnesses.laws.plato`)
 
+The laws that mesh a witness (meshed and clean, the hollow box's meshed volumes, the planted bad
+face, the metamorphic relations) moved to layer 8's `pipeline-witnesses.laws.plato` in the name
+review, because meshing is layer 8's and this layer may not name it.
+
 | Law | Statement | Tolerance |
 |---|---|---|
 | `Law_WitnessHasStatedCounts`, `...StatedShellCount`, `...StatedFaceCount` | raw counts as the facts state | exact |
@@ -314,14 +318,7 @@ Exact.
 | `Law_WitnessGreenAreaMatchesFacts` | each face's Green area equals its stated area | allowance |
 | `Law_WitnessDivergenceVolumeMatchesFacts` | each shell's divergence volume equals its stated signed volume | allowance |
 | `Law_BSplineTopAreaInBracket` | the Bezier top's area lies in its bracket | allowance |
-| `Law_WitnessMeshesOk`, `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean` | each witness meshed by layer 8's `MeshModel` is Ok and clean at Oracle | (the checks' own) |
-| `Law_HollowBoxVoidMeshVolumeNegative`, `...OuterMeshVolumePositive` | volume signs after meshing | `VolumeRoundoff` |
-| `Law_HollowBoxMeshVolumeIsDifference` | meshed volume a^3 - b^3 | 2 `VolumeRoundoff` |
-| `Law_PlantedBadFaceFailsSilently`, `...IsDiagnosed`, `...HasTwoErrors`, `...ErrorsStayInTheSheet`, `...LeavesOthersUnchanged` | the planted face meshes to nothing and asks for nothing; two Errors at it, none outside the sheet; layer 8's `Law_FailedFaceLeavesOthersUnchanged` at it | exact |
 | `Law_RedundantPoleLoops...`, `Law_FlippedFace...`, `Law_SharedCorner...` (9) | each named check fails; the structure family has exactly that many diagnostics | exact |
-| `Law_WitnessRigidMotionMovesPositions` | layer 8's `Law_RigidMotionMovesPositions` on each witness | Length |
-| `Law_WitnessPowerOfTwoScalingKeepsConnectivity`, `...ScalesPositions` | layer 8's scaling laws on each witness | exact |
-| `Law_WitnessEdgeReversalPreservesMesh`, `Law_WitnessShellReversalNegatesVolume` | layer 8's reversal laws on each witness | exact; Length times area |
 | `Law_TighterChordalNeverIncreasesSagitta` | on line-and-circle witnesses, a tighter chordal never raises the largest sagitta | `ResolutionAt(extent)` |
 
 Theorems in `validation.spec.plato`: `SampledCheckAgreesWithLaw`, `HigherLevelCleanImpliesLowerClean`,
@@ -486,3 +483,4 @@ These two landed in one commit, since both edit the topology checks.
 The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
 
 - Deleted `IsRedundantVertexLoop(m, f, j)` from `BrepOracles` (layer 2 owns it; two declarations with one signature left the call to the compiler's choice, so the oracle was never an independent route for this rule), and `LoopOfBoundaryPoint` and `LoopStart` from `BrepCheckingFaceMeshing` (layer 5's `LoopOfBoundaryPoint` and `LoopOffset`); `SlotOfBoundaryPoint` uses layer 5's.
+- Upward references removed: `WitnessOptions`, `WitnessOutcome`, `WitnessMesh` (from `BrepComparisons`) and the sixteen laws that mesh a witness (`Law_WitnessMeshesOk`, `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean`, the three `Law_HollowBox...Mesh...` laws, the five `Law_PlantedBadFace...` laws with `IsAboutPlantedSheet`, and the five `Law_Witness...` metamorphic laws) named layer 8's `MeshModel`, `MeshingOptions`, `FinalState` and laws. They moved to layer 8's `pipeline-witnesses.laws.plato`. `Witness_BoxWithPolyLoopSheet` and `PlantedBadFace` stay here; the spec's `ensures` lines and `tested by` entries that named the moved laws are dropped.

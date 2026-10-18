@@ -16,6 +16,7 @@ and `CrossCheck(mesh, level, criteria)`, all at the options' `ConformanceLevel` 
 | `pipeline.types.plato` | `MeshingOptions`, `PipelineState`, `MeshOutcome`, `StepMeshOutcome` |
 | `pipeline.library.plato` | library `StepToMesh`: options, the pipeline's findings, edges, faces, the loop, assembly and validation, the entry points; 4 of its functions are owed by layers 2, 4, 5 and marked `// belongs-in:` (`ScaledBy` on the two criteria and a limit, `WithEveryFaceReversed`) |
 | `pipeline.laws.plato` | library `StepToMeshLaws`: 34 laws, 1 witness, 9 helpers |
+| `pipeline-witnesses.laws.plato` | library `StepToMeshWitnessesLaws`: the laws that mesh layer 7's witnesses (moved from layer 7 in the name review), 3 helpers and 16 laws |
 | `pipeline.spec.plato` | invariants of the 4 types, 12 function contracts, 5 theorems |
 
 Counts after the fix wave: 4 types; 48 library functions, every one with a body; 34 laws; 16
@@ -650,3 +651,14 @@ Kept, with the reason:
 The name-and-dependency review after the fix wave (VOCABULARY.md revision 3) changed this layer as follows.
 
 - Deleted `WithEveryFaceReversed(m)`, the `belongs-in: 02-topology` copy; layer 2 declares it with the same signature.
+- New file `pipeline-witnesses.laws.plato` (library `StepToMeshWitnessesLaws`): the witness-meshing helpers and sixteen laws layer 7 held while naming this layer from below. Their table, as layer 7 wrote it:
+
+  | Law | Statement | Tolerance |
+  |---|---|---|
+  | `Law_WitnessMeshesOk`, `Law_WitnessMeshCrossChecksClean`, `Law_WitnessMeshValidatesClean` | each witness meshed by layer 8's `MeshModel` is Ok and clean at Oracle | (the checks' own) |
+  | `Law_HollowBoxVoidMeshVolumeNegative`, `...OuterMeshVolumePositive` | volume signs after meshing | `VolumeRoundoff` |
+  | `Law_HollowBoxMeshVolumeIsDifference` | meshed volume a^3 - b^3 | 2 `VolumeRoundoff` |
+  | `Law_PlantedBadFaceFailsSilently`, `...IsDiagnosed`, `...HasTwoErrors`, `...ErrorsStayInTheSheet`, `...LeavesOthersUnchanged` | the planted face meshes to nothing and asks for nothing; two Errors at it, none outside the sheet; layer 8's `Law_FailedFaceLeavesOthersUnchanged` at it | exact |
+  | `Law_WitnessRigidMotionMovesPositions` | layer 8's `Law_RigidMotionMovesPositions` on each witness | Length |
+  | `Law_WitnessPowerOfTwoScalingKeepsConnectivity`, `...ScalesPositions` | layer 8's scaling laws on each witness | exact |
+  | `Law_WitnessEdgeReversalPreservesMesh`, `Law_WitnessShellReversalNegatesVolume` | layer 8's reversal laws on each witness | exact; Length times area |

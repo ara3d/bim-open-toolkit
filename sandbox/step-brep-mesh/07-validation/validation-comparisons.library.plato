@@ -1,37 +1,16 @@
 //==
 // # BrepComparisons
 //
-// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): how
-// the witness laws mesh a witness, and the comparisons they make. A witness
-// is meshed by layer 8's MeshModel, refinement loop included, under layer 8's
-// Witness_UnitScaleOptions. The metamorphic relations (rigid motion, scaling
-// by a power of two, edge and face reversal) are layer 8's laws, run here
-// over the witnesses; the transforms they need are layer 2's (RigidlyMoved,
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
+// comparisons the witness laws make. Meshing a witness is layer 8's
+// (StepToMeshWitnessesLaws); the transforms are layer 2's (RigidlyMoved,
 // ScaledBy) and the mesh comparison layer 6's (SameConnectivity).
 //
 // Sections, in order:
-//  - Meshing a witness
 //  - Comparisons
 
 library BrepComparisons
 {
-    //==
-    // # Meshing a witness
-
-    // The options the witness laws mesh with: layer 8's options for unit-sized
-    // witnesses (chordal 1/100 of a unit, 15 degrees, triangles, validation
-    // at the Oracle level).
-    WitnessOptions(_: MeshingOptions): MeshingOptions
-        => MeshingOptions.Witness_UnitScaleOptions;
-
-    // The outcome of meshing model m with the witness options.
-    WitnessOutcome(m: BrepModel): MeshOutcome
-        => m.MeshModel(MeshingOptions.WitnessOptions);
-
-    // The mesh of model m under the witness options.
-    WitnessMesh(m: BrepModel): ModelMesh
-        => m.WitnessOutcome.Mesh;
-
     //==
     // # Comparisons
 
