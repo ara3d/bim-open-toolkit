@@ -16,6 +16,7 @@
 //  - Positive witnesses: counts, Euler characteristic, clean reports
 //  - Positive witnesses: areas and volumes
 //  - Negative witnesses
+//  - A faceted sheet
 //  - Chordal monotonicity
 
 library BrepWitnessesLaws
@@ -186,6 +187,21 @@ library BrepWitnessesLaws
     // Two boxes sharing a corner fail no other structural law.
     Law_SharedCornerFailsExactlyTwoLaws(_: BrepModel): Boolean
         => BrepModel.Witness_TwoBoxesSharingCorner.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 2;
+
+    //==
+    // # A faceted sheet
+
+    // The faceted sheet of Witness_BoxWithPolyLoopSheet, a triangle alone in
+    // open shell 1, has one boundary cycle: its three implicit edges, each
+    // used once. Its reduced counts are V = 3, E = 3, F = 1, L = 1, so
+    // chi + B = 1 + 1 = 2 and the open-shell Euler law holds at shell 1.
+    Law_PolyLoopSheetHasOneBoundaryCycle(_: BrepModel): Boolean
+        => BrepModel.Witness_BoxWithPolyLoopSheet.BoundaryCycleCount(ShellIndex(1)) == 1;
+
+    // The poly-loop sheet passes layer 2's open-shell Euler law: a legal
+    // faceted open shell is not a topology defect.
+    Law_PolyLoopSheetPassesOpenShellEuler(_: BrepModel): Boolean
+        => BrepModel.Witness_BoxWithPolyLoopSheet.Check_OpenShellEulerEvenAndBounded.Holds;
 
     //==
     // # Chordal monotonicity

@@ -769,7 +769,7 @@ planned one pass (the witnesses have at most 24 edges).
 | `LinkComponentCount` | contract: classes of the corners at `v` under `CornersShareEnd` | `Law_VertexLinkIsOneCycle`, `Law_OpenShellVertexLinkIsCycleOrPath` |
 | `CornersAroundVertex` | contract: start at a corner with a free end, else the first; step to the first unvisited corner sharing an end | `FacesAroundVertex` |
 | `ReducedCounts` | contract and research/VALIDATION-MATH.md 1.4: vertex classes across degenerate edges; edges less degenerate ones; vertex-like bounds (vertex loops, edge loops of degenerate edges only) dropped when their class lies on another bound or an earlier vertex-like bound; poly-loop points identified by coincidence, implicit edges one per unordered class pair | `Law_EulerPoincareEvenAndBounded`, `Law_OpenShellEulerEvenAndBounded`, layer 7's witness Euler laws |
-| `BoundaryCycleCount` | contract: under its requirement (every link one cycle or one path) the free edges joined at shared vertex classes form disjoint cycles, so the classes are the cycles. Indexed free edges only, as `FreeEdgeCount` counts | `Law_OpenShellEulerEvenAndBounded` |
+| `BoundaryCycleCount` | contract: under its requirement (every link one cycle or one path) the free edges joined at shared vertex classes form disjoint cycles, so the classes are the cycles; the same for the implicit free edges over the poly-loop point classes, added (`IndexedBoundaryCycleCount`, `ImplicitBoundaryCycleCount`) | `Law_OpenShellEulerEvenAndBounded`; layer 7's `Law_PolyLoopSheetHasOneBoundaryCycle`, `Law_PolyLoopSheetPassesOpenShellEuler` |
 | `PolyEdgeUseDefects` | contract: implicit edges keyed by unordered class pair, each use's direction from the loop order and the bound's `Orientation` | `Law_PolyLoopEdgesPairUp` |
 | `ShellComponentCount` | contract: classes of the shell's faces under `FacesTouch` | `Law_ShellIsConnected` |
 | `OrientationFlips` | contract: breadth-first two-colouring, parity 0 across an edge whose two uses (in two faces) run opposite | `Law_ShellIsOrientable` |
@@ -781,10 +781,15 @@ than the resolution at the surface's evaluation magnitude. At a sphere's pole `c
 to -4.4e-8 in 32 bits and the sign was rounding noise, which made
 `Law_ParameterizationSignIsConstantOnFace` false on `Witness_Sphere` at the two pole samples.
 
-Open: a faceted open shell's implicit free edges are not walked by `BoundaryCycleCount` (its
-contract bounds the result by the indexed `FreeEdgeCount`), so `Law_OpenShellEulerEvenAndBounded`
-is false on the planted sheet (shell 1) of layer 7's `Witness_BoxWithPolyLoopSheet`, which that
-witness's laws allow. Settling it means widening the contract to implicit edges.
+Settled at chunk A's close (F-52 item 4): a faceted shell's implicit edges count as boundary
+edges. `ReducedCounts` already counts them as edges, so leaving them out of `BoundaryCycleCount`
+made `Law_OpenShellEulerEvenAndBounded` false on every legal faceted open shell, such as the
+planted sheet (shell 1) of layer 7's `Witness_BoxWithPolyLoopSheet` (chi 1, no indexed boundary).
+The contract now bounds the result by `FreeEdgeCount` plus `ImplicitFreeEdgeCount`. Points and
+vertices are never identified with each other, so the two kinds of cycle are counted apart.
+`FreeEdgeCount` stays indexed only: a closed faceted shell's implicit free edges are
+`Law_PolyLoopEdgesPairUp`'s to report, and counting them in `Law_DeclaredClosedIsClosed` too
+would report one defect twice.
 
 Law results, provisional (the C# writer fixes of TKT-315 had not landed; the run used a scratch
 copy of Plato's HEAD compiler with conditionals parenthesized, see the report of TKT-314): every

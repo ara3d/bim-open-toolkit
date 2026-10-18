@@ -899,8 +899,7 @@ library BrepTopology
         var vertexClasses = m.VerticesOfShell(s).Map(v => roots[v.Value]);
         var kept = m.ShellFaces(s).Reduce(0, (n, f) => n + m.KeptReducedBoundCount(f, roots));
         var poly = m.ShellPolyBounds(s);
-        var points = poly.FlatMap(b => m.Loops[b.Loop].PolyLoopPointsOf);
-        var pointRoots = m.CoincidenceRoots(points);
+        var pointRoots = m.ShellPolyPointRoots(s);
         return ShellCounts(
             vertexClasses.DistinctCount + pointRoots.ClassCount,
             shellEdges.Count - degenerate.Count + m.ImplicitEdgeKeys(poly, pointRoots).DistinctCount,
@@ -965,6 +964,11 @@ library BrepTopology
             (i < j ? m.IsCoincident(points[i], points[j]) : false) ? [i * n + j] : n.Range.Take(0)));
         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n));
     }
+
+    // The class roots of shell s's poly-loop points under coincidence, the
+    // points taken bound by bound in ShellPolyBounds order.
+    ShellPolyPointRoots(m: BrepModel, s: ShellIndex): Array<Integer>
+        => m.CoincidenceRoots(m.ShellPolyBounds(s).FlatMap(b => m.Loops[b.Loop].PolyLoopPointsOf));
 
     // The position of the first point of poly bound k among the points of
     // all the bounds, taken in order.
@@ -1037,18 +1041,24 @@ library BrepTopology
 
     // The number of boundary cycles of shell s: the closed walks into which
     // its free edges split, on the reduced cells (degenerate edges contracted,
-    // as in ReducedCounts). At a vertex the walk leaves along the free edge at
-    // the other end of the vertex's link path. Zero for a shell with no free
-    // edge.
-    // Chunk A body, from the contract BoundaryCycleCount. Under its
-    // requirement that every vertex link is one cycle or one path, a boundary
-    // vertex has exactly two free edge ends (the path's two ends), so the free
-    // edges, joined where they share a vertex class (degenerate edges
-    // contracted as in ReducedCounts), form disjoint cycles: the number of
-    // classes of free edges is the number of boundary cycles. Counts indexed
-    // edges only, as FreeEdgeCount does; a faceted open shell's implicit
-    // free edges are not walked (README, "Implementation, chunk A").
+    // as in ReducedCounts; a faceted bound's implicit edges counted as
+    // ReducedCounts counts them). At a vertex the walk leaves along the free
+    // edge at the other end of the vertex's link path. Zero for a shell with
+    // no free edge.
+    // Chunk A body, from the contract BoundaryCycleCount: the cycles of the
+    // indexed free edges and those of the implicit free edges, added.
+    // ReducedCounts identifies poly-loop points among themselves and never
+    // with vertices, so no cycle runs through both kinds.
     BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
+        => m.IndexedBoundaryCycleCount(s) + m.ImplicitBoundaryCycleCount(s);
+
+    // The boundary cycles of shell s's indexed free edges. Under the
+    // contract's requirement that every vertex link is one cycle or one path,
+    // a boundary vertex has exactly two free edge ends (the path's two ends),
+    // so the free edges, joined where they share a vertex class (degenerate
+    // edges contracted as in ReducedCounts), form disjoint cycles: the number
+    // of classes of free edges is the number of boundary cycles.
+    IndexedBoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
     {
         var shellEdges = m.EdgesOfShell(s);
         var degenerate = shellEdges.FlatMap(e => m.IsDegenerateEdge(e) ? [e] : shellEdges.Take(0));
@@ -1060,6 +1070,30 @@ library BrepTopology
             (i < j ? m.EdgesShareClass(free[i], free[j], roots) : false) ? [i * n + j] : n.Range.Take(0)));
         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
     }
+
+    // The boundary cycles of shell s's implicit free edges: the components
+    // of the graph on the poly-loop point classes whose links are the free
+    // implicit edges, counted over the classes those edges touch. The same
+    // argument as for indexed edges makes each component one cycle.
+    ImplicitBoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
+    {
+        var n = m.ShellPolyPointRoots(s).Count;
+        var free = m.ImplicitFreeEdgeKeys(s);
+        var roots = ClassRoots(n, free.Map(k => k / n), free.Map(k => k % n));
+        return free.Map(k => roots[k / n]).DistinctCount;
+    }
+
+    // The keys (ImplicitEdgeKeys) of shell s's implicit edges used exactly
+    // once: its faceted free edges.
+    ImplicitFreeEdgeKeys(m: BrepModel, s: ShellIndex): Array<Integer>
+    {
+        var keys = m.ImplicitEdgeKeys(m.ShellPolyBounds(s), m.ShellPolyPointRoots(s));
+        return keys.FlatMap(k => keys.Reduce(0, (c, j) => j == k ? c + 1 : c) == 1 ? [k] : keys.Take(0));
+    }
+
+    // How many implicit edges of shell s's poly loops are used exactly once.
+    ImplicitFreeEdgeCount(m: BrepModel, s: ShellIndex): Integer
+        => m.ImplicitFreeEdgeKeys(s).Count;
 
     // Whether two edges have an end in a common vertex class.
     EdgesShareClass(m: BrepModel, a: BrepEdgeIndex, b: BrepEdgeIndex, roots: Array<Integer>): Boolean
@@ -1113,7 +1147,7 @@ library BrepTopology
     PolyEdgeUseDefects(m: BrepModel, s: ShellIndex): Integer
     {
         var poly = m.ShellPolyBounds(s);
-        var uses = m.ImplicitEdgeUses(poly, m.CoincidenceRoots(poly.FlatMap(b => m.Loops[b.Loop].PolyLoopPointsOf)));
+        var uses = m.ImplicitEdgeUses(poly, m.ShellPolyPointRoots(s));
         var keys = uses.Map(u => u / 2).Sort((a, b) => a <= b);
         var closed = m.Shells[s].DeclaredClosed;
         return keys.Count.Range.Reduce(0, (n, i) =>

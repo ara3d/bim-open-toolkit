@@ -185,17 +185,19 @@ spec ReducedCounts(m: BrepModel, s: ShellIndex): ShellCounts
 }
 
 // The boundary cycles of a shell: the free edges of the reduced cells,
-// chained at each vertex through the vertex's link path.
+// chained at each vertex through the vertex's link path. The reduced cells
+// include a faceted bound's implicit edges, as ReducedCounts counts them, so
+// a lone poly-loop triangle has one boundary cycle (F-52 item 4).
 spec BoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
 {
     requires Law_IndicesInRange(m);
     requires m.IsShellInRange(s);
     requires forall (v: Integer) in m.Vertices.Count.Range : Law_OpenShellVertexLinkIsCycleOrPath(m, s, BrepVertexIndex(v));
     ensures result >= 0;
-    ensures result <= m.FreeEdgeCount(s);
-    ensures m.FreeEdgeCount(s) == 0 ? result == 0 : result >= 1;
-    measure m.FreeEdgeCount(s);
-    deferred "mark the shell's free edges that are not degenerate; from each unmarked-visited one, walk forward: at its end vertex take the link path (CornersAroundVertex), cross to the free edge at the path's other end, and continue until the walk returns to its first edge; the result is the number of walks";
+    ensures result <= m.FreeEdgeCount(s) + m.ImplicitFreeEdgeCount(s);
+    ensures (m.FreeEdgeCount(s) + m.ImplicitFreeEdgeCount(s)) == 0 ? result == 0 : result >= 1;
+    measure m.FreeEdgeCount(s) + m.ImplicitFreeEdgeCount(s);
+    deferred "mark the shell's free edges that are not degenerate, and its implicit edges used once; from each unmarked-visited one, walk forward: at its end vertex take the link path (CornersAroundVertex), at a poly-loop point class the other free implicit edge there, cross to the free edge at the path's other end, and continue until the walk returns to its first edge; the result is the number of walks";
 }
 
 // The defects of a faceted shell's implicit edges.

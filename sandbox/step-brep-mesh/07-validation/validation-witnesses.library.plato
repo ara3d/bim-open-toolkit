@@ -624,12 +624,11 @@ library BrepWitnesses
     // failure-isolation law. Expected diagnostics, meshed under the witness
     // options: at face 6, layer 5's FACE-POLY-LOOP and the cross check
     // Law_EveryFaceIsMeshed, both Errors (layer 8 adds no PIPELINE-FACE-EMPTY,
-    // since the face already has an Error); at shell 1, whatever layer 2's
-    // counting of a poly-loop shell reports (it identifies poly-loop points
-    // by coincidence; whether the open-shell Euler law sees the triangle's
-    // three implicit edges as a boundary cycle rests on the deferred
-    // BoundaryCycleCount); nothing at shell 0, body 0, faces 0 to 5, or their
-    // edges and vertices, which mesh as in Witness_UnitBox.
+    // since the face already has an Error); nothing at shell 1, whose
+    // triangle's three implicit edges are one boundary cycle, so layer 2's
+    // open-shell Euler law holds there (chi 1 plus one cycle); nothing at
+    // shell 0, body 0, faces 0 to 5, or their edges and vertices, which mesh
+    // as in Witness_UnitBox.
     Witness_BoxWithPolyLoopSheet(_: BrepModel): BrepModel
     {
         var box = BrepModel.Witness_UnitBox;
