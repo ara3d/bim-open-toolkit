@@ -2,7 +2,7 @@
 id: TKT-328
 title: STEP mesher in Plato, step G: solids with holes and hollow solids (genus and voids)
 status: open
-depends_on: [TKT-332]
+depends_on: []
 owner:
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
@@ -23,3 +23,5 @@ Dependencies changed 2026-10-18 (plan docs/plans/step-mesher-parallel.md): step 
 
 
 TKT-328 waits on TKT-332 (the interpreter speed fix): its hollow-box and through-hole laws mesh whole models, which hit the 60 s budget today.
+
+2026-10-18: dependency on TKT-332 dropped. Its speed work landed in Plato 93907bd7 (pinned for every builder): step A's whole-box laws ran in 171 s wall with nothing near the budget. TKT-332 stays open for its own reporting.
