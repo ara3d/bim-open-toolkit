@@ -276,11 +276,24 @@ library ModelMeshMeasures
                 ? [e]
                 : []);
 
-    // deferred: hash every vertex into a grid of cell size tol.Value and compare each vertex with
-    // those of the 27 cells around it; report each pair (a, b), a < b, in one component, whose
-    // distance is at most tol.Value, in lexicographic order. Expected linear time. A pair it reports
-    // is a crack that index identity left open: it is reported, never merged.
-    CoincidentVertexPairs(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Array<VertexPair>;
+    // Chunk A body, from the contract CoincidentVertexPairs: every pair
+    // (a, b), a < b, of referenced vertices in one component within the
+    // tolerance, in lexicographic order by construction (a outer, b inner).
+    // Quadratic, where the deferred note hashes into cells of the tolerance.
+    CoincidentVertexPairs(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Array<VertexPair>
+    {
+        var n = mesh.Positions.Count;
+        return n.Range.FlatMap(a => n.Range.FlatMap(b =>
+            (a < b
+                ? (comps.VertexComponentOf(VertexIndex(a)).Value >= 0
+                    ? (comps.VertexComponentOf(VertexIndex(a)).Value == comps.VertexComponentOf(VertexIndex(b)).Value
+                        ? mesh.Positions[a].Distance(mesh.Positions[b]) <= tol.Value
+                        : false)
+                    : false)
+                : false)
+                ? [VertexPair(VertexIndex(a), VertexIndex(b))]
+                : [VertexPair(VertexIndex(0), VertexIndex(0))].Take(0)));
+    }
 
     //==
     // # Element normals and folds

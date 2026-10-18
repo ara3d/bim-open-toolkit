@@ -18,11 +18,48 @@ library ModelMeshTopology
     //==
     // # The edge table
 
-    // deferred: list the 3T + 4Q directed element sides (ElementSide), drop the sides whose two ends
-    // are one vertex, key each side by its canonical pair, sort by key, and count each run of equal
-    // keys, adding +1 to the run's direction sum for a side that runs from the lower index to the
-    // higher and -1 otherwise. O(S log S) for S sides; a hash table makes it O(S) expected.
-    EdgeTableOf(mesh: ModelMesh): MeshEdgeTable;
+    // Chunk A body, from the contract EdgeTableOf: the proper directed
+    // element sides (AllSides, IsProper), their positions sorted by canonical
+    // pair (lexicographic on the two indices, never a packed integer key, which
+    // overflows a 32-bit Integer above 46,341 vertices), each run of equal
+    // pairs one edge, its count the run's length, its direction sum +1 for a
+    // side from the lower index to the higher and -1 for one back.
+    EdgeTableOf(mesh: ModelMesh): MeshEdgeTable
+    {
+        var all = mesh.AllSides;
+        var sides = all.FlatMap(p => p.IsProper ? [p] : all.Take(0));
+        var order = sides.Count.Range.Sort((i, j) => sides[i].Canonical.IsLexicographicallyAtMost(sides[j].Canonical));
+        var edges = new List<VertexPair>();
+        var counts = new List<Integer>();
+        var sums = new List<Integer>();
+        var k = 0;
+        while (k < order.Count)
+        {
+            var key = sides[order[k]].Canonical;
+            var count = 0;
+            var sum = 0;
+            var j = k;
+            while (j < order.Count && j - k == count)
+            {
+                if (sides[order[j]].Canonical == key)
+                {
+                    count = count + 1;
+                    sum = sum + (sides[order[j]].A.Value < sides[order[j]].B.Value ? 1 : -1);
+                }
+                j = j + 1;
+            }
+            edges = edges.Add(key);
+            counts = counts.Add(count);
+            sums = sums.Add(sum);
+            k = k + count;
+        }
+        return MeshEdgeTable(UndirectedEdgeList(edges.Freeze()), counts.Freeze(), sums.Freeze());
+    }
+
+    // Whether pair a comes before pair b, or equals it, ordered by first
+    // index, then second.
+    IsLexicographicallyAtMost(a: VertexPair, b: VertexPair): Boolean
+        => a.A.Value < b.A.Value || (a.A.Value == b.A.Value && a.B.Value <= b.B.Value);
 
     // The number of undirected edges.
     CountEdges(t: MeshEdgeTable): Integer
@@ -140,11 +177,78 @@ library ModelMeshTopology
     //==
     // # Components
 
-    // deferred: union-find over the element-vertex incidence (each element unites its corners),
-    // then number the roots in order of their lowest element; then one breadth-first search per
-    // component from its lowest element over elements sharing a vertex, recording each element's
-    // parent and depth. Near-linear in 3T + 4Q once vertex-to-element incidence is built.
-    ComponentsOf(mesh: ModelMesh): MeshComponents;
+    // Chunk A body, from the contract ComponentsOf: one breadth-first search
+    // per component from its lowest unvisited element over the elements that
+    // share a vertex with it (the vertex-to-element incidence built once),
+    // which finds the classes the deferred note's union-find would and the
+    // spanning forest in the same pass: components numbered in the order of
+    // their lowest element, each element's parent and depth recorded, a root
+    // its own parent at depth 0; a vertex takes the component of an element
+    // that references it, -1 when none does.
+    ComponentsOf(mesh: ModelMesh): MeshComponents
+    {
+        var vertexCount = mesh.Positions.Count;
+        var elementCount = mesh.ElementCount;
+        var incident = vertexCount.MapRange(v => elementCount.Range.FlatMap(e =>
+            mesh.ElementCorners(ElementIndex(e)).Any(c => c.Value == v) ? [e] : elementCount.Range.Take(0)));
+        var parent = new Buffer<Integer>(elementCount);
+        var depth = new Buffer<Integer>(elementCount);
+        var component = new Buffer<Integer>(elementCount);
+        var i = 0;
+        while (i < elementCount)
+        {
+            parent = parent.Set(i, -1);
+            depth = depth.Set(i, -1);
+            component = component.Set(i, -1);
+            i = i + 1;
+        }
+        var next = 0;
+        var root = 0;
+        while (root < elementCount)
+        {
+            if (depth.At(root) < 0)
+            {
+                parent = parent.Set(root, root);
+                depth = depth.Set(root, 0);
+                component = component.Set(root, next);
+                var queue = new List<Integer>().Add(root);
+                var head = 0;
+                while (head < queue.Count)
+                {
+                    var e = queue.At(head);
+                    var corners = mesh.ElementCorners(ElementIndex(e));
+                    var c = 0;
+                    while (c < corners.Count)
+                    {
+                        var around = corners[c].Value >= 0 && corners[c].Value < vertexCount ? incident[corners[c].Value] : elementCount.Range.Take(0);
+                        var a = 0;
+                        while (a < around.Count)
+                        {
+                            if (depth.At(around[a]) < 0)
+                            {
+                                parent = parent.Set(around[a], e);
+                                depth = depth.Set(around[a], depth.At(e) + 1);
+                                component = component.Set(around[a], next);
+                                queue = queue.Add(around[a]);
+                            }
+                            a = a + 1;
+                        }
+                        c = c + 1;
+                    }
+                    head = head + 1;
+                }
+                next = next + 1;
+            }
+            root = root + 1;
+        }
+        var elementComponent = component.Freeze();
+        return MeshComponents(
+            elementComponent.Map(x => MeshComponentIndex(x)),
+            vertexCount.MapRange(v => incident[v].Count == 0 ? MeshComponentIndex(-1) : MeshComponentIndex(elementComponent[incident[v][0]])),
+            next,
+            parent.Freeze().Map(x => ElementIndex(x)),
+            depth.Freeze());
+    }
 
     // The parent of element e in the components' spanning forest; -1 when e names no element.
     ElementParentOf(comps: MeshComponents, e: ElementIndex): ElementIndex
@@ -220,11 +324,33 @@ library ModelMeshTopology
             ? false
             : (mesh.LinkMaxDegree(v) > 2 || mesh.LinkEdges(v).PieceCount != 1);
 
-    // deferred: one pass over vertices (counting Vertices and PinchedVertices per component), over
-    // the edge table (an edge's component is that of its first vertex; counting Edges and the three
-    // edge defects), and over elements (counting Triangles and Quads), then a union-find over the
-    // boundary edges for BoundaryCycles. One entry per component.
-    ComponentCountsOf(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents): Array<MeshComponentCounts>;
+    // Chunk A body, from the contract ComponentCountsOf, each count its
+    // ensures clause: per component, its vertices (ComponentVertexCount), the
+    // table edges whose first vertex lies in it with their boundary,
+    // non-manifold and misoriented ones, its triangles and quads, its pinched
+    // vertices, and the pieces of its boundary edges (PieceCount). The
+    // reference form, quadratic in mesh size where the deferred note planned
+    // one pass per table.
+    ComponentCountsOf(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents): Array<MeshComponentCounts>
+        => comps.ComponentCount.MapRange(c => mesh.CountsOfComponent(t, comps, c));
+
+    // The counts of component c, as ComponentCountsOf's contract states them.
+    CountsOfComponent(mesh: ModelMesh, t: MeshEdgeTable, comps: MeshComponents, c: Integer): MeshComponentCounts
+    {
+        var edges = t.CountEdges.Range.FlatMap(k =>
+            comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c ? [k] : t.CountEdges.Range.Take(0));
+        return MeshComponentCounts(
+            comps.ComponentVertexCount(MeshComponentIndex(c)),
+            edges.Count,
+            mesh.Triangles.Count.Range.Map(k => comps.ElementComponentOf(ElementIndex(k)).Value == c).CountTrue,
+            mesh.Quads.Count.Range.Map(k => comps.ElementComponentOf(ElementIndex(mesh.Triangles.Count + k)).Value == c).CountTrue,
+            edges.Map(k => t.IsBoundaryEdge(UndirectedEdgeIndex(k))).CountTrue,
+            edges.Map(k => t.IsNonManifoldEdge(UndirectedEdgeIndex(k))).CountTrue,
+            edges.Map(k => t.IsMisorientedEdge(UndirectedEdgeIndex(k))).CountTrue,
+            mesh.Positions.Count.Range.Map(k =>
+                comps.VertexComponentOf(VertexIndex(k)).Value == c ? mesh.IsPinchedVertex(VertexIndex(k)) : false).CountTrue,
+            t.BoundaryEdgesOf(comps, MeshComponentIndex(c)).PieceCount);
+    }
 
     // The counts of a component with no cells: the value CountsOf returns for a component index
     // that names none.

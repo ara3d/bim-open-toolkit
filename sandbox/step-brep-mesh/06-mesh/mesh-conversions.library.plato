@@ -46,10 +46,48 @@ library ModelMeshConversions
     //==
     // # Split vertices for per-vertex attributes
 
-    // deferred: group the corners of each vertex by their (normal, uv) pair, compared exactly,
-    // which is sound because two corners carry equal attributes only when both were copied from one
-    // parameter-space point of one face mesh. Emit one split vertex per group, ordered by source
-    // vertex and then by the group's first corner; then emit ToTriangleMesh3D's triangles with each
-    // corner replaced by its group's split vertex. Linear after sorting each vertex's corners.
-    ToSplitTriangleMesh3D(mesh: ModelMesh): SplitTriangleMesh3D;
+    // Chunk A body (reached by every model mesh validation), from the
+    // contract ToSplitTriangleMesh3D and its deferred note: the corners of
+    // each vertex grouped by their (normal, uv) pair, compared exactly with
+    // layer 0's Identical on each component (a NaN equals a NaN, so no group
+    // splits or merges by accident); one split vertex per group, ordered by
+    // source vertex and then by the group's first corner; ToTriangleMesh3D's
+    // triangles with each corner replaced by its group's split vertex
+    // (TriangulatedCorner). Quadratic in the corner count where the note
+    // sorts each vertex's corners.
+    ToSplitTriangleMesh3D(mesh: ModelMesh): SplitTriangleMesh3D
+    {
+        var count = mesh.CornerCount;
+        var firstOf = count.MapRange(c => mesh.FirstMatchingCorner(c));
+        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : count.Range.Take(0))
+            .Sort((a, b) => mesh.CornerVertex(CornerIndex(a)).Value < mesh.CornerVertex(CornerIndex(b)).Value
+                || (mesh.CornerVertex(CornerIndex(a)).Value == mesh.CornerVertex(CornerIndex(b)).Value && a <= b));
+        var splitOf = count.MapRange(c => reps.PositionOfItem(firstOf[c]));
+        var triangleCount = mesh.Triangles.Count + 2 * mesh.Quads.Count;
+        return SplitTriangleMesh3D(
+            TriangleMesh3D(
+                reps.Map(c => mesh.Positions[mesh.CornerVertex(CornerIndex(c))]),
+                triangleCount.MapRange(k => TriangleFace(
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 0).Value]),
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 1).Value]),
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 2).Value])))),
+            reps.Map(c => mesh.CornerNormals[c]),
+            reps.Map(c => mesh.CornerUvs[c]),
+            reps.Map(c => mesh.CornerVertex(CornerIndex(c))));
+    }
+
+    // The first corner, at or before c, of the same vertex with identical
+    // corner attributes: c's group's first corner.
+    FirstMatchingCorner(mesh: ModelMesh, c: Integer): Integer
+        => (c + 1).Range.Reduce(-1, (found, j) => found >= 0 ? found : (mesh.HaveIdenticalCorners(j, c) ? j : -1));
+
+    // Whether corners a and b are of one vertex and carry identical normals
+    // and parameters, component by component (layer 0's Identical).
+    HaveIdenticalCorners(mesh: ModelMesh, a: Integer, b: Integer): Boolean
+        => mesh.CornerVertex(CornerIndex(a)).Value == mesh.CornerVertex(CornerIndex(b)).Value
+            && mesh.CornerNormals[a].Vector.X.Identical(mesh.CornerNormals[b].Vector.X)
+            && mesh.CornerNormals[a].Vector.Y.Identical(mesh.CornerNormals[b].Vector.Y)
+            && mesh.CornerNormals[a].Vector.Z.Identical(mesh.CornerNormals[b].Vector.Z)
+            && mesh.CornerUvs[a].U.Identical(mesh.CornerUvs[b].U)
+            && mesh.CornerUvs[a].V.Identical(mesh.CornerUvs[b].V);
 }

@@ -19,7 +19,7 @@ Library blocks: `ModelMeshes` (the fixed name, in `mesh.library.plato`), with `M
 |---|---|
 | `mesh-numbering` | `MeshVertexSite`, `MeshVertexNumbering`; sites to indices and back; `NumberMeshVertices`; face mesh points to sites (`GlobalVertexOf`) |
 | `mesh` | `ModelMesh`; element and corner access; element geometry (`ElementTriangles`); `Reversed`; `RestrictedToFaces`; `SameConnectivity`; the tetrahedron witness |
-| `mesh-assembly` | `AssembleModelMesh` (deferred), its preconditions (`CanAssemble`), where face mesh elements land; the watertightness law and theorem |
+| `mesh-assembly` | `AssembleModelMesh` (body since chunk A), its preconditions (`CanAssemble`), where face mesh elements land; the watertightness law and theorem |
 | `mesh-topology` | `MeshEdgeTable`, components and their counts; manifold, closed, oriented; Euler characteristic, genus, pinched vertices |
 | `mesh-measures` | area, signed volume, winding number, corner angles and angle defects; degenerate elements, coincident vertices, folds |
 | `mesh-quality` | `TriangleQuality`, `QuadQuality`, `MeshQualityThresholds` and their functions |
@@ -517,3 +517,19 @@ layers 7 and 8 delete their `SameConnectivity`; layer 7's `RestrictedToShell` be
 `RestrictedToFaces`, and it may add `Check_`s for `Law_CornerProvenanceIsOnItsElementFace`,
 `Law_VectorAreaVanishes`, and `Law_OrientedSurfaceWithBoundaryHasGenus`. `CompensatedSum` could
 move to layer 0 if a second layer needs it.
+
+## Implementation, chunk A
+
+TKT-314, 2026-10-17. Of the six functions the design pass deferred, all six have bodies, each from
+its contract; `ToSplitTriangleMesh3D` was not on TASKS.md's list but every model mesh validation
+reaches it, so the unit box could not validate without it.
+
+| Body | Derived from |
+|---|---|
+| `AssembleModelMesh` | contract `AssembleModelMesh` and its note: one pass writing each parameter-space point's local position and provenance at its `GlobalVertexOf` index, first write winning, model vertices first with their points; triangles of all faces, then quads, corners mapped by `GlobalVertexOf`, corner normals and parameters copied in `CornerOf` order |
+| `EdgeTableOf` | contract `EdgeTableOf`: proper sides sorted by canonical pair (lexicographic, not a packed key, per "Implementation notes"), runs counted, direction sums +1 lower-to-higher |
+| `ComponentsOf` | contract `ComponentsOf`: one breadth-first search per component from its lowest element over shared vertices, which gives the classes and the spanning forest together; unreferenced vertices -1 |
+| `ComponentCountsOf` | contract `ComponentCountsOf`: each count its ensures clause (the reference form, quadratic) |
+| `CoincidentVertexPairs` | contract `CoincidentVertexPairs`: every pair a < b of referenced vertices of one component within the tolerance, lexicographic by construction (quadratic where the note hashes) |
+| `ToSplitTriangleMesh3D` | contract `ToSplitTriangleMesh3D`: corners of a vertex grouped by exact (normal, uv), compared with layer 0's `Identical` per component; split vertices by source vertex then first corner |
+
