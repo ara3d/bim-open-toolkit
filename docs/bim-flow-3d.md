@@ -81,6 +81,25 @@ says so. **Use selection** stays disabled until an element is selected, and
 **Comment** until a model is loaded; a comment with nothing selected is a
 model-level topic with no element.
 
+## Text annotation
+
+`view3d.label` puts text over elements or groups (TKT-336). It adds `label`,
+`labelX`, `labelY` and `labelZ` to an instance table, and the 3D pane draws each
+non-null label as a small chip at its anchor that follows the camera.
+
+| Parameter | Meaning |
+|---|---|
+| `format` | The text, with `{Column}` or `{Column:0.0}` placeholders read from the `values` table (or from the instance table when `values` is not wired) |
+| `joinColumn` | The column that matches `values` rows to instances; default `entityId` |
+| `groupColumn` | Empty: one label per element. Set: one label per group value (a storey, a zone), anchored over the group's union box |
+| `limit` | At most this many labels; default 200, with a warning saying how many were dropped |
+
+Each label sits at the top centre of its element's or group's bounding box. An
+element whose value is missing gets no label. The pane draws at most 300 and
+says so in the status line ("300 of 512 labels shown"). Labels take no clicks,
+so picking still works. A notebook's recorded 3D view replays the same rows,
+so the labels draw with no host.
+
 ## Run locally
 
 Install dependencies in both `viewer` and `bimopenflow/web`; build the existing
