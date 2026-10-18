@@ -1,12 +1,14 @@
 ---
 id: TKT-329
 title: Web smoke gate fails before TKT-320: nrc-rollup wire behind a card, nrc-web notebook card positions and README text drifted, a TableSlice type error in its samples test
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session e2aa2b2c
+session: e2aa2b2c-7acb-41a8-96ea-ad30e584b1f4
 fence: [samples/nrc-analyses/nrc-rollup.json, bimopenflow/web/packages/nrc-web/test/**, samples/notebooks/**, samples/nrc-analyses/README.md]
 workflow: [W3]
 created: 2026-10-18
+claimed: 2026-10-18
 kind: defect
 ---
 
@@ -21,3 +23,4 @@ Found 2026-10-18 while running the web smoke gate for TKT-320 (the bidirectional
 ## Notes
 
 - 2026-10-18: the layout tool (`relayout-samples` over samples/nrc-analyses) rewrote nrc-rollup.json and nrc-enrich-run.json but left the faults (1 and 10 wires behind cards); the rewrite was discarded. A hand move or a graph change (an extra column, a reordered row) is needed, not a rerun of the tool.
+- 2026-10-18: taken over by session e2aa2b2c from session c4298a2b (its agent stopped at a usage limit); its uncommitted edits to three notebooks and two nrc-web tests are kept as the starting point of the regeneration for TKT-320 and TKT-336.
