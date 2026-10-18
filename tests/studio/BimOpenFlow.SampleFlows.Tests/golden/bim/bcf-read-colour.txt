@@ -5,14 +5,16 @@ about = view.note@1(text: "bcf.read over the committed samples/nrc/bcf/dc-w1-fai
   // Ok
 issues = bcf.read@1(path: "{SAMPLES}/bcf/dc-w1-failures.bcf");
   // Ok
-  //   issues: table 6 rows x 10 cols  sha 8edf3bc778e4
-  //     columns GlobalId:Text, Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, TopicGuid:Text, Author:Text, CreationDate:Text, AuthoringToolId:Text
-  //     [0] "1hOSvn6df7F8_7GcBWlS8Z", "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", "879448c0-2d5a-52a3-b318-b1861b94d78b", "Ara3D.BimOpenSchema.IO.Bcf", "2026-10-11T20:57:10Z", ""
-  //     [1] "1hOSvn6df7F8_7GcBWlS9F", "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", "879448c0-2d5a-52a3-b318-b1861b94d78b", "Ara3D.BimOpenSchema.IO.Bcf", "2026-10-11T20:57:10Z", ""
-  //     [2] "1s1jVhK8z0pgKYcr9jt781", "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", "879448c0-2d5a-52a3-b318-b1861b94d78b", "Ara3D.BimOpenSchema.IO.Bcf", "2026-10-11T20:57:10Z", ""
+  //   issues: table 6 rows x 22 cols  sha 52ad79b3a623
+  //     columns GlobalId:Text, Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, TopicGuid:Text, Author:Text, CreationDate:Text, AuthoringToolId:Text, CameraX:Number, CameraY:Number, CameraZ:Number, DirectionX:Number, DirectionY:Number, DirectionZ:Number (+6 more)
+  //     [0] "1hOSvn6df7F8_7GcBWlS8Z", "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", "879448c0-2d5a-52a3-b318-b1861b94d78b", "Ara3D.BimOpenSchema.IO.Bcf", "2026-10-11T20:57:10Z", "", 15.37, -19.87, 13.58, -0.5774, 0.5774, -0.5774, ...
+  //     [1] "1hOSvn6df7F8_7GcBWlS9F", "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", "879448c0-2d5a-52a3-b318-b1861b94d78b", "Ara3D.BimOpenSchema.IO.Bcf", "2026-10-11T20:57:10Z", "", 15.37, -19.87, 13.58, -0.5774, 0.5774, -0.5774, ...
+  //     [2] "1s1jVhK8z0pgKYcr9jt781", "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", "879448c0-2d5a-52a3-b318-b1861b94d78b", "Ara3D.BimOpenSchema.IO.Bcf", "2026-10-11T20:57:10Z", "", 15.37, -19.87, 13.58, -0.5774, 0.5774, -0.5774, ...
   //   topics: table 1 rows x 8 cols  sha 8cd0e0867f83
   //     columns Title:Text, Description:Text, Status:Text, Priority:Text, Type:Text, Elements:Integer, GlobalIds:Text, AuthoringToolIds:Text
   //     [0] "Door leaf width at least 850 mm", "attribute OverallWidth = >=0.85", "Open", "", "Issue", 6, "1hOSvn6df7F8_7GcBWlS8Z, 1hOSvn6df7F8_7GcBWlS9F, "..., ""
+  //   comments: table 0 rows x 5 cols  sha 753bc3572935
+  //     columns TopicGuid:Text, Title:Text, CommentAuthor:Text, CommentDate:Text, Comment:Text
 answer = view.table@1(table: issues.topics, title: "Topics in the committed BCF", columns: "Title, Elements, Status, Type, Description");
   // Ok  table 1 rows x 5 cols  sha d25c6c59cb1a
   //   columns Title:Text, Elements:Integer, Status:Text, Type:Text, Description:Text

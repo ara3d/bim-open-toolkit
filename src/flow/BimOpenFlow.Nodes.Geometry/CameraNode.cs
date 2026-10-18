@@ -22,19 +22,23 @@ public sealed class CameraNode : IFlowNode
         ],
         "A named camera as a one-row table: position, look-at target, and the vertical field of view "
         + "in degrees (fov, default 60). The 3D pane's Comment button adds one holding the current "
-        + "camera and wires it into bcf.issue, which turns it into a BCF viewpoint.");
+        + "camera and wires it into bcf.issue, which turns it into a BCF viewpoint.",
+        Schemas:
+        [
+            KindSchemas.Static("camera",
+                [KindColumn.Plain("name", ColumnType.Text, nullable: false),
+                 .. NumberColumns.Select(c => KindColumn.Plain(c, ColumnType.Number, nullable: false))]),
+        ]);
+
+    /// <summary>The numeric columns after <c>name</c>, in output order; each is the parameter of the same name.</summary>
+    private static readonly string[] NumberColumns = ["posX", "posY", "posZ", "targetX", "targetY", "targetZ", "fov"];
 
     public IReadOnlyList<FlowValue> Eval(IEvalContext context, IReadOnlyList<FlowValue> inputs, ParamValues parameters)
     {
         var builder = new DataTableBuilder("camera");
         builder.AddColumn(new[] { parameters.GetText("name", "default") }, "name");
-        builder.AddColumn(new[] { parameters.GetNumber("posX") }, "posX");
-        builder.AddColumn(new[] { parameters.GetNumber("posY") }, "posY");
-        builder.AddColumn(new[] { parameters.GetNumber("posZ") }, "posZ");
-        builder.AddColumn(new[] { parameters.GetNumber("targetX") }, "targetX");
-        builder.AddColumn(new[] { parameters.GetNumber("targetY") }, "targetY");
-        builder.AddColumn(new[] { parameters.GetNumber("targetZ") }, "targetZ");
-        builder.AddColumn(new[] { parameters.GetNumber("fov", 60) }, "fov");
+        foreach (var column in NumberColumns)
+            builder.AddColumn(new[] { parameters.GetNumber(column, column == "fov" ? 60 : 0) }, column);
         return [new TableValue(builder.Build())];
     }
 }

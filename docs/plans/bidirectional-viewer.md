@@ -249,3 +249,42 @@ strings in one module, `src/graphNodes.ts`, with their param names.
 - Pins: `deps.json` moved to bim-open-data `b71b20b` and bim-open-flow
   `6c7c282` before the notebook chunk landed, so the toolkit builds against the
   library the nodes need.
+- C1 fix and C2, toolkit `d523bc83` (the missed files), `50efd47a` (`bcf.write`
+  header from `model`, `bcf.read` `comments` output, the round trip test),
+  `59badb5b` (docs), `96302647` (DeclaredSchema scenarios for the two nodes).
+- D2, bim-open-notebook `7ad4ca2`, `6ac8041`, `1645474`: Use selection,
+  Comment and Edit property; `graphNodes.ts`, `reviewPlans.ts`,
+  `reviewForms.ts`; 96 tests. A comment with nothing selected is a
+  model-level topic (the plan's story said disabled; the node defines the
+  case, so the control allows it).
+- Sample, toolkit `20caeed4`: `samples/checking-analyses/review-comment.json`
+  (camera (12, -20, 7) framing the two narrow doors), its golden and
+  `ReviewComment_TwoDoorsOneCommentAndACamera_WrittenAndReadBack` in
+  `CheckingGraphTests`.
+- Review (platonic:reviewer, 2026-10-18) of A1 and B1: ten defects, fourteen
+  design notes. Fixed, one commit each: bim-open-data `f3ac055`..`aa7c5bb`
+  (empty comment text, blank header file name, Unspecified dates as UTC,
+  non-finite and partial cameras rejected, field of view and aspect ratio
+  null when a file gives none, BCF 2.1 comments and header files read,
+  comment columns renamed `CommentAuthor` and `CommentDate`, comments distinct
+  by author and text, one date helper); bim-open-flow `e7aed4c` (planned wires
+  and params validated with sentences a pane can show), `0a0de94` (the pane
+  area reads the app's selection; a flow switch clears it), `6846390`
+  (selection-before-table test); toolkit `6c07005f`, `edd7702a` (the nodes
+  follow the rename). Design notes left as tickets: TKT-333 (`planNodes` as
+  the shared edit operation), TKT-334 (a read-then-write keeps comments).
+- Live check in the studio (viz-door-accessibility over the Duplex): a pick
+  gave `1 selected` and the property panel; Use selection saved `selection1`
+  with the GlobalId; Comment saved `camera1` (fov 50 from the viewer) wired
+  into `issue1`; Edit property saved `inline1` wired into `writePsets1` with
+  the IFC source path and a `-reviewed` target, `EffectPending` until Run; the
+  review-comment sample opened with its topic preview. Two layout defects
+  seen there (toolbar over the status line, unreadable form labels) fixed in
+  bim-open-notebook `e81dd5c`. Found and filed, not this ticket's: TKT-329
+  (the web smoke gate fails on nrc-rollup's layout and the nrc-web notebook
+  tests before this work) and TKT-330 (the pane loads no model for a
+  `$model` graph input).
+- Pins: bim-open-flow `6846390`, bim-open-notebook `e81dd5c`, bim-open-data
+  `aa7c5bb`. The sample goldens moved with the bim-open-data pin (entity
+  counts of the Duplex changed between `77c01ce` and `b71b20b`) and with the
+  new `bcf.read` output; re-approved after the rename.

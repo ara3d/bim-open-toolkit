@@ -930,6 +930,19 @@ A named camera as a one-row table: position, look-at target, and the vertical fi
 | `targetZ` | Number | — | `0` | — | — |
 | `fov` | Number | — | `60` | — | — |
 
+**Columns of `camera`**
+
+| Name | Type | Nullable | Kind | Meaning |
+|---|---|---|---|---|
+| `name` | Text | no | — | — |
+| `posX` | Number | no | — | — |
+| `posY` | Number | no | — | — |
+| `posZ` | Number | no | — | — |
+| `targetX` | Number | no | — | — |
+| `targetY` | Number | no | — | — |
+| `targetZ` | Number | no | — | — |
+| `fov` | Number | no | — | — |
+
 ### `view3d.scene` (v1) — Pure
 
 Open a model with the visualization toolkit. Connect view outputs to compose a presentation.

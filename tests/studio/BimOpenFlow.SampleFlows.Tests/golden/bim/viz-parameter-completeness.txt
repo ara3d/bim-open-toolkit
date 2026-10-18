@@ -10,27 +10,27 @@ inst = view3d.instances@1(path: "{SAMPLES}/duplex-enriched.ifc");
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 load = bos.load@1(path: "{SAMPLES}/duplex-enriched.bos");
   // Ok
-  //   entities: table 4726 rows x 6 cols  sha 077aa964710f
+  //   entities: table 4730 rows x 6 cols  sha eb7fd7c95483
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18581 rows x 6 cols  sha fcb6d2202473
+  //   parameters: table 18582 rows x 6 cols  sha 1314a405d8c0
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 116, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
-  //     [1] 121, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //     [2] 121, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //   relations: table 969 rows x 5 cols  sha df3cff65516a
+  //     [0] 118, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 123, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 123, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 969 rows x 5 cols  sha 3f48a965e462
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 134, "Level 1", 4706, null, "MemberOf"
-  //     [1] 135, "Level 2", 4706, null, "MemberOf"
-  //     [2] 136, "T/FDN", 4706, null, "MemberOf"
+  //     [0] 136, "Level 1", 4708, null, "MemberOf"
+  //     [1] 137, "Level 2", 4708, null, "MemberOf"
+  //     [2] 138, "T/FDN", 4708, null, "MemberOf"
 elements = sql.query@1(t1: load.entities, sql: "SELECT EntityIndex, GlobalId, StepId, Name, Category AS Class FROM t WHERE coalesce(GlobalId, '') <> '' AND Category NOT IN ('IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 'IFCOPENINGELEMENT') AND NOT regexp_matches(Category, '(TYPE|STYLE|PROPERTIES)$') ORDER BY EntityIndex");
-  // Ok  table 243 rows x 5 cols  sha f6b3f86bf6e6
+  // Ok  table 243 rows x 5 cols  sha b0fead1b7c15
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Name:Text, Class:Text
-  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE"
-  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE"
-  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE"
+  //   [0] 278, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE"
+  //   [1] 354, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE"
+  //   [2] 720, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE"
 required = table.inline@1(rows: "[{\"Parameter\":\"Reference\",\"Field\":\"Type reference\"},{\"Parameter\":\"Mark\",\"Field\":\"Instance mark\"},{\"Parameter\":\"Type Mark\",\"Field\":\"Type mark\"},{\"Parameter\":\"Manufacturer\",\"Field\":\"Manufacturer\"},{\"Parameter\":\"AssetIdentifier\",\"Field\":\"Asset identifier\"},{\"Parameter\":\"SerialNumber\",\"Field\":\"Serial number\"},{\"Parameter\":\"BarCode\",\"Field\":\"Barcode\"},{\"Parameter\":\"InstallationDate\",\"Field\":\"Installation date\"},{\"Parameter\":\"WarrantyStartDate\",\"Field\":\"Warranty start\"},{\"Parameter\":\"Assembly Code\",\"Field\":\"Uniformat code\"},{\"Parameter\":\"OmniClass Number\",\"Field\":\"OmniClass code\"},{\"Parameter\":\"FireRating\",\"Field\":\"Fire rating\"},{\"Parameter\":\"IsExternal\",\"Field\":\"External\"},{\"Parameter\":\"LoadBearing\",\"Field\":\"Load bearing\"}]");
   // Ok  table 14 rows x 2 cols  sha 579e5c3c9567
   //   columns Parameter:Text, Field:Text
@@ -38,24 +38,24 @@ required = table.inline@1(rows: "[{\"Parameter\":\"Reference\",\"Field\":\"Type 
   //   [1] "Mark", "Instance mark"
   //   [2] "Type Mark", "Type mark"
 storeys = sql.query@1(t1: load.entities, t2: load.relations, sql: "WITH RECURSIVE up(EntityIndex, Parent, Depth) AS (SELECT EntityIndexA, EntityIndexB, 1 FROM t2 WHERE RelationType IN ('ContainedIn', 'MemberOf') UNION ALL SELECT up.EntityIndex, r.EntityIndexB, up.Depth + 1 FROM up JOIN t2 r ON r.EntityIndexA = up.Parent AND r.RelationType IN ('ContainedIn', 'MemberOf') WHERE up.Depth < 4) SELECT up.EntityIndex, arg_min(s.Name, up.Depth) AS Storey FROM up JOIN t1 s ON s.EntityIndex = up.Parent AND s.Category = 'IFCBUILDINGSTOREY' GROUP BY up.EntityIndex ORDER BY up.EntityIndex");
-  // Ok  table 239 rows x 2 cols  sha dca1272a9d4e
+  // Ok  table 239 rows x 2 cols  sha 56ee2b2b7251
   //   columns EntityIndex:Integer, Storey:Text
-  //   [0] 276, "Level 1"
-  //   [1] 352, "Level 2"
-  //   [2] 718, "Level 1"
+  //   [0] 278, "Level 1"
+  //   [1] 354, "Level 2"
+  //   [2] 720, "Level 1"
 placed = table.join@1(a: elements.table, b: storeys.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 243 rows x 6 cols  sha 1099d180e084
+  // Ok  table 243 rows x 6 cols  sha b5b8976f4656
   //   warn table.join: 4 of 243 rows unmatched
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text
-  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1"
-  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2"
-  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1"
+  //   [0] 278, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1"
+  //   [1] 354, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2"
+  //   [2] 720, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1"
 cells = sql.query@1(t1: placed.table, t2: load.parameters, t3: required.table, sql: "WITH carried AS (SELECT p.EntityIndex, p.Name AS Parameter, max(CASE WHEN trim(coalesce(p.Value, '')) <> '' AND lower(replace(p.Value, ' ', '')) <> lower(replace(p.Name, ' ', '')) THEN 1 ELSE 0 END) AS Filled FROM t2 p JOIN t3 r ON r.Parameter = p.Name GROUP BY p.EntityIndex, p.Name), applicable AS (SELECT DISTINCT e.Class, c.Parameter FROM carried c JOIN t1 e ON e.EntityIndex = c.EntityIndex) SELECT e.EntityIndex, e.GlobalId, e.Class, e.Storey, a.Parameter, coalesce(c.Filled, 0) AS Filled FROM t1 e JOIN applicable a ON a.Class = e.Class LEFT JOIN carried c ON c.EntityIndex = e.EntityIndex AND c.Parameter = a.Parameter ORDER BY e.EntityIndex, a.Parameter");
-  // Ok  table 2157 rows x 6 cols  sha 28593f95957e
+  // Ok  table 2157 rows x 6 cols  sha 9d7e79c6d0a5
   //   columns EntityIndex:Integer, GlobalId:Text, Class:Text, Storey:Text, Parameter:Text, Filled:Integer
-  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", "Level 1", "Reference", 0
-  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", "Level 2", "Reference", 0
-  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", "Level 1", "Reference", 0
+  //   [0] 278, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", "Level 1", "Reference", 0
+  //   [1] 354, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", "Level 2", "Reference", 0
+  //   [2] 720, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", "Level 1", "Reference", 0
 coverage = table.aggregate@1(table: cells.table, groupBy: "Class, Parameter", aggregates: "count(*) as Elements, sum(Filled) as FilledElements, avg(Filled) as FillRate");
   // Ok  table 121 rows x 5 cols  sha c150cd8834ad
   //   columns Class:Text, Parameter:Text, Elements:Integer, FilledElements:Integer, FillRate:Number
@@ -89,18 +89,18 @@ placeholderTable = view.table@1(table: placeholders.table, title: "Template plac
   //   [1] "BarCode", "BarCode", 211
   //   [2] "FireRating", "Fire Rating", 14
 scores = table.aggregate@1(table: cells.table, groupBy: "EntityIndex", aggregates: "count(*) as Applicable, sum(Filled) as FilledFields, avg(Filled) as Completeness");
-  // Ok  table 235 rows x 4 cols  sha f2ed109da471
+  // Ok  table 235 rows x 4 cols  sha 7ac76954aa3b
   //   columns EntityIndex:Integer, Applicable:Integer, FilledFields:Integer, Completeness:Number
-  //   [0] 276, 1, 0, 0
-  //   [1] 352, 1, 0, 0
-  //   [2] 718, 1, 0, 0
+  //   [0] 278, 1, 0, 0
+  //   [1] 354, 1, 0, 0
+  //   [2] 720, 1, 0, 0
 perElement = table.join@1(a: placed.table, b: scores.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "left");
-  // Ok  table 243 rows x 9 cols  sha 0edcecdec00c
+  // Ok  table 243 rows x 9 cols  sha d346d89b05ff
   //   warn table.join: 8 of 243 rows unmatched
   //   columns EntityIndex:Integer, GlobalId:Text, StepId:Integer, Name:Text, Class:Text, Storey:Text, Applicable:Integer, FilledFields:Integer, Completeness:Number
-  //   [0] 276, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1", 1, 0, 0
-  //   [1] 352, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2", 1, 0, 0
-  //   [2] 718, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1", 1, 0, 0
+  //   [0] 278, "0BTBFw6f90Nfh9rP1dlXrr", 514, "Foyer", "IFCSPACE", "Level 1", 1, 0, 0
+  //   [1] 354, "0BTBFw6f90Nfh9rP1dlXri", 819, "Hallway", "IFCSPACE", "Level 2", 1, 0, 0
+  //   [2] 720, "0BTBFw6f90Nfh9rP1dl_3P", 1928, "Bathroom 1", "IFCSPACE", "Level 1", 1, 0, 0
 byClass = table.aggregate@1(table: perElement.table, groupBy: "Class", aggregates: "count(*) as Elements, avg(Completeness) as Completeness");
   // Ok  table 16 rows x 3 cols  sha da05a067bc95
   //   columns Class:Text, Elements:Integer, Completeness:Number

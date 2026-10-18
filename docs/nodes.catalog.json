@@ -6630,7 +6630,55 @@
           "default": "60"
         }
       ],
-      "description": "A named camera as a one-row table: position, look-at target, and the vertical field of view in degrees (fov, default 60). The 3D pane\u0027s Comment button adds one holding the current camera and wires it into bcf.issue, which turns it into a BCF viewpoint."
+      "description": "A named camera as a one-row table: position, look-at target, and the vertical field of view in degrees (fov, default 60). The 3D pane\u0027s Comment button adds one holding the current camera and wires it into bcf.issue, which turns it into a BCF viewpoint.",
+      "schemas": [
+        {
+          "output": "camera",
+          "mode": "Static",
+          "columns": [
+            {
+              "name": "name",
+              "type": "Text",
+              "nullable": false
+            },
+            {
+              "name": "posX",
+              "type": "Number",
+              "nullable": false
+            },
+            {
+              "name": "posY",
+              "type": "Number",
+              "nullable": false
+            },
+            {
+              "name": "posZ",
+              "type": "Number",
+              "nullable": false
+            },
+            {
+              "name": "targetX",
+              "type": "Number",
+              "nullable": false
+            },
+            {
+              "name": "targetY",
+              "type": "Number",
+              "nullable": false
+            },
+            {
+              "name": "targetZ",
+              "type": "Number",
+              "nullable": false
+            },
+            {
+              "name": "fov",
+              "type": "Number",
+              "nullable": false
+            }
+          ]
+        }
+      ]
     },
     {
       "kind": "view3d.categoryStyle",

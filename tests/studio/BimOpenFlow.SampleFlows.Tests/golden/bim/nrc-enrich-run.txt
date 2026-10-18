@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-enrich-run   graph 9d17cdea31f1
+// nrc-enrich-run   graph 66c8992498e0
 about = view.note@1(text: "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,469 values on 228 entities, including four IfcZone groups (nrc-zones.csv) with an NRC_ZoneSummary set each. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, and zoneMembers and zoneRowsTable feed the writer its zones and their sets, so every Run writes the same bytes.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
@@ -153,5 +153,5 @@ zoneRowsTable = rel.materialize@1(input: zoneAnswer.relation, limit: "0");
   //   [0] "Unit A Level 1", "NRC_ZoneSummary", "AnalysisRunId", "Identifier", "run-2026-09-17-01"
   //   [1] "Unit A Level 1", "NRC_ZoneSummary", "ScenarioName", "Label", "Baseline"
   //   [2] "Unit A Level 1", "NRC_ZoneSummary", "SpaceCount", "Integer", "5"
-answer = sink.writePsets@1(in: table.table, zones: zoneMembersTable.table, zonePsets: zoneRowsTable.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{ARTIFACTS}/nrc/duplex-enriched-out.ifc");
+answer = sink.writePsets@1(in: table.table, zones: zoneMembersTable.table, zonePsets: zoneRowsTable.table, sourcePath: "{SAMPLES}/duplex-base.ifc", targetPath: "{ARTIFACTS}/nrc/duplex-enriched-out.ifc", documentPath: "{SAMPLES}/nrc_analytics_long.csv", documentKey: "GlobalId", documentDescription: "Long table of the analytics values: one row per element and metric.");
   // EffectPending  not executed outside a Run

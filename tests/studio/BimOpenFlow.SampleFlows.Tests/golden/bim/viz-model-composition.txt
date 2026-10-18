@@ -16,17 +16,17 @@ classes = table.inline@1(rows: "[{\"IfcClass\":\"IFCWALL\",\"Class\":\"Wall\"},{
 database = duck.source@1(path: "{SAMPLES}/duplex-enriched.duckdb");
   // Ok  Database
 elements = duck.query@1(path: database.source, sql: "SELECT StepId, GlobalId, EntityIndex, Category AS IfcClass, Name FROM EntityText WHERE GlobalId IS NOT NULL AND Category <> 'IFCBUILDINGSTOREY' ORDER BY EntityIndex");
-  // Ok  table 345 rows x 5 cols  sha 5980fd6e109d
+  // Ok  table 345 rows x 5 cols  sha 08001696af04
   //   columns StepId:Integer, GlobalId:Text, EntityIndex:Integer, IfcClass:Text, Name:Text
-  //   [0] 6413, "1Jx6Wzbs17ugoFEefHo1BC", 78, "IFCWINDOWSTYLE", "4835mm x 2420mm"
-  //   [1] 6639, "28VDfyq51BtxN68z6Brpvs", 79, "IFCDOORSTYLE", "1250mm x 2010mm"
-  //   [2] 6908, "1DUB3WxH5BFQb5h$$S4JfA", 80, "IFCWINDOWSTYLE", "750mm x 2200mm"
+  //   [0] 6413, "1Jx6Wzbs17ugoFEefHo1BC", 80, "IFCWINDOWSTYLE", "4835mm x 2420mm"
+  //   [1] 6639, "28VDfyq51BtxN68z6Brpvs", 81, "IFCDOORSTYLE", "1250mm x 2010mm"
+  //   [2] 6908, "1DUB3WxH5BFQb5h$$S4JfA", 82, "IFCWINDOWSTYLE", "750mm x 2200mm"
 located = duck.query@1(path: database.source, sql: "SELECT EntityIndex, arg_min(StoreyIndex, Depth) AS StoreyIndex FROM StoreyOfEntity GROUP BY EntityIndex ORDER BY EntityIndex");
-  // Ok  table 243 rows x 2 cols  sha f537f3d9c75b
+  // Ok  table 243 rows x 2 cols  sha 21a073551d5a
   //   columns EntityIndex:Integer, StoreyIndex:Integer
-  //   [0] 134, 134
-  //   [1] 135, 135
-  //   [2] 136, 136
+  //   [0] 136, 136
+  //   [1] 137, 137
+  //   [2] 138, 138
 model = value.path@1(path: "{SAMPLES}/duplex-enriched.ifc");
   // Ok  Text "{MODELS}/duplex-enriched.ifc"
 inst = view3d.instances@1(path: model.path);
@@ -36,36 +36,36 @@ inst = view3d.instances@1(path: model.path);
   //   no colour columns
   //   bounds (-0.2415, -22.18, -1.55) to (9.042, 4.383, 9)
 storeys = duck.query@1(path: database.source, sql: "SELECT e.EntityIndex AS StoreyIndex, e.Name AS Storey, TRY_CAST(p.Value AS DOUBLE) AS Elevation FROM EntityText e LEFT JOIN ParameterText p ON p.EntityIndex = e.EntityIndex AND p.Name = 'Ifc:Elevation' WHERE e.Category = 'IFCBUILDINGSTOREY' ORDER BY Elevation, StoreyIndex");
-  // Ok  table 4 rows x 3 cols  sha 90cac2bf640b
+  // Ok  table 4 rows x 3 cols  sha 387db2b824bf
   //   columns StoreyIndex:Integer, Storey:Text, Elevation:Number
-  //   [0] 136, "T/FDN", -1.25
-  //   [1] 134, "Level 1", 0
-  //   [2] 135, "Level 2", 3.1
+  //   [0] 138, "T/FDN", -1.25
+  //   [1] 136, "Level 1", 0
+  //   [2] 137, "Level 2", 3.1
 withStorey = table.join@1(a: elements.table, b: located.table, aKey: "EntityIndex", mode: "inner");
-  // Ok  table 239 rows x 6 cols  sha d1dcca09b65c
+  // Ok  table 239 rows x 6 cols  sha ed305f4b3d3b
   //   warn table.join: 106 of 345 rows unmatched
   //   columns StepId:Integer, GlobalId:Text, EntityIndex:Integer, IfcClass:Text, Name:Text, StoreyIndex:Integer
-  //   [0] 514, "0BTBFw6f90Nfh9rP1dlXrr", 276, "IFCSPACE", "Foyer", 134
-  //   [1] 819, "0BTBFw6f90Nfh9rP1dlXri", 352, "IFCSPACE", "Hallway", 135
-  //   [2] 1928, "0BTBFw6f90Nfh9rP1dl_3P", 718, "IFCSPACE", "Bathroom 1", 134
+  //   [0] 514, "0BTBFw6f90Nfh9rP1dlXrr", 278, "IFCSPACE", "Foyer", 136
+  //   [1] 819, "0BTBFw6f90Nfh9rP1dlXri", 354, "IFCSPACE", "Hallway", 137
+  //   [2] 1928, "0BTBFw6f90Nfh9rP1dl_3P", 720, "IFCSPACE", "Bathroom 1", 136
 named = table.join@1(a: withStorey.table, b: storeys.table, aKey: "StoreyIndex", mode: "left");
-  // Ok  table 239 rows x 8 cols  sha 502684ec587d
+  // Ok  table 239 rows x 8 cols  sha a09dc0b4692d
   //   columns StepId:Integer, GlobalId:Text, EntityIndex:Integer, IfcClass:Text, Name:Text, StoreyIndex:Integer, Storey:Text, Elevation:Number
-  //   [0] 514, "0BTBFw6f90Nfh9rP1dlXrr", 276, "IFCSPACE", "Foyer", 134, "Level 1", 0
-  //   [1] 819, "0BTBFw6f90Nfh9rP1dlXri", 352, "IFCSPACE", "Hallway", 135, "Level 2", 3.1
-  //   [2] 1928, "0BTBFw6f90Nfh9rP1dl_3P", 718, "IFCSPACE", "Bathroom 1", 134, "Level 1", 0
+  //   [0] 514, "0BTBFw6f90Nfh9rP1dlXrr", 278, "IFCSPACE", "Foyer", 136, "Level 1", 0
+  //   [1] 819, "0BTBFw6f90Nfh9rP1dlXri", 354, "IFCSPACE", "Hallway", 137, "Level 2", 3.1
+  //   [2] 1928, "0BTBFw6f90Nfh9rP1dl_3P", 720, "IFCSPACE", "Bathroom 1", 136, "Level 1", 0
 classed = table.join@1(a: named.table, b: classes.table, aKey: "IfcClass", mode: "inner");
-  // Ok  table 239 rows x 9 cols  sha e8582837d309
+  // Ok  table 239 rows x 9 cols  sha 6213455ff2c3
   //   columns StepId:Integer, GlobalId:Text, EntityIndex:Integer, IfcClass:Text, Name:Text, StoreyIndex:Integer, Storey:Text, Elevation:Number, Class:Text
-  //   [0] 514, "0BTBFw6f90Nfh9rP1dlXrr", 276, "IFCSPACE", "Foyer", 134, "Level 1", 0, "Space"
-  //   [1] 819, "0BTBFw6f90Nfh9rP1dlXri", 352, "IFCSPACE", "Hallway", 135, "Level 2", 3.1, "Space"
-  //   [2] 1928, "0BTBFw6f90Nfh9rP1dl_3P", 718, "IFCSPACE", "Bathroom 1", 134, "Level 1", 0, "Space"
+  //   [0] 514, "0BTBFw6f90Nfh9rP1dlXrr", 278, "IFCSPACE", "Foyer", 136, "Level 1", 0, "Space"
+  //   [1] 819, "0BTBFw6f90Nfh9rP1dlXri", 354, "IFCSPACE", "Hallway", 137, "Level 2", 3.1, "Space"
+  //   [2] 1928, "0BTBFw6f90Nfh9rP1dl_3P", 720, "IFCSPACE", "Bathroom 1", 136, "Level 1", 0, "Space"
 physical = table.filter@1(table: classed.table, expr: "Class != 'Space'");
-  // Ok  table 218 rows x 9 cols  sha 16ee82eaa305
+  // Ok  table 218 rows x 9 cols  sha faab46ad3c0e
   //   columns StepId:Integer, GlobalId:Text, EntityIndex:Integer, IfcClass:Text, Name:Text, StoreyIndex:Integer, Storey:Text, Elevation:Number, Class:Text
-  //   [0] 4131, "2O2Fr$t4X7Zf8NOew3FNld", 1392, "IFCWALLSTANDARDCASE", "Basic Wall:Interior - Partition (92mm Stud):1385"..., 134, "Level 1", 0, "Wall"
-  //   [1] 4287, "2O2Fr$t4X7Zf8NOew3FNbT", 1415, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 134, "Level 1", 0, "Wall"
-  //   [2] 4399, "2O2Fr$t4X7Zf8NOew3FKRi", 1437, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 134, "Level 1", 0, "Wall"
+  //   [0] 4131, "2O2Fr$t4X7Zf8NOew3FNld", 1394, "IFCWALLSTANDARDCASE", "Basic Wall:Interior - Partition (92mm Stud):1385"..., 136, "Level 1", 0, "Wall"
+  //   [1] 4287, "2O2Fr$t4X7Zf8NOew3FNbT", 1417, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 136, "Level 1", 0, "Wall"
+  //   [2] 4399, "2O2Fr$t4X7Zf8NOew3FKRi", 1439, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 136, "Level 1", 0, "Wall"
 composition = table.aggregate@1(table: physical.table, groupBy: "Class", aggregates: "count(*) as Elements");
   // Ok  table 12 rows x 2 cols  sha 8d70f05a79f3
   //   columns Class:Text, Elements:Integer
@@ -85,11 +85,11 @@ grouped = table.derive@1(table: ranked.table, name: "Group", expr: "Rank <= 7 ? 
   //   [1] "Covering", 13, 6, "Covering"
   //   [2] "Door", 14, 5, "Door"
 elementGroups = table.join@1(a: physical.table, b: grouped.table, aKey: "Class", mode: "left");
-  // Ok  table 218 rows x 12 cols  sha 4ba1d5206227
+  // Ok  table 218 rows x 12 cols  sha aa15e8392ca6
   //   columns StepId:Integer, GlobalId:Text, EntityIndex:Integer, IfcClass:Text, Name:Text, StoreyIndex:Integer, Storey:Text, Elevation:Number, Class:Text, Elements:Integer, Rank:Integer, Group:Text
-  //   [0] 4131, "2O2Fr$t4X7Zf8NOew3FNld", 1392, "IFCWALLSTANDARDCASE", "Basic Wall:Interior - Partition (92mm Stud):1385"..., 134, "Level 1", 0, "Wall", 57, 2, "Wall"
-  //   [1] 4287, "2O2Fr$t4X7Zf8NOew3FNbT", 1415, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 134, "Level 1", 0, "Wall", 57, 2, "Wall"
-  //   [2] 4399, "2O2Fr$t4X7Zf8NOew3FKRi", 1437, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 134, "Level 1", 0, "Wall", 57, 2, "Wall"
+  //   [0] 4131, "2O2Fr$t4X7Zf8NOew3FNld", 1394, "IFCWALLSTANDARDCASE", "Basic Wall:Interior - Partition (92mm Stud):1385"..., 136, "Level 1", 0, "Wall", 57, 2, "Wall"
+  //   [1] 4287, "2O2Fr$t4X7Zf8NOew3FNbT", 1417, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 136, "Level 1", 0, "Wall", 57, 2, "Wall"
+  //   [2] 4399, "2O2Fr$t4X7Zf8NOew3FKRi", 1439, "IFCWALLSTANDARDCASE", "Basic Wall:Party Wall - CMU Residential Unit Dim"..., 136, "Level 1", 0, "Wall", 57, 2, "Wall"
 folded = table.aggregate@1(table: grouped.table, groupBy: "Group", aggregates: "sum(Elements) as Elements");
   // Ok  table 8 rows x 2 cols  sha 58e302f6a836
   //   columns Group:Text, Elements:Integer
@@ -97,7 +97,7 @@ folded = table.aggregate@1(table: grouped.table, groupBy: "Group", aggregates: "
   //   [1] "Covering", 13
   //   [2] "Door", 14
 instGroup = table.join@1(a: inst.instances, b: elementGroups.table, aKey: "globalId", bKey: "GlobalId", mode: "inner");
-  // Ok  table 693 rows x 22 cols  sha 09bfe569fc79
+  // Ok  table 693 rows x 22 cols  sha 42aa7bf75a90
   //   warn table.join: 21 of 714 rows unmatched
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, StepId:Integer, EntityIndex:Integer, IfcClass:Text, Name:Text, StoreyIndex:Integer (+6 more)
   //   scene 693 instances (of 714 upstream): 693 opaque, 0 faded, 0 hidden
@@ -143,7 +143,7 @@ chart = chart.bar@1(table: sorted.table, scale: scale.legend, labelColumn: "Grou
   //     legend "Group" categorical: category "Beam" 1, category "Covering" 1, category "Door" 1, category "Furniture" 1, category "Other" 1, category "Slab" 1, category "Wall" 1, category "Window" 1
 colored = view3d.color@1(instances: instGroup.table, values: instGroup.table, scale: scale.legend, joinColumn: "instanceIndex");
   // Ok
-  //   instances: table 693 rows x 26 cols  sha 44c8065784d0
+  //   instances: table 693 rows x 26 cols  sha 8f58d5f248d1
   //     columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number, StepId:Integer, EntityIndex:Integer, IfcClass:Text, Name:Text, StoreyIndex:Integer (+10 more)
   //     scene 693 instances: 693 opaque, 0 faded, 0 hidden
   //     693 coloured in 8 colours, 0 grey

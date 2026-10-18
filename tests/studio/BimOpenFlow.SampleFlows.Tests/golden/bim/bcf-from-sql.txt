@@ -7,51 +7,51 @@ modelPath = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/duplex-enriched.bos"
 model = bos.load@1(path: modelPath.path, harmonize: "false");
   // Ok
-  //   entities: table 4726 rows x 6 cols  sha 077aa964710f
+  //   entities: table 4730 rows x 6 cols  sha eb7fd7c95483
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18581 rows x 6 cols  sha fcb6d2202473
+  //   parameters: table 18582 rows x 6 cols  sha 1314a405d8c0
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 116, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
-  //     [1] 121, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //     [2] 121, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //   relations: table 969 rows x 5 cols  sha df3cff65516a
+  //     [0] 118, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 123, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 123, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 969 rows x 5 cols  sha 3f48a965e462
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 134, "Level 1", 4706, null, "MemberOf"
-  //     [1] 135, "Level 2", 4706, null, "MemberOf"
-  //     [2] 136, "T/FDN", 4706, null, "MemberOf"
+  //     [0] 136, "Level 1", 4708, null, "MemberOf"
+  //     [1] 137, "Level 2", 4708, null, "MemberOf"
+  //     [2] 138, "T/FDN", 4708, null, "MemberOf"
 doors = table.filter@1(table: model.entities, expr: "[Category] == 'IFCDOOR'");
-  // Ok  table 14 rows x 6 cols  sha b683bf3bbb0a
+  // Ok  table 14 rows x 6 cols  sha b75d1f6bc6e8
   //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
-  //   [0] 1797, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
-  //   [1] 1803, 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
-  //   [2] 2035, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15017"..., "IFCDOOR", "0762 x 2032mm"
+  //   [0] 1799, 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [1] 1805, 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [2] 2037, 8066, "1hOSvn6df7F8_7GcBWlS8Z", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:15017"..., "IFCDOOR", "0762 x 2032mm"
 isExternal = table.filter@1(table: model.parameters, expr: "[ParameterGroup] == 'Pset_DoorCommon' and [Name] == 'IsExternal' and [Value] == '.T.'");
-  // Ok  table 4 rows x 6 cols  sha cb8bdb99b0e5
+  // Ok  table 4 rows x 6 cols  sha 1e890ad12764
   //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //   [0] 1797, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
-  //   [1] 1803, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
-  //   [2] 3336, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
+  //   [0] 1799, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
+  //   [1] 1805, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
+  //   [2] 3338, "IsExternal", "Pset_DoorCommon", null, "String", ".T."
 external = table.join@1(a: isExternal.table, b: doors.table, aKey: "EntityIndex", bKey: "EntityIndex", mode: "inner");
-  // Ok  table 4 rows x 11 cols  sha 9bb3ac5e6907
+  // Ok  table 4 rows x 11 cols  sha 1b8c3773dfae
   //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text
-  //   [0] 1797, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
-  //   [1] 1803, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
-  //   [2] 3336, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm"
+  //   [0] 1799, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [1] 1805, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm"
+  //   [2] 3338, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm"
 titled = table.derive@1(table: external.table, name: "Title", expr: "'External doors'");
-  // Ok  table 4 rows x 12 cols  sha 3ee4d94c3e5a
+  // Ok  table 4 rows x 12 cols  sha b46c6389e809
   //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text, Title:Text
-  //   [0] 1797, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors"
-  //   [1] 1803, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors"
-  //   [2] 3336, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm", "External doors"
+  //   [0] 1799, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors"
+  //   [1] 1805, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors"
+  //   [2] 3338, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm", "External doors"
 described = table.derive@1(table: titled.table, name: "Description", expr: "'Pset_DoorCommon.IsExternal is true: confirm the weather seal on ' & [Name_b]");
-  // Ok  table 4 rows x 13 cols  sha f001c028d2c3
+  // Ok  table 4 rows x 13 cols  sha 086f8b2e981a
   //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text, StepId:Integer, GlobalId:Text, Name_b:Text, Category:Text, Type:Text, Title:Text, Description:Text
-  //   [0] 1797, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
-  //   [1] 1803, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
-  //   [2] 3336, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
+  //   [0] 1799, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6652, "1hOSvn6df7F8_7GcBWlRGQ", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
+  //   [1] 1805, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 6757, "1hOSvn6df7F8_7GcBWlRH8", "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:1"..., "IFCDOOR", "1250mm x 2010mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
+  //   [2] 3338, "IsExternal", "Pset_DoorCommon", null, "String", ".T.", 21821, "1s1jVhK8z0pgKYcr9jt781", "M_Single-Glass 1:0813 x 2420mm:0813 x 2420mm:171"..., "IFCDOOR", "0813 x 2420mm", "External doors", "Pset_DoorCommon.IsExternal is true: confirm the "...
 columns = table.project@1(table: described.table, columns: "Title, Description, Name_b as Name, GlobalId");
   // Ok  table 4 rows x 4 cols  sha 06565651f5ad
   //   columns Title:Text, Description:Text, Name:Text, GlobalId:Text

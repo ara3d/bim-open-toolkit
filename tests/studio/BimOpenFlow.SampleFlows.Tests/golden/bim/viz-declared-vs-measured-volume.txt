@@ -25,78 +25,78 @@ classed = table.join@1(a: declared.table, b: classes.table, aKey: "IfcClass", mo
 model = value.path@1(path: "{SAMPLES}/duplex-enriched.ifc");
   // Ok  Text "{MODELS}/duplex-enriched.ifc"
 measures = view3d.measures@1(path: model.path);
-  // Ok  table 714 rows x 8 cols  sha a95807e244ef
+  // Ok  table 714 rows x 8 cols  sha 1d9e436b425c
   //   columns instanceIndex:Integer, meshId:Integer, entityId:Integer, globalId:Text, category:Text, surfaceArea:Number, meshVolume:Number, triangleCount:Integer
   //   [0] 0, 0, 514, "0BTBFw6f90Nfh9rP1dlXrr", "IFCSPACE", 90.5, 40.24, 60
   //   [1] 1, 1, 819, "0BTBFw6f90Nfh9rP1dlXri", "IFCSPACE", 52.55, 4.504, 60
   //   [2] 2, 2, 1928, "0BTBFw6f90Nfh9rP1dl_3P", "IFCSPACE", 25.09, 8.177, 12
 perElement = table.aggregate@1(table: measures.measures, groupBy: "globalId", aggregates: "sum(meshVolume) as Measured_m3, count(*) as Meshes");
-  // Ok  table 237 rows x 3 cols  sha 248fe287c458
+  // Ok  table 237 rows x 3 cols  sha 87a2a98e62ec
   //   columns globalId:Text, Measured_m3:Number, Meshes:Integer
   //   [0] "01KzA4SPn5IOODwLEb5RNY", 0.09262, 1
   //   [1] "0BTBFw6f90Nfh9rP1dlXr$", 33.51, 1
   //   [2] "0BTBFw6f90Nfh9rP1dlXr2", 71.39, 1
 joined = table.join@1(a: classed.table, b: perElement.table, aKey: "GlobalId", bKey: "globalId", mode: "left");
-  // Ok  table 216 rows x 7 cols  sha fe1742805a52
+  // Ok  table 216 rows x 7 cols  sha c648fa8ce47b
   //   warn table.join: 2 of 216 rows unmatched
   //   columns GlobalId:Text, Name:Text, IfcClass:Text, Declared_m3:Number, Class:Text, Measured_m3:Number, Meshes:Integer
   //   [0] "01KzA4SPn5IOODwLEb5RNY", "Stair:Residential - 200mm Max Riser 250mm Tread:"..., "IFCMEMBER", null, "Member", 0.09262, 1
   //   [1] "0dxE1Sy6nDqfpDb5vIMN_Z", "Basic Wall:Interior - Furring (152 mm Stud):1941"..., "IFCWALLSTANDARDCASE", 1.641, "Wall", 1.641, 1
   //   [2] "0dxE1Sy6nDqfpDb5vIMNiA", "Basic Wall:Interior - Furring (152 mm Stud):1932"..., "IFCWALLSTANDARDCASE", 1.641, "Wall", 1.641, 1
 byClass = table.aggregate@1(table: joined.table, groupBy: "Class", aggregates: "count(*) as Elements, count(Declared_m3) as WithDeclared, sum(Declared_m3) as Declared_m3, sum(Measured_m3) as Measured_m3");
-  // Ok  table 12 rows x 5 cols  sha cb713a59a2f6
+  // Ok  table 12 rows x 5 cols  sha 6ad93bdfaf31
   //   columns Class:Text, Elements:Integer, WithDeclared:Integer, Declared_m3:Number, Measured_m3:Number
   //   [0] "Beam", 8, 8, 0.3256, 0.5077
-  //   [1] "Covering", 13, 13, 13.88, 7.983
+  //   [1] "Covering", 13, 13, 13.88, 8.978
   //   [2] "Door", 14, 0, null, 1.466
 gap = table.derive@1(table: byClass.table, name: "Gap_pct", expr: "round((Measured_m3 - Declared_m3) / Declared_m3 * 1000) / 10");
-  // Ok  table 12 rows x 6 cols  sha 3846e27db246
+  // Ok  table 12 rows x 6 cols  sha e927729bdff4
   //   columns Class:Text, Elements:Integer, WithDeclared:Integer, Declared_m3:Number, Measured_m3:Number, Gap_pct:Number
   //   [0] "Beam", 8, 8, 0.3256, 0.5077, 55.9
-  //   [1] "Covering", 13, 13, 13.88, 7.983, -42.5
+  //   [1] "Covering", 13, 13, 13.88, 8.978, -35.3
   //   [2] "Door", 14, 0, null, 1.466, null
 ranked = table.sort@1(table: gap.table, A: "Declared_m3", descendingA: "true");
-  // Ok  table 12 rows x 6 cols  sha 1e7555058afc
+  // Ok  table 12 rows x 6 cols  sha b05cda83d66e
   //   columns Class:Text, Elements:Integer, WithDeclared:Integer, Declared_m3:Number, Measured_m3:Number, Gap_pct:Number
   //   [0] "Wall", 57, 57, 207.1, 194.7, -6
   //   [1] "Slab", 21, 20, 64.58, 125, 93.5
   //   [2] "Roof", 1, 1, 60.75, 60.75, 0
 answer = view.table@1(table: ranked.table, title: "Declared (Revit Volume) against measured mesh volume per class (m3)", columns: "Class,Elements,WithDeclared,Declared_m3,Measured_m3,Gap_pct");
-  // Ok  table 12 rows x 6 cols  sha 1e7555058afc
+  // Ok  table 12 rows x 6 cols  sha b05cda83d66e
   //   columns Class:Text, Elements:Integer, WithDeclared:Integer, Declared_m3:Number, Measured_m3:Number, Gap_pct:Number
   //   [0] "Wall", 57, 57, 207.1, 194.7, -6
   //   [1] "Slab", 21, 20, 64.58, 125, 93.5
   //   [2] "Roof", 1, 1, 60.75, 60.75, 0
 comparable = table.filter@1(table: ranked.table, expr: "WithDeclared > 0");
-  // Ok  table 6 rows x 6 cols  sha b6f5f3c06c3d
+  // Ok  table 6 rows x 6 cols  sha 9595cba20b06
   //   columns Class:Text, Elements:Integer, WithDeclared:Integer, Declared_m3:Number, Measured_m3:Number, Gap_pct:Number
   //   [0] "Wall", 57, 57, 207.1, 194.7, -6
   //   [1] "Slab", 21, 20, 64.58, 125, 93.5
   //   [2] "Roof", 1, 1, 60.75, 60.75, 0
 chart = chart.bar@1(table: comparable.table, labelColumn: "Class", valueColumns: "Declared_m3, Measured_m3", title: "Declared against measured volume per class (m3)", layout: "vertical", colorBy: "series");
   // Ok
-  //   table: table 6 rows x 3 cols  sha 99257d97db73
+  //   table: table 6 rows x 3 cols  sha 9d1d10d67dab
   //     columns Class:Text, Declared_m3:Number, Measured_m3:Number
   //     chart 6 categories x 2 series: "Declared_m3", "Measured_m3"
   //     "Wall": 207.1, 194.7
   //     "Slab": 64.58, 125
   //     "Roof": 60.75, 60.75
   //     "Footing": 16.53, 16.53
-  //     "Covering": 13.88, 7.983
+  //     "Covering": 13.88, 8.978
   //     "Beam": 0.3256, 0.5077
   //   legend: table 0 rows x 9 cols  sha b47d2a37380c
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
 gapChart = chart.bar@1(table: comparable.table, labelColumn: "Class", valueColumns: "Gap_pct", title: "Measured minus declared, as % of declared", layout: "vertical", colorBy: "category");
   // Ok
-  //   table: table 6 rows x 2 cols  sha 4f17b787e3da
+  //   table: table 6 rows x 2 cols  sha ed0fde2581d3
   //     columns Class:Text, Gap_pct:Number
   //     chart 6 categories x 1 series: "Gap_pct"
   //     "Wall": -6
   //     "Slab": 93.5
   //     "Roof": 0
   //     "Footing": 0
-  //     "Covering": -42.5
+  //     "Covering": -35.3
   //     "Beam": 55.9
   //   legend: table 0 rows x 9 cols  sha b47d2a37380c
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer

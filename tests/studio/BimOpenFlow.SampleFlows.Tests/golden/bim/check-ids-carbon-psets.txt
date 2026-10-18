@@ -7,24 +7,24 @@ modelPath = value.path@1(path: "$model");
   // Ok  Text "{MODELS}/duplex-enriched.bos"
 model = bos.load@1(path: modelPath.path, harmonize: "false");
   // Ok
-  //   entities: table 4726 rows x 6 cols  sha 077aa964710f
+  //   entities: table 4730 rows x 6 cols  sha eb7fd7c95483
   //     columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text
   //     [0] 0, -1, null, "IFCORGANIZATION", null, null
   //     [1] 1, -1, null, "IFCAPPLICATION", null, null
   //     [2] 2, -1, null, "IFCSIUNIT", null, null
-  //   parameters: table 18581 rows x 6 cols  sha fcb6d2202473
+  //   parameters: table 18582 rows x 6 cols  sha 1314a405d8c0
   //     columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text
-  //     [0] 116, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
-  //     [1] 121, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //     [2] 121, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
-  //   relations: table 969 rows x 5 cols  sha df3cff65516a
+  //     [0] 118, "Ifc:ApplicationIdentifier", "IFCAPPLICATION", null, "String", "Revit"
+  //     [1] 123, "Ifc:AmountOfSubstanceExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //     [2] 123, "Ifc:ElectricCurrentExponent", "IFCDIMENSIONALEXPONENTS", null, "Number", "0.0"
+  //   relations: table 969 rows x 5 cols  sha 3f48a965e462
   //     columns EntityIndexA:Integer, NameA:Text, EntityIndexB:Integer, NameB:Text, RelationType:Text
-  //     [0] 134, "Level 1", 4706, null, "MemberOf"
-  //     [1] 135, "Level 2", 4706, null, "MemberOf"
-  //     [2] 136, "T/FDN", 4706, null, "MemberOf"
+  //     [0] 136, "Level 1", 4708, null, "MemberOf"
+  //     [1] 137, "Level 2", 4708, null, "MemberOf"
+  //     [2] 138, "T/FDN", 4708, null, "MemberOf"
 verdicts = ids.check@1(entities: model.entities, parameters: model.parameters, ids: "{SAMPLES}/ids/nrc-analytics.ids");
   // Ok
-  //   verdicts: table 436 rows x 7 cols  sha 40a0ddb17bff
+  //   verdicts: table 436 rows x 7 cols  sha 36159b1ccce4
   //     columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
   //     verdicts "IDS-EC": Fail 1, Pass 217
   //     verdicts "IDS-OC": Pass 218
@@ -43,7 +43,7 @@ chart = chart.bar@1(table: verdicts.summary, labelColumn: "CheckTitle", valueCol
   //     columns column:Text, domain:Text, role:Text, label:Text, value:Number, r:Number, g:Number, b:Number, count:Integer
   //     legend empty
 failures = table.filter@1(table: verdicts.verdicts, expr: "[Verdict] != 'Pass'");
-  // Ok  table 1 rows x 7 cols  sha 03ee2e4e3373
+  // Ok  table 1 rows x 7 cols  sha dd9e3950f086
   //   columns GlobalId:Text, EntityIndex:Integer, CheckId:Text, CheckTitle:Text, Citation:Text, Verdict:Text, Reason:Text
   //   verdicts "IDS-EC": Fail 1
 answer = view.table@1(table: failures.table, title: "Failing elements", columns: "GlobalId, CheckId, Reason");
