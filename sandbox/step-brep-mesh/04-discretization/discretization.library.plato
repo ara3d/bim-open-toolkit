@@ -806,10 +806,12 @@ library EdgeDiscretizing
     // repeats it. Each edge is independent of the others, so this is a map and parallel without
     // coordination.
     DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
-        => EdgeDiscretizations(m.Edges.Count.MapRange(i =>
-            m.CanDiscretize(BrepEdgeIndex(i), c)
-                ? m.Discretize(BrepEdgeIndex(i), c, floors)
-                : Undiscretized(BrepEdgeIndex(i))));
+        => EdgeDiscretizations(m.Edges.Count.MapRange(i => m.DiscretizedEntry(BrepEdgeIndex(i), c, floors)));
+
+    // The entry DiscretizeAll makes for edge e: its canonical discretization when CanDiscretize
+    // accepts it, Undiscretized otherwise. Total.
+    DiscretizedEntry(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization
+        => m.CanDiscretize(e, c) ? m.Discretize(e, c, floors) : Undiscretized(e);
 
     // True when the parameters increase along the arrays: the canonical direction. True for a
     // value with fewer than two parameters, which has no direction.
@@ -889,8 +891,8 @@ library EdgeDiscretizing
     // no request names are never read, so nothing is asked of them: an `Undiscretized` entry may
     // stay as long as no face asks for its edge.
     IsRefinable(m: BrepModel, ds: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): Boolean
-        => m.Law_DiscretizationsCoverEdges(ds)
-            && ds.ByEdge.Count.MapRange(i => ds.Law_DiscretizationsIndexedByEdge(i)).All(x => x)
+        => m.DiscretizationsCoverEdges(ds)
+            && ds.ByEdge.Count.MapRange(i => ds.DiscretizationsIndexedByEdge(i)).All(x => x)
             && ds.ByEdge.All(x => requests.IsRequested(x.Edge)
                 ? (m.CanDiscretize(x.Edge, c) ? (m.IsEvaluable(x) ? x.RunsAlongCurve : false) : false)
                 : true);

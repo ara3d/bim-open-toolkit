@@ -31,17 +31,17 @@ library BrepCheckingDiscretization
 
     // Law_ParameterCountEqualsPointCount at every entry. Structure: Error.
     Check_ParameterCountEqualsPointCount(d: EdgeDiscretizations): Check
-        => d.CheckEntries("Law_ParameterCountEqualsPointCount", x => Law_ParameterCountEqualsPointCount(x));
+        => d.CheckEntries("Law_ParameterCountEqualsPointCount", x => ParameterCountEqualsPointCount(x));
 
     // Law_EmptyOrAtLeastTwoParameters at every entry. Structure: Error.
     Check_EmptyOrAtLeastTwoParameters(d: EdgeDiscretizations): Check
-        => d.CheckEntries("Law_EmptyOrAtLeastTwoParameters", x => Law_EmptyOrAtLeastTwoParameters(x));
+        => d.CheckEntries("Law_EmptyOrAtLeastTwoParameters", x => EmptyOrAtLeastTwoParameters(x));
 
     // Law_UndiscretizedExactlyWhenUnusable at every entry, under the
     // criteria the entries were made for. Structure: Error.
     Check_UndiscretizedExactlyWhenUnusable(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria): Check
         => CheckAll("Law_UndiscretizedExactlyWhenUnusable", d.ByEdge.Count,
-            i => Law_UndiscretizedExactlyWhenUnusable(m, d, c, i), i => AtEdge(i));
+            i => UndiscretizedExactlyWhenUnusable(m, d, c, i), i => AtEdge(i));
 
     // Law_ParametersStrictlyMonotone at every entry and parameter. Structure:
     // Error.
@@ -51,7 +51,7 @@ library BrepCheckingDiscretization
     // Law_ParametersStrictlyIncreasing at every entry and parameter: entries
     // are canonical. Structure: Error.
     Check_ParametersStrictlyIncreasing(d: EdgeDiscretizations): Check
-        => d.CheckEntryPoints("Law_ParametersStrictlyIncreasing", (x, i) => Law_ParametersStrictlyIncreasing(x, i));
+        => d.CheckEntryPoints("Law_ParametersStrictlyIncreasing", (x, i) => ParametersStrictlyIncreasing(x, i));
 
     //==
     // # Agreement with the model (structure)
@@ -59,11 +59,11 @@ library BrepCheckingDiscretization
     // Law_LowestParameterIsDomainStart at every entry. Structure (exact,
     // copied): Error.
     Check_LowestParameterIsDomainStart(m: BrepModel, d: EdgeDiscretizations): Check
-        => d.CheckEntries("Law_LowestParameterIsDomainStart", x => Law_LowestParameterIsDomainStart(m, x));
+        => d.CheckEntries("Law_LowestParameterIsDomainStart", x => LowestParameterIsDomainStart(m, x));
 
     // Law_HighestParameterIsDomainEnd at every entry. Structure: Error.
     Check_HighestParameterIsDomainEnd(m: BrepModel, d: EdgeDiscretizations): Check
-        => d.CheckEntries("Law_HighestParameterIsDomainEnd", x => Law_HighestParameterIsDomainEnd(m, x));
+        => d.CheckEntries("Law_HighestParameterIsDomainEnd", x => HighestParameterIsDomainEnd(m, x));
 
     // Law_PointsLieOnCurve at every entry and point, measured by the distance
     // from the point to the curve at its parameter against
@@ -86,7 +86,7 @@ library BrepCheckingDiscretization
     // Law_SeedsAreSampled at every entry and seed. Structure (copied): Error.
     Check_SeedsAreSampled(m: BrepModel, d: EdgeDiscretizations): Check
         => CheckGrid("Law_SeedsAreSampled", d.ByEdge.Count, m.MostSeeds,
-            (k, j) => Law_SeedsAreSampled(m, d.ByEdge[k], j),
+            (k, j) => SeedsAreSampled(m, d.ByEdge[k], j),
             (k, j) => AtEdge(k));
 
     // Law_DegenerateEdgeHasOneSegment at every entry. Structure: Error.
@@ -154,7 +154,7 @@ library BrepCheckingDiscretization
 
     // Law_ClosedEdgeHasMinSegments at every entry. Structure: Error.
     Check_ClosedEdgeHasMinSegments(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria): Check
-        => d.CheckEntries("Law_ClosedEdgeHasMinSegments", x => Law_ClosedEdgeHasMinSegments(m, x, c));
+        => d.CheckEntries("Law_ClosedEdgeHasMinSegments", x => ClosedEdgeHasMinSegments(m, x, c));
 
     // Law_SegmentFloorMet at every entry. Structure: Error.
     Check_SegmentFloorMet(m: BrepModel, d: EdgeDiscretizations, c: DiscretizationCriteria, floors: SegmentFloors): Check
@@ -162,11 +162,11 @@ library BrepCheckingDiscretization
 
     // Law_DiscretizationsIndexedByEdge at every entry. Structure: Error.
     Check_DiscretizationsIndexedByEdge(d: EdgeDiscretizations): Check
-        => CheckAll("Law_DiscretizationsIndexedByEdge", d.ByEdge.Count, k => Law_DiscretizationsIndexedByEdge(d, k), k => AtEdge(k));
+        => CheckAll("Law_DiscretizationsIndexedByEdge", d.ByEdge.Count, k => DiscretizationsIndexedByEdge(d, k), k => AtEdge(k));
 
     // Law_DiscretizationsCoverEdges. Structure: Error.
     Check_DiscretizationsCoverEdges(m: BrepModel, d: EdgeDiscretizations): Check
-        => CheckOnce("Law_DiscretizationsCoverEdges", Law_DiscretizationsCoverEdges(m, d));
+        => CheckOnce("Law_DiscretizationsCoverEdges", DiscretizationsCoverEdges(m, d));
 
     //==
     // # Parameter-space images (structure and geometry)

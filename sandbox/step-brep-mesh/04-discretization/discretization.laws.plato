@@ -41,23 +41,43 @@ library EdgeDiscretizingLaws
     //==
     // # Shape
     //
-    // Invariants of every `EdgeDiscretization` value, in either direction. Exact.
+    // Invariants of every `EdgeDiscretization` the library makes, in either direction. Exact.
+    //
+    // Laws over a value that only one function produces take that function's inputs and compute
+    // the value inside (decision F-54, reviews/FINDINGS.md): the runner generates arbitrary
+    // values of every parameter type, and a discretization nothing made need not have any of
+    // these properties. Each claim is also a predicate of the same name without `Law_`, which
+    // the contracts and layer 7's checks apply to the values they hold. The laws below take
+    // `DiscretizedEntry`'s inputs, the entry `DiscretizeAll` makes for one edge (`Discretize`
+    // when `CanDiscretize` accepts the edge, `Undiscretized` otherwise).
 
     // There is one parameter per point.
-    Law_ParameterCountEqualsPointCount(d: EdgeDiscretization): Boolean
+    ParameterCountEqualsPointCount(d: EdgeDiscretization): Boolean
         => d.Parameters.Count == d.Points.Count;
+
+    // ParameterCountEqualsPointCount on the entry DiscretizeAll makes for edge e.
+    Law_ParameterCountEqualsPointCount(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Boolean
+        => m.DiscretizedEntry(e, c, floors).ParameterCountEqualsPointCount;
 
     // There are at least two samples, so at least one segment, or none at all (`Undiscretized`,
     // the entry of an edge `CanDiscretize` rejects).
-    Law_EmptyOrAtLeastTwoParameters(d: EdgeDiscretization): Boolean
+    EmptyOrAtLeastTwoParameters(d: EdgeDiscretization): Boolean
         => d.Parameters.Count == 0 || d.Parameters.Count >= 2;
 
-    // An entry of `DiscretizeAll` is empty exactly when `CanDiscretize` rejects its edge.
-    // Structural: exact.
-    Law_UndiscretizedExactlyWhenUnusable(m: BrepModel, ds: EdgeDiscretizations, c: DiscretizationCriteria, i: Integer): Boolean
+    // EmptyOrAtLeastTwoParameters on the entry DiscretizeAll makes for edge e.
+    Law_EmptyOrAtLeastTwoParameters(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Boolean
+        => m.DiscretizedEntry(e, c, floors).EmptyOrAtLeastTwoParameters;
+
+    // Entry i of ds, a result of `DiscretizeAll` under c, is empty exactly when `CanDiscretize`
+    // rejects its edge.
+    UndiscretizedExactlyWhenUnusable(m: BrepModel, ds: EdgeDiscretizations, c: DiscretizationCriteria, i: Integer): Boolean
         => ds.ByEdge.IsValidIndex(i)
             ? ds.ByEdge[i].IsDiscretized == m.CanDiscretize(BrepEdgeIndex(i), c)
             : true;
+
+    // UndiscretizedExactlyWhenUnusable on DiscretizeAll's result. Structural: exact.
+    Law_UndiscretizedExactlyWhenUnusable(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors, i: Integer): Boolean
+        => m.UndiscretizedExactlyWhenUnusable(m.DiscretizeAll(c, floors), c, i);
 
     // Consecutive parameters move in the direction of the whole array: strictly increasing in a
     // canonical value, strictly decreasing in a reversed one.
@@ -70,10 +90,14 @@ library EdgeDiscretizingLaws
 
     // Consecutive parameters strictly increase: the canonical direction, which every result of
     // `Discretize` and `RefineEdge` and every entry of `EdgeDiscretizations` has.
-    Law_ParametersStrictlyIncreasing(d: EdgeDiscretization, i: Integer): Boolean
+    ParametersStrictlyIncreasing(d: EdgeDiscretization, i: Integer): Boolean
         => (i >= 0 && i + 1 < d.Parameters.Count)
             ? d.Parameters[i] < d.Parameters[i + 1]
             : true;
+
+    // ParametersStrictlyIncreasing at position i of the entry DiscretizeAll makes for edge e.
+    Law_ParametersStrictlyIncreasing(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors, i: Integer): Boolean
+        => m.DiscretizedEntry(e, c, floors).ParametersStrictlyIncreasing(i);
 
     //==
     // # Agreement with the model
@@ -82,16 +106,24 @@ library EdgeDiscretizingLaws
     // end, wherever it sits in the arrays.
 
     // The lowest parameter is the edge domain's start, exactly.
-    Law_LowestParameterIsDomainStart(m: BrepModel, d: EdgeDiscretization): Boolean
+    LowestParameterIsDomainStart(m: BrepModel, d: EdgeDiscretization): Boolean
         => (m.IsEdgeEvaluable(d.Edge) && d.Parameters.Count >= 2)
             ? (d.RunsAlongCurve ? d.Parameters.First : d.Parameters.Last) == m.EdgeDomain(d.Edge).Range.Start
             : true;
 
+    // LowestParameterIsDomainStart on the entry DiscretizeAll makes for edge e.
+    Law_LowestParameterIsDomainStart(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Boolean
+        => m.LowestParameterIsDomainStart(m.DiscretizedEntry(e, c, floors));
+
     // The highest parameter is the edge domain's end, exactly.
-    Law_HighestParameterIsDomainEnd(m: BrepModel, d: EdgeDiscretization): Boolean
+    HighestParameterIsDomainEnd(m: BrepModel, d: EdgeDiscretization): Boolean
         => (m.IsEdgeEvaluable(d.Edge) && d.Parameters.Count >= 2)
             ? (d.RunsAlongCurve ? d.Parameters.Last : d.Parameters.First) == m.EdgeDomain(d.Edge).Range.End
             : true;
+
+    // HighestParameterIsDomainEnd on the entry DiscretizeAll makes for edge e.
+    Law_HighestParameterIsDomainEnd(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Boolean
+        => m.HighestParameterIsDomainEnd(m.DiscretizedEntry(e, c, floors));
 
     // Point i lies on the edge's curve at parameter i, within the model's length tolerance. Exact
     // for interior points, which are evaluations; within the tolerance for the end points, which
@@ -114,10 +146,15 @@ library EdgeDiscretizingLaws
             : true;
 
     // Seed k of the edge (a domain end, a breakpoint, a knot) is one of the parameters, exactly.
-    Law_SeedsAreSampled(m: BrepModel, d: EdgeDiscretization, k: Integer): Boolean
+    SeedsAreSampled(m: BrepModel, d: EdgeDiscretization, k: Integer): Boolean
         => m.IsEdgeEvaluable(d.Edge)
             ? (m.EdgeSeeds(d.Edge).IsValidIndex(k) ? d.ContainsParameter(m.EdgeSeeds(d.Edge)[k]) : true)
             : true;
+
+    // SeedsAreSampled at seed k of Discretize's result for edge e, which only an edge
+    // CanDiscretize accepts has (Undiscretized samples nothing).
+    Law_SeedsAreSampled(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors, k: Integer): Boolean
+        => m.CanDiscretize(e, c) ? m.SeedsAreSampled(m.Discretize(e, c, floors), k) : true;
 
     // A degenerate edge has exactly two parameters: one segment over its collapsed curve.
     Law_DegenerateEdgeHasOneSegment(m: BrepModel, d: EdgeDiscretization): Boolean
@@ -196,10 +233,15 @@ library EdgeDiscretizingLaws
     // Structural: exact; a failure is an Error.
 
     // A closed edge that is not degenerate has at least `MinSegments` segments, and at least 3.
-    Law_ClosedEdgeHasMinSegments(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
+    ClosedEdgeHasMinSegments(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
         => m.IsEdgeEvaluable(d.Edge)
             ? (m.IsClosedRegularEdge(d.Edge) ? d.SegmentCount >= c.ClosedEdgeMinimum : true)
             : true;
+
+    // ClosedEdgeHasMinSegments on Discretize's result for edge e under c, which only an edge
+    // CanDiscretize accepts has (an Undiscretized entry has no segment to count).
+    Law_ClosedEdgeHasMinSegments(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Boolean
+        => m.CanDiscretize(e, c) ? m.ClosedEdgeHasMinSegments(m.Discretize(e, c, floors), c) : true;
 
     // A non-degenerate edge has at least its minimum segment count: the caller's floor, the
     // closed-edge minimum, the two-edge-loop floor, and the turn floor.
@@ -333,12 +375,20 @@ library EdgeDiscretizingLaws
             : true;
 
     // Entry i of a set of discretizations is the discretization of edge i. Structural: exact.
-    Law_DiscretizationsIndexedByEdge(ds: EdgeDiscretizations, i: Integer): Boolean
+    DiscretizationsIndexedByEdge(ds: EdgeDiscretizations, i: Integer): Boolean
         => ds.ByEdge.IsValidIndex(i) ? ds.ByEdge[i].Edge.Value == i : true;
 
+    // DiscretizationsIndexedByEdge at entry i of DiscretizeAll's result.
+    Law_DiscretizationsIndexedByEdge(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors, i: Integer): Boolean
+        => m.DiscretizeAll(c, floors).DiscretizationsIndexedByEdge(i);
+
     // A set of discretizations has one entry per edge of the model. Structural: exact.
-    Law_DiscretizationsCoverEdges(m: BrepModel, ds: EdgeDiscretizations): Boolean
+    DiscretizationsCoverEdges(m: BrepModel, ds: EdgeDiscretizations): Boolean
         => ds.ByEdge.Count == m.Edges.Count;
+
+    // DiscretizationsCoverEdges on DiscretizeAll's result.
+    Law_DiscretizationsCoverEdges(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): Boolean
+        => m.DiscretizationsCoverEdges(m.DiscretizeAll(c, floors));
 
     //==
     // # Circular arcs

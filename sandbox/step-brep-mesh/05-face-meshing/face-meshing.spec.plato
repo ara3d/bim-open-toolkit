@@ -63,8 +63,8 @@ spec FaceMeshingCriteria
 spec UvTriangulation
 {
     invariant self.Points.Count == self.Sources.Count;
-    invariant forall (k: Integer) in self.ElementCount.Range: Law_TriangulationCornersInRange(self, ElementIndex(k));
-    invariant forall (i: Integer) in self.Points.Count.Range: Law_EveryPointIsACorner(self, i);
+    invariant forall (k: Integer) in self.ElementCount.Range: TriangulationCornersInRange(self, ElementIndex(k));
+    invariant forall (i: Integer) in self.Points.Count.Range: EveryPointIsACorner(self, i);
     constructor TriangulateRegion;
     constructor RefineToSurface;
     constructor RefinedTriangulation;
@@ -81,8 +81,8 @@ spec FaceMesh
     invariant self.UvPoints.Count == self.LocalVertex.Count;
     invariant self.UvPoints.Count == self.Normals.Count;
     invariant self.Positions.Count == self.Provenance.Count;
-    invariant forall (i: Integer) in self.LocalVertex.Count.Range: Law_LocalVertexInRange(self, VertexIndex(i));
-    invariant forall (v: Integer) in self.Positions.Count.Range: Law_LocalVertexSurjective(self, VertexIndex(v));
+    invariant forall (i: Integer) in self.LocalVertex.Count.Range: LocalVertexInRange(self, VertexIndex(i));
+    invariant forall (v: Integer) in self.Positions.Count.Range: LocalVertexSurjective(self, VertexIndex(v));
     invariant forall (i: Integer) in self.UvPoints.Count.Range:
         forall (j: Integer) in self.UvPoints.Count.Range:
             Law_LocalVertexFibresAreIdentifications(self, VertexIndex(i), VertexIndex(j));
@@ -97,8 +97,8 @@ spec FaceMesh
 // empty mesh.
 spec FaceMeshOutcome
 {
-    invariant Law_BlockingRequestMeansEmptyMesh(self);
-    invariant Law_RequestHasDiagnostic(self);
+    invariant BlockingRequestMeansEmptyMesh(self);
+    invariant RequestHasDiagnostic(self);
     invariant Law_EmptyMeshIsExplained(self);
     constructor MeshFace;
     constructor MeshRegion;
@@ -197,7 +197,7 @@ spec OrientRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): UvRegion
     requires m.IsFaceIntact(f);
     requires r.IsIndexedRegion;
     ensures result.NumberOfLoops == r.NumberOfLoops;
-    ensures r.Outer.ChartSignedArea(m.IsChartMirrored(f)) != 0.0 ? Law_UvRegionWindingPositive(m, f, result) : true;
+    ensures r.Outer.ChartSignedArea(m.IsChartMirrored(f)) != 0.0 ? UvRegionWindingPositive(m, f, result) : true;
     ensures forall (h: Integer) in result.Holes.Count.Range: Law_UvHoleWindingNegative(m, f, result, h);
     measure r.BoundaryCount;
 }
@@ -209,7 +209,7 @@ spec RegionOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
     requires m.HasPolyLoop(f) == false;
     ensures result.IsIndexedRegion;
     ensures forall (k: Integer) in result.NumberOfLoops.Range: Law_RegionLoopClosesInPlane(m, f, result, k);
-    ensures Law_UvRegionWindingPositive(m, f, result);
+    ensures UvRegionWindingPositive(m, f, result);
     ensures forall (h: Integer) in result.Holes.Count.Range: Law_UvHoleWindingNegative(m, f, result, h);
     ensures forall (k: Integer) in result.NumberOfLoops.Range:
         forall (i: Integer) in result.LoopAt(k).Points.Count.Range:
@@ -248,7 +248,7 @@ spec TriangulateRegion(r: UvRegion, chart: FaceChart): UvTriangulation
     ensures result.Points.Count == r.BoundaryCount;
     ensures forall (i: Integer) in r.BoundaryCount.Range: Law_TriangulationKeepsBoundary(r, result, i);
     ensures forall (k: Integer) in result.ElementCount.Range: result.ElementChartArea(ElementIndex(k), chart.Mirrored) > 0.0;
-    ensures forall (i: Integer) in result.Points.Count.Range: Law_EveryPointIsACorner(result, i);
+    ensures forall (i: Integer) in result.Points.Count.Range: EveryPointIsACorner(result, i);
     ensures forall (k: Integer) in r.NumberOfLoops.Range:
         forall (i: Integer) in r.LoopAt(k).Points.Count.Range: Law_BoundarySegmentIsElementSide(r, result, k, i);
     ensures forall (k: Integer) in result.ElementCount.Range:
@@ -315,9 +315,9 @@ spec Lift(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangula
     requires t.Points.Count == t.Sources.Count;
     ensures result.Face == f;
     ensures result.UvPoints.Count == t.Points.Count;
-    ensures forall (i: Integer) in t.Points.Count.Range: Law_LiftKeepsPoints(t, result, i);
+    ensures forall (i: Integer) in t.Points.Count.Range: LiftKeepsPoints(t, result, i);
     ensures forall (i: Integer) in result.UvPoints.Count.Range: Law_SharedPositionIsCopied(m, d, result, VertexIndex(i));
-    ensures forall (i: Integer) in result.UvPoints.Count.Range: Law_ProvenanceMatchesSource(d, result, VertexIndex(i));
+    ensures forall (i: Integer) in result.UvPoints.Count.Range: ProvenanceMatchesSource(d, result, VertexIndex(i));
     ensures forall (i: Integer) in result.UvPoints.Count.Range: Law_PointNormalIsFaceNormal(m, result, VertexIndex(i));
     ensures Law_DroppedElementsArePoleCollapsed(m, f, t, result);
     ensures Law_CollapsedQuadsBecomeTriangles(m, f, t, result);
@@ -336,8 +336,8 @@ spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
     requires m.IsDiscretizedFace(f, d);
     requires c.IsWellFormed;
     ensures result.Mesh.Face == f;
-    ensures Law_BlockingRequestMeansEmptyMesh(result);
-    ensures Law_RequestHasDiagnostic(result);
+    ensures BlockingRequestMeansEmptyMesh(result);
+    ensures RequestHasDiagnostic(result);
     ensures Law_EmptyMeshIsExplained(result);
     ensures Law_MeshedFaceHasSimpleRegion(m, f, d, c);
     ensures Law_NoQuadsUnlessPreferred(m, f, d, c);

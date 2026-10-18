@@ -35,11 +35,11 @@ library BrepCheckingFaceMeshing
 
     // Law_LocalVertexInRange at every parameter-space point. Structure: Error.
     Check_LocalVertexInRange(fm: FaceMesh): Check
-        => fm.CheckPoints("Law_LocalVertexInRange", i => Law_LocalVertexInRange(fm, i));
+        => fm.CheckPoints("Law_LocalVertexInRange", i => LocalVertexInRange(fm, i));
 
     // Law_LocalVertexSurjective at every local vertex. Structure: Error.
     Check_LocalVertexSurjective(fm: FaceMesh): Check
-        => CheckAll("Law_LocalVertexSurjective", fm.Positions.Count, v => Law_LocalVertexSurjective(fm, VertexIndex(v)), v => Provenance.KernelFace(fm.Face));
+        => CheckAll("Law_LocalVertexSurjective", fm.Positions.Count, v => LocalVertexSurjective(fm, VertexIndex(v)), v => Provenance.KernelFace(fm.Face));
 
     // Law_LocalVertexFibresAreIdentifications at every pair of
     // parameter-space points (quadratic as written; an implementation groups
@@ -57,7 +57,7 @@ library BrepCheckingFaceMeshing
     // Law_ProvenanceMatchesSource at every parameter-space point. Structure
     // (copied, exact): Error.
     Check_ProvenanceMatchesSource(d: EdgeDiscretizations, fm: FaceMesh): Check
-        => fm.CheckPoints("Law_ProvenanceMatchesSource", i => Law_ProvenanceMatchesSource(d, fm, i));
+        => fm.CheckPoints("Law_ProvenanceMatchesSource", i => ProvenanceMatchesSource(d, fm, i));
 
     // Law_ElementFacesFaceNormal at every element. Structure (an exact sign:
     // zero or negative is a fold): Error.
@@ -120,7 +120,7 @@ library BrepCheckingFaceMeshing
     // Law_TriangulationCornersInRange on the face mesh's own triangulation, at
     // every element. Structure: Error.
     Check_TriangulationCornersInRange(fm: FaceMesh): Check
-        => fm.CheckElements("Law_TriangulationCornersInRange", k => Law_TriangulationCornersInRange(fm.FaceMeshTriangulation, k));
+        => fm.CheckElements("Law_TriangulationCornersInRange", k => TriangulationCornersInRange(fm.FaceMeshTriangulation, k));
 
     // Law_ElementPositiveInChart on the face mesh's own triangulation, at
     // every element. Structure (an exact sign): Error.
@@ -210,7 +210,7 @@ library BrepCheckingFaceMeshing
     // Law_UvRegionWindingPositive on face f's region. A model law (an exact
     // sign): Error.
     Check_UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
-        => CheckExact("Law_UvRegionWindingPositive", Law_UvRegionWindingPositive(m, f, m.RegionOf(f, d, c)), Provenance.KernelFace(f));
+        => CheckExact("Law_UvRegionWindingPositive", UvRegionWindingPositive(m, f, m.RegionOf(f, d, c)), Provenance.KernelFace(f));
 
     // Law_UvHoleWindingNegative at every hole of face f's region. A model law
     // (an exact sign): Error.
@@ -233,7 +233,7 @@ library BrepCheckingFaceMeshing
     // Error.
     Check_HoleInsideOuter(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
         => CheckAll("Law_HoleInsideOuter", m.RegionOf(f, d, c).Holes.Count,
-            h => Law_HoleInsideOuter(m, f, m.RegionOf(f, d, c), h),
+            h => HoleInsideOuter(m, f, m.RegionOf(f, d, c), h),
             h => Provenance.KernelFace(f));
 
     // Law_SeamCutCopiesRunOpposite at every outer-loop point of face f's
@@ -298,7 +298,7 @@ library BrepCheckingFaceMeshing
     // Law_EveryPointIsACorner at every point of the recomputed triangulation.
     Check_EveryPointIsACorner(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
         => CheckAll("Law_EveryPointIsACorner", m.FaceTriangulation(f, d, c).Points.Count,
-            i => Law_EveryPointIsACorner(m.FaceTriangulation(f, d, c), i),
+            i => EveryPointIsACorner(m.FaceTriangulation(f, d, c), i),
             i => Provenance.KernelFace(f));
 
     // Law_ElementAreasSumToRegionArea for the recomputed triangulation.
@@ -310,7 +310,7 @@ library BrepCheckingFaceMeshing
     // against the delivered face mesh.
     Check_LiftKeepsPoints(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
         => CheckAll("Law_LiftKeepsPoints", m.FaceTriangulation(fm.Face, d, c).Points.Count,
-            i => Law_LiftKeepsPoints(m.FaceTriangulation(fm.Face, d, c), fm, i),
+            i => LiftKeepsPoints(m.FaceTriangulation(fm.Face, d, c), fm, i),
             i => Provenance.KernelFace(fm.Face));
 
     // Law_DroppedElementsArePoleCollapsed for the recomputed triangulation
@@ -334,11 +334,11 @@ library BrepCheckingFaceMeshing
 
     // Law_BlockingRequestMeansEmptyMesh on an outcome. Structure: Error.
     Check_BlockingRequestMeansEmptyMesh(o: FaceMeshOutcome): Check
-        => CheckExact("Law_BlockingRequestMeansEmptyMesh", Law_BlockingRequestMeansEmptyMesh(o), Provenance.KernelFace(o.Mesh.Face));
+        => CheckExact("Law_BlockingRequestMeansEmptyMesh", BlockingRequestMeansEmptyMesh(o), Provenance.KernelFace(o.Mesh.Face));
 
     // Law_RequestHasDiagnostic on an outcome. Structure: Error.
     Check_RequestHasDiagnostic(o: FaceMeshOutcome): Check
-        => CheckExact("Law_RequestHasDiagnostic", Law_RequestHasDiagnostic(o), Provenance.KernelFace(o.Mesh.Face));
+        => CheckExact("Law_RequestHasDiagnostic", RequestHasDiagnostic(o), Provenance.KernelFace(o.Mesh.Face));
 
     // Law_EmptyMeshIsExplained on an outcome. Structure: Error.
     Check_EmptyMeshIsExplained(o: FaceMeshOutcome): Check
@@ -380,17 +380,6 @@ library BrepCheckingFaceMeshing
     // True when some bound of face f cites edge e.
     FaceUsesEdgeAt(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Boolean
         => m.CoedgeSitesOfEdgeInFace(f, e).Count > 0;
-
-    // Face f's triangulation as MeshedOutcome builds it before lifting: the
-    // quad grid when PreferQuads finds one, else the refined constrained
-    // triangulation of the region.
-    FaceTriangulation(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var r = m.RegionOf(f, d, c);
-        var chart = m.ChartOf(f, r);
-        var grid = c.PreferQuads ? m.QuadGridIfRectangular(f, d, r, c) : QuadGridOutcome.NoGrid;
-        return m.GridOrTriangles(f, r, chart, grid, c);
-    }
 
     // The position, inside its loop, of boundary point a of the region
     // (layer 5's LoopOfBoundaryPoint and LoopOffset). Precondition: a is a

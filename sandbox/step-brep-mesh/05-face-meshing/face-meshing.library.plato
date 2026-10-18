@@ -900,6 +900,38 @@ library FaceMeshing
     //==
     // # Meshing one face
 
+    // RegionOf's precondition: face f's bounds discretized in d, well-formed criteria, and no
+    // poly loop.
+    CanRegion(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => (m.IsDiscretizedFace(f, d) && c.IsWellFormed) ? m.HasPolyLoop(f).Not : false;
+
+    // MeshFace's precondition: face f's bounds discretized in d and well-formed criteria.
+    CanMeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => m.IsDiscretizedFace(f, d) && c.IsWellFormed;
+
+    // FaceTriangulation's precondition: RegionOf's, and a region simple under its tolerance, as
+    // TriangulateRegion requires.
+    CanTriangulateFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => m.CanRegion(f, d, c)
+            ? m.RegionOf(f, d, c).IsSimpleRegion(m.RegionTolerance(f, m.ChartOf(f, m.RegionOf(f, d, c))))
+            : false;
+
+    // Face f's triangulation as MeshedOutcome builds it before lifting: the quad grid when
+    // PreferQuads finds one, else the refined constrained triangulation of the region. (Moved
+    // from layer 7, whose checks recomputed it, so that this layer's laws can state claims about
+    // it; F-54.)
+    FaceTriangulation(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): UvTriangulation
+    {
+        var r = m.RegionOf(f, d, c);
+        var chart = m.ChartOf(f, r);
+        return m.GridOrTriangles(f, r, chart, m.FaceQuadGrid(f, d, r, c), c);
+    }
+
+    // The quad grid MeshFace tries on region r of face f: QuadGridIfRectangular when the criteria
+    // prefer quads, else none.
+    FaceQuadGrid(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, c: FaceMeshingCriteria): QuadGridOutcome
+        => c.PreferQuads ? m.QuadGridIfRectangular(f, d, r, c) : QuadGridOutcome.NoGrid;
+
     // The triangulation to lift: the quad grid when one was built, else the refined constrained
     // triangulation.
     GridOrTriangles(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, grid: QuadGridOutcome, c: FaceMeshingCriteria): UvTriangulation
@@ -913,7 +945,7 @@ library FaceMeshing
     // requests and their diagnostics, and a warning for each loop the file gave reversed.
     MeshedOutcome(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, raw: UvRegion, r: UvRegion, chart: FaceChart, c: FaceMeshingCriteria): FaceMeshOutcome
     {
-        var grid = c.PreferQuads ? m.QuadGridIfRectangular(f, d, r, c) : QuadGridOutcome.NoGrid;
+        var grid = m.FaceQuadGrid(f, d, r, c);
         var t = m.GridOrTriangles(f, r, chart, grid, c);
         var advisory = m.CoarseSegmentRequests(f, d, r, c).Concatenate(m.QuadCountRequests(d, grid, c));
         return FaceMeshOutcome(m.Lift(f, d, t), advisory,

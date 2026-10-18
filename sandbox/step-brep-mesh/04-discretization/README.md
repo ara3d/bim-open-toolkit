@@ -398,3 +398,16 @@ holds by construction. Probe on the unit cylinder witnesses (interpreter, cpu64,
 15 degrees): the full circle goes from 24 to 48 segments at a third of the chordal bound, to 40
 segments when 40 are asked, and stays at 24 when nothing is asked; the quarter arc goes from 6 to 12;
 every old parameter is kept and the contract's laws hold on every result.
+
+Decision F-54 (2026-10-18): the laws over a discretization the library makes take the producer's
+inputs. `Law_ParameterCountEqualsPointCount`, `Law_EmptyOrAtLeastTwoParameters`,
+`Law_ParametersStrictlyIncreasing`, `Law_LowestParameterIsDomainStart` and
+`Law_HighestParameterIsDomainEnd` take `(m, e, c, floors)` and check `DiscretizedEntry`, the entry
+`DiscretizeAll` makes for one edge (new, and now `DiscretizeAll`'s own per-entry rule).
+`Law_SeedsAreSampled` and `Law_ClosedEdgeHasMinSegments` check `Discretize` under `CanDiscretize`,
+since an `Undiscretized` entry has no samples. `Law_UndiscretizedExactlyWhenUnusable`,
+`Law_DiscretizationsIndexedByEdge` and `Law_DiscretizationsCoverEdges` check `DiscretizeAll`'s
+result. Each claim keeps its body as a predicate of the same name without `Law_`, which the
+contracts, `IsRefinable` and layer 7's checks apply to the values they hold.
+`Law_SegmentFloorMet` still takes a discretization: layer 8 calls it, and it follows once layer 8's
+open edits land.

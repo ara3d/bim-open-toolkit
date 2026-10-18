@@ -107,7 +107,7 @@ library FaceMeshingLaws
     // Unwrap moves every point that is not on a collapsed line by whole periods only, within the
     // parameter tolerance at that point: the unwrapped loop lifts to the same 3D points.
     Law_UnwrapMovesByWholePeriods(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean
-        => (m.IsFaceIntact(f) && l.HasLoopPoint(i))
+        => (m.IsFaceIntact(f) && l.Points.Count == l.Sources.Count && l.HasLoopPoint(i))
             ? (m.IsOnCollapsedLine(f, l.Points[i]) ? true : m.MovedByWholePeriods(f, l.Points[i], m.Unwrap(f, l), i))
             : true;
 
@@ -123,7 +123,7 @@ library FaceMeshingLaws
     // from the last point to the first is not claimed: for a loop that winds it is a whole number
     // of periods off.
     Law_UnwrappedStepBelowHalfPeriod(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer): Boolean
-        => m.IsFaceIntact(f) ? m.IsUnwrappedStep(f, m.Unwrap(f, l), i) : true;
+        => (m.IsFaceIntact(f) && l.Points.Count == l.Sources.Count) ? m.IsUnwrappedStep(f, m.Unwrap(f, l), i) : true;
 
     // The two uses of a model seam lie on opposite copies of the period, by the left rule of
     // research/STEP-BREP-MODEL.md section 4.3: where steps i and j of a loop of face f run along
@@ -147,8 +147,14 @@ library FaceMeshingLaws
 
     // The outer loop of face f's region has positive signed area in the face's chart: it runs
     // counter-clockwise about the face normal.
-    Law_UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, r: UvRegion): Boolean
+    UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, r: UvRegion): Boolean
         => m.IsFaceIntact(f) ? r.Outer.ChartSignedArea(m.IsChartMirrored(f)) > 0.0 : true;
+
+    // UvRegionWindingPositive on RegionOf's result, under RegionOf's precondition. Laws over a
+    // value only one function produces take its inputs (decision F-54, reviews/FINDINGS.md); the
+    // claim keeps the name without Law_ for the contracts and layer 7's checks.
+    Law_UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => m.CanRegion(f, d, c) ? m.UvRegionWindingPositive(f, m.RegionOf(f, d, c)) : true;
 
     // Every hole of face f's region that is not a point hole has negative signed area in the
     // face's chart.
@@ -165,8 +171,12 @@ library FaceMeshingLaws
             ? r.SegmentsSeparated(m.RegionToleranceOf(f, r), k, i, q, j)
             : true;
 
+    // HoleInsideOuter at hole h of RegionOf's result, under RegionOf's precondition (F-54).
+    Law_HoleInsideOuter(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, h: Integer): Boolean
+        => m.CanRegion(f, d, c) ? m.HoleInsideOuter(f, m.RegionOf(f, d, c), h) : true;
+
     // Every hole of a simple region of face f lies inside its outer loop.
-    Law_HoleInsideOuter(m: BrepModel, f: BrepFaceIndex, r: UvRegion, h: Integer): Boolean
+    HoleInsideOuter(m: BrepModel, f: BrepFaceIndex, r: UvRegion, h: Integer): Boolean
         => (m.IsFaceIntact(f) && r.Holes.IsValidIndex(h))
             ? (r.Holes[h].Points.IsEmpty
                 ? true
@@ -194,8 +204,13 @@ library FaceMeshingLaws
     // # Triangulations
 
     // Every corner of every element of a triangulation names one of its points.
-    Law_TriangulationCornersInRange(t: UvTriangulation, k: ElementIndex): Boolean
+    TriangulationCornersInRange(t: UvTriangulation, k: ElementIndex): Boolean
         => t.HasElement(k) ? t.ElementCornersInRange(k) : true;
+
+    // TriangulationCornersInRange at element k of face f's triangulation (FaceTriangulation),
+    // under its precondition (CanTriangulateFace). F-54.
+    Law_TriangulationCornersInRange(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, k: ElementIndex): Boolean
+        => m.CanTriangulateFace(f, d, c) ? m.FaceTriangulation(f, d, c).TriangulationCornersInRange(k) : true;
 
     // The first BoundaryCount(r) points of a triangulation of region r are the region's boundary
     // points with their sources, unchanged: no boundary point is added, moved, or removed.
@@ -214,8 +229,12 @@ library FaceMeshingLaws
             ? t.Sources[i] == UvPointSource.Interior && r.IsStrictlyInside(t.Points[i], m.RegionToleranceOf(f, r))
             : true;
 
+    // EveryPointIsACorner at point i of face f's triangulation, under its precondition. F-54.
+    Law_EveryPointIsACorner(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, i: Integer): Boolean
+        => m.CanTriangulateFace(f, d, c) ? m.FaceTriangulation(f, d, c).EveryPointIsACorner(i) : true;
+
     // Every point of a triangulation is a corner of some element, point holes included.
-    Law_EveryPointIsACorner(t: UvTriangulation, i: Integer): Boolean
+    EveryPointIsACorner(t: UvTriangulation, i: Integer): Boolean
         => t.Points.IsValidIndex(i)
             ? t.Triangles.Any(e => e.HasVertex(VertexIndex(i))) || t.Quads.Any(e => e.HasVertex(VertexIndex(i)))
             : true;
@@ -286,8 +305,15 @@ library FaceMeshingLaws
     //==
     // # Lifting and identification
 
+    // LiftKeepsPoints at point i, for face f's triangulation and its Lift, under the
+    // triangulation's precondition. F-54.
+    Law_LiftKeepsPoints(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, i: Integer): Boolean
+        => m.CanTriangulateFace(f, d, c)
+            ? m.FaceTriangulation(f, d, c).LiftKeepsPoints(m.Lift(f, d, m.FaceTriangulation(f, d, c)), i)
+            : true;
+
     // Lift keeps the triangulation's parameter-space points and their sources, in order.
-    Law_LiftKeepsPoints(t: UvTriangulation, fm: FaceMesh, i: Integer): Boolean
+    LiftKeepsPoints(t: UvTriangulation, fm: FaceMesh, i: Integer): Boolean
         => (t.Points.IsValidIndex(i) && t.Sources.IsValidIndex(i))
             ? ((fm.UvPoints.IsValidIndex(i) && fm.Sources.IsValidIndex(i))
                 ? fm.UvPoints[i].SameParameters(t.Points[i]) && fm.Sources[i] == t.Sources[i]
@@ -295,12 +321,21 @@ library FaceMeshingLaws
             : true;
 
     // The local vertex of every parameter-space point exists.
-    Law_LocalVertexInRange(fm: FaceMesh, i: VertexIndex): Boolean
+    LocalVertexInRange(fm: FaceMesh, i: VertexIndex): Boolean
         => fm.LocalVertex.IsValidIndex(i) ? fm.Positions.IsValidIndex(fm.LocalVertex[i]) : true;
 
+    // LocalVertexInRange at point i of MeshFace's mesh, under MeshFace's precondition. F-54.
+    Law_LocalVertexInRange(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, i: VertexIndex): Boolean
+        => m.CanMeshFace(f, d, c) ? m.MeshFace(f, d, c).Mesh.LocalVertexInRange(i) : true;
+
     // Every local 3D vertex is the local vertex of some parameter-space point.
-    Law_LocalVertexSurjective(fm: FaceMesh, v: VertexIndex): Boolean
+    LocalVertexSurjective(fm: FaceMesh, v: VertexIndex): Boolean
         => fm.Positions.IsValidIndex(v) ? fm.LocalVertex.Any(w => w == v) : true;
+
+    // LocalVertexSurjective at local vertex v of MeshFace's mesh, under MeshFace's
+    // precondition. F-54.
+    Law_LocalVertexSurjective(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, v: VertexIndex): Boolean
+        => m.CanMeshFace(f, d, c) ? m.MeshFace(f, d, c).Mesh.LocalVertexSurjective(v) : true;
 
     // Two distinct parameter-space points share a local 3D vertex exactly when their sources are
     // identified: the seam and pole identifications, and nothing else.
@@ -325,9 +360,14 @@ library FaceMeshingLaws
             Interior => true;
         };
 
+    // ProvenanceMatchesSource at point i of MeshFace's mesh, under MeshFace's precondition.
+    // F-54.
+    Law_ProvenanceMatchesSource(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, i: VertexIndex): Boolean
+        => m.CanMeshFace(f, d, c) ? d.ProvenanceMatchesSource(m.MeshFace(f, d, c).Mesh, i) : true;
+
     // The provenance of the local vertex of every point agrees with the point's source: the model
     // vertex; the edge with the sample's curve parameter, copied; or the face itself.
-    Law_ProvenanceMatchesSource(d: EdgeDiscretizations, fm: FaceMesh, i: VertexIndex): Boolean
+    ProvenanceMatchesSource(d: EdgeDiscretizations, fm: FaceMesh, i: VertexIndex): Boolean
         => fm.IsLiftedPoint(i)
             ? d.ProvenanceAgrees(fm.Face, fm.Sources[i], fm.Provenance[fm.LocalVertex[i]])
             : true;
@@ -462,12 +502,20 @@ library FaceMeshingLaws
             : true;
 
     // An outcome with a blocking request has an empty mesh.
-    Law_BlockingRequestMeansEmptyMesh(o: FaceMeshOutcome): Boolean
+    BlockingRequestMeansEmptyMesh(o: FaceMeshOutcome): Boolean
         => o.Requests.Any(q => q.Reason.IsBlocking) ? o.Mesh.IsEmptyFaceMesh : true;
 
+    // BlockingRequestMeansEmptyMesh on MeshFace's outcome, under its precondition. F-54.
+    Law_BlockingRequestMeansEmptyMesh(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => m.CanMeshFace(f, d, c) ? m.MeshFace(f, d, c).BlockingRequestMeansEmptyMesh : true;
+
     // An outcome with a request has at least one diagnostic.
-    Law_RequestHasDiagnostic(o: FaceMeshOutcome): Boolean
+    RequestHasDiagnostic(o: FaceMeshOutcome): Boolean
         => o.Requests.IsEmpty ? true : o.Diagnostics.Count > 0;
+
+    // RequestHasDiagnostic on MeshFace's outcome, under its precondition. F-54.
+    Law_RequestHasDiagnostic(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+        => m.CanMeshFace(f, d, c) ? m.MeshFace(f, d, c).RequestHasDiagnostic : true;
 
     // An outcome with an empty mesh and no request carries an error diagnostic: a face is never
     // left unmeshed without a word.

@@ -485,3 +485,16 @@ the seamless band (the seamed cylinder without its seam edge): every region is s
 in the plane, the outer loop winds positive, the cut's copies run opposite, and every point lifts to its
 shared point. The seamed and the band regions both have 50 boundary points (two circles of 24 segments;
 the band's cut is one ruling, so it has no interior point); the sector patch has 14.
+
+Decision F-54 (2026-10-18): the laws over a value the library makes take the producer's inputs.
+`Law_UvRegionWindingPositive` and `Law_HoleInsideOuter` take `RegionOf`'s inputs under
+`CanRegion`. `Law_TriangulationCornersInRange`, `Law_EveryPointIsACorner` and
+`Law_LiftKeepsPoints` take `FaceTriangulation`'s under `CanTriangulateFace`.
+`Law_LocalVertexInRange`, `Law_LocalVertexSurjective`, `Law_ProvenanceMatchesSource`,
+`Law_BlockingRequestMeansEmptyMesh` and `Law_RequestHasDiagnostic` take `MeshFace`'s under
+`CanMeshFace`. Each claim keeps its body as a predicate of the same name without `Law_`, which the
+contracts and layer 7's checks apply. `FaceTriangulation` (with `FaceQuadGrid`) moved here from
+layer 7, and `MeshedOutcome` builds its triangulation through it. `Law_UnwrapMovesByWholePeriods`
+and `Law_UnwrappedStepBelowHalfPeriod` already took `Unwrap`'s inputs; they now guard its
+precondition, a source per point. Under the runner the face laws hold vacuously unless a generated
+discretization fits the face; layer 7's checks and the step B probes apply them to real meshes.

@@ -19,8 +19,8 @@
 // at the vertices) are promised by each constructor's `ensures`, since `self` carries no model.
 spec EdgeDiscretization
 {
-    invariant Law_ParameterCountEqualsPointCount(self);
-    invariant Law_EmptyOrAtLeastTwoParameters(self);
+    invariant ParameterCountEqualsPointCount(self);
+    invariant EmptyOrAtLeastTwoParameters(self);
     invariant forall (i: Integer) : Law_ParametersStrictlyMonotone(self, i);
     constructor Discretize;
     constructor RefineEdge;
@@ -32,8 +32,8 @@ spec EdgeDiscretization
 // One canonical discretization per edge, entry i for edge i.
 spec EdgeDiscretizations
 {
-    invariant forall (i: Integer) : Law_DiscretizationsIndexedByEdge(self, i);
-    invariant forall (i: Integer) in 0.UpTo(self.ByEdge.Count) : forall (j: Integer) : Law_ParametersStrictlyIncreasing(self.ByEdge[i], j);
+    invariant forall (i: Integer) : DiscretizationsIndexedByEdge(self, i);
+    invariant forall (i: Integer) in 0.UpTo(self.ByEdge.Count) : forall (j: Integer) : ParametersStrictlyIncreasing(self.ByEdge[i], j);
     constructor DiscretizeAll;
     constructor Refine;
 }
@@ -59,15 +59,15 @@ spec Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floor
 {
     requires m.CanDiscretize(e, c);
     ensures result.Edge == e;
-    ensures forall (i: Integer) : Law_ParametersStrictlyIncreasing(result, i);
-    ensures Law_LowestParameterIsDomainStart(m, result);
-    ensures Law_HighestParameterIsDomainEnd(m, result);
+    ensures forall (i: Integer) : ParametersStrictlyIncreasing(result, i);
+    ensures LowestParameterIsDomainStart(m, result);
+    ensures HighestParameterIsDomainEnd(m, result);
     ensures forall (i: Integer) : Law_PointsLieOnCurve(m, result, i);
     ensures Law_DomainStartPointIsVertex(m, result);
     ensures Law_DomainEndPointIsVertex(m, result);
-    ensures forall (k: Integer) : Law_SeedsAreSampled(m, result, k);
+    ensures forall (k: Integer) : SeedsAreSampled(m, result, k);
     ensures Law_DegenerateEdgeHasOneSegment(m, result);
-    ensures Law_ClosedEdgeHasMinSegments(m, result, c);
+    ensures ClosedEdgeHasMinSegments(m, result, c);
     ensures Law_SegmentFloorMet(m, result, c, floors);
     ensures forall (i: Integer) : Law_SagittaWithinChordal(m, result, c, SamplePlan.DiscretizationPlan, i);
     ensures forall (i: Integer) : Law_CertifiedSagittaWithinChordal(m, result, c, i);
@@ -88,12 +88,12 @@ spec RefineEdge(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, 
     requires d.RunsAlongCurve;
     requires segments >= 0;
     ensures result.Edge == d.Edge;
-    ensures forall (i: Integer) : Law_ParametersStrictlyIncreasing(result, i);
+    ensures forall (i: Integer) : ParametersStrictlyIncreasing(result, i);
     ensures forall (k: Integer) in 0.UpTo(d.Parameters.Count) : result.ContainsParameter(d.Parameters[k]);
     ensures m.IsDegenerateEdge(d.Edge) ? result.SegmentCount == 1 : result.SegmentCount >= segments;
     ensures (!m.IsDegenerateEdge(d.Edge) && m.MeetsCriteria(d, c)) ? result.SegmentCount == d.SegmentCount.Max(segments) : true;
-    ensures Law_LowestParameterIsDomainStart(m, result);
-    ensures Law_HighestParameterIsDomainEnd(m, result);
+    ensures LowestParameterIsDomainStart(m, result);
+    ensures HighestParameterIsDomainEnd(m, result);
     ensures forall (i: Integer) : Law_PointsLieOnCurve(m, result, i);
     ensures Law_DomainStartPointIsVertex(m, result);
     ensures Law_DomainEndPointIsVertex(m, result);
@@ -173,9 +173,9 @@ spec ImagePoints(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Array<UvC
 // Every edge, independently; an edge `CanDiscretize` rejects gets the empty entry.
 spec DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
 {
-    ensures Law_DiscretizationsCoverEdges(m, result);
-    ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
-    ensures forall (i: Integer) : Law_UndiscretizedExactlyWhenUnusable(m, result, c, i);
+    ensures DiscretizationsCoverEdges(m, result);
+    ensures forall (i: Integer) : DiscretizationsIndexedByEdge(result, i);
+    ensures forall (i: Integer) : UndiscretizedExactlyWhenUnusable(m, result, c, i);
     ensures forall (i: Integer) in 0.UpTo(m.Edges.Count) : m.CanDiscretize(BrepEdgeIndex(i), c) ? result.ByEdge[i].SameDiscretization(m.Discretize(BrepEdgeIndex(i), c, floors)) : result.ByEdge[i].SameDiscretization(Undiscretized(BrepEdgeIndex(i)));
     measure m.Edges.Count;
 }
@@ -184,8 +184,8 @@ spec DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloor
 spec Reversed(d: EdgeDiscretization): EdgeDiscretization
 {
     ensures result.Edge == d.Edge;
-    ensures Law_ParameterCountEqualsPointCount(result);
-    ensures Law_EmptyOrAtLeastTwoParameters(result);
+    ensures ParameterCountEqualsPointCount(result);
+    ensures EmptyOrAtLeastTwoParameters(result);
     ensures forall (i: Integer) : Law_ParametersStrictlyMonotone(result, i);
     ensures d.IsDiscretized ? result.RunsAlongCurve != d.RunsAlongCurve : result.SameDiscretization(d);
     ensures Law_ReversedIsInvolution(d);
@@ -211,8 +211,8 @@ spec Refine(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinement
     requires Law_IndicesInRange(m);
     requires c.IsWellFormed;
     requires m.IsRefinable(d, requests, c);
-    ensures Law_DiscretizationsCoverEdges(m, result);
-    ensures forall (i: Integer) : Law_DiscretizationsIndexedByEdge(result, i);
+    ensures DiscretizationsCoverEdges(m, result);
+    ensures forall (i: Integer) : DiscretizationsIndexedByEdge(result, i);
     ensures forall (e: BrepEdgeIndex) : Law_RefineKeepsUnrequestedEdges(m, d, requests, c, e);
     ensures forall (e: BrepEdgeIndex) : forall (k: Integer) : Law_RefineNeverCoarsens(m, d, requests, c, e, k);
     ensures forall (e: BrepEdgeIndex) : Law_RefineMeetsRequestedSegments(m, d, requests, c, e);
@@ -226,7 +226,7 @@ spec Refine(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinement
 theorem SharedPolylineClosesEveryEdge
 {
     given m: BrepModel, ds: EdgeDiscretizations, b1: FaceBound, c1: Coedge, b2: FaceBound, c2: Coedge;
-    assume Law_DiscretizationsCoverEdges(m, ds);
+    assume DiscretizationsCoverEdges(m, ds);
     assume m.IsEvaluable(ds.ByEdge[c1.Edge]);
     assume c1.Edge == c2.Edge;
     assume m.CoedgeRunsForwardOnCurve(b1, c1) != m.CoedgeRunsForwardOnCurve(b2, c2);
