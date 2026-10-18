@@ -250,3 +250,22 @@ session accepts them.
      the laws are rerun through it; TKT-314's boxes 2 and 3 stay unticked until then.
 - **Status** 1, 2, 3, 8 to chunk B; 4 and 7 to chunk A's close; 5 and 6 closed by TKT-315; 9 gates
   TKT-314's close.
+
+## F-53: what the interpreter's profile of the whole-model laws showed
+
+- **Raised** 2026-10-18 by the interpreter speed session (TKT-332), profiling the ten laws that hit
+  the 60 s budget in the 2026-10-18 sweep. Recorded by the supervisor of
+  `docs/plans/step-mesher-parallel.md`.
+  1. **Hot spots the interpreter's call cache hides.** `RoundingUnit` and `SmallestNormal` loop at
+     each call (30 of 90 s in one hollow-box case); `CanEvaluate` re-runs `IsWellFormed` at every
+     `CheckGrid` sample (26 s); the `Law_HollowBox*` laws mesh one model three times and the
+     planted-face laws compute `WitnessOutcome` two to five times. The compiled C# has no cache.
+     TKT-335, after step B closes.
+  2. **New verdicts once the ten laws finish.** `Law_WitnessIsOracleClean` fails at k = 5:
+     `ValidateBrep(Oracle)` reports `Law_DerivativeMatchesCentralDifference` on `KernelCurve(0)`.
+     `Law_ValidationIsIdempotent` errors on a generated `ModelMesh` with negative vertex indices
+     (`At` out of range in `CornerNormalAt < RestrictedToFaces`), an unguarded precondition. Both to
+     the topology session (layers 07 and 08).
+  3. `Law_WitnessEdgeReversalPreservesMesh` and `Law_EveryDiagnosticIsLocated` reach the bodiless
+     `ExpandedPoles` under `CompletePeriodicRegion`: step B and C work (TKT-324, TKT-325).
+- **Status** 1 TKT-335; 2 topology session; 3 step B session.
