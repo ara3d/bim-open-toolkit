@@ -125,3 +125,18 @@ The inner loop through `scripts/inner-loop.ps1`, step project: 15.6 s build plus
 - Keep one artifacts path for the whole session; do not create a new one per chunk.
 - Run `scripts/pack-ara3d-sdk.ps1` after `node deps.mjs` moves the SDK pin. Set `ARA3D_SDK_FROM_SOURCE=true` when the fence includes `deps/ara3d-sdk`.
 - End every builder report with a duration line per step: builds, focused tests, full tests, corpus, waiting on other sessions.
+
+## Studio cold build with the prebuilt SDK packages (TKT-339): measured 2026-10-18
+
+`deps/bim-open-flow/Directory.Build.targets` now has the same package-feed switch as the toolkit and bim-open-data (TKT-321); `ARA3D_SDK_FROM_SOURCE=true` still compiles the SDK from source. The ticket's fence did not include this file; the section was appended anyway to keep the numbers with the others.
+
+Command, run from the toolkit root, each into a fresh artifacts path with `MSBUILDDISABLENODEREUSE=1` and `-nodeReuse:false`: `dotnet build src/studio/BimOpenFlow.Studio --artifacts-path <scratch> -nologo -v q`. "Before" sets `ARA3D_SDK_FROM_SOURCE=true`, which gives the same project graph as the old targets file.
+
+| Run | Wall seconds | Ara3D SDK projects compiled |
+|---|---|---|
+| Before (SDK from source) | 44 | 12 (Collections, DataTable, F8, Geometry, IO.BFAST, IO.StepParser, Logging, MCP, Memory, Models, PropKit, Utils) |
+| After (SDK from the feed) | 32 | 0 |
+
+One run each, with other sessions building, so the 12 s gap is indicative; the project count is exact (counted from the `obj/` folders of the two artifacts paths).
+
+Found on the way: `node gates/host-smoke.mjs` fails with "host did not start" while a studio process runs from `src/studio/BimOpenFlow.Studio/bin/Debug`, because `dotnet run` cannot overwrite the locked DLLs. Setting `UseArtifactsOutput=true` and `ArtifactsPath=<scratch>` for the gate avoids it.
