@@ -461,15 +461,15 @@ library BrepGeometryLaws
     // A spline curve's point is the basis-weighted sum of its control points,
     // computed independently by Oracle_BSplineCurvePoint, within the length
     // tolerance.
-    Law_BSplineCurveMatchesBasisSum(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.SplineMatchesOracle(c, g.Domain(c).SampleIn(t), tol) : true;
+    Law_BSplineCurveMatchesBasisSum(g: GeometrySet, c: CurveIndex, t: Number): Boolean
+        => g.CanEvaluate(c) ? g.SplineMatchesOracle(c, g.Domain(c).SampleIn(t)) : true;
 
     // The oracle claim for a curve case.
-    SplineMatchesOracle(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CurveAt(c).SplineMatchesOracle(g, t, tol);
+    SplineMatchesOracle(g: GeometrySet, c: CurveIndex, t: Number): Boolean
+        => g.CurveAt(c).SplineMatchesOracle(g, t);
 
     // SplineMatchesOracle for one record of the arena g, which holds the entries it references.
-    SplineMatchesOracle(curve: BrepCurve, g: GeometrySet, t: Number, tol: Tolerances): Boolean
+    SplineMatchesOracle(curve: BrepCurve, g: GeometrySet, t: Number): Boolean
         => match (curve)
         {
             Line(origin, velocity) => true;
@@ -488,11 +488,11 @@ library BrepGeometryLaws
     // A spline parameter-plane curve's point is the basis-weighted sum of its
     // control points, computed independently by Oracle_BSplineCurve2DPoint,
     // within the parameter floor.
-    Law_BSplineCurve2DMatchesBasisSum(g: GeometrySet, c: Curve2DIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.Curve2DAt(c).SplineMatchesOracle(g.Domain(c).SampleIn(t), tol) : true;
+    Law_BSplineCurve2DMatchesBasisSum(g: GeometrySet, c: Curve2DIndex, t: Number): Boolean
+        => g.CanEvaluate(c) ? g.Curve2DAt(c).SplineMatchesOracle(g.Domain(c).SampleIn(t)) : true;
 
     // The oracle claim for a parameter-plane curve case.
-    SplineMatchesOracle(curve: BrepCurve2D, t: Number, tol: Tolerances): Boolean
+    SplineMatchesOracle(curve: BrepCurve2D, t: Number): Boolean
         => match (curve)
         {
             Line(origin, velocity) => true;
@@ -510,15 +510,15 @@ library BrepGeometryLaws
 
     // A spline surface's point is the basis-weighted sum of its control net,
     // computed independently by Oracle_BSplineSurfacePoint.
-    Law_BSplineSurfaceMatchesBasisSum(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.SplineMatchesOracle(s, g.Domain(s).SampleIn(uv), tol) : true;
+    Law_BSplineSurfaceMatchesBasisSum(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.CanEvaluate(s) ? g.SplineMatchesOracle(s, g.Domain(s).SampleIn(uv)) : true;
 
     // The oracle claim for a surface case.
-    SplineMatchesOracle(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.SurfaceAt(s).SplineMatchesOracle(g, uv, tol);
+    SplineMatchesOracle(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.SurfaceAt(s).SplineMatchesOracle(g, uv);
 
     // SplineMatchesOracle for one record of the arena g, which holds the entries it references.
-    SplineMatchesOracle(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, tol: Tolerances): Boolean
+    SplineMatchesOracle(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Boolean
         => match (surface)
         {
             Plane(placement) => true;
@@ -553,8 +553,8 @@ library BrepGeometryLaws
 
     // A periodic curve repeats: Eval(t + period) is Eval(t) within rounding,
     // the evaluation's own and that of the argument t + period carried by the
-    // speed. A library law: tol is not read.
-    Law_CurveRepeatsWithPeriod(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
+    // speed. A library law: it takes no tolerance.
+    Law_CurveRepeatsWithPeriod(g: GeometrySet, c: CurveIndex, t: Number): Boolean
         => g.CanEvaluate(c)
             ? (g.Domain(c).Periodicity.IsPeriodic
                 ? g.Eval(c, g.Domain(c).SampleIn(t)).Distance(g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0)))
@@ -572,10 +572,10 @@ library BrepGeometryLaws
     // most 4/3 |D(h) - D(h/2)| plus ResolutionAt(EvaluationMagnitude) / h, the
     // rounding of the library's own arithmetic. A sample whose difference
     // interval holds a break of DifferenceOrder (every distinct interior knot
-    // of a spline of degree up to six) is excluded. tol is not read: the
-    // bound is the library's, never the file's (layer 0's rounding rule); the
-    // parameter keeps the signature layer 7 calls.
-    Law_DerivativeMatchesCentralDifference(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
+    // of a spline of degree up to six) is excluded. The
+    // bound is the library's, never the file's (layer 0's rounding rule), so
+    // the law takes no tolerance.
+    Law_DerivativeMatchesCentralDifference(g: GeometrySet, c: CurveIndex, t: Number): Boolean
         => g.CanEvaluate(c) ? g.DerivativeAgrees(c, t) : true;
 
     // The central difference of curve c's Eval at x with step h.
@@ -603,7 +603,7 @@ library BrepGeometryLaws
     // within Richardson's estimate, as Law_DerivativeMatchesCentralDifference;
     // the rounding of a derivative formula is that of Eval over the
     // parameter's piece scale.
-    Law_SecondDerivativeMatchesCentralDifference(g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances): Boolean
+    Law_SecondDerivativeMatchesCentralDifference(g: GeometrySet, c: CurveIndex, t: Number): Boolean
         => g.CanEvaluate(c) ? g.SecondDerivativeAgrees(c, t) : true;
 
     // The claim of Law_SecondDerivativeMatchesCentralDifference.
@@ -643,9 +643,9 @@ library BrepGeometryLaws
     // curve or off it: |C(t*) - p| <= |C(s) - p| plus the rounding of the two
     // evaluations. The recovery laws test only points on the curve, the easy
     // case; vertices and edge samples sit up to the length tolerance off it,
-    // which is the path the pipeline takes (review M4). A library law: tol
-    // is not read.
-    Law_ClosestParameterNoWorseThanSample(g: GeometrySet, c: CurveIndex, p: Point3D, s: Number, tol: Tolerances): Boolean
+    // which is the path the pipeline takes (review M4). A library law: it takes no
+    // tolerance.
+    Law_ClosestParameterNoWorseThanSample(g: GeometrySet, c: CurveIndex, p: Point3D, s: Number): Boolean
         => g.CanEvaluate(c) ? g.NoWorseThan(c, p, g.ClosestParameter(c, p), g.Domain(c).SampleIn(s)) : true;
 
     // The claim of Law_ClosestParameterNoWorseThanSample with the minimizer
@@ -658,8 +658,8 @@ library BrepGeometryLaws
     // At a minimizer inside a smooth piece, the offset from p is orthogonal to
     // the tangent: |(C(t*) - p) . <C'(t*)>| is within the rounding of the
     // terms and of t* itself. A minimizer at a domain end or a break need not
-    // be stationary and is skipped. A library law: tol is not read.
-    Law_ClosestParameterIsStationary(g: GeometrySet, c: CurveIndex, p: Point3D, tol: Tolerances): Boolean
+    // be stationary and is skipped. A library law: it takes no tolerance.
+    Law_ClosestParameterIsStationary(g: GeometrySet, c: CurveIndex, p: Point3D): Boolean
         => g.CanEvaluate(c) ? g.StationaryAt(c, p, g.ClosestParameter(c, p)) : true;
 
     // The claim of Law_ClosestParameterIsStationary at t.
@@ -1004,7 +1004,7 @@ library BrepGeometryLaws
     // A surface curve's k-th pcurve runs the same way as its space curve
     // (ISO 10303-42 4.5.49 IP2): at matched points their velocities make an
     // angle of at most a quarter turn.
-    Law_SurfaceCurvePcurveSameSense(g: GeometrySet, c: CurveIndex, t: Number, k: Integer, tol: Tolerances): Boolean
+    Law_SurfaceCurvePcurveSameSense(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Boolean
         => g.CanEvaluate(c) ? g.PcurveSameSense(g.CurveAt(c).SpaceCurveOf, g.CurveAt(c).SupportsOf, t, k) : true;
 
     // The claim of Law_SurfaceCurvePcurveSameSense: an exact sign test.
@@ -1021,8 +1021,8 @@ library BrepGeometryLaws
     // # Parameter-plane curves and pcurves
 
     // A periodic parameter-plane curve repeats within rounding, as
-    // Law_CurveRepeatsWithPeriod. tol is not read.
-    Law_Curve2DRepeatsWithPeriod(g: GeometrySet, c: Curve2DIndex, t: Number, tol: Tolerances): Boolean
+    // Law_CurveRepeatsWithPeriod. It takes no tolerance.
+    Law_Curve2DRepeatsWithPeriod(g: GeometrySet, c: Curve2DIndex, t: Number): Boolean
         => g.CanEvaluate(c)
             ? (g.Domain(c).Periodicity.IsPeriodic
                 ? (g.Eval(c, g.Domain(c).SampleIn(t)) - g.Eval(c, g.Domain(c).SampleIn(t) + g.Domain(c).Periodicity.PeriodOr(0.0))).Length
@@ -1033,8 +1033,8 @@ library BrepGeometryLaws
 
     // A parameter-plane curve's Derivative agrees with the central difference
     // of its Eval within Richardson's estimate, as
-    // Law_DerivativeMatchesCentralDifference in space. tol is not read.
-    Law_Curve2DDerivativeMatchesCentralDifference(g: GeometrySet, c: Curve2DIndex, t: Number, tol: Tolerances): Boolean
+    // Law_DerivativeMatchesCentralDifference in space. It takes no tolerance.
+    Law_Curve2DDerivativeMatchesCentralDifference(g: GeometrySet, c: Curve2DIndex, t: Number): Boolean
         => g.CanEvaluate(c) ? g.DerivativeAgrees(c, t) : true;
 
     // The central difference of parameter-plane curve c's Eval at x.
@@ -1060,8 +1060,8 @@ library BrepGeometryLaws
 
     // A parameter-plane curve's SecondDerivative agrees with the central
     // difference of its Derivative within Richardson's estimate, as
-    // Law_SecondDerivativeMatchesCentralDifference in space. tol is not read.
-    Law_Curve2DSecondDerivativeMatchesCentralDifference(g: GeometrySet, c: Curve2DIndex, t: Number, tol: Tolerances): Boolean
+    // Law_SecondDerivativeMatchesCentralDifference in space. It takes no tolerance.
+    Law_Curve2DSecondDerivativeMatchesCentralDifference(g: GeometrySet, c: Curve2DIndex, t: Number): Boolean
         => g.CanEvaluate(c) ? g.SecondDerivativeAgrees(c, t) : true;
 
     // The claim of Law_Curve2DSecondDerivativeMatchesCentralDifference.
@@ -1082,8 +1082,8 @@ library BrepGeometryLaws
     // difference of its space points within Richardson's estimate, as
     // Law_DerivativeMatchesCentralDifference. Besides the 2D curve's own
     // breaks, a difference interval over which the 2D curve crosses a break
-    // line of the surface is excluded. tol is not read.
-    Law_PcurveDerivativeMatchesCentralDifference(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
+    // line of the surface is excluded. It takes no tolerance.
+    Law_PcurveDerivativeMatchesCentralDifference(g: GeometrySet, p: PcurveIndex, t: Number): Boolean
         => g.CanEvaluate(p) ? g.DerivativeAgrees(p, t) : true;
 
     // The central difference of pcurve p's space points at x.
@@ -1133,8 +1133,8 @@ library BrepGeometryLaws
 
     // A pcurve's space acceleration agrees with the central difference of its
     // space velocity within Richardson's estimate, as
-    // Law_SecondDerivativeMatchesCentralDifference. tol is not read.
-    Law_PcurveSecondDerivativeMatchesCentralDifference(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
+    // Law_SecondDerivativeMatchesCentralDifference. It takes no tolerance.
+    Law_PcurveSecondDerivativeMatchesCentralDifference(g: GeometrySet, p: PcurveIndex, t: Number): Boolean
         => g.CanEvaluate(p) ? g.SecondDerivativeAgrees(p, t) : true;
 
     // The claim of Law_PcurveSecondDerivativeMatchesCentralDifference.
@@ -1192,8 +1192,8 @@ library BrepGeometryLaws
             : true;
 
     // A surface periodic in the given parameter repeats with its period in
-    // it, within rounding, as Law_CurveRepeatsWithPeriod. tol is not read.
-    Law_SurfaceRepeatsWithPeriod(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter, tol: Tolerances): Boolean
+    // it, within rounding, as Law_CurveRepeatsWithPeriod. It takes no tolerance.
+    Law_SurfaceRepeatsWithPeriod(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter): Boolean
         => g.CanEvaluate(s)
             ? (g.Domain(s).DomainAlong(which).Periodicity.IsPeriodic
                 ? g.Eval(s, g.Domain(s).SampleIn(uv)).Distance(g.Eval(s, g.Domain(s).SampleIn(uv).WithCoordinate(which,
@@ -1209,8 +1209,8 @@ library BrepGeometryLaws
 
     // The partial in the given parameter agrees with the central difference
     // of Eval in that parameter within Richardson's estimate, as
-    // Law_DerivativeMatchesCentralDifference. tol is not read.
-    Law_PartialMatchesCentralDifference(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter, tol: Tolerances): Boolean
+    // Law_DerivativeMatchesCentralDifference. It takes no tolerance.
+    Law_PartialMatchesCentralDifference(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter): Boolean
         => g.CanEvaluate(s) ? g.PartialAgrees(s, g.Domain(s).SampleIn(uv), which) : true;
 
     // The central difference of surface s's Eval at w in the given
@@ -1265,9 +1265,9 @@ library BrepGeometryLaws
 
     // NormalOr is a unit vector within the rounding of a normalization,
     // everywhere: the closed forms are unit by construction, the cross
-    // products are normalized, and the fallback is unit. A library law: tol
-    // is not read.
-    Law_NormalIsUnit(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
+    // products are normalized, and the fallback is unit. A library law: it takes no
+    // tolerance.
+    Law_NormalIsUnit(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
         => g.CanEvaluate(s)
             ? (g.NormalOr(s, g.Domain(s).SampleIn(uv), Direction3D(Vector3D.UnitZ)).Vector.Length - 1.0).Abs <= ResolutionAt(1.0)
             : true;
@@ -1276,7 +1276,7 @@ library BrepGeometryLaws
     // is at most |S_x| times NormalAngleBound, which vanishes to rounding away
     // from collapsed lines and grows toward them. A library law: tol is not
     // read.
-    Law_NormalOrthogonalToPartial(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter, tol: Tolerances): Boolean
+    Law_NormalOrthogonalToPartial(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, which: SurfaceParameter): Boolean
         => g.CanEvaluate(s)
             ? g.NormalOr(s, g.Domain(s).SampleIn(uv), Direction3D(Vector3D.UnitZ)).Vector.Dot(g.Partial(s, g.Domain(s).SampleIn(uv), which)).Abs
                 <= g.Partial(s, g.Domain(s).SampleIn(uv), which).Length * g.NormalAngleBound(s, g.Domain(s).SampleIn(uv))
@@ -1286,7 +1286,7 @@ library BrepGeometryLaws
     // NormalAgreesWithParameterization says so and against it elsewhere: an
     // exact sign test wherever the rounding of the normal's direction is
     // below a radian, so the sign is determined.
-    Law_NormalSenseMatchesParameterization(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
+    Law_NormalSenseMatchesParameterization(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
         => g.CanEvaluate(s)
             ? (g.NormalAngleBound(s, g.Domain(s).SampleIn(uv)) >= 1.0
                 ? true
@@ -1296,8 +1296,8 @@ library BrepGeometryLaws
             : true;
 
     // AreaElement equals |PartialU x PartialV|, computed from the partials,
-    // within rounding. A library law: tol is not read.
-    Law_AreaElementMatchesCrossProduct(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
+    // within rounding. A library law: it takes no tolerance.
+    Law_AreaElementMatchesCrossProduct(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
         => g.CanEvaluate(s) ? g.SurfaceAt(s).AreaElementIs(g, g.Domain(s).SampleIn(uv), g.AreaElement(s, g.Domain(s).SampleIn(uv))) : true;
 
     // True when h is the cross-product area element at uv within rounding:
@@ -1326,15 +1326,15 @@ library BrepGeometryLaws
     // route through PartialU and PartialV.
 
     // On a cone, |PartialU x PartialV| = |R + v tan a| / cos a, v axial.
-    Law_ConeAreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.ConeAreaElementHolds(s, g.Domain(s).SampleIn(uv), tol) : true;
+    Law_ConeAreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.CanEvaluate(s) ? g.ConeAreaElementHolds(s, g.Domain(s).SampleIn(uv)) : true;
 
     // The claim of Law_ConeAreaElement for each case.
-    ConeAreaElementHolds(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.SurfaceAt(s).ConeAreaElementHolds(g, uv, tol);
+    ConeAreaElementHolds(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.SurfaceAt(s).ConeAreaElementHolds(g, uv);
 
     // ConeAreaElementHolds for one record of the arena g, which holds the entries it references.
-    ConeAreaElementHolds(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, tol: Tolerances): Boolean
+    ConeAreaElementHolds(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Boolean
         => match (surface)
         {
             Plane(placement) => true;
@@ -1351,15 +1351,15 @@ library BrepGeometryLaws
 
     // On a sphere, |PartialU x PartialV| = R^2 cos v, v the latitude in
     // [-pi/2, pi/2].
-    Law_SphereAreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.SphereAreaElementHolds(s, g.Domain(s).SampleIn(uv), tol) : true;
+    Law_SphereAreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.CanEvaluate(s) ? g.SphereAreaElementHolds(s, g.Domain(s).SampleIn(uv)) : true;
 
     // The claim of Law_SphereAreaElement for each case.
-    SphereAreaElementHolds(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.SurfaceAt(s).SphereAreaElementHolds(g, uv, tol);
+    SphereAreaElementHolds(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.SurfaceAt(s).SphereAreaElementHolds(g, uv);
 
     // SphereAreaElementHolds for one record of the arena g, which holds the entries it references.
-    SphereAreaElementHolds(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, tol: Tolerances): Boolean
+    SphereAreaElementHolds(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Boolean
         => match (surface)
         {
             Plane(placement) => true;
@@ -1376,15 +1376,15 @@ library BrepGeometryLaws
 
     // On a torus, |PartialU x PartialV| = r |R + r cos v|, which is
     // r (R + r cos v) on a ring torus.
-    Law_TorusAreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.CanEvaluate(s) ? g.TorusAreaElementHolds(s, g.Domain(s).SampleIn(uv), tol) : true;
+    Law_TorusAreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.CanEvaluate(s) ? g.TorusAreaElementHolds(s, g.Domain(s).SampleIn(uv)) : true;
 
     // The claim of Law_TorusAreaElement for each case.
-    TorusAreaElementHolds(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, tol: Tolerances): Boolean
-        => g.SurfaceAt(s).TorusAreaElementHolds(g, uv, tol);
+    TorusAreaElementHolds(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
+        => g.SurfaceAt(s).TorusAreaElementHolds(g, uv);
 
     // TorusAreaElementHolds for one record of the arena g, which holds the entries it references.
-    TorusAreaElementHolds(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, tol: Tolerances): Boolean
+    TorusAreaElementHolds(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Boolean
         => match (surface)
         {
             Plane(placement) => true;
@@ -1475,8 +1475,8 @@ library BrepGeometryLaws
 
     // Project is no worse than any sample, for any point p, as
     // Law_ClosestParameterNoWorseThanSample on curves (review M4). A library
-    // law: tol is not read.
-    Law_ProjectNoWorseThanSample(g: GeometrySet, s: SurfaceIndex, p: Point3D, uv: UvCoordinate, tol: Tolerances): Boolean
+    // law: it takes no tolerance.
+    Law_ProjectNoWorseThanSample(g: GeometrySet, s: SurfaceIndex, p: Point3D, uv: UvCoordinate): Boolean
         => g.CanEvaluate(s)
             ? g.Eval(s, g.Project(s, p)).Distance(p)
                 <= g.Eval(s, g.Domain(s).SampleIn(uv)).Distance(p)
@@ -1485,8 +1485,8 @@ library BrepGeometryLaws
 
     // At a minimizer inside a smooth patch and off collapsed lines, the
     // offset from p is orthogonal to both partials, within rounding, as
-    // Law_ClosestParameterIsStationary. A library law: tol is not read.
-    Law_ProjectIsStationary(g: GeometrySet, s: SurfaceIndex, p: Point3D, which: SurfaceParameter, tol: Tolerances): Boolean
+    // Law_ClosestParameterIsStationary. A library law: it takes no tolerance.
+    Law_ProjectIsStationary(g: GeometrySet, s: SurfaceIndex, p: Point3D, which: SurfaceParameter): Boolean
         => g.CanEvaluate(s) ? g.ProjectStationaryAt(s, p, g.Project(s, p), which) : true;
 
     // The claim of Law_ProjectIsStationary at uv in the given parameter.

@@ -190,7 +190,7 @@ library BrepCheckingGeometry
     // Law_SurfaceCurvePcurveSameSense at every curve, sample, and support.
     // Structure (an exact sign): Error.
     Check_SurfaceCurvePcurveSameSense(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSupportSamples(plan, "Law_SurfaceCurvePcurveSameSense", (c, t, k) => Law_SurfaceCurvePcurveSameSense(m.Geometry, c, t, k, m.Tolerances));
+        => m.CheckCurveSupportSamples(plan, "Law_SurfaceCurvePcurveSameSense", (c, t, k) => Law_SurfaceCurvePcurveSameSense(m.Geometry, c, t, k));
 
     // Law_AreaElementPositiveAwayFromCollapse at every surface and grid
     // point. Structure (an exact sign about the file's surface): Error.
@@ -345,7 +345,7 @@ library BrepCheckingGeometry
 
     // Law_BSplineCurveMatchesBasisSum at every curve and sample.
     Check_BSplineCurveMatchesBasisSum(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSamples(plan, "Law_BSplineCurveMatchesBasisSum", (c, t) => Law_BSplineCurveMatchesBasisSum(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurveSamples(plan, "Law_BSplineCurveMatchesBasisSum", (c, t) => Law_BSplineCurveMatchesBasisSum(m.Geometry, c, t));
 
     // Law_PeriodicCurveSpansOnePeriod at every curve.
     Check_PeriodicCurveSpansOnePeriod(m: BrepModel): Check
@@ -357,15 +357,15 @@ library BrepCheckingGeometry
 
     // Law_CurveRepeatsWithPeriod at every curve and sample.
     Check_CurveRepeatsWithPeriod(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSamples(plan, "Law_CurveRepeatsWithPeriod", (c, t) => Law_CurveRepeatsWithPeriod(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurveSamples(plan, "Law_CurveRepeatsWithPeriod", (c, t) => Law_CurveRepeatsWithPeriod(m.Geometry, c, t));
 
     // Law_DerivativeMatchesCentralDifference at every curve and sample.
     Check_DerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSamples(plan, "Law_DerivativeMatchesCentralDifference", (c, t) => Law_DerivativeMatchesCentralDifference(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurveSamples(plan, "Law_DerivativeMatchesCentralDifference", (c, t) => Law_DerivativeMatchesCentralDifference(m.Geometry, c, t));
 
     // Law_SecondDerivativeMatchesCentralDifference at every curve and sample.
     Check_SecondDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSamples(plan, "Law_SecondDerivativeMatchesCentralDifference", (c, t) => Law_SecondDerivativeMatchesCentralDifference(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurveSamples(plan, "Law_SecondDerivativeMatchesCentralDifference", (c, t) => Law_SecondDerivativeMatchesCentralDifference(m.Geometry, c, t));
 
     // Law_ClosestParameterRecoversPoint at every curve and sample.
     Check_ClosestParameterRecoversPoint(m: BrepModel, plan: SamplePlan): Check
@@ -382,14 +382,14 @@ library BrepCheckingGeometry
         => CheckGrid("Law_ClosestParameterNoWorseThanSample", m.Geometry.Curves.Count, plan.Count * plan.Count,
             (c, ij) => Law_ClosestParameterNoWorseThanSample(m.Geometry, CurveIndex(c),
                 m.OffCurvePoint(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[ij / plan.Count]),
-                m.CurveSamples(CurveIndex(c), plan)[ij % plan.Count], m.Tolerances),
+                m.CurveSamples(CurveIndex(c), plan)[ij % plan.Count]),
             (c, ij) => m.CurveSite(CurveIndex(c)));
 
     // Law_ClosestParameterIsStationary at every curve and the off-curve point
     // of every sample. Self-test: Error.
     Check_ClosestParameterIsStationary(m: BrepModel, plan: SamplePlan): Check
         => m.CheckCurveSamples(plan, "Law_ClosestParameterIsStationary",
-            (c, t) => Law_ClosestParameterIsStationary(m.Geometry, c, m.OffCurvePoint(c, t), m.Tolerances));
+            (c, t) => Law_ClosestParameterIsStationary(m.Geometry, c, m.OffCurvePoint(c, t)));
 
     // Law_PcurveClosestParameterIsBounded at every pcurve and sample (review
     // F4b). Self-test: Error.
@@ -449,30 +449,30 @@ library BrepCheckingGeometry
     // Law_BSplineCurve2DMatchesBasisSum at every parameter-plane curve and
     // sample.
     Check_BSplineCurve2DMatchesBasisSum(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurve2DSamples(plan, "Law_BSplineCurve2DMatchesBasisSum", (c, t) => Law_BSplineCurve2DMatchesBasisSum(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurve2DSamples(plan, "Law_BSplineCurve2DMatchesBasisSum", (c, t) => Law_BSplineCurve2DMatchesBasisSum(m.Geometry, c, t));
 
     // Law_Curve2DRepeatsWithPeriod at every parameter-plane curve and sample.
     Check_Curve2DRepeatsWithPeriod(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurve2DSamples(plan, "Law_Curve2DRepeatsWithPeriod", (c, t) => Law_Curve2DRepeatsWithPeriod(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurve2DSamples(plan, "Law_Curve2DRepeatsWithPeriod", (c, t) => Law_Curve2DRepeatsWithPeriod(m.Geometry, c, t));
 
     // Law_Curve2DDerivativeMatchesCentralDifference at every parameter-plane
     // curve and sample.
     Check_Curve2DDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurve2DSamples(plan, "Law_Curve2DDerivativeMatchesCentralDifference", (c, t) => Law_Curve2DDerivativeMatchesCentralDifference(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurve2DSamples(plan, "Law_Curve2DDerivativeMatchesCentralDifference", (c, t) => Law_Curve2DDerivativeMatchesCentralDifference(m.Geometry, c, t));
 
     // Law_Curve2DSecondDerivativeMatchesCentralDifference at every
     // parameter-plane curve and sample.
     Check_Curve2DSecondDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurve2DSamples(plan, "Law_Curve2DSecondDerivativeMatchesCentralDifference", (c, t) => Law_Curve2DSecondDerivativeMatchesCentralDifference(m.Geometry, c, t, m.Tolerances));
+        => m.CheckCurve2DSamples(plan, "Law_Curve2DSecondDerivativeMatchesCentralDifference", (c, t) => Law_Curve2DSecondDerivativeMatchesCentralDifference(m.Geometry, c, t));
 
     // Law_PcurveDerivativeMatchesCentralDifference at every pcurve and sample.
     Check_PcurveDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckPcurveSamples(plan, "Law_PcurveDerivativeMatchesCentralDifference", (p, t) => Law_PcurveDerivativeMatchesCentralDifference(m.Geometry, p, t, m.Tolerances));
+        => m.CheckPcurveSamples(plan, "Law_PcurveDerivativeMatchesCentralDifference", (p, t) => Law_PcurveDerivativeMatchesCentralDifference(m.Geometry, p, t));
 
     // Law_PcurveSecondDerivativeMatchesCentralDifference at every pcurve and
     // sample.
     Check_PcurveSecondDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckPcurveSamples(plan, "Law_PcurveSecondDerivativeMatchesCentralDifference", (p, t) => Law_PcurveSecondDerivativeMatchesCentralDifference(m.Geometry, p, t, m.Tolerances));
+        => m.CheckPcurveSamples(plan, "Law_PcurveSecondDerivativeMatchesCentralDifference", (p, t) => Law_PcurveSecondDerivativeMatchesCentralDifference(m.Geometry, p, t));
 
     //==
     // # Library self-tests: surfaces
@@ -483,7 +483,7 @@ library BrepCheckingGeometry
 
     // Law_BSplineSurfaceMatchesBasisSum at every surface and grid point.
     Check_BSplineSurfaceMatchesBasisSum(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceSamples(plan, "Law_BSplineSurfaceMatchesBasisSum", (s, uv) => Law_BSplineSurfaceMatchesBasisSum(m.Geometry, s, uv, m.Tolerances));
+        => m.CheckSurfaceSamples(plan, "Law_BSplineSurfaceMatchesBasisSum", (s, uv) => Law_BSplineSurfaceMatchesBasisSum(m.Geometry, s, uv));
 
     // Law_PeriodicSurfaceSpansOnePeriod at every surface and parameter.
     Check_PeriodicSurfaceSpansOnePeriod(m: BrepModel): Check
@@ -492,41 +492,41 @@ library BrepCheckingGeometry
     // Law_SurfaceRepeatsWithPeriod at every surface, grid point, and
     // parameter.
     Check_SurfaceRepeatsWithPeriod(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceParameterSamples(plan, "Law_SurfaceRepeatsWithPeriod", (s, uv, which) => Law_SurfaceRepeatsWithPeriod(m.Geometry, s, uv, which, m.Tolerances));
+        => m.CheckSurfaceParameterSamples(plan, "Law_SurfaceRepeatsWithPeriod", (s, uv, which) => Law_SurfaceRepeatsWithPeriod(m.Geometry, s, uv, which));
 
     // Law_PartialMatchesCentralDifference at every surface, grid point, and
     // parameter.
     Check_PartialMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceParameterSamples(plan, "Law_PartialMatchesCentralDifference", (s, uv, which) => Law_PartialMatchesCentralDifference(m.Geometry, s, uv, which, m.Tolerances));
+        => m.CheckSurfaceParameterSamples(plan, "Law_PartialMatchesCentralDifference", (s, uv, which) => Law_PartialMatchesCentralDifference(m.Geometry, s, uv, which));
 
     // Law_NormalIsUnit at every surface and grid point.
     Check_NormalIsUnit(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceSamples(plan, "Law_NormalIsUnit", (s, uv) => Law_NormalIsUnit(m.Geometry, s, uv, m.Tolerances));
+        => m.CheckSurfaceSamples(plan, "Law_NormalIsUnit", (s, uv) => Law_NormalIsUnit(m.Geometry, s, uv));
 
     // Law_NormalOrthogonalToPartial at every surface, grid point, and
     // parameter.
     Check_NormalOrthogonalToPartial(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceParameterSamples(plan, "Law_NormalOrthogonalToPartial", (s, uv, which) => Law_NormalOrthogonalToPartial(m.Geometry, s, uv, which, m.Tolerances));
+        => m.CheckSurfaceParameterSamples(plan, "Law_NormalOrthogonalToPartial", (s, uv, which) => Law_NormalOrthogonalToPartial(m.Geometry, s, uv, which));
 
     // Law_NormalSenseMatchesParameterization at every surface and grid point.
     Check_NormalSenseMatchesParameterization(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceSamples(plan, "Law_NormalSenseMatchesParameterization", (s, uv) => Law_NormalSenseMatchesParameterization(m.Geometry, s, uv, m.Tolerances));
+        => m.CheckSurfaceSamples(plan, "Law_NormalSenseMatchesParameterization", (s, uv) => Law_NormalSenseMatchesParameterization(m.Geometry, s, uv));
 
     // Law_AreaElementMatchesCrossProduct at every surface and grid point.
     Check_AreaElementMatchesCrossProduct(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceSamples(plan, "Law_AreaElementMatchesCrossProduct", (s, uv) => Law_AreaElementMatchesCrossProduct(m.Geometry, s, uv, m.Tolerances));
+        => m.CheckSurfaceSamples(plan, "Law_AreaElementMatchesCrossProduct", (s, uv) => Law_AreaElementMatchesCrossProduct(m.Geometry, s, uv));
 
     // Law_ConeAreaElement at every surface and grid point.
     Check_ConeAreaElement(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceSamples(plan, "Law_ConeAreaElement", (s, uv) => Law_ConeAreaElement(m.Geometry, s, uv, m.Tolerances));
+        => m.CheckSurfaceSamples(plan, "Law_ConeAreaElement", (s, uv) => Law_ConeAreaElement(m.Geometry, s, uv));
 
     // Law_SphereAreaElement at every surface and grid point.
     Check_SphereAreaElement(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceSamples(plan, "Law_SphereAreaElement", (s, uv) => Law_SphereAreaElement(m.Geometry, s, uv, m.Tolerances));
+        => m.CheckSurfaceSamples(plan, "Law_SphereAreaElement", (s, uv) => Law_SphereAreaElement(m.Geometry, s, uv));
 
     // Law_TorusAreaElement at every surface and grid point.
     Check_TorusAreaElement(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceSamples(plan, "Law_TorusAreaElement", (s, uv) => Law_TorusAreaElement(m.Geometry, s, uv, m.Tolerances));
+        => m.CheckSurfaceSamples(plan, "Law_TorusAreaElement", (s, uv) => Law_TorusAreaElement(m.Geometry, s, uv));
 
     // Law_ProjectRecoversPoint at every surface and grid point.
     Check_ProjectRecoversPoint(m: BrepModel, plan: SamplePlan): Check
@@ -547,14 +547,14 @@ library BrepCheckingGeometry
         => CheckGrid("Law_ProjectNoWorseThanSample", m.Geometry.Surfaces.Count, plan.Count * plan.Count * plan.Count * plan.Count,
             (s, ij) => Law_ProjectNoWorseThanSample(m.Geometry, SurfaceIndex(s),
                 m.OffSurfacePoint(SurfaceIndex(s), m.SurfaceSamples(SurfaceIndex(s), plan)[ij / (plan.Count * plan.Count)]),
-                m.SurfaceSamples(SurfaceIndex(s), plan)[ij % (plan.Count * plan.Count)], m.Tolerances),
+                m.SurfaceSamples(SurfaceIndex(s), plan)[ij % (plan.Count * plan.Count)]),
             (s, ij) => m.SurfaceSite(SurfaceIndex(s)));
 
     // Law_ProjectIsStationary at every surface, grid point (moved off the
     // surface) and parameter. Self-test: Error.
     Check_ProjectIsStationary(m: BrepModel, plan: SamplePlan): Check
         => m.CheckSurfaceParameterSamples(plan, "Law_ProjectIsStationary",
-            (s, uv, which) => Law_ProjectIsStationary(m.Geometry, s, m.OffSurfacePoint(s, uv), which, m.Tolerances));
+            (s, uv, which) => Law_ProjectIsStationary(m.Geometry, s, m.OffSurfacePoint(s, uv), which));
 
     // Law_ProjectNearRecoversFromNearbySeed at every surface, grid point, and
     // the four seeds offset by half the near-seed radius in each parameter

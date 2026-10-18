@@ -261,6 +261,26 @@ theorem FailureIsIsolated
     tested by Law_FailedFaceLeavesOthersUnchanged, Law_OnlyFacesOfChangedEdgesAreRemeshed, Law_OutcomesAreCurrent, Law_RequestsNameFaceEdges, Law_MeshFaceReadsOnlyFaceEdges, Law_RefinementNeverCoarsens;
 }
 
+// The planted bad face of layer 7's Witness_BoxWithPolyLoopSheet fails
+// alone: meshed under the witness options, face 6 ends empty with no request,
+// carries exactly two Errors, and every Error of the run is about the sheet,
+// while every other face meshes as it would without face 6. This ties the
+// witness to the five planted-face laws of StepToMeshWitnessesLaws (finding
+// F-48.2: the facts left layer 7's spec with the laws that mesh it).
+theorem PlantedFaceFailsAlone
+{
+    given g: Integer, k: Integer;
+    assume BrepModel.Witness_BoxWithPolyLoopSheet.IsRunnable(MeshingOptions.WitnessOptions);
+    assume Law_IndicesInRange(BrepModel.Witness_BoxWithPolyLoopSheet);
+    conclude Law_PlantedBadFaceFailsSilently(BrepModel.Witness_UnitBox)
+        && Law_PlantedBadFaceLeavesOthersUnchanged(g)
+        && Law_PlantedBadFaceIsDiagnosed(BrepModel.Witness_UnitBox)
+        && Law_PlantedBadFaceErrorsStayInTheSheet(k)
+        && Law_PlantedBadFaceHasTwoErrors(BrepModel.Witness_UnitBox);
+    because "Face 6 is bounded by a poly loop, which layer 5's MeshFace does not mesh in version 1: it returns an empty FaceMesh, the Error FACE-POLY-LOOP located at the face, and no refinement request, since no edge of the face exists to refine. So face 6's round-0 outcome is final and empty with no request (FailsSilently), and FailureIsIsolated applies with f = 6: every other face g ends with the mesh it has in the run without face 6 (LeavesOthersUnchanged). Faces 0 to 5 are Witness_UnitBox's, which meshes clean, so no Error lands on them, their edges, vertices, shell 0 or body 0. The validation adds Law_EveryFaceIsMeshed at face 6, an Error, and layer 8 adds no PIPELINE-FACE-EMPTY for a face that already has one; that makes exactly two Errors at face 6 (HasTwoErrors), Ok false (IsDiagnosed, by OkMeansCleanAtTheLevel's MeshOutcomeOf). Whatever layer 2's open-shell counting reports for the poly-loop triangle is located at shell 1, body 1 or face 6 (ErrorsStayInTheSheet).";
+    tested by Law_PlantedBadFaceFailsSilently, Law_PlantedBadFaceLeavesOthersUnchanged, Law_PlantedBadFaceIsDiagnosed, Law_PlantedBadFaceErrorsStayInTheSheet, Law_PlantedBadFaceHasTwoErrors;
+}
+
 // Ok means the requested validation found no error, and every finding of the
 // run, the parse and decode included.
 theorem OkMeansCleanAtTheLevel

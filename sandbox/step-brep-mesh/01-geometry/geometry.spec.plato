@@ -114,10 +114,10 @@ spec BSplineDerivative(d: BSplineCurveData, t: Number, order: Integer): Vector3D
     requires d.Basis.SplineDomain.Contains(t);
     requires order >= 1 && order <= 2;
     ensures order == 1
-        ? forall (tol: Tolerances) : Law_DerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], [], []), CurveIndex(0), t, tol)
+        ? Law_DerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], [], []), CurveIndex(0), t)
         : true;
     ensures order == 2
-        ? forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], [], []), CurveIndex(0), t, tol)
+        ? Law_SecondDerivativeMatchesCentralDifference(GeometrySet([BrepCurve.BSpline(d)], [], [], [], []), CurveIndex(0), t)
         : true;
     measure d.Basis.Degree * d.Basis.Degree * order;
     deferred "derivatives of the homogeneous curve by de Boor, then the quotient rule (Piegl and Tiller A3.2, A4.2)";
@@ -138,10 +138,10 @@ spec BSplineDerivative(d: BSplineCurve2DData, t: Number, order: Integer): Vector
     requires d.Basis.SplineDomain.Contains(t);
     requires order >= 1 && order <= 2;
     ensures order == 1
-        ? forall (tol: Tolerances) : Law_Curve2DDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], [], []), Curve2DIndex(0), t, tol)
+        ? Law_Curve2DDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], [], []), Curve2DIndex(0), t)
         : true;
     ensures order == 2
-        ? forall (tol: Tolerances) : Law_Curve2DSecondDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], [], []), Curve2DIndex(0), t, tol)
+        ? Law_Curve2DSecondDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(d)], [], [], []), Curve2DIndex(0), t)
         : true;
     measure d.Basis.Degree * d.Basis.Degree * order;
     deferred "derivatives of the homogeneous parameter-plane curve, then the quotient rule";
@@ -162,10 +162,10 @@ spec BSplinePartial(d: BSplineSurfaceData, uv: UvCoordinate, uOrder: Integer, vO
     requires d.U.SplineDomain.Contains(uv.U) && d.V.SplineDomain.Contains(uv.V);
     requires uOrder >= 0 && vOrder >= 0 && uOrder + vOrder >= 1 && uOrder + vOrder <= 2;
     ensures uOrder == 1 && vOrder == 0
-        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)], []), SurfaceIndex(0), uv, SurfaceParameter.ParameterU, tol)
+        ? Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)], []), SurfaceIndex(0), uv, SurfaceParameter.ParameterU)
         : true;
     ensures uOrder == 0 && vOrder == 1
-        ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)], []), SurfaceIndex(0), uv, SurfaceParameter.ParameterV, tol)
+        ? Law_PartialMatchesCentralDifference(GeometrySet([], [], [], [BrepSurface.BSpline(d)], []), SurfaceIndex(0), uv, SurfaceParameter.ParameterV)
         : true;
     measure d.U.Degree * d.V.Degree * (d.U.Degree + d.V.Degree) * (uOrder + vOrder);
     deferred "mixed partials of the rational tensor-product surface (Piegl and Tiller A4.4)";
@@ -219,8 +219,8 @@ spec Eval(g: GeometrySet, c: CurveIndex, t: Number): Point3D
 {
     requires g.CanEvaluate(c);
     requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
-    ensures forall (tol: Tolerances) : Law_CurveRepeatsWithPeriod(g, c, t, tol);
-    ensures forall (tol: Tolerances) : Law_BSplineCurveMatchesBasisSum(g, c, t, tol);
+    ensures Law_CurveRepeatsWithPeriod(g, c, t);
+    ensures Law_BSplineCurveMatchesBasisSum(g, c, t);
     ensures forall (tol: Tolerances) : Law_TrimmedStartsAtSensedEnd(g, c, tol);
     measure g.CurveDepth(c, g.ReferenceFuel);
 }
@@ -229,7 +229,7 @@ spec Derivative(g: GeometrySet, c: CurveIndex, t: Number): Vector3D
 {
     requires g.CanEvaluate(c);
     requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
-    ensures forall (tol: Tolerances) : Law_DerivativeMatchesCentralDifference(g, c, t, tol);
+    ensures Law_DerivativeMatchesCentralDifference(g, c, t);
     measure g.CurveDepth(c, g.ReferenceFuel);
 }
 
@@ -237,7 +237,7 @@ spec SecondDerivative(g: GeometrySet, c: CurveIndex, t: Number): Vector3D
 {
     requires g.CanEvaluate(c);
     requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
-    ensures forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(g, c, t, tol);
+    ensures Law_SecondDerivativeMatchesCentralDifference(g, c, t);
     measure g.CurveDepth(c, g.ReferenceFuel);
 }
 
@@ -251,8 +251,8 @@ spec ClosestParameter(g: GeometrySet, c: CurveIndex, p: Point3D): Number
     ensures result >= g.Domain(c).Range.Start;
     ensures result <= g.Domain(c).Range.Start + g.Domain(c).Periodicity.PeriodOr(g.Domain(c).ParameterLength);
     ensures forall (tol: Tolerances) : forall (t: Number) : Law_ClosestParameterRecoversPoint(g, c, t, tol);
-    ensures forall (tol: Tolerances) : forall (s: Number) : Law_ClosestParameterNoWorseThanSample(g, c, p, s, tol);
-    ensures forall (tol: Tolerances) : Law_ClosestParameterIsStationary(g, c, p, tol);
+    ensures forall (s: Number) : Law_ClosestParameterNoWorseThanSample(g, c, p, s);
+    ensures Law_ClosestParameterIsStationary(g, c, p);
     measure g.Breakpoints(c).Count + 1;
 }
 
@@ -276,7 +276,7 @@ spec Eval(g: GeometrySet, c: Curve2DIndex, t: Number): UvCoordinate
 {
     requires g.CanEvaluate(c);
     requires g.Domain(c).Periodicity.IsPeriodic || g.Domain(c).Range.Contains(t);
-    ensures forall (tol: Tolerances) : Law_Curve2DRepeatsWithPeriod(g, c, t, tol);
+    ensures Law_Curve2DRepeatsWithPeriod(g, c, t);
     measure g.Curve2DDepth(c, g.ReferenceFuel);
 }
 
@@ -310,7 +310,7 @@ spec OffsetSecondDerivative(g: GeometrySet, basis: CurveIndex, distance: Number,
     requires g.Domain(basis).Periodicity.IsPeriodic || g.Domain(basis).Range.Contains(t);
     ensures forall (c: CurveIndex) in g.Curves.Count.Range.Map(i => CurveIndex(i)) :
         g.CurveAt(c) == BrepCurve.Offset(basis, distance, reference)
-            ? forall (tol: Tolerances) : Law_SecondDerivativeMatchesCentralDifference(g, c, t, tol)
+            ? Law_SecondDerivativeMatchesCentralDifference(g, c, t)
             : true;
     measure g.CurveDepth(basis, g.ReferenceFuel);
     deferred "differentiate UnitVectorDerivative once more with the basis's third derivative";
@@ -322,7 +322,7 @@ spec OffsetSecondDerivative(g: GeometrySet, basis: Curve2DIndex, distance: Numbe
     requires g.Domain(basis).Periodicity.IsPeriodic || g.Domain(basis).Range.Contains(t);
     ensures forall (c: Curve2DIndex) in g.Curves2D.Count.Range.Map(i => Curve2DIndex(i)) :
         g.Curve2DAt(c) == BrepCurve2D.Offset(basis, distance)
-            ? forall (tol: Tolerances) : Law_Curve2DSecondDerivativeMatchesCentralDifference(g, c, t, tol)
+            ? Law_Curve2DSecondDerivativeMatchesCentralDifference(g, c, t)
             : true;
     measure g.Curve2DDepth(basis, g.ReferenceFuel);
     deferred "as in space, with the quarter-turn of the unit tangent";
@@ -332,7 +332,7 @@ spec SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D
 {
     requires g.CanEvaluate(p);
     requires g.Domain(p).Periodicity.IsPeriodic || g.Domain(p).Range.Contains(t);
-    ensures forall (tol: Tolerances) : Law_PcurveSecondDerivativeMatchesCentralDifference(g, p, t, tol);
+    ensures Law_PcurveSecondDerivativeMatchesCentralDifference(g, p, t);
     measure g.PcurveDepth(p, g.ReferenceFuel);
     deferred "the chain rule to second order over the surface's second partials";
 }
@@ -383,31 +383,31 @@ spec Eval(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Point3D
     requires g.CanEvaluate(s);
     requires g.Domain(s).U.Periodicity.IsPeriodic || g.Domain(s).U.Range.Contains(uv.U);
     requires g.Domain(s).V.Periodicity.IsPeriodic || g.Domain(s).V.Range.Contains(uv.V);
-    ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_SurfaceRepeatsWithPeriod(g, s, uv, which, tol);
-    ensures forall (tol: Tolerances) : Law_BSplineSurfaceMatchesBasisSum(g, s, uv, tol);
+    ensures forall (which: SurfaceParameter) : Law_SurfaceRepeatsWithPeriod(g, s, uv, which);
+    ensures Law_BSplineSurfaceMatchesBasisSum(g, s, uv);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
 }
 
 spec PartialU(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
 {
     requires g.CanEvaluate(s);
-    ensures forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(g, s, uv, SurfaceParameter.ParameterU, tol);
+    ensures Law_PartialMatchesCentralDifference(g, s, uv, SurfaceParameter.ParameterU);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
 }
 
 spec PartialV(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
 {
     requires g.CanEvaluate(s);
-    ensures forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(g, s, uv, SurfaceParameter.ParameterV, tol);
+    ensures Law_PartialMatchesCentralDifference(g, s, uv, SurfaceParameter.ParameterV);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
 }
 
 spec NormalOr(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, fallback: Direction3D): Direction3D
 {
     requires g.CanEvaluate(s);
-    ensures forall (tol: Tolerances) : Law_NormalIsUnit(g, s, uv, tol);
-    ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_NormalOrthogonalToPartial(g, s, uv, which, tol);
-    ensures forall (tol: Tolerances) : Law_NormalSenseMatchesParameterization(g, s, uv, tol);
+    ensures Law_NormalIsUnit(g, s, uv);
+    ensures forall (which: SurfaceParameter) : Law_NormalOrthogonalToPartial(g, s, uv, which);
+    ensures Law_NormalSenseMatchesParameterization(g, s, uv);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
 }
 
@@ -417,7 +417,7 @@ spec NormalOr(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, fallback: Direc
 spec NormalAgreesWithParameterization(g: GeometrySet, s: SurfaceIndex): Boolean
 {
     requires g.CanEvaluate(s);
-    ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) in g.Domain(s) : Law_NormalSenseMatchesParameterization(g, s, uv, tol);
+    ensures forall (uv: UvCoordinate) in g.Domain(s) : Law_NormalSenseMatchesParameterization(g, s, uv);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
 }
 
@@ -425,7 +425,7 @@ spec AreaElement(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Number
 {
     requires g.CanEvaluate(s);
     ensures result >= 0.0;
-    ensures forall (tol: Tolerances) : Law_AreaElementMatchesCrossProduct(g, s, uv, tol);
+    ensures Law_AreaElementMatchesCrossProduct(g, s, uv);
     ensures forall (tol: Tolerances) : Law_AreaElementPositiveAwayFromCollapse(g, s, uv, tol);
     measure g.SurfaceDepth(s, g.ReferenceFuel);
 }
@@ -440,8 +440,8 @@ spec Project(g: GeometrySet, s: SurfaceIndex, p: Point3D): UvCoordinate
     ensures forall (tol: Tolerances) : g.Domain(s).IsCanonical(result, g.UvFloorOf(s, tol));
     ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversPoint(g, s, uv, tol);
     ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectRecoversParameter(g, s, uv, tol);
-    ensures forall (tol: Tolerances) : forall (uv: UvCoordinate) : Law_ProjectNoWorseThanSample(g, s, p, uv, tol);
-    ensures forall (tol: Tolerances) : forall (which: SurfaceParameter) : Law_ProjectIsStationary(g, s, p, which, tol);
+    ensures forall (uv: UvCoordinate) : Law_ProjectNoWorseThanSample(g, s, p, uv);
+    ensures forall (which: SurfaceParameter) : Law_ProjectIsStationary(g, s, p, which);
     measure g.Breakpoints(s, SurfaceParameter.ParameterU).Count * g.Breakpoints(s, SurfaceParameter.ParameterV).Count + 1;
 }
 
@@ -499,7 +499,7 @@ spec OffsetPartial(g: GeometrySet, basis: SurfaceIndex, distance: Number, uv: Uv
     requires g.CanEvaluate(basis);
     ensures forall (o: SurfaceIndex) in g.Surfaces.Count.Range.Map(i => SurfaceIndex(i)) :
         g.SurfaceAt(o) == BrepSurface.Offset(basis, distance)
-            ? forall (tol: Tolerances) : Law_PartialMatchesCentralDifference(g, o, uv, which, tol)
+            ? Law_PartialMatchesCentralDifference(g, o, uv, which)
             : true;
     measure g.SurfaceDepth(basis, g.ReferenceFuel);
     deferred "S_x + d N_x with N_x from the Weingarten equations over the basis's second partials";
@@ -718,9 +718,9 @@ theorem ProjectNearIsLocalInverse
 // the library's own rounding as its bound, so neither counterexample applies.
 theorem RichardsonBoundsTheDifferenceError
 {
-    given g: GeometrySet, c: CurveIndex, t: Number, tol: Tolerances;
+    given g: GeometrySet, c: CurveIndex, t: Number;
     assume g.CanEvaluate(c);
-    conclude Law_DerivativeMatchesCentralDifference(g, c, t, tol);
+    conclude Law_DerivativeMatchesCentralDifference(g, c, t);
     because "Let h be the step of the law and x the sample. No break of order six lies in [x - h, x + h], so C has
              six continuous derivatives there and Taylor's theorem gives D(h) = C' + a h^2 + b h^4 + r(h), with
              a = C'''/6, b = C^(5)/120, and |r(h)| at most h^6 max|C^(7)| / 5040 after the sixth-order term

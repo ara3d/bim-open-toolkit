@@ -844,10 +844,44 @@ library BrepOracles
     RedundantVertexLoopCount(m: BrepModel, s: ShellIndex): Integer
         => m.ShellFaces(s).Reduce(0, (n, f) => n + m.RedundantVertexLoops(f));
 
-    // The number of redundant vertex loops of face f.
+    // The number of redundant vertex loops of face f, by the oracle's own
+    // rule (OracleDropsVertexLoop), not layer 2's IsRedundantVertexLoop.
     RedundantVertexLoops(m: BrepModel, f: BrepFaceIndex): Integer
         => m.Faces[f].Bounds.Count.Range.Reduce(0, (n, j) =>
-            m.IsRedundantVertexLoop(f, j) ? n + 1 : n);
+            m.OracleDropsVertexLoop(f, j) ? n + 1 : n);
+
+    // Whether bound b of face f is a vertex loop the counting rule drops
+    // (research/VALIDATION-MATH.md 1.4), written apart from layer 2's
+    // IsRedundantVertexLoop so that the oracle checks that rule instead of
+    // repeating it (finding F-48.1): the loop's vertex is an end of an edge
+    // that an edge loop of f cites, or the vertex of a vertex loop of f at an
+    // earlier position (a poly loop names no vertex). Reads the edge records directly, not layer 2's traversal.
+    // Precondition: m.IsFaceIntact(f) and b a position in its bounds.
+    OracleDropsVertexLoop(m: BrepModel, f: BrepFaceIndex, b: Integer): Boolean
+        => m.OracleLoopVertex(m.Loops[m.Faces[f].Bounds[b].Loop]).Any(v =>
+            m.Faces[f].Bounds.Count.Range.Any(j =>
+                j == b ? false : m.OracleLoopCites(m.Loops[m.Faces[f].Bounds[j].Loop], v, j < b)));
+
+    // The vertex of a vertex loop, as an array of one; empty for the other
+    // loop kinds.
+    OracleLoopVertex(m: BrepModel, loop: BrepLoop): Array<BrepVertexIndex>
+        => match (loop)
+        {
+            EdgeLoop(coedges) => m.Vertices.Count.MapRange(i => BrepVertexIndex(i)).Take(0);
+            VertexLoop(vertex) => [vertex];
+            PolyLoop(points) => m.Vertices.Count.MapRange(i => BrepVertexIndex(i)).Take(0);
+        };
+
+    // Whether loop cites vertex v: an edge loop when v ends one of its edges,
+    // a vertex loop when it is v and stands earlier in the face (earlier
+    // true), a poly loop never.
+    OracleLoopCites(m: BrepModel, loop: BrepLoop, v: BrepVertexIndex, earlier: Boolean): Boolean
+        => match (loop)
+        {
+            EdgeLoop(coedges) => coedges.Any(c => m.Edges[c.Edge].Start == v || m.Edges[c.Edge].End == v);
+            VertexLoop(vertex) => earlier ? vertex == v : false;
+            PolyLoop(points) => false;
+        };
 
     // The sum over the mesh's referenced vertices of the angle defect 2 pi
     // minus the corner angles there, in radians, by its own route: corner
