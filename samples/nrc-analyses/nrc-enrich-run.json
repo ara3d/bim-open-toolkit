@@ -163,11 +163,11 @@
         "to": "containers.t2"
       },
       {
-        "from": "values.relation",
+        "from": "containers.relation",
         "to": "inContainers.left"
       },
       {
-        "from": "containers.relation",
+        "from": "values.relation",
         "to": "inContainers.right"
       },
       {

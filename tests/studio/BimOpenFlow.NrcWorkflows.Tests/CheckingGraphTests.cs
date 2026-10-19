@@ -267,7 +267,7 @@ public sealed class CheckingGraphTests
                 Assert.That(Convert.ToDouble(issues.Cell("CameraZ", 0)), Is.EqualTo(7.0).Within(1e-4));
                 Assert.That(Convert.ToDouble(issues.Cell("FieldOfView", 0)), Is.EqualTo(60.0).Within(1e-4));
                 Assert.That(comments.Rows, Has.Count.EqualTo(1));
-                Assert.That(comments.Cell("Author", 0), Is.EqualTo("Reviewer"));
+                Assert.That(comments.Cell("CommentAuthor", 0), Is.EqualTo("Reviewer"));
                 Assert.That(comments.Cell("Comment", 0)?.ToString(), Does.Contain("850 mm"));
             });
         }
