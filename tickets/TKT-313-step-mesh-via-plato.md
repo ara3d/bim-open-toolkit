@@ -74,3 +74,36 @@ Plan: docs/plans/step-reader.md, section 'Pivot: geometry in Plato' (owner decis
   done. Fix belongs to the Plato writer (emit list-receiver functions, or the library takes `Array<T>` there); then
   regenerate with the same inputs and delete `BodilessStubs.cs`. Durations: regeneration 330 s, StepBrep builds 15.7 s and
   11.0 s, restore build 28.0 s, no tests run.
+- 2026-10-19, builder 10b9c9c6, regeneration with layer 08, bim-open-data 374f2b4. Status: regenerated and committed;
+  the MeshModel switch held back. Inputs: CLI `C:/Users/cdigg/.plato-cli/128cf769/Plato.CLI.dll`, stdlib and runtime from
+  a clone at Plato 128cf769, library at toolkit cda4477d (layers 00 to 08 clean, last touched 91e6b055, no +local),
+  cpu64. 929 generated and 13 runtime files (47 s); Ara3D.StepBrep 0 errors, 0 warnings once `BodilessStubs.cs` is
+  deleted (TKT-347 closed on this). Decoder tests 14 passed, mesher tests 33 passed.
+  **MeshModel tried, not committed.** One `MeshModel(DefaultMeshingOptions(chordal))` call in place of the restated lines
+  (it adds the refinement loop and validation at Geometric): cube clean (Ok, 0 rounds, 8 vertices, 12 triangles, closed,
+  oriented, Euler 2, 1 mm^3, area 6) in 5.1 s; unit cylinder over 10 minutes at full CPU, not finished; sphere throws
+  NotImplementedException (`ExpandedPoles`) out of MeshModel, failing the whole file. Cause: the runtime's `MapRange`
+  (`Intrinsics/Integer.cs` line 87) returns a lazy list that calls its function on every read, so the loop's face
+  outcomes are meshed again at each read (stack: `StepToMesh.InitialState` under `Extensions.RequestsOf`). Needs
+  generated lists computed once (writer or runtime), or a decision to accept the cost; the version is kept in the
+  session scratchpad (`meshmodel-version/`).
+  **Face meshing got slower with the regeneration** (TKT-343 refinement), on the cylinder's side face via `MeshFace`:
+  25 points per circle 5.0 to 9.6 s (354 to 360 triangles), 42 points not done in 240 s; the previous generation took
+  3.4 s at 72 points (142 triangles). The 0.001 mm cylinder test now uses the 1 mm default.
+  - **C# half of TKT-314 criterion 3** (regenerated library, `StepMesher.Mesh`): unit cube one mesh, one instance, 8
+    vertices, 12 triangles, no geometry pending, no dropped face, 6 PLANE faces supported; closed and consistently
+    oriented (every directed edge once, its reverse once), Euler characteristic 2, volume 1.0000001e-9 m^3 (1 mm^3,
+    float storage) and positive. On the library's ModelMesh from the same path: `IsManifold`, `IsClosed`,
+    `IsConsistentlyOriented`, `ReferencedEulerCharacteristic` 2, `SignedVolume` 1 mm^3, `Area` 6 mm^2, and
+    `Law_ClosedMeansEveryEdgeHasTwoSides`, `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides` (18 edges),
+    `Law_OrientedExactlyWhenNoEdgeIsMisoriented`, `Law_ClosedOrientedSurfaceHasGenus`,
+    `Law_AngleDefectSumIsTwoPiTimesEuler`, `Law_VectorAreaVanishes`, `Law_ComponentEulerCharacteristicsAddUp`,
+    `Law_ReversalNegatesSignedVolume`, `Law_TriangleMeshKeepsArea`, `Law_TriangleMeshKeepsPositions` all hold.
+  - Unit cylinder (r = h = 1 mm) through `StepMesher.Mesh` at the default 1 mm chordal bound: 230 vertices, 456
+    triangles, closed (every directed edge paired), Euler 2, volume 3.1217e-9 m^3 = 0.9937 of pi r^2 h (3.1416e-9);
+    the inscribed 24-gon prism is 3.1058e-9. Maximum deviation: not reported (validation is not run on this path); side
+    interior vertices lie on the surface within 5.7e-11 m, and the 24-segment chord sag is 8.6e-6 m (computed here).
+  Durations: regeneration 47 s; StepBrep build 9.0 s; MeshModel probes 300 s and 10 min (cylinder, stopped); sphere probe
+  3 s; scaling probes 33 s and 248 s; decoder tests 5.0 s build and 5.8 s; mesher full tests 7.1 s build and 21.0 s
+  (one aborted full run of 10 min at 0.001 mm, and a per-class run of 93 s that found it); builds slowed to 82 to 184 s
+  twice under machine load.

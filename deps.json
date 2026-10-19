@@ -17,7 +17,7 @@
   },
   "bim-open-data": {
     "url": "https://github.com/ara3d/bim-open-data",
-    "commit": "a4298c870bdb4b0c93014ed9203fcd0790b30409"
+    "commit": "374f2b4792f0637598aaac143b8a9ae93e54c6a3"
   },
   "ara3d-dataflow": {
     "url": "https://github.com/ara3d/ara3d-dataflow",
