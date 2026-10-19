@@ -78,6 +78,14 @@ Known gap: a graph whose model path is the `$model` graph input (`color-by-categ
 
 ## Prerequisites
 
+### Running the Windows release
+
+Windows 10 or 11 on a 64-bit Intel or AMD processor, about 3 GB of free disk, and [Claude Code](https://code.claude.com/docs/en/setup) installed and signed in with your own Claude account. Nothing else: no .NET SDK, Node, npm, git, or `node deps.mjs`, and no administrator rights. See [Windows release](#windows-release) under "Build and run".
+
+### Building from source
+
+Everything below, up to "Start here", is for building the toolkit from a clone.
+
 - **.NET 8 SDK.** The continuous-integration build installs only this SDK and builds and
   tests `BimOpenToolkit.sln` with it on Windows (`.github/workflows/build.yml`). The
   **.NET 10 SDK** is needed only for the BOS Browser app in `deps/bim-open-data`, which
@@ -112,6 +120,18 @@ one command per service to a table graph over committed sample data, with no
 private model required. The rest of this section is the same path in more detail.
 
 ## Build and run
+
+### Windows release
+
+For a person who wants to use the toolkit with their own Claude, not to change it. The release is one zip, `BimOpenToolkit-<version>-win-x64.zip`, on the [Releases](https://github.com/ara3d/bim-open-toolkit/releases) page of this repository. It holds the studio host with the BIM node packs, the IFC and dataflow MCP servers, the IFC converter, the Ask runner, the built web pages, the node catalog, the NRC notebooks, graphs, and sample models (the Duplex and the public samples; never Snowdon), the `bim-flow` and `ifc-ask` skills, and `bimopen.exe`, the wizard. The language model is the Claude Code on your computer; the release holds no API key and calls no hosted service.
+
+1. Install Claude Code, if it is not installed: in PowerShell, `irm https://claude.ai/install.ps1 | iex`, then run `claude` once and sign in.
+2. Unzip the release to a folder you can write to, and double-click `bimopen.exe` (or run `bimopen setup`). It checks the computer, finds Claude, registers the two MCP servers and the two skills for your user, and tests that the host and the IFC server answer.
+3. `bimopen start` opens the NRC notebooks (Re-evaluate works against the local host); `claude` in any terminal answers questions about a model; `bimopen doctor` repeats every check and says how to fix what is wrong; `bimopen questions` puts the nine NRC questions to the Duplex model through your Claude Code.
+
+What still needs the SDK, Node, and git: changing the code, the node packs, or the pages, and building the release itself (`node scripts/release/build-release.mjs`). The release's `.github/workflows/release.yml` builds it on a version tag. [docs/release.md](docs/release.md) lists what is in the zip, why it is a zip and not an installer (and what an installer would need), troubleshooting by doctor message, and the checklist for trying it on a fresh machine.
+
+### From a clone
 
 The first run in [docs/START.md](docs/START.md) uses the `tables` profile, which needs no private model. Run `node scripts/preflight.mjs`, then:
 
@@ -198,10 +218,10 @@ node deps.mjs
 
 A tag is made only after these pass on a fresh clone, with no files outside the repositories: the Release build; `dotnet test` with the filter CI uses (`TestCategory!=RequiresTestData`), including the paper's checks in `BimOpenFlow.NrcWorkflows.Tests`; `gates/host-smoke.mjs`; `gates/web-smoke.mjs`; and, in `bim-open-notebook` at its pinned commit, its web and Pages smokes. `node deps.mjs --check` must print no warning, which means every repository in the set pins the same commits of the others.
 
-| Tag | Date | Toolkit commit | Notes |
-|---|---|---|---|
-| `v0.1` | 2026-10-04 | see the tag | First set after the repository split: flow, data, viewer and notebook in their own repositories. |
-| `v0.2` | 2026-10-17 | see the tag | The NRC property sets are renamed from `Pset_NRC*` to `NRC_*`; questions Q4, Q5, and Q7 are reworded and a ninth question (the zone with the highest energy use intensity) is added, with four `IfcZone` groups in the enriched Duplex. Work on `main` after it (the 3D review controls, `view3d.label`, the BCF notebooks) is in no tag yet. |
+| Tag | Date | Toolkit commit | Windows release | Notes |
+|---|---|---|---|---|
+| `v0.1` | 2026-10-04 | see the tag | none | First set after the repository split: flow, data, viewer and notebook in their own repositories. |
+| `v0.2` | 2026-10-17 | see the tag | none; the release workflow is not in this tag | The NRC property sets are renamed from `Pset_NRC*` to `NRC_*`; questions Q4, Q5, and Q7 are reworded and a ninth question (the zone with the highest energy use intensity) is added, with four `IfcZone` groups in the enriched Duplex. Work on `main` after it (the 3D review controls, `view3d.label`, the BCF notebooks) is in no tag yet. |
 
 `main` is where work happens and is not promised to be in a tested state between tags. To work across several repositories at once, put them side by side in a folder that holds a `.deps-root` file; `node deps.mjs` then links `deps/<name>` to the sibling checkouts instead of cloning, so an edit in one repository is seen by the others straight away (see [docs/plans/repository-split.md](docs/plans/repository-split.md)). No other repository may depend on this one; `DepsCycleTests` enforces that.
 

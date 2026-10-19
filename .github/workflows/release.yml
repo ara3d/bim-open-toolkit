@@ -1,0 +1,89 @@
+name: release
+
+# Builds the Windows release (docs/release.md): one zip holding the studio host, the two MCP servers, the Ask
+# runner, the IFC converter, the built web pages, the NRC samples and notebooks, and bimopen.exe, the wizard.
+#
+#   git tag v0.1.0 && git push origin v0.1.0     builds, smoke-tests, and attaches the zip to the release v0.1.0
+#   Actions > release > Run workflow             builds and smoke-tests, and keeps the zip as a run artifact
+#
+# The release smoke (scripts/release/smoke-release.mjs) starts the published host from the built folder,
+# evaluates sample graphs, fetches the pages and notebooks, and calls an IFC tool through the published MCP
+# server. It also lets the host build the NRC databases once, so the zip carries them. The zip is not
+# attached when it fails.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bimopenflow/web/package-lock.json
+      # Only the 8.0 SDK, as build.yml: the release is built by the compiler a clean machine can have.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      # Every dependency at the commit deps.json pins.
+      - run: node deps.mjs
+      # Platonic.Core and Platonic.Analyzers are not on nuget.org yet (TKT-293); see build.yml.
+      - run: |
+          git clone https://github.com/cdiggins/Platonic.CSharp ../Platonic.CSharp
+          dotnet pack ../Platonic.CSharp/src/Platonic.Core -c Release -o ../Platonic.CSharp/artifacts
+          dotnet pack ../Platonic.CSharp/src/Platonic.Analyzers -c Release -o ../Platonic.CSharp/artifacts
+      # The web pages: the viewer's built dist/, then the workspace (as nrc-ifc-llm's pages workflow does).
+      - run: npm ci
+        working-directory: deps/bim-open-viewer
+      - run: npm run build
+        working-directory: deps/bim-open-viewer
+      - run: npm ci
+        working-directory: bimopenflow/web
+      - name: Work out the version
+        id: version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then v="${GITHUB_REF_NAME#v}"; else v="0.0.0-dev.${GITHUB_SHA::10}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Unit tests of the wizard
+        run: dotnet test tests/release/BimOpen.Launcher.Tests -c Release
+      - name: Build the release folder and the zip
+        run: node scripts/release/build-release.mjs --version ${{ steps.version.outputs.version }} --no-zip
+      - name: Smoke-test the folder
+        run: node scripts/release/smoke-release.mjs artifacts/release/BimOpenToolkit-${{ steps.version.outputs.version }}-win-x64 --prepare
+      - name: Zip
+        shell: pwsh
+        run: |
+          $name = "BimOpenToolkit-${{ steps.version.outputs.version }}-win-x64"
+          # Windows own bsdtar writes zips; the tar that Git for Windows puts first on PATH in bash does not.
+          & "$env:SystemRoot\System32\tar.exe" -a -c -f "artifacts/release/$name.zip" -C artifacts/release $name
+          $hash = (Get-FileHash "artifacts/release/$name.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $name.zip" | Set-Content "artifacts/release/$name.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BimOpenToolkit-${{ steps.version.outputs.version }}-win-x64
+          path: |
+            artifacts/release/*.zip
+            artifacts/release/*.sha256
+      - name: Attach to the GitHub release
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          name="BimOpenToolkit-${{ steps.version.outputs.version }}-win-x64"
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "BIM Open Toolkit ${{ steps.version.outputs.version }} for Windows" --notes-file docs/release.md
+          gh release upload "$GITHUB_REF_NAME" "artifacts/release/$name.zip" "artifacts/release/$name.zip.sha256" --clobber

