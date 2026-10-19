@@ -1,0 +1,284 @@
+//==
+// # Triangulation track: laws (TKT-343, staging)
+//
+// Laws of the constrained Delaunay triangulation (TriangulateRegionCdt) and the refinement by
+// insertion and flips (RefineToSurfaceByInsertion) of triangulation-cdt.library.plato and
+// triangulation-refine.library.plato. Every law runs over the faces of one sample model, picked
+// by an Integer the runner draws (TriSampleModel reduces it modulo the sample count), and holds
+// vacuously on a face the layer cannot triangulate (CanTriangulateFace). The models are five of
+// layer 7's positive witnesses (no poles, no B-spline) and the 2 x 3 x 4 box, meshed with the
+// witness options (chordal 1/100, 15 degrees, no length limit). Renamed Law_<What> at merge.
+//
+// Sections, in order:
+//  - Samples
+//  - The in-circle determinant
+//  - The constrained Delaunay triangulation
+//  - Refinement by insertion
+//  - Element quality
+
+library TriangulationLaws
+{
+    //==
+    // # Samples
+
+    // The layer 7 witnesses the samples take, in order: the unit box, the cylinder, the block
+    // with a through hole, the hollow box, and the quarter sector. The sphere, torus,
+    // cone and sphere by pole loops wait for step C (their regions call the bodiless
+    // ExpandedPoles), the B-spline patch solid for step F (its edges call ProjectBySearch).
+    TriWitnessIndices(_: Integer): Array<Integer>
+        => [0, 1, 5, 6, 8];
+
+    // The number of sample models.
+    TriSampleCount(_: Integer): Integer
+        => 6;
+
+    // Sample model k modulo the count: TriWitnessIndices in order, then Witness_Box(2, 3, 4).
+    // Samples 0 the unit box, 1 the cylinder, 4 the quarter sector, 5 the 2 x 3 x 4 box.
+    TriSampleModel(k: Integer): BrepModel
+    {
+        var i = ((k % 6) + 6) % 6;
+        return i < 5 ? BrepModel.WitnessAt(TriWitnessIndices(0)[i]) : BrepModel.Witness_Box(2.0, 3.0, 4.0);
+    }
+
+    // The face criteria the samples are meshed with: the witness options' (layer 8).
+    TriCriteria(_: Integer): FaceMeshingCriteria
+        => MeshingOptions.WitnessOptions.Face;
+
+    // The edge discretizations of model m under the sample criteria, with no floors.
+    TriDiscretizations(m: BrepModel): EdgeDiscretizations
+        => m.DiscretizeAll(TriCriteria(0).Discretization, SegmentFloors.NoFloors);
+
+    // Whether claim holds at every face of sample model k that the layer can triangulate, given
+    // the face, its region and its chart.
+    EveryTriangulableFace(k: Integer, claim: Function4<BrepModel, BrepFaceIndex, UvRegion, FaceChart, Boolean>): Boolean
+    {
+        var m = TriSampleModel(k);
+        var d = m.TriDiscretizations;
+        var c = TriCriteria(0);
+        return m.Faces.Count.Range.All(i => m.CanTriangulateFace(BrepFaceIndex(i), d, c)
+            ? claim(m, BrepFaceIndex(i), m.RegionOf(BrepFaceIndex(i), d, c), m.ChartOf(BrepFaceIndex(i), m.RegionOf(BrepFaceIndex(i), d, c)))
+            : true);
+    }
+
+    // The points of triangulation t in chart.
+    ChartPointsOf(t: UvTriangulation, chart: FaceChart): Array<Point2D>
+        => t.Points.Map(uv => chart.ChartPoint(uv));
+
+    // The number of edges of t that the flip rule would flip: the in-circle determinant of the
+    // opposite corner strictly positive, the quadrilateral strictly convex, not a boundary
+    // segment.
+    FlippableEdgeCount(r: UvRegion, t: UvTriangulation, chart: FaceChart): Integer
+    {
+        var points = t.ChartPointsOf(chart);
+        var nb = NeighbourTable(t.Triangles, t.Points.Count);
+        return (3 * t.Triangles.Count).Range.Reduce(0, (n, s) =>
+            nb[s] > s / 3 ? (r.IsFlippableCdt(points, t.Triangles[s / 3], s % 3, t.Triangles[nb[s]]) ? n + 1 : n) : n);
+    }
+
+    //==
+    // # The in-circle determinant
+
+    // Witnesses on the unit circle: the centre is inside the circle through (1, 0), (0, 1),
+    // (-1, 0), a point at distance 2 is outside, and (0, -1) is on it, where the determinant is
+    // exactly zero (every product is exact in 32 bits).
+    Law_Tri_InCircleWitnesses(_: Integer): Boolean
+    {
+        var a = Point2D(1.0, 0.0);
+        var b = Point2D(0.0, 1.0);
+        var c = Point2D(-1.0, 0.0);
+        return InCircle(a, b, c, Point2D(0.0, 0.0)) > 0.0
+            && InCircle(a, b, c, Point2D(2.0, 0.0)) < 0.0
+            && InCircle(a, b, c, Point2D(0.0, -1.0)) == 0.0   // exact: small integers
+            && InCircle(b, a, c, Point2D(0.0, 0.0)) < 0.0;
+    }
+
+    // A flip is never undone: for any four points, if the edge from 0 to 1 between triangles
+    // (0, 1, 2) and (1, 0, 3) passes the in-circle test, the edge from 3 to 2 that replaces it,
+    // between (0, 3, 2) and (3, 1, 2), does not. Exact, because both tests evaluate one
+    // determinant of the points in index order and differ only in sign (InCircleOf).
+    Law_Tri_FlipNeverUndone(a: Point2D, b: Point2D, c: Point2D, d: Point2D): Boolean
+    {
+        var points = [a, b, c, d];
+        return (InCircleOf(points, 0, 1, 2, 3) > 0.0 && InCircleOf(points, 3, 2, 0, 1) > 0.0).Not;
+    }
+
+    // InCircleOf agrees in sign with the determinant written in the given order, away from zero:
+    // where the plain determinant exceeds the rounding of its terms, both have the same sign.
+    Law_Tri_InCircleOfAgreesWithInCircle(a: Point2D, b: Point2D, c: Point2D, d: Point2D): Boolean
+    {
+        var plain = InCircle(a, b, c, d);
+        var ordered = InCircleOf([a, b, c, d], 0, 1, 2, 3);
+        return plain.Abs > 1e-3 * InCircleScale(a, b, c, d) ? (plain > 0.0) == (ordered > 0.0) : true;
+    }
+
+    //==
+    // # The constrained Delaunay triangulation
+
+    // TriangulateRegionCdt keeps the boundary points with their sources, in order, and adds no
+    // point.
+    Law_Tri_CdtKeepsBoundary(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) =>
+            r.TriangulateRegionCdt(chart).Points.Count == r.BoundaryCount
+                && r.BoundaryCount.Range.All(i => Law_TriangulationKeepsBoundary(r, r.TriangulateRegionCdt(chart), i)));
+
+    // Every boundary segment of the region is a side of exactly one triangle, in the boundary's
+    // direction: the constraints are kept.
+    Law_Tri_CdtKeepsEverySegment(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) =>
+            r.NumberOfLoops.Range.All(q => r.LoopAt(q).Points.Count.Range.All(i =>
+                Law_BoundarySegmentIsElementSide(r, r.TriangulateRegionCdt(chart), q, i))));
+
+    // Every side that is not a boundary segment is shared by exactly two triangles, run opposite
+    // ways, and every point is a corner; there are no quads.
+    Law_Tri_CdtIsConforming(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) =>
+            r.TriangulateRegionCdt(chart).Quads.Count == 0
+                && r.TriangulateRegionCdt(chart).ElementCount.Range.All(e => 3.Range.All(j =>
+                    Law_InteriorSideIsShared(r, r.TriangulateRegionCdt(chart), ElementIndex(e), j)))
+                && r.TriangulateRegionCdt(chart).Points.Count.Range.All(i => EveryPointIsACorner(r.TriangulateRegionCdt(chart), i)));
+
+    // Every triangle has strictly positive orientation in the chart.
+    Law_Tri_CdtPositiveOrientation(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) =>
+            r.TriangulateRegionCdt(chart).Triangles.All(x =>
+                TwiceSignedArea(chart.ChartPoint(r.BoundaryPoints[x.A]), chart.ChartPoint(r.BoundaryPoints[x.B]), chart.ChartPoint(r.BoundaryPoints[x.C])) > 0.0));
+
+    // No edge is flippable by the in-circle determinant: the triangulation is constrained
+    // Delaunay in the chart.
+    Law_Tri_CdtNoFlippableEdge(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => r.FlippableEdgeCount(r.TriangulateRegionCdt(chart), chart) == 0);
+
+    // The triangles' chart areas sum to the region's, within the area its boundary sweeps inside
+    // the region's tolerance (layer 5's Law_ElementAreasSumToRegionArea).
+    Law_Tri_CdtAreaIsRegionArea(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.Law_ElementAreasSumToRegionArea(f, r, r.TriangulateRegionCdt(chart)));
+
+    //==
+    // # Refinement by insertion
+
+    // The refined triangulation of face f: RefineToSurfaceByInsertion on TriangulateRegionCdt.
+    RefinedCdt(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): UvTriangulation
+        => m.RefineToSurfaceByInsertion(f, r, chart, r.TriangulateRegionCdt(chart), TriCriteria(0));
+
+    // Every postcondition of the contract RefineToSurface (face-meshing.spec.plato) on the
+    // refined triangulation of face f.
+    MeetsRefineContract(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation): Boolean
+        => r.BoundaryCount.Range.All(i => Law_TriangulationKeepsBoundary(r, t, i))
+            && t.Points.Count.Range.All(i => m.Law_TriangulationAddsOnlyInteriorPoints(f, r, t, i))
+            && t.ElementCount.Range.All(e => m.Law_ElementPositiveInChart(f, t, ElementIndex(e))
+                && m.Law_ElementSpansBelowHalfPeriod(f, t, ElementIndex(e))
+                && m.Law_ElementLiftsFacingFaceNormal(f, t, ElementIndex(e)))
+            && r.NumberOfLoops.Range.All(q => r.LoopAt(q).Points.Count.Range.All(i => Law_BoundarySegmentIsElementSide(r, t, q, i)))
+            && r.SidesSharedByNeighbours(t)
+            && m.Law_ElementAreasSumToRegionArea(f, r, t)
+            && t.Quads.Count == 0;
+
+    // Law_InteriorSideIsShared over every side of t, by the neighbour table instead of the
+    // quadratic SideCount: every side that is not a boundary segment has a triangle running it
+    // the other way, and no directed side occurs twice.
+    SidesSharedByNeighbours(r: UvRegion, t: UvTriangulation): Boolean
+    {
+        var n = t.Points.Count;
+        var nb = NeighbourTable(t.Triangles, n);
+        var codes = (3 * t.Triangles.Count).MapRange(s => EdgeCode(t.Triangles[s / 3].Corner(s % 3), t.Triangles[s / 3].Corner(s % 3 + 1), n));
+        var sorted = codes.Sort((x, y) => x <= y);
+        return (3 * t.Triangles.Count).Range.All(s =>
+                r.IsBoundarySegment(t.Triangles[s / 3].Corner(s % 3), t.Triangles[s / 3].Corner(s % 3 + 1)) ? true : nb[s] >= 0)
+            && (3 * t.Triangles.Count - 1).Range.All(i => sorted[i] != sorted[i + 1]);
+    }
+
+    // RefineToSurfaceByInsertion meets the contract of RefineToSurface: the boundary kept, only
+    // interior points added, every element positive, below half a period and facing the face
+    // normal when lifted, every boundary segment a side, every interior side shared, the areas
+    // summing to the region's.
+    Law_Tri_RefineMeetsContract(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.MeetsRefineContract(f, r, chart, m.RefinedCdt(f, r, chart)));
+
+    // The refined triangulation is still constrained Delaunay: every insertion is followed by
+    // flips until no edge is flippable.
+    Law_Tri_RefinedNoFlippableEdge(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => r.FlippableEdgeCount(m.RefinedCdt(f, r, chart), chart) == 0);
+
+    //==
+    // # Element quality
+    //
+    // Measured as layer 6 measures it: the smallest corner angle of the lifted triangle
+    // (TriangleQualityOf), against Cubit's acceptable 30 degrees (MeshQualityThresholds).
+
+    // The smallest corner angle, in radians, of triangle x of t lifted through face f's surface,
+    // by layer 6's TriangleQualityOf (independent of the refinement's own CornerAngle).
+    LiftedMinAngle(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, x: TriangleFace): Number
+        => Triangle3D(m.Geometry.Eval(m.SurfaceOf(f), t.Points[x.A]), m.Geometry.Eval(m.SurfaceOf(f), t.Points[x.B]),
+            m.Geometry.Eval(m.SurfaceOf(f), t.Points[x.C])).TriangleQualityOf.MinAngle.Radians;
+
+    // The smallest lifted corner angle over t's triangles; pi for none.
+    SmallestLiftedAngle(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation): Number
+        => t.Triangles.Reduce(Number.Pi, (least, x) => least.Min(m.LiftedMinAngle(f, t, x)));
+
+    // Whether triangle x of a triangulation of region r touches the boundary: one of its corners
+    // is a boundary point. Only such a triangle can be forbidden 30 degrees by the fixed boundary
+    // (TRACK.md, Findings).
+    TouchesBoundary(r: UvRegion, x: TriangleFace): Boolean
+        => x.A.Value < r.BoundaryCount || x.B.Value < r.BoundaryCount || x.C.Value < r.BoundaryCount;
+
+    // The criterion as reworded 2026-10-18: on every sample face, every refined triangle that
+    // touches no boundary point has its smallest lifted angle at least Cubit's acceptable 30
+    // degrees.
+    Law_Tri_RefinedInteriorMeetsMinAngle(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) =>
+            m.RefinedCdt(f, r, chart).Triangles.All(x => r.TouchesBoundary(x)
+                ? true
+                : m.LiftedMinAngle(f, m.RefinedCdt(f, r, chart), x) >= MeshQualityThresholds.CubitAcceptable.TriangleMinAngle.Radians));
+
+    // On every sample face, the refined triangulation's smallest lifted angle is no smaller than
+    // the library's (ear clipping, centroid and midpoint splits, angle-sum flips), within the
+    // angular rounding of 32 bits.
+    Law_Tri_MinAngleNoWorseThanLibrary(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) =>
+            m.SmallestLiftedAngle(f, m.RefinedCdt(f, r, chart))
+                >= m.SmallestLiftedAngle(f, m.RefinedTriangulation(f, r, chart, TriCriteria(0))) - 1e-5);
+
+    // On the cylinder (sample 1) and the quarter sector (4), the smallest lifted angle over the
+    // faces is larger than the library's.
+    Law_Tri_MinAngleBetterOnCylinders(k: Integer): Boolean
+    {
+        var m = TriSampleModel(k % 2 == 0 ? 1 : 4);
+        var d = m.TriDiscretizations;
+        var c = TriCriteria(0);
+        var faces = m.Faces.Count.Range.FlatMap(i => m.CanTriangulateFace(BrepFaceIndex(i), d, c) ? [BrepFaceIndex(i)] : [BrepFaceIndex(i)].Take(0));
+        var mine = faces.Reduce(Number.Pi, (least, f) => least.Min(m.SmallestLiftedAngle(f, m.RefinedCdt(f, m.RegionOf(f, d, c), m.ChartOf(f, m.RegionOf(f, d, c))))));
+        var theirs = faces.Reduce(Number.Pi, (least, f) => least.Min(m.SmallestLiftedAngle(f, m.RefinedTriangulation(f, m.RegionOf(f, d, c), m.ChartOf(f, m.RegionOf(f, d, c)), c))));
+        return mine > theirs;
+    }
+
+    // A flat rectangle stays two triangles: every face of the unit box (sample 0) and of the
+    // 2 x 3 x 4 box (5) is refined to its four corners and two triangles, so step A's box keeps
+    // 8 vertices and 12 triangles.
+    Law_Tri_BoxFacesStayTwoTriangles(k: Integer): Boolean
+        => EveryTriangulableFace(k % 2 == 0 ? 0 : 5, (m, f, r, chart) =>
+            m.RefinedCdt(f, r, chart).Points.Count == 4 && m.RefinedCdt(f, r, chart).Triangles.Count == 2);
+
+    // The quality requests at 30 degrees for face f of model m, on its refined triangulation.
+    QualityRequestsOf(m: BrepModel, f: BrepFaceIndex): Array<EdgeRefinementRequest>
+    {
+        var d = m.TriDiscretizations;
+        var c = TriCriteria(0);
+        var r = m.RegionOf(f, d, c);
+        return m.CanTriangulateFace(f, d, c)
+            ? m.QualitySegmentRequestsCdt(f, d, r, m.RefinedCdt(f, r, m.ChartOf(f, r)), c, 30.0.Degrees)
+            : EdgeRefinementRequest.NoRequests;
+    }
+
+    // The quality requests (triangulation-requests.library.plato, unwired) at 30 degrees ask for
+    // more segments on the 2 x 3 x 4 box, whose 2 x 4 faces cannot reach 30 degrees, and for
+    // none on the unit box; every request names an edge of its face.
+    Law_Tri_QualityRequestsOnBoxes(_: Integer): Boolean
+    {
+        var unit = TriSampleModel(0);
+        var box = TriSampleModel(5);
+        return unit.Faces.Count.Range.All(i => unit.QualityRequestsOf(BrepFaceIndex(i)).Count == 0)
+            && box.Faces.Count.Range.Any(i => box.QualityRequestsOf(BrepFaceIndex(i)).Count > 0)
+            && box.Faces.Count.Range.All(i => box.QualityRequestsOf(BrepFaceIndex(i))
+                .All(q => box.FaceEdges(BrepFaceIndex(i)).Any(e => e == q.Edge)));
+    }
+}

@@ -1,0 +1,143 @@
+//==
+// # Steps A and B laws with the new triangulation wired in (TKT-343, staging)
+//
+// The ticket's third criterion: every law of steps A and B still passes when TriangulateRegion
+// and RefineToSurface point at TriangulateRegionCdt and RefineToSurfaceByInsertion. The track
+// cannot edit the library, so these are staged copies: layer 5's triangulation and face-mesh
+// laws applied to FaceTriangulationCdt and MeshFaceCdt (triangulation-wiring.library.plato) at
+// every face of a sample model (TriSampleModel), and layers 6 to 8 compared through their
+// reports: no face check and no whole-model Error that holds with the library fails with the new
+// functions. The merge's full sweep against the committed verdict file is the final word.
+//
+// Sections, in order:
+//  - Layer 5: triangulation
+//  - Layer 5: lifting and the face mesh
+//  - Layers 6 to 8: reports
+
+library TriangulationStepsLaws
+{
+    //==
+    // # Layer 5: triangulation
+
+    // Every layer 5 law over face f's triangulation, on FaceTriangulationCdt: corners in range,
+    // the boundary kept, only interior points added, every point a corner, every element positive
+    // in the chart, below half a period and facing the face normal, the areas summing to the
+    // region's, every boundary segment a side, every interior side shared (the quadratic
+    // Law_InteriorSideIsShared itself).
+    TriangulationLawsHold(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+    {
+        var r = m.RegionOf(f, d, c);
+        var t = m.FaceTriangulationCdt(f, d, c);
+        return t.ElementCount.Range.All(e => t.TriangulationCornersInRange(ElementIndex(e))
+                && m.Law_ElementPositiveInChart(f, t, ElementIndex(e))
+                && m.Law_ElementSpansBelowHalfPeriod(f, t, ElementIndex(e))
+                && m.Law_ElementLiftsFacingFaceNormal(f, t, ElementIndex(e))
+                && 4.Range.All(j => Law_InteriorSideIsShared(r, t, ElementIndex(e), j)))
+            && r.BoundaryCount.Range.All(i => Law_TriangulationKeepsBoundary(r, t, i))
+            && t.Points.Count.Range.All(i => m.Law_TriangulationAddsOnlyInteriorPoints(f, r, t, i) && t.EveryPointIsACorner(i))
+            && m.Law_ElementAreasSumToRegionArea(f, r, t)
+            && r.NumberOfLoops.Range.All(q => r.LoopAt(q).Points.Count.Range.All(i => Law_BoundarySegmentIsElementSide(r, t, q, i)));
+    }
+
+    // TriangulationLawsHold at every face of sample model k that the layer can triangulate.
+    Law_Tri_Steps_TriangulationLaws(k: Integer): Boolean
+    {
+        var m = TriSampleModel(k);
+        var d = m.TriDiscretizations;
+        var c = TriCriteria(0);
+        return m.Faces.Count.Range.All(i => m.CanTriangulateFace(BrepFaceIndex(i), d, c)
+            ? m.TriangulationLawsHold(BrepFaceIndex(i), d, c)
+            : true);
+    }
+
+    //==
+    // # Layer 5: lifting and the face mesh
+
+    // Every layer 5 law over face f's mesh, on MeshFaceCdt and the triangulation it lifted:
+    // lifting keeps the points, local vertices in range, surjective and identified only by seam
+    // and pole sources, shared positions copied, provenance matching the source, point normals
+    // the face normal, dropped elements pole-collapsed, every element facing the face normal and
+    // within SurfaceAngular and SurfaceChordal both ways, the normal turn along surface edges,
+    // no quads unless preferred, and the outcome's requests and diagnostics.
+    FaceMeshLawsHold(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+    {
+        var o = m.MeshFaceCdt(f, d, c);
+        var fm = o.Mesh;
+        var t = m.FaceTriangulationCdt(f, d, c);
+        var lifted = m.CanTriangulateFace(f, d, c);
+        return (lifted
+                ? t.Points.Count.Range.All(i => t.LiftKeepsPoints(m.Lift(f, d, t), i))
+                    && m.Law_DroppedElementsArePoleCollapsed(f, t, fm)
+                    && m.Law_CollapsedQuadsBecomeTriangles(f, t, fm)
+                : true)
+            && fm.LocalVertex.Count.Range.All(i => fm.LocalVertexInRange(VertexIndex(i))
+                && fm.LocalVertex.Count.Range.All(j => Law_LocalVertexFibresAreIdentifications(fm, VertexIndex(i), VertexIndex(j)))
+                && m.Law_SharedPositionIsCopied(d, fm, VertexIndex(i))
+                && d.ProvenanceMatchesSource(fm, VertexIndex(i))
+                && m.Law_PointNormalIsFaceNormal(fm, VertexIndex(i)))
+            && fm.Positions.Count.Range.All(v => fm.LocalVertexSurjective(VertexIndex(v)))
+            && fm.ElementCount.Range.All(e => m.Law_ElementFacesFaceNormal(fm, ElementIndex(e))
+                && m.Law_ElementNormalAgreesWithSurface(fm, c, ElementIndex(e))
+                && m.Law_ElementDeviationWithinSurfaceChordal(d, fm, c, ElementIndex(e))
+                && m.Law_SurfaceWithinSurfaceChordalOfElement(d, fm, c, ElementIndex(e))
+                && 4.Range.All(j => m.Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(d, fm, c, ElementIndex(e), j)))
+            && fm.Quads.Count.Range.All(q => Law_QuadPlanarWithinSurfaceChordal(fm, c, FaceIndex(q)) && Law_QuadConvex(fm, FaceIndex(q)))
+            && (c.PreferQuads ? true : fm.Quads.Count == 0)
+            && o.Requests.Count.Range.All(q => m.RequestNamesFaceEdge(f, o, q))
+            && o.BlockingRequestMeansEmptyMesh
+            && o.RequestHasDiagnostic
+            && Law_EmptyMeshIsExplained(o);
+    }
+
+    // FaceMeshLawsHold at every face of sample model k that the layer can mesh.
+    Law_Tri_Steps_FaceMeshLaws(k: Integer): Boolean
+    {
+        var m = TriSampleModel(k);
+        var d = m.TriDiscretizations;
+        var c = TriCriteria(0);
+        return m.Faces.Count.Range.All(i => m.CanMeshFace(BrepFaceIndex(i), d, c)
+            ? m.FaceMeshLawsHold(BrepFaceIndex(i), d, c)
+            : true);
+    }
+
+    //==
+    // # Layers 6 to 8: reports
+
+    // The names of the checks that fail in report r.
+    FailingChecks(r: Report): Array<String>
+        => r.Checks.FlatMap(x => x.Holds ? [x.Law].Take(0) : [x.Law]);
+
+    // The codes of the Error diagnostics of report r.
+    ErrorCodes(r: Report): Array<String>
+        => r.Diagnostics.FlatMap(x => x.Severity.IsError ? [x.Code] : [x.Code].Take(0));
+
+    // Whether every name in xs is in ys.
+    AllIn(xs: Array<String>, ys: Array<String>): Boolean
+        => xs.All(x => ys.Any(y => y == x));
+
+    // Layer 7's face validation at the Geometric level (every promise the criteria make) fails
+    // no check on MeshFaceCdt's mesh that it passes on MeshFace's, at every face of sample
+    // model k.
+    Law_Tri_Steps_FaceChecksNoWorse(k: Integer): Boolean
+    {
+        var m = TriSampleModel(k);
+        var d = m.TriDiscretizations;
+        var c = TriCriteria(0);
+        return m.Faces.Count.Range.All(i => m.CanMeshFace(BrepFaceIndex(i), d, c)
+            ? m.ValidateFaceMesh(d, m.MeshFaceCdt(BrepFaceIndex(i), d, c).Mesh, c, ConformanceLevel.Geometric).FailingChecks
+                .AllIn(m.ValidateFaceMesh(d, m.MeshFace(BrepFaceIndex(i), d, c).Mesh, c, ConformanceLevel.Geometric).FailingChecks)
+            : true);
+    }
+
+    // The whole pipeline under the witness options (validation at Oracle, which runs layers 6
+    // and 7 on the assembled mesh: closed, oriented, volumes, areas): every Error code of
+    // MeshModelCdt's report on sample model k is also one of MeshModel's, and the run is Ok
+    // when the library's is.
+    Law_Tri_Steps_ModelErrorsNoWorse(k: Integer): Boolean
+    {
+        var m = TriSampleModel(k);
+        var mine = m.MeshModelCdt(MeshingOptions.WitnessOptions);
+        var theirs = m.MeshModel(MeshingOptions.WitnessOptions);
+        return mine.Report.ErrorCodes.AllIn(theirs.Report.ErrorCodes) && (theirs.Ok ? mine.Ok : true);
+    }
+}
