@@ -20,7 +20,7 @@ Evidence from 2026-10-18, wave 1 of version 1:
 2. **Merge by wiring, not by splicing.** A body for a declared function is staged as `<Name>Body`; a replacement gets a new name. At merge the supervisor moves the files into the layer they belong to and makes the one-line wiring edits each track lists under "Merge instructions" in its `TRACK.md`. No merge splices lines inside a function two tracks both wrote.
 3. **Contracts frozen per wave.** Types and signatures in the library change only between waves. Additive contract requests (a new field, a new function signature) may be applied at once, because they cannot break another track.
 4. **Status in files, not messages.** Each track keeps `TRACK.md` (status, merge instructions, contract and cross-track requests, findings, durations, lessons). Requests to another track are written there; the supervisor collects them at merge. Messages are only for being blocked.
-5. **Floats now, doubles later.** Every check runs under `gpu32`. When TKT-315 lands, the supervisor merges it alone, switches the default profile to `cpu64`, and reruns the full sweep; any law whose verdict changes is a finding.
+5. **Floats now, doubles later.** Every check ran under `gpu32` until TKT-315 merged on 2026-10-19; since then the default is `cpu64`. When TKT-315 lands, the supervisor merges it alone, switches the default profile to `cpu64`, and reruns the full sweep; any law whose verdict changes is a finding.
 6. **Checks stay warm per track.** `tools/plato_laws.py --staging <folder>` runs on the warm server; TKT-344 makes the server keep one compiled program per folder set, so tracks stop evicting each other.
 
 ## Tracks, wave 1
@@ -63,8 +63,10 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 | 2026-10-18 | Staging folders replace direct edits in shared layers | Version 1 log: shared-file requests and the parse-error outage |
 | 2026-10-18 | Status and requests go in `TRACK.md`, not messages | The ten-message limit, hit once |
 | 2026-10-18 | Servers and pinned CLIs are built from clean exports of committed Plato, never from the working tree | TKT-315's uncommitted Intrinsics edits sat in the Plato tree when the TKT-344 server was built |
+| 2026-10-19 | Clean-export builds of the server use `-m:1`: two projects named Ara3D.Utils (Plato's parser and studio's SDK) collide in one artifacts path when built in parallel | The 951a70ab server build failed with CS2012, then built in 7 s sequentially |
 | 2026-10-18 | Whole-model laws over the torus need `--budget` above 900 s, or wait for step C | The topology track's request ran past the script's 1800 s timeout on the torus witness |
 
 ## Log
 
 - 2026-10-18, 23:55: server on 8768 replaced by Plato f2b20722 and studio 60abd7fb (TKT-344), from clean exports, kept in `C:\Users\cdigg\.plato-cli\navmcp-f2b20722-60abd7fb`, default profile `gpu32`, `--law-programs=8`. Checked: a staging folder compiles once (2.7 s on a warm parse cache) and the library's own program stays warm alongside it.
+- 2026-10-19: track D2 merged alone. TKT-315 closed (toolkit dc8a784f; Plato 78be1798, 64-bit Integer exact within 2^53, 0 C# errors under cpu64; criterion 2 waived for 7 stdlib laws, stdlib-464). CLI pinned at `C:\Users\cdigg\.plato-cli\951a70ab` and the server on 8768 rebuilt from the same clean export (`navmcp-951a70ab`), default profile now `cpu64`; `plato_laws.py` and the staging rules default to `cpu64`. The topology track's last direct edit landed as 7e709372 (gpu32 and cpu64 verdicts identical: 133 laws, 112 pass, 1 fail fixed in staging, 4 torus budget errors, 10 obligations, 6 skipped). Tracks T (TKT-343) and G (TKT-328) are ready to merge.

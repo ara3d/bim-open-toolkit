@@ -21,8 +21,8 @@ only its own runs, not every other track's.
    while tracks run. A track that needs a new type, field or signature writes it under
    "Contract requests" in its `TRACK.md`; additive ones may be applied by the supervisor at once.
 4. **Checks.** `python -I sandbox/step-brep-mesh/tools/plato_laws.py "<laws>" --staging
-   sandbox/step-mesh-staging/<track>`: the library plus this folder, under the `gpu32` profile
-   (plain 32-bit floats) until TKT-315 lands. Fallback: the pinned CLI in the plan with the staging
+   sandbox/step-mesh-staging/<track>`: the library plus this folder, under the `cpu64` profile
+   (64-bit Number, since TKT-315 merged on 2026-10-19; `--profile gpu32` still runs 32-bit floats). Fallback: the pinned CLI in the plan with the staging
    folder as an extra root.
 5. **Status in the file, not in messages.** Each track keeps `TRACK.md` current (template below)
    and commits it with its work. The supervisor reads every `TRACK.md` at merge time. Send a

@@ -20,8 +20,8 @@ import sys
 import urllib.request
 
 URL = "http://127.0.0.1:8768/mcp"
-# Plain 32-bit floats until the 64-bit Number profile lands (TKT-315); then cpu64.
-PROFILE = "gpu32"
+# 64-bit Number since TKT-315 merged (Plato 78be1798, 2026-10-19); gpu32 stays available per call.
+PROFILE = "cpu64"
 # The server's own law folders, in order; a track's staging folder is compiled after them.
 LIBRARY = [
     "C:/Users/cdigg/git/plato/stdlib/foundation",
@@ -54,7 +54,7 @@ def main():
     parser.add_argument("--staging", action="append", default=[],
                         help="a track's staging folder, compiled after the library (repeatable)")
     parser.add_argument("--profile", default=PROFILE,
-                        help=f"Number profile; default {PROFILE} until 64-bit Number lands (TKT-315)")
+                        help=f"Number profile; default {PROFILE}")
     args = parser.parse_args()
 
     _, session = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
