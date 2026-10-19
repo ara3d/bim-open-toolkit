@@ -1,0 +1,221 @@
+//==
+// # BsplineOracles
+//
+// Track F (TKT-327): bodies for three of layer 7's deferred oracles
+// (validation-oracles.library.plato) that every face or edge without a
+// closed form reaches, and so every B-spline face: the Green area
+// potential by quadrature (AreaSegmentByQuadrature), the curvature bound
+// behind a face's area tolerance (SampledCurvatureBound), and an edge's
+// length by quadrature (EdgeLengthByQuadrature). They are not in the
+// track's brief; the first mesh of Witness_BSplinePatchSolid stopped on the
+// first of them. Each follows its deferred comment's rule.
+//
+// Sections, in order:
+//  - Gauss-Legendre on an interval
+//  - The area potential
+//  - The curvature bound
+//  - Edge length
+
+library BsplineOracles
+{
+    //==
+    // # Gauss-Legendre on an interval
+
+    // The integral of f over [a, b] by the n-point Gauss-Legendre rule, n
+    // from 1 to 8 (the nodes of https://en.wikipedia.org/wiki/Gaussian_quadrature
+    // on [-1, 1], mapped to the interval); 0 for an empty interval.
+    GaussLegendre(f: Function1<Number, Number>, a: Number, b: Number, n: Integer): Number
+    {
+        var nodes = n.GaussNodes;
+        var weights = n.GaussWeights;
+        var half = 0.5 * (b - a);
+        var mid = 0.5 * (a + b);
+        return a == b ? 0.0 : nodes.Count.Range.Reduce(0.0, (sum, i) => sum + weights[i] * f(mid + half * nodes[i])) * half;
+    }
+
+    // The nodes on [-1, 1] of the n-point rule, n clamped to 1 .. 8.
+    GaussNodes(n: Integer): Array<Number>
+    {
+        var k = n.Clamp(1, 8);
+        return k == 1 ? [0.0]
+            : (k == 2 ? [-0.5773502691896257, 0.5773502691896257]
+            : (k == 3 ? [-0.7745966692414834, 0.0, 0.7745966692414834]
+            : (k == 4 ? [-0.8611363115940526, -0.3399810435848563, 0.3399810435848563, 0.8611363115940526]
+            : (k == 5 ? [-0.9061798459386640, -0.5384693101056831, 0.0, 0.5384693101056831, 0.9061798459386640]
+            : (k == 6 ? [-0.9324695142031521, -0.6612093864662645, -0.2386191860831969, 0.2386191860831969, 0.6612093864662645, 0.9324695142031521]
+            : (k == 7 ? [-0.9491079123427585, -0.7415311855993945, -0.4058451513773972, 0.0, 0.4058451513773972, 0.7415311855993945, 0.9491079123427585]
+            : [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498, 0.1834346424956498, 0.5255324099163290, 0.7966664774136267, 0.9602898564975363]))))));
+    }
+
+    // The weights on [-1, 1] of the n-point rule, n clamped to 1 .. 8,
+    // summing to 2.
+    GaussWeights(n: Integer): Array<Number>
+    {
+        var k = n.Clamp(1, 8);
+        return k == 1 ? [2.0]
+            : (k == 2 ? [1.0, 1.0]
+            : (k == 3 ? [0.5555555555555556, 0.8888888888888888, 0.5555555555555556]
+            : (k == 4 ? [0.3478548451374538, 0.6521451548625461, 0.6521451548625461, 0.3478548451374538]
+            : (k == 5 ? [0.2369268850561891, 0.4786286704993665, 0.5688888888888889, 0.4786286704993665, 0.2369268850561891]
+            : (k == 6 ? [0.1713244923791704, 0.3607615730481386, 0.4679139345726910, 0.4679139345726910, 0.3607615730481386, 0.1713244923791704]
+            : (k == 7 ? [0.1294849661688697, 0.2797053914892766, 0.3818300505051189, 0.4179591836734694, 0.3818300505051189, 0.2797053914892766, 0.1294849661688697]
+            : [0.1012285362903763, 0.2223810344533745, 0.3137066661925477, 0.3626837833783620, 0.3626837833783620, 0.3137066661925477, 0.2223810344533745, 0.1012285362903763]))))));
+    }
+
+    // The integral of f over [a, b], split at the breaks strictly inside it,
+    // each piece by the n-point rule; a reversed interval integrates to the
+    // negative.
+    PiecewiseGauss(f: Function1<Number, Number>, a: Number, b: Number, breaks: Array<Number>, n: Integer): Number
+    {
+        var cuts = NumberInterval(a.Min(b), a.Max(b)).WindowCuts(breaks);
+        var total = (cuts.Count - 1).Range.Reduce(0.0, (sum, i) => sum + GaussLegendre(f, cuts[i], cuts[i + 1], n));
+        return b >= a ? total : 0.0 - total;
+    }
+
+    //==
+    // # The area potential
+
+    // The area element |S_u x S_v| at uv.
+    AreaElementOf(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Number
+        => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
+
+    // The Gauss points per knot span of the inner integral: ceil(3 p / 2)
+    // for a spline of degree p in v, 8 for every other surface.
+    InnerGaussPoints(surface: BrepSurface): Integer
+        => match (surface)
+        {
+            Plane(placement) => 8;
+            Cylinder(placement, radius) => 8;
+            Cone(placement, radius, semiAngle) => 8;
+            Sphere(placement, radius) => 8;
+            Torus(placement, major, minor, part) => 8;
+            Revolution(profile, axis) => 8;
+            LinearExtrusion(profile, extrusion) => 8;
+            BSpline(data) => (3 * data.V.Degree + 1) / 2;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => 8;
+            Offset(basis, distance) => 8;
+        };
+
+    // The reference v of the area potential: the start of the surface's v
+    // range when finite, else 0. Any fixed value gives the same Green
+    // integral over a closed loop (it changes P by a function of u alone).
+    PotentialReference(surface: BrepSurface, g: GeometrySet): Number
+        => surface.Domain(g).V.Range.Start.IsFinite && surface.Domain(g).V.Range.Start > Number.MinValue
+            ? surface.Domain(g).V.Range.Start
+            : 0.0;
+
+    // The area potential P(u, v) = -(integral from v_ref to v of the area
+    // element at (u, s) ds), split at the v breaks.
+    AreaPotential(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Number
+        => 0.0 - PiecewiseGauss(s => surface.AreaElementOf(g, UvCoordinate(uv.U, s)),
+            surface.PotentialReference(g), uv.V,
+            surface.Breaks(g, SurfaceParameter.ParameterV, Integer.SearchBreakOrder), surface.InnerGaussPoints);
+
+    // Body of layer 7's AreaSegmentByQuadrature: the integral of P du along
+    // the straight segment, by layer 7's 5-point rule along it, each P by
+    // the inner rule above; exactly 0 when the segment has no u extent.
+    AreaSegmentByQuadratureBody(surface: BrepSurface, g: GeometrySet, seg: GreenSegment): Number
+    {
+        var du = seg.To.U - seg.From.U;
+        var nodes = Number.GaussLegendreNodes;
+        var weights = Number.GaussLegendreWeights;
+        return du == 0.0
+            ? 0.0
+            : du * nodes.Count.Range.Reduce(0.0, (sum, i) => sum + weights[i] * surface.AreaPotential(g, UvCoordinate(
+                seg.From.U + du * nodes[i], seg.From.V + (seg.To.V - seg.From.V) * nodes[i])));
+    }
+
+    //==
+    // # The curvature bound
+
+    // The parameter box of face f: the bounding rectangle of its coarse
+    // Green boundary's points.
+    FaceParameterBox(m: BrepModel, f: BrepFaceIndex): SurfaceWindow
+    {
+        var segs = m.GreenBoundary(f, Integer.GreenChords);
+        var us = segs.Map(s => s.From.U);
+        var vs = segs.Map(s => s.From.V);
+        return SurfaceWindow(
+            NumberInterval(us.Reduce(us[0], (a, x) => a.Min(x)), us.Reduce(us[0], (a, x) => a.Max(x))),
+            NumberInterval(vs.Reduce(vs[0], (a, x) => a.Min(x)), vs.Reduce(vs[0], (a, x) => a.Max(x))));
+    }
+
+    // The largest absolute principal curvature at uv from the first
+    // fundamental form (exact partials) and the second (second differences
+    // of Eval with steps hu, hv): |H| + sqrt(H^2 - K). Infinite where the
+    // area element vanishes.
+    PrincipalCurvatureBound(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, hu: Number, hv: Number): Number
+    {
+        var su = g.PartialU(s, uv);
+        var sv = g.PartialV(s, uv);
+        var e = su.Dot(su);
+        var f = su.Dot(sv);
+        var gg = sv.Dot(sv);
+        var det = e * gg - f * f;
+        var n = su.Cross(sv) * (1.0 / su.Cross(sv).Length.Max(Number.SmallestNormal));
+        var p = g.Eval(s, uv).PositionVector;
+        var suu = (g.Eval(s, UvCoordinate(uv.U + hu, uv.V)).PositionVector - p * 2.0 + g.Eval(s, UvCoordinate(uv.U - hu, uv.V)).PositionVector) * (1.0 / (hu * hu));
+        var svv = (g.Eval(s, UvCoordinate(uv.U, uv.V + hv)).PositionVector - p * 2.0 + g.Eval(s, UvCoordinate(uv.U, uv.V - hv)).PositionVector) * (1.0 / (hv * hv));
+        var suv = (g.Eval(s, UvCoordinate(uv.U + hu, uv.V + hv)) - g.Eval(s, UvCoordinate(uv.U + hu, uv.V - hv))
+            - (g.Eval(s, UvCoordinate(uv.U - hu, uv.V + hv)) - g.Eval(s, UvCoordinate(uv.U - hu, uv.V - hv)))) * (1.0 / (4.0 * hu * hv));
+        var l = suu.Dot(n);
+        var mm = suv.Dot(n);
+        var nn = svv.Dot(n);
+        var h = (e * nn - 2.0 * f * mm + gg * l) / (2.0 * det);
+        var k = (l * nn - mm * mm) / det;
+        return det <= ResolutionAt(e * gg) ? Number.MaxValue : h.Abs + (h * h - k).Max(0.0).Sqrt;
+    }
+
+    // Body of layer 7's SampledCurvatureBound: the largest principal
+    // curvature bound at a 9 by 9 grid of the face's parameter box and at
+    // its coarse Green boundary points, times 1.5 for the space between
+    // samples. The second differences step a hundredth of the box in each
+    // direction, which keeps gpu32 rounding (about 1e-7 / 1e-4 of the
+    // magnitude) far below the curvatures of a unit-sized face.
+    SampledCurvatureBoundBody(m: BrepModel, f: BrepFaceIndex): Number
+    {
+        var g = m.Geometry;
+        var s = m.Faces[f].Surface;
+        var box = m.FaceParameterBox(f);
+        var hu = 0.01 * (box.U.End - box.U.Start).Max(Number.SmallestNormal);
+        var hv = 0.01 * (box.V.End - box.V.Start).Max(Number.SmallestNormal);
+        var grid = 81.MapRange(k => UvCoordinate(
+            box.U.Start + (box.U.End - box.U.Start) * (k % 9).ToNumber / 8.0,
+            box.V.Start + (box.V.End - box.V.Start) * (k / 9).ToNumber / 8.0));
+        var boundary = m.GreenBoundary(f, Integer.GreenChords).Map(seg => seg.From);
+        return 1.5 * grid.Concatenate(boundary).Reduce(0.0, (worst, uv) => worst.Max(g.PrincipalCurvatureBound(s, uv, hu, hv)));
+    }
+
+    //==
+    // # Edge length
+
+    // The integral of |C'| over [a, b] of curve c by the 5-point rule.
+    SpeedIntegral(g: GeometrySet, c: CurveIndex, a: Number, b: Number): Number
+        => GaussLegendre(t => g.Derivative(c, g.Domain(c).Wrap(t)).Length, a, b, 5);
+
+    // The length of curve c over [a, b] by the 5-point rule, the interval
+    // halved until the two halves' sum agrees with the whole within tol or
+    // the depth runs out (12 halvings, at most 4096 pieces per span).
+    AdaptiveLength(g: GeometrySet, c: CurveIndex, a: Number, b: Number, tol: Number, depth: Integer): Number
+    {
+        var whole = g.SpeedIntegral(c, a, b);
+        var mid = 0.5 * (a + b);
+        var halves = g.SpeedIntegral(c, a, mid) + g.SpeedIntegral(c, mid, b);
+        return depth <= 0 || (halves - whole).Abs <= tol
+            ? halves
+            : g.AdaptiveLength(c, a, mid, tol * 0.5, depth - 1) + g.AdaptiveLength(c, mid, b, tol * 0.5, depth - 1);
+    }
+
+    // Body of layer 7's EdgeLengthByQuadrature: the integral of |C'| over
+    // edge e's domain by the 5-point rule on every span between consecutive
+    // breakpoints, each span halved until two successive results agree
+    // within the length tolerance.
+    EdgeLengthByQuadratureBody(m: BrepModel, e: BrepEdgeIndex): Number
+    {
+        var g = m.Geometry;
+        var c = m.Edges[e].Curve;
+        var cuts = m.EdgeDomain(e).Range.WindowCuts(g.Breakpoints(c));
+        return (cuts.Count - 1).Range.Reduce(0.0, (sum, i) =>
+            sum + g.AdaptiveLength(c, cuts[i], cuts[i + 1], m.Tolerances.Length.Value, 12));
+    }
+}

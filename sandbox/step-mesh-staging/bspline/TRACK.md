@@ -5,6 +5,7 @@ Status: working
 
 ## Done
 
+- layer 7 oracle bodies (`bspline-oracles.library.plato`), also not in the brief's list: validating the bump solid at the Oracle level reaches `AreaSegmentByQuadrature`, `SampledCurvatureBound` and `EdgeLengthByQuadrature` for any face or edge without a closed form. `BsplineOraclesLaws` (flat-patch potential, layer 7's area bracket at three bumps, the bump's principal curvatures, the quarter circle's length) on the wired copy: 4 obligation before, 4 pass after.
 - side bodies (`bspline-sides.library.plato`), not in the brief's list but on the meshing path of every B-spline face (layer 5's degenerate sides reach `BSplineSideCollapses`): boundary control rows by de Boor at the side's knot, then convex-hull tests. `BsplineSidesLaws` on the wired copy: 3 obligation before, 3 pass after.
 - sagitta body (`bspline-sagitta.library.plato`): branch and bound over Bezier pieces (blossom extraction), exact on polylines, a sampled estimate on other curves. `BsplineSagittaLaws` on the wired copy: 3 obligation before, 3 pass after; with a piece budget of 1 (the raw hull bound) 2 fail.
 - inverse bodies (`bspline-inverse.library.plato`, `bspline-inverse.types.plato`): global search per smooth piece with regula falsi on the slope (curves, pcurves) and damped, projected Gauss-Newton (surfaces); local Gauss-Newton from a seed. `BsplineInverseLaws` (11 laws) on the wired copy: 10 obligation before (the eleventh was added with the bodies), first run 9 error (an `&&` guard that indexes -1), then 2 fail (stop at 32 roundoffs), then 11 pass. A mutation that keeps the first local minimum fails 4 laws.
@@ -52,6 +53,7 @@ Each line gives a deferred library function the body on the right (the same para
 | Inverse bodies, two fixes, mutations | 35 min | 8 CLI runs |
 | Sagitta body and mutation | 10 min | 3 CLI runs |
 | Side bodies (found on the meshing path) | 10 min | 3 CLI runs |
+| Layer 7 oracle bodies (found on the meshing path) | 20 min | 4 CLI runs |
 
 ## Lessons
 
