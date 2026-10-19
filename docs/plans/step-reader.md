@@ -344,3 +344,36 @@ library's constructs today.
   `ara3d-sdk`), hence `-PlatoCli`; the script now prints the compiler's build errors. Timings for TKT-321: the same
   regeneration took 945 s and the test build 927 s under heavy load, then 64 s and 71 s an hour later.
   `BodilessStubs.cs` stays until Plato writer fix 6 (plato-459) lands.
+- 2026-10-18, TKT-313 chunk 1 (unit cube through the compiled library), bim-open-data f6e45b3. **Where decoding and
+  meshing run: per file.** `Ara3D.Step.Mesher/Plato/StepPlatoMesher.MeshFile(StepModel, chordal mm)` calls `DecodeRaw`
+  and `PrepareModel` once for the file, because both are defined over the whole file: the tolerances come from the
+  model's size and coordinate extent, and a mirrored occurrence's faces are folded in place, with every occurrence's
+  bodies placed in millimetres. Then, as layer 08's `MeshModel` before its loop: every edge discretized once (each row
+  materialized: `DiscretizeAll` returns a lazy list that recomputes on access), layer 08's `FaceOutcome` per face, and
+  `NumberMeshVertices` plus `AssembleModelMesh`. Layer 08 is not in the committed generation (layers 00 to 07), so those
+  ten lines restate it; the refinement loop and validation are not run. Library code that throws on an edge or a face
+  becomes an empty outcome with `HOST-LIBRARY-THREW` and a `StepPlatoFailure` (pending when NotImplementedException).
+  `StepPlatoBodies.ToShapeMesh(body, units)` restricts the assembled mesh to the body's faces (`RestrictedToFaces`,
+  `ToTriangleMesh3D`), drops unused vertices, and maps back through the inverse of the occurrence's placement into the
+  item's metres, reversing triangles under a mirror. **Cube** (Plato/PlatoCubeTests): 8 vertices, 12 triangles, no
+  failure, no Error; from C# on the library's `ModelMesh`: `IsManifold`, `IsClosed`, `IsConsistentlyOriented`,
+  `ReferencedEulerCharacteristic` 2, `SignedVolume` 1 mm^3, `Area` 6 mm^2, one component, and the laws
+  `Law_ClosedMeansEveryEdgeHasTwoSides` and `Law_ManifoldMeansNoEdgeHasMoreThanTwoSides` (all 18 edges),
+  `Law_OrientedExactlyWhenNoEdgeIsMisoriented`, `Law_ClosedOrientedSurfaceHasGenus`, `Law_AngleDefectSumIsTwoPiTimesEuler`,
+  `Law_VectorAreaVanishes`, `Law_ComponentEulerCharacteristicsAddUp`, `Law_ReversalNegatesSignedVolume`,
+  `Law_TriangleMeshKeepsArea`, `Law_TriangleMeshKeepsPositions` all hold. C# on the contract mesh: every directed edge
+  paired once with its reverse, Euler 2, volume 1e-9 m^3, corners at 0 and 0.001 m. The interpreter was not run, so no
+  C#/interpreter comparison was made. **Other surfaces**: a hand-written unit cylinder (new fixture) meshes closed and
+  oriented, 72 points per circle at a 0.001 mm chordal bound, volume within 1% below pi mm^3; a unit sphere (new
+  fixture, one face bounded by a pole-to-pole seam) throws NotImplementedException in `MeshFace` and comes back as a
+  pending failure with an empty face. **Finding:** the unit cube with plane #118 replaced by
+  `SPHERICAL_SURFACE('',#112,0.5)`, `CYLINDRICAL_SURFACE('',#112,0.5)` or `TOROIDAL_SURFACE('',#112,2.,0.5)` (edges no
+  longer on the face's surface) makes `Discretize` of edge 3 (#56, a line shared with that face) run for more than 15 s
+  without returning, with `DefaultCriteria(0.001)` and no floors: a non-terminating loop on inconsistent input, which the
+  bridge's exception guard cannot catch. **Not done: wiring.** `StepMesher.Mesh` still meshes nothing, since
+  `Model/StepModelBuilder.cs` calls `StepShapeMesher.MeshItem(model, item, units, ...)` per item and cannot receive the
+  file's meshes; that file was outside the chunk's fence. Proposed: `StepMesher.Mesh` calls `MeshFile` once, and the
+  builder takes the `StepPlatoMesh` (or a `Func<StepPlacedItem, StepShapeMesh?>`) and looks each placed item up by body
+  instance id (first occurrence), counting an item pending when every face failed as pending; `MeshItem`'s per-item
+  signature then goes. Tests: Ara3D.Step.Mesher.Tests 30 passed, 1 skipped (`AssemblyModelHasTwoInstancesOfOneMesh`,
+  waiting on the wiring).
