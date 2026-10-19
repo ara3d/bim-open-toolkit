@@ -46,7 +46,7 @@ function loadPlaywright() {
       // try the next place
     }
   }
-  throw new Error("playwright-core is not installed: run `npm install --no-save playwright-core` in bimopenflow/web, or set PLAYWRIGHT_CORE to a folder whose node_modules has it");
+  throw new Error("playwright-core is not installed: run `npm ci` in bimopenflow/web (playwright-core is a devDependency there), or set PLAYWRIGHT_CORE to a folder whose node_modules has it");
 }
 
 const port = Number(process.env.NRC_PAGES_PORT ?? 5356);
