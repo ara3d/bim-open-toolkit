@@ -294,3 +294,16 @@ session accepts them.
   generated `EdgeDiscretization` (one parameter, four points); only `Discretize`'s output promises
   every seed. Same pattern: the law takes `Discretize`'s inputs. Step B (TKT-324) applies it in
   layers 4 and 5.
+
+## F-56: leftovers of the wave 1 merges
+
+- **Raised** 2026-10-19 by the merge agents of plan v2 (`docs/plans/step-mesher-v2.md`).
+  1. After TKT-346's wiring, `Law_BoundedAgreesOnConsistentModels` compares `Discretize` with
+     `DiscretizeBounded`, which are now one function, and `DiscretizeAllBounded` duplicates
+     `DiscretizeAll`. Delete the law and the duplicate.
+  2. After TKT-343's wiring, `Law_MinAngleNoWorseThanLibrary` is trivially true and
+     `Law_MinAngleBetterOnCylinders` compares against angles recorded from the old library (4.99
+     degrees for the cylinder, 8.50 for the sector). Keep the second as a recorded benchmark or
+     delete both.
+  3. `Law_RefinementNeverCoarsens` exceeds the 120 s budget on the torus since the merge.
+- **Status** a sweep after wave 1; item 3 with step C (TKT-325).
