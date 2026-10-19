@@ -2,18 +2,17 @@
 // # Constrained Delaunay flips and refinement in a face's chart
 //
 // Layer 05-face-meshing, the machinery TriangulateRegion and RefineToSurface share (chunk B,
-// TKT-324). A triangulation of a region is made constrained Delaunay in the face's chart by
-// Lawson's flips: an edge that is not a boundary segment of the region is flipped while the two
-// angles opposite it sum to more than pi and the quadrilateral around it is strictly convex.
-// From any triangulation that keeps the boundary segments, the flips reach the constrained
-// Delaunay triangulation (Lawson 1977; de Berg et al., Computational Geometry, 9.1 and 9.6), and
-// they change no point, so every contract of the triangulation that does not name the
-// connectivity still holds. Refinement against the surface splits the longest interior edge of
-// each element that fails a surface criterion at its parameter midpoint (Rivara's longest-edge
-// bisection), or the element at its parameter centroid when every side is a boundary segment,
-// then flips again. Both keep every element positive in the chart: a flip happens only on a
-// strictly convex quadrilateral, and a split point lies on the split edge or inside the
-// element.
+// TKT-324; the flip test and the refinement loop moved to triangulation-cdt.library.plato and
+// triangulation-refine.library.plato by TKT-343). A triangulation of a region is made
+// constrained Delaunay in the face's chart by Lawson's flips: an edge that is not a boundary
+// segment of the region is flipped while the in-circle determinant is positive and the
+// quadrilateral around it is strictly convex (IsFlippableCdt). From any triangulation that keeps
+// the boundary segments, the flips reach the constrained Delaunay triangulation (Lawson 1977; de
+// Berg et al., Computational Geometry, 9.1 and 9.6), and they change no point. This file keeps
+// the pass and its loop (FlipPass, Delaunayed) and the tests refinement shares: whether a
+// triangle needs refinement against the surface, where it may be split, and which triangles
+// are known to be fine. Flips keep every element positive in the chart, because a flip happens
+// only on a strictly convex quadrilateral.
 //
 // Directed edge j of a triangle runs from its corner j to corner j + 1 (A to B, B to C, C to A);
 // its slot in a neighbour table is 3 t + j.
@@ -97,33 +96,6 @@ library UvDelaunay
     //==
     // # Lawson's flips
 
-    // The angle at `apex` between the directions to p and q, in [0, pi].
-    AngleAt(apex: Point2D, p: Point2D, q: Point2D): Number
-    {
-        var ux = p.X - apex.X;
-        var uy = p.Y - apex.Y;
-        var vx = q.X - apex.X;
-        var vy = q.Y - apex.Y;
-        return Atan2Radians((ux * vy - uy * vx).Abs, ux * vx + uy * vy);
-    }
-
-    // Whether edge j of triangle t (from a to b, c opposite), shared with triangle u (d
-    // opposite), should be flipped to the edge from c to d: not a boundary segment, the
-    // quadrilateral (a, d, b, c) strictly convex in the chart, and the angles at c and d summing
-    // to more than pi by more than rounding (so cocircular points never flip back and forth).
-    IsFlippable(r: UvRegion, points: Array<Point2D>, t: TriangleFace, j: Integer, u: TriangleFace): Boolean
-    {
-        var a = t.Corner(j);
-        var b = t.Corner(j + 1);
-        var c = t.Corner(j + 2);
-        var d = u.OppositeCorner(a, b);
-        return (d < 0 || r.IsConstrained(a, b))
-            ? false
-            : (TwiceSignedArea(points[a], points[d], points[c]) > 0.0
-                && TwiceSignedArea(points[d], points[b], points[c]) > 0.0
-                && AngleAt(points[c], points[a], points[b]) + AngleAt(points[d], points[b], points[a]) > Number.Pi + 1e-9);
-    }
-
     // One pass of flips: every flippable edge whose two triangles no earlier flip of the pass
     // touched is flipped; (a, b, c) and (b, a, d) become (a, d, c) and (d, b, c).
     FlipPass(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
@@ -137,7 +109,7 @@ library UvDelaunay
             var t = s / 3;
             var u = nb[s];
             var free = u > t ? (used.At(t).Not && used.At(u).Not) : false;
-            if (free ? r.IsFlippable(points, tris[t], s % 3, tris[u]) : false)
+            if (free ? r.IsFlippableCdt(points, tris[t], s % 3, tris[u]) : false)
             {
                 var a = tris[t].Corner(s % 3);
                 var b = tris[t].Corner(s % 3 + 1);
@@ -151,14 +123,14 @@ library UvDelaunay
         return result.Freeze();
     }
 
-    // The triangles flipped until no edge is flippable (at most 200 passes): the constrained
+    // The triangles flipped until no edge is flippable (at most 400 passes): the constrained
     // Delaunay triangulation of their points in the chart, the region's boundary segments kept.
     Delaunayed(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
     {
         var current = tris;
         var changed = true;
         var pass = 0;
-        while (changed && pass < 200)
+        while (changed && pass < 400)
         {
             var next = r.FlipPass(points, current);
             changed = next.Corresponds(current, (x, y) => x == y).Not;
@@ -241,60 +213,4 @@ library UvDelaunay
         => after.Triangles.Count.MapRange(k => k < before.Triangles.Count
             ? (needs[k] ? false : after.Triangles[k] == before.Triangles[k])
             : false);
-
-    // One refinement pass over the triangles of t: each triangle that needs refinement (needs[k])
-    // and that no earlier split of the pass touched is split, at the parameter midpoint of its SplitSide
-    // with the neighbour across it ((a, b, c) and (b, a, d) become (a, p, c), (p, b, c),
-    // (b, p, d), (p, a, d)), or at its parameter centroid; the new points are Interior and come
-    // after every existing point; quads are kept. Then Lawson's flips.
-    SplitPass(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, needs: Array<Boolean>, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var points = t.Points.Map(uv => chart.ChartPoint(uv));
-        var tol = m.RegionTolerance(f, chart);
-        var nb = NeighbourTable(t.Triangles, t.Points.Count);
-        var tris = t.Triangles.EmptyList.AddRange(t.Triangles);
-        var used = new List<Boolean>().AddRange(t.Triangles.Count.MapRange(i => false));
-        var added = new List<UvCoordinate>();
-        var k = 0;
-        while (k < t.Triangles.Count)
-        {
-            var tri = t.Triangles[k];
-            if (used.At(k) ? false : needs[k])
-            {
-                var j = r.SplitSide(points, tri, nb, k);
-                var u = j < 0 ? -1 : nb[3 * k + j];
-                var a = tri.Corner(j.Max(0));
-                var b = tri.Corner(j.Max(0) + 1);
-                var e = tri.Corner(j.Max(0) + 2);
-                var d = u < 0 ? -1 : t.Triangles[u].OppositeCorner(a, b);
-                var uv = j < 0 ? t.ElementUvCentroid(ElementIndex(k)) : t.Points[a].UvMidpoint(t.Points[b]);
-                var corners = d < 0 ? [a, b, e] : [a, b, e, d];
-                var free = u < 0 ? j < 0 : used.At(u).Not;
-                if (free ? m.IsGoodInsertion(f, r, tol, t, corners, uv, c) : false)
-                {
-                    var p = t.Points.Count + added.Count;
-                    added = added.Add(uv);
-                    if (j < 0)
-                    {
-                        tris = tris.Set(k, TriangleOf(a, b, p)).Add(TriangleOf(b, e, p)).Add(TriangleOf(e, a, p));
-                        used = used.Set(k, true);
-                    }
-                    else
-                    {
-                        tris = tris.Set(k, TriangleOf(a, p, e)).Add(TriangleOf(p, b, e))
-                            .Set(u, TriangleOf(b, p, d)).Add(TriangleOf(p, a, d));
-                        used = used.Set(k, true).Set(u, true);
-                    }
-                }
-            }
-            k = k + 1;
-        }
-        var newPoints = added.Freeze();
-        var allPoints = t.Points.Concatenate(newPoints);
-        return UvTriangulation(
-            allPoints,
-            t.Sources.Concatenate(newPoints.Map(uv => UvPointSource.Interior)),
-            r.Delaunayed(allPoints.Map(uv => chart.ChartPoint(uv)), tris.Freeze()),
-            t.Quads);
-    }
 }

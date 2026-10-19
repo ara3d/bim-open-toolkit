@@ -1,5 +1,5 @@
 //==
-// # Refinement against the surface by insertion and flips (TKT-343, staging)
+// # Refinement against the surface by insertion and flips (TKT-343)
 //
 // Layer 05-face-meshing. RefineToSurfaceByInsertion, for the contract RefineToSurface, replaces
 // the library's refinement, which skipped planes and split only for surface criteria. Each
@@ -8,13 +8,13 @@
 //    TriangleNeedsRefinement, not tested on planes) gets its circumcentre (Chew 1989, Ruppert
 //    1995), or when that may not go in, the parameter midpoint of its longest side that is not
 //    a boundary segment, or its parameter centroid when every side is one, as before; the
-//    points go in together, then DelaunayedCdt;
+//    points go in together, then Delaunayed;
 //  - the angle pass: every triangle whose smallest lifted angle is below RefinementMinAngle, one
 //    at a time, gets the first of these that is kept: its off-centre (Üngör, "Off-centers",
 //    LATIN 2004: on the perpendicular bisector of its shortest side, toward the opposite corner,
 //    at the circumcentre or at the apex of a 45 degree triangle on that side, whichever is
 //    nearer), its circumcentre, the midpoint of its longest side, its centroid; the point is
-//    inserted, DelaunayedCdt flips, and the insertion is kept only
+//    inserted, Delaunayed flips, and the insertion is kept only
 //    when the smallest lifted angle of the triangles it changed is larger than that of the
 //    triangles it removed. Unchanged triangles keep their angles, so an angle insertion never
 //    lowers a face's smallest angle, and a flat rectangle the fixed boundary keeps below 30
@@ -246,7 +246,7 @@ library TriangulationRefine
     // (Chew's and Ruppert's Delaunay refinement: a smaller triangle without a worse angle), or,
     // when the circumcentre may not go in (SurfacePlacement), its SurfaceCandidate (the old
     // midpoint or centroid). The new points are Interior and come after every existing point;
-    // quads are kept. Then DelaunayedCdt.
+    // quads are kept. Then Delaunayed.
     SurfacePass(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, surface: Array<Boolean>, c: FaceMeshingCriteria): UvTriangulation
     {
         var n0 = t.Triangles.Count;
@@ -281,7 +281,7 @@ library TriangulationRefine
         return UvTriangulation(
             allPoints,
             t.Sources.Concatenate(newPoints.Map(uv => UvPointSource.Interior)),
-            r.DelaunayedCdt(allPoints.Map(uv => chart.ChartPoint(uv)), tris.Freeze()),
+            r.Delaunayed(allPoints.Map(uv => chart.ChartPoint(uv)), tris.Freeze()),
             t.Quads);
     }
 
@@ -301,7 +301,7 @@ library TriangulationRefine
     }
 
     // The triangles with the parameter point uv inserted for the failing triangle k, flipped by
-    // DelaunayedCdt; tris unchanged when the point is refused (the header's rules) or the
+    // Delaunayed; tris unchanged when the point is refused (the header's rules) or the
     // insertion does not raise the smallest angle of what it changes. The point would be
     // pts.Count.
     TryAngleInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, pts: Array<UvCoordinate>, tris: Array<TriangleFace>, k: Integer, uv: UvCoordinate, c: FaceMeshingCriteria): Array<TriangleFace>
@@ -325,7 +325,7 @@ library TriangulationRefine
             : false;
         var allPts = pts.Concatenate([uv]);
         var split = good ? tris.EmptyList.AddRange(tris).SplitAt(q, u, a, b, e, d, pts.Count).Freeze() : tris;
-        var flipped = good ? r.DelaunayedCdt(allPts.Map(x => chart.ChartPoint(x)), split) : tris;
+        var flipped = good ? r.Delaunayed(allPts.Map(x => chart.ChartPoint(x)), split) : tris;
         var angles = good ? m.ChangedAngles(f, allPts, tris, flipped) : [0.0, 0.0];
         return angles[0] > angles[1] ? flipped : tris;
     }

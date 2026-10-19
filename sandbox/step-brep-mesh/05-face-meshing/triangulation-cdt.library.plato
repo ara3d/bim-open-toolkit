@@ -1,5 +1,5 @@
 //==
-// # Constrained Delaunay triangulation by the in-circle determinant (TKT-343, staging)
+// # Constrained Delaunay triangulation by the in-circle determinant (TKT-343)
 //
 // Layer 05-face-meshing. Replaces UvDelaunay's flip test, which compared an Atan2 angle sum with
 // pi + 1e-9, by the in-circle determinant in Number (no exact predicates, owner decision
@@ -17,7 +17,7 @@
 //
 // Sections, in order:
 //  - The in-circle determinant
-//  - Flips
+//  - The flip test
 //  - The triangulation
 
 library TriangulationCdt
@@ -73,7 +73,7 @@ library TriangulationCdt
     }
 
     //==
-    // # Flips
+    // # The flip test
 
     // Whether edge j of triangle t (from a to b, c opposite), shared with triangle u (d
     // opposite), is flipped to the edge from c to d: not a boundary segment, the quadrilateral
@@ -92,57 +92,12 @@ library TriangulationCdt
                 && InCircleOf(points, a, b, c, d) > 0.0);
     }
 
-    // One pass of flips: every flippable edge whose two triangles no earlier flip of the pass
-    // touched is flipped; (a, b, c) and (b, a, d) become (a, d, c) and (d, b, c). UvDelaunay's
-    // FlipPass with IsFlippableCdt.
-    FlipPassCdt(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
-    {
-        var nb = NeighbourTable(tris, points.Count);
-        var result = tris.EmptyList.AddRange(tris);
-        var used = new List<Boolean>().AddRange(tris.Count.MapRange(i => false));
-        var s = 0;
-        while (s < 3 * tris.Count)
-        {
-            var t = s / 3;
-            var u = nb[s];
-            var free = u > t ? (used.At(t).Not && used.At(u).Not) : false;
-            if (free ? r.IsFlippableCdt(points, tris[t], s % 3, tris[u]) : false)
-            {
-                var a = tris[t].Corner(s % 3);
-                var b = tris[t].Corner(s % 3 + 1);
-                var c = tris[t].Corner(s % 3 + 2);
-                var d = tris[u].OppositeCorner(a, b);
-                result = result.Set(t, TriangleOf(a, d, c)).Set(u, TriangleOf(d, b, c));
-                used = used.Set(t, true).Set(u, true);
-            }
-            s = s + 1;
-        }
-        return result.Freeze();
-    }
-
-    // The triangles flipped until no edge is flippable (at most 400 passes): the constrained
-    // Delaunay triangulation of their points in the chart, the region's boundary segments kept.
-    DelaunayedCdt(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
-    {
-        var current = tris;
-        var changed = true;
-        var pass = 0;
-        while (changed && pass < 400)
-        {
-            var next = r.FlipPassCdt(points, current);
-            changed = next.Corresponds(current, (x, y) => x == y).Not;
-            current = next;
-            pass = pass + 1;
-        }
-        return current;
-    }
-
     //==
     // # The triangulation
 
     // The constrained Delaunay triangulation of region r in its chart, for the contract
     // TriangulateRegion: the library's ear-clipped seed (holes bridged, point holes inserted
-    // after) flipped by DelaunayedCdt. Every boundary point kept in BoundaryPoints order, every
+    // after) flipped by UvDelaunay's Delaunayed. Every boundary point kept in BoundaryPoints order, every
     // triangle positive in the chart, every boundary segment a side, no point added, no quads.
     TriangulateRegionCdt(r: UvRegion, chart: FaceChart): UvTriangulation
     {
@@ -155,7 +110,7 @@ library TriangulationCdt
         var clipped = ring.EarClipped(points);
         var pointHoles = r.Holes.Count.Range.FlatMap(h =>
             r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : r.Holes.Count.Range.Take(0));
-        var triangles = r.DelaunayedCdt(points, pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points)));
+        var triangles = r.Delaunayed(points, pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points)));
         return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
     }
 }

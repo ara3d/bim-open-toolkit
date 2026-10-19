@@ -545,7 +545,7 @@ StepToMeshLaws.Law_PendingRequestsAreRefinable	obligation	host obligation: Proje
 StepToMeshLaws.Law_PowerOfTwoScalingKeepsConnectivity	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_PowerOfTwoScalingKeepsConnectivity)
 StepToMeshLaws.Law_PowerOfTwoScalingScalesPositions	pass	
 StepToMeshLaws.Law_ProvenanceNamesModelCell	error	m = BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(2, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 0, 1)), Direction3D(Vector3D(0, -1, 0))), 0.5), BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 2.5)], [], [], [BrepSurface.Torus(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0,...
-StepToMeshLaws.Law_RefinementNeverCoarsens	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < Law_RefinementNeverCoarsens)
+StepToMeshLaws.Law_RefinementNeverCoarsens	error	m = BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(2, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 0, 1)), Direction3D(Vector3D(0, -1, 0))), 0.5), BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 2.5)], [], [], [BrepSurface.Torus(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0,...
 StepToMeshLaws.Law_RigidMotionMovesPositions	pass	
 StepToMeshLaws.Law_RoundsWithinLimit	obligation	host obligation: ProjectBySearch(BrepSurface, GeometrySet, Point3D) (in Project < Project < Map < LiftedBound < LiftedBoundCloses < All < IsPlainInParameters < Law_LoopWindingMatchesSameSense < CheckAll < CheckFaces < Check_LoopWindingMatchesSameSense < TopologyReport < Map < ForLevel < ValidateBrep < RefusedOutcome < MeshChosenFaces < MeshModel < Law_RoundsWithinLimit)
 StepToMeshLaws.Law_ShellReversalNegatesVolume	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_ShellReversalNegatesVolume)
@@ -573,7 +573,7 @@ StepToMeshWitnessesLaws.Law_WitnessMeshCrossChecksClean	obligation	host obligati
 StepToMeshWitnessesLaws.Law_WitnessMeshValidatesClean	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < WitnessOutcome < WitnessMesh < Law_WitnessMeshValidatesClean)
 StepToMeshWitnessesLaws.Law_WitnessMeshesOk	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < WitnessOutcome < Law_WitnessMeshesOk)
 StepToMeshWitnessesLaws.Law_WitnessPowerOfTwoScalingKeepsConnectivity	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_PowerOfTwoScalingKeepsConnectivity < Law_WitnessPowerOfTwoScalingKeepsConnectivity)
-StepToMeshWitnessesLaws.Law_WitnessPowerOfTwoScalingScalesPositions	error	k = -7, e = 1, v = -8  time budget exceeded (in OppositeCorner < IsFlippable < FlipPass < Delaunayed < SplitPass < RefineToSurface < RefinedTriangulation < GridOrTriangles < MeshedOutcome < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_PowerOfTwoScalingScalesPositions < Law_WitnessPowerOfTwoScalingScalesPositions)
+StepToMeshWitnessesLaws.Law_WitnessPowerOfTwoScalingScalesPositions	error	k = -7, e = 1, v = -8  time budget exceeded (in IsFlippableCdt < FlipPass < Delaunayed < TryAngleInsertion < AnglePass < RefineToSurfaceByInsertion < RefineToSurface < RefinedTriangulation < GridOrTriangles < MeshedOutcome < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_PowerOfTwoScalingScalesPositions < Law_WitnessPow...
 StepToMeshWitnessesLaws.Law_WitnessRigidMotionMovesPositions	pass	
 StepToMeshWitnessesLaws.Law_WitnessShellReversalNegatesVolume	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_ShellReversalNegatesVolume < Law_WitnessShellReversalNegatesVolume)
 StepWhereRulesLaws.Law_Practice_Axis2Placement3D_Orthogonal	obligation	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldIsUnset < Law_Practice_Axis2Placement3D_Orthogonal)
@@ -707,3 +707,19 @@ ToolingGeneratorsLaws.Law_PerturbedShellVolumeFollowsFactor	pass
 ToolingGeneratorsLaws.Law_ReversalIsAnInvolution	pass	
 ToolingGeneratorsLaws.Law_SampleHasStatedCounts	pass	
 ToolingGeneratorsLaws.Law_UnitDrawIsInUnitInterval	pass	
+TriangulationLaws.Law_BoxFacesStayTwoTriangles	pass	
+TriangulationLaws.Law_CdtAreaIsRegionArea	pass	
+TriangulationLaws.Law_CdtIsConforming	pass	
+TriangulationLaws.Law_CdtKeepsBoundary	pass	
+TriangulationLaws.Law_CdtKeepsEverySegment	pass	
+TriangulationLaws.Law_CdtNoFlippableEdge	pass	
+TriangulationLaws.Law_CdtPositiveOrientation	pass	
+TriangulationLaws.Law_FlipNeverUndone	pass	
+TriangulationLaws.Law_InCircleOfAgreesWithInCircle	pass	
+TriangulationLaws.Law_InCircleWitnesses	pass	
+TriangulationLaws.Law_MinAngleBetterOnCylinders	pass	
+TriangulationLaws.Law_MinAngleNoWorseThanLibrary	pass	
+TriangulationLaws.Law_QualityRequestsOnBoxes	pass	
+TriangulationLaws.Law_RefineMeetsContract	pass	
+TriangulationLaws.Law_RefinedInteriorMeetsMinAngle	fail	k = 1
+TriangulationLaws.Law_RefinedNoFlippableEdge	pass	

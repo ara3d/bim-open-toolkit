@@ -1,10 +1,10 @@
 //==
-// # Edge requests for triangle quality (TKT-343, staging, not to be wired yet)
+// # Edge requests for triangle quality (TKT-343, not wired yet)
 //
 // Layer 05-face-meshing. With its boundary fixed, a face cannot always reach a smallest angle:
 // a 2 x 4 face with only its corners cannot reach 30 degrees with any interior points
 // (TRACK.md, Findings). QualitySegmentRequestsCdt asks layer 8's loop for more segments on the
-// edges where it fails. It is staged for a later option (a MeshingOptions.QualityAngle, contract
+// edges where it fails. It waits for a later option (a MeshingOptions.QualityAngle, contract
 // request in TRACK.md) and is not added to MeshedOutcome's advisory requests: the owner keeps a
 // flat rectangle as two triangles (supervisor, 2026-10-18), and step A's boxes keep 8 vertices
 // and 12 triangles.

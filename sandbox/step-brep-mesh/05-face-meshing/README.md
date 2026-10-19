@@ -18,7 +18,11 @@ Algorithms were deferred by the design pass, every one with a contract in `face-
 | `face-meshing.types.plato` | `FaceMeshingCriteria`, `UvTriangulation`, `FaceMesh`, `QuadGridOutcome`, `FaceMeshOutcome` |
 | `uv-regions.library.plato` | library `UvRegions`: sources, coedge samples, the projection-versus-pcurve rule, `LoopToUv`, `Unwrap`, `AddMissingSeamsAndPoles`, the chart and tolerances, signed areas, `OrientRegion`, `RegionOf`, windings, collapsed lines, simplicity and containment, seam cuts, the region's refinement requests, four-sided regions |
 | `face-meshing.library.plato` | library `FaceMeshing`: preconditions (`IsDiscretizedFace`), criteria, `TriangulateRegion`, `RefineToSurface`, element measures, `Lift`, the surface measures, quads and `QuadGridIfRectangular`, outcomes, `MeshFace` |
-| `uv-delaunay.library.plato` | library `UvDelaunay` (chunk B): the neighbour table, Lawson's constrained flips (`Delaunayed`), and refinement against the surface (`TriangleNeedsRefinement`, `SplitPass`), shared by `TriangulateRegion` and `RefineToSurface` |
+| `uv-delaunay.library.plato` | library `UvDelaunay` (chunk B): the neighbour table, Lawson's constrained flips (`FlipPass`, `Delaunayed`, with the in-circle test `IsFlippableCdt`), and the refinement tests (`TriangleNeedsRefinement`, `NeedsRefinement`, `KnownGood`), shared by `TriangulateRegion` and `RefineToSurface` |
+| `triangulation-cdt.library.plato` | library `TriangulationCdt` (TKT-343): `InCircle`, `InCircleOf`, `IsFlippableCdt`, `TriangulateRegionCdt` |
+| `triangulation-refine.library.plato` | library `TriangulationRefine` (TKT-343): `RefineToSurfaceByInsertion`, its surface and angle passes, off-centres |
+| `triangulation-requests.library.plato` | library `TriangulationRequests` (TKT-343): `QualitySegmentRequestsCdt`, not wired (it adds boundary segments; waits for an angle bound in `FaceMeshingCriteria`) |
+| `triangulation.laws.plato` | library `TriangulationLaws` (TKT-343): 16 laws of the two functions over six sample models |
 | `face-meshing.laws.plato` | library `FaceMeshingLaws`: 46 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 15 functions (chunk B added `ExpandedPoles` and `CutWholePeriods`), 3 theorems |
 

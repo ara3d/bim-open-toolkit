@@ -73,33 +73,13 @@ library FaceMeshing
     //==
     // # Triangulation and refinement
 
-    // Chunk A body, from the contract TriangulateRegion, made constrained
-    // Delaunay in chunk B: every boundary point kept in BoundaryPoints order,
-    // every element positive in the chart, every point a corner, every
-    // boundary segment an element side, every interior side shared, no quads,
-    // no point added. Ear clipping in the chart (ChartPoint) gives a first
-    // triangulation: each hole of three or more points is bridged into the
-    // outer ring at a vertex the bridge can see (HoleBridged), a vertex is an
-    // ear when its triangle has positive chart area and no other ring point
-    // lies in it or on it, and a point hole is inserted afterwards by
-    // splitting the triangle that holds it. A flat (collinear) vertex is never
-    // an ear, so collinear boundary points stay corners. Lawson's flips then
-    // make it the constrained Delaunay triangulation of the boundary points in
-    // the chart (UvDelaunay's Delaunayed), which changes no point.
+    // The region's constrained Delaunay triangulation in the chart, by the
+    // in-circle determinant (TriangulateRegionCdt, triangulation-cdt.library.plato):
+    // every boundary point kept in BoundaryPoints order, every element positive
+    // in the chart, every point a corner, every boundary segment an element
+    // side, every interior side shared, no quads, no point added.
     TriangulateRegion(r: UvRegion, chart: FaceChart): UvTriangulation
-    {
-        var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
-        var outer = r.Outer.Points.Count.Range;
-        var holes = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count >= 3 ? [h] : r.Holes.Count.Range.Take(0));
-        var bySide = holes.Sort((a, b) => r.HoleRightmost(points, a) >= r.HoleRightmost(points, b));
-        var ring = bySide.Reduce(outer, (current, h) => current.HoleBridged(r.HoleRing(h), points, r.AllRingSegments(points)));
-        var clipped = ring.EarClipped(points);
-        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : r.Holes.Count.Range.Take(0));
-        var triangles = r.Delaunayed(points, pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points)));
-        return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
-    }
+        => r.TriangulateRegionCdt(chart);
 
     // The boundary indices of hole h, in its order.
     HoleRing(r: UvRegion, h: Integer): Array<Integer>
@@ -209,38 +189,12 @@ library FaceMeshing
         return at < 0 ? triangles : triangles.Take(at).Concatenate(split).Concatenate(triangles.Skip(at + 1));
     }
 
-    // Chunk B body, from the contract RefineToSurface. A plane needs no
-    // interior point (its elements lie on it and its normal is constant).
-    // Otherwise up to forty passes of UvDelaunay's SplitPass while a pass adds
-    // a point: each triangle exceeding a surface criterion
-    // (TriangleNeedsRefinement: SurfaceChordal at its side midpoints, corner
-    // mean and parameter centroid, both ways between surface and element;
-    // SurfaceAngular along its sides and against its normal; a fold when
-    // lifted) is split at the parameter midpoint of its longest side that is
-    // not a boundary segment, or at its centroid when every side is one,
-    // unless the new point would come within the effective minimum length of
-    // a corner it joins or within the region's tolerance of the boundary; the
-    // pass ends with Lawson's flips. A triangle found to meet the criteria is
-    // not tested again while it is unchanged (NeedsRefinement, KnownGood).
-    // Boundary points are never added, moved or removed, and every element
-    // stays positive in the chart.
+    // Refinement against the surface and the smallest-angle bound, by insertion
+    // and flips (RefineToSurfaceByInsertion, triangulation-refine.library.plato).
+    // Boundary points are never added, moved or removed, and every element stays
+    // positive in the chart.
     RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var current = t;
-        var known = t.Triangles.Map(x => false);
-        var pass = 0;
-        var changed = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord.Not;
-        while (pass < 40 && changed)
-        {
-            var needs = m.NeedsRefinement(f, r, current, known, c);
-            var next = m.SplitPass(f, r, chart, current, needs, c);
-            known = KnownGood(current, needs, next);
-            changed = next.Points.Count > current.Points.Count;
-            current = next;
-            pass = pass + 1;
-        }
-        return current;
-    }
+        => m.RefineToSurfaceByInsertion(f, r, chart, t, c);
 
     // Whether the surface record is a plane.
     IsPlanarRecord(surface: BrepSurface): Boolean

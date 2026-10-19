@@ -255,7 +255,7 @@ spec TriangulateRegion(r: UvRegion, chart: FaceChart): UvTriangulation
         forall (j: Integer) in 4.Range: Law_InteriorSideIsShared(r, result, ElementIndex(k), j);
     ensures result.Quads.Count == 0;
     measure r.BoundaryCount;
-    deferred "constrained Delaunay triangulation in the chart (CDT, Triangle -p), even-odd hole removal, exact orientation and in-circle predicates";
+    deferred "constrained Delaunay triangulation in the chart (CDT, Triangle -p), even-odd hole removal; given as ear clipping then Lawson flips on the in-circle determinant in Number (TriangulateRegionCdt), not exact predicates";
 }
 
 spec RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
@@ -277,7 +277,7 @@ spec RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceCha
     ensures Law_ElementAreasSumToRegionArea(m, f, r, result);
     ensures result.Quads.Count == t.Quads.Count;
     measure result.Points.Count;
-    deferred "Delaunay refinement with the boundary locked: insert the worst surface sample point of an element exceeding SurfaceChordal or SurfaceAngular or folding when lifted, stop at MinLength";
+    deferred "Delaunay refinement with the boundary locked: insert the worst surface sample point of an element exceeding SurfaceChordal or SurfaceAngular or folding when lifted, stop at MinLength; given as circumcentre or midpoint insertion for the surface criteria, then off-centres for a 30 degree smallest angle, each pass ending with Lawson flips on the in-circle determinant (RefineToSurfaceByInsertion)";
 }
 
 spec QuadGrid(m: BrepModel, f: BrepFaceIndex, r: UvRegion, corners: Array<VertexIndex>, c: FaceMeshingCriteria): UvTriangulation
