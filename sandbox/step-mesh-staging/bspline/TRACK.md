@@ -5,6 +5,7 @@ Status: working
 
 ## Done
 
+- sagitta body (`bspline-sagitta.library.plato`): branch and bound over Bezier pieces (blossom extraction), exact on polylines, a sampled estimate on other curves. `BsplineSagittaLaws` on the wired copy: 3 obligation before, 3 pass after; with a piece budget of 1 (the raw hull bound) 2 fail.
 - inverse bodies (`bspline-inverse.library.plato`, `bspline-inverse.types.plato`): global search per smooth piece with regula falsi on the slope (curves, pcurves) and damped, projected Gauss-Newton (surfaces); local Gauss-Newton from a seed. `BsplineInverseLaws` (11 laws) on the wired copy: 10 obligation before (the eleventh was added with the bodies), first run 9 error (an `&&` guard that indexes -1), then 2 fail (stop at 32 roundoffs), then 11 pass. A mutation that keeps the first local minimum fails 4 laws.
 - evaluation bodies (`bspline-evaluation.library.plato`): de Boor over homogeneous values, derivatives by the hodograph, the quotient rule, blossoms for Bezier extraction. `BsplineEvaluationLaws` on the wired copy: 11 obligation before, 11 pass after.
 - laws and fixtures: 21 laws in `bspline-evaluation.laws.plato` and `bspline-inverse.laws.plato` on the fixtures of `bspline-witnesses.library.plato`. Before any body: 21 of 21 stop on a host obligation (BSplinePoint, ClosestParameterBySearch), gpu32.
@@ -31,6 +32,8 @@ Each line gives a deferred library function the body on the right (the same para
 
 ## Findings
 
+- `SagittaByHullBound` is a certificate only on B-splines and polylines. Hyperbolas, parabolas, ellipse arcs of half a turn or more, offsets, composites, trimmed and surface curves get `EstimatedSagitta` (64 samples and golden-section search), which can miss a second hump between samples. A follow-up could map trimmed and composite segments onto their basis's certificate.
+
 - gpu32 cannot honour `Tolerances.Witness_Tolerances` (length 1e-6) away from the origin: one float32 step at magnitude 8 is 9.5e-7, and layer 0's own ResolutionAt(1) is 1.9e-6, so `IsResolvable` is false for the witness tolerances under gpu32 everywhere above magnitude 0.5. Recovery laws pass only because the fixtures stay within about 4 of the origin (the search fixture's parabola was shrunk to focal distance 0.02 for this). Expect recovery-law verdicts to change when cpu64 lands; under gpu32 they test luck as much as code.
 - `&&` and `||` evaluate both sides (primer D.4); the first inverse run errored on `i > 0 && xs[i - 1]`. Every guard in this track's code is a conditional.
 - A root finder stopped at layer 0's ResolutionAt (32 roundoffs of the parameter) leaves a slope that `Law_ClosestParameterIsStationary` rejects at distance 6 from the curve; stopping at 4 roundoffs passes.
@@ -46,6 +49,7 @@ Each line gives a deferred library function the body on the right (the same para
 | Waiting on the shared law server | 45 min, abandoned | 1 server run, no answer |
 | Evaluation bodies and mutations | 20 min | 3 CLI runs |
 | Inverse bodies, two fixes, mutations | 35 min | 8 CLI runs |
+| Sagitta body and mutation | 10 min | 3 CLI runs |
 
 ## Lessons
 

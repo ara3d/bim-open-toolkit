@@ -1,0 +1,151 @@
+//==
+// # BsplineSagitta
+//
+// Track F (TKT-327): the body of layer 4's deferred SagittaByHullBound, the
+// sagitta of an edge's arc over [t0, t1] for every curve Sagitta has no
+// closed form for (discretization.library.plato, Sagitta). On a B-spline it
+// is a certificate: branch and bound over Bezier pieces, whose control
+// hulls bound the arc's distance from its chord from above (the distance to
+// a segment is convex, so its maximum over a hull is at a control point)
+// and whose end points, which lie on the arc, bound it from below; pieces
+// are halved until every upper bound is within the length tolerance of the
+// best lower one. On a polyline the vertices give it exactly. Every other
+// curve (conics past their closed form, offsets, composites, trimmed and
+// surface curves) has no hull here, so its sagitta is estimated by sampling
+// and golden-section refinement: the TRACK.md findings list the gap.
+//
+// Sections, in order:
+//  - Constants
+//  - Dispatch
+//  - The B-spline certificate
+//  - Polylines and the estimate
+
+library BsplineSagitta
+{
+    //==
+    // # Constants
+
+    // The most pieces the certificate halves before it settles for the
+    // largest upper bound it holds, which is still an upper bound; the
+    // fixtures settle in under 200.
+    HullPieceBudget(_: Integer): Integer
+        => 4096;
+
+    //==
+    // # Dispatch
+
+    // Body of layer 4's SagittaByHullBound: the largest distance of edge
+    // e's arc over [t0, t1] from its chord, by the control-hull certificate
+    // on a B-spline, exactly on a polyline, by a sampled estimate otherwise.
+    SagittaByHullBoundBody(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number
+    {
+        var lo = t0.Min(t1);
+        var hi = t0.Max(t1);
+        var a = m.PointOnEdge(e, lo);
+        var b = m.PointOnEdge(e, hi);
+        return match (m.Geometry.CurveAt(m.Edges[e].Curve))
+        {
+            Line(origin, velocity) => 0.0;
+            Circle(placement, radius) => m.EstimatedSagitta(e, lo, hi);
+            Ellipse(placement, semiAxis1, semiAxis2) => m.EstimatedSagitta(e, lo, hi);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => m.EstimatedSagitta(e, lo, hi);
+            Parabola(placement, focalDistance) => m.EstimatedSagitta(e, lo, hi);
+            Polyline(points) => points.PolylineSagitta(a, b, lo, hi);
+            BSpline(data) => data.HullSagitta(a, b, lo, hi, m.Tolerances.Length.Value);
+            Trimmed(basis, range, sameSense) => m.EstimatedSagitta(e, lo, hi);
+            Composite(segments) => m.EstimatedSagitta(e, lo, hi);
+            Offset(basis, distance, reference) => m.EstimatedSagitta(e, lo, hi);
+            OnSurface(spaceCurve, supports, master) => m.EstimatedSagitta(e, lo, hi);
+        };
+    }
+
+    //==
+    // # The B-spline certificate
+
+    // The distance from the chord [a, b] of the projection of a homogeneous
+    // control value.
+    HullDistance(h: HomogeneousPoint3D, a: Point3D, b: Point3D): Number
+        => DistanceToSegment(a, b, (h.Spatial * (1.0 / h.W)).ToPoint);
+
+    // The B-spline's sagitta over [lo, hi] against the chord [a, b], to
+    // within tol: the arc split at its knots into Bezier pieces, each piece
+    // kept when its hull's largest distance is within tol of the best
+    // distance found on the arc so far (the pieces' end points), else halved;
+    // the answer is that best distance, or the largest hull distance when
+    // the piece budget ran out before every piece was settled.
+    HullSagitta(d: BSplineCurveData, a: Point3D, b: Point3D, lo: Number, hi: Number, tol: Number): Number
+    {
+        var values = d.HomogeneousControls;
+        var cuts = NumberInterval(lo, hi).WindowCuts(d.Basis.Knots.Knots);
+        var pieces = new List<NumberInterval>();
+        pieces = pieces.AddRange((cuts.Count - 1).MapRange(i => NumberInterval(cuts[i], cuts[i + 1])));
+        var lower = 0.0;
+        var upper = 0.0;
+        var settled = true;
+        var i = 0;
+        while (i < pieces.Count)
+        {
+            var piece = pieces.At(i);
+            var hull = d.Basis.BezierControls(values, piece.Start, piece.End);
+            lower = lower.Max(hull.First.HullDistance(a, b)).Max(hull.Last.HullDistance(a, b));
+            var bound = hull.Reduce(0.0, (r, h) => r.Max(h.HullDistance(a, b)));
+            if (bound <= lower + tol || pieces.Count >= Integer.HullPieceBudget || piece.End - piece.Start <= ResolutionAt(piece.Start.Abs.Max(piece.End.Abs)))
+            {
+                upper = upper.Max(bound);
+                settled = settled && bound <= lower + tol;
+            }
+            else
+            {
+                pieces = pieces.Add(NumberInterval(piece.Start, 0.5 * (piece.Start + piece.End)));
+                pieces = pieces.Add(NumberInterval(0.5 * (piece.Start + piece.End), piece.End));
+            }
+            i = i + 1;
+        }
+        return settled ? lower : upper;
+    }
+
+    //==
+    // # Polylines and the estimate
+
+    // The sagitta of the polyline's arc over [lo, hi] against the chord
+    // [a, b]: the largest distance of a vertex strictly inside it, the
+    // vertex k at parameter k (layer 1's polyline parameterization). The
+    // distance to a segment is convex, so its maximum on each straight piece
+    // is at a vertex or an end, and the ends are on the chord.
+    PolylineSagitta(points: Array<Point3D>, a: Point3D, b: Point3D, lo: Number, hi: Number): Number
+        => points.Count.Range.Reduce(0.0, (r, k) =>
+            k.ToNumber > lo && k.ToNumber < hi ? r.Max(DistanceToSegment(a, b, points[k])) : r);
+
+    // An estimate of the sagitta of edge e's arc over [lo, hi]: the best of
+    // 64 uniform samples, refined by golden-section search on the interval
+    // around it. Exact to rounding when the distance has one local maximum
+    // per sample interval; not a certificate.
+    EstimatedSagitta(m: BrepModel, e: BrepEdgeIndex, lo: Number, hi: Number): Number
+    {
+        var a = m.PointOnEdge(e, lo);
+        var b = m.PointOnEdge(e, hi);
+        var step = (hi - lo) / 64.0;
+        var best = 65.Range.Reduce(0, (i, j) =>
+            DistanceToSegment(a, b, m.PointOnEdge(e, lo + step * j.ToNumber)) > DistanceToSegment(a, b, m.PointOnEdge(e, lo + step * i.ToNumber)) ? j : i);
+        var x0 = lo + step * (best - 1).Max(0).ToNumber;
+        var x1 = lo + step * (best + 1).Min(64).ToNumber;
+        var ratio = 0.5 * ((5.0).Sqrt - 1.0);
+        var n = 0;
+        while (n < 60)
+        {
+            var left = x1 - (x1 - x0) * ratio;
+            var right = x0 + (x1 - x0) * ratio;
+            if (DistanceToSegment(a, b, m.PointOnEdge(e, left)) >= DistanceToSegment(a, b, m.PointOnEdge(e, right)))
+            {
+                x1 = right;
+            }
+            else
+            {
+                x0 = left;
+            }
+            n = n + 1;
+        }
+        return DistanceToSegment(a, b, m.PointOnEdge(e, 0.5 * (x0 + x1)))
+            .Max(DistanceToSegment(a, b, m.PointOnEdge(e, lo + step * best.ToNumber)));
+    }
+}

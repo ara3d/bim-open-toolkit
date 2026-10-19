@@ -1,0 +1,69 @@
+//==
+// # BsplineSagittaLaws
+//
+// Track F (TKT-327): laws on layer 4's Sagitta for B-spline edges, whose
+// certificate is the control-hull bound (SagittaByHullBound). Run on the
+// one-edge models of bspline-witnesses.library.plato (CurveEdgeModel). The
+// contract (discretization.spec.plato) makes Sagitta the arc's Hausdorff
+// distance from its chord within the length tolerance: no sample is farther
+// than it, and some point is that far. The second half is checked against
+// a maximization that shares no code with the hull (EstimatedSagitta,
+// samples and golden-section search), and two arcs have it in closed form.
+//
+// Sections, in order:
+//  - The contract
+//  - Closed forms
+
+library BsplineSagittaLaws
+{
+    //==
+    // # The contract
+
+    // No point of the arc over [t0, t1] is farther from the chord than
+    // Sagitta plus the length tolerance and the rounding of the evaluation,
+    // for parameters t0, t1 and a fraction f anywhere in the edge's domain.
+    Law_Bspline_SagittaBoundsArc(k: Integer, a: Number, b: Number, f: Number): Boolean
+    {
+        var m = k.CurveEdgeModel;
+        var e = BrepEdgeIndex(0);
+        var d = k.CurveFixture;
+        var t0 = d.Basis.DomainAt(a.Min(b));
+        var t1 = d.Basis.DomainAt(a.Max(b));
+        var x = t0 + (t1 - t0) * f.UnitFraction;
+        return DistanceToSegment(m.PointOnEdge(e, t0), m.PointOnEdge(e, t1), m.PointOnEdge(e, x))
+            <= m.Sagitta(e, t0, t1) + m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k));
+    }
+
+    // Sagitta is attained: it is within the length tolerance and rounding of
+    // the largest distance from the chord, found by EstimatedSagitta.
+    Law_Bspline_SagittaIsAttained(k: Integer, a: Number, b: Number): Boolean
+    {
+        var m = k.CurveEdgeModel;
+        var d = k.CurveFixture;
+        var t0 = d.Basis.DomainAt(a.Min(b));
+        var t1 = d.Basis.DomainAt(a.Max(b));
+        return (m.Sagitta(BrepEdgeIndex(0), t0, t1) - m.EstimatedSagitta(BrepEdgeIndex(0), t0, t1)).Abs
+            <= m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k));
+    }
+
+    // The magnitude the rounding of a sagitta on fixture k scales with: its
+    // largest control point.
+    SagittaMagnitude(m: BrepModel, k: Integer): Number
+        => 4.0 * k.CurveFixture.ControlPoints.Reduce(0.0, (r, p) => r.Max(p.PositionVector.Length));
+
+    //==
+    // # Closed forms
+
+    // Fixture 2's first span is the quadratic Bezier arc on (0, 0, 0),
+    // (1, 1, 0), (2, 0, 0): its distance from the chord is 2 t (1 - t) times
+    // the middle control point's, so its sagitta is exactly 1/2. Fixture 1,
+    // the rational quarter circle of radius 1, has sagitta 1 - cos(pi / 4)
+    // over its whole domain.
+    Law_Bspline_SagittaClosedForms(_: Integer): Boolean
+    {
+        var bezier = 2.CurveEdgeModel;
+        var circle = 1.CurveEdgeModel;
+        return (bezier.Sagitta(BrepEdgeIndex(0), 0.0, 1.0) - 0.5).Abs <= bezier.Tolerances.Length.Value + ResolutionAt(4.0)
+            && (circle.Sagitta(BrepEdgeIndex(0), 0.0, 1.0) - (1.0 - (0.5).Sqrt)).Abs <= circle.Tolerances.Length.Value + ResolutionAt(4.0);
+    }
+}
