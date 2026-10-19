@@ -2,7 +2,7 @@
 // # BrepCheckingLaws
 //
 // Layer 7 of the STEP B-rep to mesh design (README.md beside this file): the
-// laws of validation itself. A Law_ returns Boolean and states one property
+// laws of validation itself and its cross-check predicates. A Law_ returns Boolean and states one property
 // for all values of its parameters; a leading guard written with the
 // conditional makes it vacuous outside its hypotheses, so it never indexes
 // out of range. Every approximate comparison names its bound: the model's
@@ -25,13 +25,19 @@ library BrepCheckingLaws
 {
     //==
     // # Cross checks: topology
+    //
+    // The cross checks of this and the next two sections are predicates of a
+    // model and the mesh made from it, not laws: a generated mesh need not be
+    // the model's (finding F-54). CrossCheck evaluates them on the pipeline's
+    // output; layer 8 states the ones that hold for every runnable model as
+    // laws of the same names over MeshModel's inputs.
 
     // Every face of the model has at least one element in the mesh: a face
     // of positive area is covered by at least one element. A face the mesher
     // refused is reported here, at the face, and only here among the cross
     // checks: the laws about a shell as a whole assume the shell's mesh is
     // complete (IsCompleteShellMesh). Exact. Error.
-    Law_EveryFaceIsMeshed(m: BrepModel, mesh: ModelMesh, f: BrepFaceIndex): Boolean
+    EveryFaceIsMeshed(m: BrepModel, mesh: ModelMesh, f: BrepFaceIndex): Boolean
         => m.IsFaceInRange(f) ? mesh.HasMeshElements(f) : true;
 
     // The complete mesh of shell s has the Euler characteristic of the
@@ -39,7 +45,7 @@ library BrepCheckingLaws
     // restricted to the shell's elements and the vertices they reference
     // (MATH-REVIEW section 6, condition 1): the mesh refines the cell
     // decomposition term by term. Exact. Error.
-    Law_MeshEulerEqualsBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+    MeshEulerEqualsBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
             ? (m.IsCompleteShellMesh(mesh, s) ? m.ShellMeshEuler(mesh, s) == m.ShellEulerPoincare(s) : true)
             : true;
@@ -47,7 +53,7 @@ library BrepCheckingLaws
     // The complete mesh of shell s is closed exactly when the shell is: when
     // no edge of the shell is used once (layer 2's FreeEdgeCount). Exact.
     // Error.
-    Law_MeshClosedExactlyWhenShellClosed(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+    MeshClosedExactlyWhenShellClosed(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
             ? ((m.ShellFaces(s).Count > 0 ? m.IsCompleteShellMesh(mesh, s) : false)
                 ? m.RestrictedToShell(mesh, s).IsClosed == (m.FreeEdgeCount(s) == 0)
@@ -56,12 +62,12 @@ library BrepCheckingLaws
 
     // Every mesh vertex's provenance names a vertex, edge or face of the
     // model. Exact. Error.
-    Law_ProvenanceNamesModelCell(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
+    ProvenanceNamesModelCell(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
         => mesh.VertexProvenance.IsValidIndex(v) ? m.ProvenanceInModel(mesh.VertexProvenance[v]) : true;
 
     // The mesh of a solid's outer shell and the mesh of its void k share no
     // vertex (brep_with_voids IP1: the shells are disjoint). Exact. Error.
-    Law_SolidShellMeshesShareNoVertex(m: BrepModel, mesh: ModelMesh, b: BodyIndex, k: Integer): Boolean
+    SolidShellMeshesShareNoVertex(m: BrepModel, mesh: ModelMesh, b: BodyIndex, k: Integer): Boolean
         => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
             ? (m.Bodies[b].VoidShellsOf.IsValidIndex(k)
                 ? m.ShareNoVertex(mesh, m.Bodies[b].OuterShellOf, m.Bodies[b].VoidShellsOf[k])
@@ -72,7 +78,7 @@ library BrepCheckingLaws
     // a positive volume beyond its rounding bound: its elements face out of the
     // material (the divergence theorem, research/VALIDATION-MATH.md 4.7). A
     // sign, against VolumeRoundoff. Error.
-    Law_OuterShellVolumePositive(m: BrepModel, mesh: ModelMesh, b: BodyIndex): Boolean
+    OuterShellVolumePositive(m: BrepModel, mesh: ModelMesh, b: BodyIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
             ? (m.IsShellInRange(m.Bodies[b].OuterShellOf)
                 ? (m.IsClosedAndOrientedShellMesh(mesh, m.Bodies[b].OuterShellOf)
@@ -85,7 +91,7 @@ library BrepCheckingLaws
     // negative volume beyond its rounding bound: the void's faces point into
     // the void, out of the material (layer 3's folding). A sign, against
     // VolumeRoundoff. Error.
-    Law_VoidShellVolumeNegative(m: BrepModel, mesh: ModelMesh, b: BodyIndex, k: Integer): Boolean
+    VoidShellVolumeNegative(m: BrepModel, mesh: ModelMesh, b: BodyIndex, k: Integer): Boolean
         => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
             ? (m.Bodies[b].VoidShellsOf.IsValidIndex(k)
                 ? (m.IsClosedAndOrientedShellMesh(mesh, m.Bodies[b].VoidShellsOf[k])
@@ -101,20 +107,20 @@ library BrepCheckingLaws
     // the model point its provenance names is within the length tolerance
     // (ReevaluationDeviation, 0 outside the hypotheses). Geometric, bound
     // Tolerances.Length: Warning below ten times it, Error above.
-    Law_VertexReevaluatesFromProvenance(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
+    VertexReevaluatesFromProvenance(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
         => m.ReevaluationDeviation(mesh, v) <= m.Tolerances.Length.Value;
 
     // The normal stored at corner slot of element e is the face normal at the
     // corner's parameters within the model's angle tolerance, off collapsed
     // lines (CornerNormalGap). Geometric, bound Tolerances.Angle: W/E.
-    Law_CornerNormalIsFaceNormal(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
+    CornerNormalIsFaceNormal(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
         => m.CornerNormalGap(mesh, e, slot) <= m.Tolerances.Angle.Value.Radians;
 
     // Element e's normal, from its positions, is within SurfaceAngular of the
     // surface normal at its corner-parameter centroid, from the exact
     // surface, off collapsed lines (ElementNormalGap). Geometric, bound
     // SurfaceAngular: W/E.
-    Law_ElementNormalAgreesWithFaceNormal(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, e: ElementIndex): Boolean
+    ElementNormalAgreesWithFaceNormal(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, e: ElementIndex): Boolean
         => m.ElementNormalGap(mesh, e) <= c.SurfaceAngular.Radians;
 
     //==
@@ -126,7 +132,7 @@ library BrepCheckingLaws
     // allowance; README, "The area tolerance"). Vacuous where the oracle has
     // no number or the envelope is infinite (IsFaceAreaJudged). Oracle family,
     // Error.
-    Law_FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, f: BrepFaceIndex): Boolean
+    FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, f: BrepFaceIndex): Boolean
         => m.IsFaceInRange(f)
             ? (m.IsFaceAreaJudged(c, f) ? m.FaceAreaGap(mesh, f) <= m.FaceAreaTolerance(f, c) : true)
             : true;
@@ -140,7 +146,7 @@ library BrepCheckingLaws
     // 32-bit Number fails the unit box, whose sum of 4 pi errs by about
     // 1e-6 against an angle tolerance of 1e-8 per vertex (chunk A).
     // Oracle family, Error.
-    Law_AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
+    AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
             ? (m.IsClosedAndOrientedShellMesh(mesh, s)
                 ? (m.RestrictedToShell(mesh, s).Oracle_AngleDefectSum - m.RestrictedToShell(mesh, s).Oracle_QuadDefectSum
@@ -155,10 +161,10 @@ library BrepCheckingLaws
     // The mesh volume of solid b is its divergence-theorem volume within the
     // tube of radius d about its boundary (TubeVolume, Weyl's formula; valid
     // while d is below the reach). Vacuous for a shell set, for a body with a
-    // face missing from the mesh (Law_EveryFaceIsMeshed reports it), and where
+    // face missing from the mesh (EveryFaceIsMeshed reports it), and where
     // the oracle or the tube has no finite number (IsSolidVolumeJudged).
     // Oracle family, Error.
-    Law_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
+    SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
         => m.IsSolidVolumeJudged(mesh, c, b)
             ? (m.BodyMeshVolume(mesh, b) - m.Oracle_BodyVolume(b)).Abs <= m.TubeVolume(b, c)
             : true;
@@ -465,25 +471,25 @@ library BrepCheckingLaws
 
     // Check_VertexReevaluatesFromProvenance holds, so the law holds at v.
     Law_ReevaluationCheckAgrees(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Boolean
-        => m.Check_VertexReevaluatesFromProvenance(mesh).Holds ? Law_VertexReevaluatesFromProvenance(m, mesh, v) : true;
+        => m.Check_VertexReevaluatesFromProvenance(mesh).Holds ? VertexReevaluatesFromProvenance(m, mesh, v) : true;
 
     // A failing Check_VertexReevaluatesFromProvenance names a vertex at which
     // the law fails.
     Law_FailingReevaluationCheckNamesAVertex(m: BrepModel, mesh: ModelMesh): Boolean
         => m.Check_VertexReevaluatesFromProvenance(mesh).Holds
             ? true
-            : Law_VertexReevaluatesFromProvenance(m, mesh, m.Check_VertexReevaluatesFromProvenance(mesh).Where.MeshVertexOf).Not;
+            : VertexReevaluatesFromProvenance(m, mesh, m.Check_VertexReevaluatesFromProvenance(mesh).Where.MeshVertexOf).Not;
 
     // Check_CornerNormalIsFaceNormal holds, so the law holds at every corner.
     Law_CornerNormalCheckAgrees(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
         => (m.Tolerances.IsWellFormed ? m.Check_CornerNormalIsFaceNormal(mesh).Holds : false)
-            ? Law_CornerNormalIsFaceNormal(m, mesh, e, slot)
+            ? CornerNormalIsFaceNormal(m, mesh, e, slot)
             : true;
 
     // Check_ElementNormalAgreesWithFaceNormal holds, so the law holds at e.
     Law_ElementNormalCheckAgrees(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, e: ElementIndex): Boolean
         => (c.SurfaceAngular.Radians >= 0.0 ? m.Check_ElementNormalAgreesWithFaceNormal(mesh, c).Holds : false)
-            ? Law_ElementNormalAgreesWithFaceNormal(m, mesh, c, e)
+            ? ElementNormalAgreesWithFaceNormal(m, mesh, c, e)
             : true;
 
     // A failing Check_ElementNormalAgreesWithFaceNormal names an element at
@@ -491,7 +497,7 @@ library BrepCheckingLaws
     Law_FailingElementNormalCheckNamesAnElement(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Boolean
         => m.Check_ElementNormalAgreesWithFaceNormal(mesh, c).Holds
             ? true
-            : Law_ElementNormalAgreesWithFaceNormal(m, mesh, c, m.Check_ElementNormalAgreesWithFaceNormal(mesh, c).Where.MeshElementOf).Not;
+            : ElementNormalAgreesWithFaceNormal(m, mesh, c, m.Check_ElementNormalAgreesWithFaceNormal(mesh, c).Where.MeshElementOf).Not;
 
     //==
     // # Reports and levels

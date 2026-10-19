@@ -83,10 +83,10 @@ spec ValidateStep(file: Part21File, level: ConformanceLevel): Report
 spec CrossCheck(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel): Report
 {
     requires m.IsEveryIndexInRange;
-    ensures result.IsClean ? forall (f: BrepFaceIndex) : Law_EveryFaceIsMeshed(m, mesh, f) : true;
-    ensures result.IsClean ? forall (s: ShellIndex) : Law_MeshEulerEqualsBrepEuler(m, mesh, s) : true;
-    ensures result.IsClean ? forall (s: ShellIndex) : Law_MeshClosedExactlyWhenShellClosed(m, mesh, s) : true;
-    ensures result.IsClean ? forall (v: VertexIndex) : Law_ProvenanceNamesModelCell(m, mesh, v) : true;
+    ensures result.IsClean ? forall (f: BrepFaceIndex) : EveryFaceIsMeshed(m, mesh, f) : true;
+    ensures result.IsClean ? forall (s: ShellIndex) : MeshEulerEqualsBrepEuler(m, mesh, s) : true;
+    ensures result.IsClean ? forall (s: ShellIndex) : MeshClosedExactlyWhenShellClosed(m, mesh, s) : true;
+    ensures result.IsClean ? forall (v: VertexIndex) : ProvenanceNamesModelCell(m, mesh, v) : true;
     measure mesh.Positions.Count + mesh.ElementCount + m.Faces.Count;
 }
 
@@ -96,7 +96,7 @@ spec CrossCheck(m: BrepModel, mesh: ModelMesh, level: ConformanceLevel, c: FaceM
 {
     requires m.IsEveryIndexInRange;
     ensures result.IsClean ? m.CrossCheck(mesh, level).IsClean : true;
-    ensures (result.IsClean && level.LevelRank == 2) ? forall (f: BrepFaceIndex) : Law_FaceAreaMatchesOracle(m, mesh, c, f) : true;
+    ensures (result.IsClean && level.LevelRank == 2) ? forall (f: BrepFaceIndex) : FaceAreaMatchesOracle(m, mesh, c, f) : true;
     measure mesh.Positions.Count + mesh.ElementCount + m.Faces.Count * 4 * 64;
 }
 
@@ -436,9 +436,9 @@ theorem MeshAreaWithinEnvelope
     given m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, f: BrepFaceIndex;
     assume m.CrossCheck(mesh, ConformanceLevel.Geometric, c).IsClean;
     assume m.Oracle_FaceAreaByGreen(f).IsFinite;
-    conclude Law_FaceAreaMatchesOracle(m, mesh, c, f);
+    conclude FaceAreaMatchesOracle(m, mesh, c, f);
     because "Each element lies within d = SurfaceChordal + Length of the surface along normals, and its normal within 2 SurfaceAngular of the surface's (element normal law plus the corner normals). Projecting an element onto the surface along the normal field scales area by at most (1 + kappa d)^2 and tilts it by at most 2 SurfaceAngular, so the element's area is at most the patch's times (1 + kappa d)^2 / cos(2 SurfaceAngular) and at least it divided by that. Chordal alone does not bound area: a fine zigzag within d of the surface has unbounded area. The boundary chords differ from the exact boundary by at most d_e = EffectiveChordal + Length, sweeping at most d_e P. The oracle adds its own allowance.";
-    tested by Law_FaceAreaMatchesOracle;
+    tested by FaceAreaMatchesOracle;
 }
 
 // The mesh of a shell has the shell's reduced Euler characteristic.
@@ -447,9 +447,9 @@ theorem MeshEulerEqualsBrepEulerByConstruction
     given m: BrepModel, mesh: ModelMesh, s: ShellIndex;
     assume m.ValidateBrep(ConformanceLevel.Structural).IsClean;
     assume m.CrossCheck(mesh, ConformanceLevel.Structural).IsClean;
-    conclude Law_MeshEulerEqualsBrepEuler(m, mesh, s);
+    conclude MeshEulerEqualsBrepEuler(m, mesh, s);
     because "Each face's mesh is a triangulation of a disk-with-holes region whose boundary vertices are the discretization points of its bounds; numbering by site glues faces along shared edges exactly as the B-rep's edges glue them. Every reduced face is a disk-with-holes cell complex refined by its mesh, and refinement does not change the Euler characteristic. The reduced counts drop redundant vertex loops and closed degenerate edges, which the mesh does not represent.";
-    tested by Law_MeshEulerEqualsBrepEuler, Law_AngleDefectMatchesBrepEuler;
+    tested by MeshEulerEqualsBrepEuler, AngleDefectMatchesBrepEuler;
 }
 
 // Two routes to the reduced Euler characteristic agree.

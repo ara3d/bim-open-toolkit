@@ -311,6 +311,11 @@ hand-written texts of "Implementation order", and over the corpus.
 | `Law_ShellReversalNegatesVolume` | reversing every face negates the signed volume | `LengthTolerance` times the area | library |
 | `Law_TighterChordalStaysWithinLooserBound` | a tighter chordal bound's governed deviation is within the looser bound | `LengthTolerance` | library |
 | `Law_ValidationIsIdempotent` | `Validated` twice gives identical reports, over a runnable model and a mesh meeting the `ModelMesh` invariants (`IsWellFormed`) | exact | library |
+| `Law_MeshedMeshIsWellFormed` | the mesh of a runnable model meets the `ModelMesh` invariants | exact | library |
+| `Law_MeshedMeshValidatesStructurally` | it passes layer 7's structural mesh checks: every layer 6 predicate over the mesh, its edge table, its components | exact | library |
+| `Law_MeshedAssemblyValidatesStructurally` | the final state's face meshes and the mesh's numbering pass layer 7's structural assembly checks | exact | library |
+| `Law_ElementFaceIsModelFace`, `Law_CornerProvenanceIsOnItsElementFace` | layer 6's two mesh-against-model predicates on the mesh of a runnable model | exact | library |
+| `Law_MeshEulerEqualsBrepEuler`, `Law_MeshClosedExactlyWhenShellClosed`, `Law_ProvenanceNamesModelCell`, `Law_SolidShellMeshesShareNoVertex`, `Law_OuterShellVolumePositive`, `Law_VoidShellVolumeNegative`, `Law_VertexReevaluatesFromProvenance`, `Law_CornerNormalIsFaceNormal`, `Law_AngleDefectMatchesBrepEuler` | layer 7's cross-check predicates of the same names on the mesh of a runnable model, each under its own hypotheses (a complete, closed, oriented shell mesh where it says so) | the predicate's | library |
 
 The requested laws map to these as follows. Determinism: the first two, over witnesses, since the
 runner cannot build their inputs. Failure isolation: `Law_FailedFaceLeavesOthersUnchanged`, with
@@ -321,6 +326,11 @@ mesh: `Law_ClosedWhenEveryShellClosedAndNoFaceEmpty`, theorem `WatertightByConst
 motion and scaling: decision 11. Tighter chordal: decision 12. Idempotent validation:
 `Law_ValidationIsIdempotent`. `Ok`: `Law_OkExactlyWhenClean`. Provenance:
 `Law_EveryDiagnosticIsLocated`. Rounds: `Law_RoundsWithinLimit`.
+
+The last five rows (finding F-54, 2026-10-18) are the laws for what layers 6 and 7 state as
+predicates over a model and a mesh: the runner draws meshes that are not the model's, so those
+layers cannot state them as laws, and these take `MeshModel`'s own inputs and mesh the model under
+`IsRunnable`. On a curved witness they reach the face-meshing bodies of steps B and F.
 
 ## Theorems
 

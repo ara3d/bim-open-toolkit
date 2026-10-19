@@ -258,21 +258,30 @@ Richardson correction plus rounding. Severity applies where the law backs a `Che
 
 ### Cross checks (`validation.laws.plato`)
 
+The rows without a `Law_` prefix are predicates of a model and the mesh made from it, not laws: a
+generated mesh need not be the model's (finding F-54, 2026-10-18). `CrossCheck` evaluates them on
+the pipeline's output, and layer 8 states eleven of them as laws of the same names over
+`MeshModel`'s inputs (`Law_MeshEulerEqualsBrepEuler(m, o, s)` and the others in
+`pipeline.laws.plato`, "The mesh against its model"). `EveryFaceIsMeshed`,
+`ElementNormalAgreesWithFaceNormal`, `FaceAreaMatchesOracle` and `SolidVolumeWithinTube` hold only
+where meshing succeeded and stay checks; layer 8's `Law_EmptyFaceIsDiagnosed` and
+`Law_WitnessMeshCrossChecksClean` cover them.
+
 | Law | Statement | Tolerance | Severity |
 |---|---|---|---|
-| `Law_EveryFaceIsMeshed` | every face has at least one element | exact | Error |
-| `Law_MeshEulerEqualsBrepEuler` | a shell's complete mesh has the shell's reduced chi | exact | Error |
-| `Law_MeshClosedExactlyWhenShellClosed` | a shell's complete mesh is closed iff the shell has no free edge | exact | Error |
-| `Law_ProvenanceNamesModelCell` | each mesh vertex's provenance names a model cell | exact | Error |
-| `Law_SolidShellMeshesShareNoVertex` | outer and void shell meshes are vertex-disjoint | exact | Error |
-| `Law_OuterShellVolumePositive` | a closed oriented outer shell mesh has volume above rounding | `VolumeRoundoff` | Error |
-| `Law_VoidShellVolumeNegative` | a closed oriented void mesh has volume below minus rounding | `VolumeRoundoff` | Error |
-| `Law_VertexReevaluatesFromProvenance` | each vertex is within Length of the point its provenance names | Length | W/E |
-| `Law_CornerNormalIsFaceNormal` | each corner normal is the face normal at its parameters | Angle | W/E |
-| `Law_ElementNormalAgreesWithFaceNormal` | each element normal is within SurfaceAngular of the exact surface's | SurfaceAngular | W/E |
-| `Law_FaceAreaMatchesOracle` | mesh face area equals the Green area | `FaceAreaTolerance` | Error |
-| `Law_AngleDefectMatchesBrepEuler` | angle defects less quad defects sum to 2 pi chi | Angle per vertex and quad | Error |
-| `Law_SolidVolumeWithinTube` | mesh solid volume equals the divergence volume | `TubeVolume` | Error |
+| `EveryFaceIsMeshed` | every face has at least one element | exact | Error |
+| `MeshEulerEqualsBrepEuler` | a shell's complete mesh has the shell's reduced chi | exact | Error |
+| `MeshClosedExactlyWhenShellClosed` | a shell's complete mesh is closed iff the shell has no free edge | exact | Error |
+| `ProvenanceNamesModelCell` | each mesh vertex's provenance names a model cell | exact | Error |
+| `SolidShellMeshesShareNoVertex` | outer and void shell meshes are vertex-disjoint | exact | Error |
+| `OuterShellVolumePositive` | a closed oriented outer shell mesh has volume above rounding | `VolumeRoundoff` | Error |
+| `VoidShellVolumeNegative` | a closed oriented void mesh has volume below minus rounding | `VolumeRoundoff` | Error |
+| `VertexReevaluatesFromProvenance` | each vertex is within Length of the point its provenance names | Length | W/E |
+| `CornerNormalIsFaceNormal` | each corner normal is the face normal at its parameters | Angle | W/E |
+| `ElementNormalAgreesWithFaceNormal` | each element normal is within SurfaceAngular of the exact surface's | SurfaceAngular | W/E |
+| `FaceAreaMatchesOracle` | mesh face area equals the Green area | `FaceAreaTolerance` | Error |
+| `AngleDefectMatchesBrepEuler` | angle defects less quad defects sum to 2 pi chi | Angle per vertex and quad | Error |
+| `SolidVolumeWithinTube` | mesh solid volume equals the divergence volume | `TubeVolume` | Error |
 | `Law_ReducedEulerMatchesOracle` | layer 2's reduced chi equals the oracle's | exact | Error |
 | `Law_OuterShellExactVolumePositive` | exact outer shell volume above 2 Length A | 2 Length A | Error |
 | `Law_VoidShellExactVolumeNegative` | exact void volume below -2 Length A | 2 Length A | Error |

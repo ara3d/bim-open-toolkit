@@ -37,7 +37,7 @@ library BrepCrossChecking
 
     // True when face f has at least one element in the mesh. A face of
     // positive area always has one; a face the mesher refused (a poly loop, a
-    // region it could not build) has none, and Law_EveryFaceIsMeshed reports
+    // region it could not build) has none, and EveryFaceIsMeshed reports
     // it there, at the face.
     HasMeshElements(mesh: ModelMesh, f: BrepFaceIndex): Boolean
         => mesh.ElementFace.Any(x => x == f);
@@ -102,7 +102,7 @@ library BrepCrossChecking
         };
 
     // The distance from mesh vertex v's position to the model point its
-    // provenance names, behind Law_VertexReevaluatesFromProvenance's guard (0
+    // provenance names, behind VertexReevaluatesFromProvenance's guard (0
     // where the law is vacuous).
     ReevaluationDeviation(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Number
         => (mesh.Positions.IsValidIndex(v) && mesh.VertexProvenance.IsValidIndex(v) && m.IsEveryIndexInRange && m.Geometry.IsWellFormed)
@@ -120,7 +120,7 @@ library BrepCrossChecking
                 : 0.0).SumOf;
 
     // |mesh area of face f - Oracle_FaceAreaByGreen|, behind
-    // Law_FaceAreaMatchesOracle's guard (0 where the oracle has no number).
+    // FaceAreaMatchesOracle's guard (0 where the oracle has no number).
     FaceAreaGap(m: BrepModel, mesh: ModelMesh, f: BrepFaceIndex): Number
         => m.Oracle_FaceAreaByGreen(f).IsFinite ? (mesh.MeshFaceArea(f) - m.Oracle_FaceAreaByGreen(f)).Abs : 0.0;
 
@@ -159,7 +159,7 @@ library BrepCrossChecking
     // The angle in radians between element e's normal (layer 6's
     // ElementNormalVector, from its positions) and the face normal at its
     // corner-parameter centroid (from the surface), behind
-    // Law_ElementNormalAgreesWithFaceNormal's guard and exemption (0 on an
+    // ElementNormalAgreesWithFaceNormal's guard and exemption (0 on an
     // element with a corner on a collapsed line).
     ElementNormalGap(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Number
         => m.CanCompareElement(mesh, e)
@@ -172,7 +172,7 @@ library BrepCrossChecking
 
     // The angle in radians between the normal stored at corner slot of
     // element e and the face normal at the corner's parameters, behind
-    // Law_CornerNormalIsFaceNormal's guard and exemption (0 at a corner on a
+    // CornerNormalIsFaceNormal's guard and exemption (0 at a corner on a
     // collapsed line, where the stored normal is a limit).
     CornerNormalGap(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Number
         => (m.CanCompareElement(mesh, e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
@@ -232,69 +232,69 @@ library BrepCrossChecking
     //==
     // # Checks: topology against the B-rep (structure)
 
-    // Law_EveryFaceIsMeshed at every face. Structure: Error.
+    // EveryFaceIsMeshed at every face. Structure: Error.
     Check_EveryFaceIsMeshed(m: BrepModel, mesh: ModelMesh): Check
-        => m.CheckFaces("Law_EveryFaceIsMeshed", f => Law_EveryFaceIsMeshed(m, mesh, f));
+        => m.CheckFaces("EveryFaceIsMeshed", f => EveryFaceIsMeshed(m, mesh, f));
 
-    // Law_MeshEulerEqualsBrepEuler at every shell. Structure: Error.
+    // MeshEulerEqualsBrepEuler at every shell. Structure: Error.
     Check_MeshEulerEqualsBrepEuler(m: BrepModel, mesh: ModelMesh): Check
-        => m.CheckShells("Law_MeshEulerEqualsBrepEuler", s => Law_MeshEulerEqualsBrepEuler(m, mesh, s));
+        => m.CheckShells("MeshEulerEqualsBrepEuler", s => MeshEulerEqualsBrepEuler(m, mesh, s));
 
-    // Law_MeshClosedExactlyWhenShellClosed at every shell. Structure: Error.
+    // MeshClosedExactlyWhenShellClosed at every shell. Structure: Error.
     Check_MeshClosedExactlyWhenShellClosed(m: BrepModel, mesh: ModelMesh): Check
-        => m.CheckShells("Law_MeshClosedExactlyWhenShellClosed", s => Law_MeshClosedExactlyWhenShellClosed(m, mesh, s));
+        => m.CheckShells("MeshClosedExactlyWhenShellClosed", s => MeshClosedExactlyWhenShellClosed(m, mesh, s));
 
-    // Law_ProvenanceNamesModelCell at every mesh vertex. Structure: Error.
+    // ProvenanceNamesModelCell at every mesh vertex. Structure: Error.
     Check_ProvenanceNamesModelCell(m: BrepModel, mesh: ModelMesh): Check
-        => mesh.CheckMeshVertices("Law_ProvenanceNamesModelCell", v => Law_ProvenanceNamesModelCell(m, mesh, v));
+        => mesh.CheckMeshVertices("ProvenanceNamesModelCell", v => ProvenanceNamesModelCell(m, mesh, v));
 
-    // Law_SolidShellMeshesShareNoVertex at every body and void. Structure:
+    // SolidShellMeshesShareNoVertex at every body and void. Structure:
     // Error.
     Check_SolidShellMeshesShareNoVertex(m: BrepModel, mesh: ModelMesh): Check
-        => CheckGrid("Law_SolidShellMeshesShareNoVertex", m.Bodies.Count, m.MostVoids,
-            (b, k) => Law_SolidShellMeshesShareNoVertex(m, mesh, BodyIndex(b), k), (b, k) => AtBody(b));
+        => CheckGrid("SolidShellMeshesShareNoVertex", m.Bodies.Count, m.MostVoids,
+            (b, k) => SolidShellMeshesShareNoVertex(m, mesh, BodyIndex(b), k), (b, k) => AtBody(b));
 
-    // Law_OuterShellVolumePositive at every body. Structure (a sign): Error.
+    // OuterShellVolumePositive at every body. Structure (a sign): Error.
     Check_OuterShellVolumePositive(m: BrepModel, mesh: ModelMesh): Check
-        => m.CheckBodies("Law_OuterShellVolumePositive", b => Law_OuterShellVolumePositive(m, mesh, b));
+        => m.CheckBodies("OuterShellVolumePositive", b => OuterShellVolumePositive(m, mesh, b));
 
-    // Law_VoidShellVolumeNegative at every body and void. Structure (a sign):
+    // VoidShellVolumeNegative at every body and void. Structure (a sign):
     // Error.
     Check_VoidShellVolumeNegative(m: BrepModel, mesh: ModelMesh): Check
-        => CheckGrid("Law_VoidShellVolumeNegative", m.Bodies.Count, m.MostVoids,
-            (b, k) => Law_VoidShellVolumeNegative(m, mesh, BodyIndex(b), k), (b, k) => AtBody(b));
+        => CheckGrid("VoidShellVolumeNegative", m.Bodies.Count, m.MostVoids,
+            (b, k) => VoidShellVolumeNegative(m, mesh, BodyIndex(b), k), (b, k) => AtBody(b));
 
     //==
     // # Checks: geometry against the B-rep (geometry)
 
-    // Law_VertexReevaluatesFromProvenance at every mesh vertex, measured by
+    // VertexReevaluatesFromProvenance at every mesh vertex, measured by
     // ReevaluationDeviation against Tolerances.Length. Geometry: Warning below
     // ten times the tolerance, Error above.
     Check_VertexReevaluatesFromProvenance(m: BrepModel, mesh: ModelMesh): Check
-        => CheckAllWithin("Law_VertexReevaluatesFromProvenance", mesh.Positions.Count,
+        => CheckAllWithin("VertexReevaluatesFromProvenance", mesh.Positions.Count,
             v => m.ReevaluationDeviation(mesh, VertexIndex(v)), m.Tolerances.Length.Value, v => AtMeshVertex(v));
 
-    // Law_CornerNormalIsFaceNormal at every element and corner slot, measured
+    // CornerNormalIsFaceNormal at every element and corner slot, measured
     // by CornerNormalGap against Tolerances.Angle. Geometry: W/E.
     Check_CornerNormalIsFaceNormal(m: BrepModel, mesh: ModelMesh): Check
-        => CheckGridWithin("Law_CornerNormalIsFaceNormal", mesh.ElementCount, 4,
+        => CheckGridWithin("CornerNormalIsFaceNormal", mesh.ElementCount, 4,
             (e, s) => m.CornerNormalGap(mesh, ElementIndex(e), s), m.Tolerances.Angle.Value.Radians, (e, s) => AtElement(e));
 
-    // Law_ElementNormalAgreesWithFaceNormal at every element, measured by
+    // ElementNormalAgreesWithFaceNormal at every element, measured by
     // ElementNormalGap against SurfaceAngular. Geometry: W/E.
     Check_ElementNormalAgreesWithFaceNormal(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithin("Law_ElementNormalAgreesWithFaceNormal", mesh.ElementCount,
+        => CheckAllWithin("ElementNormalAgreesWithFaceNormal", mesh.ElementCount,
             e => m.ElementNormalGap(mesh, ElementIndex(e)), c.SurfaceAngular.Radians, e => AtElement(e));
 
     //==
     // # Checks: oracles (oracle)
 
-    // Law_FaceAreaMatchesOracle at every face, measured by FaceAreaGap
+    // FaceAreaMatchesOracle at every face, measured by FaceAreaGap
     // against the face's own envelope (FaceAreaTolerance), which the check
     // keeps as its bound; 0 against 0 where the law is vacuous. Oracle
     // family: Error.
     Check_FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithinEach("Law_FaceAreaMatchesOracle", m.Faces.Count,
+        => CheckAllWithinEach("FaceAreaMatchesOracle", m.Faces.Count,
             f => m.IsFaceAreaJudged(c, BrepFaceIndex(f)) ? m.FaceAreaGap(mesh, BrepFaceIndex(f)) : 0.0,
             f => m.IsFaceAreaJudged(c, BrepFaceIndex(f)) ? m.FaceAreaTolerance(BrepFaceIndex(f), c) : 0.0,
             f => AtFace(f));
@@ -305,17 +305,17 @@ library BrepCrossChecking
     IsFaceAreaJudged(m: BrepModel, c: FaceMeshingCriteria, f: BrepFaceIndex): Boolean
         => m.Oracle_FaceAreaByGreen(f).IsFinite ? m.FaceAreaTolerance(f, c).IsFinite : false;
 
-    // Law_AngleDefectMatchesBrepEuler at every shell. Oracle family,
+    // AngleDefectMatchesBrepEuler at every shell. Oracle family,
     // structure: Error.
     Check_AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh): Check
-        => m.CheckShells("Law_AngleDefectMatchesBrepEuler", s => Law_AngleDefectMatchesBrepEuler(m, mesh, s));
+        => m.CheckShells("AngleDefectMatchesBrepEuler", s => AngleDefectMatchesBrepEuler(m, mesh, s));
 
-    // Law_SolidVolumeWithinTube at every body, measured by the gap between
+    // SolidVolumeWithinTube at every body, measured by the gap between
     // the mesh volume and the divergence volume against the body's own tube
     // (TubeVolume), which the check keeps as its bound; 0 against 0 where the
     // law is vacuous. Oracle family: Error.
     Check_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithinEach("Law_SolidVolumeWithinTube", m.Bodies.Count,
+        => CheckAllWithinEach("SolidVolumeWithinTube", m.Bodies.Count,
             b => m.IsSolidVolumeJudged(mesh, c, BodyIndex(b))
                 ? (m.BodyMeshVolume(mesh, BodyIndex(b)) - m.Oracle_BodyVolume(BodyIndex(b))).Abs
                 : 0.0,
@@ -323,7 +323,7 @@ library BrepCrossChecking
             b => AtBody(b));
 
     // True when body b's mesh volume is judged: the hypotheses of
-    // Law_SolidVolumeWithinTube, and a finite tube.
+    // SolidVolumeWithinTube, and a finite tube.
     IsSolidVolumeJudged(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
         => (m.IsEveryIndexInRange ? m.IsBodyInRange(b) : false)
             ? ((m.IsShellInRange(m.Bodies[b].OuterShellOf)

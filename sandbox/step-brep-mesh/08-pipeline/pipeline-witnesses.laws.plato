@@ -179,7 +179,7 @@ library StepToMeshWitnessesLaws
             : true;
 
     // At the planted face the run has exactly two Errors, layer 5's
-    // FACE-POLY-LOOP and the cross check Law_EveryFaceIsMeshed, as
+    // FACE-POLY-LOOP and the cross check EveryFaceIsMeshed, as
     // Witness_BoxWithPolyLoopSheet states.
     Law_PlantedBadFaceHasTwoErrors(_: BrepModel): Boolean
         => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Reduce(0, (n, d) =>

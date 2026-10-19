@@ -696,7 +696,7 @@ library BrepWitnesses
     // in version 1, so face 6 is the planted bad face of layer 8's
     // failure-isolation law. Expected diagnostics, meshed under the witness
     // options: at face 6, layer 5's FACE-POLY-LOOP and the cross check
-    // Law_EveryFaceIsMeshed, both Errors (layer 8 adds no PIPELINE-FACE-EMPTY,
+    // EveryFaceIsMeshed, both Errors (layer 8 adds no PIPELINE-FACE-EMPTY,
     // since the face already has an Error); nothing at shell 1, whose
     // triangle's three implicit edges are one boundary cycle, so layer 2's
     // open-shell Euler law holds there (chi 1 plus one cycle); nothing at
