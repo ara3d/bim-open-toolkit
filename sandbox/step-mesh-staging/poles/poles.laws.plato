@@ -2,8 +2,8 @@
 // # Step C laws (staged)
 //
 // Laws for TKT-325 over layer 07's sphere, torus and cone witnesses and one new literal, the whole
-// torus pinned at a vertex. Each law meshes one model at the witness options (chordal 0.01, 15
-// degrees) through the test mirrors (poles-mirrors.library.plato; the library's MeshFace and
+// torus pinned at a vertex. Each law meshes one model at layer 08's options (15 degrees, at the
+// chordal bound each law names) through the test mirrors (poles-mirrors.library.plato; the library's MeshFace and
 // RegionOf after merge), so one case stays inside the runner's per-law budget.
 //
 // Sections, in order:
@@ -24,7 +24,9 @@ library PolesLaws
 
     // The same at another chordal bound. The whole-model laws on the sphere and the torus use
     // 0.05: at 0.01 the torus of radii 2 and 0.5 meshes to 6,784 triangles and one law case takes
-    // about 450 s in the interpreter, far past the runner's 60 s budget.
+    // about 450 s in the interpreter. Since the triangulation track's refinement merged
+    // (7d8dae2d), every whole-model law on a curved witness exceeds the runner's budget at any
+    // chordal bound tried (TRACK.md, findings).
     PolesOptionsAt(chordal: Number, quads: Boolean): MeshingOptions
     {
         var o = DefaultMeshingOptions(chordal);
@@ -45,6 +47,22 @@ library PolesLaws
             [BrepLoop.VertexLoop(BrepVertexIndex(0))],
             [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, false)])],
             [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // A solid sphere of radius r cut at its equator: vertex V0 = (r, 0, 0), the equator E0 closed
+    // at V0, the northern face bounded by [E0+] and the southern by [E0-], neither touching its
+    // pole. V = 1, E = 1, F = 2, L = 2, chi = 2, area 4 pi r^2, volume 4 pi r^3 / 3. Each face
+    // needs its pole added (WithMissingPole). Moves to layer 07 at merge as Witness_Hemispheres.
+    PolesHemispheres(r: Number): BrepModel
+        => BrepModel(
+            GeometrySet([BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], []),
+            [BrepVertex(Point3D(r, 0.0, 0.0))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(0, true)]), BrepLoop.EdgeLoop([CoedgeOf(0, false)])],
+            [SingleLoopFace(0, 0, true), SingleLoopFace(0, 1, true)],
+            [ClosedShellOf([0, 1])],
             [BrepBody.ManifoldSolid(ShellIndex(0))],
             Tolerances.Witness_Tolerances,
             LengthUnit.Metre);
@@ -95,9 +113,13 @@ library PolesLaws
     // The region of face 0 closes in the plane, winds positive, and is simple, and every pole
     // point lies on a collapsed line: the contract of AddMissingSeamsAndPoles and RegionOf.
     RegionIsWellFormed(m: BrepModel): Boolean
+        => m.RegionOfFaceIsWellFormed(0);
+
+    // RegionIsWellFormed for face k.
+    RegionOfFaceIsWellFormed(m: BrepModel, k: Integer): Boolean
     {
-        var f = BrepFaceIndex(0);
-        var r = m.RegionOfFace(0);
+        var f = BrepFaceIndex(k);
+        var r = m.RegionOfFace(k);
         return r.NumberOfLoops.Range.All(k => m.Law_RegionLoopClosesInPlane(f, r, k))
             && m.UvRegionWindingPositive(f, r)
             && r.Outer.Points.Count.Range.All(i => Law_SeamCutCopiesRunOpposite(r, i))
@@ -120,6 +142,10 @@ library PolesLaws
     // The cone: the base circle, the seam's two copies, and the apex segment.
     Law_Poles_ConeRegionIsWellFormed(_: BrepModel): Boolean
         => BrepModel.Witness_Cone.RegionIsWellFormed;
+
+    // The two hemispheres: each equator with its pole added, joined by a cut.
+    Law_Poles_HemispheresRegionsAreWellFormed(_: BrepModel): Boolean
+        => PolesHemispheres(1.0).RegionOfFaceIsWellFormed(0) && PolesHemispheres(1.0).RegionOfFaceIsWellFormed(1);
 
     // The whole torus at a vertex: the rectangle of two cuts through the vertex.
     Law_Poles_TorusAtVertexRegionIsWellFormed(_: BrepModel): Boolean

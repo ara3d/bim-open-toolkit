@@ -10,6 +10,7 @@
 //
 // Sections, in order:
 //  - The body
+//  - A pole inside the face
 //  - A point on a collapsed line
 //  - A vertex loop on a collapsed line
 
@@ -21,15 +22,17 @@ library PolesSegments
     // Body of ExpandedPoles(m, f, loops, c), from its contract in face-meshing.spec.plato: each
     // loop of one point on a collapsed line becomes the whole pole segment (WholePoleSegment);
     // in every other loop each point on a collapsed line becomes the segment from the free
-    // parameter where the loop arrives to the one where it leaves (WithPolePointsExpanded). Every
+    // parameter where the loop arrives to the one where it leaves (WithPolePointsExpanded); and a
+    // pole the face encloses without touching it gets its whole segment as a loop of its own
+    // (WithMissingPole). Every
     // point of a segment keeps the source of the point it replaces (the pole vertex's, in every
     // witness), so Lift identifies them and the triangles with two corners on one segment are
     // dropped. One loop per loop, in order.
     ExpandedPolesBody(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
-        => loops.Count.MapRange(k =>
+        => m.WithMissingPole(f, loops.Count.MapRange(k =>
             (loops[k].Points.Count == 1 ? m.IsOnCollapsedLine(f, loops[k].Points[0]) : false)
                 ? m.WholePoleSegment(f, loops, k, c)
-                : m.WithPolePointsExpanded(f, loops[k], c));
+                : m.WithPolePointsExpanded(f, loops[k], c)), c);
 
     // The parameter that is free along the collapsed line through uv: u on a line of constant v
     // (a sphere's pole, a cone's apex), v on a line of constant u.
@@ -57,6 +60,54 @@ library PolesSegments
     {
         var n = (to - from).PoleStepCount(c);
         return (n + 1).MapRange(k => UvSample(uv.WithCoordinate(which, from + (to - from) * k.ToNumber / n.ToNumber), s));
+    }
+
+    //==
+    // # A pole inside the face
+
+    // The loops, with the whole pole segment of the collapsed line the face encloses added as a
+    // loop of Pole points, when exactly one loop winds round u (a hemisphere bounded by its
+    // equator, a cone bounded by its base circle alone) and a collapsed line of constant v lies on
+    // the face's side of it with no boundary point on it. The face lies to the left of the winding
+    // loop, which is +v when the loop runs toward +u in the chart; the nearest such line on that
+    // side is the pole. The added loop runs the other way round, so the two wind opposite ways and
+    // the seam cut joins them. Unchanged otherwise.
+    WithMissingPole(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+    {
+        var winding = m.WindingLoops(f, loops);
+        var single = winding.Count == 1 ? (m.UWinding(f, loops[winding[0]]) != 0 && m.VWinding(f, loops[winding[0]]) == 0) : false;
+        var pole = single ? m.EnclosedPoleLine(f, loops, winding[0]) : -1;
+        return pole < 0 ? loops : loops.Concatenate([m.MissingPoleLoop(f, loops[winding[0]], pole, c)]);
+    }
+
+    // The position in CollapsedLines(f, ParameterV) of the line of constant v on the face's side
+    // of winding loop w, nearest to it, that no loop point lies on; -1 when there is none.
+    EnclosedPoleLine(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, w: Integer): Integer
+    {
+        var lines = m.CollapsedLines(f, SurfaceParameter.ParameterV);
+        var l = loops[w];
+        var meanV = l.Points.Map(uv => uv.V).SumOf / l.Points.Count.ToNumber;
+        var up = m.UWinding(f, l).ToNumber * (m.IsChartMirrored(f) ? -1.0 : 1.0) > 0.0;
+        var free = lines.Count.Range.FlatMap(k =>
+            ((up ? lines[k] > meanV : lines[k] < meanV)
+                && loops.All(x => x.Points.All(uv => m.IsOnLine(f, uv, SurfaceParameter.ParameterV, lines[k]).Not))) ? [k] : lines.Count.Range.Take(0));
+        return free.Reduce(-1, (best, k) => best < 0 ? k : ((lines[k] - meanV).Abs < (lines[best] - meanV).Abs ? k : best));
+    }
+
+    // The whole pole segment at line `pole` (a position in CollapsedLines(f, ParameterV)) as a
+    // loop winding opposite to loop l: one period of u from l's first point's u, its end left to
+    // the closing step, every point a Pole point of the side it lies on (VMax above the loop, VMin
+    // below).
+    MissingPoleLoop(m: BrepModel, f: BrepFaceIndex, l: UvLoop, pole: Integer, c: FaceMeshingCriteria): UvLoop
+    {
+        var v = m.CollapsedLines(f, SurfaceParameter.ParameterV)[pole];
+        var side = v > l.Points.Map(uv => uv.V).SumOf / l.Points.Count.ToNumber ? DomainSide.VMax : DomainSide.VMin;
+        var start = l.Points[0].U;
+        var end = start - m.LoopDisplacement(f, l).U;
+        var n = (end - start).PoleStepCount(c);
+        return UvLoop(
+            n.MapRange(k => UvCoordinate(start + (end - start) * k.ToNumber / n.ToNumber, v)),
+            n.MapRange(k => UvPointSource.Pole(side, k)));
     }
 
     //==
