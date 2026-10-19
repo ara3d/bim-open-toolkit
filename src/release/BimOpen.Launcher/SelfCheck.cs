@@ -2,13 +2,18 @@ using System.Text.Json;
 
 namespace BimOpen.Launcher;
 
-/// <summary>A host the self-check started; disposing it stops the host.</summary>
-public interface IHostHandle : IDisposable
+/// <summary>The requests made of a running host.</summary>
+public interface IHostApi
 {
     int Port { get; }
 
     Task<(int Status, string Body)> Get(string path);
+
+    Task<(int Status, string Body)> Put(string path, string json);
 }
+
+/// <summary>A host the self-check started; disposing it stops the host.</summary>
+public interface IHostHandle : IHostApi, IDisposable;
 
 /// <summary>What the self-check does to the outside world, so tests can stand in for the host and the MCP server.</summary>
 public interface ISelfCheckPorts
@@ -51,12 +56,13 @@ public static class SelfCheck
             findings.Add(Finding.Ok("Host", $"started on port {host.Port} and answered."));
             findings.Add(await Graph(host));
             findings.Add(await Pages(host));
+            findings.Add(await Notebooks(layout, host));
         }
         findings.Add(await IfcTool(layout, ports));
         return findings;
     }
 
-    private static async Task<Finding> Graph(IHostHandle host)
+    private static async Task<Finding> Graph(IHostApi host)
     {
         var (status, body) = await host.Get($"api/analyses/{SampleGraph}/state");
         var statuses = status == 200 ? NodeStatuses(body) : [];
@@ -69,7 +75,7 @@ public static class SelfCheck
                 "Read the end of the host log in the state\\logs folder. If it repeats after a restart, send that log to the people who gave you the release.");
     }
 
-    private static async Task<Finding> Pages(IHostHandle host)
+    private static async Task<Finding> Pages(IHostApi host)
     {
         var (page, _) = await host.Get(Layout.StartPage);
         var (listStatus, list) = await host.Get("__notebooks/");
@@ -78,6 +84,18 @@ public static class SelfCheck
             ? Finding.Ok("Notebook page", $"{Layout.StartPage} is served, with {count} notebooks.")
             : Finding.Fail("Notebook page", $"{Layout.StartPage} answered {page}, and the notebook list has {count} entries.",
                 "The web folder of the release is incomplete. Unzip the release again into an empty folder.");
+    }
+
+    private static async Task<Finding> Notebooks(Layout layout, IHostApi host)
+    {
+        var graphs = NotebookGraphs.All(layout);
+        var result = await NotebookGraphs.Install(graphs, host);
+        return graphs.Count == 0
+            ? Finding.Fail("Notebook graphs", "the sample notebooks hold no graphs.", "The samples folder is incomplete. Unzip the release again into an empty folder.")
+            : result.Failed > 0
+                ? Finding.Fail("Notebook graphs", $"{result.Failed} of {graphs.Count} notebook graphs could not be put on the host.",
+                    "Read the end of the host log in the state\\logs folder.")
+                : Finding.Ok("Notebook graphs", $"{graphs.Count} graphs of the sample notebooks are on the host ({result.Put} put now), so Re-evaluate finds them.");
     }
 
     private static async Task<Finding> IfcTool(Layout layout, ISelfCheckPorts ports)

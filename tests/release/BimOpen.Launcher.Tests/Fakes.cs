@@ -95,6 +95,7 @@ public sealed class Sandbox : IDisposable
         Touch(Path.Combine(Layout.SkillSources, "ifc-ask", "SKILL.md"), "ifc ask");
         foreach (var folder in Layout.DefaultModelFolders)
             Directory.CreateDirectory(folder);
+        Touch(Path.Combine(Layout.Notebooks, "one.notebook.json"), NotebookWithGraph);
         return this;
     }
 
@@ -117,6 +118,9 @@ public sealed class Sandbox : IDisposable
         => new(terminal, Layout, Machine(claudeInstalled, desktopConfig), runner, _ => ports ?? new FakePorts(), open ?? (_ => { }),
             _ => 0);
 
+    /// <summary>A notebook with one graph embed, whose document is itself JSON text, as the notebook format stores it.</summary>
+    public const string NotebookWithGraph = """{"turns":[{"reply":{"embeds":[{"kind":"table","id":"t"},{"kind":"graph","id":"g","analysisId":"nb-one-graph","document":"{\"formatVersion\":\"0.1.0\"}"}]}}]}""";
+
     public static void Touch(string path, string text = "x")
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -136,33 +140,45 @@ public sealed class Sandbox : IDisposable
 }
 
 /// <summary>A host and an IFC server that answer as the real ones should, or as told to fail.</summary>
-public sealed class FakePorts(bool hostUp = true, string graphStatus = "Ok", string ifcAnswer = "IfcDoor 12") : ISelfCheckPorts
+public sealed class FakePorts(bool hostUp = true, string graphStatus = "Ok", string ifcAnswer = "IfcDoor 12", int putStatus = 200) : ISelfCheckPorts
 {
     public int Started { get; private set; }
+
+    public List<string> Puts { get; } = [];
 
     public Task<IHostHandle?> StartHost()
     {
         Started++;
-        return Task.FromResult<IHostHandle?>(hostUp ? new Handle(graphStatus) : null);
+        return Task.FromResult<IHostHandle?>(hostUp ? new Handle(this, graphStatus) : null);
     }
 
     public Task<string> CallIfcTool(string tool, string argumentsJson)
         => Task.FromResult(ifcAnswer);
 
-    private sealed class Handle(string graphStatus) : IHostHandle
+    private sealed class Handle(FakePorts ports, string graphStatus) : IHostHandle
     {
         public int Port => 5999;
 
         public Task<(int Status, string Body)> Get(string path)
             => Task.FromResult(path switch
             {
+                var p when p.StartsWith("api/analyses/nb-") => (ports.Puts.Contains(p) ? 200 : 404, ""),
                 var p when p.StartsWith("api/analyses/") => (200, $$"""{"nodes":[{"id":"a","status":"{{graphStatus}}"},{"id":"b","status":"{{graphStatus}}"}]}"""),
                 "__notebooks/" => (200, """["one.notebook.json","two.notebook.json"]"""),
                 _ => (200, "<html>"),
             });
 
+        public Task<(int Status, string Body)> Put(string path, string json)
+        {
+            if (ports._putStatus is >= 200 and < 300)
+                ports.Puts.Add(path);
+            return Task.FromResult((ports._putStatus, ""));
+        }
+
         public void Dispose()
         {
         }
     }
+
+    private readonly int _putStatus = putStatus;
 }

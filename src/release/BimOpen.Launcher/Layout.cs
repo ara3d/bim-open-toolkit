@@ -9,6 +9,10 @@ public sealed record Layout(string Root)
 
     public string Samples => Path.Combine(Root, "samples");
 
+    public string Notebooks => Path.Combine(Samples, "notebooks");
+
+    public string NotebookGraphFolder => Path.Combine(Notebooks, "graphs");
+
     public string SkillSources => Path.Combine(Root, "skills");
 
     public string StudioExe => Path.Combine(Bin, "bimopenflow-studio.exe");

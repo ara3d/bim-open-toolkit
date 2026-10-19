@@ -41,8 +41,12 @@ switch (command)
         return command is "help" or "--help" or "-h" or "/?" ? 0 : 2;
 }
 
+// BIMOPEN_NO_BROWSER=1 only prints the address, for scripts and for machines with no browser.
 static void OpenInBrowser(string url)
-    => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+{
+    if (Environment.GetEnvironmentVariable("BIMOPEN_NO_BROWSER") is not { Length: > 0 })
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+}
 
 static int RunSetupFrom(string exe)
 {

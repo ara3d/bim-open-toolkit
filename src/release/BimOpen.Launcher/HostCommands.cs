@@ -32,6 +32,13 @@ public static class HostCommands
                 return 1;
             }
             new HostState(running.Pid, running.Port, DateTimeOffset.Now).Write(layout.HostFile);
+            var installed = await NotebookGraphs.Install(NotebookGraphs.All(layout), new HostApi(running.Port, http), NotebookGraphMarker.Moved(layout));
+            if (installed.Failed == 0)
+                NotebookGraphMarker.Record(layout);
+            if (installed.Put > 0)
+                terminal.Line($"Put {installed.Put} graphs of the sample notebooks on the host.");
+            if (installed.Failed > 0)
+                terminal.Print(Finding.Warn("Notebook graphs", $"{installed.Failed} could not be put on the host.", $"Read {log}. Re-evaluate in a notebook puts a missing graph back itself, on its second press."));
         }
         var url = HostArguments.Url(running.Port, Layout.StartPage);
         terminal.Line($"The NRC notebooks are at {url}");

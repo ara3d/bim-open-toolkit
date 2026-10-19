@@ -20,19 +20,20 @@ public sealed class HostProcess(int pid, int port)
         return free;
     }
 
-    /// <summary>Starts the host through cmd.exe so that its output goes to the log file and it outlives this program.</summary>
+    /// <summary>Starts the host through cmd.exe so that its output goes to the log file and it outlives this program.
+    /// The shell starts it (UseShellExecute), which hands it none of this program's open handles: a host that held the
+    /// console's pipe would keep a script that runs "bimopen start" waiting for as long as the host runs.</summary>
     public static HostProcess Start(Layout layout, IReadOnlyList<string> arguments, int port, string log)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(log)!);
-        var command = $"\"\"{layout.StudioExe}\" {string.Join(' ', arguments.Select(Quote))} > \"{log}\" 2>&1\"";
-        var info = new ProcessStartInfo("cmd.exe", $"/d /s /c {command}")
+        // Without the setting the host logs every request, and the log file grows by megabytes in a session.
+        var line = $"set \"Logging__LogLevel__Default=Warning\" && \"{layout.StudioExe}\" {string.Join(' ', arguments.Select(Quote))} > \"{log}\" 2>&1";
+        var info = new ProcessStartInfo("cmd.exe", $"/d /s /c \"{line}\"")
         {
             WorkingDirectory = layout.Root,
-            UseShellExecute = false,
-            CreateNoWindow = true,
+            UseShellExecute = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
         };
-        // Without this the host logs every request, and the log file grows by megabytes in a session.
-        info.Environment["Logging__LogLevel__Default"] = "Warning";
         return new(Process.Start(info)!.Id, port);
     }
 

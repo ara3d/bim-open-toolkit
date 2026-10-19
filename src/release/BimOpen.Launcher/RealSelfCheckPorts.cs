@@ -14,7 +14,7 @@ public sealed class RealSelfCheckPorts(Layout layout, Settings settings, HttpCli
         var arguments = HostArguments.For(layout, settings, port, Path.Combine(scratch, "store"), layout.Cache);
         var host = HostProcess.Start(layout, arguments, port, Path.Combine(layout.Logs, SelfCheck.HostLogName));
         if (await host.WaitUntilUp(HostLimit, http))
-            return new Handle(host, http);
+            return new Handle(host, new HostApi(host.Port, http));
         host.Stop();
         return null;
     }
@@ -22,15 +22,15 @@ public sealed class RealSelfCheckPorts(Layout layout, Settings settings, HttpCli
     public Task<string> CallIfcTool(string tool, string argumentsJson)
         => McpStdioClient.CallTool(layout.IfcMcpExe, tool, argumentsJson, HostLimit);
 
-    private sealed class Handle(HostProcess host, HttpClient http) : IHostHandle
+    private sealed class Handle(HostProcess host, HostApi api) : IHostHandle
     {
-        public int Port => host.Port;
+        public int Port => api.Port;
 
-        public async Task<(int Status, string Body)> Get(string path)
-        {
-            using var response = await http.GetAsync(HostArguments.Url(host.Port, path));
-            return ((int)response.StatusCode, await response.Content.ReadAsStringAsync());
-        }
+        public Task<(int Status, string Body)> Get(string path)
+            => api.Get(path);
+
+        public Task<(int Status, string Body)> Put(string path, string json)
+            => api.Put(path, json);
 
         public void Dispose()
             => host.Stop();

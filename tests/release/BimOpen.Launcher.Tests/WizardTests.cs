@@ -10,7 +10,7 @@ public sealed class WizardTests
     {
         using var sandbox = new Sandbox().WithRelease();
         var findings = await SelfCheck.Run(sandbox.Layout, new FakePorts());
-        Assert.That(findings.Select(f => f.Subject), Is.EqualTo(new[] { "Release files", "Host", "Sample graph", "Notebook page", "IFC server" }));
+        Assert.That(findings.Select(f => f.Subject), Is.EqualTo(new[] { "Release files", "Host", "Sample graph", "Notebook page", "Notebook graphs", "IFC server" }));
         Assert.That(findings.All(f => f.Status == Status.Ok), Is.True, findings.Text());
     }
 
