@@ -49,8 +49,32 @@ export function packagesAlias(dir: string): Alias[] {
   ];
 }
 
+/** The third-party dependencies (not @bimopenflow/ or @bim-open-viewer/ packages) of every package
+ *  in the packages folders given relative to this workspace, sorted. A file of a linked package
+ *  resolves these from its real path in deps/, where no node_modules exists on a clean checkout
+ *  (the NRC Pages runner failed on vega-embed this way), so the page configs list them in
+ *  resolve.dedupe, which resolves them from this workspace, and package.json installs them. */
+export function linkedDependencies(...dirs: string[]): string[] {
+  const names = new Set<string>();
+  for (const dir of dirs) {
+    const packagesDir = fileURLToPath(new URL(dir.replace(/\/?$/, "/"), import.meta.url));
+    for (const d of readdirSync(packagesDir, { withFileTypes: true }).filter((e) => e.isDirectory())) {
+      const manifest = JSON.parse(readFileSync(`${packagesDir}${d.name}/package.json`, "utf8")) as { dependencies?: Record<string, string> };
+      for (const name of Object.keys(manifest.dependencies ?? {}))
+        if (!name.startsWith("@bimopenflow/") && !name.startsWith("@bim-open-viewer/")) names.add(name);
+    }
+  }
+  return [...names].sort();
+}
+
 /** bim-open-flow's editor packages (api-client, app, client, contracts, graph, panes, state, viz). */
 export const flowAlias = packagesAlias("../../deps/bim-open-flow/bimopenflow/web/packages");
 
 /** bim-open-notebook's packages: the notebook and the 3D pane. */
 export const notebookAlias = packagesAlias("../../deps/bim-open-notebook/bimopenflow/web/packages");
+
+/** The third-party dependencies of the linked packages above, for resolve.dedupe in the page configs. */
+export const linkedDeps = linkedDependencies(
+  "../../deps/bim-open-flow/bimopenflow/web/packages",
+  "../../deps/bim-open-notebook/bimopenflow/web/packages",
+);

@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import { viewerAlias } from '../../viewer.config';
-import { flowAlias, notebookAlias } from '../../deps.config';
+import { flowAlias, linkedDeps, notebookAlias } from '../../deps.config';
 
 export default defineConfig({
   resolve: {
     alias: [...viewerAlias, ...flowAlias, ...notebookAlias, { find: 'gratify', replacement: resolve(__dirname, '../../../../deps/gratify/src/gratify') }],
-    dedupe: ['three'],
+    dedupe: [...new Set(['three', ...linkedDeps])],
   },
   build: {
     outDir: resolve(__dirname, '../../../../artifacts/bim-flow-duckdb/web'),
