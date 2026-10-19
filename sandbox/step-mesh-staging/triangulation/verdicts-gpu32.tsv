@@ -1,0 +1,20 @@
+TriangulationLaws.Law_Tri_BoxFacesStayTwoTriangles	pass	
+TriangulationLaws.Law_Tri_CdtAreaIsRegionArea	pass	
+TriangulationLaws.Law_Tri_CdtIsConforming	pass	
+TriangulationLaws.Law_Tri_CdtKeepsBoundary	pass	
+TriangulationLaws.Law_Tri_CdtKeepsEverySegment	pass	
+TriangulationLaws.Law_Tri_CdtNoFlippableEdge	pass	
+TriangulationLaws.Law_Tri_CdtPositiveOrientation	pass	
+TriangulationLaws.Law_Tri_FlipNeverUndone	pass	
+TriangulationLaws.Law_Tri_InCircleOfAgreesWithInCircle	pass	
+TriangulationLaws.Law_Tri_InCircleWitnesses	pass	
+TriangulationLaws.Law_Tri_MinAngleBetterOnCylinders	pass	
+TriangulationLaws.Law_Tri_MinAngleNoWorseThanLibrary	pass	
+TriangulationLaws.Law_Tri_QualityRequestsOnBoxes	pass	
+TriangulationLaws.Law_Tri_RefineMeetsContract	pass	
+TriangulationLaws.Law_Tri_RefinedInteriorMeetsMinAngle	fail	k = 1
+TriangulationLaws.Law_Tri_RefinedNoFlippableEdge	pass	
+TriangulationStepsLaws.Law_Tri_Steps_FaceChecksNoWorse	pass	
+TriangulationStepsLaws.Law_Tri_Steps_FaceMeshLaws	pass	
+TriangulationStepsLaws.Law_Tri_Steps_ModelErrorsNoWorse	pass	
+TriangulationStepsLaws.Law_Tri_Steps_TriangulationLaws	pass	
