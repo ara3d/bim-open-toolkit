@@ -1,0 +1,18 @@
+//==
+// # Genus track: laws of SharesCurveParameterBody
+//
+// The staged forms of layer 7's Law_PcurveAtCurveSpeedSharesParameter and
+// Law_PcurveAtDoubleSpeedSharesNoParameter (validation-witnesses.laws.plato),
+// over the body before it is wired to SharesCurveParameter.
+
+library GenusPcurveParameterLaws
+{
+    // A pcurve at the line's own speed shares the line's parameter.
+    Law_Genus_PcurveAtCurveSpeedSharesParameter(_: BrepModel): Boolean
+        => BrepModel.Witness_UnitBoxWithBottomPcurve(1.0).SharesCurveParameterBody(BrepEdgeIndex(0), 0);
+
+    // A pcurve at twice the line's speed has the same image and does not share
+    // its parameter: at the edge's end the two points lie 1 apart.
+    Law_Genus_PcurveAtDoubleSpeedSharesNoParameter(_: BrepModel): Boolean
+        => BrepModel.Witness_UnitBoxWithBottomPcurve(2.0).SharesCurveParameterBody(BrepEdgeIndex(0), 0).Not;
+}

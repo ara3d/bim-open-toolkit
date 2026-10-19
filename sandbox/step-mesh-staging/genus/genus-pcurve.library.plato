@@ -1,0 +1,60 @@
+//==
+// # Genus track: the body of layer 2's SharesCurveParameter
+//
+// Staged for layer 2 (02-topology/topology.library.plato), finding F-52
+// item 7 of TKT-314, which the genus track carries (TRACK.md). From the
+// contract SharesCurveParameter in topology.spec.plato and its deferred
+// note: the deviation between the pcurve's and the curve's points at the same
+// parameter (PcurveParameterDeviationAt), sampled at the edge domain's ends,
+// at every copy of a breakpoint of the curve inside the domain, and at the
+// middle of each span between them; a span whose middle deviates by more than
+// half the length tolerance is bisected, until its parameter length is within
+// the curve's parameter tolerance there or at depth 40 (2^-40 of the span, as
+// layer 4's SplitSpan). True when no sample deviates by more than the length
+// tolerance.
+
+library GenusPcurveParameter
+{
+    // The body of SharesCurveParameter. Precondition: m.IsEveryIndexInRange,
+    // e in range, m.HasPcurve(e, k).
+    SharesCurveParameterBody(m: BrepModel, e: BrepEdgeIndex, k: Integer): Boolean
+    {
+        var stops = m.EdgeBreakFractions(e);
+        var tolerance = m.Tolerances.Length.Value;
+        return stops.All(t => m.PcurveParameterDeviationAt(e, k, t) <= tolerance)
+            && (stops.Count - 1).Range.All(i => m.SpanSharesCurveParameter(e, k, stops[i], stops[i + 1], 0));
+    }
+
+    // The fractions of edge e's domain at its two ends and at every copy of a
+    // breakpoint of its curve strictly inside it, increasing. Precondition:
+    // the edge is evaluable.
+    EdgeBreakFractions(m: BrepModel, e: BrepEdgeIndex): Array<Number>
+    {
+        var curveDomain = m.Geometry.Domain(m.Edges[e].Curve);
+        var range = m.EdgeDomain(e).Range;
+        var inside = m.Geometry.Breakpoints(m.Edges[e].Curve)
+            .FlatMap(b => curveDomain.CopiesInside(b, range))
+            .Map(u => (u - range.Start) / (range.End - range.Start))
+            .FlatMap(t => (t > 0.0 && t < 1.0) ? [t] : [0.0].Take(0));
+        return [0.0].Concatenate(inside.Sort((a, b) => a <= b)).Concatenate([1.0]);
+    }
+
+    // Whether the pcurve shares the curve's parameter over the fractions
+    // [a, b] of edge e's domain: the middle within the length tolerance, and
+    // either within half of it, or the span no longer than the curve's
+    // parameter tolerance, or depth 40 reached, or both halves sharing it.
+    SpanSharesCurveParameter(m: BrepModel, e: BrepEdgeIndex, k: Integer, a: Number, b: Number, depth: Integer): Boolean
+    {
+        var middle = (a + b) * 0.5;
+        var deviation = m.PcurveParameterDeviationAt(e, k, middle);
+        var tolerance = m.Tolerances.Length.Value;
+        var curve = m.Edges[e].Curve;
+        var step = (b - a) * (m.EdgeDomain(e).Range.End - m.EdgeDomain(e).Range.Start).Abs;
+        var floor = m.Geometry.ParameterToleranceAt(curve, m.Geometry.Domain(curve).Wrap(m.EdgeParameterAt(e, middle)), m.Tolerances).Value;
+        return deviation > tolerance
+            ? false
+            : ((deviation <= 0.5 * tolerance || depth >= 40 || step <= floor)
+                ? true
+                : (m.SpanSharesCurveParameter(e, k, a, middle, depth + 1) && m.SpanSharesCurveParameter(e, k, middle, b, depth + 1)));
+    }
+}
