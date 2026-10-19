@@ -44,19 +44,19 @@
     },
     {
       "request": "Write the BCF.",
-      "reply": "The BCF writer is an effect, so it runs only on Run, and this notebook does not Run graphs. I ran nb-s14-door-bcf-issues through the host and copied the file the Run wrote into the repository: samples/nrc/bcf/s14-door-bcf-failures.bcf, 6 topics, 6 viewpoints, 6 elements, none without geometry, 8,635 bytes. Each topic holds one viewpoint: its door selected, and a camera that frames that door. The BCF is a version 3.0 file, and the library's tests validate files written by the same writer against the buildingSMART BCF 3.0 schemas (DuplexBcfTests, BcfCameraCommentTests in bim-open-data); no BCF viewer was run on this file. The bytes are not repeatable: bcf.write stamps each topic with the time of the Run and the header with the model file's date, so a second Run gives another hash. The size and SHA-256 on the card are those of the committed file.",
+      "reply": "The BCF writer is an effect, so it runs only on Run, and this notebook does not Run graphs. I ran nb-s14-door-bcf-issues through the host and copied the file the Run wrote into the repository: samples/nrc/bcf/s14-door-bcf-failures.bcf, 6 topics, 6 viewpoints, 6 elements, none without geometry, 8,531 bytes. Each topic holds one viewpoint: its door selected, and a camera that frames that door. The BCF is a version 3.0 file, and the library's tests validate files written by the same writer against the buildingSMART BCF 3.0 schemas (DuplexBcfTests, BcfCameraCommentTests in bim-open-data); no BCF viewer was run on this file. The bytes are repeatable: the graph fixes the topic creation time (created 2026-10-18T22:00:00Z) and the guidSeed, and gives no model date, so a second Run writes the same file; I ran it three times and the SHA-256 did not change. The size and SHA-256 on the card are those of the committed file.",
       "analysisId": "nb-s14-door-bcf-issues",
       "embeds": [
         { "kind": "file", "path": "samples/nrc/bcf/s14-door-bcf-failures.bcf", "mediaType": "application/zip", "caption": "s14-door-bcf-failures.bcf" }
       ],
       "tools": [
-        { "name": "createRun", "ok": true, "summary": "nb-s14-door-bcf-issues: bcf.write wrote 6 topics, 6 viewpoints, 6 elements, 0 without geometry, 8,635 bytes to artifacts/checking/s14-door-bcf-failures.bcf" },
+        { "name": "createRun", "ok": true, "summary": "nb-s14-door-bcf-issues: bcf.write wrote 6 topics, 6 viewpoints, 6 elements, 0 without geometry, 8,531 bytes to artifacts/checking/s14-door-bcf-failures.bcf" },
         { "name": "Bash", "ok": true, "summary": "copied that file to samples/nrc/bcf/s14-door-bcf-failures.bcf; the SHA-256 matches the Run's summary row" }
       ]
     },
     {
       "request": "A reviewer wants to comment on the two 813 mm doors, the near-threshold ones, from a camera outside the building. Add that comment and write it as its own BCF.",
-      "reply": "One issue on both doors, one row per door in the table. Title \"813 mm doors: 37 mm under the 850 mm rule\", author Reviewer, with the comment text in the Comment column. The camera columns hold the viewpoint: position (24, -24, 12), a direction toward the middle of the two doors, and a 60 degree field of view. It is set by hand here with view3d.camera; the 3D pane's Comment button builds the same two nodes from the camera on screen. The creation time is a parameter, 2026-10-18T23:00:00Z, because bcf.issue reads no clock. Run wrote samples/nrc/bcf/s14-door-bcf-review.bcf: 1 topic, 1 viewpoint, 2 elements, 1,887 bytes. Its viewpoint uses this camera in place of a framed one, and the comment sits under the topic.",
+      "reply": "One issue on both doors, one row per door in the table. Title \"813 mm doors: 37 mm under the 850 mm rule\", author Reviewer, with the comment text in the Comment column. The camera columns hold the viewpoint: position (24, -24, 12), a direction toward the middle of the two doors, and a 60 degree field of view. It is set by hand here with view3d.camera; the 3D pane's Comment button builds the same two nodes from the camera on screen. The creation time is a parameter, 2026-10-18T23:00:00Z, because bcf.issue reads no clock; bcf.write's created is the same instant, so the file does not depend on when it runs. Run wrote samples/nrc/bcf/s14-door-bcf-review.bcf: 1 topic, 1 viewpoint, 2 elements, 1,865 bytes. Its viewpoint uses this camera in place of a framed one, and the comment sits under the topic.",
       "analysisId": "nb-s14-door-bcf-review",
       "embeds": [
         { "kind": "table", "node": "answer", "port": "table", "caption": "The reviewer's issue, with its camera" },
@@ -64,13 +64,13 @@
       ],
       "tools": [
         { "name": "editGraph", "ok": true, "summary": "nb-s14-door-bcf-review: added view3d.camera and bcf.issue for the two 813 mm doors, wired to bcf.topics and bcf.write" },
-        { "name": "createRun", "ok": true, "summary": "nb-s14-door-bcf-review: bcf.write wrote 1 topic, 1 viewpoint, 2 elements, 0 without geometry, 1,887 bytes to artifacts/checking/s14-door-bcf-review.bcf" },
+        { "name": "createRun", "ok": true, "summary": "nb-s14-door-bcf-review: bcf.write wrote 1 topic, 1 viewpoint, 2 elements, 0 without geometry, 1,865 bytes to artifacts/checking/s14-door-bcf-review.bcf" },
         { "name": "Bash", "ok": true, "summary": "copied that file to samples/nrc/bcf/s14-door-bcf-review.bcf" }
       ]
     },
     {
       "request": "The architect has replied in the BCF. Read the returned file, show me the comments, and colour the flagged doors in 3D.",
-      "reply": "The returned file, samples/nrc/bcf/s14-door-bcf-reply.bcf (2,013 bytes), holds the same topic with 2 comments by two authors: Reviewer, then Architect, who agrees and says a wider leaf type will come in the next revision of the model. The topic is still Open and names 2 elements; joined to the model on GlobalId they are the two Level 1 glass doors, Revit element ids 171853 and 171975, 813 mm, each Fail with 2 comments, and the 3D view paints them. Nothing in the model has changed: the verdicts still say Fail until a revised model is checked again. The architect's reply is staged for this walk-through, not a colleague's: the graph below, nb-s14-door-bcf-reply, writes it by joining the reviewer's row to a second bcf.issue under one title and one guidSeed, so a viewer would treat the file as an update of the reviewer's topic. The decision is not written back into the IFC in this notebook.",
+      "reply": "The returned file, samples/nrc/bcf/s14-door-bcf-reply.bcf (1,991 bytes), holds the same topic with 2 comments by two authors: Reviewer, then Architect, who agrees and says a wider leaf type will come in the next revision of the model. The topic is still Open and names 2 elements; joined to the model on GlobalId they are the two Level 1 glass doors, Revit element ids 171853 and 171975, 813 mm, each Fail with 2 comments, and the 3D view paints them. Nothing in the model has changed: the verdicts still say Fail until a revised model is checked again. The architect's reply is staged for this walk-through, not a colleague's: the graph below, nb-s14-door-bcf-reply, writes it by joining the reviewer's row to a second bcf.issue under one title and one guidSeed, so a viewer would treat the file as an update of the reviewer's topic. The decision is not written back into the IFC in this notebook.",
       "analysisId": "nb-s14-door-bcf-return",
       "embeds": [
         { "kind": "table", "node": "commentsView", "port": "table", "caption": "Comments in the returned BCF" },
@@ -80,7 +80,7 @@
         { "kind": "graph", "analysisId": "nb-s14-door-bcf-reply", "focus": ["review", "reply", "thread", "bcf"] }
       ],
       "tools": [
-        { "name": "createRun", "ok": true, "summary": "nb-s14-door-bcf-reply: bcf.write wrote 1 topic, 1 viewpoint, 2 elements, 0 without geometry, 2,013 bytes to artifacts/checking/s14-door-bcf-reply.bcf" },
+        { "name": "createRun", "ok": true, "summary": "nb-s14-door-bcf-reply: bcf.write wrote 1 topic, 1 viewpoint, 2 elements, 0 without geometry, 1,991 bytes to artifacts/checking/s14-door-bcf-reply.bcf" },
         { "name": "Bash", "ok": true, "summary": "copied that file to samples/nrc/bcf/s14-door-bcf-reply.bcf" },
         { "name": "getResult", "ok": true, "summary": "nb-s14-door-bcf-return returned.comments: 2 rows, authors Reviewer and Architect" },
         { "name": "getResult", "ok": true, "summary": "nb-s14-door-bcf-return flaggedView.table: 2 rows, both Fail on Level 1" }

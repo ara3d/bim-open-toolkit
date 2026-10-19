@@ -150,7 +150,7 @@ describe("s14-door-bcf", () => {
         bytes.length,
         createHash("sha256").update(bytes).digest("hex"),
       ]);
-      expect(bytes.length).toBe(8635);
+      expect(bytes.length).toBe(8531);
     });
 
     it("holds one viewpoint per topic, selecting that topic's door, with a camera", () => {
@@ -193,7 +193,7 @@ describe("s14-door-bcf", () => {
   describe("turn 6: the architect's reply comes back", () => {
     it("has two comments by two authors, in order", () => {
       const comments = rowsOf(tableOf(5, "Comments in the returned BCF"));
-      expect(comments.map((c) => c["Author"])).toEqual(["Reviewer", "Architect"]);
+      expect(comments.map((c) => c["CommentAuthor"])).toEqual(["Reviewer", "Architect"]);
     });
 
     it("joins the flagged doors to the model on GlobalId: the two 813 mm doors, each with 2 comments", () => {
