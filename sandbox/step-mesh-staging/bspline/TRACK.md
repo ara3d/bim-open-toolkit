@@ -1,9 +1,19 @@
 # bspline: mesh B-spline (freeform) faces
 
 Ticket: TKT-327
-Status: working
+Status: ready to merge
 
 ## Done
+
+Verdicts of every `Law_Bspline_` law (44), each run on a copy of the library wired by the merge instructions below (`wire.py` in the wave's notes folder), pinned CLI, budget 120 s:
+
+| Library state | Profile | Pass | Not pass |
+|---|---|---|---|
+| before the G and T merges (tracks' own runs, listed below) | gpu32 | 44 | none |
+| 848b66d6 (D2 and G merged, T not) | cpu64 | 35 of the 44 run there, the 12 pipeline laws: 7 pass | 3 fail (bump solid: 12 degenerate triangles, Error `ElementIsNotDegenerate`), 2 budget errors |
+| 7d8dae2d and later (T merged), the current library | cpu64 | 35 | 9 budget errors, every one meshing the bump solid inside T's `AnglePass` / `TryAngleInsertion` |
+
+So the bodies, the side tests, the oracles, the sagitta and the crescent criteria pass under both profiles; the bump solid's three criteria laws and the six general layer 8 laws that mesh it hold under gpu32 and wait on face meshing under cpu64 (Requests to other tracks).
 
 - pipeline laws (`bspline-pipeline.laws.plato`) and the crescent witness (`Witness_BsplineCrescentSheet` in `bspline-witnesses.library.plato`): the ticket's three criteria and layer 8's general laws of steps A to C on both models. On the wired copy: 12 obligation before, 12 pass after (73 s). Facts: `Witness_BSplinePatchSolid(1/2)` meshes Ok in round 0, closed, oriented, Euler 2, 162 triangles, top area 1.0410 (bracket [1, 1.0889]), volume 1.0531 (exact 19/18 = 1.0556), and layer 8's three witness laws pass on witness 7; the crescent asks two `LoopSelfIntersects` requests, reports `PIPELINE-FACE-UNRESOLVED` with 0 rounds, and meshes Ok in 1 round under the witness options.
 
@@ -34,6 +44,8 @@ Each line gives a deferred library function the body on the right (the same para
 
 ## Requests to other tracks
 
+- T (triangulation, TKT-343), not blocking the merge of this track's bodies, blocking the bump-solid criterion under cpu64: `Witness_BSplinePatchSolid(1/2)` under layer 8's witness options does not mesh on the current library. Under cpu64 its top face (a biquadratic Bezier patch, unit square boundary) refines toward its boundary edges: before the T merge (848b66d6) the run ends with 338 triangles, 12 of them degenerate (a corner about 1.4e-6 inside a boundary edge, smallest altitude 8.6e-7 against the 1e-6 length tolerance); after it the run does not finish in 900 s (law budget) at chordal 0.01, nor in 7.8 hours at chordal 0.02 (a `--call` probe, which no budget stops), and finishes at once at chordal 0.03 and 0.05 (14 triangles). Time is spent in `AnglePass`, `TryAngleInsertion`, `FlipPass` under `RefineToSurfaceByInsertion`. The surface distances layer 5 measures through `Project` are right to 1e-15 there (checked: points 1e-3 above the patch at the boundary and corners measure 1e-3 / sqrt(1 + slope^2)). Repro: wire the library with `wire.py`, add this folder as a root, and run `--laws --filter=Law_Bspline_BumpSolidNeedsNoRound --profile=cpu64`.
+
 ## Findings
 
 - The ticket's "its MaxRefinementRounds 0 variant reports PIPELINE-FACE-UNRESOLVED" cannot hold of `Witness_BSplinePatchSolid`: its edges are lines and its top's loop is a simple square, so no face asks for refinement and 0 rounds mesh it the same, Ok (`Law_Bspline_BumpSolidNeedsNoRound`). The criterion is met on the crescent sheet instead, the model that also gives the `LoopSelfIntersects` request. The supervisor or owner may want to reword the criterion.
@@ -63,8 +75,14 @@ Each line gives a deferred library function the body on the right (the same para
 | Layer 7 oracle bodies (found on the meshing path) | 20 min | 4 CLI runs |
 | Bump solid meshing, crescent witness (three designs) | 60 min | 9 CLI runs, 1 to 1.5 min each |
 | Pipeline laws | 10 min | 2 CLI runs (14 s, 73 s) |
+| Full sweeps, unwired and wired (gpu32, stale copy) | 30 min | 2 CLI runs (13 and 17 min) |
+| cpu64 rerun after the D2, G and T merges, diagnosis of the bump solid | 70 min of runs | 6 CLI runs (18 min, 15 min, 6 min, 3, 1, 1) |
+| Idle: waiting on probes that a missing budget let run | about 8 h | 3 probes, one of 7.8 h |
 
 ## Lessons
+
+- The session went idle for about eight hours waiting on three background probes. `--budget` does not stop a `--call` run (the step B notes say so), so the probe at chordal 0.02 ran 7.8 hours, and its completion notice never woke the session. Every probe now runs under `timeout 600`, and a wait on a background run gets a time limit and a check of its output file instead of an open-ended wait.
+- The library moved under the track (D2, G and T merged during the work), and a full sweep on a wired copy made before those merges reported three false regressions. Rewire from the current library before every sweep.
 
 - The brief listed 8 bodies; meshing a B-spline face reached 5 more deferred functions (two side tests, three layer 7 oracles). Running the target witness end to end on a wired copy early would have shown the whole list on the first day; a brief could name "everything the witness's pipeline reaches" instead of a list.
 - A `--call` probe that returns the discretizations and colliding segment pairs found the gpu32 region tolerance in one run, after two witness designs built on a guess about the cause.
