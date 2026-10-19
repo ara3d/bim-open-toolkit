@@ -1,7 +1,7 @@
 # genus: step G (holes and voids), the cone's Green-area sign, and SharesCurveParameter's body
 
 Ticket: TKT-328 (step G, the cone sign F-55), TKT-314 (SharesCurveParameter, F-52 item 7)
-Status: working
+Status: ready to merge
 
 Verdicts are from Plato 88aa0277 (the fallback CLI of `docs/plans/step-mesher-v2.md`) with this
 folder as an extra root, `--budget=900`, under `gpu32` (the default) and `cpu64`.
@@ -96,8 +96,12 @@ Run of 2026-10-18 at 23:28, 32 s wall, one compile: 21 pass, 4 obligation.
 | Cone fix: first try, allowance found, second try | 6 min | 4 (two per profile) |
 | SharesCurveParameter body | included above | shared runs |
 | Step G under gpu32 | 1 min | 1 |
+| Layer 07 and 08 F-54 commit (7e709372): verification | 78 min | 1 server call timed out at 30 min; 2 CLI runs of 8 min |
 
 ## Lessons
+- A law-server call that meshes the torus outlives the script's 30-minute client timeout under this
+  load, and the server goes on working on a request nobody waits for. Laws that mesh every witness
+  belong on the CLI with a small budget until TKT-335's hot spots are paid.
 
 - A sign read from rounding noise passed under one profile and failed under the other: running
   both profiles found the allowance defect that one profile hid.
