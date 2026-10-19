@@ -21,6 +21,6 @@ public sealed class BimRegistryTests
             "bim.elements", "bim.rooms", "bim.levels", "bim.bounds",
             "bim.paramTable", "bim.paramCoverage", "bim.discipline", "bim.classifyRooms",
             "bim.containment", "bim.nearest", "bim.navGraph", "bim.hops",
-            "bim.orientation", "bim.buildSequence",
+            "bim.orientation", "bim.buildSequence", "bim.selection",
         }));
 }
