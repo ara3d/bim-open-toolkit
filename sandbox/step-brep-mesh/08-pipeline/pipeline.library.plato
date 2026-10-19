@@ -322,10 +322,12 @@ library StepToMesh
 
     // The findings of a finished loop: the model's (no face, undiscretized
     // edges), every final face outcome's, and the pipeline's own finding for
-    // each chosen face left without a mesh.
+    // each chosen face left without a mesh, and the discretization's (an edge off its face's
+    // surface, a refinement stopped at the length floor).
     LoopReport(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, s: PipelineState): Report
         => ReportOf(m.ModelDiagnostics(o))
             .Merge(ReportOf(s.Outcomes.FlatMap(x => x.Diagnostics)))
+            .Merge(ReportOf(m.DiscretizationFindings(s.Discretizations, o.Face.Discretization)))
             .Merge(ReportOf(m.Faces.Count.Range.FlatMap(k =>
                 chosen.IsChosen(BrepFaceIndex(k))
                     ? s.Outcomes[k].FailureDiagnostics(BrepFaceIndex(k), s.Round)

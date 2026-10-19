@@ -187,7 +187,7 @@ Validated: ValidateBrep(level), ValidateModelMesh(t, quality, level), CrossCheck
   `KernelFace(f)` finding, an element's `ElementFace`, or a vertex's provenance reaches its STEP
   instance and assembly occurrence through `Decoded.Map`. `MeshStepText` is the same without it.
 
-The pipeline's own findings, all Errors because each means part of the model has no mesh:
+The pipeline's own findings, all Errors because each means part of the model has no mesh, then the two Warnings it passes on from layer 4's `DiscretizationFindings`:
 
 | Code | Provenance | Measure | When |
 |---|---|---|---|
@@ -199,6 +199,8 @@ The pipeline's own findings, all Errors because each means part of the model has
 | `PIPELINE-FACE-EXCLUDED` | the face | 0 | the face was left out of a `MeshChosenFaces` run |
 | `PIPELINE-FACE-UNRESOLVED` | the face | rounds taken | a blocking request is still unanswered at exit |
 | `PIPELINE-FACE-EMPTY` | the face | 0 | no mesh, and nothing else located an error at the face |
+| `DISCRETIZE-EDGE-OFF-SURFACE` (Warning, layer 4) | the edge | the largest gap to the surface | an edge does not lie on the surface of a face that uses it; `LoopReport` adds it |
+| `DISCRETIZE-NOT-CONVERGED` (Warning, layer 4) | the edge | the number of failing segments | refinement stopped at the minimum segment length with a criterion failing; `LoopReport` adds it |
 
 ## Decisions
 

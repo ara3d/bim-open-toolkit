@@ -14,6 +14,8 @@ and states the rules both faces of the edge rely on when they consume it. It own
 | `discretization.types.plato` | `Limit`, `DiscretizationCriteria`, `SegmentFloors`, `EdgeDiscretization`, `EdgeDiscretizations`, `EdgeImage`, `RefinementReason`, `EdgeRefinementRequest` |
 | `discretization.library.plato` | criteria, edge facts, count floors, closed forms for arcs, segment measures, parameter-space images, `Discretize`, `DiscretizeAll`, `Undiscretized`, `Reversed`, `AlongCoedge`, `SameDiscretization`, `IsRefinable`, `MeetsCriteria`, `SegmentMeetsCriteria`, `RefineEdge`, `Refine` |
 | `discretization.laws.plato` | 36 laws: shape, agreement with the model, criteria, counts, images, reversal and sharing, monotonicity and refinement, arcs |
+| `termination-discretize.library.plato` | the bounded `Discretize` and `RefineEdge` (`DiscretizeBounded`, `RefineEdgeBounded`, the searched raise, the image tests over a set of images, `IsOffSurface`) and `DiscretizationFindings` |
+| `termination.laws.plato` | 9 laws: the discretization returns on an edge off its face's surface, within `SegmentBound`, and reports it |
 | `discretization.spec.plato` | type invariants, contracts of the 6 functions the design pass deferred and 4 constructors, 6 theorems. Since chunk B, `SagittaByHullBound` (the non-closed-form half of `Sagitta`, chunk F) is the one still bodiless |
 
 ## The objects
@@ -224,6 +226,17 @@ Severity per SPEC-DSL.md section 4: Error for structural laws, W/E for a geometr
 | `Law_DiscretizationsIndexedByEdge` | entry `i` is the discretization of edge `i` | exact | Error |
 | `Law_DiscretizationsCoverEdges` | one entry per edge | exact | Error |
 | `Law_ArcCriteriaCountMeetsChordal` | the closed-form arc count meets the chordal bound | `ResolutionAt(radius)` (rounding) | test |
+
+## Diagnostic codes
+
+`DiscretizationFindings` (in `termination-discretize.library.plato`, TKT-346) reports what the bounded
+`Discretize` and `RefineEdge` saw; layer 8's `LoopReport` adds them to a run's report. Both are
+Warnings located at the edge (`Provenance.KernelEdge`).
+
+| Code | Measure | When |
+|---|---|---|
+| `DISCRETIZE-EDGE-OFF-SURFACE` | the largest distance of an edge point from the surface of a face that uses it | the gap exceeds the chordal bound, so no refinement meets that face's image chord test; the image is left out of the edge's refinement |
+| `DISCRETIZE-NOT-CONVERGED` | the number of failing segments | refinement stopped at the minimum segment length with a criterion still failing |
 
 ## Left open
 

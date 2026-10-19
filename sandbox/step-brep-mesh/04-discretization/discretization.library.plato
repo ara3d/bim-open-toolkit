@@ -627,28 +627,17 @@ library EdgeDiscretizing
             ? m.EdgeDomain(e).Range.Start < m.EdgeDomain(e).Range.End
             : false;
 
-    // Chunk A body, from the contract Discretize. A degenerate edge gets its
-    // two domain ends and its two vertex points. A line, circle or ellipse is
-    // split uniformly into its closed-form count (ConicSegmentCount, never
-    // below MinimumSegmentCount), raised one segment at a time while an image
-    // chord exceeds the chordal bound and the minimum length allows. Every
-    // other curve is bisected at parameter midpoints, seed span by seed span,
-    // while a criterion fails on a segment and both halves keep the effective
-    // minimum length; then the segment longest in parameter is halved until
-    // the count reaches MinimumSegmentCount. The domain's end points are the
-    // vertex points, copied; interior points are curve evaluations.
+    // Chunk A body, from the contract Discretize: DiscretizeBounded (the "bounded" functions in
+    // termination-discretize.library.plato). A degenerate edge gets its two domain ends and its two
+    // vertex points. A line, circle or ellipse is split uniformly into its closed-form count,
+    // raised while an image chord of an image the edge lies on exceeds the chordal bound, found by
+    // search up to the cap the minimum length gives. Every other curve is bisected at parameter
+    // midpoints, seed span by seed span, while a criterion fails and both halves keep the effective
+    // minimum length; then the segment longest in parameter is halved until the count reaches
+    // MinimumSegmentCount. An image the edge does not lie on is left out of the tests and
+    // reported (DISCRETIZE-EDGE-OFF-SURFACE).
     Discretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization
-    {
-        var range = m.EdgeDomain(e).Range;
-        var least = m.MinimumSegmentCount(e, c, floors);
-        var conic = m.ConicSegmentCount(e, c, least);
-        var parameters = m.IsDegenerateEdge(e)
-            ? [range.Start, range.End]
-            : (conic > 0
-                ? range.Samples(m.RaisedForImages(e, c, conic, m.ConicSegmentCap(e, c, least)) + 1)
-                : m.RaisedToCount(m.BisectedParameters(e, c), least));
-        return m.DiscretizationAt(e, parameters);
-    }
+        => m.DiscretizeBounded(e, c, floors);
 
     // The discretization of edge e at the given increasing parameters: the
     // domain-start and domain-end vertex points at the two ends, copied, and
@@ -710,47 +699,10 @@ library EdgeDiscretizing
             AtMost(v) => (length / v).Ceiling.ToInteger.Max(1);
         };
 
-    // The uniform count n raised one at a time, up to cap, while some image
-    // chord of the uniform split exceeds the effective chordal bound widened
-    // by twice the length tolerance (Law_ImageChordWithinChordal's bound).
-    RaisedForImages(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, n: Integer, cap: Integer): Integer
-    {
-        var count = n;
-        while (count < cap && m.ImagesExceedChordal(m.DiscretizationAt(e, m.EdgeDomain(e).Range.Samples(count + 1)), c))
-        {
-            count = count + 1;
-        }
-        return count;
-    }
-
     // Whether some image chord of the discretization exceeds the effective
     // chordal bound widened by twice the length tolerance.
     ImagesExceedChordal(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
-        => m.EdgeImages(d.Edge).Any(img => m.IsImageEvaluable(img)
-            ? m.ImageChordDeviations(d, img, SamplePlan.DiscretizationPlan).Any(x =>
-                x > c.EffectiveChordal(m.Tolerances) + 2.0 * m.Tolerances.Length.Value)
-            : false);
-
-    // The seeds of edge e with every seed span bisected (SplitSpan), in
-    // increasing order.
-    BisectedParameters(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Array<Number>
-    {
-        var seeds = m.EdgeSeeds(e);
-        return [seeds[0]].Concatenate((seeds.Count - 1).Range.FlatMap(k =>
-            m.SplitSpan(e, c, seeds[k], seeds[k + 1], 0).Concatenate([seeds[k + 1]])));
-    }
-
-    // The parameters strictly inside [a, b] that bisection adds: none when
-    // the segment meets every criterion, when a half would be shorter than
-    // the effective minimum length, or at depth 40 (2^-40 of the span,
-    // below any parameter tolerance); otherwise the midpoint with both
-    // halves' own.
-    SplitSpan(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, depth: Integer): Array<Number>
-        => (depth < 40 ? (m.SegmentFails(e, c, a, b) ? m.HalvesKeepMinLength(e, c, a, b) : false) : false)
-            ? m.SplitSpan(e, c, a, (a + b) * 0.5, depth + 1)
-                .Concatenate([(a + b) * 0.5])
-                .Concatenate(m.SplitSpan(e, c, (a + b) * 0.5, b, depth + 1))
-            : [a].Take(0);
+        => m.ImagesExceedChordalOn(d, c, m.EdgeImages(d.Edge));
 
     // The one-segment piece of edge e over [a, b], points on the curve.
     PieceOf(m: BrepModel, e: BrepEdgeIndex, a: Number, b: Number): EdgeDiscretization
@@ -760,13 +712,7 @@ library EdgeDiscretizing
     // certified sagitta, the tangent deviation at the discretization plan's
     // samples, the length limit, an image chord.
     SegmentFails(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number): Boolean
-    {
-        var piece = m.PieceOf(e, a, b);
-        return m.Sagitta(e, a, b) > c.EffectiveChordal(m.Tolerances)
-            || m.TangentDeviation(piece, SamplePlan.DiscretizationPlan, 0) > c.EffectiveAngular * 0.5
-            || piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not
-            || m.ImagesExceedChordal(piece, c);
-    }
+        => m.SegmentFailsOn(e, c, a, b, m.EdgeImages(e));
 
     // Whether halving [a, b] at its parameter midpoint leaves both chords at
     // least the effective minimum length.
@@ -869,10 +815,7 @@ library EdgeDiscretizing
     // or escaped at the length floor: the per-segment test of `MeetsCriteria`, and the test by
     // which `RefineEdge` decides to split.
     SegmentMeetsCriteria(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, i: Integer): Boolean
-        => m.Law_CertifiedSagittaWithinChordal(d, c, i)
-            && m.Law_TangentDeviationWithinHalfAngular(d, c, SamplePlan.DiscretizationPlan, i)
-            && m.Law_SegmentWithinMaxLength(d, c, i)
-            && m.EdgeImages(d.Edge).All(img => m.Law_ImageChordWithinChordal(d, c, img, SamplePlan.DiscretizationPlan, i));
+        => m.SegmentMeetsCriteriaOn(d, c, i, m.EdgeImages(d.Edge));
 
     // True when some request names the edge.
     IsRequested(requests: Array<EdgeRefinementRequest>, e: BrepEdgeIndex): Boolean
@@ -907,33 +850,7 @@ library EdgeDiscretizing
     // reaches `segments` (RaisedToCount). Every parameter of d is kept, and a
     // d that already meets the criteria gains only the count pass's points.
     RefineEdge(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, segments: Integer): EdgeDiscretization
-        => m.IsDegenerateEdge(d.Edge)
-            ? d
-            : m.DiscretizationAt(d.Edge, m.RaisedToCount(m.RefinedParameters(d, c), segments));
-
-    // d's parameters with every failing segment bisected (RefinedSpan), in
-    // increasing order.
-    RefinedParameters(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Array<Number>
-        => [d.Parameters[0]].Concatenate(d.SegmentCount.Range.FlatMap(i =>
-            (m.SegmentMeetsCriteria(d, c, i)
-                ? [d.Parameters[i]].Take(0)
-                : m.RefinedSpan(d.Edge, c, d.Parameters[i], d.Parameters[i + 1], 0))
-            .Concatenate([d.Parameters[i + 1]])));
-
-    // The parameters strictly inside [a, b], a failing segment, that
-    // bisection adds: its midpoint, with each half's own while that half's
-    // piece fails SegmentMeetsCriteria; nothing at depth 40.
-    RefinedSpan(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, depth: Integer): Array<Number>
-        => depth < 40
-            ? m.RefinedHalf(e, c, a, (a + b) * 0.5, depth + 1)
-                .Concatenate([(a + b) * 0.5])
-                .Concatenate(m.RefinedHalf(e, c, (a + b) * 0.5, b, depth + 1))
-            : [a].Take(0);
-
-    // The parameters bisection adds strictly inside the half [a, b]: none
-    // when its piece meets the criteria, else RefinedSpan's.
-    RefinedHalf(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, depth: Integer): Array<Number>
-        => m.SegmentMeetsCriteria(m.PieceOf(e, a, b), c, 0) ? [a].Take(0) : m.RefinedSpan(e, c, a, b, depth);
+        => m.RefineEdgeBounded(d, c, segments);
 
     // The discretizations with every requested edge refined to the smallest requested chordal
     // bound and the largest requested count, and every other edge left as it is.

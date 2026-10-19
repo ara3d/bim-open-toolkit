@@ -1,7 +1,7 @@
 //==
 // # TermDiscretize
 //
-// Staging, track "termination" (TKT-346). Layer 4's Discretize and
+// Track "termination" (TKT-346). Layer 4's Discretize and
 // RefineEdge, bounded. Two defects made an edge that does not lie on a face
 // it bounds (an inconsistent file) hang the mesher:
 //
@@ -117,8 +117,8 @@ library TermDiscretize
     //==
     // # Discretize, bounded
 
-    // Discretize with the images the edge lies on: the replacement for
-    // layer 4's Discretize.
+    // Discretize with the images the edge lies on: what layer 4's
+    // Discretize is.
     DiscretizeBounded(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization
         => m.DiscretizeBoundedOn(e, c, floors, m.UsableImages(e, c));
 
@@ -210,8 +210,8 @@ library TermDiscretize
     //==
     // # RefineEdge, bounded
 
-    // RefineEdge with the images the edge lies on: the replacement for
-    // layer 4's RefineEdge.
+    // RefineEdge with the images the edge lies on: what layer 4's
+    // RefineEdge is.
     RefineEdgeBounded(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, segments: Integer): EdgeDiscretization
         => m.RefineEdgeBoundedOn(d, c, segments, m.UsableImages(d.Edge, c));
 

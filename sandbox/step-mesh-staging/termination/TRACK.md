@@ -1,7 +1,7 @@
 # termination: edge discretization returns on every input, and an edge off its face is reported
 
 Ticket: TKT-346
-Status: ready to merge
+Status: merged
 
 ## Files
 

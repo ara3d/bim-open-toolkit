@@ -1,7 +1,7 @@
 //==
 // # TermWitnesses
 //
-// Staging, track "termination" (TKT-346). The model that hung the mesher,
+// Track "termination" (TKT-346). The model that hung the mesher,
 // built without a file: adapter/fixtures/unit-cube.stp with its plane #118
 // replaced by a curved surface the cube's edges do not lie on (the TKT-313
 // build-log entry of docs/plans/step-reader.md). Surface 5 of layer 7's
