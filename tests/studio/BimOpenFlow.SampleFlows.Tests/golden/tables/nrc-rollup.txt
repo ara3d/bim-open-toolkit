@@ -1,6 +1,6 @@
 dfg 0.1.0;
-// nrc-rollup   graph 37e3039e3b50
-about = view.note@1(text: "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows. zoneAnswer is a second output: the zone summary rows (zoneName instead of entityId, 28 values on the four zones of nrc-zones.csv), computed from the space values of nrc_analytics_spaces.csv by each metric's Rollup, the ratio rule dividing zone energy by zone floor area. nrc-enrich-run writes them on the IfcZone groups it creates.");
+// nrc-rollup   graph 4599c273121c
+about = view.note@1(text: "The storey and building summary rows nrc-enrich-run writes (README: How the enrichment rows are derived). containers places each element on one storey, its StoreyOfElement row with the smallest Depth, and in the building; inContainers joins the values to those placements (containers on the left so the layout keeps the values wire clear of the containers card); summaries aggregates each metric by its Rollup and rounds to its Decimals; provenance puts every field of nrc-run.csv on the project. 47 rows. zoneAnswer is a second output: the zone summary rows (zoneName instead of entityId, 28 values on the four zones of nrc-zones.csv), computed from the space values of nrc_analytics_spaces.csv by each metric's Rollup, the ratio rule dividing zone energy by zone floor area. nrc-enrich-run writes them on the IfcZone groups it creates.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
   // Ok  relation plan fbac43cf5e83
@@ -40,9 +40,9 @@ WHERE e.GlobalId IS NOT NULL
 values = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
   // Ok  relation plan d8e1967ca45d
   //   "(csv \"nrc\" \"nrc_analytics_long.csv\")"
-inContainers = rel.join@1(left: values.relation, right: containers.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
-  // Ok  relation plan b3f5297b94fd
-  //   "(join Inner (csv \"nrc\" \"nrc_analytics_long.csv\") (sql \"SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so"...
+inContainers = rel.join@1(left: containers.relation, right: values.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan e57b7284ebc6
+  //   "(join Inner (sql \"SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so.StoreyIndex\nWHERE e.GlobalId IS NOT "...
 summaries = rel.sql@1(t1: inContainers.relation, t2: metrics.relation, t3: run.relation, sql: """
 SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,
        CASE m.Rollup
@@ -60,10 +60,10 @@ JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'
 JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
 ORDER BY entityId, psetName, paramName
 """);
-  // Ok  relation plan d3f20da571ca
+  // Ok  relation plan 3efdc330f472
   //   "(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE m.Rollup\n           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS I"...
 answer = rel.sql@1(t1: summaries.relation, t2: provenance.relation, sql: "SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName");
-  // Ok  relation plan 49951ca7baa4
+  // Ok  relation plan eea6776641b2
   //   "(sql \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n  "...
 zoneSpaces = rel.csv@1(source: "nrc", path: "nrc_analytics_spaces.csv");
   // Ok  relation plan b23c695a3274

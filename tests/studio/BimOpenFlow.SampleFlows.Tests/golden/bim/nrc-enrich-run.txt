@@ -1,5 +1,5 @@
 dfg 0.1.0;
-// nrc-enrich-run   graph 66c8992498e0
+// nrc-enrich-run   graph dac68db8921d
 about = view.note@1(text: "On Run, writes the rows of nrc-element-psets and nrc-rollup into a copy of duplex-base.ifc: 2,469 values on 228 entities, including four IfcZone groups (nrc-zones.csv) with an NRC_ZoneSummary set each. A graph cannot reference another, so this one carries exact copies of both chains (RollupGraphTests checks them); rows unions the summaries, the provenance and the element rows in (entityId, psetName, paramName) order, and zoneMembers and zoneRowsTable feed the writer its zones and their sets, so every Run writes the same bytes.");
   // Ok
 entities = rel.table@1(source: "duplex-base", table: "EntityText");
@@ -40,9 +40,9 @@ WHERE e.GlobalId IS NOT NULL
 values = rel.csv@1(source: "nrc", path: "nrc_analytics_long.csv");
   // Ok  relation plan d8e1967ca45d
   //   "(csv \"nrc\" \"nrc_analytics_long.csv\")"
-inContainers = rel.join@1(left: values.relation, right: containers.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
-  // Ok  relation plan b3f5297b94fd
-  //   "(join Inner (csv \"nrc\" \"nrc_analytics_long.csv\") (sql \"SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so"...
+inContainers = rel.join@1(left: containers.relation, right: values.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
+  // Ok  relation plan e57b7284ebc6
+  //   "(join Inner (sql \"SELECT e.GlobalId, 'storey' AS Level, s.StepId AS entityId\nFROM t1 so\nJOIN t2 e ON e.EntityIndex = so.EntityIndex\nJOIN t2 s ON s.EntityIndex = so.StoreyIndex\nWHERE e.GlobalId IS NOT "...
 summaries = rel.sql@1(t1: inContainers.relation, t2: metrics.relation, t3: run.relation, sql: """
 SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,
        CASE m.Rollup
@@ -60,7 +60,7 @@ JOIN t2 m ON m.Level = p.Level AND m.Rollup <> 'none'
 JOIN t3 r ON r.Field IN ('AnalysisRunId', 'ScenarioName')
 ORDER BY entityId, psetName, paramName
 """);
-  // Ok  relation plan d3f20da571ca
+  // Ok  relation plan 3efdc330f472
   //   "(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m.ValueType AS valueType,\n       CASE m.Rollup\n           WHEN 'sum' THEN CAST(round(sum(p.Value), CAST(m.Decimals AS I"...
 withStepId = rel.join@1(left: values.relation, right: entities.relation, leftKey: "GlobalId", rightKey: "GlobalId", kind: "inner");
   // Ok  relation plan be5c641177e6
@@ -91,7 +91,7 @@ elementRows = rel.sql@1(t1: metricRows.relation, t2: runFactRows.relation, t3: r
   // Ok  relation plan d80847ee9fd0
   //   "(sql \"SELECT * FROM t1 UNION SELECT * FROM t2 UNION SELECT * FROM t3 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.StepId AS entityId, m.PropertySet AS psetName, m.PropertyName AS paramName,"...
 rows = rel.sql@1(t1: summaries.relation, t2: provenance.relation, t3: elementRows.relation, sql: "SELECT * FROM t1 UNION ALL SELECT * FROM t2 UNION ALL SELECT * FROM t3 ORDER BY entityId, psetName, paramName");
-  // Ok  relation plan 4aa7ed9b7414
+  // Ok  relation plan ca27f1c729bd
   //   "(sql \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 UNION ALL SELECT * FROM t3 ORDER BY entityId, psetName, paramName\" [(sql \"SELECT p.entityId, m.PropertySet AS psetName, m.PropertyName AS paramName, m"...
 table = rel.materialize@1(input: rows.relation, limit: "0");
   // Ok  table 2441 rows x 5 cols  sha 9f3053b9ab84
