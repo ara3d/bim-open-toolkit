@@ -3,7 +3,7 @@
 An open, verifiable data layer for building information — and a node graph on top of it
 that people and AI agents edit with the same four operations.
 
-`124 nodes` · `13 node packs` · MIT
+`139 nodes` · `17 node packs` · MIT
 
 ## What it is
 

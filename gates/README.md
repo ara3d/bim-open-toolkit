@@ -1,7 +1,7 @@
 # Gates — headless integration smoke checks
 
 Supervisor-run end-to-end checks that unit tests cannot cover: a real host
-process, real HTTP, real npm builds. Run from the repo root with Node 18+.
+process, real HTTP, real npm builds. Run from the repo root with Node 20.19 or 22.12 and later (the range scripts/preflight.mjs checks).
 
 | Script | What it proves |
 |---|---|

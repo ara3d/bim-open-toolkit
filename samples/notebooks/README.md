@@ -1,8 +1,10 @@
 # Sample notebooks
 
 Notebook files (`bimopen-notebook/0.1`, the format in
-`deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/src/document/format.ts`) that realise three
-of the sessions in `docs/proposals/notebook-sessions.md`:
+`deps/bim-open-notebook/bimopenflow/web/packages/bim-open-notebook/src/document/format.ts`) that realise
+sessions from `docs/proposals/notebook-sessions.md` and the NRC walkthrough. The table lists the first ones;
+`ls *.notebook.json` gives all fourteen, twelve of which the NRC site publishes (`s10-snowdon` and
+`s11-editing-history` stay off it):
 
 | Notebook | Session | Host profile | Turns |
 |---|---|---|---|
