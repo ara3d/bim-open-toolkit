@@ -408,7 +408,8 @@ library EdgeDiscretizing
     // chord, spans subdivided until within the length tolerance of the
     // sampled maximum.
     // deferred: control-hull certificate with Bezier extraction and subdivision (chunk F).
-    SagittaByHullBound(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number;
+    SagittaByHullBound(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number
+        => SagittaByHullBoundBody(m, e, t0, t1);
 
     // The largest distance from the curve, at the plan's interior samples of segment i, to the
     // segment's chord. A lower bound on the segment's sagitta, exact on circles at the midpoint.

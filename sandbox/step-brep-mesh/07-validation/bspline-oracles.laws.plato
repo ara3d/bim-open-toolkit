@@ -26,7 +26,7 @@ library BsplineOraclesLaws
     // On the flat patch the area potential is P = -6 v (its v range starts
     // at 0), so the segment integral from (u0, v0) to (u1, v1) is -6 du vm,
     // which the quadrature reproduces to rounding for any segment.
-    Law_Bspline_AreaQuadratureOnFlatPatch(u0: Number, v0: Number, u1: Number, v1: Number): Boolean
+    Law_AreaQuadratureOnFlatPatch(u0: Number, v0: Number, u1: Number, v1: Number): Boolean
     {
         var surface = BrepSurface.FlatPatch;
         var g = GeometrySet([], [], [], [surface], []);
@@ -38,7 +38,7 @@ library BsplineOraclesLaws
     // The top of Witness_BSplinePatchSolid(b) has its Green area in layer
     // 7's bracket [1, 1 + 16 b^2 / 45] (Law_BSplineTopAreaInBracket), at
     // b = 1/4, 1/2 and 3/4.
-    Law_Bspline_BumpTopAreaInBracket(k: Integer): Boolean
+    Law_BumpTopAreaInBracket(k: Integer): Boolean
         => Law_BSplineTopAreaInBracket(0.25 * (k.FixtureIndex(3) + 1).ToNumber);
 
     //==
@@ -48,7 +48,7 @@ library BsplineOraclesLaws
     // curvatures 1 and 1 at its middle (z_uu = z_vv = -1, flat tangent
     // plane) and +-2 at the corner (0, 0) (z_uv = 2, the rest 0); the face's
     // sampled bound is at least 1.5 times the larger.
-    Law_Bspline_BumpCurvatures(_: Integer): Boolean
+    Law_BumpCurvatures(_: Integer): Boolean
     {
         var m = BrepModel.Witness_BSplinePatchSolid(0.5);
         var s = m.Faces[BrepFaceIndex(1)].Surface;
@@ -63,7 +63,7 @@ library BsplineOraclesLaws
 
     // The rational quarter circle of radius 1 has length pi / 2; the
     // quadrature gives it within the length tolerance and rounding.
-    Law_Bspline_QuarterCircleLength(_: Integer): Boolean
+    Law_QuarterCircleLength(_: Integer): Boolean
     {
         var m = 1.CurveEdgeModel;
         return (m.Oracle_EdgeLength(BrepEdgeIndex(0)) - Number.Pi * 0.5).Abs <= m.Tolerances.Length.Value + ResolutionAt(4.0);

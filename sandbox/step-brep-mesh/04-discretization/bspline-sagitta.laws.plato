@@ -22,7 +22,7 @@ library BsplineSagittaLaws
     // No point of the arc over [t0, t1] is farther from the chord than
     // Sagitta plus the length tolerance and the rounding of the evaluation,
     // for parameters t0, t1 and a fraction f anywhere in the edge's domain.
-    Law_Bspline_SagittaBoundsArc(k: Integer, a: Number, b: Number, f: Number): Boolean
+    Law_SagittaBoundsArc(k: Integer, a: Number, b: Number, f: Number): Boolean
     {
         var m = k.CurveEdgeModel;
         var e = BrepEdgeIndex(0);
@@ -36,7 +36,7 @@ library BsplineSagittaLaws
 
     // Sagitta is attained: it is within the length tolerance and rounding of
     // the largest distance from the chord, found by EstimatedSagitta.
-    Law_Bspline_SagittaIsAttained(k: Integer, a: Number, b: Number): Boolean
+    Law_SagittaIsAttained(k: Integer, a: Number, b: Number): Boolean
     {
         var m = k.CurveEdgeModel;
         var d = k.CurveFixture;
@@ -59,7 +59,7 @@ library BsplineSagittaLaws
     // the middle control point's, so its sagitta is exactly 1/2. Fixture 1,
     // the rational quarter circle of radius 1, has sagitta 1 - cos(pi / 4)
     // over its whole domain.
-    Law_Bspline_SagittaClosedForms(_: Integer): Boolean
+    Law_SagittaClosedForms(_: Integer): Boolean
     {
         var bezier = 2.CurveEdgeModel;
         var circle = 1.CurveEdgeModel;

@@ -24,24 +24,24 @@ library BsplineEvaluationLaws
     // (Oracle_BSplineCurvePoint), within layer 1's rounding allowance, at any
     // parameter of its domain: layer 1's Law_BSplineCurveMatchesBasisSum on
     // each fixture.
-    Law_Bspline_CurvePointMatchesDefinition(k: Integer, t: Number): Boolean
+    Law_CurvePointMatchesDefinition(k: Integer, t: Number): Boolean
         => Law_BSplineCurveMatchesBasisSum(k.CurveFixtureSet, CurveIndex(0), t);
 
     // A parameter-plane curve's point is the basis-weighted sum of its
     // control points: layer 1's Law_BSplineCurve2DMatchesBasisSum on each
     // fixture.
-    Law_Bspline_Curve2DPointMatchesDefinition(k: Integer, t: Number): Boolean
+    Law_Curve2DPointMatchesDefinition(k: Integer, t: Number): Boolean
         => Law_BSplineCurve2DMatchesBasisSum(GeometrySet([], [BrepCurve2D.BSpline(k.Curve2DFixture)], [], [], []), Curve2DIndex(0), t);
 
     // A surface's point is the tensor-product basis sum over its net: layer
     // 1's Law_BSplineSurfaceMatchesBasisSum on each fixture.
-    Law_Bspline_SurfacePointMatchesDefinition(k: Integer, u: Number, v: Number): Boolean
+    Law_SurfacePointMatchesDefinition(k: Integer, u: Number, v: Number): Boolean
         => Law_BSplineSurfaceMatchesBasisSum(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v));
 
     // At the two ends of a clamped curve's domain the point is the first and
     // last control point, exactly up to rounding: the end interpolation of a
     // clamped knot vector (every fixture but the unclamped one, 3).
-    Law_Bspline_ClampedCurveInterpolatesEnds(k: Integer): Boolean
+    Law_ClampedCurveInterpolatesEnds(k: Integer): Boolean
     {
         var d = k.CurveFixture;
         var tol = ResolutionAt(4.0 * d.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length)));
@@ -58,18 +58,18 @@ library BsplineEvaluationLaws
     // differences of its points and first derivative within Richardson's
     // estimate: layer 1's two derivative laws on each fixture, which skip a
     // sample whose difference interval holds a knot.
-    Law_Bspline_CurveDerivativesMatchDifferences(k: Integer, t: Number): Boolean
+    Law_CurveDerivativesMatchDifferences(k: Integer, t: Number): Boolean
         => Law_DerivativeMatchesCentralDifference(k.CurveFixtureSet, CurveIndex(0), t)
             && Law_SecondDerivativeMatchesCentralDifference(k.CurveFixtureSet, CurveIndex(0), t);
 
     // The same for a parameter-plane curve.
-    Law_Bspline_Curve2DDerivativesMatchDifferences(k: Integer, t: Number): Boolean
+    Law_Curve2DDerivativesMatchDifferences(k: Integer, t: Number): Boolean
         => Law_Curve2DDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(k.Curve2DFixture)], [], [], []), Curve2DIndex(0), t)
             && Law_Curve2DSecondDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(k.Curve2DFixture)], [], [], []), Curve2DIndex(0), t);
 
     // A surface's two first partials agree with central differences of its
     // points: layer 1's Law_PartialMatchesCentralDifference in u and in v.
-    Law_Bspline_SurfacePartialsMatchDifferences(k: Integer, u: Number, v: Number): Boolean
+    Law_SurfacePartialsMatchDifferences(k: Integer, u: Number, v: Number): Boolean
         => Law_PartialMatchesCentralDifference(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), SurfaceParameter.ParameterU)
             && Law_PartialMatchesCentralDifference(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), SurfaceParameter.ParameterV);
 
@@ -79,7 +79,7 @@ library BsplineEvaluationLaws
     // S_u and S_v, S_vv from the v-difference of S_v, at a point kept a step
     // inside the domain. The fixtures' interior knots are simple, so the
     // second partials are continuous and no sample is skipped.
-    Law_Bspline_SurfaceSecondPartialsMatchDifferences(k: Integer, u: Number, v: Number): Boolean
+    Law_SurfaceSecondPartialsMatchDifferences(k: Integer, u: Number, v: Number): Boolean
     {
         var d = k.SurfaceFixture;
         var h = 1.0 / 256.0;
@@ -109,7 +109,7 @@ library BsplineEvaluationLaws
 
     // Every point of the rational quarter circle is at distance 1 from the
     // origin, and its tangent is orthogonal to the radius, to rounding.
-    Law_Bspline_QuarterCircleIsRound(t: Number): Boolean
+    Law_QuarterCircleIsRound(t: Number): Boolean
     {
         var d = BSplineCurveData.QuarterCircle;
         var x = d.Basis.DomainAt(t);
@@ -122,7 +122,7 @@ library BsplineEvaluationLaws
     // The bump patch is z(u, v) = 1 + 4 b u (1 - u) v (1 - v) over x = u,
     // y = v, with b = 1/2 (layer 7's Witness_BSplinePatchSolid comment): its
     // point and all five partials of order 1 and 2 match the polynomial's.
-    Law_Bspline_BumpPatchMatchesPolynomial(u: Number, v: Number): Boolean
+    Law_BumpPatchMatchesPolynomial(u: Number, v: Number): Boolean
     {
         var d = BSplineSurfaceData.BumpPatch(0.5);
         var b = 0.5;
@@ -141,7 +141,7 @@ library BsplineEvaluationLaws
     // Every point of the quarter-cylinder fixture is at distance 1 from the
     // z axis at height v; its u partial is horizontal and orthogonal to
     // the radius, its v partial is (0, 0, 1), and its mixed partial vanishes.
-    Law_Bspline_CylinderPatchIsRound(u: Number, v: Number): Boolean
+    Law_CylinderPatchIsRound(u: Number, v: Number): Boolean
     {
         var d = 1.SurfaceFixture;
         var uv = UvCoordinate(u.UnitFraction, v.UnitFraction * 2.0);

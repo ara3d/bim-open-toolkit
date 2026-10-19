@@ -21,11 +21,11 @@ files present that day.
 | `geometry-surfaces.library.plato` | surfaces | `BrepGeometrySurfaces` |
 | `geometry-scaling.library.plato` | the arena scaled about the origin: `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, `ParameterScaleFactor`, `ScaledGeometry` | `BrepGeometryScaling` |
 | `geometry-motion.library.plato` | the arena carried by a rigid motion: `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` (from layer 2 in the name review) | `BrepGeometryMotion` |
-| `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; de Boor deferred | `BrepGeometrySplines` |
+| `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; evaluation, side tests and inverse search bodies in `bspline-*.library.plato` | `BrepGeometrySplines` |
 | `geometry.laws.plato` | 95 laws, 3 oracles, their helpers and measures | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
 
-Counts after the fix wave: 19 types, 3 interfaces, 262 library functions (244 with a body, 18
+Counts after the fix wave: 19 types, 3 interfaces, 262 library functions (256 with a body, 6
 deferred), 95 laws, 46 `spec` blocks, 10 theorems and no conjecture.
 
 ## The objects
@@ -359,7 +359,7 @@ nothing of the free coordinate there.
 
 ## Implementation notes
 
-Deferred, with their families (contracts in `geometry.spec.plato`):
+Deferred, with their families (contracts in `geometry.spec.plato`); the first four rows have bodies since the B-spline merge (TKT-327, in `bspline-evaluation`, `bspline-sides` and `bspline-inverse`), and the table keeps the family of each:
 
 | Function | Family |
 |---|---|

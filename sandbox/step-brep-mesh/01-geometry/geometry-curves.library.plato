@@ -206,7 +206,8 @@ library BrepGeometryCurves
     // the domain ends, wrap into the canonical window, and break ties toward
     // the smaller parameter. For an unbounded domain the search starts from
     // the foot of p on the curve's local quadratic model.
-    ClosestParameterBySearch(curve: BrepCurve, g: GeometrySet, p: Point3D): Number;
+    ClosestParameterBySearch(curve: BrepCurve, g: GeometrySet, p: Point3D): Number
+        => ClosestParameterBySearchBody(curve, g, p);
 
     //==
     // # Space curves: breakpoints, closure, parameter tolerance
@@ -819,7 +820,8 @@ library BrepGeometryCurves
     // A 2D line along a periodic direction (the bottom circle of a cylinder,
     // v = 0) has the minimizers t + k T for every integer k, so without this
     // rule the answer is not determined on its unbounded domain (review F4).
-    PcurveClosestParameterBySearch(g: GeometrySet, p: PcurveIndex, q: Point3D): Number;
+    PcurveClosestParameterBySearch(g: GeometrySet, p: PcurveIndex, q: Point3D): Number
+        => PcurveClosestParameterBySearchBody(g, p, q);
 
     // The shift of the pcurve's parameter after which its space point
     // repeats, or 0 when it never does: the 2D curve's own period when its

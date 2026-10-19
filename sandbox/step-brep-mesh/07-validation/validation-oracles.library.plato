@@ -718,7 +718,8 @@ library BrepOracles
     // knot span in v (p the degree in v; 8 points for a non-spline surface),
     // the outer by the 5-point rule along the segment (GaussLegendreNodes). Converges
     // exponentially on each smooth patch; not exact (h is a square root).
-    AreaSegmentByQuadrature(surface: BrepSurface, g: GeometrySet, seg: GreenSegment): Number;
+    AreaSegmentByQuadrature(surface: BrepSurface, g: GeometrySet, seg: GreenSegment): Number
+        => AreaSegmentByQuadratureBody(surface, g, seg);
 
     //==
     // # The divergence-theorem volume
@@ -1047,7 +1048,8 @@ library BrepOracles
     // from second differences of Eval at the Green oracle's coarse boundary
     // points and a 9 by 9 grid of the box, times 1.5 for the space between
     // samples; infinite where the area element vanishes (an axis point).
-    SampledCurvatureBound(m: BrepModel, f: BrepFaceIndex): Number;
+    SampledCurvatureBound(m: BrepModel, f: BrepFaceIndex): Number
+        => SampledCurvatureBoundBody(m, f);
 
     // The length of edge e's curve over its edge domain: |V| times the domain
     // length on a line, R times it on a circle, by quadrature otherwise.
@@ -1062,7 +1064,8 @@ library BrepOracles
     // Gauss-Legendre rule on every span between consecutive breakpoints
     // (Breakpoints), each span halved until two successive results agree
     // within the length tolerance.
-    EdgeLengthByQuadrature(m: BrepModel, e: BrepEdgeIndex): Number;
+    EdgeLengthByQuadrature(m: BrepModel, e: BrepEdgeIndex): Number
+        => EdgeLengthByQuadratureBody(m, e);
 
     // The length of face f's boundary: the lengths of the edges its coedges
     // cite, a seam counted twice (it bounds the face's parameter region on

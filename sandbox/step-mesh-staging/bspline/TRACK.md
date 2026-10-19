@@ -1,7 +1,7 @@
 # bspline: mesh B-spline (freeform) faces
 
 Ticket: TKT-327
-Status: ready to merge
+Status: merged
 
 ## Done
 
@@ -23,6 +23,14 @@ So the bodies, the side tests, the oracles, the sagitta and the crescent criteri
 - inverse bodies (`bspline-inverse.library.plato`, `bspline-inverse.types.plato`): global search per smooth piece with regula falsi on the slope (curves, pcurves) and damped, projected Gauss-Newton (surfaces); local Gauss-Newton from a seed. `BsplineInverseLaws` (11 laws) on the wired copy: 10 obligation before (the eleventh was added with the bodies), first run 9 error (an `&&` guard that indexes -1), then 2 fail (stop at 32 roundoffs), then 11 pass. A mutation that keeps the first local minimum fails 4 laws.
 - evaluation bodies (`bspline-evaluation.library.plato`): de Boor over homogeneous values, derivatives by the hodograph, the quotient rule, blossoms for Bezier extraction. `BsplineEvaluationLaws` on the wired copy: 11 obligation before, 11 pass after.
 - laws and fixtures: 21 laws in `bspline-evaluation.laws.plato` and `bspline-inverse.laws.plato` on the fixtures of `bspline-witnesses.library.plato`. Before any body: 21 of 21 stop on a host obligation (BSplinePoint, ClosestParameterBySearch), gpu32.
+
+## Merge note (2026-10-19)
+
+Merged on top of G, T and Term (cpu64 sweep, budget 120 s, 778 laws: 536 pass, 24 fail, 26 error, 103 obligation, 89 skipped; before 734: 499, 23, 6, 119, 87). The 44 laws became `Law_*` (no `Law_Bspline_` prefix). Of the 44: 34 pass, 9 exceed the time budget in the bump solid's refinement (TKT-351), 1 fails: `BsplineSagittaLaws.Law_SagittaIsAttained` case 7 (k = 12, a = -9.3878, b = -3): fixture 2 over [1.2243, 0], across its corner at t = 1. `Sagitta` gives 0.39408 (a hull certificate whose lower bound is a point of the curve), `EstimatedSagitta` (64 samples and golden-section search) gives 0.38736; so the law's reference underestimates and the body is right. The law needs a reference that handles a corner (split the interval at the knots before the golden-section search). The track reported 35 pass; that case was not among its runs.
+
+Verdict changes outside the track's laws: 6 obligation to pass (layer 1 B-spline evaluation laws), 14 obligation to error (budget, they now mesh B-spline faces), 4 error to obligation (they now stop on ExpandedPoles before the budget), 1 pass to error (`Law_AngleDefectMatchesBrepEuler`, budget in `RefineToSurfaceByInsertion`), 2 pass to skipped (`Law_OutcomeIsOfItsFace`, `Law_PendingRequestIsInSomeOutcome`: a budget error in an earlier law of the same run leaves no `PipelineState` witness; run alone, or after `Law_OutcomesAreCurrent` with the budget raised, both pass with 14 exhaustive cases; reproduced with `--budget=10 --filter=Law_OutcomesAreCurrent,Law_OutcomeIsOfItsFace,Law_PendingRequestIsInSomeOutcome`).
+
+Wiring beyond the list above (the Done section names these bodies): `BSplineSideCollapses`, `BSplineSidesCoincide` (layer 1), `SagittaByHullBound` (layer 4), `AreaSegmentByQuadrature`, `SampledCurvatureBound`, `EdgeLengthByQuadrature` (layer 7). Layer 1 now has 6 deferred functions, not 8.
 
 ## Merge instructions
 

@@ -308,14 +308,16 @@ library BrepGeometrySurfaces
     // trust region kept inside the domain, compare with the closest points on
     // the domain's sides and collapsed lines, then wrap periodic coordinates
     // into the window and set an undetermined coordinate to the window's start.
-    ProjectBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D): UvCoordinate;
+    ProjectBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D): UvCoordinate
+        => ProjectBySearchBody(surface, g, p);
 
     // deferred: Newton's iteration from seed on the same two equations, with a
     // trust region of a quarter period in a periodic direction and the domain
     // in a bounded one; periodic coordinates are not wrapped, so the result is
     // the copy reached from the seed; a coordinate the point does not
     // determine keeps the seed's value (KeepSeedWhereFree).
-    ProjectNearBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): UvCoordinate;
+    ProjectNearBySearch(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): UvCoordinate
+        => ProjectNearBySearchBody(surface, g, p, seed);
 
     // True when Project has a closed form for the surface: plane, cylinder,
     // cone, sphere, and a Full torus with major above minor.

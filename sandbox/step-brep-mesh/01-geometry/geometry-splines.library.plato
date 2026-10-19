@@ -166,26 +166,32 @@ library BrepGeometrySplines
     // deferred: de Boor's algorithm on the homogeneous control points (w P, w)
     // over the knot span holding t, then division by the weight
     // (https://en.wikipedia.org/wiki/De_Boor%27s_algorithm).
-    BSplinePoint(d: BSplineCurveData, t: Number): Point3D;
+    BSplinePoint(d: BSplineCurveData, t: Number): Point3D
+        => BSplinePointBody(d, t);
 
     // deferred: the order-th derivative (1 or 2) of the rational curve by the
     // quotient rule over the derivatives of the homogeneous curve (Piegl and
     // Tiller, The NURBS Book, 2nd ed., algorithms A3.2 and A4.2).
-    BSplineDerivative(d: BSplineCurveData, t: Number, order: Integer): Vector3D;
+    BSplineDerivative(d: BSplineCurveData, t: Number, order: Integer): Vector3D
+        => BSplineDerivativeBody(d, t, order);
 
     // deferred: de Boor's algorithm in the parameter plane.
-    BSplinePoint(d: BSplineCurve2DData, t: Number): UvCoordinate;
+    BSplinePoint(d: BSplineCurve2DData, t: Number): UvCoordinate
+        => BSplinePointBody(d, t);
 
     // deferred: the order-th derivative of the parameter-plane curve.
-    BSplineDerivative(d: BSplineCurve2DData, t: Number, order: Integer): Vector2D;
+    BSplineDerivative(d: BSplineCurve2DData, t: Number, order: Integer): Vector2D
+        => BSplineDerivativeBody(d, t, order);
 
     // deferred: tensor-product de Boor, one curve evaluation per control row
     // and one across the results (Piegl and Tiller, algorithm A4.3).
-    BSplinePoint(d: BSplineSurfaceData, uv: UvCoordinate): Point3D;
+    BSplinePoint(d: BSplineSurfaceData, uv: UvCoordinate): Point3D
+        => BSplinePointBody(d, uv);
 
     // deferred: the mixed partial derivative of order (uOrder, vOrder), each 0
     // to 2, of the rational surface (Piegl and Tiller, algorithm A4.4).
-    BSplinePartial(d: BSplineSurfaceData, uv: UvCoordinate, uOrder: Integer, vOrder: Integer): Vector3D;
+    BSplinePartial(d: BSplineSurfaceData, uv: UvCoordinate, uOrder: Integer, vOrder: Integer): Vector3D
+        => BSplinePartialBody(d, uv, uOrder, vOrder);
 
     //==
     // # Collapsed and coincident sides (deferred)
@@ -197,11 +203,13 @@ library BrepGeometrySplines
     // clamped end the row is the net's first or last row and no insertion is
     // needed. By the convex hull property the side's image then lies within
     // tol of one point.
-    BSplineSideCollapses(d: BSplineSurfaceData, side: DomainSide, tol: LengthTolerance): Boolean;
+    BSplineSideCollapses(d: BSplineSurfaceData, side: DomainSide, tol: LengthTolerance): Boolean
+        => BSplineSideCollapsesBody(d, side, tol);
 
     // deferred: the boundary curves at the two ends of the given parameter's
     // domain, each as a control row by knot insertion as above, compared
     // pointwise within tol after aligning their knot vectors; the surface is
     // then closed in that parameter.
-    BSplineSidesCoincide(d: BSplineSurfaceData, which: SurfaceParameter, tol: LengthTolerance): Boolean;
+    BSplineSidesCoincide(d: BSplineSurfaceData, which: SurfaceParameter, tol: LengthTolerance): Boolean
+        => BSplineSidesCoincideBody(d, which, tol);
 }
